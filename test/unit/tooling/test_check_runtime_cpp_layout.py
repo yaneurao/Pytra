@@ -31,6 +31,18 @@ def _make_valid_tree(root: Path, *, legacy_ext_names: bool = False) -> None:
     _write(root / "src" / "runtime" / "cpp" / "native" / "std" / "time.cpp", "// native\n")
     _write(root / "src" / "runtime" / "cpp" / "pytra" / "std" / "time.h", f"// {marker}\n")
     _write(
+        root / "src" / "runtime" / "cpp" / "generated" / "compiler" / "backend_registry_static.h",
+        f"// {marker}\n",
+    )
+    _write(
+        root / "src" / "runtime" / "cpp" / "native" / "compiler" / "backend_registry_static.cpp",
+        "// native\n",
+    )
+    _write(
+        root / "src" / "runtime" / "cpp" / "pytra" / "compiler" / "backend_registry_static.h",
+        f"// {marker}\n",
+    )
+    _write(
         root / "src" / "runtime" / "cpp" / "core" / core_header_name,
         f'#pragma once\n#include "runtime/cpp/native/core/{core_header_name}"\n',
     )

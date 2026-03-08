@@ -143,7 +143,9 @@ def module_name_to_cpp_include(module_name_norm: str) -> str:
             return indexed[4:]
         return indexed
     if module_id.startswith(TOOLCHAIN_COMPILER_PREFIX):
-        rel_hdr = module_tail_to_cpp_header_path(module_id[TOOLCHAIN_COMPILER_PREFIX_LEN:])
+        rel_hdr = module_tail_to_cpp_header_path(
+            "compiler/" + module_id[TOOLCHAIN_COMPILER_PREFIX_LEN:]
+        )
         return "runtime/cpp/" + rel_hdr
     return ""
 

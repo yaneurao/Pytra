@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -20,6 +21,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SELFHOST_BIN = ROOT / "selfhost" / "py2cpp.out"
 BUILD_SELFHOST = ROOT / "tools" / "build_selfhost.py"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+
+from tools.cpp_runtime_deps import collect_runtime_cpp_sources
 
 
 DEFAULT_CASES = [
@@ -50,13 +57,6 @@ def _resolve_selfhost_target(selfhost_bin: Path, requested: str) -> str:
     if "--target" in text:
         return "cpp"
     return ""
-
-
-def _runtime_cpp_sources() -> list[str]:
-    out: list[str] = []
-    for p in sorted((ROOT / "src" / "runtime" / "cpp" / "pytra").rglob("*.cpp")):
-        out.append(str(p))
-    return out
 
 
 def _normalize_stdout(text: str, ignore_prefixes: list[str]) -> str:
@@ -105,7 +105,6 @@ def main() -> int:
         return 2
     selfhost_target = _resolve_selfhost_target(selfhost_bin, str(args.selfhost_target))
 
-    runtime_cpp = _runtime_cpp_sources()
     failures = 0
     with tempfile.TemporaryDirectory() as tmpdir:
         td = Path(tmpdir)
@@ -142,6 +141,10 @@ def main() -> int:
                 i += 1
                 continue
 
+            runtime_cpp = [
+                str(ROOT / rel_path)
+                for rel_path in collect_runtime_cpp_sources([str(out_cpp)], ROOT / "src")
+            ]
             compile_cmd = [
                 "g++",
                 "-std=c++20",
