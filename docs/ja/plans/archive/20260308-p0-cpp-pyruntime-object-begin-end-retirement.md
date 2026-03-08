@@ -35,13 +35,14 @@
 
 ## 2. タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01] `begin/end(object)` と ADL 補助を退役する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01-S1-01] range-for compat callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01-S1-02] typed iterable 置換方針を固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01-S2-01] representative callsite を置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01-S2-02] `begin/end(object)` と ADL 補助を削除する。
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01-S3-01] parity / docs / archive を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01] `begin/end(object)` と ADL 補助を退役する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01-S1-01] range-for compat callsite を棚卸しする。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01-S1-02] typed iterable 置換方針を固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01-S2-01] representative callsite を置換する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01-S2-02] `begin/end(object)` と ADL 補助を削除する。
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-BEGINEND-01-S3-01] parity / docs / archive を更新する。
 
 ## 3. 決定ログ
 
 - 2026-03-08: 本計画は range-for ADL 互換だけを対象にし、iterator primitive の低レベル実装とは切り分ける。
+- 2026-03-08: `py_dyn_range` 退役後に checked-in C++ backend/runtime/sample を棚卸しした結果、`begin/end(object)` と `pytra::gc::begin/end(RcHandle<PyObj>)` の明示 callsite は残っていなかった。inventory guard を正本にして定義自体を削除した。

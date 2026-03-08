@@ -1676,45 +1676,6 @@ static inline auto operator-(const rc<T>& v) -> decltype(v->__neg__()) {
     return v->__neg__();
 }
 
-static inline list<object>::const_iterator begin(const object& v) {
-    if (const auto* p = obj_to_list_ptr(v)) return p->begin();
-    static const list<object> empty;
-    return empty.begin();
-}
-
-static inline list<object>::const_iterator end(const object& v) {
-    if (const auto* p = obj_to_list_ptr(v)) return p->end();
-    static const list<object> empty;
-    return empty.end();
-}
-
-// range-for は ADL で begin/end を解決するため、object 実体型の名前空間にも置く。
-namespace pytra::gc {
-static inline list<object>::const_iterator begin(const RcHandle<PyObj>& v) {
-    return ::begin(::object(v));
-}
-
-static inline list<object>::const_iterator end(const RcHandle<PyObj>& v) {
-    return ::end(::object(v));
-}
-}  // namespace pytra::gc
-
-static inline list<object>::const_iterator begin(const ::std::optional<object>& v) {
-    if (!v.has_value()) {
-        static const list<object> empty;
-        return empty.begin();
-    }
-    return ::begin(*v);
-}
-
-static inline list<object>::const_iterator end(const ::std::optional<object>& v) {
-    if (!v.has_value()) {
-        static const list<object> empty;
-        return empty.end();
-    }
-    return ::end(*v);
-}
-
 // dict.keys / dict.values の Python 互換。
 template <class K, class V>
 static inline list<object> py_dict_items(const dict<K, V>& d) {
