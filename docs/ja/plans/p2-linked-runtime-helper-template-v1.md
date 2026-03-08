@@ -57,8 +57,8 @@
 
 ## 分解
 
-- [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S1-01] `TypeVar` 案と `@template` 案の比較を閉じ、`@template("T")` を v1 canonical syntax として決定する。
-- [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S1-02] runtime helper 限定・top-level function 限定・explicit instantiation なし、という v1 スコープを spec/plan に固定する。
+- [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S1-01] `TypeVar` 案と `@template` 案の比較を閉じ、`@template("T")` を v1 canonical syntax として決定する。
+- [x] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S1-02] runtime helper 限定・top-level function 限定・explicit instantiation なし、という v1 スコープを spec/plan に固定する。
 - [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S2-01] parser / EAST / linked metadata の canonical shape（例: `meta.template_v1`）を設計する。
 - [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S2-02] validation ルール（適用位置、パラメータ名、重複、runtime helper 限定）を設計する。
 - [ ] [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S3-01] future `@instantiate(...)` と両立する surface 拡張方針を記録する。
@@ -115,3 +115,5 @@
 - 2026-03-08: ユーザーとの議論により、runtime helper limited generics の v1 syntax は `TypeVar` ではなく `@template("T")` が自然だと判断した。
 - 2026-03-08: 理由は、関数単位の type parameter 宣言が明示的であり、Pytra 専用 surface として曖昧さが少なく、将来 `@instantiate(...)` を足す拡張とも整合しやすいためである。
 - 2026-03-08: ただし v1 では explicit instantiation はまだ入れず、runtime helper 限定の implicit monomorphization 前提で設計する。
+- 2026-03-08 [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S1-01]: `TypeVar` は Python 注釈としては自然だが、関数単位の type parameter 宣言を surface 上で明示できず、runtime helper v1 の専用 generic syntax としては曖昧さが残るため採用しない。`@template("T")` は function-scoped declaration が明示的で、parser / validator / linked metadata の設計も直線的である。
+- 2026-03-08 [ID: P2-LINKED-RUNTIME-TEMPLATE-01-S1-02]: v1 スコープは linked runtime helper の top-level function に限定する。class generic / method generic / user code 一般 / explicit instantiation は後段計画へ分離し、implicit monomorphization の blast radius を runtime helper 内へ閉じ込める。
