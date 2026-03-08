@@ -68,36 +68,112 @@ class JsonObj:
     def __init__(self, raw: dict[str, object]) -> None:
         self.raw = raw
 
+    def get(self, key: str) -> JsonValue | None:
+        if key not in self.raw:
+            return None
+        return JsonValue(self.raw[key])
+
     def get_obj(self, key: str) -> JsonObj | None:
         if key not in self.raw:
             return None
-        raw = self.raw[key]
+        return JsonValue(self.raw[key]).as_obj()
+
+    def get_arr(self, key: str) -> JsonArr | None:
+        if key not in self.raw:
+            return None
+        return JsonValue(self.raw[key]).as_arr()
+
+    def get_str(self, key: str) -> str | None:
+        if key not in self.raw:
+            return None
+        return JsonValue(self.raw[key]).as_str()
+
+    def get_int(self, key: str) -> int | None:
+        if key not in self.raw:
+            return None
+        return JsonValue(self.raw[key]).as_int()
+
+    def get_float(self, key: str) -> float | None:
+        if key not in self.raw:
+            return None
+        return JsonValue(self.raw[key]).as_float()
+
+    def get_bool(self, key: str) -> bool | None:
+        if key not in self.raw:
+            return None
+        return JsonValue(self.raw[key]).as_bool()
+
+
+class JsonArr:
+    raw: list[object]
+
+    def __init__(self, raw: list[object]) -> None:
+        self.raw = raw
+
+    def get(self, index: int) -> JsonValue | None:
+        if index < 0 or index >= len(self.raw):
+            return None
+        return JsonValue(self.raw[index])
+
+    def get_obj(self, index: int) -> JsonObj | None:
+        if index < 0 or index >= len(self.raw):
+            return None
+        return JsonValue(self.raw[index]).as_obj()
+
+    def get_arr(self, index: int) -> JsonArr | None:
+        if index < 0 or index >= len(self.raw):
+            return None
+        return JsonValue(self.raw[index]).as_arr()
+
+    def get_str(self, index: int) -> str | None:
+        if index < 0 or index >= len(self.raw):
+            return None
+        return JsonValue(self.raw[index]).as_str()
+
+    def get_int(self, index: int) -> int | None:
+        if index < 0 or index >= len(self.raw):
+            return None
+        return JsonValue(self.raw[index]).as_int()
+
+    def get_float(self, index: int) -> float | None:
+        if index < 0 or index >= len(self.raw):
+            return None
+        return JsonValue(self.raw[index]).as_float()
+
+    def get_bool(self, index: int) -> bool | None:
+        if index < 0 or index >= len(self.raw):
+            return None
+        return JsonValue(self.raw[index]).as_bool()
+
+
+class JsonValue:
+    raw: object
+
+    def __init__(self, raw: object) -> None:
+        self.raw = raw
+
+    def as_obj(self) -> JsonObj | None:
+        raw = self.raw
         if isinstance(raw, dict):
             raw_obj: dict[str, object] = dict(raw)
             return JsonObj(raw_obj)
         return None
 
-    def get_arr(self, key: str) -> list[object] | None:
-        if key not in self.raw:
-            return None
-        raw = self.raw[key]
+    def as_arr(self) -> JsonArr | None:
+        raw = self.raw
         if isinstance(raw, list):
             raw_arr: list[object] = list(raw)
-            return raw_arr
+            return JsonArr(raw_arr)
         return None
 
-    def get_str(self, key: str) -> str | None:
-        if key not in self.raw:
-            return None
-        raw = self.raw[key]
+    def as_str(self) -> str | None:
+        raw = self.raw
         if isinstance(raw, str):
             return raw
         return None
 
-    def get_int(self, key: str) -> int | None:
-        if key not in self.raw:
-            return None
-        raw = self.raw[key]
+    def as_int(self) -> int | None:
+        raw = self.raw
         if isinstance(raw, bool):
             return None
         if isinstance(raw, int):
@@ -105,19 +181,15 @@ class JsonObj:
             return raw_i
         return None
 
-    def get_float(self, key: str) -> float | None:
-        if key not in self.raw:
-            return None
-        raw = self.raw[key]
+    def as_float(self) -> float | None:
+        raw = self.raw
         if isinstance(raw, float):
             raw_f: float = float(raw)
             return raw_f
         return None
 
-    def get_bool(self, key: str) -> bool | None:
-        if key not in self.raw:
-            return None
-        raw = self.raw[key]
+    def as_bool(self) -> bool | None:
+        raw = self.raw
         if isinstance(raw, bool):
             raw_b: bool = bool(raw)
             return raw_b
@@ -309,6 +381,14 @@ def loads_obj(text: str) -> JsonObj | None:
     if isinstance(value, dict):
         raw_obj: dict[str, object] = dict(value)
         return JsonObj(raw_obj)
+    return None
+
+
+def loads_arr(text: str) -> JsonArr | None:
+    value = _JsonParser(text).parse()
+    if isinstance(value, list):
+        raw_arr: list[object] = list(value)
+        return JsonArr(raw_arr)
     return None
 
 

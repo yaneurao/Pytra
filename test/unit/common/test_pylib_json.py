@@ -54,6 +54,10 @@ class PyLibJsonTest(unittest.TestCase):
         self.assertIsNotNone(obj)
         assert obj is not None
         self.assertEqual(obj.get_str("name"), "alpha")
+        name = obj.get("name")
+        self.assertIsNotNone(name)
+        assert name is not None
+        self.assertEqual(name.as_str(), "alpha")
         meta = obj.get_obj("meta")
         self.assertIsNotNone(meta)
         assert meta is not None
@@ -61,10 +65,33 @@ class PyLibJsonTest(unittest.TestCase):
         vals = obj.get_arr("vals")
         self.assertIsNotNone(vals)
         assert vals is not None
-        self.assertEqual(vals, [1, 2.5, False])
+        self.assertEqual(vals.get_int(0), 1)
+        self.assertEqual(vals.get_float(1), 2.5)
+        self.assertEqual(vals.get_bool(2), False)
+
+    def test_loads_arr_decode_helpers(self) -> None:
+        arr = json.loads_arr('[{"ok":true}, ["x"], 5, "name", false]')
+        self.assertIsNotNone(arr)
+        assert arr is not None
+        first = arr.get(0)
+        self.assertIsNotNone(first)
+        assert first is not None
+        self.assertIsNotNone(first.as_obj())
+        first_obj = arr.get_obj(0)
+        self.assertIsNotNone(first_obj)
+        assert first_obj is not None
+        self.assertEqual(first_obj.get_bool("ok"), True)
+        nested = arr.get_arr(1)
+        self.assertIsNotNone(nested)
+        assert nested is not None
+        self.assertEqual(nested.get_str(0), "x")
+        self.assertEqual(arr.get_int(2), 5)
+        self.assertEqual(arr.get_str(3), "name")
+        self.assertEqual(arr.get_bool(4), False)
 
     def test_loads_obj_rejects_shape_mismatch(self) -> None:
         self.assertIsNone(json.loads_obj("[1,2,3]"))
+        self.assertIsNone(json.loads_arr('{"name":"alpha"}'))
 
     def test_loads_rejects_invalid_inputs(self) -> None:
         bad_cases = [

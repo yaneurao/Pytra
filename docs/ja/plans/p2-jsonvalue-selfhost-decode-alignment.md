@@ -179,3 +179,5 @@ entry_modules = root.get_arr("entry_modules")
 - 2026-03-08: selfhost 側の v1 は `match` 前提にしない。`JsonValue` / `JsonObj` / `JsonArr` の decode helper method だけで進める。
 - 2026-03-08: `pytra.std.json` の public root は維持し、selfhost 対応のために `utils/json.py` へは移さない。
 - 2026-03-08: inventory の結果、priority は `program_loader/program_validator/link_manifest_io/materializer` と `py2x/ir2lang/east_io` の 2 群に分かれる。`py2x-selfhost.py` 本体は raw JSON parse を持たず、selfhost alignment は周辺 decode lane の整列で達成する。
+- 2026-03-08: `S2-01` では `loads_obj` に加えて `loads_arr`, `JsonValue.as_*`, `JsonObj.get/get_*`, `JsonArr.get/get_*` を実装した。`loads()` 自体は互換のため raw `object` 戻り値を維持し、selfhost 境界は専用 helper を使って decode する。
+- 2026-03-08: `JsonObj` / `JsonArr` / `JsonValue` の相互参照を checked-in C++ runtime へ落とすため、`header_builder` は class block の前に forward declaration を出す形へ修正した。

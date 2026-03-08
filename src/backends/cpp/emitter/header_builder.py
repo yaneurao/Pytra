@@ -244,7 +244,7 @@ def build_cpp_header_from_east(
         kind = dict_any_get_str(st, "kind")
         if kind == "ClassDef":
             cls_name = dict_any_get_str(st, "name")
-            if cls_name != "" and cls_name not in seen_classes and cls_name not in class_block_names:
+            if cls_name != "" and cls_name not in seen_classes:
                 class_lines.append("struct " + cls_name + ";")
                 seen_classes.add(cls_name)
         elif kind == "FunctionDef":
@@ -391,13 +391,13 @@ def build_cpp_header_from_east(
     if ns != "":
         lines.append("namespace " + ns + " {")
         lines.append("")
-    for class_block in class_blocks:
-        for part_line in class_block.splitlines():
-            lines.append(part_line)
-        lines.append("")
     for class_line in class_lines:
         lines.append(class_line)
     if len(class_lines) > 0:
+        lines.append("")
+    for class_block in class_blocks:
+        for part_line in class_block.splitlines():
+            lines.append(part_line)
         lines.append("")
     for var_line in var_lines:
         lines.append(var_line)
