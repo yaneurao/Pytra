@@ -36,12 +36,12 @@
 
 ## 2. タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01] generic `py_dict_get_default` overload を縮退する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01] generic `py_dict_get_default` overload を縮退する。
 - [x] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01-S1-01] generic overload の checked-in callsite を棚卸しする。
 - [x] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01-S1-02] 残す primitive wrapper を決定する。
 - [x] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01-S2-01] redundant overload を削除する。
 - [x] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01-S2-02] codegen / runtime tests を更新する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01-S3-01] parity / docs / archive を同期する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTDEFAULT-GENERIC-01-S3-01] parity / docs / archive を同期する。
 
 ## 3. 決定ログ
 
@@ -50,3 +50,4 @@
 - 2026-03-08: 上記棚卸しを受けて、残す primitive は `dict<K, V> + K + const V&` と `dict<str, V> + {const char*, str} + const V&`、および selfhost artifact 互換の最小 special-case として `dict<str, str> + {const char*, str} + const char*` に固定する。削除対象は `optional<dict<...>>` wrapper、`::std::string` key wrapper、`template<class D>` convertible default wrapper 一式とする。
 - 2026-03-08: `src/runtime/cpp/native/core/py_runtime.h` から `optional<dict<...>>` wrapper、`dict<str, V> + ::std::string key` wrapper、generic convertible default wrapper 一式を削除した。selfhost artifact がまだ必要としている `dict<str, str> + const char* default` だけは dedicated overload へ狭めて残した。
 - 2026-03-08: `test_cpp_runtime_iterable.py` には removed signature guard を追加し、`dict<str, str> + const char* default` special-case のみ `In` で固定した。representative verification は `test_cpp_runtime_iterable.py`、`test_py2cpp_codegen_issues.py`、fixture parity `cases=3 pass=3 fail=0` を通した。
+- 2026-03-08: current backend/generated path で generic `py_dict_get_default(...)` に依存していた checked-in production caller は存在せず、current C++ emitter は typed `dict.get(key, default)` を `owner_expr.get(key_expr, default_expr)` へ直接 lower する状態を確認した。archive 時点の release gate は `test_cpp_runtime_iterable.py`、`test_py2cpp_codegen_issues.py`、fixture parity `cases=3 pass=3 fail=0` とし、selfhost artifact 互換は `dict<str, str> + const char* default` special-case だけで維持した。
