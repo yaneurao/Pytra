@@ -112,6 +112,7 @@ class JsEmitter(CodeEmitter):
         self.in_method_scope: bool = False
         self.browser_symbol_aliases: dict[str, str] = {}
         self.browser_module_aliases: dict[str, str] = {}
+        self.ambient_global_aliases: dict[str, str] = {}
         self.top_function_names: set[str] = set()
         self.current_ref_vars: set[str] = set()
 
@@ -176,6 +177,40 @@ class JsEmitter(CodeEmitter):
         if module_text == "typing" or module_text == "pytra.std.typing":
             return True
         return len(module_text) >= 10 and module_text[0:10] == "__future__"
+
+    def _ambient_global_meta(self, stmt: dict[str, Any]) -> dict[str, Any]:
+        """ambient global extern variable metadata を返す。無ければ空 dict。"""
+        meta = self.any_to_dict_or_empty(stmt.get("meta"))
+        extern_meta = self.any_to_dict_or_empty(meta.get("extern_var_v1"))
+        if self.any_dict_get_int(extern_meta, "schema_version", 0) != 1:
+            return {}
+        if self.any_dict_get_str(extern_meta, "symbol", "") == "":
+            return {}
+        return extern_meta
+
+    def _is_ambient_global_decl_stmt(self, stmt: dict[str, Any]) -> bool:
+        """stmt が ambient global extern 宣言なら True を返す。"""
+        if self.any_dict_get_str(stmt, "kind", "") not in {"Assign", "AnnAssign"}:
+            return False
+        return len(self._ambient_global_meta(stmt)) > 0
+
+    def _collect_ambient_global_aliases(self, body: list[dict[str, Any]]) -> None:
+        """top-level ambient global extern 宣言を symbol alias として登録する。"""
+        self.ambient_global_aliases = {}
+        for stmt in body:
+            extern_meta = self._ambient_global_meta(stmt)
+            if len(extern_meta) == 0:
+                continue
+            target = self.any_to_dict_or_empty(stmt.get("target"))
+            if self.any_dict_get_str(target, "kind", "") != "Name":
+                continue
+            local_name = self.any_dict_get_str(target, "id", "")
+            symbol = self.any_dict_get_str(extern_meta, "symbol", "")
+            if local_name == "" or symbol == "":
+                continue
+            self.ambient_global_aliases[local_name] = symbol
+            self.declare_in_current_scope(local_name)
+            self.declared_var_types[local_name] = "Any"
 
     def _module_id_to_js_path(self, module_id: str) -> str:
         """Python 形式モジュール名を JS import パスへ変換する。"""
@@ -500,6 +535,7 @@ class JsEmitter(CodeEmitter):
         self.lines = []
         self.scope_stack = [set()]
         self.declared_var_types = {}
+        self.ambient_global_aliases = {}
         self.in_method_scope = False
 
         module = self.doc
@@ -507,19 +543,25 @@ class JsEmitter(CodeEmitter):
         main_guard_body = self._dict_stmt_list(module.get("main_guard_body"))
         meta = self.any_to_dict_or_empty(module.get("meta"))
         self.load_import_bindings_from_meta(meta)
+        self._collect_ambient_global_aliases(body)
+        analysis_body: list[dict[str, Any]] = []
+        for stmt in body:
+            if self._is_ambient_global_decl_stmt(stmt):
+                continue
+            analysis_body.append(stmt)
         self.emit_module_leading_trivia()
         self.top_function_names = set()
-        for stmt in body:
+        for stmt in analysis_body:
             if self.any_dict_get_str(stmt, "kind", "") == "FunctionDef":
                 fn_name = self.any_to_str(stmt.get("name"))
                 if fn_name != "":
                     self.top_function_names.add(fn_name)
-        used_names = self._collect_used_names(body, main_guard_body)
-        runtime_symbols = self._collect_runtime_symbols(body, main_guard_body)
+        used_names = self._collect_used_names(analysis_body, main_guard_body)
+        runtime_symbols = self._collect_runtime_symbols(analysis_body, main_guard_body)
         runtime_import_line = ""
         if len(runtime_symbols) > 0:
             runtime_import_line = "import { " + ", ".join(runtime_symbols) + " } from " + self.quote_string_literal("./pytra/py_runtime.js") + ";"
-        import_lines = self._collect_import_statements(body, meta, used_names)
+        import_lines = self._collect_import_statements(analysis_body, meta, used_names)
         if runtime_import_line != "":
             self.emit(runtime_import_line)
         for line in import_lines:
@@ -528,14 +570,14 @@ class JsEmitter(CodeEmitter):
             self.emit("")
 
         self.class_names = set()
-        for stmt in body:
+        for stmt in analysis_body:
             if self.any_dict_get_str(stmt, "kind", "") == "ClassDef":
                 nm = self.any_to_str(stmt.get("name"))
                 if nm != "":
                     self.class_names.add(nm)
 
         top_level_stmts: list[dict[str, Any]] = []
-        for stmt in body:
+        for stmt in analysis_body:
             kind = self.any_dict_get_str(stmt, "kind", "")
             if kind == "Import" or kind == "ImportFrom":
                 continue
@@ -1239,6 +1281,8 @@ class JsEmitter(CodeEmitter):
             return "new Error(" + self.quote_string_literal(fn_name_raw) + ")"
         if fn_name_raw in self.class_names:
             return "new " + fn_name_raw + "(" + ", ".join(rendered_args) + ")"
+        if fn_name_raw in self.ambient_global_aliases:
+            return self.ambient_global_aliases[fn_name_raw] + "(" + ", ".join(rendered_args) + ")"
         if fn_name_raw == "enumerate" and len(rendered_args) == 1:
             arg0 = rendered_args[0]
             return arg0 + ".map((__v, __i) => [__i, __v])"
@@ -1404,6 +1448,8 @@ class JsEmitter(CodeEmitter):
 
         if kind == "Name":
             name = self.any_dict_get_str(expr_d, "id", "_")
+            if name in self.ambient_global_aliases:
+                return self.ambient_global_aliases[name]
             if name in self.browser_symbol_aliases:
                 return self.browser_symbol_aliases[name]
             if name == "main" and "__pytra_main" in self.top_function_names and "main" not in self.top_function_names:

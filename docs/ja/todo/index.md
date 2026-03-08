@@ -37,8 +37,8 @@
 - [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S1-02] 既存 `extern(expr)` host fallback との切り分けを決定ログへ固定する。
 - [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S2-01] parser / EAST metadata に ambient global variable marker を追加する。
 - [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S2-02] representative IR/unit test で same-name / alias case を固定する。
-- [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S3-01] JS/TS emitter で ambient global extern variable を import-free symbol へ lower する。
-- [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S3-02] ambient global `Any` receiver の property/method/call raw lowering を追加する。
+- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S3-01] JS/TS emitter で ambient global extern variable を import-free symbol へ lower する。
+- [x] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S3-02] ambient global `Any` receiver の property/method/call raw lowering を追加する。
 - [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S4-01] unsupported backend guard / representative smoke を更新する。
 - [ ] [ID: P2-JS-AMBIENT-GLOBAL-EXTERN-01-S4-02] docs / archive を同期して本計画を閉じる。
 
