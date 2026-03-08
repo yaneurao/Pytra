@@ -111,9 +111,12 @@
 - `tools/check_selfhost_stage2_cpp_diff.py`
   - 目的: Python 版と 2段自己変換版（`selfhost/py2cpp_stage2.out`）の生成 C++ 差分を比較する。
   - 主要オプション: `--skip-build`, `--mode strict`, `--show-diff`
+- `tools/check_selfhost_stage2_sample_parity.py`
+  - 目的: `selfhost/py2cpp_stage2.out` を使って `sample/py/*.py` 全件の transpile + compile + run parity を確認する。
 
 補足:
 - 2026-03-08 時点で C++ selfhost の stage1 build、direct `.py` route、representative host/selfhost diff、stage2 build は current runtime/layout 契約で green である。
+- 2026-03-09 時点で `tools/check_selfhost_stage2_sample_parity.py --skip-build` により stage2 selfhost binary の full sample parity（`pass=18 fail=0`）も green である。
 - `tools/selfhost_transpile.py` は direct `.py` route の代替ではなく、調査時の fallback としてだけ扱う。
 - `tools/summarize_selfhost_errors.py`
   - 目的: selfhost ビルドログのエラーをカテゴリ別に集計する。

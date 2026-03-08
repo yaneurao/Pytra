@@ -32,12 +32,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01] `selfhost/py2cpp_stage2.out` を使った full sample parity を green にする。
-- [x] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S1-01] stage2 full sample parity の canonical command を固定する。
-- [x] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S1-02] `verify_selfhost_end_to_end.py` 再利用か wrapper 新設かを決定する。
-- [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S2-01] stage2 binary で sample 全件 parity を実行し、failure を分類する。
-- [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S2-02] failure 一覧と再現コマンドを決定ログへ固定する。
-- [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S3-01] stage2 selfhost 固有 blocker を修正する。
-- [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S3-02] `sample` 全件 `pass=18 fail=0` を確認する。
-- [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S4-01] docs / local CI 運用を更新する。
-- [ ] [ID: P4-CPP-SELFHOST-FULLPARITY-01-S4-02] archive を同期して本計画を閉じる。
+- なし
