@@ -33,8 +33,8 @@
 ## 未完了タスク
 
 - [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-LANE-01] `py_runtime.h` の JSON accessor convenience と object arithmetic convenience を縮退し、`JsonObj` accessor と typed value path を正本に寄せる。文脈: [p0-cpp-pyruntime-object-lane-retirement.md](../plans/p0-cpp-pyruntime-object-lane-retirement.md)
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-LANE-01-S1-01] `py_dict_get*` / `dict_get_*` / object arithmetic の callsite と compat 依存を棚卸しする。文脈: [p0-cpp-pyruntime-object-lane-retirement.md](../plans/p0-cpp-pyruntime-object-lane-retirement.md)
-- [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-LANE-01-S1-02] 削除順序と「残す最小 compat lane」を決定ログへ固定する。文脈: [p0-cpp-pyruntime-object-lane-retirement.md](../plans/p0-cpp-pyruntime-object-lane-retirement.md)
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-LANE-01-S1-01] `py_dict_get*` / `dict_get_*` / object arithmetic の callsite と compat 依存を棚卸しする。文脈: [p0-cpp-pyruntime-object-lane-retirement.md](../plans/p0-cpp-pyruntime-object-lane-retirement.md)
+- [x] [ID: P0-CPP-PYRUNTIME-OBJECT-LANE-01-S1-02] 削除順序と「残す最小 compat lane」を決定ログへ固定する。文脈: [p0-cpp-pyruntime-object-lane-retirement.md](../plans/p0-cpp-pyruntime-object-lane-retirement.md)
 - [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-LANE-01-S2-01] `py_dict_get(const object&)` / `py_dict_get_default(const object&, ...)` の first slice を削減し、`JsonObj` accessor へ寄せる。文脈: [p0-cpp-pyruntime-object-lane-retirement.md](../plans/p0-cpp-pyruntime-object-lane-retirement.md)
 - [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-LANE-01-S2-02] `dict_get_bool/str/int/float/list/node` の `object` / `optional<dict<str, object>>` lane を縮退し、regression を更新する。文脈: [p0-cpp-pyruntime-object-lane-retirement.md](../plans/p0-cpp-pyruntime-object-lane-retirement.md)
 - [ ] [ID: P0-CPP-PYRUNTIME-OBJECT-LANE-01-S3-01] `object` 算術・単項演算・複合代入の callsite を棚卸しし、削除または置換する。文脈: [p0-cpp-pyruntime-object-lane-retirement.md](../plans/p0-cpp-pyruntime-object-lane-retirement.md)
