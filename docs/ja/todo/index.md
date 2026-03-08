@@ -38,7 +38,8 @@
      進捗メモ: `py2x` / `ir2lang` / `east_io` / `toolchain/link/*` が raw JSON artifact 境界で、`py2x-selfhost.py` 本体は間接依存だけを持つと整理した。
    - [x] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S1-02] docs に「selfhost は `match` ではなく decode helper ベースで `JsonValue` を使う」契約を固定する。
      進捗メモ: `spec-dev` に selfhost/host JSON artifact loader も `loads_obj` / `JsonValue.as_*` / `JsonObj.get_*` を正本とする契約を追記した。
-   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S2-01] `pytra.std.json` に selfhost-ready な `loads_obj` / `loads_arr` / `JsonObj.get_*` 最小APIを定義する。
+   - [x] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S2-01] `pytra.std.json` に selfhost-ready な `loads_obj` / `loads_arr` / `JsonObj.get_*` 最小APIを定義する。
+     進捗メモ: `loads_arr`, `JsonValue.as_*`, `JsonObj.get/get_*`, `JsonArr.get/get_*` を追加し、checked-in C++ runtime と forward decl 回帰を同期した。
    - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S2-02] `program_loader` / `program_validator` の JSON decode を `JsonValue` helper ベースへ移行する。
    - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S3-01] `py2x.py` / `py2x-selfhost.py` / `ir2lang.py` の JSON artifact 境界を `JsonValue` decode lane へ揃える。
    - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S3-02] representative selfhost / linked-program / CLI tests を `JsonValue` 経路で green にする。

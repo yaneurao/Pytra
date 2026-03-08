@@ -254,6 +254,44 @@ def sin(x: float) -> float:
         self.assertIn("template <class A, class B>", hdr_txt)
         self.assertIn("list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {", hdr_txt)
 
+    def test_emit_runtime_cpp_json_header_adds_forward_decls_before_class_blocks(self) -> None:
+        rel_src = Path("src/pytra/std/json.py")
+        hdr_out = ROOT / "src/runtime/cpp/generated/std/json.h"
+
+        cp = self._run_subprocess_with_timeout(
+            [
+                "python3",
+                "src/py2x.py",
+                "--target",
+                "cpp",
+                str(rel_src),
+                "--emit-runtime-cpp",
+            ],
+            cwd=ROOT,
+            timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+            label="emit-runtime-cpp json forward decls",
+        )
+        self.assertEqual(cp.returncode, 0, msg=cp.stderr)
+        hdr_txt = hdr_out.read_text(encoding="utf-8")
+        obj_decl = hdr_txt.find("struct JsonObj;")
+        arr_decl = hdr_txt.find("struct JsonArr;")
+        value_decl = hdr_txt.find("struct JsonValue;")
+        obj_block = hdr_txt.find("struct JsonObj {")
+        arr_block = hdr_txt.find("struct JsonArr {")
+        value_block = hdr_txt.find("struct JsonValue {")
+        self.assertGreaterEqual(obj_decl, 0)
+        self.assertGreaterEqual(arr_decl, 0)
+        self.assertGreaterEqual(value_decl, 0)
+        self.assertGreaterEqual(obj_block, 0)
+        self.assertGreaterEqual(arr_block, 0)
+        self.assertGreaterEqual(value_block, 0)
+        self.assertLess(obj_decl, obj_block)
+        self.assertLess(arr_decl, obj_block)
+        self.assertLess(value_decl, obj_block)
+        self.assertLess(obj_decl, value_block)
+        self.assertLess(arr_decl, value_block)
+        self.assertLess(value_decl, value_block)
+
     def test_emit_stmt_fallback_works_when_dynamic_hooks_disabled(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         emitter.set_dynamic_hooks_enabled(False)
