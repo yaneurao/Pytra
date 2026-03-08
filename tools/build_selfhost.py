@@ -9,9 +9,17 @@ Steps:
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+
+from tools.cpp_runtime_deps import collect_runtime_cpp_sources
+
 SELFHOST = ROOT / "selfhost"
 CPP_OUT = SELFHOST / "py2cpp.cpp"
 BIN_OUT = SELFHOST / "py2cpp.out"
@@ -25,11 +33,8 @@ def run(cmd: list[str], cwd: Path | None = None) -> None:
 
 
 def runtime_cpp_sources() -> list[str]:
-    files_all = sorted((ROOT / "src" / "runtime" / "cpp" / "pytra").rglob("*.cpp"))
-    out: list[str] = []
-    for p in files_all:
-        out.append(str(p))
-    return out
+    rels = collect_runtime_cpp_sources([str(CPP_OUT)], ROOT / "src")
+    return [str(ROOT / rel) for rel in rels]
 
 def main() -> int:
     run(

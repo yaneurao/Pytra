@@ -112,6 +112,14 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
         self.assertNotIn((ROOT / "src/runtime/cpp/std/time.gen.cpp").as_posix(), paths)
         self.assertNotIn((ROOT / "src/runtime/cpp/std/time.ext.cpp").as_posix(), paths)
 
+    def test_runtime_cpp_candidates_support_compiler_bucket(self) -> None:
+        header = ROOT / "src/runtime/cpp/generated/compiler/backend_registry_static.h"
+        paths = [path.as_posix() for path in runtime_cpp_candidates_from_header(header)]
+        self.assertIn(
+            (ROOT / "src/runtime/cpp/native/compiler/backend_registry_static.cpp").as_posix(),
+            paths,
+        )
+
     def test_runtime_cpp_candidates_support_future_core_split_from_core_header(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

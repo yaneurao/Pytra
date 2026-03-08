@@ -3,9 +3,10 @@
 
 Rules:
 - Module runtime under `src/runtime/cpp/{built_in,std,utils}` is legacy-closed and must not contain `.h/.cpp`.
-- Module runtime under `src/runtime/cpp/generated/{built_in,std,utils}` must contain the auto-generated marker.
-- Module runtime under `src/runtime/cpp/native/{built_in,std,utils}` must NOT contain the auto-generated marker.
-- Public shim under `src/runtime/cpp/pytra/{built_in,std,utils}` must contain the auto-generated marker and stay header-only.
+- Compiler runtime under `src/runtime/cpp/{generated,native,pytra}/compiler` is the stage1 bootstrap lane.
+- Module runtime under `src/runtime/cpp/generated/{built_in,std,utils,compiler}` must contain the auto-generated marker.
+- Module runtime under `src/runtime/cpp/native/{built_in,std,utils,compiler}` must NOT contain the auto-generated marker.
+- Public shim under `src/runtime/cpp/pytra/{built_in,std,utils,compiler}` must contain the auto-generated marker and stay header-only.
 - `src/runtime/cpp/core/**` is the stable include surface and must not contain implementation `.cpp`.
 - Future `src/runtime/cpp/generated/core/**` and `src/runtime/cpp/native/core/**` must obey generated/handwritten marker rules without reintroducing ownership mixing under `core/`.
 """
@@ -206,13 +207,13 @@ def main() -> int:
     builtin_files = _scan_targets(builtin_dir)
     core_files = _scan_targets(core_dir)
     generated_files, unexpected_generated_bucket_files = _scan_bucketed_targets(
-        generated_dir, {"built_in", "std", "utils", "core"}
+        generated_dir, {"built_in", "std", "utils", "compiler", "core"}
     )
     native_files, unexpected_native_bucket_files = _scan_bucketed_targets(
-        native_dir, {"built_in", "std", "utils", "core"}
+        native_dir, {"built_in", "std", "utils", "compiler", "core"}
     )
     pytra_files, unexpected_pytra_bucket_files = _scan_bucketed_targets(
-        pytra_dir, {"built_in", "std", "utils"}
+        pytra_dir, {"built_in", "std", "utils", "compiler"}
     )
     std_files = _scan_targets(std_dir)
     utils_files = _scan_targets(utils_dir)

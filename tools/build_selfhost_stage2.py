@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -16,6 +17,12 @@ STAGE1_SRC = ROOT / "src" / "py2x-selfhost.py"
 STAGE2_CPP = ROOT / "selfhost" / "py2cpp_stage2.cpp"
 STAGE2_BIN = ROOT / "selfhost" / "py2cpp_stage2.out"
 STAGE1_CPP = ROOT / "selfhost" / "py2cpp.cpp"
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+
+from tools.cpp_runtime_deps import collect_runtime_cpp_sources
 
 
 def _run(cmd: list[str]) -> None:
@@ -26,13 +33,6 @@ def _run(cmd: list[str]) -> None:
 
 def _run_capture(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
-
-
-def _runtime_cpp_sources() -> list[str]:
-    out: list[str] = []
-    for p in sorted((ROOT / "src" / "runtime" / "cpp" / "pytra").rglob("*.cpp")):
-        out.append(str(p))
-    return out
 
 
 def main() -> int:
@@ -66,7 +66,10 @@ def main() -> int:
         "-Isrc",
         "-Isrc/runtime/cpp",
         str(STAGE2_CPP),
-        *_runtime_cpp_sources(),
+        *[
+            str(ROOT / rel_path)
+            for rel_path in collect_runtime_cpp_sources([str(STAGE2_CPP)], ROOT / "src")
+        ],
         "-o",
         str(STAGE2_BIN),
     ]

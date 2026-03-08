@@ -101,7 +101,7 @@
 - [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01] C++ selfhost の stage1 build / direct route / diff / stage2 を current runtime/layout 契約に合わせて復旧する。
 - [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S1-01] `tools/build_selfhost.py` 失敗点と missing artifact を棚卸しする。
 - [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S1-02] selfhost 復旧の受け入れ順序と current source of truth を決定ログへ固定する。
-- [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S2-01] stage1 build に必要な generated/static frontend artifact 供給を current layout に合わせて復旧する。
+- [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S2-01] stage1 build に必要な generated/static frontend artifact 供給を current layout に合わせて復旧する。
 - [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S2-02] `tools/build_selfhost.py` を green に戻し、`selfhost/py2cpp.out` を再生成する。
 - [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S3-01] direct `.py` route を復旧し、`tools/check_selfhost_direct_compile.py` を通す。
 - [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S3-02] host/selfhost diff と representative e2e を green に戻す。
@@ -115,3 +115,4 @@
 - 2026-03-08: build script 自体も current runtime layout に追随していない。`tools/build_selfhost.py` の `runtime_cpp_sources()` は `src/runtime/cpp/pytra/**/*.cpp` だけを列挙しており、current tree では 0 件だった。つまり stage1 build の blocker は「missing generated/static frontend artifact」と「compile source discovery が `generated/native/core` を見ていない」の二系統に分かれる。
 - 2026-03-08: 受け入れ順序は `stage1 build artifact供給 -> build_selfhost.py green -> direct .py route -> host/selfhost diff + e2e -> stage2` に固定する。`tools/selfhost_transpile.py` の bridge route は temporary fallback であり、direct `.py` route の未復旧を正当化する用途には使わない。
 - 2026-03-08: current source of truth は `src/py2x-selfhost.py` が import している `toolchain.compiler.backend_registry_static` と `toolchain.compiler.transpile_cli` の Python source であり、selfhost 側だけの ad-hoc hand-written shim は増やさない。必要なら current runtime generation lane へ `generated/utils/*` artifact を正式追加するか、selfhost source 側 import を current exported C++ surface へ寄せる。
+- 2026-03-08: `toolchain.compiler.*` の selfhost runtime lane は `src/runtime/cpp/{generated,native,pytra}/compiler` に追加し、`runtime_paths.py` も `generated/compiler/*.h` を返すように揃えた。`build_selfhost.py` / `build_selfhost_stage2.py` / `verify_selfhost_end_to_end.py` の runtime source 解決は `collect_runtime_cpp_sources(...)` に一本化し、`check_runtime_cpp_layout.py` と build-graph test も `compiler` bucket を current layout として許可した。
