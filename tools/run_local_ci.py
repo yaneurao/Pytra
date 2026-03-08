@@ -77,13 +77,13 @@ def main() -> int:
             "python3",
             "tools/check_selfhost_cpp_diff.py",
             "--mode",
-            "allow-not-implemented",
+            "strict",
         ],
         [
             "python3",
             "tools/check_selfhost_stage2_cpp_diff.py",
             "--mode",
-            "allow-not-implemented",
+            "strict",
         ],
     ]
     for step in steps:

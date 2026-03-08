@@ -105,12 +105,16 @@
   - 目的: 暫定ブリッジとして `.py -> EAST JSON -> selfhost` 経路を実行する。
 - `tools/check_selfhost_cpp_diff.py`
   - 目的: Python 版と selfhost 版の生成 C++ 差分を比較する。
-  - 主要オプション: `--mode allow-not-implemented`, `--show-diff`, `--selfhost-driver`
+  - 主要オプション: `--mode strict`, `--show-diff`, `--selfhost-driver`
 - `tools/check_selfhost_direct_compile.py`
   - 目的: selfhost の `.py` 直入力経路を `sample/py` で一括変換し、`g++ -fsyntax-only` でコンパイル回帰を即時検出する。
 - `tools/check_selfhost_stage2_cpp_diff.py`
   - 目的: Python 版と 2段自己変換版（`selfhost/py2cpp_stage2.out`）の生成 C++ 差分を比較する。
-  - 主要オプション: `--skip-build`, `--mode`, `--show-diff`
+  - 主要オプション: `--skip-build`, `--mode strict`, `--show-diff`
+
+補足:
+- 2026-03-08 時点で C++ selfhost の stage1 build、direct `.py` route、representative host/selfhost diff、stage2 build は current runtime/layout 契約で green である。
+- `tools/selfhost_transpile.py` は direct `.py` route の代替ではなく、調査時の fallback としてだけ扱う。
 - `tools/summarize_selfhost_errors.py`
   - 目的: selfhost ビルドログのエラーをカテゴリ別に集計する。
 - `tools/selfhost_error_hotspots.py`

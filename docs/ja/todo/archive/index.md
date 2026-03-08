@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-08 / P4-CPP-SELFHOST-ROLLOUT-01](../plans/archive/20260308-p4-cpp-selfhost-rollout.md)
 - [2026-03-08 / P3-COMPILER-JSONVALUE-INTERNAL-01](../plans/archive/20260308-p3-compiler-jsonvalue-internal-alignment.md)
 - [2026-03-08 / P2-JS-AMBIENT-GLOBAL-EXTERN-01](../plans/archive/20260308-p2-js-ambient-global-extern.md)
 - [2026-03-08 / P0-CPP-PYRUNTIME-DICT-STR-NODE-01](../plans/archive/20260308-p0-cpp-pyruntime-dict-str-node-retirement.md)
@@ -67,7 +68,7 @@
 
 ## 日付別リンク
 
-- [2026-03-08](20260308.md)（30 セクション）
+- [2026-03-08](20260308.md)（31 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
 - [2026-03-06](20260306.md)（12 セクション）
 - [2026-03-05](20260305.md)（7 セクション）

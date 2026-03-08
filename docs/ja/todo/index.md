@@ -32,12 +32,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01] C++ selfhost の stage1 build / direct route / diff / stage2 を current runtime/layout 契約に合わせて復旧する。
-- [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S1-01] `tools/build_selfhost.py` 失敗点と missing artifact を棚卸しする。
-- [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S1-02] selfhost 復旧の受け入れ順序と current source of truth を決定ログへ固定する。
-- [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S2-01] stage1 build に必要な generated/static frontend artifact 供給を current layout に合わせて復旧する。
-- [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S2-02] `tools/build_selfhost.py` を green に戻し、`selfhost/py2cpp.out` を再生成する。
-- [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S3-01] direct `.py` route を復旧し、`tools/check_selfhost_direct_compile.py` を通す。
-- [x] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S3-02] host/selfhost diff と representative e2e を green に戻す。
-- [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S4-01] `tools/build_selfhost_stage2.py` を current contract に合わせて復旧する。
-- [ ] [ID: P4-CPP-SELFHOST-ROLLOUT-01-S4-02] docs / archive / local CI gate 方針を更新して本計画を閉じる。
+- なし
