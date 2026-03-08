@@ -1551,12 +1551,6 @@ static inline bool py_isinstance(const T& value, uint32 expected_type_id) {
     return py_is_subtype(py_runtime_type_id(value), expected_type_id);
 }
 
-// selfhost 由来の `obj == std::nullopt` 比較（None 判定）互換。
-static inline bool operator==(const object& lhs, const ::std::nullopt_t&) { return !lhs; }
-static inline bool operator!=(const object& lhs, const ::std::nullopt_t&) { return !!lhs; }
-static inline bool operator==(const ::std::nullopt_t&, const object& rhs) { return !rhs; }
-static inline bool operator!=(const ::std::nullopt_t&, const object& rhs) { return !!rhs; }
-
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
 static inline auto operator-(const rc<T>& v) -> decltype(v->__neg__()) {
     return v->__neg__();
