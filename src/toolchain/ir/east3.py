@@ -6,6 +6,7 @@ from toolchain.ir.east2_to_east3_lowering import lower_east2_to_east3
 from toolchain.ir.east3_optimizer import optimize_east3_document
 from toolchain.ir.east3_optimizer import render_east3_opt_trace
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
+from toolchain.frontends.runtime_template import validate_template_module
 from pytra.std import json
 from pytra.std.pathlib import Path
 from typing import Any
@@ -61,7 +62,7 @@ def load_east3_document(
             trace_path = Path(dump_east3_opt_trace)
             trace_path.parent.mkdir(parents=True, exist_ok=True)
             trace_path.write_text(render_east3_opt_trace(report), encoding="utf-8")
-        return validate_runtime_abi_module(optimized_doc)
+        return validate_template_module(validate_runtime_abi_module(optimized_doc))
     if callable(make_user_error_fn):
         raise make_user_error_fn(
             "input_invalid",

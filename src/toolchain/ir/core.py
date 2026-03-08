@@ -28,6 +28,7 @@ from toolchain.frontends.frontend_semantics import lookup_stdlib_function_semant
 from toolchain.frontends.frontend_semantics import lookup_stdlib_method_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_symbol_semantic_tag
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
+from toolchain.frontends.runtime_template import validate_template_module
 from toolchain.frontends.runtime_symbol_index import lookup_runtime_call_adapter_kind
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 
@@ -63,6 +64,8 @@ _SH_EMPTY_SPAN: dict[str, Any] = {}
 _SH_RUNTIME_ABI_ARG_MODES = {"default", "value", "value_mut"}
 _SH_RUNTIME_ABI_RET_MODES = {"default", "value"}
 _SH_RUNTIME_ABI_MODE_ALIASES = {"value_readonly": "value"}
+_SH_TEMPLATE_SCOPE = "runtime_helper"
+_SH_TEMPLATE_INSTANTIATION_MODE = "linked_implicit"
 
 
 def _sh_default_type_aliases() -> dict[str, str]:
@@ -577,6 +580,32 @@ def _sh_is_abi_decorator(
     return mod_name == "pytra.std" and sym_name == "abi"
 
 
+def _sh_is_template_decorator(
+    decorator_text: str,
+    *,
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+) -> bool:
+    """decorator 文字列が `pytra.std.template.template` 系を指すか判定する。"""
+    head, _args_txt = _sh_parse_decorator_head_and_args(decorator_text)
+    if head == "":
+        return False
+    if head == "template":
+        return True
+    if head.endswith(".template"):
+        owner = head[:-len(".template")]
+        if owner in {"pytra.std", "pytra.std.template"}:
+            return True
+        mod_name = import_module_bindings.get(owner, "")
+        return mod_name in {"pytra.std", "pytra.std.template"}
+    ent = import_symbol_bindings.get(head)
+    if not isinstance(ent, dict):
+        return False
+    mod_name = str(ent.get("module", ""))
+    sym_name = str(ent.get("name", ""))
+    return mod_name in {"pytra.std", "pytra.std.template"} and sym_name == "template"
+
+
 def _sh_parse_runtime_abi_string_literal(text: str, *, line_no: int, line_text: str, field_name: str) -> str:
     raw = text.strip()
     if len(raw) >= 2 and raw[0] in {"'", '"'} and raw[-1] == raw[0]:
@@ -782,6 +811,108 @@ def _sh_collect_runtime_abi_metadata(
             )
         runtime_abi_meta = parsed
     return runtime_abi_meta
+
+
+def _sh_parse_template_decorator(
+    decorator_text: str,
+    *,
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+    line_no: int,
+    line_text: str,
+) -> dict[str, Any] | None:
+    if not _sh_is_template_decorator(
+        decorator_text,
+        import_module_bindings=import_module_bindings,
+        import_symbol_bindings=import_symbol_bindings,
+    ):
+        return None
+    _head, args_txt = _sh_parse_decorator_head_and_args(decorator_text)
+    if args_txt == "":
+        raise _make_east_build_error(
+            kind="unsupported_syntax",
+            message="template decorator requires one or more string literal parameters",
+            source_span=_sh_span(line_no, 0, len(line_text)),
+            hint='Use `@template("T")` or `@template("K", "V")`.',
+        )
+    params: list[str] = []
+    seen: set[str] = set()
+    for part_raw in _sh_split_top_commas(args_txt):
+        part = part_raw.strip()
+        if part == "":
+            continue
+        if _sh_split_top_level_assign(part) is not None:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"template decorator accepts positional string literal parameters only: {part}",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint='Use `@template("T", "U")` form.',
+            )
+        param = _sh_parse_runtime_abi_string_literal(
+            part,
+            line_no=line_no,
+            line_text=line_text,
+            field_name="template parameter",
+        )
+        if not _sh_is_identifier(param):
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"template parameter must be an identifier name: {param}",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint='Use identifier-like strings such as "T" or "Value".',
+            )
+        if param in seen:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"duplicate template parameter: {param}",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint="Specify each template parameter at most once.",
+            )
+        seen.add(param)
+        params.append(param)
+    if len(params) == 0:
+        raise _make_east_build_error(
+            kind="unsupported_syntax",
+            message="template decorator requires one or more string literal parameters",
+            source_span=_sh_span(line_no, 0, len(line_text)),
+            hint='Use `@template("T")` or `@template("K", "V")`.',
+        )
+    return {
+        "schema_version": 1,
+        "params": params,
+        "scope": _SH_TEMPLATE_SCOPE,
+        "instantiation_mode": _SH_TEMPLATE_INSTANTIATION_MODE,
+    }
+
+
+def _sh_collect_template_metadata(
+    decorators: list[str],
+    *,
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+    line_no: int,
+    line_text: str,
+) -> dict[str, Any] | None:
+    template_meta: dict[str, Any] | None = None
+    for decorator_text in decorators:
+        parsed = _sh_parse_template_decorator(
+            decorator_text,
+            import_module_bindings=import_module_bindings,
+            import_symbol_bindings=import_symbol_bindings,
+            line_no=line_no,
+            line_text=line_text,
+        )
+        if parsed is None:
+            continue
+        if template_meta is not None:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message="multiple template decorators on one function are not supported",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint='Use a single `@template("T", ...)` decorator.',
+            )
+        template_meta = parsed
+    return template_meta
 
 
 def _sh_parse_augassign(text: str) -> tuple[str, str, str] | None:
@@ -6269,6 +6400,13 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 line_no=i,
                 line_text=ln,
             )
+            template_meta = _sh_collect_template_metadata(
+                fn_decorators,
+                import_module_bindings=import_module_bindings,
+                import_symbol_bindings=import_symbol_bindings,
+                line_no=i,
+                line_text=ln,
+            )
             item: dict[str, Any] = {
                 "kind": "FunctionDef",
                 "name": fn_name,
@@ -6290,8 +6428,13 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             }
             if len(fn_decorators) > 0:
                 item["decorators"] = fn_decorators
-            if runtime_abi_meta is not None:
-                item["meta"] = {"runtime_abi_v1": runtime_abi_meta}
+            if runtime_abi_meta is not None or template_meta is not None:
+                meta: dict[str, Any] = {}
+                if runtime_abi_meta is not None:
+                    meta["runtime_abi_v1"] = runtime_abi_meta
+                if template_meta is not None:
+                    meta["template_v1"] = template_meta
+                item["meta"] = meta
             fn_returns[fn_name] = fn_ret_effective
             _SH_FN_RETURNS[fn_name] = fn_ret_effective
             if not first_item_attached:
@@ -6314,6 +6457,17 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         message="@abi is supported on top-level functions only",
                         source_span=_sh_span(i, 0, len(ln)),
                         hint="Move @abi to a top-level runtime helper function definition.",
+                    )
+                if _sh_is_template_decorator(
+                    decorator_text,
+                    import_module_bindings=import_module_bindings,
+                    import_symbol_bindings=import_symbol_bindings,
+                ):
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="@template is supported on top-level functions only",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Move @template to a top-level runtime helper function definition.",
                     )
             pending_top_level_decorators = []
         m_import: re.Match | None = re.match(r"^import\s+(.+)$", s, flags=re.S)
@@ -6597,6 +6751,17 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         source_span=_sh_span(i, 0, len(ln)),
                         hint="Use @abi on top-level runtime helper functions only.",
                     )
+                if _sh_is_template_decorator(
+                    decorator_text,
+                    import_module_bindings=import_module_bindings,
+                    import_symbol_bindings=import_symbol_bindings,
+                ):
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="@template is not supported on class definitions",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Use @template on top-level runtime helper functions only.",
+                    )
             cls_name, base = cls_hdr
             base_name = base
             is_enum_base = base_name in {"Enum", "IntEnum", "IntFlag"}
@@ -6650,6 +6815,17 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                 message="@abi is not supported on methods",
                                 source_span=_sh_span(ln_no, 0, len(ln_txt)),
                                 hint="Use @abi on top-level runtime helper functions only.",
+                            )
+                        if _sh_is_template_decorator(
+                            dec_name,
+                            import_module_bindings=import_module_bindings,
+                            import_symbol_bindings=import_symbol_bindings,
+                        ):
+                            raise _make_east_build_error(
+                                kind="unsupported_syntax",
+                                message="@template is not supported on methods",
+                                source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                                hint="Use @template on top-level runtime helper functions only.",
                             )
                         pending_method_decorators.append(dec_name)
                     k += 1
@@ -7259,7 +7435,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     out["main_guard_body"] = main_stmts
     out["renamed_symbols"] = renamed_symbols
     out["meta"] = meta
-    return validate_runtime_abi_module(out)
+    return validate_template_module(validate_runtime_abi_module(out))
 
 
 def convert_source_to_east_with_backend(source: str, filename: str, parser_backend: str = "self_hosted") -> dict[str, Any]:

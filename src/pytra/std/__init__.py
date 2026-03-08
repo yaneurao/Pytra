@@ -10,3 +10,10 @@ def abi(*, args=None, ret="default"):
         return fn
 
     return deco
+
+
+def template(*params):
+    def deco(fn):
+        return fn
+
+    return deco

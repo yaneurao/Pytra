@@ -159,6 +159,129 @@ def sort_inplace(xs: list[int]) -> None:
             },
         )
 
+    def test_top_level_template_decorator_sets_template_metadata(self) -> None:
+        src = """
+from pytra.std.template import template
+
+@template("T", "U")
+def py_zip(lhs: list[T], rhs: list[U]) -> list[tuple[T, U]]:
+    return []
+"""
+        east = convert_source_to_east_with_backend(
+            src,
+            "src/pytra/built_in/template_ops.py",
+            parser_backend="self_hosted",
+        )
+        funcs = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "py_zip"
+        ]
+        self.assertEqual(len(funcs), 1)
+        fn = funcs[0]
+        self.assertEqual(fn.get("decorators"), ['template("T", "U")'])
+        self.assertEqual(
+            fn.get("meta", {}).get("template_v1"),
+            {
+                "schema_version": 1,
+                "params": ["T", "U"],
+                "scope": "runtime_helper",
+                "instantiation_mode": "linked_implicit",
+            },
+        )
+
+    def test_top_level_template_and_abi_decorators_can_coexist(self) -> None:
+        src = """
+from pytra.std import abi
+from pytra.std.template import template
+
+@template("T")
+@abi(args={"xs": "value"}, ret="value")
+def clone(xs: list[T]) -> list[T]:
+    return xs
+"""
+        east = convert_source_to_east_with_backend(
+            src,
+            "src/pytra/built_in/template_ops.py",
+            parser_backend="self_hosted",
+        )
+        funcs = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "clone"
+        ]
+        self.assertEqual(len(funcs), 1)
+        fn = funcs[0]
+        self.assertEqual(
+            fn.get("meta", {}),
+            {
+                "template_v1": {
+                    "schema_version": 1,
+                    "params": ["T"],
+                    "scope": "runtime_helper",
+                    "instantiation_mode": "linked_implicit",
+                },
+                "runtime_abi_v1": {
+                    "schema_version": 1,
+                    "args": {"xs": "value"},
+                    "ret": "value",
+                },
+            },
+        )
+
+    def test_method_level_template_decorator_is_rejected(self) -> None:
+        src = """
+from pytra.std.template import template
+
+class Box:
+    @template("T")
+    def f(self, xs: list[int]) -> list[int]:
+        return xs
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("@template is not supported on methods", str(cm.exception))
+
+    def test_template_decorator_rejects_duplicate_params(self) -> None:
+        src = """
+from pytra.std.template import template
+
+@template("T", "T")
+def f(xs: list[int]) -> list[int]:
+    return xs
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("duplicate template parameter", str(cm.exception))
+
+    def test_template_decorator_rejects_keyword_form(self) -> None:
+        src = """
+from pytra.std.template import template
+
+@template(name="T")
+def f(xs: list[int]) -> list[int]:
+    return xs
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("template decorator accepts positional string literal parameters only", str(cm.exception))
+
+    def test_template_decorator_is_rejected_outside_runtime_helper_modules(self) -> None:
+        src = """
+from pytra.std.template import template
+
+@template("T")
+def f(xs: list[T]) -> list[T]:
+    return xs
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(
+                src,
+                "sample/py/template_demo.py",
+                parser_backend="self_hosted",
+            )
+        self.assertIn("@template is supported on runtime helper modules only", str(cm.exception))
+
     def test_method_level_abi_decorator_is_rejected(self) -> None:
         src = """
 from pytra.std import abi
