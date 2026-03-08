@@ -60,24 +60,25 @@ int main() {
     object mut_iter_obj = py_iter_or_raise(mut_list_obj);
     auto m0 = py_next_or_stop(mut_iter_obj);
     assert(m0.has_value() && obj_to_int64(*m0) == 10);
-    py_append(mut_list_obj, make_object(int64(30)));
+    rc<PyListObj> mut_list_handle = obj_to_list_obj(mut_list_obj);
+    assert(mut_list_handle);
+    py_list_append_mut(mut_list_handle->value, make_object(int64(30)));
     auto m1 = py_next_or_stop(mut_iter_obj);
     auto m2 = py_next_or_stop(mut_iter_obj);
     auto m3 = py_next_or_stop(mut_iter_obj);
     assert(m1.has_value() && obj_to_int64(*m1) == 20);
     assert(m2.has_value() && obj_to_int64(*m2) == 30);
     assert(!m3.has_value());
-    py_extend(mut_list_obj, make_object(list<int64>{40, 50}));
+    py_list_extend_mut(mut_list_handle->value, list<object>{make_object(int64(40)), make_object(int64(50))});
+    assert(mut_list_handle->value.size() == 5);
     assert(py_len(mut_list_obj) == 5);
-    object p0 = py_pop(mut_list_obj);
-    assert(obj_to_int64(p0) == 50);
-    object p1 = py_pop(mut_list_obj, 0);
-    assert(obj_to_int64(p1) == 10);
-    py_reverse(mut_list_obj);
-    assert(obj_to_int64(py_at(mut_list_obj, 0)) == 40);
-    py_sort(mut_list_obj);
-    assert(obj_to_int64(py_at(mut_list_obj, 0)) == 20);
-    py_clear(mut_list_obj);
+    assert(obj_to_int64(py_list_pop_mut(mut_list_handle->value)) == 50);
+    assert(obj_to_int64(py_list_pop_mut(mut_list_handle->value, 0)) == 10);
+    py_list_reverse_mut(mut_list_handle->value);
+    assert(obj_to_int64(py_list_at_ref(mut_list_handle->value, 0)) == 40);
+    py_list_sort_mut(mut_list_handle->value);
+    assert(obj_to_int64(py_list_at_ref(mut_list_handle->value, 0)) == 20);
+    py_list_clear_mut(mut_list_handle->value);
     assert(py_len(mut_list_obj) == 0);
 
     rc<list<int64>> typed = rc_list_from_value(list<int64>{3, 1, 2});
@@ -98,6 +99,7 @@ int main() {
     assert(py_at(typed, 0) == 5);
     py_sort(typed);
     assert(py_at(typed, 0) == 2);
+    assert(py_index(rc_list_ref(typed), int64(5)) == 2);
     py_clear(typed);
     assert(py_len(typed) == 0);
     assert(!py_to_bool(typed));
@@ -318,6 +320,15 @@ int main() {
         self.assertNotIn("static inline list<object> py_dict_items(const ::std::optional<dict<str, object>>& d)", runtime_header)
         self.assertNotIn("static inline list<object> py_dict_values(const ::std::optional<dict<str, object>>& d)", runtime_header)
         self.assertNotIn("static inline object sum(const list<object>& values)", runtime_header)
+        self.assertNotIn("static inline void py_append(const object& v, const object& item)", runtime_header)
+        self.assertNotIn("static inline void py_set_at(const object& v, int64 idx, const object& item)", runtime_header)
+        self.assertNotIn("static inline void py_extend(const object& v, const object& items)", runtime_header)
+        self.assertNotIn("static inline object py_pop(const object& v)", runtime_header)
+        self.assertNotIn("static inline object py_pop(const object& v, int64 idx)", runtime_header)
+        self.assertNotIn("static inline void py_clear(const object& v)", runtime_header)
+        self.assertNotIn("static inline void py_reverse(const object& v)", runtime_header)
+        self.assertNotIn("static inline void py_sort(const object& v)", runtime_header)
+        self.assertNotIn("static inline int64 py_index(const object& v, const object& item)", runtime_header)
         self.assertNotIn("static inline object dict_get_node(const object& obj, const char* key, const object& defval = object{})", runtime_header)
         self.assertNotIn(
             "static inline object dict_get_node(\n    const ::std::optional<dict<str, object>>& d, const char* key, const object& defval = object{})",

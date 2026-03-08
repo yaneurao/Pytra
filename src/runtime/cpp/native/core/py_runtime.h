@@ -1186,23 +1186,6 @@ static inline object py_slice(const object& v, int64 lo, const object& up) {
     return py_slice(v, lo, py_to_int64(up));
 }
 
-static inline void py_append(const object& v, const object& item) {
-    auto p = obj_to_list_obj(v);
-    if (p) {
-        py_list_append_mut(p->value, item);
-        return;
-    }
-    throw ::std::runtime_error("append on non-list object");
-}
-
-static inline void py_set_at(const object& v, int64 idx, const object& item) {
-    auto p = obj_to_list_obj(v);
-    if (!p) {
-        throw ::std::runtime_error("setitem on non-list object");
-    }
-    py_list_set_at_mut(p->value, idx, item);
-}
-
 template <class T, class I, class U>
 static inline void py_set_at(rc<list<T>>& v, I idx, const U& item) {
     py_list_set_at_mut(rc_list_ref(v), idx, item);
@@ -1212,18 +1195,6 @@ template <class K, class V, class Q, class U>
 static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item) {
     const K k = py_dict_key_cast<K>(key);
     d[k] = py_dict_value_cast<V>(item);
-}
-
-static inline void py_extend(const object& v, const object& items) {
-    auto p = obj_to_list_obj(v);
-    if (!p) {
-        throw ::std::runtime_error("extend on non-list object");
-    }
-    const auto* src = obj_to_list_ptr(items);
-    if (src == nullptr) {
-        throw ::std::runtime_error("extend source must be list object");
-    }
-    py_list_extend_mut(p->value, *src);
 }
 
 template <class T>
@@ -1241,22 +1212,6 @@ static inline void py_extend(rc<list<T>>& v, const U& items) {
     py_list_extend_mut(rc_list_ref(v), items);
 }
 
-static inline object py_pop(const object& v) {
-    auto p = obj_to_list_obj(v);
-    if (!p) {
-        throw ::std::runtime_error("pop on non-list object");
-    }
-    return py_list_pop_mut(p->value);
-}
-
-static inline object py_pop(const object& v, int64 idx) {
-    auto p = obj_to_list_obj(v);
-    if (!p) {
-        throw ::std::runtime_error("pop on non-list object");
-    }
-    return py_list_pop_mut(p->value, idx);
-}
-
 template <class T>
 static inline T py_pop(rc<list<T>>& v) {
     return py_list_pop_mut(rc_list_ref(v));
@@ -1267,25 +1222,9 @@ static inline T py_pop(rc<list<T>>& v, int64 idx) {
     return py_list_pop_mut(rc_list_ref(v), idx);
 }
 
-static inline void py_clear(const object& v) {
-    auto p = obj_to_list_obj(v);
-    if (!p) {
-        throw ::std::runtime_error("clear on non-list object");
-    }
-    py_list_clear_mut(p->value);
-}
-
 template <class T>
 static inline void py_clear(rc<list<T>>& v) {
     py_list_clear_mut(rc_list_ref(v));
-}
-
-static inline void py_reverse(const object& v) {
-    auto p = obj_to_list_obj(v);
-    if (!p) {
-        throw ::std::runtime_error("reverse on non-list object");
-    }
-    py_list_reverse_mut(p->value);
 }
 
 template <class T>
@@ -1293,39 +1232,9 @@ static inline void py_reverse(rc<list<T>>& v) {
     py_list_reverse_mut(rc_list_ref(v));
 }
 
-static inline void py_sort(const object& v) {
-    auto p = obj_to_list_obj(v);
-    if (!p) {
-        throw ::std::runtime_error("sort on non-list object");
-    }
-    py_list_sort_mut(p->value);
-}
-
 template <class T>
 static inline void py_sort(rc<list<T>>& v) {
     py_list_sort_mut(rc_list_ref(v));
-}
-
-static inline int64 py_index(const object& v, const object& item) {
-    if (const auto* p = obj_to_list_ptr(v)) {
-        const int64 n = static_cast<int64>(p->size());
-        int64 i = 0;
-        while (i < n) {
-            if ((*p)[static_cast<::std::size_t>(i)] == item) {
-                return i;
-            }
-            i += 1;
-        }
-        throw ::std::out_of_range("list.index(x): x not in list");
-    }
-    if (const auto* s = py_obj_cast<PyStrObj>(v)) {
-        const int64 pos = s->value.find(obj_to_str(item));
-        if (pos >= 0) {
-            return pos;
-        }
-        throw ::std::out_of_range("str.index(x): substring not found");
-    }
-    throw ::std::runtime_error("index on non-indexable object");
 }
 
 template <class T>
