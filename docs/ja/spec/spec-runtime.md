@@ -309,11 +309,19 @@ v1 decode surface（exact API）:
 backend lowering 方針:
 
 - `JsonValue` は target 非依存の共通ADTとして定義し、各 backend は自言語で自然な tagged union / enum / variant へ落とす。
-- 例:
-  - C++: `std::variant<null, bool, int64, float64, str, JsonObjRef, JsonArrRef>`
-  - Rust: `enum JsonValue`
-  - Swift: `indirect enum JsonValue`
-  - Nim: tagged union / `ref object`
+- v1 の優先実装順は `C++ -> Rust -> Swift -> Nim` とする。
+- v1 の具体 carrier は次を正本とする。
+  - C++:
+    - `class JsonValue` + `std::variant<::std::monostate, bool, int64, float64, str, rc<JsonObj>, rc<JsonArr>>`
+    - `JsonObj` は `dict<str, JsonValue>` を保持する nominal wrapper
+    - `JsonArr` は `list<JsonValue>` を保持する nominal wrapper
+  - Rust:
+    - `enum JsonValue { Null, Bool(bool), Int(i64), Float(f64), Str(String), Obj(BTreeMap<String, JsonValue>), Arr(Vec<JsonValue>) }`
+  - Swift:
+    - `indirect enum JsonValue { case null, bool(Bool), int(Int64), float(Double), str(String), obj([String: JsonValue]), arr([JsonValue]) }`
+  - Nim:
+    - `ref object` + `kind` discriminator の tagged union
+    - `obj` は `Table[string, JsonValue]`、`arr` は `seq[JsonValue]`
 - 一時的に `object` や `dict[str, object]` / `list[object]` を内部 carrier に使う実装は許容してよいが、それは backend/runtime 内部 detail に限る。
 - user-facing surface は `JsonValue` 系 nominal type を正本とし、一般 `object` surface を露出してはならない。
 
