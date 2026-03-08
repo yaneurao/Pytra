@@ -633,11 +633,15 @@ python3 tools/verify_selfhost_end_to_end.py --skip-build \
 # 7) stage2 binary を生成して差分確認
 python3 tools/build_selfhost_stage2.py
 python3 tools/check_selfhost_stage2_cpp_diff.py --mode strict
+
+# 8) stage2 binary で sample 全件 parity を確認
+python3 tools/check_selfhost_stage2_sample_parity.py --skip-build
 ```
 
 補足:
 - `selfhost/py2cpp.out` の `.py` 直入力は current contract です。bridge 経路は調査用 fallback としてだけ扱います。
 - `tools/check_selfhost_cpp_diff.py` と `tools/check_selfhost_stage2_cpp_diff.py` は strict mode を正本にします。
+- `tools/check_selfhost_stage2_sample_parity.py --skip-build` は `selfhost/py2cpp_stage2.out` を使った full sample parity の canonical command です。representative diff と違い、`sample/py` 全件の transpile + compile + run parity を見ます。
 - `tools/check_selfhost_direct_compile.py` は `sample/py` 全件を selfhost で変換して `g++ -fsyntax-only` まで見る、最短の compile regression gate です。
 
 失敗時の確認ポイント:
