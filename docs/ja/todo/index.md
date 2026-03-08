@@ -42,3 +42,13 @@
    - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S3-02] `std/json` runtime と representative decode path を `JsonValue` surface へ寄せる最初の実装 slice を入れる。
    - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S4-01] dynamic helper debt の guard と representative parity を固定する。
    - [ ] [ID: P1-JSONVALUE-DECODE-FIRST-01-S4-02] docs / decision log / archive 同期まで完了し、本計画を閉じる。
+2. [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01] `JsonValue` を使って selfhost/host の JSON artifact 境界を decode-first 契約へ揃える。
+   文脈: [p2-jsonvalue-selfhost-decode-alignment.md](../plans/p2-jsonvalue-selfhost-decode-alignment.md)
+   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S1-01] selfhost/host の JSON loader で `dict[str, object]` / `list[object]` を直接前提にしている箇所を棚卸しする。
+   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S1-02] docs に「selfhost は `match` ではなく decode helper ベースで `JsonValue` を使う」契約を固定する。
+   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S2-01] `pytra.std.json` に selfhost-ready な `loads_obj` / `loads_arr` / `JsonObj.get_*` 最小APIを定義する。
+   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S2-02] `program_loader` / `program_validator` の JSON decode を `JsonValue` helper ベースへ移行する。
+   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S3-01] `py2x.py` / `py2x-selfhost.py` / `ir2lang.py` の JSON artifact 境界を `JsonValue` decode lane へ揃える。
+   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S3-02] representative selfhost / linked-program / CLI tests を `JsonValue` 経路で green にする。
+   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S4-01] raw object tree 依存の再侵入を防ぐ guard / regression を追加する。
+   - [ ] [ID: P2-JSONVALUE-SELFHOST-ALIGN-01-S4-02] docs / decision log / archive 同期まで完了し、本計画を閉じる。
