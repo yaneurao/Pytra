@@ -751,6 +751,107 @@ class Ir2langCliTest(unittest.TestCase):
             module_map = call_args.args[1]
             self.assertEqual(set(module_map.keys()), {str(helper_src), str(main_src)})
 
+    def test_link_output_input_for_cpp_preserves_helper_module_lane(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            main_src = root / "main.py"
+            main_src.write_text("print(1)\n", encoding="utf-8")
+            linked_helper = self._write_east_json(
+                root,
+                {
+                    "kind": "Module",
+                    "east_stage": 3,
+                    "schema_version": 1,
+                    "meta": {
+                        "dispatch_mode": "native",
+                        "module_id": "__pytra_helper__.cpp.demo",
+                        "linked_program_v1": {
+                            "program_id": "app.main",
+                            "module_id": "__pytra_helper__.cpp.demo",
+                            "entry_modules": ["app.main"],
+                            "type_id_resolved_v1": {},
+                            "non_escape_summary": {},
+                            "container_ownership_hints_v1": {},
+                        },
+                        "synthetic_helper_v1": {
+                            "helper_id": "cpp.demo",
+                            "owner_module_id": "app.main",
+                            "generated_by": "linked_optimizer",
+                        },
+                    },
+                    "body": [],
+                },
+                name="linked/__pytra_helper__/cpp/demo.east3.json",
+            )
+            linked_main = self._write_linked_east_json(root, "app.main", name="linked/app/main.east3.json")
+            link_output = self._write_east_json(
+                root,
+                {
+                    "schema": "pytra.link_output.v1",
+                    "target": "cpp",
+                    "dispatch_mode": "native",
+                    "entry_modules": ["app.main"],
+                    "modules": [
+                        {
+                            "module_id": "__pytra_helper__.cpp.demo",
+                            "input": "generated://cpp.demo",
+                            "output": str(linked_helper.relative_to(root)).replace("\\", "/"),
+                            "source_path": "",
+                            "is_entry": False,
+                            "module_kind": "helper",
+                            "helper_id": "cpp.demo",
+                            "owner_module_id": "app.main",
+                            "generated_by": "linked_optimizer",
+                        },
+                        {
+                            "module_id": "app.main",
+                            "input": "raw/app/main.east3.json",
+                            "output": str(linked_main.relative_to(root)).replace("\\", "/"),
+                            "source_path": str(main_src),
+                            "is_entry": True,
+                        },
+                    ],
+                    "global": {
+                        "type_id_table": {},
+                        "call_graph": {},
+                        "sccs": [],
+                        "non_escape_summary": {},
+                        "container_ownership_hints_v1": {},
+                    },
+                    "diagnostics": {"warnings": [], "errors": []},
+                },
+                name="link-output.json",
+            )
+            out_dir = root / "cpp-out"
+            fake_spec = {
+                "target_lang": "cpp",
+                "extension": ".cpp",
+                "default_options": {"lower": {}, "optimizer": {}, "emitter": {}},
+                "option_schema": {"lower": {}, "optimizer": {}, "emitter": {}},
+            }
+
+            with patch.object(
+                ir2lang_mod.sys,
+                "argv",
+                ["ir2lang.py", str(link_output), "--target", "cpp", "--output-dir", str(out_dir)],
+            ):
+                with patch.object(ir2lang_mod, "get_backend_spec", return_value=fake_spec):
+                    with patch.object(ir2lang_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
+                        with patch.object(ir2lang_mod, "lower_ir", side_effect=AssertionError("unexpected lower_ir")):
+                            with patch.object(ir2lang_mod, "optimize_ir", side_effect=AssertionError("unexpected optimize_ir")):
+                                with patch.object(ir2lang_mod, "apply_runtime_hook", side_effect=AssertionError("unexpected runtime hook")):
+                                    with patch.object(ir2lang_mod, "write_multi_file_cpp", return_value={"manifest": str(out_dir / "manifest.json")}) as writer:
+                                        rc = ir2lang_mod.main()
+
+            self.assertEqual(rc, 0)
+            self.assertEqual(writer.call_count, 1)
+            call_args = writer.call_args
+            self.assertEqual(str(call_args.args[0]), str(main_src))
+            module_map = call_args.args[1]
+            self.assertIn(str(main_src), module_map)
+            self.assertIn("__pytra_helper__.cpp.demo.py", module_map)
+            self.assertEqual(module_map["__pytra_helper__.cpp.demo.py"]["meta"]["synthetic_helper_v1"]["helper_id"], "cpp.demo")
+
 
 if __name__ == "__main__":
     unittest.main()

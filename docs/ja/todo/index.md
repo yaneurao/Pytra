@@ -39,7 +39,8 @@
 - 進捗メモ: [ID: P1-LINKED-HELPER-ARTIFACT-01-S1-02] `spec-linker` / `spec-dev` / `spec-east` に `module_kind=helper`、`meta.synthetic_helper_v1`、`helper_id/owner_module_id/generated_by`、single-file fold でも runtime 再探索へ戻さない契約を追加した。
 - [x] [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-01] linked-program model / validator / materializer を helper-aware にする。
 - 進捗メモ: [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-01] `LinkedProgramModule` / `LinkOutputModuleEntry` に `module_kind/helper_id/owner_module_id/generated_by` を追加し、validator・materializer・global pass・template specialization が helper metadata を保持したまま `link-output` / reload できることを link test で固定した。
-- [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-02] `link-output.json` / restart 導線へ helper module lane を追加する。
+- [x] [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-02] `link-output.json` / restart 導線へ helper module lane を追加する。
+- 進捗メモ: [ID: P1-LINKED-HELPER-ARTIFACT-01-S2-02] `ir2lang` の `link-output` restart regression を追加し、`module_kind=helper` かつ `source_path=""` の helper entry が synthetic fallback path を使って C++ multi-file writer まで落ちずに渡ることを tooling test で固定した。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S3-01] backend 共通 program artifact に `kind=helper` を追加する。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S3-02] `CodeEmitter` / `ir2lang.py` / backend registry を helper-aware にする。
 - [ ] [ID: P1-LINKED-HELPER-ARTIFACT-01-S4-01] C++ proof helper を synthetic helper module として materialize する。
