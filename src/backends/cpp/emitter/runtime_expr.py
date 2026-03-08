@@ -228,15 +228,22 @@ class CppRuntimeExprEmitter:
                 src_t = self.normalize_type_name(self.get_expr_type(arg_nodes[0]))
                 if src_t in {"bytes", "bytearray"}:
                     return bytes_args[0]
+                if src_t.startswith("list[") and src_t.endswith("]"):
+                    bytes_args[0] = self._render_pyobj_value_list_copy_adapter(bytes_args[0], arg_nodes[0], src_t)
             return f"bytes({join_str_list(', ', bytes_args)})"
         if op == "bytearray_ctor":
             bytearray_args: list[str] = []
+            arg_nodes: list[Any] = []
             if self.any_dict_has(expr_d, "args"):
                 arg_nodes = self.any_to_list(expr_d.get("args"))
                 for arg_node in arg_nodes:
                     bytearray_args.append(self.render_expr(arg_node))
             if len(bytearray_args) == 0:
                 return "bytearray{}"
+            if len(bytearray_args) == 1 and len(arg_nodes) == 1:
+                src_t = self.normalize_type_name(self.get_expr_type(arg_nodes[0]))
+                if src_t.startswith("list[") and src_t.endswith("]"):
+                    bytearray_args[0] = self._render_pyobj_value_list_copy_adapter(bytearray_args[0], arg_nodes[0], src_t)
             return f"bytearray({join_str_list(', ', bytearray_args)})"
         return ""
 

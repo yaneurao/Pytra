@@ -518,18 +518,30 @@ namespace pytra::std::json {
             return "[]";
         if (py_is_none(indent)) {
             rc<list<str>> dumped = rc_list_from_value(list<str>{});
-            for (object x : py_dyn_range(values)) {
-                str dumped_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level);
-                py_append(dumped, dumped_txt);
+            {
+                object __iter_obj_2 = ([&]() -> object { object __obj = values; if (!__obj) throw TypeError("NoneType is not iterable"); return __obj->py_iter_or_raise(); }());
+                while (true) {
+                    ::std::optional<object> __next_3 = ([&]() -> ::std::optional<object> { object __iter = __iter_obj_2; if (!__iter) throw TypeError("NoneType is not an iterator"); return __iter->py_next_or_stop(); }());
+                    if (!__next_3.has_value()) break;
+                    object x = *__next_3;
+                    str dumped_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level);
+                    py_append(dumped, dumped_txt);
+                }
             }
             return "[" + _join_strs(dumped, item_sep) + "]";
         }
         int64 indent_i = _json_indent_value(indent);
         rc<list<str>> inner = rc_list_from_value(list<str>{});
-        for (object x : py_dyn_range(values)) {
-            str prefix = py_repeat(" ", indent_i * (level + 1));
-            str value_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1);
-            py_append(inner, prefix + value_txt);
+        {
+            object __iter_obj_4 = ([&]() -> object { object __obj = values; if (!__obj) throw TypeError("NoneType is not iterable"); return __obj->py_iter_or_raise(); }());
+            while (true) {
+                ::std::optional<object> __next_5 = ([&]() -> ::std::optional<object> { object __iter = __iter_obj_4; if (!__iter) throw TypeError("NoneType is not an iterator"); return __iter->py_next_or_stop(); }());
+                if (!__next_5.has_value()) break;
+                object x = *__next_5;
+                str prefix = py_repeat(" ", indent_i * (level + 1));
+                str value_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1);
+                py_append(inner, prefix + value_txt);
+            }
         }
         return "[\n" + _join_strs(inner, _COMMA_NL) + "\n" + py_repeat(" ", indent_i * level) + "]";
     }
@@ -539,9 +551,9 @@ namespace pytra::std::json {
             return "{}";
         if (py_is_none(indent)) {
             rc<list<str>> parts = rc_list_from_value(list<str>{});
-            for (::std::tuple<str, object> __itobj_2 : values) {
-                str k = py_to_string(py_at(__itobj_2, 0));
-                auto x = py_at(__itobj_2, 1);
+            for (::std::tuple<str, object> __itobj_6 : values) {
+                str k = py_to_string(py_at(__itobj_6, 0));
+                auto x = py_at(__itobj_6, 1);
                 str k_txt = _escape_str(k, ensure_ascii);
                 str v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level);
                 py_append(parts, k_txt + key_sep + v_txt);
@@ -550,9 +562,9 @@ namespace pytra::std::json {
         }
         int64 indent_i = _json_indent_value(indent);
         rc<list<str>> inner = rc_list_from_value(list<str>{});
-        for (::std::tuple<str, object> __itobj_3 : values) {
-            str k = py_to_string(py_at(__itobj_3, 0));
-            auto x = py_at(__itobj_3, 1);
+        for (::std::tuple<str, object> __itobj_7 : values) {
+            str k = py_to_string(py_at(__itobj_7, 0));
+            auto x = py_at(__itobj_7, 1);
             str prefix = py_repeat(" ", indent_i * (level + 1));
             str k_txt = _escape_str(k, ensure_ascii);
             str v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1);
@@ -587,9 +599,9 @@ namespace pytra::std::json {
         str item_sep = ",";
         str key_sep = (py_is_none(indent) ? ":" : ": ");
         if (!py_is_none(separators)) {
-            auto __tuple_4 = *(separators);
-            item_sep = ::std::get<0>(__tuple_4);
-            key_sep = ::std::get<1>(__tuple_4);
+            auto __tuple_8 = *(separators);
+            item_sep = ::std::get<0>(__tuple_8);
+            key_sep = ::std::get<1>(__tuple_8);
         }
         return _dump_json_value(obj, ensure_ascii, indent, item_sep, key_sep, 0);
     }

@@ -154,8 +154,13 @@ int main() {
     assert(plain_repeat[3] == 4);
 
     int64 list_sum = 0;
-    for (object v : py_dyn_range(list_obj)) {
-        list_sum += obj_to_int64(v);
+    {
+        object list_iter = list_obj->py_iter_or_raise();
+        while (true) {
+            ::std::optional<object> next = list_iter->py_next_or_stop();
+            if (!next.has_value()) break;
+            list_sum += obj_to_int64(*next);
+        }
     }
     assert(list_sum == 6);
     assert(sum(list<int64>{1, 2, 3}) == 6);
@@ -179,16 +184,28 @@ int main() {
     d["b"] = make_object(2);
     bool has_a = false;
     bool has_b = false;
-    for (object key_obj : py_dyn_range(make_object(d))) {
-        str key = obj_to_str(key_obj);
-        if (key == "a") has_a = true;
-        if (key == "b") has_b = true;
+    {
+        object dict_obj = make_object(d);
+        object dict_iter = dict_obj->py_iter_or_raise();
+        while (true) {
+            ::std::optional<object> next = dict_iter->py_next_or_stop();
+            if (!next.has_value()) break;
+            str key = obj_to_str(*next);
+            if (key == "a") has_a = true;
+            if (key == "b") has_b = true;
+        }
     }
     assert(has_a && has_b);
 
     str joined = "";
-    for (object ch : py_dyn_range(make_object(str("ab")))) {
-        joined += obj_to_str(ch);
+    {
+        object text_obj = make_object(str("ab"));
+        object text_iter = text_obj->py_iter_or_raise();
+        while (true) {
+            ::std::optional<object> next = text_iter->py_next_or_stop();
+            if (!next.has_value()) break;
+            joined += obj_to_str(*next);
+        }
     }
     assert(joined == "ab");
 
@@ -205,16 +222,21 @@ int main() {
 
     object set_obj = make_object(set<int64>{1, 2, 3});
     int64 set_sum = 0;
-    for (object v : py_dyn_range(set_obj)) {
-        set_sum += obj_to_int64(v);
+    {
+        object set_iter = set_obj->py_iter_or_raise();
+        while (true) {
+            ::std::optional<object> next = set_iter->py_next_or_stop();
+            if (!next.has_value()) break;
+            set_sum += obj_to_int64(*next);
+        }
     }
     assert(set_sum == 6);
 
     bool thrown = false;
     try {
-        for (object _ : py_dyn_range(make_object(int64(9)))) {
-            (void)_;
-        }
+        object not_iterable = make_object(int64(9));
+        object bad_iter = not_iterable->py_iter_or_raise();
+        (void)bad_iter;
     } catch (const ::std::runtime_error&) {
         thrown = true;
     }
@@ -304,6 +326,10 @@ int main() {
         self.assertNotIn("static inline object py_dict_get(const dict<str, object>& d, const char* key)", runtime_header)
         self.assertNotIn("static inline object py_dict_get(const dict<str, object>& d, const ::std::string& key)", runtime_header)
         self.assertNotIn("static inline object py_dict_get(const object& obj, const char* key)", runtime_header)
+        self.assertNotIn("class py_dyn_range_iter", runtime_header)
+        self.assertNotIn("class py_dyn_range_view", runtime_header)
+        self.assertNotIn("static inline py_dyn_range_view py_dyn_range(const object& iterable)", runtime_header)
+        self.assertNotIn("static inline py_dyn_range_view py_dyn_range(const T& iterable)", runtime_header)
         self.assertNotIn("static inline object py_dict_get_maybe(const object& obj, const char* key)", runtime_header)
         self.assertNotIn("static inline object py_dict_get_maybe(const object& obj, const str& key)", runtime_header)
         self.assertNotIn("static inline object py_dict_get_maybe(const dict<str, V>& d, const char* key)", runtime_header)

@@ -11,8 +11,10 @@
 
 namespace pytra::std::re {
 
+struct Match;
+
     struct Match : public PyObj {
-        list<str> _groups;
+        rc<list<str>> _groups;
         str _text;
         PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
         

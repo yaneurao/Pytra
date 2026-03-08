@@ -38,9 +38,8 @@ namespace pytra::utils::assertions {
         return false;
     }
     
-    bool py_assert_all(const list<bool>& results, const str& label) {
-        for (object __itobj_1 : py_dyn_range(results)) {
-            bool v = py_to<bool>(__itobj_1);
+    bool py_assert_all(const rc<list<bool>>& results, const str& label) {
+        for (bool v : rc_list_ref(results)) {
             if (!(v)) {
                 if (label != "")
                     py_print("[assert_all] " + label + ": False");
@@ -52,9 +51,7 @@ namespace pytra::utils::assertions {
         return true;
     }
     
-    bool py_assert_stdout(const list<str>& expected_lines, const object& fn) {
-        list<str> _ = expected_lines;
-        _ = py_to_str_list_from_object(fn);
+    bool py_assert_stdout(const rc<list<str>>& expected_lines, const object& fn) {
         // self_hosted parser / runtime 互換優先: stdout capture は未実装。
         return true;
     }

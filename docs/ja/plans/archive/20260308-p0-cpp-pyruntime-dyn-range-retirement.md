@@ -35,12 +35,12 @@
 
 ## 2. タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01] `py_dyn_range_*` compat wrapper を退役する。
+- [x] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01] `py_dyn_range_*` compat wrapper を退役する。
 - [x] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S1-01] `py_dyn_range` callsite を棚卸しする。
 - [x] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S1-02] typed iterable への置換順序を固定する。
 - [x] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S2-01] representative callsite を置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S2-02] `py_dyn_range_*` を削除または最小化する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S3-01] guard / parity / docs を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S2-02] `py_dyn_range_*` を削除または最小化する。
+- [x] [ID: P0-CPP-PYRUNTIME-DYNRANGE-01-S3-01] guard / parity / docs を更新する。
 
 ## 3. 決定ログ
 
@@ -48,3 +48,6 @@
 - 2026-03-08: checked-in `py_dyn_range(...)` callsite は (a) generated runtime helper `contains/json/pathlib/re/png/gif/assertions`, (b) `CppEmitter.stmt` の object for-loop lowering, (c) runtime smoke / bridge regression の 3 群に分かれることを確認した。`py_runtime.h` 自身の `py_dyn_range(const object&)` / template wrapper は別扱いで、まず callsite 側を typed iterable へ寄せる。
 - 2026-03-08: 置換順序は `generated built_in helper (contains/json) -> generated std/utils helper (pathlib/re/png/gif/assertions) -> emitter stmt runtime-for lowering -> runtime smoke/inventory` とし、非 iterable fail-fast の確認は最後まで `py_dyn_range` 側へ残してよいと固定した。
 - 2026-03-08: representative callsite の first slice として `CppEmitter.stmt` の object/runtime for-loop lowering を `py_dyn_range(expr)` から `object __iter_obj = <null-guarded py_iter_or_raise()>; while (true) { optional<object> __next = <null-guarded py_next_or_stop()>; ... }` へ切り替えた。typed iter fastpath は維持し、tuple/object target の representative bridge test も explicit iter/next 期待へ更新した。
+- 2026-03-08: `contains/json/pathlib/re/png/gif/assertions` を `--emit-runtime-cpp` で再生成し、`py_runtime.h` から `py_dyn_range_iter` / `py_dyn_range_view` / `py_dyn_range(...)` を削除した。runtime smoke は explicit `py_iter_or_raise()/py_next_or_stop()` へ切り替え、inventory guard を removed signature 前提へ反転した。
+- 2026-03-08: 再生成で露出した regressions は `(a) utils/assertions.py` の no-op assignment、`(b) bytes(list)` ctor の ref-first/value-list adapter 漏れ、`(c) typed runtime for-loop target が body 内で stack/value list local 扱いされない` の 3 件だった。`py_assert_stdout` の no-op を source から削除し、`bytes/bytearray` ctor は value-list copy adapter、typed `ForCore` loop target は body scope だけ stack/value list local として扱う補強で解消した。
+- 2026-03-08: representative verification は `test_cpp_runtime_iterable.py`, `test_east3_cpp_bridge.py`, `test_py2cpp_codegen_issues.py`, `test_pylib_json.py`, fixture parity `cases=3 pass=3 fail=0`, sample parity `cases=18 pass=18 fail=0` を通した。

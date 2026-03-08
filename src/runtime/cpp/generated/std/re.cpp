@@ -16,7 +16,7 @@ namespace pytra::std::re {
 
     Match::Match(const str& text, const rc<list<str>>& groups) {
             this->_text = text;
-            this->_groups = rc_list_copy_value(groups);
+            this->_groups = groups;
     }
 
     str Match::group(int64 idx) {
@@ -24,7 +24,7 @@ namespace pytra::std::re {
                 return this->_text;
             if ((idx < 0) || (idx > py_len(this->_groups)))
                 throw IndexError("group index out of range");
-            return this->_groups[idx - 1];
+            return py_at(this->_groups, py_to<int64>(idx - 1));
     }
     
     str group(const ::std::optional<rc<Match>>& m, int64 idx) {
@@ -320,11 +320,10 @@ namespace pytra::std::re {
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{target, ann, expr}));
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)?)\\s*(\\+=|-=|\\*=|/=|//=|%=|&=|\\|=|\\^=|<<=|>>=)\\s*(.+)$") {
-            list<str> ops = list<str>{"<<=", ">>=", "+=", "-=", "*=", "/=", "//=", "%=", "&=", "|=", "^="};
+            rc<list<str>> ops = rc_list_from_value(list<str>{"<<=", ">>=", "+=", "-=", "*=", "/=", "//=", "%=", "&=", "|=", "^="});
             int64 op_pos = -(1);
             str op_txt = "";
-            for (object __itobj_1 : py_dyn_range(ops)) {
-                str op = py_to_string(__itobj_1);
+            for (str op : rc_list_ref(ops)) {
                 auto p = py_find(text, op);
                 if ((p >= 0) && ((op_pos < 0) || (p < op_pos))) {
                     op_pos = py_to<int64>(p);
@@ -387,16 +386,16 @@ namespace pytra::std::re {
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{rest}));
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_\\.]*)(?:\\s+as\\s+([A-Za-z_][A-Za-z0-9_]*))?$") {
-            list<str> parts = text.split(" as ");
+            rc<list<str>> parts = rc_list_from_value(text.split(" as "));
             if (py_len(parts) == 1) {
-                str name = py_strip(parts[0]);
+                str name = py_strip(py_at(parts, py_to<int64>(0)));
                 if (!(_is_dotted_ident(name)))
                     return ::std::nullopt;
                 return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ""}));
             }
             if (py_len(parts) == 2) {
-                str name = py_strip(parts[0]);
-                str alias = py_strip(parts[1]);
+                str name = py_strip(py_at(parts, py_to<int64>(0)));
+                str alias = py_strip(py_at(parts, py_to<int64>(1)));
                 if ((!(_is_dotted_ident(name))) || (!(_is_ident(alias))))
                     return ::std::nullopt;
                 return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, alias}));
@@ -417,16 +416,16 @@ namespace pytra::std::re {
             return ::rc_new<Match>(text, rc_list_from_value(list<str>{mod, sym}));
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*)(?:\\s+as\\s+([A-Za-z_][A-Za-z0-9_]*))?$") {
-            list<str> parts = text.split(" as ");
+            rc<list<str>> parts = rc_list_from_value(text.split(" as "));
             if (py_len(parts) == 1) {
-                str name = py_strip(parts[0]);
+                str name = py_strip(py_at(parts, py_to<int64>(0)));
                 if (!(_is_ident(name)))
                     return ::std::nullopt;
                 return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ""}));
             }
             if (py_len(parts) == 2) {
-                str name = py_strip(parts[0]);
-                str alias = py_strip(parts[1]);
+                str name = py_strip(py_at(parts, py_to<int64>(0)));
+                str alias = py_strip(py_at(parts, py_to<int64>(1)));
                 if ((!(_is_ident(name))) || (!(_is_ident(alias))))
                     return ::std::nullopt;
                 return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, alias}));
@@ -463,16 +462,16 @@ namespace pytra::std::re {
     
     str sub(const str& pattern, const str& repl, const str& text, int64 flags) {
         if (pattern == "\\s+") {
-            list<str> out = {};
+            rc<list<str>> out = rc_list_from_value(list<str>{});
             bool in_ws = false;
             for (str ch : text) {
                 if (ch.isspace()) {
                     if (!(in_ws)) {
-                        out.append(repl);
+                        py_append(out, repl);
                         in_ws = true;
                     }
                 } else {
-                    out.append(ch);
+                    py_append(out, ch);
                     in_ws = false;
                 }
             }
@@ -494,12 +493,12 @@ namespace pytra::std::re {
             return text;
         }
         if (pattern == "[^0-9A-Za-z_]") {
-            list<str> out = {};
+            rc<list<str>> out = rc_list_from_value(list<str>{});
             for (str ch : text) {
                 if ((ch.isalnum()) || (ch == "_"))
-                    out.append(ch);
+                    py_append(out, ch);
                 else
-                    out.append(repl);
+                    py_append(out, repl);
             }
             return str("").join(out);
         }

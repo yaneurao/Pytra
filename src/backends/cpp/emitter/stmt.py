@@ -1704,6 +1704,7 @@ class CppStatementEmitter:
                 if target_id == "":
                     raise RuntimeError("cpp emitter: invalid forcore target name")
                 target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
+                target_is_loop_value_list = target_type.startswith("list[") and target_type.endswith("]")
                 iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
                 typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
                 typed_iter_expr = iter_txt
@@ -1733,6 +1734,7 @@ class CppStatementEmitter:
                     typed_iter = False
                 if target_type in {"", "unknown"}:
                     target_type = iter_item_t if typed_iter else "object"
+                    target_is_loop_value_list = target_type.startswith("list[") and target_type.endswith("]")
                 if self.is_any_like_type(target_type):
                     _, next_tmp = self._emit_runtime_iter_loop_open(iter_txt, {target_id})
                     self.emit(f"object {target_id} = *{next_tmp};")
@@ -1750,9 +1752,13 @@ class CppStatementEmitter:
                         {"type": typed_loop_type, "target": target_id, "iter": typed_iter_expr},
                     )
                     self.declared_var_types[target_id] = target_type
+                    prev_stack_list_locals = set(self.current_function_stack_list_locals)
+                    if target_is_loop_value_list:
+                        self.current_function_stack_list_locals.add(target_id)
                     self._emit_for_body_open(hdr, {target_id}, omit_braces)
                     self._emit_for_body_stmts(body_stmts, omit_braces)
                     self._emit_for_body_close(omit_braces)
+                    self.current_function_stack_list_locals = prev_stack_list_locals
                     return
                 iter_tmp = self.next_for_runtime_iter_name()
                 _, next_tmp = self._emit_runtime_iter_loop_open(iter_txt, self.scope_names_with_tmp({target_id}, iter_tmp))
@@ -1766,7 +1772,11 @@ class CppStatementEmitter:
                 )
                 self.emit(f"{self._cpp_type_text(target_type)} {target_id} = {rhs};")
                 self.declared_var_types[target_id] = target_type
+                prev_stack_list_locals = set(self.current_function_stack_list_locals)
+                if target_is_loop_value_list:
+                    self.current_function_stack_list_locals.add(target_id)
                 self._emit_for_body_stmts(body_stmts, False)
+                self.current_function_stack_list_locals = prev_stack_list_locals
                 self._emit_runtime_iter_loop_close()
                 return
             if target_kind == "TupleTarget":

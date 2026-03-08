@@ -11,6 +11,8 @@
 
 namespace pytra::std::pathlib {
 
+struct Path;
+
     struct Path {
         str _value;
         

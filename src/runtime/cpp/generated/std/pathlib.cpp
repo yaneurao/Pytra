@@ -42,12 +42,12 @@ namespace pytra::std::pathlib {
     }
 
     rc<list<Path>> Path::parents() {
-            list<Path> out = {};
+            rc<list<Path>> out = rc_list_from_value(list<Path>{});
             str current = py_to_string(pytra::std::os_path::dirname(this->_value));
             while (true) {
                 if (current == "")
                     current = ".";
-                out.append(Path(Path(current)));
+                py_append(out, Path(current));
                 str next_current = py_to_string(pytra::std::os_path::dirname(current));
                 if (next_current == "")
                     next_current = ".";
@@ -55,7 +55,7 @@ namespace pytra::std::pathlib {
                     break;
                 current = next_current;
             }
-            return rc_list_from_value(out);
+            return out;
     }
 
     str Path::name() {
@@ -63,14 +63,14 @@ namespace pytra::std::pathlib {
     }
 
     str Path::suffix() {
-            auto __tuple_1 = pytra::std::os_path::splitext(py_to_string(pytra::std::os_path::basename(this->_value)));
+            auto __tuple_1 = pytra::std::os_path::splitext(pytra::std::os_path::basename(this->_value));
             auto _ = py_at(__tuple_1, 0);
             auto ext = py_at(__tuple_1, 1);
             return ext;
     }
 
     str Path::stem() {
-            auto __tuple_2 = pytra::std::os_path::splitext(py_to_string(pytra::std::os_path::basename(this->_value)));
+            auto __tuple_2 = pytra::std::os_path::splitext(pytra::std::os_path::basename(this->_value));
             auto root = py_at(__tuple_2, 0);
             auto _ = py_at(__tuple_2, 1);
             return root;
@@ -115,13 +115,12 @@ namespace pytra::std::pathlib {
     }
 
     rc<list<Path>> Path::glob(const str& pattern) {
-            list<str> paths = py_to_str_list_from_object(pytra::std::glob::glob(py_to_string(pytra::std::os_path::join(this->_value, pattern))));
-            list<Path> out = {};
-            for (object __itobj_5 : py_dyn_range(paths)) {
-                str p = py_to_string(__itobj_5);
-                out.append(Path(Path(p)));
+            rc<list<str>> paths = py_to<rc<list<str>>>(pytra::std::glob::glob(pytra::std::os_path::join(this->_value, pattern)));
+            rc<list<Path>> out = rc_list_from_value(list<Path>{});
+            for (str p : rc_list_ref(paths)) {
+                py_append(out, Path(p));
             }
-            return rc_list_from_value(out);
+            return out;
     }
 
     Path Path::cwd() {

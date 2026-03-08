@@ -761,11 +761,11 @@ def f(frames: list[bytes]) -> None:
             cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
 
         self.assertIn(
-            "pytra::utils::gif::save_gif(\"x.gif\", 1, 1, rc_list_ref(frames), pytra::utils::gif::grayscale_palette(), 4, 0);",
+            "pytra::utils::gif::save_gif(\"x.gif\", 1, 1, frames, pytra::utils::gif::grayscale_palette(), 4, 0);",
             cpp,
         )
         self.assertNotIn(
-            "pytra::utils::gif::save_gif(\"x.gif\", 1, 1, rc_list_ref(frames), pytra::utils::gif::grayscale_palette(), 0, 4);",
+            "pytra::utils::gif::save_gif(\"x.gif\", 1, 1, frames, pytra::utils::gif::grayscale_palette(), 0, 4);",
             cpp,
         )
         self.assertNotIn("int64(py_to<int64>(4))", cpp)

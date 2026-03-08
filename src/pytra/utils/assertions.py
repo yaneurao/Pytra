@@ -41,7 +41,5 @@ def py_assert_all(results: list[bool], label: str = "") -> bool:
 
 
 def py_assert_stdout(expected_lines: list[str], fn: object) -> bool:
-    _ = expected_lines
-    _ = fn
     # self_hosted parser / runtime 互換優先: stdout capture は未実装。
     return True
