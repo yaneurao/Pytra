@@ -309,6 +309,8 @@ int main() {
         self.assertNotIn("static inline list<str> py_dict_keys(const object& obj)", runtime_header)
         self.assertNotIn("static inline list<object> py_dict_items(const object& obj)", runtime_header)
         self.assertNotIn("static inline list<object> py_dict_values(const object& obj)", runtime_header)
+        self.assertNotIn("static inline list<K> py_dict_keys(const dict<K, V>& d)", runtime_header)
+        self.assertNotIn("static inline list<V> py_dict_values(const dict<K, V>& d)", runtime_header)
         self.assertNotIn("static inline ::std::any py_dict_get(const ::std::any& obj, const char* key)", runtime_header)
         self.assertNotIn("static inline object py_dict_get_maybe(const ::std::any& obj, const char* key)", runtime_header)
         self.assertNotIn("static inline D py_dict_get_default(const dict<str, ::std::any>& d, const char* key, const D& defval)", runtime_header)

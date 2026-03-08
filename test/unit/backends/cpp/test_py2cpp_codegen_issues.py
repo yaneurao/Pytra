@@ -1599,8 +1599,10 @@ def f(xs: list[int], ws: list[float]) -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("rc<list<str>> ks = rc_list_from_value(py_dict_keys(d));", cpp)
-        self.assertIn("rc<list<int64>> vs = rc_list_from_value(py_dict_values(d));", cpp)
+        self.assertIn("rc<list<str>> ks = rc_list_from_value(([&]() -> list<str> {", cpp)
+        self.assertIn("push_back(__kv.first);", cpp)
+        self.assertIn("rc<list<int64>> vs = rc_list_from_value(([&]() -> list<int64> {", cpp)
+        self.assertIn("push_back(__kv.second);", cpp)
         self.assertNotIn("rc<list<int64>> vs = list<int64>(py_dict_values(d));", cpp)
 
     def test_pyobj_list_model_nested_list_append_copies_inner_value(self) -> None:

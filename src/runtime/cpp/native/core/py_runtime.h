@@ -1452,22 +1452,6 @@ static inline auto operator-(const rc<T>& v) -> decltype(v->__neg__()) {
     return v->__neg__();
 }
 
-template <class K, class V>
-static inline list<K> py_dict_keys(const dict<K, V>& d) {
-    list<K> out;
-    out.reserve(d.size());
-    for (const auto& kv : d) out.push_back(kv.first);
-    return out;
-}
-
-template <class K, class V>
-static inline list<V> py_dict_values(const dict<K, V>& d) {
-    list<V> out;
-    out.reserve(d.size());
-    for (const auto& kv : d) out.push_back(kv.second);
-    return out;
-}
-
 static inline str py_at(const str& v, int64 idx) {
     if (idx < 0) idx += static_cast<int64>(v.size());
     if (idx < 0 || idx >= static_cast<int64>(v.size())) {

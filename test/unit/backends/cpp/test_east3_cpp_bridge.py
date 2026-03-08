@@ -999,8 +999,12 @@ class East3CppBridgeTest(unittest.TestCase):
         keys_node = {"kind": "DictKeys", "owner": owner, "resolved_type": "list[str]"}
         values_node = {"kind": "DictValues", "owner": owner, "resolved_type": "list[int64]"}
         self.assertEqual(emitter.render_expr(items_node), "d")
-        self.assertEqual(emitter.render_expr(keys_node), "py_dict_keys(d)")
-        self.assertEqual(emitter.render_expr(values_node), "py_dict_values(d)")
+        keys_render = emitter.render_expr(keys_node)
+        values_render = emitter.render_expr(values_node)
+        self.assertIn("([&]() -> list<str> {", keys_render)
+        self.assertIn("push_back(__kv.first);", keys_render)
+        self.assertIn("([&]() -> list<int64> {", values_render)
+        self.assertIn("push_back(__kv.second);", values_render)
 
     def test_builtin_runtime_dict_views_use_ir_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -1047,8 +1051,12 @@ class East3CppBridgeTest(unittest.TestCase):
             "keywords": [],
         }
         self.assertEqual(emitter.render_expr(items_expr), "d")
-        self.assertEqual(emitter.render_expr(keys_expr), "py_dict_keys(d)")
-        self.assertEqual(emitter.render_expr(values_expr), "py_dict_values(d)")
+        keys_render = emitter.render_expr(keys_expr)
+        values_render = emitter.render_expr(values_expr)
+        self.assertIn("([&]() -> list<str> {", keys_render)
+        self.assertIn("push_back(__kv.first);", keys_render)
+        self.assertIn("([&]() -> list<int64> {", values_render)
+        self.assertIn("push_back(__kv.second);", values_render)
 
     def test_render_expr_supports_dict_pop_ir_node(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

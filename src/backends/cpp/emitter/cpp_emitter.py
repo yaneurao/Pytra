@@ -2666,6 +2666,42 @@ class CppEmitter(
             f"}}())"
         )
 
+    def _render_dict_view_expr(
+        self,
+        owner_node: Any,
+        resolved_t: str,
+        *,
+        member_name: str,
+    ) -> str:
+        """`dict.keys()` / `dict.values()` を explicit loop へ展開する。"""
+        owner_expr = self.render_expr(owner_node)
+        owner_t = self.normalize_type_name(self.get_expr_type(owner_node))
+        if owner_t in {"", "unknown"}:
+            owner_t = self.normalize_type_name(self.any_dict_get_str(self.any_to_dict_or_empty(owner_node), "resolved_type", ""))
+        cpp_list_t = ""
+        if owner_t.startswith("dict[") and owner_t.endswith("]"):
+            owner_inner = self.split_generic(owner_t[5:-1])
+            if len(owner_inner) == 2:
+                item_t = self.normalize_type_name(owner_inner[0] if member_name == "first" else owner_inner[1])
+                cpp_list_t = self._cpp_list_value_model_type_text(f"list[{item_t}]")
+        if cpp_list_t == "":
+            resolved_norm = self.normalize_type_name(resolved_t)
+            if resolved_norm.startswith("list[") and resolved_norm.endswith("]"):
+                cpp_list_t = self._cpp_list_value_model_type_text(resolved_norm)
+            else:
+                cpp_list_t = self._cpp_type_text(resolved_norm)
+        owner_tmp = self.next_tmp("__dict")
+        out_tmp = self.next_tmp("__out")
+        return (
+            f"([&]() -> {cpp_list_t} {{ "
+            f"auto&& {owner_tmp} = {owner_expr}; "
+            f"{cpp_list_t} {out_tmp}; "
+            f"{out_tmp}.reserve({owner_tmp}.size()); "
+            f"for (const auto& __kv : {owner_tmp}) {out_tmp}.push_back(__kv.{member_name}); "
+            f"return {out_tmp}; "
+            f"}}())"
+        )
+
     def _render_collection_constructor_call(
         self,
         raw: str,
@@ -3817,12 +3853,18 @@ class CppEmitter(
             return owner_expr
         if kind == "DictKeys":
             owner_node = expr_d.get("owner")
-            owner_expr = self.render_expr(owner_node)
-            return f"py_dict_keys({owner_expr})"
+            return self._render_dict_view_expr(
+                owner_node,
+                self.any_to_str(expr_d.get("resolved_type")),
+                member_name="first",
+            )
         if kind == "DictValues":
             owner_node = expr_d.get("owner")
-            owner_expr = self.render_expr(owner_node)
-            return f"py_dict_values({owner_expr})"
+            return self._render_dict_view_expr(
+                owner_node,
+                self.any_to_str(expr_d.get("resolved_type")),
+                member_name="second",
+            )
         if kind == "DictPop":
             owner_node = expr_d.get("owner")
             key_node = expr_d.get("key")
