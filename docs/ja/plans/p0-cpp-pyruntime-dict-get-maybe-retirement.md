@@ -47,3 +47,4 @@
 ## 3. 決定ログ
 
 - 2026-03-08: `maybe` convenience は typed dict primitive ではなく decode helper の都合で残っている debt として扱う。
+- 2026-03-08: checked-in production callsite は見つからず、残っているのは `CppEmitter` の `DictGetMaybe` lowering と `test_east3_cpp_bridge.py` の expectation だけだった。typed `dict.get(key)` は runtime convenience ではなく、C++ 側で `contains/at + optional` の式展開へ寄せる。

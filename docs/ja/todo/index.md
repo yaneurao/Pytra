@@ -33,8 +33,8 @@
 ## 未完了タスク
 
 1. [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01] `py_dict_get_maybe` convenience を縮退する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S1-01] `py_dict_get_maybe` callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S1-02] `JsonObj` / explicit default への移行方針を固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S1-01] `py_dict_get_maybe` callsite を棚卸しする。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S1-02] `JsonObj` / explicit default への移行方針を固定する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S2-01] representative callsite を置換する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S2-02] `py_dict_get_maybe` overload を削減する。
 - [ ] [ID: P0-CPP-PYRUNTIME-DICTGET-MAYBE-01-S3-01] guard / docs / parity を更新する。
