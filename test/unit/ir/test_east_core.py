@@ -343,7 +343,7 @@ def f(text: str) -> int:
 """
         with self.assertRaises(RuntimeError) as cm:
             convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
-        self.assertIn("sum() does not accept object/unknown values", str(cm.exception))
+        self.assertIn("sum() does not accept object/Any values", str(cm.exception))
 
     def test_zip_on_json_values_is_rejected_by_decode_first_guard(self) -> None:
         src = """
@@ -356,7 +356,7 @@ def f(lhs_text: str, rhs_text: str) -> None:
 """
         with self.assertRaises(RuntimeError) as cm:
             convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
-        self.assertIn("zip() does not accept object/unknown values", str(cm.exception))
+        self.assertIn("zip() does not accept object/Any values", str(cm.exception))
 
     def test_dict_keys_on_json_object_is_rejected_by_decode_first_guard(self) -> None:
         src = """
@@ -368,7 +368,7 @@ def f(text: str) -> None:
 """
         with self.assertRaises(RuntimeError) as cm:
             convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
-        self.assertIn("keys() does not accept object/unknown receivers", str(cm.exception))
+        self.assertIn("keys() does not accept object/Any receivers", str(cm.exception))
 
     def test_quoted_type_annotation_is_normalized(self) -> None:
         src = """

@@ -2571,7 +2571,7 @@ def main(text: str) -> int:
             src_py.write_text(src, encoding="utf-8")
             with self.assertRaises(RuntimeError) as cm:
                 load_east(src_py)
-        self.assertIn("sum() does not accept object/unknown values", str(cm.exception))
+        self.assertIn("sum() does not accept object/Any values", str(cm.exception))
 
     def test_load_east1_document_sets_stage1_while_keeping_root_contract(self) -> None:
         from src.toolchain.compiler.transpile_cli import load_east1_document

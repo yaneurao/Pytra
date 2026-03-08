@@ -2894,11 +2894,11 @@ class _ShExprParser:
     def _is_forbidden_dynamic_helper_type(self, t: str) -> bool:
         """decode-first helper に直接渡してはいけない動的型か判定する。"""
         s = t.strip()
-        if s in {"object", "Any", "any", "unknown"}:
+        if s in {"object", "Any", "any"}:
             return True
         if "|" in s:
             parts = self._split_union_types(s)
-            return any(p in {"object", "Any", "any", "unknown"} for p in parts if p != "None")
+            return any(p in {"object", "Any", "any"} for p in parts if p != "None")
         return False
 
     def _guard_dynamic_helper_receiver(self, helper_name: str, owner_t: str, source_span: dict[str, int]) -> None:
@@ -2907,7 +2907,7 @@ class _ShExprParser:
             return
         raise _make_east_build_error(
             kind="unsupported_syntax",
-            message=f"{helper_name}() does not accept object/unknown receivers under decode-first constraints",
+            message=f"{helper_name}() does not accept object/Any receivers under decode-first constraints",
             source_span=source_span,
             hint=f"Decode JSON values to a concrete type before calling {helper_name}().",
         )
@@ -2918,7 +2918,7 @@ class _ShExprParser:
         args: list[dict[str, Any]],
         source_span: dict[str, int],
     ) -> None:
-        """dynamic helper に object/unknown 引数が直接渡っていないか検査する。"""
+        """dynamic helper に object/Any 引数が直接渡っていないか検査する。"""
         for arg in args:
             if not isinstance(arg, dict):
                 continue
@@ -2928,7 +2928,7 @@ class _ShExprParser:
             if self._is_forbidden_dynamic_helper_type(arg_t):
                 raise _make_east_build_error(
                     kind="unsupported_syntax",
-                    message=f"{helper_name}() does not accept object/unknown values under decode-first constraints",
+                    message=f"{helper_name}() does not accept object/Any values under decode-first constraints",
                     source_span=source_span,
                     hint=f"Decode JSON values to a concrete type before calling {helper_name}().",
                 )

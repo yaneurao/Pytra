@@ -389,7 +389,7 @@ linked module(EAST3)
 - `object` 型値を `sum` / `zip` / `sorted` / `min` / `max` / `keys` / `items` / `values` などの built-in / collection helper へ直接渡してはならない。
   - compile error を正とし、dynamic helper fallback で救済してはならない。
   - `json.loads()` などの動的データは、将来的に `JsonValue` 系 decode surface で concrete type へ落としてから使う。
-  - 実装責務は frontend/lowering 側を正本とし、少なくとも `Call`/built-in rewrite の段階で `object` / `Any` / `unknown` を owner または主要引数に持つ対象呼び出しを reject する。
+  - 実装責務は frontend/lowering 側を正本とし、少なくとも `Call`/built-in rewrite の段階で `object` / `Any` を owner または主要引数に持つ対象呼び出しを reject する。
   - emit 時は fail-fast guard のみ許可し、backend/runtime が object fallback helper を暗黙挿入して救済してはならない。
 - selfhost / host の JSON artifact loader（`py2x.py`, `ir2lang.py`, `toolchain/ir/east_io.py`, `toolchain/link/*`）も同じ decode-first 契約に従う。
   - `json.loads()` の戻り値を `dict[str, object]` / `list[object]` と直接みなして手探り decode してはならない。
