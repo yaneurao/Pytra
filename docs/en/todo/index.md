@@ -37,7 +37,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 
 1. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01] Move compiler boundaries to typed carriers and retreat internal object-carrier / `make_object` usage.
 2. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-01] Inventory remaining `dict[str, object]`, `list[object]`, `make_object`, and `py_to` usage across `transpile_cli`, `backend_registry_static`, selfhost parser paths, and generated compiler runtime, then classify each usage as `compiler_internal`, `json_adapter`, `extern_hook`, or `legacy_bridge`.
-3. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-02] Lock the typed-boundary contract and non-goals so they stay consistent with `spec-dev`, `spec-runtime`, and `spec-boxing`.
+3. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-02] Lock the typed-boundary contract and non-goals so they stay consistent with `spec-dev`, `spec-runtime`, and `spec-boxing`.
 4. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-01] Define typed carrier specs for compiler root payloads (EAST document, backend spec, layer options, emit request/result).
 5. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-02] Introduce typed carriers and thin legacy adapters in the Python source of truth.
 6. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-03] Introduce typed carrier mirrors or typed wrapper APIs in the C++ selfhost/native compiler interfaces and reduce raw `dict<str, object>` exchange.
@@ -48,6 +48,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 11. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] Refresh selfhost build/diff/prepare/bridge regressions and lock non-regression after the typed-boundary changes.
 12. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-02] Update docs / TODO / archive and record whether each remaining `make_object` usage is `user boundary only` or `explicit adapter only`.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-01] Inventoried object-carrier usage across `transpile_cli`, `backend_registry_static`, and the selfhost/generated parser lanes, then fixed `.json` decode/encode as `json_adapter`, public raw-dict APIs plus selfhost seed helpers as `legacy_bridge`, signature/backend-spec/AST direct assembly as `compiler_internal`, and hook surfaces as the reserved `extern_hook` category.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-02] Fixed that P2 is not an `Any/object` removal plan but a typed-compiler-carrier plan, that JSON must converge on the `JsonValue` nominal lane, and that backend/runtime must not reinterpret `type_expr` or `dispatch_mode` semantics during the migration.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 
