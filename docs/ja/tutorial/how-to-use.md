@@ -107,8 +107,8 @@ console: Any = extern("console")
 
 ## 次に読むページ
 
-- 高度な変換ルートや `@abi` は [発展的な使い方](../advanced-usage.md) を参照してください。
-- parity / local CI / backend health などの運用手順は [開発運用ガイド](../dev-operations.md) を参照してください。
+- 高度な変換ルートや `@abi` は [発展的な使い方](./advanced-usage.md) を参照してください。
+- parity / local CI / backend health などの運用手順は [開発運用ガイド](./dev-operations.md) を参照してください。
 - CLI オプションの詳細は [オプション仕様](../spec/spec-options.md) を参照してください。
 
 ## 補足: 開発者向けの入口
@@ -117,7 +117,7 @@ console: Any = extern("console")
 - `ir2lang.py` の backend-only 再開
 - linked-program の dump / link-only / restart
 
-は [発展的な使い方](../advanced-usage.md) に移しました。
+は [発展的な使い方](./advanced-usage.md) に移しました。
 
 ## トランスパイラの使い方
 
@@ -414,7 +414,7 @@ g++ -std=c++20 -O2 -I src -I src/runtime/cpp test/transpile/cpp/01_mandelbrot.cp
 - C++ selfhost の検証手順
 - CodeEmitter 作業時の変換チェック
 
-は [開発運用ガイド](../dev-operations.md) に移しました。
+は [開発運用ガイド](./dev-operations.md) に移しました。
 
 ## 共通の制約と注意点
 

@@ -11,5 +11,5 @@
 
 - チュートリアル入口: [tutorial/README.md](./tutorial/README.md)
 - 実行手順本文: [tutorial/how-to-use.md](./tutorial/how-to-use.md)
-- 発展的な使い方: [advanced-usage.md](./advanced-usage.md)
-- 開発運用ガイド: [dev-operations.md](./dev-operations.md)
+- 発展的な使い方: [tutorial/advanced-usage.md](./tutorial/advanced-usage.md)
+- 開発運用ガイド: [tutorial/dev-operations.md](./tutorial/dev-operations.md)
