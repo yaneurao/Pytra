@@ -164,9 +164,10 @@ Pythonで書かれた[サンプルコード](../../sample/readme-ja.md)の実行
 
 ## ドキュメントを読む
 
+- 英語ドキュメント一覧: [../en/index.md](../en/index.md)
+- 英語 Getting Started: [../en/how-to-use.md](../en/how-to-use.md)
 - 日本語チュートリアル: [tutorial/README.md](./tutorial/README.md)
 - 日本語ドキュメント一覧: [index.md](./index.md)
-- 英語 README: [../../README.md](../../README.md)
 
 ## ライセンス
 
