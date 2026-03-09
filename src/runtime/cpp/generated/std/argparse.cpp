@@ -6,6 +6,7 @@
 
 #include "runtime/cpp/generated/std/argparse.h"
 
+#include "pytra/built_in/contains.h"
 #include "pytra/built_in/string_ops.h"
 #include "pytra/std/sys.h"
 

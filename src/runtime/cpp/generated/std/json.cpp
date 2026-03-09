@@ -5,6 +5,7 @@
 
 #include "runtime/cpp/generated/std/json.h"
 
+#include "pytra/built_in/contains.h"
 #include "pytra/built_in/scalar_ops.h"
 #include "pytra/built_in/sequence.h"
 

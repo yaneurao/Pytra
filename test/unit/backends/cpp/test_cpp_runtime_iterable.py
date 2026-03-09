@@ -38,8 +38,11 @@ class CppRuntimeIterableTest(unittest.TestCase):
     def test_runtime_iterable_protocol_helpers(self) -> None:
         cpp_src = r'''
 #include "runtime/cpp/core/py_runtime.h"
+#include "pytra/built_in/contains.h"
 #include "pytra/built_in/iter_ops.h"
+#include "pytra/built_in/numeric_ops.h"
 #include "pytra/built_in/sequence.h"
+#include "pytra/built_in/zip_ops.h"
 
 #include <cassert>
 #include <iostream>
@@ -304,8 +307,9 @@ int main() {
         self.assertIn('#include "runtime/cpp/native/core/scope_exit.h"', scope_exit_forwarder)
         self.assertIn("class py_scope_exit", scope_exit_native)
         self.assertIn("static inline auto py_make_scope_exit(F&& fn)", scope_exit_native)
-        self.assertIn('#include "runtime/cpp/generated/built_in/numeric_ops.h"', runtime_header)
-        self.assertIn('#include "runtime/cpp/generated/built_in/zip_ops.h"', runtime_header)
+        self.assertNotIn('#include "runtime/cpp/generated/built_in/numeric_ops.h"', runtime_header)
+        self.assertNotIn('#include "runtime/cpp/generated/built_in/zip_ops.h"', runtime_header)
+        self.assertNotIn('#include "runtime/cpp/native/built_in/contains.h"', runtime_header)
         self.assertNotIn('#include "runtime/cpp/generated/built_in/predicates.h"', runtime_header)
         self.assertNotIn('#include "runtime/cpp/native/built_in/sequence.h"', runtime_header)
         self.assertNotIn('#include "runtime/cpp/generated/built_in/sequence.h"', runtime_header)

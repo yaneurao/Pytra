@@ -5,6 +5,7 @@
 
 #include "runtime/cpp/generated/built_in/type_id.h"
 
+#include "pytra/built_in/contains.h"
 
 list<int64> _TYPE_IDS;
 dict<int64, int64> _TYPE_BASE;
