@@ -257,6 +257,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
 
         self.assertIn("from toolchain.compiler.typed_boundary import export_compiler_root_document_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_compiler_root_document_any", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", static_src)
         self.assertIn("doc = export_compiler_root_document_any(east_doc)", host_src)
         self.assertIn("doc = export_compiler_root_document_any(east_doc)", static_src)
         self.assertNotIn(
@@ -276,18 +280,18 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("return export_resolved_backend_spec(_normalize_backend_runtime_spec(spec))", host_src)
         self.assertIn("return export_layer_options_carrier(resolve_layer_options_typed(spec, layer, raw_options))", host_src)
         self.assertIn("return export_layer_options_carrier(resolve_layer_options_typed(spec, layer, raw_options))", static_src)
-        self.assertIn("return export_module_artifact_carrier(", host_src)
-        self.assertIn("return export_module_artifact_carrier(", static_src)
-        self.assertIn("return export_program_artifact_carrier(", host_src)
-        self.assertIn("return export_program_artifact_carrier(", static_src)
+        self.assertIn("return export_module_artifact_any(", host_src)
+        self.assertIn("return export_module_artifact_any(", static_src)
+        self.assertIn("return export_program_artifact_any(", host_src)
+        self.assertIn("return export_program_artifact_any(", static_src)
         self.assertIn("return export_resolved_backend_spec(get_backend_spec_typed(target))", host_src)
         self.assertIn("_BACKEND_SPECS[target] = export_resolved_backend_spec(runtime_spec)", static_src)
         self.assertIn(
-            "return [export_module_artifact_carrier(item) for item in collect_program_modules_typed(module_artifact)]",
+            "return [export_module_artifact_any(item) for item in collect_program_modules_typed(module_artifact)]",
             host_src,
         )
         self.assertIn(
-            "return [export_module_artifact_carrier(item) for item in collect_program_modules_typed(module_artifact)]",
+            "return [export_module_artifact_any(item) for item in collect_program_modules_typed(module_artifact)]",
             static_src,
         )
         self.assertNotIn("coerce_compiler_root_document(east_doc).to_legacy_dict()", host_src)

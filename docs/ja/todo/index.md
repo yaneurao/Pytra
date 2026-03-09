@@ -133,6 +133,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` の residual guard helper を `finditer(...)` + `functions=` filter 対応へ上げ、generated core の residual を `_sh_parse_expr_lowered`、`_parse_primary`、`_sh_parse_stmt_block_mutable` 単位でも固定した。これで lowered residual `Call/Dict/Name/Tuple` と、statement block 非statement residual `Name/Tuple` を切り分けて監視できる。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/compiler/transpile_cli.py` の `load_east3_document_typed()` は canonical front の typed API を直接呼ぶ形へ寄せ、tracked compiler shim source から `load_east3_document()` + coercion wrapper の一段を外した。compiler runtime emit は header-only forwarder のままなので、`test_py2x_entrypoints_contract.py` で shim source と header-only layout の両方を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `CompilerRootMeta.from_legacy_doc()` が legacy `source_path` / `meta.parser_backend` を保持するようにし、`export_compiler_root_document_any()` を raw dict short-circuit ではなく canonical `coerce -> export` seam に寄せた。`test_py2x_entrypoints_contract.py` で normalized compiler-root export round-trip を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] host/static registry の legacy artifact surface も `export_module_artifact_any()` / `export_program_artifact_any()` へ揃え、typed export helper 契約を compiler-root だけでなく module/program artifact にも広げた。`test_py2x_entrypoints_contract.py` で registry 側の import と return seam を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

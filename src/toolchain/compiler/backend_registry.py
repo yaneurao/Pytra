@@ -26,7 +26,9 @@ from toolchain.compiler.typed_boundary import copy_program_writer_options
 from toolchain.compiler.typed_boundary import export_compiler_root_document_any
 from toolchain.compiler.typed_boundary import export_resolved_backend_spec
 from toolchain.compiler.typed_boundary import export_layer_options_carrier
+from toolchain.compiler.typed_boundary import export_module_artifact_any
 from toolchain.compiler.typed_boundary import export_module_artifact_carrier
+from toolchain.compiler.typed_boundary import export_program_artifact_any
 from toolchain.compiler.typed_boundary import export_program_artifact_carrier
 from toolchain.compiler.typed_boundary import flatten_module_artifact_carrier
 from toolchain.compiler.typed_boundary import normalize_module_artifact_carrier
@@ -777,7 +779,7 @@ def emit_module(
     module_id: str = "",
     is_entry: bool = False,
 ) -> dict[str, Any]:
-    return export_module_artifact_carrier(
+    return export_module_artifact_any(
         emit_module_typed(
             spec,
             ir,
@@ -798,7 +800,7 @@ def collect_program_modules_typed(module_artifact: ModuleArtifactCarrier | dict[
 
 
 def collect_program_modules(module_artifact: dict[str, Any]) -> list[dict[str, Any]]:
-    return [export_module_artifact_carrier(item) for item in collect_program_modules_typed(module_artifact)]
+    return [export_module_artifact_any(item) for item in collect_program_modules_typed(module_artifact)]
 
 
 def build_program_artifact_typed(
@@ -838,7 +840,7 @@ def build_program_artifact(
     link_output_schema: str = "",
     writer_options: dict[str, object] | None = None,
 ) -> dict[str, Any]:
-    return export_program_artifact_carrier(
+    return export_program_artifact_any(
         build_program_artifact_typed(
             spec,
             modules,
