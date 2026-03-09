@@ -355,6 +355,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("dict(ir) if isinstance(ir, dict) else {}", static_src)
         self.assertNotIn("def _normalize_module_artifact(", host_src)
         self.assertNotIn("def _normalize_module_artifact(", static_src)
+        self.assertNotIn("def _default_module_label(", host_src)
+        self.assertNotIn("def _default_module_label(", static_src)
         self.assertNotIn("def _flatten_helper_modules(", host_src)
         self.assertNotIn("def _coerce_module_artifact(", host_src)
         self.assertNotIn("def _coerce_module_artifact(", static_src)

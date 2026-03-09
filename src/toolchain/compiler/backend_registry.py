@@ -168,16 +168,6 @@ def _runtime_nim(output_path: Path) -> None:
     _copy_runtime_file("runtime/nim/pytra-gen/utils/image_runtime.nim", output_path, "image_runtime.nim")
 
 
-def _default_module_label(module_id: str, output_path: Path) -> str:
-    if output_path.stem != "":
-        return output_path.stem
-    if module_id != "":
-        tail = module_id.rsplit(".", 1)[-1]
-        if tail != "":
-            return tail
-    return "module"
-
-
 def _legacy_emit_module_adapter(emit_impl: Any, *, extension: str) -> Any:
     def _emit_module(
         ir: dict[str, Any],
