@@ -15,14 +15,18 @@ from toolchain.compiler.typed_boundary import coerce_ir_document
 from toolchain.compiler.typed_boundary import collect_program_module_carriers
 from toolchain.compiler.typed_boundary import copy_module_dependencies
 from toolchain.compiler.typed_boundary import copy_module_metadata
+from toolchain.compiler.typed_boundary import emit_source_text_with_spec
 from toolchain.compiler.typed_boundary import execute_emit_module_with_spec
 from toolchain.compiler.typed_boundary import execute_lower_ir_with_spec
 from toolchain.compiler.typed_boundary import execute_optimize_ir_with_spec
 from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any
 from toolchain.compiler.typed_boundary import export_layer_options_any
 from toolchain.compiler.typed_boundary import export_module_artifact_any
+from toolchain.compiler.typed_boundary import export_program_module_artifacts
 from toolchain.compiler.typed_boundary import export_program_artifact_any
+from toolchain.compiler.typed_boundary import get_program_writer_with_spec
 from toolchain.compiler.typed_boundary import resolve_layer_options_carrier
+from toolchain.compiler.typed_boundary import apply_runtime_hook_with_spec
 
 from backends.cs.lower import lower_east3_to_cs_ir
 from backends.cs.optimizer import optimize_cs_ir
@@ -575,12 +579,12 @@ def collect_program_modules_typed(module_artifact: ModuleArtifactCarrier | dict[
 
 
 def collect_program_modules(module_artifact: dict[str, Any]) -> list[dict[str, Any]]:
-    return [export_module_artifact_any(item) for item in collect_program_modules_typed(module_artifact)]
+    return export_program_module_artifacts(module_artifact)
 
 
 def get_program_writer_typed(spec: BackendSpec | ResolvedBackendSpec) -> Any:
     runtime_spec = _coerce_runtime_spec(spec)
-    return runtime_spec.program_writer_impl
+    return get_program_writer_with_spec(runtime_spec)
 
 
 def get_program_writer(spec: BackendSpec) -> Any:
@@ -602,14 +606,19 @@ def emit_source_typed(
     output_path: Path,
     emitter_options: LayerOptionsCarrier | dict[str, Any] | None = None,
 ) -> str:
-    return emit_module_typed(spec, ir, output_path, emitter_options).text
+    runtime_spec = _coerce_runtime_spec(spec)
+    return emit_source_text_with_spec(
+        runtime_spec,
+        ir,
+        output_path,
+        emitter_options,
+        suppress_exceptions=False,
+    )
 
 
 def apply_runtime_hook_typed(spec: BackendSpec | ResolvedBackendSpec, output_path: Path) -> None:
     runtime_spec = _coerce_runtime_spec(spec)
-    fn = runtime_spec.runtime_hook_impl
-    if callable(fn):
-        fn(output_path)
+    apply_runtime_hook_with_spec(runtime_spec, output_path)
 
 
 def apply_runtime_hook(spec: BackendSpec, output_path: Path) -> None:

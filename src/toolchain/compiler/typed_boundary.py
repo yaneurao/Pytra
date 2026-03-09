@@ -769,6 +769,23 @@ def execute_emit_module_with_spec(
     return normalize_emitted_module_artifact(artifact_any, request=request)
 
 
+def emit_source_text_with_spec(
+    runtime_spec: ResolvedBackendSpec,
+    ir: dict[str, Any],
+    output_path: Path,
+    emitter_options: LayerOptionsCarrier | dict[str, Any] | None = None,
+    *,
+    suppress_exceptions: bool,
+) -> str:
+    return execute_emit_module_with_spec(
+        runtime_spec,
+        ir,
+        output_path,
+        emitter_options,
+        suppress_exceptions=suppress_exceptions,
+    ).text
+
+
 def build_legacy_emit_module_adapter(
     emit_impl: Any,
     *,
@@ -844,6 +861,10 @@ def collect_program_module_carriers(module_artifact: object) -> tuple[ModuleArti
     if carrier is None:
         return ()
     return flatten_module_artifact_carrier(carrier)
+
+
+def export_program_module_artifacts(module_artifact: object) -> list[dict[str, object]]:
+    return [export_module_artifact_any(item) for item in collect_program_module_carriers(module_artifact)]
 
 
 def coerce_module_artifact(module_artifact: object) -> ModuleArtifactCarrier:
@@ -968,3 +989,13 @@ def build_program_artifact_from_modules(
         link_output_schema=link_output_schema,
         writer_options=writer_options,
     )
+
+
+def get_program_writer_with_spec(runtime_spec: ResolvedBackendSpec) -> Any:
+    return runtime_spec.program_writer_impl
+
+
+def apply_runtime_hook_with_spec(runtime_spec: ResolvedBackendSpec, output_path: Path) -> None:
+    fn = runtime_spec.runtime_hook_impl
+    if callable(fn):
+        fn(output_path)
