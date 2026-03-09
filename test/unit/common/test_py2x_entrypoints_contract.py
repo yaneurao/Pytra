@@ -1000,6 +1000,56 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             host_program.to_legacy_dict(),
         )
 
+    def test_build_program_artifact_flattens_nested_helper_modules(self) -> None:
+        fake_spec = {"target_lang": "cpp"}
+        nested_module = {
+            "module_id": "pkg.main",
+            "kind": "user",
+            "label": "main",
+            "extension": ".cpp",
+            "text": "// main\n",
+            "is_entry": True,
+            "dependencies": [],
+            "metadata": {},
+            "helper_modules": [
+                {
+                    "module_id": "__pytra_helper__.cpp.demo",
+                    "kind": "helper",
+                    "label": "cpp_demo",
+                    "extension": ".cpp",
+                    "text": "// helper\n",
+                    "is_entry": False,
+                    "dependencies": [],
+                    "metadata": {"helper_id": "cpp.demo", "owner_module_id": "pkg.main"},
+                }
+            ],
+        }
+
+        host_artifact = host_registry.build_program_artifact(
+            fake_spec,
+            [nested_module],
+            program_id="pkg.main",
+            entry_modules=["pkg.main"],
+        )
+        static_artifact = static_registry.build_program_artifact(
+            fake_spec,
+            [nested_module],
+            program_id="pkg.main",
+            entry_modules=["pkg.main"],
+        )
+        host_typed = host_registry.build_program_artifact_typed(
+            fake_spec,
+            [nested_module],
+            program_id="pkg.main",
+            entry_modules=["pkg.main"],
+        )
+
+        self.assertEqual([module["module_id"] for module in host_artifact["modules"]], ["pkg.main", "__pytra_helper__.cpp.demo"])
+        self.assertEqual([module["kind"] for module in host_artifact["modules"]], ["user", "helper"])
+        self.assertEqual([module["module_id"] for module in static_artifact["modules"]], ["pkg.main", "__pytra_helper__.cpp.demo"])
+        self.assertEqual([module.kind for module in host_typed.modules], ["user", "helper"])
+        self.assertEqual(host_typed.modules[1].metadata["owner_module_id"], "pkg.main")
+
     def test_collect_program_modules_flattens_helper_modules(self) -> None:
         module_artifact = {
             "module_id": "pkg.main",

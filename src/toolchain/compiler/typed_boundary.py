@@ -977,9 +977,7 @@ def build_program_artifact_from_modules(
 ) -> ProgramArtifactCarrier:
     module_list: list[ModuleArtifactCarrier] = []
     for item in modules:
-        coerced = coerce_module_artifact_or_none(item)
-        if coerced is not None:
-            module_list.append(coerced)
+        module_list.extend(collect_program_module_carriers(item))
     return build_program_artifact_carrier(
         spec,
         module_list,
