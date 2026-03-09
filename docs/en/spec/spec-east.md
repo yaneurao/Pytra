@@ -253,6 +253,50 @@ Examples:
 - `int | Any` -> `UnionType(union_mode="dynamic", options=[NamedType("int64"), DynamicType("Any")])`
 - `JsonValue` -> `NominalAdtType(name="JsonValue", adt_family="json", variant_domain="closed")`
 
+### 6.5 `JsonValue` Nominal Closed-ADT Lane
+
+Treat `JsonValue` / `JsonObj` / `JsonArr` as a JSON-specific nominal closed-ADT lane, not as a general union and not as an `object` fallback.
+
+Mandatory rules:
+
+- The type of `json.loads(...)` is `NominalAdtType(name="JsonValue", adt_family="json", variant_domain="closed")`.
+- `json.loads_obj(...)` / `json.loads_arr(...)` return `OptionalType(NominalAdtType("JsonObj"))` / `OptionalType(NominalAdtType("JsonArr"))`, respectively.
+- `JsonValue.as_*`, `JsonObj.get_*`, and `JsonArr.get_*` are decode / narrowing operations for nominal ADTs, not general-purpose casts.
+- Do not expand the `JsonValue` lane into `UnionType(union_mode=general|dynamic)`.
+
+Canonical resolved semantic tags fixed in `EAST2 -> EAST3`:
+
+- `json.loads`
+- `json.loads_obj`
+- `json.loads_arr`
+- `json.value.as_obj`
+- `json.value.as_arr`
+- `json.value.as_str`
+- `json.value.as_int`
+- `json.value.as_float`
+- `json.value.as_bool`
+- `json.obj.get`
+- `json.obj.get_obj`
+- `json.obj.get_arr`
+- `json.obj.get_str`
+- `json.obj.get_int`
+- `json.obj.get_float`
+- `json.obj.get_bool`
+- `json.arr.get`
+- `json.arr.get_obj`
+- `json.arr.get_arr`
+- `json.arr.get_str`
+- `json.arr.get_int`
+- `json.arr.get_float`
+- `json.arr.get_bool`
+
+Responsibility boundary:
+
+- Frontend / lowering own the job of normalizing raw `json.loads` / `as_*` / `get_*` surface calls into the semantic tags above or an equivalent dedicated IR category.
+- Backends / hooks must not reinterpret JSON decode semantics from raw callee names, attribute names, or receiver type strings.
+- Validators must check consistency between `type_expr` and semantic tags on the `JsonValue` nominal lane, and stop any path that tries to emit `JsonValue` as a general union with `semantic_conflict` or `unsupported_syntax`.
+- If a target does not yet provide a `JsonValue` nominal carrier or decode-op mapping, it must fail closed instead of silently degrading to `object`, `String`, or `PyAny`.
+
 ## 7. Type Inference Rules
 
 - `Name`: resolve from the type environment. If unresolved, fail with `inference_failure`.
@@ -645,5 +689,6 @@ Objective:
 
 - EAST2 keeps only "what the program wants to do" as semantic tags; `EAST3` finalizes those into object-boundary instructions such as `Obj*` and `ForCore.iter_plan`.
 - `EAST2 -> EAST3` lowering must inspect `type_expr` and split `optional`, `dynamic union`, and `nominal ADT` into separate lanes; it must not recover semantics by re-splitting `resolved_type` strings.
+- `JsonValue` decode / narrowing must be normalized in `EAST2 -> EAST3` into resolved semantic tags (`json.loads`, `json.value.as_*`, `json.obj.get_*`, `json.arr.get_*`) or an equivalent dedicated IR category; backend-side raw method-name interpretation is forbidden.
 - Frontend-specific resolution of Python built-ins and standard-library items must be converted into neutral tags by an adapter layer before entering EAST2.
 - From `EAST3` onward, backends and hooks are responsible only for target-language mapping and must not reinterpret the EAST2 contract.

@@ -279,6 +279,50 @@
 - `int | Any` -> `UnionType(union_mode="dynamic", options=[NamedType("int64"), DynamicType("Any")])`
 - `JsonValue` -> `NominalAdtType(name="JsonValue", adt_family="json", variant_domain="closed")`
 
+### 6.5 `JsonValue` nominal closed ADT lane
+
+`JsonValue` / `JsonObj` / `JsonArr` は、一般 union でも `object` fallback でもなく、JSON 専用の nominal closed ADT lane として扱う。
+
+必須ルール:
+
+- `json.loads(...)` の型は `NominalAdtType(name="JsonValue", adt_family="json", variant_domain="closed")` とする。
+- `json.loads_obj(...)` / `json.loads_arr(...)` はそれぞれ `OptionalType(NominalAdtType("JsonObj"))` / `OptionalType(NominalAdtType("JsonArr"))` を返す。
+- `JsonValue.as_*`, `JsonObj.get_*`, `JsonArr.get_*` は general-purpose cast ではなく、nominal ADT 向け decode / narrowing operation として扱う。
+- `JsonValue` lane を `UnionType(union_mode=general|dynamic)` へ展開してはならない。
+
+`EAST2 -> EAST3` で固定する resolved semantic tag（canonical）:
+
+- `json.loads`
+- `json.loads_obj`
+- `json.loads_arr`
+- `json.value.as_obj`
+- `json.value.as_arr`
+- `json.value.as_str`
+- `json.value.as_int`
+- `json.value.as_float`
+- `json.value.as_bool`
+- `json.obj.get`
+- `json.obj.get_obj`
+- `json.obj.get_arr`
+- `json.obj.get_str`
+- `json.obj.get_int`
+- `json.obj.get_float`
+- `json.obj.get_bool`
+- `json.arr.get`
+- `json.arr.get_obj`
+- `json.arr.get_arr`
+- `json.arr.get_str`
+- `json.arr.get_int`
+- `json.arr.get_float`
+- `json.arr.get_bool`
+
+責務境界:
+
+- frontend / lowering は raw `json.loads` / `as_*` / `get_*` surface を上記 semantic tag か等価の dedicated IR category へ正規化する責務を持つ。
+- backend / hook は raw callee 名・attribute 名・receiver 型文字列から JSON decode semantics を再解釈してはならない。
+- validator は `JsonValue` nominal lane に対して `type_expr` と semantic tag の整合を検証し、`JsonValue` を general union として emit しようとする経路を `semantic_conflict` または `unsupported_syntax` で止める。
+- target が `JsonValue` nominal carrier または decode op 写像をまだ持たない場合は fail-closed にし、`object` / `String` / `PyAny` へ黙って退化させてはならない。
+
 ## 7. 型推論ルール
 
 - `Name`: 型環境から解決。未解決は `inference_failure`。
@@ -663,5 +707,6 @@ python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
 
 - EAST2 は「何をしたいか（意味タグ）」のみを持ち、`EAST3` で object 境界命令（`Obj*`, `ForCore.iter_plan`）へ確定する。
 - `EAST2 -> EAST3` lowering は `type_expr` を見て `optional` / `dynamic union` / `nominal ADT` を別 lane に分け、`resolved_type` の文字列再分解で意味論を決めてはならない。
+- `JsonValue` decode / narrowing は `EAST2 -> EAST3` で resolved semantic tag（`json.loads`, `json.value.as_*`, `json.obj.get_*`, `json.arr.get_*`）または等価の dedicated IR category へ正規化し、backend に raw method 名解釈を残してはならない。
 - frontend 固有（Python builtins/std）の解決は adapter 層で中立タグへ変換してから EAST2 へ渡す。
 - backend/hook は EAST3 以降で言語固有写像のみを担当し、EAST2 契約の再解釈をしない。

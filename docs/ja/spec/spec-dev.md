@@ -556,6 +556,9 @@ linked module(EAST3)
 - frontend / normalize / validator / lowering は、`type_expr` が存在する node で `resolved_type` を再分解して意味論を決めてはならない。
 - `OptionalType`、`UnionType(union_mode=dynamic)`、`NominalAdtType` は distinct lane として扱い、1 つの string parser helper へ押し込んではならない。
 - `JsonValue` / `JsonObj` / `JsonArr` は general union ではなく nominal closed ADT lane として扱う。decode-first 契約を保ったまま IR/validator/backend へ接続し、`object` fallback の別名にしてはならない。
+- `json.loads`, `loads_obj`, `loads_arr`, `JsonValue.as_*`, `JsonObj.get_*`, `JsonArr.get_*` の意味は frontend/lowering が `json.*` semantic tag family（または等価の dedicated IR category）へ正規化して確定する。backend/hook が raw callee/attr 名から JSON decode semantics を再解釈してはならない。
+- validator は `JsonValue` nominal lane で `type_expr`、decode API、semantic tag の整合を検証し、`JsonValue` を general union や dynamic helper fallback として扱おうとする経路を `semantic_conflict` / `unsupported_syntax` で停止させる。
+- backend が `JsonValue` nominal carrier や decode op 写像を未実装の場合は fail-closed にする。`object` / `PyAny` / `String` 等への silent fallback で受理してはならない。
 - `toolchain/link/runtime_template_specializer.py`、optimizer pass、backend helper が独自に型文字列 parser / substitute を持つ場合でも、`type_expr` 導入後はそれを正本にして動作させなければならない。mirror 文字列の再生成は許可してよいが、意味再構成は許可しない。
 - unsupported な general union を backend が `object` / `String` / 類似 fallback に黙って潰してはならない。temporary compat を残す場合は fail-fast guard、decision log、removal plan を同時に持つ。
 - `type_expr` と `resolved_type` mirror の矛盾、または nominal ADT を general union として emit しようとする経路は `semantic_conflict` または `unsupported_syntax` として fail-closed にする。
