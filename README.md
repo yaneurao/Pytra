@@ -9,8 +9,7 @@
 <div align="center">
     <h1>Pytra</h1>
     <img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white"> (subset) is the source language for Pytra, which transpiles code into multiple target languages.
-    <p><a href="docs/en/index.md">Read the Docs</a></p>
-    <p><a href="docs/ja/tutorial/README.md">Getting Started (Japanese)</a></p>
+    <p><a href="#read-the-docs">Read the Docs</a></p>
 </div>
 
 <div align="center">
@@ -154,6 +153,12 @@ Execution times for [sample programs](sample/readme.md) written in Python and th
 - PHP: [View full code](sample/php/16_glass_sculpture_chaos.php)
 
 </details>
+
+## Read the Docs
+
+- English docs: [docs/en/index.md](docs/en/index.md)
+- Japanese tutorial: [docs/ja/tutorial/README.md](docs/ja/tutorial/README.md)
+- Japanese docs top: [docs/ja/README.md](docs/ja/README.md)
 
 ## License
 
