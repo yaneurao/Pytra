@@ -913,6 +913,44 @@ def _sh_make_assign_stmt(
     return node
 
 
+def _sh_make_tuple_destructure_assign_stmt(
+    source_span: dict[str, Any],
+    *,
+    line_no: int,
+    first_name: str,
+    first_col: int,
+    first_type: str,
+    second_name: str,
+    second_col: int,
+    second_type: str,
+    value: dict[str, Any],
+) -> dict[str, Any]:
+    """2 要素 tuple destructuring の代入文 node を構築する。"""
+    return _sh_make_assign_stmt(
+        source_span,
+        _sh_make_tuple_expr(
+            _sh_span(line_no, first_col, second_col + len(second_name)),
+            [
+                _sh_make_name_expr(
+                    _sh_span(line_no, first_col, first_col + len(first_name)),
+                    first_name,
+                    resolved_type=first_type,
+                ),
+                _sh_make_name_expr(
+                    _sh_span(line_no, second_col, second_col + len(second_name)),
+                    second_name,
+                    resolved_type=second_type,
+                ),
+            ],
+            resolved_type="unknown",
+            repr_text=f"{first_name}, {second_name}",
+        ),
+        value,
+        declare=False,
+        decl_type=None,
+    )
+
+
 def _sh_make_ann_assign_stmt(
     source_span: dict[str, Any],
     target: dict[str, Any],
@@ -6980,33 +7018,20 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     )
                 )
                 continue
-            target_expr = _sh_make_tuple_expr(
-                _sh_span(ln_no, c1, c2 + len(n2)),
-                [
-                    _sh_make_name_expr(
-                        _sh_span(ln_no, c1, c1 + len(n1)),
-                        n1,
-                        resolved_type=name_types.get(n1, "unknown"),
-                    ),
-                    _sh_make_name_expr(
-                        _sh_span(ln_no, c2, c2 + len(n2)),
-                        n2,
-                        resolved_type=name_types.get(n2, "unknown"),
-                    ),
-                ],
-                resolved_type="unknown",
-                repr_text=f"{n1}, {n2}",
-            )
             pending_blank_count = _sh_push_stmt_with_trivia(
                 stmts,
                 pending_leading_trivia,
                 pending_blank_count,
-                _sh_make_assign_stmt(
+                _sh_make_tuple_destructure_assign_stmt(
                     _sh_stmt_span(merged_line_end, ln_no, c1, len(ln_txt)),
-                    target_expr,
-                    rhs,
-                    declare=False,
-                    decl_type=None,
+                    line_no=ln_no,
+                    first_name=n1,
+                    first_col=c1,
+                    first_type=name_types.get(n1, "unknown"),
+                    second_name=n2,
+                    second_col=c2,
+                    second_type=name_types.get(n2, "unknown"),
+                    value=rhs,
                 ),
             )
             continue
