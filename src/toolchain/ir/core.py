@@ -236,6 +236,30 @@ def _sh_lookup_noncpp_attr_runtime_call(
     return "", ""
 
 
+def _sh_annotate_noncpp_attr_call_expr(
+    payload: dict[str, Any],
+    *,
+    owner_expr: dict[str, Any] | None,
+    attr_name: str,
+) -> dict[str, Any]:
+    runtime_owner, runtime_call = _sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)
+    if runtime_call == "":
+        return payload
+    binding_semantic_tag = lookup_runtime_binding_semantic_tag(runtime_owner, attr_name)
+    _sh_annotate_resolved_runtime_expr(
+        payload,
+        runtime_call=runtime_call,
+        runtime_source="module_attr",
+        module_id=runtime_owner,
+        runtime_symbol=attr_name,
+        semantic_tag=binding_semantic_tag,
+    )
+    std_module_attr_ret = lookup_stdlib_function_return_type(attr_name)
+    if std_module_attr_ret != "":
+        payload["resolved_type"] = std_module_attr_ret
+    return payload
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -4932,26 +4956,11 @@ class _ShExprParser:
                     attr = str(node.get("attr", ""))
                     owner = node.get("value")
                     owner_t = str(owner.get("resolved_type", "unknown")) if isinstance(owner, dict) else "unknown"
-                    (
-                        noncpp_module_runtime_owner,
-                        noncpp_module_runtime_call,
-                    ) = _sh_lookup_noncpp_attr_runtime_call(owner if isinstance(owner, dict) else None, attr)
-                    if noncpp_module_runtime_call != "":
-                        binding_semantic_tag = lookup_runtime_binding_semantic_tag(
-                            noncpp_module_runtime_owner,
-                            attr,
-                        )
-                        _sh_annotate_resolved_runtime_expr(
-                            payload,
-                            runtime_call=noncpp_module_runtime_call,
-                            runtime_source="module_attr",
-                            module_id=noncpp_module_runtime_owner,
-                            runtime_symbol=attr,
-                            semantic_tag=binding_semantic_tag,
-                        )
-                        std_module_attr_ret = lookup_stdlib_function_return_type(attr)
-                        if std_module_attr_ret != "":
-                            payload["resolved_type"] = std_module_attr_ret
+                    _sh_annotate_noncpp_attr_call_expr(
+                        payload,
+                        owner_expr=owner if isinstance(owner, dict) else None,
+                        attr_name=attr,
+                    )
                     _sh_annotate_runtime_method_call_expr(
                         payload,
                         owner_type=owner_t,
