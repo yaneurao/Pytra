@@ -97,7 +97,40 @@ str _strip_known_suffix(const str& path_txt) {
     return path_txt;
 }
 
+str _dict_get_str(const dict<str, object>& src, const str& key, const str& default_value = "") {
+    auto it = src.find(key);
+    if (it == src.end() || !py_isinstance(it->second, PYTRA_TID_STR)) {
+        return default_value;
+    }
+    return py_to_string(it->second);
+}
+
+ResolvedBackendSpec _coerce_backend_spec(const dict<str, object>& spec) {
+    return ResolvedBackendSpec{
+        BackendSpecCarrier{
+            _dict_get_str(spec, "target_lang"),
+            _dict_get_str(spec, "extension"),
+        },
+        spec,
+    };
+}
+
+LayerOptionsCarrier _coerce_layer_options(const str& layer, const dict<str, object>& raw) {
+    return LayerOptionsCarrier{layer, raw};
+}
+
 }  // namespace
+
+dict<str, object> ResolvedBackendSpec::to_legacy_dict() const {
+    dict<str, object> out = raw_spec;
+    out["target_lang"] = make_object(carrier.target_lang);
+    out["extension"] = make_object(carrier.extension);
+    return out;
+}
+
+dict<str, object> LayerOptionsCarrier::to_legacy_dict() const {
+    return values;
+}
 
 list<str> list_backend_targets() {
     return list<str>{
@@ -124,14 +157,31 @@ pytra::std::pathlib::Path default_output_path(
 ) {
     pytra::std::pathlib::Path input_copy = input_path;
     str stem = _strip_known_suffix(input_copy.__str__());
-    return pytra::std::pathlib::Path(stem + _target_extension(target));
+    return pytra::std::pathlib::Path(stem + get_backend_spec_typed(target).carrier.extension);
 }
 
-dict<str, object> get_backend_spec(const str& target) {
+ResolvedBackendSpec get_backend_spec_typed(const str& target) {
     dict<str, object> spec = {};
     spec["target_lang"] = make_object(target);
     spec["extension"] = make_object(_target_extension(target));
-    return spec;
+    return ResolvedBackendSpec{
+        BackendSpecCarrier{target, _target_extension(target)},
+        spec,
+    };
+}
+
+dict<str, object> get_backend_spec(const str& target) {
+    return get_backend_spec_typed(target).to_legacy_dict();
+}
+
+LayerOptionsCarrier resolve_layer_options_typed(
+    const ResolvedBackendSpec& spec,
+    const str& layer,
+    const dict<str, str>& raw
+) {
+    (void)spec;
+    (void)raw;
+    return LayerOptionsCarrier{layer, dict<str, object>{}};
 }
 
 dict<str, object> resolve_layer_options(
@@ -139,10 +189,7 @@ dict<str, object> resolve_layer_options(
     const str& layer,
     const dict<str, str>& raw
 ) {
-    (void)spec;
-    (void)layer;
-    (void)raw;
-    return dict<str, object>{};
+    return resolve_layer_options_typed(_coerce_backend_spec(spec), layer, raw).to_legacy_dict();
 }
 
 dict<str, object> lower_ir(
@@ -171,14 +218,17 @@ str emit_source(
     const pytra::std::pathlib::Path& output_path,
     const dict<str, object>& emitter_options
 ) {
+    return emit_source_typed(_coerce_backend_spec(spec), ir, output_path, _coerce_layer_options("emitter", emitter_options));
+}
+
+str emit_source_typed(
+    const ResolvedBackendSpec& spec,
+    const dict<str, object>& ir,
+    const pytra::std::pathlib::Path& output_path,
+    const LayerOptionsCarrier& emitter_options
+) {
     (void)emitter_options;
-    const str target = [&]() -> str {
-        auto it = spec.find("target_lang");
-        if (it == spec.end()) {
-            return str("");
-        }
-        return py_to_string(it->second);
-    }();
+    const str target = spec.carrier.target_lang;
     if (target != "cpp") {
         throw ::std::runtime_error(
             py_to_string("[not_implemented] selfhost backend_registry_static.emit_source only supports cpp: " + target)
@@ -205,6 +255,13 @@ str emit_source(
 
 void apply_runtime_hook(
     const dict<str, object>& spec,
+    const pytra::std::pathlib::Path& output_path
+) {
+    apply_runtime_hook_typed(_coerce_backend_spec(spec), output_path);
+}
+
+void apply_runtime_hook_typed(
+    const ResolvedBackendSpec& spec,
     const pytra::std::pathlib::Path& output_path
 ) {
     (void)spec;

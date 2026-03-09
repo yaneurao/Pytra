@@ -40,7 +40,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 3. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-02] Lock the typed-boundary contract and non-goals so they stay consistent with `spec-dev`, `spec-runtime`, and `spec-boxing`.
 4. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-01] Define typed carrier specs for compiler root payloads (EAST document, backend spec, layer options, emit request/result).
 5. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-02] Introduce typed carriers and thin legacy adapters in the Python source of truth.
-6. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-03] Introduce typed carrier mirrors or typed wrapper APIs in the C++ selfhost/native compiler interfaces and reduce raw `dict<str, object>` exchange.
+6. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-03] Introduce typed carrier mirrors or typed wrapper APIs in the C++ selfhost/native compiler interfaces and reduce raw `dict<str, object>` exchange.
 7. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Move selfhost parser / EAST builder node construction onto typed constructors / builder helpers and gradually retire direct `dict<str, object>{{...}}` assembly.
 8. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Retreat remaining `make_object` usage in generated compiler / selfhost runtime down to serialization/export seams only.
 9. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Separate JSON, extern/hooks, and other intentionally dynamic carriers from the compiler typed model behind `JsonValue` or explicit adapters.
@@ -51,6 +51,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-02] Fixed that P2 is not an `Any/object` removal plan but a typed-compiler-carrier plan, that JSON must converge on the `JsonValue` nominal lane, and that backend/runtime must not reinterpret `type_expr` or `dispatch_mode` semantics during the migration.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-01] Fixed the fields for `CompilerRootDocument`, `BackendSpecCarrier`, `LayerOptionsCarrier`, `EmitRequestCarrier`, `ModuleArtifactCarrier`, and `ProgramArtifactCarrier`; callables stay local implementation detail, while raw EAST/IR docs are treated as migration fields only until S3.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-02] Made `src/toolchain/compiler/typed_boundary.py` the source of truth, moved host/static backend registries plus `ir2lang.py` / `py2x.py` onto typed-carrier-first paths, and shrank the old `dict[str, object]` surfaces to thin `to_legacy_dict()` adapters, a `load_east3_document_typed()` wrapper, and the writer boundary.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-03] Added native C++ `CompilerRootDocument` / `ResolvedBackendSpec` / `LayerOptionsCarrier` wrappers plus `*_typed()` APIs, then updated `selfhost/py2cpp.cpp` and `selfhost/py2cpp_stage2.cpp` to route through those wrappers and fall back to `to_legacy_dict()` only at the remaining legacy seams.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 

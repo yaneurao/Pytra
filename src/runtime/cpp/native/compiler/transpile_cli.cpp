@@ -80,11 +80,71 @@ dict<str, object> _load_json_root_dict(const pytra::std::pathlib::Path& json_pat
     return root.raw;
 }
 
+str _dict_get_str(const dict<str, object>& src, const str& key, const str& default_value = "") {
+    auto it = src.find(key);
+    if (it == src.end() || !py_isinstance(it->second, PYTRA_TID_STR)) {
+        return default_value;
+    }
+    return py_to_string(it->second);
+}
+
+int64 _dict_get_int(const dict<str, object>& src, const str& key, int64 default_value = 0) {
+    auto it = src.find(key);
+    if (it == src.end() || !py_isinstance(it->second, PYTRA_TID_INT)) {
+        return default_value;
+    }
+    return obj_to_int64(it->second);
+}
+
 }  // namespace
 
 namespace pytra::compiler::transpile_cli {
 
-dict<str, object> load_east3_document(
+dict<str, object> CompilerRootDocument::to_legacy_dict() const {
+    dict<str, object> out = raw_module_doc;
+    out["kind"] = make_object(module_kind);
+    if (meta.source_path != "") {
+        out["source_path"] = make_object(meta.source_path);
+    }
+    out["east_stage"] = make_object(meta.east_stage);
+    out["schema_version"] = make_object(meta.schema_version);
+    dict<str, object> meta_dict = {};
+    auto meta_it = out.find("meta");
+    if (meta_it != out.end() && py_isinstance(meta_it->second, PYTRA_TID_DICT)) {
+        meta_dict = obj_to_dict(meta_it->second);
+    }
+    meta_dict["dispatch_mode"] = make_object(meta.dispatch_mode);
+    if (meta.parser_backend != "") {
+        meta_dict["parser_backend"] = make_object(meta.parser_backend);
+    }
+    out["meta"] = make_object(meta_dict);
+    return out;
+}
+
+CompilerRootDocument coerce_compiler_root_document(
+    const dict<str, object>& raw_doc,
+    const str& source_path,
+    const str& parser_backend
+) {
+    dict<str, object> meta_dict = {};
+    auto meta_it = raw_doc.find("meta");
+    if (meta_it != raw_doc.end() && py_isinstance(meta_it->second, PYTRA_TID_DICT)) {
+        meta_dict = obj_to_dict(meta_it->second);
+    }
+    return CompilerRootDocument{
+        CompilerRootMeta{
+            source_path,
+            _dict_get_int(raw_doc, "east_stage"),
+            _dict_get_int(raw_doc, "schema_version"),
+            _dict_get_str(meta_dict, "dispatch_mode"),
+            parser_backend,
+        },
+        _dict_get_str(raw_doc, "kind"),
+        raw_doc,
+    };
+}
+
+CompilerRootDocument load_east3_document_typed(
     const pytra::std::pathlib::Path& input_path,
     const str& parser_backend,
     const str& object_dispatch_mode,
@@ -98,7 +158,11 @@ dict<str, object> load_east3_document(
     pytra::std::pathlib::Path input_copy = input_path;
     const str input_text = input_copy.__str__();
     if (py_endswith(input_text, ".json")) {
-        return _load_json_root_dict(input_path);
+        return coerce_compiler_root_document(
+            _load_json_root_dict(input_path),
+            py_to_string(input_copy.__str__()),
+            parser_backend
+        );
     }
     if (!py_endswith(input_text, ".py")) {
         throw ::std::runtime_error("unsupported selfhost input: expected .py or .json");
@@ -107,9 +171,9 @@ dict<str, object> load_east3_document(
     pytra::std::pathlib::Path east_path = _temp_path(".east3.json");
     const ::std::string script =
         "import json, sys; "
-        "from toolchain.compiler.transpile_cli import load_east3_document; "
+        "from toolchain.compiler.transpile_cli import load_east3_document_typed; "
         "from pytra.std.pathlib import Path; "
-        "doc = load_east3_document("
+        "doc = load_east3_document_typed("
         "Path(sys.argv[1]), "
         "parser_backend=sys.argv[3], "
         "object_dispatch_mode=sys.argv[4], "
@@ -119,7 +183,7 @@ dict<str, object> load_east3_document(
         "dump_east3_after_opt=sys.argv[8], "
         "dump_east3_opt_trace=sys.argv[9], "
         "target_lang=sys.argv[10]); "
-        "open(sys.argv[2], 'w', encoding='utf-8').write(json.dumps(doc, ensure_ascii=False, indent=2) + '\\n')";
+        "open(sys.argv[2], 'w', encoding='utf-8').write(json.dumps(doc.to_legacy_dict(), ensure_ascii=False, indent=2) + '\\n')";
     const ::std::string cmd =
         "PYTHONPATH=src${PYTHONPATH:+:$PYTHONPATH} python3 -c "
         + _shell_quote(script)
@@ -145,11 +209,39 @@ dict<str, object> load_east3_document(
         + _shell_quote(py_to_string(target_lang));
     try {
         _run_host_python_command(cmd, "selfhost direct route failed to build EAST3");
-        return _load_json_root_dict(east_path);
+        return coerce_compiler_root_document(
+            _load_json_root_dict(east_path),
+            py_to_string(input_copy.__str__()),
+            parser_backend
+        );
     } catch (...) {
         _remove_if_exists(east_path);
         throw;
     }
+}
+
+dict<str, object> load_east3_document(
+    const pytra::std::pathlib::Path& input_path,
+    const str& parser_backend,
+    const str& object_dispatch_mode,
+    const str& east3_opt_level,
+    const str& east3_opt_pass,
+    const str& dump_east3_before_opt,
+    const str& dump_east3_after_opt,
+    const str& dump_east3_opt_trace,
+    const str& target_lang
+) {
+    return load_east3_document_typed(
+        input_path,
+        parser_backend,
+        object_dispatch_mode,
+        east3_opt_level,
+        east3_opt_pass,
+        dump_east3_before_opt,
+        dump_east3_after_opt,
+        dump_east3_opt_trace,
+        target_lang
+    ).to_legacy_dict();
 }
 
 }  // namespace pytra::compiler::transpile_cli
