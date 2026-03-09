@@ -259,10 +259,17 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("dict<str, object> _sh_make_class_def_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_assign_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_ann_assign_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_arg_node(", text)
+        self.assertIn("dict<str, object> _sh_make_lambda_arg_entry(", text)
+        self.assertIn("dict<str, object> _sh_make_keyword_arg(", text)
+        self.assertIn("dict<str, object> _sh_make_cast_entry(", text)
         self.assertNotIn('dict<str, object> item = dict<str, object>{{"kind", make_object("FunctionDef")}', text)
         self.assertNotIn('dict<str, object> cls_item = dict<str, object>{{"kind", make_object("ClassDef")}', text)
         self.assertNotIn('body_items.append(dict<str, object>(dict<str, object>{{"kind", make_object("Import")}', text)
         self.assertNotIn('body_items.append(dict<str, object>(dict<str, object>{{"kind", make_object("ImportFrom")}', text)
+        self.assertNotIn('keywords.append(dict<str, object>(dict<str, object>{{"arg", make_object(py_to_string(py_dict_get(name_tok, py_to_string("v"))))}, {"value", make_object(kw_val)}}))', text)
+        self.assertNotIn('casts.append(dict<str, object>(dict<str, str>{{"on", "left"}, {"from", "int64"}, {"to", "float64"}, {"reason", "numeric_promotion"}}))', text)
+        self.assertNotIn('casts.append(dict<str, object>(dict<str, str>{{"on", "right"}, {"from", "int64"}, {"to", "float64"}, {"reason", "numeric_promotion"}}))', text)
 
 
 if __name__ == "__main__":

@@ -70,18 +70,35 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertTrue(callable(static_spec.get("emit_module")))
         self.assertIn("program_writer", static_spec)
 
-    def test_selfhost_cpp_entry_uses_typed_native_compiler_wrappers(self) -> None:
+    def test_selfhost_cpp_entry_keeps_compiler_shims_while_native_headers_expose_typed_wrappers(self) -> None:
         selfhost_cpp = (ROOT / "selfhost" / "py2cpp.cpp").read_text(encoding="utf-8")
         selfhost_stage2 = (ROOT / "selfhost" / "py2cpp_stage2.cpp").read_text(encoding="utf-8")
+        selfhost_src = (ROOT / "src" / "py2x-selfhost.py").read_text(encoding="utf-8")
         native_transpile = (ROOT / "src" / "runtime" / "cpp" / "native" / "compiler" / "transpile_cli.h").read_text(encoding="utf-8")
         native_registry = (ROOT / "src" / "runtime" / "cpp" / "native" / "compiler" / "backend_registry_static.h").read_text(encoding="utf-8")
 
-        for text in (selfhost_cpp, selfhost_stage2):
-            self.assertIn("load_east3_document_typed", text)
-            self.assertIn("get_backend_spec_typed", text)
-            self.assertIn("resolve_layer_options_typed", text)
-            self.assertIn("emit_source_typed", text)
-            self.assertIn("apply_runtime_hook_typed", text)
+        self.assertIn("def _load_east3(", selfhost_src)
+        self.assertIn("def _get_spec(", selfhost_src)
+        self.assertIn("def _resolve_opts(", selfhost_src)
+        self.assertIn("def _emit(", selfhost_src)
+        self.assertIn("def _apply_runtime(", selfhost_src)
+
+        self.assertIn("dict<str, object> _load_east3(", selfhost_cpp)
+        self.assertIn("dict<str, object> _get_spec(", selfhost_cpp)
+        self.assertIn("dict<str, object> _resolve_opts(", selfhost_cpp)
+        self.assertIn("str _emit(", selfhost_cpp)
+        self.assertIn("void _apply_runtime(", selfhost_cpp)
+
+        self.assertIn("CompilerRootDocument _load_east3_typed(", selfhost_stage2)
+        self.assertIn("ResolvedBackendSpec _get_spec_typed(", selfhost_stage2)
+        self.assertIn("LayerOptionsCarrier _resolve_opts_typed(", selfhost_stage2)
+        self.assertIn("str _emit(", selfhost_stage2)
+        self.assertIn("void _apply_runtime(", selfhost_stage2)
+        self.assertIn("load_east3_document_typed", selfhost_stage2)
+        self.assertIn("get_backend_spec_typed", selfhost_stage2)
+        self.assertIn("resolve_layer_options_typed", selfhost_stage2)
+        self.assertIn("emit_source_typed", selfhost_stage2)
+        self.assertIn("apply_runtime_hook_typed", selfhost_stage2)
 
         self.assertIn("struct CompilerRootDocument", native_transpile)
         self.assertIn("load_east3_document_typed", native_transpile)
@@ -89,6 +106,48 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("struct LayerOptionsCarrier", native_registry)
         self.assertIn("get_backend_spec_typed", native_registry)
         self.assertIn("emit_source_typed", native_registry)
+
+    def test_native_cpp_typed_boundary_make_object_usage_stays_on_export_seams(self) -> None:
+        native_transpile = (
+            ROOT / "src" / "runtime" / "cpp" / "native" / "compiler" / "transpile_cli.cpp"
+        ).read_text(encoding="utf-8")
+        native_registry = (
+            ROOT / "src" / "runtime" / "cpp" / "native" / "compiler" / "backend_registry_static.cpp"
+        ).read_text(encoding="utf-8")
+
+        transpile_make_object_lines = [
+            line.strip()
+            for line in native_transpile.splitlines()
+            if "make_object(" in line
+        ]
+        registry_make_object_lines = [
+            line.strip()
+            for line in native_registry.splitlines()
+            if "make_object(" in line
+        ]
+
+        self.assertEqual(
+            transpile_make_object_lines,
+            [
+                'out["kind"] = make_object(module_kind);',
+                'out["source_path"] = make_object(meta.source_path);',
+                'out["east_stage"] = make_object(meta.east_stage);',
+                'out["schema_version"] = make_object(meta.schema_version);',
+                'meta_dict["dispatch_mode"] = make_object(meta.dispatch_mode);',
+                'meta_dict["parser_backend"] = make_object(meta.parser_backend);',
+                'out["meta"] = make_object(meta_dict);',
+            ],
+        )
+        self.assertEqual(
+            registry_make_object_lines,
+            [
+                'out["target_lang"] = make_object(carrier.target_lang);',
+                'out["extension"] = make_object(carrier.extension);',
+                'spec["target_lang"] = make_object(target);',
+                'spec["extension"] = make_object(_target_extension(target));',
+                'ir_path.write_text(pytra::std::json::dumps(make_object(ir), true));',
+            ],
+        )
 
     def test_typed_backend_specs_preserve_legacy_metadata(self) -> None:
         host_registry._SPEC_CACHE.clear()

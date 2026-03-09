@@ -76,8 +76,10 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_make_import_symbol_binding()` を pre-scan / import registration / module parse 全経路に適用し、source-of-truth 側の import symbol metadata carrier を raw dict 代入なしで統一した。`test_east_core.py` には再流入 guard を追加し、tracked selfhost test は誤って tracked mirror 前提を置いていた箇所を整理した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_make_import_resolution_binding()` の resolution tail を known field のみへ固定し、`_sh_make_import_resolution_meta()` / `_sh_make_module_root()` の binding 型ヒントも `dict[str, Any]` 正本へ揃えた。これで import-resolution lane の generic `resolution.items()` merge をやめ、source guard でも raw loop の再流入を検知できる。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_make_lambda_arg_entry()` / `_sh_make_keyword_arg()` / `_sh_make_cast_entry()` を追加し、lambda parameter carrier、call keyword carrier、numeric promotion cast metadata の inline dict を helper 正本へ寄せた。`test_east_core.py` でも `arg_entries.append(...)` / `keywords.append(...)` / `casts.append(...)` の raw dict 再流入を落とす。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_py2x_entrypoints_contract.py` に native compiler wrapper guard を追加し、`transpile_cli.cpp` / `backend_registry_static.cpp` の `make_object(...)` が `to_legacy_dict()` と JSON export seam 以外へ増えたら fail-fast するようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_make_decl_meta()` を追加し、top-level function の `runtime_abi_v1` / `template_v1` と extern var の `extern_var_v1` metadata carrier を raw dict 組み立てなしで共通 helper へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_import_binding_fields()` / `_sh_make_import_resolution_binding()` を追加し、module root tail に残っていた `binding.get(...)` 連鎖と `dict(binding)` bridge を helper 経由へ寄せた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated C++ mirror に `_sh_make_arg_node()` / `_sh_make_lambda_arg_entry()` / `_sh_make_keyword_arg()` / `_sh_make_cast_entry()` を追加し、lambda args・call keywords・numeric cast metadata の open-coded `make_object` dict を helper carrier へ寄せた。`test_prepare_selfhost_source.py` でも旧 inline 形の再流入を検知する。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
