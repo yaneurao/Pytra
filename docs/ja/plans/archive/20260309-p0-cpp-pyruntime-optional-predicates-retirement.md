@@ -56,3 +56,5 @@
 ## 決定ログ
 
 - 2026-03-09: 本計画は `optional` predicate sugar のみを扱い、`py_is_none(optional<T>)` は非対象とする。
+- 2026-03-09: checked-in current source に `py_is_dict/list/set/str/bool(optional<T>)` の direct callsite は無く、置換フェーズは no-op として扱う。
+- 2026-03-09: canonical rule は `if (v.has_value()) { py_is_*(*v) } else { false }` を callsite 側で明示する形とする。

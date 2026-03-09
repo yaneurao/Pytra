@@ -32,16 +32,6 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01] `optional` predicate sugar を退役する。
-  - 文脈: [p0-cpp-pyruntime-optional-predicates-retirement.md](../plans/p0-cpp-pyruntime-optional-predicates-retirement.md)
-  - 進捗メモ: `has_value()` 分岐を canonical にする。
-  - [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01-S1-01] checked-in callsite を棚卸しする。
-  - [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01-S1-02] explicit branch rule を決定ログに固定する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01-S2-01] representative callsite を置換する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01-S2-02] regression / inventory guard を更新する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01-S3-01] `py_runtime.h` から sugar を削除する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01-S3-02] parity / docs / archive を更新して閉じる。
-
 - [ ] [ID: P0-CPP-PYRUNTIME-ARGV-STATE-01] argv state surface を最小化する。
   - 文脈: [p0-cpp-pyruntime-argv-state-slim.md](../plans/p0-cpp-pyruntime-argv-state-slim.md)
   - 進捗メモ: compat helper を削って最小 surface に寄せる。

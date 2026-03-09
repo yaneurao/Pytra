@@ -1284,28 +1284,6 @@ static inline bool py_is_int(const object& v) { return py_obj_cast<PyIntObj>(v) 
 static inline bool py_is_float(const object& v) { return py_obj_cast<PyFloatObj>(v) != nullptr; }
 static inline bool py_is_bool(const object& v) { return py_obj_cast<PyBoolObj>(v) != nullptr; }
 
-template <class T> static inline bool py_is_dict(const ::std::optional<T>& v) {
-    if (!v.has_value()) return false;
-    return py_is_dict(*v);
-}
-template <class T> static inline bool py_is_list(const ::std::optional<T>& v) {
-    if (!v.has_value()) return false;
-    return py_is_list(*v);
-}
-template <class T> static inline bool py_is_set(const ::std::optional<T>& v) {
-    if (!v.has_value()) return false;
-    return py_is_set(*v);
-}
-template <class T> static inline bool py_is_str(const ::std::optional<T>& v) {
-    if (!v.has_value()) return false;
-    return py_is_str(*v);
-}
-template <class T> static inline bool py_is_bool(const ::std::optional<T>& v) {
-    if (!v.has_value()) return false;
-    return py_is_bool(*v);
-}
-
-
 // type_id 判定ロジックは generated built_in 層（py_tid_*）を正本とする。
 #include "runtime/cpp/generated/built_in/type_id.h"
 
