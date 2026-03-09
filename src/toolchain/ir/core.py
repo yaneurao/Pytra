@@ -451,6 +451,22 @@ def _sh_annotate_iterator_builtin_call_expr(
     )
 
 
+def _sh_annotate_open_call_expr(
+    payload: dict[str, Any],
+    *,
+    semantic_tag: str | None = None,
+) -> dict[str, Any]:
+    return _sh_annotate_runtime_call_expr(
+        payload,
+        lowered_kind="BuiltinCall",
+        builtin_name="open",
+        runtime_call="open",
+        module_id="pytra.core.py_runtime",
+        runtime_symbol="open",
+        semantic_tag=semantic_tag,
+    )
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -4987,13 +5003,8 @@ class _ShExprParser:
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif fn_name == "open":
-                    _sh_annotate_runtime_call_expr(
+                    _sh_annotate_open_call_expr(
                         payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="open",
-                        runtime_call="open",
-                        module_id="pytra.core.py_runtime",
-                        runtime_symbol="open",
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif fn_name in {"iter", "next", "reversed"}:
