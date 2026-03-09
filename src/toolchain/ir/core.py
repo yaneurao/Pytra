@@ -236,6 +236,110 @@ def _sh_make_expr_stmt(value: dict[str, Any], source_span: dict[str, Any]) -> di
     return {"kind": "Expr", "source_span": source_span, "value": value}
 
 
+def _sh_make_name_expr(
+    source_span: dict[str, Any],
+    name: str,
+    resolved_type: str = "unknown",
+    *,
+    borrow_kind: str = "value",
+    type_expr: dict[str, Any] | None = None,
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`Name` 式 node を構築する。"""
+    node: dict[str, Any] = {
+        "kind": "Name",
+        "source_span": source_span,
+        "resolved_type": resolved_type,
+        "borrow_kind": borrow_kind,
+        "casts": [],
+        "repr": repr_text if repr_text != "" else name,
+        "id": name,
+    }
+    if type_expr is not None:
+        node["type_expr"] = type_expr
+    return node
+
+
+def _sh_make_tuple_expr(
+    source_span: dict[str, Any],
+    elements: list[dict[str, Any]],
+    *,
+    resolved_type: str = "",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`Tuple` 式 node を構築する。"""
+    tuple_type = resolved_type
+    if tuple_type == "":
+        elem_types = [str(elem.get("resolved_type", "unknown")) for elem in elements]
+        tuple_type = f"tuple[{', '.join(elem_types)}]" if len(elem_types) > 0 else "tuple[]"
+    tuple_repr = repr_text
+    if tuple_repr == "":
+        tuple_repr = ", ".join(str(elem.get("repr", "")) for elem in elements)
+    return {
+        "kind": "Tuple",
+        "source_span": source_span,
+        "resolved_type": tuple_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": tuple_repr,
+        "elements": elements,
+    }
+
+
+def _sh_make_assign_stmt(
+    source_span: dict[str, Any],
+    target: dict[str, Any],
+    value: dict[str, Any],
+    *,
+    declare: bool,
+    declare_init: bool = False,
+    decl_type: str | None = None,
+) -> dict[str, Any]:
+    """`Assign` 文 node を構築する。"""
+    node: dict[str, Any] = {
+        "kind": "Assign",
+        "source_span": source_span,
+        "target": target,
+        "value": value,
+        "declare": declare,
+        "decl_type": decl_type,
+    }
+    if declare_init:
+        node["declare_init"] = True
+    return node
+
+
+def _sh_make_ann_assign_stmt(
+    source_span: dict[str, Any],
+    target: dict[str, Any],
+    annotation: str,
+    *,
+    annotation_type_expr: dict[str, Any] | None = None,
+    value: dict[str, Any] | None = None,
+    declare: bool = True,
+    decl_type: str | None = None,
+    decl_type_expr: dict[str, Any] | None = None,
+    meta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """`AnnAssign` 文 node を構築する。"""
+    node: dict[str, Any] = {
+        "kind": "AnnAssign",
+        "source_span": source_span,
+        "target": target,
+        "annotation": annotation,
+        "value": value,
+        "declare": declare,
+        "decl_type": decl_type,
+    }
+    if annotation_type_expr is not None:
+        node["annotation_type_expr"] = annotation_type_expr
+    if decl_type_expr is not None:
+        node["decl_type_expr"] = decl_type_expr
+    if meta is not None:
+        node["meta"] = meta
+    return node
+
+
 def _sh_make_module_root(
     *,
     filename: str,
@@ -5837,23 +5941,18 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     source_span=_sh_span(ln_no, 0, len(ln_txt)),
                     hint="Add indented with-body.",
                 )
-            assign_stmt = {
-                "kind": "Assign",
-                "source_span": _sh_stmt_span(merged_line_end, ln_no, as_col, len(ln_txt)),
-                "target": {
-                    "kind": "Name",
-                    "source_span": _sh_span(ln_no, as_col, as_col + len(as_name)),
-                    "resolved_type": str(ctx_expr.get("resolved_type", "unknown")),
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": as_name,
-                    "id": as_name,
-                },
-                "value": ctx_expr,
-                "declare": True,
-                "declare_init": True,
-                "decl_type": str(ctx_expr.get("resolved_type", "unknown")),
-            }
+            assign_stmt = _sh_make_assign_stmt(
+                _sh_stmt_span(merged_line_end, ln_no, as_col, len(ln_txt)),
+                _sh_make_name_expr(
+                    _sh_span(ln_no, as_col, as_col + len(as_name)),
+                    as_name,
+                    resolved_type=str(ctx_expr.get("resolved_type", "unknown")),
+                ),
+                ctx_expr,
+                declare=True,
+                declare_init=True,
+                decl_type=str(ctx_expr.get("resolved_type", "unknown")),
+            )
             close_expr = _sh_parse_expr_lowered(f"{as_name}.close()", ln_no=ln_no, col=as_col, name_types=dict(name_types))
             try_stmt = {
                 "kind": "Try",
@@ -6051,18 +6150,20 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 target_expr["type_expr"] = ann_expr
             if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
                 name_types[str(target_expr.get("id", ""))] = ann
-            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                {
-                    "kind": "AnnAssign",
-                    "source_span": _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
-                    "target": target_expr,
-                    "annotation": ann,
-                    "annotation_type_expr": ann_expr,
-                    "value": None,
-                    "declare": True,
-                    "decl_type": ann,
-                    "decl_type_expr": ann_expr,
-                }
+            pending_blank_count = _sh_push_stmt_with_trivia(
+                stmts,
+                pending_leading_trivia,
+                pending_blank_count,
+                _sh_make_ann_assign_stmt(
+                    _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
+                    target_expr,
+                    ann,
+                    annotation_type_expr=ann_expr,
+                    value=None,
+                    declare=True,
+                    decl_type=ann,
+                    decl_type_expr=ann_expr,
+                ),
             )
             continue
 
@@ -6081,18 +6182,20 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 target_expr["type_expr"] = ann_expr
             if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
                 name_types[str(target_expr.get("id", ""))] = ann
-            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                {
-                    "kind": "AnnAssign",
-                    "source_span": _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
-                    "target": target_expr,
-                    "annotation": ann,
-                    "annotation_type_expr": ann_expr,
-                    "value": val_expr,
-                    "declare": True,
-                    "decl_type": ann,
-                    "decl_type_expr": ann_expr,
-                }
+            pending_blank_count = _sh_push_stmt_with_trivia(
+                stmts,
+                pending_leading_trivia,
+                pending_blank_count,
+                _sh_make_ann_assign_stmt(
+                    _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
+                    target_expr,
+                    ann,
+                    annotation_type_expr=ann_expr,
+                    value=val_expr,
+                    declare=True,
+                    decl_type=ann,
+                    decl_type_expr=ann_expr,
+                ),
             )
             continue
 
@@ -6159,64 +6262,47 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     {
                         "kind": "Swap",
                         "source_span": _sh_stmt_span(merged_line_end, ln_no, c1, len(ln_txt)),
-                        "left": {
-                            "kind": "Name",
-                            "source_span": _sh_span(ln_no, c1, c1 + len(n1)),
-                            "resolved_type": name_types.get(n1, "unknown"),
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": n1,
-                            "id": n1,
-                        },
-                        "right": {
-                            "kind": "Name",
-                            "source_span": _sh_span(ln_no, c2, c2 + len(n2)),
-                            "resolved_type": name_types.get(n2, "unknown"),
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": n2,
-                            "id": n2,
-                        },
+                        "left": _sh_make_name_expr(
+                            _sh_span(ln_no, c1, c1 + len(n1)),
+                            n1,
+                            resolved_type=name_types.get(n1, "unknown"),
+                        ),
+                        "right": _sh_make_name_expr(
+                            _sh_span(ln_no, c2, c2 + len(n2)),
+                            n2,
+                            resolved_type=name_types.get(n2, "unknown"),
+                        ),
                     }
                 )
                 continue
-            target_expr = {
-                "kind": "Tuple",
-                "source_span": _sh_span(ln_no, c1, c2 + len(n2)),
-                "resolved_type": "unknown",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": f"{n1}, {n2}",
-                "elements": [
-                    {
-                        "kind": "Name",
-                        "source_span": _sh_span(ln_no, c1, c1 + len(n1)),
-                        "resolved_type": name_types.get(n1, "unknown"),
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": n1,
-                        "id": n1,
-                    },
-                    {
-                        "kind": "Name",
-                        "source_span": _sh_span(ln_no, c2, c2 + len(n2)),
-                        "resolved_type": name_types.get(n2, "unknown"),
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": n2,
-                        "id": n2,
-                    },
+            target_expr = _sh_make_tuple_expr(
+                _sh_span(ln_no, c1, c2 + len(n2)),
+                [
+                    _sh_make_name_expr(
+                        _sh_span(ln_no, c1, c1 + len(n1)),
+                        n1,
+                        resolved_type=name_types.get(n1, "unknown"),
+                    ),
+                    _sh_make_name_expr(
+                        _sh_span(ln_no, c2, c2 + len(n2)),
+                        n2,
+                        resolved_type=name_types.get(n2, "unknown"),
+                    ),
                 ],
-            }
-            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                {
-                    "kind": "Assign",
-                    "source_span": _sh_stmt_span(merged_line_end, ln_no, c1, len(ln_txt)),
-                    "target": target_expr,
-                    "value": rhs,
-                    "declare": False,
-                    "decl_type": None,
-                }
+                resolved_type="unknown",
+                repr_text=f"{n1}, {n2}",
+            )
+            pending_blank_count = _sh_push_stmt_with_trivia(
+                stmts,
+                pending_leading_trivia,
+                pending_blank_count,
+                _sh_make_assign_stmt(
+                    _sh_stmt_span(merged_line_end, ln_no, c1, len(ln_txt)),
+                    target_expr,
+                    rhs,
+                    declare=False,
+                    decl_type=None,
+                ),
             )
             continue
 
@@ -6233,16 +6319,18 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 nm = str(target_expr.get("id", ""))
                 if nm != "":
                     name_types[nm] = str(decl_type)
-            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                {
-                    "kind": "Assign",
-                    "source_span": _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
-                    "target": target_expr,
-                    "value": val_expr,
-                    "declare": True,
-                    "declare_init": True,
-                    "decl_type": decl_type,
-                }
+            pending_blank_count = _sh_push_stmt_with_trivia(
+                stmts,
+                pending_leading_trivia,
+                pending_blank_count,
+                _sh_make_assign_stmt(
+                    _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
+                    target_expr,
+                    val_expr,
+                    declare=True,
+                    declare_init=True,
+                    decl_type=str(decl_type),
+                ),
             )
             continue
 
@@ -7090,26 +7178,21 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                             fexpr_col = ln_txt.find(fexpr_txt)
                             val_node = _sh_parse_expr_lowered(fexpr_txt, ln_no=ln_no, col=fexpr_col, name_types={})
                         class_body.append(
-                            {
-                                "kind": "AnnAssign",
-                                "source_span": _sh_span(ln_no, ln_txt.find(fname), len(ln_txt)),
-                                "target": {
-                                    "kind": "Name",
-                                    "source_span": _sh_span(ln_no, ln_txt.find(fname), ln_txt.find(fname) + len(fname)),
-                                    "resolved_type": fty,
-                                    "type_expr": fty_expr,
-                                    "borrow_kind": "value",
-                                    "casts": [],
-                                    "repr": fname,
-                                    "id": fname,
-                                },
-                                "annotation": fty,
-                                "annotation_type_expr": fty_expr,
-                                "value": val_node,
-                                "declare": True,
-                                "decl_type": fty,
-                                "decl_type_expr": fty_expr,
-                            }
+                            _sh_make_ann_assign_stmt(
+                                _sh_span(ln_no, ln_txt.find(fname), len(ln_txt)),
+                                _sh_make_name_expr(
+                                    _sh_span(ln_no, ln_txt.find(fname), ln_txt.find(fname) + len(fname)),
+                                    fname,
+                                    resolved_type=fty,
+                                    type_expr=fty_expr,
+                                ),
+                                fty,
+                                annotation_type_expr=fty_expr,
+                                value=val_node,
+                                declare=True,
+                                decl_type=fty,
+                                decl_type_expr=fty_expr,
+                            )
                         )
                         k += 1
                         continue
@@ -7127,23 +7210,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                 expr_col = name_col + len(fname) + 1
                             val_node = _sh_parse_expr_lowered(fexpr_txt, ln_no=ln_no, col=expr_col, name_types={})
                             class_body.append(
-                                {
-                                    "kind": "Assign",
-                                    "source_span": _sh_span(ln_no, name_col, len(ln_txt)),
-                                    "target": {
-                                        "kind": "Name",
-                                        "source_span": _sh_span(ln_no, name_col, name_col + len(fname)),
-                                        "resolved_type": str(val_node.get("resolved_type", "unknown")),
-                                        "borrow_kind": "value",
-                                        "casts": [],
-                                        "repr": fname,
-                                        "id": fname,
-                                    },
-                                    "value": val_node,
-                                    "declare": True,
-                                    "declare_init": True,
-                                    "decl_type": str(val_node.get("resolved_type", "unknown")),
-                                }
+                                _sh_make_assign_stmt(
+                                    _sh_span(ln_no, name_col, len(ln_txt)),
+                                    _sh_make_name_expr(
+                                        _sh_span(ln_no, name_col, name_col + len(fname)),
+                                        fname,
+                                        resolved_type=str(val_node.get("resolved_type", "unknown")),
+                                    ),
+                                    val_node,
+                                    declare=True,
+                                    declare_init=True,
+                                    decl_type=str(val_node.get("resolved_type", "unknown")),
+                                )
                             )
                             k += 1
                             continue
@@ -7164,23 +7242,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                 expr_col = name_col + len(fname) + 1
                             val_node = _sh_parse_expr_lowered(fexpr_txt, ln_no=ln_no, col=expr_col, name_types={})
                             class_body.append(
-                                {
-                                    "kind": "Assign",
-                                    "source_span": _sh_span(ln_no, name_col, len(ln_txt)),
-                                    "target": {
-                                        "kind": "Name",
-                                        "source_span": _sh_span(ln_no, name_col, name_col + len(fname)),
-                                        "resolved_type": str(val_node.get("resolved_type", "unknown")),
-                                        "borrow_kind": "value",
-                                        "casts": [],
-                                        "repr": fname,
-                                        "id": fname,
-                                    },
-                                    "value": val_node,
-                                    "declare": True,
-                                    "declare_init": True,
-                                    "decl_type": str(val_node.get("resolved_type", "unknown")),
-                                }
+                                _sh_make_assign_stmt(
+                                    _sh_span(ln_no, name_col, len(ln_txt)),
+                                    _sh_make_name_expr(
+                                        _sh_span(ln_no, name_col, name_col + len(fname)),
+                                        fname,
+                                        resolved_type=str(val_node.get("resolved_type", "unknown")),
+                                    ),
+                                    val_node,
+                                    declare=True,
+                                    declare_init=True,
+                                    decl_type=str(val_node.get("resolved_type", "unknown")),
+                                )
                             )
                             k += 1
                             continue
@@ -7507,26 +7580,21 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             ann_expr = _sh_ann_to_type_expr(ann)
             expr_col = ln.find(expr_txt)
             value_expr = _sh_parse_expr_lowered(expr_txt, ln_no=i, col=expr_col, name_types={})
-            ann_item: dict[str, Any] = {
-                "kind": "AnnAssign",
-                "source_span": _sh_span(i, ln.find(name), len(ln)),
-                "target": {
-                    "kind": "Name",
-                    "source_span": _sh_span(i, ln.find(name), ln.find(name) + len(name)),
-                    "resolved_type": ann,
-                    "type_expr": ann_expr,
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": name,
-                    "id": name,
-                },
-                "annotation": ann,
-                "annotation_type_expr": ann_expr,
-                "value": value_expr,
-                "declare": True,
-                "decl_type": ann,
-                "decl_type_expr": ann_expr,
-            }
+            ann_item = _sh_make_ann_assign_stmt(
+                _sh_span(i, ln.find(name), len(ln)),
+                _sh_make_name_expr(
+                    _sh_span(i, ln.find(name), ln.find(name) + len(name)),
+                    name,
+                    resolved_type=ann,
+                    type_expr=ann_expr,
+                ),
+                ann,
+                annotation_type_expr=ann_expr,
+                value=value_expr,
+                declare=True,
+                decl_type=ann,
+                decl_type_expr=ann_expr,
+            )
             extern_var_meta = _sh_collect_extern_var_metadata(
                 target_name=name,
                 annotation=ann,
@@ -7536,9 +7604,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             )
             if extern_var_meta is not None:
                 ann_item["meta"] = {"extern_var_v1": extern_var_meta}
-            body_items.append(
-                ann_item
-            )
+            body_items.append(ann_item)
             i = logical_end + 1
             continue
 
@@ -7557,18 +7623,15 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             val_node = _sh_parse_expr_lowered(expr_txt, ln_no=i, col=expr_col, name_types={})
             decl_type = str(val_node.get("resolved_type", "unknown"))
             declare_name = isinstance(target_node, dict) and target_node.get("kind") == "Name"
-            assign_item: dict[str, Any] = {
-                "kind": "Assign",
-                "source_span": _sh_span(i, target_col, len(ln)),
-                "target": target_node,
-                "value": val_node,
-                "declare": declare_name,
-                "decl_type": decl_type if declare_name else None,
-            }
-            if declare_name:
-                assign_item["declare_init"] = True
             body_items.append(
-                assign_item
+                _sh_make_assign_stmt(
+                    _sh_span(i, target_col, len(ln)),
+                    target_node,
+                    val_node,
+                    declare=declare_name,
+                    declare_init=declare_name,
+                    decl_type=decl_type if declare_name else None,
+                )
             )
             i = logical_end + 1
             continue
