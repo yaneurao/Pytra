@@ -53,6 +53,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-01] `CompilerRootDocument` / `BackendSpecCarrier` / `LayerOptionsCarrier` / `EmitRequestCarrier` / `ModuleArtifactCarrier` / `ProgramArtifactCarrier` の field を固定し、callable は local detail、raw EAST/IR doc は S3 までの migration field と定義した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-02] `src/toolchain/compiler/typed_boundary.py` を正本に、host/static backend registry と `ir2lang.py` / `py2x.py` を typed carrier 正規経路へ寄せ、既存 `dict[str, object]` surface は `to_legacy_dict()` adapter・`load_east3_document_typed()` wrapper・writer 境界の薄い互換層へ縮退した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-03] C++ native 側に `CompilerRootDocument` / `ResolvedBackendSpec` / `LayerOptionsCarrier` wrapper と `*_typed()` API を追加し、`selfhost/py2cpp.cpp` / `selfhost/py2cpp_stage2.cpp` は typed wrapper を経由してから必要箇所だけ `to_legacy_dict()` へ落とす構成へ更新した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `src/toolchain/ir/core.py` の module root / leading trivia / bare `Expr` 文を `_sh_make_*` builder helper へ寄せ、typed carrier 側では `CompilerRootDocument` 再 coercion 回避と `lower_ir_typed()` / `optimize_ir_typed()` / `emit_source_typed()` 補助 wrapper を加えて selfhost build を維持した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

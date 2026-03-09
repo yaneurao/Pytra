@@ -86,7 +86,7 @@ def load_east3_document_typed(
     dump_east3_after_opt: str = "",
     dump_east3_opt_trace: str = "",
     target_lang: str = "",
-):
+) -> CompilerRootDocument:
     """Load and normalize input into typed optimized EAST3 document."""
     return _load_east3_document_typed(
         input_path,

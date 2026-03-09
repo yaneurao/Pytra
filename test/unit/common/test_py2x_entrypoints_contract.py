@@ -13,6 +13,7 @@ if str(ROOT / "src") not in sys.path:
 
 import src.toolchain.compiler.backend_registry as host_registry
 import src.toolchain.compiler.backend_registry_static as static_registry
+import src.toolchain.compiler.typed_boundary as typed_boundary
 
 
 class Py2xEntrypointsContractTest(unittest.TestCase):
@@ -104,6 +105,20 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(host_opts.layer, "emitter")
         self.assertEqual(host_opts.values["mod_mode"], "python")
         self.assertEqual(static_opts.values["mod_mode"], "python")
+
+    def test_compiler_root_document_coercion_accepts_typed_carrier(self) -> None:
+        raw_doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native"},
+        }
+        doc = typed_boundary.coerce_compiler_root_document(
+            raw_doc,
+            source_path="demo.py",
+            parser_backend="self_hosted",
+        )
+        self.assertIs(typed_boundary.coerce_compiler_root_document(doc), doc)
 
     def test_build_program_artifact_preserves_helper_kind_metadata(self) -> None:
         fake_spec = {"target_lang": "cpp"}

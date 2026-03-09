@@ -858,6 +858,15 @@ def emit_source(
     output_path: Path,
     emitter_options: Any = None,
 ) -> str:
+    return emit_source_typed(spec, ir, output_path, emitter_options)
+
+
+def emit_source_typed(
+    spec: BackendSpec | ResolvedBackendSpec,
+    ir: dict[str, Any],
+    output_path: Path,
+    emitter_options: LayerOptionsCarrier | dict[str, Any] | None = None,
+) -> str:
     return emit_module_typed(spec, ir, output_path, emitter_options).text
 
 

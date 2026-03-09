@@ -4,6 +4,10 @@
 
 #include "pytra/std/pathlib.h"
 
+namespace pytra::compiler::transpile_cli {
+struct CompilerRootDocument;
+}
+
 namespace pytra::compiler::backend_registry_static {
 
 struct BackendSpecCarrier {
@@ -47,10 +51,20 @@ dict<str, object> lower_ir(
     const dict<str, object>& east,
     const dict<str, object>& lower_options
 );
+dict<str, object> lower_ir_typed(
+    const ResolvedBackendSpec& spec,
+    const pytra::compiler::transpile_cli::CompilerRootDocument& east,
+    const LayerOptionsCarrier& lower_options
+);
 dict<str, object> optimize_ir(
     const dict<str, object>& spec,
     const dict<str, object>& ir,
     const dict<str, object>& optimizer_options
+);
+dict<str, object> optimize_ir_typed(
+    const ResolvedBackendSpec& spec,
+    const dict<str, object>& ir,
+    const LayerOptionsCarrier& optimizer_options
 );
 str emit_source(
     const dict<str, object>& spec,

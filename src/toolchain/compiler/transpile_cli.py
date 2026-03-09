@@ -5,6 +5,7 @@ Canonical implementation moved to ``toolchain.frontends.transpile_cli``.
 
 from __future__ import annotations
 
+from toolchain.compiler.typed_boundary import CompilerRootDocument
 from toolchain.compiler.typed_boundary import coerce_compiler_root_document
 from toolchain.frontends import transpile_cli as _front
 from toolchain.frontends.transpile_cli import *  # noqa: F401,F403
@@ -84,7 +85,7 @@ def load_east3_document_typed(
     dump_east3_after_opt="",
     dump_east3_opt_trace="",
     target_lang="",
-):
+) -> CompilerRootDocument:
     return coerce_compiler_root_document(
         load_east3_document(
             input_path,

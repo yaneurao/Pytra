@@ -309,6 +309,8 @@ def coerce_compiler_root_document(
     source_path: str = "",
     parser_backend: str = "",
 ) -> CompilerRootDocument:
+    if isinstance(raw_doc, CompilerRootDocument):
+        return raw_doc
     if not isinstance(raw_doc, dict):
         raise RuntimeError("compiler root document must be dict")
     return CompilerRootDocument.from_legacy_doc(

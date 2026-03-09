@@ -30,6 +30,15 @@ def _walk(node: Any):
 
 
 class EastCoreTest(unittest.TestCase):
+    def test_core_source_uses_builder_helpers_for_module_root_and_trivia(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        self.assertIn("def _sh_make_trivia_blank(", text)
+        self.assertIn("def _sh_make_trivia_comment(", text)
+        self.assertIn("def _sh_make_expr_stmt(", text)
+        self.assertIn("def _sh_make_module_root(", text)
+        self.assertIn("out = _sh_make_module_root(", text)
+        self.assertNotIn('out["kind"] = "Module"', text)
+
     def test_top_level_extern_decorator_is_preserved(self) -> None:
         src = """
 from pytra.std import extern

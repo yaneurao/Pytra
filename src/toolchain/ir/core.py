@@ -221,6 +221,64 @@ def _sh_span(line: int, col: int, end_col: int) -> dict[str, int]:
     return {"lineno": line, "col": col, "end_lineno": line, "end_col": end_col}
 
 
+def _sh_make_trivia_blank(count: int) -> dict[str, Any]:
+    """blank trivia item を生成する。"""
+    return {"kind": "blank", "count": count}
+
+
+def _sh_make_trivia_comment(text: str) -> dict[str, Any]:
+    """comment trivia item を生成する。"""
+    return {"kind": "comment", "text": text}
+
+
+def _sh_make_expr_stmt(value: dict[str, Any], source_span: dict[str, Any]) -> dict[str, Any]:
+    """`Expr` 文 node を構築する。"""
+    return {"kind": "Expr", "source_span": source_span, "value": value}
+
+
+def _sh_make_module_root(
+    *,
+    filename: str,
+    body_items: list[dict[str, Any]],
+    main_stmts: list[dict[str, Any]],
+    renamed_symbols: dict[str, str],
+    import_resolution_bindings: list[dict[str, str]],
+    qualified_symbol_refs: list[dict[str, str]],
+    import_bindings: list[dict[str, str]],
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+) -> dict[str, Any]:
+    """Module root を構築する。"""
+    source_span: dict[str, Any] = {
+        "lineno": None,
+        "col": None,
+        "end_lineno": None,
+        "end_col": None,
+    }
+    import_resolution: dict[str, Any] = {
+        "schema_version": 1,
+        "bindings": import_resolution_bindings,
+        "qualified_refs": qualified_symbol_refs,
+    }
+    meta: dict[str, Any] = {
+        "parser_backend": "self_hosted",
+        "import_resolution": import_resolution,
+        "import_bindings": import_bindings,
+        "qualified_symbol_refs": qualified_symbol_refs,
+        "import_modules": import_module_bindings,
+        "import_symbols": import_symbol_bindings,
+    }
+    return {
+        "kind": "Module",
+        "source_path": filename,
+        "source_span": source_span,
+        "body": body_items,
+        "main_guard_body": main_stmts,
+        "renamed_symbols": renamed_symbols,
+        "meta": meta,
+    }
+
+
 def _sh_ann_to_type(ann: str, *, type_aliases: dict[str, str] | None = None) -> str:
     """型注釈文字列を EAST 正規型へ変換する。"""
     aliases: dict[str, str] = type_aliases if type_aliases is not None else _SH_TYPE_ALIASES
@@ -1646,10 +1704,7 @@ def _sh_push_stmt_with_trivia(
     """保留中 trivia を付与して文リストへ追加し、更新後 blank 数を返す。"""
     stmt_copy: dict[str, Any] = dict(stmt)
     if pending_blank_count > 0:
-        blank_item: dict[str, Any] = {}
-        blank_item["kind"] = "blank"
-        blank_item["count"] = pending_blank_count
-        pending_leading_trivia.append(blank_item)
+        pending_leading_trivia.append(_sh_make_trivia_blank(pending_blank_count))
         pending_blank_count = 0
     if len(pending_leading_trivia) > 0:
         stmt_copy["leading_trivia"] = list(pending_leading_trivia)
@@ -5199,12 +5254,12 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             continue
         if raw_s.startswith("#"):
             if pending_blank_count > 0:
-                pending_leading_trivia.append({"kind": "blank", "count": pending_blank_count})
+                pending_leading_trivia.append(_sh_make_trivia_blank(pending_blank_count))
                 pending_blank_count = 0
             text = raw_s[1:]
             if text.startswith(" "):
                 text = text[1:]
-            pending_leading_trivia.append({"kind": "comment", "text": text})
+            pending_leading_trivia.append(_sh_make_trivia_comment(text))
             continue
         if s == "":
             continue
@@ -5806,7 +5861,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 "body": _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
                 "handlers": [],
                 "orelse": [],
-                "finalbody": [{"kind": "Expr", "source_span": _sh_stmt_span(merged_line_end, ln_no, as_col, len(ln_txt)), "value": close_expr}],
+                "finalbody": [_sh_make_expr_stmt(close_expr, _sh_stmt_span(merged_line_end, ln_no, as_col, len(ln_txt)))],
             }
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, assign_stmt)
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, try_stmt)
@@ -6193,7 +6248,12 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
 
         expr_col = len(ln_txt) - len(ln_txt.lstrip(" "))
         expr_stmt = _sh_parse_expr_lowered(s, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
-        pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "Expr", "source_span": _sh_stmt_span(merged_line_end, ln_no, expr_col, len(ln_txt)), "value": expr_stmt})
+        pending_blank_count = _sh_push_stmt_with_trivia(
+            stmts,
+            pending_leading_trivia,
+            pending_blank_count,
+            _sh_make_expr_stmt(expr_stmt, _sh_stmt_span(merged_line_end, ln_no, expr_col, len(ln_txt))),
+        )
     return stmts
 
 
@@ -6276,12 +6336,12 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         s = ln.strip()
         if s == "":
             if len(leading_file_comments) > 0:
-                leading_file_trivia.append({"kind": "blank", "count": 1})
+                leading_file_trivia.append(_sh_make_trivia_blank(1))
             continue
         if s.startswith("#"):
             text = s[1:].lstrip()
             leading_file_comments.append(text)
-            leading_file_trivia.append({"kind": "comment", "text": text})
+            leading_file_trivia.append(_sh_make_trivia_comment(text))
             continue
         break
 
@@ -7581,32 +7641,17 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             qref["local_name"] = local_name
             qualified_symbol_refs.append(qref)
 
-    source_span: dict[str, Any] = {}
-    source_span["lineno"] = None
-    source_span["col"] = None
-    source_span["end_lineno"] = None
-    source_span["end_col"] = None
-
-    meta: dict[str, Any] = {}
-    meta["parser_backend"] = "self_hosted"
-    import_resolution: dict[str, Any] = {}
-    import_resolution["schema_version"] = 1
-    import_resolution["bindings"] = import_resolution_bindings
-    import_resolution["qualified_refs"] = qualified_symbol_refs
-    meta["import_resolution"] = import_resolution
-    meta["import_bindings"] = import_bindings
-    meta["qualified_symbol_refs"] = qualified_symbol_refs
-    meta["import_modules"] = import_module_bindings
-    meta["import_symbols"] = import_symbol_bindings
-
-    out: dict[str, Any] = {}
-    out["kind"] = "Module"
-    out["source_path"] = filename
-    out["source_span"] = source_span
-    out["body"] = body_items
-    out["main_guard_body"] = main_stmts
-    out["renamed_symbols"] = renamed_symbols
-    out["meta"] = meta
+    out = _sh_make_module_root(
+        filename=filename,
+        body_items=body_items,
+        main_stmts=main_stmts,
+        renamed_symbols=renamed_symbols,
+        import_resolution_bindings=import_resolution_bindings,
+        qualified_symbol_refs=qualified_symbol_refs,
+        import_bindings=import_bindings,
+        import_module_bindings=import_module_bindings,
+        import_symbol_bindings=import_symbol_bindings,
+    )
     sync_type_expr_mirrors(out)
     return validate_template_module(validate_runtime_abi_module(out))
 
