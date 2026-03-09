@@ -55,7 +55,6 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-03] C++ native 側に `CompilerRootDocument` / `ResolvedBackendSpec` / `LayerOptionsCarrier` wrapper と `*_typed()` API を追加し、`selfhost/py2cpp.cpp` / `selfhost/py2cpp_stage2.cpp` は typed wrapper を経由してから必要箇所だけ `to_legacy_dict()` へ落とす構成へ更新した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `src/toolchain/ir/core.py` の module root / leading trivia / bare `Expr` 文を `_sh_make_*` builder helper へ寄せ、typed carrier 側では `CompilerRootDocument` 再 coercion 回避と `lower_ir_typed()` / `optimize_ir_typed()` / `emit_source_typed()` 補助 wrapper を加えて selfhost build を維持した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_name_expr()` / `_sh_make_tuple_expr()` / `_sh_make_assign_stmt()` / `_sh_make_ann_assign_stmt()` を追加し、`with` 束縛、typed binding、tuple destructuring、class field、module top-level assign/annassign を helper 経由へ寄せた。
-- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_constant_expr()` を追加し、`_parse_comp_target()` / `_parse_primary()` / 簡易 list-comp・tuple lower の `Name` / `Tuple` / `Constant` 生成を helper 経由へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_constant_expr()` を追加し、`_parse_primary()` / `_parse_comp_target()` の leaf `Constant` / `Name` / `Tuple` node も helper 経由へ寄せた。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
