@@ -274,7 +274,14 @@ void apply_runtime_hook(
     const dict<str, object>& spec,
     const pytra::std::pathlib::Path& output_path
 ) {
-    apply_runtime_hook_typed(_coerce_backend_spec(spec), output_path);
+    (void)spec;
+    apply_runtime_hook_typed(output_path);
+}
+
+void apply_runtime_hook_typed(
+    const pytra::std::pathlib::Path& output_path
+) {
+    (void)output_path;
 }
 
 void apply_runtime_hook_typed(
@@ -282,7 +289,7 @@ void apply_runtime_hook_typed(
     const pytra::std::pathlib::Path& output_path
 ) {
     (void)spec;
-    (void)output_path;
+    apply_runtime_hook_typed(output_path);
 }
 
 }  // namespace pytra::compiler::backend_registry_static

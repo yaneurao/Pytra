@@ -185,6 +185,9 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("return LayerOptionsCarrier{layer, dict<str, str>(raw)};", native_registry)
         self.assertIn("return east.to_legacy_dict();", native_registry)
         self.assertIn("return ir;", native_registry)
+        self.assertIn("void apply_runtime_hook_typed(\n    const pytra::std::pathlib::Path& output_path\n)", native_registry)
+        self.assertIn("apply_runtime_hook_typed(output_path);", native_registry)
+        self.assertNotIn("apply_runtime_hook_typed(_coerce_backend_spec(spec), output_path);", native_registry)
         self.assertNotIn("return lower_ir(spec.to_legacy_dict(), east.to_legacy_dict(), lower_options.to_legacy_dict());", native_registry)
         self.assertNotIn("return optimize_ir(spec.to_legacy_dict(), ir, optimizer_options.to_legacy_dict());", native_registry)
         self.assertIn(
