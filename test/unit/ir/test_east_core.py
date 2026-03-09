@@ -331,11 +331,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("_sh_make_ann_assign_stmt(", text)
         self.assertIn("def _sh_make_tuple_destructure_assign_stmt(", text)
         self.assertIn("_sh_make_tuple_destructure_assign_stmt(", text)
-        self.assertIn(
-            "_sh_make_comp_generator(\n"
-            "                    _sh_make_name_expr(",
-            text,
-        )
+        self.assertIn("def _sh_make_simple_name_list_comp_expr(", text)
+        self.assertIn("_sh_make_simple_name_list_comp_expr(", text)
         self.assertIn(
             "_sh_make_expr_stmt(expr_stmt, _sh_stmt_span(merged_line_end, ln_no, expr_col, len(ln_txt)))",
             text,
@@ -435,9 +432,10 @@ class EastCoreTest(unittest.TestCase):
             '_sh_make_name_expr(_sh_span(ln_no, col, col + len(fn_name)), fn_name, repr_text=fn_name)',
             lowered_text,
         )
-        self.assertIn("elt_node = _sh_make_name_expr(", lowered_text)
-        self.assertIn("_sh_make_comp_generator(", lowered_text)
-        self.assertIn('resolved_type=f"list[{elem_t}]"', lowered_text)
+        self.assertIn("def _sh_make_simple_name_list_comp_expr(", text)
+        self.assertIn("_sh_make_simple_name_list_comp_expr(", lowered_text)
+        self.assertIn("elt_node = _sh_make_name_expr(", text)
+        self.assertIn('resolved_type=f"list[{elem_type}]"', text)
         self.assertNotIn('return dict<str, object>{{"kind", make_object("Call")}', lowered_text)
         self.assertNotIn('dict<str, object>{{"kind", make_object("Name")}', lowered_text)
 

@@ -720,6 +720,38 @@ def _sh_make_list_comp_expr(
     return node
 
 
+def _sh_make_simple_name_list_comp_expr(
+    source_span: dict[str, Any],
+    *,
+    line_no: int,
+    base_col: int,
+    elt_name: str,
+    target_name: str,
+    iter_expr: dict[str, Any],
+    elem_type: str,
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """単純な `[x for x in items]` を helper 1 個で構築する。"""
+    elt_node = _sh_make_name_expr(
+        _sh_span(line_no, base_col, base_col + len(elt_name)),
+        elt_name,
+        resolved_type=elem_type if elt_name == target_name else "unknown",
+    )
+    target_node = _sh_make_name_expr(
+        _sh_span(line_no, base_col, base_col + len(target_name)),
+        target_name,
+        resolved_type="unknown",
+    )
+    return _sh_make_list_comp_expr(
+        source_span,
+        elt_node,
+        [_sh_make_comp_generator(target_node, iter_expr, [])],
+        resolved_type=f"list[{elem_type}]",
+        repr_text=repr_text,
+        lowered_kind="ListCompSimple",
+    )
+
+
 def _sh_make_dict_comp_expr(
     source_span: dict[str, Any],
     key: dict[str, Any],
@@ -6040,28 +6072,15 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
         elem_t = "unknown"
         if it_t.startswith("list[") and it_t.endswith("]"):
             elem_t = it_t[5:-1]
-        elt_node = _sh_make_name_expr(
-            _sh_span(ln_no, col, col + len(elt_name)),
-            elt_name,
-            resolved_type=elem_t if elt_name == tgt_name else "unknown",
-        )
-        return _sh_make_list_comp_expr(
+        return _sh_make_simple_name_list_comp_expr(
             _sh_span(ln_no, col, col + len(raw)),
-            elt_node,
-            [
-                _sh_make_comp_generator(
-                    _sh_make_name_expr(
-                        _sh_span(ln_no, col, col + len(tgt_name)),
-                        tgt_name,
-                        resolved_type="unknown",
-                    ),
-                    iter_node,
-                    [],
-                )
-            ],
-            resolved_type=f"list[{elem_t}]",
+            line_no=ln_no,
+            base_col=col,
+            elt_name=elt_name,
+            target_name=tgt_name,
+            iter_expr=iter_node,
+            elem_type=elem_t,
             repr_text=txt,
-            lowered_kind="ListCompSimple",
         )
 
     if len(txt) >= 3 and txt[0] == "f" and txt[1] in {"'", '"'} and txt[-1] == txt[1]:
