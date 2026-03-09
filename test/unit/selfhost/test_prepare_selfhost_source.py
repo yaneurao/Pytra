@@ -39,9 +39,13 @@ def _generated_cpp_core_inline_kinds(
     *,
     scope: str = "all",
 ) -> set[str]:
-    if scope not in {"all", "callsite", "nonstmt_callsite"}:
+    if scope not in {"all", "callsite", "stmt_callsite", "nonstmt_callsite", "helper_only"}:
         raise ValueError(f"unsupported inline-kind scope: {scope}")
-    kinds: set[str] = set()
+    all_kinds: set[str] = set()
+    helper_kinds: set[str] = set()
+    callsite_kinds: set[str] = set()
+    stmt_callsite_kinds: set[str] = set()
+    nonstmt_callsite_kinds: set[str] = set()
     current_function: str | None = None
     current_function_brace_depth = 0
     for line in text.splitlines():
@@ -62,32 +66,31 @@ def _generated_cpp_core_inline_kinds(
             continue
         kind = match.group(1)
         if kind != "" and kind[0].isupper():
-            if scope != "all":
-                in_helper_definition = current_function is not None and current_function.startswith("_sh_make_")
-                if in_helper_definition:
-                    if current_function is not None:
-                        current_function_brace_depth += line.count("{")
-                        current_function_brace_depth -= line.count("}")
-                        if current_function_brace_depth <= 0:
-                            current_function = None
-                            current_function_brace_depth = 0
-                    continue
-                if scope == "nonstmt_callsite" and "_sh_push_stmt_with_trivia(" in stripped:
-                    if current_function is not None:
-                        current_function_brace_depth += line.count("{")
-                        current_function_brace_depth -= line.count("}")
-                        if current_function_brace_depth <= 0:
-                            current_function = None
-                            current_function_brace_depth = 0
-                    continue
-            kinds.add(kind)
+            all_kinds.add(kind)
+            in_helper_definition = current_function is not None and current_function.startswith("_sh_make_")
+            if in_helper_definition:
+                helper_kinds.add(kind)
+            else:
+                callsite_kinds.add(kind)
+                if "_sh_push_stmt_with_trivia(" in stripped:
+                    stmt_callsite_kinds.add(kind)
+                else:
+                    nonstmt_callsite_kinds.add(kind)
         if current_function is not None:
             current_function_brace_depth += line.count("{")
             current_function_brace_depth -= line.count("}")
             if current_function_brace_depth <= 0:
                 current_function = None
                 current_function_brace_depth = 0
-    return kinds
+    if scope == "all":
+        return all_kinds
+    if scope == "callsite":
+        return callsite_kinds
+    if scope == "stmt_callsite":
+        return stmt_callsite_kinds
+    if scope == "nonstmt_callsite":
+        return nonstmt_callsite_kinds
+    return helper_kinds - callsite_kinds
 
 
 class PrepareSelfhostSourceTest(unittest.TestCase):
@@ -534,6 +537,33 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
             }.isdisjoint(callsite_inline_kinds)
         )
 
+    def test_generated_cpp_core_known_inline_stmt_callsite_kind_residual_set_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        stmt_callsite_inline_kinds = _generated_cpp_core_inline_kinds(
+            text,
+            scope="stmt_callsite",
+        )
+        self.assertEqual(
+            stmt_callsite_inline_kinds,
+            {
+                "AnnAssign",
+                "Assign",
+                "Expr",
+            },
+        )
+        self.assertTrue(
+            {
+                "Call",
+                "Dict",
+                "Name",
+                "Tuple",
+                "Import",
+                "ImportFrom",
+                "FunctionDef",
+                "ClassDef",
+            }.isdisjoint(stmt_callsite_inline_kinds)
+        )
+
     def test_generated_cpp_core_known_inline_nonstmt_callsite_kind_residual_set_is_stable(self) -> None:
         text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
         inline_nonstmt_callsite_kinds = _generated_cpp_core_inline_kinds(
@@ -559,6 +589,33 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
                 "FunctionDef",
                 "ClassDef",
             }.isdisjoint(inline_nonstmt_callsite_kinds)
+        )
+
+    def test_generated_cpp_core_known_inline_helper_only_kind_residual_set_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        helper_only_inline_kinds = _generated_cpp_core_inline_kinds(
+            text,
+            scope="helper_only",
+        )
+        self.assertEqual(
+            helper_only_inline_kinds,
+            {
+                "ClassDef",
+                "FunctionDef",
+                "Import",
+                "ImportFrom",
+            },
+        )
+        self.assertTrue(
+            {
+                "AnnAssign",
+                "Assign",
+                "Call",
+                "Dict",
+                "Expr",
+                "Name",
+                "Tuple",
+            }.isdisjoint(helper_only_inline_kinds)
         )
 
 
