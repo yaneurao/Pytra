@@ -17,7 +17,6 @@ struct BackendSpecCarrier {
 
 struct ResolvedBackendSpec {
     BackendSpecCarrier carrier;
-    dict<str, object> raw_spec;
 
     dict<str, object> to_legacy_dict() const;
 };

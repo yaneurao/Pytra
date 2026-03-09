@@ -106,6 +106,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("struct LayerOptionsCarrier", native_registry)
         self.assertIn("get_backend_spec_typed", native_registry)
         self.assertIn("emit_source_typed", native_registry)
+        self.assertNotIn("dict<str, object> raw_spec;", native_registry)
 
     def test_native_cpp_typed_boundary_make_object_usage_stays_on_export_seams(self) -> None:
         native_transpile = (
@@ -143,8 +144,6 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             [
                 'out["target_lang"] = make_object(carrier.target_lang);',
                 'out["extension"] = make_object(carrier.extension);',
-                'spec["target_lang"] = make_object(target);',
-                'spec["extension"] = make_object(_target_extension(target));',
                 'ir_path.write_text(pytra::std::json::dumps(make_object(ir), true));',
             ],
         )

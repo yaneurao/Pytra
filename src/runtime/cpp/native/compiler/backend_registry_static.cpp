@@ -112,7 +112,6 @@ ResolvedBackendSpec _coerce_backend_spec(const dict<str, object>& spec) {
             _dict_get_str(spec, "target_lang"),
             _dict_get_str(spec, "extension"),
         },
-        spec,
     };
 }
 
@@ -123,7 +122,7 @@ LayerOptionsCarrier _coerce_layer_options(const str& layer, const dict<str, obje
 }  // namespace
 
 dict<str, object> ResolvedBackendSpec::to_legacy_dict() const {
-    dict<str, object> out = raw_spec;
+    dict<str, object> out = {};
     out["target_lang"] = make_object(carrier.target_lang);
     out["extension"] = make_object(carrier.extension);
     return out;
@@ -162,12 +161,8 @@ pytra::std::pathlib::Path default_output_path(
 }
 
 ResolvedBackendSpec get_backend_spec_typed(const str& target) {
-    dict<str, object> spec = {};
-    spec["target_lang"] = make_object(target);
-    spec["extension"] = make_object(_target_extension(target));
     return ResolvedBackendSpec{
         BackendSpecCarrier{target, _target_extension(target)},
-        spec,
     };
 }
 
