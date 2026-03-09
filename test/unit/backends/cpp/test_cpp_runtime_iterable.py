@@ -283,6 +283,8 @@ int main() {
 
     def test_runtime_list_overload_inventory(self) -> None:
         forwarder_header = (ROOT / "src/runtime/cpp/core/py_runtime.h").read_text(encoding="utf-8")
+        scope_exit_forwarder = (ROOT / "src/runtime/cpp/core/scope_exit.h").read_text(encoding="utf-8")
+        scope_exit_native = (ROOT / "src/runtime/cpp/native/core/scope_exit.h").read_text(encoding="utf-8")
         runtime_header = (ROOT / "src/runtime/cpp/native/core/py_runtime.h").read_text(encoding="utf-8")
         iter_ops_header = (ROOT / "src/runtime/cpp/native/built_in/iter_ops.h").read_text(encoding="utf-8")
         sequence_header = (ROOT / "src/runtime/cpp/native/built_in/sequence.h").read_text(encoding="utf-8")
@@ -294,6 +296,9 @@ int main() {
         type_id_cpp = (ROOT / "src/runtime/cpp/generated/built_in/type_id.cpp").read_text(encoding="utf-8")
 
         self.assertIn('#include "runtime/cpp/native/core/py_runtime.h"', forwarder_header)
+        self.assertIn('#include "runtime/cpp/native/core/scope_exit.h"', scope_exit_forwarder)
+        self.assertIn("class py_scope_exit", scope_exit_native)
+        self.assertIn("static inline auto py_make_scope_exit(F&& fn)", scope_exit_native)
         self.assertIn('#include "runtime/cpp/generated/built_in/numeric_ops.h"', runtime_header)
         self.assertIn('#include "runtime/cpp/generated/built_in/zip_ops.h"', runtime_header)
         self.assertNotIn('#include "runtime/cpp/generated/built_in/predicates.h"', runtime_header)
@@ -355,6 +360,8 @@ int main() {
         self.assertNotIn("template <class T> static inline bool py_is_str(const ::std::optional<T>& v)", runtime_header)
         self.assertNotIn("template <class T> static inline bool py_is_bool(const ::std::optional<T>& v)", runtime_header)
         self.assertNotIn("static inline list<str>& py_runtime_argv_storage()", runtime_header)
+        self.assertNotIn("class py_scope_exit", runtime_header)
+        self.assertNotIn("static inline auto py_make_scope_exit(F&& fn)", runtime_header)
         self.assertNotIn("static inline object py_dict_get(const dict<str, object>& d, const char* key)", runtime_header)
         self.assertNotIn("static inline object py_dict_get(const dict<str, object>& d, const ::std::string& key)", runtime_header)
         self.assertNotIn("static inline const V& py_dict_get(const dict<str, V>& d, const char* key)", runtime_header)

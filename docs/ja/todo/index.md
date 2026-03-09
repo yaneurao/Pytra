@@ -32,18 +32,6 @@
 
 ## 未完了タスク
 
-### P0: C++ `py_runtime.h` `py_make_scope_exit` を専用laneへ再配置する
-
-文脈: [docs/ja/plans/p0-cpp-pyruntime-scope-exit-lane-realign.md](../plans/p0-cpp-pyruntime-scope-exit-lane-realign.md)
-
-1. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01] `py_make_scope_exit` を専用laneへ再配置する。
-2. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01-S1-01] `py_make_scope_exit` の checked-in callsite を棚卸しする。
-3. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01-S1-02] new lane と non-goal を決定ログに固定する。
-4. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01-S2-01] representative caller を新契約へ置換する。
-5. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01-S2-02] regression / inventory guard を更新する。
-6. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01-S3-01] `py_runtime.h` から `py_make_scope_exit` を削除する。
-7. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01-S3-02] parity / docs / archive を更新して閉じる。
-
 ### P0: C++ `py_runtime.h` process surface を専用laneへ再配置する
 
 文脈: [docs/ja/plans/p0-cpp-pyruntime-process-surface-realign.md](../plans/p0-cpp-pyruntime-process-surface-realign.md)

@@ -2,6 +2,7 @@
 // source: src/pytra/utils/gif.py
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 #include "runtime/cpp/generated/utils/gif.h"
 

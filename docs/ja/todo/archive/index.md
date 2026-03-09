@@ -16,6 +16,7 @@
 ## 完了 plan アーカイブ
 
 - [2026-03-09 / P0-CPP-PYRUNTIME-ARGV-STATE-01](../plans/archive/20260309-p0-cpp-pyruntime-argv-state-slim.md)
+- [2026-03-09 / P0-CPP-PYRUNTIME-SCOPEEXIT-01](../plans/archive/20260309-p0-cpp-pyruntime-scope-exit-lane-realign.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-DICTVALUECAST-01](../plans/archive/20260309-p0-cpp-pyruntime-dict-value-cast-retirement.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-LISTITEMCAST-01](../plans/archive/20260309-p0-cpp-pyruntime-list-item-cast-retirement.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01](../plans/archive/20260309-p0-cpp-pyruntime-upstream-realign.md)
@@ -91,7 +92,7 @@
 
 ## 日付別リンク
 
-- [2026-03-09](20260309.md)（25 セクション）
+- [2026-03-09](20260309.md)（26 セクション）
 - [2026-03-08](20260308.md)（31 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
 - [2026-03-06](20260306.md)（12 セクション）
