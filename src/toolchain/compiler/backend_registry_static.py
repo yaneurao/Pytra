@@ -601,7 +601,7 @@ def resolve_layer_options_typed(
 
 
 def resolve_layer_options(spec: BackendSpec, layer: str, raw_options: dict[str, str]) -> dict[str, Any]:
-    return resolve_layer_options_typed(spec, layer, raw_options).to_legacy_dict()
+    return export_layer_options_carrier(resolve_layer_options_typed(spec, layer, raw_options))
 
 
 def lower_ir_typed(
