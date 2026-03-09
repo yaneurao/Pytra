@@ -143,6 +143,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `compiler_root_module_id()` を追加して [py2x.py](/workspace/Pytra/src/py2x.py) / [ir2lang.py](/workspace/Pytra/src/ir2lang.py) の `meta.module_id` 手作業 unwrap を外し、entrypoint 側の fallback module-id 決定を typed helper へ寄せた。`test_py2x_entrypoints_contract.py` で import / source pattern / helper round-trip を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `module_artifact_text()` を追加して [ir2lang.py](/workspace/Pytra/src/ir2lang.py) の `text` dict unwrap を外し、host/static registry の `_identity_ir()` も `coerce_ir_document()` へ統一した。`test_py2x_entrypoints_contract.py` で import / source pattern / helper round-trip を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] [ir2lang.py](/workspace/Pytra/src/ir2lang.py) の linked-output lane も `LinkedProgramModule` 直参照へ寄せ、`_entry_linked_module()` / `_entry_source_path()` / `_emit_cpp_linked_program()` の `getattr(..., "module_id"/"source_path"/"east_doc")` を撤去した。`test_py2x_entrypoints_contract.py` で typed import と旧 manual unwrap の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] [py2x.py](/workspace/Pytra/src/py2x.py) と [ir2lang.py](/workspace/Pytra/src/ir2lang.py) の linked-program validation loop も `linked_module.east_doc` 直参照へ揃え、restart lane に残っていた `getattr(..., "east_doc", {})` unwrap を撤去した。`test_py2x_entrypoints_contract.py` で両 entrypoint の typed field 直参照を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
