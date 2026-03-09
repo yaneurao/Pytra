@@ -526,7 +526,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_centralizes_noncpp_attr_runtime_lookup(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_lookup_noncpp_attr_runtime_call", 1)[1].split(
-            "def _sh_set_parse_context",
+            "def _sh_annotate_noncpp_attr_call_expr",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -534,9 +534,25 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("def _sh_lookup_noncpp_attr_runtime_call(", text)
         self.assertIn("if owner_name in _SH_IMPORT_MODULES:", helper_text)
         self.assertIn("if owner_name in _SH_IMPORT_SYMBOLS:", helper_text)
-        self.assertGreaterEqual(postfix_text.count("_sh_lookup_noncpp_attr_runtime_call("), 2)
+        self.assertEqual(postfix_text.count("_sh_lookup_noncpp_attr_runtime_call("), 1)
+        self.assertIn("_sh_annotate_noncpp_attr_call_expr(", postfix_text)
         self.assertNotIn("if isinstance(owner_expr, dict) and owner_expr.get(\"kind\") == \"Name\":", postfix_text)
         self.assertNotIn("if isinstance(owner, dict) and owner.get(\"kind\") == \"Name\":", postfix_text)
+
+    def test_core_source_routes_noncpp_attr_call_annotations_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_annotate_noncpp_attr_call_expr", 1)[1].split(
+            "def _sh_set_parse_context",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn("_sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)", helper_text)
+        self.assertIn("_sh_annotate_resolved_runtime_expr(", helper_text)
+        self.assertIn('payload["resolved_type"] = std_module_attr_ret', helper_text)
+        self.assertIn("_sh_annotate_noncpp_attr_call_expr(", postfix_text)
+        self.assertNotIn("std_module_attr_ret = lookup_stdlib_function_return_type(attr)", postfix_text)
+        self.assertNotIn('payload["resolved_type"] = std_module_attr_ret', postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")

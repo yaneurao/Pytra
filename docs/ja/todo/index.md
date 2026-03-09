@@ -179,6 +179,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `enumerate(...)` metadata も `_sh_annotate_enumerate_call_expr()` へ寄せ、`iterable_trait` / `iter_protocol` / `iter_element_type` / `resolved_type` の直書きを `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 `elem_t` 由来 field 書き込みの不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] non-C++ module/symbol attribute runtime lookup も `_sh_lookup_noncpp_attr_runtime_call()` へ寄せ、attribute access branch と `Call(Attribute)` branch に重複していた import module/symbol probe を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と両 branch の旧 inline lookup block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] simple list-comp helper の内側も `_sh_make_simple_name_comp_generator()` へ寄せ、`_sh_make_simple_name_list_comp_expr()` に残っていた target `Name` + `comp_generator` cluster を helper 1 箇所へまとめた。`test_east_core.py` では新 helper 定義と `target_node = _sh_make_name_expr(...)` の不在を固定し、generated selfhost 側は既存の `Name` residual guard に留まることを確認した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `Call(Attribute)` に残っていた non-C++ attr call annotation も `_sh_annotate_noncpp_attr_call_expr()` へ寄せ、`resolved_runtime_call` / binding semantic tag / `resolved_type` override の直書きを `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 `std_module_attr_ret` block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
