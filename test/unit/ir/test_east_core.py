@@ -178,6 +178,24 @@ class EastCoreTest(unittest.TestCase):
             text,
         )
 
+    def test_core_source_uses_builder_helpers_for_expression_clusters(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        self.assertIn("node = _sh_make_attribute_expr(", text)
+        self.assertIn("payload = _sh_make_call_expr(", text)
+        self.assertIn("node = _sh_make_subscript_expr(", text)
+        self.assertIn("return _sh_make_binop_expr(", text)
+        self.assertIn("node = _sh_make_binop_expr(", text)
+        self.assertIn("return _sh_make_lambda_expr(", text)
+        self.assertIn("_sh_make_formatted_value_node(", text)
+        self.assertIn("return _sh_make_joined_str_expr(", text)
+        self.assertNotIn('node = {"kind": "Attribute"', text)
+        self.assertNotIn('payload = {"kind": "Call"', text)
+        self.assertNotIn('return {"kind": "BinOp"', text)
+        self.assertNotIn('node = {"kind": "Subscript"', text)
+        self.assertNotIn('return {"kind": "Lambda"', text)
+        self.assertNotIn('values.append({"kind": "FormattedValue"', text)
+        self.assertNotIn('return {"kind": "JoinedStr"', text)
+
     def test_top_level_extern_decorator_is_preserved(self) -> None:
         src = """
 from pytra.std import extern
