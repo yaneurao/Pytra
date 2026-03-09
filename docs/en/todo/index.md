@@ -119,6 +119,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` now fixes the residual inline `kind` set in the generated selfhost core, so already-helperized kinds such as `If/While/Try/Raise/Return/AugAssign/Swap` cannot silently fall back to open-coded dicts and new unsynced kinds fail fast if they appear.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` now also fixes the residual inline call-site `kind` set in the generated selfhost core, so helper definitions stay excluded while the real open-coded dict call sites cannot expand beyond `AnnAssign/Assign/Expr/Name/Tuple` or silently reintroduce already-helperized statement kinds.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` now also fixes the residual inline non-statement call-site `kind` set in the generated selfhost core, so once statement wrappers are excluded the remaining open-coded usage surface cannot expand beyond `Name/Tuple` or silently reintroduce helper-owned decl / expr / call lanes.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] The generated-selfhost residual guard helper now exposes explicit `all` / `callsite` / `nonstmt_callsite` scopes, so the duplicated inline call-site regression loop is folded back into one helper-owned implementation.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 
