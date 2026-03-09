@@ -136,6 +136,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `CompilerRootMeta.from_legacy_doc()` が legacy `source_path` / `meta.parser_backend` を保持するようにし、`export_compiler_root_document_any()` を raw dict short-circuit ではなく canonical `coerce -> export` seam に寄せた。`test_py2x_entrypoints_contract.py` で normalized compiler-root export round-trip を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] host/static registry の legacy artifact surface も `export_module_artifact_any()` / `export_program_artifact_any()` へ揃え、typed export helper 契約を compiler-root だけでなく module/program artifact にも広げた。`test_py2x_entrypoints_contract.py` で registry 側の import と return seam を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] backend spec / layer options の legacy export も `export_resolved_backend_spec_any()` / `export_layer_options_any()` へ揃え、host/static registry の `get_backend_spec()` / `resolve_layer_options()` / cache export を同じ typed helper seam に寄せた。`test_py2x_entrypoints_contract.py` で helper import と return contract を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native C++ の `coerce_compiler_root_document()` も legacy `source_path` / `meta.parser_backend` を保持するようにし、Python 側の compiler-root round-trip 契約と揃えた。`test_py2x_entrypoints_contract.py` で native mirror の fallback 抽出を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
