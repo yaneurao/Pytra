@@ -589,11 +589,6 @@ static inline int64 py_len(const char (&)[N]) {
 }
 
 // selfhost 段階で一時的に残る `len(x)` を受ける互換エイリアス。
-template <class T>
-static inline int64 len(const T& v) {
-    return py_len(v);
-}
-
 static inline ::std::string py_to_string(const object& v);
 
 template <class T>
@@ -1336,21 +1331,6 @@ static inline uint32 py_runtime_type_id(const object& v) {
         return PYTRA_TID_OBJECT;
     }
     return out;
-}
-
-static inline object getattr(
-    const object& value,
-    const str& name,
-    const ::std::optional<object>& default_value = ::std::nullopt) {
-    if (!value) {
-        if (default_value.has_value()) return *default_value;
-        return object{};
-    }
-    if (name == str("PYTRA_TYPE_ID")) {
-        return make_object(static_cast<int64>(value->py_type_id()));
-    }
-    if (default_value.has_value()) return *default_value;
-    return object{};
 }
 
 template <class T>

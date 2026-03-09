@@ -346,6 +346,8 @@ int main() {
         self.assertNotIn("static inline str py_dict_get_default(const dict<str, str>& d, const char* key, const char* defval)", runtime_header)
         self.assertNotIn("static inline str py_dict_get_default(const dict<str, str>& d, const str& key, const char* defval)", runtime_header)
         self.assertNotIn("static inline object getattr(\n    const object& value,\n    const char* name,", runtime_header)
+        self.assertNotIn("template <class T>\nstatic inline int64 len(const T& v)", runtime_header)
+        self.assertNotIn("static inline object getattr(\n    const object& value,\n    const str& name,", runtime_header)
         self.assertNotIn("static inline uint32 py_register_class_type(const list<uint32>& bases)", runtime_header)
         self.assertNotIn("template <class T> static inline bool py_is_dict(const ::std::optional<T>& v)", runtime_header)
         self.assertNotIn("template <class T> static inline bool py_is_list(const ::std::optional<T>& v)", runtime_header)
@@ -533,7 +535,7 @@ int main() {
         self.assertIn("T py_max(const T& a, const T& b) {", numeric_ops_header)
         self.assertIn("template <class A, class B>", zip_ops_header)
         self.assertIn("list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {", zip_ops_header)
-        self.assertIn('getattr(value, str("PYTRA_TYPE_ID"), ::std::nullopt);', type_id_cpp)
+        self.assertIn("py_runtime_type_id(value);", type_id_cpp)
         self.assertFalse((ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.cpp").exists())
         self.assertFalse((ROOT / "src/runtime/cpp/generated/built_in/zip_ops.cpp").exists())
 

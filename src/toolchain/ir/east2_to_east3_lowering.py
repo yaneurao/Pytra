@@ -142,6 +142,31 @@ def _make_name_node(name: str, resolved_type: str = "unknown") -> dict[str, Any]
     }
 
 
+def _const_string_value(node: Any) -> str:
+    if not isinstance(node, dict):
+        return ""
+    kind = node.get("kind")
+    value = node.get("value")
+    if kind == "Constant" and isinstance(value, str):
+        return value
+    if kind == "Call":
+        func_obj = node.get("func")
+        if isinstance(func_obj, dict) and func_obj.get("kind") == "Name" and func_obj.get("id") == "str":
+            args_obj = node.get("args")
+            args: list[Any] = args_obj if isinstance(args_obj, list) else []
+            if len(args) == 1:
+                return _const_string_value(args[0])
+    return ""
+
+
+def _is_none_literal(node: Any) -> bool:
+    if not isinstance(node, dict):
+        return False
+    if node.get("kind") != "Constant":
+        return False
+    return node.get("value") is None
+
+
 def _builtin_type_id_symbol(type_name: str) -> str:
     table = {
         "None": "PYTRA_TID_NONE",
@@ -630,6 +655,23 @@ def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, A
     if out.get("kind") != "Call":
         return out
 
+    func_obj = out.get("func")
+    if isinstance(func_obj, dict) and func_obj.get("kind") == "Name" and func_obj.get("id") == "getattr":
+        args_obj = out.get("args")
+        args: list[Any] = args_obj if isinstance(args_obj, list) else []
+        if len(args) == 3:
+            arg0 = args[0]
+            if _is_any_like_type(_expr_type_name(arg0)):
+                attr_name = _const_string_value(args[1])
+                if attr_name == "PYTRA_TYPE_ID" and _is_none_literal(args[2]):
+                    return _make_boundary_expr(
+                        kind="ObjTypeId",
+                        value_key="value",
+                        value_node=arg0,
+                        resolved_type="int64",
+                        source_expr=out,
+                    )
+
     args_obj = out.get("args")
     args: list[Any] = args_obj if isinstance(args_obj, list) else []
     if len(args) != 1:
@@ -756,7 +798,6 @@ def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, A
             source_expr=out,
         )
 
-    func_obj = out.get("func")
     if isinstance(func_obj, dict) and func_obj.get("kind") == "Name":
         fn_name = func_obj.get("id")
         if fn_name == "iter":

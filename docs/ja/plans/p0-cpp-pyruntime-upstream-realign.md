@@ -174,7 +174,7 @@
 - [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S1-01] `py_runtime.h` helper family と checked-in callsite を棚卸しし、`delete / inline / upstream / SoT / dedicated lane / keep` へ分類する。
 - [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S1-02] `py_bool_to_string` / `len` alias / generic `getattr` / builtin binding の置き場所契約を固定する。
 - [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S2-01] dead include / `urllib` compat shim / `py_bool_to_string` を削除する。
-- [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S2-02] `len` bare alias と generic `getattr` を縮退または退役させる。
+- [x] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S2-02] `len` bare alias と generic `getattr` を縮退または退役させる。
 - [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S3-01] `print` / `ord` / `chr` / `int(x, base)` の parser/EAST binding を `pytra.core.py_runtime` から外す。
 - [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S3-02] 必要な SoT / generated / dedicated runtime lane を整備し、backend を新 contract に追従させる。
 - [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S4-01] representative runtime / backend / parity test を通す。
@@ -190,3 +190,4 @@
 - 2026-03-09: generic `getattr(const object&, const str&, default)` は `PYTRA_TYPE_ID` probe を支える最小 surface として暫定維持し、generic object helper として拡張しない。char* sugar は既に削除済みで、`S2-02` では dedicated primitive 化または type_id lane への縮退を検討する。
 - 2026-03-09: parser/EAST の builtin binding は現状 `print`, `len`, `range`, `zip`, `str`, `int/float/bool`, `min/max` を `pytra.core.py_runtime` へ束縛している。この tranche では特に `print`, `ord`, `chr`, `int(x, base)` を core から外すのを主目標にし、`len` は upstream canonical call として別枠で扱う。
 - 2026-03-09: `S2-01` として `py_runtime.h` 先頭の dead include 6 本（`<cctype> <filesystem> <fstream> <functional> <regex> <typeinfo>`）、`urllib` compile-compat shim、`py_bool_to_string` を削除した。bool の文字列化は `CppExpressionEmitter.render_to_string()` で ternary inline に置換し、inventory guard は `test_cpp_runtime_iterable.py` に追加した。
+- 2026-03-09: `S2-02` として `py_runtime.h` から bare `len(const T&)` alias と generic `getattr(const object&, const str&, default)` を削除した。`PYTRA_TYPE_ID` probe は `east2_to_east3_lowering.py` で `getattr(any_like, "PYTRA_TYPE_ID", None)` を `ObjTypeId` boundary へ縮退し、checked-in `type_id.cpp` も `py_runtime_type_id(value)` を直接使う形に更新した。
