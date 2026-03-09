@@ -654,7 +654,10 @@ class East3CppBridgeTest(unittest.TestCase):
             "ctx": "Load",
             "resolved_type": "int64",
         }
-        self.assertEqual(emitter.render_expr(expr), "py_dict_get(env, k)")
+        self.assertEqual(
+            emitter.render_expr(expr),
+            "([&]() { auto&& __dict_1 = env; auto __dict_key_2 = k; return __dict_1.at(__dict_key_2); }())",
+        )
 
     def test_emit_assign_dict_str_key_verified_skips_py_to_string(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

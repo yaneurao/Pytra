@@ -1184,16 +1184,6 @@ static inline decltype(auto) py_at_bounds_debug(const Seq& v, int64 idx) {
 #endif
 }
 
-// dict 取得ヘルパ群。`get` の既定値付きと例外送出版の両方を提供する。
-template <class K, class V>
-static inline const V& py_dict_get(const dict<K, V>& d, const K& key) {
-    auto it = d.find(key);
-    if (it == d.end()) {
-        throw ::std::out_of_range("dict key not found");
-    }
-    return it->second;
-}
-
 // Python の型判定（isinstance 的な分岐）で使う述語群。
 template <class T>
 static inline bool py_is_none(const ::std::optional<T>& v) {

@@ -106,7 +106,7 @@ namespace pytra::std::argparse {
                 if (py_startswith(tok, "-")) {
                     if (!py_contains(by_name, tok))
                         this->_fail("unknown option: " + tok);
-                    auto __idx_1 = py_dict_get(by_name, tok);
+                    auto __idx_1 = by_name.at(tok);
                     _ArgSpec spec = py_at(specs_opt, py_to<int64>(__idx_1));
                     if (spec.action == "store_true") {
                         values[spec.dest] = make_object(true);
