@@ -128,22 +128,28 @@ namespace pytra::compiler::transpile_cli {
 
 dict<str, object> CompilerRootDocument::to_legacy_dict() const {
     dict<str, object> out = raw_module_doc;
-    out["kind"] = make_object(module_kind);
+    out.update(dict<str, object>(dict<str, str>{{"kind", module_kind}}));
     if (meta.source_path != "") {
-        out["source_path"] = make_object(meta.source_path);
+        out.update(dict<str, object>(dict<str, str>{{"source_path", meta.source_path}}));
     }
-    out["east_stage"] = make_object(meta.east_stage);
-    out["schema_version"] = make_object(meta.schema_version);
+    out.update(
+        dict<str, object>(
+            dict<str, int64>{
+                {"east_stage", meta.east_stage},
+                {"schema_version", meta.schema_version},
+            }
+        )
+    );
     dict<str, object> meta_dict = {};
     auto meta_it = out.find("meta");
     if (meta_it != out.end() && py_isinstance(meta_it->second, PYTRA_TID_DICT)) {
         meta_dict = obj_to_dict(meta_it->second);
     }
-    meta_dict["dispatch_mode"] = make_object(meta.dispatch_mode);
+    meta_dict.update(dict<str, object>(dict<str, str>{{"dispatch_mode", meta.dispatch_mode}}));
     if (meta.parser_backend != "") {
-        meta_dict["parser_backend"] = make_object(meta.parser_backend);
+        meta_dict.update(dict<str, object>(dict<str, str>{{"parser_backend", meta.parser_backend}}));
     }
-    out["meta"] = make_object(meta_dict);
+    out.update(dict<str, object>(dict<str, dict<str, object>>{{"meta", meta_dict}}));
     return out;
 }
 

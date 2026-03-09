@@ -154,16 +154,12 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
 
         self.assertEqual(
             transpile_make_object_lines,
-            [
-                'out["kind"] = make_object(module_kind);',
-                'out["source_path"] = make_object(meta.source_path);',
-                'out["east_stage"] = make_object(meta.east_stage);',
-                'out["schema_version"] = make_object(meta.schema_version);',
-                'meta_dict["dispatch_mode"] = make_object(meta.dispatch_mode);',
-                'meta_dict["parser_backend"] = make_object(meta.parser_backend);',
-                'out["meta"] = make_object(meta_dict);',
-            ],
+            [],
         )
+        self.assertIn('out.update(dict<str, object>(dict<str, str>{{"kind", module_kind}}));', native_transpile)
+        self.assertIn('dict<str, int64>{', native_transpile)
+        self.assertIn('meta_dict.update(dict<str, object>(dict<str, str>{{"dispatch_mode", meta.dispatch_mode}}));', native_transpile)
+        self.assertIn('out.update(dict<str, object>(dict<str, dict<str, object>>{{"meta", meta_dict}}));', native_transpile)
         self.assertEqual(
             registry_make_object_lines,
             [],
