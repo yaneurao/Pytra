@@ -40,7 +40,7 @@ Context: [docs/ja/plans/p1-east-typeexpr-strengthening.md](../plans/p1-east-type
 3. [x] [ID: P1-EAST-TYPEEXPR-01-S1-02] Lock the end state, non-goals, and migration order in the decision log so they remain consistent with archived `EAST123` and `JsonValue` contracts.
 4. [x] [ID: P1-EAST-TYPEEXPR-01-S2-01] Extend `spec-east` / `spec-dev` with `TypeExpr` schema, the three-way union classification, and the authority relationship between `type_expr` and `resolved_type`.
 5. [x] [ID: P1-EAST-TYPEEXPR-01-S2-02] Fix the IR contract that treats `JsonValue` as a nominal closed ADT rather than a generic union, including decode/narrowing responsibility and backend fail-closed rules.
-6. [ ] [ID: P1-EAST-TYPEEXPR-01-S3-01] Update frontend type-annotation parsing to build `TypeExpr` from `int | bool`, `T | None`, and nested generic unions.
+6. [x] [ID: P1-EAST-TYPEEXPR-01-S3-01] Update frontend type-annotation parsing to build `TypeExpr` from `int | bool`, `T | None`, and nested generic unions.
 7. [ ] [ID: P1-EAST-TYPEEXPR-01-S3-02] Keep a migration `resolved_type` string mirror temporarily, but add validators and mismatch guards that treat `type_expr` as the source of truth.
 8. [ ] [ID: P1-EAST-TYPEEXPR-01-S4-01] In `EAST2 -> EAST3`, distinguish optionals, dynamic unions, and nominal ADTs, and introduce instructions or metadata for narrowing / variant checks / decode helpers.
 9. [ ] [ID: P1-EAST-TYPEEXPR-01-S4-02] Connect a representative `JsonValue` narrowing path (`as_obj/as_arr/as_int/...` or equivalent decode operations) through IR-first lowering rather than backend-local special cases.
@@ -48,7 +48,7 @@ Context: [docs/ja/plans/p1-east-typeexpr-strengthening.md](../plans/p1-east-type
 11. [ ] [ID: P1-EAST-TYPEEXPR-01-S5-02] Audit other backends for `String/object` union fallbacks and align unsupported `TypeExpr` unions to explicit errors or guarded compatibility paths.
 12. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-01] Put a representative `JsonValue` lane on top of the new `TypeExpr` / nominal-ADT contract and verify that future runtime work can proceed IR-contract-first.
 13. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-02] Refresh selfhost / unit / docs / archive and add guards against the reintroduction of stringly-typed union debt.
-- Progress memo: [ID: P1-EAST-TYPEEXPR-01-S3-01] `S2-02` fixed the `JsonValue` lane through `NominalAdtType` plus the `json.*` semantic-tag family, moved decode/narrowing responsibility to frontend/lowering, and banned backend-side silent fallback. Next is making the frontend emit `TypeExpr` directly.
+- Progress memo: [ID: P1-EAST-TYPEEXPR-01-S3-02] `S3-01` introduced the shared `type_expr` helper and made frontend/selfhost emit `arg_type_exprs` / `return_type_expr` / `decl_type_expr`. Next is adding validators and `resolved_type` mismatch guards that keep `type_expr` authoritative.
 
 ### P2: Move compiler boundaries to typed carriers and retreat internal object-carrier / `make_object` usage
 
