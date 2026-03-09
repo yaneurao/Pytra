@@ -39,7 +39,7 @@ This document defines the operational rules Codex follows while working.
 ## 3. Documentation Sync Rules
 
 - Update `README.md` as needed when specs/features/procedures change.
-- Check consistency for docs linked from `README.md` (`docs/ja/how-to-use.md`, `sample/readme-ja.md`, `docs/ja/spec/index.md`, `docs/ja/plans/pytra-wip.md`, `docs/ja/spec/spec-philosophy.md`) and update together when needed.
+- Check consistency for docs linked from `README.md` (`docs/ja/tutorial/README.md`, `sample/readme-ja.md`, `docs/ja/spec/index.md`, `docs/ja/plans/pytra-wip.md`, `docs/ja/spec/spec-philosophy.md`) and update together when needed.
 - Include "no implementation-doc mismatch left" in completion criteria.
 - If scripts in `tools/` are added/removed/renamed, update `docs/ja/spec/spec-tools.md` at the same time.
 - Keep only the latest 3 items in "Latest News" in `docs/ja/README.md`; append older items to major-version files (for example, `docs/ja/news/v0-releases.md`) and update `docs/ja/news/index.md`.
