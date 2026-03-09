@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-09 / P0-CPP-PYRUNTIME-SORTED-01](../plans/archive/20260309-p0-cpp-pyruntime-sorted-retirement.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-DICTVIEW-01](../plans/archive/20260309-p0-cpp-pyruntime-dict-view-helper-retirement.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-STRAT-01](../plans/archive/20260309-p0-cpp-pyruntime-string-at-retirement.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-DICTITEMS-01](../plans/archive/20260309-p0-cpp-pyruntime-dict-items-sugar-retirement.md)
@@ -83,7 +84,7 @@
 
 ## 日付別リンク
 
-- [2026-03-09](20260309.md)（13 セクション）
+- [2026-03-09](20260309.md)（14 セクション）
 - [2026-03-08](20260308.md)（31 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
 - [2026-03-06](20260306.md)（12 セクション）

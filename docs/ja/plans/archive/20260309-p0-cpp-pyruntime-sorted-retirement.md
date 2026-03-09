@@ -53,14 +53,16 @@
 
 ## 3. タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-SORTED-01] `sorted` helper を退役する。
-- [ ] [ID: P0-CPP-PYRUNTIME-SORTED-01-S1-01] checked-in callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-SORTED-01-S1-02] helper lane と non-goal を決定ログに固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-SORTED-01-S2-01] representative callsite を helper lane に置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-SORTED-01-S2-02] regression / inventory guard を更新する。
-- [ ] [ID: P0-CPP-PYRUNTIME-SORTED-01-S3-01] `py_runtime.h` から helper を削除する。
-- [ ] [ID: P0-CPP-PYRUNTIME-SORTED-01-S3-02] parity / docs / archive を更新して閉じる。
+- [x] [ID: P0-CPP-PYRUNTIME-SORTED-01] `sorted` helper を退役する。
+- [x] [ID: P0-CPP-PYRUNTIME-SORTED-01-S1-01] checked-in callsite を棚卸しする。
+- [x] [ID: P0-CPP-PYRUNTIME-SORTED-01-S1-02] helper lane と non-goal を決定ログに固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-SORTED-01-S2-01] representative callsite を helper lane に置換する。
+- [x] [ID: P0-CPP-PYRUNTIME-SORTED-01-S2-02] regression / inventory guard を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-SORTED-01-S3-01] `py_runtime.h` から helper を削除する。
+- [x] [ID: P0-CPP-PYRUNTIME-SORTED-01-S3-02] parity / docs / archive を更新して閉じる。
 
 ## 4. 決定ログ
 
 - 2026-03-09: 本計画は `sorted` の高水準 helper だけを扱い、`list.sort()` や object-list dynamic sort lane は非対象とする。
+- 2026-03-09: checked-in source を棚卸しすると、`sorted(` の runtime helper direct use は `src/runtime/cpp/native/core/py_runtime.h` の定義だけで、current runtime / emitter / generated C++ / representative tests には callsite が残っていなかった。`selfhost/runtime/cpp/pytra-core/built_in/py_runtime.h` は current runtime の非対象 artifact として扱う。
+- 2026-03-09: representative callsite の helper lane 置換対象は存在しないと判断し、`S2-01` は no-op 完了とする。inventory guard の追加と helper 削除だけで閉じる。

@@ -305,6 +305,8 @@ int main() {
         self.assertNotIn("static inline auto py_min(const A& a, const B& b)", runtime_header)
         self.assertNotIn("static inline auto py_max(const A& a, const B& b)", runtime_header)
         self.assertNotIn("static inline list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs)", runtime_header)
+        self.assertNotIn("static inline list<T> sorted(const list<T>& values)", runtime_header)
+        self.assertNotIn("static inline list<T> sorted(const set<T>& values)", runtime_header)
         self.assertNotIn("static inline list<object> py_dict_items(const dict<K, V>& d)", runtime_header)
         self.assertNotIn("static inline list<str> py_dict_keys(const object& obj)", runtime_header)
         self.assertNotIn("static inline list<object> py_dict_items(const object& obj)", runtime_header)

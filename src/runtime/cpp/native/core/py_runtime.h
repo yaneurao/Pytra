@@ -1452,20 +1452,6 @@ static inline auto operator-(const rc<T>& v) -> decltype(v->__neg__()) {
     return v->__neg__();
 }
 
-template <class T>
-static inline list<T> sorted(const list<T>& values) {
-    list<T> out = values;
-    out.sort();
-    return out;
-}
-
-template <class T>
-static inline list<T> sorted(const set<T>& values) {
-    list<T> out(values.begin(), values.end());
-    out.sort();
-    return out;
-}
-
 // `/` / `//` / `%` の Python 互換セマンティクス（とくに負数時の扱い）を提供する。
 template <class A, class B>
 static inline float64 py_div(A lhs, B rhs) {
