@@ -1,6 +1,8 @@
 #ifndef PYTRA_NATIVE_BUILT_IN_IO_OPS_H
 #define PYTRA_NATIVE_BUILT_IN_IO_OPS_H
 
+#include <iostream>
+
 #include "runtime/cpp/generated/built_in/io_ops.h"
 #include "runtime/cpp/core/py_runtime.h"
 

@@ -245,6 +245,7 @@ SCOPE_NESTING_KINDS: set[str] = {
 
 
 CPP_HEADER = """#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/core/process_runtime.h"
 #include "runtime/cpp/core/scope_exit.h"
 
 """

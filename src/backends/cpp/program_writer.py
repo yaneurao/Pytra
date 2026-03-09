@@ -43,6 +43,7 @@ def _prelude_header_text() -> str:
         "#ifndef PYTRA_MULTI_PRELUDE_H\n"
         "#define PYTRA_MULTI_PRELUDE_H\n\n"
         '#include "runtime/cpp/core/py_runtime.h"\n\n'
+        '#include "runtime/cpp/core/process_runtime.h"\n\n'
         '#include "runtime/cpp/core/scope_exit.h"\n\n'
         "#endif  // PYTRA_MULTI_PRELUDE_H\n"
     )
