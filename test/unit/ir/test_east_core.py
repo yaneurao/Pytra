@@ -53,6 +53,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("def _sh_make_comp_generator(", text)
         self.assertIn("def _sh_make_list_expr(", text)
         self.assertIn("def _sh_make_set_expr(", text)
+        self.assertIn("def _sh_make_dict_entry(", text)
         self.assertIn("def _sh_make_dict_expr(", text)
         self.assertIn("def _sh_make_list_comp_expr(", text)
         self.assertIn("def _sh_make_dict_comp_expr(", text)
@@ -251,6 +252,29 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('return {"kind": "List"', primary_text)
         self.assertNotIn('return {"kind": "Dict"', primary_text)
         self.assertNotIn('return {"kind": "Set"', primary_text)
+
+    def test_core_source_uses_builder_helpers_for_collection_and_dict_entry_clusters(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        primary_text = text.split("def _parse_primary", 1)[1].split("def _sh_parse_expr", 1)[0]
+        lowered_text = text.split("def _sh_parse_expr_lowered", 1)[1]
+
+        self.assertIn("return _sh_make_list_comp_expr(", primary_text)
+        self.assertIn("[_sh_make_comp_generator(target, iter_expr, ifs)]", primary_text)
+        self.assertIn("[_sh_make_comp_generator(target, iter_expr, ifs_norm)]", primary_text)
+        self.assertIn("iter_expr = _sh_make_range_expr(", primary_text)
+        self.assertIn("return _sh_make_dict_comp_expr(", primary_text)
+        self.assertIn("return _sh_make_set_comp_expr(", lowered_text)
+        self.assertIn("entries.append(\n                    _sh_make_dict_entry(", lowered_text)
+        self.assertIn("return _sh_make_dict_expr(", lowered_text)
+
+        self.assertNotIn('return {"kind": "ListComp"', primary_text)
+        self.assertNotIn('iter_expr = {"kind": "RangeExpr"', primary_text)
+        self.assertNotIn('return {"kind": "DictComp"', primary_text)
+        self.assertNotIn('return {"kind": "SetComp"', lowered_text)
+        self.assertNotIn(
+            'entries.append(\n                    {\n                        "key": _sh_parse_expr_lowered(',
+            lowered_text,
+        )
 
     def test_top_level_extern_decorator_is_preserved(self) -> None:
         src = """

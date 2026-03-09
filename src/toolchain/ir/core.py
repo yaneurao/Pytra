@@ -614,6 +614,11 @@ def _sh_make_set_expr(
     }
 
 
+def _sh_make_dict_entry(key: dict[str, Any], value: dict[str, Any]) -> dict[str, Any]:
+    """`Dict` entry carrier を構築する。"""
+    return {"key": key, "value": value}
+
+
 def _sh_make_dict_expr(
     source_span: dict[str, Any],
     *,
@@ -5788,10 +5793,20 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
                 ktxt = ktxt.strip()
                 vtxt = vtxt.strip()
                 entries.append(
-                    {
-                        "key": _sh_parse_expr_lowered(ktxt, ln_no=ln_no, col=col + txt.find(ktxt), name_types=dict(name_types)),
-                        "value": _sh_parse_expr_lowered(vtxt, ln_no=ln_no, col=col + txt.find(vtxt), name_types=dict(name_types)),
-                    }
+                    _sh_make_dict_entry(
+                        _sh_parse_expr_lowered(
+                            ktxt,
+                            ln_no=ln_no,
+                            col=col + txt.find(ktxt),
+                            name_types=dict(name_types),
+                        ),
+                        _sh_parse_expr_lowered(
+                            vtxt,
+                            ln_no=ln_no,
+                            col=col + txt.find(vtxt),
+                            name_types=dict(name_types),
+                        ),
+                    )
                 )
         return _sh_make_dict_expr(
             _sh_span(ln_no, col, col + len(raw)),
