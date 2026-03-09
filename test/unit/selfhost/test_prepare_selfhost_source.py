@@ -695,6 +695,31 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
             }.isdisjoint(stmt_block_inline_kinds)
         )
 
+    def test_generated_cpp_core_lowered_residual_callsites_are_known_clusters(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        lowered_text = _slice_block(
+            text,
+            "dict<str, object> _sh_parse_expr_lowered(",
+            "list<dict<str, object>> _sh_parse_stmt_block_mutable(",
+        )
+        self.assertIn('return dict<str, object>{{"kind", make_object("Call")}', lowered_text)
+        self.assertIn('return dict<str, object>{{"kind", make_object("Dict")}', lowered_text)
+        self.assertIn('return dict<str, object>{{"kind", make_object("Tuple")}', lowered_text)
+        self.assertIn('{"resolved_type", make_object("bool")}', lowered_text)
+        self.assertNotIn('return dict<str, object>{{"kind", make_object("Name")}', lowered_text)
+
+    def test_generated_cpp_core_stmt_block_residual_callsites_are_known_clusters(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        stmt_text = _slice_block(
+            text,
+            "list<dict<str, object>> _sh_parse_stmt_block_mutable(",
+            "dict<str, object> convert_source_to_east_self_hosted(",
+        )
+        self.assertIn('dict<str, object>{{"kind", make_object("Tuple")}', stmt_text)
+        self.assertIn('dict<str, object>{{"kind", make_object("Name")}', stmt_text)
+        self.assertNotIn('dict<str, object>{{"kind", make_object("Call")}', stmt_text)
+        self.assertNotIn('dict<str, object>{{"kind", make_object("Dict")}', stmt_text)
+
 
 if __name__ == "__main__":
     unittest.main()

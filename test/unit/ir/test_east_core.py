@@ -348,6 +348,39 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('return {"kind": "Dict"', lowered_text)
         self.assertNotIn('return {"kind": "Tuple"', lowered_text)
 
+    def test_core_source_uses_builder_helpers_for_lowered_any_all_and_simple_listcomp_clusters(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        lowered_text = text.split("def _sh_parse_expr_lowered", 1)[1].split(
+            "def _sh_parse_stmt_block_mutable",
+            1,
+        )[0]
+
+        self.assertIn('lowered_kind = "BuiltinCall" if fn_name in {"any", "all"} else None', lowered_text)
+        self.assertIn("payload = _sh_make_call_expr(", lowered_text)
+        self.assertIn(
+            '_sh_make_name_expr(_sh_span(ln_no, col, col + len(fn_name)), fn_name, repr_text=fn_name)',
+            lowered_text,
+        )
+        self.assertIn("elt_node = _sh_make_name_expr(", lowered_text)
+        self.assertIn("_sh_make_comp_generator(", lowered_text)
+        self.assertIn('resolved_type=f"list[{elem_t}]"', lowered_text)
+        self.assertNotIn('return dict<str, object>{{"kind", make_object("Call")}', lowered_text)
+        self.assertNotIn('dict<str, object>{{"kind", make_object("Name")}', lowered_text)
+
+    def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        stmt_text = text.split("def _sh_parse_stmt_block_mutable", 1)[1].split(
+            "def _sh_build_module_root",
+            1,
+        )[0]
+
+        self.assertIn("target_expr = _sh_make_tuple_expr(", stmt_text)
+        self.assertIn("_sh_make_assign_stmt(", stmt_text)
+        self.assertIn('resolved_type=name_types.get(n1, "unknown")', stmt_text)
+        self.assertIn('resolved_type=name_types.get(n2, "unknown")', stmt_text)
+        self.assertNotIn('target_expr = {"kind": "Tuple"', stmt_text)
+        self.assertNotIn('pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, dict<str, object>{{"kind", make_object("Assign")}', stmt_text)
+
     def test_core_source_known_inline_kind_residual_set_is_helper_only(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         raw_kinds = re.findall(r'\{"kind": "([^"]+)"', text)
