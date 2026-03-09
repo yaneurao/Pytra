@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSIONS_FILE = ROOT / "src" / "pytra" / "compiler" / "transpiler_versions.json"
+VERSIONS_FILE = ROOT / "src" / "toolchain" / "compiler" / "transpiler_versions.json"
 VERSIONS_REL = VERSIONS_FILE.relative_to(ROOT).as_posix()
 
 LANGS = ["cpp", "rs", "cs", "js", "ts", "go", "java", "swift", "kotlin"]
