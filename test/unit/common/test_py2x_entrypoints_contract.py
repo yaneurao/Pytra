@@ -256,11 +256,15 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("module_artifact.to_legacy_dict()", ir2lang_src)
         self.assertNotIn("program_artifact.to_legacy_dict()", ir2lang_src)
 
-        self.assertIn(
+        self.assertIn("from toolchain.compiler.typed_boundary import export_compiler_root_document_any", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_compiler_root_document_any", static_src)
+        self.assertIn("doc = export_compiler_root_document_any(east_doc)", host_src)
+        self.assertIn("doc = export_compiler_root_document_any(east_doc)", static_src)
+        self.assertNotIn(
             "doc = east_doc if isinstance(east_doc, dict) else export_compiler_root_document(coerce_compiler_root_document(east_doc))",
             host_src,
         )
-        self.assertIn(
+        self.assertNotIn(
             "doc = east_doc if isinstance(east_doc, dict) else export_compiler_root_document(coerce_compiler_root_document(east_doc))",
             static_src,
         )
@@ -326,7 +330,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         raw_doc = {
             "kind": "Module",
             "body": [],
-            "meta": {"dispatch_mode": "native"},
+            "source_path": "legacy.py",
+            "meta": {"dispatch_mode": "native", "parser_backend": "legacy_host"},
         }
         doc = typed_boundary.coerce_compiler_root_document(
             raw_doc,
@@ -341,6 +346,27 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(
             typed_boundary.export_compiler_root_document(doc)["meta"]["parser_backend"],
             "self_hosted",
+        )
+        self.assertEqual(
+            typed_boundary.export_compiler_root_document_any(doc),
+            typed_boundary.export_compiler_root_document(doc),
+        )
+        legacy_doc = typed_boundary.coerce_compiler_root_document(raw_doc)
+        self.assertEqual(legacy_doc.meta.source_path, "legacy.py")
+        self.assertEqual(legacy_doc.meta.parser_backend, "legacy_host")
+        self.assertEqual(
+            typed_boundary.export_compiler_root_document_any(raw_doc),
+            {
+                "kind": "Module",
+                "body": [],
+                "source_path": "legacy.py",
+                "east_stage": 0,
+                "schema_version": 0,
+                "meta": {
+                    "dispatch_mode": "native",
+                    "parser_backend": "legacy_host",
+                },
+            },
         )
         opts = typed_boundary.coerce_layer_options("emitter", {"mod_mode": "python", "debug": True})
         self.assertEqual(

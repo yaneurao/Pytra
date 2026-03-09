@@ -18,13 +18,12 @@ from toolchain.compiler.typed_boundary import ProgramArtifactCarrier
 from toolchain.compiler.typed_boundary import ResolvedBackendSpec
 from toolchain.compiler.typed_boundary import build_program_artifact_carrier
 from toolchain.compiler.typed_boundary import coerce_backend_spec
-from toolchain.compiler.typed_boundary import coerce_compiler_root_document
 from toolchain.compiler.typed_boundary import coerce_module_artifact as coerce_module_artifact_carrier
 from toolchain.compiler.typed_boundary import coerce_layer_options
 from toolchain.compiler.typed_boundary import copy_module_dependencies
 from toolchain.compiler.typed_boundary import copy_module_metadata
 from toolchain.compiler.typed_boundary import copy_program_writer_options
-from toolchain.compiler.typed_boundary import export_compiler_root_document
+from toolchain.compiler.typed_boundary import export_compiler_root_document_any
 from toolchain.compiler.typed_boundary import export_resolved_backend_spec
 from toolchain.compiler.typed_boundary import export_layer_options_carrier
 from toolchain.compiler.typed_boundary import export_module_artifact_carrier
@@ -674,7 +673,7 @@ def lower_ir_typed(
     lower_options: LayerOptionsCarrier | dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     runtime_spec = _coerce_runtime_spec(spec)
-    doc = east_doc if isinstance(east_doc, dict) else export_compiler_root_document(coerce_compiler_root_document(east_doc))
+    doc = export_compiler_root_document_any(east_doc)
     options = lower_options if isinstance(lower_options, LayerOptionsCarrier) else coerce_layer_options("lower", lower_options)
     fn = runtime_spec.lower_impl
     try:
