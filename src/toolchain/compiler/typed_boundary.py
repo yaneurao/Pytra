@@ -111,6 +111,34 @@ def export_layer_options_carrier(options: "LayerOptionsCarrier") -> dict[str, Co
     return dict(options.values)
 
 
+def export_module_artifact_carrier(module: "ModuleArtifactCarrier") -> dict[str, object]:
+    out: dict[str, object] = {
+        "module_id": module.module_id,
+        "kind": module.kind,
+        "label": module.label,
+        "extension": module.extension,
+        "text": module.text,
+        "is_entry": module.is_entry,
+        "dependencies": list(module.dependencies),
+        "metadata": dict(module.metadata),
+    }
+    if len(module.helper_modules) > 0:
+        out["helper_modules"] = [export_module_artifact_carrier(item) for item in module.helper_modules]
+    return out
+
+
+def export_program_artifact_carrier(program: "ProgramArtifactCarrier") -> dict[str, object]:
+    return {
+        "target": program.target,
+        "program_id": program.program_id,
+        "entry_modules": list(program.entry_modules),
+        "modules": [export_module_artifact_carrier(module) for module in program.modules],
+        "layout_mode": program.layout_mode,
+        "link_output_schema": program.link_output_schema,
+        "writer_options": dict(program.writer_options),
+    }
+
+
 @dataclass(frozen=True)
 class CompilerRootMeta:
     source_path: str
@@ -229,19 +257,7 @@ class ModuleArtifactCarrier:
     helper_modules: tuple["ModuleArtifactCarrier", ...] = ()
 
     def to_legacy_dict(self) -> dict[str, object]:
-        out = {
-            "module_id": self.module_id,
-            "kind": self.kind,
-            "label": self.label,
-            "extension": self.extension,
-            "text": self.text,
-            "is_entry": self.is_entry,
-            "dependencies": list(self.dependencies),
-            "metadata": dict(self.metadata),
-        }
-        if len(self.helper_modules) > 0:
-            out["helper_modules"] = [module.to_legacy_dict() for module in self.helper_modules]
-        return out
+        return export_module_artifact_carrier(self)
 
 
 @dataclass(frozen=True)
@@ -255,15 +271,7 @@ class ProgramArtifactCarrier:
     writer_options: dict[str, object]
 
     def to_legacy_dict(self) -> dict[str, object]:
-        return {
-            "target": self.target,
-            "program_id": self.program_id,
-            "entry_modules": list(self.entry_modules),
-            "modules": [module.to_legacy_dict() for module in self.modules],
-            "layout_mode": self.layout_mode,
-            "link_output_schema": self.link_output_schema,
-            "writer_options": dict(self.writer_options),
-        }
+        return export_program_artifact_carrier(self)
 
 
 @dataclass(frozen=True)

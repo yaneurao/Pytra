@@ -20,6 +20,8 @@ from toolchain.compiler.typed_boundary import copy_module_metadata
 from toolchain.compiler.typed_boundary import copy_program_writer_options
 from toolchain.compiler.typed_boundary import export_compiler_root_document
 from toolchain.compiler.typed_boundary import export_layer_options_carrier
+from toolchain.compiler.typed_boundary import export_module_artifact_carrier
+from toolchain.compiler.typed_boundary import export_program_artifact_carrier
 from toolchain.compiler.typed_boundary import flatten_module_artifact_carrier
 from toolchain.compiler.typed_boundary import normalize_module_artifact_carrier
 from toolchain.compiler.typed_boundary import resolve_layer_options_carrier
@@ -698,14 +700,16 @@ def emit_module(
     module_id: str = "",
     is_entry: bool = False,
 ) -> dict[str, Any]:
-    return emit_module_typed(
-        spec,
-        ir,
-        output_path,
-        emitter_options,
-        module_id=module_id,
-        is_entry=is_entry,
-    ).to_legacy_dict()
+    return export_module_artifact_carrier(
+        emit_module_typed(
+            spec,
+            ir,
+            output_path,
+            emitter_options,
+            module_id=module_id,
+            is_entry=is_entry,
+        )
+    )
 
 
 def build_program_artifact_typed(
@@ -745,15 +749,17 @@ def build_program_artifact(
     link_output_schema: str = "",
     writer_options: dict[str, object] | None = None,
 ) -> dict[str, Any]:
-    return build_program_artifact_typed(
-        spec,
-        modules,
-        program_id=program_id,
-        entry_modules=entry_modules,
-        layout_mode=layout_mode,
-        link_output_schema=link_output_schema,
-        writer_options=writer_options,
-    ).to_legacy_dict()
+    return export_program_artifact_carrier(
+        build_program_artifact_typed(
+            spec,
+            modules,
+            program_id=program_id,
+            entry_modules=entry_modules,
+            layout_mode=layout_mode,
+            link_output_schema=link_output_schema,
+            writer_options=writer_options,
+        )
+    )
 
 
 def collect_program_modules_typed(module_artifact: ModuleArtifactCarrier | dict[str, Any]) -> tuple[ModuleArtifactCarrier, ...]:
@@ -765,7 +771,7 @@ def collect_program_modules_typed(module_artifact: ModuleArtifactCarrier | dict[
 
 
 def collect_program_modules(module_artifact: dict[str, Any]) -> list[dict[str, Any]]:
-    return [item.to_legacy_dict() for item in collect_program_modules_typed(module_artifact)]
+    return [export_module_artifact_carrier(item) for item in collect_program_modules_typed(module_artifact)]
 
 
 def get_program_writer_typed(spec: BackendSpec | ResolvedBackendSpec) -> Any:
