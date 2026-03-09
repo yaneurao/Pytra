@@ -226,18 +226,26 @@ def _sh_make_kind_carrier(kind: str) -> dict[str, Any]:
     return {"kind": kind}
 
 
+def _sh_make_node(kind: str, **fields: Any) -> dict[str, Any]:
+    """`kind` 付き node の共通 envelope を構築する。"""
+    node = _sh_make_kind_carrier(kind)
+    node.update(fields)
+    return node
+
+
+def _sh_make_stmt_node(kind: str, source_span: dict[str, Any]) -> dict[str, Any]:
+    """statement node の共通 envelope を構築する。"""
+    return _sh_make_node(kind, source_span=source_span)
+
+
 def _sh_make_trivia_blank(count: int) -> dict[str, Any]:
     """blank trivia item を生成する。"""
-    node = _sh_make_kind_carrier("blank")
-    node["count"] = count
-    return node
+    return _sh_make_node("blank", count=count)
 
 
 def _sh_make_trivia_comment(text: str) -> dict[str, Any]:
     """comment trivia item を生成する。"""
-    node = _sh_make_kind_carrier("comment")
-    node["text"] = text
-    return node
+    return _sh_make_node("comment", text=text)
 
 
 def _sh_make_expr_token(kind: str, value: str, start: int, end: int) -> dict[str, Any]:
@@ -252,8 +260,7 @@ def _sh_make_expr_token(kind: str, value: str, start: int, end: int) -> dict[str
 
 def _sh_make_expr_stmt(value: dict[str, Any], source_span: dict[str, Any]) -> dict[str, Any]:
     """`Expr` 文 node を構築する。"""
-    node = _sh_make_kind_carrier("Expr")
-    node["source_span"] = source_span
+    node = _sh_make_stmt_node("Expr", source_span)
     node["value"] = value
     return node
 
@@ -268,13 +275,14 @@ def _sh_make_value_expr(
     borrow_kind: str = "value",
 ) -> dict[str, Any]:
     """値を返す式 node の共通 envelope を構築する。"""
-    node = _sh_make_kind_carrier(kind)
-    node["source_span"] = source_span
-    node["resolved_type"] = resolved_type
-    node["borrow_kind"] = borrow_kind
-    node["casts"] = [] if casts is None else casts
-    node["repr"] = repr_text
-    return node
+    return _sh_make_node(
+        kind,
+        source_span=source_span,
+        resolved_type=resolved_type,
+        borrow_kind=borrow_kind,
+        casts=[] if casts is None else casts,
+        repr=repr_text,
+    )
 
 
 def _sh_make_name_expr(
@@ -534,11 +542,7 @@ def _sh_make_slice_node(
     step: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`Slice` node を構築する。"""
-    node = _sh_make_kind_carrier("Slice")
-    node["lower"] = lower
-    node["upper"] = upper
-    node["step"] = step
-    return node
+    return _sh_make_node("Slice", lower=lower, upper=upper, step=step)
 
 
 def _sh_make_subscript_expr(
@@ -902,14 +906,11 @@ def _sh_make_assign_stmt(
     decl_type: str | None = None,
 ) -> dict[str, Any]:
     """`Assign` 文 node を構築する。"""
-    node: dict[str, Any] = {
-        "kind": "Assign",
-        "source_span": source_span,
-        "target": target,
-        "value": value,
-        "declare": declare,
-        "decl_type": decl_type,
-    }
+    node = _sh_make_stmt_node("Assign", source_span)
+    node["target"] = target
+    node["value"] = value
+    node["declare"] = declare
+    node["decl_type"] = decl_type
     if declare_init:
         node["declare_init"] = True
     return node
@@ -928,15 +929,12 @@ def _sh_make_ann_assign_stmt(
     meta: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`AnnAssign` 文 node を構築する。"""
-    node: dict[str, Any] = {
-        "kind": "AnnAssign",
-        "source_span": source_span,
-        "target": target,
-        "annotation": annotation,
-        "value": value,
-        "declare": declare,
-        "decl_type": decl_type,
-    }
+    node = _sh_make_stmt_node("AnnAssign", source_span)
+    node["target"] = target
+    node["annotation"] = annotation
+    node["value"] = value
+    node["declare"] = declare
+    node["decl_type"] = decl_type
     if annotation_type_expr is not None:
         node["annotation_type_expr"] = annotation_type_expr
     if decl_type_expr is not None:
@@ -953,20 +951,15 @@ def _sh_make_raise_stmt(
     cause: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`Raise` 文 node を構築する。"""
-    return {
-        "kind": "Raise",
-        "source_span": source_span,
-        "exc": exc,
-        "cause": cause,
-    }
+    node = _sh_make_stmt_node("Raise", source_span)
+    node["exc"] = exc
+    node["cause"] = cause
+    return node
 
 
 def _sh_make_pass_stmt(source_span: dict[str, Any]) -> dict[str, Any]:
     """`Pass` 文 node を構築する。"""
-    return {
-        "kind": "Pass",
-        "source_span": source_span,
-    }
+    return _sh_make_stmt_node("Pass", source_span)
 
 
 def _sh_make_return_stmt(
@@ -974,11 +967,9 @@ def _sh_make_return_stmt(
     value: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`Return` 文 node を構築する。"""
-    return {
-        "kind": "Return",
-        "source_span": source_span,
-        "value": value,
-    }
+    node = _sh_make_stmt_node("Return", source_span)
+    node["value"] = value
+    return node
 
 
 def _sh_make_yield_stmt(
@@ -986,11 +977,9 @@ def _sh_make_yield_stmt(
     value: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`Yield` 文 node を構築する。"""
-    return {
-        "kind": "Yield",
-        "source_span": source_span,
-        "value": value,
-    }
+    node = _sh_make_stmt_node("Yield", source_span)
+    node["value"] = value
+    return node
 
 
 def _sh_make_augassign_stmt(
@@ -1003,15 +992,13 @@ def _sh_make_augassign_stmt(
     decl_type: str | None = None,
 ) -> dict[str, Any]:
     """`AugAssign` 文 node を構築する。"""
-    return {
-        "kind": "AugAssign",
-        "source_span": source_span,
-        "target": target,
-        "op": op,
-        "value": value,
-        "declare": declare,
-        "decl_type": decl_type,
-    }
+    node = _sh_make_stmt_node("AugAssign", source_span)
+    node["target"] = target
+    node["op"] = op
+    node["value"] = value
+    node["declare"] = declare
+    node["decl_type"] = decl_type
+    return node
 
 
 def _sh_make_swap_stmt(
@@ -1020,12 +1007,10 @@ def _sh_make_swap_stmt(
     right: dict[str, Any],
 ) -> dict[str, Any]:
     """`Swap` 文 node を構築する。"""
-    return {
-        "kind": "Swap",
-        "source_span": source_span,
-        "left": left,
-        "right": right,
-    }
+    node = _sh_make_stmt_node("Swap", source_span)
+    node["left"] = left
+    node["right"] = right
+    return node
 
 
 def _sh_make_import_alias(name: str, asname: str | None = None) -> dict[str, str | None]:
@@ -1078,11 +1063,9 @@ def _sh_make_import_stmt(
     names: list[dict[str, str | None]],
 ) -> dict[str, Any]:
     """`Import` 文 node を構築する。"""
-    return {
-        "kind": "Import",
-        "source_span": source_span,
-        "names": names,
-    }
+    node = _sh_make_stmt_node("Import", source_span)
+    node["names"] = names
+    return node
 
 
 def _sh_make_import_from_stmt(
@@ -1093,13 +1076,11 @@ def _sh_make_import_from_stmt(
     level: int = 0,
 ) -> dict[str, Any]:
     """`ImportFrom` 文 node を構築する。"""
-    return {
-        "kind": "ImportFrom",
-        "source_span": source_span,
-        "module": module,
-        "names": names,
-        "level": level,
-    }
+    node = _sh_make_stmt_node("ImportFrom", source_span)
+    node["module"] = module
+    node["names"] = names
+    node["level"] = level
+    return node
 
 
 def _sh_make_if_stmt(
@@ -1110,13 +1091,11 @@ def _sh_make_if_stmt(
     orelse: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """`If` 文 node を構築する。"""
-    return {
-        "kind": "If",
-        "source_span": source_span,
-        "test": test,
-        "body": body,
-        "orelse": [] if orelse is None else orelse,
-    }
+    node = _sh_make_stmt_node("If", source_span)
+    node["test"] = test
+    node["body"] = body
+    node["orelse"] = [] if orelse is None else orelse
+    return node
 
 
 def _sh_make_while_stmt(
@@ -1127,13 +1106,11 @@ def _sh_make_while_stmt(
     orelse: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """`While` 文 node を構築する。"""
-    return {
-        "kind": "While",
-        "source_span": source_span,
-        "test": test,
-        "body": body,
-        "orelse": [] if orelse is None else orelse,
-    }
+    node = _sh_make_stmt_node("While", source_span)
+    node["test"] = test
+    node["body"] = body
+    node["orelse"] = [] if orelse is None else orelse
+    return node
 
 
 def _sh_make_except_handler(
@@ -1143,12 +1120,7 @@ def _sh_make_except_handler(
     name: str | None = None,
 ) -> dict[str, Any]:
     """`ExceptHandler` node を構築する。"""
-    return {
-        "kind": "ExceptHandler",
-        "type": type_expr,
-        "name": name,
-        "body": body,
-    }
+    return _sh_make_node("ExceptHandler", type=type_expr, name=name, body=body)
 
 
 def _sh_make_try_stmt(
@@ -1160,14 +1132,12 @@ def _sh_make_try_stmt(
     finalbody: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """`Try` 文 node を構築する。"""
-    return {
-        "kind": "Try",
-        "source_span": source_span,
-        "body": body,
-        "handlers": [] if handlers is None else handlers,
-        "orelse": [] if orelse is None else orelse,
-        "finalbody": [] if finalbody is None else finalbody,
-    }
+    node = _sh_make_stmt_node("Try", source_span)
+    node["body"] = body
+    node["handlers"] = [] if handlers is None else handlers
+    node["orelse"] = [] if orelse is None else orelse
+    node["finalbody"] = [] if finalbody is None else finalbody
+    return node
 
 
 def _sh_make_for_stmt(
@@ -1183,18 +1153,16 @@ def _sh_make_for_stmt(
     orelse: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """`For` 文 node を構築する。"""
-    return {
-        "kind": "For",
-        "source_span": source_span,
-        "target": target,
-        "target_type": target_type,
-        "iter_mode": iter_mode,
-        "iter_source_type": iter_source_type,
-        "iter_element_type": iter_element_type,
-        "iter": iter_expr,
-        "body": body,
-        "orelse": [] if orelse is None else orelse,
-    }
+    node = _sh_make_stmt_node("For", source_span)
+    node["target"] = target
+    node["target_type"] = target_type
+    node["iter_mode"] = iter_mode
+    node["iter_source_type"] = iter_source_type
+    node["iter_element_type"] = iter_element_type
+    node["iter"] = iter_expr
+    node["body"] = body
+    node["orelse"] = [] if orelse is None else orelse
+    return node
 
 
 def _sh_make_for_range_stmt(
@@ -1221,18 +1189,16 @@ def _sh_make_for_range_stmt(
             mode = "descending"
         else:
             mode = "dynamic"
-    return {
-        "kind": "ForRange",
-        "source_span": source_span,
-        "target": target,
-        "target_type": target_type,
-        "start": start,
-        "stop": stop,
-        "step": step,
-        "range_mode": mode,
-        "body": body,
-        "orelse": [] if orelse is None else orelse,
-    }
+    node = _sh_make_stmt_node("ForRange", source_span)
+    node["target"] = target
+    node["target_type"] = target_type
+    node["start"] = start
+    node["stop"] = stop
+    node["step"] = step
+    node["range_mode"] = mode
+    node["body"] = body
+    node["orelse"] = [] if orelse is None else orelse
+    return node
 
 
 def _sh_make_function_def_stmt(
@@ -1259,23 +1225,20 @@ def _sh_make_function_def_stmt(
     yield_value_type: str = "unknown",
 ) -> dict[str, Any]:
     """`FunctionDef` 文 node を構築する。"""
-    node: dict[str, Any] = {
-        "kind": "FunctionDef",
-        "name": name,
-        "original_name": original_name if original_name != "" else name,
-        "source_span": source_span,
-        "arg_types": arg_types,
-        "arg_order": arg_order,
-        "arg_defaults": {} if arg_defaults is None else arg_defaults,
-        "arg_index": {} if arg_index is None else arg_index,
-        "return_type": return_type,
-        "arg_usage": {} if arg_usage is None else arg_usage,
-        "renamed_symbols": {} if renamed_symbols is None else renamed_symbols,
-        "docstring": docstring,
-        "body": body,
-        "is_generator": 1 if is_generator else 0,
-        "yield_value_type": yield_value_type,
-    }
+    node = _sh_make_stmt_node("FunctionDef", source_span)
+    node["name"] = name
+    node["original_name"] = original_name if original_name != "" else name
+    node["arg_types"] = arg_types
+    node["arg_order"] = arg_order
+    node["arg_defaults"] = {} if arg_defaults is None else arg_defaults
+    node["arg_index"] = {} if arg_index is None else arg_index
+    node["return_type"] = return_type
+    node["arg_usage"] = {} if arg_usage is None else arg_usage
+    node["renamed_symbols"] = {} if renamed_symbols is None else renamed_symbols
+    node["docstring"] = docstring
+    node["body"] = body
+    node["is_generator"] = 1 if is_generator else 0
+    node["yield_value_type"] = yield_value_type
     if arg_type_exprs is not None:
         node["arg_type_exprs"] = arg_type_exprs
     if return_type_expr is not None:
@@ -1303,16 +1266,13 @@ def _sh_make_class_def_stmt(
     dataclass_options: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`ClassDef` 文 node を構築する。"""
-    node: dict[str, Any] = {
-        "kind": "ClassDef",
-        "name": name,
-        "original_name": original_name if original_name != "" else name,
-        "source_span": source_span,
-        "base": base,
-        "dataclass": dataclass,
-        "field_types": field_types,
-        "body": body,
-    }
+    node = _sh_make_stmt_node("ClassDef", source_span)
+    node["name"] = name
+    node["original_name"] = original_name if original_name != "" else name
+    node["base"] = base
+    node["dataclass"] = dataclass
+    node["field_types"] = field_types
+    node["body"] = body
     if dataclass_options is not None:
         node["dataclass_options"] = dataclass_options
     return node

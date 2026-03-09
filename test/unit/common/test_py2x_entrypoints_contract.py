@@ -303,6 +303,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import build_legacy_emit_module_adapter", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import build_legacy_emit_module_adapter", static_src)
         self.assertIn("doc = export_compiler_root_document_any(east_doc)", host_src)
         self.assertIn("doc = export_compiler_root_document_any(east_doc)", static_src)
         self.assertNotIn(
@@ -327,14 +329,6 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("ir_document=coerce_ir_document(ir)", static_src)
         self.assertIn('opts = export_layer_options_any(emitter_options, layer="emitter")', host_src)
         self.assertIn('opts = export_layer_options_any(emitter_options, layer="emitter")', static_src)
-        self.assertIn(
-            'source_any = emit_impl(ir, output_path, export_layer_options_any(emitter_options, layer="emitter"))',
-            host_src,
-        )
-        self.assertIn(
-            'source_any = emit_impl(ir, output_path, export_layer_options_any(emitter_options, layer="emitter"))',
-            static_src,
-        )
         self.assertIn("export_layer_options_carrier(request.emitter_options)", host_src)
         self.assertIn("export_layer_options_carrier(request.emitter_options)", static_src)
         self.assertIn("return export_resolved_backend_spec_any(_normalize_backend_runtime_spec(spec))", host_src)
@@ -350,6 +344,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("return export_program_artifact_any(", static_src)
         self.assertIn("return export_resolved_backend_spec_any(get_backend_spec_typed(target))", host_src)
         self.assertIn("_BACKEND_SPECS[target] = export_resolved_backend_spec_any(runtime_spec)", static_src)
+        self.assertIn("emit_module_impl = build_legacy_emit_module_adapter(", host_src)
+        self.assertIn("emit_module_impl = build_legacy_emit_module_adapter(", static_src)
         self.assertIn(
             "return [export_module_artifact_any(item) for item in collect_program_modules_typed(module_artifact)]",
             host_src,
@@ -380,6 +376,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("def _normalize_module_artifact_typed(", static_src)
         self.assertNotIn("def _coerce_module_artifact(", host_src)
         self.assertNotIn("def _coerce_module_artifact(", static_src)
+        self.assertNotIn("def _legacy_emit_module_adapter(", host_src)
+        self.assertNotIn("def _legacy_emit_module_adapter(", static_src)
         self.assertNotIn("opts = emitter_options if isinstance(emitter_options, dict) else {}", host_src)
         self.assertNotIn("opts = emitter_options if isinstance(emitter_options, dict) else {}", static_src)
         self.assertNotIn(
@@ -648,6 +646,62 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
                 "emitter": {},
             },
         )
+
+    def test_build_legacy_emit_module_adapter_preserves_host_static_error_policy(self) -> None:
+        host_adapter = typed_boundary.build_legacy_emit_module_adapter(
+            lambda ir, output_path, _opts=None: "// "
+            + str(ir.get("kind", ""))
+            + " -> "
+            + output_path.name,
+            extension=".txt",
+            suppress_emit_exceptions=True,
+        )
+        self.assertEqual(
+            host_adapter(
+                {"kind": "Demo"},
+                Path("out/demo.txt"),
+                {"mode": "typed"},
+                module_id="pkg.demo",
+                is_entry=True,
+            )["text"],
+            "// Demo -> demo.txt",
+        )
+
+        fallback_adapter = typed_boundary.build_legacy_emit_module_adapter(
+            lambda ir, output_path: "// " + str(ir.get("kind", "")) + " -> " + output_path.name,
+            extension=".txt",
+            suppress_emit_exceptions=True,
+        )
+        self.assertEqual(
+            fallback_adapter(
+                {"kind": "Fallback"},
+                Path("out/fallback.txt"),
+                {"mode": "typed"},
+                module_id="pkg.fallback",
+            )["text"],
+            "// Fallback -> fallback.txt",
+        )
+
+        def _emit_raises_after_typeerror(ir: dict[str, object], output_path: Path) -> str:
+            raise RuntimeError("emit failed for " + output_path.name)
+
+        soft_adapter = typed_boundary.build_legacy_emit_module_adapter(
+            _emit_raises_after_typeerror,
+            extension=".txt",
+            suppress_emit_exceptions=True,
+        )
+        strict_adapter = typed_boundary.build_legacy_emit_module_adapter(
+            _emit_raises_after_typeerror,
+            extension=".txt",
+            suppress_emit_exceptions=False,
+        )
+
+        self.assertEqual(
+            soft_adapter({"kind": "Boom"}, Path("out/boom.txt"), {"mode": "typed"})["text"],
+            "",
+        )
+        with self.assertRaisesRegex(RuntimeError, "emit failed for boom.txt"):
+            strict_adapter({"kind": "Boom"}, Path("out/boom.txt"), {"mode": "typed"})
 
     def test_build_program_artifact_preserves_helper_kind_metadata(self) -> None:
         fake_spec = {"target_lang": "cpp"}

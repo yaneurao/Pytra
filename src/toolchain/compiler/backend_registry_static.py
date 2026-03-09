@@ -10,6 +10,7 @@ from toolchain.compiler.typed_boundary import LayerOptionsCarrier
 from toolchain.compiler.typed_boundary import ModuleArtifactCarrier
 from toolchain.compiler.typed_boundary import ProgramArtifactCarrier
 from toolchain.compiler.typed_boundary import ResolvedBackendSpec
+from toolchain.compiler.typed_boundary import build_legacy_emit_module_adapter
 from toolchain.compiler.typed_boundary import build_program_artifact_carrier
 from toolchain.compiler.typed_boundary import coerce_backend_spec
 from toolchain.compiler.typed_boundary import coerce_ir_document
@@ -29,7 +30,6 @@ from toolchain.compiler.typed_boundary import export_program_artifact_carrier
 from toolchain.compiler.typed_boundary import flatten_module_artifact_carrier
 from toolchain.compiler.typed_boundary import normalize_emitted_module_artifact
 from toolchain.compiler.typed_boundary import normalize_legacy_backend_spec_dict
-from toolchain.compiler.typed_boundary import normalize_module_artifact_carrier
 from toolchain.compiler.typed_boundary import resolve_layer_options_carrier
 
 from backends.cs.lower import lower_east3_to_cs_ir
@@ -256,33 +256,6 @@ def _runtime_nim(output_path: Path) -> None:
 BackendSpec = dict[str, Any]
 
 
-def _legacy_emit_module_adapter(emit_impl: Any, *, extension: str) -> Any:
-    def _emit_module(
-        ir: dict[str, Any],
-        output_path: Path,
-        emitter_options: dict[str, Any] | None = None,
-        *,
-        module_id: str = "",
-        is_entry: bool = False,
-    ) -> dict[str, Any]:
-        source_any: Any = ""
-        try:
-            source_any = emit_impl(ir, output_path, export_layer_options_any(emitter_options, layer="emitter"))
-        except TypeError:
-            source_any = emit_impl(ir, output_path)
-        return export_module_artifact_any(
-            normalize_module_artifact_carrier(
-                source_any,
-                module_id=module_id,
-                output_path=output_path,
-                extension=extension,
-                is_entry=is_entry,
-            )
-        )
-
-    return _emit_module
-
-
 _BACKEND_SPECS: dict[str, BackendSpec] = {
     "cpp": {
         "target_lang": "cpp",
@@ -438,7 +411,11 @@ def _normalize_backend_runtime_spec(spec: BackendSpec) -> ResolvedBackendSpec:
         emit_impl = _empty_emit
     emit_module_impl = normalized.get("emit_module")
     if not callable(emit_module_impl):
-        emit_module_impl = _legacy_emit_module_adapter(emit_impl, extension=extension)
+        emit_module_impl = build_legacy_emit_module_adapter(
+            emit_impl,
+            extension=extension,
+            suppress_emit_exceptions=False,
+        )
     program_writer_impl = normalized.get("program_writer")
     if not callable(program_writer_impl) and not isinstance(program_writer_impl, dict):
         program_writer_impl = write_single_file_program

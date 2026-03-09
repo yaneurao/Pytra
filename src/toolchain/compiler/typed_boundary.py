@@ -600,6 +600,47 @@ def normalize_emitted_module_artifact(
     )
 
 
+def build_legacy_emit_module_adapter(
+    emit_impl: Any,
+    *,
+    extension: str,
+    suppress_emit_exceptions: bool,
+) -> Any:
+    def _emit_module(
+        ir: dict[str, object],
+        output_path: Path,
+        emitter_options: object = None,
+        *,
+        module_id: str = "",
+        is_entry: bool = False,
+    ) -> dict[str, object]:
+        source_any: object = ""
+        try:
+            source_any = emit_impl(ir, output_path, export_layer_options_any(emitter_options, layer="emitter"))
+        except TypeError:
+            try:
+                source_any = emit_impl(ir, output_path)
+            except Exception:
+                if not suppress_emit_exceptions:
+                    raise
+                source_any = ""
+        except Exception:
+            if not suppress_emit_exceptions:
+                raise
+            source_any = ""
+        return export_module_artifact_any(
+            normalize_module_artifact_carrier(
+                source_any,
+                module_id=module_id,
+                output_path=output_path,
+                extension=extension,
+                is_entry=is_entry,
+            )
+        )
+
+    return _emit_module
+
+
 def flatten_module_artifact_carrier(module_artifact: ModuleArtifactCarrier) -> tuple[ModuleArtifactCarrier, ...]:
     primary = ModuleArtifactCarrier(
         module_id=module_artifact.module_id,

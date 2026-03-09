@@ -34,6 +34,8 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_uses_builder_helpers_for_module_root_and_trivia(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertIn("def _sh_make_kind_carrier(", text)
+        self.assertIn("def _sh_make_node(", text)
+        self.assertIn("def _sh_make_stmt_node(", text)
         self.assertIn("def _sh_make_trivia_blank(", text)
         self.assertIn("def _sh_make_trivia_comment(", text)
         self.assertIn("def _sh_make_expr_token(", text)
@@ -256,16 +258,20 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_expr_envelopes_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        node_helper_text = text.split("def _sh_make_node", 1)[1].split("def _sh_make_stmt_node", 1)[0]
         helper_text = text.split("def _sh_make_value_expr", 1)[1].split("def _sh_make_name_expr", 1)[0]
         name_text = text.split("def _sh_make_name_expr", 1)[1].split("def _sh_make_tuple_expr", 1)[0]
         tuple_text = text.split("def _sh_make_tuple_expr", 1)[1].split("def _sh_make_constant_expr", 1)[0]
         call_text = text.split("def _sh_make_call_expr", 1)[1].split("def _sh_make_keyword_arg", 1)[0]
         dict_text = text.split("def _sh_make_dict_expr", 1)[1].split("def _sh_make_list_comp_expr", 1)[0]
+        slice_text = text.split("def _sh_make_slice_node", 1)[1].split("def _sh_make_subscript_expr", 1)[0]
 
-        self.assertIn('node = _sh_make_kind_carrier(kind)', helper_text)
-        self.assertIn('node["source_span"] = source_span', helper_text)
-        self.assertIn('node["resolved_type"] = resolved_type', helper_text)
-        self.assertIn('node["casts"] = [] if casts is None else casts', helper_text)
+        self.assertIn('node = _sh_make_kind_carrier(kind)', node_helper_text)
+        self.assertIn("node.update(fields)", node_helper_text)
+        self.assertIn('node = _sh_make_node(', helper_text)
+        self.assertIn("source_span=source_span", helper_text)
+        self.assertIn("resolved_type=resolved_type", helper_text)
+        self.assertIn("casts=[] if casts is None else casts", helper_text)
         self.assertIn('node = _sh_make_value_expr(', name_text)
         self.assertIn('"Name"', name_text)
         self.assertIn('node = _sh_make_value_expr(', tuple_text)
@@ -274,10 +280,40 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('"Call"', call_text)
         self.assertIn('node = _sh_make_value_expr(', dict_text)
         self.assertIn('"Dict"', dict_text)
+        self.assertIn('return _sh_make_node("Slice", lower=lower, upper=upper, step=step)', slice_text)
         self.assertNotIn('"kind": "Name"', name_text)
         self.assertNotIn('"kind": "Tuple"', tuple_text)
         self.assertNotIn('"kind": "Call"', call_text)
         self.assertNotIn('"kind": "Dict"', dict_text)
+        self.assertNotIn('node = _sh_make_kind_carrier("Slice")', slice_text)
+
+    def test_core_source_routes_statement_envelopes_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        node_helper_text = text.split("def _sh_make_node", 1)[1].split("def _sh_make_stmt_node", 1)[0]
+        helper_text = text.split("def _sh_make_stmt_node", 1)[1].split("def _sh_make_trivia_blank", 1)[0]
+        blank_text = text.split("def _sh_make_trivia_blank", 1)[1].split("def _sh_make_trivia_comment", 1)[0]
+        comment_text = text.split("def _sh_make_trivia_comment", 1)[1].split("def _sh_make_expr_token", 1)[0]
+        expr_text = text.split("def _sh_make_expr_stmt", 1)[1].split("def _sh_make_value_expr", 1)[0]
+        assign_text = text.split("def _sh_make_assign_stmt", 1)[1].split("def _sh_make_ann_assign_stmt", 1)[0]
+        except_text = text.split("def _sh_make_except_handler", 1)[1].split("def _sh_make_try_stmt", 1)[0]
+        try_text = text.split("def _sh_make_try_stmt", 1)[1].split("def _sh_make_for_stmt", 1)[0]
+        fn_text = text.split("def _sh_make_function_def_stmt", 1)[1].split("def _sh_make_class_def_stmt", 1)[0]
+
+        self.assertIn('node = _sh_make_kind_carrier(kind)', node_helper_text)
+        self.assertIn("node.update(fields)", node_helper_text)
+        self.assertIn("return _sh_make_node(kind, source_span=source_span)", helper_text)
+        self.assertIn('return _sh_make_node("blank", count=count)', blank_text)
+        self.assertIn('return _sh_make_node("comment", text=text)', comment_text)
+        self.assertIn('node = _sh_make_stmt_node("Expr", source_span)', expr_text)
+        self.assertIn('node = _sh_make_stmt_node("Assign", source_span)', assign_text)
+        self.assertIn('return _sh_make_node("ExceptHandler", type=type_expr, name=name, body=body)', except_text)
+        self.assertIn('node = _sh_make_stmt_node("Try", source_span)', try_text)
+        self.assertIn('node = _sh_make_stmt_node("FunctionDef", source_span)', fn_text)
+        self.assertNotIn('{"kind": "Expr"', expr_text)
+        self.assertNotIn('{"kind": "Assign"', assign_text)
+        self.assertNotIn('"kind": "ExceptHandler"', except_text)
+        self.assertNotIn('{"kind": "Try"', try_text)
+        self.assertNotIn('{"kind": "FunctionDef"', fn_text)
 
     def test_core_source_uses_builder_helpers_for_residual_stmt_name_tuple_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
@@ -413,7 +449,7 @@ class EastCoreTest(unittest.TestCase):
         inline_kinds = {kind for kind in raw_kinds if kind != "" and kind[0].isupper()}
         trivia_kinds = {kind for kind in raw_kinds if kind != "" and kind[0].islower()}
 
-        self.assertIn('node = _sh_make_kind_carrier("Expr")', text)
+        self.assertIn('node = _sh_make_stmt_node("Expr", source_span)', text)
         self.assertIn('node = _sh_make_kind_carrier("Slice")', text)
         self.assertIn('node = _sh_make_kind_carrier("blank")', text)
         self.assertIn('node = _sh_make_kind_carrier("comment")', text)
