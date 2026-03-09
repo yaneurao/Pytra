@@ -23,7 +23,7 @@ struct ResolvedBackendSpec {
 
 struct LayerOptionsCarrier {
     str layer;
-    dict<str, object> values;
+    dict<str, str> values;
 
     dict<str, object> to_legacy_dict() const;
 };

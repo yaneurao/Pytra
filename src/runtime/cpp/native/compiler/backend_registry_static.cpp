@@ -116,20 +116,22 @@ ResolvedBackendSpec _coerce_backend_spec(const dict<str, object>& spec) {
 }
 
 LayerOptionsCarrier _coerce_layer_options(const str& layer, const dict<str, object>& raw) {
-    return LayerOptionsCarrier{layer, raw};
+    return LayerOptionsCarrier{layer, dict<str, str>(raw)};
 }
 
 }  // namespace
 
 dict<str, object> ResolvedBackendSpec::to_legacy_dict() const {
-    dict<str, object> out = {};
-    out["target_lang"] = make_object(carrier.target_lang);
-    out["extension"] = make_object(carrier.extension);
-    return out;
+    return dict<str, object>(
+        dict<str, str>{
+            {"target_lang", carrier.target_lang},
+            {"extension", carrier.extension},
+        }
+    );
 }
 
 dict<str, object> LayerOptionsCarrier::to_legacy_dict() const {
-    return values;
+    return dict<str, object>(values);
 }
 
 list<str> list_backend_targets() {
@@ -176,8 +178,7 @@ LayerOptionsCarrier resolve_layer_options_typed(
     const dict<str, str>& raw
 ) {
     (void)spec;
-    (void)raw;
-    return LayerOptionsCarrier{layer, dict<str, object>{}};
+    return LayerOptionsCarrier{layer, raw};
 }
 
 dict<str, object> resolve_layer_options(

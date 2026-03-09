@@ -121,6 +121,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("get_backend_spec_typed", native_registry)
         self.assertIn("emit_source_typed", native_registry)
         self.assertNotIn("dict<str, object> raw_spec;", native_registry)
+        self.assertIn("dict<str, str> values;", native_registry)
+        self.assertNotIn("dict<str, object> values;", native_registry)
 
     def test_native_cpp_typed_boundary_make_object_usage_stays_on_export_seams(self) -> None:
         native_transpile = (
@@ -164,11 +166,15 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         )
         self.assertEqual(
             registry_make_object_lines,
-            [
-                'out["target_lang"] = make_object(carrier.target_lang);',
-                'out["extension"] = make_object(carrier.extension);',
-            ],
+            [],
         )
+        self.assertIn('return dict<str, object>(', native_registry)
+        self.assertIn('dict<str, str>{', native_registry)
+        self.assertIn('{"target_lang", carrier.target_lang},', native_registry)
+        self.assertIn('{"extension", carrier.extension},', native_registry)
+        self.assertIn("return dict<str, object>(values);", native_registry)
+        self.assertIn("return LayerOptionsCarrier{layer, raw};", native_registry)
+        self.assertIn("return LayerOptionsCarrier{layer, dict<str, str>(raw)};", native_registry)
         self.assertIn(
             'ir_path.write_text(pytra::std::json::_dump_json_dict(ir, true, ::std::nullopt, ",", ":", 0));',
             native_registry,

@@ -88,6 +88,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に `_sh_make_attribute_expr()` / `_sh_make_call_expr()` / `_sh_make_binop_expr()` guard を追加し、generated mirror 側の `Attribute` / `Call` / `BinOp` が inline `make_object` dict へ戻ったら fail-fast するようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/py2x-selfhost.py` を legacy shim helper なしの direct typed path へ揃え、`load/get_backend_spec/resolve_layer_options/lower/optimize/emit/apply_runtime` をすべて `*_typed()` 直呼びに置き換えた。`selfhost/py2cpp.cpp` / `selfhost/py2cpp_stage2.cpp` は `to_legacy_dict()` bridge を含まないことを `test_py2x_entrypoints_contract.py` で固定し、version gate は `src/py2x-selfhost.py` を `cpp` lane として監視するよう更新したうえで `transpiler_versions.json` の `cpp` を `0.282.0` へ上げた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `tools/check_transpiler_version_gate.py` で `src/py2x-selfhost.py` を cpp lane の direct dependency に追加し、`test_check_transpiler_version_gate.py` で selfhost entrypoint 変更時の version bump 漏れを fail-fast にした。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native `LayerOptionsCarrier` の internal carrier を `dict<str, object>` から `dict<str, str>` へ縮め、`resolve_layer_options_typed()` は raw CLI option string をそのまま保持、legacy boxing は `to_legacy_dict()` adapter seam にだけ残るようにした。`test_py2x_entrypoints_contract.py` で header/impl の string carrier 契約も固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
