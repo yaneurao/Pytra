@@ -148,8 +148,11 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             [
                 'out["target_lang"] = make_object(carrier.target_lang);',
                 'out["extension"] = make_object(carrier.extension);',
-                'ir_path.write_text(pytra::std::json::dumps(make_object(ir), true));',
             ],
+        )
+        self.assertIn(
+            'ir_path.write_text(pytra::std::json::_dump_json_dict(ir, true, ::std::nullopt, ",", ":", 0));',
+            native_registry,
         )
 
     def test_typed_backend_specs_preserve_legacy_metadata(self) -> None:
