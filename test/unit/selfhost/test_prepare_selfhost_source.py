@@ -31,6 +31,7 @@ def _slice_block(text: str, start_marker: str, end_marker: str) -> str:
 
 
 _CPP_INLINE_KIND_RE = re.compile(r'dict<str, object>\{\{"kind", make_object\("([^"]+)"\)')
+_CPP_FUNCTION_DEF_RE = re.compile(r"^(?:[\w:<>,&* ]+?)\s+([A-Za-z_][A-Za-z0-9_]*)\([^;]*\)\s*\{$")
 
 
 def _generated_cpp_core_inline_kinds(
@@ -41,22 +42,51 @@ def _generated_cpp_core_inline_kinds(
     if scope not in {"all", "callsite", "nonstmt_callsite"}:
         raise ValueError(f"unsupported inline-kind scope: {scope}")
     kinds: set[str] = set()
+    current_function: str | None = None
+    current_function_brace_depth = 0
     for line in text.splitlines():
+        stripped = line.strip()
+        function_match = _CPP_FUNCTION_DEF_RE.match(stripped)
+        if function_match is not None:
+            current_function = function_match.group(1)
+            current_function_brace_depth = 1
+            continue
         match = _CPP_INLINE_KIND_RE.search(line)
         if match is None:
+            if current_function is not None:
+                current_function_brace_depth += line.count("{")
+                current_function_brace_depth -= line.count("}")
+                if current_function_brace_depth <= 0:
+                    current_function = None
+                    current_function_brace_depth = 0
             continue
         kind = match.group(1)
-        if kind == "" or not kind[0].isupper():
-            continue
-        if scope != "all":
-            stripped = line.strip()
-            if stripped.startswith('return dict<str, object>{{"kind"'):
-                continue
-            if stripped.startswith('dict<str, object> node = dict<str, object>{{"kind"'):
-                continue
-            if scope == "nonstmt_callsite" and "_sh_push_stmt_with_trivia(" in stripped:
-                continue
-        kinds.add(kind)
+        if kind != "" and kind[0].isupper():
+            if scope != "all":
+                in_helper_definition = current_function is not None and current_function.startswith("_sh_make_")
+                if in_helper_definition:
+                    if current_function is not None:
+                        current_function_brace_depth += line.count("{")
+                        current_function_brace_depth -= line.count("}")
+                        if current_function_brace_depth <= 0:
+                            current_function = None
+                            current_function_brace_depth = 0
+                    continue
+                if scope == "nonstmt_callsite" and "_sh_push_stmt_with_trivia(" in stripped:
+                    if current_function is not None:
+                        current_function_brace_depth += line.count("{")
+                        current_function_brace_depth -= line.count("}")
+                        if current_function_brace_depth <= 0:
+                            current_function = None
+                            current_function_brace_depth = 0
+                    continue
+            kinds.add(kind)
+        if current_function is not None:
+            current_function_brace_depth += line.count("{")
+            current_function_brace_depth -= line.count("}")
+            if current_function_brace_depth <= 0:
+                current_function = None
+                current_function_brace_depth = 0
     return kinds
 
 
@@ -481,6 +511,8 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
             {
                 "AnnAssign",
                 "Assign",
+                "Call",
+                "Dict",
                 "Expr",
                 "Name",
                 "Tuple",
@@ -511,6 +543,8 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertEqual(
             inline_nonstmt_callsite_kinds,
             {
+                "Call",
+                "Dict",
                 "Name",
                 "Tuple",
             },
@@ -520,7 +554,6 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
                 "Assign",
                 "AnnAssign",
                 "Expr",
-                "Call",
                 "Import",
                 "ImportFrom",
                 "FunctionDef",
