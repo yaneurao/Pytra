@@ -130,6 +130,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_east_core.py` に `src/toolchain/ir/core.py` 全体の raw inline `kind` 残存集合 guard も追加し、正本側では uppercase residual が helper 定義の `Expr/Slice`、lowercase residual が trivia 用 `blank/comment` 以外へ増えないことを固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/ir/core.py` の top-level function/class と class method の declaration span を `_sh_block_end_span(...)` へ寄せ、`test_east_core.py` で import / decl helper call site と旧 inline `source_span` carrier 不在も固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/ir/core.py` の `_sh_block_end_span()` / `_sh_stmt_span()` も multi-line span を `_sh_span(..., end_lineno=...)` 経由へ統一し、`test_east_core.py` で statement span helper が raw `source_span` dict を直返ししないことを固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` の generated residual guard helper を `stmt_callsite` / `helper_only` まで拡張し、statement wrapper 側の残存集合を `AnnAssign/Assign/Expr`、helper 定義専用の残存集合を `FunctionDef/ClassDef/Import/ImportFrom` として固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` の generated residual guard helper を `helper_only` / `stmt_callsite` まで拡張し、helper 定義専用残存を `ClassDef/FunctionDef/Import/ImportFrom`、statement wrapper 側の実 residual を `AnnAssign/Assign/Expr` として固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
