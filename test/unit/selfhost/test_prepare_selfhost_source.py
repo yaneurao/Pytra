@@ -270,6 +270,22 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("dict<str, object> _sh_make_module_root(", text)
         self.assertIn("dict<str, object> _sh_make_assign_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_ann_assign_stmt(", text)
+        self.assertIn(
+            "_sh_make_name_expr(_sh_span(ln_no, ln_txt.find(fname), ln_txt.find(fname) + py_len(fname)), fname, fty)",
+            text,
+        )
+        self.assertIn(
+            "_sh_make_name_expr(_sh_span(ln_no, name_col, name_col + py_len(fname)), fname, py_to_string(dict_get_node(val_node, \"resolved_type\", \"unknown\")))",
+            text,
+        )
+        self.assertIn(
+            "_sh_make_name_expr(_sh_span(i, ln.find(name), ln.find(name) + py_len(name)), name, ann)",
+            text,
+        )
+        self.assertIn(
+            "_sh_make_name_expr(_sh_span(i, ln.find(name), ln.find(name) + py_len(name)), name, decl_type)",
+            text,
+        )
         self.assertIn("dict<str, object> _sh_make_attribute_expr(", text)
         self.assertIn("dict<str, object> _sh_make_call_expr(", text)
         self.assertIn("dict<str, object> _sh_make_binop_expr(", text)
@@ -291,6 +307,10 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("dict<str, object> _sh_make_keyword_arg(", text)
         self.assertIn("dict<str, object> _sh_make_cast_entry(", text)
         self.assertIn("dict<str, object> _sh_make_constant_expr(", text)
+        self.assertIn("dict<str, object> _sh_make_tuple_expr(", text)
+        self.assertIn("dict<str, object> _sh_make_list_expr(", text)
+        self.assertIn("dict<str, object> _sh_make_set_expr(", text)
+        self.assertIn("dict<str, object> _sh_make_dict_expr(", text)
         self.assertIn("dict<str, object> _sh_make_if_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_for_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_for_range_stmt(", text)
@@ -305,10 +325,18 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("import_symbol_bindings[local_name] = _sh_make_import_symbol_binding(module_id, export_name);", text)
         self.assertIn("qualified_symbol_refs.append(_sh_make_qualified_symbol_ref(module_id, export_name, local_name));", text)
         self.assertIn("dict<str, object> out = _sh_make_module_root(", text)
+        self.assertIn("return _sh_make_tuple_expr(", text)
+        self.assertIn("return _sh_make_list_expr(", text)
+        self.assertIn("return _sh_make_dict_expr(", text)
+        self.assertIn("return _sh_make_set_expr(", text)
         self.assertNotIn('dict<str, object> item = dict<str, object>{{"kind", make_object("FunctionDef")}', text)
         self.assertNotIn('dict<str, object> cls_item = dict<str, object>{{"kind", make_object("ClassDef")}', text)
         self.assertNotIn('body_items.append(dict<str, object>(dict<str, object>{{"kind", make_object("Import")}', text)
         self.assertNotIn('body_items.append(dict<str, object>(dict<str, object>{{"kind", make_object("ImportFrom")}', text)
+        self.assertNotIn('class_body.append(dict<str, object>(dict<str, object>{{"kind", make_object("AnnAssign")}', text)
+        self.assertNotIn('class_body.append(dict<str, object>(dict<str, object>{{"kind", make_object("Assign")}', text)
+        self.assertNotIn('body_items.append(dict<str, object>(dict<str, object>{{"kind", make_object("AnnAssign")}', text)
+        self.assertNotIn('body_items.append(dict<str, object>(dict<str, object>{{"kind", make_object("Assign")}', text)
         self.assertNotIn('return dict<str, object>{{"name", make_object(fn_name)}, {"ret", make_object(', text)
         self.assertNotIn('out.append(dict<str, object>{{"k", make_object("STR")}', text)
         self.assertNotIn('import_bindings.append(dict<str, object>{{"module_id", make_object(module_id)}', text)
@@ -318,6 +346,14 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertNotIn("dict<str, object> meta = dict<str, object>{};", text)
         self.assertNotIn('meta[py_to_string("qualified_symbol_refs")] = make_object(qualified_symbol_refs);', text)
         self.assertNotIn('out[py_to_string("source_span")] = make_object(source_span);', text)
+        self.assertNotIn('return dict<str, object>{{"kind", make_object("Name")}, {"source_span", make_object(this->_node_span(int64(py_to_int64(py_dict_get(nm, py_to_string("s"))))', text)
+        self.assertNotIn('{"resolved_type", make_object("tuple[unknown]")}, {"borrow_kind", make_object("value")}, {"casts", make_object(list<object>{})}, {"repr", make_object(this->_src_slice(', text)
+        self.assertNotIn('{"resolved_type", make_object("float64")}, {"borrow_kind", make_object("value")}, {"casts", make_object(list<object>{})}, {"repr", make_object(py_dict_get(tok, py_to_string("v")))}, {"value", make_object(py_to_float64(py_dict_get(tok, py_to_string("v"))))}', text)
+        self.assertNotIn('{"resolved_type", make_object("bool")}, {"borrow_kind", make_object("value")}, {"casts", make_object(list<object>{})}, {"repr", make_object(nm)}, {"value", make_object(nm == "True")}};', text)
+        self.assertNotIn('{"resolved_type", make_object("tuple[]")}, {"borrow_kind", make_object("value")}, {"casts", make_object(list<object>{})}, {"repr", make_object(this->_src_slice(', text)
+        self.assertNotIn('{"resolved_type", make_object("list[" + et + "]")}, {"borrow_kind", make_object("value")}, {"casts", make_object(list<object>{})}, {"repr", make_object(this->_src_slice(', text)
+        self.assertNotIn('{"resolved_type", make_object("dict[unknown,unknown]")}, {"borrow_kind", make_object("value")}, {"casts", make_object(list<object>{})}, {"repr", make_object(this->_src_slice(', text)
+        self.assertNotIn('{"resolved_type", make_object("set[" + et + "]")}, {"borrow_kind", make_object("value")}, {"casts", make_object(list<object>{})}, {"repr", make_object(this->_src_slice(', text)
         self.assertNotIn('node = dict<str, object>{{"kind", make_object("Attribute")}', text)
         self.assertNotIn('dict<str, object> payload = dict<str, object>{{"kind", make_object("Call")}', text)
         self.assertNotIn('return dict<str, object>{{"kind", make_object("BinOp")}', text)
