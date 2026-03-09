@@ -167,7 +167,7 @@ Reason:
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-02] Move tuple constant-index access to `std::get<N>` even in generated/runtime paths, and slim or retire the tuple `py_at` helper.
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-03] Shrink typed list/dict mutation helpers down to object-bridge-only surface, prioritizing direct emitter lowering for typed lanes.
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-01] Move ownership of `type_id` registry / subtype / isinstance logic to `py_tid_*`, and slim the wrappers in `py_runtime.h`.
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] Update `test_cpp_runtime_type_id.py` and generated runtime callers, and add a guard so cyclic ownership does not reappear.
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] Update `test_cpp_runtime_type_id.py` and generated runtime callers, and add a guard so cyclic ownership does not reappear.
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] Clean up small remaining surfaces such as the `py_isinstance_of` fast path and the `PyFile` alias.
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-02] Refresh representative tests / parity / docs / archive and close the task.
 
@@ -192,3 +192,5 @@ Reason:
 - 2026-03-09: `S4-01` does not delegate `py_register_class_type` directly to generated `py_tid_register_class_type`. `PYTRA_DECLARE_CLASS_TYPE` invokes `py_register_class_type(...)` during cross-TU static initialization, so allocation has to stay on the function-local-static registry in `py_runtime.h` for init-order safety.
 - 2026-03-09: As the `S4-01` bridge, `src/pytra/built_in/type_id.py` gained `py_tid_register_known_class_type(type_id, base_type_id)`, and the generated `type_id.cpp` now exposes a canonical entrypoint for synchronizing pre-allocated user `type_id`s into the SoT registry.
 - 2026-03-09: Implemented `S4-01` by adding only `py_sync_generated_user_type_registry()` to `py_runtime.h`; public `py_is_subtype` / `py_issubclass` / `py_isinstance` now sync the local user registry and then delegate to generated `py_tid_*`. `py_runtime_type_id(const object&)` remains in `core` as the raw `PyObj::type_id()` primitive.
+- 2026-03-09: Implemented `S4-02` by adding a direct generated-lane smoke to `test_cpp_runtime_type_id.py`. It registers pre-allocated user type IDs through `py_tid_register_known_class_type(...)` and verifies `py_tid_runtime_type_id(...)` plus `py_tid_isinstance(...)` without going through the public wrapper path first.
+- 2026-03-09: The `S4-02` runtime inventory guard now lives in `test_cpp_runtime_iterable.py`. It asserts that generated `type_id.cpp` still contains `py_tid_register_known_class_type(...)` and `py_tid_is_subtype(py_runtime_type_id(...), ...)`, and that `py_runtime.h` still exposes `py_sync_generated_user_type_registry()` plus the `py_tid_register_known_class_type(...)` bridge. If `py_tid_*` starts reverse-calling `py_is_subtype(...)` again, the guard fails.

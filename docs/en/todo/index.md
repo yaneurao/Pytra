@@ -44,10 +44,10 @@ Context: [docs/ja/plans/p0-cpp-pyruntime-core-boundary-realign.md](../plans/p0-c
 7. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-02] Move tuple constant-index access to `std::get<N>` even in generated/runtime paths, and slim or retire the tuple `py_at` helper.
 8. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-03] Shrink typed list/dict mutation helpers down to object-bridge-only surface, prioritizing direct emitter lowering for typed lanes.
 9. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-01] Move ownership of `type_id` registry / subtype / isinstance logic to `py_tid_*`, and slim the wrappers in `py_runtime.h`.
-10. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] Update `test_cpp_runtime_type_id.py` and generated runtime callers, and add a guard so cyclic ownership does not reappear.
+10. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] Update `test_cpp_runtime_type_id.py` and generated runtime callers, and add a guard so cyclic ownership does not reappear.
 11. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] Clean up small remaining surfaces such as the `py_isinstance_of` fast path and the `PyFile` alias.
 12. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-02] Refresh representative tests / parity / docs / archive and close the task.
-- Progress memo: [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] `S4-01` kept `py_register_class_type` on the static-init-safe local registry, added `py_tid_register_known_class_type(...)` plus a sync bridge, and thinned public `py_is_subtype` / `py_issubclass` / `py_isinstance` down to generated `py_tid_*` delegates. Next is tightening the runtime inventory guard and `type_id` regressions.
+- Progress memo: [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] `S4-02` added a direct generated-lane smoke plus runtime inventory guards so `py_tid_register_known_class_type(...)`, `py_tid_is_subtype(...)`, and the public wrapper sync bridge cannot quietly fall back into cyclic ownership. Next is the small-cleanup slice.
 
 ### P1: Structure EAST type representation and lift union / nominal ADT / narrowing out of string processing
 

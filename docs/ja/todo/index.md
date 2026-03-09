@@ -45,10 +45,10 @@
 7. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-02] tuple constant-index を generated/runtime path でも `std::get<N>` へ寄せ、tuple `py_at` helper を縮退または退役させる。
 8. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-03] typed list/dict mutation helper を object bridge 専用 surface まで縮め、typed lane は emitter direct lowering を優先する。
 9. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-01] `type_id` registry / subtype / isinstance の ownership を `py_tid_*` 主体へ寄せ、`py_runtime.h` の wrapper を薄くする。
-10. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] `test_cpp_runtime_type_id.py` と generated runtime caller を更新し、cyclic ownership が再混入しないよう guard を追加する。
+10. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] `test_cpp_runtime_type_id.py` と generated runtime caller を更新し、cyclic ownership が再混入しないよう guard を追加する。
 11. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] `py_isinstance_of` fast path、`PyFile` alias などの small cleanup を片付ける。
 12. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-02] representative test / parity / docs / archive を更新して閉じる。
-- 進捗メモ: [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] `S4-01` として `py_register_class_type` は static init-safe local registry のまま維持しつつ、`py_tid_register_known_class_type(...)` と sync bridge を追加して `py_is_subtype` / `py_issubclass` / `py_isinstance` を generated `py_tid_*` へ薄く委譲した。次は runtime inventory guard と `type_id` 回帰を強化する。
+- 進捗メモ: [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] `S4-02` として direct generated-lane smoke と runtime inventory guard を追加し、`py_tid_register_known_class_type(...)` / `py_tid_is_subtype(...)` / public wrapper sync bridge が再び cyclic ownership へ戻らないことを固定した。次は small cleanup に進む。
 
 ### P1: EAST の型表現を構造化し、union / nominal ADT / narrowing を文字列処理から引き上げる
 
