@@ -108,7 +108,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/ir2lang.py` でも writer 前の artifact 正規化を `coerce_module_artifact()` / `export_*_artifact_carrier()` に切り替え、inline `.to_legacy_dict()` と `hasattr(..., "to_legacy_dict")` 分岐を撤去した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/py2x.py` の writer lane でも `coerce_module_artifact()` を entrypoint 直下で使い、typed path の `hasattr(..., "to_legacy_dict")` 分岐をやめて `export_program_artifact_carrier()` / `export_module_artifact_carrier()` 正規経路へ揃えた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `coerce_program_artifact()` を導入して `src/py2x.py` の writer lane を typed `ProgramArtifactCarrier` 正規化へ寄せ、entrypoint-local な dict 分岐と module list 正規化を helper-owned carrier coercion へ置き換えた。`test_py2x_entrypoints_contract.py` と `test_py2x_cli.py` で dict test double lane と helper module flatten を固定した。
-- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の `expr_token` / `import_binding` guard を追加し、`_sh_make_expr_token()` / `_sh_make_import_binding()` が tracked mirror から外れたり raw dict append が戻ったりしたら fail-fast するようにした。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の `def_sig` / `expr_token` / `import_binding` guard を追加し、`_sh_make_def_sig_info()` / `_sh_make_expr_token()` / `_sh_make_import_binding()` が tracked mirror から外れたり raw dict return/append が戻ったりしたら fail-fast するようにした。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
