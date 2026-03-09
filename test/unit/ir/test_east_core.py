@@ -98,6 +98,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("def _sh_make_module_root(", text)
         self.assertIn("out = _sh_make_module_root(", text)
         self.assertNotIn('out["kind"] = "Module"', text)
+        self.assertNotIn('_SH_IMPORT_SYMBOLS[local] = {"module": module, "name": export}', text)
+        self.assertNotIn('pre_import_symbol_bindings[alias_name] = {', text)
+        self.assertNotIn('import_symbol_bindings[bind_name_dc] = {', text)
+        self.assertNotIn('import_symbol_bindings[bind_name] = {', text)
 
     def test_top_level_extern_decorator_is_preserved(self) -> None:
         src = """
