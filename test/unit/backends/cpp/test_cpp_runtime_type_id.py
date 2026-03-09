@@ -118,6 +118,77 @@ int main() {
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             self.assertIn("runtime type_id ok", run.stdout)
 
+    def test_generated_type_id_registry_accepts_preallocated_user_ids(self) -> None:
+        cpp_src = r'''
+#include "runtime/cpp/core/py_runtime.h"
+
+#include <cassert>
+#include <iostream>
+
+class BaseObj : public PyObj {
+public:
+    explicit BaseObj(uint32 type_id) : PyObj(type_id) {}
+};
+
+class ChildObj : public BaseObj {
+public:
+    explicit ChildObj(uint32 type_id) : BaseObj(type_id) {}
+};
+
+int main() {
+    _py_reset_type_registry_for_test();
+
+    int64 base_tid = 1400;
+    int64 child_tid = 1401;
+    assert(py_tid_register_known_class_type(base_tid, PYTRA_TID_OBJECT) == base_tid);
+    assert(py_tid_register_known_class_type(child_tid, base_tid) == child_tid);
+    assert(py_tid_is_subtype(child_tid, base_tid));
+    assert(py_tid_issubclass(child_tid, base_tid));
+
+    object child_obj = object_new<ChildObj>(static_cast<uint32>(child_tid));
+    assert(py_tid_runtime_type_id(child_obj) == child_tid);
+    assert(py_tid_isinstance(child_obj, base_tid));
+    assert(py_tid_isinstance(child_obj, child_tid));
+
+    std::cout << "generated type_id ok" << std::endl;
+    return 0;
+}
+'''
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src = work / "generated_type_id.cpp"
+            exe = work / "generated_type_id.out"
+            src.write_text(cpp_src, encoding="utf-8")
+
+            comp = self._run(
+                [
+                    "g++",
+                    "-std=c++20",
+                    "-O2",
+                    "-I",
+                    "src",
+                    "-I",
+                    "src/runtime/cpp",
+                    str(src),
+                    *CPP_RUNTIME_SRCS,
+                    "-o",
+                    str(exe),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="compile generated type_id smoke",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+
+            run = self._run(
+                [str(exe)],
+                cwd=work,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run generated type_id smoke",
+            )
+            self.assertEqual(run.returncode, 0, msg=run.stderr)
+            self.assertIn("generated type_id ok", run.stdout)
+
     def test_rc_handle_upcast_from_derived_compiles(self) -> None:
         cpp_src = r'''
 #include "runtime/cpp/core/gc.h"

@@ -170,7 +170,7 @@
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-02] tuple constant-index を generated/runtime path でも `std::get<N>` へ寄せ、tuple `py_at` helper を縮退または退役させる。
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-03] typed list/dict mutation helper を object bridge 専用 surface まで縮め、typed lane は emitter direct lowering を優先する。
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-01] `type_id` registry / subtype / isinstance の ownership を `py_tid_*` 主体へ寄せ、`py_runtime.h` の wrapper を薄くする。
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] `test_cpp_runtime_type_id.py` と generated runtime caller を更新し、cyclic ownership が再混入しないよう guard を追加する。
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] `test_cpp_runtime_type_id.py` と generated runtime caller を更新し、cyclic ownership が再混入しないよう guard を追加する。
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] `py_isinstance_of` fast path、`PyFile` alias などの small cleanup を片付ける。
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-02] representative test / parity / docs / archive を更新して閉じる。
 
@@ -195,3 +195,5 @@
 - 2026-03-09: `S4-01` では `py_register_class_type` を generated `py_tid_register_class_type` へ直委譲しない。`PYTRA_DECLARE_CLASS_TYPE` が cross-TU static initialization 中に `py_register_class_type(...)` を呼ぶため、allocation 自体は `py_runtime.h` の function-local static registry に残す必要がある。
 - 2026-03-09: `S4-01` の bridge として `src/pytra/built_in/type_id.py` に `py_tid_register_known_class_type(type_id, base_type_id)` を追加し、generated `type_id.cpp` 側へ「事前に確保済み user type_id を canonical registry へ同期する」entrypoint を用意した。これにより registry mutation algorithm は generated SoT 側へ戻せる。
 - 2026-03-09: `S4-01` として `py_runtime.h` には `py_sync_generated_user_type_registry()` だけを追加し、public `py_is_subtype` / `py_issubclass` / `py_isinstance` は local user registry を同期した上で `py_tid_*` へ委譲する薄い wrapper にした。`py_runtime_type_id(const object&)` は raw `PyObj::type_id()` primitive として core に残す。
+- 2026-03-09: `S4-02` として `test_cpp_runtime_type_id.py` に `py_tid_register_known_class_type(...)` を直接使う smoke を追加し、generated registry 単体でも pre-allocated user type_id、`py_tid_runtime_type_id(...)`、`py_tid_isinstance(...)` が成り立つことを固定した。
+- 2026-03-09: `S4-02` の runtime inventory guard は `test_cpp_runtime_iterable.py` へ追加し、generated `type_id.cpp` に `py_tid_register_known_class_type(...)` と `py_tid_is_subtype(py_runtime_type_id(...), ...)` が残ること、および `py_runtime.h` が `py_sync_generated_user_type_registry()` と `py_tid_register_known_class_type(...)` bridge を保持することを確認する。これで `py_tid_* -> py_is_subtype(...)` の逆参照が戻ると fail する。
