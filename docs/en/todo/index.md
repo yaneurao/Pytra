@@ -37,7 +37,7 @@ Context: [docs/ja/plans/p1-east-typeexpr-strengthening.md](../plans/p1-east-type
 
 1. [ ] [ID: P1-EAST-TYPEEXPR-01] Structure EAST type representation and lift union / nominal ADT / narrowing out of string processing.
 2. [x] [ID: P1-EAST-TYPEEXPR-01-S1-01] Inventory `split_union` / `normalize_type_name` / `resolved_type` string dependencies across frontend, lowering, optimizer, and backends, then classify them into `optional`, `dynamic union`, `nominal ADT`, and `generic container` usage.
-3. [ ] [ID: P1-EAST-TYPEEXPR-01-S1-02] Lock the end state, non-goals, and migration order in the decision log so they remain consistent with archived `EAST123` and `JsonValue` contracts.
+3. [x] [ID: P1-EAST-TYPEEXPR-01-S1-02] Lock the end state, non-goals, and migration order in the decision log so they remain consistent with archived `EAST123` and `JsonValue` contracts.
 4. [ ] [ID: P1-EAST-TYPEEXPR-01-S2-01] Extend `spec-east` / `spec-dev` with `TypeExpr` schema, the three-way union classification, and the authority relationship between `type_expr` and `resolved_type`.
 5. [ ] [ID: P1-EAST-TYPEEXPR-01-S2-02] Fix the IR contract that treats `JsonValue` as a nominal closed ADT rather than a generic union, including decode/narrowing responsibility and backend fail-closed rules.
 6. [ ] [ID: P1-EAST-TYPEEXPR-01-S3-01] Update frontend type-annotation parsing to build `TypeExpr` from `int | bool`, `T | None`, and nested generic unions.
@@ -48,7 +48,7 @@ Context: [docs/ja/plans/p1-east-typeexpr-strengthening.md](../plans/p1-east-type
 11. [ ] [ID: P1-EAST-TYPEEXPR-01-S5-02] Audit other backends for `String/object` union fallbacks and align unsupported `TypeExpr` unions to explicit errors or guarded compatibility paths.
 12. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-01] Put a representative `JsonValue` lane on top of the new `TypeExpr` / nominal-ADT contract and verify that future runtime work can proceed IR-contract-first.
 13. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-02] Refresh selfhost / unit / docs / archive and add guards against the reintroduction of stringly-typed union debt.
-- Progress memo: [ID: P1-EAST-TYPEEXPR-01-S1-02] The `S1-01` inventory confirmed raw-string union handling in frontend/selfhost parsing (`Optional[T] -> "T | None"`), EAST2->EAST3 dynamic-union Box/Unbox checks, the link template specializer's separate type parser, and backend fallbacks that still degrade unions to `object` / `PyAny` / `String`. Next is fixing the end state and migration order.
+- Progress memo: [ID: P1-EAST-TYPEEXPR-01-S2-01] `S1-02` fixed the migration contract: `type_expr` becomes authoritative from `EAST2` onward while `resolved_type` is reduced to a mirror, `JsonValue` is handled as a nominal closed ADT lane rather than a general union, and P1 stops at IR contract plus representative fail-closed behavior while runtime/full language rollout stays in `P2` / `P5`. Next is adding the `TypeExpr` schema to spec.
 
 ### P2: Move compiler boundaries to typed carriers and retreat internal object-carrier / `make_object` usage
 
