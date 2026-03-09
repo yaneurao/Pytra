@@ -9,6 +9,47 @@
 入力制約や言語仕様の正本は [仕様書トップ](../spec/index.md) を参照してください。
 型推論の詳細は [EAST仕様の型推論ルール](../spec/spec-east.md#7-型推論ルール) にあります。
 
+## まずこの 1 ファイルを動かす
+
+最初は fixture を読むより、自分で最小例を 1 本動かすほうが早いです。
+
+`add.py`:
+
+```python
+def add(a: int, b: int) -> int:
+    return a + b
+
+
+if __name__ == "__main__":
+    print(add(3, 4))
+```
+
+これを C++ に変換して、そのまま build + run する最短手順は次です。
+
+```bash
+./pytra add.py --output-dir out/add_case --build --run --exe add.out
+```
+
+想定される標準出力:
+
+```text
+7
+```
+
+まず変換結果だけを見たいなら、single-file 出力を使います。
+
+```bash
+./pytra add.py --output out/add.cpp
+```
+
+Rust に変換したいなら `--target` だけ変えます。
+
+```bash
+./pytra add.py --target rs --output out/add.rs
+```
+
+このページの後半では `test/fixtures/...` を使ったコマンド例も出てきますが、理解の起点は上の `add.py` を基準にすると楽です。
+
 ## 統合CLI（`./pytra`）の使い方
 
 ルートの `./pytra` は、`python3 src/pytra-cli.py` を呼び出す統合CLIランチャーです。

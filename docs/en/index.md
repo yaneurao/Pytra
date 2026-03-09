@@ -2,7 +2,8 @@
 
 The related documents are listed below in the order they are most frequently referenced during usage.
 
-- Start with usage instructions: [Usage Guide](how-to-use.md)
+- Start with the tutorial entry point: [Tutorial](tutorial/README.md)
+- Then read the usage instructions: [Usage Guide](how-to-use.md)
 - Check the developer utility script list: [Tools](spec/spec-tools.md)
 - Review option design (performance/compatibility trade-offs): [Options Specification](spec/spec-options.md)
 - Review runtime layout and include conventions: [Runtime Specification](spec/spec-runtime.md)
