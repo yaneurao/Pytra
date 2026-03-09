@@ -699,7 +699,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_iterator_builtin_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_iterator_builtin_call_expr", 1)[1].split(
-            "def _sh_set_parse_context",
+            "def _sh_annotate_open_call_expr",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -719,6 +719,23 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('runtime_call="py_iter_or_raise"', postfix_text)
         self.assertNotIn('runtime_call="py_next_or_stop"', postfix_text)
         self.assertNotIn('runtime_call="py_reversed"', postfix_text)
+
+    def test_core_source_routes_open_metadata_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_annotate_open_call_expr", 1)[1].split(
+            "def _sh_set_parse_context",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
+        self.assertIn('builtin_name="open"', helper_text)
+        self.assertIn('runtime_call="open"', helper_text)
+        self.assertIn('module_id="pytra.core.py_runtime"', helper_text)
+        self.assertIn('runtime_symbol="open"', helper_text)
+        self.assertIn('_sh_annotate_open_call_expr(', postfix_text)
+        self.assertNotIn('elif fn_name == "open":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
+        self.assertNotIn('runtime_call="open"', postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
