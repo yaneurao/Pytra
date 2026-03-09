@@ -221,14 +221,23 @@ def _sh_span(line: int, col: int, end_col: int, *, end_lineno: int | None = None
     return {"lineno": line, "col": col, "end_lineno": line if end_lineno is None else end_lineno, "end_col": end_col}
 
 
+def _sh_make_kind_carrier(kind: str) -> dict[str, Any]:
+    """`kind` だけを持つ薄い carrier を生成する。"""
+    return {"kind": kind}
+
+
 def _sh_make_trivia_blank(count: int) -> dict[str, Any]:
     """blank trivia item を生成する。"""
-    return {"kind": "blank", "count": count}
+    node = _sh_make_kind_carrier("blank")
+    node["count"] = count
+    return node
 
 
 def _sh_make_trivia_comment(text: str) -> dict[str, Any]:
     """comment trivia item を生成する。"""
-    return {"kind": "comment", "text": text}
+    node = _sh_make_kind_carrier("comment")
+    node["text"] = text
+    return node
 
 
 def _sh_make_expr_token(kind: str, value: str, start: int, end: int) -> dict[str, Any]:
@@ -243,7 +252,10 @@ def _sh_make_expr_token(kind: str, value: str, start: int, end: int) -> dict[str
 
 def _sh_make_expr_stmt(value: dict[str, Any], source_span: dict[str, Any]) -> dict[str, Any]:
     """`Expr` 文 node を構築する。"""
-    return {"kind": "Expr", "source_span": source_span, "value": value}
+    node = _sh_make_kind_carrier("Expr")
+    node["source_span"] = source_span
+    node["value"] = value
+    return node
 
 
 def _sh_make_name_expr(
@@ -512,7 +524,11 @@ def _sh_make_slice_node(
     step: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`Slice` node を構築する。"""
-    return {"kind": "Slice", "lower": lower, "upper": upper, "step": step}
+    node = _sh_make_kind_carrier("Slice")
+    node["lower"] = lower
+    node["upper"] = upper
+    node["step"] = step
+    return node
 
 
 def _sh_make_subscript_expr(

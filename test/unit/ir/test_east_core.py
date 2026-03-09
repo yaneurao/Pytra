@@ -33,6 +33,7 @@ def _walk(node: Any):
 class EastCoreTest(unittest.TestCase):
     def test_core_source_uses_builder_helpers_for_module_root_and_trivia(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        self.assertIn("def _sh_make_kind_carrier(", text)
         self.assertIn("def _sh_make_trivia_blank(", text)
         self.assertIn("def _sh_make_trivia_comment(", text)
         self.assertIn("def _sh_make_expr_token(", text)
@@ -353,8 +354,16 @@ class EastCoreTest(unittest.TestCase):
         inline_kinds = {kind for kind in raw_kinds if kind != "" and kind[0].isupper()}
         trivia_kinds = {kind for kind in raw_kinds if kind != "" and kind[0].islower()}
 
-        self.assertEqual(inline_kinds, {"Expr", "Slice"})
-        self.assertEqual(trivia_kinds, {"blank", "comment"})
+        self.assertIn('node = _sh_make_kind_carrier("Expr")', text)
+        self.assertIn('node = _sh_make_kind_carrier("Slice")', text)
+        self.assertIn('node = _sh_make_kind_carrier("blank")', text)
+        self.assertIn('node = _sh_make_kind_carrier("comment")', text)
+        self.assertNotIn('return {"kind": "Expr", "source_span": source_span, "value": value}', text)
+        self.assertNotIn('return {"kind": "Slice", "lower": lower, "upper": upper, "step": step}', text)
+        self.assertNotIn('return {"kind": "blank", "count": count}', text)
+        self.assertNotIn('return {"kind": "comment", "text": text}', text)
+        self.assertEqual(inline_kinds, set())
+        self.assertEqual(trivia_kinds, set())
         self.assertTrue(
             {
                 "If",
