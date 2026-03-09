@@ -56,14 +56,18 @@
 
 ## 3. タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01] `py_list_item_cast` を退役する。
-- [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S1-01] `py_list_item_cast` の checked-in callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S1-02] list item conversion の canonical rule を決定ログに固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S2-01] representative callsite を explicit conversion へ置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S2-02] regression / inventory guard を更新する。
-- [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S3-01] `py_runtime.h` から `py_list_item_cast` を削除する。
-- [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S3-02] parity / docs / archive を更新して閉じる。
+- [x] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01] `py_list_item_cast` を退役する。
+- [x] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S1-01] `py_list_item_cast` の checked-in callsite を棚卸しする。
+- [x] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S1-02] list item conversion の canonical rule を決定ログに固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S2-01] representative callsite を explicit conversion へ置換する。
+- [x] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S2-02] regression / inventory guard を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S3-01] `py_runtime.h` から `py_list_item_cast` を削除する。
+- [x] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S3-02] parity / docs / archive を更新して閉じる。
 
 ## 4. 決定ログ
 
 - 2026-03-09: 本計画は `py_list_item_cast` helper 名の退役を目的とし、`py_to<T>(object)` と `make_object(...)` の core conversion は非対象に維持する。
+- 2026-03-09: checked-in callsite は `py_runtime.h` 内の `py_list_append_mut` と `py_list_set_at_mut` だけで、generated / emitter / sample / test code に direct callsite は無かった。
+- 2026-03-09: canonical rule は「list item の typed 化は `py_list_append_mut` / `py_list_set_at_mut` 本体へ inline し、`object` は `py_to<T>(item)`、`const char*` は `str(...)` または `py_to<T>(make_object(str(...)))`、その他は explicit constructor / cast で吸収する」と固定した。
+- 2026-03-09: `src/runtime/cpp/native/core/py_runtime.h` から `py_list_item_cast` declaration/definition 3 本を削除し、`test_cpp_runtime_iterable.py` に removed inventory guard を追加した。
+- 2026-03-09: verification は `test_cpp_runtime_iterable.py`, `test_py2cpp_codegen_issues.py`, fixture parity `cases=3 pass=3 fail=0`, `check_todo_priority.py`, `git diff --check` を通した。

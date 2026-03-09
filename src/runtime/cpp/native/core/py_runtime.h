@@ -754,16 +754,6 @@ static inline T py_to(const object& v) {
     }
 }
 
-// list / str の添字・スライス互換ヘルパ。
-template <class T>
-static inline T py_list_item_cast(const object& item);
-
-template <class T>
-static inline T py_list_item_cast(const char* item);
-
-template <class T, class U>
-static inline T py_list_item_cast(const U& item);
-
 template <class T>
 static inline list<T> py_list_slice_copy(const list<T>& values, int64 lo, int64 up) {
     const int64 n = static_cast<int64>(values.size());
@@ -800,14 +790,46 @@ static inline const T& py_list_at_ref(const list<T>& values, int64 idx) {
 
 template <class T, class U>
 static inline void py_list_append_mut(list<T>& values, const U& item) {
-    values.append(py_list_item_cast<T>(item));
+    if constexpr (::std::is_same_v<U, object>) {
+        values.append(py_to<T>(item));
+    } else if constexpr (::std::is_same_v<U, const char*>) {
+        if constexpr (::std::is_same_v<T, str>) {
+            values.append(str(item));
+        } else if constexpr (::std::is_convertible_v<const char*, T>) {
+            values.append(static_cast<T>(item));
+        } else {
+            values.append(py_to<T>(make_object(str(item))));
+        }
+    } else if constexpr (::std::is_same_v<T, U>) {
+        values.append(item);
+    } else if constexpr (::std::is_convertible_v<U, T>) {
+        values.append(static_cast<T>(item));
+    } else {
+        values.append(T(item));
+    }
 }
 
 template <class T, class I, class U>
 static inline void py_list_set_at_mut(list<T>& values, I idx, const U& item) {
     int64 pos = py_to<int64>(idx);
     pos = py_list_normalize_index_or_raise(values, pos, "list index out of range");
-    values[static_cast<::std::size_t>(pos)] = py_list_item_cast<T>(item);
+    if constexpr (::std::is_same_v<U, object>) {
+        values[static_cast<::std::size_t>(pos)] = py_to<T>(item);
+    } else if constexpr (::std::is_same_v<U, const char*>) {
+        if constexpr (::std::is_same_v<T, str>) {
+            values[static_cast<::std::size_t>(pos)] = str(item);
+        } else if constexpr (::std::is_convertible_v<const char*, T>) {
+            values[static_cast<::std::size_t>(pos)] = static_cast<T>(item);
+        } else {
+            values[static_cast<::std::size_t>(pos)] = py_to<T>(make_object(str(item)));
+        }
+    } else if constexpr (::std::is_same_v<T, U>) {
+        values[static_cast<::std::size_t>(pos)] = item;
+    } else if constexpr (::std::is_convertible_v<U, T>) {
+        values[static_cast<::std::size_t>(pos)] = static_cast<T>(item);
+    } else {
+        values[static_cast<::std::size_t>(pos)] = T(item);
+    }
 }
 
 template <class T, class U>
@@ -882,33 +904,6 @@ static inline T& py_at(rc<list<T>>& v, int64 idx) {
 template <class T>
 static inline const T& py_at(const rc<list<T>>& v, int64 idx) {
     return py_list_at_ref(rc_list_ref(v), idx);
-}
-
-template <class T>
-static inline T py_list_item_cast(const object& item) {
-    return py_to<T>(item);
-}
-
-template <class T>
-static inline T py_list_item_cast(const char* item) {
-    if constexpr (::std::is_same_v<T, str>) {
-        return str(item);
-    } else if constexpr (::std::is_convertible_v<const char*, T>) {
-        return static_cast<T>(item);
-    } else {
-        return py_to<T>(make_object(str(item)));
-    }
-}
-
-template <class T, class U>
-static inline T py_list_item_cast(const U& item) {
-    if constexpr (::std::is_same_v<T, U>) {
-        return item;
-    } else if constexpr (::std::is_convertible_v<U, T>) {
-        return static_cast<T>(item);
-    } else {
-        return T(item);
-    }
 }
 
 template <class T, class U>
