@@ -121,17 +121,25 @@ LayerOptionsCarrier _coerce_layer_options(const str& layer, const dict<str, obje
 
 }  // namespace
 
-dict<str, object> ResolvedBackendSpec::to_legacy_dict() const {
+dict<str, object> export_backend_spec(const ResolvedBackendSpec& spec) {
     return dict<str, object>(
         dict<str, str>{
-            {"target_lang", carrier.target_lang},
-            {"extension", carrier.extension},
+            {"target_lang", spec.carrier.target_lang},
+            {"extension", spec.carrier.extension},
         }
     );
 }
 
+dict<str, object> ResolvedBackendSpec::to_legacy_dict() const {
+    return export_backend_spec(*this);
+}
+
+dict<str, object> export_layer_options(const LayerOptionsCarrier& options) {
+    return dict<str, object>(options.values);
+}
+
 dict<str, object> LayerOptionsCarrier::to_legacy_dict() const {
-    return dict<str, object>(values);
+    return export_layer_options(*this);
 }
 
 list<str> list_backend_targets() {
@@ -169,7 +177,7 @@ ResolvedBackendSpec get_backend_spec_typed(const str& target) {
 }
 
 dict<str, object> get_backend_spec(const str& target) {
-    return get_backend_spec_typed(target).to_legacy_dict();
+    return export_backend_spec(get_backend_spec_typed(target));
 }
 
 LayerOptionsCarrier resolve_layer_options_typed(
@@ -186,7 +194,7 @@ dict<str, object> resolve_layer_options(
     const str& layer,
     const dict<str, str>& raw
 ) {
-    return resolve_layer_options_typed(_coerce_backend_spec(spec), layer, raw).to_legacy_dict();
+    return export_layer_options(resolve_layer_options_typed(_coerce_backend_spec(spec), layer, raw));
 }
 
 dict<str, object> lower_ir(

@@ -21,12 +21,16 @@ struct ResolvedBackendSpec {
     dict<str, object> to_legacy_dict() const;
 };
 
+dict<str, object> export_backend_spec(const ResolvedBackendSpec& spec);
+
 struct LayerOptionsCarrier {
     str layer;
     dict<str, str> values;
 
     dict<str, object> to_legacy_dict() const;
 };
+
+dict<str, object> export_layer_options(const LayerOptionsCarrier& options);
 
 list<str> list_backend_targets();
 pytra::std::pathlib::Path default_output_path(
