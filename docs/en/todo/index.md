@@ -72,6 +72,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Added `_sh_make_expr_token()` and `_sh_make_import_binding()` so the source-of-truth tokenizer/import-metadata carriers now route through helpers instead of open-coded inline dict assembly.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Added `_sh_make_import_symbol_binding()` and `_sh_make_qualified_symbol_ref()` so the module-root import-resolution tail no longer assembles `import_symbols` / `qualified_symbol_refs` carriers inline.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Added `_sh_make_module_source_span()` / `_sh_make_import_resolution_meta()` / `_sh_make_module_meta()` so the remaining module-root carrier assembly inside `_sh_make_module_root()` now also routes through helpers.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Applied `_sh_make_import_symbol_binding()` across the pre-scan, import registration, and module parse paths so source-of-truth import-symbol metadata no longer uses raw dict assignment. `test_east_core.py` now guards that regression boundary, and the tracked selfhost test/docs were corrected so they no longer assume ignored mirror edits were part of the tracked slice.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 
