@@ -112,7 +112,7 @@ def export_compiler_root_document(doc: "CompilerRootDocument") -> dict[str, obje
     out["east_stage"] = doc.meta.east_stage
     out["schema_version"] = doc.meta.schema_version
     meta_any = out.get("meta", {})
-    meta = meta_any if isinstance(meta_any, dict) else {}
+    meta = dict(meta_any) if isinstance(meta_any, dict) else {}
     meta["dispatch_mode"] = doc.meta.dispatch_mode
     if doc.meta.parser_backend != "":
         meta["parser_backend"] = doc.meta.parser_backend
@@ -169,6 +169,10 @@ def export_module_artifact_carrier(module: "ModuleArtifactCarrier") -> dict[str,
     return out
 
 
+def export_module_artifact_any(module_artifact: object) -> dict[str, object]:
+    return export_module_artifact_carrier(coerce_module_artifact(module_artifact))
+
+
 def export_program_artifact_carrier(program: "ProgramArtifactCarrier") -> dict[str, object]:
     return {
         "target": program.target,
@@ -179,6 +183,29 @@ def export_program_artifact_carrier(program: "ProgramArtifactCarrier") -> dict[s
         "link_output_schema": program.link_output_schema,
         "writer_options": dict(program.writer_options),
     }
+
+
+def export_program_artifact_any(
+    program_artifact: object,
+    *,
+    fallback_target: str = "",
+    fallback_program_id: str = "",
+    fallback_entry_modules: list[str] | tuple[str, ...] | None = None,
+    fallback_layout_mode: str = "single_file",
+    fallback_link_output_schema: str = "",
+    fallback_writer_options: dict[str, object] | None = None,
+) -> dict[str, object]:
+    return export_program_artifact_carrier(
+        coerce_program_artifact(
+            program_artifact,
+            fallback_target=fallback_target,
+            fallback_program_id=fallback_program_id,
+            fallback_entry_modules=fallback_entry_modules,
+            fallback_layout_mode=fallback_layout_mode,
+            fallback_link_output_schema=fallback_link_output_schema,
+            fallback_writer_options=fallback_writer_options,
+        )
+    )
 
 
 @dataclass(frozen=True)
