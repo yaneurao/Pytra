@@ -22,6 +22,7 @@ class FrontendTypeExprTest(unittest.TestCase):
     def test_summarize_type_text_distinguishes_type_lanes(self) -> None:
         optional_nominal = summarize_type_text("JsonValue | None")
         self.assertEqual(optional_nominal["category"], "optional")
+        self.assertEqual(optional_nominal["nominal_adt_name"], "JsonValue")
         self.assertEqual(optional_nominal["nominal_adt_family"], "json")
 
         dynamic_union = summarize_type_text("int64 | Any")

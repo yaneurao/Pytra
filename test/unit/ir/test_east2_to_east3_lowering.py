@@ -1060,7 +1060,44 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         self.assertEqual(value.get("json_decode_v1", {}).get("decode_kind"), "narrow")
         self.assertEqual(value.get("json_decode_v1", {}).get("ir_category"), "JsonDecodeCall")
         self.assertEqual(value.get("json_decode_v1", {}).get("decode_entry"), "json.value.as_obj")
+        self.assertEqual(value.get("json_decode_v1", {}).get("contract_source"), "type_expr")
+        self.assertEqual(value.get("json_decode_v1", {}).get("receiver_nominal_adt_name"), "JsonValue")
         self.assertEqual(value.get("json_decode_v1", {}).get("receiver_category"), "nominal_adt")
+        self.assertEqual(value.get("json_decode_v1", {}).get("receiver_nominal_adt_family"), "json")
+
+    def test_lower_json_value_helper_call_prefers_type_expr_over_runtime_mirror(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "JsonObj | None",
+                        "type_expr": parse_type_expr_text("JsonObj | None"),
+                        "func": {
+                            "kind": "Attribute",
+                            "attr": "as_obj",
+                            "value": {
+                                "kind": "Name",
+                                "id": "payload",
+                                "resolved_type": "unknown",
+                                "type_expr": parse_type_expr_text("JsonValue"),
+                            },
+                        },
+                        "args": [],
+                        "keywords": [],
+                    },
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        value = out.get("body", [])[0].get("value", {})
+        self.assertEqual(value.get("semantic_tag"), "json.value.as_obj")
+        self.assertEqual(value.get("lowered_kind"), "JsonDecodeCall")
+        self.assertEqual(value.get("json_decode_v1", {}).get("contract_source"), "type_expr")
+        self.assertEqual(value.get("json_decode_v1", {}).get("receiver_nominal_adt_name"), "JsonValue")
         self.assertEqual(value.get("json_decode_v1", {}).get("receiver_nominal_adt_family"), "json")
 
     def test_lower_assign_reads_structured_dynamic_union_for_boundary_bridge(self) -> None:
@@ -1095,7 +1132,12 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         self.assertEqual(value.get("bridge_lane_v1", {}).get("target_category"), "dynamic_union")
 
     def test_lower_json_decode_calls_attach_nominal_metadata(self) -> None:
-        json_value = {"kind": "Name", "id": "value", "resolved_type": "JsonValue"}
+        json_value = {
+            "kind": "Name",
+            "id": "value",
+            "resolved_type": "JsonValue",
+            "type_expr": parse_type_expr_text("JsonValue"),
+        }
         json_obj = {"kind": "Name", "id": "obj", "resolved_type": "JsonObj"}
         json_arr = {"kind": "Name", "id": "arr", "resolved_type": "JsonArr"}
         east2 = {
@@ -1107,6 +1149,7 @@ class East2ToEast3LoweringTest(unittest.TestCase):
                     "value": {
                         "kind": "Call",
                         "resolved_type": "JsonObj | None",
+                        "type_expr": parse_type_expr_text("JsonObj | None"),
                         "func": {
                             "kind": "Attribute",
                             "value": json_value,
@@ -1177,15 +1220,80 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         fourth = body[3].get("value", {})
         self.assertEqual(first.get("semantic_tag"), "json.value.as_obj")
         self.assertEqual(first.get("json_decode_v1", {}).get("decode_kind"), "narrow")
+        self.assertEqual(first.get("json_decode_v1", {}).get("contract_source"), "type_expr")
+        self.assertEqual(first.get("json_decode_v1", {}).get("receiver_nominal_adt_name"), "JsonValue")
         self.assertEqual(first.get("json_decode_v1", {}).get("receiver_nominal_adt_family"), "json")
         self.assertEqual(first.get("type_expr_summary_v1", {}).get("category"), "optional")
         self.assertEqual(second.get("semantic_tag"), "json.obj.get_int")
+        self.assertEqual(second.get("json_decode_v1", {}).get("receiver_nominal_adt_name"), "JsonObj")
         self.assertEqual(second.get("json_decode_v1", {}).get("receiver_nominal_adt_family"), "json")
         self.assertEqual(third.get("semantic_tag"), "json.arr.get_bool")
+        self.assertEqual(third.get("json_decode_v1", {}).get("receiver_nominal_adt_name"), "JsonArr")
         self.assertEqual(third.get("json_decode_v1", {}).get("receiver_nominal_adt_family"), "json")
         self.assertEqual(fourth.get("semantic_tag"), "json.loads_obj")
         self.assertEqual(fourth.get("json_decode_v1", {}).get("decode_kind"), "module_load")
         self.assertEqual(fourth.get("type_expr_summary_v1", {}).get("category"), "optional")
+
+    def test_representative_json_decode_uses_resolved_type_compat_when_type_expr_missing(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "JsonObj | None",
+                        "func": {
+                            "kind": "Attribute",
+                            "attr": "as_obj",
+                            "value": {"kind": "Name", "id": "payload", "resolved_type": "JsonValue"},
+                        },
+                        "args": [],
+                        "keywords": [],
+                        "semantic_tag": "json.value.as_obj",
+                    },
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        value = out.get("body", [])[0].get("value", {})
+        self.assertEqual(value.get("lowered_kind"), "JsonDecodeCall")
+        self.assertEqual(value.get("json_decode_v1", {}).get("contract_source"), "resolved_type_compat")
+
+    def test_json_semantic_tag_contract_rejects_non_jsonvalue_receiver(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "JsonObj | None",
+                        "type_expr": parse_type_expr_text("JsonObj | None"),
+                        "semantic_tag": "json.value.as_obj",
+                        "func": {
+                            "kind": "Attribute",
+                            "attr": "as_obj",
+                            "value": {
+                                "kind": "Name",
+                                "id": "payload",
+                                "resolved_type": "JsonObj",
+                                "type_expr": parse_type_expr_text("JsonObj"),
+                            },
+                        },
+                        "args": [],
+                        "keywords": [],
+                    },
+                }
+            ],
+        }
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "json_decode_contract_violation: json.value.as_obj requires JsonValue nominal receiver TypeExpr",
+        ):
+            lower_east2_to_east3(east2)
 
     def test_dispatch_mode_override_is_applied_at_lower_entrypoint(self) -> None:
         east2 = {

@@ -249,6 +249,9 @@ def summarize_type_expr(expr: object) -> dict[str, Any]:
         return out
     if kind == "NominalAdtType":
         out["category"] = "nominal_adt"
+        nominal_name = str(expr_obj.get("name", "")).strip()
+        if nominal_name != "":
+            out["nominal_adt_name"] = nominal_name
         adt_family = str(expr_obj.get("adt_family", "")).strip()
         variant_domain = str(expr_obj.get("variant_domain", "")).strip()
         if adt_family != "":
@@ -263,6 +266,9 @@ def summarize_type_expr(expr: object) -> dict[str, Any]:
         inner_category = str(inner_summary.get("category", "unknown"))
         if inner_category != "unknown":
             out["inner_category"] = inner_category
+        nominal_name = str(inner_summary.get("nominal_adt_name", ""))
+        if nominal_name != "":
+            out["nominal_adt_name"] = nominal_name
         nominal_family = str(inner_summary.get("nominal_adt_family", ""))
         if nominal_family != "":
             out["nominal_adt_family"] = nominal_family

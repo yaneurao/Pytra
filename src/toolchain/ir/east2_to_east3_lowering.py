@@ -11,6 +11,11 @@ from toolchain.frontends.type_expr import summarize_type_text
 _LEGACY_COMPAT_BRIDGE_ENABLED = True
 _TYPE_EXPR_SUMMARY_KEY = "type_expr_summary_v1"
 _JSON_DECODE_META_KEY = "json_decode_v1"
+_JSON_RECEIVER_NAME_PREFIXES = {
+    "json.value.": "JsonValue",
+    "json.obj.": "JsonObj",
+    "json.arr.": "JsonArr",
+}
 
 
 def _normalize_dispatch_mode(value: Any) -> str:
@@ -508,6 +513,54 @@ def _expr_type_summary(expr: Any) -> dict[str, Any]:
     return _type_expr_summary_from_node(expr)
 
 
+def _json_nominal_type_name(summary: dict[str, Any]) -> str:
+    category = str(summary.get("category", "unknown")).strip()
+    if category != "nominal_adt":
+        return ""
+    family = str(summary.get("nominal_adt_family", "")).strip()
+    if family != "json":
+        return ""
+    nominal_name = str(summary.get("nominal_adt_name", "")).strip()
+    if nominal_name != "":
+        return nominal_name
+    mirror = _normalize_type_name(summary.get("mirror"))
+    if mirror in {"JsonValue", "JsonObj", "JsonArr"}:
+        return mirror
+    return ""
+
+
+def _expected_json_receiver_type_name(semantic_tag: str) -> str:
+    for prefix, nominal_name in _JSON_RECEIVER_NAME_PREFIXES.items():
+        if semantic_tag.startswith(prefix):
+            return nominal_name
+    return ""
+
+
+def _raise_json_contract_violation(semantic_tag: str, owner_summary: dict[str, Any]) -> None:
+    expected = _expected_json_receiver_type_name(semantic_tag)
+    if expected == "":
+        return
+    actual = _json_nominal_type_name(owner_summary)
+    if actual == expected:
+        return
+    mirror = _normalize_type_name(owner_summary.get("mirror"))
+    category = str(owner_summary.get("category", "unknown")).strip()
+    actual_desc = actual if actual != "" else mirror
+    if actual_desc == "":
+        actual_desc = "unknown"
+    raise RuntimeError(
+        "json_decode_contract_violation: "
+        + semantic_tag
+        + " requires "
+        + expected
+        + " nominal receiver TypeExpr, got "
+        + actual_desc
+        + " ("
+        + category
+        + ")"
+    )
+
+
 def _make_boundary_expr(
     *,
     kind: str,
@@ -764,10 +817,11 @@ def _infer_json_semantic_tag(call: dict[str, Any]) -> str:
         attr_obj = func_obj.get("attr")
         attr = attr_obj.strip() if isinstance(attr_obj, str) else ""
         owner_obj = func_obj.get("value")
-        owner_type = _expr_type_name(owner_obj)
-        if owner_type == "JsonValue" and attr in {"as_obj", "as_arr", "as_str", "as_int", "as_float", "as_bool"}:
+        owner_summary = _expr_type_summary(owner_obj)
+        owner_nominal_name = _json_nominal_type_name(owner_summary)
+        if owner_nominal_name == "JsonValue" and attr in {"as_obj", "as_arr", "as_str", "as_int", "as_float", "as_bool"}:
             return "json.value." + attr
-        if owner_type == "JsonObj" and attr in {
+        if owner_nominal_name == "JsonObj" and attr in {
             "get",
             "get_obj",
             "get_arr",
@@ -777,7 +831,7 @@ def _infer_json_semantic_tag(call: dict[str, Any]) -> str:
             "get_bool",
         }:
             return "json.obj." + attr
-        if owner_type == "JsonArr" and attr in {
+        if owner_nominal_name == "JsonArr" and attr in {
             "get",
             "get_obj",
             "get_arr",
@@ -812,15 +866,77 @@ def _build_json_decode_meta(call: dict[str, Any], semantic_tag: str) -> dict[str
         return meta
     owner_obj = func_obj.get("value")
     owner_summary = _expr_type_summary(owner_obj)
+    _raise_json_contract_violation(semantic_tag, owner_summary)
     meta["decode_kind"] = "narrow"
     meta["receiver_type"] = owner_summary
     receiver_category = str(owner_summary.get("category", "unknown"))
     if receiver_category != "unknown":
         meta["receiver_category"] = receiver_category
+    nominal_name = str(owner_summary.get("nominal_adt_name", "")).strip()
+    if nominal_name != "":
+        meta["receiver_nominal_adt_name"] = nominal_name
     nominal_family = str(owner_summary.get("nominal_adt_family", ""))
     if nominal_family != "":
         meta["receiver_nominal_adt_family"] = nominal_family
     return meta
+
+
+def _structured_type_expr_summary_from_node(node: Any) -> dict[str, Any]:
+    if not isinstance(node, dict):
+        return _unknown_type_summary()
+    return dict(summarize_type_expr(node.get("type_expr")))
+
+
+def _representative_json_contract_metadata(call: dict[str, Any], receiver_node: Any) -> tuple[str, dict[str, Any], dict[str, Any]]:
+    result_summary = _structured_type_expr_summary_from_node(call)
+    receiver_summary = _structured_type_expr_summary_from_node(receiver_node)
+    result_category = str(result_summary.get("category", "unknown"))
+    result_family = str(result_summary.get("nominal_adt_family", ""))
+    result_name = str(result_summary.get("nominal_adt_name", ""))
+    receiver_category = str(receiver_summary.get("category", "unknown"))
+    receiver_family = str(receiver_summary.get("nominal_adt_family", ""))
+    receiver_name = str(receiver_summary.get("nominal_adt_name", ""))
+    if (
+        result_category == "optional"
+        and result_family == "json"
+        and result_name == "JsonObj"
+        and receiver_category == "nominal_adt"
+        and receiver_family == "json"
+        and receiver_name == "JsonValue"
+    ):
+        return "type_expr", result_summary, receiver_summary
+    compat_result = _type_expr_summary_from_node(call)
+    compat_receiver = _expr_type_summary(receiver_node)
+    compat_result_category = str(compat_result.get("category", "unknown"))
+    compat_result_family = str(compat_result.get("nominal_adt_family", ""))
+    compat_result_name = str(compat_result.get("nominal_adt_name", ""))
+    compat_receiver_category = str(compat_receiver.get("category", "unknown"))
+    compat_receiver_family = str(compat_receiver.get("nominal_adt_family", ""))
+    compat_receiver_name = str(compat_receiver.get("nominal_adt_name", ""))
+    if (
+        compat_result_category == "optional"
+        and compat_result_family == "json"
+        and compat_result_name == "JsonObj"
+        and compat_receiver_category == "nominal_adt"
+        and compat_receiver_family == "json"
+        and compat_receiver_name == "JsonValue"
+    ):
+        return "resolved_type_compat", compat_result, compat_receiver
+    raise RuntimeError(
+        "json.value.as_obj representative lane requires json nominal contract: "
+        + "receiver="
+        + compat_receiver_category
+        + "/"
+        + compat_receiver_family
+        + "/"
+        + compat_receiver_name
+        + ", result="
+        + compat_result_category
+        + "/"
+        + compat_result_family
+        + "/"
+        + compat_result_name
+    )
 
 
 def _lower_representative_json_decode_call(out_call: dict[str, Any]) -> dict[str, Any]:
@@ -836,12 +952,23 @@ def _lower_representative_json_decode_call(out_call: dict[str, Any]) -> dict[str
     if not isinstance(func_obj, dict) or func_obj.get("kind") != "Attribute":
         return out_call
     receiver_node = func_obj.get("value")
+    contract_source, result_contract, receiver_contract = _representative_json_contract_metadata(out_call, receiver_node)
     out_call["lowered_kind"] = "JsonDecodeCall"
     out_call["json_decode_receiver"] = receiver_node
     meta_obj = out_call.get(_JSON_DECODE_META_KEY)
     meta = dict(meta_obj) if isinstance(meta_obj, dict) else _build_json_decode_meta(out_call, semantic_tag)
     meta["ir_category"] = "JsonDecodeCall"
     meta["decode_entry"] = "json.value.as_obj"
+    meta["contract_source"] = contract_source
+    meta["result_type"] = result_contract
+    meta["receiver_type"] = receiver_contract
+    meta["receiver_category"] = receiver_contract.get("category", "unknown")
+    nominal_name = str(receiver_contract.get("nominal_adt_name", ""))
+    if nominal_name != "":
+        meta["receiver_nominal_adt_name"] = nominal_name
+    nominal_family = str(receiver_contract.get("nominal_adt_family", ""))
+    if nominal_family != "":
+        meta["receiver_nominal_adt_family"] = nominal_family
     out_call[_JSON_DECODE_META_KEY] = meta
     return out_call
 

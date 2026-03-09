@@ -47,9 +47,9 @@
 9. [x] [ID: P1-EAST-TYPEEXPR-01-S4-02] `JsonValue` に対する representative narrowing path（`as_obj/as_arr/as_int/...` または等価 decode 操作）を backend 直書きではなく IR-first に接続する。
 10. [x] [ID: P1-EAST-TYPEEXPR-01-S5-01] C++ を先頭 target に、一般 union fallback を `object` へ潰す現行経路の一部を fail-closed または structured lowering へ置換する。
 11. [x] [ID: P1-EAST-TYPEEXPR-01-S5-02] 他 backend でも `String/object` fallback を棚卸しし、`TypeExpr` 非対応 union の扱いを明示エラーまたは guarded compat に揃える。
-12. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-01] representative `JsonValue` lane を `TypeExpr`/nominal ADT 契約に乗せ、runtime 先行ではなく IR contract 先行で進められることを確認する。
+12. [x] [ID: P1-EAST-TYPEEXPR-01-S6-01] representative `JsonValue` lane を `TypeExpr`/nominal ADT 契約に乗せ、runtime 先行ではなく IR contract 先行で進められることを確認する。
 13. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-02] selfhost / unit / docs / archive を更新し、stringly-typed union debt の再流入を防ぐ guard を追加する。
-- 進捗メモ: [ID: P1-EAST-TYPEEXPR-01-S6-01] `S5-02` で Rust/C# の既存 guard を維持しつつ、Go/Java/Kotlin/Scala/Swift/Nim に shared general-union TypeExpr guard を追加して static backend 契約を `unsupported_syntax` へ揃えた。次は representative `JsonValue` lane をこの契約の上に載せて runtime 先行でなく進められることを確認する。
+- 進捗メモ: [ID: P1-EAST-TYPEEXPR-01-S6-02] `S6-01` で representative `JsonValue` decode lane の semantic inference を `TypeExpr`/nominal summary ベースへ寄せ、`receiver_nominal_adt_name` を含む IR metadata と mismatch failure を固定した。次は selfhost/docs/archive と再流入 guard を仕上げる。
 
 ### P2: compiler boundary を typed 化し、internal object carrier と `make_object` 依存を後退させる
 

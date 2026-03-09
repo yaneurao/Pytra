@@ -46,9 +46,9 @@ Context: [docs/ja/plans/p1-east-typeexpr-strengthening.md](../plans/p1-east-type
 9. [x] [ID: P1-EAST-TYPEEXPR-01-S4-02] Connect a representative `JsonValue` narrowing path (`as_obj/as_arr/as_int/...` or equivalent decode operations) through IR-first lowering rather than backend-local special cases.
 10. [x] [ID: P1-EAST-TYPEEXPR-01-S5-01] Use C++ as the first target and replace at least part of the current `general union -> object` path with fail-closed behavior or structured lowering.
 11. [x] [ID: P1-EAST-TYPEEXPR-01-S5-02] Audit other backends for `String/object` union fallbacks and align unsupported `TypeExpr` unions to explicit errors or guarded compatibility paths.
-12. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-01] Put a representative `JsonValue` lane on top of the new `TypeExpr` / nominal-ADT contract and verify that future runtime work can proceed IR-contract-first.
+12. [x] [ID: P1-EAST-TYPEEXPR-01-S6-01] Put a representative `JsonValue` lane on top of the new `TypeExpr` / nominal-ADT contract and verify that future runtime work can proceed IR-contract-first.
 13. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-02] Refresh selfhost / unit / docs / archive and add guards against the reintroduction of stringly-typed union debt.
-- Progress memo: [ID: P1-EAST-TYPEEXPR-01-S6-01] `S5-02` kept the existing Rust/C# guards and added a shared general-union TypeExpr guard for Go/Java/Kotlin/Scala/Swift/Nim, so the static-backend contract now converges on `unsupported_syntax` instead of silent fallback. Next is proving that the representative `JsonValue` lane can stay on this contract without runtime-first special casing.
+- Progress memo: [ID: P1-EAST-TYPEEXPR-01-S6-02] `S6-01` moved representative `JsonValue` decode-lane semantic inference onto `TypeExpr`/nominal summaries, then fixed IR metadata and mismatch failure around `receiver_nominal_adt_name`. Next is finishing the selfhost/docs/archive follow-up and the reintroduction guard.
 
 ### P2: Move compiler boundaries to typed carriers and retreat internal object-carrier / `make_object` usage
 
