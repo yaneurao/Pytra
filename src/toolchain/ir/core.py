@@ -1290,6 +1290,47 @@ def _sh_make_def_sig_info(
     }
 
 
+def _sh_make_module_source_span() -> dict[str, Any]:
+    """Module root 用の空 source_span carrier を構築する。"""
+    return {
+        "lineno": None,
+        "col": None,
+        "end_lineno": None,
+        "end_col": None,
+    }
+
+
+def _sh_make_import_resolution_meta(
+    bindings: list[dict[str, str]],
+    qualified_refs: list[dict[str, str]],
+) -> dict[str, Any]:
+    """module meta.import_resolution carrier を構築する。"""
+    return {
+        "schema_version": 1,
+        "bindings": bindings,
+        "qualified_refs": qualified_refs,
+    }
+
+
+def _sh_make_module_meta(
+    *,
+    import_resolution: dict[str, Any],
+    import_bindings: list[dict[str, str]],
+    qualified_symbol_refs: list[dict[str, str]],
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+) -> dict[str, Any]:
+    """Module root の meta carrier を構築する。"""
+    return {
+        "parser_backend": "self_hosted",
+        "import_resolution": import_resolution,
+        "import_bindings": import_bindings,
+        "qualified_symbol_refs": qualified_symbol_refs,
+        "import_modules": import_module_bindings,
+        "import_symbols": import_symbol_bindings,
+    }
+
+
 def _sh_make_module_root(
     *,
     filename: str,
@@ -1303,25 +1344,15 @@ def _sh_make_module_root(
     import_symbol_bindings: dict[str, dict[str, str]],
 ) -> dict[str, Any]:
     """Module root を構築する。"""
-    source_span: dict[str, Any] = {
-        "lineno": None,
-        "col": None,
-        "end_lineno": None,
-        "end_col": None,
-    }
-    import_resolution: dict[str, Any] = {
-        "schema_version": 1,
-        "bindings": import_resolution_bindings,
-        "qualified_refs": qualified_symbol_refs,
-    }
-    meta: dict[str, Any] = {
-        "parser_backend": "self_hosted",
-        "import_resolution": import_resolution,
-        "import_bindings": import_bindings,
-        "qualified_symbol_refs": qualified_symbol_refs,
-        "import_modules": import_module_bindings,
-        "import_symbols": import_symbol_bindings,
-    }
+    source_span = _sh_make_module_source_span()
+    import_resolution = _sh_make_import_resolution_meta(import_resolution_bindings, qualified_symbol_refs)
+    meta = _sh_make_module_meta(
+        import_resolution=import_resolution,
+        import_bindings=import_bindings,
+        qualified_symbol_refs=qualified_symbol_refs,
+        import_module_bindings=import_module_bindings,
+        import_symbol_bindings=import_symbol_bindings,
+    )
     return {
         "kind": "Module",
         "source_path": filename,
@@ -3461,7 +3492,7 @@ def _sh_register_import_symbol(local_name: str, module_id: str, export_name: str
     export = export_name.strip()
     if local == "" or module == "" or export == "":
         return
-    _SH_IMPORT_SYMBOLS[local] = {"module": module, "name": export}
+    _SH_IMPORT_SYMBOLS[local] = _sh_make_import_symbol_binding(module, export)
 
 
 def _sh_register_import_module(local_name: str, module_id: str) -> None:
@@ -7087,10 +7118,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         sym_txt, as_name = parsed_alias
                         alias_name = as_name if as_name != "" else sym_txt
                         if alias_name != "":
-                            pre_import_symbol_bindings[alias_name] = {
-                                "module": mod_txt,
-                                "name": sym_txt,
-                            }
+                            pre_import_symbol_bindings[alias_name] = _sh_make_import_symbol_binding(
+                                mod_txt,
+                                sym_txt,
+                            )
                 if mod_txt == "typing":
                     raw_parts: list[str] = []
                     for p in names_txt.split(","):
@@ -7487,10 +7518,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         )
                     sym_name, as_name_txt = parsed_alias
                     bind_name_dc = as_name_txt if as_name_txt != "" else sym_name
-                    import_symbol_bindings[bind_name_dc] = {
-                        "module": mod_name,
-                        "name": sym_name,
-                    }
+                    import_symbol_bindings[bind_name_dc] = _sh_make_import_symbol_binding(
+                        mod_name,
+                        sym_name,
+                    )
                     _sh_register_import_symbol(bind_name_dc, mod_name, sym_name)
                 i = logical_end + 1
                 continue
@@ -7595,10 +7626,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         source_file=filename,
                         source_line=i,
                     )
-                    import_symbol_bindings[bind_name] = {
-                        "module": mod_name,
-                        "name": sym_name,
-                    }
+                    import_symbol_bindings[bind_name] = _sh_make_import_symbol_binding(
+                        mod_name,
+                        sym_name,
+                    )
                     _sh_register_import_symbol(bind_name, mod_name, sym_name)
                 aliases.append(_sh_make_import_alias(sym_name, as_name_txt if as_name_txt != "" else None))
             if len(aliases) > 0:
