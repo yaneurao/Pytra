@@ -193,6 +193,26 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         )
 
     def test_typed_backend_specs_preserve_legacy_metadata(self) -> None:
+        host_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry.py").read_text(encoding="utf-8")
+        static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
+
+        self.assertIn(
+            "doc = east_doc if isinstance(east_doc, dict) else export_compiler_root_document(coerce_compiler_root_document(east_doc))",
+            host_src,
+        )
+        self.assertIn(
+            "doc = east_doc if isinstance(east_doc, dict) else export_compiler_root_document(coerce_compiler_root_document(east_doc))",
+            static_src,
+        )
+        self.assertIn("ir = fn(doc, export_layer_options_carrier(options))", host_src)
+        self.assertIn("ir = fn(doc, export_layer_options_carrier(options))", static_src)
+        self.assertIn("out = fn(ir, export_layer_options_carrier(options))", host_src)
+        self.assertIn("out = fn(ir, export_layer_options_carrier(options))", static_src)
+        self.assertIn("export_layer_options_carrier(request.emitter_options)", host_src)
+        self.assertIn("export_layer_options_carrier(request.emitter_options)", static_src)
+        self.assertNotIn("coerce_compiler_root_document(east_doc).to_legacy_dict()", host_src)
+        self.assertNotIn("coerce_compiler_root_document(east_doc).to_legacy_dict()", static_src)
+
         host_registry._SPEC_CACHE.clear()
         host_spec = host_registry.get_backend_spec_typed("cpp")
         static_spec = static_registry.get_backend_spec_typed("cpp")
@@ -241,6 +261,11 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(
             typed_boundary.export_compiler_root_document(doc)["meta"]["parser_backend"],
             "self_hosted",
+        )
+        opts = typed_boundary.coerce_layer_options("emitter", {"mod_mode": "python", "debug": True})
+        self.assertEqual(
+            typed_boundary.export_layer_options_carrier(opts),
+            opts.to_legacy_dict(),
         )
 
     def test_build_program_artifact_preserves_helper_kind_metadata(self) -> None:

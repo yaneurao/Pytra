@@ -18,6 +18,8 @@ from toolchain.compiler.typed_boundary import coerce_layer_options
 from toolchain.compiler.typed_boundary import copy_module_dependencies
 from toolchain.compiler.typed_boundary import copy_module_metadata
 from toolchain.compiler.typed_boundary import copy_program_writer_options
+from toolchain.compiler.typed_boundary import export_compiler_root_document
+from toolchain.compiler.typed_boundary import export_layer_options_carrier
 from toolchain.compiler.typed_boundary import flatten_module_artifact_carrier
 from toolchain.compiler.typed_boundary import normalize_module_artifact_carrier
 from toolchain.compiler.typed_boundary import resolve_layer_options_carrier
@@ -605,13 +607,13 @@ def lower_ir_typed(
     lower_options: LayerOptionsCarrier | dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     runtime_spec = _coerce_runtime_spec(spec)
-    doc = east_doc if isinstance(east_doc, dict) else coerce_compiler_root_document(east_doc).to_legacy_dict()
+    doc = east_doc if isinstance(east_doc, dict) else export_compiler_root_document(coerce_compiler_root_document(east_doc))
     options = lower_options if isinstance(lower_options, LayerOptionsCarrier) else coerce_layer_options("lower", lower_options)
     fn = runtime_spec.lower_impl
     if not callable(fn):
         return _identity_ir(doc)
     try:
-        ir = fn(doc, options.to_legacy_dict())
+        ir = fn(doc, export_layer_options_carrier(options))
     except TypeError:
         ir = fn(doc)
     return ir if isinstance(ir, dict) else {}
@@ -636,7 +638,7 @@ def optimize_ir_typed(
     if not callable(fn):
         return _identity_ir(ir)
     try:
-        out = fn(ir, options.to_legacy_dict())
+        out = fn(ir, export_layer_options_carrier(options))
     except TypeError:
         out = fn(ir)
     return out if isinstance(out, dict) else {}
@@ -675,13 +677,13 @@ def emit_module_typed(
         artifact_any = fn(
             request.ir_document,
             request.output_path,
-            request.emitter_options.to_legacy_dict(),
+            export_layer_options_carrier(request.emitter_options),
             module_id=request.module_id,
             is_entry=request.is_entry,
         )
     except TypeError:
         try:
-            artifact_any = fn(request.ir_document, request.output_path, request.emitter_options.to_legacy_dict())
+            artifact_any = fn(request.ir_document, request.output_path, export_layer_options_carrier(request.emitter_options))
         except TypeError:
             artifact_any = fn(request.ir_document, request.output_path)
     return _normalize_module_artifact_typed(artifact_any, request=request)
