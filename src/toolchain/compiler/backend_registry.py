@@ -45,7 +45,7 @@ def _src_root() -> Path:
 
 
 def _identity_ir(doc: Any) -> dict:
-    return doc if isinstance(doc, dict) else {}
+    return coerce_ir_document(doc)
 
 
 def _empty_emit(_ir: Any, _output_path: Path, _emitter_options: Any = None) -> str:

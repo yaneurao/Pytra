@@ -225,6 +225,10 @@ def export_module_artifact_any(module_artifact: object) -> dict[str, object]:
     return export_module_artifact_carrier(coerce_module_artifact(module_artifact))
 
 
+def module_artifact_text(module_artifact: object) -> str:
+    return coerce_module_artifact(module_artifact).text
+
+
 def export_program_artifact_carrier(program: "ProgramArtifactCarrier") -> dict[str, object]:
     return {
         "target": program.target,
