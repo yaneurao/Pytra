@@ -354,6 +354,23 @@ def _sh_annotate_scalar_ctor_call_expr(
     )
 
 
+def _sh_annotate_minmax_call_expr(
+    payload: dict[str, Any],
+    *,
+    fn_name: str,
+    semantic_tag: str | None = None,
+) -> dict[str, Any]:
+    return _sh_annotate_runtime_call_expr(
+        payload,
+        lowered_kind="BuiltinCall",
+        builtin_name=fn_name,
+        runtime_call="py_min" if fn_name == "min" else "py_max",
+        module_id="pytra.core.py_runtime",
+        runtime_symbol=fn_name,
+        semantic_tag=semantic_tag,
+    )
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -4852,13 +4869,9 @@ class _ShExprParser:
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif fn_name in {"min", "max"}:
-                    _sh_annotate_runtime_call_expr(
+                    _sh_annotate_minmax_call_expr(
                         payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name=fn_name,
-                        runtime_call="py_min" if fn_name == "min" else "py_max",
-                        module_id="pytra.core.py_runtime",
-                        runtime_symbol=fn_name,
+                        fn_name=fn_name,
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif stdlib_fn_runtime_call != "":

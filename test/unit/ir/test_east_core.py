@@ -604,7 +604,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_scalar_ctor_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_scalar_ctor_call_expr", 1)[1].split(
-            "def _sh_set_parse_context",
+            "def _sh_annotate_minmax_call_expr",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -621,6 +621,21 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('runtime_call = "py_to_bool"', postfix_text)
         self.assertNotIn('runtime_module_id = "pytra.core.py_runtime"', postfix_text)
         self.assertNotIn('runtime_symbol = "py_to_int64_base"', postfix_text)
+
+    def test_core_source_routes_minmax_metadata_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_annotate_minmax_call_expr", 1)[1].split(
+            "def _sh_set_parse_context",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
+        self.assertIn('runtime_call="py_min" if fn_name == "min" else "py_max"', helper_text)
+        self.assertIn('module_id="pytra.core.py_runtime"', helper_text)
+        self.assertIn('_sh_annotate_minmax_call_expr(', postfix_text)
+        self.assertNotIn('elif fn_name in {"min", "max"}:\n                    _sh_annotate_runtime_call_expr(', postfix_text)
+        self.assertNotIn('runtime_call="py_min" if fn_name == "min" else "py_max"', postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
