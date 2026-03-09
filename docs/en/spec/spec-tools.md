@@ -225,7 +225,7 @@ Failure contract:
 
 - Whenever a new tool is added under `tools/`, update this document at the same time
 - Each tool description must state in one line what it automates
-- If destructive changes are made (arguments, deprecation, consolidation), also update the related examples in `docs/ja/how-to-use.md`
+- If destructive changes are made (arguments, deprecation, consolidation), also update the related examples in `docs/ja/tutorial/how-to-use.md`
 - Sample regeneration is triggered by minor-or-greater updates in `src/toolchain/compiler/transpiler_versions.json`, not merely by source diffs
 - Commits that modify transpiler-related files (`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/backends/**/profiles/**`) must pass `tools/check_transpiler_version_gate.py`
 - When regeneration happens due to a version bump, use `tools/run_regen_on_version_bump.py --verify-cpp-on-diff` to compile/run only the C++ cases whose generated output changed
