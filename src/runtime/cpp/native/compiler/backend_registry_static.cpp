@@ -204,7 +204,9 @@ dict<str, object> lower_ir_typed(
     const pytra::compiler::transpile_cli::CompilerRootDocument& east,
     const LayerOptionsCarrier& lower_options
 ) {
-    return lower_ir(spec.to_legacy_dict(), east.to_legacy_dict(), lower_options.to_legacy_dict());
+    (void)spec;
+    (void)lower_options;
+    return east.to_legacy_dict();
 }
 
 dict<str, object> optimize_ir(
@@ -222,7 +224,9 @@ dict<str, object> optimize_ir_typed(
     const dict<str, object>& ir,
     const LayerOptionsCarrier& optimizer_options
 ) {
-    return optimize_ir(spec.to_legacy_dict(), ir, optimizer_options.to_legacy_dict());
+    (void)spec;
+    (void)optimizer_options;
+    return ir;
 }
 
 str emit_source(

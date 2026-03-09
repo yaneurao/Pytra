@@ -171,6 +171,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("return dict<str, object>(values);", native_registry)
         self.assertIn("return LayerOptionsCarrier{layer, raw};", native_registry)
         self.assertIn("return LayerOptionsCarrier{layer, dict<str, str>(raw)};", native_registry)
+        self.assertIn("return east.to_legacy_dict();", native_registry)
+        self.assertIn("return ir;", native_registry)
+        self.assertNotIn("return lower_ir(spec.to_legacy_dict(), east.to_legacy_dict(), lower_options.to_legacy_dict());", native_registry)
+        self.assertNotIn("return optimize_ir(spec.to_legacy_dict(), ir, optimizer_options.to_legacy_dict());", native_registry)
         self.assertIn(
             'ir_path.write_text(pytra::std::json::_dump_json_dict(ir, true, ::std::nullopt, ",", ":", 0));',
             native_registry,
