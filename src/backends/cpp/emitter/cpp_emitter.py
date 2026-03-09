@@ -3346,10 +3346,18 @@ class CppEmitter(
         }
         if val_ty.startswith("dict["):
             idx = self._coerce_dict_key_expr(expr.get("value"), idx, sl)
-            return f"py_dict_get({val}, {idx})"
+            owner_tmp = self.next_tmp("__dict")
+            key_tmp = self.next_tmp("__dict_key")
+            return (
+                f"([&]() {{ "
+                f"auto&& {owner_tmp} = {val}; "
+                f"auto {key_tmp} = {idx}; "
+                f"return {owner_tmp}.at({key_tmp}); "
+                f"}}())"
+            )
         if val_ty in {"", "unknown"} or self.is_any_like_type(val_ty):
             if idx_is_str_key:
-                return f"py_dict_get({val}, {idx})"
+                return f"py_at({val}, {idx})"
             return f"py_at({val}, py_to<int64>({idx}))"
         if self._uses_pyobj_ref_first_list_ops(expr.get("value")):
             at_expr = f"py_at({val}, py_to<int64>({idx}))"

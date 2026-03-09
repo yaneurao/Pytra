@@ -40,14 +40,14 @@ Context: [docs/ja/plans/p0-cpp-pyruntime-core-boundary-realign.md](../plans/p0-c
 3. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-02] Record include ownership, upstream contracts, and non-goals in the decision log so they match `spec-runtime`.
 4. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-01] Extend helper-include collection in the C++ emitter / prelude / generated path so `zip`, `contains`, and numeric helpers are explicitly included.
 5. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-02] Remove transitive `numeric_ops` / `zip_ops` / `contains` includes from `py_runtime.h` and update the removed-include guards.
-6. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-01] Switch typed dict subscripts to `.at()` and remove checked-in `py_dict_get` callers.
+6. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-01] Switch typed dict subscripts to `.at()` and remove checked-in `py_dict_get` callers.
 7. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-02] Move tuple constant-index access to `std::get<N>` even in generated/runtime paths, and slim or retire the tuple `py_at` helper.
 8. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-03] Shrink typed list/dict mutation helpers down to object-bridge-only surface, prioritizing direct emitter lowering for typed lanes.
 9. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-01] Move ownership of `type_id` registry / subtype / isinstance logic to `py_tid_*`, and slim the wrappers in `py_runtime.h`.
 10. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] Update `test_cpp_runtime_type_id.py` and generated runtime callers, and add a guard so cyclic ownership does not reappear.
 11. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] Clean up small remaining surfaces such as the `py_isinstance_of` fast path and the `PyFile` alias.
 12. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-02] Refresh representative tests / parity / docs / archive and close the task.
-- Progress memo: [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-01] Completed `S2-02` by removing transitive `numeric_ops/zip_ops/contains` includes from `py_runtime.h` and updating checked-in callers plus removed-include guards to require explicit helper headers. Next, switch typed dict subscripts to `.at()` and remove checked-in `py_dict_get` callers.
+- Progress memo: [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-02] Completed `S3-01` by switching typed dict subscripts and tracked generated callers to `.at()` and removing the generic `py_dict_get` helper from `py_runtime.h`. Next, align tuple constant-index access in generated/runtime paths with `std::get<N>`.
 
 ### P1: Structure EAST type representation and lift union / nominal ADT / narrowing out of string processing
 
