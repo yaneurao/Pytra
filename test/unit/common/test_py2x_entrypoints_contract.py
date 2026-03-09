@@ -880,6 +880,74 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
                 suppress_exceptions=False,
             )
 
+    def test_typed_boundary_export_helpers_cover_emit_writer_and_runtime_hook(self) -> None:
+        def _identity(doc: object) -> dict[str, object]:
+            return {"kind": "IR", "doc": doc}
+
+        def _empty_emit(_ir: object, _output_path: Path, _opts: object = None) -> str:
+            return ""
+
+        hook_calls: list[str] = []
+
+        def _runtime_hook(output_path: Path) -> None:
+            hook_calls.append(output_path.name)
+
+        def _program_writer(_program: dict[str, object], _output_path: Path, _opts: dict[str, object]) -> None:
+            return None
+
+        spec = typed_boundary.build_resolved_backend_spec(
+            {
+                "target_lang": "fake",
+                "extension": ".txt",
+                "emit_module": lambda ir, output_path, _opts=None, **_kwargs: {
+                    "module_id": "pkg.demo",
+                    "text": "// " + str(ir.get("kind", "")) + " -> " + output_path.name,
+                    "helper_modules": [
+                        {
+                            "module_id": "__pytra_helper__.fake.demo",
+                            "metadata": {"owner_module_id": "pkg.demo"},
+                        }
+                    ],
+                },
+                "program_writer": _program_writer,
+                "runtime_hook": _runtime_hook,
+            },
+            identity_ir=_identity,
+            empty_emit=_empty_emit,
+            runtime_none=lambda _output_path: None,
+            default_program_writer=lambda _program, _output_path, _opts: None,
+            suppress_emit_exceptions=False,
+        )
+
+        emitted_text = typed_boundary.emit_source_text_with_spec(
+            spec,
+            {"kind": "Demo"},
+            Path("out/demo.txt"),
+            {"mode": "typed"},
+            suppress_exceptions=False,
+        )
+        module_exports = typed_boundary.export_program_module_artifacts(
+            {
+                "module_id": "pkg.demo",
+                "text": emitted_text,
+                "helper_modules": [
+                    {
+                        "module_id": "__pytra_helper__.fake.demo",
+                        "metadata": {"owner_module_id": "pkg.demo"},
+                    }
+                ],
+            }
+        )
+
+        self.assertEqual(emitted_text, "// Demo -> demo.txt")
+        self.assertEqual(len(module_exports), 2)
+        self.assertEqual(module_exports[1]["kind"], "helper")
+        self.assertEqual(module_exports[1]["metadata"]["owner_module_id"], "pkg.demo")
+        self.assertIs(typed_boundary.get_program_writer_with_spec(spec), _program_writer)
+
+        typed_boundary.apply_runtime_hook_with_spec(spec, Path("out/demo.txt"))
+        self.assertEqual(hook_calls, ["demo.txt"])
+
     def test_build_program_artifact_preserves_helper_kind_metadata(self) -> None:
         fake_spec = {"target_lang": "cpp"}
         helper_module = {
