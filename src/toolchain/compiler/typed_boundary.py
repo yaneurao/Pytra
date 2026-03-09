@@ -463,6 +463,23 @@ def coerce_backend_spec(raw_spec: object) -> ResolvedBackendSpec:
     raise RuntimeError("backend spec must be dict or ResolvedBackendSpec")
 
 
+def normalize_legacy_backend_spec_dict(raw_spec: object) -> dict[str, object]:
+    normalized = _copy_object_dict(raw_spec)
+    default_layers = _copy_scalar_layers(normalized.get("default_options", {}))
+    normalized["default_options"] = {
+        "lower": dict(default_layers.get("lower", {})),
+        "optimizer": dict(default_layers.get("optimizer", {})),
+        "emitter": dict(default_layers.get("emitter", {})),
+    }
+    schema_layers = _copy_schema_layers(normalized.get("option_schema", {}))
+    normalized["option_schema"] = {
+        "lower": {key: dict(rule) for key, rule in schema_layers.get("lower", {}).items()},
+        "optimizer": {key: dict(rule) for key, rule in schema_layers.get("optimizer", {}).items()},
+        "emitter": {key: dict(rule) for key, rule in schema_layers.get("emitter", {}).items()},
+    }
+    return normalized
+
+
 def coerce_ir_document(raw: object) -> dict[str, object]:
     return _copy_object_dict(raw)
 

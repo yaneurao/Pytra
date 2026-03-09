@@ -297,6 +297,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact_or_none", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import normalize_emitted_module_artifact", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import normalize_emitted_module_artifact", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import normalize_legacy_backend_spec_dict", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import normalize_legacy_backend_spec_dict", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", host_src)
@@ -323,6 +325,16 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("return coerce_ir_document(doc)", static_src)
         self.assertIn("ir_document=coerce_ir_document(ir)", host_src)
         self.assertIn("ir_document=coerce_ir_document(ir)", static_src)
+        self.assertIn('opts = export_layer_options_any(emitter_options, layer="emitter")', host_src)
+        self.assertIn('opts = export_layer_options_any(emitter_options, layer="emitter")', static_src)
+        self.assertIn(
+            'source_any = emit_impl(ir, output_path, export_layer_options_any(emitter_options, layer="emitter"))',
+            host_src,
+        )
+        self.assertIn(
+            'source_any = emit_impl(ir, output_path, export_layer_options_any(emitter_options, layer="emitter"))',
+            static_src,
+        )
         self.assertIn("export_layer_options_carrier(request.emitter_options)", host_src)
         self.assertIn("export_layer_options_carrier(request.emitter_options)", static_src)
         self.assertIn("return export_resolved_backend_spec_any(_normalize_backend_runtime_spec(spec))", host_src)
@@ -332,6 +344,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("return export_module_artifact_any(", static_src)
         self.assertIn("return normalize_emitted_module_artifact(artifact_any, request=request)", host_src)
         self.assertIn("return normalize_emitted_module_artifact(artifact_any, request=request)", static_src)
+        self.assertIn("normalized = normalize_legacy_backend_spec_dict(spec)", host_src)
+        self.assertIn("normalized = normalize_legacy_backend_spec_dict(spec)", static_src)
         self.assertIn("return export_program_artifact_any(", host_src)
         self.assertIn("return export_program_artifact_any(", static_src)
         self.assertIn("return export_resolved_backend_spec_any(get_backend_spec_typed(target))", host_src)
@@ -366,6 +380,20 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("def _normalize_module_artifact_typed(", static_src)
         self.assertNotIn("def _coerce_module_artifact(", host_src)
         self.assertNotIn("def _coerce_module_artifact(", static_src)
+        self.assertNotIn("opts = emitter_options if isinstance(emitter_options, dict) else {}", host_src)
+        self.assertNotIn("opts = emitter_options if isinstance(emitter_options, dict) else {}", static_src)
+        self.assertNotIn(
+            "emit_impl(ir, output_path, emitter_options if isinstance(emitter_options, dict) else {})",
+            host_src,
+        )
+        self.assertNotIn(
+            "emit_impl(ir, output_path, emitter_options if isinstance(emitter_options, dict) else {})",
+            static_src,
+        )
+        self.assertNotIn("default_lower = defaults.get(\"lower\")", host_src)
+        self.assertNotIn("default_lower = defaults.get(\"lower\")", static_src)
+        self.assertNotIn("schema_lower = schemas.get(\"lower\")", host_src)
+        self.assertNotIn("schema_lower = schemas.get(\"lower\")", static_src)
 
         host_registry._SPEC_CACHE.clear()
         host_spec = host_registry.get_backend_spec_typed("cpp")
@@ -428,6 +456,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             typed_boundary.export_compiler_root_document_any(doc),
             typed_boundary.export_compiler_root_document(doc),
         )
+
         legacy_doc = typed_boundary.coerce_compiler_root_document(raw_doc)
         self.assertEqual(legacy_doc.meta.source_path, "legacy.py")
         self.assertEqual(legacy_doc.meta.parser_backend, "legacy_host")
@@ -569,6 +598,33 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(len(helper_program.modules), 2)
         self.assertEqual(helper_program.modules[1].kind, "helper")
         self.assertEqual(helper_program.modules[1].metadata["owner_module_id"], "pkg.demo")
+
+    def test_normalize_legacy_backend_spec_dict_fills_option_layers(self) -> None:
+        normalized = typed_boundary.normalize_legacy_backend_spec_dict(
+            {
+                "target_lang": "cpp",
+                "extension": ".cpp",
+                "default_options": {"emitter": {"mod_mode": "python"}},
+                "option_schema": {"optimizer": {"cpp_opt_level": {"type": "int"}}},
+            }
+        )
+
+        self.assertEqual(
+            normalized["default_options"],
+            {
+                "lower": {},
+                "optimizer": {},
+                "emitter": {"mod_mode": "python"},
+            },
+        )
+        self.assertEqual(
+            normalized["option_schema"],
+            {
+                "lower": {},
+                "optimizer": {"cpp_opt_level": {"type": "int"}},
+                "emitter": {},
+            },
+        )
 
     def test_build_program_artifact_preserves_helper_kind_metadata(self) -> None:
         fake_spec = {"target_lang": "cpp"}

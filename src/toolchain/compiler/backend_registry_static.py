@@ -28,6 +28,7 @@ from toolchain.compiler.typed_boundary import export_program_artifact_any
 from toolchain.compiler.typed_boundary import export_program_artifact_carrier
 from toolchain.compiler.typed_boundary import flatten_module_artifact_carrier
 from toolchain.compiler.typed_boundary import normalize_emitted_module_artifact
+from toolchain.compiler.typed_boundary import normalize_legacy_backend_spec_dict
 from toolchain.compiler.typed_boundary import normalize_module_artifact_carrier
 from toolchain.compiler.typed_boundary import resolve_layer_options_carrier
 
@@ -129,7 +130,7 @@ def _emit_java(ir: dict[str, Any], output_path: Path, _emitter_options: dict[str
 
 
 def _emit_cpp(ir: dict[str, Any], _output_path: Path, emitter_options: dict[str, Any] | None = None) -> str:
-    opts = emitter_options if isinstance(emitter_options, dict) else {}
+    opts = export_layer_options_any(emitter_options, layer="emitter")
     negative_index_mode = str(opts.get("negative_index_mode", "const_only"))
     bounds_check_mode = str(opts.get("bounds_check_mode", "off"))
     floor_div_mode = str(opts.get("floor_div_mode", "native"))
@@ -266,7 +267,7 @@ def _legacy_emit_module_adapter(emit_impl: Any, *, extension: str) -> Any:
     ) -> dict[str, Any]:
         source_any: Any = ""
         try:
-            source_any = emit_impl(ir, output_path, emitter_options if isinstance(emitter_options, dict) else {})
+            source_any = emit_impl(ir, output_path, export_layer_options_any(emitter_options, layer="emitter"))
         except TypeError:
             source_any = emit_impl(ir, output_path)
         return export_module_artifact_any(
@@ -423,43 +424,8 @@ _BACKEND_RUNTIME_SPECS: dict[str, ResolvedBackendSpec] = {}
 
 
 def _normalize_backend_runtime_spec(spec: BackendSpec) -> ResolvedBackendSpec:
-    normalized = dict(spec)
+    normalized = normalize_legacy_backend_spec_dict(spec)
     extension = str(normalized.get("extension", ""))
-    defaults = normalized.get("default_options")
-    if not isinstance(defaults, dict):
-        defaults = {}
-    default_lower = defaults.get("lower")
-    if not isinstance(default_lower, dict):
-        default_lower = {}
-    default_optimizer = defaults.get("optimizer")
-    if not isinstance(default_optimizer, dict):
-        default_optimizer = {}
-    default_emitter = defaults.get("emitter")
-    if not isinstance(default_emitter, dict):
-        default_emitter = {}
-    normalized["default_options"] = {
-        "lower": dict(default_lower),
-        "optimizer": dict(default_optimizer),
-        "emitter": dict(default_emitter),
-    }
-
-    schemas = normalized.get("option_schema")
-    if not isinstance(schemas, dict):
-        schemas = {}
-    schema_lower = schemas.get("lower")
-    if not isinstance(schema_lower, dict):
-        schema_lower = {}
-    schema_optimizer = schemas.get("optimizer")
-    if not isinstance(schema_optimizer, dict):
-        schema_optimizer = {}
-    schema_emitter = schemas.get("emitter")
-    if not isinstance(schema_emitter, dict):
-        schema_emitter = {}
-    normalized["option_schema"] = {
-        "lower": dict(schema_lower),
-        "optimizer": dict(schema_optimizer),
-        "emitter": dict(schema_emitter),
-    }
 
     lower_impl = normalized.get("lower")
     if not callable(lower_impl):
