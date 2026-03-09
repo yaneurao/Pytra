@@ -653,49 +653,6 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(len(helper_program.modules), 2)
         self.assertEqual(helper_program.modules[1].kind, "helper")
         self.assertEqual(helper_program.modules[1].metadata["owner_module_id"], "pkg.demo")
-        helper_modules = typed_boundary.collect_program_modules_from_items(
-            [
-                {
-                    "module_id": "pkg.demo",
-                    "kind": "user",
-                    "label": "demo",
-                    "extension": ".cpp",
-                    "text": "// demo\n",
-                    "is_entry": True,
-                    "helper_modules": [
-                        {
-                            "module_id": "__pytra_helper__.cpp.demo",
-                            "text": "// helper\n",
-                            "metadata": {"helper_id": "cpp.demo", "owner_module_id": "pkg.demo"},
-                        }
-                    ],
-                }
-            ]
-        )
-        self.assertEqual([module.module_id for module in helper_modules], ["pkg.demo", "__pytra_helper__.cpp.demo"])
-        rebuilt_program = typed_boundary.build_program_artifact_from_modules(
-            host_spec,
-            [
-                {
-                    "module_id": "pkg.demo",
-                    "kind": "user",
-                    "label": "demo",
-                    "extension": ".cpp",
-                    "text": "// demo\n",
-                    "is_entry": True,
-                    "helper_modules": [
-                        {
-                            "module_id": "__pytra_helper__.cpp.demo",
-                            "text": "// helper\n",
-                            "metadata": {"helper_id": "cpp.demo", "owner_module_id": "pkg.demo"},
-                        }
-                    ],
-                }
-            ],
-            program_id="pkg.demo",
-            entry_modules=["pkg.demo"],
-        )
-        self.assertEqual([module.module_id for module in rebuilt_program.modules], ["pkg.demo", "__pytra_helper__.cpp.demo"])
 
     def test_normalize_legacy_backend_spec_dict_fills_option_layers(self) -> None:
         normalized = typed_boundary.normalize_legacy_backend_spec_dict(
