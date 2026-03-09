@@ -589,7 +589,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_noncpp_attr_call_annotations_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_noncpp_attr_call_expr", 1)[1].split(
-            "def _sh_set_parse_context",
+            "def _sh_annotate_scalar_ctor_call_expr",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -600,6 +600,27 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("_sh_annotate_noncpp_attr_call_expr(", postfix_text)
         self.assertNotIn("std_module_attr_ret = lookup_stdlib_function_return_type(attr)", postfix_text)
         self.assertNotIn('payload["resolved_type"] = std_module_attr_ret', postfix_text)
+
+    def test_core_source_routes_scalar_ctor_metadata_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_annotate_scalar_ctor_call_expr", 1)[1].split(
+            "def _sh_set_parse_context",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('runtime_call = "static_cast"', helper_text)
+        self.assertIn('if fn_name == "int" and arg_count == 2:', helper_text)
+        self.assertIn('runtime_call = "py_to_int64_base"', helper_text)
+        self.assertIn('elif fn_name == "bool" and arg_count == 1 and use_truthy_runtime:', helper_text)
+        self.assertIn('runtime_call = "py_to_bool"', helper_text)
+        self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
+        self.assertIn('_sh_annotate_scalar_ctor_call_expr(', postfix_text)
+        self.assertNotIn('runtime_call = "static_cast"', postfix_text)
+        self.assertNotIn('runtime_call = "py_to_int64_base"', postfix_text)
+        self.assertNotIn('runtime_call = "py_to_bool"', postfix_text)
+        self.assertNotIn('runtime_module_id = "pytra.core.py_runtime"', postfix_text)
+        self.assertNotIn('runtime_symbol = "py_to_int64_base"', postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")

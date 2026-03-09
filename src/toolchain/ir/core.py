@@ -326,6 +326,34 @@ def _sh_annotate_noncpp_attr_call_expr(
     return payload
 
 
+def _sh_annotate_scalar_ctor_call_expr(
+    payload: dict[str, Any],
+    *,
+    fn_name: str,
+    arg_count: int,
+    use_truthy_runtime: bool = False,
+    semantic_tag: str | None = None,
+) -> dict[str, Any]:
+    runtime_call = "static_cast"
+    runtime_module_id = "pytra.core.py_runtime"
+    runtime_symbol = fn_name
+    if fn_name == "int" and arg_count == 2:
+        runtime_call = "py_to_int64_base"
+        runtime_module_id = "pytra.built_in.scalar_ops"
+        runtime_symbol = "py_to_int64_base"
+    elif fn_name == "bool" and arg_count == 1 and use_truthy_runtime:
+        runtime_call = "py_to_bool"
+    return _sh_annotate_runtime_call_expr(
+        payload,
+        lowered_kind="BuiltinCall",
+        builtin_name=fn_name,
+        runtime_call=runtime_call,
+        module_id=runtime_module_id,
+        runtime_symbol=runtime_symbol,
+        semantic_tag=semantic_tag,
+    )
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -4809,26 +4837,18 @@ class _ShExprParser:
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif fn_name in {"int", "float", "bool"}:
-                    runtime_call = "static_cast"
-                    runtime_module_id = "pytra.core.py_runtime"
-                    runtime_symbol = fn_name
-                    if fn_name == "int" and len(args) == 2:
-                        runtime_call = "py_to_int64_base"
-                        runtime_module_id = "pytra.built_in.scalar_ops"
-                        runtime_symbol = "py_to_int64_base"
+                    use_truthy_runtime = False
                     if fn_name == "bool" and len(args) == 1:
                         arg0 = args[0]
                         if isinstance(arg0, dict):
                             arg0_t = str(arg0.get("resolved_type", "unknown"))
                             if self._is_forbidden_object_receiver_type(arg0_t):
-                                runtime_call = "py_to_bool"
-                    _sh_annotate_runtime_call_expr(
+                                use_truthy_runtime = True
+                    _sh_annotate_scalar_ctor_call_expr(
                         payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name=fn_name,
-                        runtime_call=runtime_call,
-                        module_id=runtime_module_id,
-                        runtime_symbol=runtime_symbol,
+                        fn_name=fn_name,
+                        arg_count=len(args),
+                        use_truthy_runtime=use_truthy_runtime,
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif fn_name in {"min", "max"}:
