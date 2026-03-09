@@ -75,6 +75,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_make_module_source_span()` / `_sh_make_import_resolution_meta()` / `_sh_make_module_meta()` を追加し、`_sh_make_module_root()` 内に残っていた module-level carrier の直 dict 組み立ても helper 経由へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_make_import_symbol_binding()` を pre-scan / import registration / module parse 全経路に適用し、source-of-truth 側の import symbol metadata carrier を raw dict 代入なしで統一した。`test_east_core.py` には再流入 guard を追加し、tracked selfhost test は誤って tracked mirror 前提を置いていた箇所を整理した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_make_import_resolution_binding()` の resolution tail を known field のみへ固定し、`_sh_make_import_resolution_meta()` / `_sh_make_module_root()` の binding 型ヒントも `dict[str, Any]` 正本へ揃えた。これで import-resolution lane の generic `resolution.items()` merge をやめ、source guard でも raw loop の再流入を検知できる。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_make_decl_meta()` を追加し、top-level function の `runtime_abi_v1` / `template_v1` と extern var の `extern_var_v1` metadata carrier を raw dict 組み立てなしで共通 helper へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_import_binding_fields()` / `_sh_make_import_resolution_binding()` を追加し、module root tail に残っていた `binding.get(...)` 連鎖と `dict(binding)` bridge を helper 経由へ寄せた。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする

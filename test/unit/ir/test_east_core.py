@@ -76,6 +76,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("def _sh_make_import_resolution_meta(", text)
         self.assertIn("def _sh_make_import_resolution_binding(", text)
         self.assertIn("def _sh_make_module_meta(", text)
+        self.assertIn("def _sh_make_decl_meta(", text)
         self.assertIn("def _sh_import_binding_fields(", text)
         self.assertIn("def _sh_make_import_resolution_binding(", text)
         self.assertIn("def _sh_make_assign_stmt(", text)
@@ -106,6 +107,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('import_symbol_bindings[bind_name_dc] = {', text)
         self.assertNotIn('import_symbol_bindings[bind_name] = {', text)
         self.assertNotIn("for key, value in resolution.items():", text)
+        self.assertNotIn('meta["runtime_abi_v1"] = runtime_abi_meta', text)
+        self.assertNotIn('meta["template_v1"] = template_meta', text)
+        self.assertNotIn('ann_item["meta"] = {"extern_var_v1": extern_var_meta}', text)
         module_root_tail = text.split("for binding in import_bindings:", 1)[1]
         self.assertNotIn('module_id_obj = binding.get("module_id")', module_root_tail)
         self.assertNotIn('local_name_obj = binding.get("local_name")', module_root_tail)

@@ -416,6 +416,16 @@ def _sh_make_binop_expr(
     }
 
 
+def _sh_make_cast_entry(on: str, from_type: str, to_type: str, reason: str) -> dict[str, Any]:
+    """`casts` metadata item を構築する。"""
+    return {
+        "on": on,
+        "from": from_type,
+        "to": to_type,
+        "reason": reason,
+    }
+
+
 def _sh_make_ifexp_expr(
     source_span: dict[str, Any],
     test: dict[str, Any],
@@ -485,6 +495,14 @@ def _sh_make_call_expr(
         "func": func,
         "args": args,
         "keywords": keywords,
+    }
+
+
+def _sh_make_keyword_arg(arg: str, value: dict[str, Any]) -> dict[str, Any]:
+    """Call.keyword carrier を構築する。"""
+    return {
+        "arg": arg,
+        "value": value,
     }
 
 
@@ -775,6 +793,19 @@ def _sh_make_arg_node(
     if default is not None:
         node["default"] = default
     return node
+
+
+def _sh_make_lambda_arg_entry(
+    name: str,
+    default: dict[str, Any] | None,
+    resolved_type: str,
+) -> dict[str, Any]:
+    """lambda parameter の補助 carrier を構築する。"""
+    return {
+        "name": name,
+        "default": default,
+        "resolved_type": resolved_type,
+    }
 
 
 def _sh_make_lambda_expr(
@@ -1329,6 +1360,23 @@ def _sh_make_module_meta(
         "import_modules": import_module_bindings,
         "import_symbols": import_symbol_bindings,
     }
+
+
+def _sh_make_decl_meta(
+    *,
+    runtime_abi_v1: dict[str, Any] | None = None,
+    template_v1: dict[str, Any] | None = None,
+    extern_var_v1: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """宣言 node の metadata carrier を構築する。"""
+    meta: dict[str, Any] = {}
+    if runtime_abi_v1 is not None:
+        meta["runtime_abi_v1"] = runtime_abi_v1
+    if template_v1 is not None:
+        meta["template_v1"] = template_v1
+    if extern_var_v1 is not None:
+        meta["extern_var_v1"] = extern_var_v1
+    return meta
 
 
 def _sh_make_module_root(
@@ -3736,7 +3784,7 @@ class _ShExprParser:
                     default_t = str(default_expr.get("resolved_type", "unknown"))
                     if default_t != "":
                         param_t = default_t
-                arg_entries.append({"name": nm, "default": default_expr, "resolved_type": param_t})
+                arg_entries.append(_sh_make_lambda_arg_entry(nm, default_expr, param_t))
                 continue
             cur = self._cur()
             raise _make_east_build_error(
@@ -4286,7 +4334,7 @@ class _ShExprParser:
                             if self._cur()["k"] == "=":
                                 self._eat("=")
                                 kw_val = self._parse_ifexp()
-                                keywords.append({"arg": str(name_tok["v"]), "value": kw_val})
+                                keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))
                             else:
                                 self.pos = save_pos
                                 args.append(self._parse_call_arg_expr())
@@ -4913,9 +4961,9 @@ class _ShExprParser:
             elif (lt in INT_TYPES or lt in FLOAT_TYPES) and (rt in INT_TYPES or rt in FLOAT_TYPES):
                 out_t = "float64"
                 if lt in INT_TYPES:
-                    casts.append({"on": "left", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
+                    casts.append(_sh_make_cast_entry("left", "int64", "float64", "numeric_promotion"))
                 if rt in INT_TYPES:
-                    casts.append({"on": "right", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
+                    casts.append(_sh_make_cast_entry("right", "int64", "float64", "numeric_promotion"))
             else:
                 # object/unknown を数値に固定化しない。
                 out_t = "unknown"
@@ -4929,17 +4977,17 @@ class _ShExprParser:
         elif op_sym == "**" and lt in {"int64", "float64"} and rt in {"int64", "float64"}:
             out_t = "float64"
             if lt == "int64":
-                casts.append({"on": "left", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
+                casts.append(_sh_make_cast_entry("left", "int64", "float64", "numeric_promotion"))
             if rt == "int64":
-                casts.append({"on": "right", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
+                casts.append(_sh_make_cast_entry("right", "int64", "float64", "numeric_promotion"))
         elif lt == rt and lt in {"int64", "float64"}:
             out_t = lt
         elif lt in {"int64", "float64"} and rt in {"int64", "float64"}:
             out_t = "float64"
             if lt == "int64":
-                casts.append({"on": "left", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
+                casts.append(_sh_make_cast_entry("left", "int64", "float64", "numeric_promotion"))
             if rt == "int64":
-                casts.append({"on": "right", "from": "int64", "to": "float64", "reason": "numeric_promotion"})
+                casts.append(_sh_make_cast_entry("right", "int64", "float64", "numeric_promotion"))
         elif op_sym in {"&", "|", "^", "<<", ">>"} and lt == "int64" and rt == "int64":
             out_t = "int64"
         else:
@@ -7398,12 +7446,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 yield_value_type=yield_value_type,
             )
             if runtime_abi_meta is not None or template_meta is not None:
-                meta: dict[str, Any] = {}
-                if runtime_abi_meta is not None:
-                    meta["runtime_abi_v1"] = runtime_abi_meta
-                if template_meta is not None:
-                    meta["template_v1"] = template_meta
-                item["meta"] = meta
+                item["meta"] = _sh_make_decl_meta(
+                    runtime_abi_v1=runtime_abi_meta,
+                    template_v1=template_meta,
+                )
             fn_returns[fn_name] = fn_ret_effective
             _SH_FN_RETURNS[fn_name] = fn_ret_effective
             if not first_item_attached:
@@ -8246,7 +8292,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 import_symbol_bindings=import_symbol_bindings,
             )
             if extern_var_meta is not None:
-                ann_item["meta"] = {"extern_var_v1": extern_var_meta}
+                ann_item["meta"] = _sh_make_decl_meta(extern_var_v1=extern_var_meta)
             body_items.append(ann_item)
             i = logical_end + 1
             continue
