@@ -205,8 +205,19 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         )
 
     def test_typed_backend_specs_preserve_legacy_metadata(self) -> None:
+        py2x_src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
         host_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry.py").read_text(encoding="utf-8")
         static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
+
+        self.assertIn("from toolchain.compiler.typed_boundary import export_compiler_root_document", py2x_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_carrier", py2x_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_carrier", py2x_src)
+        self.assertIn("return export_compiler_root_document(", py2x_src)
+        self.assertIn("program_artifact_any = export_program_artifact_carrier(program_artifact)", py2x_src)
+        self.assertIn("normalized_modules.append(export_module_artifact_carrier(item))", py2x_src)
+        self.assertNotIn(").to_legacy_dict()", py2x_src)
+        self.assertNotIn("program_artifact_any = program_artifact.to_legacy_dict()", py2x_src)
+        self.assertNotIn("normalized_modules.append(item.to_legacy_dict())", py2x_src)
 
         self.assertIn(
             "doc = east_doc if isinstance(east_doc, dict) else export_compiler_root_document(coerce_compiler_root_document(east_doc))",
@@ -226,6 +237,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("return export_module_artifact_carrier(", static_src)
         self.assertIn("return export_program_artifact_carrier(", host_src)
         self.assertIn("return export_program_artifact_carrier(", static_src)
+        self.assertIn("return export_resolved_backend_spec(get_backend_spec_typed(target))", host_src)
+        self.assertIn("_BACKEND_SPECS[target] = export_resolved_backend_spec(runtime_spec)", static_src)
         self.assertIn(
             "return [export_module_artifact_carrier(item) for item in collect_program_modules_typed(module_artifact)]",
             host_src,
@@ -290,6 +303,17 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(
             typed_boundary.export_layer_options_carrier(opts),
             opts.to_legacy_dict(),
+        )
+        host_registry._SPEC_CACHE.clear()
+        host_spec = host_registry.get_backend_spec_typed("cpp")
+        static_spec = static_registry.get_backend_spec_typed("cpp")
+        self.assertEqual(
+            typed_boundary.export_resolved_backend_spec(host_spec),
+            host_spec.to_legacy_dict(),
+        )
+        self.assertEqual(
+            typed_boundary.export_resolved_backend_spec(static_spec),
+            static_spec.to_legacy_dict(),
         )
         module = typed_boundary.coerce_module_artifact(
             {

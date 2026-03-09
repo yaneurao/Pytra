@@ -111,6 +111,31 @@ def export_layer_options_carrier(options: "LayerOptionsCarrier") -> dict[str, Co
     return dict(options.values)
 
 
+def export_backend_spec_carrier(carrier: "BackendSpecCarrier") -> dict[str, object]:
+    return {
+        "target_lang": carrier.target_lang,
+        "extension": carrier.extension,
+        "default_options": {
+            layer: dict(values) for layer, values in carrier.default_options_by_layer.items()
+        },
+        "option_schema": {
+            layer: {key: dict(rule) for key, rule in values.items()}
+            for layer, values in carrier.option_schema_by_layer.items()
+        },
+    }
+
+
+def export_resolved_backend_spec(spec: "ResolvedBackendSpec") -> dict[str, object]:
+    out = export_backend_spec_carrier(spec.carrier)
+    out["lower"] = spec.lower_impl
+    out["optimizer"] = spec.optimizer_impl
+    out["emit"] = spec.emit_impl
+    out["emit_module"] = spec.emit_module_impl
+    out["program_writer"] = spec.program_writer_impl
+    out["runtime_hook"] = spec.runtime_hook_impl
+    return out
+
+
 def export_module_artifact_carrier(module: "ModuleArtifactCarrier") -> dict[str, object]:
     out: dict[str, object] = {
         "module_id": module.module_id,
@@ -231,17 +256,7 @@ class BackendSpecCarrier:
         )
 
     def to_legacy_dict(self) -> dict[str, object]:
-        return {
-            "target_lang": self.target_lang,
-            "extension": self.extension,
-            "default_options": {
-                layer: dict(values) for layer, values in self.default_options_by_layer.items()
-            },
-            "option_schema": {
-                layer: {key: dict(rule) for key, rule in values.items()}
-                for layer, values in self.option_schema_by_layer.items()
-            },
-        }
+        return export_backend_spec_carrier(self)
 
 
 @dataclass(frozen=True)
@@ -309,14 +324,7 @@ class ResolvedBackendSpec:
         )
 
     def to_legacy_dict(self) -> dict[str, object]:
-        out = self.carrier.to_legacy_dict()
-        out["lower"] = self.lower_impl
-        out["optimizer"] = self.optimizer_impl
-        out["emit"] = self.emit_impl
-        out["emit_module"] = self.emit_module_impl
-        out["program_writer"] = self.program_writer_impl
-        out["runtime_hook"] = self.runtime_hook_impl
-        return out
+        return export_resolved_backend_spec(self)
 
 
 def coerce_compiler_root_document(

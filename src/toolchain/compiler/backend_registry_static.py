@@ -19,6 +19,7 @@ from toolchain.compiler.typed_boundary import copy_module_dependencies
 from toolchain.compiler.typed_boundary import copy_module_metadata
 from toolchain.compiler.typed_boundary import copy_program_writer_options
 from toolchain.compiler.typed_boundary import export_compiler_root_document
+from toolchain.compiler.typed_boundary import export_resolved_backend_spec
 from toolchain.compiler.typed_boundary import export_layer_options_carrier
 from toolchain.compiler.typed_boundary import export_module_artifact_carrier
 from toolchain.compiler.typed_boundary import export_program_artifact_carrier
@@ -538,7 +539,7 @@ def _normalize_backend_specs() -> None:
     for target, spec in list(_BACKEND_SPECS.items()):
         runtime_spec = _normalize_backend_runtime_spec(spec)
         _BACKEND_RUNTIME_SPECS[target] = runtime_spec
-        _BACKEND_SPECS[target] = runtime_spec.to_legacy_dict()
+        _BACKEND_SPECS[target] = export_resolved_backend_spec(runtime_spec)
 
 
 def _coerce_runtime_spec(spec: BackendSpec | ResolvedBackendSpec) -> ResolvedBackendSpec:

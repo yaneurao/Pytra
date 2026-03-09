@@ -25,6 +25,7 @@ from toolchain.compiler.typed_boundary import copy_module_dependencies
 from toolchain.compiler.typed_boundary import copy_module_metadata
 from toolchain.compiler.typed_boundary import copy_program_writer_options
 from toolchain.compiler.typed_boundary import export_compiler_root_document
+from toolchain.compiler.typed_boundary import export_resolved_backend_spec
 from toolchain.compiler.typed_boundary import export_layer_options_carrier
 from toolchain.compiler.typed_boundary import export_module_artifact_carrier
 from toolchain.compiler.typed_boundary import export_program_artifact_carrier
@@ -646,7 +647,7 @@ def get_backend_spec_typed(target: str) -> ResolvedBackendSpec:
 
 
 def get_backend_spec(target: str) -> BackendSpec:
-    return get_backend_spec_typed(target).to_legacy_dict()
+    return export_resolved_backend_spec(get_backend_spec_typed(target))
 
 
 def default_output_path(input_path: Path, target: str) -> Path:
