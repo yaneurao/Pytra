@@ -317,6 +317,123 @@ def _sh_make_constant_expr(
     }
 
 
+def _sh_make_unaryop_expr(
+    source_span: dict[str, Any],
+    op: str,
+    operand: dict[str, Any],
+    *,
+    resolved_type: str = "unknown",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`UnaryOp` 式 node を構築する。"""
+    return {
+        "kind": "UnaryOp",
+        "source_span": source_span,
+        "resolved_type": resolved_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "op": op,
+        "operand": operand,
+    }
+
+
+def _sh_make_boolop_expr(
+    source_span: dict[str, Any],
+    op: str,
+    values: list[dict[str, Any]],
+    *,
+    resolved_type: str = "bool",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`BoolOp` 式 node を構築する。"""
+    return {
+        "kind": "BoolOp",
+        "source_span": source_span,
+        "resolved_type": resolved_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "op": op,
+        "values": values,
+    }
+
+
+def _sh_make_compare_expr(
+    source_span: dict[str, Any],
+    left: dict[str, Any],
+    ops: list[str],
+    comparators: list[dict[str, Any]],
+    *,
+    resolved_type: str = "bool",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`Compare` 式 node を構築する。"""
+    return {
+        "kind": "Compare",
+        "source_span": source_span,
+        "resolved_type": resolved_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "left": left,
+        "ops": ops,
+        "comparators": comparators,
+    }
+
+
+def _sh_make_binop_expr(
+    source_span: dict[str, Any],
+    left: dict[str, Any],
+    op: str,
+    right: dict[str, Any],
+    *,
+    resolved_type: str = "unknown",
+    casts: list[dict[str, Any]] | None = None,
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`BinOp` 式 node を構築する。"""
+    return {
+        "kind": "BinOp",
+        "source_span": source_span,
+        "resolved_type": resolved_type,
+        "borrow_kind": "value",
+        "casts": [] if casts is None else casts,
+        "repr": repr_text,
+        "left": left,
+        "op": op,
+        "right": right,
+    }
+
+
+def _sh_make_ifexp_expr(
+    source_span: dict[str, Any],
+    test: dict[str, Any],
+    body: dict[str, Any],
+    orelse: dict[str, Any],
+    *,
+    resolved_type: str = "",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`IfExp` 式 node を構築する。"""
+    out_type = resolved_type
+    if out_type == "":
+        body_type = str(body.get("resolved_type", "unknown"))
+        orelse_type = str(orelse.get("resolved_type", "unknown"))
+        out_type = body_type if body_type == orelse_type else "unknown"
+    return {
+        "kind": "IfExp",
+        "source_span": source_span,
+        "resolved_type": out_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "test": test,
+        "body": body,
+        "orelse": orelse,
+    }
+
+
 def _sh_make_assign_stmt(
     source_span: dict[str, Any],
     target: dict[str, Any],
@@ -2848,20 +2965,13 @@ class _ShExprParser:
             orelse = self._parse_ifexp()
             s = int(body["source_span"]["col"]) - self.col_base
             e = int(orelse["source_span"]["end_col"]) - self.col_base
-            rt = str(body.get("resolved_type", "unknown"))
-            if rt != str(orelse.get("resolved_type", "unknown")):
-                rt = "unknown"
-            return {
-                "kind": "IfExp",
-                "source_span": self._node_span(s, e),
-                "resolved_type": rt,
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": self._src_slice(s, e),
-                "test": test,
-                "body": body,
-                "orelse": orelse,
-            }
+            return _sh_make_ifexp_expr(
+                self._node_span(s, e),
+                test,
+                body,
+                orelse,
+                repr_text=self._src_slice(s, e),
+            )
         return body
 
     def _parse_or(self) -> dict[str, Any]:
@@ -2875,16 +2985,7 @@ class _ShExprParser:
             return node
         s = int(values[0]["source_span"]["col"]) - self.col_base
         e = int(values[-1]["source_span"]["end_col"]) - self.col_base
-        return {
-            "kind": "BoolOp",
-            "source_span": self._node_span(s, e),
-            "resolved_type": "bool",
-            "borrow_kind": "value",
-            "casts": [],
-            "repr": self._src_slice(s, e),
-            "op": "Or",
-            "values": values,
-        }
+        return _sh_make_boolop_expr(self._node_span(s, e), "Or", values, repr_text=self._src_slice(s, e))
 
     def _parse_and(self) -> dict[str, Any]:
         """論理積（and）式を解析する。"""
@@ -2897,16 +2998,7 @@ class _ShExprParser:
             return node
         s = int(values[0]["source_span"]["col"]) - self.col_base
         e = int(values[-1]["source_span"]["end_col"]) - self.col_base
-        return {
-            "kind": "BoolOp",
-            "source_span": self._node_span(s, e),
-            "resolved_type": "bool",
-            "borrow_kind": "value",
-            "casts": [],
-            "repr": self._src_slice(s, e),
-            "op": "And",
-            "values": values,
-        }
+        return _sh_make_boolop_expr(self._node_span(s, e), "And", values, repr_text=self._src_slice(s, e))
 
     def _parse_not(self) -> dict[str, Any]:
         """単項 not を解析する。"""
@@ -2916,16 +3008,13 @@ class _ShExprParser:
             operand = self._parse_not()
             s = tok["s"]
             e = int(operand["source_span"]["end_col"]) - self.col_base
-            return {
-                "kind": "UnaryOp",
-                "source_span": self._node_span(s, e),
-                "resolved_type": "bool",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": self._src_slice(s, e),
-                "op": "Not",
-                "operand": operand,
-            }
+            return _sh_make_unaryop_expr(
+                self._node_span(s, e),
+                "Not",
+                operand,
+                resolved_type="bool",
+                repr_text=self._src_slice(s, e),
+            )
         return self._parse_compare()
 
     def _parse_compare(self) -> dict[str, Any]:
@@ -2969,17 +3058,13 @@ class _ShExprParser:
             return node
         start_col = int(node["source_span"]["col"]) - self.col_base
         end_col = int(comparators[-1]["source_span"]["end_col"]) - self.col_base
-        return {
-            "kind": "Compare",
-            "source_span": self._node_span(start_col, end_col),
-            "resolved_type": "bool",
-            "borrow_kind": "value",
-            "casts": [],
-            "repr": self._src_slice(start_col, end_col),
-            "left": node,
-            "ops": ops,
-            "comparators": comparators,
-        }
+        return _sh_make_compare_expr(
+            self._node_span(start_col, end_col),
+            node,
+            ops,
+            comparators,
+            repr_text=self._src_slice(start_col, end_col),
+        )
 
     def _parse_bitor(self) -> dict[str, Any]:
         """ビット OR を解析する。"""
@@ -3052,16 +3137,13 @@ class _ShExprParser:
             s = tok["s"]
             e = int(operand["source_span"]["end_col"]) - self.col_base
             out_t = str(operand.get("resolved_type", "unknown"))
-            return {
-                "kind": "UnaryOp",
-                "source_span": self._node_span(s, e),
-                "resolved_type": out_t if out_t in {"int64", "float64"} else "unknown",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": self._src_slice(s, e),
-                "op": "USub" if tok["k"] == "-" else "UAdd",
-                "operand": operand,
-            }
+            return _sh_make_unaryop_expr(
+                self._node_span(s, e),
+                "USub" if tok["k"] == "-" else "UAdd",
+                operand,
+                resolved_type=out_t if out_t in {"int64", "float64"} else "unknown",
+                repr_text=self._src_slice(s, e),
+            )
         return self._parse_power()
 
     def _lookup_method_return(self, cls_name: str, method: str) -> str:
@@ -4019,17 +4101,15 @@ class _ShExprParser:
 
         ls = int(left["source_span"]["col"]) - self.col_base
         rs = int(right["source_span"]["end_col"]) - self.col_base
-        return {
-            "kind": "BinOp",
-            "source_span": self._node_span(ls, rs),
-            "resolved_type": out_t,
-            "borrow_kind": "value",
-            "casts": casts,
-            "repr": self._src_slice(ls, rs),
-            "left": left,
-            "op": op_map[op_sym],
-            "right": right,
-        }
+        return _sh_make_binop_expr(
+            self._node_span(ls, rs),
+            left,
+            op_map[op_sym],
+            right,
+            resolved_type=out_t,
+            casts=casts,
+            repr_text=self._src_slice(ls, rs),
+        )
 
     def _parse_primary(self) -> dict[str, Any]:
         """リテラル・名前・括弧式などの primary 式を解析する。"""
@@ -4667,23 +4747,13 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
         body_node = _sh_parse_expr_lowered(body_txt, ln_no=ln_no, col=col + txt.find(body_txt), name_types=dict(name_types))
         test_node = _sh_parse_expr_lowered(test_txt, ln_no=ln_no, col=col + txt.find(test_txt), name_types=dict(name_types))
         else_node = _sh_parse_expr_lowered(else_txt, ln_no=ln_no, col=col + txt.rfind(else_txt), name_types=dict(name_types))
-        rt_obj: Any = body_node.get("resolved_type", "unknown")
-        rt: str = str(rt_obj) if isinstance(rt_obj, str) else "unknown"
-        else_rt_obj: Any = else_node.get("resolved_type", "unknown")
-        else_rt: str = str(else_rt_obj) if isinstance(else_rt_obj, str) else "unknown"
-        if rt != else_rt:
-            rt = "unknown"
-        return {
-            "kind": "IfExp",
-            "source_span": _sh_span(ln_no, col, col + len(raw)),
-            "resolved_type": rt,
-            "borrow_kind": "value",
-            "casts": [],
-            "repr": txt,
-            "test": test_node,
-            "body": body_node,
-            "orelse": else_node,
-        }
+        return _sh_make_ifexp_expr(
+            _sh_span(ln_no, col, col + len(raw)),
+            test_node,
+            body_node,
+            else_node,
+            repr_text=txt,
+        )
 
     # Normalize generator-arg any/all into list-comp form for self_hosted parser.
     m_any_all: re.Match | None = re.match(r"^(any|all)\((.+)\)$", txt, flags=re.S)
@@ -4776,17 +4846,14 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
         ]
         node = nodes[0]
         for rhs in nodes[1:]:
-            node = {
-                "kind": "BinOp",
-                "source_span": _sh_span(ln_no, col, col + len(raw)),
-                "resolved_type": "str",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": txt,
-                "left": node,
-                "op": "Add",
-                "right": rhs,
-            }
+            node = _sh_make_binop_expr(
+                _sh_span(ln_no, col, col + len(raw)),
+                node,
+                "Add",
+                rhs,
+                resolved_type="str",
+                repr_text=txt,
+            )
         return node
 
     plus_parts = _sh_split_top_plus(txt)
@@ -4794,17 +4861,14 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
         nodes = [_sh_parse_expr_lowered(p, ln_no=ln_no, col=col + txt.find(p), name_types=dict(name_types)) for p in plus_parts]
         node = nodes[0]
         for rhs in nodes[1:]:
-            node = {
-                "kind": "BinOp",
-                "source_span": _sh_span(ln_no, col, col + len(raw)),
-                "resolved_type": "str",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": txt,
-                "left": node,
-                "op": "Add",
-                "right": rhs,
-            }
+            node = _sh_make_binop_expr(
+                _sh_span(ln_no, col, col + len(raw)),
+                node,
+                "Add",
+                rhs,
+                resolved_type="str",
+                repr_text=txt,
+            )
         return node
     if len(plus_parts) >= 2 and is_single_top_expr:
         return _sh_parse_expr(

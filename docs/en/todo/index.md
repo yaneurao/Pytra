@@ -55,6 +55,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Moved module-root, leading-trivia, and bare-`Expr` assembly in `src/toolchain/ir/core.py` onto `_sh_make_*` builder helpers, and added the typed-carrier support shims (`CompilerRootDocument` re-coercion bypass plus `lower_ir_typed()` / `optimize_ir_typed()` / `emit_source_typed()`) needed to keep stage1 selfhost building.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_name_expr()` / `_sh_make_tuple_expr()` / `_sh_make_assign_stmt()` / `_sh_make_ann_assign_stmt()` and moved `with` bindings, typed bindings, tuple destructuring, class fields, and module top-level assign/annassign assembly through those helpers.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_constant_expr()` and moved the leaf `Constant` / `Name` / `Tuple` nodes from `_parse_primary()` / `_parse_comp_target()` through helpers too.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_ifexp_expr()` / `_sh_make_boolop_expr()` / `_sh_make_unaryop_expr()` / `_sh_make_compare_expr()` / `_sh_make_binop_expr()` and moved the `IfExp` / `BoolOp` / `UnaryOp` / `Compare` / `BinOp` nodes in both `ExprParser` and the lowered-expression path onto shared helpers.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 

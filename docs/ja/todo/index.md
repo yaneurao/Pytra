@@ -56,6 +56,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `src/toolchain/ir/core.py` の module root / leading trivia / bare `Expr` 文を `_sh_make_*` builder helper へ寄せ、typed carrier 側では `CompilerRootDocument` 再 coercion 回避と `lower_ir_typed()` / `optimize_ir_typed()` / `emit_source_typed()` 補助 wrapper を加えて selfhost build を維持した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_name_expr()` / `_sh_make_tuple_expr()` / `_sh_make_assign_stmt()` / `_sh_make_ann_assign_stmt()` を追加し、`with` 束縛、typed binding、tuple destructuring、class field、module top-level assign/annassign を helper 経由へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_constant_expr()` を追加し、`_parse_primary()` / `_parse_comp_target()` の leaf `Constant` / `Name` / `Tuple` node も helper 経由へ寄せた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_ifexp_expr()` / `_sh_make_boolop_expr()` / `_sh_make_unaryop_expr()` / `_sh_make_compare_expr()` / `_sh_make_binop_expr()` を追加し、`ExprParser` と lowered expression path の `IfExp` / `BoolOp` / `UnaryOp` / `Compare` / `BinOp` を共通 helper へ寄せた。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
