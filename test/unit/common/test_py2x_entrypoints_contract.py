@@ -257,6 +257,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
 
         self.assertIn("from toolchain.compiler.typed_boundary import export_compiler_root_document_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_compiler_root_document_any", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_layer_options_any", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_layer_options_any", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", host_src)
@@ -277,15 +281,15 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("out = fn(ir, export_layer_options_carrier(options))", static_src)
         self.assertIn("export_layer_options_carrier(request.emitter_options)", host_src)
         self.assertIn("export_layer_options_carrier(request.emitter_options)", static_src)
-        self.assertIn("return export_resolved_backend_spec(_normalize_backend_runtime_spec(spec))", host_src)
-        self.assertIn("return export_layer_options_carrier(resolve_layer_options_typed(spec, layer, raw_options))", host_src)
-        self.assertIn("return export_layer_options_carrier(resolve_layer_options_typed(spec, layer, raw_options))", static_src)
+        self.assertIn("return export_resolved_backend_spec_any(_normalize_backend_runtime_spec(spec))", host_src)
+        self.assertIn("return export_layer_options_any(resolve_layer_options_typed(spec, layer, raw_options))", host_src)
+        self.assertIn("return export_layer_options_any(resolve_layer_options_typed(spec, layer, raw_options))", static_src)
         self.assertIn("return export_module_artifact_any(", host_src)
         self.assertIn("return export_module_artifact_any(", static_src)
         self.assertIn("return export_program_artifact_any(", host_src)
         self.assertIn("return export_program_artifact_any(", static_src)
-        self.assertIn("return export_resolved_backend_spec(get_backend_spec_typed(target))", host_src)
-        self.assertIn("_BACKEND_SPECS[target] = export_resolved_backend_spec(runtime_spec)", static_src)
+        self.assertIn("return export_resolved_backend_spec_any(get_backend_spec_typed(target))", host_src)
+        self.assertIn("_BACKEND_SPECS[target] = export_resolved_backend_spec_any(runtime_spec)", static_src)
         self.assertIn(
             "return [export_module_artifact_any(item) for item in collect_program_modules_typed(module_artifact)]",
             host_src,
@@ -376,6 +380,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             typed_boundary.export_layer_options_carrier(opts),
             opts.to_legacy_dict(),
         )
+        self.assertEqual(
+            typed_boundary.export_layer_options_any(opts),
+            typed_boundary.export_layer_options_carrier(opts),
+        )
         host_registry._SPEC_CACHE.clear()
         host_spec = host_registry.get_backend_spec_typed("cpp")
         static_spec = static_registry.get_backend_spec_typed("cpp")
@@ -386,6 +394,14 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(
             typed_boundary.export_resolved_backend_spec(static_spec),
             static_spec.to_legacy_dict(),
+        )
+        self.assertEqual(
+            typed_boundary.export_resolved_backend_spec_any(host_spec),
+            typed_boundary.export_resolved_backend_spec(host_spec),
+        )
+        self.assertEqual(
+            typed_boundary.export_resolved_backend_spec_any(static_spec),
+            typed_boundary.export_resolved_backend_spec(static_spec),
         )
         module = typed_boundary.coerce_module_artifact(
             {

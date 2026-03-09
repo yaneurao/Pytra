@@ -24,7 +24,8 @@ from toolchain.compiler.typed_boundary import copy_module_dependencies
 from toolchain.compiler.typed_boundary import copy_module_metadata
 from toolchain.compiler.typed_boundary import copy_program_writer_options
 from toolchain.compiler.typed_boundary import export_compiler_root_document_any
-from toolchain.compiler.typed_boundary import export_resolved_backend_spec
+from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any
+from toolchain.compiler.typed_boundary import export_layer_options_any
 from toolchain.compiler.typed_boundary import export_layer_options_carrier
 from toolchain.compiler.typed_boundary import export_module_artifact_any
 from toolchain.compiler.typed_boundary import export_module_artifact_carrier
@@ -600,7 +601,7 @@ def _normalize_backend_runtime_spec(spec: BackendSpec) -> ResolvedBackendSpec:
 
 
 def _normalize_backend_spec(spec: BackendSpec) -> BackendSpec:
-    return export_resolved_backend_spec(_normalize_backend_runtime_spec(spec))
+    return export_resolved_backend_spec_any(_normalize_backend_runtime_spec(spec))
 
 
 def _coerce_runtime_spec(spec: BackendSpec | ResolvedBackendSpec) -> ResolvedBackendSpec:
@@ -648,7 +649,7 @@ def get_backend_spec_typed(target: str) -> ResolvedBackendSpec:
 
 
 def get_backend_spec(target: str) -> BackendSpec:
-    return export_resolved_backend_spec(get_backend_spec_typed(target))
+    return export_resolved_backend_spec_any(get_backend_spec_typed(target))
 
 
 def default_output_path(input_path: Path, target: str) -> Path:
@@ -666,7 +667,7 @@ def resolve_layer_options_typed(
 
 
 def resolve_layer_options(spec: BackendSpec, layer: str, raw_options: dict) -> dict:
-    return export_layer_options_carrier(resolve_layer_options_typed(spec, layer, raw_options))
+    return export_layer_options_any(resolve_layer_options_typed(spec, layer, raw_options))
 
 
 def lower_ir_typed(
