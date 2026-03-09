@@ -10,8 +10,7 @@
 <div align="center">
     <h1>Pytra</h1>
     <img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white">（subset）は Pytra の入力言語で、Pytra はそのコードを複数のターゲット言語へトランスパイルします。
-    <p><a href="./index.md">ドキュメントを読む</a></p>
-    <p><a href="./tutorial/README.md">はじめて使う</a></p>
+    <p><a href="#read-the-docs-ja">ドキュメントを読む</a></p>
 </div>
 
 <div align="center">
@@ -160,6 +159,14 @@ Pythonで書かれた[サンプルコード](../../sample/readme-ja.md)の実行
 - PHP: [View full code](../../sample/php/16_glass_sculpture_chaos.php)
 
 </details>
+
+<a id="read-the-docs-ja"></a>
+
+## ドキュメントを読む
+
+- 日本語チュートリアル: [tutorial/README.md](./tutorial/README.md)
+- 日本語ドキュメント一覧: [index.md](./index.md)
+- 英語 README: [../../README.md](../../README.md)
 
 ## ライセンス
 
