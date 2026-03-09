@@ -66,6 +66,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_function_def_stmt()` / `_sh_make_class_def_stmt()` and moved checked-in direct assembly for nested/top-level/method `FunctionDef` nodes plus top-level `ClassDef` nodes onto shared helpers.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Moved the remaining string-literal-concatenation `BinOp` and default `ForRange` `Constant` nodes onto existing helpers too, clearing the last checked-in direct `kind` assembly left in `core.py` source-of-truth paths.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Moved concatenated-string `BinOp` assembly and the default `Constant` nodes used by `for ... in range(...)` onto helpers too, so checked-in direct AST node assembly in `src/toolchain/ir/core.py` is now confined to the helper definitions themselves.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_def_sig_info()` and routed `_sh_parse_def_sig()` through that helper so the raw signature-carrier dict is no longer assembled inline.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] With checked-in node construction in `src/toolchain/ir/core.py` now aligned on helper-owned builders, S3-01 is closed and the remaining object-carrier retreat work moves to the generated/selfhost runtime lanes in `S3-02`.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed

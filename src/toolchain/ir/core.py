@@ -1222,6 +1222,27 @@ def _sh_make_class_def_stmt(
     return node
 
 
+def _sh_make_def_sig_info(
+    name: str,
+    return_type: str,
+    arg_types: dict[str, str],
+    arg_type_exprs: dict[str, dict[str, Any]],
+    return_type_expr: dict[str, Any],
+    arg_order: list[str],
+    arg_defaults: dict[str, str],
+) -> dict[str, Any]:
+    """`_sh_parse_def_sig()` の戻り carrier を構築する。"""
+    return {
+        "name": name,
+        "ret": return_type,
+        "arg_types": arg_types,
+        "arg_type_exprs": arg_type_exprs,
+        "return_type_expr": return_type_expr,
+        "arg_order": arg_order,
+        "arg_defaults": arg_defaults,
+    }
+
+
 def _sh_make_module_root(
     *,
     filename: str,
@@ -2291,16 +2312,16 @@ def _sh_parse_def_sig(
                 default_txt = pdef.strip()
                 if default_txt != "":
                     arg_defaults[pn] = default_txt
-    out_sig: dict[str, Any] = {}
-    out_sig["name"] = fn_name
     ret_expr = _sh_ann_to_type_expr(ret_group.strip(), type_aliases=aliases) if ret_group != "" else _sh_ann_to_type_expr("None", type_aliases=aliases)
-    out_sig["ret"] = _sh_type_expr_to_type_name(ret_expr)
-    out_sig["arg_types"] = arg_types
-    out_sig["arg_type_exprs"] = arg_type_exprs
-    out_sig["return_type_expr"] = ret_expr
-    out_sig["arg_order"] = arg_order
-    out_sig["arg_defaults"] = arg_defaults
-    return out_sig
+    return _sh_make_def_sig_info(
+        fn_name,
+        _sh_type_expr_to_type_name(ret_expr),
+        arg_types,
+        arg_type_exprs,
+        ret_expr,
+        arg_order,
+        arg_defaults,
+    )
 
 
 def _sh_split_def_header_and_inline_stmt(text: str) -> tuple[str, str]:

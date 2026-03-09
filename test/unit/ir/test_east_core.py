@@ -70,6 +70,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("def _sh_make_for_range_stmt(", text)
         self.assertIn("def _sh_make_function_def_stmt(", text)
         self.assertIn("def _sh_make_class_def_stmt(", text)
+        self.assertIn("def _sh_make_def_sig_info(", text)
         self.assertIn("def _sh_make_assign_stmt(", text)
         self.assertIn("def _sh_make_ann_assign_stmt(", text)
         self.assertIn("def _sh_make_raise_stmt(", text)

@@ -67,6 +67,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_function_def_stmt()` / `_sh_make_class_def_stmt()` を追加し、nested/top-level/method の `FunctionDef` と top-level `ClassDef` の checked-in 直組み立てを helper 経由へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] 文字列リテラル連結 `BinOp` と `ForRange` の既定 `Constant` も既存 helper へ寄せ、`core.py` source-of-truth 側の残存 `kind` 直組み立てを解消した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] 連結文字列の `BinOp` と `for ... in range(...)` の既定 `Constant` も helper 化し、`src/toolchain/ir/core.py` の checked-in AST node 直組み立ては helper 定義部だけへ縮退した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_def_sig_info()` を追加し、`_sh_parse_def_sig()` の raw signature dict 返却を helper carrier 経由へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `src/toolchain/ir/core.py` の checked-in node 構築は helper 正本へ揃ったため、S3-01 を完了として閉じ、以後の object carrier 撤退は generated/selfhost runtime 側の `S3-02` で続ける。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
