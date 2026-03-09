@@ -31,8 +31,18 @@ _CPP_HELPER_INCLUDE_BY_SPECIAL_OP = {
     "all": "pytra/built_in/predicates.h",
     "any": "pytra/built_in/predicates.h",
     "enumerate": "pytra/built_in/iter_ops.h",
+    "minmax": "pytra/built_in/numeric_ops.h",
     "range": "pytra/built_in/sequence.h",
     "reversed": "pytra/built_in/iter_ops.h",
+    "zip": "pytra/built_in/zip_ops.h",
+}
+_CPP_HELPER_INCLUDE_BY_DIRECT_CALL = {
+    "sum": "pytra/built_in/numeric_ops.h",
+}
+_CPP_HELPER_INCLUDE_BY_RUNTIME_CALL = {
+    "zip": "pytra/built_in/zip_ops.h",
+    "py_min": "pytra/built_in/numeric_ops.h",
+    "py_max": "pytra/built_in/numeric_ops.h",
 }
 _CPP_REPEAT_INT_TYPES = {"int", "uint", "int64", "uint64", "int32", "uint32", "int16", "uint16", "int8", "uint8"}
 RUNTIME_CPP_GENERATED_ROOT = REPO_ROOT / "src/runtime/cpp/generated"
@@ -96,6 +106,23 @@ class CppModuleEmitter:
                 helper_include = _CPP_HELPER_INCLUDE_BY_SPECIAL_OP.get(op, "")
                 if helper_include != "":
                     out.add(helper_include)
+            elif kind == "Call":
+                helper_include = _CPP_HELPER_INCLUDE_BY_RUNTIME_CALL.get(dict_any_get_str(node, "runtime_call"), "")
+                if helper_include != "":
+                    out.add(helper_include)
+                func_node = self.any_to_dict_or_empty(node.get("func"))
+                if self._node_kind_from_dict(func_node) == "Name":
+                    helper_include = _CPP_HELPER_INCLUDE_BY_DIRECT_CALL.get(dict_any_get_str(func_node, "id"), "")
+                    if helper_include != "":
+                        out.add(helper_include)
+            elif kind == "Compare":
+                if dict_any_get_str(node, "lowered_kind") == "Contains":
+                    out.add("pytra/built_in/contains.h")
+                else:
+                    for op_name in self.any_to_str_list(node.get("ops")):
+                        if op_name in {"In", "NotIn"}:
+                            out.add("pytra/built_in/contains.h")
+                            break
             elif kind == "BinOp" and dict_any_get_str(node, "op") == "Mult":
                 left_t = self.normalize_type_name(self.get_expr_type(node.get("left")))
                 right_t = self.normalize_type_name(self.get_expr_type(node.get("right")))

@@ -38,7 +38,7 @@ Context: [docs/ja/plans/p0-cpp-pyruntime-core-boundary-realign.md](../plans/p0-c
 1. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01] Realign the `py_runtime.h` core boundary and move remaining helpers back upstream / to dedicated lanes.
 2. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-01] Inventory checked-in callers of `numeric_ops/zip_ops/contains`, typed helpers, tuple helpers, and `type_id` wrappers, then classify the end state.
 3. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-02] Record include ownership, upstream contracts, and non-goals in the decision log so they match `spec-runtime`.
-4. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-01] Extend helper-include collection in the C++ emitter / prelude / generated path so `zip`, `contains`, and numeric helpers are explicitly included.
+4. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-01] Extend helper-include collection in the C++ emitter / prelude / generated path so `zip`, `contains`, and numeric helpers are explicitly included.
 5. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-02] Remove transitive `numeric_ops` / `zip_ops` / `contains` includes from `py_runtime.h` and update the removed-include guards.
 6. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-01] Switch typed dict subscripts to `.at()` and remove checked-in `py_dict_get` callers.
 7. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-02] Move tuple constant-index access to `std::get<N>` even in generated/runtime paths, and slim or retire the tuple `py_at` helper.
@@ -47,7 +47,7 @@ Context: [docs/ja/plans/p0-cpp-pyruntime-core-boundary-realign.md](../plans/p0-c
 10. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] Update `test_cpp_runtime_type_id.py` and generated runtime callers, and add a guard so cyclic ownership does not reappear.
 11. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] Clean up small remaining surfaces such as the `py_isinstance_of` fast path and the `PyFile` alias.
 12. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-02] Refresh representative tests / parity / docs / archive and close the task.
-- Progress memo: [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-01] Finished the S1 inventory and contract-locking work. Next, extend helper include collection in the C++ emitter/generated callers and start with explicit includes for `numeric_ops/zip_ops/contains`.
+- Progress memo: [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-02] Completed `S2-01` by extending C++ helper include collection so `numeric_ops/zip_ops/contains` can be included explicitly. Next, remove the transitive includes from `py_runtime.h` itself and update layout guards/regressions.
 
 ### P1: Structure EAST type representation and lift union / nominal ADT / narrowing out of string processing
 

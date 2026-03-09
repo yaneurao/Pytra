@@ -1846,6 +1846,29 @@ if __name__ == "__main__":
         self.assertIn("py_range(0, 3, 1)", cpp)
         self.assertIn("py_repeat(\"-\", 3)", cpp)
 
+    def test_runtime_helper_collectors_emit_numeric_zip_contains_headers(self) -> None:
+        src = """def main(xs: list[int], ys: list[str]) -> None:
+    total = sum(xs)
+    pairs = zip(xs, ys)
+    ok1 = 1 in xs
+    ok2 = "a" in ys
+    print(total, len(pairs), ok1, ok2)
+
+if __name__ == "__main__":
+    main([1, 2], ["a", "b"])
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "runtime_helper_headers.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn('#include "pytra/built_in/numeric_ops.h"', cpp)
+        self.assertIn('#include "pytra/built_in/zip_ops.h"', cpp)
+        self.assertIn('#include "pytra/built_in/contains.h"', cpp)
+        self.assertIn("sum(xs)", cpp)
+        self.assertIn("zip(xs, ys)", cpp)
+        self.assertIn("py_contains(xs, 1)", cpp)
+
     def test_from_pytra_runtime_import_gif_emits_one_to_one_include(self) -> None:
         src = """from pytra.utils import gif
 
