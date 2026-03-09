@@ -10,30 +10,25 @@ import importlib
 
 from typing import Any
 from pytra.std.pathlib import Path
-from toolchain.compiler.typed_boundary import EmitRequestCarrier
 from toolchain.compiler.typed_boundary import LayerOptionsCarrier
 from toolchain.compiler.typed_boundary import ModuleArtifactCarrier
 from toolchain.compiler.typed_boundary import ProgramArtifactCarrier
 from toolchain.compiler.typed_boundary import ResolvedBackendSpec
+from toolchain.compiler.typed_boundary import build_program_artifact_from_modules
 from toolchain.compiler.typed_boundary import build_resolved_backend_spec
-from toolchain.compiler.typed_boundary import build_program_artifact_carrier
 from toolchain.compiler.typed_boundary import coerce_backend_spec
 from toolchain.compiler.typed_boundary import coerce_ir_document
-from toolchain.compiler.typed_boundary import coerce_layer_options
-from toolchain.compiler.typed_boundary import coerce_module_artifact_or_none
+from toolchain.compiler.typed_boundary import collect_program_module_carriers
 from toolchain.compiler.typed_boundary import copy_module_dependencies
 from toolchain.compiler.typed_boundary import copy_module_metadata
-from toolchain.compiler.typed_boundary import copy_program_writer_options
+from toolchain.compiler.typed_boundary import execute_emit_module_with_spec
+from toolchain.compiler.typed_boundary import execute_lower_ir_with_spec
+from toolchain.compiler.typed_boundary import execute_optimize_ir_with_spec
 from toolchain.compiler.typed_boundary import export_compiler_root_document_any
 from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any
 from toolchain.compiler.typed_boundary import export_layer_options_any
-from toolchain.compiler.typed_boundary import export_layer_options_carrier
 from toolchain.compiler.typed_boundary import export_module_artifact_any
-from toolchain.compiler.typed_boundary import export_module_artifact_carrier
 from toolchain.compiler.typed_boundary import export_program_artifact_any
-from toolchain.compiler.typed_boundary import export_program_artifact_carrier
-from toolchain.compiler.typed_boundary import flatten_module_artifact_carrier
-from toolchain.compiler.typed_boundary import normalize_emitted_module_artifact
 from toolchain.compiler.typed_boundary import resolve_layer_options_carrier
 
 
@@ -491,19 +486,12 @@ def lower_ir_typed(
     lower_options: LayerOptionsCarrier | dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     runtime_spec = _coerce_runtime_spec(spec)
-    doc = export_compiler_root_document_any(east_doc)
-    options = lower_options if isinstance(lower_options, LayerOptionsCarrier) else coerce_layer_options("lower", lower_options)
-    fn = runtime_spec.lower_impl
-    try:
-        ir = fn(doc, export_layer_options_carrier(options))
-    except TypeError:
-        try:
-            ir = fn(doc)
-        except Exception:
-            ir = _identity_ir(doc)
-    except Exception:
-        ir = _identity_ir(doc)
-    return coerce_ir_document(ir)
+    return execute_lower_ir_with_spec(
+        runtime_spec,
+        east_doc,
+        lower_options,
+        suppress_exceptions=True,
+    )
 
 
 def lower_ir(spec: BackendSpec, east_doc: dict, lower_options: Any = None) -> dict:
@@ -516,22 +504,12 @@ def optimize_ir_typed(
     optimizer_options: LayerOptionsCarrier | dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     runtime_spec = _coerce_runtime_spec(spec)
-    options = (
-        optimizer_options
-        if isinstance(optimizer_options, LayerOptionsCarrier)
-        else coerce_layer_options("optimizer", optimizer_options)
+    return execute_optimize_ir_with_spec(
+        runtime_spec,
+        ir,
+        optimizer_options,
+        suppress_exceptions=True,
     )
-    fn = runtime_spec.optimizer_impl
-    try:
-        out = fn(ir, export_layer_options_carrier(options))
-    except TypeError:
-        try:
-            out = fn(ir)
-        except Exception:
-            out = _identity_ir(ir)
-    except Exception:
-        out = _identity_ir(ir)
-    return coerce_ir_document(out)
 
 
 def optimize_ir(spec: BackendSpec, ir: dict, optimizer_options: Any = None) -> dict:
@@ -548,42 +526,15 @@ def emit_module_typed(
     is_entry: bool = False,
 ) -> ModuleArtifactCarrier:
     runtime_spec = _coerce_runtime_spec(spec)
-    options = (
-        emitter_options
-        if isinstance(emitter_options, LayerOptionsCarrier)
-        else coerce_layer_options("emitter", emitter_options)
-    )
-    request = EmitRequestCarrier(
-        spec=runtime_spec.carrier,
-        ir_document=coerce_ir_document(ir),
-        output_path=output_path,
-        emitter_options=options,
+    return execute_emit_module_with_spec(
+        runtime_spec,
+        ir,
+        output_path,
+        emitter_options,
         module_id=module_id,
         is_entry=is_entry,
+        suppress_exceptions=True,
     )
-    fn = runtime_spec.emit_module_impl
-    artifact_any: Any = {}
-    try:
-        artifact_any = fn(
-            request.ir_document,
-            request.output_path,
-            export_layer_options_carrier(request.emitter_options),
-            module_id=request.module_id,
-            is_entry=request.is_entry,
-        )
-    except TypeError:
-        try:
-            artifact_any = fn(request.ir_document, request.output_path, export_layer_options_carrier(request.emitter_options))
-        except TypeError:
-            try:
-                artifact_any = fn(request.ir_document, request.output_path)
-            except Exception:
-                artifact_any = {}
-        except Exception:
-            artifact_any = {}
-    except Exception:
-        artifact_any = {}
-    return normalize_emitted_module_artifact(artifact_any, request=request)
 
 
 def emit_module(
@@ -608,10 +559,7 @@ def emit_module(
 
 
 def collect_program_modules_typed(module_artifact: ModuleArtifactCarrier | dict[str, Any]) -> tuple[ModuleArtifactCarrier, ...]:
-    carrier = coerce_module_artifact_or_none(module_artifact)
-    if carrier is None:
-        return ()
-    return flatten_module_artifact_carrier(carrier)
+    return collect_program_module_carriers(module_artifact)
 
 
 def collect_program_modules(module_artifact: dict[str, Any]) -> list[dict[str, Any]]:
@@ -629,19 +577,14 @@ def build_program_artifact_typed(
     writer_options: dict[str, object] | None = None,
 ) -> ProgramArtifactCarrier:
     runtime_spec = _coerce_runtime_spec(spec)
-    module_list: list[ModuleArtifactCarrier] = []
-    for item in modules:
-        coerced = coerce_module_artifact_or_none(item)
-        if coerced is not None:
-            module_list.append(coerced)
-    return build_program_artifact_carrier(
+    return build_program_artifact_from_modules(
         runtime_spec,
-        module_list,
+        modules,
         program_id=program_id,
         entry_modules=entry_modules,
         layout_mode=layout_mode,
         link_output_schema=link_output_schema,
-        writer_options=copy_program_writer_options(writer_options),
+        writer_options=writer_options,
     )
 
 

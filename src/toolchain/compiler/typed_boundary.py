@@ -577,6 +577,70 @@ def resolve_layer_options_carrier(
     return LayerOptionsCarrier(layer=layer, values=merged)
 
 
+def _execute_ir_transform(
+    fn: Any,
+    payload: dict[str, object],
+    *,
+    options: LayerOptionsCarrier,
+    fallback_payload: dict[str, object],
+    suppress_exceptions: bool,
+) -> dict[str, object]:
+    try:
+        out = fn(payload, export_layer_options_carrier(options))
+    except TypeError:
+        try:
+            out = fn(payload)
+        except Exception:
+            if not suppress_exceptions:
+                raise
+            out = fallback_payload
+    except Exception:
+        if not suppress_exceptions:
+            raise
+        out = fallback_payload
+    return coerce_ir_document(out)
+
+
+def execute_lower_ir_with_spec(
+    runtime_spec: ResolvedBackendSpec,
+    east_doc: object,
+    lower_options: LayerOptionsCarrier | dict[str, Any] | None = None,
+    *,
+    suppress_exceptions: bool,
+) -> dict[str, object]:
+    doc = export_compiler_root_document_any(east_doc)
+    options = lower_options if isinstance(lower_options, LayerOptionsCarrier) else coerce_layer_options("lower", lower_options)
+    return _execute_ir_transform(
+        runtime_spec.lower_impl,
+        doc,
+        options=options,
+        fallback_payload=doc,
+        suppress_exceptions=suppress_exceptions,
+    )
+
+
+def execute_optimize_ir_with_spec(
+    runtime_spec: ResolvedBackendSpec,
+    ir: dict[str, Any],
+    optimizer_options: LayerOptionsCarrier | dict[str, Any] | None = None,
+    *,
+    suppress_exceptions: bool,
+) -> dict[str, object]:
+    options = (
+        optimizer_options
+        if isinstance(optimizer_options, LayerOptionsCarrier)
+        else coerce_layer_options("optimizer", optimizer_options)
+    )
+    doc = coerce_ir_document(ir)
+    return _execute_ir_transform(
+        runtime_spec.optimizer_impl,
+        doc,
+        options=options,
+        fallback_payload=doc,
+        suppress_exceptions=suppress_exceptions,
+    )
+
+
 def normalize_module_artifact_carrier(
     artifact_any: object,
     *,
@@ -647,6 +711,64 @@ def normalize_emitted_module_artifact(
     )
 
 
+def execute_emit_module_with_spec(
+    runtime_spec: ResolvedBackendSpec,
+    ir: dict[str, Any],
+    output_path: Path,
+    emitter_options: LayerOptionsCarrier | dict[str, Any] | None = None,
+    *,
+    module_id: str = "",
+    is_entry: bool = False,
+    suppress_exceptions: bool,
+) -> ModuleArtifactCarrier:
+    options = (
+        emitter_options
+        if isinstance(emitter_options, LayerOptionsCarrier)
+        else coerce_layer_options("emitter", emitter_options)
+    )
+    request = EmitRequestCarrier(
+        spec=runtime_spec.carrier,
+        ir_document=coerce_ir_document(ir),
+        output_path=output_path,
+        emitter_options=options,
+        module_id=module_id,
+        is_entry=is_entry,
+    )
+    fn = runtime_spec.emit_module_impl
+    artifact_any: object = {}
+    try:
+        artifact_any = fn(
+            request.ir_document,
+            request.output_path,
+            export_layer_options_carrier(request.emitter_options),
+            module_id=request.module_id,
+            is_entry=request.is_entry,
+        )
+    except TypeError:
+        try:
+            artifact_any = fn(
+                request.ir_document,
+                request.output_path,
+                export_layer_options_carrier(request.emitter_options),
+            )
+        except TypeError:
+            try:
+                artifact_any = fn(request.ir_document, request.output_path)
+            except Exception:
+                if not suppress_exceptions:
+                    raise
+                artifact_any = {}
+        except Exception:
+            if not suppress_exceptions:
+                raise
+            artifact_any = {}
+    except Exception:
+        if not suppress_exceptions:
+            raise
+        artifact_any = {}
+    return normalize_emitted_module_artifact(artifact_any, request=request)
+
+
 def build_legacy_emit_module_adapter(
     emit_impl: Any,
     *,
@@ -715,6 +837,13 @@ def flatten_module_artifact_carrier(module_artifact: ModuleArtifactCarrier) -> t
             )
         )
     return tuple(out)
+
+
+def collect_program_module_carriers(module_artifact: object) -> tuple[ModuleArtifactCarrier, ...]:
+    carrier = coerce_module_artifact_or_none(module_artifact)
+    if carrier is None:
+        return ()
+    return flatten_module_artifact_carrier(carrier)
 
 
 def coerce_module_artifact(module_artifact: object) -> ModuleArtifactCarrier:
@@ -812,4 +941,30 @@ def build_program_artifact_carrier(
         layout_mode=layout_mode,
         link_output_schema=link_output_schema,
         writer_options=copy_program_writer_options(writer_options),
+    )
+
+
+def build_program_artifact_from_modules(
+    spec: ResolvedBackendSpec,
+    modules: list[object],
+    *,
+    program_id: str = "",
+    entry_modules: list[str] | None = None,
+    layout_mode: str = "single_file",
+    link_output_schema: str = "",
+    writer_options: dict[str, object] | None = None,
+) -> ProgramArtifactCarrier:
+    module_list: list[ModuleArtifactCarrier] = []
+    for item in modules:
+        coerced = coerce_module_artifact_or_none(item)
+        if coerced is not None:
+            module_list.append(coerced)
+    return build_program_artifact_carrier(
+        spec,
+        module_list,
+        program_id=program_id,
+        entry_modules=entry_modules,
+        layout_mode=layout_mode,
+        link_output_schema=link_output_schema,
+        writer_options=writer_options,
     )
