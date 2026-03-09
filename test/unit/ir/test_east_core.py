@@ -37,6 +37,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("def _sh_make_expr_stmt(", text)
         self.assertIn("def _sh_make_name_expr(", text)
         self.assertIn("def _sh_make_tuple_expr(", text)
+        self.assertIn("def _sh_make_constant_expr(", text)
         self.assertIn("def _sh_make_assign_stmt(", text)
         self.assertIn("def _sh_make_ann_assign_stmt(", text)
         self.assertIn("def _sh_make_module_root(", text)

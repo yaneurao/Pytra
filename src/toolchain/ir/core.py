@@ -286,6 +286,37 @@ def _sh_make_tuple_expr(
     }
 
 
+def _sh_make_constant_expr(
+    source_span: dict[str, Any],
+    value: Any,
+    *,
+    resolved_type: str = "",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`Constant` 式 node を構築する。"""
+    constant_type = resolved_type
+    if constant_type == "":
+        if value is None:
+            constant_type = "None"
+        elif isinstance(value, bool):
+            constant_type = "bool"
+        elif isinstance(value, int):
+            constant_type = "int64"
+        elif isinstance(value, float):
+            constant_type = "float64"
+        else:
+            constant_type = "str"
+    return {
+        "kind": "Constant",
+        "source_span": source_span,
+        "resolved_type": constant_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text if repr_text != "" else str(value),
+        "value": value,
+    }
+
+
 def _sh_make_assign_stmt(
     source_span: dict[str, Any],
     target: dict[str, Any],
@@ -3752,15 +3783,11 @@ class _ShExprParser:
             first = self._eat("NAME")
             first_name = str(first["v"])
             first_t = self.name_types.get(first_name, "unknown")
-            first_node = {
-                "kind": "Name",
-                "source_span": self._node_span(first["s"], first["e"]),
-                "resolved_type": first_t,
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": first_name,
-                "id": first_name,
-            }
+            first_node = _sh_make_name_expr(
+                self._node_span(first["s"], first["e"]),
+                first_name,
+                resolved_type=first_t,
+            )
             if self._cur()["k"] != ",":
                 return first_node
             elems: list[dict[str, Any]] = [first_node]
@@ -3772,28 +3799,13 @@ class _ShExprParser:
                 nm_tok = self._eat("NAME")
                 nm = str(nm_tok["v"])
                 t = self.name_types.get(nm, "unknown")
-                elems.append(
-                    {
-                        "kind": "Name",
-                        "source_span": self._node_span(nm_tok["s"], nm_tok["e"]),
-                        "resolved_type": t,
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": nm,
-                        "id": nm,
-                    }
-                )
+                elems.append(_sh_make_name_expr(self._node_span(nm_tok["s"], nm_tok["e"]), nm, resolved_type=t))
                 last_e = nm_tok["e"]
-            elem_types = [str(e.get("resolved_type", "unknown")) for e in elems]
-            return {
-                "kind": "Tuple",
-                "source_span": self._node_span(first["s"], last_e),
-                "resolved_type": f"tuple[{','.join(elem_types)}]",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": self._src_slice(first["s"], last_e),
-                "elements": elems,
-            }
+            return _sh_make_tuple_expr(
+                self._node_span(first["s"], last_e),
+                elems,
+                repr_text=self._src_slice(first["s"], last_e),
+            )
         if self._cur()["k"] == "(":
             l = self._eat("(")
             elems: list[dict[str, Any]] = []
@@ -3804,15 +3816,12 @@ class _ShExprParser:
                     break
                 elems.append(self._parse_comp_target())
             r = self._eat(")")
-            return {
-                "kind": "Tuple",
-                "source_span": self._node_span(l["s"], r["e"]),
-                "resolved_type": "tuple[unknown]",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": self._src_slice(l["s"], r["e"]),
-                "elements": elems,
-            }
+            return _sh_make_tuple_expr(
+                self._node_span(l["s"], r["e"]),
+                elems,
+                resolved_type="tuple[unknown]",
+                repr_text=self._src_slice(l["s"], r["e"]),
+            )
         tok = self._cur()
         raise _make_east_build_error(
             kind="unsupported_syntax",
@@ -4036,26 +4045,20 @@ class _ShExprParser:
                 tok_value = int(tok_v[2:], 8)
             else:
                 tok_value = int(tok_v)
-            return {
-                "kind": "Constant",
-                "source_span": self._node_span(tok["s"], tok["e"]),
-                "resolved_type": "int64",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": tok["v"],
-                "value": tok_value,
-            }
+            return _sh_make_constant_expr(
+                self._node_span(tok["s"], tok["e"]),
+                tok_value,
+                resolved_type="int64",
+                repr_text=str(tok["v"]),
+            )
         if tok["k"] == "FLOAT":
             self._eat("FLOAT")
-            return {
-                "kind": "Constant",
-                "source_span": self._node_span(tok["s"], tok["e"]),
-                "resolved_type": "float64",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": tok["v"],
-                "value": float(tok["v"]),
-            }
+            return _sh_make_constant_expr(
+                self._node_span(tok["s"], tok["e"]),
+                float(tok["v"]),
+                resolved_type="float64",
+                repr_text=str(tok["v"]),
+            )
         if tok["k"] == "STR":
             str_parts: list[dict[str, Any]] = [self._eat("STR")]
             while self._cur()["k"] == "STR":
@@ -4181,61 +4184,46 @@ class _ShExprParser:
             if "b" in prefix and "f" not in prefix:
                 resolved_type = "bytes"
             body = _sh_decode_py_string_body(body, "r" in prefix)
-            return {
-                "kind": "Constant",
-                "source_span": self._node_span(tok["s"], tok["e"]),
-                "resolved_type": resolved_type,
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": raw,
-                "value": body,
-            }
+            return _sh_make_constant_expr(
+                self._node_span(tok["s"], tok["e"]),
+                body,
+                resolved_type=resolved_type,
+                repr_text=raw,
+            )
         if tok["k"] == "NAME":
             name_tok = self._eat("NAME")
             nm = str(name_tok["v"])
             if nm in {"True", "False"}:
-                return {
-                    "kind": "Constant",
-                    "source_span": self._node_span(name_tok["s"], name_tok["e"]),
-                    "resolved_type": "bool",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": nm,
-                    "value": (nm == "True"),
-                }
+                return _sh_make_constant_expr(
+                    self._node_span(name_tok["s"], name_tok["e"]),
+                    nm == "True",
+                    resolved_type="bool",
+                    repr_text=nm,
+                )
             if nm == "None":
-                return {
-                    "kind": "Constant",
-                    "source_span": self._node_span(name_tok["s"], name_tok["e"]),
-                    "resolved_type": "None",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": nm,
-                    "value": None,
-                }
+                return _sh_make_constant_expr(
+                    self._node_span(name_tok["s"], name_tok["e"]),
+                    None,
+                    resolved_type="None",
+                    repr_text=nm,
+                )
             t = self.name_types.get(nm, "unknown")
-            return {
-                "kind": "Name",
-                "source_span": self._node_span(name_tok["s"], name_tok["e"]),
-                "resolved_type": t,
-                "borrow_kind": "readonly_ref" if t != "unknown" else "value",
-                "casts": [],
-                "repr": nm,
-                "id": nm,
-            }
+            return _sh_make_name_expr(
+                self._node_span(name_tok["s"], name_tok["e"]),
+                nm,
+                resolved_type=t,
+                borrow_kind="readonly_ref" if t != "unknown" else "value",
+            )
         if tok["k"] == "(":
             l = self._eat("(")
             if self._cur()["k"] == ")":
                 r = self._eat(")")
-                return {
-                    "kind": "Tuple",
-                    "source_span": self._node_span(l["s"], r["e"]),
-                    "resolved_type": "tuple[]",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": self._src_slice(l["s"], r["e"]),
-                    "elements": [],
-                }
+                return _sh_make_tuple_expr(
+                    self._node_span(l["s"], r["e"]),
+                    [],
+                    resolved_type="tuple[]",
+                    repr_text=self._src_slice(l["s"], r["e"]),
+                )
             first = self._parse_ifexp()
             if self._cur()["k"] == "NAME" and self._cur()["v"] == "for":
                 self._eat("NAME")
@@ -4276,16 +4264,11 @@ class _ShExprParser:
                         break
                     elements.append(self._parse_ifexp())
                 r = self._eat(")")
-                elem_types = [str(e.get("resolved_type", "unknown")) for e in elements]
-                return {
-                    "kind": "Tuple",
-                    "source_span": self._node_span(l["s"], r["e"]),
-                    "resolved_type": f"tuple[{','.join(elem_types)}]",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": self._src_slice(l["s"], r["e"]),
-                    "elements": elements,
-                }
+                return _sh_make_tuple_expr(
+                    self._node_span(l["s"], r["e"]),
+                    elements,
+                    repr_text=self._src_slice(l["s"], r["e"]),
+                )
             r = self._eat(")")
             first["source_span"] = self._node_span(l["s"], r["e"])
             first["repr"] = self._src_slice(l["s"], r["e"])
@@ -5238,15 +5221,11 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
         elem_t = "unknown"
         if it_t.startswith("list[") and it_t.endswith("]"):
             elem_t = it_t[5:-1]
-        elt_node = {
-            "kind": "Name",
-            "source_span": _sh_span(ln_no, col, col + len(elt_name)),
-            "resolved_type": elem_t if elt_name == tgt_name else "unknown",
-            "borrow_kind": "value",
-            "casts": [],
-            "repr": elt_name,
-            "id": elt_name,
-        }
+        elt_node = _sh_make_name_expr(
+            _sh_span(ln_no, col, col + len(elt_name)),
+            elt_name,
+            resolved_type=elem_t if elt_name == tgt_name else "unknown",
+        )
         return {
             "kind": "ListComp",
             "source_span": _sh_span(ln_no, col, col + len(raw)),
@@ -5257,15 +5236,11 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
             "elt": elt_node,
             "generators": [
                 {
-                    "target": {
-                        "kind": "Name",
-                        "source_span": _sh_span(ln_no, col, col + len(tgt_name)),
-                        "resolved_type": "unknown",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": tgt_name,
-                        "id": tgt_name,
-                    },
+                    "target": _sh_make_name_expr(
+                        _sh_span(ln_no, col, col + len(tgt_name)),
+                        tgt_name,
+                        resolved_type="unknown",
+                    ),
                     "iter": iter_node,
                     "ifs": [],
                 }
@@ -5288,15 +5263,12 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
     if len(tuple_parts) >= 2 or (len(tuple_parts) == 1 and txt.endswith(",")):
         elems = [_sh_parse_expr_lowered(p, ln_no=ln_no, col=col + txt.find(p), name_types=dict(name_types)) for p in tuple_parts]
         elem_ts = [str(e.get("resolved_type", "unknown")) for e in elems]
-        return {
-            "kind": "Tuple",
-            "source_span": _sh_span(ln_no, col, col + len(raw)),
-            "resolved_type": "tuple[" + ", ".join(elem_ts) + "]",
-            "borrow_kind": "value",
-            "casts": [],
-            "repr": txt,
-            "elements": elems,
-        }
+        return _sh_make_tuple_expr(
+            _sh_span(ln_no, col, col + len(raw)),
+            elems,
+            resolved_type="tuple[" + ", ".join(elem_ts) + "]",
+            repr_text=txt,
+        )
 
     return _sh_parse_expr(
         txt,
