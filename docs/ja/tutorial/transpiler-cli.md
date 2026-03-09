@@ -3,6 +3,23 @@
 このページは、統合 CLI `./pytra` ではなく `py2x.py` / `ir2lang.py` を直接使いたい場合の手順をまとめたものです。  
 まず通常利用は [how-to-use.md](./how-to-use.md) を参照してください。
 
+## 実行コマンドの前提（OS別）
+
+このページのコマンド例は、基本的に POSIX シェル（bash/zsh）形式で記載しています。
+Windows では次の読み替えを行ってください。
+
+- Python 実行:
+  - POSIX: `python ...`
+  - Windows: `py ...`（または `python ...`）
+- 環境変数の一時指定:
+  - POSIX: `PYTHONPATH=src python ...`
+  - Windows PowerShell: `$env:PYTHONPATH='src'; py ...`
+  - Windows cmd.exe: `set PYTHONPATH=src && py ...`
+- 複数行コマンドの継続:
+  - POSIX: `\`
+  - Windows PowerShell: `` ` ``
+  - Windows cmd.exe: `^`
+
 ## トランスパイラの使い方
 
 以下は言語別の手順です。必要な言語だけ展開して参照してください。

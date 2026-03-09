@@ -8,23 +8,6 @@
 このドキュメントは、Pytra を実際に動かすための実行手順ガイドです。  
 入力制約や仕様定義の正本は [利用仕様](../spec/spec-user.md) を参照してください。
 
-## 実行コマンドの前提（OS別）
-
-このドキュメントのコマンド例は、基本的に POSIX シェル（bash/zsh）形式で記載しています。  
-Windows では次の読み替えを行ってください。
-
-- Python 実行:
-  - POSIX: `python ...`
-  - Windows: `py ...`（または `python ...`）
-- 環境変数の一時指定:
-  - POSIX: `PYTHONPATH=src python ...`
-  - Windows PowerShell: `$env:PYTHONPATH='src'; py ...`
-  - Windows cmd.exe: `set PYTHONPATH=src && py ...`
-- 複数行コマンドの継続:
-  - POSIX: `\`
-  - Windows PowerShell: `` ` ``
-  - Windows cmd.exe: `^`
-
 ## 統合CLI（`./pytra`）の使い方
 
 ルートの `./pytra` は、`python3 src/pytra-cli.py` を呼び出す統合CLIランチャーです。
