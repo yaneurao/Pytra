@@ -498,6 +498,36 @@ def _sh_annotate_type_predicate_call_expr(
     )
 
 
+def _sh_annotate_fixed_runtime_builtin_call_expr(
+    payload: dict[str, Any],
+    *,
+    fn_name: str,
+    semantic_tag: str | None = None,
+) -> dict[str, Any]:
+    runtime_call = "py_to_string"
+    module_id = "pytra.core.py_runtime"
+    runtime_symbol = fn_name
+    if fn_name == "print":
+        runtime_call = "py_print"
+        module_id = "pytra.built_in.io_ops"
+        runtime_symbol = "py_print"
+    elif fn_name == "len":
+        runtime_call = "py_len"
+    elif fn_name == "range":
+        runtime_call = "py_range"
+    elif fn_name == "zip":
+        runtime_call = "zip"
+    return _sh_annotate_runtime_call_expr(
+        payload,
+        lowered_kind="BuiltinCall",
+        builtin_name=fn_name,
+        runtime_call=runtime_call,
+        module_id=module_id,
+        runtime_symbol=runtime_symbol,
+        semantic_tag=semantic_tag,
+    )
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -4930,54 +4960,10 @@ class _ShExprParser:
                 stdlib_symbol_semantic_tag = (
                     lookup_stdlib_symbol_semantic_tag(fn_name) if fn_name != "" else ""
                 )
-                if fn_name == "print":
-                    _sh_annotate_runtime_call_expr(
+                if fn_name in {"print", "len", "range", "zip", "str"}:
+                    _sh_annotate_fixed_runtime_builtin_call_expr(
                         payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="print",
-                        runtime_call="py_print",
-                        module_id="pytra.built_in.io_ops",
-                        runtime_symbol="py_print",
-                        semantic_tag=builtin_semantic_tag,
-                    )
-                elif fn_name == "len":
-                    _sh_annotate_runtime_call_expr(
-                        payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="len",
-                        runtime_call="py_len",
-                        module_id="pytra.core.py_runtime",
-                        runtime_symbol="len",
-                        semantic_tag=builtin_semantic_tag,
-                    )
-                elif fn_name == "range":
-                    _sh_annotate_runtime_call_expr(
-                        payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="range",
-                        runtime_call="py_range",
-                        module_id="pytra.core.py_runtime",
-                        runtime_symbol="range",
-                        semantic_tag=builtin_semantic_tag,
-                    )
-                elif fn_name == "zip":
-                    _sh_annotate_runtime_call_expr(
-                        payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="zip",
-                        runtime_call="zip",
-                        module_id="pytra.core.py_runtime",
-                        runtime_symbol="zip",
-                        semantic_tag=builtin_semantic_tag,
-                    )
-                elif fn_name == "str":
-                    _sh_annotate_runtime_call_expr(
-                        payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="str",
-                        runtime_call="py_to_string",
-                        module_id="pytra.core.py_runtime",
-                        runtime_symbol="str",
+                        fn_name=fn_name,
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif fn_name in {"int", "float", "bool"}:

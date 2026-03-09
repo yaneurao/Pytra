@@ -452,7 +452,9 @@ class EastCoreTest(unittest.TestCase):
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
-        self.assertIn("_sh_annotate_runtime_call_expr(", postfix_text)
+        self.assertIn("_sh_annotate_fixed_runtime_builtin_call_expr(", postfix_text)
+        self.assertIn("_sh_annotate_runtime_method_call_expr(", postfix_text)
+        self.assertIn("_sh_annotate_type_predicate_call_expr(", postfix_text)
         self.assertNotIn('payload["lowered_kind"] = "BuiltinCall"', postfix_text)
         self.assertNotIn('payload["lowered_kind"] = "TypePredicateCall"', postfix_text)
         self.assertNotIn('payload["builtin_name"] = "print"', postfix_text)
@@ -757,7 +759,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_type_predicate_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_type_predicate_call_expr", 1)[1].split(
-            "def _sh_set_parse_context",
+            "def _sh_annotate_fixed_runtime_builtin_call_expr",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -769,6 +771,35 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('elif fn_name == "isinstance":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('elif fn_name == "issubclass":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('lowered_kind="TypePredicateCall"', postfix_text)
+
+    def test_core_source_routes_fixed_runtime_builtin_metadata_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_annotate_fixed_runtime_builtin_call_expr", 1)[1].split(
+            "def _sh_set_parse_context",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('runtime_call = "py_to_string"', helper_text)
+        self.assertIn('if fn_name == "print":', helper_text)
+        self.assertIn('runtime_call = "py_print"', helper_text)
+        self.assertIn('module_id = "pytra.built_in.io_ops"', helper_text)
+        self.assertIn('runtime_symbol = "py_print"', helper_text)
+        self.assertIn('elif fn_name == "len":', helper_text)
+        self.assertIn('runtime_call = "py_len"', helper_text)
+        self.assertIn('elif fn_name == "range":', helper_text)
+        self.assertIn('runtime_call = "py_range"', helper_text)
+        self.assertIn('elif fn_name == "zip":', helper_text)
+        self.assertIn('runtime_call = "zip"', helper_text)
+        self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
+        self.assertIn('_sh_annotate_fixed_runtime_builtin_call_expr(', postfix_text)
+        self.assertNotIn('if fn_name == "print":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
+        self.assertNotIn('elif fn_name == "len":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
+        self.assertNotIn('elif fn_name == "range":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
+        self.assertNotIn('elif fn_name == "zip":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
+        self.assertNotIn('elif fn_name == "str":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
+        self.assertNotIn('runtime_call = "py_to_string"', postfix_text)
+        self.assertNotIn('runtime_call = "py_print"', postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
