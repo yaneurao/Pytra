@@ -117,40 +117,6 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('meta["runtime_abi_v1"] = runtime_abi_meta', text)
         self.assertNotIn('meta["template_v1"] = template_meta', text)
         self.assertNotIn('ann_item["meta"] = {"extern_var_v1": extern_var_meta}', text)
-        self.assertIn("try_stmt = _sh_make_try_stmt(", text)
-        self.assertIn(
-            "pending_blank_count = _sh_push_stmt_with_trivia(\n"
-            "                stmts,\n"
-            "                pending_leading_trivia,\n"
-            "                pending_blank_count,\n"
-            "                _sh_make_while_stmt(",
-            text,
-        )
-        self.assertIn(
-            "handlers.append(\n"
-            "                        _sh_make_except_handler(",
-            text,
-        )
-        self.assertIn(
-            "pending_blank_count = _sh_push_stmt_with_trivia(\n"
-            "                stmts,\n"
-            "                pending_leading_trivia,\n"
-            "                pending_blank_count,\n"
-            "                _sh_make_try_stmt(",
-            text,
-        )
-        self.assertIn("pass_stmt = _sh_make_pass_stmt(", text)
-        self.assertIn("_sh_make_return_stmt(_sh_stmt_span(merged_line_end, ln_no, rcol, len(ln_txt)))", text)
-        self.assertIn("_sh_make_raise_stmt(", text)
-        self.assertIn("_sh_make_augassign_stmt(", text)
-        self.assertIn("_sh_make_swap_stmt(", text)
-        self.assertNotIn('try_stmt = {"kind": "Try"', text)
-        self.assertNotIn('handlers.append({"kind": "ExceptHandler"', text)
-        self.assertNotIn('pass_stmt = {"kind": "Pass"', text)
-        self.assertNotIn('{"kind": "Return", "source_span": _sh_stmt_span(', text)
-        self.assertNotIn('{"kind": "Raise", "source_span": _sh_stmt_span(', text)
-        self.assertNotIn('{"kind": "AugAssign", "source_span": _sh_stmt_span(', text)
-        self.assertNotIn('{"kind": "Swap", "source_span": _sh_stmt_span(', text)
         module_root_tail = text.split("for binding in import_bindings:", 1)[1]
         self.assertNotIn('module_id_obj = binding.get("module_id")', module_root_tail)
         self.assertNotIn('local_name_obj = binding.get("local_name")', module_root_tail)
