@@ -153,6 +153,14 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             native_transpile,
         )
         self.assertIn("dict<str, object> export_compiler_root_document(const CompilerRootDocument& doc)", native_transpile)
+        self.assertIn(
+            'str effective_source_path = source_path != "" ? source_path : _dict_get_str(raw_doc, "source_path");',
+            native_transpile,
+        )
+        self.assertIn(
+            '_dict_get_str(meta_dict, "parser_backend")',
+            native_transpile,
+        )
         self.assertIn("return export_compiler_root_document(\n        load_east3_document_typed(", native_transpile)
         self.assertNotIn("CompilerRootDocument::to_legacy_dict()", native_transpile)
 

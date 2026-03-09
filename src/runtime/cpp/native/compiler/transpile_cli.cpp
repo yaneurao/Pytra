@@ -163,13 +163,19 @@ CompilerRootDocument coerce_compiler_root_document(
     if (meta_it != raw_doc.end() && py_isinstance(meta_it->second, PYTRA_TID_DICT)) {
         meta_dict = obj_to_dict(meta_it->second);
     }
+    str effective_source_path = source_path != "" ? source_path : _dict_get_str(raw_doc, "source_path");
+    str effective_parser_backend = (
+        parser_backend != ""
+            ? parser_backend
+            : _dict_get_str(meta_dict, "parser_backend")
+    );
     return CompilerRootDocument{
         CompilerRootMeta{
-            source_path,
+            effective_source_path,
             _dict_get_int(raw_doc, "east_stage"),
             _dict_get_int(raw_doc, "schema_version"),
             _dict_get_str(meta_dict, "dispatch_mode"),
-            parser_backend,
+            effective_parser_backend,
         },
         _dict_get_str(raw_doc, "kind"),
         raw_doc,
