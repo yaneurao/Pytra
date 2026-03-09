@@ -52,14 +52,18 @@
 
 ## 3. タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01] `py_at(str, idx)` を退役する。
-- [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01-S1-01] checked-in callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01-S1-02] direct expression と helper lane の使い分けを決定ログに固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01-S2-01] representative callsite を置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01-S2-02] regression / inventory guard を更新する。
-- [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01-S3-01] `py_runtime.h` から helper を削除する。
-- [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01-S3-02] parity / docs / archive を更新して閉じる。
+- [x] [ID: P0-CPP-PYRUNTIME-STRAT-01] `py_at(str, idx)` を退役する。
+- [x] [ID: P0-CPP-PYRUNTIME-STRAT-01-S1-01] checked-in callsite を棚卸しする。
+- [x] [ID: P0-CPP-PYRUNTIME-STRAT-01-S1-02] direct expression と helper lane の使い分けを決定ログに固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-STRAT-01-S2-01] representative callsite を置換する。
+- [x] [ID: P0-CPP-PYRUNTIME-STRAT-01-S2-02] regression / inventory guard を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-STRAT-01-S3-01] `py_runtime.h` から helper を削除する。
+- [x] [ID: P0-CPP-PYRUNTIME-STRAT-01-S3-02] parity / docs / archive を更新して閉じる。
 
 ## 4. 決定ログ
 
 - 2026-03-09: 本計画は string index helper の退役だけを対象とし、slice helper や string object 本体は非対象とする。
+- 2026-03-09: checked-in callsite は `cpp_emitter.py` の `Subscript` lowering と、その codegen を固定する regression だけだった。generated runtime や selfhost に direct callsite は無かった。
+- 2026-03-09: `str` は `str::operator[](int64)` 自体が negative index と bounds check を持つため、helper lane は作らず direct expression (`s[idx]`) を canonical にする。
+- 2026-03-09: representative regression として `test_string_negative_index_uses_str_operator` を追加し、`py_at(s, ...)` ではなく `s[idx]` が出ることを固定した。
+- 2026-03-09: `py_contains_str_object` も `str(values)` を先に取り、typed string lane (`haystack[i + j]`) へ寄せた。verification は targeted `test_py2cpp_codegen_issues`、`test_cpp_runtime_iterable.py`、`test_pytra_built_in_contains.py`、fixture parity `cases=3 pass=3 fail=0` を通した。

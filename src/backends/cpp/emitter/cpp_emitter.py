@@ -2395,11 +2395,15 @@ class CppEmitter(
         if self.is_indexable_sequence_type(val_ty):
             if self.is_any_like_type(idx_t):
                 idx = f"py_to<int64>({idx})"
-            return self._render_sequence_index(val, idx, node.get("slice"))
+            return self._render_sequence_index(val, idx, node.get("slice"), val_ty)
         return f"{val}[{idx}]"
 
-    def _render_sequence_index(self, value_expr: str, index_expr: str, index_node: Any) -> str:
+    def _render_sequence_index(
+        self, value_expr: str, index_expr: str, index_node: Any, value_type: str = ""
+    ) -> str:
         """list/str 添字アクセスのモード別コード生成を行う。"""
+        if self.normalize_type_name(value_type) == "str":
+            return f"{value_expr}[{index_expr}]"
         if self.negative_index_mode == "always":
             return f"py_at({value_expr}, {index_expr})"
         if self.negative_index_mode == "const_only" and self._is_negative_const_index(index_node):
@@ -3374,7 +3378,7 @@ class CppEmitter(
             idx_t = idx_t0 if isinstance(idx_t0, str) else ""
             if self.is_any_like_type(idx_t):
                 idx = f"py_to<int64>({idx})"
-            return self._render_sequence_index(val, idx, sl)
+            return self._render_sequence_index(val, idx, sl, val_ty)
         return f"{val}[{idx}]"
 
     def _render_name_expr(self, expr_d: dict[str, Any]) -> str:

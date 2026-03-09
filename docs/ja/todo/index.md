@@ -32,16 +32,6 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01] `py_runtime.h` の `py_at(str, idx)` を退役する。
-  - 文脈: [p0-cpp-pyruntime-string-at-retirement.md](../plans/p0-cpp-pyruntime-string-at-retirement.md)
-  - 進捗メモ: string index helper を runtime core から外へ寄せる。
-  - [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01-S1-01] checked-in callsite を棚卸しする。
-  - [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01-S1-02] direct expression と helper lane の使い分けを決定ログに固定する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01-S2-01] representative callsite を置換する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01-S2-02] regression / inventory guard を更新する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01-S3-01] `py_runtime.h` から helper を削除する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-STRAT-01-S3-02] parity / docs / archive を更新して閉じる。
-
 - [ ] [ID: P0-CPP-PYRUNTIME-SORTED-01] `py_runtime.h` の `sorted` helper を退役する。
   - 文脈: [p0-cpp-pyruntime-sorted-retirement.md](../plans/p0-cpp-pyruntime-sorted-retirement.md)
   - 進捗メモ: `sorted` を generated helper または linked helper lane へ寄せる。

@@ -25,7 +25,8 @@ def py_contains_set_object(values: object, key: object) -> bool:
 
 def py_contains_str_object(values: object, key: object) -> bool:
     needle = str(key)
-    n = len(values)
+    haystack = str(values)
+    n = len(haystack)
     m = len(needle)
     if m == 0:
         return True
@@ -35,7 +36,7 @@ def py_contains_str_object(values: object, key: object) -> bool:
         j = 0
         ok = True
         while j < m:
-            if values[i + j] != needle[j]:
+            if haystack[i + j] != needle[j]:
                 ok = False
                 break
             j += 1
