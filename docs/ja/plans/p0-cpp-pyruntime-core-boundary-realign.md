@@ -169,7 +169,7 @@
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-01] typed dict subscript を `.at()` 化し、`py_dict_get` の checked-in callsite を除去する。
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-02] tuple constant-index を generated/runtime path でも `std::get<N>` へ寄せ、tuple `py_at` helper を縮退または退役させる。
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-03] typed list/dict mutation helper を object bridge 専用 surface まで縮め、typed lane は emitter direct lowering を優先する。
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-01] `type_id` registry / subtype / isinstance の ownership を `py_tid_*` 主体へ寄せ、`py_runtime.h` の wrapper を薄くする。
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-01] `type_id` registry / subtype / isinstance の ownership を `py_tid_*` 主体へ寄せ、`py_runtime.h` の wrapper を薄くする。
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] `test_cpp_runtime_type_id.py` と generated runtime caller を更新し、cyclic ownership が再混入しないよう guard を追加する。
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] `py_isinstance_of` fast path、`PyFile` alias などの small cleanup を片付ける。
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-02] representative test / parity / docs / archive を更新して閉じる。
@@ -192,3 +192,6 @@
 - 2026-03-09: `S3-03` として ref-first typed list lane の `append/extend/pop/clear/reverse/sort` を `py_list_*_mut(rc_list_ref(...))` へ直接 lower し、temporary owner でも lambda hoist で wrapper を挟まないようにした。あわせて `get_expr_type()` が関数内から module global 型を再利用できるよう `module_global_var_types` を追加し、typed global list subscript assignment が `py_set_at` へ退化しないようにした。
 - 2026-03-09: `S3-03` の tracked generated/runtime caller を `src/py2x.py --target cpp --emit-runtime-cpp` で再生成し、`generated/std/{argparse,pathlib,random,re,json}`, `generated/utils/{gif,png}`, `generated/built_in/{sequence,string_ops,zip_ops,type_id}` を更新した。結果として checked-in C++ generated caller に残る `py_append` / `py_set_at` wrapper は object-bridge の `generated/built_in/iter_ops.cpp`、`generated/std/json.cpp`、`generated/built_in/type_id.cpp` に限定された。
 - 2026-03-09: `generated/std/glob.h` の regenerated ABI が `rc<list<str>> glob(const str&)` へ揃ったため、handwritten companion `src/runtime/cpp/native/std/glob.cpp` も `rc_list_from_value(...)` を返す形へ更新した。checked-in caller は `generated/std/pathlib.cpp` のみで、header/native mismatch を解消できた。
+- 2026-03-09: `S4-01` では `py_register_class_type` を generated `py_tid_register_class_type` へ直委譲しない。`PYTRA_DECLARE_CLASS_TYPE` が cross-TU static initialization 中に `py_register_class_type(...)` を呼ぶため、allocation 自体は `py_runtime.h` の function-local static registry に残す必要がある。
+- 2026-03-09: `S4-01` の bridge として `src/pytra/built_in/type_id.py` に `py_tid_register_known_class_type(type_id, base_type_id)` を追加し、generated `type_id.cpp` 側へ「事前に確保済み user type_id を canonical registry へ同期する」entrypoint を用意した。これにより registry mutation algorithm は generated SoT 側へ戻せる。
+- 2026-03-09: `S4-01` として `py_runtime.h` には `py_sync_generated_user_type_registry()` だけを追加し、public `py_is_subtype` / `py_issubclass` / `py_isinstance` は local user registry を同期した上で `py_tid_*` へ委譲する薄い wrapper にした。`py_runtime_type_id(const object&)` は raw `PyObj::type_id()` primitive として core に残す。

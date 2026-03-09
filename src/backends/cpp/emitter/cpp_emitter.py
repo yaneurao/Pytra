@@ -3724,6 +3724,11 @@ class CppEmitter(
         iter_expr = self.render_expr(expr_d.get("iter"))
         return self._render_object_iter_next_expr(iter_expr)
 
+    def _prefer_internal_py_tid_subtype_calls(self) -> bool:
+        """`pytra.built_in.type_id` 自身では subtype 判定だけ `py_tid_*` を優先する。"""
+        src = self.any_dict_get_str(self.doc, "source_path", "")
+        return src.endswith("src/pytra/built_in/type_id.py")
+
     def _render_expr_kind_obj_type_id(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
         value_expr = self.render_expr(expr_d.get("value"))

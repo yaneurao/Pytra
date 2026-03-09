@@ -230,6 +230,28 @@ def py_tid_register_class_type(base_type_id: int = _tid_object()) -> int:
     return tid
 
 
+def py_tid_register_known_class_type(type_id: int, base_type_id: int) -> int:
+    """Register a pre-allocated user class type_id into the canonical registry."""
+    _ensure_builtins()
+    if not isinstance(type_id, int):
+        raise ValueError("type_id must be int")
+    if type_id < _tid_user_base():
+        raise ValueError("user type_id must be >= " + str(_tid_user_base()))
+
+    base_tid = _normalize_base_type_id(base_type_id)
+    if type_id in _TYPE_BASE:
+        if _TYPE_BASE[type_id] != base_tid:
+            raise ValueError("type_id already registered with different base")
+        return type_id
+
+    _register_type_node(type_id, base_tid)
+    next_user_type_id = _TYPE_STATE["next_user_type_id"]
+    if type_id >= next_user_type_id:
+        _TYPE_STATE["next_user_type_id"] = type_id + 1
+    _mark_type_ranges_dirty()
+    return type_id
+
+
 def _try_runtime_tagged_type_id(value: Any) -> int:
     tagged = getattr(value, str("PYTRA_TYPE_ID"), None)
     if isinstance(tagged, int):

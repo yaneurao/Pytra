@@ -247,6 +247,27 @@ int64 py_tid_register_class_type(int64 base_type_id) {
     return tid;
 }
 
+int64 py_tid_register_known_class_type(int64 type_id, int64 base_type_id) {
+    /* Register a pre-allocated user class type_id into the canonical registry. */
+    _ensure_builtins();
+    if (!(py_isinstance(type_id, PYTRA_TID_INT)))
+        throw ValueError("type_id must be int");
+    if (type_id < _tid_user_base())
+        throw ValueError("user type_id must be >= " + ::std::to_string(_tid_user_base()));
+    int64 base_tid = _normalize_base_type_id(base_type_id);
+    if (py_contains(_TYPE_BASE, type_id)) {
+        if (([&]() { auto&& __dict_11 = _TYPE_BASE; auto __dict_key_12 = type_id; return __dict_11.at(__dict_key_12); }()) != base_tid)
+            throw ValueError("type_id already registered with different base");
+        return type_id;
+    }
+    _register_type_node(type_id, base_tid);
+    int64 next_user_type_id = ([&]() { auto&& __dict_13 = _TYPE_STATE; auto __dict_key_14 = str("next_user_type_id"); return __dict_13.at(__dict_key_14); }());
+    if (type_id >= next_user_type_id)
+        _TYPE_STATE[str("next_user_type_id")] = type_id + 1;
+    _mark_type_ranges_dirty();
+    return type_id;
+}
+
 int64 _try_runtime_tagged_type_id(const object& value) {
     int64 tagged = py_runtime_type_id(value);
     if (py_isinstance(tagged, PYTRA_TID_INT)) {
@@ -290,18 +311,18 @@ bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id) {
         return false;
     if (!py_contains(_TYPE_ORDER, expected_type_id))
         return false;
-    int64 actual_order = ([&]() { auto&& __dict_11 = _TYPE_ORDER; auto __dict_key_12 = actual_type_id; return __dict_11.at(__dict_key_12); }());
-    int64 expected_min = ([&]() { auto&& __dict_13 = _TYPE_MIN; auto __dict_key_14 = expected_type_id; return __dict_13.at(__dict_key_14); }());
-    int64 expected_max = ([&]() { auto&& __dict_15 = _TYPE_MAX; auto __dict_key_16 = expected_type_id; return __dict_15.at(__dict_key_16); }());
+    int64 actual_order = ([&]() { auto&& __dict_15 = _TYPE_ORDER; auto __dict_key_16 = actual_type_id; return __dict_15.at(__dict_key_16); }());
+    int64 expected_min = ([&]() { auto&& __dict_17 = _TYPE_MIN; auto __dict_key_18 = expected_type_id; return __dict_17.at(__dict_key_18); }());
+    int64 expected_max = ([&]() { auto&& __dict_19 = _TYPE_MAX; auto __dict_key_20 = expected_type_id; return __dict_19.at(__dict_key_20); }());
     return (expected_min <= actual_order) && (actual_order <= expected_max);
 }
 
 bool py_tid_issubclass(int64 actual_type_id, int64 expected_type_id) {
-    return py_is_subtype(actual_type_id, expected_type_id);
+    return py_tid_is_subtype(actual_type_id, expected_type_id);
 }
 
 bool py_tid_isinstance(const object& value, int64 expected_type_id) {
-    return py_is_subtype(py_runtime_type_id(value), expected_type_id);
+    return py_tid_is_subtype(py_runtime_type_id(value), expected_type_id);
 }
 
 void _py_reset_type_registry_for_test() {

@@ -585,7 +585,10 @@ int main() {
         self.assertIn("T py_max(const T& a, const T& b) {", numeric_ops_header)
         self.assertIn("template <class A, class B>", zip_ops_header)
         self.assertIn("list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {", zip_ops_header)
-        self.assertIn("py_runtime_type_id(value);", type_id_cpp)
+        self.assertIn("int64 py_tid_runtime_type_id(const object& value) {", type_id_cpp)
+        self.assertIn("py_tid_is_subtype(", type_id_cpp)
+        self.assertIn("return py_tid_is_subtype(actual_type_id, expected_type_id);", type_id_cpp)
+        self.assertIn("py_tid_isinstance(", type_id_cpp)
         self.assertFalse((ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.cpp").exists())
         self.assertFalse((ROOT / "src/runtime/cpp/generated/built_in/zip_ops.cpp").exists())
 

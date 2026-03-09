@@ -42,6 +42,7 @@ void _ensure_type_ranges();
 void _ensure_builtins();
 int64 _normalize_base_type_id(int64 base_type_id);
 int64 py_tid_register_class_type(int64 base_type_id);
+int64 py_tid_register_known_class_type(int64 type_id, int64 base_type_id);
 int64 _try_runtime_tagged_type_id(const object& value);
 int64 py_tid_runtime_type_id(const object& value);
 bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id);
