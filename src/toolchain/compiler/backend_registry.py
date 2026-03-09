@@ -33,6 +33,7 @@ from toolchain.compiler.typed_boundary import export_module_artifact_carrier
 from toolchain.compiler.typed_boundary import export_program_artifact_any
 from toolchain.compiler.typed_boundary import export_program_artifact_carrier
 from toolchain.compiler.typed_boundary import flatten_module_artifact_carrier
+from toolchain.compiler.typed_boundary import normalize_emitted_module_artifact
 from toolchain.compiler.typed_boundary import normalize_module_artifact_carrier
 from toolchain.compiler.typed_boundary import resolve_layer_options_carrier
 
@@ -535,20 +536,6 @@ def _coerce_runtime_spec(spec: BackendSpec | ResolvedBackendSpec) -> ResolvedBac
     return coerce_backend_spec(spec)
 
 
-def _normalize_module_artifact_typed(
-    artifact_any: Any,
-    *,
-    request: EmitRequestCarrier,
-) -> ModuleArtifactCarrier:
-    return normalize_module_artifact_carrier(
-        artifact_any,
-        module_id=request.module_id,
-        output_path=request.output_path,
-        extension=request.spec.extension,
-        is_entry=request.is_entry,
-    )
-
-
 def list_backend_targets() -> list:
     return list(_TARGET_ORDER)
 
@@ -688,7 +675,7 @@ def emit_module_typed(
             artifact_any = {}
     except Exception:
         artifact_any = {}
-    return _normalize_module_artifact_typed(artifact_any, request=request)
+    return normalize_emitted_module_artifact(artifact_any, request=request)
 
 
 def emit_module(

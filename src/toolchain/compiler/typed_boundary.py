@@ -568,6 +568,20 @@ def normalize_module_artifact_carrier(
     )
 
 
+def normalize_emitted_module_artifact(
+    artifact_any: object,
+    *,
+    request: EmitRequestCarrier,
+) -> ModuleArtifactCarrier:
+    return normalize_module_artifact_carrier(
+        artifact_any,
+        module_id=request.module_id,
+        output_path=request.output_path,
+        extension=request.spec.extension,
+        is_entry=request.is_entry,
+    )
+
+
 def flatten_module_artifact_carrier(module_artifact: ModuleArtifactCarrier) -> tuple[ModuleArtifactCarrier, ...]:
     primary = ModuleArtifactCarrier(
         module_id=module_artifact.module_id,
