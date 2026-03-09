@@ -82,6 +82,9 @@ void apply_runtime_hook(
     const pytra::std::pathlib::Path& output_path
 );
 void apply_runtime_hook_typed(
+    const pytra::std::pathlib::Path& output_path
+);
+void apply_runtime_hook_typed(
     const ResolvedBackendSpec& spec,
     const pytra::std::pathlib::Path& output_path
 );
