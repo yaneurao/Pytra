@@ -126,6 +126,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` の residual `callsite` 判定を helper 定義域ベースへ修正し、generated selfhost core の実 call-site 集合を `AnnAssign/Assign/Call/Dict/Expr/Name/Tuple`、non-statement 集合を `Call/Dict/Name/Tuple` として固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] ignored な generated mirror だけに頼らないよう、`test_east_core.py` に `Name/Tuple/Constant/List/Dict/Set` の正本 literal・comprehension-target helper call と旧 inline return 不在 guard も追加した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/ir/core.py` に `_sh_make_dict_entry()` を追加し、`_sh_parse_expr_lowered()` の dict literal entry carrier を helper 経由へ寄せた。`test_east_core.py` でも collection/comprehension lane と旧 inline entry dict 不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] ignored な generated mirror の residual `Call/Dict/Tuple` に依存しすぎないよう、`test_east_core.py` に `_sh_parse_expr_lowered()` の `any/all` 正規化と lowered dict/tuple return helper guard も追加した。これで `payload = _sh_make_call_expr(...)`、`return _sh_make_dict_expr(...)`、`return _sh_make_tuple_expr(...)` が外れたり、旧 inline `Call/Dict/Tuple` dict return が戻ったりすると fail-fast する。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

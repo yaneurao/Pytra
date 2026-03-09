@@ -276,6 +276,22 @@ class EastCoreTest(unittest.TestCase):
             lowered_text,
         )
 
+    def test_core_source_uses_builder_helpers_for_lowered_residual_call_dict_tuple_clusters(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        lowered_text = text.split("def _sh_parse_expr_lowered", 1)[1].split(
+            "def _sh_parse_stmt_block_mutable",
+            1,
+        )[0]
+
+        self.assertIn("payload = _sh_make_call_expr(", lowered_text)
+        self.assertIn("_sh_make_name_expr(_sh_span(ln_no, col, col + len(fn_name)), fn_name, repr_text=fn_name)", lowered_text)
+        self.assertIn("return _sh_make_dict_expr(", lowered_text)
+        self.assertIn("return _sh_make_tuple_expr(", lowered_text)
+
+        self.assertNotIn('return {"kind": "Call"', lowered_text)
+        self.assertNotIn('return {"kind": "Dict"', lowered_text)
+        self.assertNotIn('return {"kind": "Tuple"', lowered_text)
+
     def test_top_level_extern_decorator_is_preserved(self) -> None:
         src = """
 from pytra.std import extern
