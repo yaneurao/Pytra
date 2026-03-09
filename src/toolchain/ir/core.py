@@ -467,6 +467,23 @@ def _sh_annotate_open_call_expr(
     )
 
 
+def _sh_annotate_exception_ctor_call_expr(
+    payload: dict[str, Any],
+    *,
+    fn_name: str,
+    semantic_tag: str | None = None,
+) -> dict[str, Any]:
+    return _sh_annotate_runtime_call_expr(
+        payload,
+        lowered_kind="BuiltinCall",
+        builtin_name=fn_name,
+        runtime_call="std::runtime_error",
+        module_id="pytra.core.py_runtime",
+        runtime_symbol=fn_name,
+        semantic_tag=semantic_tag,
+    )
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -4993,13 +5010,9 @@ class _ShExprParser:
                         runtime_call=noncpp_symbol_runtime_call,
                     )
                 elif fn_name in {"Exception", "RuntimeError"}:
-                    _sh_annotate_runtime_call_expr(
+                    _sh_annotate_exception_ctor_call_expr(
                         payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name=fn_name,
-                        runtime_call="std::runtime_error",
-                        module_id="pytra.core.py_runtime",
-                        runtime_symbol=fn_name,
+                        fn_name=fn_name,
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif fn_name == "open":

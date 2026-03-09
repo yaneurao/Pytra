@@ -190,6 +190,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `ord/chr(...)` metadata も `_sh_annotate_ordchr_call_expr()` へ寄せ、`py_ord/py_chr` の runtime call・symbol 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 scalar inline block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `iter/next/reversed(...)` metadata も `_sh_annotate_iterator_builtin_call_expr()` へ寄せ、`py_iter_or_raise` / `py_next_or_stop` / `py_reversed` の runtime call と module 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 iterator builtin inline block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `open(...)` metadata も `_sh_annotate_open_call_expr()` へ寄せ、`open` の runtime call・module・symbol 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 open inline block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `Exception/RuntimeError(...)` metadata も `_sh_annotate_exception_ctor_call_expr()` へ寄せ、`std::runtime_error` の runtime call・module・symbol 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 exception ctor inline block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `Exception/RuntimeError(...)` metadata も `_sh_annotate_exception_ctor_call_expr()` へ寄せ、`std::runtime_error` の runtime call・module・symbol 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 exception ctor inline block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
