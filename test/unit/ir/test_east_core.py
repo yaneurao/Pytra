@@ -196,6 +196,31 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('values.append({"kind": "FormattedValue"', text)
         self.assertNotIn('return {"kind": "JoinedStr"', text)
 
+    def test_core_source_uses_builder_helpers_for_literal_and_target_clusters(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        comp_target_text = text.split("def _parse_comp_target", 1)[1].split(
+            "def _collect_and_bind_comp_target_types", 1
+        )[0]
+        primary_text = text.split("def _parse_primary", 1)[1].split("def _sh_parse_expr", 1)[0]
+
+        self.assertIn("first_node = _sh_make_name_expr(", comp_target_text)
+        self.assertIn("return _sh_make_tuple_expr(", comp_target_text)
+        self.assertIn("return _sh_make_constant_expr(", primary_text)
+        self.assertIn("return _sh_make_name_expr(", primary_text)
+        self.assertIn("return _sh_make_tuple_expr(", primary_text)
+        self.assertIn("return _sh_make_list_expr(", primary_text)
+        self.assertIn("return _sh_make_dict_expr(", primary_text)
+        self.assertIn("return _sh_make_set_expr(", primary_text)
+
+        self.assertNotIn('first_node = {"kind": "Name"', comp_target_text)
+        self.assertNotIn('return {"kind": "Tuple"', comp_target_text)
+        self.assertNotIn('return {"kind": "Constant"', primary_text)
+        self.assertNotIn('return {"kind": "Name"', primary_text)
+        self.assertNotIn('return {"kind": "Tuple"', primary_text)
+        self.assertNotIn('return {"kind": "List"', primary_text)
+        self.assertNotIn('return {"kind": "Dict"', primary_text)
+        self.assertNotIn('return {"kind": "Set"', primary_text)
+
     def test_top_level_extern_decorator_is_preserved(self) -> None:
         src = """
 from pytra.std import extern
