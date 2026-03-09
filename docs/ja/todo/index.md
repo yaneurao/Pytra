@@ -32,4 +32,41 @@
 
 ## 未完了タスク
 
-- なし
+- [ ] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01] `py_runtime.h` の `getattr(..., const char*)` sugar を退役する。
+  - 文脈: [p0-cpp-pyruntime-getattr-charptr-retirement.md](../plans/p0-cpp-pyruntime-getattr-charptr-retirement.md)
+  - 進捗メモ: `str(...)` key を canonical にする。
+  - [ ] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01-S1-01] checked-in callsite を棚卸しする。
+  - [ ] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01-S1-02] `str(...)` key canonical rule を決定ログに固定する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01-S2-01] representative callsite を置換する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01-S2-02] regression / inventory guard を更新する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01-S3-01] `py_runtime.h` から sugar を削除する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01-S3-02] parity / docs / archive を更新して閉じる。
+
+- [ ] [ID: P0-CPP-PYRUNTIME-REGISTER-BASES-01] `py_register_class_type(list<uint32>)` compat を退役する。
+  - 文脈: [p0-cpp-pyruntime-register-class-bases-retirement.md](../plans/p0-cpp-pyruntime-register-class-bases-retirement.md)
+  - 進捗メモ: 単一 base canonical rule に寄せる。
+  - [ ] [ID: P0-CPP-PYRUNTIME-REGISTER-BASES-01-S1-01] checked-in callsite を棚卸しする。
+  - [ ] [ID: P0-CPP-PYRUNTIME-REGISTER-BASES-01-S1-02] 単一 base canonical rule を決定ログに固定する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-REGISTER-BASES-01-S2-01] representative callsite を置換する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-REGISTER-BASES-01-S2-02] regression / inventory guard を更新する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-REGISTER-BASES-01-S3-01] `py_runtime.h` から compat overload を削除する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-REGISTER-BASES-01-S3-02] parity / docs / archive を更新して閉じる。
+
+- [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01] `optional` predicate sugar を退役する。
+  - 文脈: [p0-cpp-pyruntime-optional-predicates-retirement.md](../plans/p0-cpp-pyruntime-optional-predicates-retirement.md)
+  - 進捗メモ: `has_value()` 分岐を canonical にする。
+  - [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01-S1-01] checked-in callsite を棚卸しする。
+  - [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01-S1-02] explicit branch rule を決定ログに固定する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01-S2-01] representative callsite を置換する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01-S2-02] regression / inventory guard を更新する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01-S3-01] `py_runtime.h` から sugar を削除する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-OPTIONAL-PREDICATES-01-S3-02] parity / docs / archive を更新して閉じる。
+
+- [ ] [ID: P0-CPP-PYRUNTIME-ARGV-STATE-01] argv state surface を最小化する。
+  - 文脈: [p0-cpp-pyruntime-argv-state-slim.md](../plans/p0-cpp-pyruntime-argv-state-slim.md)
+  - 進捗メモ: compat helper を削って最小 surface に寄せる。
+  - [ ] [ID: P0-CPP-PYRUNTIME-ARGV-STATE-01-S1-01] checked-in callsite を棚卸しする。
+  - [ ] [ID: P0-CPP-PYRUNTIME-ARGV-STATE-01-S1-02] 残す surface と削る surface を決定ログに固定する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-ARGV-STATE-01-S2-01] representative callsite を置換する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-ARGV-STATE-01-S2-02] compat helper を削除または最小化する。
+  - [ ] [ID: P0-CPP-PYRUNTIME-ARGV-STATE-01-S3-01] guard / docs / archive を更新して閉じる。
