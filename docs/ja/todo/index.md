@@ -32,4 +32,50 @@
 
 ## 未完了タスク
 
-- なし
+### P0: C++ `py_runtime.h` `py_list_item_cast` 退役
+
+文脈: [docs/ja/plans/p0-cpp-pyruntime-list-item-cast-retirement.md](../plans/p0-cpp-pyruntime-list-item-cast-retirement.md)
+
+1. [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01] `py_list_item_cast` を退役する。
+2. [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S1-01] `py_list_item_cast` の checked-in callsite を棚卸しする。
+3. [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S1-02] list item conversion の canonical rule を決定ログに固定する。
+4. [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S2-01] representative callsite を explicit conversion へ置換する。
+5. [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S2-02] regression / inventory guard を更新する。
+6. [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S3-01] `py_runtime.h` から `py_list_item_cast` を削除する。
+7. [ ] [ID: P0-CPP-PYRUNTIME-LISTITEMCAST-01-S3-02] parity / docs / archive を更新して閉じる。
+
+### P0: C++ `py_runtime.h` `py_dict_value_cast` 退役
+
+文脈: [docs/ja/plans/p0-cpp-pyruntime-dict-value-cast-retirement.md](../plans/p0-cpp-pyruntime-dict-value-cast-retirement.md)
+
+1. [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01] `py_dict_value_cast` を退役する。
+2. [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S1-01] `py_dict_value_cast` の checked-in callsite を棚卸しする。
+3. [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S1-02] dict value conversion の canonical rule を決定ログに固定する。
+4. [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S2-01] representative callsite を explicit conversion へ置換する。
+5. [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S2-02] regression / inventory guard を更新する。
+6. [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S3-01] `py_runtime.h` から `py_dict_value_cast` を削除する。
+7. [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S3-02] parity / docs / archive を更新して閉じる。
+
+### P0: C++ `py_runtime.h` `py_make_scope_exit` を専用laneへ再配置する
+
+文脈: [docs/ja/plans/p0-cpp-pyruntime-scope-exit-lane-realign.md](../plans/p0-cpp-pyruntime-scope-exit-lane-realign.md)
+
+1. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01] `py_make_scope_exit` を専用laneへ再配置する。
+2. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01-S1-01] `py_make_scope_exit` の checked-in callsite を棚卸しする。
+3. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01-S1-02] new lane と non-goal を決定ログに固定する。
+4. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01-S2-01] representative caller を新契約へ置換する。
+5. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01-S2-02] regression / inventory guard を更新する。
+6. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01-S3-01] `py_runtime.h` から `py_make_scope_exit` を削除する。
+7. [ ] [ID: P0-CPP-PYRUNTIME-SCOPEEXIT-01-S3-02] parity / docs / archive を更新して閉じる。
+
+### P0: C++ `py_runtime.h` process surface を専用laneへ再配置する
+
+文脈: [docs/ja/plans/p0-cpp-pyruntime-process-surface-realign.md](../plans/p0-cpp-pyruntime-process-surface-realign.md)
+
+1. [ ] [ID: P0-CPP-PYRUNTIME-PROCESS-SURFACE-01] process surface を専用laneへ再配置する。
+2. [ ] [ID: P0-CPP-PYRUNTIME-PROCESS-SURFACE-01-S1-01] `argv/stdout/stderr/exit` surface の checked-in callsite を棚卸しする。
+3. [ ] [ID: P0-CPP-PYRUNTIME-PROCESS-SURFACE-01-S1-02] dedicated lane と non-goal を決定ログに固定する。
+4. [ ] [ID: P0-CPP-PYRUNTIME-PROCESS-SURFACE-01-S2-01] representative caller を新契約へ置換する。
+5. [ ] [ID: P0-CPP-PYRUNTIME-PROCESS-SURFACE-01-S2-02] regression / inventory guard を更新する。
+6. [ ] [ID: P0-CPP-PYRUNTIME-PROCESS-SURFACE-01-S3-01] `py_runtime.h` から process surface を削除する。
+7. [ ] [ID: P0-CPP-PYRUNTIME-PROCESS-SURFACE-01-S3-02] parity / docs / archive を更新して閉じる。
