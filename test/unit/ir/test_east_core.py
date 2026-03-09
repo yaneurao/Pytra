@@ -61,6 +61,12 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("def _sh_make_joined_str_expr(", text)
         self.assertIn("def _sh_make_assign_stmt(", text)
         self.assertIn("def _sh_make_ann_assign_stmt(", text)
+        self.assertIn("def _sh_make_raise_stmt(", text)
+        self.assertIn("def _sh_make_pass_stmt(", text)
+        self.assertIn("def _sh_make_return_stmt(", text)
+        self.assertIn("def _sh_make_yield_stmt(", text)
+        self.assertIn("def _sh_make_augassign_stmt(", text)
+        self.assertIn("def _sh_make_swap_stmt(", text)
         self.assertIn("def _sh_make_module_root(", text)
         self.assertIn("out = _sh_make_module_root(", text)
         self.assertNotIn('out["kind"] = "Module"', text)
@@ -702,6 +708,32 @@ def main() -> list[int]:
         self.assertEqual(iter_node.get("start", {}).get("value"), 0)
         self.assertEqual(iter_node.get("stop", {}).get("value"), 3)
         self.assertEqual(iter_node.get("step", {}).get("value"), 1)
+
+    def test_lambda_expression_builds_lambda_node(self) -> None:
+        src = """
+def main() -> None:
+    fn = lambda x: x + 1
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        lambdas = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Lambda"]
+        self.assertEqual(len(lambdas), 1)
+        lam = lambdas[0]
+        self.assertEqual([arg.get("arg") for arg in lam.get("args", [])], ["x"])
+        self.assertEqual(lam.get("body", {}).get("kind"), "BinOp")
+
+    def test_fstring_builds_joinedstr_and_formatted_value_nodes(self) -> None:
+        src = """
+def main(name: str) -> str:
+    return f"hello {name}"
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        joined = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "JoinedStr"]
+        self.assertEqual(len(joined), 1)
+        values = joined[0].get("values", [])
+        formatted = [v for v in values if isinstance(v, dict) and v.get("kind") == "FormattedValue"]
+        self.assertEqual(len(formatted), 1)
+        self.assertEqual(formatted[0].get("value", {}).get("kind"), "Name")
+        self.assertEqual(formatted[0].get("value", {}).get("id"), "name")
 
     def test_except_without_as_is_supported(self) -> None:
         src = """
