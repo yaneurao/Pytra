@@ -291,6 +291,7 @@ int main() {
         string_ops_cpp = (ROOT / "src/runtime/cpp/generated/built_in/string_ops.cpp").read_text(encoding="utf-8")
         numeric_ops_header = (ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.h").read_text(encoding="utf-8")
         zip_ops_header = (ROOT / "src/runtime/cpp/generated/built_in/zip_ops.h").read_text(encoding="utf-8")
+        type_id_cpp = (ROOT / "src/runtime/cpp/generated/built_in/type_id.cpp").read_text(encoding="utf-8")
 
         self.assertIn('#include "runtime/cpp/native/core/py_runtime.h"', forwarder_header)
         self.assertIn('#include "runtime/cpp/generated/built_in/numeric_ops.h"', runtime_header)
@@ -333,6 +334,7 @@ int main() {
         self.assertNotIn("static inline V py_dict_get_default(const ::std::optional<dict<str, V>>& d, const char* key, const D& defval)", runtime_header)
         self.assertNotIn("static inline str py_dict_get_default(const dict<str, str>& d, const char* key, const char* defval)", runtime_header)
         self.assertNotIn("static inline str py_dict_get_default(const dict<str, str>& d, const str& key, const char* defval)", runtime_header)
+        self.assertNotIn("static inline object getattr(\n    const object& value,\n    const char* name,", runtime_header)
         self.assertNotIn("static inline object py_dict_get(const dict<str, object>& d, const char* key)", runtime_header)
         self.assertNotIn("static inline object py_dict_get(const dict<str, object>& d, const ::std::string& key)", runtime_header)
         self.assertNotIn("static inline const V& py_dict_get(const dict<str, V>& d, const char* key)", runtime_header)
@@ -513,6 +515,7 @@ int main() {
         self.assertIn("T py_max(const T& a, const T& b) {", numeric_ops_header)
         self.assertIn("template <class A, class B>", zip_ops_header)
         self.assertIn("list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {", zip_ops_header)
+        self.assertIn('getattr(value, str("PYTRA_TYPE_ID"), ::std::nullopt);', type_id_cpp)
         self.assertFalse((ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.cpp").exists())
         self.assertFalse((ROOT / "src/runtime/cpp/generated/built_in/zip_ops.cpp").exists())
 

@@ -1410,13 +1410,6 @@ static inline object getattr(
     return object{};
 }
 
-static inline object getattr(
-    const object& value,
-    const char* name,
-    const ::std::optional<object>& default_value = ::std::nullopt) {
-    return getattr(value, str(name), default_value);
-}
-
 template <class T>
 static inline uint32 py_runtime_type_id(const T& v) {
     if (py_is_none(v)) return PYTRA_TID_NONE;

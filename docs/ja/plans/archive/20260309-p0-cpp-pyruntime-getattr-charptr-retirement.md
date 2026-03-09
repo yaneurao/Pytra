@@ -58,3 +58,6 @@
 - 2026-03-09: 本計画は `getattr(..., const char*)` sugar だけを扱い、attribute lookup semantics 自体は非対象とする。
 - 2026-03-09: checked-in C++ callsite は `src/runtime/cpp/generated/built_in/type_id.cpp` の `getattr(value, "PYTRA_TYPE_ID", ...)` 1 件だけで、他の literal-key `getattr` は Python/host code 側に限られていた。
 - 2026-03-09: C++ checked-in code の canonical key rule は `str("...")` とし、`const char*` literal を runtime helper へ渡さない。
+- 2026-03-09: representative callsite は `src/runtime/cpp/generated/built_in/type_id.cpp` の `_try_runtime_tagged_type_id` を `getattr(value, str("PYTRA_TYPE_ID"), ::std::nullopt)` に置換し、SoT の `src/pytra/built_in/type_id.py` も `str("PYTRA_TYPE_ID")` へ同期した。
+- 2026-03-09: `test_cpp_runtime_iterable.py` に `getattr(const object&, const char*, ...)` signature の inventory guard と generated `type_id.cpp` の `str("PYTRA_TYPE_ID")` assertion を追加した。
+- 2026-03-09: `src/runtime/cpp/native/core/py_runtime.h` から `getattr(const object&, const char*, ...)` sugar を削除し、verification は `test_cpp_runtime_iterable.py`, fixture parity `cases=3 pass=3 fail=0`, `check_todo_priority.py`, `git diff --check` を通した。

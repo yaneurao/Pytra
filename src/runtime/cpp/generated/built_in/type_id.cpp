@@ -245,7 +245,7 @@ int64 py_tid_register_class_type(int64 base_type_id) {
 }
 
 int64 _try_runtime_tagged_type_id(const object& value) {
-    auto tagged = getattr(value, "PYTRA_TYPE_ID", ::std::nullopt);
+    auto tagged = getattr(value, str("PYTRA_TYPE_ID"), ::std::nullopt);
     if (py_isinstance(tagged, PYTRA_TID_INT)) {
         int64 tagged_id = py_to_int64(tagged);
         if (py_contains(_TYPE_BASE, tagged_id))

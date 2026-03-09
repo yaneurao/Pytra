@@ -32,16 +32,6 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01] `py_runtime.h` の `getattr(..., const char*)` sugar を退役する。
-  - 文脈: [p0-cpp-pyruntime-getattr-charptr-retirement.md](../plans/p0-cpp-pyruntime-getattr-charptr-retirement.md)
-  - 進捗メモ: `str(...)` key を canonical にする。
-  - [x] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01-S1-01] checked-in callsite を棚卸しする。
-  - [x] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01-S1-02] `str(...)` key canonical rule を決定ログに固定する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01-S2-01] representative callsite を置換する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01-S2-02] regression / inventory guard を更新する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01-S3-01] `py_runtime.h` から sugar を削除する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-GETATTR-CHARPTR-01-S3-02] parity / docs / archive を更新して閉じる。
-
 - [ ] [ID: P0-CPP-PYRUNTIME-REGISTER-BASES-01] `py_register_class_type(list<uint32>)` compat を退役する。
   - 文脈: [p0-cpp-pyruntime-register-class-bases-retirement.md](../plans/p0-cpp-pyruntime-register-class-bases-retirement.md)
   - 進捗メモ: 単一 base canonical rule に寄せる。

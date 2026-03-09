@@ -231,7 +231,7 @@ def py_tid_register_class_type(base_type_id: int = _tid_object()) -> int:
 
 
 def _try_runtime_tagged_type_id(value: Any) -> int:
-    tagged = getattr(value, "PYTRA_TYPE_ID", None)
+    tagged = getattr(value, str("PYTRA_TYPE_ID"), None)
     if isinstance(tagged, int):
         tagged_id = int(tagged)
         if tagged_id in _TYPE_BASE:
