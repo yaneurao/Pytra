@@ -16,6 +16,7 @@ from toolchain.compiler.backend_registry import list_backend_targets
 from toolchain.compiler.backend_registry import lower_ir_typed
 from toolchain.compiler.backend_registry import optimize_ir_typed
 from toolchain.compiler.backend_registry import resolve_layer_options_typed
+from toolchain.compiler.typed_boundary import coerce_module_artifact
 from toolchain.compiler.typed_boundary import export_compiler_root_document
 from toolchain.compiler.typed_boundary import export_module_artifact_carrier
 from toolchain.compiler.typed_boundary import export_program_artifact_carrier
@@ -484,39 +485,34 @@ def main() -> int:
         module_id=module_id,
         is_entry=True,
     )
+    module_carrier = coerce_module_artifact(module_artifact)
     program_artifact = build_program_artifact_typed(
         spec,
-        list(collect_program_modules_typed(module_artifact)),
+        list(collect_program_modules_typed(module_carrier)),
         program_id=module_id,
         entry_modules=[module_id],
         layout_mode="single_file",
         link_output_schema="",
     )
     writer = get_program_writer_typed(spec)
-    if hasattr(program_artifact, "to_legacy_dict"):
-        program_artifact_any = export_program_artifact_carrier(program_artifact)
-    elif isinstance(program_artifact, dict):
+    if isinstance(program_artifact, dict):
         program_artifact_any = dict(program_artifact)
         modules_any = program_artifact_any.get("modules", [])
         if isinstance(modules_any, (list, tuple)):
             normalized_modules: list[dict[str, object]] = []
             for item in modules_any:
-                if hasattr(item, "to_legacy_dict"):
-                    normalized_modules.append(export_module_artifact_carrier(item))
-                elif isinstance(item, dict):
+                if isinstance(item, dict):
                     normalized_modules.append(dict(item))
+                else:
+                    normalized_modules.append(export_module_artifact_carrier(coerce_module_artifact(item)))
             program_artifact_any["modules"] = normalized_modules
     else:
-        program_artifact_any = {"modules": []}
+        program_artifact_any = export_program_artifact_carrier(program_artifact)
     if callable(writer):
         _ = writer(program_artifact_any, output_path, {})
     else:
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        module_text = getattr(module_artifact, "text", "")
-        if not isinstance(module_text, str) and isinstance(module_artifact, dict):
-            raw_text = module_artifact.get("text", "")
-            module_text = raw_text if isinstance(raw_text, str) else ""
-        output_path.write_text(module_text if isinstance(module_text, str) else "", encoding="utf-8")
+        output_path.write_text(module_carrier.text, encoding="utf-8")
     apply_runtime_hook_typed(spec, output_path)
     return 0
 

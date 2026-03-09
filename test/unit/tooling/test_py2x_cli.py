@@ -14,15 +14,19 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 import src.py2x as py2x_mod
+import src.toolchain.compiler.typed_boundary as typed_boundary
 from src.toolchain.link.program_model import LinkedProgramModule
 
 
 class _TypedDocStub:
     def __init__(self, raw_doc: dict[str, object]) -> None:
-        self._raw_doc = dict(raw_doc)
+        self._doc = typed_boundary.coerce_compiler_root_document(raw_doc)
+
+    def __getattr__(self, name: str) -> object:
+        return getattr(self._doc, name)
 
     def to_legacy_dict(self) -> dict[str, object]:
-        return dict(self._raw_doc)
+        return self._doc.to_legacy_dict()
 
 
 class Py2xCliTest(unittest.TestCase):

@@ -215,10 +215,18 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_carrier", py2x_src)
         self.assertIn("return export_compiler_root_document(", py2x_src)
         self.assertIn("program_artifact_any = export_program_artifact_carrier(program_artifact)", py2x_src)
-        self.assertIn("normalized_modules.append(export_module_artifact_carrier(item))", py2x_src)
+        self.assertIn(
+            "normalized_modules.append(export_module_artifact_carrier(coerce_module_artifact(item)))",
+            py2x_src,
+        )
+        self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact", py2x_src)
+        self.assertIn("module_carrier = coerce_module_artifact(module_artifact)", py2x_src)
+        self.assertIn("list(collect_program_modules_typed(module_carrier))", py2x_src)
         self.assertNotIn(").to_legacy_dict()", py2x_src)
         self.assertNotIn("program_artifact_any = program_artifact.to_legacy_dict()", py2x_src)
         self.assertNotIn("normalized_modules.append(item.to_legacy_dict())", py2x_src)
+        self.assertNotIn("hasattr(program_artifact, \"to_legacy_dict\")", py2x_src)
+        self.assertNotIn("hasattr(item, \"to_legacy_dict\")", py2x_src)
 
         self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact", ir2lang_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_carrier", ir2lang_src)

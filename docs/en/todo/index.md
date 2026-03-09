@@ -105,6 +105,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] The host/static legacy `resolve_layer_options()` surface and the host `_normalize_backend_spec()` helper now also export through `export_layer_options_carrier()` / `export_resolved_backend_spec()`, which aligns the remaining inline `.to_legacy_dict()` paths behind helper-owned seams.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] The host/static legacy `resolve_layer_options()` surface and the host `_normalize_backend_spec()` helper now also export through `export_layer_options_carrier()` / `export_resolved_backend_spec()`, which aligns the remaining inline `.to_legacy_dict()` paths behind helper-owned seams.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/ir2lang.py` now normalizes writer-facing artifacts through `coerce_module_artifact()` plus `export_*_artifact_carrier()`, which removes both the inline `.to_legacy_dict()` path and the `hasattr(..., "to_legacy_dict")` branch from that host entrypoint.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] The writer lane in `src/py2x.py` now also uses `coerce_module_artifact()` directly at the entrypoint, drops the typed-path `hasattr(..., "to_legacy_dict")` branches, and keeps `export_program_artifact_carrier()` / `export_module_artifact_carrier()` as the regular export seam.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 
