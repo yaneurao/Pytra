@@ -1452,14 +1452,6 @@ static inline auto operator-(const rc<T>& v) -> decltype(v->__neg__()) {
     return v->__neg__();
 }
 
-static inline str py_at(const str& v, int64 idx) {
-    if (idx < 0) idx += static_cast<int64>(v.size());
-    if (idx < 0 || idx >= static_cast<int64>(v.size())) {
-        throw ::std::out_of_range("string index out of range");
-    }
-    return str(1, static_cast<const ::std::string&>(v)[static_cast<::std::size_t>(idx)]);
-}
-
 template <class T>
 static inline list<T> sorted(const list<T>& values) {
     list<T> out = values;

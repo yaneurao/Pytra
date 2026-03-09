@@ -341,6 +341,7 @@ int main() {
         self.assertNotIn("static inline K py_dict_key_cast(const object& key)", runtime_header)
         self.assertNotIn("static inline K py_dict_key_cast(const char* key)", runtime_header)
         self.assertNotIn("static inline K py_dict_key_cast(const Q& key)", runtime_header)
+        self.assertNotIn("static inline str py_at(const str& v, int64 idx)", runtime_header)
         self.assertNotIn("class py_dyn_range_iter", runtime_header)
         self.assertNotIn("class py_dyn_range_view", runtime_header)
         self.assertNotIn("static inline py_dyn_range_view py_dyn_range(const object& iterable)", runtime_header)

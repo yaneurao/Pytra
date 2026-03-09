@@ -53,7 +53,8 @@ bool py_contains_set_object(const object& values, const object& key) {
 
 bool py_contains_str_object(const object& values, const object& key) {
     str needle = py_to_string(key);
-    int64 n = py_len(values);
+    str haystack = str(values);
+    int64 n = py_len(haystack);
     int64 m = py_len(needle);
     if (m == 0)
         return true;
@@ -63,7 +64,7 @@ bool py_contains_str_object(const object& values, const object& key) {
         int64 j = 0;
         bool ok = true;
         while (j < m) {
-            if (py_at(values, py_to<int64>(i + j)) != needle[j]) {
+            if (haystack[i + j] != needle[j]) {
                 ok = false;
                 break;
             }

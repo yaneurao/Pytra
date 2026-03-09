@@ -824,6 +824,19 @@ def new_nodes() -> list[Node]:
             or ("py_at(t, py_to<int64>(i))" in cpp)
         )
 
+    def test_string_negative_index_uses_str_operator(self) -> None:
+        src = """def tail(s: str) -> str:
+    return s[-1]
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "string_negative_index.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("return s[", cpp)
+        self.assertNotIn("return py_at(s", cpp)
+
     def test_dict_get_on_object_value_dict_int_uses_typed_wrapper(self) -> None:
         src = """def f(d: dict[str, object]) -> int:
     x: int = d.get("k", 3)
