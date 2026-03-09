@@ -5,8 +5,9 @@
 </a>
 
 
-このドキュメントは、Pytra を実際に動かすための実行手順ガイドです。  
-入力制約や仕様定義の正本は [利用仕様](../spec/spec-user.md) を参照してください。
+このドキュメントは、Pytra を実際に動かすための実行手順ガイドです。
+入力制約や言語仕様の正本は [仕様書トップ](../spec/index.md) を参照してください。
+型推論の詳細は [EAST仕様の型推論ルール](../spec/spec-east.md#7-型推論ルール) にあります。
 
 ## 統合CLI（`./pytra`）の使い方
 
@@ -55,11 +56,12 @@
 - サポート済みモジュール一覧と API は [モジュール一覧](../spec/spec-pylib-modules.md) を参照してください。
 - 変換オプションの方針と候補は [オプション仕様](../spec/spec-options.md) を参照してください。
 - 補助スクリプト（`tools/`）の用途一覧は [ツール一覧](../spec/spec-tools.md) を参照してください。
-- 制約の根拠と正規仕様は [利用仕様](../spec/spec-user.md) を参照してください。
+- 制約の根拠と正規仕様は [仕様書トップ](../spec/index.md) を参照してください。
 
 ## 次に読むページ
 
-- 言語仕様の正本は [利用仕様](../spec/spec-user.md) を参照してください。
+- 言語仕様の入口は [仕様書トップ](../spec/index.md) を参照してください。
+- 型推論の詳細は [EAST仕様の型推論ルール](../spec/spec-east.md#7-型推論ルール) を参照してください。
 - `@extern` / `extern(...)` の使い方は [extern.md](./extern.md) を参照してください。
 - `py2x.py` / `ir2lang.py` を直接使いたい場合は [transpiler-cli.md](./transpiler-cli.md) を参照してください。
 - エラーカテゴリや詰まりどころは [troubleshooting.md](./troubleshooting.md) を参照してください。
