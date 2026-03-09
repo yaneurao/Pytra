@@ -442,6 +442,23 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('return dict<str, object>{{"kind", make_object("Call")}', lowered_text)
         self.assertNotIn('dict<str, object>{{"kind", make_object("Name")}', lowered_text)
 
+    def test_core_source_routes_runtime_call_metadata_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_annotate_runtime_call_expr", 1)[1].split(
+            "def _sh_set_parse_context",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
+        self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
+        self.assertIn("_sh_annotate_runtime_call_expr(", postfix_text)
+        self.assertNotIn('payload["lowered_kind"] = "BuiltinCall"', postfix_text)
+        self.assertNotIn('payload["lowered_kind"] = "TypePredicateCall"', postfix_text)
+        self.assertNotIn('payload["builtin_name"] = "print"', postfix_text)
+        self.assertNotIn('payload["runtime_call"] = "py_print"', postfix_text)
+        self.assertNotIn('payload["runtime_call"] = "py_range"', postfix_text)
+
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         stmt_text = text.split("def _sh_parse_stmt_block_mutable", 1)[1].split(

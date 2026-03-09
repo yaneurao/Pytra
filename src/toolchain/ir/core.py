@@ -4565,43 +4565,56 @@ class _ShExprParser:
                     lookup_stdlib_symbol_semantic_tag(fn_name) if fn_name != "" else ""
                 )
                 if fn_name == "print":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "print"
-                    payload["runtime_call"] = "py_print"
-                    _set_runtime_binding_fields(payload, "pytra.built_in.io_ops", "py_print")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="print",
+                        runtime_call="py_print",
+                        module_id="pytra.built_in.io_ops",
+                        runtime_symbol="py_print",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "len":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "len"
-                    payload["runtime_call"] = "py_len"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", "len")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="len",
+                        runtime_call="py_len",
+                        module_id="pytra.core.py_runtime",
+                        runtime_symbol="len",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "range":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "range"
-                    payload["runtime_call"] = "py_range"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", "range")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="range",
+                        runtime_call="py_range",
+                        module_id="pytra.core.py_runtime",
+                        runtime_symbol="range",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "zip":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "zip"
-                    payload["runtime_call"] = "zip"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", "zip")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="zip",
+                        runtime_call="zip",
+                        module_id="pytra.core.py_runtime",
+                        runtime_symbol="zip",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "str":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "str"
-                    payload["runtime_call"] = "py_to_string"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", "str")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="str",
+                        runtime_call="py_to_string",
+                        module_id="pytra.core.py_runtime",
+                        runtime_symbol="str",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name in {"int", "float", "bool"}:
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = fn_name
                     runtime_call = "static_cast"
                     runtime_module_id = "pytra.core.py_runtime"
                     runtime_symbol = fn_name
@@ -4615,36 +4628,50 @@ class _ShExprParser:
                             arg0_t = str(arg0.get("resolved_type", "unknown"))
                             if self._is_forbidden_object_receiver_type(arg0_t):
                                 runtime_call = "py_to_bool"
-                    payload["runtime_call"] = runtime_call
-                    _set_runtime_binding_fields(payload, runtime_module_id, runtime_symbol)
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name=fn_name,
+                        runtime_call=runtime_call,
+                        module_id=runtime_module_id,
+                        runtime_symbol=runtime_symbol,
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name in {"min", "max"}:
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = fn_name
-                    payload["runtime_call"] = "py_min" if fn_name == "min" else "py_max"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", fn_name)
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name=fn_name,
+                        runtime_call="py_min" if fn_name == "min" else "py_max",
+                        module_id="pytra.core.py_runtime",
+                        runtime_symbol=fn_name,
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif stdlib_fn_runtime_call != "":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = fn_name
-                    payload["runtime_call"] = stdlib_fn_runtime_call
                     mod_id, runtime_symbol = lookup_stdlib_function_runtime_binding(fn_name)
-                    _set_runtime_binding_fields(payload, mod_id, runtime_symbol)
-                    if stdlib_fn_semantic_tag != "":
-                        payload["semantic_tag"] = stdlib_fn_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name=fn_name,
+                        runtime_call=stdlib_fn_runtime_call,
+                        module_id=mod_id,
+                        runtime_symbol=runtime_symbol,
+                        semantic_tag=stdlib_fn_semantic_tag,
+                    )
                     sig_ret = lookup_stdlib_function_return_type(fn_name)
                     if sig_ret != "":
                         payload["resolved_type"] = sig_ret
                 elif stdlib_symbol_runtime_call != "":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = fn_name
-                    payload["runtime_call"] = stdlib_symbol_runtime_call
                     mod_id, runtime_symbol = lookup_stdlib_imported_symbol_runtime_binding(fn_name, _SH_IMPORT_SYMBOLS)
-                    _set_runtime_binding_fields(payload, mod_id, runtime_symbol)
-                    if stdlib_symbol_semantic_tag != "":
-                        payload["semantic_tag"] = stdlib_symbol_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name=fn_name,
+                        runtime_call=stdlib_symbol_runtime_call,
+                        module_id=mod_id,
+                        runtime_symbol=runtime_symbol,
+                        semantic_tag=stdlib_symbol_semantic_tag,
+                    )
                 elif noncpp_symbol_runtime_call != "":
                     # C++ 互換を維持するため BuiltinCall へは降ろさず、
                     # non-C++ backend 向けに解決済み runtime 名だけ注釈する。
@@ -4659,47 +4686,65 @@ class _ShExprParser:
                         if binding_semantic_tag != "":
                             payload["semantic_tag"] = binding_semantic_tag
                 elif fn_name in {"Exception", "RuntimeError"}:
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = fn_name
-                    payload["runtime_call"] = "std::runtime_error"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", fn_name)
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name=fn_name,
+                        runtime_call="std::runtime_error",
+                        module_id="pytra.core.py_runtime",
+                        runtime_symbol=fn_name,
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "open":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "open"
-                    payload["runtime_call"] = "open"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", "open")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="open",
+                        runtime_call="open",
+                        module_id="pytra.core.py_runtime",
+                        runtime_symbol="open",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "iter":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "iter"
-                    payload["runtime_call"] = "py_iter_or_raise"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", "iter")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="iter",
+                        runtime_call="py_iter_or_raise",
+                        module_id="pytra.core.py_runtime",
+                        runtime_symbol="iter",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "next":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "next"
-                    payload["runtime_call"] = "py_next_or_stop"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", "next")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="next",
+                        runtime_call="py_next_or_stop",
+                        module_id="pytra.core.py_runtime",
+                        runtime_symbol="next",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "reversed":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "reversed"
-                    payload["runtime_call"] = "py_reversed"
-                    _set_runtime_binding_fields(payload, "pytra.built_in.iter_ops", "reversed")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="reversed",
+                        runtime_call="py_reversed",
+                        module_id="pytra.built_in.iter_ops",
+                        runtime_symbol="reversed",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "enumerate":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "enumerate"
-                    payload["runtime_call"] = "py_enumerate"
-                    _set_runtime_binding_fields(payload, "pytra.built_in.iter_ops", "enumerate")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="enumerate",
+                        runtime_call="py_enumerate",
+                        module_id="pytra.built_in.iter_ops",
+                        runtime_symbol="enumerate",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                     elem_t = "unknown"
                     if len(args) >= 1 and isinstance(args[0], dict):
                         elem_t = self._iter_item_type(args[0])
@@ -4709,57 +4754,79 @@ class _ShExprParser:
                     call_ret = f"list[tuple[int64, {elem_t}]]"
                     payload["resolved_type"] = call_ret
                 elif fn_name == "any":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "any"
-                    payload["runtime_call"] = "py_any"
-                    _set_runtime_binding_fields(payload, "pytra.built_in.predicates", "any")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="any",
+                        runtime_call="py_any",
+                        module_id="pytra.built_in.predicates",
+                        runtime_symbol="any",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "all":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "all"
-                    payload["runtime_call"] = "py_all"
-                    _set_runtime_binding_fields(payload, "pytra.built_in.predicates", "all")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="all",
+                        runtime_call="py_all",
+                        module_id="pytra.built_in.predicates",
+                        runtime_symbol="all",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "ord":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "ord"
-                    payload["runtime_call"] = "py_ord"
-                    _set_runtime_binding_fields(payload, "pytra.built_in.scalar_ops", "py_ord")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="ord",
+                        runtime_call="py_ord",
+                        module_id="pytra.built_in.scalar_ops",
+                        runtime_symbol="py_ord",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "chr":
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = "chr"
-                    payload["runtime_call"] = "py_chr"
-                    _set_runtime_binding_fields(payload, "pytra.built_in.scalar_ops", "py_chr")
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name="chr",
+                        runtime_call="py_chr",
+                        module_id="pytra.built_in.scalar_ops",
+                        runtime_symbol="py_chr",
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name in {"bytes", "bytearray"}:
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = fn_name
-                    payload["runtime_call"] = "bytes_ctor" if fn_name == "bytes" else "bytearray_ctor"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", fn_name)
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name=fn_name,
+                        runtime_call="bytes_ctor" if fn_name == "bytes" else "bytearray_ctor",
+                        module_id="pytra.core.py_runtime",
+                        runtime_symbol=fn_name,
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name in {"list", "set", "dict"}:
-                    payload["lowered_kind"] = "BuiltinCall"
-                    payload["builtin_name"] = fn_name
-                    payload["runtime_call"] = fn_name + "_ctor"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", fn_name)
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="BuiltinCall",
+                        builtin_name=fn_name,
+                        runtime_call=fn_name + "_ctor",
+                        module_id="pytra.core.py_runtime",
+                        runtime_symbol=fn_name,
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "isinstance":
-                    payload["lowered_kind"] = "TypePredicateCall"
-                    payload["builtin_name"] = fn_name
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="TypePredicateCall",
+                        builtin_name=fn_name,
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "issubclass":
-                    payload["lowered_kind"] = "TypePredicateCall"
-                    payload["builtin_name"] = fn_name
-                    if builtin_semantic_tag != "":
-                        payload["semantic_tag"] = builtin_semantic_tag
+                    _sh_annotate_runtime_call_expr(
+                        payload,
+                        lowered_kind="TypePredicateCall",
+                        builtin_name=fn_name,
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif isinstance(node, dict) and node.get("kind") == "Attribute":
                     attr = str(node.get("attr", ""))
                     owner = node.get("value")
@@ -4803,17 +4870,22 @@ class _ShExprParser:
                     if owner_method_semantic_tag != "":
                         payload["semantic_tag"] = owner_method_semantic_tag
                     if rc != "":
-                        payload["lowered_kind"] = "BuiltinCall"
-                        payload["builtin_name"] = attr
-                        payload["runtime_call"] = rc
                         mod_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_t, attr)
-                        _set_runtime_binding_fields(payload, mod_id, runtime_symbol)
-                        payload["runtime_owner"] = owner
                         method_semantic_tag = lookup_stdlib_method_semantic_tag(attr)
-                        if owner_method_semantic_tag != "":
-                            payload["semantic_tag"] = owner_method_semantic_tag
-                        elif method_semantic_tag != "":
-                            payload["semantic_tag"] = method_semantic_tag
+                        _sh_annotate_runtime_call_expr(
+                            payload,
+                            lowered_kind="BuiltinCall",
+                            builtin_name=attr,
+                            runtime_call=rc,
+                            module_id=mod_id,
+                            runtime_symbol=runtime_symbol,
+                            semantic_tag=(
+                                owner_method_semantic_tag
+                                if owner_method_semantic_tag != ""
+                                else method_semantic_tag
+                            ),
+                            runtime_owner=owner if isinstance(owner, dict) else None,
+                        )
                 node = payload
                 continue
             if tok["k"] == "[":
