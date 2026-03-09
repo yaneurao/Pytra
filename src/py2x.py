@@ -16,6 +16,9 @@ from toolchain.compiler.backend_registry import list_backend_targets
 from toolchain.compiler.backend_registry import lower_ir_typed
 from toolchain.compiler.backend_registry import optimize_ir_typed
 from toolchain.compiler.backend_registry import resolve_layer_options_typed
+from toolchain.compiler.typed_boundary import export_compiler_root_document
+from toolchain.compiler.typed_boundary import export_module_artifact_carrier
+from toolchain.compiler.typed_boundary import export_program_artifact_carrier
 from toolchain.compiler.transpile_cli import add_common_transpile_args, build_module_east_map, load_east3_document_typed
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
@@ -271,17 +274,19 @@ def _build_linked_program_for_input(
     ) -> dict[str, object]:
         _ = east_stage
         enable_dump = module_path.resolve() == input_path.resolve()
-        return load_east3_document_typed(
-            module_path,
-            parser_backend=parser_backend,
-            object_dispatch_mode=object_dispatch_mode,
-            east3_opt_level=east3_opt_level,
-            east3_opt_pass=east3_opt_pass,
-            dump_east3_before_opt=dump_east3_before_opt if enable_dump else "",
-            dump_east3_after_opt=dump_east3_after_opt if enable_dump else "",
-            dump_east3_opt_trace=dump_east3_opt_trace if enable_dump else "",
-            target_lang=target_lang,
-        ).to_legacy_dict()
+        return export_compiler_root_document(
+            load_east3_document_typed(
+                module_path,
+                parser_backend=parser_backend,
+                object_dispatch_mode=object_dispatch_mode,
+                east3_opt_level=east3_opt_level,
+                east3_opt_pass=east3_opt_pass,
+                dump_east3_before_opt=dump_east3_before_opt if enable_dump else "",
+                dump_east3_after_opt=dump_east3_after_opt if enable_dump else "",
+                dump_east3_opt_trace=dump_east3_opt_trace if enable_dump else "",
+                target_lang=target_lang,
+            )
+        )
 
     input_txt = str(input_path)
     module_map: dict[str, dict[str, object]] = {}
@@ -489,7 +494,7 @@ def main() -> int:
     )
     writer = get_program_writer_typed(spec)
     if hasattr(program_artifact, "to_legacy_dict"):
-        program_artifact_any = program_artifact.to_legacy_dict()
+        program_artifact_any = export_program_artifact_carrier(program_artifact)
     elif isinstance(program_artifact, dict):
         program_artifact_any = dict(program_artifact)
         modules_any = program_artifact_any.get("modules", [])
@@ -497,7 +502,7 @@ def main() -> int:
             normalized_modules: list[dict[str, object]] = []
             for item in modules_any:
                 if hasattr(item, "to_legacy_dict"):
-                    normalized_modules.append(item.to_legacy_dict())
+                    normalized_modules.append(export_module_artifact_carrier(item))
                 elif isinstance(item, dict):
                     normalized_modules.append(dict(item))
             program_artifact_any["modules"] = normalized_modules
