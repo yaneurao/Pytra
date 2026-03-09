@@ -159,6 +159,35 @@ def _sh_annotate_runtime_attr_expr(
     return payload
 
 
+def _sh_annotate_runtime_method_call_expr(
+    payload: dict[str, Any],
+    *,
+    owner_type: str,
+    attr: str,
+    runtime_owner: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    owner_method_semantic_tag = lookup_owner_method_semantic_tag(owner_type, attr)
+    if owner_method_semantic_tag != "":
+        payload["semantic_tag"] = owner_method_semantic_tag
+    runtime_call = lookup_stdlib_method_runtime_call(owner_type, attr)
+    if runtime_call == "":
+        return payload
+    mod_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_type, attr)
+    method_semantic_tag = lookup_stdlib_method_semantic_tag(attr)
+    return _sh_annotate_runtime_call_expr(
+        payload,
+        lowered_kind="BuiltinCall",
+        builtin_name=attr,
+        runtime_call=runtime_call,
+        module_id=mod_id,
+        runtime_symbol=runtime_symbol,
+        semantic_tag=(
+            owner_method_semantic_tag if owner_method_semantic_tag != "" else method_semantic_tag
+        ),
+        runtime_owner=runtime_owner,
+    )
+
+
 def _sh_lookup_noncpp_attr_runtime_call(
     owner_expr: dict[str, Any] | None,
     attr_name: str,
@@ -4910,27 +4939,12 @@ class _ShExprParser:
                         std_module_attr_ret = lookup_stdlib_function_return_type(attr)
                         if std_module_attr_ret != "":
                             payload["resolved_type"] = std_module_attr_ret
-                    rc = lookup_stdlib_method_runtime_call(owner_t, attr)
-                    owner_method_semantic_tag = lookup_owner_method_semantic_tag(owner_t, attr)
-                    if owner_method_semantic_tag != "":
-                        payload["semantic_tag"] = owner_method_semantic_tag
-                    if rc != "":
-                        mod_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_t, attr)
-                        method_semantic_tag = lookup_stdlib_method_semantic_tag(attr)
-                        _sh_annotate_runtime_call_expr(
-                            payload,
-                            lowered_kind="BuiltinCall",
-                            builtin_name=attr,
-                            runtime_call=rc,
-                            module_id=mod_id,
-                            runtime_symbol=runtime_symbol,
-                            semantic_tag=(
-                                owner_method_semantic_tag
-                                if owner_method_semantic_tag != ""
-                                else method_semantic_tag
-                            ),
-                            runtime_owner=owner if isinstance(owner, dict) else None,
-                        )
+                    _sh_annotate_runtime_method_call_expr(
+                        payload,
+                        owner_type=owner_t,
+                        attr=attr,
+                        runtime_owner=owner if isinstance(owner, dict) else None,
+                    )
                 node = payload
                 continue
             if tok["k"] == "[":

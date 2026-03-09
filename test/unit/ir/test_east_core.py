@@ -479,7 +479,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_builtin_attr_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_runtime_attr_expr", 1)[1].split(
-            "def _sh_lookup_noncpp_attr_runtime_call",
+            "def _sh_annotate_runtime_method_call_expr",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -489,6 +489,22 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('_sh_annotate_runtime_attr_expr(', postfix_text)
         self.assertNotIn('node["lowered_kind"] = "BuiltinAttr"', postfix_text)
         self.assertNotIn('node["runtime_call"] = attr_runtime_call', postfix_text)
+
+    def test_core_source_routes_method_call_metadata_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_annotate_runtime_method_call_expr", 1)[1].split(
+            "def _sh_lookup_noncpp_attr_runtime_call",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('lookup_owner_method_semantic_tag(owner_type, attr)', helper_text)
+        self.assertIn('lookup_stdlib_method_runtime_call(owner_type, attr)', helper_text)
+        self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
+        self.assertIn('_sh_annotate_runtime_method_call_expr(', postfix_text)
+        self.assertNotIn('owner_method_semantic_tag = lookup_owner_method_semantic_tag(owner_t, attr)', postfix_text)
+        self.assertNotIn('payload["semantic_tag"] = owner_method_semantic_tag', postfix_text)
+        self.assertNotIn('rc = lookup_stdlib_method_runtime_call(owner_t, attr)', postfix_text)
 
     def test_core_source_centralizes_noncpp_attr_runtime_lookup(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
