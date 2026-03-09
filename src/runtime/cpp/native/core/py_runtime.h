@@ -1333,17 +1333,6 @@ static inline uint32 py_register_class_type(uint32 base_type_id = PYTRA_TID_OBJE
     return tid;
 }
 
-// Backward-compatible overload for pre-migration generated sources.
-static inline uint32 py_register_class_type(const list<uint32>& bases) {
-    if (py_len(bases) == 0) {
-        return py_register_class_type(PYTRA_TID_OBJECT);
-    }
-    if (py_len(bases) == 1) {
-        return py_register_class_type(bases[0]);
-    }
-    throw ValueError("multiple inheritance is not supported");
-}
-
 // Generated user classes share this exact type-id boilerplate.
 // Keep it in runtime so backend output stays compact and consistent.
 #define PYTRA_DECLARE_CLASS_TYPE(BASE_TYPE_ID_EXPR)                                                     \

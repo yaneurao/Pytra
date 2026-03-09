@@ -56,3 +56,6 @@
 ## 決定ログ
 
 - 2026-03-09: 本計画は pre-migration compat overload のみを対象とし、single inheritance contract は維持する。
+- 2026-03-09: checked-in current C++ callsite は `py_register_class_type(uint32)` だけで、`py_register_class_type(const list<uint32>&)` の direct use は `src/runtime/cpp/native/core/py_runtime.h` の定義自身と selfhost の旧 artifact に限られていた。
+- 2026-03-09: current design の canonical rule は単一 `uint32 base_type_id` であり、representative current source に置換対象は存在しないため `S2-01` は no-op とする。
+- 2026-03-09: `test_cpp_runtime_iterable.py` に `py_register_class_type(const list<uint32>& bases)` の inventory guard を追加し、`src/runtime/cpp/native/core/py_runtime.h` から compat overload を削除した。

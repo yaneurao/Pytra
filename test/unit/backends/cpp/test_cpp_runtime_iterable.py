@@ -335,6 +335,7 @@ int main() {
         self.assertNotIn("static inline str py_dict_get_default(const dict<str, str>& d, const char* key, const char* defval)", runtime_header)
         self.assertNotIn("static inline str py_dict_get_default(const dict<str, str>& d, const str& key, const char* defval)", runtime_header)
         self.assertNotIn("static inline object getattr(\n    const object& value,\n    const char* name,", runtime_header)
+        self.assertNotIn("static inline uint32 py_register_class_type(const list<uint32>& bases)", runtime_header)
         self.assertNotIn("static inline object py_dict_get(const dict<str, object>& d, const char* key)", runtime_header)
         self.assertNotIn("static inline object py_dict_get(const dict<str, object>& d, const ::std::string& key)", runtime_header)
         self.assertNotIn("static inline const V& py_dict_get(const dict<str, V>& d, const char* key)", runtime_header)
