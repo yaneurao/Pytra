@@ -91,6 +91,19 @@ def _meta_dispatch_mode(raw_doc: dict[str, object]) -> str:
     return dispatch_any if isinstance(dispatch_any, str) else ""
 
 
+def _meta_string(raw_doc: dict[str, object], key: str) -> str:
+    meta_any = raw_doc.get("meta", {})
+    if not isinstance(meta_any, dict):
+        return ""
+    value_any = meta_any.get(key)
+    return value_any if isinstance(value_any, str) else ""
+
+
+def _root_string(raw_doc: dict[str, object], key: str) -> str:
+    value_any = raw_doc.get(key)
+    return value_any if isinstance(value_any, str) else ""
+
+
 def export_compiler_root_document(doc: "CompilerRootDocument") -> dict[str, object]:
     out = dict(doc.raw_module_doc)
     out["kind"] = doc.module_kind
@@ -105,6 +118,10 @@ def export_compiler_root_document(doc: "CompilerRootDocument") -> dict[str, obje
         meta["parser_backend"] = doc.meta.parser_backend
     out["meta"] = meta
     return out
+
+
+def export_compiler_root_document_any(doc: object) -> dict[str, object]:
+    return export_compiler_root_document(coerce_compiler_root_document(doc))
 
 
 def export_layer_options_carrier(options: "LayerOptionsCarrier") -> dict[str, CompilerOptionScalar]:
@@ -182,11 +199,11 @@ class CompilerRootMeta:
         stage_any = raw_doc.get("east_stage")
         schema_any = raw_doc.get("schema_version")
         return CompilerRootMeta(
-            source_path=source_path,
+            source_path=source_path if source_path != "" else _root_string(raw_doc, "source_path"),
             east_stage=int(stage_any) if isinstance(stage_any, int) else 0,
             schema_version=int(schema_any) if isinstance(schema_any, int) else 0,
             dispatch_mode=_meta_dispatch_mode(raw_doc),
-            parser_backend=parser_backend,
+            parser_backend=parser_backend if parser_backend != "" else _meta_string(raw_doc, "parser_backend"),
         )
 
 
