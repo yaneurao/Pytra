@@ -76,7 +76,7 @@
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-01] compiler root payload（EAST document / backend spec / layer option / emit request/result）の typed carrier 仕様を決める。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-02] Python 正本（`transpile_cli.py` / registry helper / builder helper）へ typed carrier と薄い legacy adapter を導入する。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-03] C++ selfhost/native compiler interface へ typed carrier mirror または typed wrapper API を導入し、raw `dict<str, object>` exchange を縮小する。
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] selfhost parser / EAST builder の node 構築を typed constructor / builder helper へ寄せ、`dict<str, object>{{...}}` 直組み立てを段階縮退する。
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] selfhost parser / EAST builder の node 構築を typed constructor / builder helper へ寄せ、`dict<str, object>{{...}}` 直組み立てを段階縮退する。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated compiler / selfhost runtime に残る `make_object` usage を `serialization/export seam` 専用まで後退させる。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] JSON・extern/hook・未型付け入力の dynamic carrier を compiler typed model から切り離し、`JsonValue` / explicit adapter に隔離する。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] `make_object` / `py_to` / `obj_to_*` の残存 usage に分類ラベルを与え、未分類・再流入を弾く guard を追加する。
@@ -144,3 +144,4 @@
 - 2026-03-10 [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01]: 次の slice で `_sh_make_function_def_stmt()` / `_sh_make_class_def_stmt()` を追加し、nested function・top-level function・class method・top-level class の checked-in `FunctionDef` / `ClassDef` 直組み立てを helper 経由へ揃えた。これで builder 化の残件は主に def-sig metadata の細片と generated selfhost mirror 側へ寄り、`core.py` source-of-truth 上の大きな composite stmt cluster はさらに縮小した。
 - 2026-03-10 [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01]: その後、文字列リテラル連結で使っていた `BinOp` と `ForRange` の既定 `0/1` `Constant` も既存 `_sh_make_binop_expr()` / `_sh_make_constant_expr()` へ寄せた。これで checked-in `core.py` の source-of-truth path に残っていた `kind` 直組み立ては helper 定義以外から消え、S3-01 の残件は node builder 化よりも def-sig helper と generated selfhost mirror 追従へ移った。
 - 2026-03-10 [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01]: 仕上げとして、隣接文字列リテラル連結で組み立てていた `BinOp` と `for ... in range(...)` の省略 `start/step` 用 `Constant` も `_sh_make_binop_expr()` / `_sh_make_constant_expr()` へ寄せた。これで `src/toolchain/ir/core.py` の checked-in AST node 直組み立ては helper 定義ブロックの中に閉じ込められ、S3-01 の残件は `core.py` 本体より generated selfhost mirror・def-sig metadata・残存 `make_object` lane の縮退へ移った。
+- 2026-03-10 [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01]: `src/toolchain/ir/core.py` の checked-in node 構築が helper 定義ブロック外では直 dict AST 組み立てを持たない状態まで到達したため、S3-01 は完了として閉じた。以後の object carrier 縮退は generated/selfhost runtime 側の `make_object` usage を削る `S3-02` へ移す。

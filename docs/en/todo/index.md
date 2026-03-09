@@ -41,7 +41,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 4. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-01] Define typed carrier specs for compiler root payloads (EAST document, backend spec, layer options, emit request/result).
 5. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-02] Introduce typed carriers and thin legacy adapters in the Python source of truth.
 6. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-03] Introduce typed carrier mirrors or typed wrapper APIs in the C++ selfhost/native compiler interfaces and reduce raw `dict<str, object>` exchange.
-7. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Move selfhost parser / EAST builder node construction onto typed constructors / builder helpers and gradually retire direct `dict<str, object>{{...}}` assembly.
+7. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Move selfhost parser / EAST builder node construction onto typed constructors / builder helpers and gradually retire direct `dict<str, object>{{...}}` assembly.
 8. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Retreat remaining `make_object` usage in generated compiler / selfhost runtime down to serialization/export seams only.
 9. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Separate JSON, extern/hooks, and other intentionally dynamic carriers from the compiler typed model behind `JsonValue` or explicit adapters.
 10. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Label every remaining `make_object` / `py_to` / `obj_to_*` usage and add guards that reject uncategorized reintroduction.
@@ -66,6 +66,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_function_def_stmt()` / `_sh_make_class_def_stmt()` and moved checked-in direct assembly for nested/top-level/method `FunctionDef` nodes plus top-level `ClassDef` nodes onto shared helpers.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Moved the remaining string-literal-concatenation `BinOp` and default `ForRange` `Constant` nodes onto existing helpers too, clearing the last checked-in direct `kind` assembly left in `core.py` source-of-truth paths.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Moved concatenated-string `BinOp` assembly and the default `Constant` nodes used by `for ... in range(...)` onto helpers too, so checked-in direct AST node assembly in `src/toolchain/ir/core.py` is now confined to the helper definitions themselves.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] With checked-in node construction in `src/toolchain/ir/core.py` now aligned on helper-owned builders, S3-01 is closed and the remaining object-carrier retreat work moves to the generated/selfhost runtime lanes in `S3-02`.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 
