@@ -484,6 +484,20 @@ def _sh_annotate_exception_ctor_call_expr(
     )
 
 
+def _sh_annotate_type_predicate_call_expr(
+    payload: dict[str, Any],
+    *,
+    fn_name: str,
+    semantic_tag: str | None = None,
+) -> dict[str, Any]:
+    return _sh_annotate_runtime_call_expr(
+        payload,
+        lowered_kind="TypePredicateCall",
+        builtin_name=fn_name,
+        semantic_tag=semantic_tag,
+    )
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -5053,18 +5067,10 @@ class _ShExprParser:
                         fn_name=fn_name,
                         semantic_tag=builtin_semantic_tag,
                     )
-                elif fn_name == "isinstance":
-                    _sh_annotate_runtime_call_expr(
+                elif fn_name in {"isinstance", "issubclass"}:
+                    _sh_annotate_type_predicate_call_expr(
                         payload,
-                        lowered_kind="TypePredicateCall",
-                        builtin_name=fn_name,
-                        semantic_tag=builtin_semantic_tag,
-                    )
-                elif fn_name == "issubclass":
-                    _sh_annotate_runtime_call_expr(
-                        payload,
-                        lowered_kind="TypePredicateCall",
-                        builtin_name=fn_name,
+                        fn_name=fn_name,
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif isinstance(node, dict) and node.get("kind") == "Attribute":

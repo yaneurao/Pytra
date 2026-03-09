@@ -740,7 +740,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_exception_ctor_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_exception_ctor_call_expr", 1)[1].split(
-            "def _sh_set_parse_context",
+            "def _sh_annotate_type_predicate_call_expr",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -753,6 +753,22 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('_sh_annotate_exception_ctor_call_expr(', postfix_text)
         self.assertNotIn('elif fn_name in {"Exception", "RuntimeError"}:\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('runtime_call="std::runtime_error"', postfix_text)
+
+    def test_core_source_routes_type_predicate_metadata_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_annotate_type_predicate_call_expr", 1)[1].split(
+            "def _sh_set_parse_context",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
+        self.assertIn('lowered_kind="TypePredicateCall"', helper_text)
+        self.assertIn('builtin_name=fn_name', helper_text)
+        self.assertIn('_sh_annotate_type_predicate_call_expr(', postfix_text)
+        self.assertNotIn('elif fn_name == "isinstance":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
+        self.assertNotIn('elif fn_name == "issubclass":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
+        self.assertNotIn('lowered_kind="TypePredicateCall"', postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
