@@ -107,7 +107,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `ModuleArtifactCarrier` / `ProgramArtifactCarrier` も `export_*_artifact_carrier()` 正本へ寄せ、host/static backend registry の `emit_module()` / `build_program_artifact()` / `collect_program_modules()` が `to_legacy_dict()` を直接呼ばない形に揃えた。`test_py2x_entrypoints_contract.py` では helper export と legacy adapter の等価性、ならびに host/static source が新 helper を使うことを固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/ir2lang.py` でも writer 前の artifact 正規化を `coerce_module_artifact()` / `export_*_artifact_carrier()` に切り替え、inline `.to_legacy_dict()` と `hasattr(..., "to_legacy_dict")` 分岐を撤去した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/py2x.py` の writer lane でも `coerce_module_artifact()` を entrypoint 直下で使い、typed path の `hasattr(..., "to_legacy_dict")` 分岐をやめて `export_program_artifact_carrier()` / `export_module_artifact_carrier()` 正規経路へ揃えた。
-- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `coerce_program_artifact()` を導入して `src/py2x.py` の writer lane を typed `ProgramArtifactCarrier` 正規化へ寄せ、あわせて native C++ wrapper の `CompilerRootDocument` / `ResolvedBackendSpec` / `LayerOptionsCarrier` から未使用の `to_legacy_dict()` thin adapter を外して export helper-only に揃えた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `coerce_program_artifact()` を導入して `src/py2x.py` の writer lane を typed `ProgramArtifactCarrier` 正規化へ寄せ、entrypoint-local な dict 分岐と module list 正規化を helper-owned carrier coercion へ置き換えた。`test_py2x_entrypoints_contract.py` と `test_py2x_cli.py` で dict test double lane と helper module flatten を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
