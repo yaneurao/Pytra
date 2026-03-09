@@ -100,6 +100,29 @@ def _set_runtime_binding_fields(payload: dict[str, Any], module_id: str, runtime
         payload["runtime_call_adapter_kind"] = adapter_kind
 
 
+def _sh_annotate_runtime_call_expr(
+    payload: dict[str, Any],
+    *,
+    lowered_kind: str,
+    builtin_name: str,
+    runtime_call: str = "",
+    module_id: str = "",
+    runtime_symbol: str = "",
+    semantic_tag: str | None = None,
+    runtime_owner: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload["lowered_kind"] = lowered_kind
+    payload["builtin_name"] = builtin_name
+    if runtime_call != "":
+        payload["runtime_call"] = runtime_call
+    _set_runtime_binding_fields(payload, module_id, runtime_symbol)
+    if semantic_tag is not None and semantic_tag != "":
+        payload["semantic_tag"] = semantic_tag
+    if runtime_owner is not None:
+        payload["runtime_owner"] = runtime_owner
+    return payload
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -737,18 +760,31 @@ def _sh_make_simple_name_list_comp_expr(
         elt_name,
         resolved_type=elem_type if elt_name == target_name else "unknown",
     )
-    target_node = _sh_make_name_expr(
-        _sh_span(line_no, base_col, base_col + len(target_name)),
-        target_name,
-        resolved_type="unknown",
-    )
     return _sh_make_list_comp_expr(
         source_span,
         elt_node,
-        [_sh_make_comp_generator(target_node, iter_expr, [])],
+        [_sh_make_simple_name_comp_generator(line_no, base_col, target_name, iter_expr)],
         resolved_type=f"list[{elem_type}]",
         repr_text=repr_text,
         lowered_kind="ListCompSimple",
+    )
+
+
+def _sh_make_simple_name_comp_generator(
+    line_no: int,
+    base_col: int,
+    target_name: str,
+    iter_expr: dict[str, Any],
+) -> dict[str, Any]:
+    """simple list-comp 用の target `Name` + generator を構築する。"""
+    return _sh_make_comp_generator(
+        _sh_make_name_expr(
+            _sh_span(line_no, base_col, base_col + len(target_name)),
+            target_name,
+            resolved_type="unknown",
+        ),
+        iter_expr,
+        [],
     )
 
 
@@ -776,11 +812,13 @@ def _sh_make_builtin_listcomp_call_expr(
         resolved_type="bool",
         repr_text=repr_text,
     )
-    payload["lowered_kind"] = "BuiltinCall"
-    payload["builtin_name"] = func_name
-    payload["runtime_call"] = runtime_call
-    payload["semantic_tag"] = semantic_tag
-    return payload
+    return _sh_annotate_runtime_call_expr(
+        payload,
+        lowered_kind="BuiltinCall",
+        builtin_name=func_name,
+        runtime_call=runtime_call,
+        semantic_tag=semantic_tag,
+    )
 
 
 def _sh_make_dict_comp_expr(
