@@ -7443,7 +7443,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             )
             item = _sh_make_function_def_stmt(
                 fn_name,
-                {"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])},
+                _sh_block_end_span(block, i, 0, len(ln), len(block)),
                 arg_types,
                 arg_order,
                 fn_ret_effective,
@@ -8105,12 +8105,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         class_body.append(
                             _sh_make_function_def_stmt(
                                 mname,
-                                {
-                                    "lineno": ln_no,
-                                    "col": bind,
-                                    "end_lineno": method_block[-1][0],
-                                    "end_col": len(method_block[-1][1]),
-                                },
+                                _sh_block_end_span(method_block, ln_no, bind, len(ln_txt), len(method_block)),
                                 marg_types,
                                 marg_order,
                                 mret_effective,
@@ -8141,7 +8136,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
 
             cls_item = _sh_make_class_def_stmt(
                 cls_name,
-                {"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])},
+                _sh_block_end_span(block, i, 0, len(ln), len(block)),
                 field_types,
                 class_body,
                 base=base_value,
