@@ -61,35 +61,6 @@ Windows では次の読み替えを行ってください。
 - Rust 変換は `--output` 未指定時、`--output-dir/<入力stem>.rs` へ出力されます（例: `out/rs_case/add.rs`）。
 - 一時出力は `out/` に集約する運用を推奨し、共有一時確認が必要な場合のみ `/tmp` を使用します。
 
-## C++ max-opt route
-
-- `./pytra ... --target cpp --codegen-opt 3` は、C++ compat route ではなく linked-program optimizer を通す max route です。
-- `--build` を併用すると、linked-program 最適化後の multi-file output から `Makefile` 生成と build を続けて実行します。
-- 中間の linked bundle は `--output-dir/.pytra_linked/` に置きます。
-- `--codegen-opt 0/1/2` は従来 route を維持します。
-- route 変更の非退行確認は、representative CLI test だけでなく sample parity でも見る前提です。
-
-```bash
-./pytra sample/py/18_mini_language_interpreter.py \
-  --target cpp \
-  --codegen-opt 3 \
-  --build \
-  --output-dir out/sample18_maxopt \
-  --opt -O3 \
-  --exe sample18.out
-```
-
-確認コマンド:
-
-```bash
-python3 tools/runtime_parity_check.py \
-  --targets cpp \
-  --case-root sample \
-  --all-samples \
-  --cpp-codegen-opt 3 \
-  --east3-opt-level 2
-```
-
 ## 最初に確認する制約
 
 - Python の標準ライブラリ直接 import は原則非推奨です。`pytra.std.*` を使ってください。
@@ -134,207 +105,19 @@ document: Any = extern()
 console: Any = extern("console")
 ```
 
-## runtime helper での `@abi`
+## 次に読むページ
 
-- `@abi` は runtime helper の境界 ABI を固定するための注釈です。一般 user code へ広げる前提ではありません。
-- canonical mode は `args` 側が `default` / `value` / `value_mut`、`ret` 側が `default` / `value` です。
-- 引数側 `value` は read-only value ABI を意味します。旧 `value_readonly` は移行期 alias で、metadata では `value` に正規化されます。
+- 高度な変換ルートや `@abi` は [発展的な使い方](./advanced-usage.md) を参照してください。
+- parity / local CI / backend health などの運用手順は [開発運用ガイド](./dev-operations.md) を参照してください。
+- CLI オプションの詳細は [オプション仕様](./spec/spec-options.md) を参照してください。
 
-```python
-from pytra.std import abi
+## 補足: 開発者向けの入口
 
-@abi(args={"parts": "value"}, ret="value")
-def py_join(sep: str, parts: list[str]) -> str:
-    ...
-```
+- `py2x.py` / `py2x-selfhost.py` の使い分け
+- `ir2lang.py` の backend-only 再開
+- linked-program の dump / link-only / restart
 
-## 実行時間計測プロトコル（sample）
-
-- `sample/py` 由来の実行時間計測は、fresh transpile 後に実行します。
-- 計測回数は `warmup=1` + `repeat=2` を既定とします。
-- 代表値は 2 回の**算術平均（average）**を使います（中央値は使いません）。
-- コンパイル時間は計測値に含めません。
-
-## runtime parity 運用（sample, 全target）
-
-- `tools/runtime_parity_check.py` は stdout だけでなく、`output:` で示された artifact の `size` と `CRC32` まで比較します。
-- parity 実行時は case ごとに `sample/out`, `test/out`, `out`, `test/transpile/<target>/<case>` の stale artifact を自動削除します。
-- `elapsed_sec` などの不安定行は既定で比較対象外です（`--ignore-unstable-stdout` は互換フラグ）。
-- 全14targetを一括検証する場合の canonical wrapper:
-
-```bash
-python3 tools/check_all_target_sample_parity.py \
-  --summary-dir work/logs/all_target_sample_parity
-```
-
-- lower-level に `runtime_parity_check.py` を直接使う場合の canonical group:
-
-```bash
-python3 tools/runtime_parity_check.py \
-  --targets cpp \
-  --case-root sample \
-  --all-samples \
-  --east3-opt-level 2 \
-  --cpp-codegen-opt 3
-
-python3 tools/runtime_parity_check.py \
-  --targets js,ts \
-  --case-root sample \
-  --all-samples \
-  --ignore-unstable-stdout \
-  --east3-opt-level 2
-
-python3 tools/runtime_parity_check.py \
-  --targets rs,cs,go,java,kotlin,swift,scala \
-  --case-root sample \
-  --all-samples \
-  --ignore-unstable-stdout \
-  --east3-opt-level 2
-
-python3 tools/runtime_parity_check.py \
-  --targets ruby,lua,php,nim \
-  --case-root sample \
-  --all-samples \
-  --ignore-unstable-stdout \
-  --east3-opt-level 2
-```
-
-- 実行時間短縮のためにケースを分割する場合（運用例）:
-  - `01-03`: `01_mandelbrot 02_raytrace_spheres 03_julia_set`
-  - `04-06`: `04_orbit_trap_julia 05_mandelbrot_zoom 06_julia_parameter_sweep`
-  - `07-09`: `07_game_of_life_loop 08_langtons_ant 09_fire_simulation`
-  - `10-12`: `10_plasma_effect 11_lissajous_particles 12_sort_visualizer`
-  - `13-15`: `13_maze_generation_steps 14_raymarching_light_cycle 15_wave_interference_loop`
-  - `16-18`: `16_glass_sculpture_chaos 17_monte_carlo_pi 18_mini_language_interpreter`
-
-## linked-program 後の non-C++ backend health check
-
-- linked-program 導入後の non-C++ backend gate は `tools/check_noncpp_backend_health.py` を正本とします。
-- 日常の最小確認は次の 1 本です。`parity` は toolchain 依存なのでここでは回しません。
-
-```bash
-python3 tools/check_noncpp_backend_health.py --family all --skip-parity
-```
-
-- family を絞る場合は `wave1` / `wave2` / `wave3` を使います。
-
-```bash
-python3 tools/check_noncpp_backend_health.py --family wave1 --skip-parity
-python3 tools/check_noncpp_backend_health.py --family wave2 --skip-parity
-python3 tools/check_noncpp_backend_health.py --family wave3 --skip-parity
-```
-
-- `toolchain_missing` は backend bug ではなく、parity 実行環境がないだけの baseline として扱います。
-- `tools/run_local_ci.py` には `python3 tools/check_noncpp_backend_health.py --family all --skip-parity` が組み込まれているため、local CI を通せば non-C++ backend の smoke/transpile gate も同時に監視できます。
-- 同じく `python3 tools/check_jsonvalue_decode_boundaries.py` も組み込まれているため、`py2x` / `ir2lang` / `east_io` / `toolchain/link/*` の JSON artifact 境界で raw `json.loads(...)` が再侵入した場合は local CI で fail します。
-
-## Emitter変更時の必須ガード（Stop-Ship）
-
-- `src/backends/*/emitter/*.py` を変更した場合は、コミット前に次を必ず実行します。
-  - `python3 tools/check_emitter_runtimecall_guardrails.py`
-  - `python3 tools/check_emitter_forbidden_runtime_symbols.py`
-  - `python3 tools/check_noncpp_east3_contract.py`
-- 上記のいずれかが `FAIL` の場合、コミット/プッシュ禁止です（Stop-Ship）。
-- runtime/stdlib の呼び出し解決は EAST3 正本情報（`runtime_call`, `resolved_runtime_call`, `resolved_runtime_source`）のみを使い、emitter 側に関数名・モジュール名の分岐/テーブルを増やしてはいけません。
-- `java` backend は strict 対象です。runtime dispatch 用の直書きシンボルは allowlist で許可せず、0件を維持します。
-
-## non-C++ backend のコンテナ参照管理運用（v1）
-
-- 対象 backend: `cs/js/ts/go/swift/ruby/lua/php`（Rust/Kotlin は pilot 実装済み）。
-- 共通方針:
-  - `object/Any/unknown/union(any含む)` へ流れる境界は参照管理境界（ref-boundary）として扱う。
-  - 型既知かつ局所 non-escape の経路は値型経路（value-path）として shallow copy を挿入する。
-  - 判定不能時は fail-closed で ref-boundary 側へ倒す。
-- 生成結果確認:
-  - `python3 tools/check_py2cs_transpile.py`
-  - `python3 tools/check_py2js_transpile.py`
-  - `python3 tools/check_py2ts_transpile.py`
-  - `python3 tools/check_py2go_transpile.py`
-  - `python3 tools/check_py2swift_transpile.py`
-  - `python3 tools/check_py2rb_transpile.py`
-  - `python3 tools/check_py2lua_transpile.py`
-  - `python3 tools/check_py2php_transpile.py`
-  - `python3 tools/runtime_parity_check.py --case-root sample --targets cs,js,ts,go,swift,ruby,lua,php --ignore-unstable-stdout 18_mini_language_interpreter`
-- rollback 手段（暫定）:
-  - 値型材料化が問題になる箇所は、ローカルの型注釈を `object/Any` 側へ寄せて ref-boundary を強制する。
-  - 逆に alias 分離を明示したい場合は、入力 Python 側で `list(...)` / `dict(...)` などの明示コピーを書く。
-
-## `py2x.py` / `py2x-selfhost.py` の使い分け
-
-- 通常実行は `src/py2x.py` を使います。target backend は必要言語のみ lazy import されます。
-- selfhost 実行は `src/py2x-selfhost.py` を使います。backend は static eager import 固定です。
-- 既存 `py2{lang}.py` ラッパは移行互換用途のみで、通常運用の入口は `py2x.py` / `py2x-selfhost.py` に統一します。
-
-```bash
-# 通常実行（host-lazy）
-python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add.rs
-
-# selfhost 実行（static eager import）
-python3 src/py2x-selfhost.py test/fixtures/core/add.py --target rs -o out/add_selfhost.rs
-```
-
-### 移行メモ（`py2*.py` 互換ラッパ）
-
-- 既存の `py2rs.py`, `py2js.py`, `py2rb.py` などは非推奨の互換ラッパです。
-- 正規運用は `py2x.py --target <lang>` を唯一の入口とし、互換ラッパは段階撤去対象として扱います。
-- 層別 option（`--lower-option`, `--optimizer-option`, `--emitter-option`）は `py2x.py` 側仕様で統一しています。
-
-```bash
-# 正規入口（推奨）
-python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
-```
-
-## `ir2lang.py`（EAST3 JSON -> target backend）
-
-- `ir2lang.py` は frontend（`.py -> EAST3`）を通さず、`EAST3(JSON)` から直接 backend を実行します。
-- backend 単体回帰や、`sample/ir` / `test/ir` の固定IR検証で使います。
-- 入力は `.json` のみ受理し、`east_stage=3` 以外は fail-fast します。
-
-```bash
-# 1) .py から EAST3(JSON) fixture を作成
-python3 src/py2x.py sample/py/01_mandelbrot.py --target cpp \
-  -o out/seed_01.cpp --dump-east3-after-opt sample/ir/01_mandelbrot.east3.json
-
-# 2) EAST3(JSON) から直接ターゲット言語へ変換
-python3 src/ir2lang.py sample/ir/01_mandelbrot.east3.json --target rs \
-  -o out/ir2lang_01.rs --no-runtime-hook
-
-# 3) 主要 target（cpp/rs/js）の backend-only smoke
-python3 tools/check_ir2lang_smoke.py
-```
-
-補足:
-- `--lower-option key=value` / `--optimizer-option key=value` / `--emitter-option key=value` を `ir2lang.py` でも利用できます。
-- `--no-runtime-hook` を外すと、target ごとの runtime 補助ファイル配置も含めて確認できます。
-
-## linked-program の dump / link-only / restart
-
-- linked-program の正規 debug 導線は `py2x.py -> eastlink.py -> ir2lang.py` です。
-- `py2x.py --dump-east3-dir DIR` は raw `EAST3` 群と `link-input.json` を `DIR` に書き出して終了します。
-- `py2x.py --link-only --output-dir DIR` は backend 生成を行わず、`link-output.json` と linked module 群だけを `DIR` に書き出します。
-- `ir2lang.py` は raw `EAST3(JSON)` に加えて `link-output.json` も受理できます。`py2x.py --from-link-output` はその再開経路の wrapper です。
-
-```bash
-# 1) .py から raw EAST3 群と link-input.json を出力
-python3 src/py2x.py sample/py/18_mini_language_interpreter.py --target cpp \
-  --dump-east3-dir out/linked_debug/raw
-
-# 2) linker だけを実行して link-output.json と linked modules を作る
-python3 src/eastlink.py out/linked_debug/raw/link-input.json \
-  --output-dir out/linked_debug/linked
-
-# 3) linked output から backend-only 再開
-python3 src/ir2lang.py out/linked_debug/linked/link-output.json --target cpp \
-  --output-dir out/linked_debug/cpp
-
-# 4) py2x wrapper で linked output から再開してもよい
-python3 src/py2x.py out/linked_debug/linked/link-output.json --target cpp \
-  --from-link-output --output-dir out/linked_debug/cpp_wrap
-```
-
-補足:
-- linked-program の global pass は、manifest が列挙した module 群だけを入力に使います。`source_path` を辿った追加読込で import closure を広げることはしません。
-- `NonEscapeInterproceduralPass` は linked-program 経路では linker が埋めた `meta.non_escape_import_closure` だけを見ます。closure が不足している場合は fail-closed で unresolved 扱いになります。
+は [発展的な使い方](./advanced-usage.md) に移しました。
 
 ## トランスパイラの使い方
 
@@ -626,73 +409,12 @@ g++ -std=c++20 -O2 -I src -I src/runtime/cpp test/transpile/cpp/01_mandelbrot.cp
 
 </details>
 
-## selfhost 検証手順（C++ backend -> `py2cpp.cpp`）
+## 補足: 検証と自己ホスト
 
-前提:
-- プロジェクトルートで実行する。
-- `g++` が使えること。
-- `selfhost/` は検証用の作業ディレクトリ（Git管理外）として扱う。
+- C++ selfhost の検証手順
+- CodeEmitter 作業時の変換チェック
 
-```bash
-# 0) selfhost C++ を生成してビルド（ランタイム .cpp も含めてリンク）
-python3 tools/build_selfhost.py > selfhost/build.all.log 2>&1
-
-# 1) ビルドエラーをカテゴリ確認
-rg "error:" selfhost/build.all.log
-```
-
-コンパイル成功時の比較手順:
-
-```bash
-# 2) selfhost 実行ファイルで sample/py/01 を .py 直入力から変換
-mkdir -p test/transpile/cpp2
-./selfhost/py2cpp.out sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp2/01_mandelbrot.cpp
-
-# 3) Python 版 C++ backend でも同じ入力を変換
-python3 src/py2x-selfhost.py sample/py/01_mandelbrot.py --target cpp -o test/transpile/cpp/01_mandelbrot.cpp
-
-# 4) direct route が sample 全件で -fsyntax-only まで通るか確認
-python3 tools/check_selfhost_direct_compile.py
-
-# 5) Python版とselfhost版の出力差分を代表ケースで確認
-python3 tools/check_selfhost_cpp_diff.py --mode strict --show-diff
-
-# 6) representative e2e を確認
-python3 tools/verify_selfhost_end_to_end.py --skip-build \
-  --cases sample/py/05_mandelbrot_zoom.py sample/py/18_mini_language_interpreter.py test/fixtures/core/add.py
-
-# 7) stage2 binary を生成して差分確認
-python3 tools/build_selfhost_stage2.py
-python3 tools/check_selfhost_stage2_cpp_diff.py --mode strict
-
-# 8) stage2 binary で sample 全件 parity を確認
-python3 tools/check_selfhost_stage2_sample_parity.py --skip-build
-```
-
-補足:
-- `selfhost/py2cpp.out` の `.py` 直入力は current contract です。bridge 経路は調査用 fallback としてだけ扱います。
-- `tools/check_selfhost_cpp_diff.py` と `tools/check_selfhost_stage2_cpp_diff.py` は strict mode を正本にします。
-- `tools/check_selfhost_stage2_sample_parity.py --skip-build` は `selfhost/py2cpp_stage2.out` を使った full sample parity の canonical command です。representative diff と違い、`sample/py` 全件の transpile + compile + run parity を見ます。
-- `tools/check_selfhost_direct_compile.py` は `sample/py` 全件を selfhost で変換して `g++ -fsyntax-only` まで見る、最短の compile regression gate です。
-
-失敗時の確認ポイント:
-- `build.all.log` の `error:` を先に分類し、型系（`std::any` / `optional`）と構文系（未lowering）を分ける。
-- `selfhost/py2cpp.cpp` の該当行に対して、元の `src/backends/cpp/cli.py` や generated runtime (`src/runtime/cpp/generated/**`) の ABI が value/ref-first 契約を壊していないか確認する。
-- `sample/py/18_mini_language_interpreter.py` のような host/selfhost diff は、selfhost binary を rebuild せずに runtime serializer だけ直したときにも起こりうる。`src/pytra/std/json.py` や generated runtime を直したら `python3 tools/build_selfhost.py` を再実行する。
-
-## CodeEmitter 作業時の変換チェック
-
-`CodeEmitter` を段階的に改修するときは、各ステップごとに次を実行します。
-
-```bash
-python3 tools/check_py2cpp_transpile.py
-python3 tools/check_py2rs_transpile.py
-python3 tools/check_py2js_transpile.py
-```
-
-補足:
-- 既定では既知の負例フィクスチャ（`test/fixtures/signature/ng_*.py` と `test/fixtures/typing/any_class_alias.py`）を除外して判定します。
-- 負例も含めて確認したい場合は `--include-expected-failures` を付けます。
+は [開発運用ガイド](./dev-operations.md) に移しました。
 
 ## 共通の制約と注意点
 
