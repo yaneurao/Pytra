@@ -73,6 +73,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `ExprParser` token と import metadata carrier に `_sh_make_expr_token()` / `_sh_make_import_binding()` を追加し、source-of-truth 側の tokenizer/import-binding raw carrier を helper 正本へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] module root 末尾の import-resolution metadata に `_sh_make_import_symbol_binding()` / `_sh_make_qualified_symbol_ref()` を追加し、`import_symbols` / `qualified_symbol_refs` の inline carrier 組み立てを helper 経由へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_make_module_source_span()` / `_sh_make_import_resolution_meta()` / `_sh_make_module_meta()` を追加し、`_sh_make_module_root()` 内に残っていた module-level carrier の直 dict 組み立ても helper 経由へ寄せた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_make_import_symbol_binding()` を pre-scan / import registration / module parse 全経路に適用し、source-of-truth 側の import symbol metadata carrier を raw dict 代入なしで統一した。`test_east_core.py` には再流入 guard を追加し、tracked selfhost test は誤って tracked mirror 前提を置いていた箇所を整理した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
