@@ -20,12 +20,13 @@ from toolchain.compiler.backend_registry import (
 )
 from toolchain.compiler.typed_boundary import compiler_root_module_id
 from toolchain.compiler.typed_boundary import coerce_module_artifact
-from toolchain.compiler.typed_boundary import export_module_artifact_any
+from toolchain.compiler.typed_boundary import module_artifact_text
 from toolchain.compiler.typed_boundary import export_program_artifact_any
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
 from toolchain.link import LINK_OUTPUT_SCHEMA
+from toolchain.link import LinkedProgramModule
 from toolchain.link import load_linked_output_bundle
 from backends.cpp.emitter.multifile_writer import write_multi_file_cpp
 from pytra.std import argparse
@@ -161,35 +162,29 @@ def _is_link_output_doc(root: json.JsonObj) -> bool:
 
 
 def _entry_linked_module(
-    linked_modules: tuple[Any, ...],
+    linked_modules: tuple[LinkedProgramModule, ...],
     entry_modules: list[str] | tuple[str, ...],
 ) -> dict[str, Any]:
     entry_set = {item for item in entry_modules if isinstance(item, str)}
     for module in linked_modules:
-        module_id = getattr(module, "module_id", "")
-        is_entry = bool(getattr(module, "is_entry", False))
-        east_doc = getattr(module, "east_doc", {})
-        if is_entry and isinstance(module_id, str) and module_id in entry_set and isinstance(east_doc, dict):
-            return east_doc
+        if module.is_entry and module.module_id in entry_set:
+            return module.east_doc
     raise RuntimeError("linked entry module not found")
 
 
 def _entry_source_path(
-    linked_modules: tuple[Any, ...],
+    linked_modules: tuple[LinkedProgramModule, ...],
     entry_modules: list[str] | tuple[str, ...],
 ) -> Path:
     entry_set = {item for item in entry_modules if isinstance(item, str)}
     for module in linked_modules:
-        module_id = getattr(module, "module_id", "")
-        source_path = getattr(module, "source_path", "")
-        is_entry = bool(getattr(module, "is_entry", False))
-        if is_entry and isinstance(module_id, str) and module_id in entry_set and isinstance(source_path, str):
-            return Path(source_path)
+        if module.is_entry and module.module_id in entry_set and module.source_path != "":
+            return Path(module.source_path)
     return Path("main.py")
 
 
 def _emit_cpp_linked_program(
-    linked_modules: tuple[Any, ...],
+    linked_modules: tuple[LinkedProgramModule, ...],
     entry_modules: list[str] | tuple[str, ...],
     output_root: Path,
     emitter_options: dict[str, object],
@@ -198,15 +193,11 @@ def _emit_cpp_linked_program(
     entry_path = Path("")
     entry_set = {item for item in entry_modules if isinstance(item, str)}
     for module in linked_modules:
-        module_id = getattr(module, "module_id", "")
-        source_path = getattr(module, "source_path", "")
-        east_doc = getattr(module, "east_doc", {})
-        is_entry = bool(getattr(module, "is_entry", False))
-        if not isinstance(module_id, str) or module_id == "" or not isinstance(east_doc, dict):
+        if module.module_id == "":
             continue
-        module_path = Path(source_path) if isinstance(source_path, str) and source_path != "" else Path(module_id + ".py")
-        module_east_map[str(module_path)] = east_doc
-        if is_entry and module_id in entry_set:
+        module_path = Path(module.source_path) if module.source_path != "" else Path(module.module_id + ".py")
+        module_east_map[str(module_path)] = module.east_doc
+        if module.is_entry and module.module_id in entry_set:
             entry_path = module_path
     if entry_path == Path(""):
         raise RuntimeError("linked C++ entry module not found")
@@ -329,9 +320,7 @@ def main(argv: list[str] | None = None) -> int:
         is_entry=True,
     )
     module_carrier = coerce_module_artifact(module_artifact)
-    module_artifact_dict = export_module_artifact_any(module_artifact)
-    module_text_any = module_artifact_dict.get("text", module_carrier.text)
-    module_text = module_text_any if isinstance(module_text_any, str) else module_carrier.text
+    module_text = module_artifact_text(module_artifact)
     program_modules = list(collect_program_modules(module_carrier))
     program_artifact = build_program_artifact(
         spec,
