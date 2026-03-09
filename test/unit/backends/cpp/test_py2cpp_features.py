@@ -301,6 +301,34 @@ def sin(x: float) -> float:
         self.assertIn("object value = make_object(_json_obj_require(this->raw, key));", cpp_txt)
         self.assertNotIn("JsonValue(py_dict_get(this->raw, key))", cpp_txt)
 
+    def test_emit_runtime_cpp_pathlib_uses_std_get_for_tuple_unpack(self) -> None:
+        rel_src = Path("src/pytra/std/pathlib.py")
+        cpp_out = ROOT / "src/runtime/cpp/generated/std/pathlib.cpp"
+
+        cp = self._run_subprocess_with_timeout(
+            [
+                "python3",
+                "src/py2x.py",
+                "--target",
+                "cpp",
+                str(rel_src),
+                "--emit-runtime-cpp",
+            ],
+            cwd=ROOT,
+            timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+            label="emit-runtime-cpp pathlib tuple unpack",
+        )
+        self.assertEqual(cp.returncode, 0, msg=cp.stderr)
+        cpp_txt = cpp_out.read_text(encoding="utf-8")
+        self.assertIn("::std::get<0>(__tuple_1);", cpp_txt)
+        self.assertIn("::std::get<1>(__tuple_1);", cpp_txt)
+        self.assertIn("::std::get<0>(__tuple_2);", cpp_txt)
+        self.assertIn("::std::get<1>(__tuple_2);", cpp_txt)
+        self.assertNotIn("py_at(__tuple_1, 0)", cpp_txt)
+        self.assertNotIn("py_at(__tuple_1, 1)", cpp_txt)
+        self.assertNotIn("py_at(__tuple_2, 0)", cpp_txt)
+        self.assertNotIn("py_at(__tuple_2, 1)", cpp_txt)
+
     def test_emit_stmt_fallback_works_when_dynamic_hooks_disabled(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         emitter.set_dynamic_hooks_enabled(False)

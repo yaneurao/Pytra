@@ -2,9 +2,10 @@
 // source: src/pytra/std/pathlib.py
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.h"
-#include "runtime/cpp/core/scope_exit.h"
 
 #include "runtime/cpp/generated/std/pathlib.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 #include "pytra/std/glob.h"
 #include "pytra/std/os.h"
@@ -36,7 +37,7 @@ namespace pytra::std::pathlib {
     }
 
     Path Path::parent() {
-            auto parent_txt = pytra::std::os_path::dirname(this->_value);
+            str parent_txt = pytra::std::os_path::dirname(this->_value);
             if (parent_txt == "")
                 parent_txt = ".";
             return Path(parent_txt);
@@ -44,12 +45,12 @@ namespace pytra::std::pathlib {
 
     rc<list<Path>> Path::parents() {
             rc<list<Path>> out = rc_list_from_value(list<Path>{});
-            str current = py_to_string(pytra::std::os_path::dirname(this->_value));
+            str current = pytra::std::os_path::dirname(this->_value);
             while (true) {
                 if (current == "")
                     current = ".";
                 py_append(out, Path(current));
-                str next_current = py_to_string(pytra::std::os_path::dirname(current));
+                str next_current = pytra::std::os_path::dirname(current);
                 if (next_current == "")
                     next_current = ".";
                 if (next_current == current)
@@ -65,15 +66,15 @@ namespace pytra::std::pathlib {
 
     str Path::suffix() {
             auto __tuple_1 = pytra::std::os_path::splitext(pytra::std::os_path::basename(this->_value));
-            auto _ = py_at(__tuple_1, 0);
-            auto ext = py_at(__tuple_1, 1);
+            str _ = ::std::get<0>(__tuple_1);
+            str ext = ::std::get<1>(__tuple_1);
             return ext;
     }
 
     str Path::stem() {
             auto __tuple_2 = pytra::std::os_path::splitext(pytra::std::os_path::basename(this->_value));
-            auto root = py_at(__tuple_2, 0);
-            auto _ = py_at(__tuple_2, 1);
+            str root = ::std::get<0>(__tuple_2);
+            str _ = ::std::get<1>(__tuple_2);
             return root;
     }
 
@@ -116,7 +117,7 @@ namespace pytra::std::pathlib {
     }
 
     rc<list<Path>> Path::glob(const str& pattern) {
-            rc<list<str>> paths = py_to<rc<list<str>>>(pytra::std::glob::glob(pytra::std::os_path::join(this->_value, pattern)));
+            rc<list<str>> paths = rc_list_from_value(pytra::std::glob::glob(pytra::std::os_path::join(this->_value, pattern)));
             rc<list<Path>> out = rc_list_from_value(list<Path>{});
             for (str p : rc_list_ref(paths)) {
                 py_append(out, Path(p));

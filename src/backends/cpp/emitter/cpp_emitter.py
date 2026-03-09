@@ -1649,6 +1649,13 @@ class CppEmitter(
         attr = self.any_to_str(fn_node.get("attr"))
         if attr == "":
             return ""
+        owner_rendered = self.render_expr(owner_node)
+        owner_ctx = self.resolve_attribute_owner_context(owner_node, owner_rendered)
+        owner_mod = canonical_runtime_module_id(self.any_dict_get_str(owner_ctx, "module", ""))
+        if owner_mod != "":
+            ret = self.normalize_type_name(self._module_function_return_type(owner_mod, attr))
+            if ret != "":
+                return ret
         owner_t = self.normalize_type_name(self.get_expr_type(owner_node))
         owner_candidates = self._expand_runtime_class_candidates(owner_t)
         owner_t = owner_candidates[0] if len(owner_candidates) > 0 else self._strip_rc_wrapper(owner_t)

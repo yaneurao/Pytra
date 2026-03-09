@@ -523,16 +523,10 @@ class CppStatementEmitter:
             if not rhs_is_tuple:
                 value_node = self.any_to_dict_or_empty(stmt.get("value"))
                 if self._node_kind_from_dict(value_node) == "Call":
-                    fn_node = self.any_to_dict_or_empty(value_node.get("func"))
-                    fn_name = ""
-                    if self._node_kind_from_dict(fn_node) == "Name":
-                        fn_name = self.any_to_str(fn_node.get("id"))
-                    if fn_name != "":
-                        fn_name = self.rename_if_reserved(fn_name, self.reserved_words, self.rename_prefix, self.renamed_symbols)
-                        ret_t = self.function_return_types.get(fn_name, "")
-                        if ret_t.startswith("tuple[") and ret_t.endswith("]"):
-                            rhs_is_tuple = True
-                            tuple_elem_types = self.split_generic(ret_t[6:-1])
+                    ret_t = self.normalize_type_name(self._infer_call_expr_type(value_node))
+                    if ret_t.startswith("tuple[") and ret_t.endswith("]"):
+                        rhs_is_tuple = True
+                        tuple_elem_types = self.split_generic(ret_t[6:-1])
             struct_bind_targets = self._resolve_assign_struct_bind_targets(
                 stmt,
                 lhs_elems,
