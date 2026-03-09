@@ -509,7 +509,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_enumerate_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_enumerate_call_expr", 1)[1].split(
-            "def _sh_lookup_noncpp_attr_runtime_call",
+            "def _sh_annotate_stdlib_function_call_expr",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -522,6 +522,22 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('payload["iterable_trait"] = "yes" if elem_t != "unknown" else "unknown"', postfix_text)
         self.assertNotIn('payload["iter_protocol"] = "static_range"', postfix_text)
         self.assertNotIn('payload["iter_element_type"] = elem_t', postfix_text)
+
+    def test_core_source_routes_stdlib_function_metadata_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_annotate_stdlib_function_call_expr", 1)[1].split(
+            "def _sh_lookup_noncpp_attr_runtime_call",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn("lookup_stdlib_function_runtime_binding(fn_name)", helper_text)
+        self.assertIn("lookup_stdlib_function_return_type(fn_name)", helper_text)
+        self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
+        self.assertIn('_sh_annotate_stdlib_function_call_expr(', postfix_text)
+        self.assertNotIn("mod_id, runtime_symbol = lookup_stdlib_function_runtime_binding(fn_name)", postfix_text)
+        self.assertNotIn("sig_ret = lookup_stdlib_function_return_type(fn_name)", postfix_text)
+        self.assertNotIn('payload["resolved_type"] = sig_ret', postfix_text)
 
     def test_core_source_centralizes_noncpp_attr_runtime_lookup(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
