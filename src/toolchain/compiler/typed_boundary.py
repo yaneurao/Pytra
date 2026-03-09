@@ -128,6 +128,22 @@ def export_layer_options_carrier(options: "LayerOptionsCarrier") -> dict[str, Co
     return dict(options.values)
 
 
+def export_layer_options_any(
+    options: object,
+    *,
+    layer: str = "",
+) -> dict[str, CompilerOptionScalar]:
+    if not isinstance(options, LayerOptionsCarrier):
+        to_legacy = getattr(options, "to_legacy_dict", None)
+        if callable(to_legacy):
+            legacy_options = to_legacy()
+            if isinstance(legacy_options, dict):
+                options = legacy_options
+    return export_layer_options_carrier(
+        options if isinstance(options, LayerOptionsCarrier) else coerce_layer_options(layer, options)
+    )
+
+
 def export_backend_spec_carrier(carrier: "BackendSpecCarrier") -> dict[str, object]:
     return {
         "target_lang": carrier.target_lang,
@@ -151,6 +167,16 @@ def export_resolved_backend_spec(spec: "ResolvedBackendSpec") -> dict[str, objec
     out["program_writer"] = spec.program_writer_impl
     out["runtime_hook"] = spec.runtime_hook_impl
     return out
+
+
+def export_resolved_backend_spec_any(spec: object) -> dict[str, object]:
+    if not isinstance(spec, (ResolvedBackendSpec, dict)):
+        to_legacy = getattr(spec, "to_legacy_dict", None)
+        if callable(to_legacy):
+            legacy_spec = to_legacy()
+            if isinstance(legacy_spec, dict):
+                spec = legacy_spec
+    return export_resolved_backend_spec(coerce_backend_spec(spec))
 
 
 def export_module_artifact_carrier(module: "ModuleArtifactCarrier") -> dict[str, object]:
