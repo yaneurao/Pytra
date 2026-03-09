@@ -8,7 +8,7 @@ from typing import Any
 from toolchain.compiler.backend_registry import (
     apply_runtime_hook_typed as apply_runtime_hook,
     build_program_artifact_typed as build_program_artifact,
-    collect_program_modules,
+    collect_program_modules_typed as collect_program_modules,
     default_output_path,
     emit_module_typed as emit_module,
     get_program_writer_typed as get_program_writer,
@@ -18,6 +18,9 @@ from toolchain.compiler.backend_registry import (
     optimize_ir_typed as optimize_ir,
     resolve_layer_options_typed as resolve_layer_options,
 )
+from toolchain.compiler.typed_boundary import coerce_module_artifact
+from toolchain.compiler.typed_boundary import export_module_artifact_carrier
+from toolchain.compiler.typed_boundary import export_program_artifact_carrier
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
@@ -335,16 +338,14 @@ def main(argv: list[str] | None = None) -> int:
         module_id=module_id,
         is_entry=True,
     )
-    if hasattr(module_artifact, "to_legacy_dict"):
-        module_artifact_dict = module_artifact.to_legacy_dict()
-        module_text = getattr(module_artifact, "text", "")
-    else:
-        module_artifact_dict = dict(module_artifact) if isinstance(module_artifact, dict) else {}
-        text_any = module_artifact_dict.get("text", "")
-        module_text = text_any if isinstance(text_any, str) else ""
+    module_carrier = coerce_module_artifact(module_artifact)
+    module_artifact_dict = export_module_artifact_carrier(module_carrier)
+    module_text_any = module_artifact_dict.get("text", module_carrier.text)
+    module_text = module_text_any if isinstance(module_text_any, str) else module_carrier.text
+    program_modules = list(collect_program_modules(module_carrier))
     program_artifact = build_program_artifact(
         spec,
-        collect_program_modules(module_artifact_dict),
+        program_modules,
         program_id=module_id,
         entry_modules=[module_id],
         layout_mode="single_file",
@@ -352,10 +353,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     writer = get_program_writer(spec)
     if callable(writer):
-        if hasattr(program_artifact, "to_legacy_dict"):
-            writer_program_artifact = program_artifact.to_legacy_dict()
-        else:
-            writer_program_artifact = program_artifact if isinstance(program_artifact, dict) else {}
+        writer_program_artifact = export_program_artifact_carrier(program_artifact)
         _ = writer(writer_program_artifact, output_path, {})
     else:
         output_path.parent.mkdir(parents=True, exist_ok=True)

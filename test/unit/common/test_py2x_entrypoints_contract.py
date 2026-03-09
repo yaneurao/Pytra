@@ -206,6 +206,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
 
     def test_typed_backend_specs_preserve_legacy_metadata(self) -> None:
         py2x_src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        ir2lang_src = (ROOT / "src" / "ir2lang.py").read_text(encoding="utf-8")
         host_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry.py").read_text(encoding="utf-8")
         static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
 
@@ -218,6 +219,18 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn(").to_legacy_dict()", py2x_src)
         self.assertNotIn("program_artifact_any = program_artifact.to_legacy_dict()", py2x_src)
         self.assertNotIn("normalized_modules.append(item.to_legacy_dict())", py2x_src)
+
+        self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact", ir2lang_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_carrier", ir2lang_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_carrier", ir2lang_src)
+        self.assertIn("collect_program_modules_typed as collect_program_modules", ir2lang_src)
+        self.assertIn("module_carrier = coerce_module_artifact(module_artifact)", ir2lang_src)
+        self.assertIn("module_artifact_dict = export_module_artifact_carrier(module_carrier)", ir2lang_src)
+        self.assertIn("program_modules = list(collect_program_modules(module_carrier))", ir2lang_src)
+        self.assertIn("writer_program_artifact = export_program_artifact_carrier(program_artifact)", ir2lang_src)
+        self.assertNotIn("hasattr(module_artifact, \"to_legacy_dict\")", ir2lang_src)
+        self.assertNotIn("module_artifact.to_legacy_dict()", ir2lang_src)
+        self.assertNotIn("program_artifact.to_legacy_dict()", ir2lang_src)
 
         self.assertIn(
             "doc = east_doc if isinstance(east_doc, dict) else export_compiler_root_document(coerce_compiler_root_document(east_doc))",
@@ -336,6 +349,16 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(
             typed_boundary.export_module_artifact_carrier(module),
             module.to_legacy_dict(),
+        )
+        program = typed_boundary.build_program_artifact_carrier(
+            host_spec,
+            [module],
+            program_id="pkg.demo",
+            entry_modules=["pkg.demo"],
+        )
+        self.assertEqual(
+            typed_boundary.export_program_artifact_carrier(program),
+            program.to_legacy_dict(),
         )
 
     def test_build_program_artifact_preserves_helper_kind_metadata(self) -> None:

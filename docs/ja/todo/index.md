@@ -105,6 +105,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] host/static registry の legacy `resolve_layer_options()` と host `_normalize_backend_spec()` も `export_layer_options_carrier()` / `export_resolved_backend_spec()` 経由へ寄せ、残っていた inline `.to_legacy_dict()` を helper seam に揃えた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] host/static registry の legacy `resolve_layer_options()` と host `_normalize_backend_spec()` も `export_layer_options_carrier()` / `export_resolved_backend_spec()` 経由へ寄せ、残っていた inline `.to_legacy_dict()` を helper seam に揃えた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `ModuleArtifactCarrier` / `ProgramArtifactCarrier` も `export_*_artifact_carrier()` 正本へ寄せ、host/static backend registry の `emit_module()` / `build_program_artifact()` / `collect_program_modules()` が `to_legacy_dict()` を直接呼ばない形に揃えた。`test_py2x_entrypoints_contract.py` では helper export と legacy adapter の等価性、ならびに host/static source が新 helper を使うことを固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/ir2lang.py` でも writer 前の artifact 正規化を `coerce_module_artifact()` / `export_*_artifact_carrier()` に切り替え、inline `.to_legacy_dict()` と `hasattr(..., "to_legacy_dict")` 分岐を撤去した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
