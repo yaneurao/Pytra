@@ -24,7 +24,6 @@ from toolchain.compiler.typed_boundary import copy_module_metadata
 from toolchain.compiler.typed_boundary import execute_emit_module_with_spec
 from toolchain.compiler.typed_boundary import execute_lower_ir_with_spec
 from toolchain.compiler.typed_boundary import execute_optimize_ir_with_spec
-from toolchain.compiler.typed_boundary import export_compiler_root_document_any
 from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any
 from toolchain.compiler.typed_boundary import export_layer_options_any
 from toolchain.compiler.typed_boundary import export_module_artifact_any
