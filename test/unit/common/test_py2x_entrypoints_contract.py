@@ -397,6 +397,13 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIs(typed_boundary.coerce_compiler_root_document(doc), doc)
 
     def test_export_compiler_root_document_matches_legacy_adapter(self) -> None:
+        class _LegacyCarrierAdapter:
+            def __init__(self, payload: dict[str, object]) -> None:
+                self._payload = payload
+
+            def to_legacy_dict(self) -> dict[str, object]:
+                return dict(self._payload)
+
         raw_doc = {
             "kind": "Module",
             "body": [],
@@ -447,6 +454,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             typed_boundary.export_layer_options_any(opts),
             typed_boundary.export_layer_options_carrier(opts),
         )
+        self.assertEqual(
+            typed_boundary.export_layer_options_any(_LegacyCarrierAdapter(opts.to_legacy_dict()), layer="emitter"),
+            typed_boundary.export_layer_options_carrier(opts),
+        )
         host_registry._SPEC_CACHE.clear()
         host_spec = host_registry.get_backend_spec_typed("cpp")
         static_spec = static_registry.get_backend_spec_typed("cpp")
@@ -466,8 +477,16 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             typed_boundary.export_resolved_backend_spec_any(static_spec),
             typed_boundary.export_resolved_backend_spec(static_spec),
         )
+        self.assertEqual(
+            typed_boundary.export_resolved_backend_spec_any(_LegacyCarrierAdapter(host_spec.to_legacy_dict())),
+            typed_boundary.export_resolved_backend_spec(host_spec),
+        )
         self.assertEqual(typed_boundary.backend_spec_target(host_spec), "cpp")
         self.assertEqual(typed_boundary.backend_spec_target(static_spec), "cpp")
+        self.assertEqual(
+            typed_boundary.backend_spec_target(_LegacyCarrierAdapter(host_spec.to_legacy_dict())),
+            "cpp",
+        )
         self.assertEqual(typed_boundary.backend_spec_target({"target_lang": "rs", "extension": ".rs"}), "rs")
         self.assertEqual(
             typed_boundary.compiler_root_module_id(

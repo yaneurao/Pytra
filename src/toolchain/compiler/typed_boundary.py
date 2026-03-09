@@ -83,6 +83,16 @@ def _callable_key(fn: object) -> str:
     return name if isinstance(name, str) else ""
 
 
+def _legacy_dict_adapter(value: object) -> dict[str, object] | None:
+    to_legacy = getattr(value, "to_legacy_dict", None)
+    if not callable(to_legacy):
+        return None
+    legacy = to_legacy()
+    if isinstance(legacy, dict):
+        return legacy
+    return None
+
+
 def _meta_dispatch_mode(raw_doc: dict[str, object]) -> str:
     meta_any = raw_doc.get("meta", {})
     if not isinstance(meta_any, dict):
@@ -134,11 +144,9 @@ def export_layer_options_any(
     layer: str = "",
 ) -> dict[str, CompilerOptionScalar]:
     if not isinstance(options, LayerOptionsCarrier):
-        to_legacy = getattr(options, "to_legacy_dict", None)
-        if callable(to_legacy):
-            legacy_options = to_legacy()
-            if isinstance(legacy_options, dict):
-                options = legacy_options
+        legacy_options = _legacy_dict_adapter(options)
+        if legacy_options is not None:
+            options = legacy_options
     return export_layer_options_carrier(
         options if isinstance(options, LayerOptionsCarrier) else coerce_layer_options(layer, options)
     )
@@ -171,21 +179,17 @@ def export_resolved_backend_spec(spec: "ResolvedBackendSpec") -> dict[str, objec
 
 def export_resolved_backend_spec_any(spec: object) -> dict[str, object]:
     if not isinstance(spec, (ResolvedBackendSpec, dict)):
-        to_legacy = getattr(spec, "to_legacy_dict", None)
-        if callable(to_legacy):
-            legacy_spec = to_legacy()
-            if isinstance(legacy_spec, dict):
-                spec = legacy_spec
+        legacy_spec = _legacy_dict_adapter(spec)
+        if legacy_spec is not None:
+            spec = legacy_spec
     return export_resolved_backend_spec(coerce_backend_spec(spec))
 
 
 def backend_spec_target(spec: object) -> str:
     if not isinstance(spec, (ResolvedBackendSpec, dict)):
-        to_legacy = getattr(spec, "to_legacy_dict", None)
-        if callable(to_legacy):
-            legacy_spec = to_legacy()
-            if isinstance(legacy_spec, dict):
-                spec = legacy_spec
+        legacy_spec = _legacy_dict_adapter(spec)
+        if legacy_spec is not None:
+            spec = legacy_spec
     return coerce_backend_spec(spec).carrier.target_lang
 
 
