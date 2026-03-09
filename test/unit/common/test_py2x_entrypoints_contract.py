@@ -229,29 +229,28 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
 
         self.assertIn("from toolchain.compiler.typed_boundary import export_compiler_root_document", py2x_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import coerce_program_artifact", py2x_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_carrier", py2x_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", py2x_src)
         self.assertIn("return export_compiler_root_document(", py2x_src)
-        self.assertIn("program_carrier = coerce_program_artifact(", py2x_src)
-        self.assertIn("program_artifact_any = export_program_artifact_carrier(program_carrier)", py2x_src)
+        self.assertIn("program_artifact_any = export_program_artifact_any(", py2x_src)
         self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact", py2x_src)
         self.assertIn("module_carrier = coerce_module_artifact(module_artifact)", py2x_src)
         self.assertIn("list(collect_program_modules_typed(module_carrier))", py2x_src)
         self.assertIn("fallback_target=spec_target", py2x_src)
         self.assertNotIn(").to_legacy_dict()", py2x_src)
         self.assertNotIn("program_artifact_any = program_artifact.to_legacy_dict()", py2x_src)
+        self.assertNotIn("program_carrier = coerce_program_artifact(", py2x_src)
         self.assertNotIn("if isinstance(program_artifact, dict):", py2x_src)
         self.assertNotIn("hasattr(program_artifact, \"to_legacy_dict\")", py2x_src)
         self.assertNotIn("hasattr(item, \"to_legacy_dict\")", py2x_src)
 
         self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact", ir2lang_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_carrier", ir2lang_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_carrier", ir2lang_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", ir2lang_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", ir2lang_src)
         self.assertIn("collect_program_modules_typed as collect_program_modules", ir2lang_src)
         self.assertIn("module_carrier = coerce_module_artifact(module_artifact)", ir2lang_src)
-        self.assertIn("module_artifact_dict = export_module_artifact_carrier(module_carrier)", ir2lang_src)
+        self.assertIn("module_artifact_dict = export_module_artifact_any(module_artifact)", ir2lang_src)
         self.assertIn("program_modules = list(collect_program_modules(module_carrier))", ir2lang_src)
-        self.assertIn("writer_program_artifact = export_program_artifact_carrier(program_artifact)", ir2lang_src)
+        self.assertIn("writer_program_artifact = export_program_artifact_any(program_artifact)", ir2lang_src)
         self.assertNotIn("hasattr(module_artifact, \"to_legacy_dict\")", ir2lang_src)
         self.assertNotIn("module_artifact.to_legacy_dict()", ir2lang_src)
         self.assertNotIn("program_artifact.to_legacy_dict()", ir2lang_src)
@@ -400,6 +399,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             typed_boundary.export_module_artifact_carrier(module),
             module.to_legacy_dict(),
         )
+        self.assertEqual(
+            typed_boundary.export_module_artifact_any(module),
+            typed_boundary.export_module_artifact_carrier(module),
+        )
         program = typed_boundary.build_program_artifact_carrier(
             host_spec,
             [module],
@@ -409,6 +412,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(
             typed_boundary.export_program_artifact_carrier(program),
             program.to_legacy_dict(),
+        )
+        self.assertEqual(
+            typed_boundary.export_program_artifact_any(program),
+            typed_boundary.export_program_artifact_carrier(program),
         )
         helper_program = typed_boundary.coerce_program_artifact(
             {

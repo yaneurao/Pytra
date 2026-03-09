@@ -17,9 +17,8 @@ from toolchain.compiler.backend_registry import lower_ir_typed
 from toolchain.compiler.backend_registry import optimize_ir_typed
 from toolchain.compiler.backend_registry import resolve_layer_options_typed
 from toolchain.compiler.typed_boundary import coerce_module_artifact
-from toolchain.compiler.typed_boundary import coerce_program_artifact
 from toolchain.compiler.typed_boundary import export_compiler_root_document
-from toolchain.compiler.typed_boundary import export_program_artifact_carrier
+from toolchain.compiler.typed_boundary import export_program_artifact_any
 from toolchain.compiler.transpile_cli import add_common_transpile_args, build_module_east_map, load_east3_document_typed
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
@@ -496,13 +495,12 @@ def main() -> int:
     )
     writer = get_program_writer_typed(spec)
     spec_target = spec.carrier.target_lang if not isinstance(spec, dict) else str(spec.get("target_lang", ""))
-    program_carrier = coerce_program_artifact(
+    program_artifact_any = export_program_artifact_any(
         program_artifact,
         fallback_target=spec_target,
         fallback_program_id=module_id,
         fallback_entry_modules=[module_id],
     )
-    program_artifact_any = export_program_artifact_carrier(program_carrier)
     if callable(writer):
         _ = writer(program_artifact_any, output_path, {})
     else:

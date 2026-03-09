@@ -19,8 +19,8 @@ from toolchain.compiler.backend_registry import (
     resolve_layer_options_typed as resolve_layer_options,
 )
 from toolchain.compiler.typed_boundary import coerce_module_artifact
-from toolchain.compiler.typed_boundary import export_module_artifact_carrier
-from toolchain.compiler.typed_boundary import export_program_artifact_carrier
+from toolchain.compiler.typed_boundary import export_module_artifact_any
+from toolchain.compiler.typed_boundary import export_program_artifact_any
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
@@ -339,7 +339,7 @@ def main(argv: list[str] | None = None) -> int:
         is_entry=True,
     )
     module_carrier = coerce_module_artifact(module_artifact)
-    module_artifact_dict = export_module_artifact_carrier(module_carrier)
+    module_artifact_dict = export_module_artifact_any(module_artifact)
     module_text_any = module_artifact_dict.get("text", module_carrier.text)
     module_text = module_text_any if isinstance(module_text_any, str) else module_carrier.text
     program_modules = list(collect_program_modules(module_carrier))
@@ -353,7 +353,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     writer = get_program_writer(spec)
     if callable(writer):
-        writer_program_artifact = export_program_artifact_carrier(program_artifact)
+        writer_program_artifact = export_program_artifact_any(program_artifact)
         _ = writer(writer_program_artifact, output_path, {})
     else:
         output_path.parent.mkdir(parents=True, exist_ok=True)
