@@ -113,6 +113,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` now guards `_sh_make_slice_node()` in the generated selfhost core too, so the postfix slice `Subscript` lane fails fast if the old inline `Slice` literals return.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` now also guards the generated selfhost class-field / enum-field / top-level-binding lane, so `_sh_make_assign_stmt()` / `_sh_make_ann_assign_stmt()` / `_sh_make_name_expr()` must remain in place and the old inline `Assign` / `AnnAssign` dicts fail fast if they return.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` now also guards the generated selfhost `Name` return / top-level `Expr` helper lane, so `return _sh_make_name_expr(...)` and `_sh_make_expr_stmt(...)` appends must remain in place and the old inline `Expr` dict append fails fast if it returns.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` now also guards the generated selfhost comprehension / `range(...)` helper call lane, so `_sh_make_comp_generator(...)` and `_sh_make_range_expr(...)` call sites must remain in place and the old inline generator / `RangeExpr` dicts fail fast if they return.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 
