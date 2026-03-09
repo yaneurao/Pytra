@@ -224,3 +224,74 @@ def type_expr_to_string(expr: dict[str, Any]) -> str:
 def normalize_type_text(raw_text: str, *, type_aliases: dict[str, str] | None = None) -> str:
     """Normalize an annotation string into the existing legacy type-text mirror."""
     return type_expr_to_string(parse_type_expr_text(raw_text, type_aliases=type_aliases))
+
+
+def _is_type_expr_payload(value: object) -> bool:
+    return isinstance(value, dict) and isinstance(value.get("kind"), str)
+
+
+def _sync_type_expr_pair(node: dict[str, Any], expr_key: str, mirror_key: str, path: str) -> None:
+    expr_obj = node.get(expr_key)
+    if not _is_type_expr_payload(expr_obj):
+        return
+    expected = type_expr_to_string(expr_obj)
+    mirror_obj = node.get(mirror_key)
+    if mirror_obj is None:
+        node[mirror_key] = expected
+        return
+    if not isinstance(mirror_obj, str):
+        raise RuntimeError(path + "." + mirror_key + " must be a string when " + expr_key + " is present")
+    actual = mirror_obj.strip()
+    if actual == "" or actual == "unknown":
+        node[mirror_key] = expected
+        return
+    if actual != expected:
+        raise RuntimeError(path + "." + mirror_key + " mismatch: " + actual + " != " + expected)
+
+
+def _sync_arg_type_expr_mirrors(node: dict[str, Any], path: str) -> None:
+    exprs_obj = node.get("arg_type_exprs")
+    if not isinstance(exprs_obj, dict):
+        return
+    arg_types_obj = node.get("arg_types")
+    if arg_types_obj is None:
+        arg_types_obj = {}
+        node["arg_types"] = arg_types_obj
+    if not isinstance(arg_types_obj, dict):
+        raise RuntimeError(path + ".arg_types must be a dict when arg_type_exprs is present")
+    for arg_name, expr_obj in exprs_obj.items():
+        if not isinstance(arg_name, str):
+            continue
+        if not _is_type_expr_payload(expr_obj):
+            raise RuntimeError(path + ".arg_type_exprs." + arg_name + " must be a TypeExpr object")
+        expected = type_expr_to_string(expr_obj)
+        mirror_obj = arg_types_obj.get(arg_name)
+        if mirror_obj is None:
+            arg_types_obj[arg_name] = expected
+            continue
+        if not isinstance(mirror_obj, str):
+            raise RuntimeError(path + ".arg_types." + arg_name + " must be a string")
+        actual = mirror_obj.strip()
+        if actual == "" or actual == "unknown":
+            arg_types_obj[arg_name] = expected
+            continue
+        if actual != expected:
+            raise RuntimeError(path + ".arg_types." + arg_name + " mismatch: " + actual + " != " + expected)
+
+
+def sync_type_expr_mirrors(doc: object, *, path: str = "$") -> object:
+    """Fill/validate legacy string mirrors from structured TypeExpr payloads in-place."""
+    if isinstance(doc, dict):
+        _sync_type_expr_pair(doc, "type_expr", "resolved_type", path)
+        _sync_type_expr_pair(doc, "annotation_type_expr", "annotation", path)
+        _sync_type_expr_pair(doc, "decl_type_expr", "decl_type", path)
+        _sync_type_expr_pair(doc, "return_type_expr", "return_type", path)
+        _sync_arg_type_expr_mirrors(doc, path)
+        for key, value in list(doc.items()):
+            if isinstance(key, str):
+                sync_type_expr_mirrors(value, path=path + "." + key)
+        return doc
+    if isinstance(doc, list):
+        for idx, item in enumerate(doc):
+            sync_type_expr_mirrors(item, path=path + "[" + str(idx) + "]")
+    return doc

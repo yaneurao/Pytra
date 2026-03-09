@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from toolchain.frontends.type_expr import sync_type_expr_mirrors
 from toolchain.ir.core import EastBuildError, convert_path, convert_source_to_east_with_backend
 from pytra.std import json
 from pytra.std.pathlib import Path
@@ -42,6 +43,7 @@ def _normalize_east_root(east: dict[str, Any]) -> dict[str, Any]:
         meta = meta_value
     east["meta"] = meta
     meta["dispatch_mode"] = _normalize_dispatch_mode(meta.get("dispatch_mode"))
+    sync_type_expr_mirrors(east)
     return east
 
 

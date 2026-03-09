@@ -32,6 +32,7 @@ from toolchain.frontends.runtime_template import validate_template_module
 from toolchain.frontends.runtime_symbol_index import lookup_runtime_call_adapter_kind
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 from toolchain.frontends.type_expr import parse_type_expr_text
+from toolchain.frontends.type_expr import sync_type_expr_mirrors
 from toolchain.frontends.type_expr import type_expr_to_string
 
 
@@ -7590,6 +7591,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     out["main_guard_body"] = main_stmts
     out["renamed_symbols"] = renamed_symbols
     out["meta"] = meta
+    sync_type_expr_mirrors(out)
     return validate_template_module(validate_runtime_abi_module(out))
 
 

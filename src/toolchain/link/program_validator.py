@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pytra.std import json
 
+from toolchain.frontends.type_expr import sync_type_expr_mirrors
 from toolchain.link.program_model import DISPATCH_MODES
 from toolchain.link.program_model import LINK_INPUT_SCHEMA
 from toolchain.link.program_model import LINK_OUTPUT_SCHEMA
@@ -162,7 +163,9 @@ def validate_raw_east3_doc(
         )
     if meta.get("linked_program_v1") is not None:
         raise RuntimeError("raw EAST3 must not contain meta.linked_program_v1: " + module_id)
-    return _to_raw_dict(east)
+    raw_doc = _to_raw_dict(east)
+    sync_type_expr_mirrors(raw_doc)
+    return raw_doc
 
 
 def validate_link_output_doc(doc_any: object) -> dict[str, object]:

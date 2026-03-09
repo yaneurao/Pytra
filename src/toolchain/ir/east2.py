@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from toolchain.frontends.type_expr import sync_type_expr_mirrors
+
 
 def is_east_module_root(east_doc: dict[str, object]) -> bool:
     """`Module` ルートかどうかを判定する。"""
@@ -17,4 +19,5 @@ def normalize_east1_to_east2_document(east_doc: dict[str, object]) -> dict[str, 
         stage_obj = east_doc.get("east_stage")
         if isinstance(stage_obj, int) and stage_obj == 1:
             east_doc["east_stage"] = 2
+        sync_type_expr_mirrors(east_doc)
     return east_doc
