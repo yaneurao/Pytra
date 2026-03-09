@@ -434,6 +434,320 @@ def _sh_make_ifexp_expr(
     }
 
 
+def _sh_make_attribute_expr(
+    source_span: dict[str, Any],
+    value: dict[str, Any],
+    attr: str,
+    *,
+    resolved_type: str = "unknown",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`Attribute` 式 node を構築する。"""
+    return {
+        "kind": "Attribute",
+        "source_span": source_span,
+        "resolved_type": resolved_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "value": value,
+        "attr": attr,
+    }
+
+
+def _sh_make_call_expr(
+    source_span: dict[str, Any],
+    func: dict[str, Any],
+    args: list[dict[str, Any]],
+    keywords: list[dict[str, Any]],
+    *,
+    resolved_type: str = "unknown",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`Call` 式 node を構築する。"""
+    return {
+        "kind": "Call",
+        "source_span": source_span,
+        "resolved_type": resolved_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "func": func,
+        "args": args,
+        "keywords": keywords,
+    }
+
+
+def _sh_make_slice_node(
+    lower: dict[str, Any] | None,
+    upper: dict[str, Any] | None,
+    step: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """`Slice` node を構築する。"""
+    return {"kind": "Slice", "lower": lower, "upper": upper, "step": step}
+
+
+def _sh_make_subscript_expr(
+    source_span: dict[str, Any],
+    value: dict[str, Any],
+    slice_node: dict[str, Any],
+    *,
+    resolved_type: str = "unknown",
+    repr_text: str = "",
+    lowered_kind: str = "",
+    lower: dict[str, Any] | None = None,
+    upper: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """`Subscript` 式 node を構築する。"""
+    node: dict[str, Any] = {
+        "kind": "Subscript",
+        "source_span": source_span,
+        "resolved_type": resolved_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "value": value,
+        "slice": slice_node,
+    }
+    if lowered_kind != "":
+        node["lowered_kind"] = lowered_kind
+    if lower is not None or lowered_kind == "SliceExpr":
+        node["lower"] = lower
+    if upper is not None or lowered_kind == "SliceExpr":
+        node["upper"] = upper
+    return node
+
+
+def _sh_make_comp_generator(
+    target: dict[str, Any],
+    iter_expr: dict[str, Any],
+    ifs: list[dict[str, Any]],
+    *,
+    is_async: bool = False,
+) -> dict[str, Any]:
+    """comprehension generator item を構築する。"""
+    return {
+        "target": target,
+        "iter": iter_expr,
+        "ifs": ifs,
+        "is_async": is_async,
+    }
+
+
+def _sh_make_list_expr(
+    source_span: dict[str, Any],
+    elements: list[dict[str, Any]],
+    *,
+    resolved_type: str = "",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`List` 式 node を構築する。"""
+    list_type = resolved_type
+    if list_type == "":
+        elem_type = "unknown"
+        if len(elements) > 0:
+            elem_type = str(elements[0].get("resolved_type", "unknown"))
+            for elem in elements[1:]:
+                if str(elem.get("resolved_type", "unknown")) != elem_type:
+                    elem_type = "unknown"
+                    break
+        list_type = f"list[{elem_type}]"
+    return {
+        "kind": "List",
+        "source_span": source_span,
+        "resolved_type": list_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "elements": elements,
+    }
+
+
+def _sh_make_set_expr(
+    source_span: dict[str, Any],
+    elements: list[dict[str, Any]],
+    *,
+    resolved_type: str = "",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`Set` 式 node を構築する。"""
+    set_type = resolved_type
+    if set_type == "":
+        elem_type = str(elements[0].get("resolved_type", "unknown")) if len(elements) > 0 else "unknown"
+        set_type = f"set[{elem_type}]"
+    return {
+        "kind": "Set",
+        "source_span": source_span,
+        "resolved_type": set_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "elements": elements,
+    }
+
+
+def _sh_make_dict_expr(
+    source_span: dict[str, Any],
+    *,
+    keys: list[dict[str, Any]] | None = None,
+    values: list[dict[str, Any]] | None = None,
+    entries: list[dict[str, Any]] | None = None,
+    resolved_type: str = "",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`Dict` 式 node を構築する。"""
+    dict_type = resolved_type
+    if entries is not None:
+        entry_nodes = entries
+        if dict_type == "":
+            key_type = "unknown"
+            value_type = "unknown"
+            if len(entry_nodes) > 0:
+                first_key = entry_nodes[0].get("key", {})
+                first_value = entry_nodes[0].get("value", {})
+                key_type = str(first_key.get("resolved_type", "unknown"))
+                value_type = str(first_value.get("resolved_type", "unknown"))
+            dict_type = f"dict[{key_type},{value_type}]"
+        return {
+            "kind": "Dict",
+            "source_span": source_span,
+            "resolved_type": dict_type,
+            "borrow_kind": "value",
+            "casts": [],
+            "repr": repr_text,
+            "entries": entry_nodes,
+        }
+
+    key_nodes = keys if keys is not None else []
+    value_nodes = values if values is not None else []
+    if dict_type == "":
+        key_type = "unknown"
+        value_type = "unknown"
+        if len(key_nodes) > 0 and len(value_nodes) > 0:
+            key_type = str(key_nodes[0].get("resolved_type", "unknown"))
+            value_type = str(value_nodes[0].get("resolved_type", "unknown"))
+        dict_type = f"dict[{key_type},{value_type}]"
+    return {
+        "kind": "Dict",
+        "source_span": source_span,
+        "resolved_type": dict_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "keys": key_nodes,
+        "values": value_nodes,
+    }
+
+
+def _sh_make_list_comp_expr(
+    source_span: dict[str, Any],
+    elt: dict[str, Any],
+    generators: list[dict[str, Any]],
+    *,
+    resolved_type: str = "",
+    repr_text: str = "",
+    lowered_kind: str | None = None,
+) -> dict[str, Any]:
+    """`ListComp` 式 node を構築する。"""
+    list_type = resolved_type if resolved_type != "" else f"list[{str(elt.get('resolved_type', 'unknown'))}]"
+    node: dict[str, Any] = {
+        "kind": "ListComp",
+        "source_span": source_span,
+        "resolved_type": list_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "elt": elt,
+        "generators": generators,
+    }
+    if lowered_kind is not None:
+        node["lowered_kind"] = lowered_kind
+    return node
+
+
+def _sh_make_dict_comp_expr(
+    source_span: dict[str, Any],
+    key: dict[str, Any],
+    value: dict[str, Any],
+    generators: list[dict[str, Any]],
+    *,
+    resolved_type: str = "",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`DictComp` 式 node を構築する。"""
+    dict_type = resolved_type
+    if dict_type == "":
+        dict_type = f"dict[{key.get('resolved_type', 'unknown')},{value.get('resolved_type', 'unknown')}]"
+    return {
+        "kind": "DictComp",
+        "source_span": source_span,
+        "resolved_type": dict_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "key": key,
+        "value": value,
+        "generators": generators,
+    }
+
+
+def _sh_make_set_comp_expr(
+    source_span: dict[str, Any],
+    elt: dict[str, Any],
+    generators: list[dict[str, Any]],
+    *,
+    resolved_type: str = "",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`SetComp` 式 node を構築する。"""
+    set_type = resolved_type if resolved_type != "" else f"set[{str(elt.get('resolved_type', 'unknown'))}]"
+    return {
+        "kind": "SetComp",
+        "source_span": source_span,
+        "resolved_type": set_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "elt": elt,
+        "generators": generators,
+    }
+
+
+def _sh_make_range_expr(
+    source_span: dict[str, Any] | None,
+    start: dict[str, Any],
+    stop: dict[str, Any],
+    step: dict[str, Any],
+    *,
+    repr_text: str = "",
+    range_mode: str = "",
+) -> dict[str, Any]:
+    """`RangeExpr` node を構築する。"""
+    mode = range_mode
+    if mode == "":
+        step_const_obj: Any = None
+        if isinstance(step, dict):
+            step_const_obj = step.get("value")
+        if step_const_obj == 1:
+            mode = "ascending"
+        elif step_const_obj == -1:
+            mode = "descending"
+        else:
+            mode = "dynamic"
+    return {
+        "kind": "RangeExpr",
+        "source_span": source_span,
+        "resolved_type": "range",
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text if repr_text != "" else "range(...)",
+        "start": start,
+        "stop": stop,
+        "step": step,
+        "range_mode": mode,
+    }
+
+
 def _sh_make_assign_stmt(
     source_span: dict[str, Any],
     target: dict[str, Any],
@@ -3389,16 +3703,13 @@ class _ShExprParser:
                                     noncpp_module_attr_runtime_owner,
                                     attr_name,
                                 )
-                node = {
-                    "kind": "Attribute",
-                    "source_span": self._node_span(s, e),
-                    "resolved_type": attr_t,
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": self._src_slice(s, e),
-                    "value": owner_expr,
-                    "attr": attr_name,
-                }
+                node = _sh_make_attribute_expr(
+                    self._node_span(s, e),
+                    owner_expr,
+                    attr_name,
+                    resolved_type=attr_t,
+                    repr_text=self._src_slice(s, e),
+                )
                 if attr_runtime_call != "":
                     node["lowered_kind"] = "BuiltinAttr"
                     node["runtime_call"] = attr_runtime_call
@@ -3516,17 +3827,14 @@ class _ShExprParser:
                                 call_ret = "None"
                 elif isinstance(node, dict) and node.get("kind") == "Lambda":
                     call_ret = str(node.get("return_type", "unknown"))
-                payload: dict[str, Any] = {
-                    "kind": "Call",
-                    "source_span": self._node_span(s, e),
-                    "resolved_type": call_ret,
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": self._src_slice(s, e),
-                    "func": node,
-                    "args": args,
-                    "keywords": keywords,
-                }
+                payload = _sh_make_call_expr(
+                    self._node_span(s, e),
+                    node,
+                    args,
+                    keywords,
+                    resolved_type=call_ret,
+                    repr_text=self._src_slice(s, e),
+                )
                 stdlib_fn_runtime_call = lookup_stdlib_function_runtime_call(fn_name) if fn_name != "" else ""
                 stdlib_symbol_runtime_call = (
                     lookup_stdlib_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)
@@ -3805,19 +4113,16 @@ class _ShExprParser:
                     rtok = self._eat("]")
                     s = int(node["source_span"]["col"]) - self.col_base
                     e = rtok["e"]
-                    node = {
-                        "kind": "Subscript",
-                        "source_span": self._node_span(s, e),
-                        "resolved_type": node.get("resolved_type", "unknown"),
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": self._src_slice(s, e),
-                        "value": node,
-                        "slice": {"kind": "Slice", "lower": None, "upper": up, "step": None},
-                        "lowered_kind": "SliceExpr",
-                        "lower": None,
-                        "upper": up,
-                    }
+                    node = _sh_make_subscript_expr(
+                        self._node_span(s, e),
+                        node,
+                        _sh_make_slice_node(None, up),
+                        resolved_type=str(node.get("resolved_type", "unknown")),
+                        repr_text=self._src_slice(s, e),
+                        lowered_kind="SliceExpr",
+                        lower=None,
+                        upper=up,
+                    )
                     continue
                 first = self._parse_ifexp()
                 if self._cur()["k"] == ":":
@@ -3828,34 +4133,28 @@ class _ShExprParser:
                     rtok = self._eat("]")
                     s = int(node["source_span"]["col"]) - self.col_base
                     e = rtok["e"]
-                    node = {
-                        "kind": "Subscript",
-                        "source_span": self._node_span(s, e),
-                        "resolved_type": node.get("resolved_type", "unknown"),
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": self._src_slice(s, e),
-                        "value": node,
-                        "slice": {"kind": "Slice", "lower": first, "upper": up, "step": None},
-                        "lowered_kind": "SliceExpr",
-                        "lower": first,
-                        "upper": up,
-                    }
+                    node = _sh_make_subscript_expr(
+                        self._node_span(s, e),
+                        node,
+                        _sh_make_slice_node(first, up),
+                        resolved_type=str(node.get("resolved_type", "unknown")),
+                        repr_text=self._src_slice(s, e),
+                        lowered_kind="SliceExpr",
+                        lower=first,
+                        upper=up,
+                    )
                     continue
                 rtok = self._eat("]")
                 s = int(node["source_span"]["col"]) - self.col_base
                 e = rtok["e"]
                 out_t = self._subscript_result_type(str(node.get("resolved_type", "unknown")))
-                node = {
-                    "kind": "Subscript",
-                    "source_span": self._node_span(s, e),
-                    "resolved_type": out_t,
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": self._src_slice(s, e),
-                    "value": node,
-                    "slice": first,
-                }
+                node = _sh_make_subscript_expr(
+                    self._node_span(s, e),
+                    node,
+                    first,
+                    resolved_type=out_t,
+                    repr_text=self._src_slice(s, e),
+                )
                 continue
             return node
 
@@ -4023,24 +4322,20 @@ class _ShExprParser:
             else:
                 end_node = iter_expr
 
-            generators.append({"target": target, "iter": iter_expr, "ifs": conds_norm, "is_async": False})
+            generators.append(_sh_make_comp_generator(target, iter_expr, conds_norm))
 
         self._restore_comp_target_types(snapshots)
         s = int(first["source_span"]["col"]) - self.col_base
         if not isinstance(end_node, dict):
             return first
         e = int(end_node["source_span"]["end_col"]) - self.col_base
-        return {
-            "kind": "ListComp",
-            "source_span": self._node_span(s, e),
-            "resolved_type": f"list[{first_norm.get('resolved_type', 'unknown')}]",
-            "borrow_kind": "value",
-            "casts": [],
-            "repr": self._src_slice(s, e),
-            "elt": first_norm,
-            "generators": generators,
-            "lowered_kind": "GeneratorArg",
-        }
+        return _sh_make_list_comp_expr(
+            self._node_span(s, e),
+            first_norm,
+            generators,
+            repr_text=self._src_slice(s, e),
+            lowered_kind="GeneratorArg",
+        )
 
     def _make_bin(self, left: dict[str, Any], op_sym: str, right: dict[str, Any]) -> dict[str, Any]:
         """二項演算ノードを構築し、数値昇格 cast も付与する。"""
@@ -4325,17 +4620,13 @@ class _ShExprParser:
                 end_node = ifs[-1] if len(ifs) > 0 else iter_expr
                 s = l["s"]
                 e = int(end_node["source_span"]["end_col"]) - self.col_base
-                return {
-                    "kind": "ListComp",
-                    "source_span": self._node_span(s, r["e"]),
-                    "resolved_type": f"list[{first.get('resolved_type', 'unknown')}]",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": self._src_slice(s, r["e"]),
-                    "elt": first,
-                    "generators": [{"target": target, "iter": iter_expr, "ifs": ifs, "is_async": False}],
-                    "lowered_kind": "GeneratorArg",
-                }
+                return _sh_make_list_comp_expr(
+                    self._node_span(s, r["e"]),
+                    first,
+                    [_sh_make_comp_generator(target, iter_expr, ifs)],
+                    repr_text=self._src_slice(s, r["e"]),
+                    lowered_kind="GeneratorArg",
+                )
             if self._cur()["k"] == ",":
                 elements = [first]
                 while self._cur()["k"] == ",":
@@ -4391,64 +4682,39 @@ class _ShExprParser:
                             if isinstance(ts, int) and isinstance(te, int):
                                 range_target_span = self._node_span(ts, te)
                         if len(rargs) == 1:
-                            start_node = {
-                                "kind": "Constant",
-                                "source_span": range_target_span,
-                                "resolved_type": "int64",
-                                "borrow_kind": "value",
-                                "casts": [],
-                                "repr": "0",
-                                "value": 0,
-                            }
+                            start_node = _sh_make_constant_expr(
+                                range_target_span,
+                                0,
+                                resolved_type="int64",
+                                repr_text="0",
+                            )
                             stop_node = rargs[0]
-                            step_node = {
-                                "kind": "Constant",
-                                "source_span": range_target_span,
-                                "resolved_type": "int64",
-                                "borrow_kind": "value",
-                                "casts": [],
-                                "repr": "1",
-                                "value": 1,
-                            }
+                            step_node = _sh_make_constant_expr(
+                                range_target_span,
+                                1,
+                                resolved_type="int64",
+                                repr_text="1",
+                            )
                         elif len(rargs) == 2:
                             start_node = rargs[0]
                             stop_node = rargs[1]
-                            step_node = {
-                                "kind": "Constant",
-                                "source_span": range_target_span,
-                                "resolved_type": "int64",
-                                "borrow_kind": "value",
-                                "casts": [],
-                                "repr": "1",
-                                "value": 1,
-                            }
+                            step_node = _sh_make_constant_expr(
+                                range_target_span,
+                                1,
+                                resolved_type="int64",
+                                repr_text="1",
+                            )
                         else:
                             start_node = rargs[0]
                             stop_node = rargs[1]
                             step_node = rargs[2]
-                        step_const_obj: Any = None
-                        if isinstance(step_node, dict):
-                            step_const_obj = step_node.get("value")
-                        step_const: int | None = None
-                        if isinstance(step_const_obj, int):
-                            step_const = int(step_const_obj)
-                        mode = "dynamic"
-                        if step_const == 1:
-                            mode = "ascending"
-                        elif step_const == -1:
-                            mode = "descending"
-                        iter_expr = {
-                            "kind": "RangeExpr",
-                            "source_span": iter_expr.get("source_span"),
-                            "resolved_type": "range",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": iter_expr.get("repr", "range(...)"),
-                            "start": start_node,
-                            "stop": stop_node,
-                            "step": step_node,
-                            "range_mode": mode,
-                        }
+                        iter_expr = _sh_make_range_expr(
+                            iter_expr.get("source_span"),
+                            start_node,
+                            stop_node,
+                            step_node,
+                            repr_text=str(iter_expr.get("repr", "range(...)")),
+                        )
                     ifs: list[dict[str, Any]] = []
                     while self._cur()["k"] == "NAME" and self._cur()["v"] == "if":
                         self._eat("NAME")
@@ -4491,22 +4757,12 @@ class _ShExprParser:
                             else:
                                 ifs_norm.append(cond)
                         self._restore_comp_target_types(snaps)
-                    return {
-                        "kind": "ListComp",
-                        "source_span": self._node_span(l["s"], r["e"]),
-                        "resolved_type": f"list[{str(first_norm.get('resolved_type', 'unknown'))}]",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": self._src_slice(l["s"], r["e"]),
-                        "elt": first_norm,
-                        "generators": [
-                            {
-                                "target": target,
-                                "iter": iter_expr,
-                                "ifs": ifs_norm,
-                            }
-                        ],
-                    }
+                    return _sh_make_list_comp_expr(
+                        self._node_span(l["s"], r["e"]),
+                        first_norm,
+                        [_sh_make_comp_generator(target, iter_expr, ifs_norm)],
+                        repr_text=self._src_slice(l["s"], r["e"]),
+                    )
 
                 elements.append(first)
                 while True:
@@ -4518,36 +4774,21 @@ class _ShExprParser:
                         continue
                     break
             r = self._eat("]")
-            et = "unknown"
-            if len(elements) > 0:
-                et = str(elements[0].get("resolved_type", "unknown"))
-                for e in elements[1:]:
-                    if str(e.get("resolved_type", "unknown")) != et:
-                        et = "unknown"
-                        break
-            return {
-                "kind": "List",
-                "source_span": self._node_span(l["s"], r["e"]),
-                "resolved_type": f"list[{et}]",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": self._src_slice(l["s"], r["e"]),
-                "elements": elements,
-            }
+            return _sh_make_list_expr(
+                self._node_span(l["s"], r["e"]),
+                elements,
+                repr_text=self._src_slice(l["s"], r["e"]),
+            )
         if tok["k"] == "{":
             l = self._eat("{")
             if self._cur()["k"] == "}":
                 r = self._eat("}")
-                return {
-                    "kind": "Dict",
-                    "source_span": self._node_span(l["s"], r["e"]),
-                    "resolved_type": "dict[unknown,unknown]",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": self._src_slice(l["s"], r["e"]),
-                    "keys": [],
-                    "values": [],
-                }
+                return _sh_make_dict_expr(
+                    self._node_span(l["s"], r["e"]),
+                    keys=[],
+                    values=[],
+                    repr_text=self._src_slice(l["s"], r["e"]),
+                )
             first = self._parse_ifexp()
             if self._cur()["k"] == ":":
                 keys = [first]
@@ -4626,24 +4867,13 @@ class _ShExprParser:
                     end_node = ifs_norm[-1] if len(ifs_norm) > 0 else iter_expr
                     end_col = int(end_node.get("source_span", {}).get("end_col", self.col_base))
                     r = self._eat("}")
-                    return {
-                        "kind": "DictComp",
-                        "source_span": self._node_span(l["s"], end_col - self.col_base),
-                        "resolved_type": f"dict[{key_node.get('resolved_type', 'unknown')},{val_node.get('resolved_type', 'unknown')}]",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": self._src_slice(l["s"], end_col - self.col_base),
-                        "key": key_node,
-                        "value": val_node,
-                        "generators": [
-                            {
-                                "target": target,
-                                "iter": iter_expr,
-                                "ifs": ifs_norm,
-                                "is_async": False,
-                            }
-                        ],
-                    }
+                    return _sh_make_dict_comp_expr(
+                        self._node_span(l["s"], end_col - self.col_base),
+                        key_node,
+                        val_node,
+                        [_sh_make_comp_generator(target, iter_expr, ifs_norm)],
+                        repr_text=self._src_slice(l["s"], end_col - self.col_base),
+                    )
                 while self._cur()["k"] == ",":
                     self._eat(",")
                     if self._cur()["k"] == "}":
@@ -4652,18 +4882,12 @@ class _ShExprParser:
                     self._eat(":")
                     vals.append(self._parse_ifexp())
                 r = self._eat("}")
-                kt = str(keys[0].get("resolved_type", "unknown")) if len(keys) > 0 else "unknown"
-                vt = str(vals[0].get("resolved_type", "unknown")) if len(vals) > 0 else "unknown"
-                return {
-                    "kind": "Dict",
-                    "source_span": self._node_span(l["s"], r["e"]),
-                    "resolved_type": f"dict[{kt},{vt}]",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": self._src_slice(l["s"], r["e"]),
-                    "keys": keys,
-                    "values": vals,
-                }
+                return _sh_make_dict_expr(
+                    self._node_span(l["s"], r["e"]),
+                    keys=keys,
+                    values=vals,
+                    repr_text=self._src_slice(l["s"], r["e"]),
+                )
             elements = [first]
             while self._cur()["k"] == ",":
                 self._eat(",")
@@ -4671,16 +4895,11 @@ class _ShExprParser:
                     break
                 elements.append(self._parse_ifexp())
             r = self._eat("}")
-            et = str(elements[0].get("resolved_type", "unknown")) if len(elements) > 0 else "unknown"
-            return {
-                "kind": "Set",
-                "source_span": self._node_span(l["s"], r["e"]),
-                "resolved_type": f"set[{et}]",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": self._src_slice(l["s"], r["e"]),
-                "elements": elements,
-            }
+            return _sh_make_set_expr(
+                self._node_span(l["s"], r["e"]),
+                elements,
+                repr_text=self._src_slice(l["s"], r["e"]),
+            )
         raise _make_east_build_error(
             kind="unsupported_syntax",
             message=f"self_hosted parser cannot parse expression token: {tok['k']}",
@@ -4765,29 +4984,19 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
             lowered_kind = "BuiltinCall" if fn_name in {"any", "all"} else None
             runtime_call = "py_any" if fn_name == "any" else ("py_all" if fn_name == "all" else "")
             semantic_tag = lookup_builtin_semantic_tag(fn_name)
-            return {
-                "kind": "Call",
-                "source_span": _sh_span(ln_no, col, col + len(raw)),
-                "resolved_type": "bool",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": txt,
-                "func": {
-                    "kind": "Name",
-                    "source_span": _sh_span(ln_no, col, col + len(fn_name)),
-                    "resolved_type": "unknown",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": fn_name,
-                    "id": fn_name,
-                },
-                "args": [lc],
-                "keywords": [],
-                "lowered_kind": lowered_kind,
-                "builtin_name": fn_name if lowered_kind is not None else None,
-                "runtime_call": runtime_call if lowered_kind is not None else None,
-                "semantic_tag": semantic_tag if lowered_kind is not None else None,
-            }
+            payload = _sh_make_call_expr(
+                _sh_span(ln_no, col, col + len(raw)),
+                _sh_make_name_expr(_sh_span(ln_no, col, col + len(fn_name)), fn_name, repr_text=fn_name),
+                [lc],
+                [],
+                resolved_type="bool",
+                repr_text=txt,
+            )
+            payload["lowered_kind"] = lowered_kind
+            payload["builtin_name"] = fn_name if lowered_kind is not None else None
+            payload["runtime_call"] = runtime_call if lowered_kind is not None else None
+            payload["semantic_tag"] = semantic_tag if lowered_kind is not None else None
+            return payload
 
     # Normalize single generator-argument calls into list-comp argument form.
     # Example: ", ".join(f(x) for x in items) -> ", ".join([f(x) for x in items])
@@ -4925,24 +5134,14 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
                 if_nodes.append(_sh_parse_expr_lowered(if_txt, ln_no=ln_no, col=col + txt.find(if_txt), name_types=dict(comp_types)))
             kt = str(key_node.get("resolved_type", "unknown"))
             vt = str(val_node.get("resolved_type", "unknown"))
-            return {
-                "kind": "DictComp",
-                "source_span": _sh_span(ln_no, col, col + len(raw)),
-                "resolved_type": f"dict[{kt},{vt}]",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": txt,
-                "key": key_node,
-                "value": val_node,
-                "generators": [
-                    {
-                        "target": target_node,
-                        "iter": iter_node,
-                        "ifs": if_nodes,
-                        "is_async": False,
-                    }
-                ],
-            }
+            return _sh_make_dict_comp_expr(
+                _sh_span(ln_no, col, col + len(raw)),
+                key_node,
+                val_node,
+                [_sh_make_comp_generator(target_node, iter_node, if_nodes)],
+                resolved_type=f"dict[{kt},{vt}]",
+                repr_text=txt,
+            )
 
     # set-comp support: {x for x in it} / {x for a, b in it if cond}
     if txt.startswith("{") and txt.endswith("}") and ":" not in txt and is_single_top_expr:
@@ -4975,23 +5174,12 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
             if_nodes: list[dict[str, Any]] = []
             if if_txt != "":
                 if_nodes.append(_sh_parse_expr_lowered(if_txt, ln_no=ln_no, col=col + txt.find(if_txt), name_types=dict(comp_types)))
-            return {
-                "kind": "SetComp",
-                "source_span": _sh_span(ln_no, col, col + len(raw)),
-                "resolved_type": f"set[{elt_node.get('resolved_type', 'unknown')}]",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": txt,
-                "elt": elt_node,
-                "generators": [
-                    {
-                        "target": target_node,
-                        "iter": iter_node,
-                        "ifs": if_nodes,
-                        "is_async": False,
-                    }
-                ],
-            }
+            return _sh_make_set_comp_expr(
+                _sh_span(ln_no, col, col + len(raw)),
+                elt_node,
+                [_sh_make_comp_generator(target_node, iter_node, if_nodes)],
+                repr_text=txt,
+            )
 
     # dict literal: {"a": 1, "b": 2}
     if txt.startswith("{") and txt.endswith("}") and ":" in txt:
@@ -5015,22 +5203,11 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
                         "value": _sh_parse_expr_lowered(vtxt, ln_no=ln_no, col=col + txt.find(vtxt), name_types=dict(name_types)),
                     }
                 )
-        kt = "unknown"
-        vt = "unknown"
-        if len(entries) > 0:
-            first_key: dict[str, Any] = entries[0]["key"]
-            first_value: dict[str, Any] = entries[0]["value"]
-            kt = str(first_key.get("resolved_type", "unknown"))
-            vt = str(first_value.get("resolved_type", "unknown"))
-        return {
-            "kind": "Dict",
-            "source_span": _sh_span(ln_no, col, col + len(raw)),
-            "resolved_type": f"dict[{kt},{vt}]",
-            "borrow_kind": "value",
-            "casts": [],
-            "repr": txt,
-            "entries": entries,
-        }
+        return _sh_make_dict_expr(
+            _sh_span(ln_no, col, col + len(raw)),
+            entries=entries,
+            repr_text=txt,
+        )
 
     # list-comp support: [expr for target in iter if cond] + chained for-clauses
     if txt.startswith("[") and txt.endswith("]") and is_single_top_expr:
@@ -5144,64 +5321,39 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
                     ):
                         rargs = list(iter_node.get("args", []))
                         if len(rargs) == 1:
-                            start_node = {
-                                "kind": "Constant",
-                                "source_span": _sh_span(ln_no, col, col),
-                                "resolved_type": "int64",
-                                "borrow_kind": "value",
-                                "casts": [],
-                                "repr": "0",
-                                "value": 0,
-                            }
+                            start_node = _sh_make_constant_expr(
+                                _sh_span(ln_no, col, col),
+                                0,
+                                resolved_type="int64",
+                                repr_text="0",
+                            )
                             stop_node = rargs[0]
-                            step_node = {
-                                "kind": "Constant",
-                                "source_span": _sh_span(ln_no, col, col),
-                                "resolved_type": "int64",
-                                "borrow_kind": "value",
-                                "casts": [],
-                                "repr": "1",
-                                "value": 1,
-                            }
+                            step_node = _sh_make_constant_expr(
+                                _sh_span(ln_no, col, col),
+                                1,
+                                resolved_type="int64",
+                                repr_text="1",
+                            )
                         elif len(rargs) == 2:
                             start_node = rargs[0]
                             stop_node = rargs[1]
-                            step_node = {
-                                "kind": "Constant",
-                                "source_span": _sh_span(ln_no, col, col),
-                                "resolved_type": "int64",
-                                "borrow_kind": "value",
-                                "casts": [],
-                                "repr": "1",
-                                "value": 1,
-                            }
+                            step_node = _sh_make_constant_expr(
+                                _sh_span(ln_no, col, col),
+                                1,
+                                resolved_type="int64",
+                                repr_text="1",
+                            )
                         else:
                             start_node = rargs[0]
                             stop_node = rargs[1]
                             step_node = rargs[2]
-                        step_const_obj: Any = None
-                        if isinstance(step_node, dict):
-                            step_const_obj = step_node.get("value")
-                        step_const: int | None = None
-                        if isinstance(step_const_obj, int):
-                            step_const = int(step_const_obj)
-                        mode = "dynamic"
-                        if step_const == 1:
-                            mode = "ascending"
-                        elif step_const == -1:
-                            mode = "descending"
-                        iter_node = {
-                            "kind": "RangeExpr",
-                            "source_span": iter_node.get("source_span"),
-                            "resolved_type": "range",
-                            "borrow_kind": "value",
-                            "casts": [],
-                            "repr": iter_node.get("repr", "range(...)"),
-                            "start": start_node,
-                            "stop": stop_node,
-                            "step": step_node,
-                            "range_mode": mode,
-                        }
+                        iter_node = _sh_make_range_expr(
+                            iter_node.get("source_span"),
+                            start_node,
+                            stop_node,
+                            step_node,
+                            repr_text=str(iter_node.get("repr", "range(...)")),
+                        )
 
                     comp_types = _sh_bind_comp_target_types(dict(comp_types), target_node, iter_node)
                     if_nodes: list[dict[str, Any]] = []
@@ -5235,14 +5387,7 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
                             )
                         )
 
-                    generators.append(
-                        {
-                            "target": target_node,
-                            "iter": iter_node,
-                            "ifs": if_nodes,
-                            "is_async": False,
-                        }
-                    )
+                    generators.append(_sh_make_comp_generator(target_node, iter_node, if_nodes))
                     if suffix_txt == "":
                         break
                     if not suffix_txt.startswith("for "):
@@ -5263,16 +5408,13 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
 
             elt_node = _sh_parse_expr_lowered(elt_txt, ln_no=ln_no, col=col + txt.find(elt_txt), name_types=dict(comp_types))
             elem_t = str(elt_node.get("resolved_type", "unknown"))
-            return {
-                "kind": "ListComp",
-                "source_span": _sh_span(ln_no, col, col + len(raw)),
-                "resolved_type": f"list[{elem_t}]",
-                "borrow_kind": "value",
-                "casts": [],
-                "repr": txt,
-                "elt": elt_node,
-                "generators": generators,
-            }
+            return _sh_make_list_comp_expr(
+                _sh_span(ln_no, col, col + len(raw)),
+                elt_node,
+                generators,
+                resolved_type=f"list[{elem_t}]",
+                repr_text=txt,
+            )
 
     # Very simple list-comp support: [x for x in <iter>]
     m_lc: re.Match | None = re.match(r"^\[\s*([A-Za-z_][A-Za-z0-9_]*)\s+for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+)\]$", txt)
@@ -5290,27 +5432,24 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
             elt_name,
             resolved_type=elem_t if elt_name == tgt_name else "unknown",
         )
-        return {
-            "kind": "ListComp",
-            "source_span": _sh_span(ln_no, col, col + len(raw)),
-            "resolved_type": f"list[{elem_t}]",
-            "borrow_kind": "value",
-            "casts": [],
-            "repr": txt,
-            "elt": elt_node,
-            "generators": [
-                {
-                    "target": _sh_make_name_expr(
+        return _sh_make_list_comp_expr(
+            _sh_span(ln_no, col, col + len(raw)),
+            elt_node,
+            [
+                _sh_make_comp_generator(
+                    _sh_make_name_expr(
                         _sh_span(ln_no, col, col + len(tgt_name)),
                         tgt_name,
                         resolved_type="unknown",
                     ),
-                    "iter": iter_node,
-                    "ifs": [],
-                }
+                    iter_node,
+                    [],
+                )
             ],
-            "lowered_kind": "ListCompSimple",
-        }
+            resolved_type=f"list[{elem_t}]",
+            repr_text=txt,
+            lowered_kind="ListCompSimple",
+        )
 
     if len(txt) >= 3 and txt[0] == "f" and txt[1] in {"'", '"'} and txt[-1] == txt[1]:
         return _sh_parse_expr(

@@ -43,6 +43,18 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("def _sh_make_compare_expr(", text)
         self.assertIn("def _sh_make_binop_expr(", text)
         self.assertIn("def _sh_make_ifexp_expr(", text)
+        self.assertIn("def _sh_make_attribute_expr(", text)
+        self.assertIn("def _sh_make_call_expr(", text)
+        self.assertIn("def _sh_make_slice_node(", text)
+        self.assertIn("def _sh_make_subscript_expr(", text)
+        self.assertIn("def _sh_make_comp_generator(", text)
+        self.assertIn("def _sh_make_list_expr(", text)
+        self.assertIn("def _sh_make_set_expr(", text)
+        self.assertIn("def _sh_make_dict_expr(", text)
+        self.assertIn("def _sh_make_list_comp_expr(", text)
+        self.assertIn("def _sh_make_dict_comp_expr(", text)
+        self.assertIn("def _sh_make_set_comp_expr(", text)
+        self.assertIn("def _sh_make_range_expr(", text)
         self.assertIn("def _sh_make_assign_stmt(", text)
         self.assertIn("def _sh_make_ann_assign_stmt(", text)
         self.assertIn("def _sh_make_module_root(", text)
@@ -669,6 +681,23 @@ def main() -> None:
         s_ifs = sc.get("generators", [{}])[0].get("ifs", [])
         self.assertEqual(len(d_ifs), 1)
         self.assertEqual(len(s_ifs), 1)
+
+    def test_list_comprehension_over_range_uses_range_expr(self) -> None:
+        src = """
+def main() -> list[int]:
+    return [x for x in range(3)]
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        list_comps = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "ListComp"]
+        self.assertEqual(len(list_comps), 1)
+        generators = list_comps[0].get("generators", [])
+        self.assertEqual(len(generators), 1)
+        iter_node = generators[0].get("iter", {})
+        self.assertEqual(iter_node.get("kind"), "RangeExpr")
+        self.assertEqual(iter_node.get("range_mode"), "ascending")
+        self.assertEqual(iter_node.get("start", {}).get("value"), 0)
+        self.assertEqual(iter_node.get("stop", {}).get("value"), 3)
+        self.assertEqual(iter_node.get("step", {}).get("value"), 1)
 
     def test_except_without_as_is_supported(self) -> None:
         src = """
