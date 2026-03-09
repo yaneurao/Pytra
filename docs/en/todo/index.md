@@ -60,6 +60,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_arg_node()` / `_sh_make_lambda_expr()` / `_sh_make_formatted_value_node()` / `_sh_make_joined_str_expr()` and moved checked-in node assembly for lambda args/body plus f-string fragments onto shared builders.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_arg_node()` / `_sh_make_lambda_expr()` / `_sh_make_formatted_value_node()` / `_sh_make_joined_str_expr()` and moved lambda args, `Lambda`, f-string fragments, and module-level bare `Expr` statements onto shared helpers too.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_raise_stmt()` / `_sh_make_pass_stmt()` / `_sh_make_return_stmt()` / `_sh_make_yield_stmt()` / `_sh_make_augassign_stmt()` / `_sh_make_swap_stmt()` and moved simple-statement assembly in the statement-block and class-body parsers onto shared helpers too.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Applied `_sh_make_import_alias()` / `_sh_make_import_stmt()` / `_sh_make_import_from_stmt()` / `_sh_make_if_stmt()` / `_sh_make_while_stmt()` / `_sh_make_except_handler()` / `_sh_make_try_stmt()` / `_sh_make_for_stmt()` / `_sh_make_for_range_stmt()` to the real statement-block and module-root assembly paths.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 

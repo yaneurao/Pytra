@@ -2982,16 +2982,14 @@ def _sh_parse_if_tail(
             name_types=dict(name_types),
             scope_label=scope_label,
         )
-        elif_items: list[dict[str, Any]] = []
-        elif_item: dict[str, Any] = {
-            "kind": "If",
-            "source_span": _sh_block_end_span(body_lines, t_no, t_ln.find("elif "), len(t_ln), k3),
-            "test": cond_expr2,
-            "body": _sh_parse_stmt_block(elif_block, name_types=dict(name_types), scope_label=scope_label),
-            "orelse": nested_orelse,
-        }
-        elif_items.append(elif_item)
-        return elif_items, k3
+        return [
+            _sh_make_if_stmt(
+                _sh_block_end_span(body_lines, t_no, t_ln.find("elif "), len(t_ln), k3),
+                cond_expr2,
+                _sh_parse_stmt_block(elif_block, name_types=dict(name_types), scope_label=scope_label),
+                orelse=nested_orelse,
+            )
+        ], k3
     return [], idx
 
 
@@ -5976,14 +5974,16 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 name_types=dict(name_types),
                 scope_label=scope_label,
             )
-            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                {
-                    "kind": "If",
-                    "source_span": _sh_block_end_span(body_lines, ln_no, ln_txt.find("if "), len(ln_txt), j),
-                    "test": cond_expr,
-                    "body": _sh_parse_stmt_block(then_block, name_types=dict(name_types), scope_label=scope_label),
-                    "orelse": else_stmt_list,
-                }
+            pending_blank_count = _sh_push_stmt_with_trivia(
+                stmts,
+                pending_leading_trivia,
+                pending_blank_count,
+                _sh_make_if_stmt(
+                    _sh_block_end_span(body_lines, ln_no, ln_txt.find("if "), len(ln_txt), j),
+                    cond_expr,
+                    _sh_parse_stmt_block(then_block, name_types=dict(name_types), scope_label=scope_label),
+                    orelse=else_stmt_list,
+                ),
             )
             skip = j - i - 1
             continue
@@ -6159,15 +6159,12 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                         "value": 0,
                     }
                     stop_node = rargs[0]
-                    step_node = {
-                        "kind": "Constant",
-                        "source_span": _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
-                        "resolved_type": "int64",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": "1",
-                        "value": 1,
-                    }
+                    step_node = _sh_make_constant_expr(
+                        _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
+                        1,
+                        resolved_type="int64",
+                        repr_text="1",
+                    )
                 elif len(rargs) == 2:
                     start_node = rargs[0]
                     stop_node = rargs[1]
@@ -6187,46 +6184,35 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 tgt = str(target_expr.get("id", ""))
                 if tgt != "":
                     name_types[tgt] = "int64"
-                step_const_obj: Any = None
-                if isinstance(step_node, dict):
-                    step_const_obj = step_node.get("value")
-                step_const: int | None = None
-                if isinstance(step_const_obj, int):
-                    step_const = int(step_const_obj)
-                mode = "dynamic"
-                if step_const == 1:
-                    mode = "ascending"
-                elif step_const == -1:
-                    mode = "descending"
-                pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                    {
-                        "kind": "ForRange",
-                        "source_span": _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
-                        "target": target_expr,
-                        "target_type": "int64",
-                        "start": start_node,
-                        "stop": stop_node,
-                        "step": step_node,
-                        "range_mode": mode,
-                        "body": _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
-                        "orelse": [],
-                    }
+                pending_blank_count = _sh_push_stmt_with_trivia(
+                    stmts,
+                    pending_leading_trivia,
+                    pending_blank_count,
+                    _sh_make_for_range_stmt(
+                        _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
+                        target_expr,
+                        start_node,
+                        stop_node,
+                        step_node,
+                        _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
+                    ),
                 )
                 skip = j - i - 1
                 continue
-            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                {
-                    "kind": "For",
-                    "source_span": _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
-                    "target": target_expr,
-                    "target_type": t_ty,
-                    "iter_mode": iter_mode,
-                    "iter_source_type": i_ty_norm if i_ty_norm != "" else "unknown",
-                    "iter_element_type": t_ty,
-                    "iter": iter_expr,
-                    "body": _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
-                    "orelse": [],
-                }
+            pending_blank_count = _sh_push_stmt_with_trivia(
+                stmts,
+                pending_leading_trivia,
+                pending_blank_count,
+                _sh_make_for_stmt(
+                    _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
+                    target_expr,
+                    iter_expr,
+                    _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
+                    target_type=t_ty,
+                    iter_mode=iter_mode,
+                    iter_source_type=i_ty_norm if i_ty_norm != "" else "unknown",
+                    iter_element_type=t_ty,
+                ),
             )
             skip = j - i - 1
             continue
@@ -6269,20 +6255,16 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 _sh_register_import_module(bind_name, mod_name)
                 if _sh_is_host_only_alias(bind_name):
                     continue
-                alias_item: dict[str, str | None] = {"name": mod_name, "asname": None}
-                if as_name_txt != "":
-                    alias_item["asname"] = as_name_txt
-                aliases.append(alias_item)
+                aliases.append(_sh_make_import_alias(mod_name, as_name_txt if as_name_txt != "" else None))
             if len(aliases) > 0:
                 pending_blank_count = _sh_push_stmt_with_trivia(
                     stmts,
                     pending_leading_trivia,
                     pending_blank_count,
-                    {
-                        "kind": "Import",
-                        "source_span": _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
-                        "names": aliases,
-                    },
+                    _sh_make_import_stmt(
+                        _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
+                        aliases,
+                    ),
                 )
             continue
 
@@ -6365,13 +6347,11 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     stmts,
                     pending_leading_trivia,
                     pending_blank_count,
-                    {
-                        "kind": "ImportFrom",
-                        "source_span": _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
-                        "module": mod_name,
-                        "names": [{"name": "*", "asname": None}],
-                        "level": 0,
-                    },
+                    _sh_make_import_from_stmt(
+                        _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
+                        mod_name,
+                        [_sh_make_import_alias("*")],
+                    ),
                 )
                 continue
             raw_parts: list[str] = []
@@ -6401,22 +6381,17 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 _sh_register_import_symbol(bind_name, mod_name, sym_name)
                 if _sh_is_host_only_alias(bind_name):
                     continue
-                alias_item: dict[str, str | None] = {"name": sym_name, "asname": None}
-                if as_name_txt != "":
-                    alias_item["asname"] = as_name_txt
-                aliases.append(alias_item)
+                aliases.append(_sh_make_import_alias(sym_name, as_name_txt if as_name_txt != "" else None))
             if len(aliases) > 0:
                 pending_blank_count = _sh_push_stmt_with_trivia(
                     stmts,
                     pending_leading_trivia,
                     pending_blank_count,
-                    {
-                        "kind": "ImportFrom",
-                        "source_span": _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
-                        "module": mod_name,
-                        "names": aliases,
-                        "level": 0,
-                    },
+                    _sh_make_import_from_stmt(
+                        _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
+                        mod_name,
+                        aliases,
+                    ),
                 )
             continue
 
@@ -6456,14 +6431,11 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 decl_type=str(ctx_expr.get("resolved_type", "unknown")),
             )
             close_expr = _sh_parse_expr_lowered(f"{as_name}.close()", ln_no=ln_no, col=as_col, name_types=dict(name_types))
-            try_stmt = {
-                "kind": "Try",
-                "source_span": _sh_block_end_span(body_lines, ln_no, ln_txt.find("with "), len(ln_txt), j),
-                "body": _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
-                "handlers": [],
-                "orelse": [],
-                "finalbody": [_sh_make_expr_stmt(close_expr, _sh_stmt_span(merged_line_end, ln_no, as_col, len(ln_txt)))],
-            }
+            try_stmt = _sh_make_try_stmt(
+                _sh_block_end_span(body_lines, ln_no, ln_txt.find("with "), len(ln_txt), j),
+                _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
+                finalbody=[_sh_make_expr_stmt(close_expr, _sh_stmt_span(merged_line_end, ln_no, as_col, len(ln_txt)))],
+            )
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, assign_stmt)
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, try_stmt)
             skip = j - i - 1
@@ -6481,14 +6453,15 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     source_span=_sh_span(ln_no, 0, len(ln_txt)),
                     hint="Add indented while-body.",
                 )
-            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                {
-                    "kind": "While",
-                    "source_span": _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
-                    "test": cond_expr,
-                    "body": _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
-                    "orelse": [],
-                }
+            pending_blank_count = _sh_push_stmt_with_trivia(
+                stmts,
+                pending_leading_trivia,
+                pending_blank_count,
+                _sh_make_while_stmt(
+                    _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
+                    cond_expr,
+                    _sh_parse_stmt_block(body_block, name_types=dict(name_types), scope_label=scope_label),
+                ),
             )
             skip = j - i - 1
             continue
@@ -6520,12 +6493,16 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                             ex_type_col = 0
                     h_body, k = _sh_collect_indented_block(body_lines, j + 1, indent)
                     handlers.append(
-                        {
-                            "kind": "ExceptHandler",
-                            "type": _sh_parse_expr_lowered(ex_type_txt, ln_no=h_no, col=ex_type_col, name_types=dict(name_types)),
-                            "name": ex_name,
-                            "body": _sh_parse_stmt_block(h_body, name_types=dict(name_types), scope_label=scope_label),
-                        }
+                        _sh_make_except_handler(
+                            _sh_parse_expr_lowered(
+                                ex_type_txt,
+                                ln_no=h_no,
+                                col=ex_type_col,
+                                name_types=dict(name_types),
+                            ),
+                            _sh_parse_stmt_block(h_body, name_types=dict(name_types), scope_label=scope_label),
+                            name=ex_name,
+                        )
                     )
                     j = k
                     continue
@@ -6535,15 +6512,16 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     j = k
                     continue
                 break
-            pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                {
-                    "kind": "Try",
-                    "source_span": _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
-                    "body": _sh_parse_stmt_block(try_body, name_types=dict(name_types), scope_label=scope_label),
-                    "handlers": handlers,
-                    "orelse": [],
-                    "finalbody": finalbody,
-                }
+            pending_blank_count = _sh_push_stmt_with_trivia(
+                stmts,
+                pending_leading_trivia,
+                pending_blank_count,
+                _sh_make_try_stmt(
+                    _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
+                    _sh_parse_stmt_block(try_body, name_types=dict(name_types), scope_label=scope_label),
+                    handlers=handlers,
+                    finalbody=finalbody,
+                ),
             )
             skip = j - i - 1
             continue
@@ -7306,18 +7284,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     source_file=filename,
                     source_line=i,
                 )
-                alias_item: dict[str, str | None] = {"name": mod_name, "asname": None}
-                if as_name_txt != "":
-                    alias_item["asname"] = as_name_txt
-                aliases.append(alias_item)
+                aliases.append(_sh_make_import_alias(mod_name, as_name_txt if as_name_txt != "" else None))
             if len(aliases) > 0:
-                body_items.append(
-                    {
-                        "kind": "Import",
-                        "source_span": _sh_span(i, 0, len(ln)),
-                        "names": aliases,
-                    }
-                )
+                body_items.append(_sh_make_import_stmt(_sh_span(i, 0, len(ln)), aliases))
             i = logical_end + 1
             continue
         if s.startswith("from "):
@@ -7443,13 +7412,11 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     source_line=i,
                 )
                 body_items.append(
-                    {
-                        "kind": "ImportFrom",
-                        "source_span": _sh_span(i, 0, len(ln)),
-                        "module": mod_name,
-                        "names": [{"name": "*", "asname": None}],
-                        "level": 0,
-                    }
+                    _sh_make_import_from_stmt(
+                        _sh_span(i, 0, len(ln)),
+                        mod_name,
+                        [_sh_make_import_alias("*")],
+                    )
                 )
                 i = logical_end + 1
                 continue
@@ -7498,19 +7465,14 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         "name": sym_name,
                     }
                     _sh_register_import_symbol(bind_name, mod_name, sym_name)
-                alias_item: dict[str, str | None] = {"name": sym_name, "asname": None}
-                if as_name_txt != "":
-                    alias_item["asname"] = as_name_txt
-                aliases.append(alias_item)
+                aliases.append(_sh_make_import_alias(sym_name, as_name_txt if as_name_txt != "" else None))
             if len(aliases) > 0:
                 body_items.append(
-                    {
-                        "kind": "ImportFrom",
-                        "source_span": _sh_span(i, 0, len(ln)),
-                        "module": mod_name,
-                        "names": aliases,
-                        "level": 0,
-                    }
+                    _sh_make_import_from_stmt(
+                        _sh_span(i, 0, len(ln)),
+                        mod_name,
+                        aliases,
+                    )
                 )
             i = logical_end + 1
             continue
