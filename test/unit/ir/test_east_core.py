@@ -640,7 +640,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_collection_ctor_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_collection_ctor_call_expr", 1)[1].split(
-            "def _sh_set_parse_context",
+            "def _sh_annotate_anyall_call_expr",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -662,6 +662,22 @@ class EastCoreTest(unittest.TestCase):
         )
         self.assertNotIn('runtime_call="bytes_ctor" if fn_name == "bytes" else "bytearray_ctor"', postfix_text)
         self.assertNotIn('runtime_call=fn_name + "_ctor"', postfix_text)
+
+    def test_core_source_routes_anyall_metadata_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_annotate_anyall_call_expr", 1)[1].split(
+            "def _sh_set_parse_context",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
+        self.assertIn('runtime_call="py_any" if fn_name == "any" else "py_all"', helper_text)
+        self.assertIn('module_id="pytra.built_in.predicates"', helper_text)
+        self.assertIn('_sh_annotate_anyall_call_expr(', postfix_text)
+        self.assertNotIn('elif fn_name == "any":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
+        self.assertNotIn('elif fn_name == "all":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
+        self.assertNotIn('runtime_call="py_any" if fn_name == "any" else "py_all"', postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
