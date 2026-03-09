@@ -161,7 +161,7 @@
 
 ## タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01] `py_runtime.h` の core 境界を再整理し、残存 helper を上流 / 専用lane へ戻す。
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01] `py_runtime.h` の core 境界を再整理し、残存 helper を上流 / 専用lane へ戻す。
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-01] `numeric_ops/zip_ops/contains`、typed helper、tuple helper、`type_id` wrapper の checked-in caller を棚卸しし、end state を分類する。
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-02] `spec-runtime` に反しない include ownership / upstream contract / non-goal を決定ログへ固定する。
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-01] C++ emitter / prelude / generated path の helper include 収集を拡張し、`zip` / `contains` / numeric helper を explicit include 化する。
@@ -171,8 +171,8 @@
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-03] typed list/dict mutation helper を object bridge 専用 surface まで縮め、typed lane は emitter direct lowering を優先する。
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-01] `type_id` registry / subtype / isinstance の ownership を `py_tid_*` 主体へ寄せ、`py_runtime.h` の wrapper を薄くする。
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] `test_cpp_runtime_type_id.py` と generated runtime caller を更新し、cyclic ownership が再混入しないよう guard を追加する。
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] `py_isinstance_of` fast path、`PyFile` alias などの small cleanup を片付ける。
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-02] representative test / parity / docs / archive を更新して閉じる。
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] `py_isinstance_of` fast path、`PyFile` alias などの small cleanup を片付ける。
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-02] representative test / parity / docs / archive を更新して閉じる。
 
 ## 決定ログ
 
@@ -197,3 +197,6 @@
 - 2026-03-09: `S4-01` として `py_runtime.h` には `py_sync_generated_user_type_registry()` だけを追加し、public `py_is_subtype` / `py_issubclass` / `py_isinstance` は local user registry を同期した上で `py_tid_*` へ委譲する薄い wrapper にした。`py_runtime_type_id(const object&)` は raw `PyObj::type_id()` primitive として core に残す。
 - 2026-03-09: `S4-02` として `test_cpp_runtime_type_id.py` に `py_tid_register_known_class_type(...)` を直接使う smoke を追加し、generated registry 単体でも pre-allocated user type_id、`py_tid_runtime_type_id(...)`、`py_tid_isinstance(...)` が成り立つことを固定した。
 - 2026-03-09: `S4-02` の runtime inventory guard は `test_cpp_runtime_iterable.py` へ追加し、generated `type_id.cpp` に `py_tid_register_known_class_type(...)` と `py_tid_is_subtype(py_runtime_type_id(...), ...)` が残ること、および `py_runtime.h` が `py_sync_generated_user_type_registry()` と `py_tid_register_known_class_type(...)` bridge を保持することを確認する。これで `py_tid_* -> py_is_subtype(...)` の逆参照が戻ると fail する。
+- 2026-03-09: `S5-01` では `gc.h` の `PyObj::py_isinstance_of(...)` virtual を削除した。checked-in override / caller が存在せず、public `py_isinstance(...)` も既に generated `py_tid_isinstance(...)` へ委譲しているため、この fast path は dead surface と判断した。
+- 2026-03-09: `S5-01` では `src/runtime/cpp/native/core/py_runtime.h` の `using PyFile = ...` alias も削除した。checked-in C++ runtime / generated caller / emitter は fully-qualified `pytra::runtime::cpp::base::PyFile` を使っており、alias を残す理由が無かった。
+- 2026-03-09: `S5-02` の representative verification として `test_cpp_runtime_iterable.py`、`test_cpp_runtime_type_id.py`、`test_py2cpp_features.py -k json`、`test_py2cpp_features.py -k argparse_extended_runtime`、`runtime_parity_check.py --targets cpp --case-root fixture`、`git diff --check` を通した。結果は parity `cases=3 pass=3 fail=0` で、本計画は archive へ移管できる状態になった。

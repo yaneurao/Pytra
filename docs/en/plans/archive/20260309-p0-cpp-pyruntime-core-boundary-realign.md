@@ -158,7 +158,7 @@ Reason:
 
 ## Breakdown
 
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01] Realign the `py_runtime.h` core boundary and move remaining helpers back upstream / to dedicated lanes.
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01] Realign the `py_runtime.h` core boundary and move remaining helpers back upstream / to dedicated lanes.
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-01] Inventory checked-in callers of `numeric_ops/zip_ops/contains`, typed helpers, tuple helpers, and `type_id` wrappers, then classify the end state.
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-02] Record include ownership, upstream contracts, and non-goals in the decision log so they match `spec-runtime`.
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-01] Extend helper-include collection in the C++ emitter / prelude / generated path so `zip`, `contains`, and numeric helpers are explicitly included.
@@ -168,8 +168,8 @@ Reason:
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-03] Shrink typed list/dict mutation helpers down to object-bridge-only surface, prioritizing direct emitter lowering for typed lanes.
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-01] Move ownership of `type_id` registry / subtype / isinstance logic to `py_tid_*`, and slim the wrappers in `py_runtime.h`.
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] Update `test_cpp_runtime_type_id.py` and generated runtime callers, and add a guard so cyclic ownership does not reappear.
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] Clean up small remaining surfaces such as the `py_isinstance_of` fast path and the `PyFile` alias.
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-02] Refresh representative tests / parity / docs / archive and close the task.
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] Clean up small remaining surfaces such as the `py_isinstance_of` fast path and the `PyFile` alias.
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-02] Refresh representative tests / parity / docs / archive and close the task.
 
 ## Decision Log
 
@@ -194,3 +194,6 @@ Reason:
 - 2026-03-09: Implemented `S4-01` by adding only `py_sync_generated_user_type_registry()` to `py_runtime.h`; public `py_is_subtype` / `py_issubclass` / `py_isinstance` now sync the local user registry and then delegate to generated `py_tid_*`. `py_runtime_type_id(const object&)` remains in `core` as the raw `PyObj::type_id()` primitive.
 - 2026-03-09: Implemented `S4-02` by adding a direct generated-lane smoke to `test_cpp_runtime_type_id.py`. It registers pre-allocated user type IDs through `py_tid_register_known_class_type(...)` and verifies `py_tid_runtime_type_id(...)` plus `py_tid_isinstance(...)` without going through the public wrapper path first.
 - 2026-03-09: The `S4-02` runtime inventory guard now lives in `test_cpp_runtime_iterable.py`. It asserts that generated `type_id.cpp` still contains `py_tid_register_known_class_type(...)` and `py_tid_is_subtype(py_runtime_type_id(...), ...)`, and that `py_runtime.h` still exposes `py_sync_generated_user_type_registry()` plus the `py_tid_register_known_class_type(...)` bridge. If `py_tid_*` starts reverse-calling `py_is_subtype(...)` again, the guard fails.
+- 2026-03-09: `S5-01` removed the `PyObj::py_isinstance_of(...)` virtual from `gc.h`. There are no checked-in overrides or callers left, and public `py_isinstance(...)` already delegates to generated `py_tid_isinstance(...)`, so the fast path was dead surface.
+- 2026-03-09: `S5-01` also removed `using PyFile = ...` from `src/runtime/cpp/native/core/py_runtime.h`. Checked-in C++ runtime code, generated callers, and the emitter already use the fully-qualified `pytra::runtime::cpp::base::PyFile`, so the alias had no remaining justification.
+- 2026-03-09: `S5-02` completed representative verification with `test_cpp_runtime_iterable.py`, `test_cpp_runtime_type_id.py`, `test_py2cpp_features.py -k json`, `test_py2cpp_features.py -k argparse_extended_runtime`, `runtime_parity_check.py --targets cpp --case-root fixture`, and `git diff --check`. Parity finished at `cases=3 pass=3 fail=0`, so this plan is ready to move into the archive.
