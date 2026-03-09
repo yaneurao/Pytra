@@ -543,6 +543,20 @@ static inline rc<PyListObj> obj_to_list_obj(const object& v) {
     return obj_to_rc<PyListObj>(v);
 }
 
+static inline list<object>& obj_to_list_ref_or_raise(object& v, const char* ctx = "obj_to_list_ref_or_raise") {
+    auto p = obj_to_list_obj(v);
+    if (p) return p->value;
+    const char* label = ctx != nullptr ? ctx : "obj_to_list_ref_or_raise";
+    throw ::std::runtime_error(::std::string(label) + ": object is not list");
+}
+
+static inline const list<object>& obj_to_list_ref_or_raise(const object& v, const char* ctx = "obj_to_list_ref_or_raise") {
+    const auto* p = obj_to_list_ptr(v);
+    if (p) return *p;
+    const char* label = ctx != nullptr ? ctx : "obj_to_list_ref_or_raise";
+    throw ::std::runtime_error(::std::string(label) + ": object is not list");
+}
+
 inline const list<object>* obj_to_set_ptr(const object& v) {
     if (const auto* p = py_obj_cast<PySetObj>(v)) return &(p->value);
     return nullptr;
@@ -901,6 +915,10 @@ static inline const T& py_at(const rc<list<T>>& v, int64 idx) {
     return py_list_at_ref(rc_list_ref(v), idx);
 }
 
+static inline object py_at(const object& v, int64 idx) {
+    return py_list_at_ref(obj_to_list_ref_or_raise(v, "py_at"), idx);
+}
+
 template <class T, class U>
 static inline void py_append(list<T>& v, const U& item) {
     py_list_append_mut(v, item);
@@ -909,6 +927,11 @@ static inline void py_append(list<T>& v, const U& item) {
 template <class T, class U>
 static inline void py_append(rc<list<T>>& v, const U& item) {
     py_list_append_mut(rc_list_ref(v), item);
+}
+
+template <class U>
+static inline void py_append(object& v, const U& item) {
+    py_list_append_mut(obj_to_list_ref_or_raise(v, "py_append"), item);
 }
 
 template <class T>
@@ -1016,6 +1039,11 @@ static inline void py_set_at(rc<list<T>>& v, I idx, const U& item) {
     py_list_set_at_mut(rc_list_ref(v), idx, item);
 }
 
+template <class I, class U>
+static inline void py_set_at(object& v, I idx, const U& item) {
+    py_list_set_at_mut(obj_to_list_ref_or_raise(v, "py_set_at"), idx, item);
+}
+
 template <class K, class V, class Q, class U>
 static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item) {
     const K k = [&]() -> K {
@@ -1091,9 +1119,23 @@ static inline void py_extend(rc<list<T>>& v, const U& items) {
     py_list_extend_mut(rc_list_ref(v), items);
 }
 
+static inline void py_extend(object& v, const list<object>& items) {
+    py_list_extend_mut(obj_to_list_ref_or_raise(v, "py_extend"), items);
+}
+
+static inline void py_extend(object& v, const object& items) {
+    py_list_extend_mut(
+        obj_to_list_ref_or_raise(v, "py_extend"),
+        obj_to_list_ref_or_raise(items, "py_extend"));
+}
+
 template <class T>
 static inline T py_pop(rc<list<T>>& v) {
     return py_list_pop_mut(rc_list_ref(v));
+}
+
+static inline object py_pop(object& v) {
+    return py_list_pop_mut(obj_to_list_ref_or_raise(v, "py_pop"));
 }
 
 template <class T>
@@ -1101,9 +1143,17 @@ static inline T py_pop(rc<list<T>>& v, int64 idx) {
     return py_list_pop_mut(rc_list_ref(v), idx);
 }
 
+static inline object py_pop(object& v, int64 idx) {
+    return py_list_pop_mut(obj_to_list_ref_or_raise(v, "py_pop"), idx);
+}
+
 template <class T>
 static inline void py_clear(rc<list<T>>& v) {
     py_list_clear_mut(rc_list_ref(v));
+}
+
+static inline void py_clear(object& v) {
+    py_list_clear_mut(obj_to_list_ref_or_raise(v, "py_clear"));
 }
 
 template <class T>
@@ -1111,9 +1161,17 @@ static inline void py_reverse(rc<list<T>>& v) {
     py_list_reverse_mut(rc_list_ref(v));
 }
 
+static inline void py_reverse(object& v) {
+    py_list_reverse_mut(obj_to_list_ref_or_raise(v, "py_reverse"));
+}
+
 template <class T>
 static inline void py_sort(rc<list<T>>& v) {
     py_list_sort_mut(rc_list_ref(v));
+}
+
+static inline void py_sort(object& v) {
+    py_list_sort_mut(obj_to_list_ref_or_raise(v, "py_sort"));
 }
 
 template <class T>
