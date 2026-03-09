@@ -166,8 +166,8 @@ int main() {
     assert(sum(list<int64>{1, 2, 3}) == 6);
     assert(py_min(int64(9), int64(3)) == 3);
     assert(py_max(int64(9), int64(3)) == 9);
-    assert(py_min(int64(9), int64(3), int64(5)) == 3);
-    assert(py_max(int64(9), int64(3), int64(5)) == 9);
+    assert(py_min(py_min(int64(9), int64(3)), int64(5)) == 3);
+    assert(py_max(py_max(int64(9), int64(3)), int64(5)) == 9);
     list<::std::tuple<int64, str>> zipped = zip(list<int64>{1, 2, 3}, list<str>{"a", "b"});
     assert(zipped.size() == 2);
     assert(::std::get<0>(zipped[0]) == 1);
@@ -304,6 +304,8 @@ int main() {
         self.assertNotIn("static inline T sum(const list<T>& values)", runtime_header)
         self.assertNotIn("static inline auto py_min(const A& a, const B& b)", runtime_header)
         self.assertNotIn("static inline auto py_max(const A& a, const B& b)", runtime_header)
+        self.assertNotIn("static inline auto py_min(const A& a, const B& b, const C& c, const Rest&... rest)", runtime_header)
+        self.assertNotIn("static inline auto py_max(const A& a, const B& b, const C& c, const Rest&... rest)", runtime_header)
         self.assertNotIn("static inline list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs)", runtime_header)
         self.assertNotIn("static inline list<T> sorted(const list<T>& values)", runtime_header)
         self.assertNotIn("static inline list<T> sorted(const set<T>& values)", runtime_header)

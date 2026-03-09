@@ -1554,14 +1554,4 @@ static inline void py_runtime_write_stdout(const str& text) {
     ::std::exit(static_cast<int>(code));
 }
 
-template <class A, class B, class C, class... Rest>
-static inline auto py_min(const A& a, const B& b, const C& c, const Rest&... rest) -> ::std::common_type_t<A, B, C, Rest...> {
-    return py_min(py_min(a, b), c, rest...);
-}
-
-template <class A, class B, class C, class... Rest>
-static inline auto py_max(const A& a, const B& b, const C& c, const Rest&... rest) -> ::std::common_type_t<A, B, C, Rest...> {
-    return py_max(py_max(a, b), c, rest...);
-}
-
 #endif  // PYTRA_BUILT_IN_PY_RUNTIME_H

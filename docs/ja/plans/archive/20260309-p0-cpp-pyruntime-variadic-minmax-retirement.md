@@ -52,14 +52,16 @@
 
 ## 3. タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01] variadic `py_min` / `py_max` を退役する。
-- [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S1-01] checked-in callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S1-02] fold 置換方針と non-goal を決定ログに固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S2-01] representative callsite を置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S2-02] regression / inventory guard を更新する。
-- [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S3-01] `py_runtime.h` から variadic wrapper を削除する。
-- [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S3-02] parity / docs / archive を更新して閉じる。
+- [x] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01] variadic `py_min` / `py_max` を退役する。
+- [x] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S1-01] checked-in callsite を棚卸しする。
+- [x] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S1-02] fold 置換方針と non-goal を決定ログに固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S2-01] representative callsite を置換する。
+- [x] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S2-02] regression / inventory guard を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S3-01] `py_runtime.h` から variadic wrapper を削除する。
+- [x] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S3-02] parity / docs / archive を更新して閉じる。
 
 ## 4. 決定ログ
 
 - 2026-03-09: 本計画は variadic wrapper のみを対象とし、2 引数版 `py_min` / `py_max` helper lane は非対象とする。
+- 2026-03-09: checked-in source を棚卸しすると、variadic `py_min` / `py_max` の direct callsite は `test_cpp_runtime_iterable.py` の 3 引数 smoke だけで、runtime / emitter / generated C++ には残っていなかった。
+- 2026-03-09: helper lane は増やさず、2 引数版 generated helper をネストした explicit fold (`py_min(py_min(a, b), c)`) を canonical 置換にする。

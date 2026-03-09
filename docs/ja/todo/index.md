@@ -32,12 +32,4 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01] `py_runtime.h` の variadic `py_min` / `py_max` を退役する。
-  - 文脈: [p0-cpp-pyruntime-variadic-minmax-retirement.md](../plans/p0-cpp-pyruntime-variadic-minmax-retirement.md)
-  - 進捗メモ: variadic wrapper を helper lane または explicit fold へ寄せる。
-  - [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S1-01] checked-in callsite を棚卸しする。
-  - [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S1-02] fold 置換方針と non-goal を決定ログに固定する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S2-01] representative callsite を置換する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S2-02] regression / inventory guard を更新する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S3-01] `py_runtime.h` から variadic wrapper を削除する。
-  - [ ] [ID: P0-CPP-PYRUNTIME-VARIADIC-MINMAX-01-S3-02] parity / docs / archive を更新して閉じる。
+- なし
