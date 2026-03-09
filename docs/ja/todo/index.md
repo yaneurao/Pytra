@@ -132,6 +132,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/ir/core.py` の `_sh_block_end_span()` / `_sh_stmt_span()` も multi-line span を `_sh_span(..., end_lineno=...)` 経由へ統一し、`test_east_core.py` で statement span helper が raw `source_span` dict を直返ししないことを固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` の generated residual guard helper を `stmt_callsite` / `helper_only` まで拡張し、statement wrapper 側の残存集合を `AnnAssign/Assign/Expr`、helper 定義専用の残存集合を `FunctionDef/ClassDef/Import/ImportFrom` として固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` の generated residual guard helper を `helper_only` / `stmt_callsite` まで拡張し、helper 定義専用残存を `ClassDef/FunctionDef/Import/ImportFrom`、statement wrapper 側の実 residual を `AnnAssign/Assign/Expr` として固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` の residual guard helper に `functions=` filter を追加し、generated core の residual を `_sh_parse_expr_lowered`、`_parse_primary`、`_sh_parse_stmt_block_mutable` 単位でも固定した。これで lowered residual `Call/Dict/Name/Tuple` と、statement block 非statement residual `Name/Tuple` を切り分けて監視できる。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
