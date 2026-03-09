@@ -12,8 +12,9 @@ from toolchain.compiler.typed_boundary import ProgramArtifactCarrier
 from toolchain.compiler.typed_boundary import ResolvedBackendSpec
 from toolchain.compiler.typed_boundary import build_program_artifact_carrier
 from toolchain.compiler.typed_boundary import coerce_backend_spec
-from toolchain.compiler.typed_boundary import coerce_module_artifact as coerce_module_artifact_carrier
+from toolchain.compiler.typed_boundary import coerce_ir_document
 from toolchain.compiler.typed_boundary import coerce_layer_options
+from toolchain.compiler.typed_boundary import coerce_module_artifact_or_none
 from toolchain.compiler.typed_boundary import copy_module_dependencies
 from toolchain.compiler.typed_boundary import copy_module_metadata
 from toolchain.compiler.typed_boundary import copy_program_writer_options
@@ -562,13 +563,6 @@ def _normalize_module_artifact_typed(
     )
 
 
-def _coerce_module_artifact(item: ModuleArtifactCarrier | dict[str, Any]) -> ModuleArtifactCarrier | None:
-    try:
-        return coerce_module_artifact_carrier(item)
-    except RuntimeError:
-        return None
-
-
 _normalize_backend_specs()
 
 
@@ -621,7 +615,7 @@ def lower_ir_typed(
         ir = fn(doc, export_layer_options_carrier(options))
     except TypeError:
         ir = fn(doc)
-    return ir if isinstance(ir, dict) else {}
+    return coerce_ir_document(ir)
 
 
 def lower_ir(spec: BackendSpec, east_doc: dict[str, Any], lower_options: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -646,7 +640,7 @@ def optimize_ir_typed(
         out = fn(ir, export_layer_options_carrier(options))
     except TypeError:
         out = fn(ir)
-    return out if isinstance(out, dict) else {}
+    return coerce_ir_document(out)
 
 
 def optimize_ir(spec: BackendSpec, ir: dict[str, Any], optimizer_options: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -670,7 +664,7 @@ def emit_module_typed(
     )
     request = EmitRequestCarrier(
         spec=runtime_spec.carrier,
-        ir_document=dict(ir) if isinstance(ir, dict) else {},
+        ir_document=coerce_ir_document(ir),
         output_path=output_path,
         emitter_options=options,
         module_id=module_id,
@@ -728,7 +722,7 @@ def build_program_artifact_typed(
     runtime_spec = _coerce_runtime_spec(spec)
     module_list: list[ModuleArtifactCarrier] = []
     for item in modules:
-        coerced = _coerce_module_artifact(item)
+        coerced = coerce_module_artifact_or_none(item)
         if coerced is not None:
             module_list.append(coerced)
     return build_program_artifact_carrier(
@@ -766,9 +760,8 @@ def build_program_artifact(
 
 
 def collect_program_modules_typed(module_artifact: ModuleArtifactCarrier | dict[str, Any]) -> tuple[ModuleArtifactCarrier, ...]:
-    try:
-        carrier = coerce_module_artifact_carrier(module_artifact)
-    except RuntimeError:
+    carrier = coerce_module_artifact_or_none(module_artifact)
+    if carrier is None:
         return ()
     return flatten_module_artifact_carrier(carrier)
 

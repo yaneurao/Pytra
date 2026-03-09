@@ -17,6 +17,7 @@ from toolchain.compiler.backend_registry import lower_ir_typed
 from toolchain.compiler.backend_registry import optimize_ir_typed
 from toolchain.compiler.backend_registry import resolve_layer_options_typed
 from toolchain.compiler.typed_boundary import backend_spec_target
+from toolchain.compiler.typed_boundary import compiler_root_module_id
 from toolchain.compiler.typed_boundary import coerce_module_artifact
 from toolchain.compiler.typed_boundary import export_compiler_root_document
 from toolchain.compiler.typed_boundary import export_program_artifact_any
@@ -341,17 +342,6 @@ def _entry_module_east_doc(program: LinkedProgram) -> dict[str, object]:
     raise RuntimeError("linked program entry module not found")
 
 
-def _module_id_from_east(east: dict[str, Any], output_path: Path) -> str:
-    meta_any = east.get("meta", {})
-    meta = meta_any if isinstance(meta_any, dict) else {}
-    module_id_any = meta.get("module_id")
-    if isinstance(module_id_any, str) and module_id_any.strip() != "":
-        return module_id_any.strip()
-    if output_path.stem != "":
-        return output_path.stem
-    return "module"
-
-
 def main() -> int:
     argv = sys.argv[1:] if isinstance(sys.argv, list) else []
     for arg in argv:
@@ -476,7 +466,7 @@ def main() -> int:
     validate_runtime_abi_target_support(east, target=target)
     ir = lower_ir_typed(spec, east, lower_options)
     ir = optimize_ir_typed(spec, ir, optimizer_options)
-    module_id = _module_id_from_east(east, output_path)
+    module_id = compiler_root_module_id(east, fallback_output_path=output_path)
     module_artifact = emit_module_typed(
         spec,
         ir,

@@ -189,6 +189,22 @@ def backend_spec_target(spec: object) -> str:
     return coerce_backend_spec(spec).carrier.target_lang
 
 
+def compiler_root_module_id(
+    doc: object,
+    *,
+    fallback_output_path: Path | None = None,
+) -> str:
+    root = coerce_compiler_root_document(doc)
+    meta_any = root.raw_module_doc.get("meta", {})
+    if isinstance(meta_any, dict):
+        module_id_any = meta_any.get("module_id")
+        if isinstance(module_id_any, str) and module_id_any.strip() != "":
+            return module_id_any.strip()
+    if fallback_output_path is not None and fallback_output_path.stem != "":
+        return fallback_output_path.stem
+    return "module"
+
+
 def export_module_artifact_carrier(module: "ModuleArtifactCarrier") -> dict[str, object]:
     out: dict[str, object] = {
         "module_id": module.module_id,
@@ -439,6 +455,10 @@ def coerce_backend_spec(raw_spec: object) -> ResolvedBackendSpec:
     raise RuntimeError("backend spec must be dict or ResolvedBackendSpec")
 
 
+def coerce_ir_document(raw: object) -> dict[str, object]:
+    return _copy_object_dict(raw)
+
+
 def copy_program_writer_options(raw: object) -> dict[str, object]:
     return _copy_object_dict(raw)
 
@@ -586,6 +606,13 @@ def coerce_module_artifact(module_artifact: object) -> ModuleArtifactCarrier:
             default_kind=str(module_artifact.get("kind", "user")) if isinstance(module_artifact.get("kind", "user"), str) else "user",
         )
     raise RuntimeError("module artifact must be dict or ModuleArtifactCarrier")
+
+
+def coerce_module_artifact_or_none(module_artifact: object) -> ModuleArtifactCarrier | None:
+    try:
+        return coerce_module_artifact(module_artifact)
+    except RuntimeError:
+        return None
 
 
 def coerce_program_artifact(
