@@ -93,6 +93,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native `lower_ir_typed()` / `optimize_ir_typed()` は no-op lane で `spec.to_legacy_dict()` / `lower_options.to_legacy_dict()` / `optimizer_options.to_legacy_dict()` を踏まず、typed selfhost path から legacy adapter を一段後退させた。`test_py2x_entrypoints_contract.py` では旧 delegate call の不在も固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native `lower_ir_typed()` / `optimize_ir_typed()` は `spec.to_legacy_dict()` と option carrier の再 boxing をやめ、現在の selfhost direct route 実装に合わせて `east.to_legacy_dict()` / `ir` をそのまま返す thin adapter に縮めた。`test_py2x_entrypoints_contract.py` で旧 round-trip の再流入を禁止し、`python3 tools/build_selfhost.py` でも非退行を確認した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native `transpile_cli.cpp` の host-Python direct route は `doc.to_legacy_dict()` を直叩きせず、`typed_boundary.export_compiler_root_document()` 経由の explicit export seam に切り替えた。`CompilerRootDocument::to_legacy_dict()` は互換 adapter として残しつつ、`test_py2x_entrypoints_contract.py` で埋め込み script の export helper 契約を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated selfhost core に `_sh_make_constant_expr()` / `_sh_make_if_stmt()` / `_sh_make_for_stmt()` / `_sh_make_for_range_stmt()` / `_sh_make_range_expr()` を追加し、`elif` tail、statement-level `if/for/range` fastpath、list-comprehension range fastpath の open-coded `make_object` dict 組み立てを helper 経由へ寄せた。`test_prepare_selfhost_source.py` でも旧 inline `If` / `For` / `ForRange` / `RangeExpr` の再流入を禁止した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
