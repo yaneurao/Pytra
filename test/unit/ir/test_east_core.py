@@ -268,7 +268,7 @@ class EastCoreTest(unittest.TestCase):
 
         self.assertIn('node = _sh_make_kind_carrier(kind)', node_helper_text)
         self.assertIn("node.update(fields)", node_helper_text)
-        self.assertIn('node = _sh_make_node(', helper_text)
+        self.assertIn('return _sh_make_node(', helper_text)
         self.assertIn("source_span=source_span", helper_text)
         self.assertIn("resolved_type=resolved_type", helper_text)
         self.assertIn("casts=[] if casts is None else casts", helper_text)
@@ -450,9 +450,9 @@ class EastCoreTest(unittest.TestCase):
         trivia_kinds = {kind for kind in raw_kinds if kind != "" and kind[0].islower()}
 
         self.assertIn('node = _sh_make_stmt_node("Expr", source_span)', text)
-        self.assertIn('node = _sh_make_kind_carrier("Slice")', text)
-        self.assertIn('node = _sh_make_kind_carrier("blank")', text)
-        self.assertIn('node = _sh_make_kind_carrier("comment")', text)
+        self.assertIn('return _sh_make_node("Slice", lower=lower, upper=upper, step=step)', text)
+        self.assertIn('return _sh_make_node("blank", count=count)', text)
+        self.assertIn('return _sh_make_node("comment", text=text)', text)
         self.assertNotIn('return {"kind": "Expr", "source_span": source_span, "value": value}', text)
         self.assertNotIn('return {"kind": "Slice", "lower": lower, "upper": upper, "step": step}', text)
         self.assertNotIn('return {"kind": "blank", "count": count}', text)
