@@ -252,6 +252,30 @@ def _sh_annotate_stdlib_symbol_call_expr(
     )
 
 
+def _sh_annotate_noncpp_symbol_call_expr(
+    payload: dict[str, Any],
+    *,
+    fn_name: str,
+    runtime_call: str,
+) -> dict[str, Any]:
+    mod_id = ""
+    runtime_symbol = ""
+    binding_semantic_tag = ""
+    binding = _SH_IMPORT_SYMBOLS.get(fn_name)
+    if isinstance(binding, dict):
+        mod_id = str(binding.get("module", "")).strip()
+        runtime_symbol = str(binding.get("name", "")).strip()
+        binding_semantic_tag = lookup_runtime_binding_semantic_tag(mod_id, runtime_symbol)
+    return _sh_annotate_resolved_runtime_expr(
+        payload,
+        runtime_call=runtime_call,
+        runtime_source="import_symbol",
+        module_id=mod_id,
+        runtime_symbol=runtime_symbol,
+        semantic_tag=binding_semantic_tag,
+    )
+
+
 def _sh_lookup_noncpp_attr_runtime_call(
     owner_expr: dict[str, Any] | None,
     attr_name: str,
@@ -4834,21 +4858,10 @@ class _ShExprParser:
                 elif noncpp_symbol_runtime_call != "":
                     # C++ 互換を維持するため BuiltinCall へは降ろさず、
                     # non-C++ backend 向けに解決済み runtime 名だけ注釈する。
-                    mod_id = ""
-                    runtime_symbol = ""
-                    binding_semantic_tag = ""
-                    binding = _SH_IMPORT_SYMBOLS.get(fn_name)
-                    if isinstance(binding, dict):
-                        mod_id = str(binding.get("module", "")).strip()
-                        runtime_symbol = str(binding.get("name", "")).strip()
-                        binding_semantic_tag = lookup_runtime_binding_semantic_tag(mod_id, runtime_symbol)
-                    _sh_annotate_resolved_runtime_expr(
+                    _sh_annotate_noncpp_symbol_call_expr(
                         payload,
+                        fn_name=fn_name,
                         runtime_call=noncpp_symbol_runtime_call,
-                        runtime_source="import_symbol",
-                        module_id=mod_id,
-                        runtime_symbol=runtime_symbol,
-                        semantic_tag=binding_semantic_tag,
                     )
                 elif fn_name in {"Exception", "RuntimeError"}:
                     _sh_annotate_runtime_call_expr(
