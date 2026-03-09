@@ -121,15 +121,6 @@ public:
         return "<object>";
     }
 
-    /**
-     * @brief C++ 側の virtual 型判定フック。
-     *
-     * 既定では自身の type_id と一致する場合のみ true。
-     */
-    virtual bool py_isinstance_of(uint32_t expected_type_id) const {
-        return py_type_id() == expected_type_id;
-    }
-
 protected:
     void set_type_id(uint32_t type_id) noexcept {
         type_id_ = type_id;

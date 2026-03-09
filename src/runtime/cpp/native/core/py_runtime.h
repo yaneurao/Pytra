@@ -20,7 +20,6 @@
 #include "io.h"
 // `str` method delegates still live here, so string helper declarations remain a direct dependency.
 #include "runtime/cpp/generated/built_in/string_ops.h"
-using PyFile = pytra::runtime::cpp::base::PyFile;
 
 template <class T>
 static inline rc<list<T>> obj_to_rc_list(const object& v, const char* ctx = "obj_to_rc_list");
