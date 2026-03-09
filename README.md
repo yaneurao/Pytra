@@ -157,6 +157,7 @@ Execution times for [sample programs](sample/readme.md) written in Python and th
 ## Read the Docs
 
 - English docs: [docs/en/index.md](docs/en/index.md)
+- Getting Started (English): [docs/en/how-to-use.md](docs/en/how-to-use.md)
 - Japanese tutorial: [docs/ja/tutorial/README.md](docs/ja/tutorial/README.md)
 - Japanese docs top: [docs/ja/README.md](docs/ja/README.md)
 
