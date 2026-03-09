@@ -410,8 +410,8 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
 
-        self.assertIn("payload = _sh_make_call_expr(", lowered_text)
-        self.assertIn("_sh_make_name_expr(_sh_span(ln_no, col, col + len(fn_name)), fn_name, repr_text=fn_name)", lowered_text)
+        self.assertIn("def _sh_make_builtin_listcomp_call_expr(", text)
+        self.assertIn("_sh_make_builtin_listcomp_call_expr(", lowered_text)
         self.assertIn("return _sh_make_dict_expr(", lowered_text)
         self.assertIn("return _sh_make_tuple_expr(", lowered_text)
 
@@ -426,12 +426,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
 
-        self.assertIn('lowered_kind = "BuiltinCall" if fn_name in {"any", "all"} else None', lowered_text)
-        self.assertIn("payload = _sh_make_call_expr(", lowered_text)
-        self.assertIn(
-            '_sh_make_name_expr(_sh_span(ln_no, col, col + len(fn_name)), fn_name, repr_text=fn_name)',
-            lowered_text,
-        )
+        self.assertIn("def _sh_make_builtin_listcomp_call_expr(", text)
+        self.assertIn("_sh_make_builtin_listcomp_call_expr(", lowered_text)
+        self.assertIn("payload = _sh_make_call_expr(", text)
+        self.assertIn('_sh_make_name_expr(', text)
         self.assertIn("def _sh_make_simple_name_list_comp_expr(", text)
         self.assertIn("_sh_make_simple_name_list_comp_expr(", lowered_text)
         self.assertIn("elt_node = _sh_make_name_expr(", text)

@@ -752,6 +752,37 @@ def _sh_make_simple_name_list_comp_expr(
     )
 
 
+def _sh_make_builtin_listcomp_call_expr(
+    source_span: dict[str, Any],
+    *,
+    line_no: int,
+    base_col: int,
+    func_name: str,
+    arg: dict[str, Any],
+    repr_text: str = "",
+    runtime_call: str = "",
+    semantic_tag: str | None = None,
+) -> dict[str, Any]:
+    """`any/all(<list-comp>)` の lowered builtin call を構築する。"""
+    payload = _sh_make_call_expr(
+        source_span,
+        _sh_make_name_expr(
+            _sh_span(line_no, base_col, base_col + len(func_name)),
+            func_name,
+            repr_text=func_name,
+        ),
+        [arg],
+        [],
+        resolved_type="bool",
+        repr_text=repr_text,
+    )
+    payload["lowered_kind"] = "BuiltinCall"
+    payload["builtin_name"] = func_name
+    payload["runtime_call"] = runtime_call
+    payload["semantic_tag"] = semantic_tag
+    return payload
+
+
 def _sh_make_dict_comp_expr(
     source_span: dict[str, Any],
     key: dict[str, Any],
@@ -5616,22 +5647,18 @@ def _sh_parse_expr_lowered(expr_txt: str, *, ln_no: int, col: int, name_types: d
         inner_arg = re.strip_group(m_any_all, 2)
         if _sh_split_top_keyword(inner_arg, "for") > 0 and _sh_split_top_keyword(inner_arg, "in") > 0:
             lc = _sh_parse_expr_lowered(f"[{inner_arg}]", ln_no=ln_no, col=col + txt.find(inner_arg), name_types=dict(name_types))
-            lowered_kind = "BuiltinCall" if fn_name in {"any", "all"} else None
             runtime_call = "py_any" if fn_name == "any" else ("py_all" if fn_name == "all" else "")
             semantic_tag = lookup_builtin_semantic_tag(fn_name)
-            payload = _sh_make_call_expr(
+            return _sh_make_builtin_listcomp_call_expr(
                 _sh_span(ln_no, col, col + len(raw)),
-                _sh_make_name_expr(_sh_span(ln_no, col, col + len(fn_name)), fn_name, repr_text=fn_name),
-                [lc],
-                [],
-                resolved_type="bool",
+                line_no=ln_no,
+                base_col=col,
+                func_name=fn_name,
+                arg=lc,
                 repr_text=txt,
+                runtime_call=runtime_call,
+                semantic_tag=semantic_tag,
             )
-            payload["lowered_kind"] = lowered_kind
-            payload["builtin_name"] = fn_name if lowered_kind is not None else None
-            payload["runtime_call"] = runtime_call if lowered_kind is not None else None
-            payload["semantic_tag"] = semantic_tag if lowered_kind is not None else None
-            return payload
 
     # Normalize single generator-argument calls into list-comp argument form.
     # Example: ", ".join(f(x) for x in items) -> ", ".join([f(x) for x in items])
