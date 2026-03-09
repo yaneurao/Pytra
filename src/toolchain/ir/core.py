@@ -748,6 +748,91 @@ def _sh_make_range_expr(
     }
 
 
+def _sh_make_arg_node(
+    arg: str,
+    *,
+    annotation: str | None = None,
+    resolved_type: str = "unknown",
+    default: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """`arg` node を構築する。"""
+    node: dict[str, Any] = {
+        "kind": "arg",
+        "arg": arg,
+        "annotation": annotation,
+        "resolved_type": resolved_type,
+    }
+    if default is not None:
+        node["default"] = default
+    return node
+
+
+def _sh_make_lambda_expr(
+    source_span: dict[str, Any],
+    args: list[dict[str, Any]],
+    body: dict[str, Any],
+    *,
+    return_type: str = "unknown",
+    resolved_type: str = "",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`Lambda` 式 node を構築する。"""
+    callable_type = resolved_type
+    if callable_type == "":
+        param_types: list[str] = []
+        for arg in args:
+            arg_type = str(arg.get("resolved_type", "unknown"))
+            param_types.append(arg_type if arg_type != "" else "unknown")
+        callable_type = f"callable[{','.join(param_types)}->{return_type}]"
+    return {
+        "kind": "Lambda",
+        "source_span": source_span,
+        "resolved_type": callable_type,
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "args": args,
+        "body": body,
+        "return_type": return_type,
+    }
+
+
+def _sh_make_formatted_value_node(
+    value: dict[str, Any],
+    *,
+    conversion: str = "",
+    format_spec: str = "",
+) -> dict[str, Any]:
+    """`FormattedValue` node を構築する。"""
+    node: dict[str, Any] = {
+        "kind": "FormattedValue",
+        "value": value,
+    }
+    if conversion != "":
+        node["conversion"] = conversion
+    if format_spec != "":
+        node["format_spec"] = format_spec
+    return node
+
+
+def _sh_make_joined_str_expr(
+    source_span: dict[str, Any],
+    values: list[dict[str, Any]],
+    *,
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`JoinedStr` 式 node を構築する。"""
+    return {
+        "kind": "JoinedStr",
+        "source_span": source_span,
+        "resolved_type": "str",
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": repr_text,
+        "values": values,
+    }
+
+
 def _sh_make_assign_stmt(
     source_span: dict[str, Any],
     target: dict[str, Any],
@@ -3230,26 +3315,22 @@ class _ShExprParser:
             param_t = str(ent.get("resolved_type", "unknown"))
             if param_t == "":
                 param_t = "unknown"
-            arg_ent: dict[str, Any] = {
-                "kind": "arg",
-                "arg": nm,
-                "annotation": None,
-                "resolved_type": param_t,
-            }
-            if isinstance(default_expr, dict):
-                arg_ent["default"] = default_expr
-            args.append(arg_ent)
-        return {
-            "kind": "Lambda",
-            "source_span": self._node_span(s, e),
-            "resolved_type": callable_t,
-            "borrow_kind": "value",
-            "casts": [],
-            "repr": self._src_slice(s, e),
-            "args": args,
-            "body": body,
-            "return_type": ret_t,
-        }
+            args.append(
+                _sh_make_arg_node(
+                    nm,
+                    annotation=None,
+                    resolved_type=param_t,
+                    default=default_expr if isinstance(default_expr, dict) else None,
+                )
+            )
+        return _sh_make_lambda_expr(
+            self._node_span(s, e),
+            args,
+            body,
+            return_type=ret_t,
+            resolved_type=callable_t,
+            repr_text=self._src_slice(s, e),
+        )
 
     def _callable_return_type(self, t: str) -> str:
         """`callable[...]` 型文字列から戻り型だけを抽出する。"""
@@ -4528,33 +4609,27 @@ class _ShExprParser:
                             source_span=self._node_span(tok["s"], tok["e"]),
                             hint="Use `{expr}` form inside f-string placeholders.",
                         )
-                    fv: dict[str, Any] = {
-                        "kind": "FormattedValue",
-                        "value": _sh_parse_expr(
-                            expr_txt,
-                            line_no=self.line_no,
-                            col_base=self.col_base + tok["s"] + j + 1,
-                            name_types=self.name_types,
-                            fn_return_types=self.fn_return_types,
-                            class_method_return_types=self.class_method_return_types,
-                            class_base=self.class_base,
-                        ),
-                    }
-                    if conv_txt != "":
-                        fv["conversion"] = conv_txt
-                    if fmt_txt != "":
-                        fv["format_spec"] = fmt_txt
-                    values.append(fv)
+                    values.append(
+                        _sh_make_formatted_value_node(
+                            _sh_parse_expr(
+                                expr_txt,
+                                line_no=self.line_no,
+                                col_base=self.col_base + tok["s"] + j + 1,
+                                name_types=self.name_types,
+                                fn_return_types=self.fn_return_types,
+                                class_method_return_types=self.class_method_return_types,
+                                class_base=self.class_base,
+                            ),
+                            conversion=conv_txt,
+                            format_spec=fmt_txt,
+                        )
+                    )
                     i = k + 1
-                return {
-                    "kind": "JoinedStr",
-                    "source_span": self._node_span(tok["s"], tok["e"]),
-                    "resolved_type": "str",
-                    "borrow_kind": "value",
-                    "casts": [],
-                    "repr": raw,
-                    "values": values,
-                }
+                return _sh_make_joined_str_expr(
+                    self._node_span(tok["s"], tok["e"]),
+                    values,
+                    repr_text=raw,
+                )
             resolved_type = "str"
             if "b" in prefix and "f" not in prefix:
                 resolved_type = "bytes"
@@ -7814,22 +7889,20 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         if (s.startswith('"""') and s.endswith('"""')) or (s.startswith("'''") and s.endswith("'''")):
             # Module-level docstring / standalone string expression.
             body_items.append(
-                {
-                    "kind": "Expr",
-                    "source_span": _sh_span(i, 0, len(ln)),
-                    "value": _sh_parse_expr_lowered(s, ln_no=i, col=0, name_types={}),
-                }
+                _sh_make_expr_stmt(
+                    _sh_parse_expr_lowered(s, ln_no=i, col=0, name_types={}),
+                    _sh_span(i, 0, len(ln)),
+                )
             )
             i = logical_end + 1
             continue
 
         expr_col = len(ln) - len(ln.lstrip(" "))
         body_items.append(
-            {
-                "kind": "Expr",
-                "source_span": _sh_span(i, expr_col, len(ln)),
-                "value": _sh_parse_expr_lowered(s, ln_no=i, col=expr_col, name_types={}),
-            }
+            _sh_make_expr_stmt(
+                _sh_parse_expr_lowered(s, ln_no=i, col=expr_col, name_types={}),
+                _sh_span(i, expr_col, len(ln)),
+            )
         )
         i = logical_end + 1
         continue

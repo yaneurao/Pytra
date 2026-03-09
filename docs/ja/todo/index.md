@@ -58,6 +58,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_constant_expr()` を追加し、`_parse_primary()` / `_parse_comp_target()` の leaf `Constant` / `Name` / `Tuple` node も helper 経由へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_ifexp_expr()` / `_sh_make_boolop_expr()` / `_sh_make_unaryop_expr()` / `_sh_make_compare_expr()` / `_sh_make_binop_expr()` を追加し、`ExprParser` と lowered expression path の `IfExp` / `BoolOp` / `UnaryOp` / `Compare` / `BinOp` を共通 helper へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] postfix / collection 向け `_sh_make_attribute_expr()` / `_sh_make_call_expr()` / `_sh_make_slice_node()` / `_sh_make_subscript_expr()` / `_sh_make_*_comp_expr()` / `_sh_make_*_expr()` helper を追加し、`ExprParser._parse_postfix()`、collection literal、generator/list/dict/set comprehension、`range(...)` 正規化を helper 経由へ寄せた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_arg_node()` / `_sh_make_lambda_expr()` / `_sh_make_formatted_value_node()` / `_sh_make_joined_str_expr()` を追加し、lambda 引数、`Lambda`、f-string fragment、module-level の裸 `Expr` 文も helper 経由へ寄せた。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

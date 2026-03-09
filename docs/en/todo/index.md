@@ -57,6 +57,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_constant_expr()` and moved the leaf `Constant` / `Name` / `Tuple` nodes from `_parse_primary()` / `_parse_comp_target()` through helpers too.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_ifexp_expr()` / `_sh_make_boolop_expr()` / `_sh_make_unaryop_expr()` / `_sh_make_compare_expr()` / `_sh_make_binop_expr()` and moved the `IfExp` / `BoolOp` / `UnaryOp` / `Compare` / `BinOp` nodes in both `ExprParser` and the lowered-expression path onto shared helpers.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added postfix/collection helpers such as `_sh_make_attribute_expr()` / `_sh_make_call_expr()` / `_sh_make_slice_node()` / `_sh_make_subscript_expr()` / `_sh_make_*_comp_expr()` / `_sh_make_*_expr()` and moved `ExprParser._parse_postfix()`, collection literals, generator/list/dict/set comprehensions, and `range(...)` normalization onto shared builders.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_arg_node()` / `_sh_make_lambda_expr()` / `_sh_make_formatted_value_node()` / `_sh_make_joined_str_expr()` and moved lambda args, `Lambda`, f-string fragments, and module-level bare `Expr` statements onto shared helpers too.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 
