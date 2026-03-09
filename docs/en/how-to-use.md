@@ -1,4 +1,4 @@
-<a href="../ja/how-to-use.md">
+<a href="../ja/tutorial/how-to-use.md">
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
@@ -6,6 +6,47 @@
 
 This document is an execution runbook for actually running Pytra.  
 For normative input constraints and usage rules, see [User Specification](./spec/spec-user.md).
+
+## Run This One File First
+
+At the beginning, it is faster to run one tiny example yourself than to start by reading fixture files.
+
+`add.py`:
+
+```python
+def add(a: int, b: int) -> int:
+    return a + b
+
+
+if __name__ == "__main__":
+    print(add(3, 4))
+```
+
+The shortest way to transpile this to C++ and immediately build and run it is:
+
+```bash
+./pytra add.py --output-dir out/add_case --build --run --exe add.out
+```
+
+Expected stdout:
+
+```text
+7
+```
+
+If you want to inspect the generated code first, use single-file output.
+
+```bash
+./pytra add.py --output out/add.cpp
+```
+
+If you want Rust instead, just change `--target`.
+
+```bash
+./pytra add.py --target rs --output out/add.rs
+```
+
+Later sections on this page also use `test/fixtures/...` examples, but the easiest mental model is to keep this `add.py` example as the baseline.
 
 ## Command Prerequisites by OS
 

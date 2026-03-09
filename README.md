@@ -34,6 +34,9 @@
 
 ## Latest News
 
+> **2026-03-09 | v0.11.0 Released**<br>
+> Version 0.11.0 was released. We are revisiting object boundaries, and the tutorial has been improved.
+
 > **2026-03-08 | v0.10.0 Released**<br>
 > Version 0.10.0 was released. `@template` is now available, and runtime support for each target language is currently being refined.
 
@@ -156,7 +159,7 @@ Execution times for [sample programs](sample/readme.md) written in Python and th
 
 ## Read the Docs
 
-- English tutorial: [docs/en/how-to-use.md](docs/en/how-to-use.md)
+- English tutorial: [docs/en/tutorial/README.md](docs/en/tutorial/README.md)
 - English docs top: [docs/en/index.md](docs/en/index.md)
 - Japanese tutorial: [docs/ja/tutorial/README.md](docs/ja/tutorial/README.md)
 - Japanese docs top: [docs/ja/README.md](docs/ja/README.md)
