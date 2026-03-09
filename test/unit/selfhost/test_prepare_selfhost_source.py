@@ -62,6 +62,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
     def test_extract_support_blocks_does_not_inline_build_cpp_hooks_stub(self) -> None:
         mod = _load_prepare_module()
         support_blocks = mod._extract_support_blocks()
+        self.assertIn("_JSON_NOMINALS: set[str] = {\"JsonValue\", \"JsonObj\", \"JsonArr\"}", support_blocks)
         self.assertIn("def join_str_list(sep: str, items: list[str]) -> str:", support_blocks)
         self.assertIn("def mkdirs_for_cli(path_txt: str) -> None:", support_blocks)
         self.assertIn("def path_parent_text(path_obj: Path) -> str:", support_blocks)
@@ -76,6 +77,8 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def parse_type_expr_text(raw_text: str, *, type_aliases: dict[str, str] | None = None) -> dict[str, Any]:", support_blocks)
         self.assertIn("def type_expr_to_string(expr: dict[str, Any]) -> str:", support_blocks)
         self.assertIn("def normalize_type_text(raw_text: str, *, type_aliases: dict[str, str] | None = None) -> str:", support_blocks)
+        self.assertIn("if name in _JSON_NOMINALS:", support_blocks)
+        self.assertIn("\"kind\": \"NominalAdtType\"", support_blocks)
         self.assertIn("def split_ws_tokens(text: str) -> list[str]:", support_blocks)
         self.assertIn("def normalize_param_annotation(ann: str) -> str:", support_blocks)
         self.assertIn("def extract_function_signatures_from_python_source(src_path: Path)", support_blocks)

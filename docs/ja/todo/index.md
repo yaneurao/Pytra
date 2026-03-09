@@ -32,25 +32,6 @@
 
 ## 未完了タスク
 
-### P1: EAST の型表現を構造化し、union / nominal ADT / narrowing を文字列処理から引き上げる
-
-文脈: [docs/ja/plans/p1-east-typeexpr-strengthening.md](../plans/p1-east-typeexpr-strengthening.md)
-
-1. [ ] [ID: P1-EAST-TYPEEXPR-01] EAST の型表現を構造化し、union / nominal ADT / narrowing を文字列処理から引き上げる。
-2. [x] [ID: P1-EAST-TYPEEXPR-01-S1-01] frontend / lowering / optimizer / backend に散在する `split_union` / `normalize_type_name` / `resolved_type` 文字列依存箇所を棚卸しし、`optional` / `dynamic union` / `nominal ADT` / `generic container` ごとに分類する。
-3. [x] [ID: P1-EAST-TYPEEXPR-01-S1-02] archived `EAST123` / `JsonValue` 契約と矛盾しない end state、non-goal、migration 順序を decision log に固定する。
-4. [x] [ID: P1-EAST-TYPEEXPR-01-S2-01] `spec-east` / `spec-dev` に `TypeExpr` schema、union 3分類、`type_expr` と `resolved_type` の主従関係を追加する。
-5. [x] [ID: P1-EAST-TYPEEXPR-01-S2-02] `JsonValue` を general union ではなく nominal closed ADT として扱う IR 契約、decode/narrowing の責務境界、backend fail-closed ルールを spec に固定する。
-6. [x] [ID: P1-EAST-TYPEEXPR-01-S3-01] frontend の型注釈解析を更新し、`int | bool`, `T | None`, generic nested union から `TypeExpr` を構築する。
-7. [x] [ID: P1-EAST-TYPEEXPR-01-S3-02] migration 互換として `resolved_type` string mirror を生成するが、`type_expr` を真実とする validator と mismatch guard を追加する。
-8. [x] [ID: P1-EAST-TYPEEXPR-01-S4-01] EAST2 -> EAST3 lowering で optional / dynamic union / nominal ADT を区別し、narrowing / variant check / decode helper 用の命令または metadata を導入する。
-9. [x] [ID: P1-EAST-TYPEEXPR-01-S4-02] `JsonValue` に対する representative narrowing path（`as_obj/as_arr/as_int/...` または等価 decode 操作）を backend 直書きではなく IR-first に接続する。
-10. [x] [ID: P1-EAST-TYPEEXPR-01-S5-01] C++ を先頭 target に、一般 union fallback を `object` へ潰す現行経路の一部を fail-closed または structured lowering へ置換する。
-11. [x] [ID: P1-EAST-TYPEEXPR-01-S5-02] 他 backend でも `String/object` fallback を棚卸しし、`TypeExpr` 非対応 union の扱いを明示エラーまたは guarded compat に揃える。
-12. [x] [ID: P1-EAST-TYPEEXPR-01-S6-01] representative `JsonValue` lane を `TypeExpr`/nominal ADT 契約に乗せ、runtime 先行ではなく IR contract 先行で進められることを確認する。
-13. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-02] selfhost / unit / docs / archive を更新し、stringly-typed union debt の再流入を防ぐ guard を追加する。
-- 進捗メモ: [ID: P1-EAST-TYPEEXPR-01-S6-02] `S6-01` で representative `json.value.as_obj` lane に `json_decode_v1.contract_source` を導入し、structured `TypeExpr` を最優先、既存 runtime/selfhost lane は `resolved_type_compat` として明示した。次は selfhost/docs/archive と再流入 guard を仕上げる。
-
 ### P2: compiler boundary を typed 化し、internal object carrier と `make_object` 依存を後退させる
 
 文脈: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-typed-boundary.md)

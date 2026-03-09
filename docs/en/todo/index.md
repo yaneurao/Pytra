@@ -31,25 +31,6 @@ Last updated: 2026-03-09
 
 ## Unfinished Tasks
 
-### P1: Structure EAST type representation and lift union / nominal ADT / narrowing out of string processing
-
-Context: [docs/ja/plans/p1-east-typeexpr-strengthening.md](../plans/p1-east-typeexpr-strengthening.md)
-
-1. [ ] [ID: P1-EAST-TYPEEXPR-01] Structure EAST type representation and lift union / nominal ADT / narrowing out of string processing.
-2. [x] [ID: P1-EAST-TYPEEXPR-01-S1-01] Inventory `split_union` / `normalize_type_name` / `resolved_type` string dependencies across frontend, lowering, optimizer, and backends, then classify them into `optional`, `dynamic union`, `nominal ADT`, and `generic container` usage.
-3. [x] [ID: P1-EAST-TYPEEXPR-01-S1-02] Lock the end state, non-goals, and migration order in the decision log so they remain consistent with archived `EAST123` and `JsonValue` contracts.
-4. [x] [ID: P1-EAST-TYPEEXPR-01-S2-01] Extend `spec-east` / `spec-dev` with `TypeExpr` schema, the three-way union classification, and the authority relationship between `type_expr` and `resolved_type`.
-5. [x] [ID: P1-EAST-TYPEEXPR-01-S2-02] Fix the IR contract that treats `JsonValue` as a nominal closed ADT rather than a generic union, including decode/narrowing responsibility and backend fail-closed rules.
-6. [x] [ID: P1-EAST-TYPEEXPR-01-S3-01] Update frontend type-annotation parsing to build `TypeExpr` from `int | bool`, `T | None`, and nested generic unions.
-7. [x] [ID: P1-EAST-TYPEEXPR-01-S3-02] Keep a migration `resolved_type` string mirror temporarily, but add validators and mismatch guards that treat `type_expr` as the source of truth.
-8. [x] [ID: P1-EAST-TYPEEXPR-01-S4-01] In `EAST2 -> EAST3`, distinguish optionals, dynamic unions, and nominal ADTs, and introduce instructions or metadata for narrowing / variant checks / decode helpers.
-9. [x] [ID: P1-EAST-TYPEEXPR-01-S4-02] Connect a representative `JsonValue` narrowing path (`as_obj/as_arr/as_int/...` or equivalent decode operations) through IR-first lowering rather than backend-local special cases.
-10. [x] [ID: P1-EAST-TYPEEXPR-01-S5-01] Use C++ as the first target and replace at least part of the current `general union -> object` path with fail-closed behavior or structured lowering.
-11. [x] [ID: P1-EAST-TYPEEXPR-01-S5-02] Audit other backends for `String/object` union fallbacks and align unsupported `TypeExpr` unions to explicit errors or guarded compatibility paths.
-12. [x] [ID: P1-EAST-TYPEEXPR-01-S6-01] Put a representative `JsonValue` lane on top of the new `TypeExpr` / nominal-ADT contract and verify that future runtime work can proceed IR-contract-first.
-13. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-02] Refresh selfhost / unit / docs / archive and add guards against the reintroduction of stringly-typed union debt.
-- Progress memo: [ID: P1-EAST-TYPEEXPR-01-S6-02] `S6-01` added `json_decode_v1.contract_source` to the representative `json.value.as_obj` lane, preferring structured `TypeExpr` while explicitly labeling the existing runtime/selfhost path as `resolved_type_compat`. Next is finishing the selfhost/docs/archive follow-up and the reintroduction guard.
-
 ### P2: Move compiler boundaries to typed carriers and retreat internal object-carrier / `make_object` usage
 
 Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-typed-boundary.md)

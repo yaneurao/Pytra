@@ -24,6 +24,7 @@ def main() -> int:
         ["python3", "tools/check_legacy_transpile_checkers_absent.py"],
         ["python3", "tools/check_todo_priority.py"],
         ["python3", "tools/check_jsonvalue_decode_boundaries.py"],
+        ["python3", "tools/check_jsonvalue_typeexpr_contract.py"],
         ["python3", "tools/check_py2cpp_boundary.py"],
         ["python3", "tools/check_east_stage_boundary.py"],
         ["python3", "tools/check_py2cpp_helper_guard.py"],

@@ -15,6 +15,7 @@ Last updated: 2026-03-09
 
 ## Completed Plan Archive
 
+- [2026-03-09 / P1-EAST-TYPEEXPR-01](../plans/archive/20260309-p1-east-typeexpr-strengthening.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-CORE-BOUNDARY-01](../plans/archive/20260309-p0-cpp-pyruntime-core-boundary-realign.md)
 - [2026-03-08 / P2-LINKED-RUNTIME-TEMPLATE-01](../plans/archive/20260308-p2-linked-runtime-helper-template-v1.md)
 - [2026-03-08 / P0-PYTRACLI-CPP-MAXOPT-LINKED-01](../plans/archive/20260308-p0-pytra-cli-cpp-maxopt-linked-build.md)
@@ -46,7 +47,7 @@ Last updated: 2026-03-09
 
 ## Date Links
 
-- [2026-03-09](20260309.md) (1 section)
+- [2026-03-09](20260309.md) (2 sections)
 - [2026-03-08](20260308.md) (8 sections)
 - [2026-03-07](20260307.md) (6 sections)
 - [2026-03-06](20260306.md) (12 sections)

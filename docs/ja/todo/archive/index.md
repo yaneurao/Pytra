@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-09 / P1-EAST-TYPEEXPR-01](../plans/archive/20260309-p1-east-typeexpr-strengthening.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-CORE-BOUNDARY-01](../plans/archive/20260309-p0-cpp-pyruntime-core-boundary-realign.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-ARGV-STATE-01](../plans/archive/20260309-p0-cpp-pyruntime-argv-state-slim.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-PROCESS-SURFACE-01](../plans/archive/20260309-p0-cpp-pyruntime-process-surface-realign.md)
@@ -94,7 +95,7 @@
 
 ## 日付別リンク
 
-- [2026-03-09](20260309.md)（28 セクション）
+- [2026-03-09](20260309.md)（29 セクション）
 - [2026-03-08](20260308.md)（31 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
 - [2026-03-06](20260306.md)（12 セクション）
