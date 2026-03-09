@@ -393,6 +393,23 @@ def _sh_annotate_collection_ctor_call_expr(
     )
 
 
+def _sh_annotate_anyall_call_expr(
+    payload: dict[str, Any],
+    *,
+    fn_name: str,
+    semantic_tag: str | None = None,
+) -> dict[str, Any]:
+    return _sh_annotate_runtime_call_expr(
+        payload,
+        lowered_kind="BuiltinCall",
+        builtin_name=fn_name,
+        runtime_call="py_any" if fn_name == "any" else "py_all",
+        module_id="pytra.built_in.predicates",
+        runtime_symbol=fn_name,
+        semantic_tag=semantic_tag,
+    )
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -4977,24 +4994,10 @@ class _ShExprParser:
                         iter_element_type=elem_t,
                         semantic_tag=builtin_semantic_tag,
                     )
-                elif fn_name == "any":
-                    _sh_annotate_runtime_call_expr(
+                elif fn_name in {"any", "all"}:
+                    _sh_annotate_anyall_call_expr(
                         payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="any",
-                        runtime_call="py_any",
-                        module_id="pytra.built_in.predicates",
-                        runtime_symbol="any",
-                        semantic_tag=builtin_semantic_tag,
-                    )
-                elif fn_name == "all":
-                    _sh_annotate_runtime_call_expr(
-                        payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="all",
-                        runtime_call="py_all",
-                        module_id="pytra.built_in.predicates",
-                        runtime_symbol="all",
+                        fn_name=fn_name,
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif fn_name == "ord":

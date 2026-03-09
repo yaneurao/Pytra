@@ -186,6 +186,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `int/float/bool(...)` scalar ctor metadata も `_sh_annotate_scalar_ctor_call_expr()` へ寄せ、`static_cast` / `py_to_int64_base` / `py_to_bool` の切替と binding 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 `runtime_call` / `runtime_module_id` / `runtime_symbol` block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `min/max(...)` metadata も `_sh_annotate_minmax_call_expr()` へ寄せ、`py_min/py_max` の runtime call・module・symbol 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 inline `py_min/py_max` block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `bytes/bytearray/list/set/dict(...)` ctor metadata も `_sh_annotate_collection_ctor_call_expr()` へ寄せ、`bytes_ctor` / `bytearray_ctor` / `*_ctor` の runtime call 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 ctor inline block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `any/all(...)` metadata も `_sh_annotate_anyall_call_expr()` へ寄せ、`py_any/py_all` の runtime call 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 predicate inline block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
