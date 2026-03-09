@@ -215,6 +215,25 @@ class EastCoreTest(unittest.TestCase):
             text,
         )
 
+    def test_core_source_routes_stmt_span_helpers_through_sh_span(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        span_helper_text = text.split("def _sh_span", 1)[1].split("def _sh_make_trivia_blank", 1)[0]
+        block_span_text = text.split("def _sh_block_end_span", 1)[1].split("def _sh_stmt_span", 1)[0]
+        stmt_span_text = text.split("def _sh_stmt_span", 1)[1].split("def _sh_push_stmt_with_trivia", 1)[0]
+
+        self.assertIn("(line: int, col: int, end_col: int, *, end_lineno: int | None = None) -> dict[str, int]:", span_helper_text)
+        self.assertIn('return {"lineno": line, "col": col, "end_lineno": line if end_lineno is None else end_lineno, "end_col": end_col}', span_helper_text)
+        self.assertIn("return _sh_span(start_ln, start_col, len(end_txt), end_lineno=end_ln)", block_span_text)
+        self.assertIn("return _sh_span(start_ln, start_col, end_col, end_lineno=end_ln)", stmt_span_text)
+        self.assertNotIn(
+            '{"lineno": start_ln, "col": start_col, "end_lineno": end_ln, "end_col": len(end_txt)}',
+            block_span_text,
+        )
+        self.assertNotIn(
+            '{"lineno": start_ln, "col": start_col, "end_lineno": end_ln, "end_col": end_col}',
+            stmt_span_text,
+        )
+
     def test_core_source_uses_builder_helpers_for_expression_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertIn("node = _sh_make_attribute_expr(", text)

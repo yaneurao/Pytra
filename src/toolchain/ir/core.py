@@ -216,9 +216,9 @@ def convert_source_to_east(source: str, filename: str) -> dict[str, Any]:
     """後方互換用の入口。self-hosted パーサで EAST を生成する。"""
     return convert_source_to_east_self_hosted(source, filename)
 
-def _sh_span(line: int, col: int, end_col: int) -> dict[str, int]:
+def _sh_span(line: int, col: int, end_col: int, *, end_lineno: int | None = None) -> dict[str, int]:
     """self-hosted parser 用の source_span を生成する。"""
-    return {"lineno": line, "col": col, "end_lineno": line, "end_col": end_col}
+    return {"lineno": line, "col": col, "end_lineno": line if end_lineno is None else end_lineno, "end_col": end_col}
 
 
 def _sh_make_trivia_blank(count: int) -> dict[str, Any]:
@@ -2816,7 +2816,7 @@ def _sh_block_end_span(
     """複数行文の終端まで含む source_span を生成する。"""
     if end_idx_exclusive > 0 and end_idx_exclusive - 1 < len(body_lines):
         end_ln, end_txt = body_lines[end_idx_exclusive - 1]
-        return {"lineno": start_ln, "col": start_col, "end_lineno": end_ln, "end_col": len(end_txt)}
+        return _sh_span(start_ln, start_col, len(end_txt), end_lineno=end_ln)
     return _sh_span(start_ln, start_col, fallback_end_col)
 
 
@@ -2830,7 +2830,7 @@ def _sh_stmt_span(
     end_pair: tuple[int, int] = merged_line_end.get(start_ln, (start_ln, fallback_end_col))
     end_ln: int = int(end_pair[0])
     end_col: int = int(end_pair[1])
-    return {"lineno": start_ln, "col": start_col, "end_lineno": end_ln, "end_col": end_col}
+    return _sh_span(start_ln, start_col, end_col, end_lineno=end_ln)
 
 
 def _sh_push_stmt_with_trivia(
