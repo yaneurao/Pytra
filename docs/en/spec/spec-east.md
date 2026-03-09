@@ -122,14 +122,16 @@ Notes:
 
 Expression nodes (`_expr`) contain:
 
-- `kind`, `source_span`, `resolved_type`, `borrow_kind`, `casts`, `repr`
-- `resolved_type` is the inferred type string.
+- `kind`, `source_span`, `resolved_type`, `type_expr`, `borrow_kind`, `casts`, `repr`
+- `type_expr` is the structured type representation and takes precedence over `resolved_type` when present.
+- `resolved_type` is the migration-compat inferred-type string mirror.
 - `borrow_kind` is `value | readonly_ref | mutable_ref` (`move` is currently unused).
 - Major expressions keep structured child nodes such as `left/right`, `args`, `elements`, and `entries`.
 
 Function nodes contain:
 
-- `arg_types`, `return_type`, `arg_usage`, `renamed_symbols`
+- `arg_types`, `arg_type_exprs`, `return_type`, `return_type_expr`, `arg_usage`, `renamed_symbols`
+- `arg_type_exprs` / `return_type_expr` are the structured source of truth behind `arg_types` / `return_type`.
 - `decorators` (list of raw decorator strings)
 - `meta.runtime_abi_v1` (optional, canonical metadata for `@abi`)
 - `meta.template_v1` (optional, canonical metadata for `@template`)
@@ -199,6 +201,57 @@ Rules for `FunctionDef.meta.template_v1`:
 - Normalize `bytes` and `bytearray` to `list[uint8]`.
 - Normalize `pathlib.Path` to `Path`.
 - In the C++ runtime, `str`, `list`, `dict`, `set`, `bytes`, and `bytearray` are implemented as wrappers via composition, not STL inheritance.
+
+### 6.3 `TypeExpr` Schema (Structured Type Representation)
+
+`type_expr` is a backend-neutral structured type representation and must support at least the following kinds.
+
+- `NamedType`
+  - `name: str`
+  - examples: `int64`, `float64`, `str`, `Path`
+- `GenericType`
+  - `base: str`
+  - `args: TypeExpr[]`
+  - examples: `list[T]`, `dict[K,V]`, `tuple[T1,T2]`, `callable[float64]`
+- `OptionalType`
+  - `inner: TypeExpr`
+  - canonical form for `T | None`; do not encode this as `UnionType`
+- `UnionType`
+  - `options: TypeExpr[]`
+  - `union_mode: general | dynamic`
+  - `general` represents open general unions; `dynamic` represents unions that contain `Any/object/unknown`
+- `DynamicType`
+  - `name: Any | object | unknown`
+  - represents open-world dynamic carriers
+- `NominalAdtType`
+  - `name: str`
+  - `adt_family: str` (optional, example: `json`)
+  - `variant_domain: str` (optional, example: `closed`)
+  - represents closed nominal ADTs such as `JsonValue`
+
+Notes:
+
+- `bytes` / `bytearray` may continue to normalize to `list[uint8]`; they do not require an independent kind.
+- The exact serialized field style may use either `snake_case` or `camelCase`, but the semantics above are required.
+- Nodes that directly carry annotations may add `*_type_expr` fields paired with existing string fields.
+
+### 6.4 Three-Way Union Classification and `resolved_type` Mirror Authority
+
+Mandatory rules:
+
+- Always normalize `T | None` to `OptionalType(inner=T)` and never leave it as `UnionType(options=[T, None])`.
+- Treat unions that contain `Any/object/unknown` as `UnionType(union_mode=dynamic)` and never lower them with the same rules as general unions.
+- Treat JSON decode-first surfaces such as `JsonValue` / `JsonObj` / `JsonArr` as `NominalAdtType`, not as general unions.
+- Demote `resolved_type`, `arg_types`, and `return_type` to mirrors derived from `type_expr`, `arg_type_exprs`, and `return_type_expr`.
+- When both `type_expr` and `resolved_type` are present, `type_expr` is always authoritative. Conflicts must fail closed as `semantic_conflict`.
+- During migration, legacy nodes may temporarily carry only `resolved_type`, but whenever canonical EAST2/EAST3, validators, or backend contracts are extended, `type_expr` must be the preferred input.
+
+Examples:
+
+- `int | None` -> `OptionalType(NamedType("int64"))`
+- `int | bool` -> `UnionType(union_mode="general", options=[NamedType("int64"), NamedType("bool")])`
+- `int | Any` -> `UnionType(union_mode="dynamic", options=[NamedType("int64"), DynamicType("Any")])`
+- `JsonValue` -> `NominalAdtType(name="JsonValue", adt_family="json", variant_domain="closed")`
 
 ## 7. Type Inference Rules
 
@@ -568,7 +621,9 @@ Objective:
   - `Compare.ops` keeps `Eq/NotEq/Lt/LtE/Gt/GtE/In/NotIn/Is/IsNot`
   - `BoolOp.op` keeps `And/Or`
 - Types:
-  - `resolved_type` keeps only logical type names such as `int64`, `float64`, `list[T]`, `dict[K,V]`, `tuple[...]`, `Any`, and `unknown`, without backend-specific representations
+  - `type_expr` is the canonical type representation and must not carry backend-specific representations
+  - `resolved_type` may remain only as a legacy mirror of logical type names such as `int64`, `float64`, `list[T]`, `dict[K,V]`, `tuple[...]`, `Any`, and `unknown`
+  - `OptionalType`, `UnionType(union_mode=dynamic)`, and `NominalAdtType` must remain distinct categories
 - Metadata:
   - `meta.dispatch_mode` is kept as the compilation-policy value `native | type_id`, and semantics are applied exactly once in `EAST2 -> EAST3`
   - import normalization data (`import_bindings`, `qualified_symbol_refs`, `import_modules`, `import_symbols`) is kept as frontend resolution results
@@ -583,10 +638,12 @@ Objective:
 
 - Unresolvable nodes or types must stop with `ok=false` plus `error.kind` (`inference_failure`, `unsupported_syntax`, `semantic_conflict`).
 - Inputs outside the neutral contract, such as invalid `dispatch_mode`, unsupported node shapes, or missing required metadata, must fail closed instead of being rescued implicitly.
+- Fail closed with `semantic_conflict` when `type_expr` and its `resolved_type` mirror disagree.
 - Compatibility fallbacks are allowed only during staged migration and must be logged together with an explicit `legacy` flag.
 
 ### 24.5 Principles for `EAST2 -> EAST3`
 
 - EAST2 keeps only "what the program wants to do" as semantic tags; `EAST3` finalizes those into object-boundary instructions such as `Obj*` and `ForCore.iter_plan`.
+- `EAST2 -> EAST3` lowering must inspect `type_expr` and split `optional`, `dynamic union`, and `nominal ADT` into separate lanes; it must not recover semantics by re-splitting `resolved_type` strings.
 - Frontend-specific resolution of Python built-ins and standard-library items must be converted into neutral tags by an adapter layer before entering EAST2.
 - From `EAST3` onward, backends and hooks are responsible only for target-language mapping and must not reinterpret the EAST2 contract.
