@@ -122,6 +122,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に statement wrapper を除く generated selfhost core の residual inline `kind` call-site 集合 guard も追加し、純粋な non-statement 残存集合が `Name/Tuple` 以外へ増えたり、`Assign/AnnAssign/Expr/Call` など helper 契約へ寄った lane が再流入したりしたら fail-fast するようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated selfhost core の residual guard helper を `all` / `callsite` / `nonstmt_callsite` scope へ整理し、重複していた inline call-site regression loop を 1 箇所に畳んだ。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] ignored な generated mirror に依存しないよう、`test_east_core.py` にも `Attribute/Call/BinOp/Subscript/Lambda/FormattedValue/JoinedStr` の正本 expr helper call site と旧 inline dict 不在 guard を追加した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated mirror の residual `AnnAssign/Assign/Expr/Name/Tuple` call-site だけに依存しないよう、`test_east_core.py` に typed binding・tuple destructuring・simple list-comp target・bare `Expr` の正本 helper call site と旧 inline cluster 不在 guard も追加した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] ignored な generated mirror だけに頼らないよう、`test_east_core.py` に `Name/Tuple/Constant/List/Dict/Set` の正本 literal・comprehension-target helper call と旧 inline return 不在 guard も追加した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする

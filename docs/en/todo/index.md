@@ -122,6 +122,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] The generated-selfhost residual guard helper now exposes explicit `all` / `callsite` / `nonstmt_callsite` scopes, so the duplicated inline call-site regression loop is folded back into one helper-owned implementation.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] To avoid depending only on the ignored generated mirror, `test_east_core.py` now also guards the source-of-truth expr helper lanes for `Attribute/Call/BinOp/Subscript/Lambda/FormattedValue/JoinedStr`, locking in helper call sites and the absence of the old inline dict clusters.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] To avoid relying only on the ignored generated mirror, `test_east_core.py` now also guards the source-of-truth literal / comprehension-target helper lanes for `Name/Tuple/Constant/List/Dict/Set`, locking in helper call sites and the absence of the old inline returns.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] To avoid depending only on the generated residual `AnnAssign/Assign/Expr/Name/Tuple` call-site set, `test_east_core.py` now also guards the source-of-truth helper lanes for typed bindings, tuple destructuring, the simple list-comp target, and bare `Expr`, including the absence of the old inline clusters.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 

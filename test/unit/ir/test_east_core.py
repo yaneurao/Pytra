@@ -196,6 +196,37 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('values.append({"kind": "FormattedValue"', text)
         self.assertNotIn('return {"kind": "JoinedStr"', text)
 
+    def test_core_source_uses_builder_helpers_for_residual_stmt_name_tuple_clusters(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        self.assertIn("_sh_make_ann_assign_stmt(", text)
+        self.assertIn("target_expr = _sh_make_tuple_expr(", text)
+        self.assertIn(
+            "_sh_make_comp_generator(\n"
+            "                    _sh_make_name_expr(",
+            text,
+        )
+        self.assertIn(
+            "_sh_make_expr_stmt(expr_stmt, _sh_stmt_span(merged_line_end, ln_no, expr_col, len(ln_txt)))",
+            text,
+        )
+        self.assertNotIn(
+            'pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "AnnAssign"',
+            text,
+        )
+        self.assertNotIn(
+            'pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "Assign"',
+            text,
+        )
+        self.assertNotIn(
+            'pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "Expr"',
+            text,
+        )
+        self.assertNotIn('target_expr = {"kind": "Tuple"', text)
+        self.assertNotIn(
+            'dict<str, object>{{"kind", make_object("Name")}',
+            text,
+        )
+
     def test_core_source_uses_builder_helpers_for_literal_and_target_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         comp_target_text = text.split("def _parse_comp_target", 1)[1].split(
