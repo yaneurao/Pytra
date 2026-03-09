@@ -7,8 +7,10 @@ Pytra を初めて触る人向けの入口です。
 
 1. 実行手順を確認する: [使い方](./how-to-use.md)
 2. `@extern` / `extern(...)` を確認する: [extern.md](./extern.md)
-3. 高度な変換ルートを確認する: [発展的な使い方](./advanced-usage.md)
-4. parity / selfhost / local CI を確認する: [開発運用ガイド](./dev-operations.md)
+3. `py2x.py` / `ir2lang.py` を直接使う: [transpiler-cli.md](./transpiler-cli.md)
+4. エラーの見方と詰まりどころを確認する: [troubleshooting.md](./troubleshooting.md)
+5. 高度な変換ルートを確認する: [発展的な使い方](./advanced-usage.md)
+6. parity / selfhost / local CI を確認する: [開発運用ガイド](./dev-operations.md)
 
 ## 読み分け
 
@@ -16,6 +18,10 @@ Pytra を初めて触る人向けの入口です。
   - [使い方](./how-to-use.md)
 - `@extern` / `extern(...)` を使いたい
   - [extern.md](./extern.md)
+- `py2x.py` / `ir2lang.py` を直接使いたい
+  - [transpiler-cli.md](./transpiler-cli.md)
+- エラーカテゴリや詰まりどころを確認したい
+  - [troubleshooting.md](./troubleshooting.md)
 - `@abi` や linked-program route を使いたい
   - [発展的な使い方](./advanced-usage.md)
 - parity や selfhost を含む開発運用を確認したい
