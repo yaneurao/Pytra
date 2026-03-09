@@ -143,13 +143,7 @@ def export_layer_options_any(
     *,
     layer: str = "",
 ) -> dict[str, CompilerOptionScalar]:
-    if not isinstance(options, LayerOptionsCarrier):
-        legacy_options = _legacy_dict_adapter(options)
-        if legacy_options is not None:
-            options = legacy_options
-    return export_layer_options_carrier(
-        options if isinstance(options, LayerOptionsCarrier) else coerce_layer_options(layer, options)
-    )
+    return export_layer_options_carrier(coerce_layer_options(layer, options))
 
 
 def export_backend_spec_carrier(carrier: "BackendSpecCarrier") -> dict[str, object]:
@@ -178,18 +172,10 @@ def export_resolved_backend_spec(spec: "ResolvedBackendSpec") -> dict[str, objec
 
 
 def export_resolved_backend_spec_any(spec: object) -> dict[str, object]:
-    if not isinstance(spec, (ResolvedBackendSpec, dict)):
-        legacy_spec = _legacy_dict_adapter(spec)
-        if legacy_spec is not None:
-            spec = legacy_spec
     return export_resolved_backend_spec(coerce_backend_spec(spec))
 
 
 def backend_spec_target(spec: object) -> str:
-    if not isinstance(spec, (ResolvedBackendSpec, dict)):
-        legacy_spec = _legacy_dict_adapter(spec)
-        if legacy_spec is not None:
-            spec = legacy_spec
     return coerce_backend_spec(spec).carrier.target_lang
 
 
@@ -439,6 +425,9 @@ def coerce_compiler_root_document(
 ) -> CompilerRootDocument:
     if isinstance(raw_doc, CompilerRootDocument):
         return raw_doc
+    legacy_doc = _legacy_dict_adapter(raw_doc)
+    if legacy_doc is not None:
+        raw_doc = legacy_doc
     if not isinstance(raw_doc, dict):
         raise RuntimeError("compiler root document must be dict")
     return CompilerRootDocument.from_legacy_doc(
@@ -452,12 +441,20 @@ def coerce_layer_options(
     layer: str,
     raw_options: object,
 ) -> LayerOptionsCarrier:
+    if isinstance(raw_options, LayerOptionsCarrier):
+        return raw_options
+    legacy_options = _legacy_dict_adapter(raw_options)
+    if legacy_options is not None:
+        raw_options = legacy_options
     return LayerOptionsCarrier(layer=layer, values=_copy_scalar_dict(raw_options))
 
 
 def coerce_backend_spec(raw_spec: object) -> ResolvedBackendSpec:
     if isinstance(raw_spec, ResolvedBackendSpec):
         return raw_spec
+    legacy_spec = _legacy_dict_adapter(raw_spec)
+    if legacy_spec is not None:
+        raw_spec = legacy_spec
     if isinstance(raw_spec, dict):
         return ResolvedBackendSpec.from_legacy_spec(raw_spec)
     raise RuntimeError("backend spec must be dict or ResolvedBackendSpec")
@@ -635,6 +632,9 @@ def flatten_module_artifact_carrier(module_artifact: ModuleArtifactCarrier) -> t
 def coerce_module_artifact(module_artifact: object) -> ModuleArtifactCarrier:
     if isinstance(module_artifact, ModuleArtifactCarrier):
         return module_artifact
+    legacy_module = _legacy_dict_adapter(module_artifact)
+    if legacy_module is not None:
+        module_artifact = legacy_module
     if isinstance(module_artifact, dict):
         return normalize_module_artifact_carrier(
             module_artifact,
@@ -666,6 +666,9 @@ def coerce_program_artifact(
 ) -> ProgramArtifactCarrier:
     if isinstance(program_artifact, ProgramArtifactCarrier):
         return program_artifact
+    legacy_program = _legacy_dict_adapter(program_artifact)
+    if legacy_program is not None:
+        program_artifact = legacy_program
     if not isinstance(program_artifact, dict):
         raise RuntimeError("program artifact must be dict or ProgramArtifactCarrier")
 

@@ -460,6 +460,9 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         legacy_doc = typed_boundary.coerce_compiler_root_document(raw_doc)
         self.assertEqual(legacy_doc.meta.source_path, "legacy.py")
         self.assertEqual(legacy_doc.meta.parser_backend, "legacy_host")
+        wrapped_doc = typed_boundary.coerce_compiler_root_document(_LegacyCarrierAdapter(raw_doc))
+        self.assertEqual(wrapped_doc.meta.source_path, "legacy.py")
+        self.assertEqual(wrapped_doc.meta.parser_backend, "legacy_host")
         self.assertEqual(
             typed_boundary.export_compiler_root_document_any(raw_doc),
             {
@@ -486,6 +489,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(
             typed_boundary.export_layer_options_any(_LegacyCarrierAdapter(opts.to_legacy_dict()), layer="emitter"),
             typed_boundary.export_layer_options_carrier(opts),
+        )
+        self.assertEqual(
+            typed_boundary.coerce_layer_options("emitter", _LegacyCarrierAdapter(opts.to_legacy_dict())).values,
+            opts.values,
         )
         host_registry._SPEC_CACHE.clear()
         host_spec = host_registry.get_backend_spec_typed("cpp")
@@ -514,6 +521,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(typed_boundary.backend_spec_target(static_spec), "cpp")
         self.assertEqual(
             typed_boundary.backend_spec_target(_LegacyCarrierAdapter(host_spec.to_legacy_dict())),
+            "cpp",
+        )
+        self.assertEqual(
+            typed_boundary.coerce_backend_spec(_LegacyCarrierAdapter(host_spec.to_legacy_dict())).carrier.target_lang,
             "cpp",
         )
         self.assertEqual(typed_boundary.backend_spec_target({"target_lang": "rs", "extension": ".rs"}), "rs")
@@ -554,6 +565,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             typed_boundary.export_module_artifact_any(module),
             typed_boundary.export_module_artifact_carrier(module),
         )
+        self.assertEqual(
+            typed_boundary.coerce_module_artifact(_LegacyCarrierAdapter(module.to_legacy_dict())).module_id,
+            "pkg.demo",
+        )
         self.assertEqual(typed_boundary.module_artifact_text(module), "// demo\n")
         program = typed_boundary.build_program_artifact_carrier(
             host_spec,
@@ -569,6 +584,14 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             typed_boundary.export_program_artifact_any(program),
             typed_boundary.export_program_artifact_carrier(program),
         )
+        wrapped_program = typed_boundary.coerce_program_artifact(
+            _LegacyCarrierAdapter(program.to_legacy_dict()),
+            fallback_target="cpp",
+            fallback_program_id="pkg.demo",
+            fallback_entry_modules=["pkg.demo"],
+        )
+        self.assertEqual(wrapped_program.program_id, "pkg.demo")
+        self.assertEqual(wrapped_program.modules[0].module_id, "pkg.demo")
         helper_program = typed_boundary.coerce_program_artifact(
             {
                 "modules": [

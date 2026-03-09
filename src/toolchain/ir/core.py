@@ -258,6 +258,25 @@ def _sh_make_expr_stmt(value: dict[str, Any], source_span: dict[str, Any]) -> di
     return node
 
 
+def _sh_make_value_expr(
+    kind: str,
+    source_span: dict[str, Any] | None,
+    *,
+    resolved_type: str = "unknown",
+    repr_text: str = "",
+    casts: list[dict[str, Any]] | None = None,
+    borrow_kind: str = "value",
+) -> dict[str, Any]:
+    """値を返す式 node の共通 envelope を構築する。"""
+    node = _sh_make_kind_carrier(kind)
+    node["source_span"] = source_span
+    node["resolved_type"] = resolved_type
+    node["borrow_kind"] = borrow_kind
+    node["casts"] = [] if casts is None else casts
+    node["repr"] = repr_text
+    return node
+
+
 def _sh_make_name_expr(
     source_span: dict[str, Any],
     name: str,
@@ -268,15 +287,14 @@ def _sh_make_name_expr(
     repr_text: str = "",
 ) -> dict[str, Any]:
     """`Name` 式 node を構築する。"""
-    node: dict[str, Any] = {
-        "kind": "Name",
-        "source_span": source_span,
-        "resolved_type": resolved_type,
-        "borrow_kind": borrow_kind,
-        "casts": [],
-        "repr": repr_text if repr_text != "" else name,
-        "id": name,
-    }
+    node = _sh_make_value_expr(
+        "Name",
+        source_span,
+        resolved_type=resolved_type,
+        repr_text=repr_text if repr_text != "" else name,
+        borrow_kind=borrow_kind,
+    )
+    node["id"] = name
     if type_expr is not None:
         node["type_expr"] = type_expr
     return node
@@ -297,15 +315,14 @@ def _sh_make_tuple_expr(
     tuple_repr = repr_text
     if tuple_repr == "":
         tuple_repr = ", ".join(str(elem.get("repr", "")) for elem in elements)
-    return {
-        "kind": "Tuple",
-        "source_span": source_span,
-        "resolved_type": tuple_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": tuple_repr,
-        "elements": elements,
-    }
+    node = _sh_make_value_expr(
+        "Tuple",
+        source_span,
+        resolved_type=tuple_type,
+        repr_text=tuple_repr,
+    )
+    node["elements"] = elements
+    return node
 
 
 def _sh_make_constant_expr(
@@ -328,15 +345,14 @@ def _sh_make_constant_expr(
             constant_type = "float64"
         else:
             constant_type = "str"
-    return {
-        "kind": "Constant",
-        "source_span": source_span,
-        "resolved_type": constant_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text if repr_text != "" else str(value),
-        "value": value,
-    }
+    node = _sh_make_value_expr(
+        "Constant",
+        source_span,
+        resolved_type=constant_type,
+        repr_text=repr_text if repr_text != "" else str(value),
+    )
+    node["value"] = value
+    return node
 
 
 def _sh_make_unaryop_expr(
@@ -348,16 +364,15 @@ def _sh_make_unaryop_expr(
     repr_text: str = "",
 ) -> dict[str, Any]:
     """`UnaryOp` 式 node を構築する。"""
-    return {
-        "kind": "UnaryOp",
-        "source_span": source_span,
-        "resolved_type": resolved_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "op": op,
-        "operand": operand,
-    }
+    node = _sh_make_value_expr(
+        "UnaryOp",
+        source_span,
+        resolved_type=resolved_type,
+        repr_text=repr_text,
+    )
+    node["op"] = op
+    node["operand"] = operand
+    return node
 
 
 def _sh_make_boolop_expr(
@@ -369,16 +384,15 @@ def _sh_make_boolop_expr(
     repr_text: str = "",
 ) -> dict[str, Any]:
     """`BoolOp` 式 node を構築する。"""
-    return {
-        "kind": "BoolOp",
-        "source_span": source_span,
-        "resolved_type": resolved_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "op": op,
-        "values": values,
-    }
+    node = _sh_make_value_expr(
+        "BoolOp",
+        source_span,
+        resolved_type=resolved_type,
+        repr_text=repr_text,
+    )
+    node["op"] = op
+    node["values"] = values
+    return node
 
 
 def _sh_make_compare_expr(
@@ -391,17 +405,16 @@ def _sh_make_compare_expr(
     repr_text: str = "",
 ) -> dict[str, Any]:
     """`Compare` 式 node を構築する。"""
-    return {
-        "kind": "Compare",
-        "source_span": source_span,
-        "resolved_type": resolved_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "left": left,
-        "ops": ops,
-        "comparators": comparators,
-    }
+    node = _sh_make_value_expr(
+        "Compare",
+        source_span,
+        resolved_type=resolved_type,
+        repr_text=repr_text,
+    )
+    node["left"] = left
+    node["ops"] = ops
+    node["comparators"] = comparators
+    return node
 
 
 def _sh_make_binop_expr(
@@ -415,17 +428,17 @@ def _sh_make_binop_expr(
     repr_text: str = "",
 ) -> dict[str, Any]:
     """`BinOp` 式 node を構築する。"""
-    return {
-        "kind": "BinOp",
-        "source_span": source_span,
-        "resolved_type": resolved_type,
-        "borrow_kind": "value",
-        "casts": [] if casts is None else casts,
-        "repr": repr_text,
-        "left": left,
-        "op": op,
-        "right": right,
-    }
+    node = _sh_make_value_expr(
+        "BinOp",
+        source_span,
+        resolved_type=resolved_type,
+        repr_text=repr_text,
+        casts=casts,
+    )
+    node["left"] = left
+    node["op"] = op
+    node["right"] = right
+    return node
 
 
 def _sh_make_cast_entry(on: str, from_type: str, to_type: str, reason: str) -> dict[str, Any]:
@@ -453,17 +466,16 @@ def _sh_make_ifexp_expr(
         body_type = str(body.get("resolved_type", "unknown"))
         orelse_type = str(orelse.get("resolved_type", "unknown"))
         out_type = body_type if body_type == orelse_type else "unknown"
-    return {
-        "kind": "IfExp",
-        "source_span": source_span,
-        "resolved_type": out_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "test": test,
-        "body": body,
-        "orelse": orelse,
-    }
+    node = _sh_make_value_expr(
+        "IfExp",
+        source_span,
+        resolved_type=out_type,
+        repr_text=repr_text,
+    )
+    node["test"] = test
+    node["body"] = body
+    node["orelse"] = orelse
+    return node
 
 
 def _sh_make_attribute_expr(
@@ -475,16 +487,15 @@ def _sh_make_attribute_expr(
     repr_text: str = "",
 ) -> dict[str, Any]:
     """`Attribute` 式 node を構築する。"""
-    return {
-        "kind": "Attribute",
-        "source_span": source_span,
-        "resolved_type": resolved_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "value": value,
-        "attr": attr,
-    }
+    node = _sh_make_value_expr(
+        "Attribute",
+        source_span,
+        resolved_type=resolved_type,
+        repr_text=repr_text,
+    )
+    node["value"] = value
+    node["attr"] = attr
+    return node
 
 
 def _sh_make_call_expr(
@@ -497,17 +508,16 @@ def _sh_make_call_expr(
     repr_text: str = "",
 ) -> dict[str, Any]:
     """`Call` 式 node を構築する。"""
-    return {
-        "kind": "Call",
-        "source_span": source_span,
-        "resolved_type": resolved_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "func": func,
-        "args": args,
-        "keywords": keywords,
-    }
+    node = _sh_make_value_expr(
+        "Call",
+        source_span,
+        resolved_type=resolved_type,
+        repr_text=repr_text,
+    )
+    node["func"] = func
+    node["args"] = args
+    node["keywords"] = keywords
+    return node
 
 
 def _sh_make_keyword_arg(arg: str, value: dict[str, Any]) -> dict[str, Any]:
@@ -543,16 +553,14 @@ def _sh_make_subscript_expr(
     upper: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`Subscript` 式 node を構築する。"""
-    node: dict[str, Any] = {
-        "kind": "Subscript",
-        "source_span": source_span,
-        "resolved_type": resolved_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "value": value,
-        "slice": slice_node,
-    }
+    node = _sh_make_value_expr(
+        "Subscript",
+        source_span,
+        resolved_type=resolved_type,
+        repr_text=repr_text,
+    )
+    node["value"] = value
+    node["slice"] = slice_node
     if lowered_kind != "":
         node["lowered_kind"] = lowered_kind
     if lower is not None or lowered_kind == "SliceExpr":
@@ -596,15 +604,14 @@ def _sh_make_list_expr(
                     elem_type = "unknown"
                     break
         list_type = f"list[{elem_type}]"
-    return {
-        "kind": "List",
-        "source_span": source_span,
-        "resolved_type": list_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "elements": elements,
-    }
+    node = _sh_make_value_expr(
+        "List",
+        source_span,
+        resolved_type=list_type,
+        repr_text=repr_text,
+    )
+    node["elements"] = elements
+    return node
 
 
 def _sh_make_set_expr(
@@ -619,15 +626,14 @@ def _sh_make_set_expr(
     if set_type == "":
         elem_type = str(elements[0].get("resolved_type", "unknown")) if len(elements) > 0 else "unknown"
         set_type = f"set[{elem_type}]"
-    return {
-        "kind": "Set",
-        "source_span": source_span,
-        "resolved_type": set_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "elements": elements,
-    }
+    node = _sh_make_value_expr(
+        "Set",
+        source_span,
+        resolved_type=set_type,
+        repr_text=repr_text,
+    )
+    node["elements"] = elements
+    return node
 
 
 def _sh_make_dict_entry(key: dict[str, Any], value: dict[str, Any]) -> dict[str, Any]:
@@ -657,15 +663,14 @@ def _sh_make_dict_expr(
                 key_type = str(first_key.get("resolved_type", "unknown"))
                 value_type = str(first_value.get("resolved_type", "unknown"))
             dict_type = f"dict[{key_type},{value_type}]"
-        return {
-            "kind": "Dict",
-            "source_span": source_span,
-            "resolved_type": dict_type,
-            "borrow_kind": "value",
-            "casts": [],
-            "repr": repr_text,
-            "entries": entry_nodes,
-        }
+        node = _sh_make_value_expr(
+            "Dict",
+            source_span,
+            resolved_type=dict_type,
+            repr_text=repr_text,
+        )
+        node["entries"] = entry_nodes
+        return node
 
     key_nodes = keys if keys is not None else []
     value_nodes = values if values is not None else []
@@ -676,16 +681,15 @@ def _sh_make_dict_expr(
             key_type = str(key_nodes[0].get("resolved_type", "unknown"))
             value_type = str(value_nodes[0].get("resolved_type", "unknown"))
         dict_type = f"dict[{key_type},{value_type}]"
-    return {
-        "kind": "Dict",
-        "source_span": source_span,
-        "resolved_type": dict_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "keys": key_nodes,
-        "values": value_nodes,
-    }
+    node = _sh_make_value_expr(
+        "Dict",
+        source_span,
+        resolved_type=dict_type,
+        repr_text=repr_text,
+    )
+    node["keys"] = key_nodes
+    node["values"] = value_nodes
+    return node
 
 
 def _sh_make_list_comp_expr(
@@ -699,16 +703,14 @@ def _sh_make_list_comp_expr(
 ) -> dict[str, Any]:
     """`ListComp` 式 node を構築する。"""
     list_type = resolved_type if resolved_type != "" else f"list[{str(elt.get('resolved_type', 'unknown'))}]"
-    node: dict[str, Any] = {
-        "kind": "ListComp",
-        "source_span": source_span,
-        "resolved_type": list_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "elt": elt,
-        "generators": generators,
-    }
+    node = _sh_make_value_expr(
+        "ListComp",
+        source_span,
+        resolved_type=list_type,
+        repr_text=repr_text,
+    )
+    node["elt"] = elt
+    node["generators"] = generators
     if lowered_kind is not None:
         node["lowered_kind"] = lowered_kind
     return node
@@ -727,17 +729,16 @@ def _sh_make_dict_comp_expr(
     dict_type = resolved_type
     if dict_type == "":
         dict_type = f"dict[{key.get('resolved_type', 'unknown')},{value.get('resolved_type', 'unknown')}]"
-    return {
-        "kind": "DictComp",
-        "source_span": source_span,
-        "resolved_type": dict_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "key": key,
-        "value": value,
-        "generators": generators,
-    }
+    node = _sh_make_value_expr(
+        "DictComp",
+        source_span,
+        resolved_type=dict_type,
+        repr_text=repr_text,
+    )
+    node["key"] = key
+    node["value"] = value
+    node["generators"] = generators
+    return node
 
 
 def _sh_make_set_comp_expr(
@@ -750,16 +751,15 @@ def _sh_make_set_comp_expr(
 ) -> dict[str, Any]:
     """`SetComp` 式 node を構築する。"""
     set_type = resolved_type if resolved_type != "" else f"set[{str(elt.get('resolved_type', 'unknown'))}]"
-    return {
-        "kind": "SetComp",
-        "source_span": source_span,
-        "resolved_type": set_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "elt": elt,
-        "generators": generators,
-    }
+    node = _sh_make_value_expr(
+        "SetComp",
+        source_span,
+        resolved_type=set_type,
+        repr_text=repr_text,
+    )
+    node["elt"] = elt
+    node["generators"] = generators
+    return node
 
 
 def _sh_make_range_expr(
@@ -783,18 +783,17 @@ def _sh_make_range_expr(
             mode = "descending"
         else:
             mode = "dynamic"
-    return {
-        "kind": "RangeExpr",
-        "source_span": source_span,
-        "resolved_type": "range",
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text if repr_text != "" else "range(...)",
-        "start": start,
-        "stop": stop,
-        "step": step,
-        "range_mode": mode,
-    }
+    node = _sh_make_value_expr(
+        "RangeExpr",
+        source_span,
+        resolved_type="range",
+        repr_text=repr_text if repr_text != "" else "range(...)",
+    )
+    node["start"] = start
+    node["stop"] = stop
+    node["step"] = step
+    node["range_mode"] = mode
+    return node
 
 
 def _sh_make_arg_node(
@@ -846,17 +845,16 @@ def _sh_make_lambda_expr(
             arg_type = str(arg.get("resolved_type", "unknown"))
             param_types.append(arg_type if arg_type != "" else "unknown")
         callable_type = f"callable[{','.join(param_types)}->{return_type}]"
-    return {
-        "kind": "Lambda",
-        "source_span": source_span,
-        "resolved_type": callable_type,
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "args": args,
-        "body": body,
-        "return_type": return_type,
-    }
+    node = _sh_make_value_expr(
+        "Lambda",
+        source_span,
+        resolved_type=callable_type,
+        repr_text=repr_text,
+    )
+    node["args"] = args
+    node["body"] = body
+    node["return_type"] = return_type
+    return node
 
 
 def _sh_make_formatted_value_node(
@@ -884,15 +882,14 @@ def _sh_make_joined_str_expr(
     repr_text: str = "",
 ) -> dict[str, Any]:
     """`JoinedStr` 式 node を構築する。"""
-    return {
-        "kind": "JoinedStr",
-        "source_span": source_span,
-        "resolved_type": "str",
-        "borrow_kind": "value",
-        "casts": [],
-        "repr": repr_text,
-        "values": values,
-    }
+    node = _sh_make_value_expr(
+        "JoinedStr",
+        source_span,
+        resolved_type="str",
+        repr_text=repr_text,
+    )
+    node["values"] = values
+    return node
 
 
 def _sh_make_assign_stmt(
