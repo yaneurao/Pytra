@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -179,6 +180,41 @@ class EastCoreTest(unittest.TestCase):
             text,
         )
 
+    def test_core_source_uses_builder_helpers_for_decl_and_import_clusters(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        self.assertIn("aliases.append(_sh_make_import_alias(", text)
+        self.assertIn("body_items.append(_sh_make_import_stmt(_sh_span(i, 0, len(ln)), aliases))", text)
+        self.assertIn(
+            "body_items.append(\n"
+            "                    _sh_make_import_from_stmt(",
+            text,
+        )
+        self.assertIn("item = _sh_make_function_def_stmt(", text)
+        self.assertIn("_sh_block_end_span(block, i, 0, len(ln), len(block))", text)
+        self.assertIn(
+            "class_body.append(\n"
+            "                            _sh_make_function_def_stmt(",
+            text,
+        )
+        self.assertIn(
+            "_sh_block_end_span(method_block, ln_no, bind, len(ln_txt), len(method_block))",
+            text,
+        )
+        self.assertIn("cls_item = _sh_make_class_def_stmt(", text)
+        self.assertNotIn('body_items.append({"kind": "Import"', text)
+        self.assertNotIn('body_items.append({"kind": "ImportFrom"', text)
+        self.assertNotIn('item = {"kind": "FunctionDef"', text)
+        self.assertNotIn('class_body.append({"kind": "FunctionDef"', text)
+        self.assertNotIn('cls_item = {"kind": "ClassDef"', text)
+        self.assertNotIn(
+            '{"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])}',
+            text,
+        )
+        self.assertNotIn(
+            '{"lineno": ln_no, "col": bind, "end_lineno": method_block[-1][0], "end_col": len(method_block[-1][1])}',
+            text,
+        )
+
     def test_core_source_uses_builder_helpers_for_expression_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertIn("node = _sh_make_attribute_expr(", text)
@@ -291,6 +327,48 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('return {"kind": "Call"', lowered_text)
         self.assertNotIn('return {"kind": "Dict"', lowered_text)
         self.assertNotIn('return {"kind": "Tuple"', lowered_text)
+
+    def test_core_source_known_inline_kind_residual_set_is_helper_only(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        raw_kinds = re.findall(r'\{"kind": "([^"]+)"', text)
+        inline_kinds = {kind for kind in raw_kinds if kind != "" and kind[0].isupper()}
+        trivia_kinds = {kind for kind in raw_kinds if kind != "" and kind[0].islower()}
+
+        self.assertEqual(inline_kinds, {"Expr", "Slice"})
+        self.assertEqual(trivia_kinds, {"blank", "comment"})
+        self.assertTrue(
+            {
+                "If",
+                "While",
+                "ExceptHandler",
+                "Try",
+                "For",
+                "ForRange",
+                "Raise",
+                "Pass",
+                "Return",
+                "AugAssign",
+                "Swap",
+                "RangeExpr",
+                "ListComp",
+                "DictComp",
+                "SetComp",
+                "FormattedValue",
+                "JoinedStr",
+                "Subscript",
+                "BoolOp",
+                "UnaryOp",
+                "Compare",
+                "BinOp",
+                "Lambda",
+                "Call",
+                "Dict",
+                "Tuple",
+                "Name",
+                "Assign",
+                "AnnAssign",
+            }.isdisjoint(inline_kinds)
+        )
 
     def test_top_level_extern_decorator_is_preserved(self) -> None:
         src = """
