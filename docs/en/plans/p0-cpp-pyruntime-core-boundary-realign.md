@@ -159,8 +159,8 @@ Reason:
 ## Breakdown
 
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01] Realign the `py_runtime.h` core boundary and move remaining helpers back upstream / to dedicated lanes.
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-01] Inventory checked-in callers of `numeric_ops/zip_ops/contains`, typed helpers, tuple helpers, and `type_id` wrappers, then classify the end state.
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-02] Record include ownership, upstream contracts, and non-goals in the decision log so they match `spec-runtime`.
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-01] Inventory checked-in callers of `numeric_ops/zip_ops/contains`, typed helpers, tuple helpers, and `type_id` wrappers, then classify the end state.
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-02] Record include ownership, upstream contracts, and non-goals in the decision log so they match `spec-runtime`.
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-01] Extend helper-include collection in the C++ emitter / prelude / generated path so `zip`, `contains`, and numeric helpers are explicitly included.
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-02] Remove transitive `numeric_ops` / `zip_ops` / `contains` includes from `py_runtime.h` and update the removed-include guards.
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-01] Switch typed dict subscripts to `.at()` and remove checked-in `py_dict_get` callers.
@@ -178,3 +178,7 @@ Reason:
 - 2026-03-09: Most object-dict / optional-dict / string-sugar variants of `py_dict_get` were already retired in previous tranches. The remaining debt is close to a single typed-dict convenience path in the backend, so it stays near the top of the queue.
 - 2026-03-09: The main CppEmitter path already lowers constant tuple indices to `std::get<N>`, so remaining tuple-helper callers are treated as lagging generated/runtime paths.
 - 2026-03-09: The intended end state for `type_id` is raw primitives in `core` and nominal subtype / registry algorithms in the generated lane. Avoid extending the life of handwritten wrappers.
+- 2026-03-09: The `S1-01` inventory confirmed that the direct checked-in caller for `zip` is `src/backends/cpp/emitter/runtime_expr.py`, the direct checked-in callers for `contains` are in `src/backends/cpp/emitter/cpp_emitter.py`, and the public numeric helper surface already lives under `src/runtime/cpp/pytra/built_in/numeric_ops.h`. In other words, include ownership belongs in the C++ emitter, generated callers, and public companion headers, not in `py_runtime.h`.
+- 2026-03-09: The checked-in `py_dict_get` callers now remain not only in the C++ emitter typed-dict path, but also in generated/selfhost paths such as `src/runtime/cpp/generated/std/argparse.cpp`, `src/runtime/cpp/generated/built_in/type_id.cpp`, and `selfhost/py2cpp.cpp`. Therefore `S3-01` must update generated callers as well, not just the emitter.
+- 2026-03-09: Checked-in `type_id` wrapper callers still span the main C++ backend, generated C++ runtime, selfhost stage1/stage2, and related tests, so `S4-01` should treat "move callers toward `py_tid_*`" and "shrink `py_runtime.h` wrappers to thin delegates" as one slice.
+- 2026-03-09: The `S1-02` contract is now fixed as follows: `numeric_ops/zip_ops/contains` are companion surfaces that must be explicitly included through `pytra/built_in/*.h`; `py_runtime.h` must not re-aggregate them. Typed dict access, tuple constant-index access, and typed mutation helpers should move back upstream or into typed lanes, leaving only object bridges and low-level primitives in `core`. Non-goals remain simultaneous cleanup of other target runtimes and any full boxing/unboxing redesign.

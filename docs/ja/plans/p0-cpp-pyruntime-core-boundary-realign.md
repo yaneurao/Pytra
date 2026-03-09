@@ -162,8 +162,8 @@
 ## タスク分解
 
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01] `py_runtime.h` の core 境界を再整理し、残存 helper を上流 / 専用lane へ戻す。
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-01] `numeric_ops/zip_ops/contains`、typed helper、tuple helper、`type_id` wrapper の checked-in caller を棚卸しし、end state を分類する。
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-02] `spec-runtime` に反しない include ownership / upstream contract / non-goal を決定ログへ固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-01] `numeric_ops/zip_ops/contains`、typed helper、tuple helper、`type_id` wrapper の checked-in caller を棚卸しし、end state を分類する。
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-02] `spec-runtime` に反しない include ownership / upstream contract / non-goal を決定ログへ固定する。
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-01] C++ emitter / prelude / generated path の helper include 収集を拡張し、`zip` / `contains` / numeric helper を explicit include 化する。
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-02] `py_runtime.h` から `numeric_ops` / `zip_ops` / `contains` の transitive include を削除し、removed-include guard を更新する。
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-01] typed dict subscript を `.at()` 化し、`py_dict_get` の checked-in callsite を除去する。
@@ -181,3 +181,7 @@
 - 2026-03-09: `py_dict_get` は過去 tranche で object dict / optional dict / string sugar を大半撤去済みであり、remaining debt は typed dict subscript が backend convenience として使っている 1 本に近い。したがって次の削減候補として優先度を高く置く。
 - 2026-03-09: tuple helper は CppEmitter 本体では既に constant-index `std::get<N>` へ落ちているため、remaining caller は generated/runtime path の追従不足として扱う。
 - 2026-03-09: `type_id` の end state は「`core` に raw primitive、generated 側に nominal subtype / registry algorithm」を基本形とし、手書き helper の延命は避ける。
+- 2026-03-09: `S1-01` 棚卸しでは、`zip` の direct caller は `src/backends/cpp/emitter/runtime_expr.py`、`contains` の direct caller は `src/backends/cpp/emitter/cpp_emitter.py`、`numeric_ops` の public surface は `src/runtime/cpp/pytra/built_in/numeric_ops.h` であることを確認した。つまり include ownership の本命は `py_runtime.h` ではなく C++ emitter / generated caller / public companion header である。
+- 2026-03-09: `py_dict_get` の checked-in caller は C++ emitter の typed dict path に加えて `src/runtime/cpp/generated/std/argparse.cpp`、`src/runtime/cpp/generated/built_in/type_id.cpp`、`selfhost/py2cpp.cpp` などの generated / selfhost path に残っていることを確認した。よって `S3-01` は emitter 側だけでなく generated caller 追従を前提に進める。
+- 2026-03-09: `type_id` wrapper の checked-in caller は C++ backend 本体、generated C++ runtime、selfhost stage1/stage2、関連 test に広く残っているため、`S4-01` は「callsite を `py_tid_*` に寄せる / `py_runtime.h` wrapper を thin delegate に縮める」を同時に扱う slice とする。
+- 2026-03-09: `S1-02` の契約として、`numeric_ops/zip_ops/contains` は `pytra/built_in/*.h` から explicit include される companion surface とし、`py_runtime.h` は再集約しない。typed dict / tuple constant-index / typed mutation helper は upstream または typed lane へ戻し、`core` に残るのは object bridge と low-level primitive だけに寄せる。非対象は他 target runtime の同時整理と boxing/unboxing の全面再設計で固定する。
