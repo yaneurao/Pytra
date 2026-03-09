@@ -116,6 +116,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             ROOT / "src" / "runtime" / "cpp" / "native" / "compiler" / "backend_registry_static.cpp"
         ).read_text(encoding="utf-8")
 
+        self.assertIn("CompilerRootDocument _load_json_root_document(", native_transpile)
+        self.assertNotIn("dict<str, object> _load_json_root_dict(", native_transpile)
+        self.assertNotIn("coerce_compiler_root_document(\n            _load_json_root_dict(", native_transpile)
+
         transpile_make_object_lines = [
             line.strip()
             for line in native_transpile.splitlines()
