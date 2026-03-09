@@ -816,7 +816,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
                 {"debug": "1"},
                 suppress_exceptions=True,
             ),
-            {"kind": "Module"},
+            typed_boundary.export_compiler_root_document_any({"kind": "Module"}),
         )
         with self.assertRaisesRegex(RuntimeError, "lower failed"):
             typed_boundary.execute_lower_ir_with_spec(
