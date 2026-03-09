@@ -30,6 +30,40 @@ def _slice_block(text: str, start_marker: str, end_marker: str) -> str:
     return text[i:j]
 
 
+_CPP_INLINE_KIND_RE = re.compile(r'dict<str, object>\{\{"kind", make_object\("([^"]+)"\)')
+
+
+def _generated_cpp_core_inline_kinds(text: str, *, callsites_only: bool) -> set[str]:
+    kinds: set[str] = set()
+    for line in text.splitlines():
+        match = _CPP_INLINE_KIND_RE.search(line)
+        if match is None:
+            continue
+        kind = match.group(1)
+        if kind == "" or not kind[0].isupper():
+            continue
+        if callsites_only:
+            stripped = line.strip()
+            if stripped.startswith('return dict<str, object>{{"kind"'):
+                continue
+            if stripped.startswith('dict<str, object> node = dict<str, object>{{"kind"'):
+                continue
+            if stripped.startswith('dict<str, object> payload = dict<str, object>{{"kind"'):
+                continue
+            if stripped.startswith('dict<str, object> fv = dict<str, object>{{"kind"'):
+                continue
+            if stripped.startswith('dict<str, object> elif_item = dict<str, object>{{"kind"'):
+                continue
+            if (
+                'dict<str, object>(dict<str, object>{{"kind"' not in stripped
+                and 'append(dict<str, object>{{"kind"' not in stripped
+                and '= dict<str, object>{{"kind"' not in stripped
+            ):
+                continue
+        kinds.add(kind)
+    return kinds
+
+
 class PrepareSelfhostSourceTest(unittest.TestCase):
     def test_load_cpp_hooks_patch_function_is_absent(self) -> None:
         mod = _load_prepare_module()
@@ -397,11 +431,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
 
     def test_generated_cpp_core_known_inline_kind_residual_set_is_stable(self) -> None:
         text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
-        inline_kinds = {
-            kind
-            for kind in re.findall(r'dict<str, object>\{\{"kind", make_object\("([^"]+)"\)', text)
-            if kind != "" and kind[0].isupper()
-        }
+        inline_kinds = _generated_cpp_core_inline_kinds(text, callsites_only=False)
         self.assertEqual(
             inline_kinds,
             {
@@ -445,6 +475,77 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
                 "BinOp",
                 "Lambda",
             }.isdisjoint(inline_kinds)
+        )
+
+    def test_generated_cpp_core_inline_kind_callsites_are_known(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        callsite_inline_kinds = _generated_cpp_core_inline_kinds(text, callsites_only=True)
+        self.assertEqual(callsite_inline_kinds, {"Name", "Tuple"})
+        self.assertTrue(
+            {
+                "If",
+                "While",
+                "ExceptHandler",
+                "Try",
+                "For",
+                "ForRange",
+                "Raise",
+                "Pass",
+                "Return",
+                "AugAssign",
+                "Swap",
+                "Call",
+                "ClassDef",
+                "FunctionDef",
+                "Import",
+                "ImportFrom",
+                "Expr",
+                "Dict",
+                "AnnAssign",
+                "Assign",
+            }.isdisjoint(callsite_inline_kinds)
+        )
+
+    def test_generated_cpp_core_known_inline_callsite_kind_residual_set_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        inline_callsite_kinds: set[str] = set()
+        for line in text.splitlines():
+            match = re.search(r'dict<str, object>\{\{"kind", make_object\("([^"]+)"\)', line)
+            if match is None:
+                continue
+            kind = match.group(1)
+            if kind == "" or not kind[0].isupper():
+                continue
+            stripped = line.strip()
+            if 'return dict<str, object>{{"kind"' in stripped:
+                continue
+            if 'dict<str, object> node = dict<str, object>{{"kind"' in stripped:
+                continue
+            inline_callsite_kinds.add(kind)
+        self.assertEqual(
+            inline_callsite_kinds,
+            {
+                "AnnAssign",
+                "Assign",
+                "Expr",
+                "Name",
+                "Tuple",
+            },
+        )
+        self.assertTrue(
+            {
+                "If",
+                "While",
+                "ExceptHandler",
+                "Try",
+                "For",
+                "ForRange",
+                "Raise",
+                "Pass",
+                "Return",
+                "AugAssign",
+                "Swap",
+            }.isdisjoint(inline_callsite_kinds)
         )
 
 
