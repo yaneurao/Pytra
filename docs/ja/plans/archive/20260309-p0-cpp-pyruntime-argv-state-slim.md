@@ -54,3 +54,5 @@
 ## 決定ログ
 
 - 2026-03-09: 本計画は `argv` state surface の最小化のみを対象とし、runtime state の大規模再編は非対象とする。
+- 2026-03-09: checked-in current callsite は `py_runtime_argv()` が `src/runtime/cpp/generated/std/argparse.cpp` と `src/runtime/cpp/native/std/sys.cpp`、`py_runtime_set_argv()` が `src/runtime/cpp/native/std/sys.cpp` と `pytra_configure_from_argv()` に限られる。
+- 2026-03-09: canonical surface は `pytra_configure_from_argv()`, `py_runtime_argv()`, `py_runtime_set_argv()`, `py_runtime_write_stdout/stderr()`, `py_runtime_exit()` とし、`py_runtime_argv_storage()` accessor は compat sugar として削除する。
