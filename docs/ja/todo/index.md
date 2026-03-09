@@ -120,6 +120,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の residual inline `kind` 集合 guard を追加し、`If/While/Try/Raise/Return/AugAssign/Swap` など既に helper 化済みの kind が open-coded dict へ戻ったり、新しい unsynced kind が増えたりしたら fail-fast するようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の residual inline `kind` call-site 集合 guard を追加し、helper 定義を除く実利用側が `AnnAssign/Assign/Expr/Name/Tuple` 以外へ増えたり、既に helper 化済みの statement kind が call-site 側へ再流入したりしたら fail-fast するようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に statement wrapper を除く generated selfhost core の residual inline `kind` call-site 集合 guard も追加し、純粋な non-statement 残存集合が `Name/Tuple` 以外へ増えたり、`Assign/AnnAssign/Expr/Call` など helper 契約へ寄った lane が再流入したりしたら fail-fast するようにした。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated selfhost core の residual guard helper を `all` / `callsite` / `nonstmt_callsite` scope へ整理し、重複していた inline call-site regression loop を 1 箇所に畳んだ。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
