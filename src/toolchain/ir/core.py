@@ -188,6 +188,28 @@ def _sh_annotate_runtime_method_call_expr(
     )
 
 
+def _sh_annotate_enumerate_call_expr(
+    payload: dict[str, Any],
+    *,
+    iter_element_type: str,
+    semantic_tag: str | None = None,
+) -> dict[str, Any]:
+    _sh_annotate_runtime_call_expr(
+        payload,
+        lowered_kind="BuiltinCall",
+        builtin_name="enumerate",
+        runtime_call="py_enumerate",
+        module_id="pytra.built_in.iter_ops",
+        runtime_symbol="enumerate",
+        semantic_tag=semantic_tag,
+    )
+    payload["iterable_trait"] = "yes" if iter_element_type != "unknown" else "unknown"
+    payload["iter_protocol"] = "static_range"
+    payload["iter_element_type"] = iter_element_type
+    payload["resolved_type"] = f"list[tuple[int64, {iter_element_type}]]"
+    return payload
+
+
 def _sh_lookup_noncpp_attr_runtime_call(
     owner_expr: dict[str, Any] | None,
     attr_name: str,
@@ -4824,23 +4846,14 @@ class _ShExprParser:
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif fn_name == "enumerate":
-                    _sh_annotate_runtime_call_expr(
-                        payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="enumerate",
-                        runtime_call="py_enumerate",
-                        module_id="pytra.built_in.iter_ops",
-                        runtime_symbol="enumerate",
-                        semantic_tag=builtin_semantic_tag,
-                    )
                     elem_t = "unknown"
                     if len(args) >= 1 and isinstance(args[0], dict):
                         elem_t = self._iter_item_type(args[0])
-                    payload["iterable_trait"] = "yes" if elem_t != "unknown" else "unknown"
-                    payload["iter_protocol"] = "static_range"
-                    payload["iter_element_type"] = elem_t
-                    call_ret = f"list[tuple[int64, {elem_t}]]"
-                    payload["resolved_type"] = call_ret
+                    _sh_annotate_enumerate_call_expr(
+                        payload,
+                        iter_element_type=elem_t,
+                        semantic_tag=builtin_semantic_tag,
+                    )
                 elif fn_name == "any":
                     _sh_annotate_runtime_call_expr(
                         payload,
