@@ -6,17 +6,17 @@ from __future__ import annotations
 from typing import Any
 
 from toolchain.compiler.backend_registry import (
-    apply_runtime_hook,
-    build_program_artifact,
+    apply_runtime_hook_typed as apply_runtime_hook,
+    build_program_artifact_typed as build_program_artifact,
     collect_program_modules,
     default_output_path,
-    emit_module,
-    get_program_writer,
-    get_backend_spec,
+    emit_module_typed as emit_module,
+    get_program_writer_typed as get_program_writer,
+    get_backend_spec_typed as get_backend_spec,
     list_backend_targets,
-    lower_ir,
-    optimize_ir,
-    resolve_layer_options,
+    lower_ir_typed as lower_ir,
+    optimize_ir_typed as optimize_ir,
+    resolve_layer_options_typed as resolve_layer_options,
 )
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
@@ -272,10 +272,10 @@ def main(argv: list[str] | None = None) -> int:
     optimizer_raw = _parse_layer_option_items(layer_option_items["optimizer"], "--optimizer-option")
     emitter_raw = _parse_layer_option_items(layer_option_items["emitter"], "--emitter-option")
 
-    spec: dict[str, object]
-    lower_options: dict[str, object]
-    optimizer_options: dict[str, object]
-    emitter_options: dict[str, object]
+    spec: object
+    lower_options: object
+    optimizer_options: object
+    emitter_options: object
     if is_link_output:
         link_output_doc, linked_modules = load_linked_output_bundle(input_path)
         link_target = link_output_doc.get("target")
@@ -335,9 +335,16 @@ def main(argv: list[str] | None = None) -> int:
         module_id=module_id,
         is_entry=True,
     )
+    if hasattr(module_artifact, "to_legacy_dict"):
+        module_artifact_dict = module_artifact.to_legacy_dict()
+        module_text = getattr(module_artifact, "text", "")
+    else:
+        module_artifact_dict = dict(module_artifact) if isinstance(module_artifact, dict) else {}
+        text_any = module_artifact_dict.get("text", "")
+        module_text = text_any if isinstance(text_any, str) else ""
     program_artifact = build_program_artifact(
         spec,
-        collect_program_modules(module_artifact),
+        collect_program_modules(module_artifact_dict),
         program_id=module_id,
         entry_modules=[module_id],
         layout_mode="single_file",
@@ -345,11 +352,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     writer = get_program_writer(spec)
     if callable(writer):
-        _ = writer(program_artifact, output_path, {})
+        if hasattr(program_artifact, "to_legacy_dict"):
+            writer_program_artifact = program_artifact.to_legacy_dict()
+        else:
+            writer_program_artifact = program_artifact if isinstance(program_artifact, dict) else {}
+        _ = writer(writer_program_artifact, output_path, {})
     else:
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        out_src = module_artifact.get("text", "")
-        output_path.write_text(out_src if isinstance(out_src, str) else "", encoding="utf-8")
+        output_path.write_text(module_text, encoding="utf-8")
 
     if not skip_runtime_hook:
         apply_runtime_hook(spec, output_path)

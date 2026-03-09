@@ -17,6 +17,14 @@ import src.py2x as py2x_mod
 from src.toolchain.link.program_model import LinkedProgramModule
 
 
+class _TypedDocStub:
+    def __init__(self, raw_doc: dict[str, object]) -> None:
+        self._raw_doc = dict(raw_doc)
+
+    def to_legacy_dict(self) -> dict[str, object]:
+        return dict(self._raw_doc)
+
+
 class Py2xCliTest(unittest.TestCase):
     def test_build_linked_program_for_json_link_input_uses_loader(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -27,7 +35,7 @@ class Py2xCliTest(unittest.TestCase):
             with patch.object(py2x_mod, "load_linked_program", return_value=sentinel) as load_program:
                 with patch.object(
                     py2x_mod,
-                    "load_east3_document",
+                    "load_east3_document_typed",
                     side_effect=AssertionError("raw EAST3 loader must not run for link-input restart"),
                 ):
                     program = py2x_mod._build_linked_program_for_input(
@@ -55,8 +63,8 @@ class Py2xCliTest(unittest.TestCase):
         fixture = ROOT / "test" / "fixtures" / "core" / "add.py"
         with patch.object(
             py2x_mod,
-            "load_east3_document",
-            side_effect=AssertionError("load_east3_document must not be called for stage2"),
+            "load_east3_document_typed",
+            side_effect=AssertionError("load_east3_document_typed must not be called for stage2"),
         ):
             with patch.object(
                 py2x_mod.sys,
@@ -105,7 +113,7 @@ class Py2xCliTest(unittest.TestCase):
         with patch.object(py2x_mod, "_build_linked_program_for_input", return_value=fake_program):
             with patch.object(
                 py2x_mod,
-                "get_backend_spec",
+                "get_backend_spec_typed",
                 side_effect=AssertionError("backend dispatch must not be called for unsupported ambient extern target"),
             ):
                 with patch.object(
@@ -279,15 +287,15 @@ class Py2xCliTest(unittest.TestCase):
                 "eopt=alpha",
             ]
             with patch.object(py2x_mod.sys, "argv", argv):
-                with patch.object(py2x_mod, "get_backend_spec", return_value=fake_spec):
-                    with patch.object(py2x_mod, "resolve_layer_options", side_effect=_resolve):
+                with patch.object(py2x_mod, "get_backend_spec_typed", return_value=fake_spec):
+                    with patch.object(py2x_mod, "resolve_layer_options_typed", side_effect=_resolve):
                         with patch.object(py2x_mod, "build_module_east_map", side_effect=_build_module_map):
-                            with patch.object(py2x_mod, "lower_ir", side_effect=_lower):
-                                with patch.object(py2x_mod, "optimize_ir", side_effect=_optimize):
-                                    with patch.object(py2x_mod, "emit_module", side_effect=_emit_module):
-                                        with patch.object(py2x_mod, "build_program_artifact", side_effect=_build_program):
-                                            with patch.object(py2x_mod, "get_program_writer", return_value=_writer):
-                                                with patch.object(py2x_mod, "apply_runtime_hook", side_effect=_runtime):
+                            with patch.object(py2x_mod, "lower_ir_typed", side_effect=_lower):
+                                with patch.object(py2x_mod, "optimize_ir_typed", side_effect=_optimize):
+                                    with patch.object(py2x_mod, "emit_module_typed", side_effect=_emit_module):
+                                        with patch.object(py2x_mod, "build_program_artifact_typed", side_effect=_build_program):
+                                            with patch.object(py2x_mod, "get_program_writer_typed", return_value=_writer):
+                                                with patch.object(py2x_mod, "apply_runtime_hook_typed", side_effect=_runtime):
                                                     rc = py2x_mod.main()
             out_exists = out_rs.exists()
             out_text = out_rs.read_text(encoding="utf-8") if out_exists else ""
@@ -357,8 +365,8 @@ class Py2xCliTest(unittest.TestCase):
                 return {"primary_output": str(output_root)}
 
             with patch.object(py2x_mod.sys, "argv", ["py2x.py", str(src_py), "--target", "rs", "-o", str(out_rs)]):
-                with patch.object(py2x_mod, "get_backend_spec", return_value=fake_spec):
-                    with patch.object(py2x_mod, "resolve_layer_options", side_effect=lambda *_args, **_kw: {}):
+                with patch.object(py2x_mod, "get_backend_spec_typed", return_value=fake_spec):
+                    with patch.object(py2x_mod, "resolve_layer_options_typed", side_effect=lambda *_args, **_kw: {}):
                         with patch.object(
                             py2x_mod,
                             "_build_linked_program_for_input",
@@ -385,11 +393,11 @@ class Py2xCliTest(unittest.TestCase):
                                 options={},
                             ),
                         ):
-                            with patch.object(py2x_mod, "lower_ir", return_value={"kind": "LoweredModule"}):
-                                with patch.object(py2x_mod, "optimize_ir", return_value={"kind": "OptimizedModule"}):
+                            with patch.object(py2x_mod, "lower_ir_typed", return_value={"kind": "LoweredModule"}):
+                                with patch.object(py2x_mod, "optimize_ir_typed", return_value={"kind": "OptimizedModule"}):
                                     with patch.object(
                                         py2x_mod,
-                                        "emit_module",
+                                        "emit_module_typed",
                                         return_value={
                                             "module_id": "pkg.main",
                                             "kind": "user",
@@ -412,8 +420,8 @@ class Py2xCliTest(unittest.TestCase):
                                             ],
                                         },
                                     ):
-                                        with patch.object(py2x_mod, "get_program_writer", return_value=_writer):
-                                            with patch.object(py2x_mod, "apply_runtime_hook", return_value=None):
+                                        with patch.object(py2x_mod, "get_program_writer_typed", return_value=_writer):
+                                            with patch.object(py2x_mod, "apply_runtime_hook_typed", return_value=None):
                                                 rc = py2x_mod.main()
 
         self.assertEqual(rc, 0)
@@ -484,14 +492,14 @@ class Py2xCliTest(unittest.TestCase):
                 return {"primary_output": str(output_root)}
 
             with patch.object(py2x_mod.sys, "argv", argv):
-                with patch.object(py2x_mod, "get_backend_spec", return_value=fake_spec):
+                with patch.object(py2x_mod, "get_backend_spec_typed", return_value=fake_spec):
                     with patch.object(py2x_mod, "build_module_east_map", side_effect=AssertionError("unexpected module-map build")):
-                        with patch.object(py2x_mod, "load_east3_document", return_value=east_doc):
-                            with patch.object(py2x_mod, "lower_ir", return_value={"kind": "LoweredModule"}) as lower:
-                                with patch.object(py2x_mod, "optimize_ir", return_value={"kind": "OptimizedModule"}):
+                        with patch.object(py2x_mod, "load_east3_document_typed", return_value=_TypedDocStub(east_doc)):
+                            with patch.object(py2x_mod, "lower_ir_typed", return_value={"kind": "LoweredModule"}) as lower:
+                                with patch.object(py2x_mod, "optimize_ir_typed", return_value={"kind": "OptimizedModule"}):
                                     with patch.object(
                                         py2x_mod,
-                                        "emit_module",
+                                        "emit_module_typed",
                                         return_value={
                                             "module_id": "app.case",
                                             "label": "case",
@@ -502,9 +510,9 @@ class Py2xCliTest(unittest.TestCase):
                                             "metadata": {},
                                         },
                                     ):
-                                        with patch.object(py2x_mod, "build_program_artifact", return_value={"modules": [{"text": "// json route\n"}]}):
-                                            with patch.object(py2x_mod, "get_program_writer", return_value=_writer):
-                                                with patch.object(py2x_mod, "apply_runtime_hook"):
+                                        with patch.object(py2x_mod, "build_program_artifact_typed", return_value={"modules": [{"text": "// json route\n"}]}):
+                                            with patch.object(py2x_mod, "get_program_writer_typed", return_value=_writer):
+                                                with patch.object(py2x_mod, "apply_runtime_hook_typed"):
                                                     rc = py2x_mod.main()
 
         self.assertEqual(rc, 0)
@@ -552,7 +560,7 @@ class Py2xCliTest(unittest.TestCase):
                     },
                 ):
                     with patch.object(py2x_mod, "_invoke_py2cpp_main", side_effect=AssertionError("unexpected compat route")):
-                        with patch.object(py2x_mod, "get_backend_spec", side_effect=AssertionError("unexpected backend dispatch")):
+                        with patch.object(py2x_mod, "get_backend_spec_typed", side_effect=AssertionError("unexpected backend dispatch")):
                             rc = py2x_mod.main()
 
             self.assertEqual(rc, 0)
@@ -604,7 +612,7 @@ class Py2xCliTest(unittest.TestCase):
                     },
                 ):
                     with patch.object(py2x_mod, "_invoke_py2cpp_main", side_effect=AssertionError("unexpected compat route")):
-                        with patch.object(py2x_mod, "get_backend_spec", side_effect=AssertionError("unexpected backend dispatch")):
+                        with patch.object(py2x_mod, "get_backend_spec_typed", side_effect=AssertionError("unexpected backend dispatch")):
                             rc = py2x_mod.main()
 
             self.assertEqual(rc, 0)

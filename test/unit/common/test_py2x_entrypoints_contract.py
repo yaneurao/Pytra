@@ -69,6 +69,22 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertTrue(callable(static_spec.get("emit_module")))
         self.assertIn("program_writer", static_spec)
 
+    def test_typed_backend_specs_preserve_legacy_metadata(self) -> None:
+        host_registry._SPEC_CACHE.clear()
+        host_spec = host_registry.get_backend_spec_typed("cpp")
+        static_spec = static_registry.get_backend_spec_typed("cpp")
+
+        self.assertEqual(host_spec.carrier.target_lang, "cpp")
+        self.assertEqual(static_spec.carrier.target_lang, "cpp")
+        self.assertEqual(host_registry.get_backend_spec("cpp").get("target_lang"), host_spec.carrier.target_lang)
+        self.assertEqual(static_registry.get_backend_spec("cpp").get("target_lang"), static_spec.carrier.target_lang)
+
+        host_opts = host_registry.resolve_layer_options_typed(host_spec, "emitter", {"mod_mode": "python"})
+        static_opts = static_registry.resolve_layer_options_typed(static_spec, "emitter", {"mod_mode": "python"})
+        self.assertEqual(host_opts.layer, "emitter")
+        self.assertEqual(host_opts.values["mod_mode"], "python")
+        self.assertEqual(static_opts.values["mod_mode"], "python")
+
     def test_build_program_artifact_preserves_helper_kind_metadata(self) -> None:
         fake_spec = {"target_lang": "cpp"}
         helper_module = {
@@ -112,38 +128,32 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(static_artifact["modules"][1]["kind"], "user")
 
     def test_collect_program_modules_flattens_helper_modules(self) -> None:
-        host_modules = host_registry.collect_program_modules(
-            {
-                "module_id": "pkg.main",
-                "kind": "user",
-                "text": "// main\n",
-                "helper_modules": [
-                    {
-                        "module_id": "__pytra_helper__.cpp.demo",
-                        "metadata": {"helper_id": "cpp.demo", "owner_module_id": "pkg.main"},
-                    }
-                ],
-            }
-        )
-        static_modules = static_registry.collect_program_modules(
-            {
-                "module_id": "pkg.main",
-                "kind": "user",
-                "text": "// main\n",
-                "helper_modules": [
-                    {
-                        "module_id": "__pytra_helper__.cpp.demo",
-                        "metadata": {"helper_id": "cpp.demo", "owner_module_id": "pkg.main"},
-                    }
-                ],
-            }
-        )
+        module_artifact = {
+            "module_id": "pkg.main",
+            "kind": "user",
+            "text": "// main\n",
+            "helper_modules": [
+                {
+                    "module_id": "__pytra_helper__.cpp.demo",
+                    "metadata": {"helper_id": "cpp.demo", "owner_module_id": "pkg.main"},
+                }
+            ],
+        }
+        host_modules = host_registry.collect_program_modules(module_artifact)
+        static_modules = static_registry.collect_program_modules(module_artifact)
+        host_typed_modules = host_registry.collect_program_modules_typed(module_artifact)
+        static_typed_modules = static_registry.collect_program_modules_typed(module_artifact)
 
         self.assertEqual(len(host_modules), 2)
         self.assertEqual(host_modules[1]["kind"], "helper")
         self.assertEqual(host_modules[1]["metadata"]["helper_id"], "cpp.demo")
         self.assertEqual(len(static_modules), 2)
         self.assertEqual(static_modules[1]["kind"], "helper")
+        self.assertEqual(len(host_typed_modules), 2)
+        self.assertEqual(host_typed_modules[1].kind, "helper")
+        self.assertEqual(host_typed_modules[1].metadata["owner_module_id"], "pkg.main")
+        self.assertEqual(len(static_typed_modules), 2)
+        self.assertEqual(static_typed_modules[1].kind, "helper")
 
     def test_emit_source_uses_emit_module_text_wrapper(self) -> None:
         spec = host_registry._normalize_backend_spec(
@@ -170,6 +180,63 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(artifact["extension"], ".txt")
         self.assertEqual(artifact["text"], text)
         self.assertTrue(bool(artifact["is_entry"]))
+
+    def test_typed_emit_and_program_artifact_wrap_legacy_surface(self) -> None:
+        fake_host_spec = host_registry._normalize_backend_runtime_spec(
+            {
+                "target_lang": "fake",
+                "extension": ".txt",
+                "emit": lambda ir, output_path, _opts=None: "// "
+                + str(ir.get("kind", ""))
+                + " -> "
+                + output_path.name,
+            }
+        )
+        fake_static_spec = static_registry._normalize_backend_runtime_spec(
+            {
+                "target_lang": "fake",
+                "extension": ".txt",
+                "emit": lambda ir, output_path, _opts=None: "// "
+                + str(ir.get("kind", ""))
+                + " -> "
+                + output_path.name,
+            }
+        )
+
+        host_artifact = host_registry.emit_module_typed(
+            fake_host_spec,
+            {"kind": "Demo"},
+            Path("out/demo.txt"),
+            {"mode": "typed"},
+            module_id="pkg.demo",
+            is_entry=True,
+        )
+        static_artifact = static_registry.emit_module_typed(
+            fake_static_spec,
+            {"kind": "Demo"},
+            Path("out/demo.txt"),
+            {"mode": "typed"},
+            module_id="pkg.demo",
+            is_entry=True,
+        )
+        host_program = host_registry.build_program_artifact_typed(
+            fake_host_spec,
+            [host_artifact],
+            program_id="pkg.demo",
+            entry_modules=["pkg.demo"],
+        )
+        static_program = static_registry.build_program_artifact_typed(
+            fake_static_spec,
+            [static_artifact],
+            program_id="pkg.demo",
+            entry_modules=["pkg.demo"],
+        )
+
+        self.assertEqual(host_artifact.module_id, "pkg.demo")
+        self.assertEqual(host_artifact.label, "demo")
+        self.assertEqual(static_artifact.text, "// Demo -> demo.txt")
+        self.assertEqual(host_program.modules[0].text, host_artifact.text)
+        self.assertEqual(static_program.to_legacy_dict()["modules"][0]["module_id"], "pkg.demo")
 
 
 if __name__ == "__main__":

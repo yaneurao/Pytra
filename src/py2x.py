@@ -5,18 +5,18 @@ from __future__ import annotations
 
 from typing import Any
 
-from toolchain.compiler.backend_registry import apply_runtime_hook
-from toolchain.compiler.backend_registry import build_program_artifact
-from toolchain.compiler.backend_registry import collect_program_modules
+from toolchain.compiler.backend_registry import apply_runtime_hook_typed
+from toolchain.compiler.backend_registry import build_program_artifact_typed
+from toolchain.compiler.backend_registry import collect_program_modules_typed
 from toolchain.compiler.backend_registry import default_output_path
-from toolchain.compiler.backend_registry import emit_module
-from toolchain.compiler.backend_registry import get_program_writer
-from toolchain.compiler.backend_registry import get_backend_spec
+from toolchain.compiler.backend_registry import emit_module_typed
+from toolchain.compiler.backend_registry import get_program_writer_typed
+from toolchain.compiler.backend_registry import get_backend_spec_typed
 from toolchain.compiler.backend_registry import list_backend_targets
-from toolchain.compiler.backend_registry import lower_ir
-from toolchain.compiler.backend_registry import optimize_ir
-from toolchain.compiler.backend_registry import resolve_layer_options
-from toolchain.compiler.transpile_cli import add_common_transpile_args, build_module_east_map, load_east3_document
+from toolchain.compiler.backend_registry import lower_ir_typed
+from toolchain.compiler.backend_registry import optimize_ir_typed
+from toolchain.compiler.backend_registry import resolve_layer_options_typed
+from toolchain.compiler.transpile_cli import add_common_transpile_args, build_module_east_map, load_east3_document_typed
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
 from toolchain.link import LINK_INPUT_SCHEMA
@@ -271,7 +271,7 @@ def _build_linked_program_for_input(
     ) -> dict[str, object]:
         _ = east_stage
         enable_dump = module_path.resolve() == input_path.resolve()
-        return load_east3_document(
+        return load_east3_document_typed(
             module_path,
             parser_backend=parser_backend,
             object_dispatch_mode=object_dispatch_mode,
@@ -281,7 +281,7 @@ def _build_linked_program_for_input(
             dump_east3_after_opt=dump_east3_after_opt if enable_dump else "",
             dump_east3_opt_trace=dump_east3_opt_trace if enable_dump else "",
             target_lang=target_lang,
-        )
+        ).to_legacy_dict()
 
     input_txt = str(input_path)
     module_map: dict[str, dict[str, object]] = {}
@@ -450,7 +450,7 @@ def main() -> int:
         return 0
 
     output_path = Path(output_text) if output_text != "" else default_output_path(input_path, target)
-    spec = get_backend_spec(target)
+    spec = get_backend_spec_typed(target)
     lower_raw = _parse_layer_option_items(layer_option_items["lower"], "--lower-option")
     optimizer_raw = _parse_layer_option_items(layer_option_items["optimizer"], "--optimizer-option")
     emitter_raw = _parse_layer_option_items(layer_option_items["emitter"], "--emitter-option")
@@ -458,9 +458,9 @@ def main() -> int:
     optimizer_options = {}
     emitter_options = {}
     try:
-        lower_options = resolve_layer_options(spec, "lower", lower_raw)
-        optimizer_options = resolve_layer_options(spec, "optimizer", optimizer_raw)
-        emitter_options = resolve_layer_options(spec, "emitter", emitter_raw)
+        lower_options = resolve_layer_options_typed(spec, "lower", lower_raw)
+        optimizer_options = resolve_layer_options_typed(spec, "optimizer", optimizer_raw)
+        emitter_options = resolve_layer_options_typed(spec, "emitter", emitter_raw)
     except Exception as ex:
         _fatal(str(ex))
 
@@ -468,10 +468,10 @@ def main() -> int:
     east = _entry_module_east_doc(optimized_program)
     validate_ambient_global_target_support(east, target=target)
     validate_runtime_abi_target_support(east, target=target)
-    ir = lower_ir(spec, east, lower_options)
-    ir = optimize_ir(spec, ir, optimizer_options)
+    ir = lower_ir_typed(spec, east, lower_options)
+    ir = optimize_ir_typed(spec, ir, optimizer_options)
     module_id = _module_id_from_east(east, output_path)
-    module_artifact = emit_module(
+    module_artifact = emit_module_typed(
         spec,
         ir,
         output_path,
@@ -479,22 +479,40 @@ def main() -> int:
         module_id=module_id,
         is_entry=True,
     )
-    program_artifact = build_program_artifact(
+    program_artifact = build_program_artifact_typed(
         spec,
-        collect_program_modules(module_artifact),
+        list(collect_program_modules_typed(module_artifact)),
         program_id=module_id,
         entry_modules=[module_id],
         layout_mode="single_file",
         link_output_schema="",
     )
-    writer = get_program_writer(spec)
+    writer = get_program_writer_typed(spec)
+    if hasattr(program_artifact, "to_legacy_dict"):
+        program_artifact_any = program_artifact.to_legacy_dict()
+    elif isinstance(program_artifact, dict):
+        program_artifact_any = dict(program_artifact)
+        modules_any = program_artifact_any.get("modules", [])
+        if isinstance(modules_any, (list, tuple)):
+            normalized_modules: list[dict[str, object]] = []
+            for item in modules_any:
+                if hasattr(item, "to_legacy_dict"):
+                    normalized_modules.append(item.to_legacy_dict())
+                elif isinstance(item, dict):
+                    normalized_modules.append(dict(item))
+            program_artifact_any["modules"] = normalized_modules
+    else:
+        program_artifact_any = {"modules": []}
     if callable(writer):
-        _ = writer(program_artifact, output_path, {})
+        _ = writer(program_artifact_any, output_path, {})
     else:
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        out_src = module_artifact.get("text", "")
-        output_path.write_text(out_src if isinstance(out_src, str) else "", encoding="utf-8")
-    apply_runtime_hook(spec, output_path)
+        module_text = getattr(module_artifact, "text", "")
+        if not isinstance(module_text, str) and isinstance(module_artifact, dict):
+            raw_text = module_artifact.get("text", "")
+            module_text = raw_text if isinstance(raw_text, str) else ""
+        output_path.write_text(module_text if isinstance(module_text, str) else "", encoding="utf-8")
+    apply_runtime_hook_typed(spec, output_path)
     return 0
 
 

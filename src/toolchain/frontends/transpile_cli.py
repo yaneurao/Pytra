@@ -6,6 +6,7 @@ from toolchain.ir.core import convert_path, convert_source_to_east_with_backend
 from toolchain.ir.east1 import load_east1_document as load_east1_document_stage
 from toolchain.ir.east2 import normalize_east1_to_east2_document as normalize_east1_to_east2_document_stage
 from toolchain.ir.east3 import load_east3_document as load_east3_document_stage
+from toolchain.compiler.typed_boundary import coerce_compiler_root_document
 from toolchain.frontends.known_modules import is_known_module_name
 from toolchain.frontends.type_expr import normalize_type_text
 from toolchain.frontends.type_expr import parse_type_expr_text
@@ -374,6 +375,35 @@ def load_east3_document(
         target_lang=target_lang,
         load_east_document_fn=load_east_document,
         make_user_error_fn=make_user_error,
+    )
+
+
+def load_east3_document_typed(
+    input_path: Path,
+    parser_backend: str = "self_hosted",
+    object_dispatch_mode: str = "",
+    east3_opt_level: str | int | object = 1,
+    east3_opt_pass: str = "",
+    dump_east3_before_opt: str = "",
+    dump_east3_after_opt: str = "",
+    dump_east3_opt_trace: str = "",
+    target_lang: str = "",
+):
+    """`load_east3_document()` の typed carrier wrapper。"""
+    return coerce_compiler_root_document(
+        load_east3_document(
+            input_path,
+            parser_backend=parser_backend,
+            object_dispatch_mode=object_dispatch_mode,
+            east3_opt_level=east3_opt_level,
+            east3_opt_pass=east3_opt_pass,
+            dump_east3_before_opt=dump_east3_before_opt,
+            dump_east3_after_opt=dump_east3_after_opt,
+            dump_east3_opt_trace=dump_east3_opt_trace,
+            target_lang=target_lang,
+        ),
+        source_path=str(input_path),
+        parser_backend=parser_backend,
     )
 
 

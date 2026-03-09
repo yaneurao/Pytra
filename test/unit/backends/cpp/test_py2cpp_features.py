@@ -2849,6 +2849,53 @@ def f(x: int | bool) -> int | bool:
         self.assertEqual(calls, ["called"])
         self.assertEqual(dict_any_get(out, "east_stage"), 3)
 
+    def test_transpile_cli_load_east3_typed_wrapper_wraps_legacy_doc(self) -> None:
+        from src.toolchain.compiler import transpile_cli as cli
+
+        calls: list[str] = []
+
+        def _fake_stage_fn(
+            _path: Path,
+            parser_backend: str = "self_hosted",
+            object_dispatch_mode: str = "",
+            east3_opt_level: str | int | object = 1,
+            east3_opt_pass: str = "",
+            dump_east3_before_opt: str = "",
+            dump_east3_after_opt: str = "",
+            dump_east3_opt_trace: str = "",
+            target_lang: str = "",
+            load_east_document_fn: object = None,
+            make_user_error_fn: object = None,
+        ) -> dict[str, object]:
+            _ = parser_backend
+            _ = object_dispatch_mode
+            _ = east3_opt_level
+            _ = east3_opt_pass
+            _ = dump_east3_before_opt
+            _ = dump_east3_after_opt
+            _ = dump_east3_opt_trace
+            _ = target_lang
+            _ = load_east_document_fn
+            _ = make_user_error_fn
+            calls.append("called")
+            return {"kind": "Module", "east_stage": 3, "schema_version": 1, "meta": {"dispatch_mode": "native"}, "body": []}
+
+        old = cli.load_east3_document_stage
+        try:
+            cli.load_east3_document_stage = _fake_stage_fn
+            with tempfile.TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                p = root / "dummy.py"
+                p.write_text("x = 1\n", encoding="utf-8")
+                out = cli.load_east3_document_typed(p)
+        finally:
+            cli.load_east3_document_stage = old
+        self.assertEqual(calls, ["called"])
+        self.assertEqual(out.meta.east_stage, 3)
+        self.assertEqual(out.meta.dispatch_mode, "native")
+        self.assertEqual(out.meta.source_path, str(p))
+        self.assertEqual(out.module_kind, "Module")
+
     def test_resolve_module_name_classifies_user_pytra_and_missing(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

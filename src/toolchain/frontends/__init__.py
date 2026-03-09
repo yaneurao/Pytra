@@ -27,8 +27,15 @@ def load_east3_document(*args: Any, **kwargs: Any) -> dict[str, object]:
     return _impl(*args, **kwargs)
 
 
+def load_east3_document_typed(*args: Any, **kwargs: Any) -> Any:
+    from .python_frontend import load_east3_document_typed as _impl
+
+    return _impl(*args, **kwargs)
+
+
 __all__ = [
     "add_common_transpile_args",
     "normalize_common_transpile_args",
     "load_east3_document",
+    "load_east3_document_typed",
 ]

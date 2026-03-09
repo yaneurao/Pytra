@@ -11,6 +11,7 @@ from typing import Iterable
 
 from toolchain.frontends.transpile_cli import add_common_transpile_args as _add_common_transpile_args
 from toolchain.frontends.transpile_cli import load_east3_document as _load_east3_document
+from toolchain.frontends.transpile_cli import load_east3_document_typed as _load_east3_document_typed
 from toolchain.frontends.transpile_cli import normalize_common_transpile_args as _normalize_common_transpile_args
 from pytra.std import argparse
 from pytra.std.pathlib import Path
@@ -62,6 +63,32 @@ def load_east3_document(
 ) -> dict[str, object]:
     """Load and normalize input into optimized EAST3 document."""
     return _load_east3_document(
+        input_path,
+        parser_backend=parser_backend,
+        object_dispatch_mode=object_dispatch_mode,
+        east3_opt_level=east3_opt_level,
+        east3_opt_pass=east3_opt_pass,
+        dump_east3_before_opt=dump_east3_before_opt,
+        dump_east3_after_opt=dump_east3_after_opt,
+        dump_east3_opt_trace=dump_east3_opt_trace,
+        target_lang=target_lang,
+    )
+
+
+def load_east3_document_typed(
+    input_path: Path,
+    *,
+    parser_backend: str = "self_hosted",
+    object_dispatch_mode: str = "",
+    east3_opt_level: str | int | object = 1,
+    east3_opt_pass: str = "",
+    dump_east3_before_opt: str = "",
+    dump_east3_after_opt: str = "",
+    dump_east3_opt_trace: str = "",
+    target_lang: str = "",
+):
+    """Load and normalize input into typed optimized EAST3 document."""
+    return _load_east3_document_typed(
         input_path,
         parser_backend=parser_backend,
         object_dispatch_mode=object_dispatch_mode,

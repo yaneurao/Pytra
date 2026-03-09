@@ -40,7 +40,7 @@
 2. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-01] `transpile_cli` / `backend_registry_static` / selfhost parser / generated compiler runtime に残る `dict[str, object]` / `list[object]` / `make_object` / `py_to` usage を棚卸しし、`compiler_internal` / `json_adapter` / `extern_hook` / `legacy_bridge` に分類する。
 3. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-02] `spec-dev` / `spec-runtime` / `spec-boxing` と矛盾しない typed boundary 契約と non-goal を decision log に固定する。
 4. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-01] compiler root payload（EAST document / backend spec / layer option / emit request/result）の typed carrier 仕様を決める。
-5. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-02] Python 正本へ typed carrier と薄い legacy adapter を導入する。
+5. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-02] Python 正本へ typed carrier と薄い legacy adapter を導入する。
 6. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-03] C++ selfhost/native compiler interface へ typed carrier mirror または typed wrapper API を導入し、raw `dict<str, object>` exchange を縮小する。
 7. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] selfhost parser / EAST builder の node 構築を typed constructor / builder helper へ寄せ、`dict<str, object>{{...}}` 直組み立てを段階縮退する。
 8. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated compiler / selfhost runtime に残る `make_object` usage を `serialization/export seam` 専用まで後退させる。
@@ -51,6 +51,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-01] `transpile_cli` / `backend_registry_static` / selfhost parser / generated compiler runtime の object carrier を棚卸しし、`.json` decode/encode を `json_adapter`、公開 raw dict API と selfhost seed helper を `legacy_bridge`、signature/backend spec/AST 直組み立てを `compiler_internal`、hook surface を `extern_hook` 予備カテゴリとして固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-02] P2 は `Any/object` 廃止ではなく compiler 内部 carrier の typed 化に限定し、JSON は `JsonValue` nominal lane へ寄せ、`type_expr` / `dispatch_mode` の意味論を backend/runtime が再解釈しない non-goal を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-01] `CompilerRootDocument` / `BackendSpecCarrier` / `LayerOptionsCarrier` / `EmitRequestCarrier` / `ModuleArtifactCarrier` / `ProgramArtifactCarrier` の field を固定し、callable は local detail、raw EAST/IR doc は S3 までの migration field と定義した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-02] `src/toolchain/compiler/typed_boundary.py` を正本に、host/static backend registry と `ir2lang.py` / `py2x.py` を typed carrier 正規経路へ寄せ、既存 `dict[str, object]` surface は `to_legacy_dict()` adapter・`load_east3_document_typed()` wrapper・writer 境界の薄い互換層へ縮退した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

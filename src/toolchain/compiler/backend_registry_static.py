@@ -4,6 +4,23 @@ from __future__ import annotations
 
 from typing import Any
 from pytra.std.pathlib import Path
+from toolchain.compiler.typed_boundary import BackendSpecCarrier
+from toolchain.compiler.typed_boundary import EmitRequestCarrier
+from toolchain.compiler.typed_boundary import LayerOptionsCarrier
+from toolchain.compiler.typed_boundary import ModuleArtifactCarrier
+from toolchain.compiler.typed_boundary import ProgramArtifactCarrier
+from toolchain.compiler.typed_boundary import ResolvedBackendSpec
+from toolchain.compiler.typed_boundary import build_program_artifact_carrier
+from toolchain.compiler.typed_boundary import coerce_backend_spec
+from toolchain.compiler.typed_boundary import coerce_compiler_root_document
+from toolchain.compiler.typed_boundary import coerce_module_artifact as coerce_module_artifact_carrier
+from toolchain.compiler.typed_boundary import coerce_layer_options
+from toolchain.compiler.typed_boundary import copy_module_dependencies
+from toolchain.compiler.typed_boundary import copy_module_metadata
+from toolchain.compiler.typed_boundary import copy_program_writer_options
+from toolchain.compiler.typed_boundary import flatten_module_artifact_carrier
+from toolchain.compiler.typed_boundary import normalize_module_artifact_carrier
+from toolchain.compiler.typed_boundary import resolve_layer_options_carrier
 
 from backends.cs.lower import lower_east3_to_cs_ir
 from backends.cs.optimizer import optimize_cs_ir
@@ -54,6 +71,10 @@ def _src_root() -> Path:
 
 def _identity_ir(doc: dict[str, Any]) -> dict[str, Any]:
     return doc if isinstance(doc, dict) else {}
+
+
+def _empty_emit(_ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    return ""
 
 
 def _default_output_path_for(input_path: Path, ext: str) -> Path:
@@ -436,53 +457,109 @@ _BACKEND_SPECS: dict[str, BackendSpec] = {
 }
 
 
-def _normalize_backend_specs() -> None:
-    for spec in _BACKEND_SPECS.values():
-        extension = str(spec.get("extension", ""))
-        defaults = spec.get("default_options")
-        if not isinstance(defaults, dict):
-            defaults = {}
-        default_lower = defaults.get("lower")
-        if not isinstance(default_lower, dict):
-            default_lower = {}
-        default_optimizer = defaults.get("optimizer")
-        if not isinstance(default_optimizer, dict):
-            default_optimizer = {}
-        default_emitter = defaults.get("emitter")
-        if not isinstance(default_emitter, dict):
-            default_emitter = {}
-        spec["default_options"] = {
-            "lower": dict(default_lower),
-            "optimizer": dict(default_optimizer),
-            "emitter": dict(default_emitter),
-        }
+_BACKEND_RUNTIME_SPECS: dict[str, ResolvedBackendSpec] = {}
 
-        schemas = spec.get("option_schema")
-        if not isinstance(schemas, dict):
-            schemas = {}
-        schema_lower = schemas.get("lower")
-        if not isinstance(schema_lower, dict):
-            schema_lower = {}
-        schema_optimizer = schemas.get("optimizer")
-        if not isinstance(schema_optimizer, dict):
-            schema_optimizer = {}
-        schema_emitter = schemas.get("emitter")
-        if not isinstance(schema_emitter, dict):
-            schema_emitter = {}
-        spec["option_schema"] = {
-            "lower": dict(schema_lower),
-            "optimizer": dict(schema_optimizer),
-            "emitter": dict(schema_emitter),
-        }
-        emit_module_any = spec.get("emit_module")
-        if not callable(emit_module_any):
-            emit_any = spec.get("emit", _emit_cpp)
-            emit_module_any = _legacy_emit_module_adapter(emit_any, extension=extension)
-        spec["emit_module"] = emit_module_any
-        program_writer_any = spec.get("program_writer")
-        if not callable(program_writer_any) and not isinstance(program_writer_any, dict):
-            program_writer_any = write_single_file_program
-        spec["program_writer"] = program_writer_any
+
+def _normalize_backend_runtime_spec(spec: BackendSpec) -> ResolvedBackendSpec:
+    normalized = dict(spec)
+    extension = str(normalized.get("extension", ""))
+    defaults = normalized.get("default_options")
+    if not isinstance(defaults, dict):
+        defaults = {}
+    default_lower = defaults.get("lower")
+    if not isinstance(default_lower, dict):
+        default_lower = {}
+    default_optimizer = defaults.get("optimizer")
+    if not isinstance(default_optimizer, dict):
+        default_optimizer = {}
+    default_emitter = defaults.get("emitter")
+    if not isinstance(default_emitter, dict):
+        default_emitter = {}
+    normalized["default_options"] = {
+        "lower": dict(default_lower),
+        "optimizer": dict(default_optimizer),
+        "emitter": dict(default_emitter),
+    }
+
+    schemas = normalized.get("option_schema")
+    if not isinstance(schemas, dict):
+        schemas = {}
+    schema_lower = schemas.get("lower")
+    if not isinstance(schema_lower, dict):
+        schema_lower = {}
+    schema_optimizer = schemas.get("optimizer")
+    if not isinstance(schema_optimizer, dict):
+        schema_optimizer = {}
+    schema_emitter = schemas.get("emitter")
+    if not isinstance(schema_emitter, dict):
+        schema_emitter = {}
+    normalized["option_schema"] = {
+        "lower": dict(schema_lower),
+        "optimizer": dict(schema_optimizer),
+        "emitter": dict(schema_emitter),
+    }
+
+    lower_impl = normalized.get("lower")
+    if not callable(lower_impl):
+        lower_impl = _identity_ir
+    optimizer_impl = normalized.get("optimizer")
+    if not callable(optimizer_impl):
+        optimizer_impl = _identity_ir
+    emit_impl = normalized.get("emit")
+    if not callable(emit_impl):
+        emit_impl = _empty_emit
+    emit_module_impl = normalized.get("emit_module")
+    if not callable(emit_module_impl):
+        emit_module_impl = _legacy_emit_module_adapter(emit_impl, extension=extension)
+    program_writer_impl = normalized.get("program_writer")
+    if not callable(program_writer_impl) and not isinstance(program_writer_impl, dict):
+        program_writer_impl = write_single_file_program
+    runtime_hook_impl = normalized.get("runtime_hook")
+    if runtime_hook_impl is None:
+        runtime_hook_impl = _runtime_none
+
+    carrier = BackendSpecCarrier.from_legacy_spec(normalized)
+    return ResolvedBackendSpec(
+        carrier=carrier,
+        lower_impl=lower_impl,
+        optimizer_impl=optimizer_impl,
+        emit_impl=emit_impl,
+        emit_module_impl=emit_module_impl,
+        program_writer_impl=program_writer_impl,
+        runtime_hook_impl=runtime_hook_impl,
+    )
+
+
+def _normalize_backend_specs() -> None:
+    for target, spec in list(_BACKEND_SPECS.items()):
+        runtime_spec = _normalize_backend_runtime_spec(spec)
+        _BACKEND_RUNTIME_SPECS[target] = runtime_spec
+        _BACKEND_SPECS[target] = runtime_spec.to_legacy_dict()
+
+
+def _coerce_runtime_spec(spec: BackendSpec | ResolvedBackendSpec) -> ResolvedBackendSpec:
+    return coerce_backend_spec(spec)
+
+
+def _normalize_module_artifact_typed(
+    artifact_any: Any,
+    *,
+    request: EmitRequestCarrier,
+) -> ModuleArtifactCarrier:
+    return normalize_module_artifact_carrier(
+        artifact_any,
+        module_id=request.module_id,
+        output_path=request.output_path,
+        extension=request.spec.extension,
+        is_entry=request.is_entry,
+    )
+
+
+def _coerce_module_artifact(item: ModuleArtifactCarrier | dict[str, Any]) -> ModuleArtifactCarrier | None:
+    try:
+        return coerce_module_artifact_carrier(item)
+    except RuntimeError:
+        return None
 
 
 _normalize_backend_specs()
@@ -492,6 +569,12 @@ def list_backend_targets() -> list[str]:
     return list(_BACKEND_SPECS.keys())
 
 
+def get_backend_spec_typed(target: str) -> ResolvedBackendSpec:
+    if target not in _BACKEND_RUNTIME_SPECS:
+        raise RuntimeError("unsupported target: " + target)
+    return _BACKEND_RUNTIME_SPECS[target]
+
+
 def get_backend_spec(target: str) -> BackendSpec:
     if target not in _BACKEND_SPECS:
         raise RuntimeError("unsupported target: " + target)
@@ -499,80 +582,109 @@ def get_backend_spec(target: str) -> BackendSpec:
 
 
 def default_output_path(input_path: Path, target: str) -> Path:
-    spec = get_backend_spec(target)
-    ext = str(spec.get("extension", ""))
-    return _default_output_path_for(input_path, ext)
+    spec = get_backend_spec_typed(target)
+    return _default_output_path_for(input_path, spec.carrier.extension)
+
+
+def resolve_layer_options_typed(
+    spec: BackendSpec | ResolvedBackendSpec,
+    layer: str,
+    raw_options: dict[str, str],
+) -> LayerOptionsCarrier:
+    runtime_spec = _coerce_runtime_spec(spec)
+    return resolve_layer_options_carrier(runtime_spec, layer, raw_options)
 
 
 def resolve_layer_options(spec: BackendSpec, layer: str, raw_options: dict[str, str]) -> dict[str, Any]:
-    defaults = spec.get("default_options")
-    if not isinstance(defaults, dict):
-        defaults = {}
-    merged = defaults.get(layer)
-    if not isinstance(merged, dict):
-        merged = {}
-    out: dict[str, Any] = dict(merged)
-
-    schemas = spec.get("option_schema")
-    if not isinstance(schemas, dict):
-        schemas = {}
-    schema = schemas.get(layer)
-    if not isinstance(schema, dict):
-        schema = {}
-
-    for key, raw in raw_options.items():
-        if key not in schema:
-            raise RuntimeError("unknown " + layer + " option: " + key)
-        rule = schema[key]
-        if not isinstance(rule, dict):
-            raise RuntimeError("invalid schema for option: " + key)
-        typ = str(rule.get("type", "str"))
-        value_any: Any = raw
-        if typ == "str":
-            value_any = raw
-        elif typ == "int":
-            try:
-                value_any = int(raw)
-            except Exception as ex:
-                raise RuntimeError("invalid int for option " + key + ": " + raw) from ex
-        elif typ == "bool":
-            lowered = raw.lower()
-            if lowered in {"1", "true", "yes", "on"}:
-                value_any = True
-            elif lowered in {"0", "false", "no", "off"}:
-                value_any = False
-            else:
-                raise RuntimeError("invalid bool for option " + key + ": " + raw)
-        else:
-            raise RuntimeError("unsupported option type for " + key + ": " + typ)
-
-        choices = rule.get("choices")
-        if isinstance(choices, list) and len(choices) > 0 and value_any not in choices:
-            raise RuntimeError("invalid value for option " + key + ": " + str(value_any))
-        out[key] = value_any
-    return out
+    return resolve_layer_options_typed(spec, layer, raw_options).to_legacy_dict()
 
 
-def lower_ir(spec: BackendSpec, east_doc: dict[str, Any], lower_options: dict[str, Any] | None = None) -> dict[str, Any]:
-    fn = spec.get("lower", _identity_ir)
+def lower_ir_typed(
+    spec: BackendSpec | ResolvedBackendSpec,
+    east_doc: dict[str, Any] | object,
+    lower_options: LayerOptionsCarrier | dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    runtime_spec = _coerce_runtime_spec(spec)
+    doc = east_doc if isinstance(east_doc, dict) else coerce_compiler_root_document(east_doc).to_legacy_dict()
+    options = lower_options if isinstance(lower_options, LayerOptionsCarrier) else coerce_layer_options("lower", lower_options)
+    fn = runtime_spec.lower_impl
     if not callable(fn):
-        return _identity_ir(east_doc)
+        return _identity_ir(doc)
     try:
-        ir = fn(east_doc, lower_options if isinstance(lower_options, dict) else {})
+        ir = fn(doc, options.to_legacy_dict())
     except TypeError:
-        ir = fn(east_doc)
+        ir = fn(doc)
     return ir if isinstance(ir, dict) else {}
 
 
-def optimize_ir(spec: BackendSpec, ir: dict[str, Any], optimizer_options: dict[str, Any] | None = None) -> dict[str, Any]:
-    fn = spec.get("optimizer", _identity_ir)
+def lower_ir(spec: BackendSpec, east_doc: dict[str, Any], lower_options: dict[str, Any] | None = None) -> dict[str, Any]:
+    return lower_ir_typed(spec, east_doc, lower_options)
+
+
+def optimize_ir_typed(
+    spec: BackendSpec | ResolvedBackendSpec,
+    ir: dict[str, Any],
+    optimizer_options: LayerOptionsCarrier | dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    runtime_spec = _coerce_runtime_spec(spec)
+    options = (
+        optimizer_options
+        if isinstance(optimizer_options, LayerOptionsCarrier)
+        else coerce_layer_options("optimizer", optimizer_options)
+    )
+    fn = runtime_spec.optimizer_impl
     if not callable(fn):
         return _identity_ir(ir)
     try:
-        out = fn(ir, optimizer_options if isinstance(optimizer_options, dict) else {})
+        out = fn(ir, options.to_legacy_dict())
     except TypeError:
         out = fn(ir)
     return out if isinstance(out, dict) else {}
+
+
+def optimize_ir(spec: BackendSpec, ir: dict[str, Any], optimizer_options: dict[str, Any] | None = None) -> dict[str, Any]:
+    return optimize_ir_typed(spec, ir, optimizer_options)
+
+
+def emit_module_typed(
+    spec: BackendSpec | ResolvedBackendSpec,
+    ir: dict[str, Any],
+    output_path: Path,
+    emitter_options: LayerOptionsCarrier | dict[str, Any] | None = None,
+    *,
+    module_id: str = "",
+    is_entry: bool = False,
+) -> ModuleArtifactCarrier:
+    runtime_spec = _coerce_runtime_spec(spec)
+    options = (
+        emitter_options
+        if isinstance(emitter_options, LayerOptionsCarrier)
+        else coerce_layer_options("emitter", emitter_options)
+    )
+    request = EmitRequestCarrier(
+        spec=runtime_spec.carrier,
+        ir_document=dict(ir) if isinstance(ir, dict) else {},
+        output_path=output_path,
+        emitter_options=options,
+        module_id=module_id,
+        is_entry=is_entry,
+    )
+    fn = runtime_spec.emit_module_impl
+    artifact_any: Any = {}
+    try:
+        artifact_any = fn(
+            request.ir_document,
+            request.output_path,
+            request.emitter_options.to_legacy_dict(),
+            module_id=request.module_id,
+            is_entry=request.is_entry,
+        )
+    except TypeError:
+        try:
+            artifact_any = fn(request.ir_document, request.output_path, request.emitter_options.to_legacy_dict())
+        except TypeError:
+            artifact_any = fn(request.ir_document, request.output_path)
+    return _normalize_module_artifact_typed(artifact_any, request=request)
 
 
 def emit_module(
@@ -584,36 +696,40 @@ def emit_module(
     module_id: str = "",
     is_entry: bool = False,
 ) -> dict[str, Any]:
-    fn = spec.get("emit_module")
-    extension = str(spec.get("extension", ""))
-    if not callable(fn):
-        return _normalize_module_artifact(
-            "",
-            module_id=module_id,
-            output_path=output_path,
-            extension=extension,
-            is_entry=is_entry,
-        )
-    artifact_any: Any = {}
-    try:
-        artifact_any = fn(
-            ir,
-            output_path,
-            emitter_options if isinstance(emitter_options, dict) else {},
-            module_id=module_id,
-            is_entry=is_entry,
-        )
-    except TypeError:
-        try:
-            artifact_any = fn(ir, output_path, emitter_options if isinstance(emitter_options, dict) else {})
-        except TypeError:
-            artifact_any = fn(ir, output_path)
-    return _normalize_module_artifact(
-        artifact_any,
+    return emit_module_typed(
+        spec,
+        ir,
+        output_path,
+        emitter_options,
         module_id=module_id,
-        output_path=output_path,
-        extension=extension,
         is_entry=is_entry,
+    ).to_legacy_dict()
+
+
+def build_program_artifact_typed(
+    spec: BackendSpec | ResolvedBackendSpec,
+    modules: list[ModuleArtifactCarrier | dict[str, Any]],
+    *,
+    program_id: str = "",
+    entry_modules: list[str] | None = None,
+    layout_mode: str = "single_file",
+    link_output_schema: str = "",
+    writer_options: dict[str, object] | None = None,
+) -> ProgramArtifactCarrier:
+    runtime_spec = _coerce_runtime_spec(spec)
+    module_list: list[ModuleArtifactCarrier] = []
+    for item in modules:
+        coerced = _coerce_module_artifact(item)
+        if coerced is not None:
+            module_list.append(coerced)
+    return build_program_artifact_carrier(
+        runtime_spec,
+        module_list,
+        program_id=program_id,
+        entry_modules=entry_modules,
+        layout_mode=layout_mode,
+        link_output_schema=link_output_schema,
+        writer_options=copy_program_writer_options(writer_options),
     )
 
 
@@ -627,63 +743,36 @@ def build_program_artifact(
     link_output_schema: str = "",
     writer_options: dict[str, object] | None = None,
 ) -> dict[str, Any]:
-    target = str(spec.get("target_lang", ""))
-    module_list: list[dict[str, Any]] = []
-    for item in modules:
-        if not isinstance(item, dict):
-            continue
-        module = dict(item)
-        kind_any = module.get("kind", "user")
-        if not isinstance(kind_any, str) or kind_any == "":
-            kind_any = "user"
-        module["kind"] = kind_any
-        metadata_any = module.get("metadata", {})
-        module["metadata"] = dict(metadata_any) if isinstance(metadata_any, dict) else {}
-        module_list.append(module)
-    effective_program_id = program_id
-    if effective_program_id == "" and len(module_list) > 0:
-        first_module_id = module_list[0].get("module_id", "")
-        if isinstance(first_module_id, str):
-            effective_program_id = first_module_id
-    entry_out = [item for item in list(entry_modules or []) if isinstance(item, str) and item != ""]
-    return {
-        "target": target,
-        "program_id": effective_program_id,
-        "entry_modules": entry_out,
-        "modules": module_list,
-        "layout_mode": layout_mode,
-        "link_output_schema": link_output_schema,
-        "writer_options": dict(writer_options) if isinstance(writer_options, dict) else {},
-    }
+    return build_program_artifact_typed(
+        spec,
+        modules,
+        program_id=program_id,
+        entry_modules=entry_modules,
+        layout_mode=layout_mode,
+        link_output_schema=link_output_schema,
+        writer_options=writer_options,
+    ).to_legacy_dict()
+
+
+def collect_program_modules_typed(module_artifact: ModuleArtifactCarrier | dict[str, Any]) -> tuple[ModuleArtifactCarrier, ...]:
+    try:
+        carrier = coerce_module_artifact_carrier(module_artifact)
+    except RuntimeError:
+        return ()
+    return flatten_module_artifact_carrier(carrier)
 
 
 def collect_program_modules(module_artifact: dict[str, Any]) -> list[dict[str, Any]]:
-    if not isinstance(module_artifact, dict):
-        return []
-    modules_out: list[dict[str, Any]] = []
-    primary = dict(module_artifact)
-    if "helper_modules" in primary:
-        del primary["helper_modules"]
-    modules_out.append(primary)
-    helper_any = module_artifact.get("helper_modules", [])
-    if not isinstance(helper_any, list):
-        return modules_out
-    for item in helper_any:
-        if not isinstance(item, dict):
-            continue
-        helper = dict(item)
-        kind_any = helper.get("kind", "helper")
-        if not isinstance(kind_any, str) or kind_any == "":
-            kind_any = "helper"
-        helper["kind"] = kind_any
-        metadata_any = helper.get("metadata", {})
-        helper["metadata"] = dict(metadata_any) if isinstance(metadata_any, dict) else {}
-        modules_out.append(helper)
-    return modules_out
+    return [item.to_legacy_dict() for item in collect_program_modules_typed(module_artifact)]
+
+
+def get_program_writer_typed(spec: BackendSpec | ResolvedBackendSpec) -> Any:
+    runtime_spec = _coerce_runtime_spec(spec)
+    return runtime_spec.program_writer_impl
 
 
 def get_program_writer(spec: BackendSpec) -> Any:
-    return spec.get("program_writer")
+    return get_program_writer_typed(spec)
 
 
 def emit_source(
@@ -692,12 +781,15 @@ def emit_source(
     output_path: Path,
     emitter_options: dict[str, Any] | None = None,
 ) -> str:
-    artifact = emit_module(spec, ir, output_path, emitter_options)
-    source = artifact.get("text", "")
-    return source if isinstance(source, str) else ""
+    return emit_module_typed(spec, ir, output_path, emitter_options).text
+
+
+def apply_runtime_hook_typed(spec: BackendSpec | ResolvedBackendSpec, output_path: Path) -> None:
+    runtime_spec = _coerce_runtime_spec(spec)
+    fn = runtime_spec.runtime_hook_impl
+    if callable(fn):
+        fn(output_path)
 
 
 def apply_runtime_hook(spec: BackendSpec, output_path: Path) -> None:
-    fn = spec.get("runtime_hook", _runtime_none)
-    if callable(fn):
-        fn(output_path)
+    apply_runtime_hook_typed(spec, output_path)
