@@ -248,7 +248,7 @@ str emit_source_typed(
     }
     pytra::std::pathlib::Path ir_path = _temp_path(".east3.json");
     try {
-        ir_path.write_text(pytra::std::json::dumps(make_object(ir), true));
+        ir_path.write_text(pytra::std::json::_dump_json_dict(ir, true, ::std::nullopt, ",", ":", 0));
         const ::std::string cmd =
             "PYTHONPATH=src${PYTHONPATH:+:$PYTHONPATH} python3 src/ir2lang.py "
             + _shell_quote(py_to_string(ir_path.__str__()))
