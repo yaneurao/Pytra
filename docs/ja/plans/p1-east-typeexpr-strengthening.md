@@ -114,7 +114,7 @@
 
 ## 分解
 
-- [ ] [ID: P1-EAST-TYPEEXPR-01-S1-01] frontend / lowering / optimizer / backend に散在する `split_union` / `normalize_type_name` / `resolved_type` 文字列依存箇所を棚卸しし、`optional` / `dynamic union` / `nominal ADT` / `generic container` ごとに分類する。
+- [x] [ID: P1-EAST-TYPEEXPR-01-S1-01] frontend / lowering / optimizer / backend に散在する `split_union` / `normalize_type_name` / `resolved_type` 文字列依存箇所を棚卸しし、`optional` / `dynamic union` / `nominal ADT` / `generic container` ごとに分類する。
 - [ ] [ID: P1-EAST-TYPEEXPR-01-S1-02] archived `EAST123` / `JsonValue` 契約と矛盾しない end state、non-goal、migration 順序を decision log に固定する。
 - [ ] [ID: P1-EAST-TYPEEXPR-01-S2-01] `spec-east` / `spec-dev` に `TypeExpr` schema、union 3分類、`type_expr` と `resolved_type` の主従関係を追加する。
 - [ ] [ID: P1-EAST-TYPEEXPR-01-S2-02] `JsonValue` を general union ではなく nominal closed ADT として扱う IR 契約、decode/narrowing の責務境界、backend fail-closed ルールを spec に固定する。
@@ -156,3 +156,7 @@
 - 2026-03-09: ユーザー指示により、`std/json.py` の nominal 化を runtime 先行で進めるのではなく、まず EAST 側の stringly-typed 型 debt を止める P1 を追加した。
 - 2026-03-09: この P1 の主眼は `JsonValue` 実装そのものより、`TypeExpr` を正本にして optional / dynamic union / nominal ADT を IR で区別することに置く。
 - 2026-03-09: 既存 `JsonValue` public surface は活かすが、それを「一般 union の runtime wrapper」として延命しない。closed nominal ADT として扱う方向を固定した。
+- 2026-03-09: `S1-01` の frontend / selfhost parser inventory では、`toolchain/frontends/transpile_cli.py:523` の `normalize_param_annotation()` が union を構造化せず文字列のまま通し、`toolchain/ir/core.py:219` の `_sh_ann_to_type()` が `Optional[T] -> "T | None"` を返し、`toolchain/ir/core.py:118` / `2952` の `_sh_is_type_expr_text()` / `_split_union_types()` が type alias と object/Any receiver guard を文字列分解で支えていることを確認した。ここは `optional` と `dynamic union` の混線源である。
+- 2026-03-09: `S1-01` の lowering inventory では、`toolchain/ir/east2_to_east3_lowering.py:27` / `35` / `90` の `_normalize_type_name()` / `_split_union_types()` / `_is_any_like_type()` が union に `Any/object/unknown` を含むかだけで dynamic 判定し、`east2_to_east3_lowering.py:474` の `_wrap_value_for_target_type()` で `Box/Unbox` 境界へ直結していることを確認した。一般 union と dynamic union の区別が IR 入口で失われている。
+- 2026-03-09: `S1-01` の generic-container inventory では、`toolchain/link/runtime_template_specializer.py:67` の独自 `_parse_type_expr()` / `_type_expr_to_string()` が `annotation/return_type/resolved_type` を別系統で再解析・再文字列化しており、`backends/common/emitter/code_emitter.py:1516` / `1594` / `1757` の `split_union()` / `split_union_non_none()` / `normalize_type_name()` と二重管理になっていることを確認した。generic container と template specialization も `resolved_type` 文字列正本へ依存している。
+- 2026-03-09: `S1-01` の backend inventory では、C++ `backends/cpp/emitter/type_bridge.py:372` が optional だけを `std::optional<T>` へ寄せ、それ以外の general union を `object` へ潰し、`backends/cpp/emitter/header_builder.py:1130` も header 側で同じ fallback を持つ。Rust `backends/rs/emitter/rs_emitter.py:1973` は any-like union を `PyAny`、optional を `Option<T>`、その他 multi-arm union を `String` へ退避し、C# `backends/cs/emitter/cs_emitter.py:676` も non-optional union を `object` へ退避する。`JsonValue` nominal ADT 候補は backend 契約ではなく fallback と decode-first guard で支えられている。
