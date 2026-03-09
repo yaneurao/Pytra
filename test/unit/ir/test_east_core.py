@@ -38,6 +38,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("def _sh_make_trivia_comment(", text)
         self.assertIn("def _sh_make_expr_token(", text)
         self.assertIn("def _sh_make_expr_stmt(", text)
+        self.assertIn("def _sh_make_value_expr(", text)
         self.assertIn("def _sh_make_name_expr(", text)
         self.assertIn("def _sh_make_tuple_expr(", text)
         self.assertIn("def _sh_make_constant_expr(", text)
@@ -252,6 +253,31 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('return {"kind": "Lambda"', text)
         self.assertNotIn('values.append({"kind": "FormattedValue"', text)
         self.assertNotIn('return {"kind": "JoinedStr"', text)
+
+    def test_core_source_routes_expr_envelopes_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_make_value_expr", 1)[1].split("def _sh_make_name_expr", 1)[0]
+        name_text = text.split("def _sh_make_name_expr", 1)[1].split("def _sh_make_tuple_expr", 1)[0]
+        tuple_text = text.split("def _sh_make_tuple_expr", 1)[1].split("def _sh_make_constant_expr", 1)[0]
+        call_text = text.split("def _sh_make_call_expr", 1)[1].split("def _sh_make_keyword_arg", 1)[0]
+        dict_text = text.split("def _sh_make_dict_expr", 1)[1].split("def _sh_make_list_comp_expr", 1)[0]
+
+        self.assertIn('node = _sh_make_kind_carrier(kind)', helper_text)
+        self.assertIn('node["source_span"] = source_span', helper_text)
+        self.assertIn('node["resolved_type"] = resolved_type', helper_text)
+        self.assertIn('node["casts"] = [] if casts is None else casts', helper_text)
+        self.assertIn('node = _sh_make_value_expr(', name_text)
+        self.assertIn('"Name"', name_text)
+        self.assertIn('node = _sh_make_value_expr(', tuple_text)
+        self.assertIn('"Tuple"', tuple_text)
+        self.assertIn('node = _sh_make_value_expr(', call_text)
+        self.assertIn('"Call"', call_text)
+        self.assertIn('node = _sh_make_value_expr(', dict_text)
+        self.assertIn('"Dict"', dict_text)
+        self.assertNotIn('"kind": "Name"', name_text)
+        self.assertNotIn('"kind": "Tuple"', tuple_text)
+        self.assertNotIn('"kind": "Call"', call_text)
+        self.assertNotIn('"kind": "Dict"', dict_text)
 
     def test_core_source_uses_builder_helpers_for_residual_stmt_name_tuple_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
