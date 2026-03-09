@@ -550,6 +550,16 @@ linked module(EAST3)
   - `--object-dispatch-mode` はコンパイル開始時に 1 回だけ確定し、段間で `meta.dispatch_mode` として保持する。
   - dispatch mode の意味論適用は `EAST2 -> EAST3` lowering のみで実施し、backend/hook では再判断しない。
 
+### 5.5 `TypeExpr` 実装契約（必須）
+
+- `type_expr` / `arg_type_exprs` / `return_type_expr` を型意味論の正本とし、`resolved_type` / `arg_types` / `return_type` は migration 互換 mirror として扱う。
+- frontend / normalize / validator / lowering は、`type_expr` が存在する node で `resolved_type` を再分解して意味論を決めてはならない。
+- `OptionalType`、`UnionType(union_mode=dynamic)`、`NominalAdtType` は distinct lane として扱い、1 つの string parser helper へ押し込んではならない。
+- `JsonValue` / `JsonObj` / `JsonArr` は general union ではなく nominal closed ADT lane として扱う。decode-first 契約を保ったまま IR/validator/backend へ接続し、`object` fallback の別名にしてはならない。
+- `toolchain/link/runtime_template_specializer.py`、optimizer pass、backend helper が独自に型文字列 parser / substitute を持つ場合でも、`type_expr` 導入後はそれを正本にして動作させなければならない。mirror 文字列の再生成は許可してよいが、意味再構成は許可しない。
+- unsupported な general union を backend が `object` / `String` / 類似 fallback に黙って潰してはならない。temporary compat を残す場合は fail-fast guard、decision log、removal plan を同時に持つ。
+- `type_expr` と `resolved_type` mirror の矛盾、または nominal ADT を general union として emit しようとする経路は `semantic_conflict` または `unsupported_syntax` として fail-closed にする。
+
 ## 6. LanguageProfile / CodeEmitter
 
 - `CodeEmitter` は言語非依存の骨組み（ノード走査、スコープ管理、共通補助）を担当します。

@@ -532,6 +532,16 @@ Constraints:
   - `--object-dispatch-mode` is decided exactly once at the start of compilation and kept as `meta.dispatch_mode` across stages
   - dispatch semantics are applied only in `EAST2 -> EAST3` lowering, never re-decided in the backend or hooks
 
+### 5.5 `TypeExpr` Implementation Contract (Mandatory)
+
+- Treat `type_expr` / `arg_type_exprs` / `return_type_expr` as the canonical carriers of type meaning, and treat `resolved_type` / `arg_types` / `return_type` only as migration-compat mirrors.
+- Frontend, normalization, validators, and lowering must not re-split `resolved_type` to recover meaning when `type_expr` is present on a node.
+- `OptionalType`, `UnionType(union_mode=dynamic)`, and `NominalAdtType` must stay on distinct lanes and must not be collapsed back into one string parser helper.
+- Treat `JsonValue` / `JsonObj` / `JsonArr` as a nominal closed ADT lane, not as a general union. Connect them to IR/validators/backends while preserving the decode-first contract, and never turn them into a new spelling for `object` fallback.
+- Even where `toolchain/link/runtime_template_specializer.py`, optimizer passes, or backend helpers still carry local type-string parsers or substitution helpers, they must switch to `type_expr` as the source of truth once it exists. Regenerating mirror strings is allowed; reconstructing meaning from those mirrors is not.
+- Backends must not silently collapse unsupported general unions into `object`, `String`, or similar fallbacks. If temporary compatibility remains, it must come with a fail-fast guard, a decision-log entry, and a removal plan.
+- Any mismatch between `type_expr` and its `resolved_type` mirror, or any path that tries to emit a nominal ADT as a general union, must fail closed as `semantic_conflict` or `unsupported_syntax`.
+
 ## 6. LanguageProfile / CodeEmitter
 
 - `CodeEmitter` owns the language-agnostic skeleton: node traversal, scope management, and common helpers.

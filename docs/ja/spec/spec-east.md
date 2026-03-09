@@ -123,14 +123,16 @@
 
 式ノード（`_expr`）は以下を持つ。
 
-- `kind`, `source_span`, `resolved_type`, `borrow_kind`, `casts`, `repr`
-- `resolved_type` は推論済み型文字列。
+- `kind`, `source_span`, `resolved_type`, `type_expr`, `borrow_kind`, `casts`, `repr`
+- `type_expr` は構造化型表現であり、存在する場合は `resolved_type` より優先する。
+- `resolved_type` は migration 互換の推論済み型文字列 mirror。
 - `borrow_kind` は `value | readonly_ref | mutable_ref`（`move` は未使用）。
 - 主要式は構造化子ノードを持つ（`left/right`, `args`, `elements`, `entries` など）。
 
 関数ノードは以下を持つ。
 
-- `arg_types`, `return_type`, `arg_usage`, `renamed_symbols`
+- `arg_types`, `arg_type_exprs`, `return_type`, `return_type_expr`, `arg_usage`, `renamed_symbols`
+- `arg_type_exprs` / `return_type_expr` は `arg_types` / `return_type` の構造化正本。
 - `decorators`（raw decorator 文字列の列）
 - `meta.runtime_abi_v1`（任意。`@abi` の canonical metadata）
 - `meta.template_v1`（任意。`@template` の canonical metadata）
@@ -225,6 +227,57 @@
 - `bytes` / `bytearray` は `list[uint8]` に正規化。
 - `pathlib.Path` は `Path` に正規化。
 - C++ ランタイムの `str` / `list` / `dict` / `set` / `bytes` / `bytearray` は、STL 継承ではなく wrapper（composition）として実装する。
+
+### 6.3 `TypeExpr` schema（構造化型表現）
+
+`type_expr` は backend 非依存の構造化型表現とし、少なくとも次の kind を持つ。
+
+- `NamedType`
+  - `name: str`
+  - 例: `int64`, `float64`, `str`, `Path`
+- `GenericType`
+  - `base: str`
+  - `args: TypeExpr[]`
+  - 例: `list[T]`, `dict[K,V]`, `tuple[T1,T2]`, `callable[float64]`
+- `OptionalType`
+  - `inner: TypeExpr`
+  - `T | None` の正規形。`UnionType` で表してはならない。
+- `UnionType`
+  - `options: TypeExpr[]`
+  - `union_mode: general | dynamic`
+  - `general` は open な一般 union、`dynamic` は `Any/object/unknown` を含む dynamic union を表す。
+- `DynamicType`
+  - `name: Any | object | unknown`
+  - open-world dynamic carrier を表す。
+- `NominalAdtType`
+  - `name: str`
+  - `adt_family: str`（任意。例: `json`）
+  - `variant_domain: str`（任意。例: `closed`）
+  - `JsonValue` のような closed nominal ADT を表す。
+
+補足:
+
+- `bytes` / `bytearray` は従来どおり `list[uint8]` へ正規化してよく、独立 kind を必須にしない。
+- exact JSON field 名は implementation に合わせて snake_case か camelCase に統一してよいが、意味論は上記 kind/field を満たすこと。
+- annotation を直接持つ node は、既存の文字列 field に対応する `*_type_expr` field を持ってよい。
+
+### 6.4 union 3分類と `resolved_type` mirror の主従
+
+必須ルール:
+
+- `T | None` は常に `OptionalType(inner=T)` に正規化し、`UnionType(options=[T, None])` のまま残してはならない。
+- `Any/object/unknown` を含む union は `UnionType(union_mode=dynamic)` として扱い、general union と同じ lowering 規則で扱ってはならない。
+- `JsonValue` / `JsonObj` / `JsonArr` のような JSON decode-first surface は general union ではなく `NominalAdtType` として扱う。
+- `resolved_type`, `arg_types`, `return_type` はすべて `type_expr`, `arg_type_exprs`, `return_type_expr` から導出される mirror に格下げする。
+- `type_expr` と `resolved_type` が両方ある場合、正本は常に `type_expr` である。矛盾は `semantic_conflict` として fail-closed にする。
+- migration 中に legacy node が `resolved_type` だけを持つことは許容してよいが、`EAST2` 正本・`EAST3` 正本・validator・backend contract を追加するときは `type_expr` を優先入力にしなければならない。
+
+例:
+
+- `int | None` -> `OptionalType(NamedType("int64"))`
+- `int | bool` -> `UnionType(union_mode="general", options=[NamedType("int64"), NamedType("bool")])`
+- `int | Any` -> `UnionType(union_mode="dynamic", options=[NamedType("int64"), DynamicType("Any")])`
+- `JsonValue` -> `NominalAdtType(name="JsonValue", adt_family="json", variant_domain="closed")`
 
 ## 7. 型推論ルール
 
@@ -586,7 +639,9 @@ python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
   - `Compare.ops` は `Eq/NotEq/Lt/LtE/Gt/GtE/In/NotIn/Is/IsNot` を保持。
   - `BoolOp.op` は `And/Or` を保持。
 - 型:
-  - `resolved_type` は論理型名（`int64`, `float64`, `list[T]`, `dict[K,V]`, `tuple[...]`, `Any`, `unknown`）のみを保持し、backend 固有表現は持たない。
+  - `type_expr` を正本の型表現とし、backend 固有表現を持たない。
+  - `resolved_type` は論理型名（`int64`, `float64`, `list[T]`, `dict[K,V]`, `tuple[...]`, `Any`, `unknown`）の legacy mirror としてのみ保持してよい。
+  - `OptionalType` / `UnionType(union_mode=dynamic)` / `NominalAdtType` を distinct category として保持する。
 - メタ:
   - `meta.dispatch_mode` は `native | type_id` のコンパイル方針値として保持し、意味適用は `EAST2 -> EAST3` の 1 回のみで実施する。
   - import 正規化情報（`import_bindings`, `qualified_symbol_refs`, `import_modules`, `import_symbols`）は frontend 解決結果として保持する。
@@ -601,10 +656,12 @@ python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
 
 - 解決不能ノード/型は `ok=false` + `error.kind`（`inference_failure` / `unsupported_syntax` / `semantic_conflict`）で停止する。
 - 中立契約外の入力（不正 `dispatch_mode`, 未対応ノード形、必要メタ欠落）は暗黙救済せず fail-closed で終了する。
+- `type_expr` と `resolved_type` mirror が矛盾する入力は `semantic_conflict` として fail-closed で終了する。
 - 互換フォールバックは段階移行中のみ許可し、`legacy` 明示フラグとともにログへ記録する。
 
 ### 24.5 EAST2 -> EAST3 への接続原則
 
 - EAST2 は「何をしたいか（意味タグ）」のみを持ち、`EAST3` で object 境界命令（`Obj*`, `ForCore.iter_plan`）へ確定する。
+- `EAST2 -> EAST3` lowering は `type_expr` を見て `optional` / `dynamic union` / `nominal ADT` を別 lane に分け、`resolved_type` の文字列再分解で意味論を決めてはならない。
 - frontend 固有（Python builtins/std）の解決は adapter 層で中立タグへ変換してから EAST2 へ渡す。
 - backend/hook は EAST3 以降で言語固有写像のみを担当し、EAST2 契約の再解釈をしない。
