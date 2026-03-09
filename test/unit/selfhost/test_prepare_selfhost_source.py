@@ -708,6 +708,36 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn('{"resolved_type", make_object("bool")}', lowered_text)
         self.assertNotIn('return dict<str, object>{{"kind", make_object("Name")}', lowered_text)
 
+    def test_generated_cpp_core_lowered_any_all_call_residual_cluster_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        branch_text = _slice_block(
+            text,
+            "// Normalize generator-arg any/all into list-comp form for self_hosted parser.",
+            "// Normalize single generator-argument calls into list-comp argument form.",
+        )
+        self.assertIn('return dict<str, object>{{"kind", make_object("Call")}', branch_text)
+        self.assertIn('{"resolved_type", make_object("bool")}', branch_text)
+        self.assertIn('{"func", make_object(dict<str, object>{{"kind", make_object("Name")}', branch_text)
+        self.assertNotIn('return dict<str, object>{{"kind", make_object("Dict")}', branch_text)
+        self.assertNotIn('return dict<str, object>{{"kind", make_object("Tuple")}', branch_text)
+
+    def test_generated_cpp_core_lowered_simple_listcomp_name_residual_cluster_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        branch_text = _slice_block(
+            text,
+            "if (!py_is_none(m_lc)) {",
+            'if ((py_len(txt) >= 3) && (py_at(txt, py_to_int64(0)) == "f")',
+        )
+        self.assertIn('dict<str, str> elt_node = dict<str, object>{{"kind", make_object("Name")}', branch_text)
+        self.assertIn(
+            '_sh_make_comp_generator(\n'
+            '                        dict<str, object>{{"kind", make_object("Name")}',
+            branch_text,
+        )
+        self.assertNotIn('return dict<str, object>{{"kind", make_object("Call")}', branch_text)
+        self.assertNotIn('return dict<str, object>{{"kind", make_object("Dict")}', branch_text)
+        self.assertNotIn('return dict<str, object>{{"kind", make_object("Tuple")}', branch_text)
+
     def test_generated_cpp_core_stmt_block_residual_callsites_are_known_clusters(self) -> None:
         text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
         stmt_text = _slice_block(
@@ -719,6 +749,23 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn('dict<str, object>{{"kind", make_object("Name")}', stmt_text)
         self.assertNotIn('dict<str, object>{{"kind", make_object("Call")}', stmt_text)
         self.assertNotIn('dict<str, object>{{"kind", make_object("Dict")}', stmt_text)
+
+    def test_generated_cpp_core_stmt_block_tuple_destructure_residual_cluster_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        branch_text = _slice_block(
+            text,
+            "if (!py_is_none(m_tasg)) {",
+            "::std::optional<::std::tuple<str, str>> asg_split = _sh_split_top_level_assign(s);",
+        )
+        self.assertIn("_sh_make_swap_stmt(", branch_text)
+        self.assertIn('dict<str, str> target_expr = dict<str, object>{{"kind", make_object("Tuple")}', branch_text)
+        self.assertIn(
+            '{"elements", make_object(list<dict<str, object>>{dict<str, object>{{"kind", make_object("Name")}',
+            branch_text,
+        )
+        self.assertIn('pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, dict<str, object>{{"kind", make_object("Assign")}', branch_text)
+        self.assertNotIn('dict<str, object>{{"kind", make_object("Call")}', branch_text)
+        self.assertNotIn('dict<str, object>{{"kind", make_object("Dict")}', branch_text)
 
 
 if __name__ == "__main__":
