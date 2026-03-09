@@ -944,45 +944,36 @@ static inline rc<list<T>> obj_to_rc_list(const object& value, const char* ctx) {
 
 #include "runtime/cpp/native/built_in/contains.h"
 
-template <class V>
-static inline V py_dict_value_cast(const object& value) {
-    if constexpr (::std::is_same_v<V, object>) {
-        return value;
-    } else if constexpr (
-        ::std::is_arithmetic_v<V>
-        || ::std::is_same_v<V, bool>
-        || ::std::is_same_v<V, str>) {
-        return py_to<V>(value);
-    } else {
-        return V(value);
-    }
-}
-
-template <class V>
-static inline V py_dict_value_cast(const char* value) {
-    if constexpr (::std::is_same_v<V, str>) {
-        return str(value);
-    } else if constexpr (::std::is_convertible_v<const char*, V>) {
-        return static_cast<V>(value);
-    } else {
-        return py_to<V>(make_object(str(value)));
-    }
-}
-
-template <class V, class U>
-static inline V py_dict_value_cast(const U& value) {
-    if constexpr (::std::is_same_v<V, U>) {
-        return value;
-    } else if constexpr (::std::is_convertible_v<U, V>) {
-        return static_cast<V>(value);
-    } else {
-        return V(value);
-    }
-}
-
 template <class K, class V, class Q>
 static inline V& py_at(dict<K, V>& d, const Q& key) {
-    const K k = py_dict_value_cast<K>(key);
+    const K k = [&]() -> K {
+        if constexpr (::std::is_same_v<Q, object>) {
+            if constexpr (::std::is_same_v<K, object>) {
+                return key;
+            } else if constexpr (
+                ::std::is_arithmetic_v<K>
+                || ::std::is_same_v<K, bool>
+                || ::std::is_same_v<K, str>) {
+                return py_to<K>(key);
+            } else {
+                return K(key);
+            }
+        } else if constexpr (::std::is_same_v<Q, const char*> || ::std::is_same_v<Q, char*>) {
+            if constexpr (::std::is_same_v<K, str>) {
+                return str(key);
+            } else if constexpr (::std::is_convertible_v<const char*, K>) {
+                return static_cast<K>(key);
+            } else {
+                return py_to<K>(make_object(str(key)));
+            }
+        } else if constexpr (::std::is_same_v<K, Q>) {
+            return key;
+        } else if constexpr (::std::is_convertible_v<Q, K>) {
+            return static_cast<K>(key);
+        } else {
+            return K(key);
+        }
+    }();
     auto it = d.find(k);
     if (it == d.end()) {
         throw ::std::out_of_range("dict key not found");
@@ -992,7 +983,34 @@ static inline V& py_at(dict<K, V>& d, const Q& key) {
 
 template <class K, class V, class Q>
 static inline const V& py_at(const dict<K, V>& d, const Q& key) {
-    const K k = py_dict_value_cast<K>(key);
+    const K k = [&]() -> K {
+        if constexpr (::std::is_same_v<Q, object>) {
+            if constexpr (::std::is_same_v<K, object>) {
+                return key;
+            } else if constexpr (
+                ::std::is_arithmetic_v<K>
+                || ::std::is_same_v<K, bool>
+                || ::std::is_same_v<K, str>) {
+                return py_to<K>(key);
+            } else {
+                return K(key);
+            }
+        } else if constexpr (::std::is_same_v<Q, const char*> || ::std::is_same_v<Q, char*>) {
+            if constexpr (::std::is_same_v<K, str>) {
+                return str(key);
+            } else if constexpr (::std::is_convertible_v<const char*, K>) {
+                return static_cast<K>(key);
+            } else {
+                return py_to<K>(make_object(str(key)));
+            }
+        } else if constexpr (::std::is_same_v<K, Q>) {
+            return key;
+        } else if constexpr (::std::is_convertible_v<Q, K>) {
+            return static_cast<K>(key);
+        } else {
+            return K(key);
+        }
+    }();
     auto it = d.find(k);
     if (it == d.end()) {
         throw ::std::out_of_range("dict key not found");
@@ -1007,8 +1025,62 @@ static inline void py_set_at(rc<list<T>>& v, I idx, const U& item) {
 
 template <class K, class V, class Q, class U>
 static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item) {
-    const K k = py_dict_value_cast<K>(key);
-    d[k] = py_dict_value_cast<V>(item);
+    const K k = [&]() -> K {
+        if constexpr (::std::is_same_v<Q, object>) {
+            if constexpr (::std::is_same_v<K, object>) {
+                return key;
+            } else if constexpr (
+                ::std::is_arithmetic_v<K>
+                || ::std::is_same_v<K, bool>
+                || ::std::is_same_v<K, str>) {
+                return py_to<K>(key);
+            } else {
+                return K(key);
+            }
+        } else if constexpr (::std::is_same_v<Q, const char*> || ::std::is_same_v<Q, char*>) {
+            if constexpr (::std::is_same_v<K, str>) {
+                return str(key);
+            } else if constexpr (::std::is_convertible_v<const char*, K>) {
+                return static_cast<K>(key);
+            } else {
+                return py_to<K>(make_object(str(key)));
+            }
+        } else if constexpr (::std::is_same_v<K, Q>) {
+            return key;
+        } else if constexpr (::std::is_convertible_v<Q, K>) {
+            return static_cast<K>(key);
+        } else {
+            return K(key);
+        }
+    }();
+    d[k] = [&]() -> V {
+        if constexpr (::std::is_same_v<U, object>) {
+            if constexpr (::std::is_same_v<V, object>) {
+                return item;
+            } else if constexpr (
+                ::std::is_arithmetic_v<V>
+                || ::std::is_same_v<V, bool>
+                || ::std::is_same_v<V, str>) {
+                return py_to<V>(item);
+            } else {
+                return V(item);
+            }
+        } else if constexpr (::std::is_same_v<U, const char*> || ::std::is_same_v<U, char*>) {
+            if constexpr (::std::is_same_v<V, str>) {
+                return str(item);
+            } else if constexpr (::std::is_convertible_v<const char*, V>) {
+                return static_cast<V>(item);
+            } else {
+                return py_to<V>(make_object(str(item)));
+            }
+        } else if constexpr (::std::is_same_v<V, U>) {
+            return item;
+        } else if constexpr (::std::is_convertible_v<U, V>) {
+            return static_cast<V>(item);
+        } else {
+            return V(item);
+        }
+    }();
 }
 
 template <class T>

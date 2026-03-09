@@ -54,14 +54,18 @@
 
 ## 3. タスク分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01] `py_dict_value_cast` を退役する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S1-01] `py_dict_value_cast` の checked-in callsite を棚卸しする。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S1-02] dict value conversion の canonical rule を決定ログに固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S2-01] representative callsite を explicit conversion へ置換する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S2-02] regression / inventory guard を更新する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S3-01] `py_runtime.h` から `py_dict_value_cast` を削除する。
-- [ ] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S3-02] parity / docs / archive を更新して閉じる。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01] `py_dict_value_cast` を退役する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S1-01] `py_dict_value_cast` の checked-in callsite を棚卸しする。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S1-02] dict value conversion の canonical rule を決定ログに固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S2-01] representative callsite を explicit conversion へ置換する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S2-02] regression / inventory guard を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S3-01] `py_runtime.h` から `py_dict_value_cast` を削除する。
+- [x] [ID: P0-CPP-PYRUNTIME-DICTVALUECAST-01-S3-02] parity / docs / archive を更新して閉じる。
 
 ## 4. 決定ログ
 
 - 2026-03-09: 本計画は value cast helper 名の退役のみを対象にし、dict primitive や `py_to<T>(object)` の大規模再設計は非対象とする。
+- 2026-03-09: checked-in `py_dict_value_cast(...)` callsite は `src/runtime/cpp/native/core/py_runtime.h` 内の `py_at(dict<K, V>&, ...)`, `py_at(const dict<K, V>&, ...)`, `py_set_at(dict<K, V>&, ...)` だけで、generated runtime / emitter / tests / sample からの direct use は存在しなかった。
+- 2026-03-09: canonical rule は helper 名を残さず、dict key/value coercion を `py_at/py_set_at` 内の local conversion expression に直接展開する形へ固定した。`object`, `const char*`, same-type, convertible, fallback-constructor の既存挙動は維持する。
+- 2026-03-09: `src/runtime/cpp/native/core/py_runtime.h` から `py_dict_value_cast` 3 本を削除し、`test_cpp_runtime_iterable.py` に removed inventory guard を追加した。
+- 2026-03-09: verification は `test_cpp_runtime_iterable.py`, `test_east3_cpp_bridge.py`, `tools/runtime_parity_check.py --targets cpp --case-root fixture`, `tools/check_todo_priority.py`, `git diff --check` を基準とする。
