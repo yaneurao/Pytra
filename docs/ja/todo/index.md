@@ -39,7 +39,7 @@
 1. [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01] `py_runtime.h` の非core helper を削除し、上流 / SoT / 専用laneへ再配置する。
 2. [x] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S1-01] `py_runtime.h` helper family と checked-in callsite を棚卸しし、`delete / inline / upstream / SoT / dedicated lane / keep` へ分類する。
 3. [x] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S1-02] `py_bool_to_string` / `len` alias / generic `getattr` / builtin binding の置き場所契約を固定する。
-4. [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S2-01] dead include / `urllib` compat shim / `py_bool_to_string` を削除する。
+4. [x] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S2-01] dead include / `urllib` compat shim / `py_bool_to_string` を削除する。
 5. [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S2-02] `len` bare alias と generic `getattr` を縮退または退役させる。
 6. [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S3-01] `print` / `ord` / `chr` / `int(x, base)` の parser/EAST binding を `pytra.core.py_runtime` から外す。
 7. [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S3-02] 必要な SoT / generated / dedicated runtime lane を整備し、backend を新 contract に追従させる。

@@ -47,7 +47,7 @@ class CppExpressionEmitter:
         if t == "str":
             return rendered
         if t == "bool":
-            return f"py_bool_to_string({rendered})"
+            return f"(({rendered}) ? ::std::string(\"True\") : ::std::string(\"False\"))"
         if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64"}:
             return f"::std::to_string({rendered})"
         return f"py_to_string({rendered})"

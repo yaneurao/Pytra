@@ -2,22 +2,16 @@
 #define PYTRA_BUILT_IN_PY_RUNTIME_H
 
 #include <algorithm>
-#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
-#include <filesystem>
-#include <fstream>
-#include <functional>
 #include <iostream>
 #include <optional>
-#include <regex>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <tuple>
-#include <typeinfo>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -676,10 +670,6 @@ static inline ::std::optional<D> py_object_try_cast(const object& v) {
     }
 }
 
-static inline ::std::string py_bool_to_string(bool v) {
-    return v ? "True" : "False";
-}
-
 template <class T>
 static inline T py_to(const object& v);
 
@@ -853,20 +843,6 @@ static inline void py_print(const T& first, const Rest&... rest) {
     ((::std::cout << " " << py_to_string(rest)), ...);
     ::std::cout << ::std::endl;
 }
-
-// minimal urllib shim (compile-compat). no network transfer is performed.
-struct _PyUrllibRequestCompat {
-    void urlretrieve(const str& _url, const str& _path) const {
-        (void)_url;
-        (void)_path;
-    }
-};
-
-struct _PyUrllibCompat {
-    _PyUrllibRequestCompat request{};
-};
-
-inline _PyUrllibCompat urllib{};
 
 // list / str の添字・スライス互換ヘルパ。
 template <class T>
