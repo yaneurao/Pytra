@@ -170,15 +170,15 @@
 
 ## 分解
 
-- [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01] `py_runtime.h` の非core helper を削除し、上流 / SoT / 専用laneへ再配置する。
-- [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S1-01] `py_runtime.h` helper family と checked-in callsite を棚卸しし、`delete / inline / upstream / SoT / dedicated lane / keep` へ分類する。
-- [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S1-02] `py_bool_to_string` / `len` alias / generic `getattr` / builtin binding の置き場所契約を固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01] `py_runtime.h` の非core helper を削除し、上流 / SoT / 専用laneへ再配置する。
+- [x] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S1-01] `py_runtime.h` helper family と checked-in callsite を棚卸しし、`delete / inline / upstream / SoT / dedicated lane / keep` へ分類する。
+- [x] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S1-02] `py_bool_to_string` / `len` alias / generic `getattr` / builtin binding の置き場所契約を固定する。
 - [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S2-01] dead include / `urllib` compat shim / `py_bool_to_string` を削除する。
 - [x] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S2-02] `len` bare alias と generic `getattr` を縮退または退役させる。
-- [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S3-01] `print` / `ord` / `chr` / `int(x, base)` の parser/EAST binding を `pytra.core.py_runtime` から外す。
-- [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S3-02] 必要な SoT / generated / dedicated runtime lane を整備し、backend を新 contract に追従させる。
-- [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S4-01] representative runtime / backend / parity test を通す。
-- [ ] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S4-02] docs / guard / archive を同期して本件を閉じる。
+- [x] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S3-01] `print` / `ord` / `chr` / `int(x, base)` の parser/EAST binding を `pytra.core.py_runtime` から外す。
+- [x] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S3-02] 必要な SoT / generated / dedicated runtime lane を整備し、backend を新 contract に追従させる。
+- [x] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S4-01] representative runtime / backend / parity test を通す。
+- [x] [ID: P0-CPP-PYRUNTIME-UPSTREAM-REALIGN-01-S4-02] docs / guard / archive を同期して本件を閉じる。
 
 ## 決定ログ
 
@@ -191,3 +191,6 @@
 - 2026-03-09: parser/EAST の builtin binding は現状 `print`, `len`, `range`, `zip`, `str`, `int/float/bool`, `min/max` を `pytra.core.py_runtime` へ束縛している。この tranche では特に `print`, `ord`, `chr`, `int(x, base)` を core から外すのを主目標にし、`len` は upstream canonical call として別枠で扱う。
 - 2026-03-09: `S2-01` として `py_runtime.h` 先頭の dead include 6 本（`<cctype> <filesystem> <fstream> <functional> <regex> <typeinfo>`）、`urllib` compile-compat shim、`py_bool_to_string` を削除した。bool の文字列化は `CppExpressionEmitter.render_to_string()` で ternary inline に置換し、inventory guard は `test_cpp_runtime_iterable.py` に追加した。
 - 2026-03-09: `S2-02` として `py_runtime.h` から bare `len(const T&)` alias と generic `getattr(const object&, const str&, default)` を削除した。`PYTRA_TYPE_ID` probe は `east2_to_east3_lowering.py` で `getattr(any_like, "PYTRA_TYPE_ID", None)` を `ObjTypeId` boundary へ縮退し、checked-in `type_id.cpp` も `py_runtime_type_id(value)` を直接使う形に更新した。
+- 2026-03-09: `S3-01/S3-02` として parser/EAST binding の `print`, `ord`, `chr`, `int(x, base)` を `pytra.core.py_runtime` から切り離し、`pytra.built_in.io_ops` / `pytra.built_in.scalar_ops` へ移した。C++ runtime では dedicated lane として `src/runtime/cpp/native/built_in/io_ops.h`, `src/runtime/cpp/native/built_in/scalar_ops.h` を新設し、generated/shim header も同期した。
+- 2026-03-09: C++ include 収集は `body` だけでなく `main_guard_body` も走査するように修正した。これにより top-level `print(...)` の `runtime_module_id=pytra.built_in.io_ops` が `json_extended` の main guard でも `pytra/built_in/io_ops.h` へ反映される。
+- 2026-03-09: `S4-01` の確認は `test_py2cpp_features.py -k json`, `test_runtime_symbol_index.py`, `test_cpp_runtime_symbol_index_integration.py`, `test_cpp_runtime_boxing.py`, `tools/gen_runtime_symbol_index.py --check`, fixture parity `cases=3 pass=3 fail=0` を通した。`test_east_core.py` 全体には unrelated failure があるため、runtime binding の subset と representative C++ backend suiteで確認した。
