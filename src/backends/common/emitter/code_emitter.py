@@ -5,7 +5,93 @@ from __future__ import annotations
 from typing import Any
 from pytra.std import json
 from pytra.std.pathlib import Path
+from toolchain.compiler.transpile_cli import make_user_error
+from toolchain.frontends.type_expr import type_expr_to_string
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
+
+
+_TYPE_EXPR_KINDS: set[str] = {
+    "NamedType",
+    "DynamicType",
+    "OptionalType",
+    "GenericType",
+    "UnionType",
+    "NominalAdtType",
+}
+
+
+def _is_type_expr_payload(value: object) -> bool:
+    if not isinstance(value, dict):
+        return False
+    kind = value.get("kind")
+    return isinstance(kind, str) and kind in _TYPE_EXPR_KINDS
+
+
+def _find_general_union_lane(type_expr: object) -> dict[str, Any] | None:
+    if not _is_type_expr_payload(type_expr):
+        return None
+    expr_obj = type_expr
+    kind = str(expr_obj.get("kind", ""))
+    if kind == "UnionType":
+        union_mode = str(expr_obj.get("union_mode", "")).strip()
+        if union_mode != "dynamic":
+            return expr_obj
+        options_obj = expr_obj.get("options")
+        if isinstance(options_obj, list):
+            for option in options_obj:
+                found = _find_general_union_lane(option)
+                if found is not None:
+                    return found
+        return None
+    if kind == "OptionalType":
+        return _find_general_union_lane(expr_obj.get("inner"))
+    if kind == "GenericType":
+        args_obj = expr_obj.get("args")
+        if isinstance(args_obj, list):
+            for arg in args_obj:
+                found = _find_general_union_lane(arg)
+                if found is not None:
+                    return found
+    return None
+
+
+def _collect_general_union_type_expr_issues(doc: object, *, path: str, out: list[dict[str, str]]) -> None:
+    if _is_type_expr_payload(doc):
+        lane = _find_general_union_lane(doc)
+        if lane is not None:
+            carrier = type_expr_to_string(doc)
+            lane_text = type_expr_to_string(lane)
+            out.append({"path": path, "carrier": carrier, "lane": lane_text})
+        return
+    if isinstance(doc, dict):
+        for key, value in doc.items():
+            if isinstance(key, str):
+                _collect_general_union_type_expr_issues(value, path=path + "." + key, out=out)
+        return
+    if isinstance(doc, list):
+        for idx, item in enumerate(doc):
+            _collect_general_union_type_expr_issues(item, path=path + "[" + str(idx) + "]", out=out)
+
+
+def reject_backend_general_union_type_exprs(doc: object, *, backend_name: str) -> None:
+    """Reject general-union TypeExpr lanes for backends that only support optional/dynamic compatibility."""
+    issues: list[dict[str, str]] = []
+    _collect_general_union_type_expr_issues(doc, path="$", out=issues)
+    if len(issues) == 0:
+        return
+    first = issues[0]
+    carrier = first.get("carrier", "unknown")
+    lane = first.get("lane", carrier)
+    path = first.get("path", "$")
+    details: list[str] = [path + ": " + carrier, "unsupported general-union lane: " + lane]
+    if len(issues) > 1:
+        details.append("additional general-union TypeExpr carriers: " + str(len(issues) - 1))
+    details.append("Use Optional[T], a dynamic union, or a nominal ADT lane instead.")
+    raise make_user_error(
+        "unsupported_syntax",
+        backend_name + " does not support general union TypeExpr yet",
+        details,
+    )
 
 
 class EmitterHooks:

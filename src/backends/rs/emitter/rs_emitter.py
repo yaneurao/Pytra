@@ -6,6 +6,8 @@ from typing import Any
 
 from backends.rs.hooks.rs_hooks import build_rs_hooks
 from backends.common.emitter.code_emitter import CodeEmitter
+from toolchain.compiler.transpile_cli import make_user_error
+from toolchain.frontends.type_expr import type_expr_to_string
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
 
@@ -70,6 +72,58 @@ class RustEmitter(CodeEmitter):
         self.uses_string_helpers: bool = False
         self._stmt_list_stack: list[list[dict[str, Any]]] = []
         self._stmt_index_stack: list[int] = []
+
+    def _is_type_expr_payload(self, value: Any) -> bool:
+        if not isinstance(value, dict):
+            return False
+        kind = self.any_dict_get_str(value, "kind", "")
+        return kind in {
+            "NamedType",
+            "DynamicType",
+            "OptionalType",
+            "GenericType",
+            "UnionType",
+            "NominalAdtType",
+        }
+
+    def _find_unsupported_general_union_type_expr(self, value: Any) -> dict[str, Any] | None:
+        if not self._is_type_expr_payload(value):
+            return None
+        kind = self.any_dict_get_str(value, "kind", "")
+        if kind == "UnionType":
+            if self.any_dict_get_str(value, "union_mode", "") != "dynamic":
+                return value
+            for option in self.any_to_list(value.get("options")):
+                found = self._find_unsupported_general_union_type_expr(option)
+                if found is not None:
+                    return found
+            return None
+        if kind == "OptionalType":
+            return self._find_unsupported_general_union_type_expr(value.get("inner"))
+        if kind == "GenericType":
+            for arg in self.any_to_list(value.get("args")):
+                found = self._find_unsupported_general_union_type_expr(arg)
+                if found is not None:
+                    return found
+        return None
+
+    def _reject_unsupported_general_union_type_expr(self, value: Any, *, context: str) -> None:
+        if not self._is_type_expr_payload(value):
+            return
+        unsupported = self._find_unsupported_general_union_type_expr(value)
+        if unsupported is None:
+            return
+        carrier = type_expr_to_string(value)
+        lane = type_expr_to_string(unsupported)
+        details: list[str] = [context + ": " + carrier]
+        if lane != "":
+            details.append("unsupported general-union lane: " + lane)
+        details.append("Use Optional[T], a dynamic union, or a nominal ADT lane instead.")
+        raise make_user_error(
+            "unsupported_syntax",
+            "Rust backend does not support general union TypeExpr yet",
+            details,
+        )
 
     def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
         """現在ブロック文脈を保持しつつ文リストを出力する。"""
@@ -2258,6 +2312,7 @@ class RustEmitter(CodeEmitter):
         fn_name = self._safe_name(fn_name_raw)
         arg_order = self.any_to_str_list(fn.get("arg_order"))
         arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
+        arg_type_exprs = self.any_to_dict_or_empty(fn.get("arg_type_exprs"))
         arg_usage = self.any_to_dict_or_empty(fn.get("arg_usage"))
         body = self._dict_stmt_list(fn.get("body"))
         prev_write_counts = self.current_fn_write_counts
@@ -2302,6 +2357,10 @@ class RustEmitter(CodeEmitter):
         for arg_name in arg_order:
             safe = self._safe_name(arg_name)
             arg_east_t = self.any_to_str(arg_types.get(arg_name))
+            self._reject_unsupported_general_union_type_expr(
+                arg_type_exprs.get(arg_name),
+                context="FunctionDef arg " + arg_name,
+            )
             arg_t = self._rust_type_for_binding(arg_name, arg_east_t)
             usage = self.any_to_str(arg_usage.get(arg_name))
             write_count = self.current_fn_write_counts.get(arg_name, 0)
@@ -2320,6 +2379,10 @@ class RustEmitter(CodeEmitter):
                 self.current_ref_vars.add(arg_name)
             self.declared_var_types[arg_name] = self.normalize_type_name(self.any_to_str(arg_types.get(arg_name)))
 
+        self._reject_unsupported_general_union_type_expr(
+            fn.get("return_type_expr"),
+            context="FunctionDef return type for " + fn_name_raw,
+        )
         ret_t_east = self.normalize_type_name(self.any_to_str(fn.get("return_type")))
         ret_t = self._rust_type(ret_t_east)
         ret_txt = ""
@@ -3048,6 +3111,8 @@ class RustEmitter(CodeEmitter):
     def _emit_annassign(self, stmt: dict[str, Any]) -> None:
         target = self.any_to_dict_or_empty(stmt.get("target"))
         target_kind = self.any_dict_get_str(target, "kind", "")
+        self._reject_unsupported_general_union_type_expr(stmt.get("annotation_type_expr"), context="AnnAssign annotation")
+        self._reject_unsupported_general_union_type_expr(stmt.get("decl_type_expr"), context="AnnAssign decl_type")
         if target_kind != "Name":
             t = self.render_expr(target)
             if target_kind == "Subscript":

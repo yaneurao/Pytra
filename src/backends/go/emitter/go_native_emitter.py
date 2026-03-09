@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
-from backends.common.emitter.code_emitter import CodeEmitter
+from backends.common.emitter.code_emitter import CodeEmitter, reject_backend_general_union_type_exprs
 from toolchain.frontends.runtime_call_adapters import normalize_rendered_runtime_args
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
@@ -2371,6 +2371,7 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
     body_any = east_doc.get("body")
     if not isinstance(body_any, list):
         raise RuntimeError("go native emitter: Module.body must be list")
+    reject_backend_general_union_type_exprs(east_doc, backend_name="Go backend")
     main_guard_any = east_doc.get("main_guard_body")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from backends.common.emitter.code_emitter import reject_backend_general_union_type_exprs
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
 
@@ -194,6 +195,7 @@ def _is_math_constant(expr: dict[str, Any]) -> bool:
 
 class NimNativeEmitter:
     def __init__(self, east_doc: dict[str, Any]) -> None:
+        reject_backend_general_union_type_exprs(east_doc, backend_name="Nim backend")
         self.east_doc = east_doc
         self.lines: list[str] = []
         self.indent = 0

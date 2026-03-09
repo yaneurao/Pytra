@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from backends.common.emitter.code_emitter import reject_backend_general_union_type_exprs
 from toolchain.compiler.stdlib.signature_registry import list_noncpp_assertion_runtime_calls
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
@@ -2483,6 +2484,7 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     body_any = east_doc.get("body")
     if not isinstance(body_any, list):
         raise RuntimeError("java native emitter: Module.body must be list")
+    reject_backend_general_union_type_exprs(east_doc, backend_name="Java backend")
     main_guard_any = east_doc.get("main_guard_body")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []
 

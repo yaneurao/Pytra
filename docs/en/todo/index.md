@@ -45,10 +45,10 @@ Context: [docs/ja/plans/p1-east-typeexpr-strengthening.md](../plans/p1-east-type
 8. [x] [ID: P1-EAST-TYPEEXPR-01-S4-01] In `EAST2 -> EAST3`, distinguish optionals, dynamic unions, and nominal ADTs, and introduce instructions or metadata for narrowing / variant checks / decode helpers.
 9. [x] [ID: P1-EAST-TYPEEXPR-01-S4-02] Connect a representative `JsonValue` narrowing path (`as_obj/as_arr/as_int/...` or equivalent decode operations) through IR-first lowering rather than backend-local special cases.
 10. [x] [ID: P1-EAST-TYPEEXPR-01-S5-01] Use C++ as the first target and replace at least part of the current `general union -> object` path with fail-closed behavior or structured lowering.
-11. [ ] [ID: P1-EAST-TYPEEXPR-01-S5-02] Audit other backends for `String/object` union fallbacks and align unsupported `TypeExpr` unions to explicit errors or guarded compatibility paths.
+11. [x] [ID: P1-EAST-TYPEEXPR-01-S5-02] Audit other backends for `String/object` union fallbacks and align unsupported `TypeExpr` unions to explicit errors or guarded compatibility paths.
 12. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-01] Put a representative `JsonValue` lane on top of the new `TypeExpr` / nominal-ADT contract and verify that future runtime work can proceed IR-contract-first.
 13. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-02] Refresh selfhost / unit / docs / archive and add guards against the reintroduction of stringly-typed union debt.
-- Progress memo: [ID: P1-EAST-TYPEEXPR-01-S5-02] `S5-01` made C++ fail closed for general unions such as `int64|bool` in `_cpp_type_text` / header generation instead of silently collapsing them to `object`. Next is auditing other backends so `String/object` fallbacks become guarded compatibility or explicit errors.
+- Progress memo: [ID: P1-EAST-TYPEEXPR-01-S6-01] `S5-02` kept the existing Rust/C# guards and added a shared general-union TypeExpr guard for Go/Java/Kotlin/Scala/Swift/Nim, so the static-backend contract now converges on `unsupported_syntax` instead of silent fallback. Next is proving that the representative `JsonValue` lane can stay on this contract without runtime-first special casing.
 
 ### P2: Move compiler boundaries to typed carriers and retreat internal object-carrier / `make_object` usage
 

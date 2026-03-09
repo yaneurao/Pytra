@@ -6,6 +6,8 @@ from typing import Any
 
 from backends.cs.hooks.cs_hooks import build_cs_hooks
 from backends.common.emitter.code_emitter import CodeEmitter
+from toolchain.compiler.transpile_cli import make_user_error
+from toolchain.frontends.type_expr import type_expr_to_string
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
 
@@ -120,6 +122,58 @@ class CSharpEmitter(CodeEmitter):
         self.current_return_east_type: str = ""
         self.top_function_names: set[str] = set()
         self.current_ref_vars: set[str] = set()
+
+    def _is_type_expr_payload(self, value: Any) -> bool:
+        if not isinstance(value, dict):
+            return False
+        kind = self.any_dict_get_str(value, "kind", "")
+        return kind in {
+            "NamedType",
+            "DynamicType",
+            "OptionalType",
+            "GenericType",
+            "UnionType",
+            "NominalAdtType",
+        }
+
+    def _find_unsupported_general_union_type_expr(self, value: Any) -> dict[str, Any] | None:
+        if not self._is_type_expr_payload(value):
+            return None
+        kind = self.any_dict_get_str(value, "kind", "")
+        if kind == "UnionType":
+            if self.any_dict_get_str(value, "union_mode", "") != "dynamic":
+                return value
+            for option in self.any_to_list(value.get("options")):
+                found = self._find_unsupported_general_union_type_expr(option)
+                if found is not None:
+                    return found
+            return None
+        if kind == "OptionalType":
+            return self._find_unsupported_general_union_type_expr(value.get("inner"))
+        if kind == "GenericType":
+            for arg in self.any_to_list(value.get("args")):
+                found = self._find_unsupported_general_union_type_expr(arg)
+                if found is not None:
+                    return found
+        return None
+
+    def _reject_unsupported_general_union_type_expr(self, value: Any, *, context: str) -> None:
+        if not self._is_type_expr_payload(value):
+            return
+        unsupported = self._find_unsupported_general_union_type_expr(value)
+        if unsupported is None:
+            return
+        carrier = type_expr_to_string(value)
+        lane = type_expr_to_string(unsupported)
+        details: list[str] = [context + ": " + carrier]
+        if lane != "":
+            details.append("unsupported general-union lane: " + lane)
+        details.append("Use Optional[T], a dynamic union, or a nominal ADT lane instead.")
+        raise make_user_error(
+            "unsupported_syntax",
+            "C# backend does not support general union TypeExpr yet",
+            details,
+        )
 
     # NOTE:
     # C# selfhost generated code does not use virtual dispatch by default.
@@ -651,9 +705,13 @@ class CSharpEmitter(CodeEmitter):
                         self._add_unique_using_line(out, seen, "using " + ns + ";")
         return out
 
-    def _cs_type(self, east_type: str) -> str:
+    def _cs_type(self, east_type: Any) -> str:
         """EAST 型名を C# 型名へ変換する。"""
-        t = self.normalize_type_name(east_type)
+        if self._is_type_expr_payload(east_type):
+            self._reject_unsupported_general_union_type_expr(east_type, context="_cs_type")
+            t = self.normalize_type_name(type_expr_to_string(east_type))
+        else:
+            t = self.normalize_type_name(self.any_to_str(east_type))
         if t == "" or t == "unknown":
             return "object"
         mapped = self.any_dict_get_str(self.type_map, t, "")
@@ -1588,6 +1646,14 @@ class CSharpEmitter(CodeEmitter):
             return ""
         ann = self.any_to_str(stmt.get("annotation"))
         decl = self.any_to_str(stmt.get("decl_type"))
+        self._reject_unsupported_general_union_type_expr(
+            stmt.get("annotation_type_expr"),
+            context="class static AnnAssign annotation",
+        )
+        self._reject_unsupported_general_union_type_expr(
+            stmt.get("decl_type_expr"),
+            context="class static AnnAssign decl_type",
+        )
         t = ann
         if t == "":
             t = decl
@@ -1657,6 +1723,7 @@ class CSharpEmitter(CodeEmitter):
         fn_name = self._safe_name(fn_name_raw)
         arg_order = self.any_to_str_list(fn.get("arg_order"))
         arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
+        arg_type_exprs = self.any_to_dict_or_empty(fn.get("arg_type_exprs"))
         arg_defaults = self.any_to_dict_or_empty(fn.get("arg_defaults"))
         decorators = set(self.any_to_str_list(fn.get("decorators")))
         args: list[str] = []
@@ -1695,6 +1762,10 @@ class CSharpEmitter(CodeEmitter):
         for arg_name in arg_order:
             safe = self._safe_name(arg_name)
             arg_east_t = self.any_to_str(arg_types.get(arg_name))
+            self._reject_unsupported_general_union_type_expr(
+                arg_type_exprs.get(arg_name),
+                context="FunctionDef arg " + arg_name,
+            )
             arg_cs_t = self._cs_type(arg_east_t)
             if arg_cs_t == "":
                 arg_cs_t = "object"
@@ -1721,6 +1792,10 @@ class CSharpEmitter(CodeEmitter):
             self.emit(ctor_sig)
         else:
             ret_east = self.normalize_type_name(self.any_to_str(fn.get("return_type")))
+            self._reject_unsupported_general_union_type_expr(
+                fn.get("return_type_expr"),
+                context="FunctionDef return type for " + fn_name_raw,
+            )
             self.current_return_east_type = ret_east
             ret_cs = self._cs_type(ret_east)
             if ret_cs == "":
@@ -2073,6 +2148,8 @@ class CSharpEmitter(CodeEmitter):
         target_kind = self.any_dict_get_str(target, "kind", "")
         ann = self.any_to_str(stmt.get("annotation"))
         decl = self.any_to_str(stmt.get("decl_type"))
+        self._reject_unsupported_general_union_type_expr(stmt.get("annotation_type_expr"), context="AnnAssign annotation")
+        self._reject_unsupported_general_union_type_expr(stmt.get("decl_type_expr"), context="AnnAssign decl_type")
         t_hint = ann
         if t_hint == "":
             t_hint = decl

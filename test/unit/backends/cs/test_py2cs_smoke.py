@@ -22,6 +22,7 @@ if str(ROOT / "src") not in sys.path:
 from backends.cs.emitter.cs_emitter import load_cs_profile, transpile_to_csharp
 from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core import convert_path
+from src.toolchain.frontends.type_expr import parse_type_expr_text
 from backends.cs.emitter.cs_emitter import CSharpEmitter
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
@@ -978,6 +979,51 @@ def f(s: str):
         src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
+
+    def test_transpile_rejects_general_union_type_expr_in_annassign(self) -> None:
+        east = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "AnnAssign",
+                    "target": {"kind": "Name", "id": "value", "resolved_type": "list[int64|bool]"},
+                    "annotation": "list[int64|bool]",
+                    "annotation_type_expr": parse_type_expr_text("list[int | bool]"),
+                    "decl_type": "list[int64|bool]",
+                    "decl_type_expr": parse_type_expr_text("list[int | bool]"),
+                    "value": {"kind": "List", "elements": [], "resolved_type": "list[int64|bool]"},
+                }
+            ],
+        }
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "unsupported_syntax\\|C# backend does not support general union TypeExpr yet",
+        ):
+            transpile_to_csharp(east)
+
+    def test_transpile_rejects_general_union_type_expr_in_signature(self) -> None:
+        east = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "pick",
+                    "args": [{"arg": "x"}],
+                    "arg_order": ["x"],
+                    "arg_types": {"x": "int64|bool"},
+                    "arg_type_exprs": {"x": parse_type_expr_text("int | bool")},
+                    "arg_usage": {"x": "readonly"},
+                    "return_type": "int64|bool",
+                    "return_type_expr": parse_type_expr_text("int | bool"),
+                    "body": [{"kind": "Return", "value": {"kind": "Name", "id": "x", "resolved_type": "int64|bool"}}],
+                }
+            ],
+        }
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "unsupported_syntax\\|C# backend does not support general union TypeExpr yet",
+        ):
+            transpile_to_csharp(east)
 
 
 if __name__ == "__main__":
