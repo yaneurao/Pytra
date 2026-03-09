@@ -410,6 +410,23 @@ def _sh_annotate_anyall_call_expr(
     )
 
 
+def _sh_annotate_ordchr_call_expr(
+    payload: dict[str, Any],
+    *,
+    fn_name: str,
+    semantic_tag: str | None = None,
+) -> dict[str, Any]:
+    return _sh_annotate_runtime_call_expr(
+        payload,
+        lowered_kind="BuiltinCall",
+        builtin_name=fn_name,
+        runtime_call="py_ord" if fn_name == "ord" else "py_chr",
+        module_id="pytra.built_in.scalar_ops",
+        runtime_symbol="py_ord" if fn_name == "ord" else "py_chr",
+        semantic_tag=semantic_tag,
+    )
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -5000,24 +5017,10 @@ class _ShExprParser:
                         fn_name=fn_name,
                         semantic_tag=builtin_semantic_tag,
                     )
-                elif fn_name == "ord":
-                    _sh_annotate_runtime_call_expr(
+                elif fn_name in {"ord", "chr"}:
+                    _sh_annotate_ordchr_call_expr(
                         payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="ord",
-                        runtime_call="py_ord",
-                        module_id="pytra.built_in.scalar_ops",
-                        runtime_symbol="py_ord",
-                        semantic_tag=builtin_semantic_tag,
-                    )
-                elif fn_name == "chr":
-                    _sh_annotate_runtime_call_expr(
-                        payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="chr",
-                        runtime_call="py_chr",
-                        module_id="pytra.built_in.scalar_ops",
-                        runtime_symbol="py_chr",
+                        fn_name=fn_name,
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif fn_name in {"bytes", "bytearray", "list", "set", "dict"}:
