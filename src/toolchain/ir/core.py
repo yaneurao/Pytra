@@ -231,6 +231,16 @@ def _sh_make_trivia_comment(text: str) -> dict[str, Any]:
     return {"kind": "comment", "text": text}
 
 
+def _sh_make_expr_token(kind: str, value: str, start: int, end: int) -> dict[str, Any]:
+    """self-hosted 式 parser 用の token carrier を構築する。"""
+    return {
+        "k": kind,
+        "v": value,
+        "s": start,
+        "e": end,
+    }
+
+
 def _sh_make_expr_stmt(value: dict[str, Any], source_span: dict[str, Any]) -> dict[str, Any]:
     """`Expr` 文 node を構築する。"""
     return {"kind": "Expr", "source_span": source_span, "value": value}
@@ -974,6 +984,26 @@ def _sh_make_import_alias(name: str, asname: str | None = None) -> dict[str, str
     return {
         "name": name,
         "asname": asname,
+    }
+
+
+def _sh_make_import_binding(
+    *,
+    module_id: str,
+    export_name: str,
+    local_name: str,
+    binding_kind: str,
+    source_file: str,
+    source_line: int,
+) -> dict[str, Any]:
+    """import metadata carrier を構築する。"""
+    return {
+        "module_id": module_id,
+        "export_name": export_name,
+        "local_name": local_name,
+        "binding_kind": binding_kind,
+        "source_file": source_file,
+        "source_line": source_line,
     }
 
 
@@ -3377,14 +3407,14 @@ def _sh_append_import_binding(
         )
     import_binding_names.add(local_name)
     import_bindings.append(
-        {
-            "module_id": module_id,
-            "export_name": export_name,
-            "local_name": local_name,
-            "binding_kind": binding_kind,
-            "source_file": source_file,
-            "source_line": source_line,
-        }
+        _sh_make_import_binding(
+            module_id=module_id,
+            export_name=export_name,
+            local_name=local_name,
+            binding_kind=binding_kind,
+            source_file=source_file,
+            source_line=source_line,
+        )
     )
 
 
@@ -3481,7 +3511,7 @@ class _ShExprParser:
                         pref_len = 2
             if pref_len > 0:
                 end = _sh_scan_string_token(text, i, i + pref_len, self.line_no, self.col_base)
-                out.append({"k": "STR", "v": text[i:end], "s": i, "e": end})
+                out.append(_sh_make_expr_token("STR", text[i:end], i, end))
                 skip = end - i - 1
                 continue
             if ch.isdigit():
@@ -3490,7 +3520,7 @@ class _ShExprParser:
                     while j < text_len and (text[j].isdigit() or text[j].lower() in {"a", "b", "c", "d", "e", "f"}):
                         j += 1
                     if j > i + 2:
-                        out.append({"k": "INT", "v": text[i:j], "s": i, "e": j})
+                        out.append(_sh_make_expr_token("INT", text[i:j], i, j))
                         skip = j - i - 1
                         continue
                 j = i + 1
@@ -3515,38 +3545,38 @@ class _ShExprParser:
                         j = k
                         has_float = True
                 if has_float:
-                    out.append({"k": "FLOAT", "v": text[i:j], "s": i, "e": j})
+                    out.append(_sh_make_expr_token("FLOAT", text[i:j], i, j))
                     skip = j - i - 1
                     continue
-                out.append({"k": "INT", "v": text[i:j], "s": i, "e": j})
+                out.append(_sh_make_expr_token("INT", text[i:j], i, j))
                 skip = j - i - 1
                 continue
             if ch.isalpha() or ch == "_":
                 j = i + 1
                 while j < text_len and (text[j].isalnum() or text[j] == "_"):
                     j += 1
-                out.append({"k": "NAME", "v": text[i:j], "s": i, "e": j})
+                out.append(_sh_make_expr_token("NAME", text[i:j], i, j))
                 skip = j - i - 1
                 continue
             if i + 2 < text_len and text[i : i + 3] in {"'''", '"""'}:
                 end = _sh_scan_string_token(text, i, i, self.line_no, self.col_base)
-                out.append({"k": "STR", "v": text[i:end], "s": i, "e": end})
+                out.append(_sh_make_expr_token("STR", text[i:end], i, end))
                 skip = end - i - 1
                 continue
             if ch in {"'", '"'}:
                 end = _sh_scan_string_token(text, i, i, self.line_no, self.col_base)
-                out.append({"k": "STR", "v": text[i:end], "s": i, "e": end})
+                out.append(_sh_make_expr_token("STR", text[i:end], i, end))
                 skip = end - i - 1
                 continue
             if i + 1 < text_len and text[i : i + 2] in {"<=", ">=", "==", "!=", "//", "<<", ">>", "**"}:
-                out.append({"k": text[i : i + 2], "v": text[i : i + 2], "s": i, "e": i + 2})
+                out.append(_sh_make_expr_token(text[i : i + 2], text[i : i + 2], i, i + 2))
                 skip = 1
                 continue
             if ch in {"<", ">"}:
-                out.append({"k": ch, "v": ch, "s": i, "e": i + 1})
+                out.append(_sh_make_expr_token(ch, ch, i, i + 1))
                 continue
             if ch in {"+", "-", "*", "/", "%", "&", "|", "^", "(", ")", ",", ".", "[", "]", ":", "=", "{", "}"}:
-                out.append({"k": ch, "v": ch, "s": i, "e": i + 1})
+                out.append(_sh_make_expr_token(ch, ch, i, i + 1))
                 continue
             raise _make_east_build_error(
                 kind="unsupported_syntax",
@@ -3554,7 +3584,7 @@ class _ShExprParser:
                 source_span=_sh_span(self.line_no, self.col_base + i, self.col_base + i + 1),
                 hint="Extend tokenizer for this syntax.",
             )
-        out.append({"k": "EOF", "v": "", "s": len(text), "e": len(text)})
+        out.append(_sh_make_expr_token("EOF", "", len(text), len(text)))
         return out
 
     def _cur(self) -> dict[str, Any]:

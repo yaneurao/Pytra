@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-09
+Last updated: 2026-03-10
 
 ## Context Operation Rules
 
@@ -68,6 +68,8 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Moved concatenated-string `BinOp` assembly and the default `Constant` nodes used by `for ... in range(...)` onto helpers too, so checked-in direct AST node assembly in `src/toolchain/ir/core.py` is now confined to the helper definitions themselves.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_def_sig_info()` and routed `_sh_parse_def_sig()` through that helper so the raw signature-carrier dict is no longer assembled inline.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] With checked-in node construction in `src/toolchain/ir/core.py` now aligned on helper-owned builders, S3-01 is closed and the remaining object-carrier retreat work moves to the generated/selfhost runtime lanes in `S3-02`.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Added module/class-root helpers to the generated C++ selfhost mirror and started routing the large top-level `FunctionDef` / `ClassDef` / `Import` / `ImportFrom`, class-field/method, top-level assignment, and bare-`Expr` `make_object` clusters through those builders. In parallel, the source-of-truth side gained `_sh_make_expr_token()` / `_sh_make_import_binding()` so token/import metadata carriers and mirror regressions use the same helper contract.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Added `_sh_make_expr_token()` and `_sh_make_import_binding()` so both the source-of-truth and the tracked generated selfhost C++ mirror route tokenizer/import-metadata carriers through helpers instead of open-coded inline `make_object` dict assembly.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 

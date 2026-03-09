@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
 MODULE_PATH = ROOT / "tools" / "prepare_selfhost_source.py"
+GENERATED_CPP_CORE = ROOT / "selfhost" / "runtime" / "cpp" / "pytra-gen" / "compiler" / "east_parts" / "core.cpp"
 
 
 def _load_prepare_module() -> object:
@@ -29,6 +30,21 @@ def _slice_block(text: str, start_marker: str, end_marker: str) -> str:
 
 
 class PrepareSelfhostSourceTest(unittest.TestCase):
+    def test_generated_cpp_core_uses_helper_carriers_for_checked_in_builders(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        self.assertIn("dict<str, object> _sh_make_constant_str_node(", text)
+        self.assertIn("dict<str, object> _sh_make_def_sig_info(", text)
+        self.assertIn("dict<str, object> _sh_make_import_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_import_from_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_function_def_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_class_def_stmt(", text)
+        self.assertIn("values.append(_sh_make_constant_str_node(lit, span));", text)
+        self.assertIn("return _sh_make_def_sig_info(", text)
+        self.assertIn("body_items.append(_sh_make_import_stmt(", text)
+        self.assertIn("body_items.append(_sh_make_import_from_stmt(", text)
+        self.assertIn("dict<str, object> item = _sh_make_function_def_stmt(", text)
+        self.assertIn("dict<str, object> cls_item = _sh_make_class_def_stmt(", text)
+
     def test_load_cpp_hooks_patch_function_is_absent(self) -> None:
         mod = _load_prepare_module()
         self.assertFalse(hasattr(mod, "_patch_load_cpp_hooks_for_selfhost"))
@@ -249,6 +265,19 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         )
         with self.assertRaisesRegex(RuntimeError, "init_base_state call"):
             mod._patch_code_emitter_hooks_for_selfhost(broken_order)
+
+    def test_generated_cpp_core_uses_helpers_for_module_and_class_root_nodes(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        self.assertIn("dict<str, object> _sh_make_import_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_import_from_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_function_def_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_class_def_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_assign_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_ann_assign_stmt(", text)
+        self.assertNotIn('dict<str, object> item = dict<str, object>{{"kind", make_object("FunctionDef")}', text)
+        self.assertNotIn('dict<str, object> cls_item = dict<str, object>{{"kind", make_object("ClassDef")}', text)
+        self.assertNotIn('body_items.append(dict<str, object>(dict<str, object>{{"kind", make_object("Import")}', text)
+        self.assertNotIn('body_items.append(dict<str, object>(dict<str, object>{{"kind", make_object("ImportFrom")}', text)
 
 
 if __name__ == "__main__":
