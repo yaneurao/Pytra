@@ -117,6 +117,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の comprehension / `range(...)` helper call guard を追加し、`_sh_make_comp_generator(...)` と `_sh_make_range_expr(...)` call site が外れたり旧 inline generator / `RangeExpr` dict が戻ったりしたら fail-fast するようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の control-flow helper call guard を追加し、`_sh_make_if_stmt()` / `_sh_make_for_stmt()` / `_sh_make_for_range_stmt()` の call site が外れたり旧 inline `If` / `For` / `ForRange` dict が戻ったりしたら fail-fast するようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] ignored な generated mirror が未同期でも `src/toolchain/ir/core.py` の `with/while/try/raise/pass/return/augassign/swap` helper lane が壊れないよう、`test_east_core.py` に正本 statement cluster の helper call と旧 inline statement dict 不在 guard を追加した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の residual inline `kind` 集合 guard を追加し、`If/While/Try/Raise/Return/AugAssign/Swap` など既に helper 化済みの kind が open-coded dict へ戻ったり、新しい unsynced kind が増えたりしたら fail-fast するようにした。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated `selfhost/runtime/cpp/pytra-gen/compiler/east_parts/core.cpp` に `_sh_make_while_stmt()` / `_sh_make_except_handler()` / `_sh_make_try_stmt()` / `_sh_make_raise_stmt()` / `_sh_make_pass_stmt()` / `_sh_make_return_stmt()` / `_sh_make_augassign_stmt()` / `_sh_make_swap_stmt()` を追加し、`with/while/try/raise/pass/return/augassign/swap` の open-coded statement dict を helper lane へ寄せた。`test_prepare_selfhost_source.py` でも旧 cluster の再流入を禁止した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

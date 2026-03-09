@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import unittest
 from pathlib import Path
 
@@ -313,8 +314,16 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("dict<str, object> _sh_make_set_expr(", text)
         self.assertIn("dict<str, object> _sh_make_dict_expr(", text)
         self.assertIn("dict<str, object> _sh_make_if_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_while_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_except_handler(", text)
+        self.assertIn("dict<str, object> _sh_make_try_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_for_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_for_range_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_raise_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_pass_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_return_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_augassign_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_swap_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_range_expr(", text)
         self.assertIn("return _sh_make_def_sig_info(", text)
         self.assertIn('out.append(_sh_make_expr_token("STR", py_slice(text, i, end), i, end));', text)
@@ -337,9 +346,19 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("_sh_make_comp_generator(target, iter_expr, ifs)", text)
         self.assertIn("_sh_make_comp_generator(target_node, iter_node, if_nodes)", text)
         self.assertIn("elif_items.append(\n                _sh_make_if_stmt(", text)
+        self.assertIn("dict<str, object> assign_stmt = _sh_make_assign_stmt(", text)
+        self.assertIn("dict<str, object> try_stmt = _sh_make_try_stmt(", text)
         self.assertIn("pending_blank_count = _sh_push_stmt_with_trivia(\n                    stmts,\n                    pending_leading_trivia,\n                    pending_blank_count,\n                    _sh_make_if_stmt(", text)
+        self.assertIn("pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, _sh_make_while_stmt(", text)
+        self.assertIn("handlers.append(_sh_make_except_handler(", text)
+        self.assertIn("pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, _sh_make_try_stmt(", text)
         self.assertIn("pending_blank_count = _sh_push_stmt_with_trivia(\n                        stmts,\n                        pending_leading_trivia,\n                        pending_blank_count,\n                        _sh_make_for_range_stmt(", text)
         self.assertIn("pending_blank_count = _sh_push_stmt_with_trivia(\n                    stmts,\n                    pending_leading_trivia,\n                    pending_blank_count,\n                    _sh_make_for_stmt(", text)
+        self.assertIn("pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, _sh_make_raise_stmt(", text)
+        self.assertIn("dict<str, object> pass_stmt = _sh_make_pass_stmt(", text)
+        self.assertIn("pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, _sh_make_return_stmt(", text)
+        self.assertIn("pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, _sh_make_augassign_stmt(", text)
+        self.assertIn("pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, _sh_make_swap_stmt(", text)
         self.assertNotIn('dict<str, object> item = dict<str, object>{{"kind", make_object("FunctionDef")}', text)
         self.assertNotIn('dict<str, object> cls_item = dict<str, object>{{"kind", make_object("ClassDef")}', text)
         self.assertNotIn('body_items.append(dict<str, object>(dict<str, object>{{"kind", make_object("Import")}', text)
@@ -385,14 +404,76 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertNotIn('values.append(dict<str, object>(dict<str, object>{{"kind", make_object("FormattedValue")}', text)
         self.assertNotIn('return dict<str, object>{{"kind", make_object("JoinedStr")}', text)
         self.assertNotIn('dict<str, object> elif_item = dict<str, object>{{"kind", make_object("If")}', text)
+        self.assertNotIn('dict<str, str> assign_stmt = dict<str, object>{{"kind", make_object("Assign")}', text)
+        self.assertNotIn('dict<str, str> try_stmt = dict<str, object>{{"kind", make_object("Try")}', text)
         self.assertNotIn('pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, dict<str, object>{{"kind", make_object("If")}', text)
+        self.assertNotIn('pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, dict<str, object>{{"kind", make_object("While")}', text)
+        self.assertNotIn('handlers.append(dict<str, object>(dict<str, object>{{"kind", make_object("ExceptHandler")}', text)
+        self.assertNotIn('pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, dict<str, object>{{"kind", make_object("Try")}', text)
         self.assertNotIn('pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, dict<str, object>{{"kind", make_object("ForRange")}', text)
         self.assertNotIn('pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, dict<str, object>{{"kind", make_object("For")}', text)
+        self.assertNotIn('pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, dict<str, object>{{"kind", make_object("Raise")}', text)
+        self.assertNotIn('dict<str, object> pass_stmt = dict<str, object>{{"kind", make_object("Pass")}', text)
+        self.assertNotIn('pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, dict<str, object>{{"kind", make_object("Return")}', text)
+        self.assertNotIn('pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, dict<str, object>{{"kind", make_object("AugAssign")}', text)
+        self.assertNotIn('pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, dict<str, object>{{"kind", make_object("Swap")}', text)
         self.assertNotIn('iter_expr = dict<str, object>{{"kind", make_object("RangeExpr")}', text)
         self.assertNotIn('iter_node = dict<str, object>{{"kind", make_object("RangeExpr")}', text)
         self.assertNotIn('keywords.append(dict<str, object>(dict<str, object>{{"arg", make_object(py_to_string(py_dict_get(name_tok, py_to_string("v"))))}, {"value", make_object(kw_val)}}))', text)
         self.assertNotIn('casts.append(dict<str, object>(dict<str, str>{{"on", "left"}, {"from", "int64"}, {"to", "float64"}, {"reason", "numeric_promotion"}}))', text)
         self.assertNotIn('casts.append(dict<str, object>(dict<str, str>{{"on", "right"}, {"from", "int64"}, {"to", "float64"}, {"reason", "numeric_promotion"}}))', text)
+
+    def test_generated_cpp_core_known_inline_kind_residual_set_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        inline_kinds = {
+            kind
+            for kind in re.findall(r'dict<str, object>\{\{"kind", make_object\("([^"]+)"\)', text)
+            if kind != "" and kind[0].isupper()
+        }
+        self.assertEqual(
+            inline_kinds,
+            {
+                "AnnAssign",
+                "Assign",
+                "Call",
+                "ClassDef",
+                "Dict",
+                "Expr",
+                "FunctionDef",
+                "Import",
+                "ImportFrom",
+                "Name",
+                "Tuple",
+            },
+        )
+        self.assertTrue(
+            {
+                "If",
+                "While",
+                "ExceptHandler",
+                "Try",
+                "For",
+                "ForRange",
+                "Raise",
+                "Pass",
+                "Return",
+                "AugAssign",
+                "Swap",
+                "RangeExpr",
+                "ListComp",
+                "DictComp",
+                "SetComp",
+                "FormattedValue",
+                "JoinedStr",
+                "Slice",
+                "Subscript",
+                "BoolOp",
+                "UnaryOp",
+                "Compare",
+                "BinOp",
+                "Lambda",
+            }.isdisjoint(inline_kinds)
+        )
 
 
 if __name__ == "__main__":
