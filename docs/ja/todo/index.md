@@ -32,4 +32,20 @@
 
 ## 未完了タスク
 
- - なし
+### P0: C++ `py_runtime.h` の core 境界を再整理し、残存 helper を上流 / 専用lane へ戻す
+
+文脈: [docs/ja/plans/p0-cpp-pyruntime-core-boundary-realign.md](../plans/p0-cpp-pyruntime-core-boundary-realign.md)
+
+1. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01] `py_runtime.h` の core 境界を再整理し、残存 helper を上流 / 専用lane へ戻す。
+2. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-01] `numeric_ops/zip_ops/contains`、typed helper、tuple helper、`type_id` wrapper の checked-in caller を棚卸しし、end state を分類する。
+3. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-02] `spec-runtime` に反しない include ownership / upstream contract / non-goal を決定ログへ固定する。
+4. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-01] C++ emitter / prelude / generated path の helper include 収集を拡張し、`zip` / `contains` / numeric helper を explicit include 化する。
+5. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-02] `py_runtime.h` から `numeric_ops` / `zip_ops` / `contains` の transitive include を削除し、removed-include guard を更新する。
+6. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-01] typed dict subscript を `.at()` 化し、`py_dict_get` の checked-in callsite を除去する。
+7. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-02] tuple constant-index を generated/runtime path でも `std::get<N>` へ寄せ、tuple `py_at` helper を縮退または退役させる。
+8. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-03] typed list/dict mutation helper を object bridge 専用 surface まで縮め、typed lane は emitter direct lowering を優先する。
+9. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-01] `type_id` registry / subtype / isinstance の ownership を `py_tid_*` 主体へ寄せ、`py_runtime.h` の wrapper を薄くする。
+10. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] `test_cpp_runtime_type_id.py` と generated runtime caller を更新し、cyclic ownership が再混入しないよう guard を追加する。
+11. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] `py_isinstance_of` fast path、`PyFile` alias などの small cleanup を片付ける。
+12. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-02] representative test / parity / docs / archive を更新して閉じる。
+- 進捗メモ: [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-01] 監査結果を active plan に反映し、初手は `numeric_ops/zip_ops/contains` の explicit include 契約固定から着手する。ここを片付けてから `py_dict_get`、tuple helper、`type_id` ownership の順に進める。
