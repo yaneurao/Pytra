@@ -13,6 +13,8 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.backends.cpp.cli import CppEmitter
+from src.toolchain.frontends.type_expr import parse_type_expr_text
+from src.backends.cpp.emitter.header_builder import _header_cpp_type_from_east
 
 
 class CppTypeTest(unittest.TestCase):
@@ -28,12 +30,32 @@ class CppTypeTest(unittest.TestCase):
         self.assertEqual(em._cpp_type_text("Any|None"), "object")
         self.assertEqual(em._cpp_type_text("bytes|bytearray|None"), "bytes")
 
+    def test_general_union_is_rejected_in_cpp_type_and_header_builder(self) -> None:
+        em = CppEmitter({"body": []}, {}, emit_main=False)
+        with self.assertRaisesRegex(ValueError, r"unsupported general union for C\+\+ emit: int64\|bool"):
+            em._cpp_type_text("int64|bool")
+        with self.assertRaisesRegex(ValueError, r"unsupported general union for C\+\+ emit: int64\|bool"):
+            _header_cpp_type_from_east("int64|bool", set(), set())
+
     def test_list_type_text_can_switch_to_pyobj_model(self) -> None:
         em = CppEmitter({"body": []}, {}, emit_main=False)
         em.cpp_list_model = "pyobj"
         self.assertEqual(em._cpp_type_text("list[int64]"), "list<int64>")
         self.assertEqual(em._cpp_type_text("list[str]"), "list<str>")
         self.assertEqual(em._cpp_type_text("list[Any]"), "object")
+
+    def test_type_expr_path_rejects_general_union_fallback(self) -> None:
+        em = CppEmitter({"body": []}, {}, emit_main=False)
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "unsupported_syntax\\|C\\+\\+ backend does not support general union TypeExpr yet",
+        ):
+            em.cpp_type(parse_type_expr_text("int | bool"))
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "unsupported general-union lane: int64\\|bool",
+        ):
+            em.cpp_signature_type(parse_type_expr_text("list[int | bool]"))
 
 
 if __name__ == "__main__":

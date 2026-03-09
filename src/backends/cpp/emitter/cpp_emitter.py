@@ -2118,8 +2118,12 @@ class CppEmitter(
         """ローカル関数定義をラムダ変数へ lowering して出力する。"""
         name = self.any_dict_get_str(stmt, "name", "fn")
         emitted_name = self.rename_if_reserved(str(name), self.reserved_words, self.rename_prefix, self.renamed_symbols)
-        ret = self.cpp_signature_type(stmt.get("return_type"))
+        return_type_expr = stmt.get("return_type_expr")
+        ret = self.cpp_signature_type(
+            return_type_expr if self._is_type_expr_payload(return_type_expr) else stmt.get("return_type")
+        )
         arg_types = self.any_to_dict_or_empty(stmt.get("arg_types"))
+        arg_type_exprs = self.any_to_dict_or_empty(stmt.get("arg_type_exprs"))
         arg_usage = self.any_to_dict_or_empty(stmt.get("arg_usage"))
         arg_defaults = self.any_to_dict_or_empty(stmt.get("arg_defaults"))
         body_stmts = self._dict_stmt_list(stmt.get("body"))
@@ -2144,7 +2148,8 @@ class CppEmitter(
         fn_sig_params: list[str] = []
         for n in arg_names:
             t = self.any_to_str(arg_types.get(n))
-            ct = self.cpp_signature_type(t)
+            type_expr_obj = arg_type_exprs.get(n)
+            ct = self.cpp_signature_type(type_expr_obj if self._is_type_expr_payload(type_expr_obj) else t)
             if self._is_pyobj_ref_first_list_type(t):
                 ref_first_param_names.add(n)
             emitted_n = self.rename_if_reserved(n, self.reserved_words, self.rename_prefix, self.renamed_symbols)

@@ -64,16 +64,22 @@ class CppStatementEmitter:
 
     def _emit_annassign_stmt(self, stmt: dict[str, Any]) -> None:
         """AnnAssign ノードを出力する。"""
-        t = self.cpp_type(stmt.get("annotation"))
+        annotation_type_expr = stmt.get("annotation_type_expr")
+        decl_type_expr = stmt.get("decl_type_expr")
+        annotation_type_source: Any = annotation_type_expr if self._is_type_expr_payload(annotation_type_expr) else stmt.get(
+            "annotation"
+        )
+        decl_type_source: Any = decl_type_expr if self._is_type_expr_payload(decl_type_expr) else stmt.get("decl_type")
+        t = self.cpp_type(annotation_type_source)
         decl_hint = self.any_dict_get_str(stmt, "decl_type", "")
         decl_hint_fallback = str(stmt.get("decl_type"))
         ann_text_fallback = str(stmt.get("annotation"))
         if decl_hint == "" and decl_hint_fallback not in {"", "{}", "None"}:
             decl_hint = decl_hint_fallback
         if decl_hint != "":
-            t = self._cpp_type_text(decl_hint)
+            t = self.cpp_type(decl_type_source)
         elif t == "auto":
-            t = self.cpp_type(stmt.get("decl_type"))
+            t = self.cpp_type(decl_type_source)
             if t == "auto" and ann_text_fallback not in {"", "{}", "None"}:
                 t = self._cpp_type_text(self.normalize_type_name(ann_text_fallback))
         target_node = self.any_to_dict_or_empty(stmt.get("target"))
@@ -1931,7 +1937,11 @@ class CppStatementEmitter:
             )
             if ret_abi_mode == "":
                 ret_abi_mode = "default"
-        ret = self.cpp_signature_type(stmt.get("return_type"), runtime_abi_mode=ret_abi_mode)
+        return_type_expr = stmt.get("return_type_expr")
+        ret = self.cpp_signature_type(
+            return_type_expr if self._is_type_expr_payload(return_type_expr) else stmt.get("return_type"),
+            runtime_abi_mode=ret_abi_mode,
+        )
         ret_t_norm = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
         list_model = self.any_to_str(getattr(self, "cpp_list_model", "value"))
         if is_generator:
@@ -1941,6 +1951,7 @@ class CppStatementEmitter:
             elem_cpp = self._cpp_type_text(elem_type_for_cpp)
             ret = f"list<{elem_cpp}>"
         arg_types = self.any_to_dict_or_empty(stmt.get("arg_types"))
+        arg_type_exprs = self.any_to_dict_or_empty(stmt.get("arg_type_exprs"))
         arg_usage = self.any_to_dict_or_empty(stmt.get("arg_usage"))
         arg_defaults = self.any_to_dict_or_empty(stmt.get("arg_defaults"))
         arg_index = self.any_to_dict_or_empty(stmt.get("arg_index"))
@@ -1971,7 +1982,11 @@ class CppStatementEmitter:
                 fallback_mode = self.any_to_str(fallback_arg_abi_modes[idx])
                 if fallback_mode != "":
                     arg_abi_mode = fallback_mode
-            ct = self.cpp_signature_type(t, runtime_abi_mode=arg_abi_mode)
+            type_expr_obj = arg_type_exprs.get(n)
+            ct = self.cpp_signature_type(
+                type_expr_obj if self._is_type_expr_payload(type_expr_obj) else t,
+                runtime_abi_mode=arg_abi_mode,
+            )
             t_norm = self.normalize_type_name(t)
             emitted_n = self.rename_if_reserved(n, self.reserved_words, self.rename_prefix, self.renamed_symbols)
             if (

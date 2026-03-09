@@ -1,11 +1,65 @@
 from __future__ import annotations
 
 from typing import Any
-from toolchain.compiler.transpile_cli import dict_any_get_str, join_str_list
+from toolchain.compiler.transpile_cli import dict_any_get_str, join_str_list, make_user_error
+from toolchain.frontends.type_expr import type_expr_to_string
 
 
 class CppTypeBridgeEmitter:
     """Type conversion and Any-boundary helpers extracted from CppEmitter."""
+
+    def _is_type_expr_payload(self, value: Any) -> bool:
+        if not isinstance(value, dict):
+            return False
+        kind = self.any_dict_get_str(value, "kind", "")
+        return kind in {
+            "NamedType",
+            "DynamicType",
+            "OptionalType",
+            "GenericType",
+            "UnionType",
+            "NominalAdtType",
+        }
+
+    def _find_unsupported_cpp_general_union_type_expr(self, value: Any) -> dict[str, Any] | None:
+        if not self._is_type_expr_payload(value):
+            return None
+        kind = self.any_dict_get_str(value, "kind", "")
+        if kind == "UnionType":
+            union_mode = self.any_dict_get_str(value, "union_mode", "")
+            if union_mode != "dynamic":
+                return value
+            for option in self.any_to_list(value.get("options")):
+                found = self._find_unsupported_cpp_general_union_type_expr(option)
+                if found is not None:
+                    return found
+            return None
+        if kind == "OptionalType":
+            return self._find_unsupported_cpp_general_union_type_expr(value.get("inner"))
+        if kind == "GenericType":
+            for arg in self.any_to_list(value.get("args")):
+                found = self._find_unsupported_cpp_general_union_type_expr(arg)
+                if found is not None:
+                    return found
+        return None
+
+    def _reject_unsupported_cpp_general_union_type_expr(self, value: Any, *, context: str) -> None:
+        if not self._is_type_expr_payload(value):
+            return
+        unsupported = self._find_unsupported_cpp_general_union_type_expr(value)
+        if unsupported is None:
+            return
+        carrier = type_expr_to_string(value)
+        lane = type_expr_to_string(unsupported)
+        details: list[str] = [context + ": " + carrier]
+        if lane != "" and lane != carrier:
+            details.append("unsupported general-union lane: " + lane)
+        details.append("Use Optional[T], a dynamic union, or a nominal ADT lane instead.")
+        raise make_user_error(
+            "unsupported_syntax",
+            "C++ backend does not support general union TypeExpr yet",
+            details,
+        )
 
     def _is_concrete_type_for_typed_list(self, east_type: str) -> bool:
         """typed list 判定向けに Any/unknown/None を含まない concrete 型か判定する。"""
@@ -334,6 +388,9 @@ class CppTypeBridgeEmitter:
 
     def cpp_type(self, east_type: Any) -> str:
         """EAST 型名を C++ 型名へマッピングする。"""
+        if self._is_type_expr_payload(east_type):
+            self._reject_unsupported_cpp_general_union_type_expr(east_type, context="cpp_type")
+            return self._cpp_type_text(type_expr_to_string(east_type))
         east_type_txt = self.any_to_str(east_type)
         if east_type_txt == "" and east_type is not None:
             ttxt = str(east_type)
@@ -344,7 +401,11 @@ class CppTypeBridgeEmitter:
 
     def cpp_signature_type(self, east_type: Any, *, runtime_abi_mode: str = "default") -> str:
         """関数境界/宣言向けに ref-first list を反映した型文字列を返す。"""
-        east_type_txt = self.any_to_str(east_type)
+        if self._is_type_expr_payload(east_type):
+            self._reject_unsupported_cpp_general_union_type_expr(east_type, context="cpp_signature_type")
+            east_type_txt = type_expr_to_string(east_type)
+        else:
+            east_type_txt = self.any_to_str(east_type)
         if east_type_txt == "" and east_type is not None:
             ttxt = str(east_type)
             if ttxt != "" and ttxt not in {"{}", "[]"}:
@@ -390,11 +451,11 @@ class CppTypeBridgeEmitter:
                             break
                     if has_any_like:
                         return "object"
-                    if has_none and len(non_none) == 1:
-                        return f"::std::optional<{self._cpp_type_text(non_none[0], pyobj_ref_lists=pyobj_ref_lists)}>"
-                    if (not has_none) and len(non_none) == 1:
-                        return self._cpp_type_text(non_none[0], pyobj_ref_lists=pyobj_ref_lists)
-                    return "object"
+                if has_none and len(non_none) == 1:
+                    return f"::std::optional<{self._cpp_type_text(non_none[0], pyobj_ref_lists=pyobj_ref_lists)}>"
+                if (not has_none) and len(non_none) == 1:
+                    return self._cpp_type_text(non_none[0], pyobj_ref_lists=pyobj_ref_lists)
+                raise ValueError("unsupported general union for C++ emit: " + east_type)
         if east_type == "None":
             return "void"
         if east_type == "PyFile":

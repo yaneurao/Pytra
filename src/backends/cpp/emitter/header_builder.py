@@ -1147,7 +1147,7 @@ def _header_cpp_type_from_east(
         if len(folded) == 1:
             only = folded[0]
             return _header_cpp_type_from_east(only, ref_classes, class_names)
-        return "object"
+        raise ValueError("unsupported general union for C++ emit: " + t)
     if t.startswith("list[") and t.endswith("]"):
         inner = t[5:-1].strip()
         return "list<" + _header_cpp_type_from_east(inner, ref_classes, class_names) + ">"

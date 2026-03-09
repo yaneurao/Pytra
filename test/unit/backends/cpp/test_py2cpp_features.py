@@ -2654,6 +2654,21 @@ def main(text: str) -> int:
                 load_east(src_py)
         self.assertIn("sum() does not accept object/Any values", str(cm.exception))
 
+    def test_general_union_is_rejected_before_cpp_emit(self) -> None:
+        src = """
+def f(x: int | bool) -> int | bool:
+    return x
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "general_union.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"unsupported_syntax\|C\+\+ backend does not support general union TypeExpr yet",
+            ):
+                transpile_to_cpp(east, cpp_list_model="pyobj")
+
     def test_load_east1_document_sets_stage1_while_keeping_root_contract(self) -> None:
         from src.toolchain.compiler.transpile_cli import load_east1_document
 
