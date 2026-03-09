@@ -14,6 +14,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.backends.cpp.cli import CppEmitter, load_east
 from src.toolchain.compiler.transpile_cli import collect_symbols_from_stmt, parse_py2cpp_argv
+from src.toolchain.frontends.type_expr import parse_type_expr_text
 
 
 def _const_i(v: int) -> dict[str, object]:
@@ -51,6 +52,44 @@ class East3CppBridgeTest(unittest.TestCase):
             "keywords": [],
         }
         self.assertEqual(emitter.render_expr(expr), "payload.as_obj()")
+
+    def test_emit_annassign_rejects_general_union_type_expr(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        stmt = {
+            "kind": "AnnAssign",
+            "target": {"kind": "Name", "id": "value", "resolved_type": "list[int64|bool]"},
+            "annotation": "list[int64|bool]",
+            "annotation_type_expr": parse_type_expr_text("list[int | bool]"),
+            "decl_type": "list[int64|bool]",
+            "decl_type_expr": parse_type_expr_text("list[int | bool]"),
+            "value": {"kind": "List", "elements": [], "resolved_type": "list[int64|bool]"},
+        }
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "unsupported_syntax\\|C\\+\\+ backend does not support general union TypeExpr yet",
+        ):
+            emitter.emit_stmt(stmt)
+
+    def test_emit_function_rejects_general_union_type_expr(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        stmt = {
+            "kind": "FunctionDef",
+            "name": "pick",
+            "args": [{"arg": "x"}],
+            "arg_order": ["x"],
+            "arg_types": {"x": "int64|bool"},
+            "arg_type_exprs": {"x": parse_type_expr_text("int | bool")},
+            "arg_usage": {"x": "readonly"},
+            "arg_defaults": {},
+            "return_type": "int64|bool",
+            "return_type_expr": parse_type_expr_text("int | bool"),
+            "body": [{"kind": "Return", "value": {"kind": "Name", "id": "x", "resolved_type": "int64|bool"}}],
+        }
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "unsupported_syntax\\|C\\+\\+ backend does not support general union TypeExpr yet",
+        ):
+            emitter.emit_stmt(stmt)
 
     def test_emit_stmt_annassign_empty_dict_with_marker_uses_brace_shorthand(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
