@@ -78,11 +78,32 @@ pytra::compiler::transpile_cli::CompilerRootDocument _load_json_root_document(
     }
     pytra::std::json::JsonObj root = parsed.value();
     auto east = root.get_obj("east");
-    dict<str, object> raw_doc = root.raw;
+    pytra::std::json::JsonObj doc = root;
     if (east.has_value()) {
-        raw_doc = east.value().raw;
+        doc = east.value();
     }
-    return pytra::compiler::transpile_cli::coerce_compiler_root_document(raw_doc, source_path, parser_backend);
+    auto meta = doc.get_obj("meta");
+    str dispatch_mode = "";
+    if (meta.has_value()) {
+        auto meta_dispatch_mode = meta.value().get_str("dispatch_mode");
+        if (meta_dispatch_mode.has_value()) {
+            dispatch_mode = meta_dispatch_mode.value();
+        }
+    }
+    auto east_stage = doc.get_int("east_stage");
+    auto schema_version = doc.get_int("schema_version");
+    auto kind = doc.get_str("kind");
+    return pytra::compiler::transpile_cli::CompilerRootDocument{
+        pytra::compiler::transpile_cli::CompilerRootMeta{
+            source_path,
+            east_stage.has_value() ? east_stage.value() : 0,
+            schema_version.has_value() ? schema_version.value() : 0,
+            dispatch_mode,
+            parser_backend,
+        },
+        kind.has_value() ? kind.value() : "",
+        doc.raw,
+    };
 }
 
 str _dict_get_str(const dict<str, object>& src, const str& key, const str& default_value = "") {

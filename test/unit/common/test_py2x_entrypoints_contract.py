@@ -119,6 +119,11 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("CompilerRootDocument _load_json_root_document(", native_transpile)
         self.assertNotIn("dict<str, object> _load_json_root_dict(", native_transpile)
         self.assertNotIn("coerce_compiler_root_document(\n            _load_json_root_dict(", native_transpile)
+        self.assertNotIn(
+            "return pytra::compiler::transpile_cli::coerce_compiler_root_document(raw_doc, source_path, parser_backend);",
+            native_transpile,
+        )
+        self.assertIn("pytra::std::json::JsonObj doc = root;", native_transpile)
 
         transpile_make_object_lines = [
             line.strip()
