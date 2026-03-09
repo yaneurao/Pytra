@@ -137,6 +137,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] host/static registry の legacy artifact surface も `export_module_artifact_any()` / `export_program_artifact_any()` へ揃え、typed export helper 契約を compiler-root だけでなく module/program artifact にも広げた。`test_py2x_entrypoints_contract.py` で registry 側の import と return seam を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] backend spec / layer options の legacy export も `export_resolved_backend_spec_any()` / `export_layer_options_any()` へ揃え、host/static registry の `get_backend_spec()` / `resolve_layer_options()` / cache export を同じ typed helper seam に寄せた。`test_py2x_entrypoints_contract.py` で helper import と return contract を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native C++ の `coerce_compiler_root_document()` も legacy `source_path` / `meta.parser_backend` を保持するようにし、Python 側の compiler-root round-trip 契約と揃えた。`test_py2x_entrypoints_contract.py` で native mirror の fallback 抽出を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_east_core.py` と `test_prepare_selfhost_source.py` に、`any/all` 正規化・simple list-comp・tuple destructuring の residual cluster guard を追加し、source と generated selfhost mirror の `Call/Dict/Name/Tuple` 残存が既知 branch 以外へ広がらないことを固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `backend_spec_target()` を追加して [py2x.py](/workspace/Pytra/src/py2x.py) の manual backend-spec unwrap を外し、entrypoint 側の `spec.carrier.target_lang if not isinstance(...)` 分岐を typed helper へ寄せた。`test_py2x_entrypoints_contract.py` で import と helper round-trip を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
