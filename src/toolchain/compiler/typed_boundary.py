@@ -863,6 +863,14 @@ def collect_program_module_carriers(module_artifact: object) -> tuple[ModuleArti
     return flatten_module_artifact_carrier(carrier)
 
 
+def collect_program_modules_from_items(items: object) -> tuple[ModuleArtifactCarrier, ...]:
+    out: list[ModuleArtifactCarrier] = []
+    if isinstance(items, (list, tuple)):
+        for item in items:
+            out.extend(collect_program_module_carriers(item))
+    return tuple(out)
+
+
 def export_program_module_artifacts(module_artifact: object) -> list[dict[str, object]]:
     return [export_module_artifact_any(item) for item in collect_program_module_carriers(module_artifact)]
 
@@ -910,14 +918,7 @@ def coerce_program_artifact(
     if not isinstance(program_artifact, dict):
         raise RuntimeError("program artifact must be dict or ProgramArtifactCarrier")
 
-    modules_out: list[ModuleArtifactCarrier] = []
-    modules_any = program_artifact.get("modules", ())
-    if isinstance(modules_any, (list, tuple)):
-        for item in modules_any:
-            try:
-                modules_out.extend(flatten_module_artifact_carrier(coerce_module_artifact(item)))
-            except RuntimeError:
-                continue
+    modules_out = list(collect_program_modules_from_items(program_artifact.get("modules", ())))
 
     target_any = program_artifact.get("target", fallback_target)
     target_out = target_any if isinstance(target_any, str) else fallback_target
@@ -975,12 +976,9 @@ def build_program_artifact_from_modules(
     link_output_schema: str = "",
     writer_options: dict[str, object] | None = None,
 ) -> ProgramArtifactCarrier:
-    module_list: list[ModuleArtifactCarrier] = []
-    for item in modules:
-        module_list.extend(collect_program_module_carriers(item))
     return build_program_artifact_carrier(
         spec,
-        module_list,
+        list(collect_program_modules_from_items(modules)),
         program_id=program_id,
         entry_modules=entry_modules,
         layout_mode=layout_mode,
