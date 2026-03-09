@@ -210,6 +210,29 @@ def _sh_annotate_enumerate_call_expr(
     return payload
 
 
+def _sh_annotate_stdlib_function_call_expr(
+    payload: dict[str, Any],
+    *,
+    fn_name: str,
+    runtime_call: str,
+    semantic_tag: str | None = None,
+) -> dict[str, Any]:
+    mod_id, runtime_symbol = lookup_stdlib_function_runtime_binding(fn_name)
+    _sh_annotate_runtime_call_expr(
+        payload,
+        lowered_kind="BuiltinCall",
+        builtin_name=fn_name,
+        runtime_call=runtime_call,
+        module_id=mod_id,
+        runtime_symbol=runtime_symbol,
+        semantic_tag=semantic_tag,
+    )
+    sig_ret = lookup_stdlib_function_return_type(fn_name)
+    if sig_ret != "":
+        payload["resolved_type"] = sig_ret
+    return payload
+
+
 def _sh_lookup_noncpp_attr_runtime_call(
     owner_expr: dict[str, Any] | None,
     attr_name: str,
@@ -4776,19 +4799,12 @@ class _ShExprParser:
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif stdlib_fn_runtime_call != "":
-                    mod_id, runtime_symbol = lookup_stdlib_function_runtime_binding(fn_name)
-                    _sh_annotate_runtime_call_expr(
+                    _sh_annotate_stdlib_function_call_expr(
                         payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name=fn_name,
+                        fn_name=fn_name,
                         runtime_call=stdlib_fn_runtime_call,
-                        module_id=mod_id,
-                        runtime_symbol=runtime_symbol,
                         semantic_tag=stdlib_fn_semantic_tag,
                     )
-                    sig_ret = lookup_stdlib_function_return_type(fn_name)
-                    if sig_ret != "":
-                        payload["resolved_type"] = sig_ret
                 elif stdlib_symbol_runtime_call != "":
                     mod_id, runtime_symbol = lookup_stdlib_imported_symbol_runtime_binding(fn_name, _SH_IMPORT_SYMBOLS)
                     _sh_annotate_runtime_call_expr(
