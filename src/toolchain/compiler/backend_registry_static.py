@@ -264,45 +264,6 @@ def _default_module_label(module_id: str, output_path: Path) -> str:
     return "module"
 
 
-def _normalize_module_artifact(
-    artifact_any: Any,
-    *,
-    module_id: str,
-    output_path: Path,
-    extension: str,
-    is_entry: bool,
-) -> dict[str, Any]:
-    artifact = artifact_any if isinstance(artifact_any, dict) else {}
-    text = artifact_any if isinstance(artifact_any, str) else artifact.get("text", "")
-    module_id_out = artifact.get("module_id", module_id)
-    if not isinstance(module_id_out, str) or module_id_out == "":
-        module_id_out = module_id if module_id != "" else _default_module_label("", output_path)
-    label = artifact.get("label", "")
-    if not isinstance(label, str) or label == "":
-        label = _default_module_label(module_id_out, output_path)
-    extension_out = artifact.get("extension", extension)
-    if not isinstance(extension_out, str) or extension_out == "":
-        extension_out = extension if extension != "" else output_path.suffix
-    dependencies_out: list[str] = []
-    dependencies_any = artifact.get("dependencies", [])
-    if isinstance(dependencies_any, list):
-        for item in dependencies_any:
-            if isinstance(item, str) and item != "":
-                dependencies_out.append(item)
-    metadata_any = artifact.get("metadata", {})
-    metadata_out = metadata_any if isinstance(metadata_any, dict) else {}
-    is_entry_out = artifact.get("is_entry", is_entry)
-    return {
-        "module_id": module_id_out,
-        "label": label,
-        "extension": extension_out,
-        "text": text if isinstance(text, str) else "",
-        "is_entry": bool(is_entry_out),
-        "dependencies": dependencies_out,
-        "metadata": dict(metadata_out),
-    }
-
-
 def _legacy_emit_module_adapter(emit_impl: Any, *, extension: str) -> Any:
     def _emit_module(
         ir: dict[str, Any],
@@ -317,12 +278,14 @@ def _legacy_emit_module_adapter(emit_impl: Any, *, extension: str) -> Any:
             source_any = emit_impl(ir, output_path, emitter_options if isinstance(emitter_options, dict) else {})
         except TypeError:
             source_any = emit_impl(ir, output_path)
-        return _normalize_module_artifact(
-            source_any,
-            module_id=module_id,
-            output_path=output_path,
-            extension=extension,
-            is_entry=is_entry,
+        return export_module_artifact_any(
+            normalize_module_artifact_carrier(
+                source_any,
+                module_id=module_id,
+                output_path=output_path,
+                extension=extension,
+                is_entry=is_entry,
+            )
         )
 
     return _emit_module
