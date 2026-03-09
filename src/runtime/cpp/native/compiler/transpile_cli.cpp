@@ -66,7 +66,11 @@ void _run_host_python_command(const ::std::string& command, const str& error_pre
     _remove_if_exists(err_path);
 }
 
-dict<str, object> _load_json_root_dict(const pytra::std::pathlib::Path& json_path) {
+pytra::compiler::transpile_cli::CompilerRootDocument _load_json_root_document(
+    const pytra::std::pathlib::Path& json_path,
+    const str& source_path,
+    const str& parser_backend
+) {
     pytra::std::pathlib::Path json_copy = json_path;
     auto parsed = pytra::std::json::loads_obj(json_copy.read_text());
     if (!parsed.has_value()) {
@@ -74,10 +78,11 @@ dict<str, object> _load_json_root_dict(const pytra::std::pathlib::Path& json_pat
     }
     pytra::std::json::JsonObj root = parsed.value();
     auto east = root.get_obj("east");
+    dict<str, object> raw_doc = root.raw;
     if (east.has_value()) {
-        return east.value().raw;
+        raw_doc = east.value().raw;
     }
-    return root.raw;
+    return pytra::compiler::transpile_cli::coerce_compiler_root_document(raw_doc, source_path, parser_backend);
 }
 
 str _dict_get_str(const dict<str, object>& src, const str& key, const str& default_value = "") {
@@ -158,8 +163,8 @@ CompilerRootDocument load_east3_document_typed(
     pytra::std::pathlib::Path input_copy = input_path;
     const str input_text = input_copy.__str__();
     if (py_endswith(input_text, ".json")) {
-        return coerce_compiler_root_document(
-            _load_json_root_dict(input_path),
+        return _load_json_root_document(
+            input_path,
             py_to_string(input_copy.__str__()),
             parser_backend
         );
@@ -209,8 +214,8 @@ CompilerRootDocument load_east3_document_typed(
         + _shell_quote(py_to_string(target_lang));
     try {
         _run_host_python_command(cmd, "selfhost direct route failed to build EAST3");
-        return coerce_compiler_root_document(
-            _load_json_root_dict(east_path),
+        return _load_json_root_document(
+            east_path,
             py_to_string(input_copy.__str__()),
             parser_backend
         );
