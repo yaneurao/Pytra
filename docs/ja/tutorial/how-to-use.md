@@ -59,6 +59,7 @@
 
 ## 次に読むページ
 
+- 言語仕様の正本は [利用仕様](../spec/spec-user.md) を参照してください。
 - `@extern` / `extern(...)` の使い方は [extern.md](./extern.md) を参照してください。
 - `py2x.py` / `ir2lang.py` を直接使いたい場合は [transpiler-cli.md](./transpiler-cli.md) を参照してください。
 - エラーカテゴリや詰まりどころは [troubleshooting.md](./troubleshooting.md) を参照してください。

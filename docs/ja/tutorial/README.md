@@ -6,11 +6,12 @@ Pytra を初めて触る人向けの入口です。
 ## 最初に読む順番
 
 1. 実行手順を確認する: [使い方](./how-to-use.md)
-2. `@extern` / `extern(...)` を確認する: [extern.md](./extern.md)
-3. `py2x.py` / `ir2lang.py` を直接使う: [transpiler-cli.md](./transpiler-cli.md)
-4. エラーの見方と詰まりどころを確認する: [troubleshooting.md](./troubleshooting.md)
-5. 高度な変換ルートを確認する: [発展的な使い方](./advanced-usage.md)
-6. parity / selfhost / local CI を確認する: [開発運用ガイド](./dev-operations.md)
+2. 言語仕様の正本を確認する: [利用仕様](../spec/spec-user.md)
+3. `@extern` / `extern(...)` を確認する: [extern.md](./extern.md)
+4. `py2x.py` / `ir2lang.py` を直接使う: [transpiler-cli.md](./transpiler-cli.md)
+5. エラーの見方と詰まりどころを確認する: [troubleshooting.md](./troubleshooting.md)
+6. 高度な変換ルートを確認する: [発展的な使い方](./advanced-usage.md)
+7. parity / selfhost / local CI を確認する: [開発運用ガイド](./dev-operations.md)
 
 ## 読み分け
 
