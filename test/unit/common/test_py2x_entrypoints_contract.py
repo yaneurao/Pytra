@@ -236,6 +236,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         host_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry.py").read_text(encoding="utf-8")
         static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
 
+        self.assertIn("from toolchain.compiler.typed_boundary import backend_spec_target", py2x_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_compiler_root_document", py2x_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", py2x_src)
         self.assertIn("return export_compiler_root_document(", py2x_src)
@@ -243,11 +244,13 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact", py2x_src)
         self.assertIn("module_carrier = coerce_module_artifact(module_artifact)", py2x_src)
         self.assertIn("list(collect_program_modules_typed(module_carrier))", py2x_src)
+        self.assertIn("spec_target = backend_spec_target(spec)", py2x_src)
         self.assertIn("fallback_target=spec_target", py2x_src)
         self.assertNotIn(").to_legacy_dict()", py2x_src)
         self.assertNotIn("program_artifact_any = program_artifact.to_legacy_dict()", py2x_src)
         self.assertNotIn("program_carrier = coerce_program_artifact(", py2x_src)
         self.assertNotIn("if isinstance(program_artifact, dict):", py2x_src)
+        self.assertNotIn('spec.carrier.target_lang if not isinstance(spec, dict)', py2x_src)
         self.assertNotIn("hasattr(program_artifact, \"to_legacy_dict\")", py2x_src)
         self.assertNotIn("hasattr(item, \"to_legacy_dict\")", py2x_src)
 
@@ -411,6 +414,9 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             typed_boundary.export_resolved_backend_spec_any(static_spec),
             typed_boundary.export_resolved_backend_spec(static_spec),
         )
+        self.assertEqual(typed_boundary.backend_spec_target(host_spec), "cpp")
+        self.assertEqual(typed_boundary.backend_spec_target(static_spec), "cpp")
+        self.assertEqual(typed_boundary.backend_spec_target({"target_lang": "rs", "extension": ".rs"}), "rs")
         module = typed_boundary.coerce_module_artifact(
             {
                 "module_id": "pkg.demo",

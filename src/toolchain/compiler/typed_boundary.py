@@ -179,6 +179,16 @@ def export_resolved_backend_spec_any(spec: object) -> dict[str, object]:
     return export_resolved_backend_spec(coerce_backend_spec(spec))
 
 
+def backend_spec_target(spec: object) -> str:
+    if not isinstance(spec, (ResolvedBackendSpec, dict)):
+        to_legacy = getattr(spec, "to_legacy_dict", None)
+        if callable(to_legacy):
+            legacy_spec = to_legacy()
+            if isinstance(legacy_spec, dict):
+                spec = legacy_spec
+    return coerce_backend_spec(spec).carrier.target_lang
+
+
 def export_module_artifact_carrier(module: "ModuleArtifactCarrier") -> dict[str, object]:
     out: dict[str, object] = {
         "module_id": module.module_id,

@@ -16,6 +16,7 @@ from toolchain.compiler.backend_registry import list_backend_targets
 from toolchain.compiler.backend_registry import lower_ir_typed
 from toolchain.compiler.backend_registry import optimize_ir_typed
 from toolchain.compiler.backend_registry import resolve_layer_options_typed
+from toolchain.compiler.typed_boundary import backend_spec_target
 from toolchain.compiler.typed_boundary import coerce_module_artifact
 from toolchain.compiler.typed_boundary import export_compiler_root_document
 from toolchain.compiler.typed_boundary import export_program_artifact_any
@@ -494,7 +495,7 @@ def main() -> int:
         link_output_schema="",
     )
     writer = get_program_writer_typed(spec)
-    spec_target = spec.carrier.target_lang if not isinstance(spec, dict) else str(spec.get("target_lang", ""))
+    spec_target = backend_spec_target(spec)
     program_artifact_any = export_program_artifact_any(
         program_artifact,
         fallback_target=spec_target,
