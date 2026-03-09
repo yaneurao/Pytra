@@ -123,6 +123,23 @@ def _sh_annotate_runtime_call_expr(
     return payload
 
 
+def _sh_annotate_resolved_runtime_expr(
+    payload: dict[str, Any],
+    *,
+    runtime_call: str,
+    runtime_source: str,
+    module_id: str = "",
+    runtime_symbol: str = "",
+    semantic_tag: str | None = None,
+) -> dict[str, Any]:
+    payload["resolved_runtime_call"] = runtime_call
+    payload["resolved_runtime_source"] = runtime_source
+    _set_runtime_binding_fields(payload, module_id, runtime_symbol)
+    if semantic_tag is not None and semantic_tag != "":
+        payload["semantic_tag"] = semantic_tag
+    return payload
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -4432,9 +4449,13 @@ class _ShExprParser:
                 if attr_semantic_tag != "":
                     node["semantic_tag"] = attr_semantic_tag
                 if noncpp_module_attr_runtime_call != "":
-                    node["resolved_runtime_call"] = noncpp_module_attr_runtime_call
-                    node["resolved_runtime_source"] = "module_attr"
-                    _set_runtime_binding_fields(node, noncpp_module_attr_runtime_owner, attr_name)
+                    _sh_annotate_resolved_runtime_expr(
+                        node,
+                        runtime_call=noncpp_module_attr_runtime_call,
+                        runtime_source="module_attr",
+                        module_id=noncpp_module_attr_runtime_owner,
+                        runtime_symbol=attr_name,
+                    )
                 continue
             if tok["k"] == "(":
                 ltok = self._eat("(")
@@ -4675,16 +4696,22 @@ class _ShExprParser:
                 elif noncpp_symbol_runtime_call != "":
                     # C++ 互換を維持するため BuiltinCall へは降ろさず、
                     # non-C++ backend 向けに解決済み runtime 名だけ注釈する。
-                    payload["resolved_runtime_call"] = noncpp_symbol_runtime_call
-                    payload["resolved_runtime_source"] = "import_symbol"
+                    mod_id = ""
+                    runtime_symbol = ""
+                    binding_semantic_tag = ""
                     binding = _SH_IMPORT_SYMBOLS.get(fn_name)
                     if isinstance(binding, dict):
                         mod_id = str(binding.get("module", "")).strip()
                         runtime_symbol = str(binding.get("name", "")).strip()
-                        _set_runtime_binding_fields(payload, mod_id, runtime_symbol)
                         binding_semantic_tag = lookup_runtime_binding_semantic_tag(mod_id, runtime_symbol)
-                        if binding_semantic_tag != "":
-                            payload["semantic_tag"] = binding_semantic_tag
+                    _sh_annotate_resolved_runtime_expr(
+                        payload,
+                        runtime_call=noncpp_symbol_runtime_call,
+                        runtime_source="import_symbol",
+                        module_id=mod_id,
+                        runtime_symbol=runtime_symbol,
+                        semantic_tag=binding_semantic_tag,
+                    )
                 elif fn_name in {"Exception", "RuntimeError"}:
                     _sh_annotate_runtime_call_expr(
                         payload,
@@ -4853,15 +4880,18 @@ class _ShExprParser:
                                         attr,
                                     )
                     if noncpp_module_runtime_call != "":
-                        payload["resolved_runtime_call"] = noncpp_module_runtime_call
-                        payload["resolved_runtime_source"] = "module_attr"
-                        _set_runtime_binding_fields(payload, noncpp_module_runtime_owner, attr)
                         binding_semantic_tag = lookup_runtime_binding_semantic_tag(
                             noncpp_module_runtime_owner,
                             attr,
                         )
-                        if binding_semantic_tag != "":
-                            payload["semantic_tag"] = binding_semantic_tag
+                        _sh_annotate_resolved_runtime_expr(
+                            payload,
+                            runtime_call=noncpp_module_runtime_call,
+                            runtime_source="module_attr",
+                            module_id=noncpp_module_runtime_owner,
+                            runtime_symbol=attr,
+                            semantic_tag=binding_semantic_tag,
+                        )
                         std_module_attr_ret = lookup_stdlib_function_return_type(attr)
                         if std_module_attr_ret != "":
                             payload["resolved_type"] = std_module_attr_ret
