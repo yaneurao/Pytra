@@ -91,19 +91,19 @@ int main() {
     assert(typed_head.size() == 2);
     assert(typed_head[0] == 3);
     assert(typed_head[1] == 1);
-    py_set_at(typed, 1, int64(9));
+    py_list_set_at_mut(rc_list_ref(typed), 1, int64(9));
     assert(py_at(typed, 1) == 9);
-    py_append(typed, int64(4));
-    py_extend(typed, list<int64>{5, 6});
+    py_list_append_mut(rc_list_ref(typed), int64(4));
+    py_list_extend_mut(rc_list_ref(typed), list<int64>{5, 6});
     assert(py_len(typed) == 6);
-    assert(py_pop(typed) == 6);
-    assert(py_pop(typed, 0) == 3);
-    py_reverse(typed);
+    assert(py_list_pop_mut(rc_list_ref(typed)) == 6);
+    assert(py_list_pop_mut(rc_list_ref(typed), 0) == 3);
+    py_list_reverse_mut(rc_list_ref(typed));
     assert(py_at(typed, 0) == 5);
-    py_sort(typed);
+    py_list_sort_mut(rc_list_ref(typed));
     assert(py_at(typed, 0) == 2);
     assert(py_index(rc_list_ref(typed), int64(5)) == 2);
-    py_clear(typed);
+    py_list_clear_mut(rc_list_ref(typed));
     assert(py_len(typed) == 0);
     assert(!py_to_bool(typed));
 
@@ -296,9 +296,18 @@ int main() {
         contains_header = (ROOT / "src/runtime/cpp/native/built_in/contains.h").read_text(encoding="utf-8")
         string_ops_header = (ROOT / "src/runtime/cpp/generated/built_in/string_ops.h").read_text(encoding="utf-8")
         string_ops_cpp = (ROOT / "src/runtime/cpp/generated/built_in/string_ops.cpp").read_text(encoding="utf-8")
+        sequence_cpp = (ROOT / "src/runtime/cpp/generated/built_in/sequence.cpp").read_text(encoding="utf-8")
         numeric_ops_header = (ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.h").read_text(encoding="utf-8")
+        iter_ops_cpp = (ROOT / "src/runtime/cpp/generated/built_in/iter_ops.cpp").read_text(encoding="utf-8")
         zip_ops_header = (ROOT / "src/runtime/cpp/generated/built_in/zip_ops.h").read_text(encoding="utf-8")
         type_id_cpp = (ROOT / "src/runtime/cpp/generated/built_in/type_id.cpp").read_text(encoding="utf-8")
+        argparse_cpp = (ROOT / "src/runtime/cpp/generated/std/argparse.cpp").read_text(encoding="utf-8")
+        json_cpp = (ROOT / "src/runtime/cpp/generated/std/json.cpp").read_text(encoding="utf-8")
+        pathlib_cpp = (ROOT / "src/runtime/cpp/generated/std/pathlib.cpp").read_text(encoding="utf-8")
+        random_cpp = (ROOT / "src/runtime/cpp/generated/std/random.cpp").read_text(encoding="utf-8")
+        re_cpp = (ROOT / "src/runtime/cpp/generated/std/re.cpp").read_text(encoding="utf-8")
+        gif_cpp = (ROOT / "src/runtime/cpp/generated/utils/gif.cpp").read_text(encoding="utf-8")
+        png_cpp = (ROOT / "src/runtime/cpp/generated/utils/png.cpp").read_text(encoding="utf-8")
 
         self.assertIn('#include "runtime/cpp/native/core/py_runtime.h"', forwarder_header)
         self.assertIn('#include "runtime/cpp/native/core/process_runtime.h"', process_forwarder)
@@ -519,6 +528,18 @@ int main() {
         self.assertIn("static inline const T& py_at(const list<T>& v, int64 idx)", runtime_header)
         self.assertIn("static inline void py_append(list<T>& v, const U& item)", runtime_header)
         self.assertIn("static inline list<T> py_slice(const list<T>& v, int64 lo, int64 up)", runtime_header)
+        self.assertNotIn("py_append(", argparse_cpp)
+        self.assertNotIn("py_append(", pathlib_cpp)
+        self.assertNotIn("py_append(", random_cpp)
+        self.assertNotIn("py_set_at(", random_cpp)
+        self.assertNotIn("py_append(", re_cpp)
+        self.assertNotIn("py_append(", gif_cpp)
+        self.assertNotIn("py_append(", png_cpp)
+        self.assertNotIn("py_append(", sequence_cpp)
+        self.assertNotIn("py_append(", string_ops_cpp)
+        self.assertNotIn("py_append(", zip_ops_header)
+        self.assertIn("py_append(out, this->_parse_value());", json_cpp)
+        self.assertIn("py_append(out, make_object(py_at(values, py_to<int64>(i))));", iter_ops_cpp)
         self.assertNotIn("static inline bool operator==(const ::std::any& lhs, const char* rhs)", runtime_header)
         self.assertNotIn("static inline bool operator!=(const ::std::any& lhs, const char* rhs)", runtime_header)
         self.assertNotIn("static inline bool operator<(const ::std::any& lhs, T rhs)", runtime_header)

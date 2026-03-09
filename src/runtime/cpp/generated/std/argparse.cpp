@@ -2,9 +2,10 @@
 // source: src/pytra/std/argparse.py
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.h"
-#include "runtime/cpp/core/process_runtime.h"
 
 #include "runtime/cpp/generated/std/argparse.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 #include "pytra/built_in/contains.h"
 #include "pytra/built_in/string_ops.h"
@@ -48,17 +49,17 @@ namespace pytra::std::argparse {
     void ArgumentParser::add_argument(const str& name0, const str& name1, const str& name2, const str& name3, const str& help, const str& action, const rc<list<str>>& choices, const object& py_default) {
             rc<list<str>> names = rc_list_from_value(list<str>{});
             if (name0 != "")
-                py_append(names, name0);
+                py_list_append_mut(rc_list_ref(names), name0);
             if (name1 != "")
-                py_append(names, name1);
+                py_list_append_mut(rc_list_ref(names), name1);
             if (name2 != "")
-                py_append(names, name2);
+                py_list_append_mut(rc_list_ref(names), name2);
             if (name3 != "")
-                py_append(names, name3);
+                py_list_append_mut(rc_list_ref(names), name3);
             if ((rc_list_ref(names)).empty())
                 throw ValueError("add_argument requires at least one name");
             _ArgSpec spec = _ArgSpec(names, action, choices, py_default, help);
-            py_append(this->_specs, spec);
+            py_list_append_mut(rc_list_ref(this->_specs), spec);
     }
 
     void ArgumentParser::_fail(const str& msg) {
@@ -77,9 +78,9 @@ namespace pytra::std::argparse {
             rc<list<_ArgSpec>> specs_opt = rc_list_from_value(list<_ArgSpec>{});
             for (_ArgSpec s : rc_list_ref(this->_specs)) {
                 if (s.is_optional)
-                    py_append(specs_opt, s);
+                    py_list_append_mut(rc_list_ref(specs_opt), s);
                 else
-                    py_append(specs_pos, s);
+                    py_list_append_mut(rc_list_ref(specs_pos), s);
             }
             dict<str, int64> by_name = {};
             int64 spec_i = 0;
@@ -106,7 +107,7 @@ namespace pytra::std::argparse {
                 if (py_startswith(tok, "-")) {
                     if (!py_contains(by_name, tok))
                         this->_fail("unknown option: " + tok);
-                    auto __idx_1 = by_name.at(tok);
+                    auto __idx_1 = ([&]() { auto&& __dict_2 = by_name; auto __dict_key_3 = tok; return __dict_2.at(__dict_key_3); }());
                     _ArgSpec spec = py_at(specs_opt, py_to<int64>(__idx_1));
                     if (spec.action == "store_true") {
                         values[spec.dest] = make_object(true);

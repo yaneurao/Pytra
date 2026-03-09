@@ -268,6 +268,7 @@ class CppEmitter(
         self.current_function_typed_list_str_locals: set[str] = set()
         self.current_function_reassigned_names: set[str] = set()
         self.declared_var_types: dict[str, str] = {}
+        self.module_global_var_types: dict[str, str] = {}
         self._module_fn_arg_type_cache: dict[str, dict[str, list[str]]] = {}
         self._module_fn_signature_cache: dict[str, dict[str, dict[str, list[str]]]] = {}
         self._module_fn_return_type_cache: dict[str, dict[str, str]] = {}
@@ -376,6 +377,10 @@ class CppEmitter(
                 declared_t = self.normalize_type_name(self.declared_var_types[nm])
                 if declared_t not in {"", "unknown"}:
                     return declared_t
+            if nm in self.module_global_var_types:
+                global_t = self.normalize_type_name(self.module_global_var_types[nm])
+                if global_t not in {"", "unknown"}:
+                    return global_t
         if kind == "Call":
             call_t = self.normalize_type_name(self._infer_numeric_call_expr_type(node_for_base))
             if call_t != "":
@@ -397,6 +402,8 @@ class CppEmitter(
             nm = self.any_to_str(node_for_base.get("id"))
             if nm in self.declared_var_types:
                 return self.normalize_type_name(self.declared_var_types[nm])
+            if nm in self.module_global_var_types:
+                return self.normalize_type_name(self.module_global_var_types[nm])
         if kind == "Attribute":
             owner = self.any_to_dict_or_empty(node_for_base.get("value"))
             owner_t0 = self.get_expr_type(node_for_base.get("value"))
@@ -1369,12 +1376,14 @@ class CppEmitter(
             if len(stmt) > 0:
                 module_runtime_dicts.append(stmt)
         module_globals = self._collect_module_global_decls(module_runtime)
+        self.module_global_var_types = {}
 
         module_global_names: set[str] = set()
         for g_name, g_ty in module_globals:
             self.emit(f"{self._cpp_type_text(g_ty)} {g_name};")
             self.declare_in_current_scope(g_name)
             self.declared_var_types[g_name] = g_ty
+            self.module_global_var_types[g_name] = g_ty
             module_global_names.add(g_name)
         if len(module_globals) > 0:
             self.emit("")
@@ -3771,7 +3780,15 @@ class CppEmitter(
             value_expr = self.render_expr(value_node)
             if self._uses_pyobj_ref_first_list_ops(owner_node):
                 value_expr = self._render_pyobj_ref_first_list_container_item(owner_node, value_expr, value_node)
-                return f"py_append({owner_expr}, {value_expr})"
+                if self._uses_pyobj_ref_first_list_lvalue_expr(owner_node):
+                    return f"py_list_append_mut(rc_list_ref({owner_expr}), {value_expr})"
+                list_tmp = self.next_tmp("__list")
+                return (
+                    f"([&]() {{ "
+                    f"auto {list_tmp} = {owner_expr}; "
+                    f"py_list_append_mut(rc_list_ref({list_tmp}), {value_expr}); "
+                    f"}}())"
+                )
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 boxed_value = self._box_expr_for_any(value_expr, value_node)
                 return f"py_append({owner_expr}, {boxed_value})"
@@ -3790,7 +3807,15 @@ class CppEmitter(
             owner_expr = self.render_expr(owner_node)
             value_expr = self.render_expr(value_node)
             if self._uses_pyobj_ref_first_list_ops(owner_node):
-                return f"py_extend({owner_expr}, {value_expr})"
+                if self._uses_pyobj_ref_first_list_lvalue_expr(owner_node):
+                    return f"py_list_extend_mut(rc_list_ref({owner_expr}), {value_expr})"
+                list_tmp = self.next_tmp("__list")
+                return (
+                    f"([&]() {{ "
+                    f"auto {list_tmp} = {owner_expr}; "
+                    f"py_list_extend_mut(rc_list_ref({list_tmp}), {value_expr}); "
+                    f"}}())"
+                )
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 boxed_value = self._box_expr_for_any(value_expr, value_node)
                 return f"py_extend({owner_expr}, {boxed_value})"
@@ -3806,13 +3831,39 @@ class CppEmitter(
             owner_expr = self.render_expr(owner_node)
             has_index = self.any_dict_has(expr_d, "index")
             if self._uses_pyobj_ref_first_list_ops(owner_node):
+                list_ref_expr = f"rc_list_ref({owner_expr})"
                 if not has_index:
-                    return f"py_pop({owner_expr})"
+                    if self._uses_pyobj_ref_first_list_lvalue_expr(owner_node):
+                        return f"py_list_pop_mut({list_ref_expr})"
+                    list_tmp = self.next_tmp("__list")
+                    return (
+                        f"([&]() {{ "
+                        f"auto {list_tmp} = {owner_expr}; "
+                        f"return py_list_pop_mut(rc_list_ref({list_tmp})); "
+                        f"}}())"
+                    )
                 index_node = expr_d.get("index")
                 index_expr = self.render_expr(index_node)
                 if index_expr in {"", "/* none */"}:
-                    return f"py_pop({owner_expr})"
-                return f"py_pop({owner_expr}, py_to<int64>({index_expr}))"
+                    if self._uses_pyobj_ref_first_list_lvalue_expr(owner_node):
+                        return f"py_list_pop_mut({list_ref_expr})"
+                    list_tmp = self.next_tmp("__list")
+                    return (
+                        f"([&]() {{ "
+                        f"auto {list_tmp} = {owner_expr}; "
+                        f"return py_list_pop_mut(rc_list_ref({list_tmp})); "
+                        f"}}())"
+                    )
+                index_expr = f"py_to<int64>({index_expr})"
+                if self._uses_pyobj_ref_first_list_lvalue_expr(owner_node):
+                    return f"py_list_pop_mut({list_ref_expr}, {index_expr})"
+                list_tmp = self.next_tmp("__list")
+                return (
+                    f"([&]() {{ "
+                    f"auto {list_tmp} = {owner_expr}; "
+                    f"return py_list_pop_mut(rc_list_ref({list_tmp}), {index_expr}); "
+                    f"}}())"
+                )
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 if not has_index:
                     return f"py_pop({owner_expr})"
@@ -3832,7 +3883,15 @@ class CppEmitter(
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
             if self._uses_pyobj_ref_first_list_ops(owner_node):
-                return f"py_clear({owner_expr})"
+                if self._uses_pyobj_ref_first_list_lvalue_expr(owner_node):
+                    return f"py_list_clear_mut(rc_list_ref({owner_expr}))"
+                list_tmp = self.next_tmp("__list")
+                return (
+                    f"([&]() {{ "
+                    f"auto {list_tmp} = {owner_expr}; "
+                    f"py_list_clear_mut(rc_list_ref({list_tmp})); "
+                    f"}}())"
+                )
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 return f"py_clear({owner_expr})"
             return f"{owner_expr}.clear()"
@@ -3840,7 +3899,15 @@ class CppEmitter(
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
             if self._uses_pyobj_ref_first_list_ops(owner_node):
-                return f"py_reverse({owner_expr})"
+                if self._uses_pyobj_ref_first_list_lvalue_expr(owner_node):
+                    return f"py_list_reverse_mut(rc_list_ref({owner_expr}))"
+                list_tmp = self.next_tmp("__list")
+                return (
+                    f"([&]() {{ "
+                    f"auto {list_tmp} = {owner_expr}; "
+                    f"py_list_reverse_mut(rc_list_ref({list_tmp})); "
+                    f"}}())"
+                )
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 return f"py_reverse({owner_expr})"
             return f"::std::reverse({owner_expr}.begin(), {owner_expr}.end())"
@@ -3848,7 +3915,15 @@ class CppEmitter(
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
             if self._uses_pyobj_ref_first_list_ops(owner_node):
-                return f"py_sort({owner_expr})"
+                if self._uses_pyobj_ref_first_list_lvalue_expr(owner_node):
+                    return f"py_list_sort_mut(rc_list_ref({owner_expr}))"
+                list_tmp = self.next_tmp("__list")
+                return (
+                    f"([&]() {{ "
+                    f"auto {list_tmp} = {owner_expr}; "
+                    f"py_list_sort_mut(rc_list_ref({list_tmp})); "
+                    f"}}())"
+                )
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 return f"py_sort({owner_expr})"
             return f"::std::sort({owner_expr}.begin(), {owner_expr}.end())"

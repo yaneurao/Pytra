@@ -4,6 +4,8 @@
 #include "runtime/cpp/core/py_runtime.h"
 
 #include "runtime/cpp/generated/built_in/type_id.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 #include "pytra/built_in/contains.h"
 
@@ -57,47 +59,47 @@ int64 _tid_user_base() {
     return 1000;
 }
 
-list<int64> _make_int_list_0() {
-    list<int64> out = {};
+rc<list<int64>> _make_int_list_0() {
+    rc<list<int64>> out = rc_list_from_value(list<int64>{});
     return out;
 }
 
-list<int64> _make_int_list_1(int64 a0) {
-    list<int64> out = {};
-    out.append(a0);
+rc<list<int64>> _make_int_list_1(int64 a0) {
+    rc<list<int64>> out = rc_list_from_value(list<int64>{});
+    py_list_append_mut(rc_list_ref(out), a0);
     return out;
 }
 
-bool _contains_int(const list<int64>& items, int64 value) {
+bool _contains_int(const rc<list<int64>>& items, int64 value) {
     int64 i = 0;
     while (i < py_len(items)) {
-        if (items[i] == value)
+        if (py_at(items, py_to<int64>(i)) == value)
             return true;
         i++;
     }
     return false;
 }
 
-list<int64> _copy_int_list(const list<int64>& items) {
-    list<int64> out = {};
+rc<list<int64>> _copy_int_list(const rc<list<int64>>& items) {
+    rc<list<int64>> out = rc_list_from_value(list<int64>{});
     int64 i = 0;
     while (i < py_len(items)) {
-        out.append(int64(items[i]));
+        py_list_append_mut(rc_list_ref(out), py_at(items, py_to<int64>(i)));
         i++;
     }
     return out;
 }
 
-list<int64> _sorted_ints(const list<int64>& items) {
-    list<int64> out = _copy_int_list(items);
+rc<list<int64>> _sorted_ints(const rc<list<int64>>& items) {
+    rc<list<int64>> out = _copy_int_list(items);
     int64 i = 0;
     while (i < py_len(out)) {
         int64 j = i + 1;
         while (j < py_len(out)) {
-            if (out[j] < out[i]) {
-                int64 tmp = out[i];
-                out[i] = out[j];
-                out[j] = tmp;
+            if (py_at(out, py_to<int64>(j)) < py_at(out, py_to<int64>(i))) {
+                int64 tmp = py_at(out, py_to<int64>(i));
+                py_at(out, py_to<int64>(i)) = py_at(out, py_to<int64>(j));
+                py_at(out, py_to<int64>(j)) = tmp;
             }
             j++;
         }
@@ -107,55 +109,55 @@ list<int64> _sorted_ints(const list<int64>& items) {
 }
 
 void _register_type_node(int64 type_id, int64 base_type_id) {
-    if (!(_contains_int(_TYPE_IDS, type_id)))
-        py_append(_TYPE_IDS, make_object(type_id));
-    py_set_at(_TYPE_BASE, type_id, make_object(base_type_id));
+    if (!(_contains_int(rc_list_from_value(_TYPE_IDS), type_id)))
+        _TYPE_IDS.append(type_id);
+    _TYPE_BASE[type_id] = base_type_id;
     if (!py_contains(_TYPE_CHILDREN, type_id))
-        py_set_at(_TYPE_CHILDREN, type_id, make_object(_make_int_list_0()));
+        _TYPE_CHILDREN[type_id] = rc_list_copy_value(_make_int_list_0());
     if (base_type_id < 0)
         return;
     if (!py_contains(_TYPE_CHILDREN, base_type_id))
-        py_set_at(_TYPE_CHILDREN, base_type_id, make_object(_make_int_list_0()));
-    auto children = py_at(_TYPE_CHILDREN, py_to<int64>(base_type_id));
+        _TYPE_CHILDREN[base_type_id] = rc_list_copy_value(_make_int_list_0());
+    rc<list<int64>> children = rc_list_from_value(([&]() { auto&& __dict_1 = _TYPE_CHILDREN; auto __dict_key_2 = base_type_id; return __dict_1.at(__dict_key_2); }()));
     if (!(_contains_int(children, type_id))) {
-        py_append(children, make_object(type_id));
-        py_set_at(_TYPE_CHILDREN, base_type_id, make_object(children));
+        py_list_append_mut(rc_list_ref(children), type_id);
+        _TYPE_CHILDREN[base_type_id] = rc_list_copy_value(children);
     }
 }
 
-list<int64> _sorted_child_type_ids(int64 type_id) {
-    list<int64> children = _make_int_list_0();
+rc<list<int64>> _sorted_child_type_ids(int64 type_id) {
+    rc<list<int64>> children = _make_int_list_0();
     if (py_contains(_TYPE_CHILDREN, type_id))
-        children = list<int64>(py_at(_TYPE_CHILDREN, py_to<int64>(type_id)));
+        children = rc_list_from_value(([&]() { auto&& __dict_3 = _TYPE_CHILDREN; auto __dict_key_4 = type_id; return __dict_3.at(__dict_key_4); }()));
     return _sorted_ints(children);
 }
 
-list<int64> _collect_root_type_ids() {
-    list<int64> roots = {};
+rc<list<int64>> _collect_root_type_ids() {
+    rc<list<int64>> roots = rc_list_from_value(list<int64>{});
     int64 i = 0;
     while (i < py_len(_TYPE_IDS)) {
-        auto tid = py_at(_TYPE_IDS, py_to<int64>(i));
+        int64 tid = _TYPE_IDS[i];
         int64 base_tid = -(1);
         if (py_contains(_TYPE_BASE, tid))
-            base_tid = py_to<int64>(py_at(_TYPE_BASE, py_to<int64>(tid)));
+            base_tid = ([&]() { auto&& __dict_7 = _TYPE_BASE; auto __dict_key_8 = tid; return __dict_7.at(__dict_key_8); }());
         if ((base_tid < 0) || (!py_contains(_TYPE_BASE, base_tid)))
-            roots.append(int64(tid));
+            py_list_append_mut(rc_list_ref(roots), tid);
         i++;
     }
     return _sorted_ints(roots);
 }
 
 int64 _assign_type_ranges_dfs(int64 type_id, int64 next_order) {
-    py_set_at(_TYPE_ORDER, type_id, make_object(next_order));
-    py_set_at(_TYPE_MIN, type_id, make_object(next_order));
+    _TYPE_ORDER[type_id] = next_order;
+    _TYPE_MIN[type_id] = next_order;
     int64 cur = next_order + 1;
-    list<int64> children = _sorted_child_type_ids(type_id);
+    rc<list<int64>> children = _sorted_child_type_ids(type_id);
     int64 i = 0;
     while (i < py_len(children)) {
-        cur = _assign_type_ranges_dfs(children[i], cur);
+        cur = _assign_type_ranges_dfs(py_at(children, py_to<int64>(i)), cur);
         i++;
     }
-    py_set_at(_TYPE_MAX, type_id, make_object(cur - 1));
+    _TYPE_MAX[type_id] = cur - 1;
     return cur;
 }
 
@@ -165,16 +167,16 @@ void _recompute_type_ranges() {
     _TYPE_MAX.clear();
     
     int64 next_order = 0;
-    list<int64> roots = _collect_root_type_ids();
+    rc<list<int64>> roots = _collect_root_type_ids();
     int64 i = 0;
     while (i < py_len(roots)) {
-        next_order = _assign_type_ranges_dfs(roots[i], next_order);
+        next_order = _assign_type_ranges_dfs(py_at(roots, py_to<int64>(i)), next_order);
         i++;
     }
-    list<int64> all_ids = _sorted_ints(_TYPE_IDS);
+    rc<list<int64>> all_ids = _sorted_ints(rc_list_from_value(_TYPE_IDS));
     i = 0;
     while (i < py_len(all_ids)) {
-        int64 tid = all_ids[i];
+        int64 tid = py_at(all_ids, py_to<int64>(i));
         if (!py_contains(_TYPE_ORDER, tid))
             next_order = _assign_type_ranges_dfs(tid, next_order);
         i++;
@@ -182,15 +184,15 @@ void _recompute_type_ranges() {
 }
 
 void _mark_type_ranges_dirty() {
-    py_set_at(_TYPE_STATE, "ranges_dirty", make_object(1));
+    _TYPE_STATE[str("ranges_dirty")] = 1;
 }
 
 void _mark_type_ranges_clean() {
-    py_set_at(_TYPE_STATE, "ranges_dirty", make_object(0));
+    _TYPE_STATE[str("ranges_dirty")] = 0;
 }
 
 bool _is_type_ranges_dirty() {
-    return _TYPE_STATE.get("ranges_dirty", 1) != 0;
+    return _TYPE_STATE.get(str("ranges_dirty"), 1) != 0;
 }
 
 void _ensure_type_ranges() {
@@ -202,9 +204,9 @@ void _ensure_type_ranges() {
 
 void _ensure_builtins() {
     if (!py_contains(_TYPE_STATE, "next_user_type_id"))
-        py_set_at(_TYPE_STATE, "next_user_type_id", make_object(_tid_user_base()));
+        _TYPE_STATE[str("next_user_type_id")] = _tid_user_base();
     if (!py_contains(_TYPE_STATE, "ranges_dirty"))
-        py_set_at(_TYPE_STATE, "ranges_dirty", make_object(1));
+        _TYPE_STATE[str("ranges_dirty")] = 1;
     if (py_len(_TYPE_IDS) > 0)
         return;
     _register_type_node(_tid_none(), -(1));
@@ -234,11 +236,11 @@ int64 py_tid_register_class_type(int64 base_type_id) {
     _ensure_builtins();
     int64 base_tid = _normalize_base_type_id(base_type_id);
     
-    auto tid = _TYPE_STATE.at(str("next_user_type_id"));
+    int64 tid = ([&]() { auto&& __dict_9 = _TYPE_STATE; auto __dict_key_10 = str("next_user_type_id"); return __dict_9.at(__dict_key_10); }());
     while (py_contains(_TYPE_BASE, tid)) {
         tid++;
     }
-    py_set_at(_TYPE_STATE, "next_user_type_id", make_object(tid + 1));
+    _TYPE_STATE[str("next_user_type_id")] = tid + 1;
     
     _register_type_node(tid, base_tid);
     _mark_type_ranges_dirty();
@@ -288,9 +290,9 @@ bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id) {
         return false;
     if (!py_contains(_TYPE_ORDER, expected_type_id))
         return false;
-    auto actual_order = py_at(_TYPE_ORDER, py_to<int64>(actual_type_id));
-    auto expected_min = py_at(_TYPE_MIN, py_to<int64>(expected_type_id));
-    auto expected_max = py_at(_TYPE_MAX, py_to<int64>(expected_type_id));
+    int64 actual_order = ([&]() { auto&& __dict_11 = _TYPE_ORDER; auto __dict_key_12 = actual_type_id; return __dict_11.at(__dict_key_12); }());
+    int64 expected_min = ([&]() { auto&& __dict_13 = _TYPE_MIN; auto __dict_key_14 = expected_type_id; return __dict_13.at(__dict_key_14); }());
+    int64 expected_max = ([&]() { auto&& __dict_15 = _TYPE_MAX; auto __dict_key_16 = expected_type_id; return __dict_15.at(__dict_key_16); }());
     return (expected_min <= actual_order) && (actual_order <= expected_max);
 }
 
@@ -311,8 +313,8 @@ void _py_reset_type_registry_for_test() {
     _TYPE_MIN.clear();
     _TYPE_MAX.clear();
     _TYPE_STATE.clear();
-    py_set_at(_TYPE_STATE, "next_user_type_id", make_object(_tid_user_base()));
-    py_set_at(_TYPE_STATE, "ranges_dirty", make_object(1));
+    _TYPE_STATE[str("next_user_type_id")] = _tid_user_base();
+    _TYPE_STATE[str("ranges_dirty")] = 1;
     _ensure_builtins();
 }
 

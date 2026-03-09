@@ -4,6 +4,8 @@
 #include "runtime/cpp/core/py_runtime.h"
 
 #include "runtime/cpp/generated/built_in/predicates.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 
 /* Pure-Python source-of-truth for predicate helpers. */

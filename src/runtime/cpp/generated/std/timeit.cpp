@@ -4,6 +4,8 @@
 #include "runtime/cpp/core/py_runtime.h"
 
 #include "runtime/cpp/generated/std/timeit.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 #include "pytra/std/time.h"
 

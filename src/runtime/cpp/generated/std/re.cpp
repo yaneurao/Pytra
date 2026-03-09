@@ -4,6 +4,8 @@
 #include "runtime/cpp/core/py_runtime.h"
 
 #include "runtime/cpp/generated/std/re.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 #include "pytra/built_in/contains.h"
 #include "pytra/built_in/string_ops.h"
@@ -468,11 +470,11 @@ namespace pytra::std::re {
             for (str ch : text) {
                 if (ch.isspace()) {
                     if (!(in_ws)) {
-                        py_append(out, repl);
+                        py_list_append_mut(rc_list_ref(out), repl);
                         in_ws = true;
                     }
                 } else {
-                    py_append(out, ch);
+                    py_list_append_mut(rc_list_ref(out), ch);
                     in_ws = false;
                 }
             }
@@ -497,9 +499,9 @@ namespace pytra::std::re {
             rc<list<str>> out = rc_list_from_value(list<str>{});
             for (str ch : text) {
                 if ((ch.isalnum()) || (ch == "_"))
-                    py_append(out, ch);
+                    py_list_append_mut(rc_list_ref(out), ch);
                 else
-                    py_append(out, repl);
+                    py_list_append_mut(rc_list_ref(out), repl);
             }
             return str("").join(out);
         }

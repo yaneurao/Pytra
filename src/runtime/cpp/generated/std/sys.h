@@ -15,8 +15,8 @@ extern object stderr;
 extern object stdout;
 
 void exit(int64 code = 0);
-void set_argv(const list<str>& values);
-void set_path(const list<str>& values);
+void set_argv(const rc<list<str>>& values);
+void set_path(const rc<list<str>>& values);
 void write_stderr(const str& text);
 void write_stdout(const str& text);
 

@@ -6,6 +6,8 @@
 #define PYTRA_GENERATED_BUILT_IN_NUMERIC_OPS_H
 
 #include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 
 /* Pure-Python source-of-truth for numeric helper built-ins. */

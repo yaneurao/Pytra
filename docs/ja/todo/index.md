@@ -43,12 +43,12 @@
 5. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-02] `py_runtime.h` から `numeric_ops` / `zip_ops` / `contains` の transitive include を削除し、removed-include guard を更新する。
 6. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-01] typed dict subscript を `.at()` 化し、`py_dict_get` の checked-in callsite を除去する。
 7. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-02] tuple constant-index を generated/runtime path でも `std::get<N>` へ寄せ、tuple `py_at` helper を縮退または退役させる。
-8. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-03] typed list/dict mutation helper を object bridge 専用 surface まで縮め、typed lane は emitter direct lowering を優先する。
+8. [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-03] typed list/dict mutation helper を object bridge 専用 surface まで縮め、typed lane は emitter direct lowering を優先する。
 9. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-01] `type_id` registry / subtype / isinstance の ownership を `py_tid_*` 主体へ寄せ、`py_runtime.h` の wrapper を薄くする。
 10. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-02] `test_cpp_runtime_type_id.py` と generated runtime caller を更新し、cyclic ownership が再混入しないよう guard を追加する。
 11. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-01] `py_isinstance_of` fast path、`PyFile` alias などの small cleanup を片付ける。
 12. [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S5-02] representative test / parity / docs / archive を更新して閉じる。
-- 進捗メモ: [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-03] `S3-02` として runtime module の tuple unpack でも `std::get<N>` を使うようにし、tracked constant-index caller から tuple `py_at` を外した。次は typed list/dict mutation helper を object bridge 専用 surface まで縮める。
+- 進捗メモ: [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S4-01] `S3-03` として ref-first typed list mutation を `py_list_*_mut` へ直接 lower し、tracked generated C++ を再生成して typed lane の `py_append/py_set_at/...` caller を object bridge 残件へ押し戻した。次は `type_id` ownership を `py_tid_*` 主体へ寄せる。
 
 ### P1: EAST の型表現を構造化し、union / nominal ADT / narrowing を文字列処理から引き上げる
 

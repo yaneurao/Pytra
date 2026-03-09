@@ -4,6 +4,8 @@
 #include "runtime/cpp/core/py_runtime.h"
 
 #include "runtime/cpp/generated/built_in/contains.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 
 /* Pure-Python source-of-truth for containment helpers. */
@@ -53,7 +55,7 @@ bool py_contains_set_object(const object& values, const object& key) {
 
 bool py_contains_str_object(const object& values, const object& key) {
     str needle = py_to_string(key);
-    str haystack = str(values);
+    str haystack = py_to_string(values);
     int64 n = py_len(haystack);
     int64 m = py_len(needle);
     if (m == 0)

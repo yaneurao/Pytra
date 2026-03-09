@@ -4,6 +4,8 @@
 #include "runtime/cpp/core/py_runtime.h"
 
 #include "runtime/cpp/generated/built_in/string_ops.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 
 /* Pure-Python source-of-truth for string helper built-ins. */
@@ -52,7 +54,7 @@ str py_join(const str& sep, const list<str>& parts) {
 list<str> py_split(const str& s, const str& sep, int64 maxsplit) {
     rc<list<str>> out = rc_list_from_value(list<str>{});
     if (sep == "") {
-        py_append(out, s);
+        py_list_append_mut(rc_list_ref(out), s);
         return rc_list_copy_value(out);
     }
     int64 pos = 0;
@@ -66,11 +68,11 @@ list<str> py_split(const str& s, const str& sep, int64 maxsplit) {
         int64 at = py_find_window(s, sep, pos, n);
         if (at < 0)
             break;
-        py_append(out, py_slice(s, pos, at));
+        py_list_append_mut(rc_list_ref(out), py_slice(s, pos, at));
         pos = at + m;
         splits++;
     }
-    py_append(out, py_slice(s, pos, n));
+    py_list_append_mut(rc_list_ref(out), py_slice(s, pos, n));
     return rc_list_copy_value(out);
 }
 
@@ -82,7 +84,7 @@ list<str> py_splitlines(const str& s) {
     while (i < n) {
         str ch = s[i];
         if ((ch == "\n") || (ch == "\r")) {
-            py_append(out, py_slice(s, start, i));
+            py_list_append_mut(rc_list_ref(out), py_slice(s, start, i));
             if ((ch == "\r") && (i + 1 < n) && (s[i + 1] == "\n"))
                 i++;
             i++;
@@ -92,12 +94,12 @@ list<str> py_splitlines(const str& s) {
         i++;
     }
     if (start < n) {
-        py_append(out, py_slice(s, start, n));
+        py_list_append_mut(rc_list_ref(out), py_slice(s, start, n));
     } else if (n > 0) {
         auto __idx_1 = n - 1;
         str last = s[__idx_1];
         if ((last == "\n") || (last == "\r"))
-            py_append(out, "");
+            py_list_append_mut(rc_list_ref(out), "");
     }
     return rc_list_copy_value(out);
 }

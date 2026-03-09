@@ -4,6 +4,8 @@
 #include "runtime/cpp/core/py_runtime.h"
 
 #include "runtime/cpp/generated/std/json.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 #include "pytra/built_in/contains.h"
 #include "pytra/built_in/scalar_ops.h"
@@ -371,32 +373,32 @@ namespace pytra::std::json {
                     str esc = this->text[this->i];
                     this->i++;
                     if (esc == "\"") {
-                        py_append(out_chars, "\"");
+                        py_list_append_mut(rc_list_ref(out_chars), "\"");
                     } else if (esc == "\\") {
-                        py_append(out_chars, "\\");
+                        py_list_append_mut(rc_list_ref(out_chars), "\\");
                     } else if (esc == "/") {
-                        py_append(out_chars, "/");
+                        py_list_append_mut(rc_list_ref(out_chars), "/");
                     } else if (esc == "b") {
-                        py_append(out_chars, "\b");
+                        py_list_append_mut(rc_list_ref(out_chars), "\b");
                     } else if (esc == "f") {
-                        py_append(out_chars, "\f");
+                        py_list_append_mut(rc_list_ref(out_chars), "\f");
                     } else if (esc == "n") {
-                        py_append(out_chars, "\n");
+                        py_list_append_mut(rc_list_ref(out_chars), "\n");
                     } else if (esc == "r") {
-                        py_append(out_chars, "\r");
+                        py_list_append_mut(rc_list_ref(out_chars), "\r");
                     } else if (esc == "t") {
-                        py_append(out_chars, "\t");
+                        py_list_append_mut(rc_list_ref(out_chars), "\t");
                     } else if (esc == "u") {
                         if (this->i + 4 > this->n)
                             throw ValueError("invalid json unicode escape");
                         str hx = py_slice(this->text, this->i, this->i + 4);
                         this->i += 4;
-                        py_append(out_chars, py_chr(_int_from_hex4(hx)));
+                        py_list_append_mut(rc_list_ref(out_chars), py_chr(_int_from_hex4(hx)));
                     } else {
                         throw ValueError("invalid json escape");
                     }
                 } else {
-                    py_append(out_chars, ch);
+                    py_list_append_mut(rc_list_ref(out_chars), ch);
                 }
             }
             throw ValueError("unterminated json string");
@@ -492,26 +494,26 @@ namespace pytra::std::json {
         for (str ch : s) {
             int64 code = py_to<int64>(py_ord(ch));
             if (ch == "\"") {
-                py_append(out, "\\\"");
+                py_list_append_mut(rc_list_ref(out), "\\\"");
             } else if (ch == "\\") {
-                py_append(out, "\\\\");
+                py_list_append_mut(rc_list_ref(out), "\\\\");
             } else if (ch == "\b") {
-                py_append(out, "\\b");
+                py_list_append_mut(rc_list_ref(out), "\\b");
             } else if (ch == "\f") {
-                py_append(out, "\\f");
+                py_list_append_mut(rc_list_ref(out), "\\f");
             } else if (ch == "\n") {
-                py_append(out, "\\n");
+                py_list_append_mut(rc_list_ref(out), "\\n");
             } else if (ch == "\r") {
-                py_append(out, "\\r");
+                py_list_append_mut(rc_list_ref(out), "\\r");
             } else if (ch == "\t") {
-                py_append(out, "\\t");
+                py_list_append_mut(rc_list_ref(out), "\\t");
             } else if ((ensure_ascii) && (code > 0x7F)) {
-                py_append(out, "\\u" + _hex4(code));
+                py_list_append_mut(rc_list_ref(out), "\\u" + _hex4(code));
             } else {
-                py_append(out, ch);
+                py_list_append_mut(rc_list_ref(out), ch);
             }
         }
-        py_append(out, "\"");
+        py_list_append_mut(rc_list_ref(out), "\"");
         return _join_strs(out, _EMPTY);
     }
     
@@ -527,7 +529,7 @@ namespace pytra::std::json {
                     if (!__next_3.has_value()) break;
                     object x = *__next_3;
                     str dumped_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level);
-                    py_append(dumped, dumped_txt);
+                    py_list_append_mut(rc_list_ref(dumped), dumped_txt);
                 }
             }
             return "[" + _join_strs(dumped, item_sep) + "]";
@@ -542,7 +544,7 @@ namespace pytra::std::json {
                 object x = *__next_5;
                 str prefix = py_repeat(" ", indent_i * (level + 1));
                 str value_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1);
-                py_append(inner, prefix + value_txt);
+                py_list_append_mut(rc_list_ref(inner), prefix + value_txt);
             }
         }
         return "[\n" + _join_strs(inner, _COMMA_NL) + "\n" + py_repeat(" ", indent_i * level) + "]";
@@ -558,7 +560,7 @@ namespace pytra::std::json {
                 auto x = py_at(__itobj_6, 1);
                 str k_txt = _escape_str(k, ensure_ascii);
                 str v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level);
-                py_append(parts, k_txt + key_sep + v_txt);
+                py_list_append_mut(rc_list_ref(parts), k_txt + key_sep + v_txt);
             }
             return "{" + _join_strs(parts, item_sep) + "}";
         }
@@ -570,7 +572,7 @@ namespace pytra::std::json {
             str prefix = py_repeat(" ", indent_i * (level + 1));
             str k_txt = _escape_str(k, ensure_ascii);
             str v_txt = _dump_json_value(x, ensure_ascii, indent, item_sep, key_sep, level + 1);
-            py_append(inner, prefix + k_txt + key_sep + v_txt);
+            py_list_append_mut(rc_list_ref(inner), prefix + k_txt + key_sep + v_txt);
         }
         return "{\n" + _join_strs(inner, _COMMA_NL) + "\n" + py_repeat(" ", indent_i * level) + "}";
     }

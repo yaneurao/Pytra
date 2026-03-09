@@ -6,6 +6,8 @@
 #define PYTRA_GENERATED_BUILT_IN_ZIP_OPS_H
 
 #include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 
 /* Pure-Python source-of-truth for generic zip helpers. */
@@ -18,7 +20,7 @@ list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {
     if (py_len(rhs) < n)
         n = py_len(rhs);
     while (i < n) {
-        py_append(out, ::std::make_tuple(lhs[i], rhs[i]));
+        py_list_append_mut(rc_list_ref(out), ::std::make_tuple(lhs[i], rhs[i]));
         i++;
     }
     return rc_list_copy_value(out);

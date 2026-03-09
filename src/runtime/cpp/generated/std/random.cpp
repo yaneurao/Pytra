@@ -4,6 +4,8 @@
 #include "runtime/cpp/core/py_runtime.h"
 
 #include "runtime/cpp/generated/std/random.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 #include "pytra/std/math.h"
 
@@ -24,15 +26,15 @@ so it can be transpiled to target runtimes.
         int64 v = value & 2147483647;
         if (v == 0)
             v = 1;
-        py_set_at(_state_box, 0, make_object(v));
-        py_set_at(_gauss_has_spare, 0, make_object(0));
+        _state_box[0] = v;
+        _gauss_has_spare[0] = 0;
     }
     
     int64 _next_u31() {
         /* Advance internal LCG and return a 31-bit value. */
-        auto s = py_at(_state_box, py_to<int64>(0));
+        int64 s = _state_box[0];
         s = 1103515245 * s + 12345 & 2147483647;
-        py_set_at(_state_box, 0, make_object(s));
+        _state_box[0] = s;
         return s;
     }
     
@@ -64,14 +66,14 @@ so it can be transpiled to target runtimes.
         int64 draws = k;
         if (draws < 0)
             draws = 0;
-        list<float64> weight_vals = {};
+        rc<list<float64>> weight_vals = rc_list_from_value(list<float64>{});
         for (float64 w : rc_list_ref(weights)) {
-            weight_vals.append(w);
+            py_list_append_mut(rc_list_ref(weight_vals), w);
         }
         rc<list<int64>> out = rc_list_from_value(list<int64>{});
         if (py_len(weight_vals) == n) {
             float64 total = 0.0;
-            for (float64 w : weight_vals) {
+            for (float64 w : rc_list_ref(weight_vals)) {
                 if (w > 0.0)
                     total += w;
             }
@@ -81,7 +83,7 @@ so it can be transpiled to target runtimes.
                     float64 acc = 0.0;
                     int64 picked_i = n - 1;
                     for (int64 i = 0; i < n; ++i) {
-                        float64 w = weight_vals[i];
+                        float64 w = py_at(weight_vals, py_to<int64>(i));
                         if (w > 0.0)
                             acc += w;
                         if (r < acc) {
@@ -89,22 +91,22 @@ so it can be transpiled to target runtimes.
                             break;
                         }
                     }
-                    py_append(out, py_at(population, py_to<int64>(picked_i)));
+                    py_list_append_mut(rc_list_ref(out), py_at(population, py_to<int64>(picked_i)));
                 }
                 return out;
             }
         }
         rc_list_ref(out).reserve((draws <= 0) ? 0 : draws);
         for (int64 _ = 0; _ < draws; ++_)
-            py_append(out, py_at(population, py_to<int64>(randint(0, n - 1))));
+            py_list_append_mut(rc_list_ref(out), py_at(population, py_to<int64>(randint(0, n - 1))));
         return out;
     }
     
     float64 gauss(float64 mu, float64 sigma) {
         /* Return a pseudo-random Gaussian sample. */
-        if (py_at(_gauss_has_spare, py_to<int64>(0)) != 0) {
-            py_set_at(_gauss_has_spare, 0, make_object(0));
-            return mu + sigma * py_at(_gauss_spare, py_to<int64>(0));
+        if (_gauss_has_spare[0] != 0) {
+            _gauss_has_spare[0] = 0;
+            return mu + sigma * _gauss_spare[0];
         }
         float64 u1 = 0.0;
         while (u1 <= 1.0e-12) {
@@ -112,10 +114,10 @@ so it can be transpiled to target runtimes.
         }
         float64 u2 = random();
         float64 mag = pytra::std::math::sqrt(-(2.0) * pytra::std::math::log(u1));
-        float64 z0 = mag * pytra::std::math::cos(py_to<float64>(2.0 * pytra::std::math::pi * u2));
-        float64 z1 = mag * pytra::std::math::sin(py_to<float64>(2.0 * pytra::std::math::pi * u2));
-        py_set_at(_gauss_spare, 0, make_object(z1));
-        py_set_at(_gauss_has_spare, 0, make_object(1));
+        float64 z0 = mag * pytra::std::math::cos(2.0 * pytra::std::math::pi * u2);
+        float64 z1 = mag * pytra::std::math::sin(2.0 * pytra::std::math::pi * u2);
+        _gauss_spare[0] = z1;
+        _gauss_has_spare[0] = 1;
         return mu + sigma * z0;
     }
     

@@ -2,9 +2,10 @@
 // source: src/pytra/utils/png.py
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.h"
-#include "runtime/cpp/core/scope_exit.h"
 
 #include "runtime/cpp/generated/utils/png.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 
 namespace pytra::utils::png {
@@ -19,7 +20,7 @@ RGB 8bit バッファを PNG ファイルとして保存する。
         int64 i = 0;
         int64 n = py_len(src);
         while (i < n) {
-            py_append(dst, py_at(src, py_to<int64>(i)));
+            py_list_append_mut(rc_list_ref(dst), py_at(src, py_to<int64>(i)));
             i++;
         }
     }
@@ -73,13 +74,13 @@ RGB 8bit バッファを PNG ファイルとして保存する。
             int64 remain = n - pos;
             int64 chunk_len = (remain > 65535 ? 65535 : remain);
             int64 final = (pos + chunk_len >= n ? 1 : 0);
-            py_append(out, final);
+            py_list_append_mut(rc_list_ref(out), final);
             _png_append_list(out, _png_u16le(chunk_len));
             _png_append_list(out, _png_u16le(0xFFFF ^ chunk_len));
             int64 i = pos;
             int64 end = pos + chunk_len;
             while (i < end) {
-                py_append(out, py_at(data, py_to<int64>(i)));
+                py_list_append_mut(rc_list_ref(out), py_at(data, py_to<int64>(i)));
                 i++;
             }
             pos += chunk_len;
@@ -104,7 +105,7 @@ RGB 8bit バッファを PNG ファイルとして保存する。
     void write_rgb_png(const str& path, int64 width, int64 height, const bytes& pixels) {
         rc<list<int64>> raw = rc_list_from_value(list<int64>{});
         for (uint8 b : pixels) {
-            py_append(raw, int64(b));
+            py_list_append_mut(rc_list_ref(raw), int64(b));
         }
         int64 expected = width * height * 3;
         if (py_len(raw) != expected)
@@ -113,12 +114,12 @@ RGB 8bit バッファを PNG ファイルとして保存する。
         int64 row_bytes = width * 3;
         int64 y = 0;
         while (y < height) {
-            py_append(scanlines, 0);
+            py_list_append_mut(rc_list_ref(scanlines), 0);
             int64 start = y * row_bytes;
             int64 end = start + row_bytes;
             int64 i = start;
             while (i < end) {
-                py_append(scanlines, py_at(raw, py_to<int64>(i)));
+                py_list_append_mut(rc_list_ref(scanlines), py_at(raw, py_to<int64>(i)));
                 i++;
             }
             y++;

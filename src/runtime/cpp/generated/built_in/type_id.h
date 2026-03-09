@@ -2,8 +2,8 @@
 // source: src/pytra/built_in/type_id.py
 // generated-by: src/backends/cpp/cli.py
 
-#ifndef PYTRA_BUILT_IN_TYPE_ID_GEN_H
-#define PYTRA_BUILT_IN_TYPE_ID_GEN_H
+#ifndef PYTRA_GENERATED_BUILT_IN_TYPE_ID_H
+#define PYTRA_GENERATED_BUILT_IN_TYPE_ID_H
 
 #include "runtime/cpp/core/py_types.h"
 
@@ -25,14 +25,14 @@ int64 _tid_dict();
 int64 _tid_set();
 int64 _tid_object();
 int64 _tid_user_base();
-list<int64> _make_int_list_0();
-list<int64> _make_int_list_1(int64 a0);
-bool _contains_int(const list<int64>& items, int64 value);
-list<int64> _copy_int_list(const list<int64>& items);
-list<int64> _sorted_ints(const list<int64>& items);
+rc<list<int64>> _make_int_list_0();
+rc<list<int64>> _make_int_list_1(int64 a0);
+bool _contains_int(const rc<list<int64>>& items, int64 value);
+rc<list<int64>> _copy_int_list(const rc<list<int64>>& items);
+rc<list<int64>> _sorted_ints(const rc<list<int64>>& items);
 void _register_type_node(int64 type_id, int64 base_type_id);
-list<int64> _sorted_child_type_ids(int64 type_id);
-list<int64> _collect_root_type_ids();
+rc<list<int64>> _sorted_child_type_ids(int64 type_id);
+rc<list<int64>> _collect_root_type_ids();
 int64 _assign_type_ranges_dfs(int64 type_id, int64 next_order);
 void _recompute_type_ranges();
 void _mark_type_ranges_dirty();
@@ -49,4 +49,4 @@ bool py_tid_issubclass(int64 actual_type_id, int64 expected_type_id);
 bool py_tid_isinstance(const object& value, int64 expected_type_id);
 void _py_reset_type_registry_for_test();
 
-#endif  // PYTRA_BUILT_IN_TYPE_ID_GEN_H
+#endif  // PYTRA_GENERATED_BUILT_IN_TYPE_ID_H

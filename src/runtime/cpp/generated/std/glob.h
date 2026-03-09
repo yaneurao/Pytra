@@ -9,7 +9,7 @@
 
 namespace pytra::std::glob {
 
-list<str> glob(const str& pattern);
+rc<list<str>> glob(const str& pattern);
 
 }  // namespace pytra::std::glob
 

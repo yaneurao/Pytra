@@ -36,7 +36,7 @@ bool glob_match_simple(const str& text, const str& pattern) {
 
 }  // namespace
 
-list<str> glob(const str& pattern) {
+rc<list<str>> glob(const str& pattern) {
     const ::std::string pat = pattern.std();
     const ::std::size_t sep = pat.find_last_of("/\\");
     const ::std::string dir = (sep == ::std::string::npos) ? "." : pat.substr(0, sep);
@@ -46,7 +46,7 @@ list<str> glob(const str& pattern) {
     if (mask.find('*') == ::std::string::npos && mask.find('?') == ::std::string::npos) {
         const ::std::filesystem::path single = ::std::filesystem::path(pat);
         if (::std::filesystem::exists(single, ec)) out.append(str(single.generic_string()));
-        return out;
+        return rc_list_from_value(out);
     }
     for (const auto& ent : ::std::filesystem::directory_iterator(::std::filesystem::path(dir), ec)) {
         if (ec) break;
@@ -54,7 +54,7 @@ list<str> glob(const str& pattern) {
         if (!glob_match_simple(name, str(mask))) continue;
         out.append(str(ent.path().generic_string()));
     }
-    return out;
+    return rc_list_from_value(out);
 }
 
 }  // namespace pytra::std::glob

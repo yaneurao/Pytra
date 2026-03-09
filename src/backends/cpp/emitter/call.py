@@ -627,6 +627,15 @@ class CppCallEmitter:
         )
         if selfhost_fallback is not None and selfhost_fallback != "":
             return selfhost_fallback
+        runtime_builtin_fallback = self._render_runtime_builtin_method_call_fallback(
+            owner_t,
+            owner_obj,
+            attr,
+            arg_nodes,
+            kw_nodes,
+        )
+        if runtime_builtin_fallback is not None and runtime_builtin_fallback != "":
+            return runtime_builtin_fallback
         if self._requires_builtin_method_call_lowering(owner_t, attr):
             owner_label = self.normalize_type_name(owner_t)
             if owner_label == "":
@@ -690,6 +699,48 @@ class CppCallEmitter:
                 return f"py_{attr}({owner_expr})"
             return None
         return None
+
+    def _render_runtime_builtin_method_call_fallback(
+        self,
+        owner_t: str,
+        owner_node: Any,
+        attr: str,
+        arg_nodes: list[Any],
+        kw_nodes: list[Any],
+    ) -> str | None:
+        """runtime SoT のみ、未 lower の builtin method を BuiltinCall 経路へ戻す。"""
+        if len(kw_nodes) != 0:
+            return None
+        src = self.any_dict_get_str(self.doc, "source_path", "")
+        if not (
+            src.startswith("src/pytra/std/")
+            or src.startswith("src/pytra/utils/")
+            or src.startswith("src/pytra/built_in/")
+            or src.startswith("src/toolchain/compiler/")
+        ):
+            return None
+        owner_norm = self.normalize_type_name(owner_t)
+        runtime_call = ""
+        if owner_norm.startswith("list[") and attr in {"append", "extend", "pop", "clear", "reverse", "sort"}:
+            runtime_call = "list." + attr
+        elif owner_norm.startswith("set[") and attr in {"add", "discard", "remove", "clear"}:
+            runtime_call = "set." + attr
+        elif owner_norm.startswith("dict[") and attr in {"get", "pop", "items", "keys", "values"}:
+            runtime_call = "dict." + attr
+        if runtime_call == "":
+            return None
+        builtin_expr: dict[str, Any] = {
+            "kind": "BuiltinCall",
+            "runtime_call": runtime_call,
+            "runtime_owner": owner_node,
+            "resolved_type": "unknown",
+            "borrow_kind": "value",
+            "casts": [],
+        }
+        rendered = self._render_builtin_call(builtin_expr, arg_nodes, kw_nodes)
+        if rendered == "":
+            return None
+        return rendered
 
     def _make_missing_symbol_import_error(self, base_name: str, attr: str) -> Exception:
         """`from-import` 束縛名の module 参照エラーを生成する（C++ 向け）。"""

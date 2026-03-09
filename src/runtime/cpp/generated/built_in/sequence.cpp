@@ -4,6 +4,8 @@
 #include "runtime/cpp/core/py_runtime.h"
 
 #include "runtime/cpp/generated/built_in/sequence.h"
+#include "runtime/cpp/core/process_runtime.h"
+#include "runtime/cpp/core/scope_exit.h"
 
 
 /* Pure-Python source-of-truth for sequence helpers used by runtime built-ins. */
@@ -16,13 +18,13 @@ list<int64> py_range(int64 start, int64 stop, int64 step) {
     if (step > 0) {
         i = start;
         while (i < stop) {
-            py_append(out, i);
+            py_list_append_mut(rc_list_ref(out), i);
             i += step;
         }
     } else {
         i = start;
         while (i > stop) {
-            py_append(out, i);
+            py_list_append_mut(rc_list_ref(out), i);
             i += step;
         }
     }
