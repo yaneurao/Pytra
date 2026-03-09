@@ -79,9 +79,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_py2x_entrypoints_contract.py` に native compiler wrapper guard を追加し、`transpile_cli.cpp` / `backend_registry_static.cpp` の `make_object(...)` が `to_legacy_dict()` と JSON export seam 以外へ増えたら fail-fast するようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_make_decl_meta()` を追加し、top-level function の `runtime_abi_v1` / `template_v1` と extern var の `extern_var_v1` metadata carrier を raw dict 組み立てなしで共通 helper へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `_sh_import_binding_fields()` / `_sh_make_import_resolution_binding()` を追加し、module root tail に残っていた `binding.get(...)` 連鎖と `dict(binding)` bridge を helper 経由へ寄せた。
-- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated C++ mirror に `_sh_make_arg_node()` / `_sh_make_lambda_arg_entry()` / `_sh_make_keyword_arg()` / `_sh_make_cast_entry()` を追加し、lambda args・call keywords・numeric cast metadata の open-coded `make_object` dict を helper carrier へ寄せた。`test_prepare_selfhost_source.py` でも旧 inline 形の再流入を検知する。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に `_sh_make_arg_node()` / `_sh_make_lambda_arg_entry()` / `_sh_make_keyword_arg()` / `_sh_make_cast_entry()` guard を追加し、generated mirror 側で lambda args・call keywords・numeric cast metadata が旧 inline `make_object` dict へ戻ったら fail-fast するようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に `_sh_make_attribute_expr()` / `_sh_make_call_expr()` / `_sh_make_binop_expr()` guard を追加し、generated mirror 側の `Attribute` / `Call` / `BinOp` が inline `make_object` dict へ戻ったら fail-fast するようにした。
-- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated C++ mirror に `_sh_make_attribute_expr()` / `_sh_make_call_expr()` / `_sh_make_binop_expr()` を追加し、`_parse_postfix()` と `_make_bin()` に残っていた `Attribute` / `Call` / `BinOp` の open-coded node 組み立てを helper へ寄せた。`test_prepare_selfhost_source.py` でも旧 inline node literal の再流入を検知する。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
