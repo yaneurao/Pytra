@@ -297,10 +297,18 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.compiler.typed_boundary import execute_optimize_ir_with_spec", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import execute_emit_module_with_spec", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import execute_emit_module_with_spec", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import emit_source_text_with_spec", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import emit_source_text_with_spec", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import collect_program_module_carriers", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import collect_program_module_carriers", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_program_module_artifacts", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_program_module_artifacts", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import build_program_artifact_from_modules", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import build_program_artifact_from_modules", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import get_program_writer_with_spec", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import get_program_writer_with_spec", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import apply_runtime_hook_with_spec", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import apply_runtime_hook_with_spec", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import build_resolved_backend_spec", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import build_resolved_backend_spec", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", host_src)
@@ -313,6 +321,14 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("return execute_optimize_ir_with_spec(", static_src)
         self.assertIn("return execute_emit_module_with_spec(", host_src)
         self.assertIn("return execute_emit_module_with_spec(", static_src)
+        self.assertIn("return export_program_module_artifacts(module_artifact)", host_src)
+        self.assertIn("return export_program_module_artifacts(module_artifact)", static_src)
+        self.assertIn("return get_program_writer_with_spec(runtime_spec)", host_src)
+        self.assertIn("return get_program_writer_with_spec(runtime_spec)", static_src)
+        self.assertIn("return emit_source_text_with_spec(", host_src)
+        self.assertIn("return emit_source_text_with_spec(", static_src)
+        self.assertIn("apply_runtime_hook_with_spec(runtime_spec, output_path)", host_src)
+        self.assertIn("apply_runtime_hook_with_spec(runtime_spec, output_path)", static_src)
         self.assertIn("return export_resolved_backend_spec_any(_normalize_backend_runtime_spec(spec))", host_src)
         self.assertIn("return export_layer_options_any(resolve_layer_options_typed(spec, layer, raw_options))", host_src)
         self.assertIn("return export_layer_options_any(resolve_layer_options_typed(spec, layer, raw_options))", static_src)
@@ -332,14 +348,6 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.compiler.typed_boundary import build_program_artifact_from_modules", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import collect_program_module_carriers", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import collect_program_module_carriers", static_src)
-        self.assertIn(
-            "return [export_module_artifact_any(item) for item in collect_program_modules_typed(module_artifact)]",
-            host_src,
-        )
-        self.assertIn(
-            "return [export_module_artifact_any(item) for item in collect_program_modules_typed(module_artifact)]",
-            static_src,
-        )
         self.assertIn("return collect_program_module_carriers(module_artifact)", host_src)
         self.assertIn("return collect_program_module_carriers(module_artifact)", static_src)
         self.assertIn("return build_program_artifact_from_modules(", host_src)
@@ -363,6 +371,20 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("request = EmitRequestCarrier(", static_src)
         self.assertNotIn("return normalize_emitted_module_artifact(artifact_any, request=request)", host_src)
         self.assertNotIn("return normalize_emitted_module_artifact(artifact_any, request=request)", static_src)
+        self.assertNotIn(
+            "return [export_module_artifact_any(item) for item in collect_program_modules_typed(module_artifact)]",
+            host_src,
+        )
+        self.assertNotIn(
+            "return [export_module_artifact_any(item) for item in collect_program_modules_typed(module_artifact)]",
+            static_src,
+        )
+        self.assertNotIn("return runtime_spec.program_writer_impl", host_src)
+        self.assertNotIn("return runtime_spec.program_writer_impl", static_src)
+        self.assertNotIn("return emit_module_typed(spec, ir, output_path, emitter_options).text", host_src)
+        self.assertNotIn("return emit_module_typed(spec, ir, output_path, emitter_options).text", static_src)
+        self.assertNotIn("fn = runtime_spec.runtime_hook_impl", host_src)
+        self.assertNotIn("fn = runtime_spec.runtime_hook_impl", static_src)
         self.assertNotIn("def _normalize_module_artifact(", host_src)
         self.assertNotIn("def _normalize_module_artifact(", static_src)
         self.assertNotIn("def _default_module_label(", host_src)
