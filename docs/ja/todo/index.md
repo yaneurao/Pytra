@@ -145,6 +145,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] [ir2lang.py](/workspace/Pytra/src/ir2lang.py) の linked-output lane も `LinkedProgramModule` 直参照へ寄せ、`_entry_linked_module()` / `_entry_source_path()` / `_emit_cpp_linked_program()` の `getattr(..., "module_id"/"source_path"/"east_doc")` を撤去した。`test_py2x_entrypoints_contract.py` で typed import と旧 manual unwrap の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] [py2x.py](/workspace/Pytra/src/py2x.py) と [ir2lang.py](/workspace/Pytra/src/ir2lang.py) の linked-program validation loop も `linked_module.east_doc` 直参照へ揃え、restart lane に残っていた `getattr(..., "east_doc", {})` unwrap を撤去した。`test_py2x_entrypoints_contract.py` で両 entrypoint の typed field 直参照を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] host/static registry の legacy emit adapter も `normalize_module_artifact_carrier()` と `export_module_artifact_any()` へ寄せ、`backend_registry.py` / `backend_registry_static.py` に残っていた `_normalize_module_artifact` 重複と host 側 `_flatten_helper_modules` を削除した。`test_py2x_entrypoints_contract.py` で local legacy normalizer の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 上の cleanup に続けて host/static registry の未使用 `_default_module_label()` も削除し、artifact label fallback は `typed_boundary.py` の regular normalizer だけが持つ形へ寄せた。`test_py2x_entrypoints_contract.py` で dead local helper の不在も固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
