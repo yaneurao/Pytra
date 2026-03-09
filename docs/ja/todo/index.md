@@ -127,6 +127,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] ignored な generated mirror だけに頼らないよう、`test_east_core.py` に `Name/Tuple/Constant/List/Dict/Set` の正本 literal・comprehension-target helper call と旧 inline return 不在 guard も追加した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/ir/core.py` に `_sh_make_dict_entry()` を追加し、`_sh_parse_expr_lowered()` の dict literal entry carrier を helper 経由へ寄せた。`test_east_core.py` でも collection/comprehension lane と旧 inline entry dict 不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] ignored な generated mirror の residual `Call/Dict/Tuple` に依存しすぎないよう、`test_east_core.py` に `_sh_parse_expr_lowered()` の `any/all` 正規化と lowered dict/tuple return helper guard も追加した。これで `payload = _sh_make_call_expr(...)`、`return _sh_make_dict_expr(...)`、`return _sh_make_tuple_expr(...)` が外れたり、旧 inline `Call/Dict/Tuple` dict return が戻ったりすると fail-fast する。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_east_core.py` に `src/toolchain/ir/core.py` 全体の raw inline `kind` 残存集合 guard も追加し、正本側では uppercase residual が helper 定義の `Expr/Slice`、lowercase residual が trivia 用 `blank/comment` 以外へ増えないことを固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/ir/core.py` の top-level function/class と class method の declaration span を `_sh_block_end_span(...)` へ寄せ、`test_east_core.py` で import / decl helper call site と旧 inline `source_span` carrier 不在も固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
