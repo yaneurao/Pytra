@@ -90,7 +90,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `tools/check_transpiler_version_gate.py` で `src/py2x-selfhost.py` を cpp lane の direct dependency に追加し、`test_check_transpiler_version_gate.py` で selfhost entrypoint 変更時の version bump 漏れを fail-fast にした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native `LayerOptionsCarrier` の internal carrier を `dict<str, object>` から `dict<str, str>` へ縮め、`resolve_layer_options_typed()` は raw CLI option string をそのまま保持、legacy boxing は `to_legacy_dict()` adapter seam にだけ残るようにした。`test_py2x_entrypoints_contract.py` で header/impl の string carrier 契約も固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native `CompilerRootDocument::to_legacy_dict()` の `kind/source_path/east_stage/schema_version/meta` 更新を typed dict conversion ベースへ寄せ、`transpile_cli.cpp` 側の explicit `make_object(...)` 呼び出しを 0 にした。boxing は dict conversion と adapter seam の内部 detail へ後退し、`test_py2x_entrypoints_contract.py` と `python3 tools/build_selfhost.py` で非退行を確認した。
-- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native `CompilerRootDocument::to_legacy_dict()` と `ResolvedBackendSpec::to_legacy_dict()` を typed dict conversion へ寄せ、`transpile_cli.cpp` / `backend_registry_static.cpp` の explicit `make_object(...)` を撤去した。`test_py2x_entrypoints_contract.py` では native wrapper 両方の `make_object` 行数が 0 のまま維持されることを固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native `CompilerRootDocument::to_legacy_dict()` を typed dict conversion へ寄せ、`transpile_cli.cpp` の explicit `make_object(...)` を撤去した。`test_py2x_entrypoints_contract.py` では既存の `backend_registry_static.cpp` と合わせて native wrapper 両方の `make_object` 行数が 0 のまま維持されることを固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
