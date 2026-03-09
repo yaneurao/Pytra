@@ -427,6 +427,30 @@ def _sh_annotate_ordchr_call_expr(
     )
 
 
+def _sh_annotate_iterator_builtin_call_expr(
+    payload: dict[str, Any],
+    *,
+    fn_name: str,
+    semantic_tag: str | None = None,
+) -> dict[str, Any]:
+    runtime_call = "py_iter_or_raise"
+    module_id = "pytra.core.py_runtime"
+    if fn_name == "next":
+        runtime_call = "py_next_or_stop"
+    elif fn_name == "reversed":
+        runtime_call = "py_reversed"
+        module_id = "pytra.built_in.iter_ops"
+    return _sh_annotate_runtime_call_expr(
+        payload,
+        lowered_kind="BuiltinCall",
+        builtin_name=fn_name,
+        runtime_call=runtime_call,
+        module_id=module_id,
+        runtime_symbol=fn_name,
+        semantic_tag=semantic_tag,
+    )
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -4972,34 +4996,10 @@ class _ShExprParser:
                         runtime_symbol="open",
                         semantic_tag=builtin_semantic_tag,
                     )
-                elif fn_name == "iter":
-                    _sh_annotate_runtime_call_expr(
+                elif fn_name in {"iter", "next", "reversed"}:
+                    _sh_annotate_iterator_builtin_call_expr(
                         payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="iter",
-                        runtime_call="py_iter_or_raise",
-                        module_id="pytra.core.py_runtime",
-                        runtime_symbol="iter",
-                        semantic_tag=builtin_semantic_tag,
-                    )
-                elif fn_name == "next":
-                    _sh_annotate_runtime_call_expr(
-                        payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="next",
-                        runtime_call="py_next_or_stop",
-                        module_id="pytra.core.py_runtime",
-                        runtime_symbol="next",
-                        semantic_tag=builtin_semantic_tag,
-                    )
-                elif fn_name == "reversed":
-                    _sh_annotate_runtime_call_expr(
-                        payload,
-                        lowered_kind="BuiltinCall",
-                        builtin_name="reversed",
-                        runtime_call="py_reversed",
-                        module_id="pytra.built_in.iter_ops",
-                        runtime_symbol="reversed",
+                        fn_name=fn_name,
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif fn_name == "enumerate":
