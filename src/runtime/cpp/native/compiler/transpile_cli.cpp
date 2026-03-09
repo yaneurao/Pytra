@@ -126,17 +126,17 @@ int64 _dict_get_int(const dict<str, object>& src, const str& key, int64 default_
 
 namespace pytra::compiler::transpile_cli {
 
-dict<str, object> CompilerRootDocument::to_legacy_dict() const {
-    dict<str, object> out = raw_module_doc;
-    out.update(dict<str, object>(dict<str, str>{{"kind", module_kind}}));
-    if (meta.source_path != "") {
-        out.update(dict<str, object>(dict<str, str>{{"source_path", meta.source_path}}));
+dict<str, object> export_compiler_root_document(const CompilerRootDocument& doc) {
+    dict<str, object> out = doc.raw_module_doc;
+    out.update(dict<str, object>(dict<str, str>{{"kind", doc.module_kind}}));
+    if (doc.meta.source_path != "") {
+        out.update(dict<str, object>(dict<str, str>{{"source_path", doc.meta.source_path}}));
     }
     out.update(
         dict<str, object>(
             dict<str, int64>{
-                {"east_stage", meta.east_stage},
-                {"schema_version", meta.schema_version},
+                {"east_stage", doc.meta.east_stage},
+                {"schema_version", doc.meta.schema_version},
             }
         )
     );
@@ -145,12 +145,16 @@ dict<str, object> CompilerRootDocument::to_legacy_dict() const {
     if (meta_it != out.end() && py_isinstance(meta_it->second, PYTRA_TID_DICT)) {
         meta_dict = obj_to_dict(meta_it->second);
     }
-    meta_dict.update(dict<str, object>(dict<str, str>{{"dispatch_mode", meta.dispatch_mode}}));
-    if (meta.parser_backend != "") {
-        meta_dict.update(dict<str, object>(dict<str, str>{{"parser_backend", meta.parser_backend}}));
+    meta_dict.update(dict<str, object>(dict<str, str>{{"dispatch_mode", doc.meta.dispatch_mode}}));
+    if (doc.meta.parser_backend != "") {
+        meta_dict.update(dict<str, object>(dict<str, str>{{"parser_backend", doc.meta.parser_backend}}));
     }
     out.update(dict<str, object>(dict<str, dict<str, object>>{{"meta", meta_dict}}));
     return out;
+}
+
+dict<str, object> CompilerRootDocument::to_legacy_dict() const {
+    return export_compiler_root_document(*this);
 }
 
 CompilerRootDocument coerce_compiler_root_document(
@@ -264,17 +268,19 @@ dict<str, object> load_east3_document(
     const str& dump_east3_opt_trace,
     const str& target_lang
 ) {
-    return load_east3_document_typed(
-        input_path,
-        parser_backend,
-        object_dispatch_mode,
-        east3_opt_level,
-        east3_opt_pass,
-        dump_east3_before_opt,
-        dump_east3_after_opt,
-        dump_east3_opt_trace,
-        target_lang
-    ).to_legacy_dict();
+    return export_compiler_root_document(
+        load_east3_document_typed(
+            input_path,
+            parser_backend,
+            object_dispatch_mode,
+            east3_opt_level,
+            east3_opt_pass,
+            dump_east3_before_opt,
+            dump_east3_after_opt,
+            dump_east3_opt_trace,
+            target_lang
+        )
+    );
 }
 
 }  // namespace pytra::compiler::transpile_cli

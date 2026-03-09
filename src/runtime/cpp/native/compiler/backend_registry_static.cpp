@@ -206,7 +206,7 @@ dict<str, object> lower_ir_typed(
 ) {
     (void)spec;
     (void)lower_options;
-    return east.to_legacy_dict();
+    return pytra::compiler::transpile_cli::export_compiler_root_document(east);
 }
 
 dict<str, object> optimize_ir(

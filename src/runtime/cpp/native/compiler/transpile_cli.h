@@ -22,6 +22,8 @@ struct CompilerRootDocument {
     dict<str, object> to_legacy_dict() const;
 };
 
+dict<str, object> export_compiler_root_document(const CompilerRootDocument& doc);
+
 CompilerRootDocument coerce_compiler_root_document(
     const dict<str, object>& raw_doc,
     const str& source_path = "",
