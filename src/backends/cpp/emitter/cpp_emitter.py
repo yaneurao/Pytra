@@ -2438,6 +2438,8 @@ class CppEmitter(
         if key_t == "str":
             key_node_d = self.any_to_dict_or_empty(key_node)
             key_verified = bool(key_node_d.get("dict_key_verified", False))
+            if self._node_kind_from_dict(key_node_d) == "Constant" and isinstance(key_node_d.get("value"), str):
+                return f"str({key_expr})"
             if key_verified:
                 return key_expr
             return f"str({key_expr})"

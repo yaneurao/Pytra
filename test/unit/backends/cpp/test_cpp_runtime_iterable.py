@@ -341,6 +341,7 @@ int main() {
         self.assertNotIn("template <class T> static inline bool py_is_set(const ::std::optional<T>& v)", runtime_header)
         self.assertNotIn("template <class T> static inline bool py_is_str(const ::std::optional<T>& v)", runtime_header)
         self.assertNotIn("template <class T> static inline bool py_is_bool(const ::std::optional<T>& v)", runtime_header)
+        self.assertNotIn("static inline list<str>& py_runtime_argv_storage()", runtime_header)
         self.assertNotIn("static inline object py_dict_get(const dict<str, object>& d, const char* key)", runtime_header)
         self.assertNotIn("static inline object py_dict_get(const dict<str, object>& d, const ::std::string& key)", runtime_header)
         self.assertNotIn("static inline const V& py_dict_get(const dict<str, V>& d, const char* key)", runtime_header)
