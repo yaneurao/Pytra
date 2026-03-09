@@ -56,3 +56,5 @@
 ## 決定ログ
 
 - 2026-03-09: 本計画は `getattr(..., const char*)` sugar だけを扱い、attribute lookup semantics 自体は非対象とする。
+- 2026-03-09: checked-in C++ callsite は `src/runtime/cpp/generated/built_in/type_id.cpp` の `getattr(value, "PYTRA_TYPE_ID", ...)` 1 件だけで、他の literal-key `getattr` は Python/host code 側に限られていた。
+- 2026-03-09: C++ checked-in code の canonical key rule は `str("...")` とし、`const char*` literal を runtime helper へ渡さない。
