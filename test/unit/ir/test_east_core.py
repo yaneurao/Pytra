@@ -82,6 +82,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("def _sh_make_swap_stmt(", text)
         self.assertIn("def _sh_make_import_alias(", text)
         self.assertIn("def _sh_make_import_binding(", text)
+        self.assertIn("def _sh_make_import_symbol_binding(", text)
+        self.assertIn("def _sh_make_qualified_symbol_ref(", text)
         self.assertIn("def _sh_make_import_stmt(", text)
         self.assertIn("def _sh_make_import_from_stmt(", text)
         self.assertIn("def _sh_make_if_stmt(", text)

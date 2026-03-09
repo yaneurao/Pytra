@@ -1007,6 +1007,23 @@ def _sh_make_import_binding(
     }
 
 
+def _sh_make_import_symbol_binding(module: str, name: str) -> dict[str, str]:
+    """import symbol metadata carrier を構築する。"""
+    return {
+        "module": module,
+        "name": name,
+    }
+
+
+def _sh_make_qualified_symbol_ref(module_id: str, symbol: str, local_name: str) -> dict[str, str]:
+    """qualified symbol reference carrier を構築する。"""
+    return {
+        "module_id": module_id,
+        "symbol": symbol,
+        "local_name": local_name,
+    }
+
+
 def _sh_make_import_stmt(
     source_span: dict[str, Any],
     names: list[dict[str, str | None]],
@@ -8249,15 +8266,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             import_module_bindings[local_name] = module_id
             continue
         if binding_kind == "symbol" and export_name != "":
-            sym_binding: dict[str, str] = {}
-            sym_binding["module"] = module_id
-            sym_binding["name"] = export_name
-            import_symbol_bindings[local_name] = sym_binding
-            qref: dict[str, str] = {}
-            qref["module_id"] = module_id
-            qref["symbol"] = export_name
-            qref["local_name"] = local_name
-            qualified_symbol_refs.append(qref)
+            import_symbol_bindings[local_name] = _sh_make_import_symbol_binding(module_id, export_name)
+            qualified_symbol_refs.append(_sh_make_qualified_symbol_ref(module_id, export_name, local_name))
 
     out = _sh_make_module_root(
         filename=filename,

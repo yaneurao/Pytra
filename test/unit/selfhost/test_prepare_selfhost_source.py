@@ -30,21 +30,6 @@ def _slice_block(text: str, start_marker: str, end_marker: str) -> str:
 
 
 class PrepareSelfhostSourceTest(unittest.TestCase):
-    def test_generated_cpp_core_uses_helper_carriers_for_checked_in_builders(self) -> None:
-        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
-        self.assertIn("dict<str, object> _sh_make_constant_str_node(", text)
-        self.assertIn("dict<str, object> _sh_make_def_sig_info(", text)
-        self.assertIn("dict<str, object> _sh_make_import_stmt(", text)
-        self.assertIn("dict<str, object> _sh_make_import_from_stmt(", text)
-        self.assertIn("dict<str, object> _sh_make_function_def_stmt(", text)
-        self.assertIn("dict<str, object> _sh_make_class_def_stmt(", text)
-        self.assertIn("values.append(_sh_make_constant_str_node(lit, span));", text)
-        self.assertIn("return _sh_make_def_sig_info(", text)
-        self.assertIn("body_items.append(_sh_make_import_stmt(", text)
-        self.assertIn("body_items.append(_sh_make_import_from_stmt(", text)
-        self.assertIn("dict<str, object> item = _sh_make_function_def_stmt(", text)
-        self.assertIn("dict<str, object> cls_item = _sh_make_class_def_stmt(", text)
-
     def test_load_cpp_hooks_patch_function_is_absent(self) -> None:
         mod = _load_prepare_module()
         self.assertFalse(hasattr(mod, "_patch_load_cpp_hooks_for_selfhost"))

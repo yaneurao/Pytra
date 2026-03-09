@@ -70,7 +70,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_def_sig_info()` を追加し、`_sh_parse_def_sig()` の raw signature dict 返却を helper carrier 経由へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `src/toolchain/ir/core.py` の checked-in node 構築は helper 正本へ揃ったため、S3-01 を完了として閉じ、以後の object carrier 撤退は generated/selfhost runtime 側の `S3-02` で続ける。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated C++ selfhost mirror に module/class root helper を追加し、top-level `FunctionDef` / `ClassDef` / `Import` / `ImportFrom`、class field / method / top-level assign / bare `Expr` の大きい `make_object` cluster を helper 経由へ寄せ始めた。あわせて source-of-truth 側にも `_sh_make_expr_token()` / `_sh_make_import_binding()` を足し、token/import metadata carrier の helper 契約と mirror regression を揃えた。
-- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `ExprParser` token と import metadata carrier に `_sh_make_expr_token()` / `_sh_make_import_binding()` を追加し、source-of-truth と tracked generated selfhost C++ mirror の tokenizer/import-binding でも inline `make_object` dict を helper 経由へ寄せた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `ExprParser` token と import metadata carrier に `_sh_make_expr_token()` / `_sh_make_import_binding()` を追加し、source-of-truth 側の tokenizer/import-binding raw carrier を helper 正本へ寄せた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] module root 末尾の import-resolution metadata に `_sh_make_import_symbol_binding()` / `_sh_make_qualified_symbol_ref()` を追加し、`import_symbols` / `qualified_symbol_refs` の inline carrier 組み立てを helper 経由へ寄せた。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
