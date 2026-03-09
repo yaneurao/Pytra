@@ -230,6 +230,70 @@ def _is_type_expr_payload(value: object) -> bool:
     return isinstance(value, dict) and isinstance(value.get("kind"), str)
 
 
+def summarize_type_expr(expr: object) -> dict[str, Any]:
+    """Summarize a structured TypeExpr for lowering / validation metadata."""
+    out: dict[str, Any] = {
+        "kind": "unknown",
+        "category": "unknown",
+        "mirror": "unknown",
+    }
+    if not _is_type_expr_payload(expr):
+        return out
+    expr_obj = expr
+    kind = str(expr_obj.get("kind", "unknown"))
+    out["kind"] = kind
+    out["mirror"] = type_expr_to_string(expr_obj)
+    if kind == "DynamicType":
+        out["category"] = "dynamic"
+        out["dynamic_name"] = str(expr_obj.get("name", "unknown"))
+        return out
+    if kind == "NominalAdtType":
+        out["category"] = "nominal_adt"
+        adt_family = str(expr_obj.get("adt_family", "")).strip()
+        variant_domain = str(expr_obj.get("variant_domain", "")).strip()
+        if adt_family != "":
+            out["nominal_adt_family"] = adt_family
+        if variant_domain != "":
+            out["nominal_variant_domain"] = variant_domain
+        return out
+    if kind == "OptionalType":
+        out["category"] = "optional"
+        inner_obj = expr_obj.get("inner")
+        inner_summary = summarize_type_expr(inner_obj)
+        inner_category = str(inner_summary.get("category", "unknown"))
+        if inner_category != "unknown":
+            out["inner_category"] = inner_category
+        nominal_family = str(inner_summary.get("nominal_adt_family", ""))
+        if nominal_family != "":
+            out["nominal_adt_family"] = nominal_family
+        variant_domain = str(inner_summary.get("nominal_variant_domain", ""))
+        if variant_domain != "":
+            out["nominal_variant_domain"] = variant_domain
+        return out
+    if kind == "UnionType":
+        union_mode = str(expr_obj.get("union_mode", "")).strip()
+        out["union_mode"] = union_mode
+        if union_mode == "dynamic":
+            out["category"] = "dynamic_union"
+        else:
+            out["category"] = "general_union"
+        return out
+    if kind in {"NamedType", "GenericType"}:
+        out["category"] = "static"
+        return out
+    return out
+
+
+def summarize_type_text(raw_text: object, *, type_aliases: dict[str, str] | None = None) -> dict[str, Any]:
+    """Summarize a legacy type-text mirror via the shared TypeExpr parser."""
+    if not isinstance(raw_text, str):
+        return summarize_type_expr(None)
+    txt = raw_text.strip()
+    if txt == "":
+        return summarize_type_expr(None)
+    return summarize_type_expr(parse_type_expr_text(txt, type_aliases=type_aliases))
+
+
 def _sync_type_expr_pair(node: dict[str, Any], expr_key: str, mirror_key: str, path: str) -> None:
     expr_obj = node.get(expr_key)
     if not _is_type_expr_payload(expr_obj):

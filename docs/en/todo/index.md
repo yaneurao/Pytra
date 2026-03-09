@@ -42,13 +42,13 @@ Context: [docs/ja/plans/p1-east-typeexpr-strengthening.md](../plans/p1-east-type
 5. [x] [ID: P1-EAST-TYPEEXPR-01-S2-02] Fix the IR contract that treats `JsonValue` as a nominal closed ADT rather than a generic union, including decode/narrowing responsibility and backend fail-closed rules.
 6. [x] [ID: P1-EAST-TYPEEXPR-01-S3-01] Update frontend type-annotation parsing to build `TypeExpr` from `int | bool`, `T | None`, and nested generic unions.
 7. [x] [ID: P1-EAST-TYPEEXPR-01-S3-02] Keep a migration `resolved_type` string mirror temporarily, but add validators and mismatch guards that treat `type_expr` as the source of truth.
-8. [ ] [ID: P1-EAST-TYPEEXPR-01-S4-01] In `EAST2 -> EAST3`, distinguish optionals, dynamic unions, and nominal ADTs, and introduce instructions or metadata for narrowing / variant checks / decode helpers.
+8. [x] [ID: P1-EAST-TYPEEXPR-01-S4-01] In `EAST2 -> EAST3`, distinguish optionals, dynamic unions, and nominal ADTs, and introduce instructions or metadata for narrowing / variant checks / decode helpers.
 9. [ ] [ID: P1-EAST-TYPEEXPR-01-S4-02] Connect a representative `JsonValue` narrowing path (`as_obj/as_arr/as_int/...` or equivalent decode operations) through IR-first lowering rather than backend-local special cases.
 10. [ ] [ID: P1-EAST-TYPEEXPR-01-S5-01] Use C++ as the first target and replace at least part of the current `general union -> object` path with fail-closed behavior or structured lowering.
 11. [ ] [ID: P1-EAST-TYPEEXPR-01-S5-02] Audit other backends for `String/object` union fallbacks and align unsupported `TypeExpr` unions to explicit errors or guarded compatibility paths.
 12. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-01] Put a representative `JsonValue` lane on top of the new `TypeExpr` / nominal-ADT contract and verify that future runtime work can proceed IR-contract-first.
 13. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-02] Refresh selfhost / unit / docs / archive and add guards against the reintroduction of stringly-typed union debt.
-- Progress memo: [ID: P1-EAST-TYPEEXPR-01-S4-01] `S3-02` added `sync_type_expr_mirrors()` and made selfhost/EAST2/EAST3/linker gates fail fast on mirror drift. Next is teaching lowering to split optionals, dynamic unions, and nominal ADTs into distinct lanes.
+- Progress memo: [ID: P1-EAST-TYPEEXPR-01-S4-02] `S4-01` taught the frontend to stamp JSON decode helpers with `json.*` semantic tags and taught lowering to attach `type_expr_summary_v1` / `json_decode_v1`. Next is moving a representative `JsonValue` narrowing path onto a dedicated IR category.
 
 ### P2: Move compiler boundaries to typed carriers and retreat internal object-carrier / `make_object` usage
 

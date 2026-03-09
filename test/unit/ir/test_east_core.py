@@ -852,6 +852,35 @@ def main() -> None:
         self.assertEqual(math_pi_attrs[0].get("runtime_module_id"), "math")
         self.assertEqual(math_pi_attrs[0].get("runtime_symbol"), "pi")
 
+    def test_json_decode_helpers_receive_json_semantic_tags(self) -> None:
+        src = """
+from pytra.std import json
+from pytra.std.json import JsonArr, JsonObj, JsonValue
+
+def main(text: str, value: JsonValue, obj: JsonObj, arr: JsonArr) -> None:
+    root = json.loads(text)
+    obj0 = json.loads_obj(text)
+    arr0 = json.loads_arr(text)
+    a = value.as_obj()
+    b = value.as_int()
+    c = obj.get_arr("items")
+    d = arr.get_bool(0)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        calls = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "Call" and isinstance(n.get("repr"), str)
+        ]
+        by_repr = {str(n.get("repr")): n for n in calls}
+        self.assertEqual(by_repr["json.loads(text)"].get("semantic_tag"), "json.loads")
+        self.assertEqual(by_repr["json.loads_obj(text)"].get("semantic_tag"), "json.loads_obj")
+        self.assertEqual(by_repr["json.loads_arr(text)"].get("semantic_tag"), "json.loads_arr")
+        self.assertEqual(by_repr["value.as_obj()"].get("semantic_tag"), "json.value.as_obj")
+        self.assertEqual(by_repr["value.as_int()"].get("semantic_tag"), "json.value.as_int")
+        self.assertEqual(by_repr['obj.get_arr("items")'].get("semantic_tag"), "json.obj.get_arr")
+        self.assertEqual(by_repr["arr.get_bool(0)"].get("semantic_tag"), "json.arr.get_bool")
+
     def test_core_does_not_reintroduce_perf_counter_direct_branch(self) -> None:
         src = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertNotIn('fn_name == "perf_counter"', src)

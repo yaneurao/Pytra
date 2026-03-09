@@ -4,8 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
+from toolchain.frontends.type_expr import summarize_type_expr
+from toolchain.frontends.type_expr import summarize_type_text
+
 
 _LEGACY_COMPAT_BRIDGE_ENABLED = True
+_TYPE_EXPR_SUMMARY_KEY = "type_expr_summary_v1"
+_JSON_DECODE_META_KEY = "json_decode_v1"
 
 
 def _normalize_dispatch_mode(value: Any) -> str:
@@ -30,6 +35,51 @@ def _normalize_type_name(value: Any) -> str:
         if t != "":
             return t
     return "unknown"
+
+
+def _unknown_type_summary() -> dict[str, Any]:
+    return {"kind": "unknown", "category": "unknown", "mirror": "unknown"}
+
+
+def _type_expr_summary_from_payload(type_expr: Any, mirror: Any) -> dict[str, Any]:
+    summary = summarize_type_expr(type_expr)
+    if str(summary.get("category", "unknown")) != "unknown":
+        return dict(summary)
+    return dict(summarize_type_text(mirror))
+
+
+def _type_expr_summary_from_node(node: Any) -> dict[str, Any]:
+    if not isinstance(node, dict):
+        return _unknown_type_summary()
+    return _type_expr_summary_from_payload(node.get("type_expr"), node.get("resolved_type"))
+
+
+def _set_type_expr_summary(node: dict[str, Any], summary: dict[str, Any]) -> None:
+    category = str(summary.get("category", "unknown")).strip()
+    if category == "" or category == "unknown":
+        return
+    payload = {"schema_version": 1}
+    for key, value in summary.items():
+        payload[key] = value
+    node[_TYPE_EXPR_SUMMARY_KEY] = payload
+
+
+def _bridge_lane_payload(target_summary: dict[str, Any], value_summary: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "target": dict(target_summary),
+        "target_category": target_summary.get("category", "unknown"),
+        "value": dict(value_summary),
+        "value_category": value_summary.get("category", "unknown"),
+    }
+
+
+def _is_dynamic_like_summary(summary: dict[str, Any]) -> bool:
+    category = str(summary.get("category", "unknown")).strip()
+    if category == "dynamic" or category == "dynamic_union":
+        return True
+    mirror = str(summary.get("mirror", "unknown")).strip()
+    return mirror == "Any" or mirror == "object" or mirror == "unknown"
 
 
 def _split_union_types(type_name: str) -> list[str]:
@@ -97,16 +147,7 @@ def _tuple_element_types(type_name: Any) -> list[str]:
 
 
 def _is_any_like_type(type_name: Any) -> bool:
-    norm = _normalize_type_name(type_name)
-    if norm == "Any" or norm == "object" or norm == "unknown":
-        return True
-    union_parts = _split_union_types(norm)
-    if len(union_parts) <= 1:
-        return False
-    for part in union_parts:
-        if part == "Any" or part == "object" or part == "unknown":
-            return True
-    return False
+    return _is_dynamic_like_summary(_type_expr_summary_from_payload(None, type_name))
 
 
 def _const_int_node(value: int) -> dict[str, Any]:
@@ -208,6 +249,15 @@ def _make_type_predicate_expr(
         "expected_type_id": expected_type_id_expr,
     }
     _copy_source_span_and_repr(source_expr, out)
+    left_summary = _expr_type_summary(left_expr)
+    _set_type_expr_summary(out, left_summary)
+    mode = str(left_summary.get("category", "unknown")).strip()
+    if mode != "" and mode != "unknown":
+        out["narrowing_lane_v1"] = {
+            "schema_version": 1,
+            "source_category": mode,
+            "source_type": dict(left_summary),
+        }
     return out
 
 
@@ -445,9 +495,17 @@ def _node_repr(node: Any) -> str:
 
 
 def _expr_type_name(expr: Any) -> str:
+    summary = _expr_type_summary(expr)
+    mirror = _normalize_type_name(summary.get("mirror"))
+    if mirror != "unknown":
+        return mirror
     if isinstance(expr, dict):
         return _normalize_type_name(expr.get("resolved_type"))
     return "unknown"
+
+
+def _expr_type_summary(expr: Any) -> dict[str, Any]:
+    return _type_expr_summary_from_node(expr)
 
 
 def _make_boundary_expr(
@@ -471,23 +529,29 @@ def _make_boundary_expr(
     repr_txt = _node_repr(source_expr)
     if repr_txt != "":
         out["repr"] = repr_txt
+    _set_type_expr_summary(out, _type_expr_summary_from_payload(None, resolved_type))
     return out
 
 
-def _wrap_value_for_target_type(value_expr: Any, target_type: Any) -> Any:
-    target_t = _normalize_type_name(target_type)
+def _wrap_value_for_target_type(value_expr: Any, target_type: Any, *, target_type_expr: Any = None) -> Any:
+    target_summary = _type_expr_summary_from_payload(target_type_expr, target_type)
+    target_t = _normalize_type_name(target_summary.get("mirror"))
     if target_t == "unknown":
         return value_expr
-    value_t = _expr_type_name(value_expr)
-    if _is_any_like_type(target_t) and not _is_any_like_type(value_t):
-        return _make_boundary_expr(
+    value_summary = _expr_type_summary(value_expr)
+    value_t = _normalize_type_name(value_summary.get("mirror"))
+    if _is_dynamic_like_summary(target_summary) and not _is_dynamic_like_summary(value_summary):
+        out = _make_boundary_expr(
             kind="Box",
             value_key="value",
             value_node=value_expr,
             resolved_type="object",
             source_expr=value_expr,
         )
-    if not _is_any_like_type(target_t) and _is_any_like_type(value_t):
+        out["bridge_lane_v1"] = _bridge_lane_payload(target_summary, value_summary)
+        _set_type_expr_summary(out, target_summary)
+        return out
+    if not _is_dynamic_like_summary(target_summary) and _is_dynamic_like_summary(value_summary):
         out = _make_boundary_expr(
             kind="Unbox",
             value_key="value",
@@ -497,11 +561,34 @@ def _wrap_value_for_target_type(value_expr: Any, target_type: Any) -> Any:
         )
         out["target"] = target_t
         out["on_fail"] = "raise"
+        out["bridge_lane_v1"] = _bridge_lane_payload(target_summary, value_summary)
+        _set_type_expr_summary(out, target_summary)
         return out
     return value_expr
 
 
+def _resolve_assign_target_type_summary(stmt: dict[str, Any]) -> dict[str, Any]:
+    decl_expr = stmt.get("decl_type_expr")
+    summary = _type_expr_summary_from_payload(decl_expr, stmt.get("decl_type"))
+    if str(summary.get("category", "unknown")) != "unknown":
+        return summary
+    ann_expr = stmt.get("annotation_type_expr")
+    summary = _type_expr_summary_from_payload(ann_expr, stmt.get("annotation"))
+    if str(summary.get("category", "unknown")) != "unknown":
+        return summary
+    target_obj = stmt.get("target")
+    if isinstance(target_obj, dict):
+        summary = _type_expr_summary_from_payload(target_obj.get("type_expr"), target_obj.get("resolved_type"))
+        if str(summary.get("category", "unknown")) != "unknown":
+            return summary
+    return _unknown_type_summary()
+
+
 def _resolve_assign_target_type(stmt: dict[str, Any]) -> str:
+    summary = _resolve_assign_target_type_summary(stmt)
+    mirror = _normalize_type_name(summary.get("mirror"))
+    if mirror != "unknown":
+        return mirror
     decl_type = _normalize_type_name(stmt.get("decl_type"))
     if decl_type != "unknown":
         return decl_type
@@ -556,8 +643,20 @@ def _lower_assignment_like_stmt(stmt: dict[str, Any], *, dispatch_mode: str) -> 
     if stmt.get("value") is None:
         return out
     value_lowered = _lower_node(stmt.get("value"), dispatch_mode=dispatch_mode)
-    target_type = _resolve_assign_target_type(stmt)
-    out["value"] = _wrap_value_for_target_type(value_lowered, target_type)
+    target_summary = _resolve_assign_target_type_summary(stmt)
+    target_type = _normalize_type_name(target_summary.get("mirror"))
+    if target_type == "unknown":
+        target_type = _resolve_assign_target_type(stmt)
+    target_obj = stmt.get("target")
+    target_type_expr = stmt.get("decl_type_expr") or stmt.get("annotation_type_expr")
+    if target_type_expr is None and isinstance(target_obj, dict):
+        target_type_expr = target_obj.get("type_expr")
+    out["value"] = _wrap_value_for_target_type(
+        value_lowered,
+        target_type,
+        target_type_expr=target_type_expr,
+    )
+    _set_type_expr_summary(out, target_summary)
     return out
 
 
@@ -644,6 +743,95 @@ def _lower_forrange_stmt(stmt: dict[str, Any], *, dispatch_mode: str) -> dict[st
     return out
 
 
+def _infer_json_semantic_tag(call: dict[str, Any]) -> str:
+    semantic_tag_obj = call.get("semantic_tag")
+    semantic_tag = semantic_tag_obj.strip() if isinstance(semantic_tag_obj, str) else ""
+    if semantic_tag.startswith("json."):
+        return semantic_tag
+    module_id_obj = call.get("runtime_module_id")
+    runtime_symbol_obj = call.get("runtime_symbol")
+    module_id = module_id_obj.strip() if isinstance(module_id_obj, str) else ""
+    runtime_symbol = runtime_symbol_obj.strip() if isinstance(runtime_symbol_obj, str) else ""
+    if module_id == "pytra.std.json":
+        if runtime_symbol == "loads":
+            return "json.loads"
+        if runtime_symbol == "loads_obj":
+            return "json.loads_obj"
+        if runtime_symbol == "loads_arr":
+            return "json.loads_arr"
+    func_obj = call.get("func")
+    if isinstance(func_obj, dict) and func_obj.get("kind") == "Attribute":
+        attr_obj = func_obj.get("attr")
+        attr = attr_obj.strip() if isinstance(attr_obj, str) else ""
+        owner_obj = func_obj.get("value")
+        owner_type = _expr_type_name(owner_obj)
+        if owner_type == "JsonValue" and attr in {"as_obj", "as_arr", "as_str", "as_int", "as_float", "as_bool"}:
+            return "json.value." + attr
+        if owner_type == "JsonObj" and attr in {
+            "get",
+            "get_obj",
+            "get_arr",
+            "get_str",
+            "get_int",
+            "get_float",
+            "get_bool",
+        }:
+            return "json.obj." + attr
+        if owner_type == "JsonArr" and attr in {
+            "get",
+            "get_obj",
+            "get_arr",
+            "get_str",
+            "get_int",
+            "get_float",
+            "get_bool",
+        }:
+            return "json.arr." + attr
+        if _LEGACY_COMPAT_BRIDGE_ENABLED and attr in {"loads", "loads_obj", "loads_arr"}:
+            owner_name = ""
+            if isinstance(owner_obj, dict) and owner_obj.get("kind") == "Name":
+                owner_name_obj = owner_obj.get("id")
+                owner_name = owner_name_obj.strip() if isinstance(owner_name_obj, str) else ""
+            if owner_name == "json":
+                return "json." + attr
+    return ""
+
+
+def _build_json_decode_meta(call: dict[str, Any], semantic_tag: str) -> dict[str, Any]:
+    meta: dict[str, Any] = {
+        "schema_version": 1,
+        "semantic_tag": semantic_tag,
+        "result_type": _type_expr_summary_from_node(call),
+    }
+    if semantic_tag.startswith("json.loads"):
+        meta["decode_kind"] = "module_load"
+        return meta
+    func_obj = call.get("func")
+    if not isinstance(func_obj, dict) or func_obj.get("kind") != "Attribute":
+        meta["decode_kind"] = "helper_call"
+        return meta
+    owner_obj = func_obj.get("value")
+    owner_summary = _expr_type_summary(owner_obj)
+    meta["decode_kind"] = "narrow"
+    meta["receiver_type"] = owner_summary
+    receiver_category = str(owner_summary.get("category", "unknown"))
+    if receiver_category != "unknown":
+        meta["receiver_category"] = receiver_category
+    nominal_family = str(owner_summary.get("nominal_adt_family", ""))
+    if nominal_family != "":
+        meta["receiver_nominal_adt_family"] = nominal_family
+    return meta
+
+
+def _decorate_call_metadata(call: dict[str, Any]) -> dict[str, Any]:
+    _set_type_expr_summary(call, _type_expr_summary_from_node(call))
+    json_tag = _infer_json_semantic_tag(call)
+    if json_tag != "":
+        call["semantic_tag"] = json_tag
+        call[_JSON_DECODE_META_KEY] = _build_json_decode_meta(call, json_tag)
+    return call
+
+
 def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, Any]:
     out: dict[str, Any] = {}
     for key in call:
@@ -654,6 +842,7 @@ def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, A
         return out
     if out.get("kind") != "Call":
         return out
+    out = _decorate_call_metadata(out)
 
     func_obj = out.get("func")
     if isinstance(func_obj, dict) and func_obj.get("kind") == "Name" and func_obj.get("id") == "getattr":

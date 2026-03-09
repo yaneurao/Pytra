@@ -24,6 +24,8 @@ from toolchain.frontends.signature_registry import lookup_stdlib_method_runtime_
 from toolchain.frontends.signature_registry import lookup_stdlib_method_runtime_call
 from toolchain.frontends.signature_registry import lookup_stdlib_method_return_type
 from toolchain.frontends.frontend_semantics import lookup_builtin_semantic_tag
+from toolchain.frontends.frontend_semantics import lookup_owner_method_semantic_tag
+from toolchain.frontends.frontend_semantics import lookup_runtime_binding_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_function_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_method_semantic_tag
 from toolchain.frontends.frontend_semantics import lookup_stdlib_symbol_semantic_tag
@@ -3360,6 +3362,9 @@ class _ShExprParser:
                         mod_id = str(binding.get("module", "")).strip()
                         runtime_symbol = str(binding.get("name", "")).strip()
                         _set_runtime_binding_fields(payload, mod_id, runtime_symbol)
+                        binding_semantic_tag = lookup_runtime_binding_semantic_tag(mod_id, runtime_symbol)
+                        if binding_semantic_tag != "":
+                            payload["semantic_tag"] = binding_semantic_tag
                 elif fn_name in {"Exception", "RuntimeError"}:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
@@ -3491,10 +3496,19 @@ class _ShExprParser:
                         payload["resolved_runtime_call"] = noncpp_module_runtime_call
                         payload["resolved_runtime_source"] = "module_attr"
                         _set_runtime_binding_fields(payload, noncpp_module_runtime_owner, attr)
+                        binding_semantic_tag = lookup_runtime_binding_semantic_tag(
+                            noncpp_module_runtime_owner,
+                            attr,
+                        )
+                        if binding_semantic_tag != "":
+                            payload["semantic_tag"] = binding_semantic_tag
                         std_module_attr_ret = lookup_stdlib_function_return_type(attr)
                         if std_module_attr_ret != "":
                             payload["resolved_type"] = std_module_attr_ret
                     rc = lookup_stdlib_method_runtime_call(owner_t, attr)
+                    owner_method_semantic_tag = lookup_owner_method_semantic_tag(owner_t, attr)
+                    if owner_method_semantic_tag != "":
+                        payload["semantic_tag"] = owner_method_semantic_tag
                     if rc != "":
                         payload["lowered_kind"] = "BuiltinCall"
                         payload["builtin_name"] = attr
@@ -3503,7 +3517,9 @@ class _ShExprParser:
                         _set_runtime_binding_fields(payload, mod_id, runtime_symbol)
                         payload["runtime_owner"] = owner
                         method_semantic_tag = lookup_stdlib_method_semantic_tag(attr)
-                        if method_semantic_tag != "":
+                        if owner_method_semantic_tag != "":
+                            payload["semantic_tag"] = owner_method_semantic_tag
+                        elif method_semantic_tag != "":
                             payload["semantic_tag"] = method_semantic_tag
                 node = payload
                 continue

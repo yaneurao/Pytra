@@ -15,6 +15,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.toolchain.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
 from src.toolchain.compiler.transpile_cli import load_east3_document
+from src.toolchain.frontends.type_expr import parse_type_expr_text
 
 
 def _const_i(v: int) -> dict[str, object]:
@@ -917,18 +918,57 @@ class East2ToEast3LoweringTest(unittest.TestCase):
             "body": [
                 {
                     "kind": "AnnAssign",
-                    "target": {"kind": "Name", "id": "obj", "resolved_type": "object"},
+                    "target": {
+                        "kind": "Name",
+                        "id": "obj",
+                        "resolved_type": "object",
+                        "type_expr": parse_type_expr_text("object"),
+                    },
                     "annotation": "object",
+                    "annotation_type_expr": parse_type_expr_text("object"),
                     "decl_type": "object",
+                    "decl_type_expr": parse_type_expr_text("object"),
                     "value": _const_i(1),
                     "declare": True,
                 },
                 {
                     "kind": "AnnAssign",
-                    "target": {"kind": "Name", "id": "i", "resolved_type": "int64"},
-                    "annotation": "int64",
-                    "decl_type": "int64",
-                    "value": {"kind": "Name", "id": "obj", "resolved_type": "Any"},
+                    "target": {
+                        "kind": "Name",
+                        "id": "i",
+                        "resolved_type": "JsonValue | None",
+                        "type_expr": parse_type_expr_text("JsonValue | None"),
+                    },
+                    "annotation": "JsonValue | None",
+                    "annotation_type_expr": parse_type_expr_text("JsonValue | None"),
+                    "decl_type": "JsonValue | None",
+                    "decl_type_expr": parse_type_expr_text("JsonValue | None"),
+                    "value": {
+                        "kind": "Name",
+                        "id": "obj",
+                        "resolved_type": "Any",
+                        "type_expr": parse_type_expr_text("Any"),
+                    },
+                    "declare": True,
+                },
+                {
+                    "kind": "AnnAssign",
+                    "target": {
+                        "kind": "Name",
+                        "id": "obj2",
+                        "resolved_type": "object",
+                        "type_expr": parse_type_expr_text("object"),
+                    },
+                    "annotation": "object",
+                    "annotation_type_expr": parse_type_expr_text("object"),
+                    "decl_type": "object",
+                    "decl_type_expr": parse_type_expr_text("object"),
+                    "value": {
+                        "kind": "Name",
+                        "id": "payload",
+                        "resolved_type": "JsonValue | None",
+                        "type_expr": parse_type_expr_text("JsonValue | None"),
+                    },
                     "declare": True,
                 },
             ],
@@ -937,11 +977,211 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         body = out.get("body", [])
         first_value = body[0].get("value", {})
         second_value = body[1].get("value", {})
+        third_value = body[2].get("value", {})
         self.assertEqual(first_value.get("kind"), "Box")
         self.assertEqual(first_value.get("resolved_type"), "object")
+        self.assertEqual(first_value.get("bridge_lane_v1", {}).get("target_category"), "dynamic")
+        self.assertEqual(first_value.get("bridge_lane_v1", {}).get("value_category"), "static")
         self.assertEqual(second_value.get("kind"), "Unbox")
-        self.assertEqual(second_value.get("target"), "int64")
+        self.assertEqual(second_value.get("target"), "JsonValue | None")
         self.assertEqual(second_value.get("on_fail"), "raise")
+        self.assertEqual(second_value.get("type_expr_summary_v1", {}).get("category"), "optional")
+        self.assertEqual(second_value.get("type_expr_summary_v1", {}).get("nominal_adt_family"), "json")
+        self.assertEqual(second_value.get("bridge_lane_v1", {}).get("target", {}).get("category"), "optional")
+        self.assertEqual(third_value.get("kind"), "Box")
+        self.assertEqual(third_value.get("bridge_lane_v1", {}).get("value", {}).get("category"), "optional")
+        self.assertEqual(third_value.get("bridge_lane_v1", {}).get("value", {}).get("nominal_adt_family"), "json")
+
+    def test_lower_isinstance_records_narrowing_lane_for_optional_nominal_type(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "type_id"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "isinstance"},
+                        "args": [
+                            {
+                                "kind": "Name",
+                                "id": "payload",
+                                "resolved_type": "JsonValue | None",
+                                "type_expr": parse_type_expr_text("JsonValue | None"),
+                            },
+                            {"kind": "Name", "id": "JsonObj", "resolved_type": "unknown"},
+                        ],
+                        "keywords": [],
+                    },
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        value = out.get("body", [])[0].get("value", {})
+        self.assertEqual(value.get("kind"), "IsInstance")
+        self.assertEqual(value.get("type_expr_summary_v1", {}).get("category"), "optional")
+        self.assertEqual(value.get("type_expr_summary_v1", {}).get("nominal_adt_family"), "json")
+        self.assertEqual(value.get("narrowing_lane_v1", {}).get("source_category"), "optional")
+
+    def test_lower_json_value_helper_call_attaches_decode_metadata(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "JsonObj | None",
+                        "type_expr": parse_type_expr_text("JsonObj | None"),
+                        "func": {
+                            "kind": "Attribute",
+                            "attr": "as_obj",
+                            "value": {
+                                "kind": "Name",
+                                "id": "payload",
+                                "resolved_type": "JsonValue",
+                                "type_expr": parse_type_expr_text("JsonValue"),
+                            },
+                        },
+                        "args": [],
+                        "keywords": [],
+                    },
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        value = out.get("body", [])[0].get("value", {})
+        self.assertEqual(value.get("kind"), "Call")
+        self.assertEqual(value.get("semantic_tag"), "json.value.as_obj")
+        self.assertEqual(value.get("json_decode_v1", {}).get("decode_kind"), "narrow")
+        self.assertEqual(value.get("json_decode_v1", {}).get("receiver_category"), "nominal_adt")
+        self.assertEqual(value.get("json_decode_v1", {}).get("receiver_nominal_adt_family"), "json")
+
+    def test_lower_assign_reads_structured_dynamic_union_for_boundary_bridge(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "AnnAssign",
+                    "target": {"kind": "Name", "id": "slot", "resolved_type": "unknown"},
+                    "annotation": "unknown",
+                    "decl_type": "unknown",
+                    "decl_type_expr": {
+                        "kind": "UnionType",
+                        "union_mode": "dynamic",
+                        "options": [
+                            {"kind": "NamedType", "name": "int64"},
+                            {"kind": "DynamicType", "name": "Any"},
+                        ],
+                    },
+                    "value": _const_i(1),
+                    "declare": True,
+                },
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        stmt = out.get("body", [])[0]
+        value = stmt.get("value", {})
+        self.assertEqual(value.get("kind"), "Box")
+        summary = value.get("type_expr_summary_v1", {})
+        self.assertEqual(summary.get("category"), "dynamic_union")
+        self.assertEqual(value.get("bridge_lane_v1", {}).get("target_category"), "dynamic_union")
+
+    def test_lower_json_decode_calls_attach_nominal_metadata(self) -> None:
+        json_value = {"kind": "Name", "id": "value", "resolved_type": "JsonValue"}
+        json_obj = {"kind": "Name", "id": "obj", "resolved_type": "JsonObj"}
+        json_arr = {"kind": "Name", "id": "arr", "resolved_type": "JsonArr"}
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "JsonObj | None",
+                        "func": {
+                            "kind": "Attribute",
+                            "value": json_value,
+                            "attr": "as_obj",
+                            "resolved_type": "unknown",
+                        },
+                        "args": [],
+                        "keywords": [],
+                        "semantic_tag": "json.value.as_obj",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "int64 | None",
+                        "func": {
+                            "kind": "Attribute",
+                            "value": json_obj,
+                            "attr": "get_int",
+                            "resolved_type": "unknown",
+                        },
+                        "args": [{"kind": "Constant", "value": "age", "resolved_type": "str"}],
+                        "keywords": [],
+                        "semantic_tag": "json.obj.get_int",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool | None",
+                        "func": {
+                            "kind": "Attribute",
+                            "value": json_arr,
+                            "attr": "get_bool",
+                            "resolved_type": "unknown",
+                        },
+                        "args": [{"kind": "Constant", "value": 0, "resolved_type": "int64"}],
+                        "keywords": [],
+                        "semantic_tag": "json.arr.get_bool",
+                    },
+                },
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "JsonObj | None",
+                        "func": {
+                            "kind": "Attribute",
+                            "value": {"kind": "Name", "id": "json", "resolved_type": "unknown"},
+                            "attr": "loads_obj",
+                            "resolved_type": "unknown",
+                        },
+                        "args": [{"kind": "Name", "id": "text", "resolved_type": "str"}],
+                        "keywords": [],
+                        "runtime_module_id": "pytra.std.json",
+                        "runtime_symbol": "loads_obj",
+                    },
+                },
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        body = out.get("body", [])
+        first = body[0].get("value", {})
+        second = body[1].get("value", {})
+        third = body[2].get("value", {})
+        fourth = body[3].get("value", {})
+        self.assertEqual(first.get("semantic_tag"), "json.value.as_obj")
+        self.assertEqual(first.get("json_decode_v1", {}).get("decode_kind"), "narrow")
+        self.assertEqual(first.get("json_decode_v1", {}).get("receiver_nominal_adt_family"), "json")
+        self.assertEqual(first.get("type_expr_summary_v1", {}).get("category"), "optional")
+        self.assertEqual(second.get("semantic_tag"), "json.obj.get_int")
+        self.assertEqual(second.get("json_decode_v1", {}).get("receiver_nominal_adt_family"), "json")
+        self.assertEqual(third.get("semantic_tag"), "json.arr.get_bool")
+        self.assertEqual(third.get("json_decode_v1", {}).get("receiver_nominal_adt_family"), "json")
+        self.assertEqual(fourth.get("semantic_tag"), "json.loads_obj")
+        self.assertEqual(fourth.get("json_decode_v1", {}).get("decode_kind"), "module_load")
+        self.assertEqual(fourth.get("type_expr_summary_v1", {}).get("category"), "optional")
 
     def test_dispatch_mode_override_is_applied_at_lower_entrypoint(self) -> None:
         east2 = {
