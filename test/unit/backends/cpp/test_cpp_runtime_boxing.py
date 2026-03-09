@@ -37,6 +37,7 @@ class CppRuntimeBoxingTest(unittest.TestCase):
     def test_runtime_boxing_helpers_behave_as_expected(self) -> None:
         cpp_src = r'''
 #include "runtime/cpp/core/py_runtime.h"
+#include "pytra/built_in/scalar_ops.h"
 
 #include <cassert>
 #include <iostream>
@@ -90,11 +91,13 @@ int main() {
 
     object tuple_list_obj = make_object(list<::std::tuple<int64, int64>>{::std::make_tuple(7, 8)});
     assert(py_len(tuple_list_obj) == 1);
-    object tuple_elem_obj = py_at(tuple_list_obj, int64(-1));
+    list<object> tuple_list = list<object>(tuple_list_obj);
+    object tuple_elem_obj = py_at(tuple_list, int64(-1));
     assert(py_is_list(tuple_elem_obj));
     assert(py_len(tuple_elem_obj) == 2);
-    assert(py_to<int64>(py_at(tuple_elem_obj, int64(0))) == 7);
-    assert(py_to<int64>(py_at(tuple_elem_obj, int64(1))) == 8);
+    list<object> tuple_elem = list<object>(tuple_elem_obj);
+    assert(py_to<int64>(py_at(tuple_elem, int64(0))) == 7);
+    assert(py_to<int64>(py_at(tuple_elem, int64(1))) == 8);
 
     assert(py_to_int64_base(str("10"), 16) == 16);
     assert(py_to_int64_base(as_str_num, 10) == 12);

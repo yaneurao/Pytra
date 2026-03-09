@@ -145,6 +145,12 @@ class CppModuleEmitter:
         """EAST body から必要な C++ include を収集する。"""
         includes: list[str] = []
         seen: set[str] = set()
+        scan_nodes: list[dict[str, Any]] = list(body)
+        raw_main_guard = self.any_dict_get_list(self.doc, "main_guard_body")
+        if isinstance(raw_main_guard, list):
+            for item in raw_main_guard:
+                if isinstance(item, dict):
+                    scan_nodes.append(item)
         bindings = dict_any_get_dict_list(meta, "import_bindings")
         if len(bindings) > 0:
             for item in bindings:
@@ -152,7 +158,7 @@ class CppModuleEmitter:
                 append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(mod_name))
                 append_unique_non_empty(includes, seen, self._import_binding_cpp_include(item))
         else:
-            for stmt in body:
+            for stmt in scan_nodes:
                 kind = self._node_kind_from_dict(stmt)
                 if kind == "Import":
                     for ent in self._dict_stmt_list(stmt.get("names")):
@@ -168,14 +174,14 @@ class CppModuleEmitter:
                         }
                         append_unique_non_empty(includes, seen, self._import_binding_cpp_include(binding))
         runtime_modules: set[str] = set()
-        for stmt in body:
+        for stmt in scan_nodes:
             self._collect_runtime_modules_from_node(stmt, runtime_modules)
         for module_id in sorted(runtime_modules):
             if lookup_runtime_module_group(module_id) == "core":
                 continue
             append_unique_non_empty(includes, seen, self._module_name_to_cpp_include(module_id))
         helper_includes: set[str] = set()
-        for stmt in body:
+        for stmt in scan_nodes:
             self._collect_cpp_helper_includes_from_node(stmt, helper_includes)
         for inc in sorted(helper_includes):
             append_unique_non_empty(includes, seen, inc)

@@ -5,6 +5,7 @@
 
 #include "runtime/cpp/generated/utils/assertions.h"
 
+#include "pytra/built_in/io_ops.h"
 
 namespace pytra::utils::assertions {
 

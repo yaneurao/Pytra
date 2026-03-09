@@ -554,6 +554,10 @@ if __name__ == "__main__":
         }
         self.assertEqual(runtime_bindings.get("py_enumerate"), ("pytra.built_in.iter_ops", "enumerate"))
         self.assertEqual(runtime_bindings.get("py_any"), ("pytra.built_in.predicates", "any"))
+        self.assertEqual(runtime_bindings.get("py_print"), ("pytra.built_in.io_ops", "py_print"))
+        self.assertEqual(runtime_bindings.get("py_to_int64_base"), ("pytra.built_in.scalar_ops", "py_to_int64_base"))
+        self.assertEqual(runtime_bindings.get("py_ord"), ("pytra.built_in.scalar_ops", "py_ord"))
+        self.assertEqual(runtime_bindings.get("py_chr"), ("pytra.built_in.scalar_ops", "py_chr"))
         self.assertEqual(runtime_bindings.get("dict.get"), ("pytra.core.dict", "dict.get"))
         self.assertEqual(runtime_bindings.get("std::filesystem::exists"), ("pytra.std.pathlib", "Path.exists"))
 
