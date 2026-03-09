@@ -204,6 +204,24 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             native_registry,
         )
 
+    def test_compiler_transpile_cli_typed_shim_skips_legacy_wrapper(self) -> None:
+        shim_src = (ROOT / "src" / "toolchain" / "compiler" / "transpile_cli.py").read_text(encoding="utf-8")
+        generated_header = (
+            ROOT / "src" / "runtime" / "cpp" / "generated" / "compiler" / "transpile_cli.h"
+        ).read_text(encoding="utf-8")
+        public_header = (
+            ROOT / "src" / "runtime" / "cpp" / "pytra" / "compiler" / "transpile_cli.h"
+        ).read_text(encoding="utf-8")
+        generated_cpp = ROOT / "src" / "runtime" / "cpp" / "generated" / "compiler" / "transpile_cli.cpp"
+
+        self.assertIn("return _front.load_east3_document_typed(", shim_src)
+        self.assertNotIn("return coerce_compiler_root_document(", shim_src)
+
+        self.assertFalse(generated_cpp.exists())
+        self.assertIn('#include "runtime/cpp/native/compiler/transpile_cli.h"', generated_header)
+        self.assertIn('#include "runtime/cpp/generated/compiler/transpile_cli.h"', public_header)
+        self.assertNotIn('#include "runtime/cpp/native/compiler/transpile_cli.h"', public_header)
+
     def test_typed_backend_specs_preserve_legacy_metadata(self) -> None:
         py2x_src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
         ir2lang_src = (ROOT / "src" / "ir2lang.py").read_text(encoding="utf-8")

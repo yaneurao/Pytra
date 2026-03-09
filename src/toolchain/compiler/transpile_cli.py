@@ -6,7 +6,6 @@ Canonical implementation moved to ``toolchain.frontends.transpile_cli``.
 from __future__ import annotations
 
 from toolchain.compiler.typed_boundary import CompilerRootDocument
-from toolchain.compiler.typed_boundary import coerce_compiler_root_document
 from toolchain.frontends import transpile_cli as _front
 from toolchain.frontends.transpile_cli import *  # noqa: F401,F403
 
@@ -86,18 +85,14 @@ def load_east3_document_typed(
     dump_east3_opt_trace="",
     target_lang="",
 ) -> CompilerRootDocument:
-    return coerce_compiler_root_document(
-        load_east3_document(
-            input_path,
-            parser_backend=parser_backend,
-            object_dispatch_mode=object_dispatch_mode,
-            east3_opt_level=east3_opt_level,
-            east3_opt_pass=east3_opt_pass,
-            dump_east3_before_opt=dump_east3_before_opt,
-            dump_east3_after_opt=dump_east3_after_opt,
-            dump_east3_opt_trace=dump_east3_opt_trace,
-            target_lang=target_lang,
-        ),
-        source_path=str(input_path),
+    return _front.load_east3_document_typed(
+        input_path,
         parser_backend=parser_backend,
+        object_dispatch_mode=object_dispatch_mode,
+        east3_opt_level=east3_opt_level,
+        east3_opt_pass=east3_opt_pass,
+        dump_east3_before_opt=dump_east3_before_opt,
+        dump_east3_after_opt=dump_east3_after_opt,
+        dump_east3_opt_trace=dump_east3_opt_trace,
+        target_lang=target_lang,
     )

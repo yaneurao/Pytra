@@ -131,7 +131,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/ir/core.py` の top-level function/class と class method の declaration span を `_sh_block_end_span(...)` へ寄せ、`test_east_core.py` で import / decl helper call site と旧 inline `source_span` carrier 不在も固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/ir/core.py` の `_sh_block_end_span()` / `_sh_stmt_span()` も multi-line span を `_sh_span(..., end_lineno=...)` 経由へ統一し、`test_east_core.py` で statement span helper が raw `source_span` dict を直返ししないことを固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` の residual guard helper を `finditer(...)` + `functions=` filter 対応へ上げ、generated core の residual を `_sh_parse_expr_lowered`、`_parse_primary`、`_sh_parse_stmt_block_mutable` 単位でも固定した。これで lowered residual `Call/Dict/Name/Tuple` と、statement block 非statement residual `Name/Tuple` を切り分けて監視できる。
-- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/compiler/transpile_cli.py` の `load_east3_document_typed()` は canonical front の typed API を直接呼ぶ形へ寄せ、official `--emit-runtime-cpp` で再生成した `generated/compiler/transpile_cli.cpp` でも typed lane が legacy `load_east3_document()` + coercion wrapper を踏まないようにした。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/compiler/transpile_cli.py` の `load_east3_document_typed()` は canonical front の typed API を直接呼ぶ形へ寄せ、tracked compiler shim source から `load_east3_document()` + coercion wrapper の一段を外した。compiler runtime emit は header-only forwarder のままなので、`test_py2x_entrypoints_contract.py` で shim source と header-only layout の両方を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
