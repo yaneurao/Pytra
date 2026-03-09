@@ -462,7 +462,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_resolved_runtime_annotations_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_resolved_runtime_expr", 1)[1].split(
-            "def _sh_set_parse_context",
+            "def _sh_annotate_runtime_attr_expr",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -475,6 +475,20 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('payload["resolved_runtime_source"] = "module_attr"', postfix_text)
         self.assertNotIn('node["resolved_runtime_call"] = noncpp_module_attr_runtime_call', postfix_text)
         self.assertNotIn('node["resolved_runtime_source"] = "module_attr"', postfix_text)
+
+    def test_core_source_routes_builtin_attr_metadata_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_annotate_runtime_attr_expr", 1)[1].split(
+            "def _sh_set_parse_context",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
+        self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
+        self.assertIn('_sh_annotate_runtime_attr_expr(', postfix_text)
+        self.assertNotIn('node["lowered_kind"] = "BuiltinAttr"', postfix_text)
+        self.assertNotIn('node["runtime_call"] = attr_runtime_call', postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")

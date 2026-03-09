@@ -140,6 +140,25 @@ def _sh_annotate_resolved_runtime_expr(
     return payload
 
 
+def _sh_annotate_runtime_attr_expr(
+    payload: dict[str, Any],
+    *,
+    runtime_call: str,
+    module_id: str = "",
+    runtime_symbol: str = "",
+    semantic_tag: str | None = None,
+    runtime_owner: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload["lowered_kind"] = "BuiltinAttr"
+    payload["runtime_call"] = runtime_call
+    _set_runtime_binding_fields(payload, module_id, runtime_symbol)
+    if semantic_tag is not None and semantic_tag != "":
+        payload["semantic_tag"] = semantic_tag
+    if runtime_owner is not None:
+        payload["runtime_owner"] = runtime_owner
+    return payload
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -4441,12 +4460,16 @@ class _ShExprParser:
                     repr_text=self._src_slice(s, e),
                 )
                 if attr_runtime_call != "":
-                    node["lowered_kind"] = "BuiltinAttr"
-                    node["runtime_call"] = attr_runtime_call
                     mod_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_t, attr_name)
-                    _set_runtime_binding_fields(node, mod_id, runtime_symbol)
-                    node["runtime_owner"] = owner_expr
-                if attr_semantic_tag != "":
+                    _sh_annotate_runtime_attr_expr(
+                        node,
+                        runtime_call=attr_runtime_call,
+                        module_id=mod_id,
+                        runtime_symbol=runtime_symbol,
+                        semantic_tag=attr_semantic_tag,
+                        runtime_owner=owner_expr,
+                    )
+                elif attr_semantic_tag != "":
                     node["semantic_tag"] = attr_semantic_tag
                 if noncpp_module_attr_runtime_call != "":
                     _sh_annotate_resolved_runtime_expr(
