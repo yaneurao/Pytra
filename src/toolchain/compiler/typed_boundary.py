@@ -107,6 +107,10 @@ def export_compiler_root_document(doc: "CompilerRootDocument") -> dict[str, obje
     return out
 
 
+def export_layer_options_carrier(options: "LayerOptionsCarrier") -> dict[str, CompilerOptionScalar]:
+    return dict(options.values)
+
+
 @dataclass(frozen=True)
 class CompilerRootMeta:
     source_path: str
@@ -167,7 +171,7 @@ class LayerOptionsCarrier:
     values: dict[str, CompilerOptionScalar]
 
     def to_legacy_dict(self) -> dict[str, CompilerOptionScalar]:
-        return dict(self.values)
+        return export_layer_options_carrier(self)
 
 
 @dataclass(frozen=True)
