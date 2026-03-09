@@ -115,6 +115,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の class field / enum field / top-level binding lane guard を追加し、`_sh_make_assign_stmt()` / `_sh_make_ann_assign_stmt()` / `_sh_make_name_expr()` が外れたり旧 inline `Assign` / `AnnAssign` dict が戻ったりしたら fail-fast するようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の `Name` return / top-level `Expr` helper lane guard を追加し、`return _sh_make_name_expr(...)` と `_sh_make_expr_stmt(...)` append が外れたり旧 inline `Expr` dict append が戻ったりしたら fail-fast するようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の comprehension / `range(...)` helper call guard を追加し、`_sh_make_comp_generator(...)` と `_sh_make_range_expr(...)` call site が外れたり旧 inline generator / `RangeExpr` dict が戻ったりしたら fail-fast するようにした。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の control-flow helper call guard を追加し、`_sh_make_if_stmt()` / `_sh_make_for_stmt()` / `_sh_make_for_range_stmt()` の call site が外れたり旧 inline `If` / `For` / `ForRange` dict が戻ったりしたら fail-fast するようにした。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
