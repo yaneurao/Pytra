@@ -599,7 +599,7 @@ def _normalize_backend_runtime_spec(spec: BackendSpec) -> ResolvedBackendSpec:
 
 
 def _normalize_backend_spec(spec: BackendSpec) -> BackendSpec:
-    return _normalize_backend_runtime_spec(spec).to_legacy_dict()
+    return export_resolved_backend_spec(_normalize_backend_runtime_spec(spec))
 
 
 def _coerce_runtime_spec(spec: BackendSpec | ResolvedBackendSpec) -> ResolvedBackendSpec:
@@ -665,7 +665,7 @@ def resolve_layer_options_typed(
 
 
 def resolve_layer_options(spec: BackendSpec, layer: str, raw_options: dict) -> dict:
-    return resolve_layer_options_typed(spec, layer, raw_options).to_legacy_dict()
+    return export_layer_options_carrier(resolve_layer_options_typed(spec, layer, raw_options))
 
 
 def lower_ir_typed(

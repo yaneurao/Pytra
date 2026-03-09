@@ -101,6 +101,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Updated `tools/check_transpiler_version_gate.py` so `src/py2x-selfhost.py` is treated as a direct cpp dependency, and added `test_check_transpiler_version_gate.py` to fail fast when selfhost entrypoint changes are missing a cpp version bump.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] The source-of-truth backend spec export now also routes through `export_backend_spec_carrier()` / `export_resolved_backend_spec()`, so host/static `get_backend_spec()` and static spec-cache normalization no longer call `.to_legacy_dict()` inline.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] The linked-program build and program-artifact normalization in `src/py2x.py` now also route through `export_compiler_root_document()` / `export_program_artifact_carrier()` / `export_module_artifact_carrier()`, which pushes the remaining inline `.to_legacy_dict()` calls out of the host entrypoint itself.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] The host/static legacy `resolve_layer_options()` surface and the host `_normalize_backend_spec()` helper now also export through `export_layer_options_carrier()` / `export_resolved_backend_spec()`, which aligns the remaining inline `.to_legacy_dict()` paths behind helper-owned seams.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 
