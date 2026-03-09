@@ -4867,17 +4867,14 @@ class _ShExprParser:
                 ]
                 node = str_nodes[0]
                 for str_rhs in str_nodes[1:]:
-                    node = {
-                        "kind": "BinOp",
-                        "source_span": self._node_span(str_parts[0]["s"], str_parts[-1]["e"]),
-                        "resolved_type": "str",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": self._src_slice(str_parts[0]["s"], str_parts[-1]["e"]),
-                        "left": node,
-                        "op": "Add",
-                        "right": str_rhs,
-                    }
+                    node = _sh_make_binop_expr(
+                        self._node_span(str_parts[0]["s"], str_parts[-1]["e"]),
+                        node,
+                        "Add",
+                        str_rhs,
+                        resolved_type="str",
+                        repr_text=self._src_slice(str_parts[0]["s"], str_parts[-1]["e"]),
+                    )
                 return node
 
             tok = str_parts[0]
@@ -6229,15 +6226,12 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 stop_node: dict[str, Any]
                 step_node: dict[str, Any]
                 if len(rargs) == 1:
-                    start_node = {
-                        "kind": "Constant",
-                        "source_span": _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
-                        "resolved_type": "int64",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": "0",
-                        "value": 0,
-                    }
+                    start_node = _sh_make_constant_expr(
+                        _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
+                        0,
+                        resolved_type="int64",
+                        repr_text="0",
+                    )
                     stop_node = rargs[0]
                     step_node = _sh_make_constant_expr(
                         _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
@@ -6248,15 +6242,12 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 elif len(rargs) == 2:
                     start_node = rargs[0]
                     stop_node = rargs[1]
-                    step_node = {
-                        "kind": "Constant",
-                        "source_span": _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
-                        "resolved_type": "int64",
-                        "borrow_kind": "value",
-                        "casts": [],
-                        "repr": "1",
-                        "value": 1,
-                    }
+                    step_node = _sh_make_constant_expr(
+                        _sh_span(ln_no, ln_txt.find("range"), ln_txt.find("range") + 5),
+                        1,
+                        resolved_type="int64",
+                        repr_text="1",
+                    )
                 else:
                     start_node = rargs[0]
                     stop_node = rargs[1]

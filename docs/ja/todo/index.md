@@ -65,6 +65,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_raise_stmt()` / `_sh_make_pass_stmt()` / `_sh_make_return_stmt()` / `_sh_make_yield_stmt()` / `_sh_make_augassign_stmt()` / `_sh_make_swap_stmt()` を追加し、statement block/class-body の simple stmt も helper 経由へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_import_alias()` / `_sh_make_import_stmt()` / `_sh_make_import_from_stmt()` / `_sh_make_if_stmt()` / `_sh_make_while_stmt()` / `_sh_make_except_handler()` / `_sh_make_try_stmt()` / `_sh_make_for_stmt()` / `_sh_make_for_range_stmt()` を statement block と module root parser の実組み立てへ適用した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_function_def_stmt()` / `_sh_make_class_def_stmt()` を追加し、nested/top-level/method の `FunctionDef` と top-level `ClassDef` の checked-in 直組み立てを helper 経由へ寄せた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] 文字列リテラル連結 `BinOp` と `ForRange` の既定 `Constant` も既存 helper へ寄せ、`core.py` source-of-truth 側の残存 `kind` 直組み立てを解消した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] 連結文字列の `BinOp` と `for ... in range(...)` の既定 `Constant` も helper 化し、`src/toolchain/ir/core.py` の checked-in AST node 直組み立ては helper 定義部だけへ縮退した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

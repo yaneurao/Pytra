@@ -64,6 +64,8 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_raise_stmt()` / `_sh_make_pass_stmt()` / `_sh_make_return_stmt()` / `_sh_make_yield_stmt()` / `_sh_make_augassign_stmt()` / `_sh_make_swap_stmt()` and moved simple-statement assembly in the statement-block and class-body parsers onto shared helpers too.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Applied `_sh_make_import_alias()` / `_sh_make_import_stmt()` / `_sh_make_import_from_stmt()` / `_sh_make_if_stmt()` / `_sh_make_while_stmt()` / `_sh_make_except_handler()` / `_sh_make_try_stmt()` / `_sh_make_for_stmt()` / `_sh_make_for_range_stmt()` to the real statement-block and module-root assembly paths.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Added `_sh_make_function_def_stmt()` / `_sh_make_class_def_stmt()` and moved checked-in direct assembly for nested/top-level/method `FunctionDef` nodes plus top-level `ClassDef` nodes onto shared helpers.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Moved the remaining string-literal-concatenation `BinOp` and default `ForRange` `Constant` nodes onto existing helpers too, clearing the last checked-in direct `kind` assembly left in `core.py` source-of-truth paths.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Moved concatenated-string `BinOp` assembly and the default `Constant` nodes used by `for ... in range(...)` onto helpers too, so checked-in direct AST node assembly in `src/toolchain/ir/core.py` is now confined to the helper definitions themselves.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 
