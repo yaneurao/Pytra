@@ -165,7 +165,7 @@
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-01] `numeric_ops/zip_ops/contains`、typed helper、tuple helper、`type_id` wrapper の checked-in caller を棚卸しし、end state を分類する。
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S1-02] `spec-runtime` に反しない include ownership / upstream contract / non-goal を決定ログへ固定する。
 - [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-01] C++ emitter / prelude / generated path の helper include 収集を拡張し、`zip` / `contains` / numeric helper を explicit include 化する。
-- [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-02] `py_runtime.h` から `numeric_ops` / `zip_ops` / `contains` の transitive include を削除し、removed-include guard を更新する。
+- [x] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S2-02] `py_runtime.h` から `numeric_ops` / `zip_ops` / `contains` の transitive include を削除し、removed-include guard を更新する。
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-01] typed dict subscript を `.at()` 化し、`py_dict_get` の checked-in callsite を除去する。
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-02] tuple constant-index を generated/runtime path でも `std::get<N>` へ寄せ、tuple `py_at` helper を縮退または退役させる。
 - [ ] [ID: P0-CPP-PYRUNTIME-CORE-BOUNDARY-01-S3-03] typed list/dict mutation helper を object bridge 専用 surface まで縮め、typed lane は emitter direct lowering を優先する。
@@ -186,3 +186,4 @@
 - 2026-03-09: `type_id` wrapper の checked-in caller は C++ backend 本体、generated C++ runtime、selfhost stage1/stage2、関連 test に広く残っているため、`S4-01` は「callsite を `py_tid_*` に寄せる / `py_runtime.h` wrapper を thin delegate に縮める」を同時に扱う slice とする。
 - 2026-03-09: `S1-02` の契約として、`numeric_ops/zip_ops/contains` は `pytra/built_in/*.h` から explicit include される companion surface とし、`py_runtime.h` は再集約しない。typed dict / tuple constant-index / typed mutation helper は upstream または typed lane へ戻し、`core` に残るのは object bridge と low-level primitive だけに寄せる。非対象は他 target runtime の同時整理と boxing/unboxing の全面再設計で固定する。
 - 2026-03-09: `S2-01` として `src/backends/cpp/emitter/module.py` の helper include collector を拡張し、`RuntimeSpecialOp(minmax)`、`runtime_call=zip/py_min/py_max`、direct `sum(...)` call、`Compare` の `In/NotIn` / lowered `Contains` から `pytra/built_in/{numeric_ops,zip_ops,contains}.h` を明示収集するようにした。`test_py2cpp_features.py` に回帰を追加し、transpiled C++ が `py_runtime.h` 以外からも必要 helper header を自力で引けることを固定した。
+- 2026-03-09: `S2-02` として `src/runtime/cpp/native/core/py_runtime.h` から `numeric_ops` / `zip_ops` / `contains` の再集約 include を外し、tracked な generated caller（`generated/std/{re,json,argparse}.cpp`、`generated/built_in/type_id.cpp`）へ `pytra/built_in/contains.h` を明示追加した。`test_cpp_runtime_iterable.py` では compile snippet も explicit include へ切り替え、removed-include guard を `assertNotIn(...)` に反転して regression を固定した。
