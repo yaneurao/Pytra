@@ -479,7 +479,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_builtin_attr_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_runtime_attr_expr", 1)[1].split(
-            "def _sh_set_parse_context",
+            "def _sh_lookup_noncpp_attr_runtime_call",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -489,6 +489,21 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('_sh_annotate_runtime_attr_expr(', postfix_text)
         self.assertNotIn('node["lowered_kind"] = "BuiltinAttr"', postfix_text)
         self.assertNotIn('node["runtime_call"] = attr_runtime_call', postfix_text)
+
+    def test_core_source_centralizes_noncpp_attr_runtime_lookup(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_lookup_noncpp_attr_runtime_call", 1)[1].split(
+            "def _sh_set_parse_context",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn("def _sh_lookup_noncpp_attr_runtime_call(", text)
+        self.assertIn("if owner_name in _SH_IMPORT_MODULES:", helper_text)
+        self.assertIn("if owner_name in _SH_IMPORT_SYMBOLS:", helper_text)
+        self.assertGreaterEqual(postfix_text.count("_sh_lookup_noncpp_attr_runtime_call("), 2)
+        self.assertNotIn("if isinstance(owner_expr, dict) and owner_expr.get(\"kind\") == \"Name\":", postfix_text)
+        self.assertNotIn("if isinstance(owner, dict) and owner.get(\"kind\") == \"Name\":", postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")

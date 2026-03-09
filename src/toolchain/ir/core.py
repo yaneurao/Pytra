@@ -159,6 +159,32 @@ def _sh_annotate_runtime_attr_expr(
     return payload
 
 
+def _sh_lookup_noncpp_attr_runtime_call(
+    owner_expr: dict[str, Any] | None,
+    attr_name: str,
+) -> tuple[str, str]:
+    if not isinstance(owner_expr, dict) or owner_expr.get("kind") != "Name":
+        return "", ""
+    owner_name = str(owner_expr.get("id", "")).strip()
+    if owner_name == "":
+        return "", ""
+    if owner_name in _SH_IMPORT_MODULES:
+        runtime_owner = _SH_IMPORT_MODULES[owner_name]
+        runtime_call = lookup_noncpp_module_attr_runtime_call(runtime_owner, attr_name)
+        if runtime_call != "":
+            return runtime_owner, runtime_call
+    if owner_name in _SH_IMPORT_SYMBOLS:
+        binding = _SH_IMPORT_SYMBOLS[owner_name]
+        mod_name = str(binding.get("module", "")).strip()
+        sym_name = str(binding.get("name", "")).strip()
+        if mod_name != "" and sym_name != "":
+            runtime_owner = mod_name + "." + sym_name
+            runtime_call = lookup_noncpp_module_attr_runtime_call(runtime_owner, attr_name)
+            if runtime_call != "":
+                return runtime_owner, runtime_call
+    return "", ""
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -4431,27 +4457,10 @@ class _ShExprParser:
                     attr_runtime_call = lookup_stdlib_method_runtime_call(owner_t, attr_name)
                     attr_semantic_tag = lookup_stdlib_method_semantic_tag(attr_name)
                 owner_expr = node
-                noncpp_module_attr_runtime_call = ""
-                noncpp_module_attr_runtime_owner = ""
-                if isinstance(owner_expr, dict) and owner_expr.get("kind") == "Name":
-                    owner_name = str(owner_expr.get("id", "")).strip()
-                    if owner_name != "":
-                        if owner_name in _SH_IMPORT_MODULES:
-                            noncpp_module_attr_runtime_owner = _SH_IMPORT_MODULES[owner_name]
-                            noncpp_module_attr_runtime_call = lookup_noncpp_module_attr_runtime_call(
-                                noncpp_module_attr_runtime_owner,
-                                attr_name,
-                            )
-                        if noncpp_module_attr_runtime_call == "" and owner_name in _SH_IMPORT_SYMBOLS:
-                            binding = _SH_IMPORT_SYMBOLS[owner_name]
-                            mod_name = str(binding.get("module", "")).strip()
-                            sym_name = str(binding.get("name", "")).strip()
-                            if mod_name != "" and sym_name != "":
-                                noncpp_module_attr_runtime_owner = mod_name + "." + sym_name
-                                noncpp_module_attr_runtime_call = lookup_noncpp_module_attr_runtime_call(
-                                    noncpp_module_attr_runtime_owner,
-                                    attr_name,
-                                )
+                (
+                    noncpp_module_attr_runtime_owner,
+                    noncpp_module_attr_runtime_call,
+                ) = _sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)
                 node = _sh_make_attribute_expr(
                     self._node_span(s, e),
                     owner_expr,
@@ -4881,27 +4890,10 @@ class _ShExprParser:
                     attr = str(node.get("attr", ""))
                     owner = node.get("value")
                     owner_t = str(owner.get("resolved_type", "unknown")) if isinstance(owner, dict) else "unknown"
-                    noncpp_module_runtime_call = ""
-                    noncpp_module_runtime_owner = ""
-                    if isinstance(owner, dict) and owner.get("kind") == "Name":
-                        owner_name = str(owner.get("id", "")).strip()
-                        if owner_name != "":
-                            if owner_name in _SH_IMPORT_MODULES:
-                                noncpp_module_runtime_owner = _SH_IMPORT_MODULES[owner_name]
-                                noncpp_module_runtime_call = lookup_noncpp_module_attr_runtime_call(
-                                    noncpp_module_runtime_owner,
-                                    attr,
-                                )
-                            if noncpp_module_runtime_call == "" and owner_name in _SH_IMPORT_SYMBOLS:
-                                binding = _SH_IMPORT_SYMBOLS[owner_name]
-                                mod_name = str(binding.get("module", "")).strip()
-                                sym_name = str(binding.get("name", "")).strip()
-                                if mod_name != "" and sym_name != "":
-                                    noncpp_module_runtime_owner = mod_name + "." + sym_name
-                                    noncpp_module_runtime_call = lookup_noncpp_module_attr_runtime_call(
-                                        noncpp_module_runtime_owner,
-                                        attr,
-                                    )
+                    (
+                        noncpp_module_runtime_owner,
+                        noncpp_module_runtime_call,
+                    ) = _sh_lookup_noncpp_attr_runtime_call(owner if isinstance(owner, dict) else None, attr)
                     if noncpp_module_runtime_call != "":
                         binding_semantic_tag = lookup_runtime_binding_semantic_tag(
                             noncpp_module_runtime_owner,
