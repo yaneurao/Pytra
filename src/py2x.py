@@ -432,9 +432,7 @@ def main() -> int:
         target_lang=target_lang,
     )
     for linked_module in program.modules:
-        linked_doc = getattr(linked_module, "east_doc", {})
-        if isinstance(linked_doc, dict):
-            validate_ambient_global_target_support(linked_doc, target=target)
+        validate_ambient_global_target_support(linked_module.east_doc, target=target)
     if dump_east3_dir != "":
         manifest_path, module_paths = write_link_input_bundle(Path(dump_east3_dir), program)
         _write_generated_paths([manifest_path] + module_paths)

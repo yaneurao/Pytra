@@ -266,10 +266,8 @@ def main(argv: list[str] | None = None) -> int:
         if isinstance(link_target, str) and link_target != "" and link_target != target:
             _fatal("target mismatch for link-output: " + link_target + " != " + target)
         for linked_module in linked_modules:
-            linked_doc = getattr(linked_module, "east_doc", {})
-            if isinstance(linked_doc, dict):
-                validate_ambient_global_target_support(linked_doc, target=target)
-                validate_runtime_abi_target_support(linked_doc, target=target)
+            validate_ambient_global_target_support(linked_module.east_doc, target=target)
+            validate_runtime_abi_target_support(linked_module.east_doc, target=target)
         spec = get_backend_spec(target)
         try:
             lower_options = resolve_layer_options(spec, "lower", lower_raw)
