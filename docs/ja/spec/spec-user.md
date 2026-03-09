@@ -6,7 +6,7 @@
 
 
 このドキュメントは、Pytra の利用方法と入力制約をまとめた仕様です。
-本書は仕様定義にフォーカスし、実行コマンドや実行手順は [使い方ガイド](../how-to-use.md) で管理します。
+本書は仕様定義にフォーカスし、実行コマンドや実行手順は [tutorial/how-to-use.md](../tutorial/how-to-use.md) で管理します。
 
 ## 1. 目的
 
@@ -126,7 +126,7 @@ python -m unittest discover -s test/unit/common -p "test_fixtures_truth.py" -v
 
 ## 7. 関連ドキュメント
 
-- 使い方: [使い方ガイド](../how-to-use.md)
+- 使い方: [tutorial/how-to-use.md](../tutorial/how-to-use.md)
 - py2cpp 機能対応表（テスト根拠）: [py2cpp サポートマトリクス](../language/cpp/spec-support.md)
 - サンプルコード: [サンプルコード案内](../../sample/readme-ja.md)
 - 実装状況詳細: [実装状況メモ（WIP）](../plans/pytra-wip.md)

@@ -1,6 +1,6 @@
 # 開発運用ガイド
 
-このページは、parity、local CI、backend health など、日常開発で使う運用手順をまとめたものです。
+このページは、[tutorial/how-to-use.md](./tutorial/how-to-use.md) には載せない parity、local CI、backend health などの日常開発向け運用手順をまとめたものです。
 
 ## 実行時間計測プロトコル（sample）
 

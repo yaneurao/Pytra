@@ -50,13 +50,15 @@
 
 ## 分解
 
-- [ ] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S1-01` 参照元と再配置方針を棚卸しする
-- [ ] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S2-01` `docs/ja/tutorial/README.md` を新設する
-- [ ] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S3-01` 実行手順本文を `docs/ja/tutorial/how-to-use.md` へ移す
-- [ ] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S3-02` 旧 `docs/ja/how-to-use.md` を redirect/stub 化する
-- [ ] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S4-01` 代表 docs のリンクを tutorial 入口へ更新する
-- [ ] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S5-01` 検証して archive する
+- [x] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S1-01` 参照元と再配置方針を棚卸しする
+- [x] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S2-01` `docs/ja/tutorial/README.md` を新設する
+- [x] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S3-01` 実行手順本文を `docs/ja/tutorial/how-to-use.md` へ移す
+- [x] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S3-02` 旧 `docs/ja/how-to-use.md` を redirect/stub 化する
+- [x] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S4-01` 代表 docs のリンクを tutorial 入口へ更新する
+- [x] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S5-01` 検証して archive する
 
 ## 決定ログ
 
 - 2026-03-09: tutorial/ を新設し、`how-to-use.md` を tutorial 本文へ移したうえで旧 path は互換 stub として残す方針を採る。
+- 2026-03-09: `docs/ja/tutorial/README.md` を新しい入口として追加し、`docs/ja/tutorial/how-to-use.md` へ実行手順本文を移した。旧 `docs/ja/how-to-use.md` は redirect/stub として残した。
+- 2026-03-09: live docs の参照は `README.md`, `docs/ja/README.md`, `docs/ja/index.md`, `spec-user.md`, `spec-tools.md`, `spec-options.md`, `spec-codex.md`, `advanced-usage.md`, `dev-operations.md` を tutorial 導線へ更新し、archive / 旧計画書内の履歴参照はそのまま維持した。

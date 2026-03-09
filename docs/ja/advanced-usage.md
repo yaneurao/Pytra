@@ -1,6 +1,6 @@
 # 発展的な使い方
 
-このページは、`how-to-use.md` には載せない高度な変換ルートと runtime helper 注釈をまとめたものです。
+このページは、[tutorial/how-to-use.md](./tutorial/how-to-use.md) には載せない高度な変換ルートと runtime helper 注釈をまとめたものです。
 
 ## C++ max-opt route
 

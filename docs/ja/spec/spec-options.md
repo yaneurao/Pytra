@@ -160,7 +160,7 @@
 1. `docs/ja/spec/spec-options.md`（オプション定義・既定値・preset）
 2. `docs/ja/spec/spec-dev.md`（実装仕様と CLI 反映）
 3. `docs/ja/spec/spec-east.md`（EAST 側と生成器側の責務境界）
-4. `docs/ja/how-to-use.md`（利用例）
+4. `docs/ja/tutorial/how-to-use.md`（利用例）
 
 更新後は次を確認する。
 

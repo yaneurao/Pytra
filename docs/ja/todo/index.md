@@ -32,10 +32,4 @@
 
 ## 未完了タスク
 
-- [ ] [P0-DOCS-TUTORIAL-RESTRUCTURE-01](../plans/p0-docs-tutorial-restructure-01.md)
-  - [ ] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S1-01` 参照元と再配置方針を棚卸しする
-  - [ ] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S2-01` `docs/ja/tutorial/README.md` を新設する
-  - [ ] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S3-01` 実行手順本文を `docs/ja/tutorial/how-to-use.md` へ移す
-  - [ ] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S3-02` 旧 `docs/ja/how-to-use.md` を redirect/stub 化する
-  - [ ] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S4-01` 代表 docs のリンクを tutorial 入口へ更新する
-  - [ ] `P0-DOCS-TUTORIAL-RESTRUCTURE-01-S5-01` 検証して archive する
+- なし

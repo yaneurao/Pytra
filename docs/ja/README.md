@@ -11,6 +11,7 @@
     <h1>Pytra</h1>
     <img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white">（subset）は Pytra の入力言語で、Pytra はそのコードを複数のターゲット言語へトランスパイルします。
     <p><a href="./index.md">ドキュメントを読む</a></p>
+    <p><a href="./tutorial/README.md">はじめて使う</a></p>
 </div>
 
 <div align="center">

@@ -10,6 +10,7 @@
     <h1>Pytra</h1>
     <img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white"> (subset) is the source language for Pytra, which transpiles code into multiple target languages.
     <p><a href="docs/en/index.md">Read the Docs</a></p>
+    <p><a href="docs/ja/tutorial/README.md">Getting Started (Japanese)</a></p>
 </div>
 
 <div align="center">
