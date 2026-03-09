@@ -49,7 +49,7 @@
 11. [x] [ID: P1-EAST-TYPEEXPR-01-S5-02] 他 backend でも `String/object` fallback を棚卸しし、`TypeExpr` 非対応 union の扱いを明示エラーまたは guarded compat に揃える。
 12. [x] [ID: P1-EAST-TYPEEXPR-01-S6-01] representative `JsonValue` lane を `TypeExpr`/nominal ADT 契約に乗せ、runtime 先行ではなく IR contract 先行で進められることを確認する。
 13. [ ] [ID: P1-EAST-TYPEEXPR-01-S6-02] selfhost / unit / docs / archive を更新し、stringly-typed union debt の再流入を防ぐ guard を追加する。
-- 進捗メモ: [ID: P1-EAST-TYPEEXPR-01-S6-02] `S6-01` で representative `JsonValue` decode lane の semantic inference を `TypeExpr`/nominal summary ベースへ寄せ、`receiver_nominal_adt_name` を含む IR metadata と mismatch failure を固定した。次は selfhost/docs/archive と再流入 guard を仕上げる。
+- 進捗メモ: [ID: P1-EAST-TYPEEXPR-01-S6-02] `S6-01` で representative `json.value.as_obj` lane に `json_decode_v1.contract_source` を導入し、structured `TypeExpr` を最優先、既存 runtime/selfhost lane は `resolved_type_compat` として明示した。次は selfhost/docs/archive と再流入 guard を仕上げる。
 
 ### P2: compiler boundary を typed 化し、internal object carrier と `make_object` 依存を後退させる
 
