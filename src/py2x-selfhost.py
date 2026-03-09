@@ -6,15 +6,15 @@ This entrypoint keeps static backend imports by using backend_registry_static.
 
 from __future__ import annotations
 
-from toolchain.compiler.backend_registry_static import apply_runtime_hook
+from toolchain.compiler.backend_registry_static import apply_runtime_hook_typed
 from toolchain.compiler.backend_registry_static import default_output_path
-from toolchain.compiler.backend_registry_static import emit_source
-from toolchain.compiler.backend_registry_static import get_backend_spec
+from toolchain.compiler.backend_registry_static import emit_source_typed
+from toolchain.compiler.backend_registry_static import get_backend_spec_typed
 from toolchain.compiler.backend_registry_static import list_backend_targets
-from toolchain.compiler.backend_registry_static import lower_ir
-from toolchain.compiler.backend_registry_static import optimize_ir
-from toolchain.compiler.backend_registry_static import resolve_layer_options
-from toolchain.compiler.transpile_cli import load_east3_document
+from toolchain.compiler.backend_registry_static import lower_ir_typed
+from toolchain.compiler.backend_registry_static import optimize_ir_typed
+from toolchain.compiler.backend_registry_static import resolve_layer_options_typed
+from toolchain.compiler.transpile_cli import load_east3_document_typed
 from pytra.std.pathlib import Path
 from pytra.std import sys
 
@@ -25,77 +25,6 @@ def _list_targets() -> list[str]:
 
 def _default_output(input_path: Path, target: str) -> Path:
     return default_output_path(input_path, target)
-
-
-def _load_east3(
-    input_path: Path,
-    parser_backend: str,
-    object_dispatch_mode: str,
-    east3_opt_level: str,
-    east3_opt_pass: str,
-    dump_east3_before_opt: str,
-    dump_east3_after_opt: str,
-    dump_east3_opt_trace: str,
-    target_lang: str,
-) -> dict[str, object]:
-    doc = load_east3_document(
-        input_path,
-        parser_backend=parser_backend,
-        object_dispatch_mode=object_dispatch_mode,
-        east3_opt_level=east3_opt_level,
-        east3_opt_pass=east3_opt_pass,
-        dump_east3_before_opt=dump_east3_before_opt,
-        dump_east3_after_opt=dump_east3_after_opt,
-        dump_east3_opt_trace=dump_east3_opt_trace,
-        target_lang=target_lang,
-    )
-    if isinstance(doc, dict):
-        return doc
-    return {}
-
-
-def _get_spec(target: str) -> dict[str, object]:
-    raw = get_backend_spec(target)
-    if isinstance(raw, dict):
-        return raw
-    return {}
-
-
-def _resolve_opts(spec: dict[str, object], layer: str, raw: dict[str, str]) -> dict[str, object]:
-    out = resolve_layer_options(spec, layer, raw)
-    if isinstance(out, dict):
-        return out
-    return {}
-
-
-def _lower(spec: dict[str, object], east: dict[str, object], lower_options: dict[str, object]) -> dict[str, object]:
-    out = lower_ir(spec, east, lower_options)
-    if isinstance(out, dict):
-        return out
-    return {}
-
-
-def _optimize(spec: dict[str, object], ir: dict[str, object], optimizer_options: dict[str, object]) -> dict[str, object]:
-    out = optimize_ir(spec, ir, optimizer_options)
-    if isinstance(out, dict):
-        return out
-    return {}
-
-
-def _emit(
-    spec: dict[str, object],
-    ir: dict[str, object],
-    output_path: Path,
-    emitter_options: dict[str, object],
-) -> str:
-    out = emit_source(spec, ir, output_path, emitter_options)
-    if isinstance(out, str):
-        return out
-    return ""
-
-
-def _apply_runtime(spec: dict[str, object], output_path: Path) -> None:
-    apply_runtime_hook(spec, output_path)
 
 
 def _fatal(msg: str) -> None:
@@ -245,39 +174,36 @@ def main() -> int:
     if east_stage == "2":
         _fatal("--east-stage 2 is no longer supported; use EAST3 (default).")
 
-    spec = _get_spec(target)
+    spec = get_backend_spec_typed(target)
     lower_raw = _parse_layer_option_items(layer_option_items["lower"], "--lower-option")
     optimizer_raw = _parse_layer_option_items(layer_option_items["optimizer"], "--optimizer-option")
     emitter_raw = _parse_layer_option_items(layer_option_items["emitter"], "--emitter-option")
-    lower_options: dict[str, object] = {}
-    optimizer_options: dict[str, object] = {}
-    emitter_options: dict[str, object] = {}
     try:
-        lower_options = _resolve_opts(spec, "lower", lower_raw)
-        optimizer_options = _resolve_opts(spec, "optimizer", optimizer_raw)
-        emitter_options = _resolve_opts(spec, "emitter", emitter_raw)
+        lower_options = resolve_layer_options_typed(spec, "lower", lower_raw)
+        optimizer_options = resolve_layer_options_typed(spec, "optimizer", optimizer_raw)
+        emitter_options = resolve_layer_options_typed(spec, "emitter", emitter_raw)
+        target_lang = spec.carrier.target_lang
+        if target_lang == "":
+            target_lang = target
+        east = load_east3_document_typed(
+            input_path,
+            parser_backend=parser_backend,
+            object_dispatch_mode=object_dispatch_mode,
+            east3_opt_level=east3_opt_level,
+            east3_opt_pass=east3_opt_pass,
+            dump_east3_before_opt=dump_east3_before_opt,
+            dump_east3_after_opt=dump_east3_after_opt,
+            dump_east3_opt_trace=dump_east3_opt_trace,
+            target_lang=target_lang,
+        )
+        ir = lower_ir_typed(spec, east, lower_options)
+        ir = optimize_ir_typed(spec, ir, optimizer_options)
+        out_src = emit_source_typed(spec, ir, output_path, emitter_options)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(out_src, encoding="utf-8")
+        apply_runtime_hook_typed(spec, output_path)
     except Exception as ex:
         _fatal(str(ex))
-
-    target_lang = str(spec.get("target_lang", target))
-    east = _load_east3(
-        input_path,
-        parser_backend=parser_backend,
-        object_dispatch_mode=object_dispatch_mode,
-        east3_opt_level=east3_opt_level,
-        east3_opt_pass=east3_opt_pass,
-        dump_east3_before_opt=dump_east3_before_opt,
-        dump_east3_after_opt=dump_east3_after_opt,
-        dump_east3_opt_trace=dump_east3_opt_trace,
-        target_lang=target_lang,
-    )
-    ir = _lower(spec, east, lower_options)
-    ir = _optimize(spec, ir, optimizer_options)
-    out_src = _emit(spec, ir, output_path, emitter_options)
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(out_src, encoding="utf-8")
-    _apply_runtime(spec, output_path)
     return 0
 
 
