@@ -1,4 +1,5 @@
 #include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/core/process_runtime.h"
 
 #include "runtime/cpp/generated/std/sys.h"
 

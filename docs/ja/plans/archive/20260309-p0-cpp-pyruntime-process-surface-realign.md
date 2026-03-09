@@ -63,3 +63,5 @@
 ## 4. 決定ログ
 
 - 2026-03-09: 本計画は process / argv surface の dedicated lane 化を目的とし、`pytra_configure_from_argv` の意味変更や runtime state policy の再設計は非対象とする。
+- 2026-03-09: dedicated lane は `runtime/cpp/core/process_runtime.h` / `runtime/cpp/native/core/process_runtime.h` の header-only surface とし、`py_runtime.h` には compat alias を残さない。
+- 2026-03-09: checked-in direct caller は `native/std/sys.cpp`, `generated/std/argparse.cpp`, `CPP_HEADER`, multi-file prelude に限られ、`runtime_calls.json` の surface 名は維持する。

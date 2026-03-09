@@ -2,6 +2,7 @@
 // source: src/pytra/std/argparse.py
 // generated-by: src/backends/cpp/cli.py
 #include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/core/process_runtime.h"
 
 #include "runtime/cpp/generated/std/argparse.h"
 

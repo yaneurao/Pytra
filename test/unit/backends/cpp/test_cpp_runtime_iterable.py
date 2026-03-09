@@ -283,6 +283,8 @@ int main() {
 
     def test_runtime_list_overload_inventory(self) -> None:
         forwarder_header = (ROOT / "src/runtime/cpp/core/py_runtime.h").read_text(encoding="utf-8")
+        process_forwarder = (ROOT / "src/runtime/cpp/core/process_runtime.h").read_text(encoding="utf-8")
+        process_native = (ROOT / "src/runtime/cpp/native/core/process_runtime.h").read_text(encoding="utf-8")
         scope_exit_forwarder = (ROOT / "src/runtime/cpp/core/scope_exit.h").read_text(encoding="utf-8")
         scope_exit_native = (ROOT / "src/runtime/cpp/native/core/scope_exit.h").read_text(encoding="utf-8")
         runtime_header = (ROOT / "src/runtime/cpp/native/core/py_runtime.h").read_text(encoding="utf-8")
@@ -296,6 +298,9 @@ int main() {
         type_id_cpp = (ROOT / "src/runtime/cpp/generated/built_in/type_id.cpp").read_text(encoding="utf-8")
 
         self.assertIn('#include "runtime/cpp/native/core/py_runtime.h"', forwarder_header)
+        self.assertIn('#include "runtime/cpp/native/core/process_runtime.h"', process_forwarder)
+        self.assertIn("static inline list<str> py_runtime_argv()", process_native)
+        self.assertIn("[[noreturn]] static inline void py_runtime_exit(int64 code = 0)", process_native)
         self.assertIn('#include "runtime/cpp/native/core/scope_exit.h"', scope_exit_forwarder)
         self.assertIn("class py_scope_exit", scope_exit_native)
         self.assertIn("static inline auto py_make_scope_exit(F&& fn)", scope_exit_native)
@@ -360,6 +365,12 @@ int main() {
         self.assertNotIn("template <class T> static inline bool py_is_str(const ::std::optional<T>& v)", runtime_header)
         self.assertNotIn("template <class T> static inline bool py_is_bool(const ::std::optional<T>& v)", runtime_header)
         self.assertNotIn("static inline list<str>& py_runtime_argv_storage()", runtime_header)
+        self.assertNotIn("inline list<str> py_runtime_argv_storage_v{}", runtime_header)
+        self.assertNotIn("static inline list<str> py_runtime_argv()", runtime_header)
+        self.assertNotIn("static inline void py_runtime_set_argv(const list<str>& values)", runtime_header)
+        self.assertNotIn("static inline void py_runtime_write_stderr(const str& text)", runtime_header)
+        self.assertNotIn("static inline void py_runtime_write_stdout(const str& text)", runtime_header)
+        self.assertNotIn("[[noreturn]] static inline void py_runtime_exit(int64 code = 0)", runtime_header)
         self.assertNotIn("class py_scope_exit", runtime_header)
         self.assertNotIn("static inline auto py_make_scope_exit(F&& fn)", runtime_header)
         self.assertNotIn("static inline object py_dict_get(const dict<str, object>& d, const char* key)", runtime_header)
