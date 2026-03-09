@@ -1352,6 +1352,16 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         self.assertEqual(cp.returncode, 0, msg=f"{cp.stdout}\n{cp.stderr}")
         self.assertIn("static contract checks passed", cp.stdout)
 
+    def test_jsonvalue_typeexpr_contract_script_passes(self) -> None:
+        cp = subprocess.run(
+            ["python3", "tools/check_jsonvalue_typeexpr_contract.py"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(cp.returncode, 0, msg=f"{cp.stdout}\n{cp.stderr}")
+        self.assertIn("jsonvalue TypeExpr contract guard passed", cp.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

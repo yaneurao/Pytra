@@ -169,6 +169,17 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def check_guard_limit(", support_blocks)
         self.assertNotIn("def build_cpp_hooks() -> dict[str, Any]:", support_blocks)
 
+    def test_extract_type_expr_support_blocks_keeps_json_nominal_helpers(self) -> None:
+        mod = _load_prepare_module()
+        support_blocks = mod._extract_type_expr_support_blocks()
+        self.assertIn("_JSON_NOMINALS: set[str] = {\"JsonValue\", \"JsonObj\", \"JsonArr\"}", support_blocks)
+        self.assertIn("def _make_union_type_expr(options: list[dict[str, Any]]) -> dict[str, Any]:", support_blocks)
+        self.assertIn("def parse_type_expr_text(raw_text: str, *, type_aliases: dict[str, str] | None = None) -> dict[str, Any]:", support_blocks)
+        self.assertIn("def type_expr_to_string(expr: dict[str, Any]) -> str:", support_blocks)
+        self.assertIn("def normalize_type_text(raw_text: str, *, type_aliases: dict[str, str] | None = None) -> str:", support_blocks)
+        self.assertIn("if name in _JSON_NOMINALS:", support_blocks)
+        self.assertIn("\"kind\": \"NominalAdtType\"", support_blocks)
+
     def test_load_cpp_hooks_uses_factory_fallback_in_merged_source(self) -> None:
         mod = _load_prepare_module()
         py2cpp_text = mod.SRC_PY2CPP.read_text(encoding="utf-8")
