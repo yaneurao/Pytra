@@ -91,6 +91,22 @@ def _meta_dispatch_mode(raw_doc: dict[str, object]) -> str:
     return dispatch_any if isinstance(dispatch_any, str) else ""
 
 
+def export_compiler_root_document(doc: "CompilerRootDocument") -> dict[str, object]:
+    out = dict(doc.raw_module_doc)
+    out["kind"] = doc.module_kind
+    if doc.meta.source_path != "":
+        out["source_path"] = doc.meta.source_path
+    out["east_stage"] = doc.meta.east_stage
+    out["schema_version"] = doc.meta.schema_version
+    meta_any = out.get("meta", {})
+    meta = meta_any if isinstance(meta_any, dict) else {}
+    meta["dispatch_mode"] = doc.meta.dispatch_mode
+    if doc.meta.parser_backend != "":
+        meta["parser_backend"] = doc.meta.parser_backend
+    out["meta"] = meta
+    return out
+
+
 @dataclass(frozen=True)
 class CompilerRootMeta:
     source_path: str
@@ -142,19 +158,7 @@ class CompilerRootDocument:
         )
 
     def to_legacy_dict(self) -> dict[str, object]:
-        out = dict(self.raw_module_doc)
-        out["kind"] = self.module_kind
-        if self.meta.source_path != "":
-            out["source_path"] = self.meta.source_path
-        out["east_stage"] = self.meta.east_stage
-        out["schema_version"] = self.meta.schema_version
-        meta_any = out.get("meta", {})
-        meta = meta_any if isinstance(meta_any, dict) else {}
-        meta["dispatch_mode"] = self.meta.dispatch_mode
-        if self.meta.parser_backend != "":
-            meta["parser_backend"] = self.meta.parser_backend
-        out["meta"] = meta
-        return out
+        return export_compiler_root_document(self)
 
 
 @dataclass(frozen=True)

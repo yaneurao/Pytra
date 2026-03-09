@@ -92,6 +92,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native `CompilerRootDocument::to_legacy_dict()` の `kind/source_path/east_stage/schema_version/meta` 更新を typed dict conversion ベースへ寄せ、`transpile_cli.cpp` 側の explicit `make_object(...)` 呼び出しを 0 にした。boxing は dict conversion と adapter seam の内部 detail へ後退し、`test_py2x_entrypoints_contract.py` と `python3 tools/build_selfhost.py` で非退行を確認した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native `lower_ir_typed()` / `optimize_ir_typed()` は no-op lane で `spec.to_legacy_dict()` / `lower_options.to_legacy_dict()` / `optimizer_options.to_legacy_dict()` を踏まず、typed selfhost path から legacy adapter を一段後退させた。`test_py2x_entrypoints_contract.py` では旧 delegate call の不在も固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native `lower_ir_typed()` / `optimize_ir_typed()` は `spec.to_legacy_dict()` と option carrier の再 boxing をやめ、現在の selfhost direct route 実装に合わせて `east.to_legacy_dict()` / `ir` をそのまま返す thin adapter に縮めた。`test_py2x_entrypoints_contract.py` で旧 round-trip の再流入を禁止し、`python3 tools/build_selfhost.py` でも非退行を確認した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native `transpile_cli.cpp` の host-Python direct route は `doc.to_legacy_dict()` を直叩きせず、`typed_boundary.export_compiler_root_document()` 経由の explicit export seam に切り替えた。`CompilerRootDocument::to_legacy_dict()` は互換 adapter として残しつつ、`test_py2x_entrypoints_contract.py` で埋め込み script の export helper 契約を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

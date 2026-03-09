@@ -204,6 +204,7 @@ CompilerRootDocument load_east3_document_typed(
     const ::std::string script =
         "import json, sys; "
         "from toolchain.compiler.transpile_cli import load_east3_document_typed; "
+        "from toolchain.compiler.typed_boundary import export_compiler_root_document; "
         "from pytra.std.pathlib import Path; "
         "doc = load_east3_document_typed("
         "Path(sys.argv[1]), "
@@ -215,7 +216,7 @@ CompilerRootDocument load_east3_document_typed(
         "dump_east3_after_opt=sys.argv[8], "
         "dump_east3_opt_trace=sys.argv[9], "
         "target_lang=sys.argv[10]); "
-        "open(sys.argv[2], 'w', encoding='utf-8').write(json.dumps(doc.to_legacy_dict(), ensure_ascii=False, indent=2) + '\\n')";
+        "open(sys.argv[2], 'w', encoding='utf-8').write(json.dumps(export_compiler_root_document(doc), ensure_ascii=False, indent=2) + '\\n')";
     const ::std::string cmd =
         "PYTHONPATH=src${PYTHONPATH:+:$PYTHONPATH} python3 -c "
         + _shell_quote(script)

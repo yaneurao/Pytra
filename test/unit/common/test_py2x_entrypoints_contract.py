@@ -140,6 +140,18 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             native_transpile,
         )
         self.assertIn("pytra::std::json::JsonObj doc = root;", native_transpile)
+        self.assertIn(
+            "from toolchain.compiler.typed_boundary import export_compiler_root_document; ",
+            native_transpile,
+        )
+        self.assertIn(
+            "json.dumps(export_compiler_root_document(doc), ensure_ascii=False, indent=2)",
+            native_transpile,
+        )
+        self.assertNotIn(
+            "json.dumps(doc.to_legacy_dict(), ensure_ascii=False, indent=2)",
+            native_transpile,
+        )
 
         transpile_make_object_lines = [
             line.strip()
@@ -209,6 +221,27 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             parser_backend="self_hosted",
         )
         self.assertIs(typed_boundary.coerce_compiler_root_document(doc), doc)
+
+    def test_export_compiler_root_document_matches_legacy_adapter(self) -> None:
+        raw_doc = {
+            "kind": "Module",
+            "body": [],
+            "meta": {"dispatch_mode": "native"},
+        }
+        doc = typed_boundary.coerce_compiler_root_document(
+            raw_doc,
+            source_path="demo.py",
+            parser_backend="self_hosted",
+        )
+
+        self.assertEqual(
+            typed_boundary.export_compiler_root_document(doc),
+            doc.to_legacy_dict(),
+        )
+        self.assertEqual(
+            typed_boundary.export_compiler_root_document(doc)["meta"]["parser_backend"],
+            "self_hosted",
+        )
 
     def test_build_program_artifact_preserves_helper_kind_metadata(self) -> None:
         fake_spec = {"target_lang": "cpp"}
