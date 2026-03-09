@@ -1301,7 +1301,7 @@ def _sh_make_module_source_span() -> dict[str, Any]:
 
 
 def _sh_make_import_resolution_meta(
-    bindings: list[dict[str, str]],
+    bindings: list[dict[str, Any]],
     qualified_refs: list[dict[str, str]],
 ) -> dict[str, Any]:
     """module meta.import_resolution carrier を構築する。"""
@@ -1315,7 +1315,7 @@ def _sh_make_import_resolution_meta(
 def _sh_make_module_meta(
     *,
     import_resolution: dict[str, Any],
-    import_bindings: list[dict[str, str]],
+    import_bindings: list[dict[str, Any]],
     qualified_symbol_refs: list[dict[str, str]],
     import_module_bindings: dict[str, str],
     import_symbol_bindings: dict[str, dict[str, str]],
@@ -1337,9 +1337,9 @@ def _sh_make_module_root(
     body_items: list[dict[str, Any]],
     main_stmts: list[dict[str, Any]],
     renamed_symbols: dict[str, str],
-    import_resolution_bindings: list[dict[str, str]],
+    import_resolution_bindings: list[dict[str, Any]],
     qualified_symbol_refs: list[dict[str, str]],
-    import_bindings: list[dict[str, str]],
+    import_bindings: list[dict[str, Any]],
     import_module_bindings: dict[str, str],
     import_symbol_bindings: dict[str, dict[str, str]],
 ) -> dict[str, Any]:
@@ -3466,14 +3466,52 @@ def _sh_append_import_binding(
     )
 
 
-def _import_resolution_binding(binding: dict[str, Any]) -> dict[str, Any]:
-    out = dict(binding)
-    resolution = resolve_import_binding_doc(
-        str(binding.get("module_id", "")),
-        str(binding.get("export_name", "")),
-        str(binding.get("binding_kind", "")),
+def _sh_import_binding_fields(binding: dict[str, Any]) -> tuple[str, str, str, str, str, int]:
+    """import binding raw dict から共通 field を取り出す。"""
+    module_id_obj = binding.get("module_id")
+    export_name_obj = binding.get("export_name")
+    local_name_obj = binding.get("local_name")
+    binding_kind_obj = binding.get("binding_kind")
+    source_file_obj = binding.get("source_file")
+    source_line_obj = binding.get("source_line")
+    module_id = module_id_obj if isinstance(module_id_obj, str) else ""
+    export_name = export_name_obj if isinstance(export_name_obj, str) else ""
+    local_name = local_name_obj if isinstance(local_name_obj, str) else ""
+    binding_kind = binding_kind_obj if isinstance(binding_kind_obj, str) else ""
+    source_file = source_file_obj if isinstance(source_file_obj, str) else ""
+    source_line = source_line_obj if isinstance(source_line_obj, int) else 0
+    return module_id, export_name, local_name, binding_kind, source_file, source_line
+
+
+def _sh_make_import_resolution_binding(binding: dict[str, Any]) -> dict[str, Any]:
+    module_id, export_name, local_name, binding_kind, source_file, source_line = _sh_import_binding_fields(binding)
+    out = _sh_make_import_binding(
+        module_id=module_id,
+        export_name=export_name,
+        local_name=local_name,
+        binding_kind=binding_kind,
+        source_file=source_file,
+        source_line=source_line,
     )
-    for key, value in resolution.items():
+    resolution = resolve_import_binding_doc(
+        module_id,
+        export_name,
+        binding_kind,
+    )
+    for key in (
+        "source_module_id",
+        "source_export_name",
+        "source_binding_kind",
+        "runtime_module_id",
+        "runtime_group",
+        "resolved_binding_kind",
+        "runtime_symbol",
+        "runtime_symbol_kind",
+        "runtime_symbol_dispatch",
+        "runtime_semantic_tag",
+        "runtime_call_adapter_kind",
+    ):
+        value = resolution.get(key)
         if isinstance(value, str) and value != "":
             out[key] = value
     return out
@@ -8274,23 +8312,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     qualified_symbol_refs: list[dict[str, str]] = []
     import_resolution_bindings: list[dict[str, Any]] = []
     for binding in import_bindings:
-        import_resolution_bindings.append(_import_resolution_binding(binding))
-        module_id_obj = binding.get("module_id")
-        local_name_obj = binding.get("local_name")
-        export_name_obj = binding.get("export_name")
-        binding_kind_obj = binding.get("binding_kind")
-        module_id: str = ""
-        if isinstance(module_id_obj, str):
-            module_id = module_id_obj
-        local_name: str = ""
-        if isinstance(local_name_obj, str):
-            local_name = local_name_obj
-        export_name: str = ""
-        if isinstance(export_name_obj, str):
-            export_name = export_name_obj
-        binding_kind: str = ""
-        if isinstance(binding_kind_obj, str):
-            binding_kind = binding_kind_obj
+        import_resolution_bindings.append(_sh_make_import_resolution_binding(binding))
+        module_id, export_name, local_name, binding_kind, _source_file, _source_line = _sh_import_binding_fields(binding)
         if module_id == "" or local_name == "":
             continue
         if binding_kind == "module":

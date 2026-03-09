@@ -74,7 +74,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("def _sh_make_def_sig_info(", text)
         self.assertIn("def _sh_make_module_source_span(", text)
         self.assertIn("def _sh_make_import_resolution_meta(", text)
+        self.assertIn("def _sh_make_import_resolution_binding(", text)
         self.assertIn("def _sh_make_module_meta(", text)
+        self.assertIn("def _sh_import_binding_fields(", text)
+        self.assertIn("def _sh_make_import_resolution_binding(", text)
         self.assertIn("def _sh_make_assign_stmt(", text)
         self.assertIn("def _sh_make_ann_assign_stmt(", text)
         self.assertIn("def _sh_make_raise_stmt(", text)
@@ -102,6 +105,12 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('pre_import_symbol_bindings[alias_name] = {', text)
         self.assertNotIn('import_symbol_bindings[bind_name_dc] = {', text)
         self.assertNotIn('import_symbol_bindings[bind_name] = {', text)
+        self.assertNotIn("for key, value in resolution.items():", text)
+        module_root_tail = text.split("for binding in import_bindings:", 1)[1]
+        self.assertNotIn('module_id_obj = binding.get("module_id")', module_root_tail)
+        self.assertNotIn('local_name_obj = binding.get("local_name")', module_root_tail)
+        self.assertNotIn('export_name_obj = binding.get("export_name")', module_root_tail)
+        self.assertNotIn('binding_kind_obj = binding.get("binding_kind")', module_root_tail)
 
     def test_top_level_extern_decorator_is_preserved(self) -> None:
         src = """
