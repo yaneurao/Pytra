@@ -285,59 +285,39 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("module_artifact.to_legacy_dict()", ir2lang_src)
         self.assertNotIn("program_artifact.to_legacy_dict()", ir2lang_src)
 
-        self.assertIn("from toolchain.compiler.typed_boundary import export_compiler_root_document_any", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import export_compiler_root_document_any", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_layer_options_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_layer_options_any", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import coerce_ir_document", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import coerce_ir_document", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import execute_lower_ir_with_spec", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import execute_lower_ir_with_spec", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import execute_optimize_ir_with_spec", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import execute_optimize_ir_with_spec", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import execute_emit_module_with_spec", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import execute_emit_module_with_spec", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import collect_program_module_carriers", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import collect_program_module_carriers", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import build_program_artifact_from_modules", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import build_program_artifact_from_modules", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import normalize_emitted_module_artifact", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import normalize_emitted_module_artifact", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import build_resolved_backend_spec", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import build_resolved_backend_spec", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", static_src)
-        self.assertIn("doc = export_compiler_root_document_any(east_doc)", host_src)
-        self.assertIn("doc = export_compiler_root_document_any(east_doc)", static_src)
-        self.assertNotIn(
-            "doc = east_doc if isinstance(east_doc, dict) else export_compiler_root_document(coerce_compiler_root_document(east_doc))",
-            host_src,
-        )
-        self.assertNotIn(
-            "doc = east_doc if isinstance(east_doc, dict) else export_compiler_root_document(coerce_compiler_root_document(east_doc))",
-            static_src,
-        )
-        self.assertIn("ir = fn(doc, export_layer_options_carrier(options))", host_src)
-        self.assertIn("ir = fn(doc, export_layer_options_carrier(options))", static_src)
-        self.assertIn("out = fn(ir, export_layer_options_carrier(options))", host_src)
-        self.assertIn("out = fn(ir, export_layer_options_carrier(options))", static_src)
-        self.assertIn("return coerce_ir_document(ir)", host_src)
-        self.assertIn("return coerce_ir_document(ir)", static_src)
-        self.assertIn("return coerce_ir_document(out)", host_src)
-        self.assertIn("return coerce_ir_document(out)", static_src)
-        self.assertIn("return coerce_ir_document(doc)", host_src)
-        self.assertIn("return coerce_ir_document(doc)", static_src)
-        self.assertIn("ir_document=coerce_ir_document(ir)", host_src)
-        self.assertIn("ir_document=coerce_ir_document(ir)", static_src)
-        self.assertIn('opts = export_layer_options_any(emitter_options, layer="emitter")', host_src)
-        self.assertIn('opts = export_layer_options_any(emitter_options, layer="emitter")', static_src)
-        self.assertIn("export_layer_options_carrier(request.emitter_options)", host_src)
-        self.assertIn("export_layer_options_carrier(request.emitter_options)", static_src)
+        self.assertIn("return execute_lower_ir_with_spec(", host_src)
+        self.assertIn("return execute_lower_ir_with_spec(", static_src)
+        self.assertIn("return execute_optimize_ir_with_spec(", host_src)
+        self.assertIn("return execute_optimize_ir_with_spec(", static_src)
+        self.assertIn("return execute_emit_module_with_spec(", host_src)
+        self.assertIn("return execute_emit_module_with_spec(", static_src)
         self.assertIn("return export_resolved_backend_spec_any(_normalize_backend_runtime_spec(spec))", host_src)
         self.assertIn("return export_layer_options_any(resolve_layer_options_typed(spec, layer, raw_options))", host_src)
         self.assertIn("return export_layer_options_any(resolve_layer_options_typed(spec, layer, raw_options))", static_src)
         self.assertIn("return export_module_artifact_any(", host_src)
         self.assertIn("return export_module_artifact_any(", static_src)
-        self.assertIn("return normalize_emitted_module_artifact(artifact_any, request=request)", host_src)
-        self.assertIn("return normalize_emitted_module_artifact(artifact_any, request=request)", static_src)
         self.assertIn("return build_resolved_backend_spec(", host_src)
         self.assertIn("return build_resolved_backend_spec(", static_src)
         self.assertIn('default_program_writer=_load_callable("backends.common.program_writer", "write_single_file_program")', host_src)
@@ -373,6 +353,16 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("coerce_module_artifact_carrier(", static_src)
         self.assertNotIn("dict(ir) if isinstance(ir, dict) else {}", host_src)
         self.assertNotIn("dict(ir) if isinstance(ir, dict) else {}", static_src)
+        self.assertNotIn("doc = export_compiler_root_document_any(east_doc)", host_src)
+        self.assertNotIn("doc = export_compiler_root_document_any(east_doc)", static_src)
+        self.assertNotIn("ir = fn(doc, export_layer_options_carrier(options))", host_src)
+        self.assertNotIn("ir = fn(doc, export_layer_options_carrier(options))", static_src)
+        self.assertNotIn("out = fn(ir, export_layer_options_carrier(options))", host_src)
+        self.assertNotIn("out = fn(ir, export_layer_options_carrier(options))", static_src)
+        self.assertNotIn("request = EmitRequestCarrier(", host_src)
+        self.assertNotIn("request = EmitRequestCarrier(", static_src)
+        self.assertNotIn("return normalize_emitted_module_artifact(artifact_any, request=request)", host_src)
+        self.assertNotIn("return normalize_emitted_module_artifact(artifact_any, request=request)", static_src)
         self.assertNotIn("def _normalize_module_artifact(", host_src)
         self.assertNotIn("def _normalize_module_artifact(", static_src)
         self.assertNotIn("def _default_module_label(", host_src)
@@ -769,6 +759,104 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         )
         with self.assertRaisesRegex(RuntimeError, "emit failed for boom.txt"):
             strict_adapter({"kind": "Boom"}, Path("out/boom.txt"), {"mode": "typed"})
+
+    def test_execute_typed_boundary_helpers_preserve_host_static_error_policy(self) -> None:
+        def _identity(doc: object) -> dict[str, object]:
+            return {"kind": "IR", "doc": doc}
+
+        def _empty_emit(_ir: object, _output_path: Path, _opts: object = None) -> str:
+            return ""
+
+        def _runtime_none(_output_path: Path) -> None:
+            return None
+
+        def _default_writer(_program: dict[str, object], _output_path: Path, _opts: dict[str, object]) -> None:
+            return None
+
+        lower_spec = typed_boundary.build_resolved_backend_spec(
+            {
+                "target_lang": "fake",
+                "extension": ".txt",
+                "lower": lambda doc: {"kind": "IR", "doc": doc},
+            },
+            identity_ir=_identity,
+            empty_emit=_empty_emit,
+            runtime_none=_runtime_none,
+            default_program_writer=_default_writer,
+            suppress_emit_exceptions=True,
+        )
+        lowered = typed_boundary.execute_lower_ir_with_spec(
+            lower_spec,
+            {"kind": "Module"},
+            {"debug": "1"},
+            suppress_exceptions=False,
+        )
+        self.assertEqual(lowered["kind"], "IR")
+        self.assertEqual(lowered["doc"]["kind"], "Module")
+
+        def _lower_raises(doc: dict[str, object]) -> dict[str, object]:
+            raise RuntimeError("lower failed")
+
+        strict_lower_spec = typed_boundary.build_resolved_backend_spec(
+            {
+                "target_lang": "fake",
+                "extension": ".txt",
+                "lower": _lower_raises,
+            },
+            identity_ir=_identity,
+            empty_emit=_empty_emit,
+            runtime_none=_runtime_none,
+            default_program_writer=_default_writer,
+            suppress_emit_exceptions=True,
+        )
+        self.assertEqual(
+            typed_boundary.execute_lower_ir_with_spec(
+                strict_lower_spec,
+                {"kind": "Module"},
+                {"debug": "1"},
+                suppress_exceptions=True,
+            ),
+            {"kind": "Module"},
+        )
+        with self.assertRaisesRegex(RuntimeError, "lower failed"):
+            typed_boundary.execute_lower_ir_with_spec(
+                strict_lower_spec,
+                {"kind": "Module"},
+                {"debug": "1"},
+                suppress_exceptions=False,
+            )
+
+        def _emit_module_raises(ir: dict[str, object], output_path: Path) -> dict[str, object]:
+            raise RuntimeError("emit failed for " + output_path.name)
+
+        emit_spec = typed_boundary.build_resolved_backend_spec(
+            {
+                "target_lang": "fake",
+                "extension": ".txt",
+                "emit_module": _emit_module_raises,
+            },
+            identity_ir=_identity,
+            empty_emit=_empty_emit,
+            runtime_none=_runtime_none,
+            default_program_writer=_default_writer,
+            suppress_emit_exceptions=True,
+        )
+        soft_artifact = typed_boundary.execute_emit_module_with_spec(
+            emit_spec,
+            {"kind": "Demo"},
+            Path("out/demo.txt"),
+            {"mode": "typed"},
+            suppress_exceptions=True,
+        )
+        self.assertEqual(soft_artifact.text, "")
+        with self.assertRaisesRegex(RuntimeError, "emit failed for demo.txt"):
+            typed_boundary.execute_emit_module_with_spec(
+                emit_spec,
+                {"kind": "Demo"},
+                Path("out/demo.txt"),
+                {"mode": "typed"},
+                suppress_exceptions=False,
+            )
 
     def test_build_program_artifact_preserves_helper_kind_metadata(self) -> None:
         fake_spec = {"target_lang": "cpp"}
