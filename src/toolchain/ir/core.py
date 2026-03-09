@@ -3298,7 +3298,7 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "print"
                     payload["runtime_call"] = "py_print"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", "print")
+                    _set_runtime_binding_fields(payload, "pytra.built_in.io_ops", "py_print")
                     if builtin_semantic_tag != "":
                         payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "len":
@@ -3333,8 +3333,12 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = fn_name
                     runtime_call = "static_cast"
+                    runtime_module_id = "pytra.core.py_runtime"
+                    runtime_symbol = fn_name
                     if fn_name == "int" and len(args) == 2:
                         runtime_call = "py_to_int64_base"
+                        runtime_module_id = "pytra.built_in.scalar_ops"
+                        runtime_symbol = "py_to_int64_base"
                     if fn_name == "bool" and len(args) == 1:
                         arg0 = args[0]
                         if isinstance(arg0, dict):
@@ -3342,7 +3346,7 @@ class _ShExprParser:
                             if self._is_forbidden_object_receiver_type(arg0_t):
                                 runtime_call = "py_to_bool"
                     payload["runtime_call"] = runtime_call
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", fn_name)
+                    _set_runtime_binding_fields(payload, runtime_module_id, runtime_symbol)
                     if builtin_semantic_tag != "":
                         payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name in {"min", "max"}:
@@ -3449,14 +3453,14 @@ class _ShExprParser:
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "ord"
                     payload["runtime_call"] = "py_ord"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", "ord")
+                    _set_runtime_binding_fields(payload, "pytra.built_in.scalar_ops", "py_ord")
                     if builtin_semantic_tag != "":
                         payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name == "chr":
                     payload["lowered_kind"] = "BuiltinCall"
                     payload["builtin_name"] = "chr"
                     payload["runtime_call"] = "py_chr"
-                    _set_runtime_binding_fields(payload, "pytra.core.py_runtime", "chr")
+                    _set_runtime_binding_fields(payload, "pytra.built_in.scalar_ops", "py_chr")
                     if builtin_semantic_tag != "":
                         payload["semantic_tag"] = builtin_semantic_tag
                 elif fn_name in {"bytes", "bytearray"}:

@@ -32,6 +32,17 @@
         }
       }
     },
+    "pytra.built_in.io_ops": {
+      "runtime_group": "built_in",
+      "source_py": "src/pytra/built_in/io_ops.py",
+      "symbols": {
+        "py_print": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_print"
+        }
+      }
+    },
     "pytra.built_in.iter_ops": {
       "runtime_group": "built_in",
       "source_py": "src/pytra/built_in/iter_ops.py",
@@ -82,6 +93,27 @@
           "dispatch": "function",
           "kind": "function",
           "semantic_tag": "stdlib.fn.py_any"
+        }
+      }
+    },
+    "pytra.built_in.scalar_ops": {
+      "runtime_group": "built_in",
+      "source_py": "src/pytra/built_in/scalar_ops.py",
+      "symbols": {
+        "py_chr": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_chr"
+        },
+        "py_ord": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_ord"
+        },
+        "py_to_int64_base": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn.py_to_int64_base"
         }
       }
     },
@@ -642,6 +674,26 @@
           "kind": "function",
           "semantic_tag": "stdlib.fn._join_strs"
         },
+        "_json_array_items": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._json_array_items"
+        },
+        "_json_indent_value": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._json_indent_value"
+        },
+        "_json_new_array": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._json_new_array"
+        },
+        "_json_obj_require": {
+          "dispatch": "function",
+          "kind": "function",
+          "semantic_tag": "stdlib.fn._json_obj_require"
+        },
         "dumps": {
           "dispatch": "function",
           "kind": "function",
@@ -1140,6 +1192,16 @@
             "src/runtime/cpp/pytra/built_in/contains.h"
           ]
         },
+        "pytra.built_in.io_ops": {
+          "companions": [
+            "generated",
+            "native"
+          ],
+          "compile_sources": [],
+          "public_headers": [
+            "src/runtime/cpp/pytra/built_in/io_ops.h"
+          ]
+        },
         "pytra.built_in.iter_ops": {
           "companions": [
             "generated",
@@ -1170,6 +1232,16 @@
           ],
           "public_headers": [
             "src/runtime/cpp/pytra/built_in/predicates.h"
+          ]
+        },
+        "pytra.built_in.scalar_ops": {
+          "companions": [
+            "generated",
+            "native"
+          ],
+          "compile_sources": [],
+          "public_headers": [
+            "src/runtime/cpp/pytra/built_in/scalar_ops.h"
           ]
         },
         "pytra.built_in.sequence": {
