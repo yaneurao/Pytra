@@ -119,7 +119,6 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] ignored な generated mirror が未同期でも `src/toolchain/ir/core.py` の `with/while/try/raise/pass/return/augassign/swap` helper lane が壊れないよう、`test_east_core.py` に正本 statement cluster の helper call と旧 inline statement dict 不在 guard を追加した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の residual inline `kind` 集合 guard を追加し、`If/While/Try/Raise/Return/AugAssign/Swap` など既に helper 化済みの kind が open-coded dict へ戻ったり、新しい unsynced kind が増えたりしたら fail-fast するようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の residual inline `kind` call-site 集合 guard を追加し、実際の open-coded 使用箇所が `Name/Tuple` 以外へ増えたり、既に helper 化済みの statement / decl / call lane が call-site 側へ再流入したりしたら fail-fast するようにした。
-- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の inline call-site `kind` 残存集合 guard も追加し、helper 定義を除く open-coded dict の実利用側が `AnnAssign/Assign/Expr/Name/Tuple` 以外へ増えたり、statement helper 化済み kind が call site へ再流入したりしたら fail-fast するようにした。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

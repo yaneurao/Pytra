@@ -548,6 +548,44 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
             }.isdisjoint(inline_callsite_kinds)
         )
 
+    def test_generated_cpp_core_known_inline_nonstmt_callsite_kind_residual_set_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        inline_nonstmt_callsite_kinds: set[str] = set()
+        for line in text.splitlines():
+            match = re.search(r'dict<str, object>\{\{"kind", make_object\("([^"]+)"\)', line)
+            if match is None:
+                continue
+            kind = match.group(1)
+            if kind == "" or not kind[0].isupper():
+                continue
+            stripped = line.strip()
+            if 'return dict<str, object>{{"kind"' in stripped:
+                continue
+            if 'dict<str, object> node = dict<str, object>{{"kind"' in stripped:
+                continue
+            if "_sh_push_stmt_with_trivia(" in stripped:
+                continue
+            inline_nonstmt_callsite_kinds.add(kind)
+        self.assertEqual(
+            inline_nonstmt_callsite_kinds,
+            {
+                "Name",
+                "Tuple",
+            },
+        )
+        self.assertTrue(
+            {
+                "Assign",
+                "AnnAssign",
+                "Expr",
+                "Call",
+                "Import",
+                "ImportFrom",
+                "FunctionDef",
+                "ClassDef",
+            }.isdisjoint(inline_nonstmt_callsite_kinds)
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
