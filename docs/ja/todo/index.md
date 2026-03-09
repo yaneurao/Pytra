@@ -113,6 +113,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated selfhost core の `_parse_comp_target()` / `_parse_primary()` に残っていた `Name` / `Tuple` / `Constant` / `List` / `Dict` / `Set` の open-coded node を `_sh_make_name_expr()` / `_sh_make_tuple_expr()` / `_sh_make_constant_expr()` / `_sh_make_list_expr()` / `_sh_make_dict_expr()` / `_sh_make_set_expr()` へ寄せ、literal/comprehension-target lane の raw dict 直 return を縮めた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の `_sh_make_slice_node()` guard を追加し、postfix の slice `Subscript` lane が旧 inline `Slice` literal へ戻ったら fail-fast するようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の class field / enum field / top-level binding lane guard を追加し、`_sh_make_assign_stmt()` / `_sh_make_ann_assign_stmt()` / `_sh_make_name_expr()` が外れたり旧 inline `Assign` / `AnnAssign` dict が戻ったりしたら fail-fast するようにした。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_prepare_selfhost_source.py` に generated selfhost core の `Name` return / top-level `Expr` helper lane guard を追加し、`return _sh_make_name_expr(...)` と `_sh_make_expr_stmt(...)` append が外れたり旧 inline `Expr` dict append が戻ったりしたら fail-fast するようにした。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
