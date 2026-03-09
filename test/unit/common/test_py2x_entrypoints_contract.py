@@ -237,15 +237,18 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
 
         self.assertIn("from toolchain.compiler.typed_boundary import backend_spec_target", py2x_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import compiler_root_module_id", py2x_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_compiler_root_document", py2x_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", py2x_src)
         self.assertIn("return export_compiler_root_document(", py2x_src)
         self.assertIn("program_artifact_any = export_program_artifact_any(", py2x_src)
         self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact", py2x_src)
         self.assertIn("module_carrier = coerce_module_artifact(module_artifact)", py2x_src)
+        self.assertIn("module_id = compiler_root_module_id(east, fallback_output_path=output_path)", py2x_src)
         self.assertIn("list(collect_program_modules_typed(module_carrier))", py2x_src)
         self.assertIn("spec_target = backend_spec_target(spec)", py2x_src)
         self.assertIn("fallback_target=spec_target", py2x_src)
+        self.assertNotIn("def _module_id_from_east(", py2x_src)
         self.assertNotIn(").to_legacy_dict()", py2x_src)
         self.assertNotIn("program_artifact_any = program_artifact.to_legacy_dict()", py2x_src)
         self.assertNotIn("program_carrier = coerce_program_artifact(", py2x_src)
@@ -254,14 +257,17 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("hasattr(program_artifact, \"to_legacy_dict\")", py2x_src)
         self.assertNotIn("hasattr(item, \"to_legacy_dict\")", py2x_src)
 
+        self.assertIn("from toolchain.compiler.typed_boundary import compiler_root_module_id", ir2lang_src)
         self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact", ir2lang_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", ir2lang_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", ir2lang_src)
         self.assertIn("collect_program_modules_typed as collect_program_modules", ir2lang_src)
+        self.assertIn("module_id = compiler_root_module_id(east_doc, fallback_output_path=output_path)", ir2lang_src)
         self.assertIn("module_carrier = coerce_module_artifact(module_artifact)", ir2lang_src)
         self.assertIn("module_artifact_dict = export_module_artifact_any(module_artifact)", ir2lang_src)
         self.assertIn("program_modules = list(collect_program_modules(module_carrier))", ir2lang_src)
         self.assertIn("writer_program_artifact = export_program_artifact_any(program_artifact)", ir2lang_src)
+        self.assertNotIn("def _module_id_from_east(", ir2lang_src)
         self.assertNotIn("hasattr(module_artifact, \"to_legacy_dict\")", ir2lang_src)
         self.assertNotIn("module_artifact.to_legacy_dict()", ir2lang_src)
         self.assertNotIn("program_artifact.to_legacy_dict()", ir2lang_src)
@@ -272,6 +278,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_layer_options_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_layer_options_any", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import coerce_ir_document", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import coerce_ir_document", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact_or_none", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact_or_none", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", host_src)
@@ -290,6 +300,12 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("ir = fn(doc, export_layer_options_carrier(options))", static_src)
         self.assertIn("out = fn(ir, export_layer_options_carrier(options))", host_src)
         self.assertIn("out = fn(ir, export_layer_options_carrier(options))", static_src)
+        self.assertIn("return coerce_ir_document(ir)", host_src)
+        self.assertIn("return coerce_ir_document(ir)", static_src)
+        self.assertIn("return coerce_ir_document(out)", host_src)
+        self.assertIn("return coerce_ir_document(out)", static_src)
+        self.assertIn("ir_document=coerce_ir_document(ir)", host_src)
+        self.assertIn("ir_document=coerce_ir_document(ir)", static_src)
         self.assertIn("export_layer_options_carrier(request.emitter_options)", host_src)
         self.assertIn("export_layer_options_carrier(request.emitter_options)", static_src)
         self.assertIn("return export_resolved_backend_spec_any(_normalize_backend_runtime_spec(spec))", host_src)
@@ -309,11 +325,21 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             "return [export_module_artifact_any(item) for item in collect_program_modules_typed(module_artifact)]",
             static_src,
         )
+        self.assertIn("carrier = coerce_module_artifact_or_none(module_artifact)", host_src)
+        self.assertIn("carrier = coerce_module_artifact_or_none(module_artifact)", static_src)
+        self.assertIn("coerced = coerce_module_artifact_or_none(item)", host_src)
+        self.assertIn("coerced = coerce_module_artifact_or_none(item)", static_src)
         self.assertNotIn("coerce_compiler_root_document(east_doc).to_legacy_dict()", host_src)
         self.assertNotIn("coerce_compiler_root_document(east_doc).to_legacy_dict()", static_src)
         self.assertNotIn("return _normalize_backend_runtime_spec(spec).to_legacy_dict()", host_src)
         self.assertNotIn("return resolve_layer_options_typed(spec, layer, raw_options).to_legacy_dict()", host_src)
         self.assertNotIn("return resolve_layer_options_typed(spec, layer, raw_options).to_legacy_dict()", static_src)
+        self.assertNotIn("coerce_module_artifact_carrier(", host_src)
+        self.assertNotIn("coerce_module_artifact_carrier(", static_src)
+        self.assertNotIn("dict(ir) if isinstance(ir, dict) else {}", host_src)
+        self.assertNotIn("dict(ir) if isinstance(ir, dict) else {}", static_src)
+        self.assertNotIn("def _coerce_module_artifact(", host_src)
+        self.assertNotIn("def _coerce_module_artifact(", static_src)
 
         host_registry._SPEC_CACHE.clear()
         host_spec = host_registry.get_backend_spec_typed("cpp")
@@ -417,6 +443,23 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(typed_boundary.backend_spec_target(host_spec), "cpp")
         self.assertEqual(typed_boundary.backend_spec_target(static_spec), "cpp")
         self.assertEqual(typed_boundary.backend_spec_target({"target_lang": "rs", "extension": ".rs"}), "rs")
+        self.assertEqual(
+            typed_boundary.compiler_root_module_id(
+                {
+                    "kind": "Module",
+                    "meta": {"module_id": "pkg.demo"},
+                },
+                fallback_output_path=Path("fallback.cpp"),
+            ),
+            "pkg.demo",
+        )
+        self.assertEqual(
+            typed_boundary.compiler_root_module_id(
+                doc,
+                fallback_output_path=Path("demo.cpp"),
+            ),
+            "demo",
+        )
         module = typed_boundary.coerce_module_artifact(
             {
                 "module_id": "pkg.demo",

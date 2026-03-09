@@ -18,6 +18,7 @@ from toolchain.compiler.backend_registry import (
     optimize_ir_typed as optimize_ir,
     resolve_layer_options_typed as resolve_layer_options,
 )
+from toolchain.compiler.typed_boundary import compiler_root_module_id
 from toolchain.compiler.typed_boundary import coerce_module_artifact
 from toolchain.compiler.typed_boundary import export_module_artifact_any
 from toolchain.compiler.typed_boundary import export_program_artifact_any
@@ -153,17 +154,6 @@ def _validate_east3_module(east: dict[str, Any]) -> dict[str, Any]:
     if "meta" in east and not isinstance(east.get("meta"), dict):
         _fatal("invalid EAST root: meta must be an object")
     return validate_runtime_abi_module(east)
-
-
-def _module_id_from_east(east: dict[str, Any], output_path: Path) -> str:
-    meta_any = east.get("meta", {})
-    meta = meta_any if isinstance(meta_any, dict) else {}
-    module_id_any = meta.get("module_id")
-    if isinstance(module_id_any, str) and module_id_any.strip() != "":
-        return module_id_any.strip()
-    if output_path.stem != "":
-        return output_path.stem
-    return "module"
 
 
 def _is_link_output_doc(root: json.JsonObj) -> bool:
@@ -329,7 +319,7 @@ def main(argv: list[str] | None = None) -> int:
     validate_runtime_abi_target_support(east_doc, target=target)
     ir = lower_ir(spec, east_doc, lower_options)
     ir = optimize_ir(spec, ir, optimizer_options)
-    module_id = _module_id_from_east(east_doc, output_path)
+    module_id = compiler_root_module_id(east_doc, fallback_output_path=output_path)
     module_artifact = emit_module(
         spec,
         ir,

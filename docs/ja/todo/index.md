@@ -139,6 +139,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] native C++ の `coerce_compiler_root_document()` も legacy `source_path` / `meta.parser_backend` を保持するようにし、Python 側の compiler-root round-trip 契約と揃えた。`test_py2x_entrypoints_contract.py` で native mirror の fallback 抽出を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `test_east_core.py` と `test_prepare_selfhost_source.py` に、`any/all` 正規化・simple list-comp・tuple destructuring の residual cluster guard を追加し、source と generated selfhost mirror の `Call/Dict/Name/Tuple` 残存が既知 branch 以外へ広がらないことを固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `backend_spec_target()` を追加して [py2x.py](/workspace/Pytra/src/py2x.py) の manual backend-spec unwrap を外し、entrypoint 側の `spec.carrier.target_lang if not isinstance(...)` 分岐を typed helper へ寄せた。`test_py2x_entrypoints_contract.py` で import と helper round-trip を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `coerce_ir_document()` / `coerce_module_artifact_or_none()` を `typed_boundary.py` に追加し、host/static backend registry の local dict/module fallback を helper seam へ集約した。`test_py2x_entrypoints_contract.py` で import・return・旧 local helper 不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `compiler_root_module_id()` を追加して [py2x.py](/workspace/Pytra/src/py2x.py) / [ir2lang.py](/workspace/Pytra/src/ir2lang.py) の `meta.module_id` 手作業 unwrap を外し、entrypoint 側の fallback module-id 決定を typed helper へ寄せた。`test_py2x_entrypoints_contract.py` で import / source pattern / helper round-trip を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
