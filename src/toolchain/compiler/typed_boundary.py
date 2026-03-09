@@ -508,6 +508,51 @@ def coerce_module_artifact(module_artifact: object) -> ModuleArtifactCarrier:
     raise RuntimeError("module artifact must be dict or ModuleArtifactCarrier")
 
 
+def coerce_program_artifact(
+    program_artifact: object,
+    *,
+    fallback_target: str = "",
+    fallback_program_id: str = "",
+    fallback_entry_modules: list[str] | tuple[str, ...] | None = None,
+    fallback_layout_mode: str = "single_file",
+    fallback_link_output_schema: str = "",
+    fallback_writer_options: dict[str, object] | None = None,
+) -> ProgramArtifactCarrier:
+    if isinstance(program_artifact, ProgramArtifactCarrier):
+        return program_artifact
+    if not isinstance(program_artifact, dict):
+        raise RuntimeError("program artifact must be dict or ProgramArtifactCarrier")
+
+    modules_out: list[ModuleArtifactCarrier] = []
+    modules_any = program_artifact.get("modules", ())
+    if isinstance(modules_any, (list, tuple)):
+        for item in modules_any:
+            try:
+                modules_out.extend(flatten_module_artifact_carrier(coerce_module_artifact(item)))
+            except RuntimeError:
+                continue
+
+    target_any = program_artifact.get("target", fallback_target)
+    target_out = target_any if isinstance(target_any, str) else fallback_target
+    program_id_any = program_artifact.get("program_id", fallback_program_id)
+    program_id_out = program_id_any if isinstance(program_id_any, str) else fallback_program_id
+    if program_id_out == "" and len(modules_out) > 0:
+        program_id_out = modules_out[0].module_id
+    entry_modules_any = program_artifact.get("entry_modules", fallback_entry_modules if fallback_entry_modules is not None else ())
+    layout_mode_any = program_artifact.get("layout_mode", fallback_layout_mode)
+    link_output_schema_any = program_artifact.get("link_output_schema", fallback_link_output_schema)
+    writer_options_any = program_artifact.get("writer_options", fallback_writer_options if fallback_writer_options is not None else {})
+    return ProgramArtifactCarrier(
+        target=target_out,
+        program_id=program_id_out,
+        entry_modules=_copy_string_tuple(entry_modules_any),
+        modules=tuple(modules_out),
+        layout_mode=layout_mode_any if isinstance(layout_mode_any, str) else fallback_layout_mode,
+        link_output_schema=link_output_schema_any if isinstance(link_output_schema_any, str) else fallback_link_output_schema,
+        writer_options=copy_program_writer_options(writer_options_any),
+    )
+
+
 def build_program_artifact_carrier(
     spec: ResolvedBackendSpec,
     modules: list[ModuleArtifactCarrier],

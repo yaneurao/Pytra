@@ -18,8 +18,6 @@ struct CompilerRootDocument {
     CompilerRootMeta meta;
     str module_kind;
     dict<str, object> raw_module_doc;
-
-    dict<str, object> to_legacy_dict() const;
 };
 
 dict<str, object> export_compiler_root_document(const CompilerRootDocument& doc);

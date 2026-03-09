@@ -17,8 +17,8 @@ from toolchain.compiler.backend_registry import lower_ir_typed
 from toolchain.compiler.backend_registry import optimize_ir_typed
 from toolchain.compiler.backend_registry import resolve_layer_options_typed
 from toolchain.compiler.typed_boundary import coerce_module_artifact
+from toolchain.compiler.typed_boundary import coerce_program_artifact
 from toolchain.compiler.typed_boundary import export_compiler_root_document
-from toolchain.compiler.typed_boundary import export_module_artifact_carrier
 from toolchain.compiler.typed_boundary import export_program_artifact_carrier
 from toolchain.compiler.transpile_cli import add_common_transpile_args, build_module_east_map, load_east3_document_typed
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
@@ -495,19 +495,14 @@ def main() -> int:
         link_output_schema="",
     )
     writer = get_program_writer_typed(spec)
-    if isinstance(program_artifact, dict):
-        program_artifact_any = dict(program_artifact)
-        modules_any = program_artifact_any.get("modules", [])
-        if isinstance(modules_any, (list, tuple)):
-            normalized_modules: list[dict[str, object]] = []
-            for item in modules_any:
-                if isinstance(item, dict):
-                    normalized_modules.append(dict(item))
-                else:
-                    normalized_modules.append(export_module_artifact_carrier(coerce_module_artifact(item)))
-            program_artifact_any["modules"] = normalized_modules
-    else:
-        program_artifact_any = export_program_artifact_carrier(program_artifact)
+    spec_target = spec.carrier.target_lang if not isinstance(spec, dict) else str(spec.get("target_lang", ""))
+    program_carrier = coerce_program_artifact(
+        program_artifact,
+        fallback_target=spec_target,
+        fallback_program_id=module_id,
+        fallback_entry_modules=[module_id],
+    )
+    program_artifact_any = export_program_artifact_carrier(program_carrier)
     if callable(writer):
         _ = writer(program_artifact_any, output_path, {})
     else:

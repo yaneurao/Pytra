@@ -17,8 +17,6 @@ struct BackendSpecCarrier {
 
 struct ResolvedBackendSpec {
     BackendSpecCarrier carrier;
-
-    dict<str, object> to_legacy_dict() const;
 };
 
 dict<str, object> export_backend_spec(const ResolvedBackendSpec& spec);
@@ -26,8 +24,6 @@ dict<str, object> export_backend_spec(const ResolvedBackendSpec& spec);
 struct LayerOptionsCarrier {
     str layer;
     dict<str, str> values;
-
-    dict<str, object> to_legacy_dict() const;
 };
 
 dict<str, object> export_layer_options(const LayerOptionsCarrier& options);

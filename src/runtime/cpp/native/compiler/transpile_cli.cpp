@@ -153,10 +153,6 @@ dict<str, object> export_compiler_root_document(const CompilerRootDocument& doc)
     return out;
 }
 
-dict<str, object> CompilerRootDocument::to_legacy_dict() const {
-    return export_compiler_root_document(*this);
-}
-
 CompilerRootDocument coerce_compiler_root_document(
     const dict<str, object>& raw_doc,
     const str& source_path,

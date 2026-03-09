@@ -153,8 +153,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             native_transpile,
         )
         self.assertIn("dict<str, object> export_compiler_root_document(const CompilerRootDocument& doc)", native_transpile)
-        self.assertIn("return export_compiler_root_document(*this);", native_transpile)
         self.assertIn("return export_compiler_root_document(\n        load_east3_document_typed(", native_transpile)
+        self.assertNotIn("CompilerRootDocument::to_legacy_dict()", native_transpile)
 
         transpile_make_object_lines = [
             line.strip()
@@ -180,9 +180,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             [],
         )
         self.assertIn("dict<str, object> export_backend_spec(const ResolvedBackendSpec& spec)", native_registry)
-        self.assertIn("return export_backend_spec(*this);", native_registry)
         self.assertIn("dict<str, object> export_layer_options(const LayerOptionsCarrier& options)", native_registry)
-        self.assertIn("return export_layer_options(*this);", native_registry)
         self.assertIn('return dict<str, object>(', native_registry)
         self.assertIn('dict<str, str>{', native_registry)
         self.assertIn('{"target_lang", spec.carrier.target_lang},', native_registry)
@@ -199,6 +197,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("apply_runtime_hook_typed(_coerce_backend_spec(spec), output_path);", native_registry)
         self.assertNotIn("return lower_ir(spec.to_legacy_dict(), east.to_legacy_dict(), lower_options.to_legacy_dict());", native_registry)
         self.assertNotIn("return optimize_ir(spec.to_legacy_dict(), ir, optimizer_options.to_legacy_dict());", native_registry)
+        self.assertNotIn("ResolvedBackendSpec::to_legacy_dict()", native_registry)
+        self.assertNotIn("LayerOptionsCarrier::to_legacy_dict()", native_registry)
         self.assertIn(
             'ir_path.write_text(pytra::std::json::_dump_json_dict(ir, true, ::std::nullopt, ",", ":", 0));',
             native_registry,
@@ -211,20 +211,18 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
 
         self.assertIn("from toolchain.compiler.typed_boundary import export_compiler_root_document", py2x_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_carrier", py2x_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import coerce_program_artifact", py2x_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_carrier", py2x_src)
         self.assertIn("return export_compiler_root_document(", py2x_src)
-        self.assertIn("program_artifact_any = export_program_artifact_carrier(program_artifact)", py2x_src)
-        self.assertIn(
-            "normalized_modules.append(export_module_artifact_carrier(coerce_module_artifact(item)))",
-            py2x_src,
-        )
+        self.assertIn("program_carrier = coerce_program_artifact(", py2x_src)
+        self.assertIn("program_artifact_any = export_program_artifact_carrier(program_carrier)", py2x_src)
         self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact", py2x_src)
         self.assertIn("module_carrier = coerce_module_artifact(module_artifact)", py2x_src)
         self.assertIn("list(collect_program_modules_typed(module_carrier))", py2x_src)
+        self.assertIn("fallback_target=spec_target", py2x_src)
         self.assertNotIn(").to_legacy_dict()", py2x_src)
         self.assertNotIn("program_artifact_any = program_artifact.to_legacy_dict()", py2x_src)
-        self.assertNotIn("normalized_modules.append(item.to_legacy_dict())", py2x_src)
+        self.assertNotIn("if isinstance(program_artifact, dict):", py2x_src)
         self.assertNotIn("hasattr(program_artifact, \"to_legacy_dict\")", py2x_src)
         self.assertNotIn("hasattr(item, \"to_legacy_dict\")", py2x_src)
 
@@ -368,6 +366,35 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             typed_boundary.export_program_artifact_carrier(program),
             program.to_legacy_dict(),
         )
+        helper_program = typed_boundary.coerce_program_artifact(
+            {
+                "modules": [
+                    {
+                        "module_id": "pkg.demo",
+                        "kind": "user",
+                        "label": "demo",
+                        "extension": ".cpp",
+                        "text": "// demo\n",
+                        "is_entry": True,
+                        "helper_modules": [
+                            {
+                                "module_id": "__pytra_helper__.cpp.demo",
+                                "text": "// helper\n",
+                                "metadata": {"helper_id": "cpp.demo", "owner_module_id": "pkg.demo"},
+                            }
+                        ],
+                    }
+                ]
+            },
+            fallback_target="cpp",
+            fallback_program_id="pkg.demo",
+            fallback_entry_modules=["pkg.demo"],
+        )
+        self.assertEqual(helper_program.target, "cpp")
+        self.assertEqual(helper_program.program_id, "pkg.demo")
+        self.assertEqual(len(helper_program.modules), 2)
+        self.assertEqual(helper_program.modules[1].kind, "helper")
+        self.assertEqual(helper_program.modules[1].metadata["owner_module_id"], "pkg.demo")
 
     def test_build_program_artifact_preserves_helper_kind_metadata(self) -> None:
         fake_spec = {"target_lang": "cpp"}

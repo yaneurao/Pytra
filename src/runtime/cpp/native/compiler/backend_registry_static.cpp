@@ -130,16 +130,8 @@ dict<str, object> export_backend_spec(const ResolvedBackendSpec& spec) {
     );
 }
 
-dict<str, object> ResolvedBackendSpec::to_legacy_dict() const {
-    return export_backend_spec(*this);
-}
-
 dict<str, object> export_layer_options(const LayerOptionsCarrier& options) {
     return dict<str, object>(options.values);
-}
-
-dict<str, object> LayerOptionsCarrier::to_legacy_dict() const {
-    return export_layer_options(*this);
 }
 
 list<str> list_backend_targets() {
