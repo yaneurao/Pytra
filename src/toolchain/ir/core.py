@@ -1139,6 +1139,89 @@ def _sh_make_for_range_stmt(
     }
 
 
+def _sh_make_function_def_stmt(
+    name: str,
+    source_span: dict[str, Any],
+    arg_types: dict[str, str],
+    arg_order: list[str],
+    return_type: str,
+    body: list[dict[str, Any]],
+    *,
+    original_name: str = "",
+    arg_type_exprs: dict[str, Any] | None = None,
+    arg_defaults: dict[str, Any] | None = None,
+    arg_index: dict[str, int] | None = None,
+    return_type_expr: dict[str, Any] | None = None,
+    arg_usage: dict[str, Any] | None = None,
+    renamed_symbols: dict[str, str] | None = None,
+    decorators: list[str] | None = None,
+    leading_comments: list[str] | None = None,
+    leading_trivia: list[dict[str, Any]] | None = None,
+    docstring: str | None = None,
+    meta: dict[str, Any] | None = None,
+    is_generator: bool = False,
+    yield_value_type: str = "unknown",
+) -> dict[str, Any]:
+    """`FunctionDef` 文 node を構築する。"""
+    node: dict[str, Any] = {
+        "kind": "FunctionDef",
+        "name": name,
+        "original_name": original_name if original_name != "" else name,
+        "source_span": source_span,
+        "arg_types": arg_types,
+        "arg_order": arg_order,
+        "arg_defaults": {} if arg_defaults is None else arg_defaults,
+        "arg_index": {} if arg_index is None else arg_index,
+        "return_type": return_type,
+        "arg_usage": {} if arg_usage is None else arg_usage,
+        "renamed_symbols": {} if renamed_symbols is None else renamed_symbols,
+        "docstring": docstring,
+        "body": body,
+        "is_generator": 1 if is_generator else 0,
+        "yield_value_type": yield_value_type,
+    }
+    if arg_type_exprs is not None:
+        node["arg_type_exprs"] = arg_type_exprs
+    if return_type_expr is not None:
+        node["return_type_expr"] = return_type_expr
+    if decorators is not None:
+        node["decorators"] = decorators
+    if leading_comments is not None:
+        node["leading_comments"] = leading_comments
+    if leading_trivia is not None:
+        node["leading_trivia"] = leading_trivia
+    if meta is not None:
+        node["meta"] = meta
+    return node
+
+
+def _sh_make_class_def_stmt(
+    name: str,
+    source_span: dict[str, Any],
+    field_types: dict[str, str],
+    body: list[dict[str, Any]],
+    *,
+    original_name: str = "",
+    base: str | None = None,
+    dataclass: bool = False,
+    dataclass_options: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """`ClassDef` 文 node を構築する。"""
+    node: dict[str, Any] = {
+        "kind": "ClassDef",
+        "name": name,
+        "original_name": original_name if original_name != "" else name,
+        "source_span": source_span,
+        "base": base,
+        "dataclass": dataclass,
+        "field_types": field_types,
+        "body": body,
+    }
+    if dataclass_options is not None:
+        node["dataclass_options"] = dataclass_options
+    return node
+
+
 def _sh_make_module_root(
     *,
     filename: str,
@@ -5932,25 +6015,22 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 stmts,
                 pending_leading_trivia,
                 pending_blank_count,
-                {
-                    "kind": "FunctionDef",
-                    "name": fn_name,
-                    "original_name": fn_name,
-                    "source_span": _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
-                    "arg_types": arg_types,
-                    "arg_type_exprs": arg_type_exprs,
-                    "arg_order": arg_order,
-                    "arg_defaults": arg_defaults,
-                    "arg_index": arg_index_map,
-                    "return_type": fn_ret_effective,
-                    "return_type_expr": fn_ret_type_expr,
-                    "arg_usage": arg_usage_map,
-                    "renamed_symbols": {},
-                    "docstring": docstring,
-                    "body": fn_stmts,
-                    "is_generator": 1 if is_generator else 0,
-                    "yield_value_type": yield_value_type,
-                },
+                _sh_make_function_def_stmt(
+                    fn_name,
+                    _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
+                    arg_types,
+                    arg_order,
+                    fn_ret_effective,
+                    fn_stmts,
+                    arg_type_exprs=arg_type_exprs,
+                    arg_defaults=arg_defaults,
+                    arg_index=arg_index_map,
+                    return_type_expr=fn_ret_type_expr,
+                    arg_usage=arg_usage_map,
+                    docstring=docstring,
+                    is_generator=is_generator,
+                    yield_value_type=yield_value_type,
+                ),
             )
             skip = j - i - 1
             continue
@@ -7170,29 +7250,25 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 line_no=i,
                 line_text=ln,
             )
-            item: dict[str, Any] = {
-                "kind": "FunctionDef",
-                "name": fn_name,
-                "original_name": fn_name,
-                "source_span": {"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])},
-                "arg_types": arg_types,
-                "arg_type_exprs": arg_type_exprs,
-                "arg_order": arg_order,
-                "arg_defaults": arg_defaults,
-                "arg_index": arg_index_map,
-                "return_type": fn_ret_effective,
-                "return_type_expr": fn_ret_type_expr,
-                "arg_usage": arg_usage_map,
-                "renamed_symbols": {},
-                "leading_comments": [],
-                "leading_trivia": [],
-                "docstring": docstring,
-                "body": stmts,
-                "is_generator": 1 if is_generator else 0,
-                "yield_value_type": yield_value_type,
-            }
-            if len(fn_decorators) > 0:
-                item["decorators"] = fn_decorators
+            item = _sh_make_function_def_stmt(
+                fn_name,
+                {"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])},
+                arg_types,
+                arg_order,
+                fn_ret_effective,
+                stmts,
+                arg_type_exprs=arg_type_exprs,
+                arg_defaults=arg_defaults,
+                arg_index=arg_index_map,
+                return_type_expr=fn_ret_type_expr,
+                arg_usage=arg_usage_map,
+                decorators=list(fn_decorators) if len(fn_decorators) > 0 else None,
+                leading_comments=[],
+                leading_trivia=[],
+                docstring=docstring,
+                is_generator=is_generator,
+                yield_value_type=yield_value_type,
+            )
             if runtime_abi_meta is not None or template_meta is not None:
                 meta: dict[str, Any] = {}
                 if runtime_abi_meta is not None:
@@ -7838,29 +7914,26 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                             methods_map2[mname] = mret_effective
                             _SH_CLASS_METHOD_RETURNS[cls_name] = methods_map2
                         class_body.append(
-                            {
-                                "kind": "FunctionDef",
-                                "name": mname,
-                                "original_name": mname,
-                                "source_span": {
+                            _sh_make_function_def_stmt(
+                                mname,
+                                {
                                     "lineno": ln_no,
                                     "col": bind,
                                     "end_lineno": method_block[-1][0],
                                     "end_col": len(method_block[-1][1]),
                                 },
-                                "arg_types": marg_types,
-                                "arg_order": marg_order,
-                                "arg_defaults": marg_defaults,
-                                "arg_index": arg_index_map,
-                                "return_type": mret_effective,
-                                "arg_usage": arg_usage_map,
-                                "renamed_symbols": {},
-                                "decorators": list(pending_method_decorators),
-                                "docstring": docstring,
-                                "body": stmts,
-                                "is_generator": 1 if is_generator else 0,
-                                "yield_value_type": yield_value_type,
-                            }
+                                marg_types,
+                                marg_order,
+                                mret_effective,
+                                stmts,
+                                arg_defaults=marg_defaults,
+                                arg_index=arg_index_map,
+                                arg_usage=arg_usage_map,
+                                decorators=list(pending_method_decorators),
+                                docstring=docstring,
+                                is_generator=is_generator,
+                                yield_value_type=yield_value_type,
+                            )
                         )
                         pending_method_decorators = []
                         k = m
@@ -7877,18 +7950,15 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             if base != "":
                 base_value = base
 
-            cls_item: dict[str, Any] = {
-                "kind": "ClassDef",
-                "name": cls_name,
-                "original_name": cls_name,
-                "source_span": {"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])},
-                "base": base_value,
-                "dataclass": pending_dataclass,
-                "field_types": field_types,
-                "body": class_body,
-            }
-            if len(pending_dataclass_options) > 0:
-                cls_item["dataclass_options"] = dict(pending_dataclass_options)
+            cls_item = _sh_make_class_def_stmt(
+                cls_name,
+                {"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])},
+                field_types,
+                class_body,
+                base=base_value,
+                dataclass=pending_dataclass,
+                dataclass_options=dict(pending_dataclass_options) if len(pending_dataclass_options) > 0 else None,
+            )
             static_field_names: set[str] = set()
             if not pending_dataclass:
                 for st in class_body:
