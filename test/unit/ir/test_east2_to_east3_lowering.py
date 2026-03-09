@@ -1054,8 +1054,12 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         out = lower_east2_to_east3(east2)
         value = out.get("body", [])[0].get("value", {})
         self.assertEqual(value.get("kind"), "Call")
+        self.assertEqual(value.get("lowered_kind"), "JsonDecodeCall")
         self.assertEqual(value.get("semantic_tag"), "json.value.as_obj")
+        self.assertEqual(value.get("json_decode_receiver", {}).get("id"), "payload")
         self.assertEqual(value.get("json_decode_v1", {}).get("decode_kind"), "narrow")
+        self.assertEqual(value.get("json_decode_v1", {}).get("ir_category"), "JsonDecodeCall")
+        self.assertEqual(value.get("json_decode_v1", {}).get("decode_entry"), "json.value.as_obj")
         self.assertEqual(value.get("json_decode_v1", {}).get("receiver_category"), "nominal_adt")
         self.assertEqual(value.get("json_decode_v1", {}).get("receiver_nominal_adt_family"), "json")
 

@@ -823,12 +823,36 @@ def _build_json_decode_meta(call: dict[str, Any], semantic_tag: str) -> dict[str
     return meta
 
 
+def _lower_representative_json_decode_call(out_call: dict[str, Any]) -> dict[str, Any]:
+    semantic_tag_obj = out_call.get("semantic_tag")
+    semantic_tag = semantic_tag_obj.strip() if isinstance(semantic_tag_obj, str) else ""
+    if semantic_tag != "json.value.as_obj":
+        return out_call
+    args_obj = out_call.get("args")
+    args: list[Any] = args_obj if isinstance(args_obj, list) else []
+    if len(args) != 0:
+        return out_call
+    func_obj = out_call.get("func")
+    if not isinstance(func_obj, dict) or func_obj.get("kind") != "Attribute":
+        return out_call
+    receiver_node = func_obj.get("value")
+    out_call["lowered_kind"] = "JsonDecodeCall"
+    out_call["json_decode_receiver"] = receiver_node
+    meta_obj = out_call.get(_JSON_DECODE_META_KEY)
+    meta = dict(meta_obj) if isinstance(meta_obj, dict) else _build_json_decode_meta(out_call, semantic_tag)
+    meta["ir_category"] = "JsonDecodeCall"
+    meta["decode_entry"] = "json.value.as_obj"
+    out_call[_JSON_DECODE_META_KEY] = meta
+    return out_call
+
+
 def _decorate_call_metadata(call: dict[str, Any]) -> dict[str, Any]:
     _set_type_expr_summary(call, _type_expr_summary_from_node(call))
     json_tag = _infer_json_semantic_tag(call)
     if json_tag != "":
         call["semantic_tag"] = json_tag
         call[_JSON_DECODE_META_KEY] = _build_json_decode_meta(call, json_tag)
+        call = _lower_representative_json_decode_call(call)
     return call
 
 

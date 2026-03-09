@@ -11,6 +11,19 @@ from toolchain.compiler.transpile_cli import (
 class CppCallEmitter:
     """Runtime-call / import / cast-related helpers split out from CppEmitter."""
 
+    def _render_json_decode_call(self, expr_d: dict[str, Any]) -> str:
+        lowered_kind = self.any_dict_get_str(expr_d, "lowered_kind", "")
+        if lowered_kind != "JsonDecodeCall":
+            return ""
+        semantic_tag = self.any_dict_get_str(expr_d, "semantic_tag", "")
+        receiver_node = expr_d.get("json_decode_receiver")
+        receiver_expr = self.render_expr(receiver_node)
+        if receiver_expr == "":
+            raise ValueError("JsonDecodeCall missing receiver")
+        if semantic_tag == "json.value.as_obj":
+            return f"{receiver_expr}.as_obj()"
+        raise ValueError("unsupported JsonDecodeCall semantic tag: " + semantic_tag)
+
     def _lookup_module_attr_runtime_call(self, module_name: str, attr: str) -> str:
         """`module.attr` から runtime_call 名を引く（pytra.* は短縮名フォールバックしない）。"""
         owner_keys: list[str] = [module_name]
@@ -1057,6 +1070,9 @@ class CppCallEmitter:
             hook_call_txt = str(hook_call)
         if hook_call_txt != "":
             return hook_call_txt
+        json_decode_call = self._render_json_decode_call(expr_d)
+        if json_decode_call != "":
+            return json_decode_call
         lowered_kind = self.any_dict_get_str(expr_d, "lowered_kind", "")
         if lowered_kind == "BuiltinCall":
             builtin_rendered: str = self._render_builtin_call(expr_d, arg_nodes, kw_nodes)

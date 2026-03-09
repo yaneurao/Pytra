@@ -28,6 +28,30 @@ def _const_i(v: int) -> dict[str, object]:
 
 
 class East3CppBridgeTest(unittest.TestCase):
+    def test_render_expr_json_decode_call_uses_ir_receiver_instead_of_raw_attr(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        expr = {
+            "kind": "Call",
+            "lowered_kind": "JsonDecodeCall",
+            "semantic_tag": "json.value.as_obj",
+            "resolved_type": "JsonObj | None",
+            "json_decode_receiver": {"kind": "Name", "id": "payload", "resolved_type": "JsonValue"},
+            "json_decode_v1": {
+                "schema_version": 1,
+                "semantic_tag": "json.value.as_obj",
+                "decode_kind": "narrow",
+                "ir_category": "JsonDecodeCall",
+            },
+            "func": {
+                "kind": "Attribute",
+                "attr": "wrong_attr",
+                "value": {"kind": "Name", "id": "ignored_owner", "resolved_type": "JsonValue"},
+            },
+            "args": [],
+            "keywords": [],
+        }
+        self.assertEqual(emitter.render_expr(expr), "payload.as_obj()")
+
     def test_emit_stmt_annassign_empty_dict_with_marker_uses_brace_shorthand(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         stmt = {
