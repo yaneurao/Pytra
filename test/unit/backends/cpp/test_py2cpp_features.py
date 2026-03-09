@@ -1187,8 +1187,10 @@ def sin(x: float) -> float:
         self.assertEqual(normalize_param_annotation(""), "unknown")
         self.assertEqual(normalize_param_annotation(" Any "), "Any")
         self.assertEqual(normalize_param_annotation("object"), "object")
-        self.assertEqual(normalize_param_annotation("int"), "int")
+        self.assertEqual(normalize_param_annotation("int"), "int64")
         self.assertEqual(normalize_param_annotation("list[str]"), "list[str]")
+        self.assertEqual(normalize_param_annotation("typing.Optional[int]"), "int64 | None")
+        self.assertEqual(normalize_param_annotation("list[int | bool]"), "list[int64|bool]")
         self.assertEqual(normalize_param_annotation("CustomType"), "CustomType")
 
     def test_extract_function_signatures_from_python_source_parses_defs(self) -> None:
@@ -1206,9 +1208,28 @@ def sin(x: float) -> float:
                 encoding="utf-8",
             )
             sigs = extract_function_signatures_from_python_source(src)
-            self.assertEqual(sigs["f"]["arg_types"], ["int", "str"])
+            self.assertEqual(sigs["f"]["arg_types"], ["int64", "str"])
             self.assertEqual(sigs["f"]["arg_defaults"], ["", "'x'"])
-            self.assertEqual(sigs["g"]["arg_types"], ["list[int]", "unknown"])
+            self.assertEqual(sigs["f"]["return_type"], "None")
+            self.assertEqual(
+                sigs["f"]["arg_type_exprs"],
+                [
+                    {"kind": "NamedType", "name": "int64"},
+                    {"kind": "NamedType", "name": "str"},
+                ],
+            )
+            self.assertEqual(sigs["g"]["arg_types"], ["list[int64]", "unknown"])
+            self.assertEqual(
+                sigs["g"]["arg_type_exprs"],
+                [
+                    {
+                        "kind": "GenericType",
+                        "base": "list",
+                        "args": [{"kind": "NamedType", "name": "int64"}],
+                    },
+                    {"kind": "DynamicType", "name": "unknown"},
+                ],
+            )
 
     def test_extract_function_arg_types_from_python_source(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -1219,7 +1240,7 @@ def sin(x: float) -> float:
                 encoding="utf-8",
             )
             arg_types = extract_function_arg_types_from_python_source(src)
-            self.assertEqual(arg_types, {"f": ["int", "Any"]})
+            self.assertEqual(arg_types, {"f": ["int64", "Any"]})
 
     def test_dict_any_get_str_list_filters_non_str(self) -> None:
         data: dict[str, object] = {"xs": ["a", 1, "b"], "ys": "abc"}

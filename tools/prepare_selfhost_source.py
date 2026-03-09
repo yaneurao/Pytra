@@ -15,6 +15,7 @@ SRC_PY2CPP = ROOT / "src" / "backends" / "cpp" / "cli.py"
 SRC_BASE = ROOT / "src" / "backends" / "common" / "emitter" / "code_emitter.py"
 DST_SELFHOST = ROOT / "selfhost" / "py2cpp.py"
 SRC_TRANSPILE_CLI = ROOT / "src" / "toolchain" / "frontends" / "transpile_cli.py"
+SRC_TYPE_EXPR = ROOT / "src" / "toolchain" / "frontends" / "type_expr.py"
 
 
 def _extract_code_emitter_class(text: str) -> str:
@@ -123,6 +124,35 @@ def _extract_top_level_block(text: str, name: str, kind: str) -> str:
     return block
 
 
+def _extract_type_expr_support_blocks() -> str:
+    text = SRC_TYPE_EXPR.read_text(encoding="utf-8")
+    constants_start = text.find("_PRIMITIVE_NAMES:")
+    if constants_start < 0:
+        raise RuntimeError("type_expr constants not found")
+    first_def = text.find("def _strip_quotes", constants_start)
+    if first_def < 0:
+        raise RuntimeError("type_expr helper blocks not found")
+    parts = [text[constants_start:first_def].rstrip() + "\n"]
+    names = [
+        "_strip_quotes",
+        "_strip_typing_prefix",
+        "_split_top_level",
+        "_is_simple_identifier",
+        "_normalize_head_name",
+        "_is_none_expr",
+        "_is_dynamic_expr",
+        "_make_named_like",
+        "_make_union_type_expr",
+        "_parse_type_expr_inner",
+        "parse_type_expr_text",
+        "type_expr_to_string",
+        "normalize_type_text",
+    ]
+    for name in names:
+        parts.append(_extract_top_level_block(text, name, "def"))
+    return "".join(parts)
+
+
 def _extract_support_blocks() -> str:
     cli_text = SRC_TRANSPILE_CLI.read_text(encoding="utf-8")
     names = [
@@ -229,7 +259,7 @@ def _extract_support_blocks() -> str:
         "check_parse_stage_guards",
         "check_analyze_stage_guards",
     ]
-    parts: list[str] = []
+    parts: list[str] = [_extract_type_expr_support_blocks()]
     for name in names:
         parts.append(_extract_top_level_block(cli_text, name, "def"))
     parts.append(

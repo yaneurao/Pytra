@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pytra.std import re
 from pytra.std.pathlib import Path
+from toolchain.frontends.type_expr import normalize_type_text
 
 
 _DEF_PATTERN = r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$"
@@ -31,6 +32,8 @@ _IMPORTED_SYMBOL_RUNTIME_BINDINGS: dict[tuple[str, str], tuple[str, str]] = {
 }
 
 _IMPORTED_SYMBOL_RUNTIME_CALLS: dict[tuple[str, str], str] = {
+    ("pathlib", "Path"): "Path",
+    ("pytra.std.pathlib", "Path"): "Path",
 }
 
 _NONCPP_IMPORTED_SYMBOL_RUNTIME_CALLS: dict[tuple[str, str], str] = {
@@ -283,56 +286,7 @@ def _normalize_return_type(raw_type: str) -> str:
     t = _strip_quotes(raw_type.strip())
     if t == "":
         return ""
-    primitive = {
-        "int": "int64",
-        "float": "float64",
-        "bool": "bool",
-        "str": "str",
-        "bytes": "bytes",
-        "bytearray": "bytearray",
-        "None": "None",
-        "Any": "Any",
-        "object": "object",
-        "Path": "Path",
-    }
-    if t in primitive:
-        return primitive[t]
-    if t.startswith("list[") and t.endswith("]"):
-        inner = _normalize_return_type(t[5:-1])
-        if inner == "":
-            inner = "unknown"
-        return f"list[{inner}]"
-    if t.startswith("set[") and t.endswith("]"):
-        inner = _normalize_return_type(t[4:-1])
-        if inner == "":
-            inner = "unknown"
-        return f"set[{inner}]"
-    if t.startswith("dict[") and t.endswith("]"):
-        inner_parts = _split_top_level(t[5:-1], ",")
-        if len(inner_parts) == 2:
-            key_t = _normalize_return_type(inner_parts[0])
-            val_t = _normalize_return_type(inner_parts[1])
-            if key_t == "":
-                key_t = "unknown"
-            if val_t == "":
-                val_t = "unknown"
-            return f"dict[{key_t},{val_t}]"
-    if t.startswith("tuple[") and t.endswith("]"):
-        tuple_parts = _split_top_level(t[6:-1], ",")
-        normalized: list[str] = []
-        for p in tuple_parts:
-            n = _normalize_return_type(p)
-            normalized.append(n if n != "" else "unknown")
-        if len(normalized) > 0:
-            return "tuple[" + ",".join(normalized) + "]"
-    union_parts = _split_top_level(t, "|")
-    if len(union_parts) > 1:
-        normalized_union: list[str] = []
-        for p in union_parts:
-            n = _normalize_return_type(p)
-            normalized_union.append(n if n != "" else "unknown")
-        return "|".join(normalized_union)
-    return t
+    return normalize_type_text(t)
 
 
 def _load_signature_cache() -> None:

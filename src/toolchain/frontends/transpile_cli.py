@@ -7,6 +7,8 @@ from toolchain.ir.east1 import load_east1_document as load_east1_document_stage
 from toolchain.ir.east2 import normalize_east1_to_east2_document as normalize_east1_to_east2_document_stage
 from toolchain.ir.east3 import load_east3_document as load_east3_document_stage
 from toolchain.frontends.known_modules import is_known_module_name
+from toolchain.frontends.type_expr import normalize_type_text
+from toolchain.frontends.type_expr import parse_type_expr_text
 from pytra.std import argparse
 from pytra.std import json
 from pytra.std import os
@@ -521,31 +523,23 @@ def split_top_level_csv(text: str) -> list[str]:
 
 
 def normalize_param_annotation(ann: str) -> str:
-    """関数引数注釈文字列を EAST 互換の粗い型名へ正規化する。"""
+    """関数引数注釈文字列を EAST 互換の型文字列 mirror へ正規化する。"""
     t = ann.strip()
     if t == "":
         return "unknown"
-    if "Any" in t:
-        return "Any"
-    if "object" in t:
-        return "object"
-    if t in {"int", "float", "str", "bool", "bytes", "bytearray"}:
-        return t
-    if t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
-        return t
-    return t
+    return normalize_type_text(t)
 
 
-def extract_function_signatures_from_python_source(src_path: Path) -> dict[str, dict[str, list[str]]]:
+def extract_function_signatures_from_python_source(src_path: Path) -> dict[str, dict[str, object]]:
     """`def` シグネチャから引数型とデフォルト値（テキスト）を抽出する。"""
     text = ""
     try:
         text = src_path.read_text(encoding="utf-8")
     except Exception:
-        empty: dict[str, dict[str, list[str]]] = {}
+        empty: dict[str, dict[str, object]] = {}
         return empty
     lines: list[str] = text.splitlines()
-    sig_map: dict[str, dict[str, list[str]]] = {}
+    sig_map: dict[str, dict[str, object]] = {}
     skip_until = 0
     for i in range(len(lines)):
         if i < skip_until:
@@ -589,6 +583,7 @@ def extract_function_signatures_from_python_source(src_path: Path) -> dict[str, 
             arg_names: list[str] = []
             arg_types: list[str] = []
             arg_defaults: list[str] = []
+            arg_type_exprs: list[dict[str, object]] = []
             parts = split_top_level_csv(params)
             for part in parts:
                 prm = part.strip()
@@ -605,16 +600,31 @@ def extract_function_signatures_from_python_source(src_path: Path) -> dict[str, 
                 else:
                     arg_names.append(prm.strip())
                 if colon < 0:
-                    arg_types.append("unknown")
+                    unknown_expr = parse_type_expr_text("unknown")
+                    arg_types.append(normalize_type_text("unknown"))
+                    arg_type_exprs.append(unknown_expr)
                     arg_defaults.append(default_txt)
                     continue
                 ann = prm[colon + 1 :]
+                ann_expr = parse_type_expr_text(ann)
                 arg_types.append(normalize_param_annotation(ann))
+                arg_type_exprs.append(ann_expr)
                 arg_defaults.append(default_txt)
+            return_type = "None"
+            return_type_expr: dict[str, object] = parse_type_expr_text("None")
+            suffix = sig0[p1 + 1 :].strip()
+            if suffix.startswith("->"):
+                raw_ret = suffix[2:].strip()
+                if raw_ret != "":
+                    return_type_expr = parse_type_expr_text(raw_ret)
+                    return_type = normalize_type_text(raw_ret)
             sig_map[name] = {
                 "arg_names": arg_names,
                 "arg_types": arg_types,
+                "arg_type_exprs": arg_type_exprs,
                 "arg_defaults": arg_defaults,
+                "return_type": return_type,
+                "return_type_expr": return_type_expr,
             }
     return sig_map
 

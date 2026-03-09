@@ -423,6 +423,209 @@ def f(p: "Path", xs: "list[int]") -> "Path":
         self.assertEqual(arg_types.get("p"), "Path")
         self.assertEqual(arg_types.get("xs"), "list[int64]")
         self.assertEqual(fn.get("return_type"), "Path")
+        arg_type_exprs = fn.get("arg_type_exprs", {})
+        self.assertEqual(arg_type_exprs.get("p"), {"kind": "NamedType", "name": "Path"})
+        self.assertEqual(
+            arg_type_exprs.get("xs"),
+            {
+                "kind": "GenericType",
+                "base": "list",
+                "args": [{"kind": "NamedType", "name": "int64"}],
+            },
+        )
+        self.assertEqual(fn.get("return_type_expr"), {"kind": "NamedType", "name": "Path"})
+
+    def test_type_expr_is_emitted_for_union_optional_and_nested_generic_annotations(self) -> None:
+        src = """
+from pytra.std.json import JsonValue
+
+def f(x: int | bool, ys: list[int | bool], payload: JsonValue | None) -> dict[str, int | bool]:
+    local: list[int | bool] = []
+    return {"a": 1}
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        fn = next(
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "f"
+        )
+        self.assertEqual(fn.get("arg_types", {}).get("x"), "int64|bool")
+        self.assertEqual(fn.get("arg_types", {}).get("ys"), "list[int64|bool]")
+        self.assertEqual(fn.get("arg_types", {}).get("payload"), "JsonValue | None")
+        self.assertEqual(fn.get("return_type"), "dict[str,int64|bool]")
+
+        arg_type_exprs = fn.get("arg_type_exprs", {})
+        self.assertEqual(
+            arg_type_exprs.get("x"),
+            {
+                "kind": "UnionType",
+                "union_mode": "general",
+                "options": [
+                    {"kind": "NamedType", "name": "int64"},
+                    {"kind": "NamedType", "name": "bool"},
+                ],
+            },
+        )
+        self.assertEqual(
+            arg_type_exprs.get("ys"),
+            {
+                "kind": "GenericType",
+                "base": "list",
+                "args": [
+                    {
+                        "kind": "UnionType",
+                        "union_mode": "general",
+                        "options": [
+                            {"kind": "NamedType", "name": "int64"},
+                            {"kind": "NamedType", "name": "bool"},
+                        ],
+                    }
+                ],
+            },
+        )
+        self.assertEqual(
+            arg_type_exprs.get("payload"),
+            {
+                "kind": "OptionalType",
+                "inner": {
+                    "kind": "NominalAdtType",
+                    "name": "JsonValue",
+                    "adt_family": "json",
+                    "variant_domain": "closed",
+                },
+            },
+        )
+        self.assertEqual(
+            fn.get("return_type_expr"),
+            {
+                "kind": "GenericType",
+                "base": "dict",
+                "args": [
+                    {"kind": "NamedType", "name": "str"},
+                    {
+                        "kind": "UnionType",
+                        "union_mode": "general",
+                        "options": [
+                            {"kind": "NamedType", "name": "int64"},
+                            {"kind": "NamedType", "name": "bool"},
+                        ],
+                    },
+                ],
+            },
+        )
+
+        ann_assign = next(
+            st for st in fn.get("body", []) if isinstance(st, dict) and st.get("kind") == "AnnAssign"
+        )
+        self.assertEqual(ann_assign.get("annotation"), "list[int64|bool]")
+        self.assertEqual(
+            ann_assign.get("annotation_type_expr"),
+            {
+                "kind": "GenericType",
+                "base": "list",
+                "args": [
+                    {
+                        "kind": "UnionType",
+                        "union_mode": "general",
+                        "options": [
+                            {"kind": "NamedType", "name": "int64"},
+                            {"kind": "NamedType", "name": "bool"},
+                        ],
+                    }
+                ],
+            },
+        )
+
+    def test_type_expr_is_built_for_union_optional_and_nominal_annotations(self) -> None:
+        src = """
+from pytra.std.json import JsonObj, JsonValue
+
+def f(x: int | bool, xs: list[int | bool], payload: JsonValue | None) -> JsonObj | None:
+    local: dict[str, int | bool] = {}
+    return None
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        fn = next(
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "f"
+        )
+        arg_type_exprs = fn.get("arg_type_exprs", {})
+        self.assertEqual(
+            arg_type_exprs.get("x"),
+            {
+                "kind": "UnionType",
+                "union_mode": "general",
+                "options": [
+                    {"kind": "NamedType", "name": "int64"},
+                    {"kind": "NamedType", "name": "bool"},
+                ],
+            },
+        )
+        self.assertEqual(
+            arg_type_exprs.get("xs"),
+            {
+                "kind": "GenericType",
+                "base": "list",
+                "args": [
+                    {
+                        "kind": "UnionType",
+                        "union_mode": "general",
+                        "options": [
+                            {"kind": "NamedType", "name": "int64"},
+                            {"kind": "NamedType", "name": "bool"},
+                        ],
+                    }
+                ],
+            },
+        )
+        self.assertEqual(
+            arg_type_exprs.get("payload"),
+            {
+                "kind": "OptionalType",
+                "inner": {
+                    "kind": "NominalAdtType",
+                    "name": "JsonValue",
+                    "adt_family": "json",
+                    "variant_domain": "closed",
+                },
+            },
+        )
+        self.assertEqual(
+            fn.get("return_type_expr"),
+            {
+                "kind": "OptionalType",
+                "inner": {
+                    "kind": "NominalAdtType",
+                    "name": "JsonObj",
+                    "adt_family": "json",
+                    "variant_domain": "closed",
+                },
+            },
+        )
+        ann_assign = next(
+            n
+            for n in fn.get("body", [])
+            if isinstance(n, dict) and n.get("kind") == "AnnAssign"
+        )
+        expected_decl = {
+            "kind": "GenericType",
+            "base": "dict",
+            "args": [
+                {"kind": "NamedType", "name": "str"},
+                {
+                    "kind": "UnionType",
+                    "union_mode": "general",
+                    "options": [
+                        {"kind": "NamedType", "name": "int64"},
+                        {"kind": "NamedType", "name": "bool"},
+                    ],
+                },
+            ],
+        }
+        self.assertEqual(ann_assign.get("annotation_type_expr"), expected_decl)
+        self.assertEqual(ann_assign.get("decl_type_expr"), expected_decl)
+        self.assertEqual(ann_assign.get("target", {}).get("type_expr"), expected_decl)
 
     def test_dict_set_comprehension_infers_target_type(self) -> None:
         src = """

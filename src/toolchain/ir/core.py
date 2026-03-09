@@ -31,6 +31,8 @@ from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_template import validate_template_module
 from toolchain.frontends.runtime_symbol_index import lookup_runtime_call_adapter_kind
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
+from toolchain.frontends.type_expr import parse_type_expr_text
+from toolchain.frontends.type_expr import type_expr_to_string
 
 
 # `BorrowKind` は実体のない型エイリアス用途のみなので、
@@ -219,58 +221,20 @@ def _sh_span(line: int, col: int, end_col: int) -> dict[str, int]:
 def _sh_ann_to_type(ann: str, *, type_aliases: dict[str, str] | None = None) -> str:
     """型注釈文字列を EAST 正規型へ変換する。"""
     aliases: dict[str, str] = type_aliases if type_aliases is not None else _SH_TYPE_ALIASES
-    mapping = {
-        "int": "int64",
-        "float": "float64",
-        "byte": "uint8",
-        "bool": "bool",
-        "str": "str",
-        "None": "None",
-        "bytes": "bytes",
-        "bytearray": "bytearray",
-        "Any": "Any",
-    }
-    txt: str = ann.strip()
-    if len(txt) >= 2 and ((txt[0] == "'" and txt[-1] == "'") or (txt[0] == '"' and txt[-1] == '"')):
-        txt = txt[1:-1].strip()
-    if txt.startswith("typing."):
-        txt = txt[len("typing.") :].strip()
-    if txt in mapping:
-        return mapping[txt]
-    if txt in aliases:
-        return aliases[txt]
-    lb = txt.find("[")
-    if lb <= 0 or not txt.endswith("]"):
-        return txt
-    head: str = txt[:lb].strip()
-    if head.startswith("typing."):
-        head = head[len("typing.") :].strip()
-    if head in aliases:
-        head = aliases[head]
-    if not _sh_is_identifier(head):
-        return txt
-    inner: str = txt[lb + 1 : -1].strip()
-    if inner == "":
-        return txt
-    parts: list[str] = []
-    depth = 0
-    start = 0
-    for i, ch in enumerate(inner):
-        if ch == "[":
-            depth += 1
-        elif ch == "]":
-            if depth > 0:
-                depth -= 1
-        elif ch == "," and depth == 0:
-            parts.append(inner[start:i].strip())
-            start = i + 1
-    tail = inner[start:].strip()
-    if tail != "":
-        parts.append(tail)
-    norm = [_sh_ann_to_type(p) for p in parts]
-    if head == "Optional" and len(norm) == 1:
-        return norm[0] + " | None"
-    return f"{head}[{', '.join(norm)}]"
+    return type_expr_to_string(parse_type_expr_text(ann, type_aliases=aliases))
+
+
+def _sh_ann_to_type_expr(
+    ann: str,
+    *,
+    type_aliases: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    aliases: dict[str, str] = type_aliases if type_aliases is not None else _SH_TYPE_ALIASES
+    return parse_type_expr_text(ann, type_aliases=aliases)
+
+
+def _sh_type_expr_to_type_name(expr: dict[str, Any]) -> str:
+    return type_expr_to_string(expr)
 
 
 def _sh_split_args_with_offsets(arg_text: str) -> list[tuple[str, int]]:
@@ -1149,6 +1113,7 @@ def _sh_parse_def_sig(
     in_class: str = "",
 ) -> dict[str, Any] | None:
     """`def ...` 行から関数名・引数型・戻り型を抽出する。"""
+    aliases = _SH_TYPE_ALIASES
     ln_norm: str = re.sub(r"\s+", " ", ln.strip())
     if not ln_norm.startswith("def ") or not ln_norm.endswith(":"):
         return None
@@ -1179,6 +1144,7 @@ def _sh_parse_def_sig(
     else:
         return None
     arg_types: dict[str, str] = {}
+    arg_type_exprs: dict[str, dict[str, Any]] = {}
     arg_order: list[str] = []
     arg_defaults: dict[str, str] = {}
     if args_raw.strip() != "":
@@ -1217,6 +1183,7 @@ def _sh_parse_def_sig(
                 )
             if in_class != "" and p == "self":
                 arg_types["self"] = in_class
+                arg_type_exprs["self"] = _sh_ann_to_type_expr(in_class, type_aliases=aliases)
                 arg_order.append("self")
                 continue
             if ":" not in p:
@@ -1235,11 +1202,13 @@ def _sh_parse_def_sig(
                     )
                 if in_class != "" and p_name == "self":
                     arg_types["self"] = in_class
+                    arg_type_exprs["self"] = _sh_ann_to_type_expr(in_class, type_aliases=aliases)
                     arg_order.append("self")
                     if p_default != "":
                         arg_defaults["self"] = p_default
                     continue
                 arg_types[p_name] = "unknown"
+                arg_type_exprs[p_name] = _sh_ann_to_type_expr("unknown", type_aliases=aliases)
                 arg_order.append(p_name)
                 if p_default != "":
                     arg_defaults[p_name] = p_default
@@ -1267,7 +1236,9 @@ def _sh_parse_def_sig(
                     source_span=_sh_span(ln_no, 0, len(ln_norm)),
                     hint="Use `name: Type` style parameters.",
                 )
-            arg_types[pn] = _sh_ann_to_type(pt)
+            arg_expr = _sh_ann_to_type_expr(pt, type_aliases=aliases)
+            arg_types[pn] = _sh_type_expr_to_type_name(arg_expr)
+            arg_type_exprs[pn] = arg_expr
             arg_order.append(pn)
             if pdef != "":
                 default_txt = pdef.strip()
@@ -1275,8 +1246,11 @@ def _sh_parse_def_sig(
                     arg_defaults[pn] = default_txt
     out_sig: dict[str, Any] = {}
     out_sig["name"] = fn_name
-    out_sig["ret"] = _sh_ann_to_type(ret_group.strip()) if ret_group != "" else "None"
+    ret_expr = _sh_ann_to_type_expr(ret_group.strip(), type_aliases=aliases) if ret_group != "" else _sh_ann_to_type_expr("None", type_aliases=aliases)
+    out_sig["ret"] = _sh_type_expr_to_type_name(ret_expr)
     out_sig["arg_types"] = arg_types
+    out_sig["arg_type_exprs"] = arg_type_exprs
+    out_sig["return_type_expr"] = ret_expr
     out_sig["arg_order"] = arg_order
     out_sig["arg_defaults"] = arg_defaults
     return out_sig
@@ -5224,6 +5198,8 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             fn_name = str(sig["name"])
             fn_ret = str(sig["ret"])
             arg_types: dict[str, str] = dict(sig["arg_types"])
+            arg_type_exprs_obj: Any = sig.get("arg_type_exprs")
+            arg_type_exprs: dict[str, Any] = arg_type_exprs_obj if isinstance(arg_type_exprs_obj, dict) else {}
             arg_order: list[str] = list(sig["arg_order"])
             arg_defaults_raw_obj: Any = sig.get("arg_defaults")
             arg_defaults_raw: dict[str, Any] = arg_defaults_raw_obj if isinstance(arg_defaults_raw_obj, dict) else {}
@@ -5252,6 +5228,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             yield_value_type = "unknown"
             if is_generator:
                 fn_ret_effective, yield_value_type = _sh_make_generator_return_type(fn_ret, yield_types)
+            fn_ret_type_expr = _sh_ann_to_type_expr(fn_ret_effective)
             arg_defaults: dict[str, Any] = {}
             arg_index_map: dict[str, int] = {}
             for arg_pos, arg_name in enumerate(arg_order):
@@ -5285,10 +5262,12 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "original_name": fn_name,
                     "source_span": _sh_block_end_span(body_lines, ln_no, 0, len(ln_txt), j),
                     "arg_types": arg_types,
+                    "arg_type_exprs": arg_type_exprs,
                     "arg_order": arg_order,
                     "arg_defaults": arg_defaults,
                     "arg_index": arg_index_map,
                     "return_type": fn_ret_effective,
+                    "return_type_expr": fn_ret_type_expr,
                     "arg_usage": arg_usage_map,
                     "renamed_symbols": {},
                     "docstring": docstring,
@@ -5992,9 +5971,12 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             target_txt = typed_target
             ann_txt = typed_ann
             ann = _sh_ann_to_type(ann_txt)
+            ann_expr = _sh_ann_to_type_expr(ann)
             target_col = ln_txt.find(target_txt)
             target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
             _maybe_bind_self_field(target_expr, None, explicit=ann)
+            if isinstance(target_expr, dict):
+                target_expr["type_expr"] = ann_expr
             if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
                 name_types[str(target_expr.get("id", ""))] = ann
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
@@ -6003,9 +5985,11 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "source_span": _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
                     "target": target_expr,
                     "annotation": ann,
+                    "annotation_type_expr": ann_expr,
                     "value": None,
                     "declare": True,
                     "decl_type": ann,
+                    "decl_type_expr": ann_expr,
                 }
             )
             continue
@@ -6015,11 +5999,14 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             ann_txt = typed_ann
             expr_txt = typed_default
             ann = _sh_ann_to_type(ann_txt)
+            ann_expr = _sh_ann_to_type_expr(ann)
             expr_col = ln_txt.find(expr_txt)
             val_expr = _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
             target_col = ln_txt.find(target_txt)
             target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
             _maybe_bind_self_field(target_expr, None, explicit=ann)
+            if isinstance(target_expr, dict):
+                target_expr["type_expr"] = ann_expr
             if isinstance(target_expr, dict) and target_expr.get("kind") == "Name":
                 name_types[str(target_expr.get("id", ""))] = ann
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
@@ -6028,9 +6015,11 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     "source_span": _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
                     "target": target_expr,
                     "annotation": ann,
+                    "annotation_type_expr": ann_expr,
                     "value": val_expr,
                     "declare": True,
                     "decl_type": ann,
+                    "decl_type_expr": ann_expr,
                 }
             )
             continue
@@ -6486,6 +6475,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             fn_name = str(sig["name"])
             fn_ret = str(sig["ret"])
             arg_types: dict[str, str] = dict(sig["arg_types"])
+            arg_type_exprs_obj: Any = sig.get("arg_type_exprs")
+            arg_type_exprs: dict[str, Any] = arg_type_exprs_obj if isinstance(arg_type_exprs_obj, dict) else {}
             arg_order: list[str] = list(sig["arg_order"])
             arg_defaults_raw_obj: Any = sig.get("arg_defaults")
             arg_defaults_raw: dict[str, Any] = arg_defaults_raw_obj if isinstance(arg_defaults_raw_obj, dict) else {}
@@ -6513,6 +6504,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             yield_value_type = "unknown"
             if is_generator:
                 fn_ret_effective, yield_value_type = _sh_make_generator_return_type(fn_ret, yield_types)
+            fn_ret_type_expr = _sh_ann_to_type_expr(fn_ret_effective)
             arg_defaults: dict[str, Any] = {}
             arg_index_map: dict[str, int] = {}
             for arg_pos, arg_name in enumerate(arg_order):
@@ -6555,10 +6547,12 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 "original_name": fn_name,
                 "source_span": {"lineno": i, "col": 0, "end_lineno": block[-1][0], "end_col": len(block[-1][1])},
                 "arg_types": arg_types,
+                "arg_type_exprs": arg_type_exprs,
                 "arg_order": arg_order,
                 "arg_defaults": arg_defaults,
                 "arg_index": arg_index_map,
                 "return_type": fn_ret_effective,
+                "return_type_expr": fn_ret_type_expr,
                 "arg_usage": arg_usage_map,
                 "renamed_symbols": {},
                 "leading_comments": [],
@@ -7011,6 +7005,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     if parsed_field is not None:
                         fname, fty_txt, fdefault = parsed_field
                         fty = _sh_ann_to_type(fty_txt)
+                        fty_expr = _sh_ann_to_type_expr(fty)
                         field_types[fname] = fty
                         val_node: dict[str, Any] | None = None
                         if fdefault != "":
@@ -7025,15 +7020,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                     "kind": "Name",
                                     "source_span": _sh_span(ln_no, ln_txt.find(fname), ln_txt.find(fname) + len(fname)),
                                     "resolved_type": fty,
+                                    "type_expr": fty_expr,
                                     "borrow_kind": "value",
                                     "casts": [],
                                     "repr": fname,
                                     "id": fname,
                                 },
                                 "annotation": fty,
+                                "annotation_type_expr": fty_expr,
                                 "value": val_node,
                                 "declare": True,
                                 "decl_type": fty,
+                                "decl_type_expr": fty_expr,
                             }
                         )
                         k += 1
@@ -7429,6 +7427,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             ann_txt = top_ann
             expr_txt = top_default
             ann = _sh_ann_to_type(ann_txt)
+            ann_expr = _sh_ann_to_type_expr(ann)
             expr_col = ln.find(expr_txt)
             value_expr = _sh_parse_expr_lowered(expr_txt, ln_no=i, col=expr_col, name_types={})
             ann_item: dict[str, Any] = {
@@ -7438,15 +7437,18 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     "kind": "Name",
                     "source_span": _sh_span(i, ln.find(name), ln.find(name) + len(name)),
                     "resolved_type": ann,
+                    "type_expr": ann_expr,
                     "borrow_kind": "value",
                     "casts": [],
                     "repr": name,
                     "id": name,
                 },
                 "annotation": ann,
+                "annotation_type_expr": ann_expr,
                 "value": value_expr,
                 "declare": True,
                 "decl_type": ann,
+                "decl_type_expr": ann_expr,
             }
             extern_var_meta = _sh_collect_extern_var_metadata(
                 target_name=name,
