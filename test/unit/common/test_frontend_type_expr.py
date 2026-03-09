@@ -12,12 +12,26 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.toolchain.frontends.type_expr import parse_type_expr_text
+from src.toolchain.frontends.type_expr import summarize_type_text
 from src.toolchain.frontends.type_expr import sync_type_expr_mirrors
 from src.toolchain.ir.east2 import normalize_east1_to_east2_document
 from src.toolchain.link.program_validator import validate_raw_east3_doc
 
 
 class FrontendTypeExprTest(unittest.TestCase):
+    def test_summarize_type_text_distinguishes_type_lanes(self) -> None:
+        optional_nominal = summarize_type_text("JsonValue | None")
+        self.assertEqual(optional_nominal["category"], "optional")
+        self.assertEqual(optional_nominal["nominal_adt_family"], "json")
+
+        dynamic_union = summarize_type_text("int64 | Any")
+        self.assertEqual(dynamic_union["category"], "dynamic_union")
+        self.assertEqual(dynamic_union["union_mode"], "dynamic")
+
+        general_union = summarize_type_text("int64 | bool")
+        self.assertEqual(general_union["category"], "general_union")
+        self.assertEqual(general_union["union_mode"], "general")
+
     def test_sync_type_expr_mirrors_fills_legacy_string_fields(self) -> None:
         doc = {
             "kind": "Module",
