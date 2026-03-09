@@ -257,6 +257,8 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("dict<str, object> _sh_make_import_from_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_function_def_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_class_def_stmt(", text)
+        self.assertIn("dict<str, object> _sh_make_expr_token(", text)
+        self.assertIn("dict<str, object> _sh_make_import_binding(", text)
         self.assertIn("dict<str, object> _sh_make_assign_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_ann_assign_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_attribute_expr(", text)
@@ -278,10 +280,17 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("dict<str, object> _sh_make_for_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_for_range_stmt(", text)
         self.assertIn("dict<str, object> _sh_make_range_expr(", text)
+        self.assertIn('out.append(_sh_make_expr_token("STR", py_slice(text, i, end), i, end));', text)
+        self.assertIn(
+            "import_bindings.append(_sh_make_import_binding(module_id, export_name, local_name, binding_kind, source_file, source_line));",
+            text,
+        )
         self.assertNotIn('dict<str, object> item = dict<str, object>{{"kind", make_object("FunctionDef")}', text)
         self.assertNotIn('dict<str, object> cls_item = dict<str, object>{{"kind", make_object("ClassDef")}', text)
         self.assertNotIn('body_items.append(dict<str, object>(dict<str, object>{{"kind", make_object("Import")}', text)
         self.assertNotIn('body_items.append(dict<str, object>(dict<str, object>{{"kind", make_object("ImportFrom")}', text)
+        self.assertNotIn('out.append(dict<str, object>{{"k", make_object("STR")}', text)
+        self.assertNotIn('import_bindings.append(dict<str, object>{{"module_id", make_object(module_id)}', text)
         self.assertNotIn('node = dict<str, object>{{"kind", make_object("Attribute")}', text)
         self.assertNotIn('dict<str, object> payload = dict<str, object>{{"kind", make_object("Call")}', text)
         self.assertNotIn('return dict<str, object>{{"kind", make_object("BinOp")}', text)
