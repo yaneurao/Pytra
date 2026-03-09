@@ -103,6 +103,37 @@ python3 tools/runtime_parity_check.py \
 - 補助スクリプト（`tools/`）の用途一覧は [ツール一覧](spec/spec-tools.md) を参照してください。
 - 制約の根拠と正規仕様は [利用仕様](./spec/spec-user.md) を参照してください。
 
+## `@extern` / `extern(...)` の使い方
+
+- `@extern` はトップレベル関数を「外部実装へ委譲する関数」として宣言する Pytra 独自記法です。
+- 関数 extern は `@extern`、変数 extern は `name = extern(...)` を使います。変数に `@extern` は付けられません。
+- 正規仕様は [ABI仕様](./spec/spec-abi.md) を参照してください。
+
+```python
+from pytra.std import extern
+
+@extern
+def sin(x: float) -> float:
+    ...
+```
+
+- 変数 extern には 3 つあります。
+  - `name: T = extern(expr)`
+    - host fallback / runtime hook 初期化
+  - `name: Any = extern()`
+    - 同名 ambient global
+  - `name: Any = extern("symbol")`
+    - 別名 ambient global
+- ambient global は現状 JS/TS backend 限定です。
+
+```python
+from typing import Any
+from pytra.std import extern
+
+document: Any = extern()
+console: Any = extern("console")
+```
+
 ## runtime helper での `@abi`
 
 - `@abi` は runtime helper の境界 ABI を固定するための注釈です。一般 user code へ広げる前提ではありません。
