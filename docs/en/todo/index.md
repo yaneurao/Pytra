@@ -85,6 +85,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Added `_sh_import_binding_fields()` / `_sh_make_import_resolution_binding()` so the module-root tail no longer chains `binding.get(...)` calls or `dict(binding)` when deriving `import_resolution_bindings`.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Extended `test_prepare_selfhost_source.py` with `_sh_make_arg_node()` / `_sh_make_lambda_arg_entry()` / `_sh_make_keyword_arg()` / `_sh_make_cast_entry()` guards so the generated mirror fails fast if lambda args, call keywords, or numeric cast metadata slip back to inline `make_object` dict assembly.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Extended `test_prepare_selfhost_source.py` with `_sh_make_attribute_expr()` / `_sh_make_call_expr()` / `_sh_make_binop_expr()` guards so the generated mirror fails fast if `Attribute` / `Call` / `BinOp` slip back to inline `make_object` dict assembly.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Updated `tools/check_transpiler_version_gate.py` so `src/py2x-selfhost.py` is treated as a direct cpp dependency, and added `test_check_transpiler_version_gate.py` to fail fast when selfhost entrypoint changes are missing a cpp version bump.
 
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 
