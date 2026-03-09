@@ -297,14 +297,12 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact_or_none", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import normalize_emitted_module_artifact", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import normalize_emitted_module_artifact", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import normalize_legacy_backend_spec_dict", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import normalize_legacy_backend_spec_dict", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import build_resolved_backend_spec", host_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import build_resolved_backend_spec", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import build_legacy_emit_module_adapter", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import build_legacy_emit_module_adapter", static_src)
         self.assertIn("doc = export_compiler_root_document_any(east_doc)", host_src)
         self.assertIn("doc = export_compiler_root_document_any(east_doc)", static_src)
         self.assertNotIn(
@@ -338,14 +336,16 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("return export_module_artifact_any(", static_src)
         self.assertIn("return normalize_emitted_module_artifact(artifact_any, request=request)", host_src)
         self.assertIn("return normalize_emitted_module_artifact(artifact_any, request=request)", static_src)
-        self.assertIn("normalized = normalize_legacy_backend_spec_dict(spec)", host_src)
-        self.assertIn("normalized = normalize_legacy_backend_spec_dict(spec)", static_src)
+        self.assertIn("return build_resolved_backend_spec(", host_src)
+        self.assertIn("return build_resolved_backend_spec(", static_src)
+        self.assertIn('default_program_writer=_load_callable("backends.common.program_writer", "write_single_file_program")', host_src)
+        self.assertIn("default_program_writer=write_single_file_program", static_src)
+        self.assertIn("suppress_emit_exceptions=True", host_src)
+        self.assertIn("suppress_emit_exceptions=False", static_src)
         self.assertIn("return export_program_artifact_any(", host_src)
         self.assertIn("return export_program_artifact_any(", static_src)
         self.assertIn("return export_resolved_backend_spec_any(get_backend_spec_typed(target))", host_src)
         self.assertIn("_BACKEND_SPECS[target] = export_resolved_backend_spec_any(runtime_spec)", static_src)
-        self.assertIn("emit_module_impl = build_legacy_emit_module_adapter(", host_src)
-        self.assertIn("emit_module_impl = build_legacy_emit_module_adapter(", static_src)
         self.assertIn(
             "return [export_module_artifact_any(item) for item in collect_program_modules_typed(module_artifact)]",
             host_src,
@@ -378,6 +378,14 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("def _coerce_module_artifact(", static_src)
         self.assertNotIn("def _legacy_emit_module_adapter(", host_src)
         self.assertNotIn("def _legacy_emit_module_adapter(", static_src)
+        self.assertNotIn("normalized = normalize_legacy_backend_spec_dict(spec)", host_src)
+        self.assertNotIn("normalized = normalize_legacy_backend_spec_dict(spec)", static_src)
+        self.assertNotIn("emit_module_impl = build_legacy_emit_module_adapter(", host_src)
+        self.assertNotIn("emit_module_impl = build_legacy_emit_module_adapter(", static_src)
+        self.assertNotIn("program_writer_impl = normalized.get(\"program_writer\")", host_src)
+        self.assertNotIn("program_writer_impl = normalized.get(\"program_writer\")", static_src)
+        self.assertNotIn("runtime_hook_impl = normalized.get(\"runtime_hook\")", host_src)
+        self.assertNotIn("runtime_hook_impl = normalized.get(\"runtime_hook\")", static_src)
         self.assertNotIn("opts = emitter_options if isinstance(emitter_options, dict) else {}", host_src)
         self.assertNotIn("opts = emitter_options if isinstance(emitter_options, dict) else {}", static_src)
         self.assertNotIn(
@@ -645,6 +653,51 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
                 "optimizer": {"cpp_opt_level": {"type": "int"}},
                 "emitter": {},
             },
+        )
+
+    def test_build_resolved_backend_spec_keeps_writer_hook_and_emit_fallbacks(self) -> None:
+        def _identity(doc: object) -> dict[str, object]:
+            return {"kind": "IR", "doc": doc}
+
+        def _empty_emit(_ir: object, _output_path: Path, _opts: object = None) -> str:
+            return ""
+
+        def _runtime_none(_output_path: Path) -> None:
+            return None
+
+        def _default_writer(_program: dict[str, object], _output_path: Path, _opts: dict[str, object]) -> None:
+            return None
+
+        spec = typed_boundary.build_resolved_backend_spec(
+            {
+                "target_lang": "fake",
+                "extension": ".txt",
+                "emit": lambda ir, output_path, _opts=None: "// "
+                + str(ir.get("kind", ""))
+                + " -> "
+                + output_path.name,
+            },
+            identity_ir=_identity,
+            empty_emit=_empty_emit,
+            runtime_none=_runtime_none,
+            default_program_writer=_default_writer,
+            suppress_emit_exceptions=True,
+        )
+
+        self.assertEqual(spec.carrier.target_lang, "fake")
+        self.assertIs(spec.lower_impl, _identity)
+        self.assertIs(spec.optimizer_impl, _identity)
+        self.assertIs(spec.program_writer_impl, _default_writer)
+        self.assertIs(spec.runtime_hook_impl, _runtime_none)
+        self.assertEqual(
+            spec.emit_module_impl(
+                {"kind": "Demo"},
+                Path("out/demo.txt"),
+                {"mode": "typed"},
+                module_id="pkg.demo",
+                is_entry=True,
+            )["text"],
+            "// Demo -> demo.txt",
         )
 
     def test_build_legacy_emit_module_adapter_preserves_host_static_error_policy(self) -> None:

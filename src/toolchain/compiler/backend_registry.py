@@ -10,13 +10,12 @@ import importlib
 
 from typing import Any
 from pytra.std.pathlib import Path
-from toolchain.compiler.typed_boundary import BackendSpecCarrier
 from toolchain.compiler.typed_boundary import EmitRequestCarrier
 from toolchain.compiler.typed_boundary import LayerOptionsCarrier
 from toolchain.compiler.typed_boundary import ModuleArtifactCarrier
 from toolchain.compiler.typed_boundary import ProgramArtifactCarrier
 from toolchain.compiler.typed_boundary import ResolvedBackendSpec
-from toolchain.compiler.typed_boundary import build_legacy_emit_module_adapter
+from toolchain.compiler.typed_boundary import build_resolved_backend_spec
 from toolchain.compiler.typed_boundary import build_program_artifact_carrier
 from toolchain.compiler.typed_boundary import coerce_backend_spec
 from toolchain.compiler.typed_boundary import coerce_ir_document
@@ -35,7 +34,6 @@ from toolchain.compiler.typed_boundary import export_program_artifact_any
 from toolchain.compiler.typed_boundary import export_program_artifact_carrier
 from toolchain.compiler.typed_boundary import flatten_module_artifact_carrier
 from toolchain.compiler.typed_boundary import normalize_emitted_module_artifact
-from toolchain.compiler.typed_boundary import normalize_legacy_backend_spec_dict
 from toolchain.compiler.typed_boundary import resolve_layer_options_carrier
 
 
@@ -428,41 +426,13 @@ _SPEC_CACHE: dict[str, ResolvedBackendSpec] = {}
 
 
 def _normalize_backend_runtime_spec(spec: BackendSpec) -> ResolvedBackendSpec:
-    normalized = normalize_legacy_backend_spec_dict(spec)
-    extension = str(normalized.get("extension", ""))
-
-    lower_impl = normalized.get("lower")
-    if not callable(lower_impl):
-        lower_impl = _identity_ir
-    optimizer_impl = normalized.get("optimizer")
-    if not callable(optimizer_impl):
-        optimizer_impl = _identity_ir
-    emit_impl = normalized.get("emit")
-    if not callable(emit_impl):
-        emit_impl = _empty_emit
-    emit_module_impl = normalized.get("emit_module")
-    if not callable(emit_module_impl):
-        emit_module_impl = build_legacy_emit_module_adapter(
-            emit_impl,
-            extension=extension,
-            suppress_emit_exceptions=True,
-        )
-    program_writer_impl = normalized.get("program_writer")
-    if not callable(program_writer_impl) and not isinstance(program_writer_impl, dict):
-        program_writer_impl = _load_callable("backends.common.program_writer", "write_single_file_program")
-    runtime_hook_impl = normalized.get("runtime_hook")
-    if runtime_hook_impl is None:
-        runtime_hook_impl = _runtime_none
-
-    carrier = BackendSpecCarrier.from_legacy_spec(normalized)
-    return ResolvedBackendSpec(
-        carrier=carrier,
-        lower_impl=lower_impl,
-        optimizer_impl=optimizer_impl,
-        emit_impl=emit_impl,
-        emit_module_impl=emit_module_impl,
-        program_writer_impl=program_writer_impl,
-        runtime_hook_impl=runtime_hook_impl,
+    return build_resolved_backend_spec(
+        spec,
+        identity_ir=_identity_ir,
+        empty_emit=_empty_emit,
+        runtime_none=_runtime_none,
+        default_program_writer=_load_callable("backends.common.program_writer", "write_single_file_program"),
+        suppress_emit_exceptions=True,
     )
 
 

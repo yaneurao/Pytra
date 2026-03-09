@@ -264,6 +264,8 @@ class EastCoreTest(unittest.TestCase):
         tuple_text = text.split("def _sh_make_tuple_expr", 1)[1].split("def _sh_make_constant_expr", 1)[0]
         call_text = text.split("def _sh_make_call_expr", 1)[1].split("def _sh_make_keyword_arg", 1)[0]
         dict_text = text.split("def _sh_make_dict_expr", 1)[1].split("def _sh_make_list_comp_expr", 1)[0]
+        arg_text = text.split("def _sh_make_arg_node", 1)[1].split("def _sh_make_lambda_arg_entry", 1)[0]
+        formatted_text = text.split("def _sh_make_formatted_value_node", 1)[1].split("def _sh_make_joined_str_expr", 1)[0]
         slice_text = text.split("def _sh_make_slice_node", 1)[1].split("def _sh_make_subscript_expr", 1)[0]
 
         self.assertIn('node = _sh_make_kind_carrier(kind)', node_helper_text)
@@ -280,11 +282,16 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('"Call"', call_text)
         self.assertIn('node = _sh_make_value_expr(', dict_text)
         self.assertIn('"Dict"', dict_text)
+        self.assertIn('node = _sh_make_node(', arg_text)
+        self.assertIn('"arg"', arg_text)
+        self.assertIn('node = _sh_make_node("FormattedValue", value=value)', formatted_text)
         self.assertIn('return _sh_make_node("Slice", lower=lower, upper=upper, step=step)', slice_text)
         self.assertNotIn('"kind": "Name"', name_text)
         self.assertNotIn('"kind": "Tuple"', tuple_text)
         self.assertNotIn('"kind": "Call"', call_text)
         self.assertNotIn('"kind": "Dict"', dict_text)
+        self.assertNotIn('"kind": "arg"', arg_text)
+        self.assertNotIn('"kind": "FormattedValue"', formatted_text)
         self.assertNotIn('node = _sh_make_kind_carrier("Slice")', slice_text)
 
     def test_core_source_routes_statement_envelopes_through_shared_helper(self) -> None:
@@ -298,6 +305,7 @@ class EastCoreTest(unittest.TestCase):
         except_text = text.split("def _sh_make_except_handler", 1)[1].split("def _sh_make_try_stmt", 1)[0]
         try_text = text.split("def _sh_make_try_stmt", 1)[1].split("def _sh_make_for_stmt", 1)[0]
         fn_text = text.split("def _sh_make_function_def_stmt", 1)[1].split("def _sh_make_class_def_stmt", 1)[0]
+        module_text = text.split("def _sh_make_module_root", 1)[1].split("def _sh_ann_to_type", 1)[0]
 
         self.assertIn('node = _sh_make_kind_carrier(kind)', node_helper_text)
         self.assertIn("node.update(fields)", node_helper_text)
@@ -309,11 +317,14 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('return _sh_make_node("ExceptHandler", type=type_expr, name=name, body=body)', except_text)
         self.assertIn('node = _sh_make_stmt_node("Try", source_span)', try_text)
         self.assertIn('node = _sh_make_stmt_node("FunctionDef", source_span)', fn_text)
+        self.assertIn('return _sh_make_node(', module_text)
+        self.assertIn('"Module"', module_text)
         self.assertNotIn('{"kind": "Expr"', expr_text)
         self.assertNotIn('{"kind": "Assign"', assign_text)
         self.assertNotIn('"kind": "ExceptHandler"', except_text)
         self.assertNotIn('{"kind": "Try"', try_text)
         self.assertNotIn('{"kind": "FunctionDef"', fn_text)
+        self.assertNotIn('"kind": "Module"', module_text)
 
     def test_core_source_uses_builder_helpers_for_residual_stmt_name_tuple_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
@@ -448,6 +459,9 @@ class EastCoreTest(unittest.TestCase):
         raw_kinds = re.findall(r'\{"kind": "([^"]+)"', text)
         inline_kinds = {kind for kind in raw_kinds if kind != "" and kind[0].isupper()}
         trivia_kinds = {kind for kind in raw_kinds if kind != "" and kind[0].islower()}
+        multiline_kind_literals = set(
+            re.findall(r'(?:return|node:\s*dict\[str, Any\]\s*=)\s*\{\s*"kind":\s*"([^"]+)"', text, re.S)
+        )
 
         self.assertIn('node = _sh_make_stmt_node("Expr", source_span)', text)
         self.assertIn('return _sh_make_node("Slice", lower=lower, upper=upper, step=step)', text)
@@ -459,6 +473,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('return {"kind": "comment", "text": text}', text)
         self.assertEqual(inline_kinds, set())
         self.assertEqual(trivia_kinds, set())
+        self.assertEqual(multiline_kind_literals, set())
         self.assertTrue(
             {
                 "If",
@@ -488,8 +503,10 @@ class EastCoreTest(unittest.TestCase):
                 "Dict",
                 "Tuple",
                 "Name",
+                "Module",
                 "Assign",
                 "AnnAssign",
+                "FormattedValue",
             }.isdisjoint(inline_kinds)
         )
 

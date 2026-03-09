@@ -477,6 +477,53 @@ def normalize_legacy_backend_spec_dict(raw_spec: object) -> dict[str, object]:
     return normalized
 
 
+def build_resolved_backend_spec(
+    raw_spec: object,
+    *,
+    identity_ir: Any,
+    empty_emit: Any,
+    runtime_none: Any,
+    default_program_writer: Any,
+    suppress_emit_exceptions: bool,
+) -> "ResolvedBackendSpec":
+    normalized = normalize_legacy_backend_spec_dict(raw_spec)
+    extension = str(normalized.get("extension", ""))
+
+    lower_impl = normalized.get("lower")
+    if not callable(lower_impl):
+        lower_impl = identity_ir
+    optimizer_impl = normalized.get("optimizer")
+    if not callable(optimizer_impl):
+        optimizer_impl = identity_ir
+    emit_impl = normalized.get("emit")
+    if not callable(emit_impl):
+        emit_impl = empty_emit
+    emit_module_impl = normalized.get("emit_module")
+    if not callable(emit_module_impl):
+        emit_module_impl = build_legacy_emit_module_adapter(
+            emit_impl,
+            extension=extension,
+            suppress_emit_exceptions=suppress_emit_exceptions,
+        )
+    program_writer_impl = normalized.get("program_writer")
+    if not callable(program_writer_impl) and not isinstance(program_writer_impl, dict):
+        program_writer_impl = default_program_writer
+    runtime_hook_impl = normalized.get("runtime_hook")
+    if runtime_hook_impl is None:
+        runtime_hook_impl = runtime_none
+
+    carrier = BackendSpecCarrier.from_legacy_spec(normalized)
+    return ResolvedBackendSpec(
+        carrier=carrier,
+        lower_impl=lower_impl,
+        optimizer_impl=optimizer_impl,
+        emit_impl=emit_impl,
+        emit_module_impl=emit_module_impl,
+        program_writer_impl=program_writer_impl,
+        runtime_hook_impl=runtime_hook_impl,
+    )
+
+
 def coerce_ir_document(raw: object) -> dict[str, object]:
     return _copy_object_dict(raw)
 

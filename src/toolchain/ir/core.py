@@ -808,12 +808,12 @@ def _sh_make_arg_node(
     default: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`arg` node を構築する。"""
-    node: dict[str, Any] = {
-        "kind": "arg",
-        "arg": arg,
-        "annotation": annotation,
-        "resolved_type": resolved_type,
-    }
+    node = _sh_make_node(
+        "arg",
+        arg=arg,
+        annotation=annotation,
+        resolved_type=resolved_type,
+    )
     if default is not None:
         node["default"] = default
     return node
@@ -868,10 +868,7 @@ def _sh_make_formatted_value_node(
     format_spec: str = "",
 ) -> dict[str, Any]:
     """`FormattedValue` node を構築する。"""
-    node: dict[str, Any] = {
-        "kind": "FormattedValue",
-        "value": value,
-    }
+    node = _sh_make_node("FormattedValue", value=value)
     if conversion != "":
         node["conversion"] = conversion
     if format_spec != "":
@@ -1379,15 +1376,15 @@ def _sh_make_module_root(
         import_module_bindings=import_module_bindings,
         import_symbol_bindings=import_symbol_bindings,
     )
-    return {
-        "kind": "Module",
-        "source_path": filename,
-        "source_span": source_span,
-        "body": body_items,
-        "main_guard_body": main_stmts,
-        "renamed_symbols": renamed_symbols,
-        "meta": meta,
-    }
+    return _sh_make_node(
+        "Module",
+        source_path=filename,
+        source_span=source_span,
+        body=body_items,
+        main_guard_body=main_stmts,
+        renamed_symbols=renamed_symbols,
+        meta=meta,
+    )
 
 
 def _sh_ann_to_type(ann: str, *, type_aliases: dict[str, str] | None = None) -> str:
