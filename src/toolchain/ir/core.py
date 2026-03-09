@@ -887,6 +887,258 @@ def _sh_make_ann_assign_stmt(
     return node
 
 
+def _sh_make_raise_stmt(
+    source_span: dict[str, Any],
+    exc: dict[str, Any],
+    *,
+    cause: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """`Raise` 文 node を構築する。"""
+    return {
+        "kind": "Raise",
+        "source_span": source_span,
+        "exc": exc,
+        "cause": cause,
+    }
+
+
+def _sh_make_pass_stmt(source_span: dict[str, Any]) -> dict[str, Any]:
+    """`Pass` 文 node を構築する。"""
+    return {
+        "kind": "Pass",
+        "source_span": source_span,
+    }
+
+
+def _sh_make_return_stmt(
+    source_span: dict[str, Any],
+    value: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """`Return` 文 node を構築する。"""
+    return {
+        "kind": "Return",
+        "source_span": source_span,
+        "value": value,
+    }
+
+
+def _sh_make_yield_stmt(
+    source_span: dict[str, Any],
+    value: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """`Yield` 文 node を構築する。"""
+    return {
+        "kind": "Yield",
+        "source_span": source_span,
+        "value": value,
+    }
+
+
+def _sh_make_augassign_stmt(
+    source_span: dict[str, Any],
+    target: dict[str, Any],
+    op: str,
+    value: dict[str, Any],
+    *,
+    declare: bool = False,
+    decl_type: str | None = None,
+) -> dict[str, Any]:
+    """`AugAssign` 文 node を構築する。"""
+    return {
+        "kind": "AugAssign",
+        "source_span": source_span,
+        "target": target,
+        "op": op,
+        "value": value,
+        "declare": declare,
+        "decl_type": decl_type,
+    }
+
+
+def _sh_make_swap_stmt(
+    source_span: dict[str, Any],
+    left: dict[str, Any],
+    right: dict[str, Any],
+) -> dict[str, Any]:
+    """`Swap` 文 node を構築する。"""
+    return {
+        "kind": "Swap",
+        "source_span": source_span,
+        "left": left,
+        "right": right,
+    }
+
+
+def _sh_make_import_alias(name: str, asname: str | None = None) -> dict[str, str | None]:
+    """import alias item を構築する。"""
+    return {
+        "name": name,
+        "asname": asname,
+    }
+
+
+def _sh_make_import_stmt(
+    source_span: dict[str, Any],
+    names: list[dict[str, str | None]],
+) -> dict[str, Any]:
+    """`Import` 文 node を構築する。"""
+    return {
+        "kind": "Import",
+        "source_span": source_span,
+        "names": names,
+    }
+
+
+def _sh_make_import_from_stmt(
+    source_span: dict[str, Any],
+    module: str,
+    names: list[dict[str, str | None]],
+    *,
+    level: int = 0,
+) -> dict[str, Any]:
+    """`ImportFrom` 文 node を構築する。"""
+    return {
+        "kind": "ImportFrom",
+        "source_span": source_span,
+        "module": module,
+        "names": names,
+        "level": level,
+    }
+
+
+def _sh_make_if_stmt(
+    source_span: dict[str, Any],
+    test: dict[str, Any],
+    body: list[dict[str, Any]],
+    *,
+    orelse: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """`If` 文 node を構築する。"""
+    return {
+        "kind": "If",
+        "source_span": source_span,
+        "test": test,
+        "body": body,
+        "orelse": [] if orelse is None else orelse,
+    }
+
+
+def _sh_make_while_stmt(
+    source_span: dict[str, Any],
+    test: dict[str, Any],
+    body: list[dict[str, Any]],
+    *,
+    orelse: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """`While` 文 node を構築する。"""
+    return {
+        "kind": "While",
+        "source_span": source_span,
+        "test": test,
+        "body": body,
+        "orelse": [] if orelse is None else orelse,
+    }
+
+
+def _sh_make_except_handler(
+    type_expr: dict[str, Any],
+    body: list[dict[str, Any]],
+    *,
+    name: str | None = None,
+) -> dict[str, Any]:
+    """`ExceptHandler` node を構築する。"""
+    return {
+        "kind": "ExceptHandler",
+        "type": type_expr,
+        "name": name,
+        "body": body,
+    }
+
+
+def _sh_make_try_stmt(
+    source_span: dict[str, Any],
+    body: list[dict[str, Any]],
+    *,
+    handlers: list[dict[str, Any]] | None = None,
+    orelse: list[dict[str, Any]] | None = None,
+    finalbody: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """`Try` 文 node を構築する。"""
+    return {
+        "kind": "Try",
+        "source_span": source_span,
+        "body": body,
+        "handlers": [] if handlers is None else handlers,
+        "orelse": [] if orelse is None else orelse,
+        "finalbody": [] if finalbody is None else finalbody,
+    }
+
+
+def _sh_make_for_stmt(
+    source_span: dict[str, Any],
+    target: dict[str, Any],
+    iter_expr: dict[str, Any],
+    body: list[dict[str, Any]],
+    *,
+    target_type: str = "unknown",
+    iter_mode: str = "static_fastpath",
+    iter_source_type: str = "unknown",
+    iter_element_type: str = "unknown",
+    orelse: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """`For` 文 node を構築する。"""
+    return {
+        "kind": "For",
+        "source_span": source_span,
+        "target": target,
+        "target_type": target_type,
+        "iter_mode": iter_mode,
+        "iter_source_type": iter_source_type,
+        "iter_element_type": iter_element_type,
+        "iter": iter_expr,
+        "body": body,
+        "orelse": [] if orelse is None else orelse,
+    }
+
+
+def _sh_make_for_range_stmt(
+    source_span: dict[str, Any],
+    target: dict[str, Any],
+    start: dict[str, Any],
+    stop: dict[str, Any],
+    step: dict[str, Any],
+    body: list[dict[str, Any]],
+    *,
+    target_type: str = "int64",
+    range_mode: str = "",
+    orelse: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """`ForRange` 文 node を構築する。"""
+    mode = range_mode
+    if mode == "":
+        step_const_obj: Any = None
+        if isinstance(step, dict):
+            step_const_obj = step.get("value")
+        if step_const_obj == 1:
+            mode = "ascending"
+        elif step_const_obj == -1:
+            mode = "descending"
+        else:
+            mode = "dynamic"
+    return {
+        "kind": "ForRange",
+        "source_span": source_span,
+        "target": target,
+        "target_type": target_type,
+        "start": start,
+        "stop": stop,
+        "step": step,
+        "range_mode": mode,
+        "body": body,
+        "orelse": [] if orelse is None else orelse,
+    }
+
+
 def _sh_make_module_root(
     *,
     filename: str,
@@ -6308,31 +6560,23 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 cause_col = ln_txt.find(cause_txt)
                 cause_expr = _sh_parse_expr_lowered(cause_txt, ln_no=ln_no, col=cause_col, name_types=dict(name_types))
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                {
-                    "kind": "Raise",
-                    "source_span": _sh_stmt_span(merged_line_end, ln_no, ln_txt.find("raise "), len(ln_txt)),
-                    "exc": _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
-                    "cause": cause_expr,
-                }
+                _sh_make_raise_stmt(
+                    _sh_stmt_span(merged_line_end, ln_no, ln_txt.find("raise "), len(ln_txt)),
+                    _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
+                    cause=cause_expr,
+                )
             )
             continue
 
         if s == "pass":
-            pass_stmt: dict[str, Any] = {
-                "kind": "Pass",
-                "source_span": _sh_stmt_span(merged_line_end, ln_no, indent, indent + 4),
-            }
+            pass_stmt = _sh_make_pass_stmt(_sh_stmt_span(merged_line_end, ln_no, indent, indent + 4))
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, pass_stmt)
             continue
 
         if s == "return":
             rcol = ln_txt.find("return")
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                {
-                    "kind": "Return",
-                    "source_span": _sh_stmt_span(merged_line_end, ln_no, rcol, len(ln_txt)),
-                    "value": None,
-                }
+                _sh_make_return_stmt(_sh_stmt_span(merged_line_end, ln_no, rcol, len(ln_txt)))
             )
             continue
 
@@ -6343,11 +6587,10 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             if expr_col < 0:
                 expr_col = rcol + len("return ")
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                {
-                    "kind": "Return",
-                    "source_span": _sh_stmt_span(merged_line_end, ln_no, rcol, len(ln_txt)),
-                    "value": _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
-                }
+                _sh_make_return_stmt(
+                    _sh_stmt_span(merged_line_end, ln_no, rcol, len(ln_txt)),
+                    _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
+                )
             )
             continue
 
@@ -6357,11 +6600,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 stmts,
                 pending_leading_trivia,
                 pending_blank_count,
-                {
-                    "kind": "Yield",
-                    "source_span": _sh_stmt_span(merged_line_end, ln_no, ycol, len(ln_txt)),
-                    "value": None,
-                },
+                _sh_make_yield_stmt(_sh_stmt_span(merged_line_end, ln_no, ycol, len(ln_txt))),
             )
             continue
 
@@ -6375,11 +6614,10 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 stmts,
                 pending_leading_trivia,
                 pending_blank_count,
-                {
-                    "kind": "Yield",
-                    "source_span": _sh_stmt_span(merged_line_end, ln_no, ycol, len(ln_txt)),
-                    "value": _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
-                },
+                _sh_make_yield_stmt(
+                    _sh_stmt_span(merged_line_end, ln_no, ycol, len(ln_txt)),
+                    _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types)),
+                ),
             )
             continue
 
@@ -6476,15 +6714,14 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             if target_ty != "unknown":
                 decl_type = target_ty
             pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                {
-                    "kind": "AugAssign",
-                    "source_span": _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
-                    "target": target_expr,
-                    "op": op_map[aug_op],
-                    "value": val_expr,
-                    "declare": False,
-                    "decl_type": decl_type,
-                }
+                _sh_make_augassign_stmt(
+                    _sh_stmt_span(merged_line_end, ln_no, target_col, len(ln_txt)),
+                    target_expr,
+                    op_map[aug_op],
+                    val_expr,
+                    declare=False,
+                    decl_type=decl_type,
+                )
             )
             continue
 
@@ -6509,20 +6746,19 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 and str(rhs.get("elements")[1].get("id", "")) == n1
             ):
                 pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, 
-                    {
-                        "kind": "Swap",
-                        "source_span": _sh_stmt_span(merged_line_end, ln_no, c1, len(ln_txt)),
-                        "left": _sh_make_name_expr(
+                    _sh_make_swap_stmt(
+                        _sh_stmt_span(merged_line_end, ln_no, c1, len(ln_txt)),
+                        _sh_make_name_expr(
                             _sh_span(ln_no, c1, c1 + len(n1)),
                             n1,
                             resolved_type=name_types.get(n1, "unknown"),
                         ),
-                        "right": _sh_make_name_expr(
+                        _sh_make_name_expr(
                             _sh_span(ln_no, c2, c2 + len(n2)),
                             n2,
                             resolved_type=name_types.get(n2, "unknown"),
                         ),
-                    }
+                    )
                 )
                 continue
             target_expr = _sh_make_tuple_expr(
@@ -7397,10 +7633,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 if bind == cls_indent + 4:
                     if s2 == "pass":
                         class_body.append(
-                            {
-                                "kind": "Pass",
-                                "source_span": _sh_span(ln_no, 0, len(ln_txt)),
-                            }
+                            _sh_make_pass_stmt(_sh_span(ln_no, 0, len(ln_txt)))
                         )
                         k += 1
                         continue

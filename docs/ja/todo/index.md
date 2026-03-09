@@ -60,6 +60,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] postfix / collection 向け `_sh_make_attribute_expr()` / `_sh_make_call_expr()` / `_sh_make_slice_node()` / `_sh_make_subscript_expr()` / `_sh_make_*_comp_expr()` / `_sh_make_*_expr()` helper を追加し、`ExprParser._parse_postfix()`、collection literal、generator/list/dict/set comprehension、`range(...)` 正規化を helper 経由へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_arg_node()` / `_sh_make_lambda_expr()` / `_sh_make_formatted_value_node()` / `_sh_make_joined_str_expr()` を追加し、lambda 引数/本体と f-string fragment の checked-in node 組み立てを helper 経由へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_arg_node()` / `_sh_make_lambda_expr()` / `_sh_make_formatted_value_node()` / `_sh_make_joined_str_expr()` を追加し、lambda 引数、`Lambda`、f-string fragment、module-level の裸 `Expr` 文も helper 経由へ寄せた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] `_sh_make_raise_stmt()` / `_sh_make_pass_stmt()` / `_sh_make_return_stmt()` / `_sh_make_yield_stmt()` / `_sh_make_augassign_stmt()` / `_sh_make_swap_stmt()` を追加し、statement block/class-body の simple stmt も helper 経由へ寄せた。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
