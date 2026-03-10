@@ -6512,6 +6512,24 @@ class _ShExprParser:
             repr_text=repr_text,
         )
 
+    def _parse_subscript_slice_tail(
+        self,
+        *,
+        lower: dict[str, Any] | None,
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any],
+    ]:
+        """Subscript slice tail の `:` 以降 parse を helper へ寄せる。"""
+        self._eat(":")
+        upper = None
+        if self._cur()["k"] != "]":
+            upper = self._parse_ifexp()
+        rtok = self._eat("]")
+        return None, lower, upper, rtok
+
     def _parse_subscript_suffix_components(
         self,
     ) -> tuple[
@@ -6522,20 +6540,10 @@ class _ShExprParser:
     ]:
         """Subscript / slice suffix の component parse を helper へ寄せる。"""
         if self._cur()["k"] == ":":
-            self._eat(":")
-            up = None
-            if self._cur()["k"] != "]":
-                up = self._parse_ifexp()
-            rtok = self._eat("]")
-            return None, None, up, rtok
+            return self._parse_subscript_slice_tail(lower=None)
         first = self._parse_ifexp()
         if self._cur()["k"] == ":":
-            self._eat(":")
-            up = None
-            if self._cur()["k"] != "]":
-                up = self._parse_ifexp()
-            rtok = self._eat("]")
-            return None, first, up, rtok
+            return self._parse_subscript_slice_tail(lower=first)
         rtok = self._eat("]")
         return first, None, None, rtok
 

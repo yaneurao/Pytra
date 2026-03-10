@@ -282,6 +282,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call suffix の token consume も `_ShExprParser._consume_call_suffix_tokens()` へ寄せ、`_resolve_call_suffix_state()` から `"(" + call-args + ")"` の直列処理を外した。`test_east_core.py` では token helper 定義、state helper の call site、旧 inline call-suffix token block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `attr suffix` の `.` + `NAME` consume も `_ShExprParser._resolve_attr_suffix_name_token()` へ寄せ、`_resolve_attr_suffix_state()` から direct token consume を外した。`test_east_core.py` では token helper 定義、state helper call site、旧 inline attr-suffix token block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `subscript suffix` の `[` + component parse も `_ShExprParser._consume_subscript_suffix_tokens()` へ寄せ、`_resolve_subscript_suffix_state()` から direct token consume を外した。`test_east_core.py` では token helper 定義、state helper call site、旧 inline subscript-suffix token block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `subscript suffix` の slice-tail parse も `_ShExprParser._parse_subscript_slice_tail()` へ寄せ、`_parse_subscript_suffix_components()` から `":" -> upper -> "]"` の重複枝を外した。`test_east_core.py` では tail helper 定義、component helper の call site、旧 inline slice-tail block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
