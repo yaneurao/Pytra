@@ -12,6 +12,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 import src.toolchain.compiler.backend_registry as host_registry
+import src.toolchain.compiler.backend_registry_metadata as registry_metadata
 import src.toolchain.compiler.backend_registry_static as static_registry
 import src.toolchain.compiler.typed_boundary as typed_boundary
 
@@ -69,6 +70,21 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("program_writer", host_spec)
         self.assertTrue(callable(static_spec.get("emit_module")))
         self.assertIn("program_writer", static_spec)
+
+    def test_backend_registries_share_canonical_metadata_sot(self) -> None:
+        targets = registry_metadata.list_backend_targets()
+        self.assertEqual(host_registry.list_backend_targets(), targets)
+        self.assertEqual(static_registry.list_backend_targets(), targets)
+
+        cpp_meta = registry_metadata.build_backend_spec_metadata("cpp")
+        host_cpp = host_registry.get_backend_spec("cpp")
+        static_cpp = static_registry.get_backend_spec("cpp")
+        self.assertEqual(host_cpp.get("target_lang"), cpp_meta.get("target_lang"))
+        self.assertEqual(static_cpp.get("target_lang"), cpp_meta.get("target_lang"))
+        self.assertEqual(host_cpp.get("extension"), cpp_meta.get("extension"))
+        self.assertEqual(static_cpp.get("extension"), cpp_meta.get("extension"))
+        self.assertEqual(host_cpp.get("default_options"), cpp_meta.get("default_options"))
+        self.assertEqual(static_cpp.get("option_schema"), cpp_meta.get("option_schema"))
 
     def test_selfhost_cpp_entry_uses_direct_typed_compiler_path(self) -> None:
         selfhost_cpp = (ROOT / "selfhost" / "py2cpp.cpp").read_text(encoding="utf-8")
@@ -771,7 +787,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("return export_module_artifact_any(", static_src)
         self.assertIn("return build_resolved_backend_spec(", host_src)
         self.assertIn("return build_resolved_backend_spec(", static_src)
-        self.assertIn('default_program_writer=_load_callable("backends.common.program_writer", "write_single_file_program")', host_src)
+        self.assertIn('default_program_writer=_load_callable_ref(get_program_writer_ref("single_file"))', host_src)
         self.assertIn("default_program_writer=write_single_file_program", static_src)
         self.assertIn("suppress_emit_exceptions=True", host_src)
         self.assertIn("suppress_emit_exceptions=False", static_src)

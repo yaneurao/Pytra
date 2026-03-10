@@ -10,8 +10,16 @@ import importlib
 
 from typing import Any
 from pytra.std.pathlib import Path
-from toolchain.compiler.backend_registry_metadata import backend_target_order
-from toolchain.compiler.backend_registry_metadata import build_backend_spec_row
+from toolchain.compiler.backend_registry_metadata import build_backend_spec_metadata
+from toolchain.compiler.backend_registry_metadata import get_backend_emit_kind
+from toolchain.compiler.backend_registry_metadata import get_backend_emit_ref
+from toolchain.compiler.backend_registry_metadata import get_backend_lower_ref
+from toolchain.compiler.backend_registry_metadata import get_backend_optimizer_ref
+from toolchain.compiler.backend_registry_metadata import get_backend_program_writer_key
+from toolchain.compiler.backend_registry_metadata import get_backend_runtime_hook_key
+from toolchain.compiler.backend_registry_metadata import get_program_writer_ref
+from toolchain.compiler.backend_registry_metadata import get_runtime_hook_descriptor
+from toolchain.compiler.backend_registry_metadata import list_backend_targets as metadata_backend_targets
 from toolchain.compiler.typed_boundary import LayerOptionsCarrier
 from toolchain.compiler.typed_boundary import ModuleArtifactCarrier
 from toolchain.compiler.typed_boundary import ProgramArtifactCarrier
@@ -69,18 +77,29 @@ def _copy_runtime_file(src_rel: str, output_path: Path, dst_name: str) -> None:
     dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
 
 
-def _copy_php_runtime(output_path: Path) -> None:
+def _copy_runtime_files(file_specs: list[object], output_path: Path) -> None:
+    for item in file_specs:
+        if not isinstance(item, (list, tuple)) or len(item) != 2:
+            raise RuntimeError("invalid runtime file descriptor")
+        src_rel = item[0]
+        dst_name = item[1]
+        if not isinstance(src_rel, str) or not isinstance(dst_name, str):
+            raise RuntimeError("invalid runtime file descriptor")
+        _copy_runtime_file(src_rel, output_path, dst_name)
+
+
+def _copy_php_runtime_files(file_specs: list[object], output_path: Path) -> None:
     src_root = _src_root() / "runtime" / "php"
     if not src_root.exists():
         raise RuntimeError("php runtime source root not found: " + str(src_root))
     dst_root = output_path.parent / "pytra"
-    files = [
-        ("pytra-core/py_runtime.php", "py_runtime.php"),
-        ("pytra-core/std/time.php", "std/time.php"),
-        ("pytra-gen/runtime/png.php", "runtime/png.php"),
-        ("pytra-gen/runtime/gif.php", "runtime/gif.php"),
-    ]
-    for src_rel, dst_rel in files:
+    for item in file_specs:
+        if not isinstance(item, (list, tuple)) or len(item) != 2:
+            raise RuntimeError("invalid php runtime file descriptor")
+        src_rel = item[0]
+        dst_rel = item[1]
+        if not isinstance(src_rel, str) or not isinstance(dst_rel, str):
+            raise RuntimeError("invalid php runtime file descriptor")
         src = src_root / src_rel
         if not src.exists():
             raise RuntimeError("php runtime source missing: " + str(src))
@@ -115,59 +134,6 @@ def _runtime_js_shims(output_path: Path) -> None:
     writer(output_path.parent)
 
 
-def _runtime_rs(output_path: Path) -> None:
-    _copy_runtime_file("runtime/rs/pytra-core/built_in/py_runtime.rs", output_path, "py_runtime.rs")
-    _copy_runtime_file("runtime/rs/pytra-gen/utils/image_runtime.rs", output_path, "image_runtime.rs")
-
-
-def _runtime_go(output_path: Path) -> None:
-    _copy_runtime_file("runtime/go/pytra-core/built_in/py_runtime.go", output_path, "py_runtime.go")
-    _copy_runtime_file("runtime/go/pytra-gen/utils/png.go", output_path, "png.go")
-    _copy_runtime_file("runtime/go/pytra-gen/utils/gif.go", output_path, "gif.go")
-
-
-def _runtime_java(output_path: Path) -> None:
-    _copy_runtime_file("runtime/java/pytra-core/built_in/PyRuntime.java", output_path, "PyRuntime.java")
-    _copy_runtime_file("runtime/java/pytra-core/std/time_impl.java", output_path, "_impl.java")
-    _copy_runtime_file("runtime/java/pytra-core/std/math_impl.java", output_path, "_m.java")
-    _copy_runtime_file("runtime/java/pytra-gen/utils/png.java", output_path, "png.java")
-    _copy_runtime_file("runtime/java/pytra-gen/utils/gif.java", output_path, "gif.java")
-    _copy_runtime_file("runtime/java/pytra-gen/std/time.java", output_path, "time.java")
-    _copy_runtime_file("runtime/java/pytra-gen/std/json.java", output_path, "json.java")
-    _copy_runtime_file("runtime/java/pytra-gen/std/pathlib.java", output_path, "pathlib.java")
-    _copy_runtime_file("runtime/java/pytra-gen/std/math.java", output_path, "math.java")
-
-
-def _runtime_kotlin(output_path: Path) -> None:
-    _copy_runtime_file("runtime/kotlin/pytra-core/built_in/py_runtime.kt", output_path, "py_runtime.kt")
-    _copy_runtime_file("runtime/kotlin/pytra-gen/utils/image_runtime.kt", output_path, "image_runtime.kt")
-
-
-def _runtime_swift(output_path: Path) -> None:
-    _copy_runtime_file("runtime/swift/pytra-core/built_in/py_runtime.swift", output_path, "py_runtime.swift")
-    _copy_runtime_file("runtime/swift/pytra-gen/utils/image_runtime.swift", output_path, "image_runtime.swift")
-
-
-def _runtime_ruby(output_path: Path) -> None:
-    _copy_runtime_file("runtime/ruby/pytra-core/built_in/py_runtime.rb", output_path, "py_runtime.rb")
-    _copy_runtime_file("runtime/ruby/pytra-gen/utils/image_runtime.rb", output_path, "image_runtime.rb")
-
-
-def _runtime_lua(output_path: Path) -> None:
-    _copy_runtime_file("runtime/lua/pytra-core/built_in/py_runtime.lua", output_path, "py_runtime.lua")
-    _copy_runtime_file("runtime/lua/pytra-gen/utils/image_runtime.lua", output_path, "image_runtime.lua")
-
-
-def _runtime_scala(output_path: Path) -> None:
-    _copy_runtime_file("runtime/scala/pytra-core/built_in/py_runtime.scala", output_path, "py_runtime.scala")
-    _copy_runtime_file("runtime/scala/pytra-gen/utils/image_runtime.scala", output_path, "image_runtime.scala")
-
-
-def _runtime_nim(output_path: Path) -> None:
-    _copy_runtime_file("runtime/nim/pytra-core/built_in/py_runtime.nim", output_path, "py_runtime.nim")
-    _copy_runtime_file("runtime/nim/pytra-gen/utils/image_runtime.nim", output_path, "image_runtime.nim")
-
-
 def _load_callable(module_name: str, symbol_name: str) -> Any:
     mod = importlib.import_module(module_name)
     fn = _module_symbol(mod, symbol_name)
@@ -176,8 +142,20 @@ def _load_callable(module_name: str, symbol_name: str) -> Any:
     return fn
 
 
-def _make_unary_emit(module_name: str, symbol_name: str) -> Any:
-    emit_impl = _load_callable(module_name, symbol_name)
+def _split_symbol_ref(symbol_ref: str) -> tuple[str, str]:
+    parts = symbol_ref.split(":", 1)
+    if len(parts) != 2 or parts[0] == "" or parts[1] == "":
+        raise RuntimeError("invalid backend symbol ref: " + symbol_ref)
+    return parts[0], parts[1]
+
+
+def _load_callable_ref(symbol_ref: str) -> Any:
+    module_name, symbol_name = _split_symbol_ref(symbol_ref)
+    return _load_callable(module_name, symbol_name)
+
+
+def _make_unary_emit_from_ref(symbol_ref: str) -> Any:
+    emit_impl = _load_callable_ref(symbol_ref)
 
     def _emit(ir: dict, _output_path: Path, _emitter_options: Any = None) -> str:
         out = emit_impl(ir)
@@ -186,9 +164,8 @@ def _make_unary_emit(module_name: str, symbol_name: str) -> Any:
     return _emit
 
 
-def _load_cpp_spec() -> BackendSpec:
-    transpile_to_cpp = _load_callable("backends.cpp.cli", "transpile_to_cpp")
-    write_cpp_program = _load_callable("backends.cpp.program_writer", "write_cpp_program")
+def _make_cpp_emit_from_ref(symbol_ref: str) -> Any:
+    transpile_to_cpp = _load_callable_ref(symbol_ref)
 
     def _emit_cpp(ir: dict, _output_path: Path, emitter_options: Any = None) -> str:
         opts = export_layer_options_any(emitter_options, layer="emitter")
@@ -205,170 +182,61 @@ def _load_cpp_spec() -> BackendSpec:
         )
         return out if isinstance(out, str) else ""
 
-    return build_backend_spec_row(
-        "cpp",
-        lower=_identity_ir,
-        optimizer=_identity_ir,
-        emit=_emit_cpp,
-        runtime_hook=_runtime_none,
-        program_writer=write_cpp_program,
-    )
+    return _emit_cpp
 
 
-def _load_rs_spec() -> BackendSpec:
-    return build_backend_spec_row(
-        "rs",
-        lower=_load_callable("backends.rs.lower", "lower_east3_to_rs_ir"),
-        optimizer=_load_callable("backends.rs.optimizer", "optimize_rs_ir"),
-        emit=_make_unary_emit("backends.rs.emitter.rs_emitter", "transpile_to_rust"),
-        runtime_hook=_runtime_rs,
-    )
-
-
-def _load_cs_spec() -> BackendSpec:
-    return build_backend_spec_row(
-        "cs",
-        lower=_load_callable("backends.cs.lower", "lower_east3_to_cs_ir"),
-        optimizer=_load_callable("backends.cs.optimizer", "optimize_cs_ir"),
-        emit=_make_unary_emit("backends.cs.emitter.cs_emitter", "transpile_to_csharp"),
-        runtime_hook=_runtime_none,
-    )
-
-
-def _load_js_spec() -> BackendSpec:
-    return build_backend_spec_row(
-        "js",
-        lower=_load_callable("backends.js.lower", "lower_east3_to_js_ir"),
-        optimizer=_load_callable("backends.js.optimizer", "optimize_js_ir"),
-        emit=_make_unary_emit("backends.js.emitter.js_emitter", "transpile_to_js"),
-        runtime_hook=_runtime_js_shims,
-    )
-
-
-def _load_ts_spec() -> BackendSpec:
-    return build_backend_spec_row(
-        "ts",
-        lower=_load_callable("backends.ts.lower", "lower_east3_to_ts_ir"),
-        optimizer=_load_callable("backends.ts.optimizer", "optimize_ts_ir"),
-        emit=_make_unary_emit("backends.ts.emitter.ts_emitter", "transpile_to_typescript"),
-        runtime_hook=_runtime_js_shims,
-    )
-
-
-def _load_go_spec() -> BackendSpec:
-    return build_backend_spec_row(
-        "go",
-        lower=_load_callable("backends.go.lower", "lower_east3_to_go_ir"),
-        optimizer=_load_callable("backends.go.optimizer", "optimize_go_ir"),
-        emit=_make_unary_emit("backends.go.emitter", "transpile_to_go_native"),
-        runtime_hook=_runtime_go,
-    )
-
-
-def _load_java_spec() -> BackendSpec:
-    lower = _load_callable("backends.java.lower", "lower_east3_to_java_ir")
-    optimizer = _load_callable("backends.java.optimizer", "optimize_java_ir")
-    emit_impl = _load_callable("backends.java.emitter", "transpile_to_java_native")
+def _make_java_emit_from_ref(symbol_ref: str) -> Any:
+    emit_impl = _load_callable_ref(symbol_ref)
 
     def _emit_java(ir: dict, output_path: Path, _emitter_options: Any = None) -> str:
         class_name = output_path.stem if output_path.stem != "" else "Main"
         out = emit_impl(ir, class_name=class_name)
         return out if isinstance(out, str) else ""
 
-    return build_backend_spec_row(
-        "java",
-        lower=lower,
-        optimizer=optimizer,
-        emit=_emit_java,
-        runtime_hook=_runtime_java,
-    )
+    return _emit_java
 
 
-def _load_kotlin_spec() -> BackendSpec:
-    return build_backend_spec_row(
-        "kotlin",
-        lower=_load_callable("backends.kotlin.lower", "lower_east3_to_kotlin_ir"),
-        optimizer=_load_callable("backends.kotlin.optimizer", "optimize_kotlin_ir"),
-        emit=_make_unary_emit("backends.kotlin.emitter", "transpile_to_kotlin_native"),
-        runtime_hook=_runtime_kotlin,
-    )
+def _runtime_hook_from_key(runtime_key: str) -> Any:
+    descriptor = get_runtime_hook_descriptor(runtime_key)
+    kind = str(descriptor.get("kind", ""))
+    files_any = descriptor.get("files", [])
+    files = files_any if isinstance(files_any, list) else []
+    if kind == "none":
+        return _runtime_none
+    if kind == "js_shims":
+        return _runtime_js_shims
+    if kind == "copy_files":
+        return lambda output_path: _copy_runtime_files(files, output_path)
+    if kind == "php_runtime":
+        return lambda output_path: _copy_php_runtime_files(files, output_path)
+    raise RuntimeError("unsupported runtime hook kind: " + runtime_key)
 
 
-def _load_swift_spec() -> BackendSpec:
-    return build_backend_spec_row(
-        "swift",
-        lower=_load_callable("backends.swift.lower", "lower_east3_to_swift_ir"),
-        optimizer=_load_callable("backends.swift.optimizer", "optimize_swift_ir"),
-        emit=_make_unary_emit("backends.swift.emitter", "transpile_to_swift_native"),
-        runtime_hook=_runtime_swift,
-    )
+def _emit_from_target(target: str) -> Any:
+    emit_kind = get_backend_emit_kind(target)
+    emit_ref = get_backend_emit_ref(target)
+    if emit_kind == "cpp":
+        return _make_cpp_emit_from_ref(emit_ref)
+    if emit_kind == "java":
+        return _make_java_emit_from_ref(emit_ref)
+    if emit_kind == "unary":
+        return _make_unary_emit_from_ref(emit_ref)
+    raise RuntimeError("unsupported emit kind: " + emit_kind)
 
 
-def _load_ruby_spec() -> BackendSpec:
-    return build_backend_spec_row(
-        "ruby",
-        lower=_load_callable("backends.ruby.lower", "lower_east3_to_ruby_ir"),
-        optimizer=_load_callable("backends.ruby.optimizer", "optimize_ruby_ir"),
-        emit=_make_unary_emit("backends.ruby.emitter", "transpile_to_ruby_native"),
-        runtime_hook=_runtime_ruby,
-    )
+def _load_backend_spec(target: str) -> BackendSpec:
+    spec = build_backend_spec_metadata(target)
+    lower_ref = get_backend_lower_ref(target)
+    optimizer_ref = get_backend_optimizer_ref(target)
+    spec["lower"] = _identity_ir if lower_ref == "" else _load_callable_ref(lower_ref)
+    spec["optimizer"] = _identity_ir if optimizer_ref == "" else _load_callable_ref(optimizer_ref)
+    spec["emit"] = _emit_from_target(target)
+    spec["runtime_hook"] = _runtime_hook_from_key(get_backend_runtime_hook_key(target))
+    program_writer_key = get_backend_program_writer_key(target)
+    if program_writer_key != "":
+        spec["program_writer"] = _load_callable_ref(get_program_writer_ref(program_writer_key))
+    return spec
 
-
-def _load_lua_spec() -> BackendSpec:
-    return build_backend_spec_row(
-        "lua",
-        lower=_load_callable("backends.lua.lower", "lower_east3_to_lua_ir"),
-        optimizer=_load_callable("backends.lua.optimizer", "optimize_lua_ir"),
-        emit=_make_unary_emit("backends.lua.emitter", "transpile_to_lua_native"),
-        runtime_hook=_runtime_lua,
-    )
-
-
-def _load_scala_spec() -> BackendSpec:
-    return build_backend_spec_row(
-        "scala",
-        lower=_load_callable("backends.scala.lower", "lower_east3_to_scala_ir"),
-        optimizer=_load_callable("backends.scala.optimizer", "optimize_scala_ir"),
-        emit=_make_unary_emit("backends.scala.emitter", "transpile_to_scala_native"),
-        runtime_hook=_runtime_scala,
-    )
-
-
-def _load_php_spec() -> BackendSpec:
-    return build_backend_spec_row(
-        "php",
-        lower=_load_callable("backends.php.lower", "lower_east3_to_php_ir"),
-        optimizer=_load_callable("backends.php.optimizer", "optimize_php_ir"),
-        emit=_make_unary_emit("backends.php.emitter", "transpile_to_php_native"),
-        runtime_hook=_copy_php_runtime,
-    )
-
-
-def _load_nim_spec() -> BackendSpec:
-    return build_backend_spec_row(
-        "nim",
-        lower=_identity_ir,
-        optimizer=_identity_ir,
-        emit=_make_unary_emit("backends.nim.emitter", "transpile_to_nim_native"),
-        runtime_hook=_runtime_nim,
-    )
-
-_TARGET_LOADERS: dict = {
-    "cpp": _load_cpp_spec,
-    "rs": _load_rs_spec,
-    "cs": _load_cs_spec,
-    "js": _load_js_spec,
-    "ts": _load_ts_spec,
-    "go": _load_go_spec,
-    "java": _load_java_spec,
-    "kotlin": _load_kotlin_spec,
-    "swift": _load_swift_spec,
-    "ruby": _load_ruby_spec,
-    "lua": _load_lua_spec,
-    "scala": _load_scala_spec,
-    "php": _load_php_spec,
-    "nim": _load_nim_spec,
-}
 
 _SPEC_CACHE: dict[str, ResolvedBackendSpec] = {}
 
@@ -379,7 +247,7 @@ def _normalize_backend_runtime_spec(spec: BackendSpec) -> ResolvedBackendSpec:
         identity_ir=_identity_ir,
         empty_emit=_empty_emit,
         runtime_none=_runtime_none,
-        default_program_writer=_load_callable("backends.common.program_writer", "write_single_file_program"),
+        default_program_writer=_load_callable_ref(get_program_writer_ref("single_file")),
         suppress_emit_exceptions=True,
     )
 
@@ -393,17 +261,14 @@ def _coerce_runtime_spec(spec: BackendSpec | ResolvedBackendSpec) -> ResolvedBac
 
 
 def list_backend_targets() -> list:
-    return list(backend_target_order())
+    return metadata_backend_targets()
 
 
 def get_backend_spec_typed(target: str) -> ResolvedBackendSpec:
-    if target not in _TARGET_LOADERS:
-        raise RuntimeError("unsupported target: " + target)
     cached = _SPEC_CACHE.get(target)
     if isinstance(cached, ResolvedBackendSpec):
         return cached
-    loader = _TARGET_LOADERS[target]
-    spec_any = loader()
+    spec_any = _load_backend_spec(target)
     if not isinstance(spec_any, dict):
         raise RuntimeError("invalid backend spec for target: " + target)
     spec = _normalize_backend_runtime_spec(spec_any)

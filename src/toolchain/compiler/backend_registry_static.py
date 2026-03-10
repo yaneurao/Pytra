@@ -4,8 +4,16 @@ from __future__ import annotations
 
 from typing import Any
 from pytra.std.pathlib import Path
-from toolchain.compiler.backend_registry_metadata import backend_target_order
-from toolchain.compiler.backend_registry_metadata import build_backend_spec_row
+from toolchain.compiler.backend_registry_metadata import build_backend_spec_metadata
+from toolchain.compiler.backend_registry_metadata import get_backend_emit_kind
+from toolchain.compiler.backend_registry_metadata import get_backend_emit_ref
+from toolchain.compiler.backend_registry_metadata import get_backend_lower_ref
+from toolchain.compiler.backend_registry_metadata import get_backend_optimizer_ref
+from toolchain.compiler.backend_registry_metadata import get_backend_program_writer_key
+from toolchain.compiler.backend_registry_metadata import get_backend_runtime_hook_key
+from toolchain.compiler.backend_registry_metadata import get_program_writer_ref
+from toolchain.compiler.backend_registry_metadata import get_runtime_hook_descriptor
+from toolchain.compiler.backend_registry_metadata import list_backend_targets as metadata_backend_targets
 from toolchain.compiler.typed_boundary import LayerOptionsCarrier
 from toolchain.compiler.typed_boundary import ModuleArtifactCarrier
 from toolchain.compiler.typed_boundary import ProgramArtifactCarrier
@@ -102,29 +110,35 @@ def _copy_runtime_file(src_rel: str, output_path: Path, dst_name: str) -> None:
     dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
 
 
-def _copy_php_runtime(output_path: Path) -> None:
+def _copy_runtime_files(file_specs: list[object], output_path: Path) -> None:
+    for item in file_specs:
+        if not isinstance(item, (list, tuple)) or len(item) != 2:
+            raise RuntimeError("invalid runtime file descriptor")
+        src_rel = item[0]
+        dst_name = item[1]
+        if not isinstance(src_rel, str) or not isinstance(dst_name, str):
+            raise RuntimeError("invalid runtime file descriptor")
+        _copy_runtime_file(src_rel, output_path, dst_name)
+
+
+def _copy_php_runtime_files(file_specs: list[object], output_path: Path) -> None:
     src_root = _src_root() / "runtime" / "php"
     if not src_root.exists():
         raise RuntimeError("php runtime source root not found: " + str(src_root))
     dst_root = output_path.parent / "pytra"
-    files = [
-        ("pytra-core/py_runtime.php", "py_runtime.php"),
-        ("pytra-core/std/time.php", "std/time.php"),
-        ("pytra-gen/runtime/png.php", "runtime/png.php"),
-        ("pytra-gen/runtime/gif.php", "runtime/gif.php"),
-    ]
-    for src_rel, dst_rel in files:
+    for item in file_specs:
+        if not isinstance(item, (list, tuple)) or len(item) != 2:
+            raise RuntimeError("invalid php runtime file descriptor")
+        src_rel = item[0]
+        dst_rel = item[1]
+        if not isinstance(src_rel, str) or not isinstance(dst_rel, str):
+            raise RuntimeError("invalid php runtime file descriptor")
         src = src_root / src_rel
         if not src.exists():
             raise RuntimeError("php runtime source missing: " + str(src))
         dst = dst_root / dst_rel
         dst.parent.mkdir(parents=True, exist_ok=True)
         dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
-
-
-def _emit_java(ir: dict[str, Any], output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    class_name = output_path.stem if output_path.stem != "" else "Main"
-    return transpile_to_java_native(ir, class_name=class_name)
 
 
 def _emit_cpp(ir: dict[str, Any], _output_path: Path, emitter_options: dict[str, Any] | None = None) -> str:
@@ -142,54 +156,6 @@ def _emit_cpp(ir: dict[str, Any], _output_path: Path, emitter_options: dict[str,
     )
 
 
-def _emit_rs(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    return transpile_to_rust(ir)
-
-
-def _emit_cs(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    return transpile_to_csharp(ir)
-
-
-def _emit_js(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    return transpile_to_js(ir)
-
-
-def _emit_ts(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    return transpile_to_typescript(ir)
-
-
-def _emit_go(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    return transpile_to_go_native(ir)
-
-
-def _emit_kotlin(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    return transpile_to_kotlin_native(ir)
-
-
-def _emit_swift(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    return transpile_to_swift_native(ir)
-
-
-def _emit_ruby(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    return transpile_to_ruby_native(ir)
-
-
-def _emit_lua(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    return transpile_to_lua_native(ir)
-
-
-def _emit_scala(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    return transpile_to_scala_native(ir)
-
-
-def _emit_php(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    return transpile_to_php_native(ir)
-
-
-def _emit_nim(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    return transpile_to_nim_native(ir)
-
-
 def _runtime_none(_output_path: Path) -> None:
     return
 
@@ -198,84 +164,117 @@ def _runtime_js_shims(output_path: Path) -> None:
     write_js_runtime_shims(output_path.parent)
 
 
-def _runtime_rs(output_path: Path) -> None:
-    _copy_runtime_file("runtime/rs/pytra-core/built_in/py_runtime.rs", output_path, "py_runtime.rs")
-    _copy_runtime_file("runtime/rs/pytra-gen/utils/image_runtime.rs", output_path, "image_runtime.rs")
+def _emit_java(ir: dict[str, Any], output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+    class_name = output_path.stem if output_path.stem != "" else "Main"
+    return transpile_to_java_native(ir, class_name=class_name)
 
 
-def _runtime_go(output_path: Path) -> None:
-    _copy_runtime_file("runtime/go/pytra-core/built_in/py_runtime.go", output_path, "py_runtime.go")
-    _copy_runtime_file("runtime/go/pytra-gen/utils/png.go", output_path, "png.go")
-    _copy_runtime_file("runtime/go/pytra-gen/utils/gif.go", output_path, "gif.go")
+def _make_unary_emit(emit_impl: Any) -> Any:
+    def _emit(ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
+        out = emit_impl(ir)
+        return out if isinstance(out, str) else ""
+
+    return _emit
 
 
-def _runtime_java(output_path: Path) -> None:
-    _copy_runtime_file("runtime/java/pytra-core/built_in/PyRuntime.java", output_path, "PyRuntime.java")
-    _copy_runtime_file("runtime/java/pytra-core/std/time_impl.java", output_path, "_impl.java")
-    _copy_runtime_file("runtime/java/pytra-core/std/math_impl.java", output_path, "_m.java")
-    _copy_runtime_file("runtime/java/pytra-gen/utils/png.java", output_path, "png.java")
-    _copy_runtime_file("runtime/java/pytra-gen/utils/gif.java", output_path, "gif.java")
-    _copy_runtime_file("runtime/java/pytra-gen/std/time.java", output_path, "time.java")
-    _copy_runtime_file("runtime/java/pytra-gen/std/json.java", output_path, "json.java")
-    _copy_runtime_file("runtime/java/pytra-gen/std/pathlib.java", output_path, "pathlib.java")
-    _copy_runtime_file("runtime/java/pytra-gen/std/math.java", output_path, "math.java")
+_STATIC_CALLABLES: dict[str, Any] = {
+    "backends.rs.lower:lower_east3_to_rs_ir": lower_east3_to_rs_ir,
+    "backends.rs.optimizer:optimize_rs_ir": optimize_rs_ir,
+    "backends.rs.emitter.rs_emitter:transpile_to_rust": transpile_to_rust,
+    "backends.cs.lower:lower_east3_to_cs_ir": lower_east3_to_cs_ir,
+    "backends.cs.optimizer:optimize_cs_ir": optimize_cs_ir,
+    "backends.cs.emitter.cs_emitter:transpile_to_csharp": transpile_to_csharp,
+    "backends.js.lower:lower_east3_to_js_ir": lower_east3_to_js_ir,
+    "backends.js.optimizer:optimize_js_ir": optimize_js_ir,
+    "backends.js.emitter.js_emitter:transpile_to_js": transpile_to_js,
+    "backends.ts.lower:lower_east3_to_ts_ir": lower_east3_to_ts_ir,
+    "backends.ts.optimizer:optimize_ts_ir": optimize_ts_ir,
+    "backends.ts.emitter.ts_emitter:transpile_to_typescript": transpile_to_typescript,
+    "backends.go.lower:lower_east3_to_go_ir": lower_east3_to_go_ir,
+    "backends.go.optimizer:optimize_go_ir": optimize_go_ir,
+    "backends.go.emitter:transpile_to_go_native": transpile_to_go_native,
+    "backends.java.lower:lower_east3_to_java_ir": lower_east3_to_java_ir,
+    "backends.java.optimizer:optimize_java_ir": optimize_java_ir,
+    "backends.java.emitter:transpile_to_java_native": transpile_to_java_native,
+    "backends.kotlin.lower:lower_east3_to_kotlin_ir": lower_east3_to_kotlin_ir,
+    "backends.kotlin.optimizer:optimize_kotlin_ir": optimize_kotlin_ir,
+    "backends.kotlin.emitter:transpile_to_kotlin_native": transpile_to_kotlin_native,
+    "backends.swift.lower:lower_east3_to_swift_ir": lower_east3_to_swift_ir,
+    "backends.swift.optimizer:optimize_swift_ir": optimize_swift_ir,
+    "backends.swift.emitter:transpile_to_swift_native": transpile_to_swift_native,
+    "backends.ruby.lower:lower_east3_to_ruby_ir": lower_east3_to_ruby_ir,
+    "backends.ruby.optimizer:optimize_ruby_ir": optimize_ruby_ir,
+    "backends.ruby.emitter:transpile_to_ruby_native": transpile_to_ruby_native,
+    "backends.lua.lower:lower_east3_to_lua_ir": lower_east3_to_lua_ir,
+    "backends.lua.optimizer:optimize_lua_ir": optimize_lua_ir,
+    "backends.lua.emitter:transpile_to_lua_native": transpile_to_lua_native,
+    "backends.scala.lower:lower_east3_to_scala_ir": lower_east3_to_scala_ir,
+    "backends.scala.optimizer:optimize_scala_ir": optimize_scala_ir,
+    "backends.scala.emitter:transpile_to_scala_native": transpile_to_scala_native,
+    "backends.php.lower:lower_east3_to_php_ir": lower_east3_to_php_ir,
+    "backends.php.optimizer:optimize_php_ir": optimize_php_ir,
+    "backends.php.emitter:transpile_to_php_native": transpile_to_php_native,
+    "backends.nim.emitter:transpile_to_nim_native": transpile_to_nim_native,
+    "backends.common.program_writer:write_single_file_program": write_single_file_program,
+    "backends.cpp.program_writer:write_cpp_program": write_cpp_program,
+    "backends.cpp.emitter:transpile_to_cpp": transpile_to_cpp,
+}
 
 
-def _runtime_kotlin(output_path: Path) -> None:
-    _copy_runtime_file("runtime/kotlin/pytra-core/built_in/py_runtime.kt", output_path, "py_runtime.kt")
-    _copy_runtime_file("runtime/kotlin/pytra-gen/utils/image_runtime.kt", output_path, "image_runtime.kt")
+def _resolve_callable_ref(symbol_ref: str) -> Any:
+    fn = _STATIC_CALLABLES.get(symbol_ref)
+    if fn is None:
+        raise RuntimeError("unsupported backend symbol ref: " + symbol_ref)
+    return fn
 
 
-def _runtime_swift(output_path: Path) -> None:
-    _copy_runtime_file("runtime/swift/pytra-core/built_in/py_runtime.swift", output_path, "py_runtime.swift")
-    _copy_runtime_file("runtime/swift/pytra-gen/utils/image_runtime.swift", output_path, "image_runtime.swift")
+def _runtime_hook_from_key(runtime_key: str) -> Any:
+    descriptor = get_runtime_hook_descriptor(runtime_key)
+    kind = str(descriptor.get("kind", ""))
+    files_any = descriptor.get("files", [])
+    files = files_any if isinstance(files_any, list) else []
+    if kind == "none":
+        return _runtime_none
+    if kind == "js_shims":
+        return _runtime_js_shims
+    if kind == "copy_files":
+        return lambda output_path: _copy_runtime_files(files, output_path)
+    if kind == "php_runtime":
+        return lambda output_path: _copy_php_runtime_files(files, output_path)
+    raise RuntimeError("unsupported runtime hook kind: " + runtime_key)
 
 
-def _runtime_ruby(output_path: Path) -> None:
-    _copy_runtime_file("runtime/ruby/pytra-core/built_in/py_runtime.rb", output_path, "py_runtime.rb")
-    _copy_runtime_file("runtime/ruby/pytra-gen/utils/image_runtime.rb", output_path, "image_runtime.rb")
+def _emit_from_target(target: str) -> Any:
+    emit_kind = get_backend_emit_kind(target)
+    emit_ref = get_backend_emit_ref(target)
+    if emit_kind == "cpp":
+        return _emit_cpp
+    if emit_kind == "java":
+        return _emit_java
+    if emit_kind == "unary":
+        return _make_unary_emit(_resolve_callable_ref(emit_ref))
+    raise RuntimeError("unsupported emit kind: " + emit_kind)
 
 
-def _runtime_lua(output_path: Path) -> None:
-    _copy_runtime_file("runtime/lua/pytra-core/built_in/py_runtime.lua", output_path, "py_runtime.lua")
-    _copy_runtime_file("runtime/lua/pytra-gen/utils/image_runtime.lua", output_path, "image_runtime.lua")
-
-
-def _runtime_scala(output_path: Path) -> None:
-    _copy_runtime_file("runtime/scala/pytra-core/built_in/py_runtime.scala", output_path, "py_runtime.scala")
-    _copy_runtime_file("runtime/scala/pytra-gen/utils/image_runtime.scala", output_path, "image_runtime.scala")
-
-
-def _runtime_nim(output_path: Path) -> None:
-    _copy_runtime_file("runtime/nim/pytra-core/built_in/py_runtime.nim", output_path, "py_runtime.nim")
-    _copy_runtime_file("runtime/nim/pytra-gen/utils/image_runtime.nim", output_path, "image_runtime.nim")
+def _build_backend_spec(target: str) -> BackendSpec:
+    spec = build_backend_spec_metadata(target)
+    lower_ref = get_backend_lower_ref(target)
+    optimizer_ref = get_backend_optimizer_ref(target)
+    spec["lower"] = _identity_ir if lower_ref == "" else _resolve_callable_ref(lower_ref)
+    spec["optimizer"] = _identity_ir if optimizer_ref == "" else _resolve_callable_ref(optimizer_ref)
+    spec["emit"] = _emit_from_target(target)
+    spec["runtime_hook"] = _runtime_hook_from_key(get_backend_runtime_hook_key(target))
+    program_writer_key = get_backend_program_writer_key(target)
+    if program_writer_key != "":
+        spec["program_writer"] = _resolve_callable_ref(get_program_writer_ref(program_writer_key))
+    return spec
 
 
 BackendSpec = dict[str, Any]
 
 
 _BACKEND_SPECS: dict[str, BackendSpec] = {
-    "cpp": build_backend_spec_row(
-        "cpp",
-        lower=_identity_ir,
-        optimizer=_identity_ir,
-        emit=_emit_cpp,
-        runtime_hook=_runtime_none,
-        program_writer=write_cpp_program,
-    ),
-    "rs": build_backend_spec_row("rs", lower=lower_east3_to_rs_ir, optimizer=optimize_rs_ir, emit=_emit_rs, runtime_hook=_runtime_rs),
-    "cs": build_backend_spec_row("cs", lower=lower_east3_to_cs_ir, optimizer=optimize_cs_ir, emit=_emit_cs, runtime_hook=_runtime_none),
-    "js": build_backend_spec_row("js", lower=lower_east3_to_js_ir, optimizer=optimize_js_ir, emit=_emit_js, runtime_hook=_runtime_js_shims),
-    "ts": build_backend_spec_row("ts", lower=lower_east3_to_ts_ir, optimizer=optimize_ts_ir, emit=_emit_ts, runtime_hook=_runtime_js_shims),
-    "go": build_backend_spec_row("go", lower=lower_east3_to_go_ir, optimizer=optimize_go_ir, emit=_emit_go, runtime_hook=_runtime_go),
-    "java": build_backend_spec_row("java", lower=lower_east3_to_java_ir, optimizer=optimize_java_ir, emit=_emit_java, runtime_hook=_runtime_java),
-    "kotlin": build_backend_spec_row("kotlin", lower=lower_east3_to_kotlin_ir, optimizer=optimize_kotlin_ir, emit=_emit_kotlin, runtime_hook=_runtime_kotlin),
-    "swift": build_backend_spec_row("swift", lower=lower_east3_to_swift_ir, optimizer=optimize_swift_ir, emit=_emit_swift, runtime_hook=_runtime_swift),
-    "ruby": build_backend_spec_row("ruby", lower=lower_east3_to_ruby_ir, optimizer=optimize_ruby_ir, emit=_emit_ruby, runtime_hook=_runtime_ruby),
-    "lua": build_backend_spec_row("lua", lower=lower_east3_to_lua_ir, optimizer=optimize_lua_ir, emit=_emit_lua, runtime_hook=_runtime_lua),
-    "scala": build_backend_spec_row("scala", lower=lower_east3_to_scala_ir, optimizer=optimize_scala_ir, emit=_emit_scala, runtime_hook=_runtime_scala),
-    "php": build_backend_spec_row("php", lower=lower_east3_to_php_ir, optimizer=optimize_php_ir, emit=_emit_php, runtime_hook=_copy_php_runtime),
-    "nim": build_backend_spec_row("nim", lower=_identity_ir, optimizer=_identity_ir, emit=_emit_nim, runtime_hook=_runtime_nim),
+    target: _build_backend_spec(target) for target in metadata_backend_targets()
 }
 
 
@@ -308,7 +307,7 @@ _normalize_backend_specs()
 
 
 def list_backend_targets() -> list[str]:
-    return list(backend_target_order())
+    return metadata_backend_targets()
 
 
 def get_backend_spec_typed(target: str) -> ResolvedBackendSpec:

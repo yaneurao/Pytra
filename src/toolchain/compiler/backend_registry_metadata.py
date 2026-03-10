@@ -325,6 +325,10 @@ def build_backend_spec_metadata(target: str) -> dict[str, object]:
     return out
 
 
+def get_backend_metadata(target: str) -> dict[str, object]:
+    return build_backend_spec_metadata(target)
+
+
 def build_backend_spec_row(
     target: str,
     *,
