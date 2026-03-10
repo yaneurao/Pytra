@@ -9,6 +9,7 @@ from toolchain.frontends.type_expr import summarize_type_text
 
 
 _LEGACY_COMPAT_BRIDGE_ENABLED = True
+_NOMINAL_ADT_DECL_SUMMARY_TABLE: dict[str, dict[str, str]] = {}
 _TYPE_EXPR_SUMMARY_KEY = "type_expr_summary_v1"
 _JSON_DECODE_META_KEY = "json_decode_v1"
 _JSON_RECEIVER_NAME_PREFIXES = {
@@ -49,14 +50,63 @@ def _unknown_type_summary() -> dict[str, Any]:
 def _type_expr_summary_from_payload(type_expr: Any, mirror: Any) -> dict[str, Any]:
     summary = summarize_type_expr(type_expr)
     if str(summary.get("category", "unknown")) != "unknown":
-        return dict(summary)
-    return dict(summarize_type_text(mirror))
+        return _hydrate_nominal_adt_summary(dict(summary), mirror)
+    return _hydrate_nominal_adt_summary(dict(summarize_type_text(mirror)), mirror)
 
 
 def _type_expr_summary_from_node(node: Any) -> dict[str, Any]:
     if not isinstance(node, dict):
         return _unknown_type_summary()
     return _type_expr_summary_from_payload(node.get("type_expr"), node.get("resolved_type"))
+
+
+def _lookup_nominal_adt_decl(name: Any) -> dict[str, str] | None:
+    type_name = _normalize_type_name(name)
+    if type_name == "unknown":
+        return None
+    entry = _NOMINAL_ADT_DECL_SUMMARY_TABLE.get(type_name)
+    if not isinstance(entry, dict):
+        return None
+    return dict(entry)
+
+
+def _make_nominal_adt_type_summary(name: str, family_name: str) -> dict[str, Any]:
+    return {
+        "kind": "NominalAdtType",
+        "category": "nominal_adt",
+        "mirror": name,
+        "nominal_adt_name": name,
+        "nominal_adt_family": family_name,
+        "nominal_variant_domain": "closed",
+    }
+
+
+def _hydrate_nominal_adt_summary(summary: dict[str, Any], mirror: Any) -> dict[str, Any]:
+    category = str(summary.get("category", "unknown")).strip()
+    summary_mirror = _normalize_type_name(summary.get("mirror"))
+    if summary_mirror == "unknown":
+        summary_mirror = _normalize_type_name(mirror)
+    if category == "nominal_adt":
+        return summary
+    if category == "static":
+        decl = _lookup_nominal_adt_decl(summary_mirror)
+        if decl is None:
+            return summary
+        return _make_nominal_adt_type_summary(summary_mirror, str(decl.get("family_name", summary_mirror)))
+    if category == "optional" and str(summary.get("nominal_adt_name", "")).strip() == "":
+        if not summary_mirror.endswith(" | None"):
+            return summary
+        inner_name = summary_mirror[:-7].strip()
+        decl = _lookup_nominal_adt_decl(inner_name)
+        if decl is None:
+            return summary
+        out = dict(summary)
+        out["nominal_adt_name"] = inner_name
+        out["nominal_adt_family"] = str(decl.get("family_name", inner_name))
+        out["nominal_variant_domain"] = "closed"
+        out["inner_category"] = "nominal_adt"
+        return out
+    return summary
 
 
 def _set_type_expr_summary(node: dict[str, Any], summary: dict[str, Any]) -> None:
@@ -237,6 +287,38 @@ def _copy_source_span_and_repr(source_expr: Any, out: dict[str, Any]) -> None:
         out["repr"] = repr_txt
 
 
+def _collect_nominal_adt_decl_summary_table(east_module: dict[str, Any]) -> dict[str, dict[str, str]]:
+    out: dict[str, dict[str, str]] = {}
+    body_obj = east_module.get("body")
+    body: list[Any] = body_obj if isinstance(body_obj, list) else []
+    for item in body:
+        if not isinstance(item, dict) or item.get("kind") != "ClassDef":
+            continue
+        class_name = _normalize_type_name(item.get("name"))
+        if class_name == "unknown":
+            continue
+        meta_obj = item.get("meta")
+        meta = meta_obj if isinstance(meta_obj, dict) else {}
+        nominal_obj = meta.get("nominal_adt_v1")
+        nominal = nominal_obj if isinstance(nominal_obj, dict) else {}
+        role = str(nominal.get("role", "")).strip()
+        family_name = str(nominal.get("family_name", "")).strip()
+        if role not in {"family", "variant"} or family_name == "":
+            continue
+        entry: dict[str, str] = {
+            "role": role,
+            "family_name": family_name,
+        }
+        variant_name = str(nominal.get("variant_name", "")).strip()
+        if variant_name != "":
+            entry["variant_name"] = variant_name
+        payload_style = str(nominal.get("payload_style", "")).strip()
+        if payload_style != "":
+            entry["payload_style"] = payload_style
+        out[class_name] = entry
+    return out
+
+
 def _make_type_predicate_expr(
     *,
     kind: str,
@@ -264,6 +346,47 @@ def _make_type_predicate_expr(
             "source_type": dict(left_summary),
         }
     return out
+
+
+def _build_nominal_adt_type_test_meta(type_ref_expr: Any) -> dict[str, Any] | None:
+    if not isinstance(type_ref_expr, dict) or type_ref_expr.get("kind") != "Name":
+        return None
+    type_name = _normalize_type_name(type_ref_expr.get("id"))
+    decl = _lookup_nominal_adt_decl(type_name)
+    if decl is None:
+        return None
+    meta: dict[str, Any] = {
+        "schema_version": 1,
+        "family_name": str(decl.get("family_name", type_name)),
+    }
+    role = str(decl.get("role", "")).strip()
+    if role == "family":
+        meta["predicate_kind"] = "family"
+        return meta
+    meta["predicate_kind"] = "variant"
+    meta["variant_name"] = type_name
+    payload_style = str(decl.get("payload_style", "")).strip()
+    if payload_style != "":
+        meta["payload_style"] = payload_style
+    return meta
+
+
+def _attach_nominal_adt_type_test_meta(check: dict[str, Any], type_test_meta: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(type_test_meta, dict):
+        return check
+    check["nominal_adt_test_v1"] = dict(type_test_meta)
+    lane_obj = check.get("narrowing_lane_v1")
+    lane = dict(lane_obj) if isinstance(lane_obj, dict) else {"schema_version": 1}
+    lane["predicate_category"] = "nominal_adt"
+    lane["family_name"] = type_test_meta.get("family_name", "")
+    predicate_kind = type_test_meta.get("predicate_kind", "")
+    if predicate_kind != "":
+        lane["predicate_kind"] = predicate_kind
+    variant_name = type_test_meta.get("variant_name", "")
+    if variant_name != "":
+        lane["variant_name"] = variant_name
+    check["narrowing_lane_v1"] = lane
+    return check
 
 
 def _build_or_of_checks(checks: list[dict[str, Any]], source_expr: Any) -> dict[str, Any]:
@@ -303,21 +426,33 @@ def _type_ref_expr_to_type_id_expr(type_ref_expr: Any, *, dispatch_mode: str) ->
     return node
 
 
-def _collect_expected_type_id_exprs(type_spec_expr: Any, *, dispatch_mode: str) -> list[Any]:
+def _collect_expected_type_id_specs(type_spec_expr: Any, *, dispatch_mode: str) -> list[dict[str, Any]]:
     spec_node = _lower_node(type_spec_expr, dispatch_mode=dispatch_mode)
+    out: list[dict[str, Any]] = []
     if isinstance(spec_node, dict) and spec_node.get("kind") == "Tuple":
-        out: list[Any] = []
         elems_obj = spec_node.get("elements")
         elems: list[Any] = elems_obj if isinstance(elems_obj, list) else []
         for elem in elems:
             lowered = _type_ref_expr_to_type_id_expr(elem, dispatch_mode=dispatch_mode)
             if lowered is not None:
-                out.append(lowered)
+                out.append(
+                    {
+                        "type_id_expr": lowered,
+                        "type_ref_expr": elem,
+                        "nominal_adt_test_v1": _build_nominal_adt_type_test_meta(elem),
+                    }
+                )
         return out
     lowered_one = _type_ref_expr_to_type_id_expr(spec_node, dispatch_mode=dispatch_mode)
-    if lowered_one is None:
-        return []
-    return [lowered_one]
+    if lowered_one is not None:
+        out.append(
+            {
+                "type_id_expr": lowered_one,
+                "type_ref_expr": spec_node,
+                "nominal_adt_test_v1": _build_nominal_adt_type_test_meta(spec_node),
+            }
+        )
+    return out
 
 
 def _lower_isinstance_call_expr(out_call: dict[str, Any], *, dispatch_mode: str) -> dict[str, Any]:
@@ -326,22 +461,28 @@ def _lower_isinstance_call_expr(out_call: dict[str, Any], *, dispatch_mode: str)
     if len(args) != 2:
         return out_call
     value_expr = args[0]
-    expected = _collect_expected_type_id_exprs(args[1], dispatch_mode=dispatch_mode)
+    expected_specs = _collect_expected_type_id_specs(args[1], dispatch_mode=dispatch_mode)
+    expected = [spec.get("type_id_expr") for spec in expected_specs if isinstance(spec, dict)]
     if len(expected) == 0:
         false_out = _const_bool_node(False)
         _copy_source_span_and_repr(out_call, false_out)
         return false_out
     checks: list[dict[str, Any]] = []
-    for expected_type_id_expr in expected:
-        checks.append(
-            _make_type_predicate_expr(
+    for expected_spec in expected_specs:
+        if not isinstance(expected_spec, dict):
+            continue
+        expected_type_id_expr = expected_spec.get("type_id_expr")
+        if expected_type_id_expr is None:
+            continue
+        check = _make_type_predicate_expr(
                 kind="IsInstance",
                 left_key="value",
                 left_expr=value_expr,
                 expected_type_id_expr=expected_type_id_expr,
                 source_expr=out_call,
             )
-        )
+        check = _attach_nominal_adt_type_test_meta(check, expected_spec.get("nominal_adt_test_v1"))
+        checks.append(check)
     return _build_or_of_checks(checks, out_call)
 
 
@@ -355,22 +496,28 @@ def _lower_issubclass_call_expr(out_call: dict[str, Any], *, dispatch_mode: str)
         false_out = _const_bool_node(False)
         _copy_source_span_and_repr(out_call, false_out)
         return false_out
-    expected = _collect_expected_type_id_exprs(args[1], dispatch_mode=dispatch_mode)
+    expected_specs = _collect_expected_type_id_specs(args[1], dispatch_mode=dispatch_mode)
+    expected = [spec.get("type_id_expr") for spec in expected_specs if isinstance(spec, dict)]
     if len(expected) == 0:
         false_out = _const_bool_node(False)
         _copy_source_span_and_repr(out_call, false_out)
         return false_out
     checks: list[dict[str, Any]] = []
-    for expected_type_id_expr in expected:
-        checks.append(
-            _make_type_predicate_expr(
+    for expected_spec in expected_specs:
+        if not isinstance(expected_spec, dict):
+            continue
+        expected_type_id_expr = expected_spec.get("type_id_expr")
+        if expected_type_id_expr is None:
+            continue
+        check = _make_type_predicate_expr(
                 kind="IsSubclass",
                 left_key="actual_type_id",
                 left_expr=actual_type_id_expr,
                 expected_type_id_expr=expected_type_id_expr,
                 source_expr=out_call,
             )
-        )
+        check = _attach_nominal_adt_type_test_meta(check, expected_spec.get("nominal_adt_test_v1"))
+        checks.append(check)
     return _build_or_of_checks(checks, out_call)
 
 
@@ -881,6 +1028,37 @@ def _build_json_decode_meta(call: dict[str, Any], semantic_tag: str) -> dict[str
     return meta
 
 
+def _build_nominal_adt_ctor_meta(call: dict[str, Any]) -> dict[str, Any] | None:
+    func_obj = call.get("func")
+    if not isinstance(func_obj, dict) or func_obj.get("kind") != "Name":
+        return None
+    ctor_name = _normalize_type_name(func_obj.get("id"))
+    decl = _lookup_nominal_adt_decl(ctor_name)
+    if decl is None or str(decl.get("role", "")).strip() != "variant":
+        return None
+    payload_style = str(decl.get("payload_style", "")).strip()
+    if payload_style == "":
+        payload_style = "unit"
+    return {
+        "schema_version": 1,
+        "ir_category": "NominalAdtCtorCall",
+        "family_name": str(decl.get("family_name", ctor_name)),
+        "variant_name": ctor_name,
+        "payload_style": payload_style,
+    }
+
+
+def _decorate_nominal_adt_ctor_call(call: dict[str, Any]) -> dict[str, Any]:
+    meta = _build_nominal_adt_ctor_meta(call)
+    if meta is None:
+        return call
+    call["semantic_tag"] = "nominal_adt.variant_ctor"
+    call["lowered_kind"] = "NominalAdtCtorCall"
+    call["nominal_adt_ctor_v1"] = meta
+    _set_type_expr_summary(call, _make_nominal_adt_type_summary(str(meta["variant_name"]), str(meta["family_name"])))
+    return call
+
+
 def _structured_type_expr_summary_from_node(node: Any) -> dict[str, Any]:
     if not isinstance(node, dict):
         return _unknown_type_summary()
@@ -975,6 +1153,7 @@ def _lower_representative_json_decode_call(out_call: dict[str, Any]) -> dict[str
 
 def _decorate_call_metadata(call: dict[str, Any]) -> dict[str, Any]:
     _set_type_expr_summary(call, _type_expr_summary_from_node(call))
+    call = _decorate_nominal_adt_ctor_call(call)
     json_tag = _infer_json_semantic_tag(call)
     if json_tag != "":
         call["semantic_tag"] = json_tag
@@ -1207,8 +1386,11 @@ def lower_east2_to_east3(east_module: dict[str, Any], object_dispatch_mode: str 
         dispatch_mode = _normalize_dispatch_mode(meta_obj.get("dispatch_mode"))
 
     global _LEGACY_COMPAT_BRIDGE_ENABLED
+    global _NOMINAL_ADT_DECL_SUMMARY_TABLE
     prev_legacy_compat = _LEGACY_COMPAT_BRIDGE_ENABLED
+    prev_nominal_adt_decl_table = dict(_NOMINAL_ADT_DECL_SUMMARY_TABLE)
     _LEGACY_COMPAT_BRIDGE_ENABLED = True
+    _NOMINAL_ADT_DECL_SUMMARY_TABLE = _collect_nominal_adt_decl_summary_table(east_module)
     if isinstance(meta_obj, dict):
         legacy_obj = meta_obj.get("legacy_compat_bridge")
         if isinstance(legacy_obj, bool):
@@ -1218,6 +1400,7 @@ def lower_east2_to_east3(east_module: dict[str, Any], object_dispatch_mode: str 
         lowered = _lower_node(east_module, dispatch_mode=dispatch_mode)
     finally:
         _LEGACY_COMPAT_BRIDGE_ENABLED = prev_legacy_compat
+        _NOMINAL_ADT_DECL_SUMMARY_TABLE = prev_nominal_adt_decl_table
     if not isinstance(lowered, dict):
         return east_module
     if lowered.get("kind") != "Module":

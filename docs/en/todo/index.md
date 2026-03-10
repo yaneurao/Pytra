@@ -47,6 +47,7 @@ Context: [docs/ja/plans/p5-nominal-adt-language-rollout.md](../plans/p5-nominal-
 6. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] Update the frontend and selfhost parser so representative nominal-ADT syntax is accepted.
    - Progress memo: the selfhost parser now accepts the representative `@sealed` family, same-module variant, mandatory `@dataclass` payload variant, and `ClassDef.meta.nominal_adt_v1` cases end-to-end.
 7. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] Introduce ADT constructors, variant tests, variant projections, and `match` lowering into EAST/EAST3.
+   - Progress memo: nominal ADT metadata is now attached to user-defined constructor calls and `isinstance(..., Variant/Family)` checks, fixing the representative EAST3 lane. Variant projection and `match` lowering are still pending.
 8. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] Confirm through representative tests that the built-in `JsonValue` lane and user-defined nominal-ADT lane share the same IR category.
 9. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] Implement the minimum representative backend support, starting with C++, for constructors, variant checks, destructuring, and `match`, and forbid silent fallbacks.
 10. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] Define rollout order and fail-closed policy for other backends, and fix diagnostics for unsupported targets.

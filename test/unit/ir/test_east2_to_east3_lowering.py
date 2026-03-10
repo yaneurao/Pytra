@@ -17,6 +17,7 @@ if str(ROOT / "src") not in sys.path:
 from src.toolchain.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
 from src.toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.frontends.type_expr import parse_type_expr_text
+from src.toolchain.ir.core import convert_source_to_east_with_backend
 from src.toolchain.ir.east3 import load_east3_document as load_east3_stage
 
 
@@ -24,7 +25,59 @@ def _const_i(v: int) -> dict[str, object]:
     return {"kind": "Constant", "value": v, "resolved_type": "int64"}
 
 
+def _nominal_adt_class(
+    name: str,
+    *,
+    role: str,
+    family_name: str,
+    variant_name: str = "",
+    payload_style: str = "",
+) -> dict[str, object]:
+    nominal_meta: dict[str, object] = {
+        "schema_version": 1,
+        "role": role,
+        "family_name": family_name,
+    }
+    if variant_name != "":
+        nominal_meta["variant_name"] = variant_name
+    if payload_style != "":
+        nominal_meta["payload_style"] = payload_style
+    return {
+        "kind": "ClassDef",
+        "name": name,
+        "body": [],
+        "meta": {"nominal_adt_v1": nominal_meta},
+    }
+
+
 class East2ToEast3LoweringTest(unittest.TestCase):
+    def _representative_nominal_adt_east2(self) -> dict[str, object]:
+        source = """
+from dataclasses import dataclass
+
+@sealed
+class Maybe:
+    pass
+
+@dataclass
+class Just(Maybe):
+    value: int
+
+class Nothing(Maybe):
+    pass
+
+def f(x: Maybe) -> int:
+    if isinstance(x, Just):
+        return x.value
+    y = Just(1)
+    return 0
+"""
+        return convert_source_to_east_with_backend(
+            source,
+            filename="sample.py",
+            parser_backend="self_hosted",
+        )
+
     def _collect_runtime_iter_plans(self, node: object) -> list[dict[str, object]]:
         plans: list[dict[str, object]] = []
         if not isinstance(node, dict):
@@ -1069,6 +1122,74 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         self.assertEqual(value.get("type_expr_summary_v1", {}).get("category"), "optional")
         self.assertEqual(value.get("type_expr_summary_v1", {}).get("nominal_adt_family"), "json")
         self.assertEqual(value.get("narrowing_lane_v1", {}).get("source_category"), "optional")
+
+    def test_lower_user_nominal_adt_isinstance_attaches_variant_test_metadata(self) -> None:
+        east2 = self._representative_nominal_adt_east2()
+        out = lower_east2_to_east3(east2)
+        fn = out.get("body", [])[3]
+        test_expr = fn.get("body", [])[0].get("test", {})
+        self.assertEqual(test_expr.get("kind"), "IsInstance")
+        self.assertEqual(test_expr.get("type_expr_summary_v1", {}).get("category"), "nominal_adt")
+        self.assertEqual(test_expr.get("type_expr_summary_v1", {}).get("nominal_adt_name"), "Maybe")
+        self.assertEqual(test_expr.get("type_expr_summary_v1", {}).get("nominal_adt_family"), "Maybe")
+        self.assertEqual(test_expr.get("narrowing_lane_v1", {}).get("source_category"), "nominal_adt")
+        self.assertEqual(test_expr.get("narrowing_lane_v1", {}).get("predicate_category"), "nominal_adt")
+        self.assertEqual(test_expr.get("narrowing_lane_v1", {}).get("variant_name"), "Just")
+        self.assertEqual(test_expr.get("nominal_adt_test_v1", {}).get("predicate_kind"), "variant")
+        self.assertEqual(test_expr.get("nominal_adt_test_v1", {}).get("family_name"), "Maybe")
+        self.assertEqual(test_expr.get("nominal_adt_test_v1", {}).get("variant_name"), "Just")
+
+    def test_lower_user_nominal_adt_isinstance_attaches_family_test_metadata(self) -> None:
+        east2 = self._representative_nominal_adt_east2()
+        east2["body"][3]["body"].insert(
+            0,
+            {
+                "kind": "Expr",
+                "value": {
+                    "kind": "Call",
+                    "resolved_type": "bool",
+                    "func": {"kind": "Name", "id": "isinstance"},
+                    "args": [
+                        {
+                            "kind": "Name",
+                            "id": "x",
+                            "resolved_type": "Maybe",
+                            "type_expr": parse_type_expr_text("Maybe"),
+                        },
+                        {"kind": "Name", "id": "Maybe", "resolved_type": "unknown"},
+                    ],
+                    "keywords": [],
+                },
+            },
+        )
+        out = lower_east2_to_east3(east2)
+        fn = out.get("body", [])[3]
+        family_check = fn.get("body", [])[0].get("value", {})
+        self.assertEqual(family_check.get("kind"), "IsInstance")
+        self.assertEqual(family_check.get("type_expr_summary_v1", {}).get("category"), "nominal_adt")
+        self.assertEqual(family_check.get("type_expr_summary_v1", {}).get("nominal_adt_name"), "Maybe")
+        self.assertEqual(family_check.get("type_expr_summary_v1", {}).get("nominal_adt_family"), "Maybe")
+        self.assertEqual(family_check.get("nominal_adt_test_v1", {}).get("predicate_kind"), "family")
+        self.assertEqual(family_check.get("nominal_adt_test_v1", {}).get("family_name"), "Maybe")
+        self.assertEqual(family_check.get("narrowing_lane_v1", {}).get("source_category"), "nominal_adt")
+        self.assertEqual(family_check.get("narrowing_lane_v1", {}).get("predicate_category"), "nominal_adt")
+        self.assertEqual(family_check.get("narrowing_lane_v1", {}).get("predicate_kind"), "family")
+
+    def test_lower_user_nominal_adt_constructor_attaches_ctor_metadata(self) -> None:
+        east2 = self._representative_nominal_adt_east2()
+        out = lower_east2_to_east3(east2)
+        fn = out.get("body", [])[3]
+        ctor_call = fn.get("body", [])[1].get("value", {})
+        self.assertEqual(ctor_call.get("kind"), "Call")
+        self.assertEqual(ctor_call.get("lowered_kind"), "NominalAdtCtorCall")
+        self.assertEqual(ctor_call.get("semantic_tag"), "nominal_adt.variant_ctor")
+        self.assertEqual(ctor_call.get("nominal_adt_ctor_v1", {}).get("ir_category"), "NominalAdtCtorCall")
+        self.assertEqual(ctor_call.get("nominal_adt_ctor_v1", {}).get("family_name"), "Maybe")
+        self.assertEqual(ctor_call.get("nominal_adt_ctor_v1", {}).get("variant_name"), "Just")
+        self.assertEqual(ctor_call.get("nominal_adt_ctor_v1", {}).get("payload_style"), "dataclass")
+        self.assertEqual(ctor_call.get("type_expr_summary_v1", {}).get("category"), "nominal_adt")
+        self.assertEqual(ctor_call.get("type_expr_summary_v1", {}).get("nominal_adt_name"), "Just")
+        self.assertEqual(ctor_call.get("type_expr_summary_v1", {}).get("nominal_adt_family"), "Maybe")
 
     def test_lower_json_value_helper_call_attaches_decode_metadata(self) -> None:
         east2 = {
