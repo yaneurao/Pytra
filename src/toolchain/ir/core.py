@@ -4972,26 +4972,17 @@ class _ShExprParser:
         )
         if builtin_payload is not None:
             return builtin_payload
-        if stdlib_fn_runtime_call != "":
-            return _sh_annotate_stdlib_function_call_expr(
-                payload,
-                fn_name=fn_name,
-                runtime_call=stdlib_fn_runtime_call,
-                semantic_tag=stdlib_fn_semantic_tag,
-            )
-        if stdlib_symbol_runtime_call != "":
-            return _sh_annotate_stdlib_symbol_call_expr(
-                payload,
-                fn_name=fn_name,
-                runtime_call=stdlib_symbol_runtime_call,
-                semantic_tag=stdlib_symbol_semantic_tag,
-            )
-        if noncpp_symbol_runtime_call != "":
-            return _sh_annotate_noncpp_symbol_call_expr(
-                payload,
-                fn_name=fn_name,
-                runtime_call=noncpp_symbol_runtime_call,
-            )
+        runtime_payload = self._annotate_runtime_named_call_expr(
+            payload,
+            fn_name=fn_name,
+            stdlib_fn_runtime_call=stdlib_fn_runtime_call,
+            stdlib_symbol_runtime_call=stdlib_symbol_runtime_call,
+            noncpp_symbol_runtime_call=noncpp_symbol_runtime_call,
+            stdlib_fn_semantic_tag=stdlib_fn_semantic_tag,
+            stdlib_symbol_semantic_tag=stdlib_symbol_semantic_tag,
+        )
+        if runtime_payload is not None:
+            return runtime_payload
         return payload
 
     def _annotate_builtin_named_call_expr(
@@ -5076,6 +5067,40 @@ class _ShExprParser:
                 payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
+            )
+        return None
+
+    def _annotate_runtime_named_call_expr(
+        self,
+        payload: dict[str, Any],
+        *,
+        fn_name: str,
+        stdlib_fn_runtime_call: str,
+        stdlib_symbol_runtime_call: str,
+        noncpp_symbol_runtime_call: str,
+        stdlib_fn_semantic_tag: str,
+        stdlib_symbol_semantic_tag: str,
+    ) -> dict[str, Any] | None:
+        """stdlib / non-C++ named-call dispatch を parser helper へ寄せる。"""
+        if stdlib_fn_runtime_call != "":
+            return _sh_annotate_stdlib_function_call_expr(
+                payload,
+                fn_name=fn_name,
+                runtime_call=stdlib_fn_runtime_call,
+                semantic_tag=stdlib_fn_semantic_tag,
+            )
+        if stdlib_symbol_runtime_call != "":
+            return _sh_annotate_stdlib_symbol_call_expr(
+                payload,
+                fn_name=fn_name,
+                runtime_call=stdlib_symbol_runtime_call,
+                semantic_tag=stdlib_symbol_semantic_tag,
+            )
+        if noncpp_symbol_runtime_call != "":
+            return _sh_annotate_noncpp_symbol_call_expr(
+                payload,
+                fn_name=fn_name,
+                runtime_call=noncpp_symbol_runtime_call,
             )
         return None
 
