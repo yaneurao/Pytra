@@ -42,6 +42,8 @@ Pytra transpiles type-annotated Python code into multiple languages. The canonic
   - The canonical variant-access surface is `isinstance(x, Variant)` followed by field access in the success branch.
   - Nested variant classes, dedicated `adt` blocks, and namespace sugar such as `Result.Ok(...)` are outside v1.
 - Nominal ADT destructuring via `match/case` is reserved as the statement-first Stage B surface.
+  - A `match` over a closed family must be exhaustive. In v1, the canonical forms are either "list each variant exactly once" or "use a final `_` wildcard branch for the remaining variants."
+  - Repeating the same variant or placing more branches after coverage is already closed is an error.
   - `match` expressions, guard patterns, and nested patterns are not part of the v1 accepted surface.
 - Supports `import` / `from ... import ...`.
 - `from ... import *` (wildcard import) is supported (relative import is still unsupported).

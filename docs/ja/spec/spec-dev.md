@@ -310,6 +310,28 @@ category 運用ルール:
 - exhaustiveness / duplicate pattern / unreachable branch の最終 policy と category は `P5-NOMINAL-ADT-ROLLOUT-01-S2-02` で固定する。
 - それまでの段階でも、validator / backend は `Match` / pattern を「まだ実装していないから黙って削る」ことをしてはならない。
 
+### 1.2.4.2 exhaustiveness / duplicate / unreachable の検証契約（P5-S2-02）
+
+- v1 の static check は closed nominal ADT family を subject に持つ `Match` だけに適用する。
+- validator / lowering は `Match.meta.match_analysis_v1` を source of truth にして、coverage 結果を backend へ渡す前に確定しなければならない。
+- exhaustive とみなす条件:
+  - family の全 variant が 1 回ずつ `VariantPattern` で列挙されている
+  - または末尾の `PatternWildcard` が残余 variant 全体を受ける
+- duplicate pattern とみなす条件:
+  - 同じ `variant_name` を同一 `Match` 内で 2 回以上列挙する
+  - 2 個目以降の `PatternWildcard` を置く
+- unreachable branch とみなす条件:
+  - wildcard により coverage が閉じた後ろに `MatchCase` がある
+  - 既に coverage 済みの variant に対する `VariantPattern` が後続 branch に現れる
+- v1 では exhaustiveness / duplicate pattern / unreachable branch はすべて `semantic_conflict` で fail-closed にする。
+- diagnostic には少なくとも次を含める。
+  - `family_name`
+  - `covered_variants`
+  - `uncovered_variants`（partial の場合）
+  - `duplicate_case_indexes`
+  - `unreachable_case_indexes`
+- backend は `coverage_kind=partial | invalid` の `Match` を受理してはならず、validator が先に止めることを正本とする。
+
 ### 1.2.5 validator 更新必須ルール
 
 node kind / meta key / helper protocol / backend input dependency を追加または変更するときは、次を同一 change set で更新しなければならない。

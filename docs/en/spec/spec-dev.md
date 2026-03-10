@@ -305,6 +305,28 @@ Category rules:
 - The final policy and category mapping for exhaustiveness, duplicate patterns, and unreachable branches is fixed by `P5-NOMINAL-ADT-ROLLOUT-01-S2-02`.
 - Even before that step, validators and backends must not silently drop `Match` / pattern nodes just because they are not implemented yet.
 
+### 1.2.4.2 Verification Contract for Exhaustiveness / Duplicates / Unreachable Branches (P5-S2-02)
+
+- v1 static checking applies only to `Match` whose subject is a closed nominal ADT family.
+- Validators / lowering must treat `Match.meta.match_analysis_v1` as the source of truth and finalize the coverage result before handing the node to a backend.
+- A match is exhaustive when:
+  - every family variant appears exactly once as a `VariantPattern`, or
+  - a trailing `PatternWildcard` captures the full remaining variant set
+- A pattern is duplicate when:
+  - the same `variant_name` appears more than once in one `Match`, or
+  - a second or later `PatternWildcard` appears
+- A branch is unreachable when:
+  - a `MatchCase` appears after wildcard coverage already closed the family, or
+  - a later `VariantPattern` targets a variant that is already covered
+- In v1, non-exhaustive matches, duplicate patterns, and unreachable branches all fail closed with `semantic_conflict`.
+- Diagnostics must include at least:
+  - `family_name`
+  - `covered_variants`
+  - `uncovered_variants` (for partial coverage)
+  - `duplicate_case_indexes`
+  - `unreachable_case_indexes`
+- Backends must not accept `Match` with `coverage_kind=partial | invalid`; validators are the canonical place to stop first.
+
 ### 1.2.5 Mandatory Validator-Update Rule
 
 Whenever a node kind, meta key, helper protocol, or backend-input dependency is added or changed, the same change set must update all of the following:

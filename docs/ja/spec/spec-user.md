@@ -46,6 +46,8 @@ Pytra は、型注釈付き Python コードを複数言語へ変換するトラ
   - canonical な variant access surface は `isinstance(x, Variant)` と、その成功 branch での field access です。
   - nested variant class、`adt` 専用 block、`Result.Ok(...)` のような namespace sugar は v1 に含めません。
 - `match/case` による nominal ADT 分解は statement-first の Stage B surface として予約します。
+  - closed family に対する `match` は exhaustive でなければなりません。v1 では「各 variant を 1 回ずつ列挙する」か「末尾の `_` wildcard で残りを受ける」のどちらかを正本とします。
+  - 同じ variant を複数回書くこと、または coverage が閉じた後ろに branch を置くことは error です。
   - `match` expression、guard pattern、nested pattern は v1 の受理対象に含めません。
 - `import` / `from ... import ...` をサポートします。
 - `from ... import *`（ワイルドカード import）をサポートします（相対 import は未対応）。

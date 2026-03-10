@@ -75,7 +75,7 @@ Planned verification commands:
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-01] Inventory candidate language surfaces for nominal ADT declarations, constructors, variant access, and `match`, then decide on a selfhost-safe staged introduction path.
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-02] Fix the boundary between type-system base work and full language-feature work so this plan does not overlap with `P1-EAST-TYPEEXPR-01`.
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-01] Extend `spec-east` / `spec-user` / `spec-dev` with nominal-ADT declaration surface, pattern nodes, match nodes, and diagnostic contracts.
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] Fix the static-check policy and error categories for exhaustiveness, duplicate patterns, and unreachable branches.
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] Fix the static-check policy and error categories for exhaustiveness, duplicate patterns, and unreachable branches.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] Update frontend and selfhost parser paths so they can accept representative nominal-ADT syntax.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] Introduce ADT constructors, variant tests, variant projection, and `match` lowering into EAST/EAST3.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] Verify through representative tests that built-in `JsonValue` and user-defined nominal ADTs use the same IR category.
@@ -191,3 +191,4 @@ Decision log:
 - 2026-03-11: Closed `S1-02` by fixing `TypeExpr` schema, union lanes, nominal-ADT categories, and generic narrowing metadata as P1 responsibilities, while declaration/constructor/pattern/`match` surface and user-facing diagnostics remain P5 responsibilities.
 - 2026-03-11: Fixed the rule that Stage A may reuse `class` / `@dataclass` / `isinstance` as a representative P5 bridge, but P5 does not redefine the generic `isinstance` semantics or the decode-first IR contract already fixed for `JsonValue` by P1.
 - 2026-03-11: Closed `S2-01` by adding the Stage-A `@sealed` family / top-level variant / `isinstance` surface to `spec-user`, adding `ClassDef.meta.nominal_adt_v1` plus `Match` / `MatchCase` / `VariantPattern` / `PatternBind` / `PatternWildcard` schema to `spec-east`, and fixing fail-closed diagnostic rules for nominal ADT / `match` introduction in `spec-dev`.
+- 2026-03-11: Closed `S2-02` by fixing the rule that `Match` over a closed nominal ADT family must be exhaustive, while duplicate patterns and unreachable branches fail closed with `semantic_conflict`, and by recording the coverage summary in `Match.meta.match_analysis_v1`.

@@ -75,7 +75,7 @@
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-01] nominal ADT の language surface（宣言、constructor、variant access、`match`）の候補を棚卸しし、selfhost-safe な段階導入案を決める。
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-02] `P1-EAST-TYPEEXPR-01` と責務が衝突しないように、型基盤・narrowing 基盤・full language feature の境界を decision log に固定する。
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-01] `spec-east` / `spec-user` / `spec-dev` に nominal ADT declaration surface、pattern node、`match` node、diagnostic 契約を追加する。
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] exhaustiveness / duplicate pattern / unreachable branch の静的検証方針と error category を固定する。
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] exhaustiveness / duplicate pattern / unreachable branch の静的検証方針と error category を固定する。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] frontend と selfhost parser を更新し、representative nominal ADT syntax を受理できるようにする。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] EAST/EAST3 に ADT constructor、variant test、variant projection、`match` lowering を導入する。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] built-in `JsonValue` lane と user-defined nominal ADT lane が同じ IR category に乗ることを representative test で確認する。
@@ -191,3 +191,4 @@
 - 2026-03-11: `S1-02` として、`TypeExpr` schema・union lane・nominal ADT category・generic narrowing metadata は P1 の責務、declaration/constructor/pattern/`match` の source surface と user-facing diagnostic は P5 の責務と固定した。
 - 2026-03-11: Stage A の `class` / `@dataclass` / `isinstance` bridge は P5 の representative surface に含めるが、`isinstance` 自体の generic type-predicate semantics と `JsonValue` decode-first IR 契約は P1 の成果物を再利用し、P5 で再定義しない方針を固定した。
 - 2026-03-11: `S2-01` として、`spec-user` に Stage A の `@sealed` family / top-level variant / `isinstance` access surface を追加し、`spec-east` に `ClassDef.meta.nominal_adt_v1` と `Match` / `MatchCase` / `VariantPattern` / `PatternBind` / `PatternWildcard` schema を追加し、`spec-dev` に nominal ADT / `match` 導入時の fail-closed diagnostic 契約を固定した。
+- 2026-03-11: `S2-02` として、closed nominal ADT family に対する `Match` は exhaustive 必須、duplicate pattern / unreachable branch は `semantic_conflict` で fail-closed とし、coverage summary は `Match.meta.match_analysis_v1` で保持する方針を固定した。

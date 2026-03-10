@@ -42,7 +42,8 @@ Context: [docs/ja/plans/p5-nominal-adt-language-rollout.md](../plans/p5-nominal-
 3. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-02] Fix the boundary between type-system groundwork, narrowing groundwork, and full language-surface rollout so this plan does not conflict with `P1-EAST-TYPEEXPR-01`.
 4. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-01] Extend `spec-east`, `spec-user`, and `spec-dev` with nominal-ADT declarations, pattern nodes, `match` nodes, and diagnostics contracts.
    - Progress memo: added the Stage-A `@sealed` family / top-level variant surface, the Stage-B `Match`/pattern schema, and fail-closed diagnostics contracts to the specs.
-5. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] Fix the policy and error categories for exhaustiveness checks, duplicate patterns, and unreachable branches.
+5. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] Fix the policy and error categories for exhaustiveness checks, duplicate patterns, and unreachable branches.
+   - Progress memo: the specs now require exhaustive `Match` over closed families and stop duplicate/unreachable branches with `semantic_conflict`.
 6. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] Update the frontend and selfhost parser so representative nominal-ADT syntax is accepted.
 7. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] Introduce ADT constructors, variant tests, variant projections, and `match` lowering into EAST/EAST3.
 8. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] Confirm through representative tests that the built-in `JsonValue` lane and user-defined nominal-ADT lane share the same IR category.
