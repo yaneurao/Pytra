@@ -76,6 +76,8 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `program_loader` now coerces in-memory module docs through `coerce_json_object_dict()`, and `typed_boundary.py` keeps compiler-root raw/meta access behind named helpers.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Dynamic carriers are now confined to the explicit seams in `toolchain.json_adapters`, `RuntimeHookAdapter`, `AmbientExternBinding`, and `pytra.std.json`; the compiler/toolchain core no longer uses generic raw access.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Remaining compiler/toolchain `make_object` / `py_to` / `obj_to_*` usage is now limited to the native `transpile_cli.cpp` legacy-import seam, labeled with `P2-object-bridge: legacy_migration_adapter`, and guarded by `tools/check_compiler_object_bridge_labels.py` against unlabeled reintroduction.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] Selfhost build/parity regressions now start fixing `build_selfhost_stage2.py` stage1->stage2 command/fallback behavior and `verify_selfhost_end_to_end.py` auto-target/stdout normalization with unit tests.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] In addition to selfhost `prepare` / `verify`, `build_selfhost_stage2` and `check_selfhost_stage2_cpp_diff` now have unit-tested command/fallback helpers, so stage2 build/diff regressions are starting to be locked after the typed-boundary migration.
 
 ### P3: Harden compiler contracts and make stage/pass/backend handoff fail-closed
 
