@@ -129,6 +129,28 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "unsupported backend symbol ref: missing:fn"):
             static_registry._resolve_callable_ref("missing:fn")
 
+    def test_backend_registry_runtime_hook_kind_contract_matches(self) -> None:
+        with patch.object(host_registry, "get_runtime_hook_descriptor", return_value={"kind": "broken"}):
+            with self.assertRaisesRegex(RuntimeError, "unsupported runtime hook kind: rs"):
+                host_registry._runtime_hook_from_key("rs")
+        with patch.object(static_registry, "get_runtime_hook_descriptor", return_value={"kind": "broken"}):
+            with self.assertRaisesRegex(RuntimeError, "unsupported runtime hook kind: rs"):
+                static_registry._runtime_hook_from_key("rs")
+
+    def test_backend_registry_emit_kind_contract_matches(self) -> None:
+        with (
+            patch.object(host_registry, "get_backend_emit_kind", return_value="broken"),
+            patch.object(host_registry, "get_backend_emit_ref", return_value="backends.rs.emitter.rs_emitter:transpile_to_rust"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "unsupported emit kind: broken"):
+                host_registry._emit_from_target("rs")
+        with (
+            patch.object(static_registry, "get_backend_emit_kind", return_value="broken"),
+            patch.object(static_registry, "get_backend_emit_ref", return_value="backends.rs.emitter.rs_emitter:transpile_to_rust"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "unsupported emit kind: broken"):
+                static_registry._emit_from_target("rs")
+
     def test_selfhost_cpp_entry_uses_direct_typed_compiler_path(self) -> None:
         selfhost_cpp = (ROOT / "selfhost" / "py2cpp.cpp").read_text(encoding="utf-8")
         selfhost_stage2 = (ROOT / "selfhost" / "py2cpp_stage2.cpp").read_text(encoding="utf-8")
