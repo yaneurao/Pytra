@@ -73,7 +73,7 @@
 ## 分解
 
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-01] nominal ADT の language surface（宣言、constructor、variant access、`match`）の候補を棚卸しし、selfhost-safe な段階導入案を決める。
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-02] `P1-EAST-TYPEEXPR-01` と責務が衝突しないように、型基盤・narrowing 基盤・full language feature の境界を decision log に固定する。
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-02] `P1-EAST-TYPEEXPR-01` と責務が衝突しないように、型基盤・narrowing 基盤・full language feature の境界を decision log に固定する。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-01] `spec-east` / `spec-user` / `spec-dev` に nominal ADT declaration surface、pattern node、`match` node、diagnostic 契約を追加する。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] exhaustiveness / duplicate pattern / unreachable branch の静的検証方針と error category を固定する。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] frontend と selfhost parser を更新し、representative nominal ADT syntax を受理できるようにする。
@@ -149,6 +149,32 @@
 - `match` は language feature の目標には含めるが、statement-first の後段導入とする
 - new syntax を初手で増やす案（nested variant / `adt` block / expression-first match）は採用しない
 
+### S1-02 責務境界
+
+- P1 が持つもの: 型基盤
+  - `TypeExpr` schema
+  - `OptionalType` / `UnionType(union_mode=dynamic)` / `NominalAdtType` の分類
+  - `type_expr` と `resolved_type` mirror の主従
+  - `JsonValue` を nominal closed ADT lane として扱う IR 契約
+- P1 が持つもの: narrowing 基盤
+  - `isinstance` / decode helper / variant test 相当の generic narrowing semantics
+  - EAST2 -> EAST3 における narrowing / decode / type-predicate metadata
+  - validator が見る `semantic_tag` / nominal 名 / fail-closed mismatch 契約
+- P5 が持つもの: full language feature
+  - nominal ADT declaration surface
+  - constructor / variant access / destructuring / pattern / `match`
+  - exhaustiveness / duplicate pattern / unreachable branch の user-facing diagnostic
+  - selfhost parser が読む ADT / pattern / `match` syntax
+  - representative backend が user-defined nominal ADT を end-to-end で通す surface 契約
+
+### S1-02 handoff ルール
+
+1. `TypeExpr` kind、union lane、nominal ADT category、generic narrowing metadata を変える変更は P1 側の責務とする。
+2. user code がどう書くか、parser が何を受理するか、`match` / pattern / constructor の surface をどう見せるかは P5 側の責務とする。
+3. Stage A の `class` / `@dataclass` / `isinstance` bridge は P5 の representative surface に含めてよいが、`isinstance` 自体の generic type-predicate semantics を P5 で再定義してはならない。
+4. built-in `JsonValue.as_*` / `get_*` の decode-first semantics は P1 が固定した IR/narrowing 契約を正とし、P5 はそれを user-defined ADT syntax と同じ IR category に寄せる段階だけを扱う。
+5. P5 が新しい source surface を導入するときに新 `TypeExpr` kind や新 generic narrowing lane が必要になった場合、その基盤追加は P1 後継の型基盤タスクへ戻し、P5 だけで抱え込まない。
+
 ### representative scope の例
 
 - built-in: `JsonValue`
@@ -162,3 +188,5 @@
 - 2026-03-11: `S1-01` として language surface 候補を棚卸しし、initial rollout は既存 `class` + 単一継承 + `@dataclass` + `isinstance` を canonical surface にする方針を固定した。
 - 2026-03-11: `match` は language goal に含めるが、selfhost-safe な初期導入には含めず、statement-first の Stage B として後段導入に回す方針を固定した。
 - 2026-03-11: `Result.Ok` や `adt` block のような concise sugar は canonical v1 では採用せず、parser/selfhost/backend が安定した後段で再評価する方針を固定した。
+- 2026-03-11: `S1-02` として、`TypeExpr` schema・union lane・nominal ADT category・generic narrowing metadata は P1 の責務、declaration/constructor/pattern/`match` の source surface と user-facing diagnostic は P5 の責務と固定した。
+- 2026-03-11: Stage A の `class` / `@dataclass` / `isinstance` bridge は P5 の representative surface に含めるが、`isinstance` 自体の generic type-predicate semantics と `JsonValue` decode-first IR 契約は P1 の成果物を再利用し、P5 で再定義しない方針を固定した。

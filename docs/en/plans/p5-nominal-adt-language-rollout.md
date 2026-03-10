@@ -73,7 +73,7 @@ Planned verification commands:
 ## Breakdown
 
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-01] Inventory candidate language surfaces for nominal ADT declarations, constructors, variant access, and `match`, then decide on a selfhost-safe staged introduction path.
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-02] Fix the boundary between type-system base work and full language-feature work so this plan does not overlap with `P1-EAST-TYPEEXPR-01`.
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-02] Fix the boundary between type-system base work and full language-feature work so this plan does not overlap with `P1-EAST-TYPEEXPR-01`.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-01] Extend `spec-east` / `spec-user` / `spec-dev` with nominal-ADT declaration surface, pattern nodes, match nodes, and diagnostic contracts.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] Fix the static-check policy and error categories for exhaustiveness, duplicate patterns, and unreachable branches.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] Update frontend and selfhost parser paths so they can accept representative nominal-ADT syntax.
@@ -149,6 +149,32 @@ Planned verification commands:
 - `match` stays in scope for the overall feature, but it is deferred as a statement-first later stage
 - New-syntax-first options such as nested variants, `adt` blocks, or expression-first `match` are not chosen for the first rollout
 
+### S1-02 Responsibility Boundary
+
+- Owned by P1: type-system groundwork
+  - `TypeExpr` schema
+  - classification of `OptionalType`, `UnionType(union_mode=dynamic)`, and `NominalAdtType`
+  - authority relationship between `type_expr` and the `resolved_type` mirror
+  - the IR contract that treats `JsonValue` as a nominal closed ADT lane
+- Owned by P1: narrowing groundwork
+  - generic narrowing semantics for `isinstance`, decode helpers, and variant-test equivalents
+  - narrowing / decode / type-predicate metadata in `EAST2 -> EAST3`
+  - validator contracts around `semantic_tag`, nominal names, and fail-closed mismatch handling
+- Owned by P5: full language feature
+  - the nominal-ADT declaration surface
+  - constructors / variant access / destructuring / patterns / `match`
+  - user-facing diagnostics for exhaustiveness, duplicate patterns, and unreachable branches
+  - ADT / pattern / `match` syntax accepted by the selfhost parser
+  - the representative backend surface that runs user-defined nominal ADTs end to end
+
+### S1-02 handoff rules
+
+1. Any change to `TypeExpr` kinds, union lanes, nominal-ADT categories, or generic narrowing metadata belongs to P1-side type groundwork.
+2. Any change to how users write code, what the parser accepts, or how constructors / patterns / `match` appear on the surface belongs to P5-side language rollout.
+3. The Stage A `class` / `@dataclass` / `isinstance` bridge is allowed as part of the P5 representative surface, but P5 must not redefine the generic type-predicate semantics of `isinstance` itself.
+4. The decode-first semantics of built-in `JsonValue.as_*` / `get_*` remain authoritative in the IR/narrowing contract fixed by P1; P5 only owns the step that aligns user-defined ADT syntax with the same IR category.
+5. If a new source surface in P5 requires a new `TypeExpr` kind or a new generic narrowing lane, that foundation must be pushed back into follow-up type-groundwork instead of being absorbed by P5 alone.
+
 ### Representative scope example
 
 - Built-in: `JsonValue`
@@ -162,3 +188,5 @@ Decision log:
 - 2026-03-11: Closed `S1-01` by inventorying candidate language surfaces and fixing the initial rollout to existing `class` + single inheritance + `@dataclass` + `isinstance`.
 - 2026-03-11: Fixed `match` as a language goal but deferred it from the selfhost-safe initial stage; statement-first `match/case` is now the Stage B target.
 - 2026-03-11: Fixed `Result.Ok`-style namespace sugar and `adt` blocks as later-stage sugar rather than canonical v1 syntax.
+- 2026-03-11: Closed `S1-02` by fixing `TypeExpr` schema, union lanes, nominal-ADT categories, and generic narrowing metadata as P1 responsibilities, while declaration/constructor/pattern/`match` surface and user-facing diagnostics remain P5 responsibilities.
+- 2026-03-11: Fixed the rule that Stage A may reuse `class` / `@dataclass` / `isinstance` as a representative P5 bridge, but P5 does not redefine the generic `isinstance` semantics or the decode-first IR contract already fixed for `JsonValue` by P1.
