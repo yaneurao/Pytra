@@ -965,6 +965,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         tail_upper_apply_text = text.split("def _apply_subscript_slice_tail_upper_state", 1)[1].split(
+            "def _resolve_subscript_slice_tail_close_state",
+            1,
+        )[0]
+        tail_close_state_text = text.split("def _resolve_subscript_slice_tail_close_state", 1)[1].split(
             "def _parse_subscript_suffix_components",
             1,
         )[0]
@@ -1098,8 +1102,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("upper = self._resolve_subscript_slice_tail_upper_state()", tail_token_text)
         self.assertIn("return self._apply_subscript_slice_tail_upper_state(upper=upper)", tail_token_text)
         self.assertIn("return self._parse_subscript_slice_upper_expr()", tail_upper_state_text)
-        self.assertIn("rtok = self._consume_subscript_slice_tail_close_token()", tail_upper_apply_text)
+        self.assertIn("rtok = self._resolve_subscript_slice_tail_close_state()", tail_upper_apply_text)
         self.assertIn("return upper, rtok", tail_upper_apply_text)
+        self.assertIn("return self._consume_subscript_slice_tail_close_token()", tail_close_state_text)
         self.assertIn("starts_with_slice = self._resolve_subscript_suffix_component_state()", component_text)
         self.assertIn("return self._apply_subscript_suffix_component_state(", component_text)
         self.assertIn('return self._cur()["k"] == ":"', component_state_text)
@@ -1179,7 +1184,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("return self._parse_ifexp()", upper_expr_text)
         self.assertNotIn('self._eat(":")', tail_token_text)
         self.assertNotIn("upper = self._parse_subscript_slice_upper_expr()", tail_token_text)
-        self.assertNotIn("rtok = self._consume_subscript_slice_tail_close_token()", tail_token_text)
+        self.assertNotIn("rtok = self._resolve_subscript_slice_tail_close_state()", tail_token_text)
         self.assertNotIn("return upper, rtok", tail_token_text)
         self.assertNotIn('if self._cur()["k"] == ":":', component_text)
         self.assertNotIn("if starts_with_slice:", component_text)
