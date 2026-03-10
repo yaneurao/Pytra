@@ -36,32 +36,37 @@ def runtime_cpp_sources() -> list[str]:
     rels = collect_runtime_cpp_sources([str(CPP_OUT)], ROOT / "src")
     return [str(ROOT / rel) for rel in rels]
 
-def main() -> int:
-    run(
-        [
-            "python3",
-            str(SELFHOST_ENTRY),
-            str(SELFHOST_ENTRY),
-            "--target",
-            "cpp",
-            "-o",
-            str(CPP_OUT),
-        ]
-    )
 
-    cpp_sources = runtime_cpp_sources()
-    cmd = [
+def build_selfhost_transpile_cmd(selfhost_entry: Path, cpp_out: Path) -> list[str]:
+    return [
+        "python3",
+        str(selfhost_entry),
+        str(selfhost_entry),
+        "--target",
+        "cpp",
+        "-o",
+        str(cpp_out),
+    ]
+
+
+def build_selfhost_compile_cmd(cpp_out: Path, bin_out: Path, cpp_sources: list[str]) -> list[str]:
+    return [
         "g++",
         "-std=c++20",
         "-O2",
         "-Isrc",
         "-Isrc/runtime/cpp",
-        str(CPP_OUT),
+        str(cpp_out),
         *cpp_sources,
         "-o",
-        str(BIN_OUT),
+        str(bin_out),
     ]
-    run(cmd)
+
+def main() -> int:
+    run(build_selfhost_transpile_cmd(SELFHOST_ENTRY, CPP_OUT))
+
+    cpp_sources = runtime_cpp_sources()
+    run(build_selfhost_compile_cmd(CPP_OUT, BIN_OUT, cpp_sources))
 
     print(str(BIN_OUT))
     return 0

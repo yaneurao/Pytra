@@ -82,6 +82,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] `selfhost_transpile.py` の bridge lane も env/cmd helper と `main()` regression を unit test 化し、JSON passthrough と `.py -> EAST JSON -> selfhost` の両経路を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] `check_selfhost_stage2_cpp_diff.py` は helper command だけでなく `main()` の build failure / missing binary / build→diff flow まで unit test 化し、stage2 diff CLI contract を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] `selfhost_transpile.py` も `.json` passthrough と `.py -> EAST JSON -> selfhost` bridge、`PYTHONPATH` / `--target` 伝播を unit test で固定し、bridge lane の typed-boundary regressions を捕まえ始めた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] `build_selfhost.py` も stage1 transpile command・compile command・runtime source resolve・`main()` の transpile→compile flow を unit test 化し、stage1 build lane の drift を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
