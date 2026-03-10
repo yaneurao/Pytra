@@ -11,8 +11,10 @@ from toolchain.compiler.typed_boundary import coerce_compiler_root_document
 from toolchain.frontends.known_modules import is_known_module_name
 from toolchain.frontends.type_expr import normalize_type_text
 from toolchain.frontends.type_expr import parse_type_expr_text
+from toolchain.json_adapters import export_json_object_dict
+from toolchain.json_adapters import load_json_object_doc
+from toolchain.json_adapters import unwrap_east_root_json_doc
 from pytra.std import argparse
-from pytra.std import json
 from pytra.std import os
 from pytra.std import sys
 from pytra.std.pathlib import Path
@@ -205,16 +207,12 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
     input_txt = str(input_path)
     if input_txt.endswith(".json"):
-        payload = json.loads_obj(input_path.read_text(encoding="utf-8"))
-        if payload is not None:
-            ok = payload.get_bool("ok")
-            east_obj = payload.get_obj("east")
-            if ok is True and east_obj is not None:
-                east_doc = normalize_east_root_document(dict(east_obj.raw))
-                return normalize_east1_to_east2_document(east_doc)
-            if payload.get_str("kind") == "Module":
-                payload_doc = normalize_east_root_document(dict(payload.raw))
-                return normalize_east1_to_east2_document(payload_doc)
+        payload = load_json_object_doc(input_path, label="EAST JSON")
+        east_doc = unwrap_east_root_json_doc(payload)
+        if east_doc is not None:
+            return normalize_east1_to_east2_document(
+                normalize_east_root_document(export_json_object_dict(east_doc))
+            )
         raise make_user_error(
             "input_invalid",
             "Invalid EAST JSON format.",

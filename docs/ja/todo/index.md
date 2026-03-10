@@ -66,6 +66,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] dynamic carrier の現状は `JsonValue` raw carrier、extern-marked stdlib surface、`typed_boundary.py` の runtime hook seam、compiler-root JSON load に集約されることを contract test で固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `typed_boundary.py` の runtime hook lane は `RuntimeHookAdapter` へ寄せ、typed spec から raw callable を直接持たずに export/apply seam で扱う形へ整理した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] native compiler-root JSON load も `_unwrap_compiler_root_json_doc()` / `_coerce_compiler_root_json_doc()` に集約し、raw `JsonObj` unwrap を named adapter の内側へ閉じた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] toolchain 側の JSON load seam も `toolchain.json_adapters` に集約し、`frontends/transpile_cli` / `ir/east_io` / `link_*` / `runtime_symbol_index` から raw `json.loads_obj(...).raw` を退けた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Python compiler lane の `loads_obj(...).raw` は `toolchain/json_adapters.py` の `load_json_object_doc()` / `export_json_object_dict()` / `unwrap_east_root_json_doc()` に寄せ、frontends/link/ir/runtime-index で raw `JsonObj` unwrap を共通 seam に閉じた。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

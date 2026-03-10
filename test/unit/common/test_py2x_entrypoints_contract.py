@@ -222,6 +222,21 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         typed_boundary_src = (
             ROOT / "src" / "toolchain" / "compiler" / "typed_boundary.py"
         ).read_text(encoding="utf-8")
+        json_adapter_src = (ROOT / "src" / "toolchain" / "json_adapters.py").read_text(encoding="utf-8")
+        frontend_transpile_src = (
+            ROOT / "src" / "toolchain" / "frontends" / "transpile_cli.py"
+        ).read_text(encoding="utf-8")
+        east_io_src = (ROOT / "src" / "toolchain" / "ir" / "east_io.py").read_text(encoding="utf-8")
+        link_loader_src = (ROOT / "src" / "toolchain" / "link" / "program_loader.py").read_text(encoding="utf-8")
+        link_manifest_src = (
+            ROOT / "src" / "toolchain" / "link" / "link_manifest_io.py"
+        ).read_text(encoding="utf-8")
+        link_materializer_src = (
+            ROOT / "src" / "toolchain" / "link" / "materializer.py"
+        ).read_text(encoding="utf-8")
+        runtime_index_src = (
+            ROOT / "src" / "toolchain" / "frontends" / "runtime_symbol_index.py"
+        ).read_text(encoding="utf-8")
         sys_std_src = (ROOT / "src" / "pytra" / "std" / "sys.py").read_text(encoding="utf-8")
         prepare_src = (ROOT / "tools" / "prepare_selfhost_source.py").read_text(encoding="utf-8")
         native_transpile = (
@@ -252,6 +267,22 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("runtime_spec.runtime_hook.apply(output_path)", typed_boundary_src)
         self.assertNotIn("runtime_hook_impl: Any", typed_boundary_src)
         self.assertNotIn("def _coerce_runtime_hook_impl(", typed_boundary_src)
+
+        self.assertIn("def load_json_object_doc(path: Path, *, label: str) -> json.JsonObj:", json_adapter_src)
+        self.assertIn("def export_json_object_dict(doc: json.JsonObj) -> dict[str, object]:", json_adapter_src)
+        self.assertIn("def unwrap_east_root_json_doc(doc: json.JsonObj) -> json.JsonObj | None:", json_adapter_src)
+        self.assertIn("from toolchain.json_adapters import load_json_object_doc", frontend_transpile_src)
+        self.assertIn("from toolchain.json_adapters import unwrap_east_root_json_doc", frontend_transpile_src)
+        self.assertIn("from toolchain.json_adapters import load_json_object_doc", east_io_src)
+        self.assertIn("from toolchain.json_adapters import export_json_object_dict", link_loader_src)
+        self.assertIn("from toolchain.json_adapters import load_json_object_doc", link_manifest_src)
+        self.assertIn("from toolchain.json_adapters import load_json_object_doc", link_materializer_src)
+        self.assertIn("from toolchain.json_adapters import load_json_object_doc", runtime_index_src)
+        self.assertNotIn("dict(payload.raw)", frontend_transpile_src)
+        self.assertNotIn("dict(payload.raw)", east_io_src)
+        self.assertNotIn("dict(payload.raw)", link_manifest_src)
+        self.assertNotIn("dict(payload.raw)", link_materializer_src)
+        self.assertNotIn("dict(obj.raw)", runtime_index_src)
         self.assertIn("self.set_dynamic_hooks_enabled(False)", prepare_src)
         self.assertIn("def _build_cpp_hooks_impl() -> dict[str, Any]:", prepare_src)
 

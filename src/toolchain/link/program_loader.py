@@ -6,6 +6,8 @@ from pytra.std import json
 from pytra.std.pathlib import Path
 from typing import Any
 
+from toolchain.json_adapters import export_json_object_dict
+from toolchain.json_adapters import load_json_object_doc
 from toolchain.link.link_manifest_io import load_link_input_doc
 from toolchain.link.program_model import LinkedProgram
 from toolchain.link.program_model import LinkedProgramModule
@@ -14,13 +16,7 @@ from toolchain.link.program_validator import validate_raw_east3_doc
 
 
 def _load_raw_east3(path: Path) -> dict[str, object]:
-    try:
-        payload = json.loads_obj(path.read_text(encoding="utf-8"))
-    except Exception as exc:
-        raise RuntimeError("failed to parse raw EAST3: " + str(path) + ": " + str(exc)) from exc
-    if payload is None:
-        raise RuntimeError("raw EAST3 root must be an object: " + str(path))
-    return dict(payload.raw)
+    return export_json_object_dict(load_json_object_doc(path, label="raw EAST3"))
 
 
 def _module_id_from_east_or_path(east_doc: dict[str, object], source_path: Path) -> str:
@@ -62,10 +58,10 @@ def build_linked_program_from_module_map(
             raise RuntimeError("module_east_map keys must be non-empty paths")
         module_path = Path(path_txt).resolve()
         east_doc: dict[str, object] = {}
-        if isinstance(east_any, json.JsonObj):
-            east_doc = dict(east_any.raw)
-        elif isinstance(east_any, dict):
+        if isinstance(east_any, dict):
             east_doc = dict(east_any)
+        elif isinstance(east_any, json.JsonObj):
+            east_doc = export_json_object_dict(east_any)
         module_items.append((module_path, east_doc))
 
     for module_path, raw_east_doc in sorted(module_items, key=lambda item: str(item[0])):

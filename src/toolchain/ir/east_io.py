@@ -7,7 +7,9 @@ from typing import Any
 
 from toolchain.frontends.type_expr import sync_type_expr_mirrors
 from toolchain.ir.core import EastBuildError, convert_path, convert_source_to_east_with_backend
-from pytra.std import json
+from toolchain.json_adapters import export_json_object_dict
+from toolchain.json_adapters import load_json_object_doc
+from toolchain.json_adapters import unwrap_east_root_json_doc
 from pytra.std.pathlib import Path
 
 
@@ -99,24 +101,16 @@ def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:
 def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted") -> dict[str, Any]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
     if input_path.suffix == ".json":
-        payload = json.loads_obj(input_path.read_text(encoding="utf-8"))
-        if payload is None:
-            raise UserFacingError(
-                category="input_invalid",
-                summary="Invalid EAST JSON format.",
-                details=["expected: dict-root JSON"],
-            )
+        payload = load_json_object_doc(input_path, label="EAST JSON")
         if payload.get_bool("ok") is False:
             raise UserFacingError(
                 category="east_error",
                 summary="EAST JSON contains an error payload.",
                 details=[f"error: {payload.get_str('error')}"],
             )
-        east = payload.get_obj("east")
-        if payload.get_bool("ok") is True and east is not None:
-            return _normalize_east_root(dict(east.raw))
-        if payload.get_str("kind") == "Module":
-            return _normalize_east_root(dict(payload.raw))
+        east = unwrap_east_root_json_doc(payload)
+        if east is not None:
+            return _normalize_east_root(export_json_object_dict(east))
         raise UserFacingError(
             category="input_invalid",
             summary="Invalid EAST JSON structure.",

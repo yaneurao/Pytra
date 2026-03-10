@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from pytra.std import json
 from pytra.std.pathlib import Path
 
+from toolchain.json_adapters import export_json_object_dict
+from toolchain.json_adapters import load_json_object_doc
 from toolchain.link.global_optimizer import LinkedProgramOptimizationResult
 from toolchain.link.link_manifest_io import load_link_output_doc
 from toolchain.link.link_manifest_io import save_manifest_doc
@@ -21,13 +22,7 @@ def _module_rel_path(module_id: str, *, prefix: str) -> str:
 
 
 def _load_json_doc(path: Path, label: str) -> dict[str, object]:
-    try:
-        payload = json.loads_obj(path.read_text(encoding="utf-8"))
-    except Exception as exc:
-        raise RuntimeError("failed to parse " + label + ": " + str(path) + ": " + str(exc)) from exc
-    if payload is None:
-        raise RuntimeError(label + " root must be an object: " + str(path))
-    return dict(payload.raw)
+    return export_json_object_dict(load_json_object_doc(path, label=label))
 
 
 def _load_linked_east3_doc(
