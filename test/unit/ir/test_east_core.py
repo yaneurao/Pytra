@@ -16,6 +16,7 @@ if str(ROOT / "src") not in sys.path:
 
 CORE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core.py"
 CORE_CALL_SUFFIX_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_suffix.py"
+CORE_CALL_ANNOTATION_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_annotation.py"
 CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH = (
     ROOT / "src" / "toolchain" / "ir" / "core_expr_attr_subscript_suffix.py"
 )
@@ -735,7 +736,7 @@ class EastCoreTest(unittest.TestCase):
             core_text,
         )
         self.assertIn(
-            "class _ShExprParser(_ShExprCallSuffixParserMixin, _ShExprAttrSubscriptSuffixParserMixin):",
+            "class _ShExprParser(",
             core_text,
         )
         self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_apply_text)
@@ -1431,108 +1432,30 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('payload["resolved_type"] = std_module_attr_ret', postfix_text)
 
     def test_core_source_routes_attr_call_annotations_through_parser_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        callee_resolve_text = text.split("def _resolve_callee_call_annotation_kind", 1)[1].split(
-            "def _resolve_callee_call_annotation_state",
-            1,
-        )[0]
-        callee_state_text = text.split("def _resolve_callee_call_annotation_state", 1)[1].split(
-            "def _annotate_callee_call_expr",
-            1,
-        )[0]
-        callee_apply_text = text.split("def _apply_callee_call_annotation", 1)[1].split(
-            "def _resolve_callee_call_annotation_kind",
-            1,
-        )[0]
-        callee_helper_text = text.split("def _annotate_callee_call_expr", 1)[1].split(
-            "def _annotate_call_expr",
-            1,
-        )[0]
-        call_apply_text = text.split("def _apply_call_expr_annotation", 1)[1].split(
-            "def _annotate_call_expr",
-            1,
-        )[0]
-        call_helper_text = text.split("def _annotate_call_expr", 1)[1].split(
-            "def _annotate_named_call_expr",
-            1,
-        )[0]
-        attr_name_text = text.split("def _resolve_attr_callee_attr_name", 1)[1].split(
-            "def _resolve_attr_callee",
-            1,
-        )[0]
-        resolve_text = text.split("def _resolve_attr_callee", 1)[1].split(
-            "def _payload_source_span",
-            1,
-        )[0]
-        payload_span_text = text.split("def _payload_source_span", 1)[1].split(
-            "def _resolve_attr_call_annotation_state",
-            1,
-        )[0]
-        state_text = text.split("def _resolve_attr_call_annotation_state", 1)[1].split(
-            "def _apply_noncpp_attr_call_expr_annotation",
-            1,
-        )[0]
-        noncpp_apply_text = text.split("def _apply_noncpp_attr_call_expr_annotation", 1)[1].split(
-            "def _apply_runtime_method_call_expr_annotation",
-            1,
-        )[0]
-        runtime_apply_text = text.split("def _apply_runtime_method_call_expr_annotation", 1)[1].split(
-            "def _apply_attr_call_expr_annotation",
-            1,
-        )[0]
-        apply_text = text.split("def _apply_attr_call_expr_annotation", 1)[1].split(
-            "def _annotate_attr_call_expr",
-            1,
-        )[0]
-        helper_text = text.split("def _annotate_attr_call_expr", 1)[1].split(
-            "def _resolve_attr_expr_annotation",
-            1,
-        )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn('return str(callee.get("attr", ""))', attr_name_text)
-        self.assertIn("attr = self._resolve_attr_callee_attr_name(callee=callee)", resolve_text)
-        self.assertIn('owner = callee.get("value")', resolve_text)
-        self.assertIn("self._resolve_attr_expr_owner_state(", resolve_text)
-        self.assertIn("return owner_expr, owner_t, attr", resolve_text)
-        self.assertIn('source_span = payload.get("source_span")', payload_span_text)
-        self.assertIn("return source_span if isinstance(source_span, dict) else {}", payload_span_text)
-        self.assertIn("source_span=self._payload_source_span(payload)", state_text)
-        self.assertIn("return self._resolve_attr_callee(", state_text)
-        self.assertIn('_sh_annotate_noncpp_attr_call_expr(', noncpp_apply_text)
-        self.assertIn('_sh_annotate_runtime_method_call_expr(', runtime_apply_text)
-        self.assertIn("self._apply_noncpp_attr_call_expr_annotation(", apply_text)
-        self.assertIn("self._apply_runtime_method_call_expr_annotation(", apply_text)
-        self.assertIn("owner_expr, owner_t, attr = self._resolve_attr_call_annotation_state(", helper_text)
-        self.assertIn("return self._apply_attr_call_expr_annotation(", helper_text)
-        self.assertIn('if callee.get("kind") == "Attribute":', callee_resolve_text)
-        self.assertIn("return self._resolve_callee_call_annotation_kind(", callee_state_text)
-        self.assertIn('if callee_kind == "attr":', callee_apply_text)
-        self.assertIn("return self._annotate_attr_call_expr(", callee_apply_text)
-        self.assertIn("callee_kind = self._resolve_callee_call_annotation_state(", callee_helper_text)
-        self.assertIn("return self._apply_callee_call_annotation(", callee_helper_text)
-        self.assertIn("return self._annotate_callee_call_expr(", call_apply_text)
-        self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
-        self.assertNotIn('source_span = payload.get("source_span")', state_text)
-        self.assertNotIn('source_span = payload.get("source_span")', helper_text)
-        self.assertNotIn('attr = str(callee.get("attr", ""))', helper_text)
-        self.assertNotIn('attr = str(callee.get("attr", ""))', resolve_text)
-        self.assertNotIn('owner = callee.get("value")', helper_text)
-        self.assertNotIn("self._resolve_attr_expr_owner_state(", helper_text)
-        self.assertNotIn("return self._resolve_attr_callee(", helper_text)
-        self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', helper_text)
-        self.assertNotIn('_sh_annotate_runtime_method_call_expr(', helper_text)
-        self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', apply_text)
-        self.assertNotIn('_sh_annotate_runtime_method_call_expr(', apply_text)
-        self.assertNotIn('if callee.get("kind") == "Attribute":', callee_apply_text)
-        self.assertNotIn('if callee.get("kind") == "Attribute":', callee_helper_text)
-        self.assertNotIn('if callee_kind == "attr":', callee_helper_text)
-        self.assertNotIn("return self._annotate_callee_call_expr(", call_helper_text)
-        self.assertNotIn('attr = str(node.get("attr", ""))', postfix_text)
-        self.assertNotIn('owner = node.get("value")', postfix_text)
-        self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', postfix_text)
-        self.assertNotIn('_sh_annotate_runtime_method_call_expr(', postfix_text)
-        self.assertNotIn("payload = self._annotate_attr_call_expr(", postfix_text)
+        self.assertIn("class _ShExprCallAnnotationMixin:", annotation_text)
+        self.assertIn("def _apply_attr_callee_call_annotation(", annotation_text)
+        self.assertIn("def _apply_callee_call_annotation(", annotation_text)
+        self.assertIn("def _resolve_callee_call_annotation_kind(", annotation_text)
+        self.assertIn("def _resolve_callee_call_annotation_state(", annotation_text)
+        self.assertIn("def _annotate_callee_call_expr(", annotation_text)
+        self.assertIn("def _apply_call_expr_annotation(", annotation_text)
+        self.assertIn("def _annotate_call_expr(", annotation_text)
+        self.assertIn("return self._annotate_attr_call_expr(", annotation_text)
+        self.assertIn("return self._apply_callee_call_annotation(", annotation_text)
+        self.assertIn("return self._annotate_callee_call_expr(", annotation_text)
+        self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", core_text)
+        self.assertIn("_ShExprCallAnnotationMixin", core_text)
+        self.assertIn("def _resolve_attr_call_annotation_state(", core_text)
+        self.assertIn("def _apply_attr_call_expr_annotation(", core_text)
+        self.assertIn("def _annotate_attr_call_expr(", core_text)
+        self.assertNotIn("def _apply_attr_callee_call_annotation(", core_text)
+        self.assertNotIn("def _apply_callee_call_annotation(", core_text)
+        self.assertNotIn("def _resolve_callee_call_annotation_kind(", core_text)
+        self.assertNotIn("def _annotate_callee_call_expr(", core_text)
+        self.assertNotIn("def _annotate_call_expr(", core_text)
 
     def test_core_source_routes_scalar_ctor_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
@@ -1774,11 +1697,12 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_named_call_lookup_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_lookup_named_call_dispatch", 1)[1].split(
             "def _sh_infer_known_name_call_return_type",
             1,
         )[0]
-        call_helper_text = text.split("def _annotate_call_expr", 1)[1].split(
+        call_helper_text = annotation_text.split("def _annotate_call_expr", 1)[1].split(
             "def _resolve_named_call_dispatch",
             1,
         )[0]
@@ -1805,176 +1729,32 @@ class EastCoreTest(unittest.TestCase):
         )
 
     def test_core_source_routes_named_call_annotations_through_parser_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        callee_resolve_text = text.split("def _resolve_callee_call_annotation_kind", 1)[1].split(
-            "def _resolve_callee_call_annotation_state",
-            1,
-        )[0]
-        callee_apply_text = text.split("def _apply_callee_call_annotation", 1)[1].split(
-            "def _apply_named_callee_call_annotation",
-            1,
-        )[0]
-        named_callee_apply_text = text.split("def _apply_named_callee_call_annotation", 1)[1].split(
-            "def _apply_attr_callee_call_annotation",
-            1,
-        )[0]
-        attr_callee_apply_text = text.split("def _apply_attr_callee_call_annotation", 1)[1].split(
-            "def _resolve_callee_call_annotation_kind",
-            1,
-        )[0]
-        callee_state_text = text.split("def _resolve_callee_call_annotation_state", 1)[1].split(
-            "def _annotate_callee_call_expr",
-            1,
-        )[0]
-        callee_helper_text = text.split("def _annotate_callee_call_expr", 1)[1].split(
-            "def _annotate_call_expr",
-            1,
-        )[0]
-        call_apply_text = text.split("def _apply_call_expr_annotation", 1)[1].split(
-            "def _annotate_call_expr",
-            1,
-        )[0]
-        call_helper_text = text.split("def _annotate_call_expr", 1)[1].split(
-            "def _annotate_named_call_expr",
-            1,
-        )[0]
-        state_helper_text = text.split("def _resolve_call_expr_annotation_state", 1)[1].split(
-            "def _build_call_expr_payload",
-            1,
-        )[0]
-        named_guard_text = text.split("def _guard_named_call_args", 1)[1].split(
-            "def _apply_callee_call_annotation",
-            1,
-        )[0]
-        resolve_named_text = text.split("def _resolve_named_call_dispatch", 1)[1].split(
-            "def _resolve_named_call_annotation_state",
-            1,
-        )[0]
-        state_named_text = text.split("def _resolve_named_call_annotation_state", 1)[1].split(
-            "def _annotate_named_call_expr",
-            1,
-        )[0]
-        builtin_named_apply_text = text.split("def _apply_builtin_named_call_annotation", 1)[1].split(
-            "def _apply_runtime_named_call_annotation",
-            1,
-        )[0]
-        runtime_named_apply_text = text.split("def _apply_runtime_named_call_annotation", 1)[1].split(
-            "def _resolve_named_call_dispatch",
-            1,
-        )[0]
-        coalesce_text = text.split("def _coalesce_optional_annotation_payload", 1)[1].split(
-            "def _apply_builtin_named_call_annotation",
-            1,
-        )[0]
-        helper_text = text.split("def _annotate_named_call_expr", 1)[1].split(
-            "def _should_use_truthy_runtime_for_bool_ctor",
-            1,
-        )[0]
-        apply_text = text.split("def _apply_named_call_dispatch", 1)[1].split(
-            "def _coalesce_optional_annotation_payload",
-            1,
-        )[0]
-        builtin_resolve_text = text.split("def _resolve_builtin_named_call_semantic_tag", 1)[1].split(
-            "def _resolve_builtin_named_call_annotation_state",
-            1,
-        )[0]
-        builtin_state_text = text.split("def _resolve_builtin_named_call_annotation_state", 1)[1].split(
-            "def _apply_builtin_named_call_dispatch",
-            1,
-        )[0]
-        builtin_apply_text = text.split("def _apply_builtin_named_call_dispatch", 1)[1].split(
-            "def _annotate_builtin_named_call_expr",
-            1,
-        )[0]
-        builtin_helper_text = text.split("def _annotate_builtin_named_call_expr", 1)[1].split(
-            "def _annotate_runtime_named_call_expr",
-            1,
-        )[0]
-        runtime_helper_text = text.split("def _annotate_runtime_named_call_expr", 1)[1].split(
-            "def _resolve_attr_callee",
-            1,
-        )[0]
-        runtime_apply_text = text.split("def _apply_runtime_named_call_dispatch", 1)[1].split(
-            "def _annotate_attr_call_expr",
-            1,
-        )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
 
-        resolve_named_text = text.split("def _resolve_named_call_dispatch", 1)[1].split(
-            "def _resolve_named_call_dispatch_kind",
-            1,
-        )[0]
-        resolve_named_kind_text = text.split("def _resolve_named_call_dispatch_kind", 1)[1].split(
-            "def _resolve_named_call_annotation_state",
-            1,
-        )[0]
-        self.assertIn("return _sh_lookup_named_call_dispatch(fn_name)", resolve_named_text)
-        self.assertIn('if self._resolve_builtin_named_call_kind(fn_name=fn_name) != "":', resolve_named_kind_text)
-        self.assertIn("dispatch_kind, *_ = self._resolve_runtime_named_call_annotation(", resolve_named_kind_text)
-        self.assertIn('if dispatch_kind != "":', resolve_named_kind_text)
-        self.assertIn("call_dispatch = self._resolve_named_call_dispatch(", state_named_text)
-        self.assertIn("dispatch_kind = self._resolve_named_call_dispatch_kind(", state_named_text)
-        self.assertIn("return call_dispatch, dispatch_kind", state_named_text)
-        self.assertIn("call_dispatch, dispatch_kind = self._resolve_named_call_annotation_state(", helper_text)
-        self.assertIn("return self._apply_named_call_dispatch(", helper_text)
-        self.assertIn('if dispatch_kind == "builtin":', apply_text)
-        self.assertIn('if dispatch_kind == "runtime":', apply_text)
-        self.assertIn("return self._apply_builtin_named_call_annotation(", apply_text)
-        self.assertIn("return self._apply_runtime_named_call_annotation(", apply_text)
-        self.assertIn("return payload if annotated_payload is None else annotated_payload", coalesce_text)
-        self.assertIn("builtin_payload = self._annotate_builtin_named_call_expr(", builtin_named_apply_text)
-        self.assertIn("runtime_payload = self._annotate_runtime_named_call_expr(", runtime_named_apply_text)
-        self.assertIn("return self._coalesce_optional_annotation_payload(", builtin_named_apply_text)
-        self.assertIn("annotated_payload=builtin_payload", builtin_named_apply_text)
-        self.assertIn("return self._coalesce_optional_annotation_payload(", runtime_named_apply_text)
-        self.assertIn("annotated_payload=runtime_payload", runtime_named_apply_text)
-        self.assertIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', named_guard_text)
-        self.assertNotIn("call_dispatch = _sh_lookup_named_call_dispatch(fn_name)", helper_text)
-        self.assertNotIn("call_dispatch = self._resolve_named_call_dispatch(", helper_text)
-        self.assertNotIn("dispatch_kind = self._resolve_named_call_dispatch_kind(", helper_text)
-        self.assertNotIn('str(call_dispatch.get("builtin_semantic_tag", ""))', helper_text)
-        self.assertNotIn('str(call_dispatch.get("stdlib_fn_runtime_call", ""))', helper_text)
-        self.assertNotIn('str(call_dispatch.get("stdlib_symbol_runtime_call", ""))', helper_text)
-        self.assertNotIn("builtin_payload = self._annotate_builtin_named_call_expr(", apply_text)
-        self.assertNotIn("runtime_payload = self._annotate_runtime_named_call_expr(", apply_text)
-        self.assertNotIn("return payload if annotated_payload is None else annotated_payload", apply_text)
-        self.assertNotIn('str(call_dispatch.get("noncpp_symbol_runtime_call", ""))', helper_text)
-        self.assertNotIn('if dispatch_kind == "builtin":', helper_text)
-        self.assertNotIn('if dispatch_kind == "runtime":', helper_text)
-        self.assertIn('return str(call_dispatch.get("builtin_semantic_tag", ""))', builtin_resolve_text)
-        self.assertIn("return self._apply_builtin_named_call_dispatch(", builtin_helper_text)
-        self.assertIn("semantic_tag, dispatch_kind = self._resolve_builtin_named_call_dispatch(", builtin_state_text)
-        self.assertIn('dispatch_kind == "scalar_ctor"', builtin_state_text)
-        self.assertIn('dispatch_kind == "enumerate"', builtin_state_text)
-        self.assertIn("_resolve_builtin_named_call_annotation_state(", builtin_helper_text)
-        self.assertIn('if dispatch_kind == "fixed_runtime":', builtin_apply_text)
-        self.assertIn('if dispatch_kind == "scalar_ctor":', builtin_apply_text)
-        self.assertIn('if dispatch_kind == "enumerate":', builtin_apply_text)
-        self.assertIn("use_truthy_runtime=use_truthy_runtime", builtin_apply_text)
-        self.assertIn("iter_element_type=iter_element_type", builtin_apply_text)
-        self.assertIn("return self._apply_runtime_named_call_dispatch(", runtime_helper_text)
-        self.assertIn('if dispatch_kind == "stdlib_function":', runtime_apply_text)
-        self.assertIn("call_ret, fn_name = self._infer_call_expr_return_type(callee, args)", state_helper_text)
-        self.assertIn("self._guard_named_call_args(", state_helper_text)
-        self.assertIn("call_ret, fn_name = self._resolve_call_expr_annotation_state(", call_helper_text)
-        self.assertIn('if fn_name != "":', callee_resolve_text)
-        self.assertIn("return self._apply_named_callee_call_annotation(", callee_apply_text)
-        self.assertIn("return self._apply_attr_callee_call_annotation(", callee_apply_text)
-        self.assertIn("return self._annotate_named_call_expr(", named_callee_apply_text)
-        self.assertIn("return self._annotate_attr_call_expr(", attr_callee_apply_text)
-        self.assertIn("return self._resolve_callee_call_annotation_kind(", callee_state_text)
-        self.assertIn("return self._apply_callee_call_annotation(", callee_helper_text)
-        self.assertIn("return self._annotate_callee_call_expr(", call_apply_text)
-        self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
-        self.assertNotIn('fn_name = str(callee.get("id", "")) if callee.get("kind") == "Name" else ""', call_helper_text)
-        self.assertNotIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', call_helper_text)
-        self.assertNotIn("self._guard_named_call_args(", call_helper_text)
-        self.assertNotIn('if fn_name != "":', callee_apply_text)
-        self.assertNotIn("return self._annotate_named_call_expr(", callee_apply_text)
-        self.assertNotIn("return self._annotate_attr_call_expr(", callee_apply_text)
-        self.assertNotIn("callee_kind = self._resolve_callee_call_annotation_kind(", callee_helper_text)
-        self.assertNotIn("return self._annotate_named_call_expr(", callee_helper_text)
-        self.assertNotIn("return self._annotate_callee_call_expr(", call_helper_text)
+        self.assertIn("class _ShExprCallAnnotationMixin:", annotation_text)
+        self.assertIn("def _apply_named_callee_call_annotation(", annotation_text)
+        self.assertIn("def _apply_callee_call_annotation(", annotation_text)
+        self.assertIn("def _resolve_callee_call_annotation_kind(", annotation_text)
+        self.assertIn("def _resolve_callee_call_annotation_state(", annotation_text)
+        self.assertIn("def _annotate_callee_call_expr(", annotation_text)
+        self.assertIn("def _resolve_call_expr_annotation_state(", annotation_text)
+        self.assertIn("def _annotate_call_expr(", annotation_text)
+        self.assertIn("return self._annotate_named_call_expr(", annotation_text)
+        self.assertIn("return self._apply_named_callee_call_annotation(", annotation_text)
+        self.assertIn("return self._apply_attr_callee_call_annotation(", annotation_text)
+        self.assertIn("return self._apply_call_expr_annotation(", annotation_text)
+        self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", core_text)
+        self.assertIn("_ShExprCallAnnotationMixin", core_text)
+        self.assertIn("def _resolve_named_call_dispatch(", core_text)
+        self.assertIn("def _annotate_named_call_expr(", core_text)
+        self.assertIn("def _annotate_builtin_named_call_expr(", core_text)
+        self.assertIn("def _annotate_runtime_named_call_expr(", core_text)
+        self.assertNotIn("def _apply_named_callee_call_annotation(", core_text)
+        self.assertNotIn("def _apply_callee_call_annotation(", core_text)
+        self.assertNotIn("def _resolve_callee_call_annotation_kind(", core_text)
+        self.assertNotIn("def _resolve_call_expr_annotation_state(", core_text)
+        self.assertNotIn("def _annotate_call_expr(", core_text)
 
     def test_self_hosted_parser_rejects_object_receiver_method_call(self) -> None:
         src = """
@@ -2236,6 +2016,7 @@ x.bit_length()
 
     def test_core_source_routes_call_expr_returns_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         named_decl_text = text.split("def _resolve_named_call_declared_return_type", 1)[1].split(
             "def _resolve_named_call_return_state",
             1,
@@ -2252,20 +2033,20 @@ x.bit_length()
             "def _split_generic_types",
             1,
         )[0]
-        state_text = text.split("def _resolve_call_expr_annotation_state", 1)[1].split(
-            "def _build_call_expr_payload",
+        build_text = text.split("def _build_call_expr_payload", 1)[1].split(
+            "def _apply_named_call_dispatch",
             1,
         )[0]
-        build_text = text.split("def _build_call_expr_payload", 1)[1].split(
+        state_text = annotation_text.split("def _resolve_call_expr_annotation_state", 1)[1].split(
             "def _apply_call_expr_annotation",
             1,
         )[0]
-        apply_text = text.split("def _apply_call_expr_annotation", 1)[1].split(
+        apply_text = annotation_text.split("def _apply_call_expr_annotation", 1)[1].split(
             "def _annotate_call_expr",
             1,
         )[0]
-        call_helper_text = text.split("def _annotate_call_expr", 1)[1].split(
-            "def _annotate_named_call_expr",
+        call_helper_text = annotation_text.split("def _annotate_call_expr", 1)[1].split(
+            "def _apply_named_call_dispatch",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -2288,6 +2069,10 @@ x.bit_length()
         self.assertIn("return self._annotate_callee_call_expr(", apply_text)
         self.assertIn("call_ret, fn_name = self._resolve_call_expr_annotation_state(", call_helper_text)
         self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
+        self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", text)
+        self.assertNotIn("def _resolve_call_expr_annotation_state(", text)
+        self.assertNotIn("def _apply_call_expr_annotation(", text)
+        self.assertNotIn("def _annotate_call_expr(", text)
         self.assertNotIn("_sh_infer_known_name_call_return_type(", helper_text)
         self.assertNotIn("stdlib_imported_ret = (", postfix_text)
         self.assertNotIn("call_ret = self.fn_return_types[fn_name]", postfix_text)
@@ -2324,7 +2109,7 @@ x.bit_length()
             core_text,
         )
         self.assertIn(
-            "class _ShExprParser(_ShExprCallSuffixParserMixin, _ShExprAttrSubscriptSuffixParserMixin):",
+            "class _ShExprParser(",
             core_text,
         )
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
@@ -2360,7 +2145,7 @@ x.bit_length()
             core_text,
         )
         self.assertIn(
-            "class _ShExprParser(_ShExprCallSuffixParserMixin, _ShExprAttrSubscriptSuffixParserMixin):",
+            "class _ShExprParser(",
             core_text,
         )
         self.assertIn('if tok_kind == "(":', postfix_suffix_apply_text)
