@@ -102,12 +102,35 @@ def _generated_cpp_core_make_object_functions(
     *,
     scope: str = "nonhelper",
 ) -> set[str]:
-    if scope not in {"all", "nonhelper", "helper_only", "export_seam", "parser_residual"}:
+    if scope not in {
+        "all",
+        "nonhelper",
+        "helper_only",
+        "export_seam",
+        "parser_residual",
+        "expr_parser_residual",
+        "stmt_parser_residual",
+        "lookup_residual",
+    }:
         raise ValueError(f"unsupported make-object scope: {scope}")
     all_functions: set[str] = set()
     helper_functions: set[str] = set()
     nonhelper_functions: set[str] = set()
     export_seam_functions = {"to_payload"}
+    expr_parser_functions = {
+        "_parse_lambda",
+        "_parse_not",
+        "_parse_postfix",
+        "_parse_primary",
+        "_parse_unary",
+        "_sh_parse_expr_lowered",
+    }
+    stmt_parser_functions = {
+        "_sh_parse_stmt_block_mutable",
+        "_sh_push_stmt_with_trivia",
+        "convert_source_to_east_self_hosted",
+    }
+    lookup_functions = {"_lookup_method_return"}
     current_function: str | None = None
     current_function_brace_depth = 0
     for line in text.splitlines():
@@ -135,6 +158,12 @@ def _generated_cpp_core_make_object_functions(
         return helper_functions
     if scope == "export_seam":
         return nonhelper_functions & export_seam_functions
+    if scope == "expr_parser_residual":
+        return nonhelper_functions & expr_parser_functions
+    if scope == "stmt_parser_residual":
+        return nonhelper_functions & stmt_parser_functions
+    if scope == "lookup_residual":
+        return nonhelper_functions & lookup_functions
     if scope == "parser_residual":
         return nonhelper_functions - export_seam_functions
     return nonhelper_functions
@@ -719,6 +748,38 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
                 "_sh_push_stmt_with_trivia",
                 "convert_source_to_east_self_hosted",
             },
+        )
+
+    def test_generated_cpp_core_make_object_expr_parser_residual_set_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        self.assertEqual(
+            _generated_cpp_core_make_object_functions(text, scope="expr_parser_residual"),
+            {
+                "_parse_lambda",
+                "_parse_not",
+                "_parse_postfix",
+                "_parse_primary",
+                "_parse_unary",
+                "_sh_parse_expr_lowered",
+            },
+        )
+
+    def test_generated_cpp_core_make_object_stmt_parser_residual_set_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        self.assertEqual(
+            _generated_cpp_core_make_object_functions(text, scope="stmt_parser_residual"),
+            {
+                "_sh_parse_stmt_block_mutable",
+                "_sh_push_stmt_with_trivia",
+                "convert_source_to_east_self_hosted",
+            },
+        )
+
+    def test_generated_cpp_core_make_object_lookup_residual_set_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        self.assertEqual(
+            _generated_cpp_core_make_object_functions(text, scope="lookup_residual"),
+            {"_lookup_method_return"},
         )
 
     def test_generated_cpp_core_known_inline_lowered_callsite_kind_residual_set_is_stable(self) -> None:
