@@ -278,6 +278,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument 1件分の NAME save/peek も `_ShExprParser._resolve_call_arg_entry_state()` と `_apply_call_arg_entry_state()` に分離し、`_parse_call_arg_entry()` から `save/peek + keyword apply` の直列処理を外した。`test_east_core.py` では両 helper 定義、entry helper の call site、旧 inline call-arg state/apply block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument 1件分の apply も `_ShExprParser._apply_keyword_call_arg_entry()` と `_apply_positional_call_arg_entry()` に分離し、`_apply_call_arg_entry_state()` から keyword/positional の直列分岐を外した。`test_east_core.py` では両 helper 定義、apply helper の call site、旧 inline call-arg apply block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument loop の append も `_ShExprParser._apply_call_arg_entry()` へ寄せ、`_parse_call_args()` から positional/keyword の direct append を外した。`test_east_core.py` では loop apply helper 定義、call site、旧 inline call-arg loop append block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument loop の comma/terminator 制御も `_ShExprParser._advance_call_arg_loop()` へ寄せ、`_parse_call_args()` から `,` / `)` の direct consume を外した。`test_east_core.py` では loop state helper 定義、call site、旧 inline call-arg terminator block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

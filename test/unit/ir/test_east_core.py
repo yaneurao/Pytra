@@ -1914,6 +1914,10 @@ x.bit_length()
             1,
         )[0]
         loop_apply_text = text.split("def _apply_call_arg_entry", 1)[1].split(
+            "def _advance_call_arg_loop",
+            1,
+        )[0]
+        loop_state_text = text.split("def _advance_call_arg_loop", 1)[1].split(
             "def _parse_call_args",
             1,
         )[0]
@@ -1951,8 +1955,12 @@ x.bit_length()
         self.assertIn("keywords.append(keyword_entry)", loop_apply_text)
         self.assertIn("if arg_entry is not None:", loop_apply_text)
         self.assertIn("args.append(arg_entry)", loop_apply_text)
+        self.assertIn('if self._cur()["k"] != ",":', loop_state_text)
+        self.assertIn('self._eat(",")', loop_state_text)
+        self.assertIn('return self._cur()["k"] != ")"', loop_state_text)
         self.assertIn("arg_entry, keyword_entry = self._parse_call_arg_entry()", helper_text)
         self.assertIn("self._apply_call_arg_entry(", helper_text)
+        self.assertIn("if not self._advance_call_arg_loop():", helper_text)
         self.assertIn("args, keywords = self._parse_call_args()", state_text)
         self.assertIn("args, keywords, source_span, repr_text = self._resolve_call_suffix_state(", call_suffix_text)
         self.assertNotIn("save_pos = self.pos", entry_text)
@@ -1963,6 +1971,8 @@ x.bit_length()
         self.assertNotIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', helper_text)
         self.assertNotIn("keywords.append(keyword_entry)", helper_text)
         self.assertNotIn("args.append(arg_entry)", helper_text)
+        self.assertNotIn('if self._cur()["k"] != ",":', helper_text)
+        self.assertNotIn('self._eat(",")', helper_text)
         self.assertNotIn("save_pos = self.pos", helper_text)
         self.assertNotIn("args, keywords = self._parse_call_args()", call_suffix_text)
         self.assertNotIn("save_pos = self.pos", postfix_text)
