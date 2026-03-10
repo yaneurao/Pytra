@@ -1072,15 +1072,21 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         helper_text = text.split("def _annotate_named_call_expr", 1)[1].split(
-            "def _subscript_result_type",
+            "def _annotate_builtin_named_call_expr",
+            1,
+        )[0]
+        builtin_helper_text = text.split("def _annotate_builtin_named_call_expr", 1)[1].split(
+            "def _annotate_attr_call_expr",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))', helper_text)
-        self.assertIn('if fn_name in {"print", "len", "range", "zip", "str"}:', helper_text)
-        self.assertIn('if fn_name == "bool" and len(args) == 1:', helper_text)
-        self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', helper_text)
+        self.assertIn("builtin_payload = self._annotate_builtin_named_call_expr(", helper_text)
+        self.assertIn("if builtin_payload is not None:", helper_text)
+        self.assertIn('if fn_name in {"print", "len", "range", "zip", "str"}:', builtin_helper_text)
+        self.assertIn('if fn_name == "bool" and len(args) == 1:', builtin_helper_text)
+        self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', builtin_helper_text)
         self.assertIn('fn_name = str(callee.get("id", "")) if callee.get("kind") == "Name" else ""', call_helper_text)
         self.assertIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', call_helper_text)
         self.assertIn("return self._annotate_named_call_expr(", call_helper_text)
@@ -1088,6 +1094,27 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', postfix_text)
         self.assertNotIn('if fn_name == "bool" and len(args) == 1:', postfix_text)
         self.assertNotIn("payload = self._annotate_named_call_expr(", postfix_text)
+        self.assertNotIn("elem_t = _sh_infer_enumerate_item_type(args)", postfix_text)
+
+    def test_core_source_routes_builtin_named_call_annotations_through_parser_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _annotate_builtin_named_call_expr",
+            1,
+        )[0]
+        helper_text = text.split("def _annotate_builtin_named_call_expr", 1)[1].split(
+            "def _annotate_attr_call_expr",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('if fn_name in {"print", "len", "range", "zip", "str"}:', helper_text)
+        self.assertIn('if fn_name == "bool" and len(args) == 1:', helper_text)
+        self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', helper_text)
+        self.assertIn("return None", helper_text)
+        self.assertIn("builtin_payload = self._annotate_builtin_named_call_expr(", named_call_text)
+        self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', postfix_text)
+        self.assertNotIn('if fn_name == "bool" and len(args) == 1:', postfix_text)
         self.assertNotIn("elem_t = _sh_infer_enumerate_item_type(args)", postfix_text)
 
     def test_core_source_routes_known_name_call_returns_through_shared_helper(self) -> None:

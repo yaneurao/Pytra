@@ -208,6 +208,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] call 引数解析 loop も parser method `_ShExprParser._parse_call_args()` へ寄せ、`NAME '='` keyword 分岐と `save_pos` 復帰を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline call-arg loop の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `(` suffix 全体も parser method `_ShExprParser._parse_call_suffix()` へ寄せ、`(` / `)` token 消費、span 計算、`_annotate_call_expr()` 呼び出しを `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline call-suffix block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] postfix suffix dispatch 自体も parser method `_ShExprParser._parse_postfix_suffix()` へ寄せ、`.` / `(` / `[` の token-kind 分岐を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline suffix-dispatch if-chain の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] builtins 側の named-call dispatch も parser method `_ShExprParser._annotate_builtin_named_call_expr()` へ寄せ、`print/len/...`、scalar ctor、`min/max`、`enumerate`、iterator/predicate/collection ctor の分岐を `_annotate_named_call_expr()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline builtin-dispatch block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] builtins named-call annotation も parser method `_ShExprParser._annotate_builtin_named_call_expr()` へ分離し、`print/len/range/zip/str`、scalar ctor、`min/max`、`open`、`enumerate`、`iter/next/reversed`、collection ctor、type predicate などの分岐を `_annotate_named_call_expr()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline builtin-dispatch cluster の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

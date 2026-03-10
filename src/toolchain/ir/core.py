@@ -4964,33 +4964,14 @@ class _ShExprParser:
         builtin_semantic_tag = str(call_dispatch.get("builtin_semantic_tag", ""))
         stdlib_fn_semantic_tag = str(call_dispatch.get("stdlib_fn_semantic_tag", ""))
         stdlib_symbol_semantic_tag = str(call_dispatch.get("stdlib_symbol_semantic_tag", ""))
-        if fn_name in {"print", "len", "range", "zip", "str"}:
-            return _sh_annotate_fixed_runtime_builtin_call_expr(
-                payload,
-                fn_name=fn_name,
-                semantic_tag=builtin_semantic_tag,
-            )
-        if fn_name in {"int", "float", "bool"}:
-            use_truthy_runtime = False
-            if fn_name == "bool" and len(args) == 1:
-                arg0 = args[0]
-                if isinstance(arg0, dict):
-                    arg0_t = str(arg0.get("resolved_type", "unknown"))
-                    if self._is_forbidden_object_receiver_type(arg0_t):
-                        use_truthy_runtime = True
-            return _sh_annotate_scalar_ctor_call_expr(
-                payload,
-                fn_name=fn_name,
-                arg_count=len(args),
-                use_truthy_runtime=use_truthy_runtime,
-                semantic_tag=builtin_semantic_tag,
-            )
-        if fn_name in {"min", "max"}:
-            return _sh_annotate_minmax_call_expr(
-                payload,
-                fn_name=fn_name,
-                semantic_tag=builtin_semantic_tag,
-            )
+        builtin_payload = self._annotate_builtin_named_call_expr(
+            payload,
+            fn_name=fn_name,
+            args=args,
+            semantic_tag=builtin_semantic_tag,
+        )
+        if builtin_payload is not None:
+            return builtin_payload
         if stdlib_fn_runtime_call != "":
             return _sh_annotate_stdlib_function_call_expr(
                 payload,
@@ -5011,54 +4992,92 @@ class _ShExprParser:
                 fn_name=fn_name,
                 runtime_call=noncpp_symbol_runtime_call,
             )
+        return payload
+
+    def _annotate_builtin_named_call_expr(
+        self,
+        payload: dict[str, Any],
+        *,
+        fn_name: str,
+        args: list[dict[str, Any]],
+        semantic_tag: str,
+    ) -> dict[str, Any] | None:
+        """builtin named-call の annotation dispatch を parser helper へ寄せる。"""
+        if fn_name in {"print", "len", "range", "zip", "str"}:
+            return _sh_annotate_fixed_runtime_builtin_call_expr(
+                payload,
+                fn_name=fn_name,
+                semantic_tag=semantic_tag,
+            )
+        if fn_name in {"int", "float", "bool"}:
+            use_truthy_runtime = False
+            if fn_name == "bool" and len(args) == 1:
+                arg0 = args[0]
+                if isinstance(arg0, dict):
+                    arg0_t = str(arg0.get("resolved_type", "unknown"))
+                    if self._is_forbidden_object_receiver_type(arg0_t):
+                        use_truthy_runtime = True
+            return _sh_annotate_scalar_ctor_call_expr(
+                payload,
+                fn_name=fn_name,
+                arg_count=len(args),
+                use_truthy_runtime=use_truthy_runtime,
+                semantic_tag=semantic_tag,
+            )
+        if fn_name in {"min", "max"}:
+            return _sh_annotate_minmax_call_expr(
+                payload,
+                fn_name=fn_name,
+                semantic_tag=semantic_tag,
+            )
         if fn_name in {"Exception", "RuntimeError"}:
             return _sh_annotate_exception_ctor_call_expr(
                 payload,
                 fn_name=fn_name,
-                semantic_tag=builtin_semantic_tag,
+                semantic_tag=semantic_tag,
             )
         if fn_name == "open":
             return _sh_annotate_open_call_expr(
                 payload,
-                semantic_tag=builtin_semantic_tag,
+                semantic_tag=semantic_tag,
             )
         if fn_name in {"iter", "next", "reversed"}:
             return _sh_annotate_iterator_builtin_call_expr(
                 payload,
                 fn_name=fn_name,
-                semantic_tag=builtin_semantic_tag,
+                semantic_tag=semantic_tag,
             )
         if fn_name == "enumerate":
             return _sh_annotate_enumerate_call_expr(
                 payload,
                 iter_element_type=_sh_infer_enumerate_item_type(args),
-                semantic_tag=builtin_semantic_tag,
+                semantic_tag=semantic_tag,
             )
         if fn_name in {"any", "all"}:
             return _sh_annotate_anyall_call_expr(
                 payload,
                 fn_name=fn_name,
-                semantic_tag=builtin_semantic_tag,
+                semantic_tag=semantic_tag,
             )
         if fn_name in {"ord", "chr"}:
             return _sh_annotate_ordchr_call_expr(
                 payload,
                 fn_name=fn_name,
-                semantic_tag=builtin_semantic_tag,
+                semantic_tag=semantic_tag,
             )
         if fn_name in {"bytes", "bytearray", "list", "set", "dict"}:
             return _sh_annotate_collection_ctor_call_expr(
                 payload,
                 fn_name=fn_name,
-                semantic_tag=builtin_semantic_tag,
+                semantic_tag=semantic_tag,
             )
         if fn_name in {"isinstance", "issubclass"}:
             return _sh_annotate_type_predicate_call_expr(
                 payload,
                 fn_name=fn_name,
-                semantic_tag=builtin_semantic_tag,
+                semantic_tag=semantic_tag,
             )
-        return payload
+        return None
 
     def _annotate_attr_call_expr(
         self,
