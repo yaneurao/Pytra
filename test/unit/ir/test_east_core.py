@@ -514,6 +514,10 @@ class EastCoreTest(unittest.TestCase):
             "def _split_generic_types",
             1,
         )[0]
+        postfix_suffix_text = text.split("def _parse_postfix_suffix", 1)[1].split(
+            "def _parse_postfix",
+            1,
+        )[0]
         attr_suffix_text = text.split("def _parse_attr_suffix", 1)[1].split(
             "def _annotate_attr_expr",
             1,
@@ -530,7 +534,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('_sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)', helper_text)
         self.assertIn("attr_meta = self._lookup_attr_expr_metadata(", attr_expr_text)
         self.assertIn("return self._annotate_attr_expr(", attr_suffix_text)
-        self.assertIn("node = self._parse_attr_suffix(owner_expr=node)", postfix_text)
+        self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_text)
+        self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertNotIn('std_attr_t = lookup_stdlib_attribute_type(owner_t, attr_name)', postfix_text)
         self.assertNotIn('attr_runtime_call = lookup_stdlib_method_runtime_call(owner_t, attr_name)', postfix_text)
         self.assertNotIn('mod_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_t, attr_name)', postfix_text)
@@ -542,6 +547,10 @@ class EastCoreTest(unittest.TestCase):
             "def _annotate_subscript_expr",
             1,
         )[0]
+        postfix_suffix_text = text.split("def _parse_postfix_suffix", 1)[1].split(
+            "def _parse_postfix",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
         self.assertIn('owner_t = str(owner_expr.get("resolved_type", "unknown"))', helper_text)
@@ -549,7 +558,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("_sh_make_attribute_expr(", helper_text)
         self.assertIn('_sh_annotate_runtime_attr_expr(', helper_text)
         self.assertIn('_sh_annotate_resolved_runtime_expr(', helper_text)
-        self.assertIn("node = self._parse_attr_suffix(owner_expr=node)", postfix_text)
+        self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_text)
+        self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertNotIn('owner_t = str(node.get("resolved_type", "unknown"))', postfix_text)
         self.assertNotIn("attr_meta = self._lookup_attr_expr_metadata(", postfix_text)
         self.assertNotIn("_sh_make_attribute_expr(", postfix_text)
@@ -562,12 +572,18 @@ class EastCoreTest(unittest.TestCase):
             "def _annotate_attr_expr",
             1,
         )[0]
+        postfix_suffix_text = text.split("def _parse_postfix_suffix", 1)[1].split(
+            "def _parse_postfix",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
         self.assertIn('self._eat(".")', helper_text)
         self.assertIn('name_tok = self._eat("NAME")', helper_text)
         self.assertIn("return self._annotate_attr_expr(", helper_text)
-        self.assertIn("node = self._parse_attr_suffix(owner_expr=node)", postfix_text)
+        self.assertIn('if tok_kind == ".":', postfix_suffix_text)
+        self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_text)
+        self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertNotIn('self._eat(".")', postfix_text)
         self.assertNotIn('name_tok = self._eat("NAME")', postfix_text)
         self.assertNotIn("node = self._annotate_attr_expr(", postfix_text)
@@ -578,13 +594,18 @@ class EastCoreTest(unittest.TestCase):
             "def _parse_subscript_suffix",
             1,
         )[0]
+        postfix_suffix_text = text.split("def _parse_postfix_suffix", 1)[1].split(
+            "def _parse_postfix",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
         self.assertIn('owner_t = str(owner_expr.get("resolved_type", "unknown"))', helper_text)
         self.assertIn("_sh_make_slice_node(lower, upper)", helper_text)
         self.assertIn("_sh_make_subscript_expr(", helper_text)
         self.assertIn("resolved_type=self._subscript_result_type(owner_t)", helper_text)
-        self.assertIn("node = self._parse_subscript_suffix(owner_expr=node)", postfix_text)
+        self.assertIn("return self._parse_subscript_suffix(owner_expr=owner_expr)", postfix_suffix_text)
+        self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertNotIn("node = _sh_make_subscript_expr(", postfix_text)
         self.assertNotIn("_sh_make_slice_node(", postfix_text)
         self.assertNotIn("out_t = self._subscript_result_type(", postfix_text)
@@ -592,7 +613,11 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_subscript_suffix_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _parse_subscript_suffix", 1)[1].split(
-            "def _subscript_result_type",
+            "def _parse_postfix_suffix",
+            1,
+        )[0]
+        postfix_suffix_text = text.split("def _parse_postfix_suffix", 1)[1].split(
+            "def _parse_postfix",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
@@ -600,7 +625,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('if self._cur()["k"] == ":":', helper_text)
         self.assertIn("first = self._parse_ifexp()", helper_text)
         self.assertIn("return self._annotate_subscript_expr(", helper_text)
-        self.assertIn("node = self._parse_subscript_suffix(owner_expr=node)", postfix_text)
+        self.assertIn('if tok_kind == "[":', postfix_suffix_text)
+        self.assertIn("return self._parse_subscript_suffix(owner_expr=owner_expr)", postfix_suffix_text)
+        self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertNotIn('if self._cur()["k"] == ":":', postfix_text)
         self.assertNotIn("first = self._parse_ifexp()", postfix_text)
         self.assertNotIn("node = self._annotate_subscript_expr(", postfix_text)
@@ -1170,16 +1197,42 @@ class EastCoreTest(unittest.TestCase):
             "def _annotate_call_expr",
             1,
         )[0]
+        postfix_suffix_text = text.split("def _parse_postfix_suffix", 1)[1].split(
+            "def _parse_postfix",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
         self.assertIn('ltok = self._eat("(")', helper_text)
         self.assertIn("args, keywords = self._parse_call_args()", helper_text)
         self.assertIn('rtok = self._eat(")")', helper_text)
         self.assertIn("return self._annotate_call_expr(", helper_text)
-        self.assertIn("node = self._parse_call_suffix(callee=node)", postfix_text)
+        self.assertIn('if tok_kind == "(":', postfix_suffix_text)
+        self.assertIn("return self._parse_call_suffix(callee=owner_expr)", postfix_suffix_text)
+        self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertNotIn('ltok = self._eat("(")', postfix_text)
         self.assertNotIn('rtok = self._eat(")")', postfix_text)
         self.assertNotIn("node = self._annotate_call_expr(", postfix_text)
+
+    def test_core_source_routes_postfix_suffix_dispatch_through_parser_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _parse_postfix_suffix", 1)[1].split(
+            "def _parse_postfix",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+
+        self.assertIn('tok_kind = str(self._cur()["k"])', helper_text)
+        self.assertIn('if tok_kind == ".":', helper_text)
+        self.assertIn('if tok_kind == "(":', helper_text)
+        self.assertIn('if tok_kind == "[":', helper_text)
+        self.assertIn("return None", helper_text)
+        self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
+        self.assertIn("if next_node is None:", postfix_text)
+        self.assertNotIn('tok = self._cur()', postfix_text)
+        self.assertNotIn('if tok["k"] == "."', postfix_text)
+        self.assertNotIn('if tok["k"] == "("', postfix_text)
+        self.assertNotIn('if tok["k"] == "["', postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")

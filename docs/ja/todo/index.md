@@ -207,6 +207,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] subscript / slice node 構築も `_ShExprParser._annotate_subscript_expr()` へ寄せ、`_sh_make_subscript_expr()` / `_sh_make_slice_node()` / `_subscript_result_type()` の直列処理を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline subscript block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] call 引数解析 loop も parser method `_ShExprParser._parse_call_args()` へ寄せ、`NAME '='` keyword 分岐と `save_pos` 復帰を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline call-arg loop の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `(` suffix 全体も parser method `_ShExprParser._parse_call_suffix()` へ寄せ、`(` / `)` token 消費、span 計算、`_annotate_call_expr()` 呼び出しを `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline call-suffix block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] postfix suffix dispatch 自体も parser method `_ShExprParser._parse_postfix_suffix()` へ寄せ、`.` / `(` / `[` の token-kind 分岐を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline suffix-dispatch if-chain の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

@@ -5227,6 +5227,17 @@ class _ShExprParser:
             repr_text=self._src_slice(s, e),
         )
 
+    def _parse_postfix_suffix(self, *, owner_expr: dict[str, Any]) -> dict[str, Any] | None:
+        """postfix suffix dispatch を parser helper へ寄せる。"""
+        tok_kind = str(self._cur()["k"])
+        if tok_kind == ".":
+            return self._parse_attr_suffix(owner_expr=owner_expr)
+        if tok_kind == "(":
+            return self._parse_call_suffix(callee=owner_expr)
+        if tok_kind == "[":
+            return self._parse_subscript_suffix(owner_expr=owner_expr)
+        return None
+
     def _subscript_result_type(self, container_type: str) -> str:
         """添字アクセスの結果型をコンテナ型から推論する。"""
         if container_type.startswith("list[") and container_type.endswith("]"):
@@ -5294,17 +5305,10 @@ class _ShExprParser:
         """属性参照・呼び出し・添字・スライスなど後置構文を解析する。"""
         node = self._parse_primary()
         while True:
-            tok = self._cur()
-            if tok["k"] == ".":
-                node = self._parse_attr_suffix(owner_expr=node)
-                continue
-            if tok["k"] == "(":
-                node = self._parse_call_suffix(callee=node)
-                continue
-            if tok["k"] == "[":
-                node = self._parse_subscript_suffix(owner_expr=node)
-                continue
-            return node
+            next_node = self._parse_postfix_suffix(owner_expr=node)
+            if next_node is None:
+                return node
+            node = next_node
 
     def _parse_comp_target(self) -> dict[str, Any]:
         """内包表現のターゲット（name / tuple）を解析する。"""
