@@ -50,6 +50,9 @@
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_extern_semantics.py` を追加し、ambient extern metadata helper cluster を `core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_runtime_decl_semantics.py` を追加し、runtime ABI literal/mode/args-map helper cluster を `core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_runtime_decl_semantics.py` へ runtime ABI/template decorator collector cluster も寄せ、`core.py` 側は function parse orchestration のみを残した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] runtime ABI/template の function collector と class/method/top-level misuse guard cluster を `core_runtime_decl_semantics.py` へ寄せ、`core.py` の残りを declaration orchestration に縮めた。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_string_semantics.py` を追加し、string/f-string scan/decode/literal helper cluster を `core.py` から分離した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_text_semantics.py` を追加し、identifier/import alias/dataclass option の text helper cluster を `core.py` から切り出した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_string_semantics.py` を追加し、string/fstring scan・decode・literal append cluster を `core.py` から切り出した。
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。

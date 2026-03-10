@@ -68,8 +68,13 @@ from toolchain.ir.core_runtime_call_semantics import _sh_infer_enumerate_item_ty
 from toolchain.ir.core_runtime_call_semantics import _sh_infer_known_name_call_return_type
 from toolchain.ir.core_runtime_call_semantics import _sh_lookup_noncpp_attr_runtime_call
 from toolchain.ir.core_runtime_call_semantics import _sh_lookup_named_call_dispatch
-from toolchain.ir.core_runtime_decl_semantics import _sh_collect_runtime_abi_metadata
-from toolchain.ir.core_runtime_decl_semantics import _sh_collect_template_metadata
+from toolchain.ir.core_runtime_decl_semantics import _sh_collect_function_runtime_decl_metadata
+from toolchain.ir.core_runtime_decl_semantics import _sh_reject_runtime_decl_class_decorators
+from toolchain.ir.core_runtime_decl_semantics import _sh_reject_runtime_decl_method_decorator
+from toolchain.ir.core_runtime_decl_semantics import _sh_reject_runtime_decl_nonfunction_decorators
+from toolchain.ir.core_string_semantics import _sh_append_fstring_literal
+from toolchain.ir.core_string_semantics import _sh_decode_py_string_body
+from toolchain.ir.core_string_semantics import _sh_scan_string_token
 from toolchain.ir.core_text_semantics import _sh_is_dotted_identifier
 from toolchain.ir.core_text_semantics import _sh_is_identifier
 from toolchain.ir.core_text_semantics import _sh_parse_dataclass_decorator_options
@@ -1659,108 +1664,6 @@ def _sh_parse_augassign(text: str) -> tuple[str, str, str] | None:
     return None
 
 
-def _sh_scan_string_token(text: str, start: int, quote_pos: int, line_no: int, col_base: int) -> int:
-    """文字列リテラルの終端位置を走査して返す。"""
-    if quote_pos + 2 < len(text) and text[quote_pos : quote_pos + 3] in {"'''", '"""'}:
-        q3 = text[quote_pos : quote_pos + 3]
-        j = quote_pos + 3
-        while j + 2 < len(text):
-            if text[j : j + 3] == q3:
-                return j + 3
-            j += 1
-        raise _make_east_build_error(
-            kind="unsupported_syntax",
-            message="unterminated triple-quoted string literal in self_hosted parser",
-            source_span=_sh_span(line_no, col_base + start, col_base + len(text)),
-            hint="Close triple-quoted string with matching quote.",
-        )
-    q = text[quote_pos]
-    j = quote_pos + 1
-    while j < len(text):
-        if text[j] == "\\":
-            j += 2
-            continue
-        if text[j] == q:
-            return j + 1
-        j += 1
-    raise _make_east_build_error(
-        kind="unsupported_syntax",
-        message="unterminated string literal in self_hosted parser",
-        source_span=_sh_span(line_no, col_base + start, col_base + len(text)),
-        hint="Close string literal with matching quote.",
-    )
-
-
-def _sh_decode_py_string_body(text: str, raw_mode: bool) -> str:
-    """Python 文字列リテラル本体（引用符除去後）を簡易復号する。"""
-    if raw_mode:
-        return text
-    out = ""
-    skip = 0
-    for i, ch in enumerate(text):
-        if skip > 0:
-            skip -= 1
-            continue
-        if ch != "\\":
-            out += ch
-            continue
-        if i + 1 >= len(text):
-            out += "\\"
-            break
-        esc = text[i + 1 : i + 2]
-        skip = 1
-        if esc == "n":
-            out += "\n"
-        elif esc == "r":
-            out += "\r"
-        elif esc == "t":
-            out += "\t"
-        elif esc == "b":
-            out += "\b"
-        elif esc == "f":
-            out += "\f"
-        elif esc == "v":
-            out += "\v"
-        elif esc == "a":
-            out += "\a"
-        elif esc in {'"', "'", "\\"}:
-            out += esc
-        elif esc == "x" and i + 2 < len(text):
-            hex2 = text[i + 1 : i + 3]
-            try:
-                out += chr(int(hex2, 16))
-                skip = 3
-            except ValueError:
-                out += "x"
-        elif esc == "u" and i + 4 < len(text):
-            hex4 = text[i + 1 : i + 5]
-            try:
-                out += chr(int(hex4, 16))
-                skip = 4
-            except ValueError:
-                out += "u"
-        else:
-            out += esc
-    return out
-
-
-def _sh_append_fstring_literal(values: list[dict[str, Any]], segment: str, span: dict[str, int], *, raw_mode: bool = False) -> None:
-    """f-string の生文字列片を Constant(str) ノードとして values に追加する。"""
-    lit = segment.replace("{{", "{").replace("}}", "}")
-    lit = _sh_decode_py_string_body(lit, raw_mode)
-    if lit == "":
-        return
-    node: dict[str, Any] = {}
-    node["kind"] = "Constant"
-    node["source_span"] = span
-    node["resolved_type"] = "str"
-    node["borrow_kind"] = "value"
-    node["casts"] = []
-    node["repr"] = json.dumps(lit)
-    node["value"] = lit
-    values.append(node)
-
-
 def _sh_parse_def_sig(
     ln_no: int,
     ln: str,
@@ -3064,7 +2967,15 @@ class _ShExprParser(
                     if all(c in _SH_STR_PREFIX_CHARS for c in p2) and text[i + 2] in {"'", '"'}:
                         pref_len = 2
             if pref_len > 0:
-                end = _sh_scan_string_token(text, i, i + pref_len, self.line_no, self.col_base)
+                end = _sh_scan_string_token(
+                    text,
+                    i,
+                    i + pref_len,
+                    self.line_no,
+                    self.col_base,
+                    make_east_build_error=_make_east_build_error,
+                    make_span=_sh_span,
+                )
                 out.append(_sh_make_expr_token("STR", text[i:end], i, end))
                 skip = end - i - 1
                 continue
@@ -3113,12 +3024,28 @@ class _ShExprParser(
                 skip = j - i - 1
                 continue
             if i + 2 < text_len and text[i : i + 3] in {"'''", '"""'}:
-                end = _sh_scan_string_token(text, i, i, self.line_no, self.col_base)
+                end = _sh_scan_string_token(
+                    text,
+                    i,
+                    i,
+                    self.line_no,
+                    self.col_base,
+                    make_east_build_error=_make_east_build_error,
+                    make_span=_sh_span,
+                )
                 out.append(_sh_make_expr_token("STR", text[i:end], i, end))
                 skip = end - i - 1
                 continue
             if ch in {"'", '"'}:
-                end = _sh_scan_string_token(text, i, i, self.line_no, self.col_base)
+                end = _sh_scan_string_token(
+                    text,
+                    i,
+                    i,
+                    self.line_no,
+                    self.col_base,
+                    make_east_build_error=_make_east_build_error,
+                    make_span=_sh_span,
+                )
                 out.append(_sh_make_expr_token("STR", text[i:end], i, end))
                 skip = end - i - 1
                 continue
@@ -7424,7 +7351,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         source_span=_sh_span(i, 0, len(ln)),
                         hint="Move `@sealed` to a family class declaration.",
                     )
-            runtime_abi_meta = _sh_collect_runtime_abi_metadata(
+            runtime_abi_meta, template_meta = _sh_collect_function_runtime_decl_metadata(
                 fn_decorators,
                 arg_order=arg_order,
                 import_module_bindings=import_module_bindings,
@@ -7432,6 +7359,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 line_no=i,
                 line_text=ln,
                 is_abi_decorator=_sh_is_abi_decorator,
+                is_template_decorator=_sh_is_template_decorator,
                 parse_decorator_head_and_args=_sh_parse_decorator_head_and_args,
                 split_top_commas=_sh_split_top_commas,
                 split_top_level_assign=_sh_split_top_level_assign,
@@ -7440,20 +7368,6 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 runtime_abi_arg_modes=_SH_RUNTIME_ABI_ARG_MODES,
                 runtime_abi_ret_modes=_SH_RUNTIME_ABI_RET_MODES,
                 runtime_abi_mode_aliases=_SH_RUNTIME_ABI_MODE_ALIASES,
-                make_east_build_error=_make_east_build_error,
-                make_span=_sh_span,
-            )
-            template_meta = _sh_collect_template_metadata(
-                fn_decorators,
-                import_module_bindings=import_module_bindings,
-                import_symbol_bindings=import_symbol_bindings,
-                line_no=i,
-                line_text=ln,
-                is_template_decorator=_sh_is_template_decorator,
-                parse_decorator_head_and_args=_sh_parse_decorator_head_and_args,
-                split_top_commas=_sh_split_top_commas,
-                split_top_level_assign=_sh_split_top_level_assign,
-                is_identifier=_sh_is_identifier,
                 template_scope=_SH_TEMPLATE_SCOPE,
                 template_instantiation_mode=_SH_TEMPLATE_INSTANTIATION_MODE,
                 make_east_build_error=_make_east_build_error,
@@ -7748,29 +7662,17 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         if cls_hdr is not None:
             class_decorators = list(pending_top_level_decorators)
             pending_top_level_decorators = []
-            for decorator_text in class_decorators:
-                if _sh_is_abi_decorator(
-                    decorator_text,
-                    import_module_bindings=import_module_bindings,
-                    import_symbol_bindings=import_symbol_bindings,
-                ):
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message="@abi is not supported on class definitions",
-                        source_span=_sh_span(i, 0, len(ln)),
-                        hint="Use @abi on top-level runtime helper functions only.",
-                    )
-                if _sh_is_template_decorator(
-                    decorator_text,
-                    import_module_bindings=import_module_bindings,
-                    import_symbol_bindings=import_symbol_bindings,
-                ):
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message="@template is not supported on class definitions",
-                        source_span=_sh_span(i, 0, len(ln)),
-                        hint="Use @template on top-level runtime helper functions only.",
-                    )
+            _sh_reject_runtime_decl_class_decorators(
+                class_decorators,
+                import_module_bindings=import_module_bindings,
+                import_symbol_bindings=import_symbol_bindings,
+                line_no=i,
+                line_text=ln,
+                is_abi_decorator=_sh_is_abi_decorator,
+                is_template_decorator=_sh_is_template_decorator,
+                make_east_build_error=_make_east_build_error,
+                make_span=_sh_span,
+            )
             cls_name, base = cls_hdr
             base_name = base
             is_enum_base = base_name in {"Enum", "IntEnum", "IntFlag"}
@@ -7814,28 +7716,17 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 if bind == cls_indent + 4 and s2.startswith("@"):
                     dec_name = s2[1:].strip()
                     if dec_name != "":
-                        if _sh_is_abi_decorator(
+                        _sh_reject_runtime_decl_method_decorator(
                             dec_name,
                             import_module_bindings=import_module_bindings,
                             import_symbol_bindings=import_symbol_bindings,
-                        ):
-                            raise _make_east_build_error(
-                                kind="unsupported_syntax",
-                                message="@abi is not supported on methods",
-                                source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                                hint="Use @abi on top-level runtime helper functions only.",
-                            )
-                        if _sh_is_template_decorator(
-                            dec_name,
-                            import_module_bindings=import_module_bindings,
-                            import_symbol_bindings=import_symbol_bindings,
-                        ):
-                            raise _make_east_build_error(
-                                kind="unsupported_syntax",
-                                message="@template is not supported on methods",
-                                source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                                hint="Use @template on top-level runtime helper functions only.",
-                            )
+                            line_no=ln_no,
+                            line_text=ln_txt,
+                            is_abi_decorator=_sh_is_abi_decorator,
+                            is_template_decorator=_sh_is_template_decorator,
+                            make_east_build_error=_make_east_build_error,
+                            make_span=_sh_span,
+                        )
                         if _sh_is_sealed_decorator(dec_name):
                             raise _make_east_build_error(
                                 kind="unsupported_syntax",
@@ -8220,28 +8111,17 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         source_span=_sh_span(i, 0, len(ln)),
                         hint="Place `@sealed` immediately above a family class definition.",
                     )
-                if _sh_is_abi_decorator(
-                    decorator_text,
-                    import_module_bindings=import_module_bindings,
-                    import_symbol_bindings=import_symbol_bindings,
-                ):
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message="@abi is supported on top-level functions only",
-                        source_span=_sh_span(i, 0, len(ln)),
-                        hint="Move @abi to a top-level runtime helper function definition.",
-                    )
-                if _sh_is_template_decorator(
-                    decorator_text,
-                    import_module_bindings=import_module_bindings,
-                    import_symbol_bindings=import_symbol_bindings,
-                ):
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message="@template is supported on top-level functions only",
-                        source_span=_sh_span(i, 0, len(ln)),
-                        hint="Move @template to a top-level runtime helper function definition.",
-                    )
+            _sh_reject_runtime_decl_nonfunction_decorators(
+                pending_top_level_decorators,
+                import_module_bindings=import_module_bindings,
+                import_symbol_bindings=import_symbol_bindings,
+                line_no=i,
+                line_text=ln,
+                is_abi_decorator=_sh_is_abi_decorator,
+                is_template_decorator=_sh_is_template_decorator,
+                make_east_build_error=_make_east_build_error,
+                make_span=_sh_span,
+            )
             pending_top_level_decorators = []
 
         top_indent = len(ln) - len(ln.lstrip(" "))
