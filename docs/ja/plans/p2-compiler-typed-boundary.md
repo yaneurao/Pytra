@@ -79,7 +79,7 @@
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-A] `S3-02` の完了条件を再定義し、TODO / plan の進捗メモを cluster 単位へ圧縮する。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] `core.py` の postfix/suffix parser cluster を分割し、`call` / `attr` / `subscript` を専用 module へ移す。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] `core.py` の call annotation cluster を分割し、`named-call` / `attr-call` / `callee-call` を専用 module へ移す。
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` / `suffix tail` / `subscript tail` に残る helper 抽出を 5-10 個単位の bundle で消化する。
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` / `suffix tail` / `subscript tail` に残る helper 抽出を 5-10 個単位の bundle で消化する。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] generated/selfhost residual guard と export seam を再基準化し、`make_object` を `serialization/export seam` 専用まで後退させて `S3-02` を閉じる。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] JSON・extern/hook・未型付け入力の dynamic carrier を compiler typed model から切り離し、`JsonValue` / explicit adapter に隔離する。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] `make_object` / `py_to` / `obj_to_*` の残存 usage に分類ラベルを与え、未分類・再流入を弾く guard を追加する。
@@ -130,3 +130,6 @@
 - 2026-03-10: `attr/subscript suffix` parser cluster も `core_expr_attr_subscript_suffix.py` へ移し、`call` / `attr` / `subscript` の suffix parser は `core.py` から専用 module へ分割し終えた。`S3-02-B` は完了として閉じ、次は `call annotation` cluster の分割へ進む。
 - 2026-03-10: `S3-02-C` の最初の塊では `call_expr` / `callee_call` の orchestration を `core_expr_call_annotation.py` へ移し、`named-call` / `attr-call` の lower-level apply と shared helper は `core.py` に残す段階 split とした。source guard も split-cluster 前提へ切り替える。
 - 2026-03-10: `S3-02-C` は完了として閉じる。`core.py` から `call_expr` / `callee_call` / `named-call` / `attr-call` の annotation entrypoint は `core_expr_call_annotation.py` へ移り、残る細かい helper 抽出は `S3-02-D` の bundle work に寄せる。
+- 2026-03-10: `S3-02-D` の最初の bundle では `call-arg` parser cluster を `core_expr_call_args.py` へ分割し、`core_expr_call_suffix.py` は `call suffix` 本体だけを持つ形へ縮める。以後も同じ粒度で `subscript tail` と `attr/suffix` 側を切る。
+- 2026-03-10: `S3-02-D` は完了として閉じる。`call-arg` は `core_expr_call_args.py`、`call suffix` は `core_expr_call_suffix.py`、`attr/subscript suffix` は `core_expr_attr_subscript_suffix.py` に整理され、残りの helper 抽出も bundle 単位へ再編した。
+- 2026-03-10: `S3-02-E` の初手として、generated selfhost core に残る `make_object` usage を関数単位で再基準化した。現時点では `to_payload` を export seam、残りを parser residual として guard 化する。

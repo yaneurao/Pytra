@@ -97,6 +97,44 @@ def _generated_cpp_core_inline_kinds(
     return helper_kinds - callsite_kinds
 
 
+def _generated_cpp_core_make_object_functions(
+    text: str,
+    *,
+    scope: str = "nonhelper",
+) -> set[str]:
+    if scope not in {"all", "nonhelper", "helper_only"}:
+        raise ValueError(f"unsupported make-object scope: {scope}")
+    all_functions: set[str] = set()
+    helper_functions: set[str] = set()
+    nonhelper_functions: set[str] = set()
+    current_function: str | None = None
+    current_function_brace_depth = 0
+    for line in text.splitlines():
+        stripped = line.strip()
+        function_match = _CPP_FUNCTION_DEF_RE.match(stripped)
+        if function_match is not None:
+            current_function = function_match.group(1)
+            current_function_brace_depth = 1
+            continue
+        if current_function is not None and "make_object(" in line:
+            all_functions.add(current_function)
+            if current_function.startswith("_sh_make_"):
+                helper_functions.add(current_function)
+            else:
+                nonhelper_functions.add(current_function)
+        if current_function is not None:
+            current_function_brace_depth += line.count("{")
+            current_function_brace_depth -= line.count("}")
+            if current_function_brace_depth <= 0:
+                current_function = None
+                current_function_brace_depth = 0
+    if scope == "all":
+        return all_functions
+    if scope == "helper_only":
+        return helper_functions
+    return nonhelper_functions
+
+
 class PrepareSelfhostSourceTest(unittest.TestCase):
     def test_load_cpp_hooks_patch_function_is_absent(self) -> None:
         mod = _load_prepare_module()
@@ -620,6 +658,55 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
                 "Name",
                 "Tuple",
             }.isdisjoint(helper_only_inline_kinds)
+        )
+
+    def test_generated_cpp_core_nonhelper_make_object_function_residual_set_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        nonhelper_make_object_functions = _generated_cpp_core_make_object_functions(
+            text,
+            scope="nonhelper",
+        )
+        self.assertEqual(
+            nonhelper_make_object_functions,
+            {
+                "_lookup_method_return",
+                "_parse_lambda",
+                "_parse_not",
+                "_parse_postfix",
+                "_parse_primary",
+                "_parse_unary",
+                "_sh_parse_expr_lowered",
+                "_sh_parse_stmt_block_mutable",
+                "_sh_push_stmt_with_trivia",
+                "convert_source_to_east_self_hosted",
+                "to_payload",
+            },
+        )
+
+    def test_generated_cpp_core_make_object_export_seam_function_set_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        nonhelper_make_object_functions = _generated_cpp_core_make_object_functions(
+            text,
+            scope="nonhelper",
+        )
+        self.assertEqual(
+            nonhelper_make_object_functions & {"to_payload"},
+            {"to_payload"},
+        )
+        self.assertEqual(
+            nonhelper_make_object_functions - {"to_payload"},
+            {
+                "_lookup_method_return",
+                "_parse_lambda",
+                "_parse_not",
+                "_parse_postfix",
+                "_parse_primary",
+                "_parse_unary",
+                "_sh_parse_expr_lowered",
+                "_sh_parse_stmt_block_mutable",
+                "_sh_push_stmt_with_trivia",
+                "convert_source_to_east_self_hosted",
+            },
         )
 
     def test_generated_cpp_core_known_inline_lowered_callsite_kind_residual_set_is_stable(self) -> None:

@@ -218,7 +218,7 @@ class _ShExprCallAnnotationMixin:
         call_dispatch: dict[str, str],
     ) -> str:
         """named-call dispatch kind の分類を helper へ寄せる。"""
-        if str(call_dispatch.get("builtin_runtime_call", "")) != "":
+        if str(call_dispatch.get("builtin_semantic_tag", "")) != "":
             return "builtin"
         if (
             str(call_dispatch.get("stdlib_fn_runtime_call", "")) != ""

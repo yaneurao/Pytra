@@ -46,7 +46,7 @@
 9. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-A] `S3-02` の完了条件を再定義し、`TODO` / plan の進捗メモを cluster 単位へ圧縮する。
 10. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] `core.py` の postfix/suffix parser cluster を分割し、`call` / `attr` / `subscript` を専用 module へ移す。
 11. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] `core.py` の call annotation cluster を分割し、`named-call` / `attr-call` / `callee-call` を専用 module へ移す。
-12. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` / `suffix tail` / `subscript tail` に残る helper 抽出を 5-10 個単位の bundle で消化し、1 helper = 1 commit を止める。
+12. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` / `suffix tail` / `subscript tail` に残る helper 抽出を 5-10 個単位の bundle で消化し、1 helper = 1 commit を止める。
 13. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] generated/selfhost residual guard と export seam を再基準化し、`make_object` を `serialization/export seam` 専用まで後退させて `S3-02` を閉じる。
 14. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] JSON・extern/hook・未型付け入力の dynamic carrier を compiler typed model から切り離し、`JsonValue` / explicit adapter に隔離する。
 15. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] `make_object` / `py_to` / `obj_to_*` の残存 usage に分類ラベルを与え、未分類・再流入を弾く guard を追加する。
@@ -60,6 +60,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 以後の `S3-02` は `S3-02-B` から `S3-02-E` の cluster 単位で進め、`TODO` には cluster 要約のみを残す。helper 単位の微細履歴は plan の decision log と git history に委ねる。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] postfix/suffix parser cluster は `core_expr_call_suffix.py` と `core_expr_attr_subscript_suffix.py` へ分割し、`core.py` 側は mixin import と postfix dispatch orchestration を中心に持つ形へ整理した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] `call_expr` / `callee_call` / `named-call` / `attr-call` の annotation entrypoint は `core_expr_call_annotation.py` へ移り、`core.py` 側は shared helper と lower-level apply に縮んだ。残りの微細 helper 抽出は `S3-02-D` で扱う。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` は `core_expr_call_args.py`、`call suffix` は `core_expr_call_suffix.py`、`attr/subscript suffix` は `core_expr_attr_subscript_suffix.py` に寄り、残る helper 抽出も bundle 単位へ整理した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] generated selfhost core の residual `make_object` は関数単位でも guard 化し、現状は `to_payload` を export seam、残りを parser residual として固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

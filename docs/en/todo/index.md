@@ -46,7 +46,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 9. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-A] Redefine the `S3-02` completion criteria and compress TODO/plan progress notes to cluster-level summaries.
 10. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] Split the postfix/suffix parser cluster out of `core.py` and move `call` / `attr` / `subscript` parsing into dedicated modules.
 11. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] Split the call-annotation cluster out of `core.py` and move `named-call` / `attr-call` / `callee-call` handling into dedicated modules.
-12. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] Finish the remaining `call-arg` / `suffix tail` / `subscript tail` helper extraction in bundles of 5-10 clusters instead of one-helper commits.
+12. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] Finish the remaining `call-arg` / `suffix tail` / `subscript tail` helper extraction in bundles of 5-10 clusters instead of one-helper commits.
 13. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Rebaseline generated/selfhost residual guards and export seams, retreat `make_object` down to serialization/export seams only, and close `S3-02`.
 14. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Separate JSON, extern/hooks, and intentionally dynamic carriers from the compiler typed model behind `JsonValue` or explicit adapters.
 15. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Label every remaining `make_object` / `py_to` / `obj_to_*` usage and add guards that reject uncategorized reintroduction.
@@ -60,6 +60,8 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] From this point on, `S3-02` proceeds in cluster units `S3-02-B` through `S3-02-E`; TODO keeps only cluster-level summaries, and fine-grained helper history stays in the plan decision log and git history.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] The postfix/suffix parser cluster now lives in `core_expr_call_suffix.py` and `core_expr_attr_subscript_suffix.py`, and `core.py` has been reduced toward mixin imports plus postfix-dispatch orchestration.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] The `call_expr` / `callee_call` / `named-call` / `attr-call` annotation entrypoints now live in `core_expr_call_annotation.py`. `core.py` is reduced to shared helpers and lower-level apply logic, and the remaining fine-grained helper extraction is tracked under `S3-02-D`.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` now lives in `core_expr_call_args.py`, `call suffix` in `core_expr_call_suffix.py`, and `attr/subscript suffix` in `core_expr_attr_subscript_suffix.py`; the remaining helper extraction was also regrouped into bundle-sized batches.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Generated selfhost-core residual `make_object` usage is now guarded at function level as well, with `to_payload` treated as the export seam and the rest recorded as parser residuals.
 
 ### P3: Harden compiler contracts and make stage/pass/backend handoff fail-closed
 

@@ -79,7 +79,7 @@ Out of scope:
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-A] Redefine the `S3-02` completion criteria and compress TODO/plan progress notes to cluster-level summaries.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] Split the postfix/suffix parser cluster out of `core.py` and move `call` / `attr` / `subscript` parsing into dedicated modules.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] Split the call-annotation cluster out of `core.py` and move `named-call` / `attr-call` / `callee-call` handling into dedicated modules.
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] Finish the remaining `call-arg` / `suffix tail` / `subscript tail` helper extraction in bundles of 5-10 clusters.
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] Finish the remaining `call-arg` / `suffix tail` / `subscript tail` helper extraction in bundles of 5-10 clusters.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Rebaseline generated/selfhost residual guards and export seams, retreat `make_object` to serialization/export seams only, and close `S3-02`.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Separate JSON, extern/hooks, and intentionally dynamic carriers from the compiler typed model behind `JsonValue` or explicit adapters.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Label every remaining `make_object` / `py_to` / `obj_to_*` usage and add guards that reject uncategorized reintroduction.
@@ -130,3 +130,6 @@ Decision log:
 - 2026-03-10: The `attr/subscript suffix` parser cluster also moved into `core_expr_attr_subscript_suffix.py`, so the `call` / `attr` / `subscript` suffix parser family is now split out of `core.py`. `S3-02-B` is considered complete and the next target is the `call annotation` cluster split.
 - 2026-03-10: The first `S3-02-C` batch moves `call_expr` / `callee_call` orchestration into `core_expr_call_annotation.py`, while lower-level `named-call` / `attr-call` apply paths and shared helpers remain in `core.py` for now. Source guards are updated around the split-cluster boundary instead of per-helper locations.
 - 2026-03-10: Close `S3-02-C` as complete. The `call_expr` / `callee_call` / `named-call` / `attr-call` annotation entrypoints now live in `core_expr_call_annotation.py`, and the remaining fine-grained helper extraction is pushed into `S3-02-D` bundle work.
+- 2026-03-10: Start `S3-02-D` by splitting the `call-arg` parser cluster into `core_expr_call_args.py`, leaving `core_expr_call_suffix.py` with the `call suffix` flow itself. The next bundles should use the same granularity for `subscript tail` and `attr/suffix`.
+- 2026-03-10: Close `S3-02-D` as complete. `call-arg` now lives in `core_expr_call_args.py`, `call suffix` in `core_expr_call_suffix.py`, and `attr/subscript suffix` in `core_expr_attr_subscript_suffix.py`, while the remaining helper extraction has been regrouped into bundle-sized work.
+- 2026-03-10: As the first `S3-02-E` step, rebaseline generated selfhost-core `make_object` usage at function granularity. For now, `to_payload` is treated as the export seam and the rest is guarded explicitly as parser residual.
