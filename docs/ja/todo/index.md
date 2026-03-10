@@ -265,6 +265,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `Subscript / Slice` の build-kind 判定も `_ShExprParser._resolve_subscript_expr_build_kind()` へ寄せ、`_annotate_subscript_expr()` から `index_expr/lower/upper` の inline 分岐を外した。`test_east_core.py` では build-kind helper 定義、call site、旧 inline slice/index branch の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `Subscript / Slice` の build dispatch も `_ShExprParser._apply_subscript_expr_build()` へ寄せ、`_annotate_subscript_expr()` から `_build_slice_subscript_expr()` / `_build_index_subscript_expr()` の直列呼び出しを外した。`test_east_core.py` では apply helper 定義、call site、旧 inline build dispatch の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて subscript suffix の component parse も `_ShExprParser._parse_subscript_suffix_components()` へ寄せ、`_parse_subscript_suffix()` から `:` / `first` の inline 分岐を外した。`test_east_core.py` では component helper 定義、call site、旧 inline suffix-parse branch の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `Attribute` suffix の token/state resolve も `_ShExprParser._resolve_attr_suffix_state()` へ寄せ、`_parse_attr_suffix()` から `"." + NAME + span/repr` の直列処理を外した。`test_east_core.py` では state helper 定義、call site、旧 inline attr-suffix state block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
