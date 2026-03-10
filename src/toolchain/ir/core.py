@@ -4894,19 +4894,32 @@ class _ShExprParser:
                 break
         return args, keywords
 
+    def _resolve_postfix_span_repr(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        end_tok: dict[str, Any],
+    ) -> tuple[dict[str, int], str]:
+        """postfix suffix 共通の source_span / repr 計算を helper へ寄せる。"""
+        s = int(owner_expr["source_span"]["col"]) - self.col_base
+        e = end_tok["e"]
+        return self._node_span(s, e), self._src_slice(s, e)
+
     def _parse_call_suffix(self, *, callee: dict[str, Any]) -> dict[str, Any]:
         """`(` postfix 全体の token 消費と call annotation を parser helper へ寄せる。"""
         ltok = self._eat("(")
         args, keywords = self._parse_call_args()
         rtok = self._eat(")")
-        s = int(callee["source_span"]["col"]) - self.col_base
-        e = rtok["e"]
+        source_span, repr_text = self._resolve_postfix_span_repr(
+            owner_expr=callee,
+            end_tok=rtok,
+        )
         return self._annotate_call_expr(
             callee=callee,
             args=args,
             keywords=keywords,
-            source_span=self._node_span(s, e),
-            repr_text=self._src_slice(s, e),
+            source_span=source_span,
+            repr_text=repr_text,
         )
 
     def _guard_named_call_args(
@@ -5294,12 +5307,16 @@ class _ShExprParser:
             stdlib_symbol_semantic_tag=stdlib_symbol_semantic_tag,
         )
 
+    def _owner_expr_resolved_type(self, owner_expr: dict[str, Any]) -> str:
+        """owner expr から resolved_type を取る処理を helper へ寄せる。"""
+        return str(owner_expr.get("resolved_type", "unknown"))
+
     def _resolve_attr_callee(self, *, callee: dict[str, Any]) -> tuple[dict[str, Any] | None, str, str]:
         """Attribute callee の owner / type / attr 抽出を helper へ寄せる。"""
         attr = str(callee.get("attr", ""))
         owner = callee.get("value")
         owner_expr = owner if isinstance(owner, dict) else None
-        owner_t = str(owner_expr.get("resolved_type", "unknown")) if owner_expr is not None else "unknown"
+        owner_t = self._owner_expr_resolved_type(owner_expr) if owner_expr is not None else "unknown"
         return owner_expr, owner_t, attr
 
     def _apply_attr_call_expr_annotation(
@@ -5343,13 +5360,15 @@ class _ShExprParser:
         """Attribute suffix の token 消費を parser helper へ寄せる。"""
         self._eat(".")
         name_tok = self._eat("NAME")
-        s = int(owner_expr["source_span"]["col"]) - self.col_base
-        e = name_tok["e"]
+        source_span, repr_text = self._resolve_postfix_span_repr(
+            owner_expr=owner_expr,
+            end_tok=name_tok,
+        )
         return self._annotate_attr_expr(
             owner_expr=owner_expr,
             attr_name=str(name_tok["v"]),
-            source_span=self._node_span(s, e),
-            repr_text=self._src_slice(s, e),
+            source_span=source_span,
+            repr_text=repr_text,
         )
 
     def _resolve_attr_expr_annotation(
@@ -5419,7 +5438,7 @@ class _ShExprParser:
         repr_text: str,
     ) -> dict[str, Any]:
         """Attribute access node の生成と annotation を parser helper へ寄せる。"""
-        owner_t = str(owner_expr.get("resolved_type", "unknown"))
+        owner_t = self._owner_expr_resolved_type(owner_expr)
         if attr_name in {"keys", "items", "values"}:
             self._guard_dynamic_helper_receiver(
                 helper_name=attr_name,
@@ -5475,7 +5494,7 @@ class _ShExprParser:
         repr_text: str,
     ) -> dict[str, Any]:
         """Subscript / slice node の構築を parser helper へ寄せる。"""
-        owner_t = str(owner_expr.get("resolved_type", "unknown"))
+        owner_t = self._owner_expr_resolved_type(owner_expr)
         if index_expr is None or lower is not None or upper is not None:
             return _sh_make_subscript_expr(
                 source_span,
@@ -5504,14 +5523,16 @@ class _ShExprParser:
             if self._cur()["k"] != "]":
                 up = self._parse_ifexp()
             rtok = self._eat("]")
-            s = int(owner_expr["source_span"]["col"]) - self.col_base
-            e = rtok["e"]
+            source_span, repr_text = self._resolve_postfix_span_repr(
+                owner_expr=owner_expr,
+                end_tok=rtok,
+            )
             return self._annotate_subscript_expr(
                 owner_expr=owner_expr,
                 lower=None,
                 upper=up,
-                source_span=self._node_span(s, e),
-                repr_text=self._src_slice(s, e),
+                source_span=source_span,
+                repr_text=repr_text,
             )
         first = self._parse_ifexp()
         if self._cur()["k"] == ":":
@@ -5520,23 +5541,27 @@ class _ShExprParser:
             if self._cur()["k"] != "]":
                 up = self._parse_ifexp()
             rtok = self._eat("]")
-            s = int(owner_expr["source_span"]["col"]) - self.col_base
-            e = rtok["e"]
+            source_span, repr_text = self._resolve_postfix_span_repr(
+                owner_expr=owner_expr,
+                end_tok=rtok,
+            )
             return self._annotate_subscript_expr(
                 owner_expr=owner_expr,
                 lower=first,
                 upper=up,
-                source_span=self._node_span(s, e),
-                repr_text=self._src_slice(s, e),
+                source_span=source_span,
+                repr_text=repr_text,
             )
         rtok = self._eat("]")
-        s = int(owner_expr["source_span"]["col"]) - self.col_base
-        e = rtok["e"]
+        source_span, repr_text = self._resolve_postfix_span_repr(
+            owner_expr=owner_expr,
+            end_tok=rtok,
+        )
         return self._annotate_subscript_expr(
             owner_expr=owner_expr,
             index_expr=first,
-            source_span=self._node_span(s, e),
-            repr_text=self._src_slice(s, e),
+            source_span=source_span,
+            repr_text=repr_text,
         )
 
     def _parse_postfix_suffix(self, *, owner_expr: dict[str, Any]) -> dict[str, Any] | None:

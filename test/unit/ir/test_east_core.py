@@ -558,6 +558,10 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_attr_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        owner_type_text = text.split("def _owner_expr_resolved_type", 1)[1].split(
+            "def _resolve_attr_callee",
+            1,
+        )[0]
         resolve_text = text.split("def _resolve_attr_expr_annotation", 1)[1].split(
             "def _apply_attr_expr_annotation",
             1,
@@ -583,12 +587,13 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('attr_runtime_symbol = str(attr_meta.get("runtime_symbol", ""))', resolve_text)
         self.assertIn('noncpp_module_attr_runtime_call = str(attr_meta.get("noncpp_runtime_call", ""))', resolve_text)
         self.assertIn('noncpp_module_id = str(attr_meta.get("noncpp_module_id", ""))', resolve_text)
+        self.assertIn('return str(owner_expr.get("resolved_type", "unknown"))', owner_type_text)
         self.assertIn('if attr_runtime_call != "":', apply_text)
         self.assertIn('_sh_annotate_runtime_attr_expr(', apply_text)
         self.assertIn('elif attr_semantic_tag != "":', apply_text)
         self.assertIn('node["semantic_tag"] = attr_semantic_tag', apply_text)
         self.assertIn('_sh_annotate_resolved_runtime_expr(', apply_text)
-        self.assertIn('owner_t = str(owner_expr.get("resolved_type", "unknown"))', helper_text)
+        self.assertIn('owner_t = self._owner_expr_resolved_type(owner_expr)', helper_text)
         self.assertIn("attr_meta = self._lookup_attr_expr_metadata(", helper_text)
         self.assertIn("self._resolve_attr_expr_annotation(", helper_text)
         self.assertIn("_sh_make_attribute_expr(", helper_text)
@@ -634,6 +639,10 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_subscript_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        owner_type_text = text.split("def _owner_expr_resolved_type", 1)[1].split(
+            "def _resolve_attr_callee",
+            1,
+        )[0]
         helper_text = text.split("def _annotate_subscript_expr", 1)[1].split(
             "def _parse_subscript_suffix",
             1,
@@ -644,7 +653,8 @@ class EastCoreTest(unittest.TestCase):
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
-        self.assertIn('owner_t = str(owner_expr.get("resolved_type", "unknown"))', helper_text)
+        self.assertIn('return str(owner_expr.get("resolved_type", "unknown"))', owner_type_text)
+        self.assertIn('owner_t = self._owner_expr_resolved_type(owner_expr)', helper_text)
         self.assertIn("_sh_make_slice_node(lower, upper)", helper_text)
         self.assertIn("_sh_make_subscript_expr(", helper_text)
         self.assertIn("resolved_type=self._subscript_result_type(owner_t)", helper_text)
