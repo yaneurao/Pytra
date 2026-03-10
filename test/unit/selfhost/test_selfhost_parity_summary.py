@@ -78,6 +78,15 @@ class SelfhostParitySummaryTest(unittest.TestCase):
         self.assertEqual(row.top_level_category, "known_block")
         self.assertEqual(row.detail_category, "unsupported_by_design")
 
+    def test_direct_e2e_preview_only_maps_to_known_block(self) -> None:
+        row = build_direct_e2e_summary_row(
+            "sample/py/01_mandelbrot.py",
+            "selfhost_transpile_fail",
+            "preview backend: sample target is intentionally blocked",
+        )
+        self.assertEqual(row.top_level_category, "known_block")
+        self.assertEqual(row.detail_category, "preview_only")
+
     def test_stage2_diff_unsupported_target_maps_to_known_block(self) -> None:
         row = build_stage2_diff_summary_row(
             "sample/py/01_mandelbrot.py",
@@ -86,6 +95,15 @@ class SelfhostParitySummaryTest(unittest.TestCase):
         )
         self.assertEqual(row.top_level_category, "known_block")
         self.assertEqual(row.detail_category, "unsupported_by_design")
+
+    def test_stage2_diff_preview_only_maps_to_known_block(self) -> None:
+        row = build_stage2_diff_summary_row(
+            "sample/py/01_mandelbrot.py",
+            "host_transpile_fail",
+            "preview backend: stage2 bridge intentionally unavailable",
+        )
+        self.assertEqual(row.top_level_category, "known_block")
+        self.assertEqual(row.detail_category, "preview_only")
 
     def test_render_summary_block_skips_pass_rows_but_keeps_pass_aggregate(self) -> None:
         lines = render_summary_block(

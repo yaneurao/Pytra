@@ -1030,6 +1030,7 @@ def _render_report(rows: list[StatusRow], out_path: Path) -> None:
     lines.append("- `stage2_compile_fail`: stage2 生成 transpiler のビルド失敗。")
     lines.append("- `sample_transpile_fail`: stage2 生成 transpiler で `sample/py/01` 変換に失敗。")
     lines.append("- `stage1_transpile_fail`: stage1 自己変換自体が失敗。")
+    lines.append("- `unsupported_by_design`: 現在の multistage runner 対象外で expected failure として扱う。")
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -1083,7 +1084,7 @@ def main() -> int:
                 rows.append(StatusRow(spec.lang, "pass", st2, st3, category, note))
                 continue
 
-            rows.append(StatusRow(spec.lang, "pass", "skip", "skip", "runner_not_defined", "multistage runner is not defined"))
+            rows.append(StatusRow(spec.lang, "pass", "skip", "skip", "unsupported_by_design", "multistage runner is not defined"))
 
     out_path = ROOT / args.out
     _render_report(rows, out_path)
