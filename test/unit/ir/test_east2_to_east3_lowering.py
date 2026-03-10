@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
 if str(ROOT) not in sys.path:
@@ -16,6 +17,7 @@ if str(ROOT / "src") not in sys.path:
 from src.toolchain.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
 from src.toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.frontends.type_expr import parse_type_expr_text
+from src.toolchain.ir.east3 import load_east3_document as load_east3_stage
 
 
 def _const_i(v: int) -> dict[str, object]:
@@ -444,6 +446,50 @@ class East2ToEast3LoweringTest(unittest.TestCase):
         runtime_plan = body[0].get("iter_plan", {})
         self.assertEqual(runtime_plan.get("kind"), "RuntimeIterForPlan")
         self.assertEqual(runtime_plan.get("dispatch_mode"), "type_id")
+
+    def test_load_east3_document_validates_lowered_doc_before_optimizer(self) -> None:
+        bad_east3 = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+            "body": [1],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "main.py"
+            p.write_text("", encoding="utf-8")
+            with patch("src.toolchain.ir.east3.lower_east2_to_east3_document", return_value=bad_east3):
+                with self.assertRaisesRegex(RuntimeError, r"raw EAST3\.body\[0\] must be an object: pkg\.main"):
+                    load_east3_stage(
+                        p,
+                        load_east_document_fn=lambda *_args, **_kwargs: {"kind": "Module", "body": []},
+                    )
+
+    def test_load_east3_document_validates_optimized_doc_before_return(self) -> None:
+        valid_east3 = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+            "body": [],
+        }
+        bad_optimized = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+            "body": [1],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "main.py"
+            p.write_text("", encoding="utf-8")
+            with patch("src.toolchain.ir.east3.lower_east2_to_east3_document", return_value=valid_east3):
+                with patch("src.toolchain.ir.east3.optimize_east3_document", return_value=(bad_optimized, {"trace": []})):
+                    with self.assertRaisesRegex(RuntimeError, r"raw EAST3\.body\[0\] must be an object: pkg\.main"):
+                        load_east3_stage(
+                            p,
+                            load_east_document_fn=lambda *_args, **_kwargs: {"kind": "Module", "body": []},
+                        )
 
     def test_lower_any_boundary_builtin_calls_to_obj_ops(self) -> None:
         any_name = {"kind": "Name", "id": "x", "resolved_type": "Any"}

@@ -174,7 +174,7 @@ class FrontendTypeExprTest(unittest.TestCase):
         }
 
         with self.assertRaisesRegex(RuntimeError, r"\$\.body\[0\]\.source_span is required"):
-            validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m")
+            validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m", require_source_spans=True)
 
     def test_validate_raw_east3_doc_rejects_invalid_source_span_shape(self) -> None:
         doc = {
@@ -196,8 +196,8 @@ class FrontendTypeExprTest(unittest.TestCase):
             ],
         }
 
-        with self.assertRaisesRegex(RuntimeError, r"source_span must not encode reversed range"):
-            validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m")
+        with self.assertRaisesRegex(RuntimeError, r"source_span: .* must not encode reversed range"):
+            validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m", require_source_spans=True)
 
     def test_validate_raw_east3_doc_rejects_nested_dispatch_mode_drift(self) -> None:
         doc = {

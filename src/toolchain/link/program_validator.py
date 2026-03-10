@@ -85,8 +85,8 @@ def _validate_raw_east3_invariants(
             and not isinstance(generated_by, str)
         ):
             raise RuntimeError("raw EAST3 " + path + ".source_span is required: " + module_id)
-        if source_span is not None:
-            _validate_source_span_shape(source_span, "raw EAST3 " + path + ".source_span")
+        if source_span is not None and (kind != "Module" or require_source_spans):
+            _validate_source_span_shape(source_span, "raw EAST3 " + path + ".source_span: " + module_id)
         if meta is None:
             continue
         if not isinstance(meta, dict):
@@ -291,7 +291,7 @@ def validate_raw_east3_doc(
     *,
     expected_dispatch_mode: str,
     module_id: str,
-    require_source_spans: bool = True,
+    require_source_spans: bool = False,
 ) -> dict[str, object]:
     east = coerce_json_object_doc(east_any, label="raw EAST3")
     if east.get_str("kind") != "Module":
