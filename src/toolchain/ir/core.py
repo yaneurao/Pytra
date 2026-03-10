@@ -45,6 +45,9 @@ from toolchain.ir.core_decorator_semantics import _sh_is_sealed_decorator
 from toolchain.ir.core_decorator_semantics import _sh_is_template_decorator
 from toolchain.ir.core_decorator_semantics import _sh_parse_decorator_head_and_args
 from toolchain.ir.core_extern_semantics import _sh_collect_extern_var_metadata
+from toolchain.ir.core_runtime_decl_semantics import _sh_parse_runtime_abi_args_map
+from toolchain.ir.core_runtime_decl_semantics import _sh_parse_runtime_abi_mode
+from toolchain.ir.core_runtime_decl_semantics import _sh_parse_runtime_abi_string_literal
 from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin
 from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin
 from toolchain.ir.core_expr_call_args import _ShExprCallArgParserMixin
@@ -2201,98 +2204,6 @@ def _sh_parse_dataclass_decorator_options(args_txt: str, *, line_no: int, line_t
     return out
 
 
-def _sh_parse_runtime_abi_string_literal(text: str, *, line_no: int, line_text: str, field_name: str) -> str:
-    raw = text.strip()
-    if len(raw) >= 2 and raw[0] in {"'", '"'} and raw[-1] == raw[0]:
-        return raw[1:-1]
-    raise _make_east_build_error(
-        kind="unsupported_syntax",
-        message=f"{field_name} must be a string literal: {raw}",
-        source_span=_sh_span(line_no, 0, len(line_text)),
-        hint="Use quoted string literals such as \"value\" or \"parts\".",
-    )
-
-
-def _sh_parse_runtime_abi_mode(
-    text: str,
-    *,
-    line_no: int,
-    line_text: str,
-    field_name: str,
-    allowed_modes: set[str],
-    hint_text: str,
-) -> str:
-    mode = _sh_parse_runtime_abi_string_literal(text, line_no=line_no, line_text=line_text, field_name=field_name)
-    normalized = _SH_RUNTIME_ABI_MODE_ALIASES.get(mode, mode)
-    if normalized in allowed_modes:
-        return normalized
-    raise _make_east_build_error(
-        kind="unsupported_syntax",
-        message=f"unsupported abi mode for {field_name}: {mode}",
-        source_span=_sh_span(line_no, 0, len(line_text)),
-        hint=hint_text,
-    )
-
-
-def _sh_parse_runtime_abi_args_map(text: str, *, line_no: int, line_text: str) -> dict[str, str]:
-    raw = text.strip()
-    if raw in {"", "None"}:
-        return {}
-    if not (raw.startswith("{") and raw.endswith("}")):
-        raise _make_east_build_error(
-            kind="unsupported_syntax",
-            message=f"abi args must be a dict literal: {raw}",
-            source_span=_sh_span(line_no, 0, len(line_text)),
-            hint='Use args={"param": "value"} form.',
-        )
-    inner = raw[1:-1].strip()
-    if inner == "":
-        return {}
-    out: dict[str, str] = {}
-    for part_raw in _sh_split_top_commas(inner):
-        part = part_raw.strip()
-        if part == "":
-            continue
-        split = _sh_split_top_level_colon(part)
-        if split is None:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"unsupported abi args entry: {part}",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint='Use args={"param": "value"} entries only.',
-            )
-        key_txt, value_txt = split
-        key = _sh_parse_runtime_abi_string_literal(
-            key_txt,
-            line_no=line_no,
-            line_text=line_text,
-            field_name="abi args key",
-        )
-        if not _sh_is_identifier(key):
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"abi args key must be an identifier name: {key}",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint='Use quoted parameter names such as "parts".',
-            )
-        if key in out:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"duplicate abi args entry: {key}",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint="Specify each parameter at most once.",
-            )
-        out[key] = _sh_parse_runtime_abi_mode(
-            value_txt,
-            line_no=line_no,
-            line_text=line_text,
-            field_name=f"abi args[{key}]",
-            allowed_modes=_SH_RUNTIME_ABI_ARG_MODES,
-            hint_text='Use one of "default", "value", or "value_mut".',
-        )
-    return out
-
-
 def _sh_parse_runtime_abi_decorator(
     decorator_text: str,
     *,
@@ -2342,7 +2253,18 @@ def _sh_parse_runtime_abi_decorator(
             )
         seen_keys.add(key)
         if key == "args":
-            out_args = _sh_parse_runtime_abi_args_map(value_txt, line_no=line_no, line_text=line_text)
+            out_args = _sh_parse_runtime_abi_args_map(
+                value_txt,
+                line_no=line_no,
+                line_text=line_text,
+                split_top_commas=_sh_split_top_commas,
+                split_top_level_colon=_sh_split_top_level_colon,
+                is_identifier=_sh_is_identifier,
+                runtime_abi_arg_modes=_SH_RUNTIME_ABI_ARG_MODES,
+                runtime_abi_mode_aliases=_SH_RUNTIME_ABI_MODE_ALIASES,
+                make_east_build_error=_make_east_build_error,
+                make_span=_sh_span,
+            )
             continue
         if key == "ret":
             out_ret = _sh_parse_runtime_abi_mode(
@@ -2352,6 +2274,9 @@ def _sh_parse_runtime_abi_decorator(
                 field_name="abi ret",
                 allowed_modes=_SH_RUNTIME_ABI_RET_MODES,
                 hint_text='Use one of "default" or "value".',
+                runtime_abi_mode_aliases=_SH_RUNTIME_ABI_MODE_ALIASES,
+                make_east_build_error=_make_east_build_error,
+                make_span=_sh_span,
             )
             continue
         raise _make_east_build_error(
@@ -2448,6 +2373,8 @@ def _sh_parse_template_decorator(
             line_no=line_no,
             line_text=line_text,
             field_name="template parameter",
+            make_east_build_error=_make_east_build_error,
+            make_span=_sh_span,
         )
         if not _sh_is_identifier(param):
             raise _make_east_build_error(

@@ -1,0 +1,51 @@
+"""Source-contract regressions for EAST core runtime declaration helper clusters."""
+
+from __future__ import annotations
+
+import sys
+import unittest
+from pathlib import Path
+
+TEST_DIR = Path(__file__).resolve().parent
+if str(TEST_DIR) not in sys.path:
+    sys.path.insert(0, str(TEST_DIR))
+
+from _east_core_test_support import CORE_RUNTIME_DECL_SEMANTICS_SOURCE_PATH
+from _east_core_test_support import CORE_SOURCE_PATH
+
+
+class EastCoreSourceContractRuntimeDeclSemanticsTest(unittest.TestCase):
+    def test_core_source_moves_runtime_decl_helpers_out_of_core(self) -> None:
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = CORE_RUNTIME_DECL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
+
+        self.assertIn(
+            "from toolchain.ir.core_runtime_decl_semantics import _sh_parse_runtime_abi_args_map",
+            core_text,
+        )
+        self.assertIn(
+            "from toolchain.ir.core_runtime_decl_semantics import _sh_parse_runtime_abi_mode",
+            core_text,
+        )
+        self.assertIn(
+            "from toolchain.ir.core_runtime_decl_semantics import _sh_parse_runtime_abi_string_literal",
+            core_text,
+        )
+        self.assertIn("def _sh_parse_runtime_abi_string_literal(", helper_text)
+        self.assertIn("def _sh_parse_runtime_abi_mode(", helper_text)
+        self.assertIn("def _sh_parse_runtime_abi_args_map(", helper_text)
+        self.assertNotIn("def _sh_parse_runtime_abi_string_literal(", core_text)
+        self.assertNotIn("def _sh_parse_runtime_abi_mode(", core_text)
+        self.assertNotIn("def _sh_parse_runtime_abi_args_map(", core_text)
+
+    def test_core_source_routes_runtime_decl_helpers_through_callback_injection(self) -> None:
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("runtime_abi_mode_aliases=_SH_RUNTIME_ABI_MODE_ALIASES", core_text)
+        self.assertIn("make_east_build_error=_make_east_build_error", core_text)
+        self.assertIn("make_span=_sh_span", core_text)
+        self.assertIn("split_top_level_colon=_sh_split_top_level_colon", core_text)
+
+
+if __name__ == "__main__":
+    unittest.main()
