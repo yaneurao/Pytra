@@ -1,6 +1,6 @@
 # P3: Harden Compiler Contracts and Make Stage / Pass / Backend Handoffs Fail Closed
 
-Last updated: 2026-03-09
+Last updated: 2026-03-11
 
 Related TODO:
 - `ID: P3-COMPILER-CONTRACT-HARDENING-01` in `docs/ja/todo/index.md`
@@ -75,10 +75,64 @@ Keep the order fixed: first expose the blind spots, then add central validators,
 5. Strengthen diagnostics / tests / guards
 6. Refresh docs / archive / migration notes
 
+## S1 Inventory Results
+
+### Current guard / validator coverage
+
+| Area | What it currently validates | What it does not validate yet |
+| --- | --- | --- |
+| `tools/check_east_stage_boundary.py` | Cross-stage import/call boundaries for `east2.py` and `code_emitter.py` | Document shape, `type_expr` / `resolved_type` mirrors, `source_span` / `repr`, helper metadata, semantic drift at pass/backend entry |
+| `validate_raw_east3_doc(...)` | Top-level `kind=Module`, `east_stage=3`, `body` list, `schema_version>=1`, `meta.dispatch_mode`, forbidding `meta.linked_program_v1`, and `sync_type_expr_mirrors(...)` | Recursive node shape, node-level `source_span` / `repr` requirements, helper-metadata categories, node/meta `dispatch_mode` consistency, post-pass drift |
+| `validate_link_input_doc(...)` | Manifest-level schema plus required `target` / `dispatch_mode` / `entry_modules` / `modules` fields | Per-module EAST3 payload shape and semantic contract for options payload |
+| `validate_link_output_doc(...)` | Manifest-level schema, helper-module metadata presence, and top-level required `global` / `diagnostics` keys | Internal shape of `global`, invariant checks for embedded IR/EAST artifacts, schema for diagnostic items |
+| `program_loader.py` | `validate_raw_east3_doc(...)` at raw EAST3 load time | Revalidation after optimizer/linker/template-specialization mutations |
+| `backend_registry.py` / `backend_registry_static.py` | Backend spec, option schema, and typed-carrier coercion | IR contract at `lower_ir_typed` / `optimize_ir_typed` / `emit_source_typed` / `emit_module_typed`. The host lane can still surface backend-local failures through `suppress_exceptions=True` fallback behavior |
+
+### Blind-spot categories
+
+- `node shape`
+  - Raw EAST3 validation stops at top-level `Module`; representative node kinds still lack central required-field / field-type / child-shape checks.
+- `type_expr` / `resolved_type`
+  - Mirror syncing exists, but canonical ownership by stage, acceptable `unknown` lanes, and backend-entry requirements are not fixed yet.
+- `source_span` / `repr`
+  - Required versus optional nodes are not defined centrally, so missing spans leak into backend crashes or poor diagnostics.
+- `helper metadata`
+  - Runtime helper, linked helper, and dispatch-helper `meta` keys still depend on producer/consumer conventions rather than a central validator.
+- `stage semantic drift`
+  - `check_east_stage_boundary.py` only polices imports/calls and does not cover semantic drift across `east2 -> east3 -> linked output -> backend input`.
+- `backend input`
+  - Representative backend entrypoints still lack compiler-contract validators, so malformed IR surfaces as backend-local exceptions or silent fallback.
+
+## S1 Responsibility Boundaries
+
+- `schema validator`
+  - Scope: serialization/container shape for raw EAST3, linked input, linked output, and backend-input artifacts.
+  - Responsibility: required top-level fields, enum domains, list/object shape, helper-module top-level metadata, and syntactic `type_expr` mirror consistency.
+  - Out of scope: node-level semantic invariants and target-specific backend assumptions.
+
+- `invariant validator`
+  - Scope: EAST3 / linked output / representative IR after schema validation.
+  - Responsibility: per-node required fields, `source_span` / `repr` preservation contracts, `dispatch_mode` / `resolved_type` / helper-metadata consistency, and post-pass relationships that must remain true.
+  - Out of scope: backend-specific lowering detail and emit strategy.
+
+- `backend input validator`
+  - Scope: immediately before representative backend entrypoints (first C++).
+  - Responsibility: convert target-local unsupported lowered kinds, required metadata, and malformed backend inputs into structured diagnostics.
+  - Out of scope: raw-doc coercion and carrier migration; that remains P2 territory.
+
+### Boundary vs. P1 / P2
+
+- `P1-EAST-TYPEEXPR-01`
+  - Owns the `TypeExpr` schema and mirror format. P3 only validates adherence to that canonical contract.
+- `P2-COMPILER-TYPED-BOUNDARY-01`
+  - Owns carrier and adapter seams. P3 makes the document / IR contracts fail-closed after those seams.
+- `P3`
+  - Owns machine-checkable rules for what each stage may accept and return. It does not add new carriers or language surface.
+
 ## Breakdown
 
-- [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-01] Inventory current `check_east_stage_boundary`, `validate_raw_east3_doc`, and backend-entry guards, then classify blind spots that are still unchecked (`node shape`, `type_expr` / `resolved_type`, `source_span`, helper metadata).
-- [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-02] Fix the responsibility boundary between schema validation, invariant validation, and backend-input validation so this plan does not overlap with `P1-EAST-TYPEEXPR-01` or `P2-COMPILER-TYPED-BOUNDARY-01`.
+- [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-01] Inventory current `check_east_stage_boundary`, `validate_raw_east3_doc`, and backend-entry guards, then classify blind spots that are still unchecked (`node shape`, `type_expr` / `resolved_type`, `source_span`, helper metadata).
+- [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-02] Fix the responsibility boundary between schema validation, invariant validation, and backend-input validation so this plan does not overlap with `P1-EAST-TYPEEXPR-01` or `P2-COMPILER-TYPED-BOUNDARY-01`.
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-01] Extend `spec-dev` or equivalent design docs with required fields, allowed omissions, and diagnostic categories for EAST3 / linked output / backend input.
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-02] Fix consistency rules and fail-closed policy for `type_expr` / `resolved_type` mirrors, `dispatch_mode`, `source_span`, and helper metadata.
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-01] Add central validator primitives around `toolchain/link/program_validator.py` and expand raw EAST3 / linked-output checks beyond coarse schema validation into node/meta invariants.
@@ -119,3 +173,5 @@ Decision log:
 - 2026-03-09: Added this P3 in response to the user request to prioritize compiler-internal strengthening after the type and carrier groundwork.
 - 2026-03-09: Fixed the scope of this P3 to validators and fail-closed contracts at stage / pass / backend handoffs, not new language features.
 - 2026-03-09: Fixed the policy that boundary guards such as `check_east_stage_boundary` must grow beyond import/call policing and cover semantic invariants too.
+- 2026-03-11: `S1-01` inventory confirmed that current guards are still biased toward top-level schema checks and import/call policing, while node shape, `source_span`, helper metadata, and backend-input contracts remain largely unvalidated.
+- 2026-03-11: `S1-02` fixed a three-layer responsibility split: schema validators own serialization/container shape, invariant validators own node/meta relationships, and backend-input validators own target-local fail-closed diagnostics.

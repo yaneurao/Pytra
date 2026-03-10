@@ -37,8 +37,8 @@ Last updated: 2026-03-11
 Context: [docs/ja/plans/p3-compiler-contract-hardening.md](../plans/p3-compiler-contract-hardening.md)
 
 1. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01] Harden compiler contracts and make stage/pass/backend handoff fail-closed.
-2. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-01] Inventory the current `check_east_stage_boundary`, `validate_raw_east3_doc`, and backend-entry guards, then classify blind spots such as node shape, `type_expr` / `resolved_type`, `source_span`, and helper metadata.
-3. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-02] Fix the responsibility boundary between schema validators, invariant validators, and backend input validators so it does not conflict with `P1-EAST-TYPEEXPR-01` or `P2-COMPILER-TYPED-BOUNDARY-01`.
+2. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-01] Inventory the current `check_east_stage_boundary`, `validate_raw_east3_doc`, and backend-entry guards, then classify blind spots such as node shape, `type_expr` / `resolved_type`, `source_span`, and helper metadata.
+3. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-02] Fix the responsibility boundary between schema validators, invariant validators, and backend input validators so it does not conflict with `P1-EAST-TYPEEXPR-01` or `P2-COMPILER-TYPED-BOUNDARY-01`.
 4. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-01] Add the required fields, allowed omissions, and diagnostic categories for EAST3, linked output, and backend input to `spec-dev` or an equivalent design document.
 5. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-02] Fix consistency rules and fail-closed policy for `type_expr` / `resolved_type` mirrors, `dispatch_mode`, `source_span`, and helper metadata.
 6. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-01] Add central validator primitives around `toolchain/link/program_validator.py` and extend coarse raw EAST3 / linked-output checks to node/meta invariants.

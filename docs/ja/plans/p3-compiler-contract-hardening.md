@@ -1,6 +1,6 @@
 # P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
-最終更新: 2026-03-09
+最終更新: 2026-03-11
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P3-COMPILER-CONTRACT-HARDENING-01`
@@ -75,10 +75,64 @@
 5. diagnostics / test / guard の強化
 6. docs / archive / migration note の更新
 
+## S1 棚卸し結果
+
+### 既存 guard / validator の現状
+
+| 系統 | 現在見ているもの | いま見ていないもの |
+| --- | --- | --- |
+| `tools/check_east_stage_boundary.py` | `east2.py` と `code_emitter.py` に対する import / call の stage 越境 | document shape、`type_expr` / `resolved_type` mirror、`source_span` / `repr`、helper metadata、pass / backend entry の semantic drift |
+| `validate_raw_east3_doc(...)` | top-level `kind=Module`、`east_stage=3`、`body` list、`schema_version>=1`、`meta.dispatch_mode`、`meta.linked_program_v1` 禁止、`sync_type_expr_mirrors(...)` | 再帰的 node shape、node-level `source_span` / `repr` 必須性、helper metadata category、`dispatch_mode` の node/meta 整合、pass 後 drift |
+| `validate_link_input_doc(...)` | manifest-level schema、`target` / `dispatch_mode` / `entry_modules` / `modules` の required field | 各 module の EAST3 payload shape、options payload の semantic 契約 |
+| `validate_link_output_doc(...)` | manifest-level schema、helper module metadata の有無、`global` / `diagnostics` の top-level required key | `global` payload の内部 shape、embedded IR/EAST artifact の invariant、diagnostic item schema |
+| `program_loader.py` | raw EAST3 load 時の `validate_raw_east3_doc(...)` | optimizer / linker / template specialization 後の再検証 |
+| `backend_registry.py` / `backend_registry_static.py` | backend spec / option schema / typed carrier coercion | `lower_ir_typed` / `optimize_ir_typed` / `emit_source_typed` / `emit_module_typed` 入力 IR の contract。host lane は `suppress_exceptions=True` で backend-local error を空文字 fallback へ逃がしうる |
+
+### blind spot の分類
+
+- `node shape`
+  - raw EAST3 は top-level `Module` だけ検証され、代表 node kind の必須 field / field type / child shape が未検証。
+- `type_expr` / `resolved_type`
+  - mirror sync はあるが、どの stage で何を canonical とみなすか、`unknown` をどこまで許すか、backend entry で何を必須とするかが未固定。
+- `source_span` / `repr`
+  - top-level 以外の node で required / optional が定義されておらず、欠落が backend crash や poor diagnostic として遅延検知される。
+- `helper metadata`
+  - runtime helper / linked helper / dispatch helper が埋める `meta` key 群に central validator がなく、producer/consumer の暗黙契約に依存している。
+- `stage semantic drift`
+  - `check_east_stage_boundary.py` は import/call policing に留まり、`east2 -> east3 -> linked output -> backend input` の semantic boundary drift を見ていない。
+- `backend input`
+  - representative backend の入口には compiler-contract validator がなく、malformed IR は backend-local exception または silent fallback で表面化する。
+
+## S1 責務境界
+
+- `schema validator`
+  - 対象: raw EAST3 / linked input / linked output / backend input artifact の serialization/container shape。
+  - 役割: required top-level field、enum domain、list/object shape、helper module top-level metadata、`type_expr` mirror の構文的一致を検証する。
+  - 非役割: node-level semantic invariant、target-specific backend assumption。
+
+- `invariant validator`
+  - 対象: schema を通過した EAST3 / linked output / representative IR。
+  - 役割: node kind ごとの必須 field、`source_span` / `repr` の保持契約、`dispatch_mode` / `resolved_type` / helper metadata の整合、pass 後に壊れてはいけない relationship を検証する。
+  - 非役割: backend ごとの lowering detail や emit strategy。
+
+- `backend input validator`
+  - 対象: representative backend entry（まず C++）の直前。
+  - 役割: backend が分岐に使う lowered kind、required metadata、target-local unsupported category を structured diagnostic に変える。
+  - 非役割: raw doc coercion や carrier migration。そこは `P2` の責務。
+
+### P1 / P2 との境界
+
+- `P1-EAST-TYPEEXPR-01`
+  - `TypeExpr` schema と mirror format の設計を持つ。P3 はその canonical contract を validator に落とすだけで、意味論自体は拡張しない。
+- `P2-COMPILER-TYPED-BOUNDARY-01`
+  - carrier / adapter seam を thin にする。P3 は seam を越えた後の document / IR contract を fail-closed にする。
+- `P3`
+  - 「何を受け取ってよいか」を machine-checkable に固定する。carrier の型上げや language surface 追加は行わない。
+
 ## 分解
 
-- [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-01] `check_east_stage_boundary` / `validate_raw_east3_doc` / backend entry guard の現状を棚卸しし、未検証の blind spot（node shape、`type_expr` / `resolved_type`、`source_span`、helper metadata）を分類する。
-- [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-02] `P1-EAST-TYPEEXPR-01` / `P2-COMPILER-TYPED-BOUNDARY-01` と責務が衝突しないように、schema validator / invariant validator / backend input validator の責務境界を decision log に固定する。
+- [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-01] `check_east_stage_boundary` / `validate_raw_east3_doc` / backend entry guard の現状を棚卸しし、未検証の blind spot（node shape、`type_expr` / `resolved_type`、`source_span`、helper metadata）を分類する。
+- [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-02] `P1-EAST-TYPEEXPR-01` / `P2-COMPILER-TYPED-BOUNDARY-01` と責務が衝突しないように、schema validator / invariant validator / backend input validator の責務境界を decision log に固定する。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-01] `spec-dev` または等価設計文書に、EAST3 / linked output / backend input の必須 field、許容欠落、diagnostic category を追加する。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-02] `type_expr` / `resolved_type` mirror、`dispatch_mode`、`source_span`、helper metadata の整合ルールと fail-closed 方針を固定する。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-01] `toolchain/link/program_validator.py` と周辺に central validator primitive を追加し、raw EAST3 / linked output の coarse check を node/meta invariant まで拡張する。
@@ -119,3 +173,5 @@
 - 2026-03-09: ユーザー指示により、型基盤・typed carrier に続く内部改善として、compiler contract hardening を独立 P3 に切り出した。
 - 2026-03-09: この P3 は language feature 追加ではなく、stage / pass / backend handoff の validator と fail-closed 契約を強化することを主眼に置く。
 - 2026-03-09: `check_east_stage_boundary` のような境界 guard は残しつつ、import/call 監視だけでは足りないため semantic invariant まで広げる方針を固定した。
+- 2026-03-11: `S1-01` 棚卸しでは、現行 guard が top-level schema と import/call policing に偏っており、node shape・`source_span`・helper metadata・backend input 契約が未検証であることを確認した。
+- 2026-03-11: `S1-02` では責務境界を 3 層に固定した。schema validator は serialization/container shape、invariant validator は node/meta relationship、backend input validator は target-local fail-closed diagnostics を担当する。
