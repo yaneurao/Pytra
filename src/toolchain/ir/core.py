@@ -4956,6 +4956,21 @@ class _ShExprParser:
             self.pos = save_pos
         return self._parse_call_arg_expr(), None
 
+    def _apply_call_arg_entry(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        arg_entry: dict[str, Any] | None,
+        keyword_entry: dict[str, Any] | None,
+    ) -> None:
+        """call argument loop の positional/keyword append を helper へ寄せる。"""
+        if keyword_entry is not None:
+            keywords.append(keyword_entry)
+            return
+        if arg_entry is not None:
+            args.append(arg_entry)
+
     def _parse_call_args(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Call expr の位置引数と keyword 引数を parser helper へ寄せる。"""
         args: list[dict[str, Any]] = []
@@ -4964,10 +4979,12 @@ class _ShExprParser:
             return args, keywords
         while True:
             arg_entry, keyword_entry = self._parse_call_arg_entry()
-            if keyword_entry is not None:
-                keywords.append(keyword_entry)
-            elif arg_entry is not None:
-                args.append(arg_entry)
+            self._apply_call_arg_entry(
+                args=args,
+                keywords=keywords,
+                arg_entry=arg_entry,
+                keyword_entry=keyword_entry,
+            )
             if self._cur()["k"] != ",":
                 break
             self._eat(",")
