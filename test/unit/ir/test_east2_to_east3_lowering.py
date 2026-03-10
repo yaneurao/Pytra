@@ -177,70 +177,6 @@ def f(x: Maybe) -> int:
             ],
         }
 
-    def _representative_nominal_adt_match_east2(self) -> dict[str, object]:
-        return {
-            "kind": "Module",
-            "meta": {"dispatch_mode": "native"},
-            "body": [
-                _nominal_adt_class("Maybe", role="family", family_name="Maybe"),
-                {
-                    **_nominal_adt_class(
-                        "Just",
-                        role="variant",
-                        family_name="Maybe",
-                        variant_name="Just",
-                        payload_style="dataclass",
-                    ),
-                    "field_types": {"value": "int64"},
-                },
-                _nominal_adt_class("Nothing", role="variant", family_name="Maybe", variant_name="Nothing"),
-                {
-                    "kind": "FunctionDef",
-                    "name": "g",
-                    "body": [
-                        {
-                            "kind": "Match",
-                            "subject": {
-                                "kind": "Name",
-                                "id": "x",
-                                "resolved_type": "Maybe",
-                                "type_expr": parse_type_expr_text("Maybe"),
-                            },
-                            "cases": [
-                                {
-                                    "kind": "MatchCase",
-                                    "pattern": {
-                                        "kind": "VariantPattern",
-                                        "family_name": "Maybe",
-                                        "variant_name": "Just",
-                                        "subpatterns": [
-                                            {
-                                                "kind": "PatternBind",
-                                                "name": "value",
-                                            }
-                                        ],
-                                    },
-                                    "guard": None,
-                                    "body": [{"kind": "Return", "value": _const_i(1)}],
-                                },
-                                {
-                                    "kind": "MatchCase",
-                                    "pattern": {
-                                        "kind": "VariantPattern",
-                                        "family_name": "Maybe",
-                                        "variant_name": "Nothing",
-                                        "subpatterns": [],
-                                    },
-                                    "guard": None,
-                                    "body": [{"kind": "Return", "value": _const_i(0)}],
-                                },
-                            ],
-                        }
-                    ],
-                },
-            ],
-        }
-
     def _collect_runtime_iter_plans(self, node: object) -> list[dict[str, object]]:
         plans: list[dict[str, object]] = []
         if not isinstance(node, dict):
@@ -1457,6 +1393,48 @@ def f(x: Maybe) -> int:
         self.assertEqual(analysis.get("covered_variants"), ["Just", "Nothing"])
         self.assertEqual(analysis.get("duplicate_case_indexes"), [1])
         self.assertEqual(analysis.get("unreachable_case_indexes"), [1])
+
+    def test_lower_builtin_jsonvalue_and_user_nominal_adt_share_nominal_adt_category(self) -> None:
+        user_out = lower_east2_to_east3(self._representative_nominal_adt_match_east2())
+        user_match = user_out.get("body", [])[3].get("body", [])[0]
+        user_subject_type = user_match.get("nominal_adt_match_v1", {}).get("subject_type", {})
+        self.assertEqual(user_subject_type.get("category"), "nominal_adt")
+        self.assertEqual(user_subject_type.get("nominal_adt_family"), "Maybe")
+
+        json_out = lower_east2_to_east3(
+            {
+                "kind": "Module",
+                "meta": {"dispatch_mode": "native"},
+                "body": [
+                    {
+                        "kind": "Expr",
+                        "value": {
+                            "kind": "Call",
+                            "resolved_type": "JsonObj | None",
+                            "type_expr": parse_type_expr_text("JsonObj | None"),
+                            "func": {
+                                "kind": "Attribute",
+                                "attr": "as_obj",
+                                "value": {
+                                    "kind": "Name",
+                                    "id": "payload",
+                                    "resolved_type": "JsonValue",
+                                    "type_expr": parse_type_expr_text("JsonValue"),
+                                },
+                            },
+                            "args": [],
+                            "keywords": [],
+                        },
+                    }
+                ],
+            }
+        )
+        json_call = json_out.get("body", [])[0].get("value", {})
+        receiver_type = json_call.get("json_decode_v1", {}).get("receiver_type", {})
+        self.assertEqual(receiver_type.get("category"), "nominal_adt")
+        self.assertEqual(receiver_type.get("nominal_adt_family"), "json")
+        self.assertEqual(json_call.get("json_decode_v1", {}).get("receiver_category"), "nominal_adt")
+        self.assertEqual(receiver_type.get("category"), user_subject_type.get("category"))
 
     def test_lower_json_value_helper_call_attaches_decode_metadata(self) -> None:
         east2 = {
