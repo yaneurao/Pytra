@@ -1311,6 +1311,14 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         callee_apply_text = text.split("def _apply_callee_call_annotation", 1)[1].split(
+            "def _apply_named_callee_call_annotation",
+            1,
+        )[0]
+        named_callee_apply_text = text.split("def _apply_named_callee_call_annotation", 1)[1].split(
+            "def _apply_attr_callee_call_annotation",
+            1,
+        )[0]
+        attr_callee_apply_text = text.split("def _apply_attr_callee_call_annotation", 1)[1].split(
             "def _resolve_callee_call_annotation_kind",
             1,
         )[0]
@@ -1450,7 +1458,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("self._guard_named_call_args(", state_helper_text)
         self.assertIn("call_ret, fn_name = self._resolve_call_expr_annotation_state(", call_helper_text)
         self.assertIn('if fn_name != "":', callee_resolve_text)
-        self.assertIn("return self._annotate_named_call_expr(", callee_apply_text)
+        self.assertIn("return self._apply_named_callee_call_annotation(", callee_apply_text)
+        self.assertIn("return self._apply_attr_callee_call_annotation(", callee_apply_text)
+        self.assertIn("return self._annotate_named_call_expr(", named_callee_apply_text)
+        self.assertIn("return self._annotate_attr_call_expr(", attr_callee_apply_text)
         self.assertIn("return self._resolve_callee_call_annotation_kind(", callee_state_text)
         self.assertIn("return self._apply_callee_call_annotation(", callee_helper_text)
         self.assertIn("return self._annotate_callee_call_expr(", call_apply_text)
@@ -1459,6 +1470,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', call_helper_text)
         self.assertNotIn("self._guard_named_call_args(", call_helper_text)
         self.assertNotIn('if fn_name != "":', callee_apply_text)
+        self.assertNotIn("return self._annotate_named_call_expr(", callee_apply_text)
+        self.assertNotIn("return self._annotate_attr_call_expr(", callee_apply_text)
         self.assertNotIn("callee_kind = self._resolve_callee_call_annotation_kind(", callee_helper_text)
         self.assertNotIn("return self._annotate_named_call_expr(", callee_helper_text)
         self.assertNotIn("return self._annotate_callee_call_expr(", call_helper_text)

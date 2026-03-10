@@ -4979,17 +4979,43 @@ class _ShExprParser:
     ) -> dict[str, Any]:
         """callee kind ごとの call annotation 適用を helper へ寄せる。"""
         if callee_kind == "named":
-            return self._annotate_named_call_expr(
+            return self._apply_named_callee_call_annotation(
                 payload,
                 fn_name=fn_name,
                 args=args,
             )
         if callee_kind == "attr":
-            return self._annotate_attr_call_expr(
+            return self._apply_attr_callee_call_annotation(
                 payload,
                 callee=callee,
             )
         return payload
+
+    def _apply_named_callee_call_annotation(
+        self,
+        payload: dict[str, Any],
+        *,
+        fn_name: str,
+        args: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """named callee-call apply を helper へ寄せる。"""
+        return self._annotate_named_call_expr(
+            payload,
+            fn_name=fn_name,
+            args=args,
+        )
+
+    def _apply_attr_callee_call_annotation(
+        self,
+        payload: dict[str, Any],
+        *,
+        callee: dict[str, Any],
+    ) -> dict[str, Any]:
+        """attr callee-call apply を helper へ寄せる。"""
+        return self._annotate_attr_call_expr(
+            payload,
+            callee=callee,
+        )
 
     def _resolve_callee_call_annotation_kind(
         self,
