@@ -480,6 +480,10 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_runtime_attr_expr",
             1,
         )[0]
+        noncpp_apply_text = text.split("def _apply_noncpp_attr_expr_annotation", 1)[1].split(
+            "def _apply_attr_expr_annotation",
+            1,
+        )[0]
         apply_text = text.split("def _apply_attr_expr_annotation", 1)[1].split(
             "def _annotate_attr_expr",
             1,
@@ -491,7 +495,8 @@ class EastCoreTest(unittest.TestCase):
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
-        self.assertIn('_sh_annotate_resolved_runtime_expr(', apply_text)
+        self.assertIn('_sh_annotate_resolved_runtime_expr(', noncpp_apply_text)
+        self.assertIn("self._apply_noncpp_attr_expr_annotation(", apply_text)
         self.assertIn("return self._apply_attr_expr_annotation(", attr_expr_text)
         self.assertNotIn('payload["resolved_runtime_call"] = noncpp_symbol_runtime_call', postfix_text)
         self.assertNotIn('payload["resolved_runtime_source"] = "import_symbol"', postfix_text)
@@ -506,6 +511,10 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_runtime_method_call_expr",
             1,
         )[0]
+        runtime_apply_text = text.split("def _apply_runtime_attr_expr_annotation", 1)[1].split(
+            "def _apply_noncpp_attr_expr_annotation",
+            1,
+        )[0]
         apply_text = text.split("def _apply_attr_expr_annotation", 1)[1].split(
             "def _annotate_attr_expr",
             1,
@@ -518,7 +527,8 @@ class EastCoreTest(unittest.TestCase):
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
-        self.assertIn('_sh_annotate_runtime_attr_expr(', apply_text)
+        self.assertIn('_sh_annotate_runtime_attr_expr(', runtime_apply_text)
+        self.assertIn("self._apply_runtime_attr_expr_annotation(", apply_text)
         self.assertIn("return self._apply_attr_expr_annotation(", attr_expr_text)
         self.assertNotIn('node["lowered_kind"] = "BuiltinAttr"', postfix_text)
         self.assertNotIn('node["runtime_call"] = attr_runtime_call', postfix_text)
@@ -581,6 +591,14 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         build_text = text.split("def _build_attr_expr_payload", 1)[1].split(
+            "def _apply_runtime_attr_expr_annotation",
+            1,
+        )[0]
+        runtime_apply_text = text.split("def _apply_runtime_attr_expr_annotation", 1)[1].split(
+            "def _apply_noncpp_attr_expr_annotation",
+            1,
+        )[0]
+        noncpp_apply_text = text.split("def _apply_noncpp_attr_expr_annotation", 1)[1].split(
             "def _apply_attr_expr_annotation",
             1,
         )[0]
@@ -618,11 +636,13 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("return (\n            owner_t,", state_text)
         self.assertIn("node = _sh_make_attribute_expr(", build_text)
         self.assertIn("return node", build_text)
-        self.assertIn('if attr_runtime_call != "":', apply_text)
-        self.assertIn('_sh_annotate_runtime_attr_expr(', apply_text)
-        self.assertIn('elif attr_semantic_tag != "":', apply_text)
-        self.assertIn('node["semantic_tag"] = attr_semantic_tag', apply_text)
-        self.assertIn('_sh_annotate_resolved_runtime_expr(', apply_text)
+        self.assertIn('if attr_runtime_call != "":', runtime_apply_text)
+        self.assertIn('_sh_annotate_runtime_attr_expr(', runtime_apply_text)
+        self.assertIn('elif attr_semantic_tag != "":', runtime_apply_text)
+        self.assertIn('node["semantic_tag"] = attr_semantic_tag', runtime_apply_text)
+        self.assertIn('_sh_annotate_resolved_runtime_expr(', noncpp_apply_text)
+        self.assertIn("self._apply_runtime_attr_expr_annotation(", apply_text)
+        self.assertIn("self._apply_noncpp_attr_expr_annotation(", apply_text)
         self.assertIn(") = self._resolve_attr_expr_annotation_state(", helper_text)
         self.assertNotIn("owner_t,", helper_text)
         self.assertIn("node = self._build_attr_expr_payload(", helper_text)
@@ -630,6 +650,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("owner_t = self._resolve_attr_expr_owner_state(", helper_text)
         self.assertNotIn("self._resolve_attr_expr_metadata(", helper_text)
         self.assertNotIn("_sh_make_attribute_expr(", helper_text)
+        self.assertNotIn('_sh_annotate_runtime_attr_expr(', apply_text)
+        self.assertNotIn('_sh_annotate_resolved_runtime_expr(', apply_text)
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', helper_text)
         self.assertNotIn('_sh_annotate_resolved_runtime_expr(', helper_text)
         self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_text)

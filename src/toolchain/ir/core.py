@@ -5747,6 +5747,47 @@ class _ShExprParser:
         )
         return node
 
+    def _apply_runtime_attr_expr_annotation(
+        self,
+        *,
+        node: dict[str, Any],
+        owner_expr: dict[str, Any],
+        attr_runtime_call: str,
+        attr_semantic_tag: str,
+        attr_module_id: str,
+        attr_runtime_symbol: str,
+    ) -> None:
+        """runtime attr annotation 適用を helper へ寄せる。"""
+        if attr_runtime_call != "":
+            _sh_annotate_runtime_attr_expr(
+                node,
+                runtime_call=attr_runtime_call,
+                module_id=attr_module_id,
+                runtime_symbol=attr_runtime_symbol,
+                semantic_tag=attr_semantic_tag,
+                runtime_owner=owner_expr,
+            )
+        elif attr_semantic_tag != "":
+            node["semantic_tag"] = attr_semantic_tag
+
+    def _apply_noncpp_attr_expr_annotation(
+        self,
+        *,
+        node: dict[str, Any],
+        attr_name: str,
+        noncpp_module_attr_runtime_call: str,
+        noncpp_module_id: str,
+    ) -> None:
+        """non-C++ attr annotation 適用を helper へ寄せる。"""
+        if noncpp_module_attr_runtime_call != "":
+            _sh_annotate_resolved_runtime_expr(
+                node,
+                runtime_call=noncpp_module_attr_runtime_call,
+                runtime_source="module_attr",
+                module_id=noncpp_module_id,
+                runtime_symbol=attr_name,
+            )
+
     def _apply_attr_expr_annotation(
         self,
         *,
@@ -5761,25 +5802,20 @@ class _ShExprParser:
         noncpp_module_id: str,
     ) -> dict[str, Any]:
         """Attribute access node への annotation 適用を helper へ寄せる。"""
-        if attr_runtime_call != "":
-            _sh_annotate_runtime_attr_expr(
-                node,
-                runtime_call=attr_runtime_call,
-                module_id=attr_module_id,
-                runtime_symbol=attr_runtime_symbol,
-                semantic_tag=attr_semantic_tag,
-                runtime_owner=owner_expr,
-            )
-        elif attr_semantic_tag != "":
-            node["semantic_tag"] = attr_semantic_tag
-        if noncpp_module_attr_runtime_call != "":
-            _sh_annotate_resolved_runtime_expr(
-                node,
-                runtime_call=noncpp_module_attr_runtime_call,
-                runtime_source="module_attr",
-                module_id=noncpp_module_id,
-                runtime_symbol=attr_name,
-            )
+        self._apply_runtime_attr_expr_annotation(
+            node=node,
+            owner_expr=owner_expr,
+            attr_runtime_call=attr_runtime_call,
+            attr_semantic_tag=attr_semantic_tag,
+            attr_module_id=attr_module_id,
+            attr_runtime_symbol=attr_runtime_symbol,
+        )
+        self._apply_noncpp_attr_expr_annotation(
+            node=node,
+            attr_name=attr_name,
+            noncpp_module_attr_runtime_call=noncpp_module_attr_runtime_call,
+            noncpp_module_id=noncpp_module_id,
+        )
         return node
 
     def _annotate_attr_expr(
