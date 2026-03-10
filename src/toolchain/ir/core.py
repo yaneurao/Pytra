@@ -6662,13 +6662,28 @@ class _ShExprParser:
     ]:
         """Subscript / slice suffix の component parse を helper へ寄せる。"""
         starts_with_slice = self._resolve_subscript_suffix_component_state()
-        if starts_with_slice:
-            return self._parse_subscript_slice_tail(lower=None)
-        return self._parse_subscript_suffix_first_component()
+        return self._apply_subscript_suffix_component_state(
+            starts_with_slice=starts_with_slice,
+        )
 
     def _resolve_subscript_suffix_component_state(self) -> bool:
         """Subscript suffix の component 先頭 state resolve を helper へ寄せる。"""
         return self._cur()["k"] == ":"
+
+    def _apply_subscript_suffix_component_state(
+        self,
+        *,
+        starts_with_slice: bool,
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any],
+    ]:
+        """Subscript suffix の component apply を helper へ寄せる。"""
+        if starts_with_slice:
+            return self._parse_subscript_slice_tail(lower=None)
+        return self._parse_subscript_suffix_first_component()
 
     def _parse_subscript_suffix_first_component(
         self,
