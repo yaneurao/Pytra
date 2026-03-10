@@ -1902,6 +1902,14 @@ x.bit_length()
             1,
         )[0]
         apply_text = text.split("def _apply_call_arg_entry_state", 1)[1].split(
+            "def _apply_keyword_call_arg_entry",
+            1,
+        )[0]
+        keyword_apply_text = text.split("def _apply_keyword_call_arg_entry", 1)[1].split(
+            "def _apply_positional_call_arg_entry",
+            1,
+        )[0]
+        positional_apply_text = text.split("def _apply_positional_call_arg_entry", 1)[1].split(
             "def _parse_call_args",
             1,
         )[0]
@@ -1929,10 +1937,12 @@ x.bit_length()
         self.assertIn('name_tok = self._eat("NAME")', resolve_text)
         self.assertIn('return save_pos, name_tok, self._cur()["k"] == "="', resolve_text)
         self.assertIn("if is_keyword and name_tok is not None:", apply_text)
-        self.assertIn('return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)', apply_text)
-        self.assertIn("if save_pos is not None:", apply_text)
-        self.assertIn("self.pos = save_pos", apply_text)
-        self.assertIn("return self._parse_call_arg_expr(), None", apply_text)
+        self.assertIn("return self._apply_keyword_call_arg_entry(", apply_text)
+        self.assertIn("return self._apply_positional_call_arg_entry(", apply_text)
+        self.assertIn('return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)', keyword_apply_text)
+        self.assertIn("if save_pos is not None:", positional_apply_text)
+        self.assertIn("self.pos = save_pos", positional_apply_text)
+        self.assertIn("return self._parse_call_arg_expr(), None", positional_apply_text)
         self.assertIn("arg_entry, keyword_entry = self._parse_call_arg_entry()", helper_text)
         self.assertIn("keywords.append(keyword_entry)", helper_text)
         self.assertIn("args.append(arg_entry)", helper_text)
@@ -1941,6 +1951,8 @@ x.bit_length()
         self.assertNotIn("save_pos = self.pos", entry_text)
         self.assertNotIn('return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)', entry_text)
         self.assertNotIn("self.pos = save_pos", entry_text)
+        self.assertNotIn('return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)', apply_text)
+        self.assertNotIn("self.pos = save_pos", apply_text)
         self.assertNotIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', helper_text)
         self.assertNotIn("save_pos = self.pos", helper_text)
         self.assertNotIn("args, keywords = self._parse_call_args()", call_suffix_text)

@@ -4929,9 +4929,29 @@ class _ShExprParser:
     ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
         """call argument 1件分の positional/keyword apply を helper へ寄せる。"""
         if is_keyword and name_tok is not None:
-            self._eat("=")
-            kw_val = self._parse_ifexp()
-            return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)
+            return self._apply_keyword_call_arg_entry(
+                name_tok=name_tok,
+            )
+        return self._apply_positional_call_arg_entry(
+            save_pos=save_pos,
+        )
+
+    def _apply_keyword_call_arg_entry(
+        self,
+        *,
+        name_tok: dict[str, Any],
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument 1件分の keyword apply を helper へ寄せる。"""
+        self._eat("=")
+        kw_val = self._parse_ifexp()
+        return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)
+
+    def _apply_positional_call_arg_entry(
+        self,
+        *,
+        save_pos: int | None,
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument 1件分の positional apply を helper へ寄せる。"""
         if save_pos is not None:
             self.pos = save_pos
         return self._parse_call_arg_expr(), None
