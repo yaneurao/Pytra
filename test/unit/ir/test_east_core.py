@@ -2154,6 +2154,10 @@ x.bit_length()
     def test_core_source_routes_call_suffix_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         state_text = text.split("def _resolve_call_suffix_state", 1)[1].split(
+            "def _resolve_call_suffix_token_state",
+            1,
+        )[0]
+        token_state_text = text.split("def _resolve_call_suffix_token_state", 1)[1].split(
             "def _consume_call_suffix_open_token",
             1,
         )[0]
@@ -2179,7 +2183,8 @@ x.bit_length()
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
-        self.assertIn("args, keywords, rtok = self._consume_call_suffix_tokens()", state_text)
+        self.assertIn("args, keywords, rtok = self._resolve_call_suffix_token_state()", state_text)
+        self.assertIn("return self._consume_call_suffix_tokens()", token_state_text)
         self.assertIn("source_span, repr_text = self._resolve_postfix_span_repr(", state_text)
         self.assertIn("return args, keywords, source_span, repr_text", state_text)
         self.assertIn('return self._eat("(")', open_token_text)
@@ -2195,7 +2200,8 @@ x.bit_length()
         self.assertIn("return self._annotate_call_expr(", helper_text)
         self.assertNotIn('self._eat("(")', state_text)
         self.assertNotIn('self._eat("(")', token_text)
-        self.assertNotIn("args, keywords = self._parse_call_args()", state_text)
+        self.assertNotIn("args, keywords, rtok = self._consume_call_suffix_tokens()", state_text)
+        self.assertNotIn("args, keywords = self._parse_call_args()", token_state_text)
         self.assertNotIn('rtok = self._eat(")")', state_text)
         self.assertNotIn('rtok = self._eat(")")', token_text)
         self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)

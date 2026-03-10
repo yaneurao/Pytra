@@ -5013,12 +5013,18 @@ class _ShExprParser:
         callee: dict[str, Any],
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, int], str]:
         """call suffix の token/state resolve を parser helper へ寄せる。"""
-        args, keywords, rtok = self._consume_call_suffix_tokens()
+        args, keywords, rtok = self._resolve_call_suffix_token_state()
         source_span, repr_text = self._resolve_postfix_span_repr(
             owner_expr=callee,
             end_tok=rtok,
         )
         return args, keywords, source_span, repr_text
+
+    def _resolve_call_suffix_token_state(
+        self,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+        """call suffix の token-state resolve を parser helper へ寄せる。"""
+        return self._consume_call_suffix_tokens()
 
     def _consume_call_suffix_open_token(self) -> dict[str, Any]:
         """call suffix の `(` open token consume を helper へ寄せる。"""
