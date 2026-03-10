@@ -4995,7 +4995,7 @@ class _ShExprParser:
         """Call expr の位置引数と keyword 引数を parser helper へ寄せる。"""
         args: list[dict[str, Any]] = []
         keywords: list[dict[str, Any]] = []
-        if self._cur()["k"] == ")":
+        if self._resolve_call_args_empty_state():
             return args, keywords
         while True:
             arg_entry, keyword_entry = self._parse_call_arg_entry()
@@ -5008,6 +5008,10 @@ class _ShExprParser:
             if not self._advance_call_arg_loop():
                 break
         return args, keywords
+
+    def _resolve_call_args_empty_state(self) -> bool:
+        """call argument list の空 `)` 判定を helper へ寄せる。"""
+        return self._cur()["k"] == ")"
 
     def _resolve_postfix_span_repr(
         self,

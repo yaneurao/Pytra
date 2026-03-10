@@ -2197,6 +2197,10 @@ x.bit_length()
             1,
         )[0]
         helper_text = text.split("def _parse_call_args", 1)[1].split(
+            "def _resolve_call_args_empty_state",
+            1,
+        )[0]
+        empty_state_text = text.split("def _resolve_call_args_empty_state", 1)[1].split(
             "def _resolve_postfix_span_repr",
             1,
         )[0]
@@ -2241,6 +2245,8 @@ x.bit_length()
         self.assertIn("arg_entry, keyword_entry = self._parse_call_arg_entry()", helper_text)
         self.assertIn("self._apply_call_arg_entry(", helper_text)
         self.assertIn("if not self._advance_call_arg_loop():", helper_text)
+        self.assertIn("if self._resolve_call_args_empty_state():", helper_text)
+        self.assertIn('return self._cur()["k"] == ")"', empty_state_text)
         self.assertIn("args, keywords = self._parse_call_args()", state_text)
         self.assertIn("args, keywords, source_span, repr_text = self._resolve_call_suffix_state(", call_suffix_text)
         self.assertNotIn("save_pos = self.pos", entry_text)
@@ -2254,6 +2260,7 @@ x.bit_length()
         self.assertNotIn("args.append(arg_entry)", helper_text)
         self.assertNotIn('if self._cur()["k"] != ",":', helper_text)
         self.assertNotIn('self._eat(",")', helper_text)
+        self.assertNotIn('if self._cur()["k"] == ")":', helper_text)
         self.assertNotIn('self._eat(",")', loop_helper_text)
         self.assertNotIn("save_pos = self.pos", helper_text)
         self.assertNotIn("args, keywords = self._parse_call_args()", call_suffix_text)
