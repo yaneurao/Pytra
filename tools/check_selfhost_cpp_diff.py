@@ -60,6 +60,46 @@ def _load_expected_diff_cases(path: Path) -> set[str]:
     return out
 
 
+def build_host_transpile_cmd(src: Path, out_cpp: Path) -> list[str]:
+    return [
+        "python3",
+        str(PY2X_SELFHOST),
+        str(src),
+        "--target",
+        "cpp",
+        "-o",
+        str(out_cpp),
+    ]
+
+
+def build_selfhost_diff_cmd(
+    src: Path,
+    out_cpp: Path,
+    selfhost_bin: Path,
+    selfhost_target: str,
+    selfhost_driver: str,
+    bridge_tool: Path,
+) -> list[str]:
+    if selfhost_driver == "bridge":
+        cmd = [
+            "python3",
+            str(bridge_tool),
+            str(src),
+            "-o",
+            str(out_cpp),
+            "--selfhost-bin",
+            str(selfhost_bin),
+        ]
+        if selfhost_target != "":
+            cmd.extend(["--target", selfhost_target])
+        return cmd
+    cmd = [str(selfhost_bin), str(src)]
+    if selfhost_target != "":
+        cmd.extend(["--target", selfhost_target])
+    cmd.extend(["-o", str(out_cpp)])
+    return cmd
+
+
 def _canonicalize_cpp_line(line: str) -> str:
     """Normalize known semantically-equivalent cpp diff patterns."""
     m = _DECL_NONE_INIT_RE.match(line)
@@ -172,42 +212,33 @@ def main() -> int:
             out_py = td / (src.stem + ".py.cpp")
             out_sh = td / (src.stem + ".sh.cpp")
 
-            cp1 = _run(
-                [
-                    "python3",
-                    str(PY2X_SELFHOST),
-                    str(src),
-                    "--target",
-                    "cpp",
-                    "-o",
-                    str(out_py),
-                ]
-            )
+            cp1 = _run(build_host_transpile_cmd(src, out_py))
             if cp1.returncode != 0:
                 print(f"[FAIL host] {rel}: {(cp1.stderr.strip() or cp1.stdout.strip()).splitlines()[:1]}")
                 mismatches += 1
                 continue
             if args.selfhost_driver == "bridge":
-                bridge_cmd = [
-                    "python3",
-                    str(bridge_tool),
-                    str(src),
-                    "-o",
-                    str(out_sh),
-                    "--selfhost-bin",
-                    str(selfhost_bin),
-                ]
-                if selfhost_target != "":
-                    bridge_cmd.extend(["--target", selfhost_target])
                 cp2 = _run(
-                    bridge_cmd
+                    build_selfhost_diff_cmd(
+                        src,
+                        out_sh,
+                        selfhost_bin,
+                        selfhost_target,
+                        args.selfhost_driver,
+                        bridge_tool,
+                    )
                 )
             else:
-                direct_cmd = [str(selfhost_bin), str(src)]
-                if selfhost_target != "":
-                    direct_cmd.extend(["--target", selfhost_target])
-                direct_cmd.extend(["-o", str(out_sh)])
-                cp2 = _run(direct_cmd)
+                cp2 = _run(
+                    build_selfhost_diff_cmd(
+                        src,
+                        out_sh,
+                        selfhost_bin,
+                        selfhost_target,
+                        args.selfhost_driver,
+                        bridge_tool,
+                    )
+                )
             if cp2.returncode != 0:
                 msg = (cp2.stderr.strip() or cp2.stdout.strip())
                 if args.mode == "allow-not-implemented" and "[not_implemented]" in msg:

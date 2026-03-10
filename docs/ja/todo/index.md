@@ -76,7 +76,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `program_loader` の in-memory module doc 受理も `coerce_json_object_dict()` に統一し、`typed_boundary.py` の compiler-root raw/meta 参照は helper 内へ閉じた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] これで dynamic carrier は `toolchain.json_adapters`・`RuntimeHookAdapter`・`AmbientExternBinding`・`pytra.std.json` の明示 seam に集約され、compiler/toolchain 本体から generic raw access は後退した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] compiler/toolchain lane に残る `make_object` / `py_to` / `obj_to_*` usage は native `transpile_cli.cpp` の legacy import seam だけに絞られたため、`P2-object-bridge: legacy_migration_adapter` ラベルと `tools/check_compiler_object_bridge_labels.py` guard を追加し、未分類・再流入を fail-fast 化した。
-- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] selfhost build/parity regression として `build_selfhost_stage2.py` の stage1->stage2 command/fallback と `verify_selfhost_end_to_end.py` の auto-target/stdout normalization を unit test で固定し始めた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] selfhost build/diff/parity regression として `build_selfhost_stage2.py` の stage1->stage2 command/fallback、`check_selfhost_cpp_diff.py` の direct/bridge command、`verify_selfhost_end_to_end.py` の auto-target/stdout normalization を unit test で固定し始めた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] selfhost `prepare` / `verify` に加えて `build_selfhost_stage2` / `check_selfhost_stage2_cpp_diff` の command・fallback も unit test 化し、typed boundary 変更後の stage2 build/diff regressions を固定し始めた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] `test_prepare_selfhost_source.py` では generated selfhost core の `make_object` residual bucket を category map と和集合 invariant で固定し、export seam と parser residual の再崩れを selfhost regression として検知できるようにした。
 

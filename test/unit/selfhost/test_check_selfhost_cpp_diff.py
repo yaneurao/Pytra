@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import importlib.util
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
@@ -51,6 +53,70 @@ class CheckSelfhostCppDiffNormalizeTest(unittest.TestCase):
                 "test/fixtures/core/add.py",
                 "sample/py/01_mandelbrot.py",
             },
+        )
+
+    def test_resolve_selfhost_target_auto_prefers_cpp_only_when_help_advertises_target(self) -> None:
+        mod = _load_module()
+        selfhost_bin = ROOT / "selfhost" / "py2cpp.out"
+        with patch.object(
+            mod.subprocess,
+            "run",
+            return_value=subprocess.CompletedProcess(["--help"], 0, stdout="usage: py2cpp --target cpp", stderr=""),
+        ):
+            self.assertEqual(mod._resolve_selfhost_target(selfhost_bin, "auto"), "cpp")
+        with patch.object(
+            mod.subprocess,
+            "run",
+            return_value=subprocess.CompletedProcess(["--help"], 0, stdout="usage: py2cpp", stderr=""),
+        ):
+            self.assertEqual(mod._resolve_selfhost_target(selfhost_bin, "auto"), "")
+        self.assertEqual(mod._resolve_selfhost_target(selfhost_bin, "bridge"), "bridge")
+
+    def test_build_host_transpile_cmd_uses_py2x_selfhost_cpp_target(self) -> None:
+        mod = _load_module()
+        src = ROOT / "test" / "fixtures" / "core" / "add.py"
+        out_cpp = Path("/tmp/out.cpp")
+        self.assertEqual(
+            mod.build_host_transpile_cmd(src, out_cpp),
+            [
+                "python3",
+                str(ROOT / "src" / "py2x-selfhost.py"),
+                str(src),
+                "--target",
+                "cpp",
+                "-o",
+                str(out_cpp),
+            ],
+        )
+
+    def test_build_selfhost_diff_cmd_uses_bridge_driver_and_optional_target(self) -> None:
+        mod = _load_module()
+        src = ROOT / "test" / "fixtures" / "core" / "add.py"
+        out_cpp = Path("/tmp/out.cpp")
+        selfhost_bin = ROOT / "selfhost" / "py2cpp.out"
+        bridge_tool = ROOT / "tools" / "selfhost_transpile.py"
+        self.assertEqual(
+            mod.build_selfhost_diff_cmd(src, out_cpp, selfhost_bin, "cpp", "bridge", bridge_tool),
+            [
+                "python3",
+                str(bridge_tool),
+                str(src),
+                "-o",
+                str(out_cpp),
+                "--selfhost-bin",
+                str(selfhost_bin),
+                "--target",
+                "cpp",
+            ],
+        )
+        self.assertEqual(
+            mod.build_selfhost_diff_cmd(src, out_cpp, selfhost_bin, "", "direct", bridge_tool),
+            [
+                str(selfhost_bin),
+                str(src),
+                "-o",
+                str(out_cpp),
+            ],
         )
 
 
