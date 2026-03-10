@@ -89,6 +89,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
     def test_backend_registry_intentional_differences_are_limited(self) -> None:
         host_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry.py").read_text(encoding="utf-8")
         static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
+        shared_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_shared.py").read_text(encoding="utf-8")
 
         self.assertIn("import importlib", host_src)
         self.assertIn("_SPEC_CACHE: dict[str, ResolvedBackendSpec] = {}", host_src)
@@ -106,6 +107,13 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("get_runtime_hook_descriptor(", static_src)
         self.assertIn("get_program_writer_ref(", host_src)
         self.assertIn("get_program_writer_ref(", static_src)
+        self.assertIn("def copy_runtime_files(", shared_src)
+        self.assertIn("def copy_php_runtime_files(", shared_src)
+        self.assertIn("def default_output_path_for(", shared_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import copy_runtime_files", host_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import copy_runtime_files", static_src)
+        self.assertNotIn("def _copy_runtime_files(", host_src)
+        self.assertNotIn("def _copy_runtime_files(", static_src)
 
     def test_backend_registry_unsupported_target_contract_matches(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "unsupported target: missing-target"):

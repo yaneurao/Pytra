@@ -20,6 +20,11 @@ from toolchain.compiler.backend_registry_metadata import get_backend_runtime_hoo
 from toolchain.compiler.backend_registry_metadata import get_program_writer_ref
 from toolchain.compiler.backend_registry_metadata import get_runtime_hook_descriptor
 from toolchain.compiler.backend_registry_metadata import list_backend_targets as metadata_backend_targets
+from toolchain.compiler.backend_registry_shared import copy_php_runtime_files
+from toolchain.compiler.backend_registry_shared import copy_runtime_files
+from toolchain.compiler.backend_registry_shared import default_output_path_for
+from toolchain.compiler.backend_registry_shared import registry_src_root
+from toolchain.compiler.backend_registry_shared import runtime_none
 from toolchain.compiler.typed_boundary import LayerOptionsCarrier
 from toolchain.compiler.typed_boundary import ModuleArtifactCarrier
 from toolchain.compiler.typed_boundary import ProgramArtifactCarrier
@@ -46,10 +51,7 @@ from toolchain.compiler.typed_boundary import apply_runtime_hook_with_spec
 
 
 BackendSpec = dict
-
-
-def _src_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+_SRC_ROOT = registry_src_root(__file__)
 
 
 def _identity_ir(doc: Any) -> dict:
@@ -58,58 +60,6 @@ def _identity_ir(doc: Any) -> dict:
 
 def _empty_emit(_ir: Any, _output_path: Path, _emitter_options: Any = None) -> str:
     return ""
-
-
-def _default_output_path_for(input_path: Path, ext: str) -> Path:
-    stem = str(input_path)
-    if stem.endswith(".py"):
-        stem = stem[:-3]
-    elif stem.endswith(".json"):
-        stem = stem[:-5]
-    return Path(stem + ext)
-
-
-def _copy_runtime_file(src_rel: str, output_path: Path, dst_name: str) -> None:
-    src = _src_root() / src_rel
-    if not src.exists():
-        raise RuntimeError("runtime source not found: " + str(src))
-    dst = output_path.parent / dst_name
-    dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
-
-
-def _copy_runtime_files(file_specs: list[object], output_path: Path) -> None:
-    for item in file_specs:
-        if not isinstance(item, (list, tuple)) or len(item) != 2:
-            raise RuntimeError("invalid runtime file descriptor")
-        src_rel = item[0]
-        dst_name = item[1]
-        if not isinstance(src_rel, str) or not isinstance(dst_name, str):
-            raise RuntimeError("invalid runtime file descriptor")
-        _copy_runtime_file(src_rel, output_path, dst_name)
-
-
-def _copy_php_runtime_files(file_specs: list[object], output_path: Path) -> None:
-    src_root = _src_root() / "runtime" / "php"
-    if not src_root.exists():
-        raise RuntimeError("php runtime source root not found: " + str(src_root))
-    dst_root = output_path.parent / "pytra"
-    for item in file_specs:
-        if not isinstance(item, (list, tuple)) or len(item) != 2:
-            raise RuntimeError("invalid php runtime file descriptor")
-        src_rel = item[0]
-        dst_rel = item[1]
-        if not isinstance(src_rel, str) or not isinstance(dst_rel, str):
-            raise RuntimeError("invalid php runtime file descriptor")
-        src = src_root / src_rel
-        if not src.exists():
-            raise RuntimeError("php runtime source missing: " + str(src))
-        dst = dst_root / dst_rel
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
-
-
-def _runtime_none(_output_path: Path) -> None:
-    return
 
 
 def _module_symbol(mod: Any, symbol_name: str) -> Any:
@@ -205,13 +155,13 @@ def _runtime_hook_from_key(runtime_key: str) -> Any:
     files_any = descriptor.get("files", [])
     files = files_any if isinstance(files_any, list) else []
     if kind == "none":
-        return _runtime_none
+        return runtime_none
     if kind == "js_shims":
         return _runtime_js_shims
     if kind == "copy_files":
-        return lambda output_path: _copy_runtime_files(files, output_path)
+        return lambda output_path: copy_runtime_files(_SRC_ROOT, files, output_path)
     if kind == "php_runtime":
-        return lambda output_path: _copy_php_runtime_files(files, output_path)
+        return lambda output_path: copy_php_runtime_files(_SRC_ROOT, files, output_path)
     raise RuntimeError("unsupported runtime hook kind: " + runtime_key)
 
 
@@ -249,7 +199,7 @@ def _normalize_backend_runtime_spec(spec: BackendSpec) -> ResolvedBackendSpec:
         spec,
         identity_ir=_identity_ir,
         empty_emit=_empty_emit,
-        runtime_none=_runtime_none,
+        runtime_none=runtime_none,
         default_program_writer=_load_callable_ref(get_program_writer_ref("single_file")),
         suppress_emit_exceptions=True,
     )
@@ -285,7 +235,7 @@ def get_backend_spec(target: str) -> BackendSpec:
 
 def default_output_path(input_path: Path, target: str) -> Path:
     spec = get_backend_spec_typed(target)
-    return _default_output_path_for(input_path, spec.carrier.extension)
+    return default_output_path_for(input_path, spec.carrier.extension)
 
 
 def resolve_layer_options_typed(
