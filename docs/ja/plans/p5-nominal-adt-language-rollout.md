@@ -76,7 +76,7 @@
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-02] `P1-EAST-TYPEEXPR-01` と責務が衝突しないように、型基盤・narrowing 基盤・full language feature の境界を decision log に固定する。
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-01] `spec-east` / `spec-user` / `spec-dev` に nominal ADT declaration surface、pattern node、`match` node、diagnostic 契約を追加する。
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] exhaustiveness / duplicate pattern / unreachable branch の静的検証方針と error category を固定する。
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] frontend と selfhost parser を更新し、representative nominal ADT syntax を受理できるようにする。
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] frontend と selfhost parser を更新し、representative nominal ADT syntax を受理できるようにする。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] EAST/EAST3 に ADT constructor、variant test、variant projection、`match` lowering を導入する。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] built-in `JsonValue` lane と user-defined nominal ADT lane が同じ IR category に乗ることを representative test で確認する。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] representative backend（まず C++）で constructor / variant check / destructuring / `match` の最小実装を入れ、silent fallback を禁止する。
@@ -194,3 +194,4 @@
 - 2026-03-11: `S2-02` として、closed nominal ADT family に対する `Match` は exhaustive 必須、duplicate pattern / unreachable branch は `semantic_conflict` で fail-closed とし、coverage summary は `Match.meta.match_analysis_v1` で保持する方針を固定した。
 - 2026-03-11: `S3-01` の representative parser として、selfhost parser は `@sealed` family、same-module に先行定義された family からの variant、payload variant の `@dataclass` 必須、`ClassDef.meta.nominal_adt_v1` 付与までを受理する方針で進めることにした。
 - 2026-03-11: `S3-01` では imported family や family より前に定義された variant までは扱わず、まず same-module / family-first の representative case を正本にすることにした。
+- 2026-03-11: `S3-01` を閉じ、representative parser case は `@sealed` family、same-module family-first variant、payload variant の `@dataclass` 必須、`ClassDef.meta.nominal_adt_v1` 生成、misuse の fail-closed 診断まで通す方針で固定した。

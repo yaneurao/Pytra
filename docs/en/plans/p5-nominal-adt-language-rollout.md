@@ -76,7 +76,7 @@ Planned verification commands:
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-02] Fix the boundary between type-system base work and full language-feature work so this plan does not overlap with `P1-EAST-TYPEEXPR-01`.
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-01] Extend `spec-east` / `spec-user` / `spec-dev` with nominal-ADT declaration surface, pattern nodes, match nodes, and diagnostic contracts.
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] Fix the static-check policy and error categories for exhaustiveness, duplicate patterns, and unreachable branches.
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] Update frontend and selfhost parser paths so they can accept representative nominal-ADT syntax.
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] Update frontend and selfhost parser paths so they can accept representative nominal-ADT syntax.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] Introduce ADT constructors, variant tests, variant projection, and `match` lowering into EAST/EAST3.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] Verify through representative tests that built-in `JsonValue` and user-defined nominal ADTs use the same IR category.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] Implement the minimal constructor / variant-check / destructuring / `match` path in a representative backend (first C++) and forbid silent fallback.
@@ -194,3 +194,4 @@ Decision log:
 - 2026-03-11: Closed `S2-02` by fixing the rule that `Match` over a closed nominal ADT family must be exhaustive, while duplicate patterns and unreachable branches fail closed with `semantic_conflict`, and by recording the coverage summary in `Match.meta.match_analysis_v1`.
 - 2026-03-11: For `S3-01`, fixed the representative parser scope to selfhost acceptance of `@sealed` families, variants whose family is defined earlier in the same module, mandatory `@dataclass` on payload variants, and `ClassDef.meta.nominal_adt_v1` emission for those representative cases.
 - 2026-03-11: For `S3-01`, deferred imported-family support and variants declared before their family; the canonical first parser milestone is same-module, family-first nominal ADT syntax.
+- 2026-03-11: Closed `S3-01` with representative parser support for `@sealed` families, same-module family-first variants, mandatory `@dataclass` payload variants, `ClassDef.meta.nominal_adt_v1` emission, and fail-closed misuse diagnostics.

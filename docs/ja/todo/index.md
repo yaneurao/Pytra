@@ -44,8 +44,8 @@
    - 進捗メモ: Stage A の `@sealed` family / top-level variant surface、Stage B の `Match`/pattern schema、fail-closed diagnostic 契約を spec に追加した。
 5. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] exhaustiveness / duplicate pattern / unreachable branch の静的検証方針と error category を固定する。
    - 進捗メモ: closed family の `Match` は exhaustive 必須、duplicate/unreachable を `semantic_conflict` で止める契約を spec に追加した。
-6. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] frontend と selfhost parser を更新し、representative nominal ADT syntax を受理できるようにする。
-   - 進捗メモ: selfhost parser は `@sealed` family、same-module variant、payload variant の `@dataclass` 必須と `ClassDef.meta.nominal_adt_v1` 生成を受理する段階まで進んだ。
+6. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] frontend と selfhost parser を更新し、representative nominal ADT syntax を受理できるようにする。
+   - 進捗メモ: selfhost parser は `@sealed` family、same-module variant、payload variant の `@dataclass` 必須と `ClassDef.meta.nominal_adt_v1` 生成を受理する代表ケースまで通した。
 7. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] EAST/EAST3 に ADT constructor、variant test、variant projection、`match` lowering を導入する。
 8. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] built-in `JsonValue` lane と user-defined nominal ADT lane が同じ IR category に乗ることを representative test で確認する。
 9. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] representative backend（まず C++）で constructor / variant check / destructuring / `match` の最小実装を入れ、silent fallback を禁止する。

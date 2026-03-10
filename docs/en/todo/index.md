@@ -44,8 +44,8 @@ Context: [docs/ja/plans/p5-nominal-adt-language-rollout.md](../plans/p5-nominal-
    - Progress memo: added the Stage-A `@sealed` family / top-level variant surface, the Stage-B `Match`/pattern schema, and fail-closed diagnostics contracts to the specs.
 5. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] Fix the policy and error categories for exhaustiveness checks, duplicate patterns, and unreachable branches.
    - Progress memo: the specs now require exhaustive `Match` over closed families and stop duplicate/unreachable branches with `semantic_conflict`.
-6. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] Update the frontend and selfhost parser so representative nominal-ADT syntax is accepted.
-   - Progress memo: the selfhost parser now accepts `@sealed` families, same-module variants, mandatory `@dataclass` payload variants, and emits `ClassDef.meta.nominal_adt_v1` for those representative cases.
+6. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] Update the frontend and selfhost parser so representative nominal-ADT syntax is accepted.
+   - Progress memo: the selfhost parser now accepts the representative `@sealed` family, same-module variant, mandatory `@dataclass` payload variant, and `ClassDef.meta.nominal_adt_v1` cases end-to-end.
 7. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] Introduce ADT constructors, variant tests, variant projections, and `match` lowering into EAST/EAST3.
 8. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] Confirm through representative tests that the built-in `JsonValue` lane and user-defined nominal-ADT lane share the same IR category.
 9. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] Implement the minimum representative backend support, starting with C++, for constructors, variant checks, destructuring, and `match`, and forbid silent fallbacks.
