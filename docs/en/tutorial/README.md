@@ -108,6 +108,35 @@ Notes:
 - `@template` is currently v1 for linked runtime helpers, not for general user code.
 - If you only want to transpile and run ordinary `.py` files, you do not need `@extern`, `@abi`, or `@template` at first.
 
+## Small Nominal ADT Example
+
+The nominal ADT v1 source surface is `@sealed` plus top-level variants plus `isinstance`.
+
+```python
+from dataclasses import dataclass
+
+@sealed
+class Maybe:
+    pass
+
+@dataclass
+class Just(Maybe):
+    value: int
+
+class Nothing(Maybe):
+    pass
+
+def unwrap_or_zero(x: Maybe) -> int:
+    if isinstance(x, Just):
+        return x.value
+    return 0
+```
+
+Notes:
+- This is the current canonical user surface.
+- The nominal ADT `match/case` contract is already fixed in the representative EAST3 / backend lane, but the source parser still treats `isinstance` plus field access as the canonical accepted surface.
+- C++ is the representative backend. Other backends still fail closed on nominal ADT lanes according to the rollout policy.
+
 ## Related Links
 
 - Specification Index: [index.md](../spec/index.md)

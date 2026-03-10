@@ -81,7 +81,7 @@ Planned verification commands:
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] Verify through representative tests that built-in `JsonValue` and user-defined nominal ADTs use the same IR category.
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] Implement the minimal constructor / variant-check / destructuring / `match` path in a representative backend (first C++) and forbid silent fallback.
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] Organize rollout order and fail-closed policy for other backends, and fix diagnostics for unsupported targets.
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] Refresh selfhost / docs / archive / migration notes and close the full nominal-ADT rollout plan.
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] Refresh selfhost / docs / archive / migration notes and close the full nominal-ADT rollout plan.
 
 ### S5-01 Rollout Order And Fail-Closed Policy
 
@@ -215,3 +215,4 @@ Decision log:
 - 2026-03-11: As the first `S5-01` slice, fixed the rollout order to `C++ -> Rust -> C# -> the rest`, and locked Rust/C# to fail closed with `unsupported_syntax` for representative nominal ADT v1 `ClassDef.meta.nominal_adt_v1`, `Match`, and `NominalAdtProjection` lanes.
 - 2026-03-11: Closed `S5-01` by fixing the multi-backend rollout order as `Rust/C#/Go/Java/Kotlin/Scala/Swift/Nim`, then shared-JS `JS/TS`, then `Lua/Ruby/PHP`.
 - 2026-03-11: Closed `S5-01` by fixing the unsupported-backend contract to fail close through the Rust/C# lane-level `unsupported_syntax` guard or, for the remaining targets, backend-local `unsupported stmt kind: Match` diagnostics, and by removing Nim's old `# unsupported stmt` comment fallback.
+- 2026-03-11: Closed `S5-02` by syncing `spec-user`, the tutorial, the C++ support matrix, and selfhost support-block guards to the formal nominal ADT v1 surface, and by fixing the migration note so Stage A remains the canonical `@sealed` + variant + `isinstance` source surface while the representative `match` lane stays a Stage B contract.

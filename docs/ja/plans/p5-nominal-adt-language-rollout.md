@@ -81,7 +81,7 @@
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] built-in `JsonValue` lane と user-defined nominal ADT lane が同じ IR category に乗ることを representative test で確認する。
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] representative backend（まず C++）で constructor / variant check / destructuring / `match` の最小実装を入れ、silent fallback を禁止する。
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] 他 backend への rollout 順と fail-closed policy を整理し、未対応 target の診断を固定する。
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] selfhost / docs / archive / migration note を更新し、正式言語機能としての nominal ADT rollout を閉じる。
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] selfhost / docs / archive / migration note を更新し、正式言語機能としての nominal ADT rollout を閉じる。
 
 ### S5-01 rollout 順と fail-closed policy
 
@@ -215,3 +215,4 @@
 - 2026-03-11: `S5-01` の first slice として rollout 順を `C++ -> Rust -> C# -> それ以外` に固定し、Rust/C# は representative nominal ADT v1 の `ClassDef.meta.nominal_adt_v1`、`Match`、`NominalAdtProjection` を `unsupported_syntax` で fail-closed にする方針をコードと test で固定した。
 - 2026-03-11: `S5-01` を閉じ、multi-backend rollout 順は `Rust/C#/Go/Java/Kotlin/Scala/Swift/Nim` を先頭、shared JS emitter を使う `JS/TS` を次段、`Lua/Ruby/PHP` を最終段に固定した。
 - 2026-03-11: `S5-01` を閉じ、未対応 backend の representative nominal ADT lane は `Rust/C#` の lane-level `unsupported_syntax` guard と、それ以外の backend が返す `unsupported stmt kind: Match` の 2 段で fail-closed する契約を固定した。Nim backend の `# unsupported stmt` comment fallback は撤去した。
+- 2026-03-11: `S5-02` を閉じ、`spec-user` / tutorial / C++ support matrix / selfhost support-block guard を nominal ADT v1 の正式 surface に同期し、canonical source は Stage A の `@sealed` + variant + `isinstance`、representative `match` lane は Stage B contract として migration note に固定した。

@@ -7,5 +7,7 @@
 
 各ターゲット言語の個別仕様をまとめた入口です。
 
+- 共通 language feature:
+  - nominal ADT v1 の canonical surface と staged rollout: [nominal ADT v1 ガイド](./nominal-adt-v1.md)
 - C++:
   - サポート状況（テスト根拠つき）: [py2cpp サポートマトリクス](./cpp/spec-support.md)

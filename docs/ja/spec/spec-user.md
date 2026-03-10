@@ -45,7 +45,9 @@ Pytra は、型注釈付き Python コードを複数言語へ変換するトラ
   - constructor surface は variant class への通常の call (`Ok(...)`, `Err(...)`) を正本とし、family class 自体は constructor entrypoint にしません。
   - canonical な variant access surface は `isinstance(x, Variant)` と、その成功 branch での field access です。
   - nested variant class、`adt` 専用 block、`Result.Ok(...)` のような namespace sugar は v1 に含めません。
-- `match/case` による nominal ADT 分解は statement-first の Stage B surface として予約します。
+- `match/case` による nominal ADT 分解は statement-first の Stage B surface として契約を固定します。
+  - 現時点で selfhost parser から直接使う canonical source surface は Stage A の `isinstance` + field access です。
+  - representative な EAST3 / backend lane では `Match` / `VariantPattern` / `PatternBind` metadata が固定済みで、source parser が `match/case` を受理するときも同じ contract を使います。
   - closed family に対する `match` は exhaustive でなければなりません。v1 では「各 variant を 1 回ずつ列挙する」か「末尾の `_` wildcard で残りを受ける」のどちらかを正本とします。
   - 同じ variant を複数回書くこと、または coverage が閉じた後ろに branch を置くことは error です。
   - `match` expression、guard pattern、nested pattern は v1 の受理対象に含めません。
@@ -140,4 +142,4 @@ python -m unittest discover -s test/unit/common -p "test_fixtures_truth.py" -v
 - 使い方: [tutorial/how-to-use.md](../tutorial/how-to-use.md)
 - py2cpp 機能対応表（テスト根拠）: [py2cpp サポートマトリクス](../language/cpp/spec-support.md)
 - サンプルコード: [サンプルコード案内](../../sample/readme-ja.md)
-- 実装状況詳細: [実装状況メモ（WIP）](../plans/pytra-wip.md)
+- 実装状況詳細: [実装状況メモ（WIP）](../plans/archive/pytra-wip.md)

@@ -111,6 +111,35 @@ def py_min(a: T, b: T) -> T:
 - `@template` は現状 user code 全般ではなく、linked runtime helper 向けの v1 です。
 - ふつうに `.py` を変換して動かすだけなら、最初は `@extern` / `@abi` / `@template` を使わなくて構いません。
 
+## nominal ADT の最小例
+
+nominal ADT v1 の source surface は `@sealed` + top-level variant + `isinstance` です。
+
+```python
+from dataclasses import dataclass
+
+@sealed
+class Maybe:
+    pass
+
+@dataclass
+class Just(Maybe):
+    value: int
+
+class Nothing(Maybe):
+    pass
+
+def unwrap_or_zero(x: Maybe) -> int:
+    if isinstance(x, Just):
+        return x.value
+    return 0
+```
+
+補足:
+- これが現時点の canonical user surface です。
+- `match/case` の nominal ADT contract 自体は representative な EAST3 / backend lane で固定済みですが、source parser から直接受理する surface はまだ `isinstance` + field access を正本にしています。
+- representative backend は C++ です。他 backend の nominal ADT lane は rollout 順に従って fail-closed します。
+
 ## 関連リンク
 
 - 仕様書トップ: [index.md](../spec/index.md)

@@ -55,4 +55,5 @@
 10. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] 他 backend への rollout 順と fail-closed policy を整理し、未対応 target の診断を固定する。
    - 進捗メモ: rollout 順は `Rust/C#/Go/Java/Kotlin/Scala/Swift/Nim` → `JS/TS` → `Lua/Ruby/PHP` に固定し、未対応 target は `Rust/C#` の lane-level `unsupported_syntax` か、それ以外の `unsupported stmt kind: Match` で fail-closed するように揃え、Nim の comment fallback も撤去した。
    - 進捗メモ: first slice として Rust/C# は representative nominal ADT v1 の `declaration` / `Match` / `NominalAdtProjection` を `unsupported_syntax` で fail-closed に固定した。
-11. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] selfhost / docs / archive / migration note を更新し、正式言語機能としての nominal ADT rollout を閉じる。
+11. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] selfhost / docs / archive / migration note を更新し、正式言語機能としての nominal ADT rollout を閉じる。
+   - 進捗メモ: `spec-user` / tutorial / C++ support matrix と selfhost support-block guard を nominal ADT v1 の正式 surface に同期し、Stage A canonical source と Stage B `match` contract の migration note を固定した。

@@ -241,6 +241,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def normalize_type_text(raw_text: str, *, type_aliases: dict[str, str] | None = None) -> str:", support_blocks)
         self.assertIn("if name in _JSON_NOMINALS:", support_blocks)
         self.assertIn("\"kind\": \"NominalAdtType\"", support_blocks)
+        self.assertIn("\"variant_domain\": \"closed\"", support_blocks)
         self.assertIn("def split_ws_tokens(text: str) -> list[str]:", support_blocks)
         self.assertIn("def normalize_param_annotation(ann: str) -> str:", support_blocks)
         self.assertIn("def extract_function_signatures_from_python_source(src_path: Path)", support_blocks)
@@ -341,6 +342,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def normalize_type_text(raw_text: str, *, type_aliases: dict[str, str] | None = None) -> str:", support_blocks)
         self.assertIn("if name in _JSON_NOMINALS:", support_blocks)
         self.assertIn("\"kind\": \"NominalAdtType\"", support_blocks)
+        self.assertIn("\"variant_domain\": \"closed\"", support_blocks)
 
     def test_load_cpp_hooks_uses_factory_fallback_in_merged_source(self) -> None:
         mod = _load_prepare_module()

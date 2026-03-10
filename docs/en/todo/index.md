@@ -55,4 +55,5 @@ Context: [docs/ja/plans/p5-nominal-adt-language-rollout.md](../plans/p5-nominal-
 10. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] Define rollout order and fail-closed policy for other backends, and fix diagnostics for unsupported targets.
    - Progress memo: The rollout order is fixed as `Rust/C#/Go/Java/Kotlin/Scala/Swift/Nim` -> `JS/TS` -> `Lua/Ruby/PHP`; unsupported targets now fail close either through the Rust/C# lane-level `unsupported_syntax` guard or, for the remaining targets, backend-local `unsupported stmt kind: Match` diagnostics, and Nim's old comment fallback is gone.
    - Progress memo: as the first slice, Rust and C# now fail closed with `unsupported_syntax` for representative nominal ADT v1 `declaration`, `Match`, and `NominalAdtProjection` lanes.
-11. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] Update selfhost / docs / archive / migration notes and close the rollout as a formal language feature.
+11. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] Update selfhost / docs / archive / migration notes and close the rollout as a formal language feature.
+   - Progress memo: Synced `spec-user`, the tutorial, the C++ support matrix, and selfhost support-block guards to the formal nominal ADT v1 surface, and fixed the migration note between the Stage A canonical source surface and the Stage B `match` contract.

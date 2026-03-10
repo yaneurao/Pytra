@@ -9,6 +9,7 @@ The related documents are listed below in the order they are most frequently ref
 - Review option design (performance/compatibility trade-offs): [Options Specification](spec/spec-options.md)
 - Review runtime layout and include conventions: [Runtime Specification](spec/spec-runtime.md)
 - Check implemented / unimplemented / out-of-scope items: [Implementation Status Notes](plans/pytra-wip.md)
+- Check the canonical nominal ADT v1 surface and staged rollout: [nominal ADT v1 Guide](language/nominal-adt-v1.md)
 - Check `py2cpp` feature coverage (with test evidence): [py2cpp Support Matrix](language/cpp/spec-support.md)
 - Browse sample list and overview: [Sample Code Guide](../../sample/readme.md)
 - Review specs, constraints, architecture, and operational rules: [Specification Index](spec/index.md)

@@ -5,7 +5,7 @@
 </a>
 
 
-最終更新: 2026-02-22
+最終更新: 2026-03-11
 
 この文書は、`src/py2cpp.py` の言語機能サポート状況を「実装コード」と「実行テスト」の両方で確認できる粒度でまとめたものです。
 
@@ -59,6 +59,8 @@
 |---|---|---|---|
 | `super().__init__()` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1379`, `test/fixtures/oop/super_init.py:1` |
 | `@dataclass` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1519`, `test/fixtures/stdlib/dataclasses_extended.py:1` |
+| nominal ADT v1（`@sealed` family / variant ctor / `isinstance` + projection） | supported | representative v1 は既存 class lane を再利用してサポート済み。`@sealed` family、top-level variant、payload `@dataclass`、variant ctor、`isinstance` 判定、projection が通る。 | `test/unit/backends/cpp/test_py2cpp_codegen_issues.py:1339`, `test/unit/backends/cpp/test_east3_cpp_bridge.py:188` |
+| nominal ADT `Match`（representative EAST3 lane） | partial | `NominalAdtMatch` lane は `if / else if` へ lower される。source `match/case` parser surface はまだ staged で、plain `Match` は fail-closed。 | `test/unit/backends/cpp/test_east3_cpp_bridge.py:195`, `test/unit/backends/cpp/test_noncpp_east3_contract_guard.py:225` |
 | `Enum` / `IntEnum` / `IntFlag` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1453`, `test/unit/test_py2cpp_features.py:1459`, `test/unit/test_py2cpp_features.py:1465` |
 | `Any` 系（基本） | supported | サポート済み（`Any`/`None`/混在 list/dict を回帰確認）。 | `test/unit/test_py2cpp_features.py:1265`, `test/unit/test_py2cpp_features.py:1271`, `test/unit/test_py2cpp_features.py:1277`, `test/unit/test_py2cpp_features.py:1289` |
 | `object` レシーバへの属性/メソッド呼び出し | unsupported | emit guard で拒否。 | `test/unit/test_py2cpp_features.py:1531` |

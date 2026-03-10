@@ -6,5 +6,7 @@
 
 This is the entry point for per-target-language specifications.
 
+- Shared language features:
+  - Canonical nominal ADT v1 surface and staged rollout: [nominal ADT v1 Guide](./nominal-adt-v1.md)
 - C++:
   - Support status (with test evidence): [py2cpp Support Matrix](./cpp/spec-support.md)

@@ -4,7 +4,7 @@
 
 # py2cpp Support Matrix (Test-Aligned)
 
-Last updated: 2026-02-21
+Last updated: 2026-03-11
 
 This document summarizes language-feature support status in `src/py2cpp.py` at a granularity verifiable through both implementation code and runtime tests.
 
@@ -58,6 +58,8 @@ This document summarizes language-feature support status in `src/py2cpp.py` at a
 |---|---|---|---|
 | `super().__init__()` | supported | Supported. | `test/unit/test_py2cpp_features.py:1379`, `test/fixtures/oop/super_init.py:1` |
 | `@dataclass` | supported | Supported. | `test/unit/test_py2cpp_features.py:1519`, `test/fixtures/stdlib/dataclasses_extended.py:1` |
+| nominal ADT v1 (`@sealed` family / variant ctor / `isinstance` + projection) | supported | The representative v1 surface reuses the existing class lane. `@sealed` families, top-level variants, payload `@dataclass`, variant constructors, `isinstance` checks, and projection all transpile. | `test/unit/backends/cpp/test_py2cpp_codegen_issues.py:1339`, `test/unit/backends/cpp/test_east3_cpp_bridge.py:188` |
+| nominal ADT `Match` (representative EAST3 lane) | partial | The `NominalAdtMatch` lane lowers to an `if / else if` chain. The source `match/case` parser surface is still staged, and plain `Match` remains fail-closed. | `test/unit/backends/cpp/test_east3_cpp_bridge.py:195`, `test/unit/backends/cpp/test_noncpp_east3_contract_guard.py:225` |
 | `Enum` / `IntEnum` / `IntFlag` | supported | Supported. | `test/unit/test_py2cpp_features.py:1453`, `test/unit/test_py2cpp_features.py:1459`, `test/unit/test_py2cpp_features.py:1465` |
 | `Any` family (basic) | supported | Supported (regression-checked for `Any`/`None`/mixed list-dict cases). | `test/unit/test_py2cpp_features.py:1265`, `test/unit/test_py2cpp_features.py:1271`, `test/unit/test_py2cpp_features.py:1277`, `test/unit/test_py2cpp_features.py:1289` |
 | Attribute/method call on `object` receiver | unsupported | Rejected by emit guard. | `test/unit/test_py2cpp_features.py:1531` |

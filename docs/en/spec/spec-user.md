@@ -41,7 +41,9 @@ Pytra transpiles type-annotated Python code into multiple languages. The canonic
   - The canonical constructor surface is an ordinary variant-class call (`Ok(...)`, `Err(...)`), and the family class itself is not a constructor entrypoint.
   - The canonical variant-access surface is `isinstance(x, Variant)` followed by field access in the success branch.
   - Nested variant classes, dedicated `adt` blocks, and namespace sugar such as `Result.Ok(...)` are outside v1.
-- Nominal ADT destructuring via `match/case` is reserved as the statement-first Stage B surface.
+- Nominal ADT destructuring via `match/case` has its contract fixed as the statement-first Stage B surface.
+  - The current canonical source surface accepted directly by the selfhost parser remains Stage A: `isinstance` plus field access.
+  - The representative EAST3 / backend lane already fixes `Match` / `VariantPattern` / `PatternBind` metadata, and source-parser acceptance of `match/case` will reuse that same contract.
   - A `match` over a closed family must be exhaustive. In v1, the canonical forms are either "list each variant exactly once" or "use a final `_` wildcard branch for the remaining variants."
   - Repeating the same variant or placing more branches after coverage is already closed is an error.
   - `match` expressions, guard patterns, and nested patterns are not part of the v1 accepted surface.
@@ -132,4 +134,4 @@ python -m unittest discover -s test/unit/common -p "test_fixtures_truth.py" -v
 - How to use: [Usage Guide](../how-to-use.md)
 - py2cpp feature support matrix (with test evidence): [C++ Support Matrix](../language/cpp/spec-support.md)
 - Sample code: [Sample Code](../../sample/readme.md)
-- Detailed implementation status: [Pytra WIP Plan](../plans/pytra-wip.md)
+- Detailed implementation status: [Pytra WIP Plan](../plans/archive/pytra-wip.md)
