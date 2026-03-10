@@ -6556,9 +6556,14 @@ class _ShExprParser:
         dict[str, Any],
     ]:
         """Subscript / slice suffix の component parse を helper へ寄せる。"""
-        if self._cur()["k"] == ":":
+        starts_with_slice = self._resolve_subscript_suffix_component_state()
+        if starts_with_slice:
             return self._parse_subscript_slice_tail(lower=None)
         return self._parse_subscript_suffix_first_component()
+
+    def _resolve_subscript_suffix_component_state(self) -> bool:
+        """Subscript suffix の component 先頭 state resolve を helper へ寄せる。"""
+        return self._cur()["k"] == ":"
 
     def _parse_subscript_suffix_first_component(
         self,
@@ -6651,11 +6656,23 @@ class _ShExprParser:
     ]:
         """Subscript / slice suffix の token/state resolve を helper へ寄せる。"""
         index_expr, lower, upper, rtok = self._consume_subscript_suffix_tokens()
-        source_span, repr_text = self._resolve_postfix_span_repr(
+        source_span, repr_text = self._resolve_subscript_suffix_span_repr(
             owner_expr=owner_expr,
             end_tok=rtok,
         )
         return index_expr, lower, upper, source_span, repr_text
+
+    def _resolve_subscript_suffix_span_repr(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        end_tok: dict[str, Any],
+    ) -> tuple[dict[str, int], str]:
+        """Subscript suffix の postfix span/repr resolve を helper へ寄せる。"""
+        return self._resolve_postfix_span_repr(
+            owner_expr=owner_expr,
+            end_tok=end_tok,
+        )
 
     def _consume_subscript_suffix_tokens(
         self,
