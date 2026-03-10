@@ -47,7 +47,7 @@ Validation commands:
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S1-02] Record the cluster-level progress-note rule in this plan and align TODO wording with it.
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] Extract the leading source-contract builder cluster from `test_east_core.py` into a shared support module plus a dedicated test file.
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] Split the remaining source-contract guards into cluster-specific `test_east_core_source_contract_*.py` files.
-- [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Split parser behavior, diagnostics, and representative nominal-ADT tests into dedicated test files.
+- [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Split parser behavior, diagnostics, and representative nominal-ADT tests into dedicated test files.
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Continue moving remaining `core.py` clusters into dedicated modules in bundle-sized slices.
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] Run representative IR/selfhost regressions and stabilize the split with compressed progress notes.
 
@@ -66,3 +66,4 @@ Decision log:
 - 2026-03-11: Added `test/unit/ir/test_east_core_parser_behavior_classes.py`, then moved 7 representative class-storage / dataclass / nominal-ADT / enum parser-behavior tests out of `test_east_core.py`.
 - 2026-03-11: Added `test/unit/ir/test_east_core_parser_behavior_runtime.py`, then moved 12 representative runtime-annotation / builtin-call / pathlib / json / iter-lowering parser-behavior tests out of `test_east_core.py`.
 - 2026-03-11: Added `test/unit/ir/test_east_core_parser_behavior_statements.py`, then moved 6 representative identifier/import ambiguity, `super()`, bare `return`, arg-usage, and trailing-semicolon parser-behavior tests out of `test_east_core.py`. Only 3 residual source-contract regressions remain in the main file.
+- 2026-03-11: `S2-03` is complete now that `test_east_core.py` contains only the 3 residual source-contract regressions. The next bundle is `S3-01`, which will move the declaration / class-semantics cluster out of `core.py` into dedicated modules.

@@ -47,7 +47,7 @@
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S1-02] TODO / plan の進捗メモを cluster 単位へ圧縮する運用ルールをこの計画に反映する。
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] `test_east_core.py` の先頭 source-contract builder cluster を shared support module と専用 test file へ切り出す。
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] 残る source-contract guard を cluster ごとの `test_east_core_source_contract_*.py` へ分割する。
-- [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] parser behavior / diagnostics / nominal ADT representative tests を別 test file へ分割する。
+- [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] parser behavior / diagnostics / nominal ADT representative tests を別 test file へ分割する。
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core.py` 側の残 cluster を bundle 単位で専用 module へ寄せる。
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] representative IR/selfhost regression を通し、分割後の運用メモを圧縮して安定化する。
 
@@ -66,3 +66,4 @@
 - 2026-03-11: `test/unit/ir/test_east_core_parser_behavior_classes.py` を追加し、class storage hint / dataclass / nominal ADT / enum の representative parser behavior 7 本を `test_east_core.py` から切り出した。
 - 2026-03-11: `test/unit/ir/test_east_core_parser_behavior_runtime.py` を追加し、runtime annotation / builtin call / pathlib / json / iter lowering の representative parser behavior 12 本を `test_east_core.py` から切り出した。
 - 2026-03-11: `test/unit/ir/test_east_core_parser_behavior_statements.py` を追加し、identifier/import ambiguity・`super()`・bare `return`・arg usage・trailing semicolon の representative parser behavior 6 本を `test_east_core.py` から切り出した。`test_east_core.py` には residual source-contract 3 本だけが残っている。
+- 2026-03-11: `test_east_core.py` が residual source-contract 3 本だけになったため、`S2-03` は完了とする。次の束は `S3-01` として `core.py` 側の declaration / class-semantics cluster を module 単位で外へ出す。
