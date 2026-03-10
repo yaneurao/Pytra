@@ -878,6 +878,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         subscript_span_text = text.split("def _resolve_subscript_suffix_span_repr", 1)[1].split(
+            "def _consume_subscript_suffix_open_token",
+            1,
+        )[0]
+        open_token_text = text.split("def _consume_subscript_suffix_open_token", 1)[1].split(
             "def _consume_subscript_suffix_tokens",
             1,
         )[0]
@@ -931,7 +935,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("source_span, repr_text = self._resolve_subscript_suffix_span_repr(", state_text)
         self.assertIn("return index_expr, lower, upper, source_span, repr_text", state_text)
         self.assertIn("return self._resolve_postfix_span_repr(", subscript_span_text)
-        self.assertIn('self._eat("[")', token_text)
+        self.assertIn('return self._eat("[")', open_token_text)
+        self.assertIn("self._consume_subscript_suffix_open_token()", token_text)
         self.assertIn("return self._parse_subscript_suffix_components()", token_text)
         self.assertIn(
             "index_expr, lower, upper, source_span, repr_text = self._resolve_subscript_suffix_state(",
@@ -945,6 +950,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("index_expr, lower, upper, rtok = self._parse_subscript_suffix_components()", state_text)
         self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", state_text)
         self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)
+        self.assertNotIn('self._eat("[")', token_text)
         self.assertNotIn("return self._consume_subscript_slice_tail_tokens()", slice_tail_text)
         self.assertNotIn('self._eat(":")', slice_tail_text)
         self.assertNotIn('rtok = self._eat("]")', slice_tail_text)
