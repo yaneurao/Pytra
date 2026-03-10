@@ -5,17 +5,14 @@ from __future__ import annotations
 from typing import Any
 from pytra.std.pathlib import Path
 from toolchain.compiler.backend_registry_metadata import get_program_writer_ref
-from toolchain.compiler.backend_registry_metadata import get_runtime_hook_descriptor
 from toolchain.compiler.backend_registry_metadata import list_backend_targets as metadata_backend_targets
 from toolchain.compiler.backend_registry_shared import build_cpp_emit
 from toolchain.compiler.backend_registry_shared import build_emit_from_target
 from toolchain.compiler.backend_registry_shared import build_java_emit
-from toolchain.compiler.backend_registry_shared import copy_php_runtime_files
-from toolchain.compiler.backend_registry_shared import copy_runtime_files
+from toolchain.compiler.backend_registry_shared import build_runtime_hook_from_key
 from toolchain.compiler.backend_registry_shared import default_output_path_for
 from toolchain.compiler.backend_registry_shared import build_runtime_bound_backend_spec
 from toolchain.compiler.backend_registry_shared import normalize_runtime_backend_spec
-from toolchain.compiler.backend_registry_shared import build_runtime_hook_from_descriptor
 from toolchain.compiler.backend_registry_shared import build_unary_emit
 from toolchain.compiler.backend_registry_shared import empty_emit
 from toolchain.compiler.backend_registry_shared import identity_ir
@@ -143,13 +140,11 @@ def _resolve_callable_ref(symbol_ref: str) -> Any:
 
 
 def _runtime_hook_from_key(runtime_key: str) -> Any:
-    return build_runtime_hook_from_descriptor(
+    return build_runtime_hook_from_key(
         runtime_key,
-        get_runtime_hook_descriptor(runtime_key),
+        src_root=_SRC_ROOT,
         none_hook=runtime_none,
         js_shims_hook=_runtime_js_shims,
-        copy_files_factory=lambda files: lambda output_path: copy_runtime_files(_SRC_ROOT, files, output_path),
-        php_runtime_factory=lambda files: lambda output_path: copy_php_runtime_files(_SRC_ROOT, files, output_path),
     )
 
 

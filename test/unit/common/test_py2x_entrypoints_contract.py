@@ -105,23 +105,22 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("_SPEC_CACHE: dict[str, ResolvedBackendSpec] = {}", static_src)
         self.assertIn("suppress_emit_exceptions=False", static_src)
 
-        self.assertIn("get_runtime_hook_descriptor(", host_src)
-        self.assertIn("get_runtime_hook_descriptor(", static_src)
         self.assertIn("get_program_writer_ref(", host_src)
         self.assertIn("get_program_writer_ref(", shared_src)
+        self.assertIn("get_runtime_hook_descriptor(", shared_src)
         self.assertIn("def copy_runtime_files(", shared_src)
         self.assertIn("def copy_php_runtime_files(", shared_src)
         self.assertIn("def default_output_path_for(", shared_src)
         self.assertIn("def identity_ir(", shared_src)
         self.assertIn("def empty_emit(", shared_src)
         self.assertIn("def build_runtime_hook_from_descriptor(", shared_src)
+        self.assertIn("def build_runtime_hook_from_key(", shared_src)
         self.assertIn("def build_unary_emit(", shared_src)
         self.assertIn("def build_cpp_emit(", shared_src)
         self.assertIn("def build_java_emit(", shared_src)
         self.assertIn("def build_emit_from_target(", shared_src)
         self.assertIn("def build_runtime_bound_backend_spec(", shared_src)
         self.assertIn("def normalize_runtime_backend_spec(", shared_src)
-        self.assertIn("from toolchain.compiler.backend_registry_shared import copy_runtime_files", host_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import build_emit_from_target", host_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import build_cpp_emit", host_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import build_java_emit", host_src)
@@ -130,7 +129,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.compiler.backend_registry_shared import empty_emit", host_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import build_runtime_bound_backend_spec", host_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import normalize_runtime_backend_spec", host_src)
-        self.assertIn("from toolchain.compiler.backend_registry_shared import copy_runtime_files", static_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import build_runtime_hook_from_key", host_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import build_emit_from_target", static_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import build_cpp_emit", static_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import build_java_emit", static_src)
@@ -139,8 +138,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.compiler.backend_registry_shared import empty_emit", static_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import build_runtime_bound_backend_spec", static_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import normalize_runtime_backend_spec", static_src)
-        self.assertIn("from toolchain.compiler.backend_registry_shared import build_runtime_hook_from_descriptor", host_src)
-        self.assertIn("from toolchain.compiler.backend_registry_shared import build_runtime_hook_from_descriptor", static_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import build_runtime_hook_from_key", static_src)
         self.assertNotIn("def _copy_runtime_files(", host_src)
         self.assertNotIn("def _copy_runtime_files(", static_src)
         self.assertNotIn("def _identity_ir(", host_src)
@@ -179,10 +177,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             static_registry._resolve_callable_ref("missing:fn")
 
     def test_backend_registry_runtime_hook_kind_contract_matches(self) -> None:
-        with patch.object(host_registry, "get_runtime_hook_descriptor", return_value={"kind": "broken"}):
+        with patch.object(runtime_registry_shared, "get_runtime_hook_descriptor", return_value={"kind": "broken"}):
             with self.assertRaisesRegex(RuntimeError, "unsupported runtime hook kind: rs"):
                 host_registry._runtime_hook_from_key("rs")
-        with patch.object(static_registry, "get_runtime_hook_descriptor", return_value={"kind": "broken"}):
+        with patch.object(runtime_registry_shared, "get_runtime_hook_descriptor", return_value={"kind": "broken"}):
             with self.assertRaisesRegex(RuntimeError, "unsupported runtime hook kind: rs"):
                 static_registry._runtime_hook_from_key("rs")
 

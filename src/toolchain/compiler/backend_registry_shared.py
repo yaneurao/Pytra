@@ -13,10 +13,23 @@ from toolchain.compiler.backend_registry_metadata import get_backend_optimizer_r
 from toolchain.compiler.backend_registry_metadata import get_backend_program_writer_key
 from toolchain.compiler.backend_registry_metadata import get_backend_runtime_hook_key
 from toolchain.compiler.backend_registry_metadata import get_program_writer_ref
+from toolchain.compiler.backend_registry_metadata import get_runtime_hook_descriptor
+from toolchain.compiler.typed_boundary import apply_runtime_hook_with_spec
+from toolchain.compiler.typed_boundary import build_program_artifact_from_modules
+from toolchain.compiler.typed_boundary import collect_program_module_carriers
 from toolchain.compiler.typed_boundary import ResolvedBackendSpec
 from toolchain.compiler.typed_boundary import build_resolved_backend_spec
 from toolchain.compiler.typed_boundary import coerce_ir_document
+from toolchain.compiler.typed_boundary import emit_source_text_with_spec
+from toolchain.compiler.typed_boundary import execute_emit_module_with_spec
+from toolchain.compiler.typed_boundary import execute_lower_ir_with_spec
+from toolchain.compiler.typed_boundary import execute_optimize_ir_with_spec
 from toolchain.compiler.typed_boundary import export_layer_options_any
+from toolchain.compiler.typed_boundary import export_module_artifact_any
+from toolchain.compiler.typed_boundary import export_program_artifact_any
+from toolchain.compiler.typed_boundary import export_program_module_artifacts
+from toolchain.compiler.typed_boundary import get_program_writer_with_spec
+from toolchain.compiler.typed_boundary import resolve_layer_options_carrier
 
 
 def registry_src_root(module_file: str) -> Path:
@@ -160,6 +173,23 @@ def build_runtime_hook_from_descriptor(
     raise RuntimeError("unsupported runtime hook kind: " + runtime_key)
 
 
+def build_runtime_hook_from_key(
+    runtime_key: str,
+    *,
+    src_root: Path,
+    none_hook: Any,
+    js_shims_hook: Any,
+) -> Any:
+    return build_runtime_hook_from_descriptor(
+        runtime_key,
+        get_runtime_hook_descriptor(runtime_key),
+        none_hook=none_hook,
+        js_shims_hook=js_shims_hook,
+        copy_files_factory=lambda files: lambda output_path: copy_runtime_files(src_root, files, output_path),
+        php_runtime_factory=lambda files: lambda output_path: copy_php_runtime_files(src_root, files, output_path),
+    )
+
+
 def build_runtime_bound_backend_spec(
     target: str,
     *,
@@ -198,3 +228,203 @@ def normalize_runtime_backend_spec(
         default_program_writer=default_program_writer,
         suppress_emit_exceptions=suppress_emit_exceptions,
     )
+
+
+def default_output_path_from_backend_spec(input_path: Path, target: str, *, get_backend_spec_typed: Any) -> Path:
+    spec = get_backend_spec_typed(target)
+    return default_output_path_for(input_path, spec.carrier.extension)
+
+
+def resolve_layer_options_with_backend_spec(
+    spec: Any,
+    layer: str,
+    raw_options: dict[str, str],
+    *,
+    coerce_runtime_spec: Any,
+) -> Any:
+    runtime_spec = coerce_runtime_spec(spec)
+    return resolve_layer_options_carrier(runtime_spec, layer, raw_options)
+
+
+def export_layer_options_with_backend_spec(
+    spec: Any,
+    layer: str,
+    raw_options: dict[str, str],
+    *,
+    coerce_runtime_spec: Any,
+) -> dict[str, Any]:
+    return export_layer_options_any(
+        resolve_layer_options_with_backend_spec(
+            spec,
+            layer,
+            raw_options,
+            coerce_runtime_spec=coerce_runtime_spec,
+        )
+    )
+
+
+def lower_ir_with_backend_spec(
+    spec: Any,
+    east_doc: dict[str, Any] | object,
+    lower_options: Any = None,
+    *,
+    coerce_runtime_spec: Any,
+    suppress_exceptions: bool,
+) -> dict[str, Any]:
+    runtime_spec = coerce_runtime_spec(spec)
+    return execute_lower_ir_with_spec(
+        runtime_spec,
+        east_doc,
+        lower_options,
+        suppress_exceptions=suppress_exceptions,
+    )
+
+
+def optimize_ir_with_backend_spec(
+    spec: Any,
+    ir: dict[str, Any],
+    optimizer_options: Any = None,
+    *,
+    coerce_runtime_spec: Any,
+    suppress_exceptions: bool,
+) -> dict[str, Any]:
+    runtime_spec = coerce_runtime_spec(spec)
+    return execute_optimize_ir_with_spec(
+        runtime_spec,
+        ir,
+        optimizer_options,
+        suppress_exceptions=suppress_exceptions,
+    )
+
+
+def emit_module_with_backend_spec(
+    spec: Any,
+    ir: dict[str, Any],
+    output_path: Path,
+    emitter_options: Any = None,
+    *,
+    module_id: str = "",
+    is_entry: bool = False,
+    coerce_runtime_spec: Any,
+    suppress_exceptions: bool,
+) -> Any:
+    runtime_spec = coerce_runtime_spec(spec)
+    return execute_emit_module_with_spec(
+        runtime_spec,
+        ir,
+        output_path,
+        emitter_options,
+        module_id=module_id,
+        is_entry=is_entry,
+        suppress_exceptions=suppress_exceptions,
+    )
+
+
+def export_module_artifact_with_backend_spec(
+    spec: Any,
+    ir: dict[str, Any],
+    output_path: Path,
+    emitter_options: Any = None,
+    *,
+    module_id: str = "",
+    is_entry: bool = False,
+    coerce_runtime_spec: Any,
+    suppress_exceptions: bool,
+) -> dict[str, Any]:
+    return export_module_artifact_any(
+        emit_module_with_backend_spec(
+            spec,
+            ir,
+            output_path,
+            emitter_options,
+            module_id=module_id,
+            is_entry=is_entry,
+            coerce_runtime_spec=coerce_runtime_spec,
+            suppress_exceptions=suppress_exceptions,
+        )
+    )
+
+
+def collect_program_modules_from_artifact(module_artifact: Any) -> tuple[Any, ...]:
+    return collect_program_module_carriers(module_artifact)
+
+
+def export_program_modules_from_artifact(module_artifact: Any) -> list[dict[str, Any]]:
+    return export_program_module_artifacts(module_artifact)
+
+
+def build_program_artifact_with_backend_spec(
+    spec: Any,
+    modules: list[Any],
+    *,
+    program_id: str = "",
+    entry_modules: list[str] | None = None,
+    layout_mode: str = "single_file",
+    link_output_schema: str = "",
+    writer_options: dict[str, object] | None = None,
+    coerce_runtime_spec: Any,
+) -> Any:
+    runtime_spec = coerce_runtime_spec(spec)
+    return build_program_artifact_from_modules(
+        runtime_spec,
+        modules,
+        program_id=program_id,
+        entry_modules=entry_modules,
+        layout_mode=layout_mode,
+        link_output_schema=link_output_schema,
+        writer_options=writer_options,
+    )
+
+
+def export_program_artifact_with_backend_spec(
+    spec: Any,
+    modules: list[Any],
+    *,
+    program_id: str = "",
+    entry_modules: list[str] | None = None,
+    layout_mode: str = "single_file",
+    link_output_schema: str = "",
+    writer_options: dict[str, object] | None = None,
+    coerce_runtime_spec: Any,
+) -> dict[str, Any]:
+    return export_program_artifact_any(
+        build_program_artifact_with_backend_spec(
+            spec,
+            modules,
+            program_id=program_id,
+            entry_modules=entry_modules,
+            layout_mode=layout_mode,
+            link_output_schema=link_output_schema,
+            writer_options=writer_options,
+            coerce_runtime_spec=coerce_runtime_spec,
+        )
+    )
+
+
+def get_program_writer_from_backend_spec(spec: Any, *, coerce_runtime_spec: Any) -> Any:
+    runtime_spec = coerce_runtime_spec(spec)
+    return get_program_writer_with_spec(runtime_spec)
+
+
+def emit_source_with_backend_spec(
+    spec: Any,
+    ir: dict[str, Any],
+    output_path: Path,
+    emitter_options: Any = None,
+    *,
+    coerce_runtime_spec: Any,
+    suppress_exceptions: bool,
+) -> str:
+    runtime_spec = coerce_runtime_spec(spec)
+    return emit_source_text_with_spec(
+        runtime_spec,
+        ir,
+        output_path,
+        emitter_options,
+        suppress_exceptions=suppress_exceptions,
+    )
+
+
+def apply_runtime_hook_from_backend_spec(spec: Any, output_path: Path, *, coerce_runtime_spec: Any) -> None:
+    runtime_spec = coerce_runtime_spec(spec)
+    apply_runtime_hook_with_spec(runtime_spec, output_path)
