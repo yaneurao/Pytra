@@ -679,7 +679,9 @@ class EastCoreTest(unittest.TestCase):
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
-        self.assertIn('return str(owner_expr.get("resolved_type", "unknown"))', owner_type_text)
+        self.assertIn('owner_t = str(owner_expr.get("resolved_type", "unknown"))', owner_type_text)
+        self.assertIn('owner_t = self.name_types.get(str(owner_expr.get("id", "")), owner_t)', owner_type_text)
+        self.assertIn("return owner_t", owner_type_text)
         self.assertIn('owner_t = self._owner_expr_resolved_type(owner_expr)', helper_text)
         self.assertIn("_sh_make_slice_node(lower, upper)", helper_text)
         self.assertIn("_sh_make_subscript_expr(", helper_text)
@@ -888,6 +890,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         resolve_text = text.split("def _resolve_attr_callee", 1)[1].split(
+            "def _resolve_attr_call_annotation_state",
+            1,
+        )[0]
+        state_text = text.split("def _resolve_attr_call_annotation_state", 1)[1].split(
             "def _apply_attr_call_expr_annotation",
             1,
         )[0]
@@ -905,19 +911,22 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('owner = callee.get("value")', resolve_text)
         self.assertIn("self._resolve_attr_expr_owner_state(", resolve_text)
         self.assertIn("return owner_expr, owner_t, attr", resolve_text)
+        self.assertIn('source_span = payload.get("source_span")', state_text)
+        self.assertIn("return self._resolve_attr_callee(", state_text)
         self.assertIn('_sh_annotate_noncpp_attr_call_expr(', apply_text)
         self.assertIn('_sh_annotate_runtime_method_call_expr(', apply_text)
-        self.assertIn('source_span = payload.get("source_span")', helper_text)
-        self.assertIn("owner_expr, owner_t, attr = self._resolve_attr_callee(", helper_text)
+        self.assertIn("owner_expr, owner_t, attr = self._resolve_attr_call_annotation_state(", helper_text)
         self.assertIn("return self._apply_attr_call_expr_annotation(", helper_text)
         self.assertIn('if callee.get("kind") == "Attribute":', callee_apply_text)
         self.assertIn("return self._annotate_attr_call_expr(", callee_apply_text)
         self.assertIn("return self._apply_callee_call_annotation(", callee_helper_text)
         self.assertIn("return self._annotate_callee_call_expr(", call_apply_text)
         self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
+        self.assertNotIn('source_span = payload.get("source_span")', helper_text)
         self.assertNotIn('attr = str(callee.get("attr", ""))', helper_text)
         self.assertNotIn('owner = callee.get("value")', helper_text)
         self.assertNotIn("self._resolve_attr_expr_owner_state(", helper_text)
+        self.assertNotIn("return self._resolve_attr_callee(", helper_text)
         self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', helper_text)
         self.assertNotIn('_sh_annotate_runtime_method_call_expr(', helper_text)
         self.assertNotIn('if callee.get("kind") == "Attribute":', callee_helper_text)
