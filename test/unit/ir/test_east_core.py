@@ -92,6 +92,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("def _sh_make_import_resolution_binding(", text)
         self.assertIn("def _sh_make_module_meta(", text)
         self.assertIn("def _sh_make_decl_meta(", text)
+        self.assertIn("def _sh_make_nominal_adt_v1_meta(", text)
         self.assertIn("def _sh_import_binding_fields(", text)
         self.assertIn("def _sh_make_import_resolution_binding(", text)
         self.assertIn("def _sh_make_assign_stmt(", text)
@@ -211,6 +212,8 @@ class EastCoreTest(unittest.TestCase):
             text,
         )
         self.assertIn("cls_item = _sh_make_class_def_stmt(", text)
+        self.assertIn("def _sh_collect_nominal_adt_class_metadata(", text)
+        self.assertIn("class_meta = _sh_collect_nominal_adt_class_metadata(", text)
         self.assertNotIn('body_items.append({"kind": "Import"', text)
         self.assertNotIn('body_items.append({"kind": "ImportFrom"', text)
         self.assertNotIn('item = {"kind": "FunctionDef"', text)
@@ -3697,6 +3700,67 @@ class B:
         self.assertEqual(opts_a.get("eq"), False)
         self.assertEqual(opts_b.get("init"), False)
         self.assertEqual(opts_b.get("frozen"), True)
+
+    def test_nominal_adt_family_and_variants_are_parsed(self) -> None:
+        src = """
+from dataclasses import dataclass
+
+@sealed
+class Maybe:
+    pass
+
+@dataclass
+class Just(Maybe):
+    value: int
+
+class Nothing(Maybe):
+    pass
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        classes = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "ClassDef" and n.get("name") in {"Maybe", "Just", "Nothing"}
+        ]
+        self.assertEqual(len(classes), 3)
+        by_name = {str(c.get("name")): c for c in classes}
+
+        maybe = by_name["Maybe"]
+        maybe_meta = maybe.get("meta", {}).get("nominal_adt_v1", {})
+        self.assertEqual(maybe.get("decorators"), ["sealed"])
+        self.assertEqual(maybe_meta.get("role"), "family")
+        self.assertEqual(maybe_meta.get("family_name"), "Maybe")
+        self.assertEqual(maybe_meta.get("surface_phase"), "declaration_v1")
+        self.assertEqual(maybe_meta.get("closed"), 1)
+
+        just = by_name["Just"]
+        just_meta = just.get("meta", {}).get("nominal_adt_v1", {})
+        self.assertTrue(bool(just.get("dataclass")))
+        self.assertEqual(just.get("base"), "Maybe")
+        self.assertEqual(just_meta.get("role"), "variant")
+        self.assertEqual(just_meta.get("family_name"), "Maybe")
+        self.assertEqual(just_meta.get("variant_name"), "Just")
+        self.assertEqual(just_meta.get("payload_style"), "dataclass")
+
+        nothing = by_name["Nothing"]
+        nothing_meta = nothing.get("meta", {}).get("nominal_adt_v1", {})
+        self.assertEqual(nothing.get("base"), "Maybe")
+        self.assertEqual(nothing_meta.get("role"), "variant")
+        self.assertEqual(nothing_meta.get("family_name"), "Maybe")
+        self.assertEqual(nothing_meta.get("variant_name"), "Nothing")
+        self.assertEqual(nothing_meta.get("payload_style"), "unit")
+
+    def test_nominal_adt_payload_variant_requires_dataclass(self) -> None:
+        src = """
+@sealed
+class Maybe:
+    pass
+
+class Bad(Maybe):
+    value: int
+"""
+        with self.assertRaisesRegex(RuntimeError, "payload variant 'Bad' must use @dataclass"):
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
 
     def test_enum_members_are_parsed_in_class_body(self) -> None:
         src = """
