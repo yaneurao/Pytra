@@ -47,6 +47,7 @@ Context: [docs/ja/plans/p4-backend-registry-selfhost-parity-hardening.md](../pla
 9. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S4-02] Align unsupported / preview / known-block / regression diagnostics between registry metadata and parity reports so expected failures are explicitly managed.
 10. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S5-01] Update docs / plan reports / archive so backend readiness, known blocks, and gate execution procedures stay traceable.
 11. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S5-02] Verify that representative internal changes are checked under the same contract in both host and selfhost lanes, then lock that re-entry guard.
+- Progress memo: [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S5-02] A guard is being added to lock shared diagnostic cases across the host registry plus direct e2e / stage2 diff / multilang summary lanes at the same time.
 
 ### P5: Full rollout of nominal ADT as a language feature
 
