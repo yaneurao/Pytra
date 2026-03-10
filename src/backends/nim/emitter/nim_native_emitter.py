@@ -505,7 +505,7 @@ class NimNativeEmitter:
         elif kind == "ImportFrom":
             self._emit_import_from(stmt)
         else:
-            self._emit_line("# unsupported stmt: " + str(kind))
+            raise RuntimeError("nim native emitter: unsupported stmt kind: " + str(kind))
 
     def _emit_import(self, stmt: dict[str, Any]) -> None:
         pass

@@ -19,11 +19,16 @@ if str(ROOT / "src") not in sys.path:
 from backends.cs.emitter import transpile_to_csharp
 from backends.go.emitter import transpile_to_go
 from backends.java.emitter import transpile_to_java
+from backends.js.emitter.js_emitter import transpile_to_js
 from backends.kotlin.emitter import transpile_to_kotlin
 from backends.nim.emitter import transpile_to_nim
+from backends.php.emitter import transpile_to_php
+from backends.ruby.emitter import transpile_to_ruby
 from backends.rs.emitter.rs_emitter import transpile_to_rust
 from backends.scala.emitter import transpile_to_scala
 from backends.swift.emitter import transpile_to_swift
+from backends.ts.emitter.ts_emitter import transpile_to_typescript
+from backends.lua.emitter import transpile_to_lua
 from toolchain.frontends.type_expr import parse_type_expr_text
 
 
@@ -46,6 +51,142 @@ def _general_union_module() -> dict[str, object]:
         ],
         "main_guard_body": [],
         "meta": {},
+    }
+
+
+def _nominal_adt_class(
+    name: str,
+    *,
+    role: str,
+    family_name: str,
+    variant_name: str = "",
+    payload_style: str = "",
+    field_types: dict[str, object] | None = None,
+) -> dict[str, object]:
+    nominal_meta: dict[str, object] = {
+        "schema_version": 1,
+        "role": role,
+        "family_name": family_name,
+    }
+    if variant_name != "":
+        nominal_meta["variant_name"] = variant_name
+    if payload_style != "":
+        nominal_meta["payload_style"] = payload_style
+    out: dict[str, object] = {
+        "kind": "ClassDef",
+        "name": name,
+        "body": [],
+        "meta": {"nominal_adt_v1": nominal_meta},
+    }
+    out["class_storage_hint"] = "ref" if role == "variant" else "value"
+    if role == "variant":
+        out["base"] = family_name
+    if payload_style == "dataclass":
+        out["dataclass"] = True
+    if field_types is not None:
+        out["field_types"] = dict(field_types)
+    return out
+
+
+def _const_i(v: int) -> dict[str, object]:
+    return {
+        "kind": "Constant",
+        "resolved_type": "int64",
+        "borrow_kind": "value",
+        "casts": [],
+        "repr": str(v),
+        "value": v,
+    }
+
+
+def _representative_nominal_adt_match_module() -> dict[str, object]:
+    return {
+        "kind": "Module",
+        "east_stage": 3,
+        "main_guard_body": [],
+        "meta": {},
+        "body": [
+            _nominal_adt_class("Maybe", role="family", family_name="Maybe"),
+            _nominal_adt_class(
+                "Just",
+                role="variant",
+                family_name="Maybe",
+                variant_name="Just",
+                payload_style="dataclass",
+                field_types={"value": "int64"},
+            ),
+            _nominal_adt_class(
+                "Nothing",
+                role="variant",
+                family_name="Maybe",
+                variant_name="Nothing",
+            ),
+            {
+                "kind": "FunctionDef",
+                "name": "f",
+                "arg_order": ["x"],
+                "args": [{"arg": "x"}],
+                "arg_types": {"x": "Maybe"},
+                "arg_type_exprs": {"x": parse_type_expr_text("Maybe")},
+                "return_type": "int64",
+                "return_type_expr": parse_type_expr_text("int"),
+                "body": [
+                    {
+                        "kind": "Match",
+                        "subject": {
+                            "kind": "Name",
+                            "id": "x",
+                            "resolved_type": "Maybe",
+                            "type_expr": parse_type_expr_text("Maybe"),
+                        },
+                        "cases": [
+                            {
+                                "kind": "MatchCase",
+                                "pattern": {
+                                    "kind": "VariantPattern",
+                                    "family_name": "Maybe",
+                                    "variant_name": "Just",
+                                    "subpatterns": [{"kind": "PatternBind", "name": "value"}],
+                                },
+                                "guard": None,
+                                "body": [
+                                    {
+                                        "kind": "Return",
+                                        "value": {
+                                            "kind": "Name",
+                                            "id": "value",
+                                            "resolved_type": "int64",
+                                        },
+                                    }
+                                ],
+                            },
+                            {
+                                "kind": "MatchCase",
+                                "pattern": {
+                                    "kind": "VariantPattern",
+                                    "family_name": "Maybe",
+                                    "variant_name": "Nothing",
+                                    "subpatterns": [],
+                                },
+                                "guard": None,
+                                "body": [{"kind": "Return", "value": _const_i(0)}],
+                            },
+                        ],
+                        "meta": {
+                            "match_analysis_v1": {
+                                "schema_version": 1,
+                                "family_name": "Maybe",
+                                "coverage_kind": "exhaustive",
+                                "covered_variants": ["Just", "Nothing"],
+                                "uncovered_variants": [],
+                                "duplicate_case_indexes": [],
+                                "unreachable_case_indexes": [],
+                            }
+                        },
+                    }
+                ],
+            },
+        ],
     }
 
 
@@ -80,6 +221,37 @@ class NonCppEast3ContractGuardTest(unittest.TestCase):
                 ) as cm:
                     transpile(copy.deepcopy(east))
                 self.assertIn("unsupported general-union lane: int64|bool", str(cm.exception))
+
+    def test_native_noncpp_backends_fail_closed_on_nominal_adt_match_stmt(self) -> None:
+        east = _representative_nominal_adt_match_module()
+        backends = [
+            ("Rust backend", transpile_to_rust, r"rust emitter: unsupported stmt kind: Match"),
+            ("C# backend", transpile_to_csharp, r"csharp emitter: unsupported stmt kind: Match"),
+            ("Go backend", transpile_to_go, r"go native emitter: unsupported stmt kind: Match"),
+            ("Java backend", transpile_to_java, r"java native emitter: unsupported stmt kind: Match"),
+            ("Kotlin backend", transpile_to_kotlin, r"kotlin native emitter: unsupported stmt kind: Match"),
+            ("Scala backend", transpile_to_scala, r"scala native emitter: unsupported stmt kind Match"),
+            ("Swift backend", transpile_to_swift, r"swift native emitter: unsupported stmt kind: Match"),
+            ("Nim backend", transpile_to_nim, r"nim native emitter: unsupported stmt kind: Match"),
+            ("PHP backend", transpile_to_php, r"php native emitter: unsupported stmt kind: Match"),
+            ("Ruby backend", transpile_to_ruby, r"ruby native emitter: unsupported stmt kind: Match"),
+            ("Lua backend", transpile_to_lua, r"lang=lua unsupported stmt kind: Match"),
+        ]
+        for backend_name, transpile, pattern in backends:
+            with self.subTest(backend=backend_name):
+                with self.assertRaisesRegex(RuntimeError, pattern):
+                    transpile(copy.deepcopy(east))
+
+    def test_js_family_noncpp_backends_fail_closed_on_nominal_adt_match_stmt(self) -> None:
+        east = _representative_nominal_adt_match_module()
+        backends = [
+            ("JS backend", transpile_to_js, r"js emitter: unsupported stmt kind: Match"),
+            ("TS backend", transpile_to_typescript, r"js emitter: unsupported stmt kind: Match"),
+        ]
+        for backend_name, transpile, pattern in backends:
+            with self.subTest(backend=backend_name):
+                with self.assertRaisesRegex(RuntimeError, pattern):
+                    transpile(copy.deepcopy(east))
 
 
 if __name__ == "__main__":
