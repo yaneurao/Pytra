@@ -58,6 +58,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated/selfhost residual guard は module root / import / expr / stmt / literal / comprehension / f-string lane まで広がっており、source-of-truth 側でも raw inline `kind` や open-coded dict residual を fail-fast で監視している。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `call` / `attr` / `subscript` / `call-arg` 周辺の helper 化はかなり進んだが、`core.py` と `test_east_core.py` が肥大化し、helper 1 個ごとの commit と進捗メモでは全体前進量に対して粒度が細かすぎる状態になった。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 以後の `S3-02` は `S3-02-B` から `S3-02-E` の cluster 単位で進め、`TODO` には cluster 要約のみを残す。helper 単位の微細履歴は plan の decision log と git history に委ねる。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] `call-arg` / `call-suffix` parser cluster は `core_expr_call_suffix.py` へ分離し、`core.py` 側は mixin import と postfix dispatch の orchestration だけを持つ形へ寄せ始めた。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

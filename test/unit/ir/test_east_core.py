@@ -15,6 +15,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 CORE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core.py"
+CORE_CALL_SUFFIX_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_suffix.py"
 
 from src.toolchain.compiler.east import convert_source_to_east_with_backend
 from src.toolchain.compiler.east import EastBuildError
@@ -2388,618 +2389,58 @@ x.bit_length()
         self.assertNotIn("self._guard_named_call_args(", call_helper_text)
 
     def test_core_source_routes_call_arg_parsing_through_parser_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        entry_text = text.split("def _parse_call_arg_entry", 1)[1].split(
-            "def _resolve_call_arg_entry_state",
-            1,
-        )[0]
-        resolve_text = text.split("def _resolve_call_arg_entry_state", 1)[1].split(
-            "def _resolve_call_arg_entry_has_name",
-            1,
-        )[0]
-        entry_has_name_text = text.split("def _resolve_call_arg_entry_has_name", 1)[1].split(
-            "def _resolve_call_arg_entry_save_pos",
-            1,
-        )[0]
-        save_pos_text = text.split("def _resolve_call_arg_entry_save_pos", 1)[1].split(
-            "def _resolve_call_arg_entry_kind",
-            1,
-        )[0]
-        entry_kind_text = text.split("def _resolve_call_arg_entry_kind", 1)[1].split(
-            "def _resolve_call_arg_entry_is_keyword",
-            1,
-        )[0]
-        entry_is_keyword_text = text.split("def _resolve_call_arg_entry_is_keyword", 1)[1].split(
-            "def _consume_call_arg_entry_name_token",
-            1,
-        )[0]
-        entry_name_text = text.split("def _consume_call_arg_entry_name_token", 1)[1].split(
-            "def _resolve_call_arg_entry_name_value",
-            1,
-        )[0]
-        entry_name_value_text = text.split("def _resolve_call_arg_entry_name_value", 1)[1].split(
-            "def _resolve_keyword_call_arg_entry_state",
-            1,
-        )[0]
-        keyword_state_text = text.split("def _resolve_keyword_call_arg_entry_state", 1)[1].split(
-            "def _apply_keyword_call_arg_entry_state",
-            1,
-        )[0]
-        keyword_state_apply_text = text.split("def _apply_keyword_call_arg_entry_state", 1)[1].split(
-            "def _apply_call_arg_entry_state",
-            1,
-        )[0]
-        apply_text = text.split("def _apply_call_arg_entry_state", 1)[1].split(
-            "def _apply_keyword_call_arg_entry",
-            1,
-        )[0]
-        keyword_token_text = text.split("def _consume_keyword_call_arg_equals_token", 1)[1].split(
-            "def _apply_positional_call_arg_entry",
-            1,
-        )[0]
-        keyword_apply_text = text.split("def _apply_keyword_call_arg_entry", 1)[1].split(
-            "def _apply_keyword_call_arg_build",
-            1,
-        )[0]
-        keyword_build_text = text.split("def _apply_keyword_call_arg_build", 1)[1].split(
-            "def _resolve_keyword_call_arg_entry_state",
-            1,
-        )[0]
-        positional_apply_text = text.split("def _apply_positional_call_arg_entry", 1)[1].split(
-            "def _resolve_positional_call_arg_entry_state",
-            1,
-        )[0]
-        positional_state_text = text.split("def _resolve_positional_call_arg_entry_state", 1)[1].split(
-            "def _apply_positional_call_arg_build_state",
-            1,
-        )[0]
-        positional_state_apply_text = text.split("def _apply_positional_call_arg_build_state", 1)[1].split(
-            "def _apply_positional_call_arg_build",
-            1,
-        )[0]
-        positional_build_text = text.split("def _apply_positional_call_arg_build", 1)[1].split(
-            "def _apply_call_arg_entry_save_pos",
-            1,
-        )[0]
-        positional_save_pos_text = text.split("def _apply_call_arg_entry_save_pos", 1)[1].split(
-            "def _apply_call_arg_entry",
-            1,
-        )[0]
-        loop_apply_text = text.split("def _apply_call_arg_entry", 1)[1].split(
-            "def _resolve_call_arg_loop_entry_kind",
-            1,
-        )[0]
-        loop_kind_text = text.split("def _resolve_call_arg_loop_entry_kind", 1)[1].split(
-            "def _apply_call_arg_loop_entry_kind",
-            1,
-        )[0]
-        loop_kind_apply_text = text.split("def _apply_call_arg_loop_entry_kind", 1)[1].split(
-            "def _resolve_call_arg_loop_entry_apply_state",
-            1,
-        )[0]
-        loop_kind_apply_state_text = text.split("def _resolve_call_arg_loop_entry_apply_state", 1)[1].split(
-            "def _apply_call_arg_loop_entry_apply_state",
-            1,
-        )[0]
-        loop_kind_apply_dispatch_text = text.split("def _apply_call_arg_loop_entry_apply_state", 1)[1].split(
-            "def _apply_keyword_call_arg_loop_entry",
-            1,
-        )[0]
-        keyword_loop_apply_text = text.split("def _apply_keyword_call_arg_loop_entry", 1)[1].split(
-            "def _apply_keyword_call_arg_loop_entry_build",
-            1,
-        )[0]
-        keyword_loop_build_text = text.split("def _apply_keyword_call_arg_loop_entry_build", 1)[1].split(
-            "def _apply_positional_call_arg_loop_entry",
-            1,
-        )[0]
-        positional_loop_apply_text = text.split("def _apply_positional_call_arg_loop_entry", 1)[1].split(
-            "def _resolve_positional_call_arg_loop_entry_state",
-            1,
-        )[0]
-        positional_loop_state_text = text.split("def _resolve_positional_call_arg_loop_entry_state", 1)[1].split(
-            "def _apply_positional_call_arg_loop_entry_state",
-            1,
-        )[0]
-        positional_loop_state_apply_text = text.split("def _apply_positional_call_arg_loop_entry_state", 1)[1].split(
-            "def _apply_positional_call_arg_loop_entry_build",
-            1,
-        )[0]
-        positional_loop_build_text = text.split("def _apply_positional_call_arg_loop_entry_build", 1)[1].split(
-            "def _advance_call_arg_loop",
-            1,
-        )[0]
-        loop_helper_text = text.split("def _advance_call_arg_loop", 1)[1].split(
-            "def _resolve_call_arg_loop_state",
-            1,
-        )[0]
-        loop_state_text = text.split("def _resolve_call_arg_loop_state", 1)[1].split(
-            "def _apply_call_arg_loop_state",
-            1,
-        )[0]
-        loop_apply_state_text = text.split("def _apply_call_arg_loop_state", 1)[1].split(
-            "def _consume_call_arg_loop_comma_token",
-            1,
-        )[0]
-        loop_comma_text = text.split("def _consume_call_arg_loop_comma_token", 1)[1].split(
-            "def _apply_call_arg_loop_continue_state",
-            1,
-        )[0]
-        loop_continue_apply_text = text.split("def _apply_call_arg_loop_continue_state", 1)[1].split(
-            "def _resolve_call_arg_loop_continue_kind",
-            1,
-        )[0]
-        loop_continue_text = text.split("def _resolve_call_arg_loop_continue_kind", 1)[1].split(
-            "def _parse_call_args",
-            1,
-        )[0]
-        helper_text = text.split("def _parse_call_args", 1)[1].split(
-            "def _consume_call_arg_entries",
-            1,
-        )[0]
-        nonempty_helper_text = text.split("def _consume_call_arg_entries", 1)[1].split(
-            "def _resolve_call_arg_entries_result_state",
-            1,
-        )[0]
-        nonempty_result_state_text = text.split("def _resolve_call_arg_entries_result_state", 1)[1].split(
-            "def _resolve_call_arg_entries_result_state_value",
-            1,
-        )[0]
-        nonempty_result_state_value_text = text.split(
-            "def _resolve_call_arg_entries_result_state_value", 1
-        )[1].split(
-            "def _apply_call_arg_entries_result_state",
-            1,
-        )[0]
-        nonempty_result_apply_text = text.split("def _apply_call_arg_entries_result_state", 1)[1].split(
-            "def _apply_call_arg_entries_result_state_result",
-            1,
-        )[0]
-        nonempty_result_apply_result_text = text.split(
-            "def _apply_call_arg_entries_result_state_result", 1
-        )[1].split(
-            "def _consume_call_arg_entries_loop",
-            1,
-        )[0]
-        nonempty_helper_loop_text = text.split("def _consume_call_arg_entries_loop", 1)[1].split(
-            "def _resolve_call_arg_entries_loop_state",
-            1,
-        )[0]
-        nonempty_helper_state_text = text.split("def _resolve_call_arg_entries_loop_state", 1)[1].split(
-            "def _resolve_call_arg_entries_loop_state_value",
-            1,
-        )[0]
-        nonempty_helper_state_value_text = text.split(
-            "def _resolve_call_arg_entries_loop_state_value", 1
-        )[1].split(
-            "def _apply_call_arg_entries_loop_state",
-            1,
-        )[0]
-        nonempty_helper_apply_text = text.split("def _apply_call_arg_entries_loop_state", 1)[1].split(
-            "def _apply_call_arg_entries_loop_state_result",
-            1,
-        )[0]
-        nonempty_helper_apply_result_text = text.split(
-            "def _apply_call_arg_entries_loop_state_result", 1
-        )[1].split(
-            "def _consume_call_arg_loop_entry",
-            1,
-        )[0]
-        nonempty_loop_text = text.split("def _consume_call_arg_loop_entry", 1)[1].split(
-            "def _resolve_call_arg_loop_entry_state",
-            1,
-        )[0]
-        nonempty_loop_state_text = text.split("def _resolve_call_arg_loop_entry_state", 1)[1].split(
-            "def _resolve_call_arg_loop_entry_state_value",
-            1,
-        )[0]
-        nonempty_loop_state_value_text = text.split(
-            "def _resolve_call_arg_loop_entry_state_value", 1
-        )[1].split(
-            "def _apply_call_arg_loop_entry_state",
-            1,
-        )[0]
-        nonempty_loop_apply_text = text.split("def _apply_call_arg_loop_entry_state", 1)[1].split(
-            "def _apply_call_arg_loop_entry_state_result",
-            1,
-        )[0]
-        nonempty_loop_apply_result_text = text.split(
-            "def _apply_call_arg_loop_entry_state_result", 1
-        )[1].split(
-            "def _resolve_call_args_empty_state",
-            1,
-        )[0]
-        empty_state_text = text.split("def _resolve_call_args_empty_state", 1)[1].split(
-            "def _resolve_call_args_empty_kind",
-            1,
-        )[0]
-        empty_kind_text = text.split("def _resolve_call_args_empty_kind", 1)[1].split(
-            "def _apply_call_args_empty_state",
-            1,
-        )[0]
-        empty_apply_text = text.split("def _apply_call_args_empty_state", 1)[1].split(
-            "def _apply_call_args_empty_state_result",
-            1,
-        )[0]
-        empty_apply_result_text = text.split(
-            "def _apply_call_args_empty_state_result", 1
-        )[1].split(
-            "def _resolve_postfix_span_repr",
-            1,
-        )[0]
-        call_suffix_text = text.split("def _parse_call_suffix", 1)[1].split(
-            "def _guard_named_call_args",
-            1,
-        )[0]
-        state_text = text.split("def _resolve_call_suffix_state", 1)[1].split(
-            "def _parse_call_suffix",
-            1,
-        )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        text = CORE_CALL_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
-        self.assertIn(
-            "save_pos, name_tok, is_keyword = self._resolve_call_arg_entry_state()",
-            entry_text,
-        )
-        self.assertIn("return self._apply_call_arg_entry_state(", entry_text)
-        self.assertIn("if not self._resolve_call_arg_entry_has_name():", resolve_text)
-        self.assertIn('return self._cur()["k"] == "NAME"', entry_has_name_text)
-        self.assertIn("save_pos = self._resolve_call_arg_entry_save_pos()", resolve_text)
-        self.assertIn("return self.pos", save_pos_text)
-        self.assertIn("name_tok = self._consume_call_arg_entry_name_token()", resolve_text)
-        self.assertIn("return save_pos, name_tok, self._resolve_call_arg_entry_kind()", resolve_text)
-        self.assertIn("return self._resolve_call_arg_entry_is_keyword()", entry_kind_text)
-        self.assertIn('return self._cur()["k"] == "="', entry_is_keyword_text)
-        self.assertIn('return self._eat("NAME")', entry_name_text)
-        self.assertIn('return str(name_tok["v"])', entry_name_value_text)
-        self.assertIn("self._consume_keyword_call_arg_equals_token()", keyword_state_text)
-        self.assertIn("kw_val = self._parse_ifexp()", keyword_state_text)
-        self.assertIn("kw_name = self._resolve_call_arg_entry_name_value(name_tok=name_tok)", keyword_state_text)
-        self.assertIn("return self._apply_keyword_call_arg_entry_state(", keyword_state_text)
-        self.assertIn("return kw_name, kw_val", keyword_state_apply_text)
-        self.assertIn("if is_keyword and name_tok is not None:", apply_text)
-        self.assertIn("return self._apply_keyword_call_arg_entry(", apply_text)
-        self.assertIn("return self._apply_positional_call_arg_entry(", apply_text)
-        self.assertIn('return self._eat("=")', keyword_token_text)
-        self.assertIn(
-            "kw_name, kw_val = self._resolve_keyword_call_arg_entry_state(name_tok=name_tok)",
-            keyword_apply_text,
-        )
-        self.assertIn("return self._apply_keyword_call_arg_build(", keyword_apply_text)
-        self.assertIn("return None, _sh_make_keyword_arg(kw_name, kw_val)", keyword_build_text)
-        self.assertIn("self._apply_call_arg_entry_save_pos(save_pos=save_pos)", positional_apply_text)
-        self.assertIn("arg_expr = self._resolve_positional_call_arg_entry_state()", positional_apply_text)
-        self.assertIn("return self._apply_positional_call_arg_build_state(", positional_apply_text)
-        self.assertIn("return self._parse_call_arg_expr()", positional_state_text)
-        self.assertIn("return self._apply_positional_call_arg_build(", positional_state_apply_text)
-        self.assertIn("return arg_expr, None", positional_build_text)
-        self.assertIn("if save_pos is not None:", positional_save_pos_text)
-        self.assertIn("self.pos = save_pos", positional_save_pos_text)
-        self.assertIn(
-            "is_keyword_entry = self._resolve_call_arg_loop_entry_kind(keyword_entry=keyword_entry)",
-            loop_apply_text,
-        )
-        self.assertIn("return self._apply_call_arg_loop_entry_kind(", loop_apply_text)
-        self.assertIn("return keyword_entry is not None", loop_kind_text)
-        self.assertIn(
-            "has_keyword_entry = self._resolve_call_arg_loop_entry_apply_state(",
-            loop_kind_apply_text,
-        )
-        self.assertIn("return self._apply_call_arg_loop_entry_apply_state(", loop_kind_apply_text)
-        self.assertIn("return is_keyword_entry and keyword_entry is not None", loop_kind_apply_state_text)
-        self.assertIn("if has_keyword_entry and keyword_entry is not None:", loop_kind_apply_dispatch_text)
-        self.assertIn("return self._apply_keyword_call_arg_loop_entry(", loop_kind_apply_dispatch_text)
-        self.assertIn("return self._apply_positional_call_arg_loop_entry(", loop_kind_apply_dispatch_text)
-        self.assertIn("return self._apply_keyword_call_arg_loop_entry_build(", keyword_loop_apply_text)
-        self.assertIn("keywords.append(keyword_entry)", keyword_loop_build_text)
-        self.assertIn(
-            "has_arg_entry = self._resolve_positional_call_arg_loop_entry_state(arg_entry=arg_entry)",
-            positional_loop_apply_text,
-        )
-        self.assertIn("return self._apply_positional_call_arg_loop_entry_state(", positional_loop_apply_text)
-        self.assertIn("return arg_entry is not None", positional_loop_state_text)
-        self.assertIn("if has_arg_entry and arg_entry is not None:", positional_loop_state_apply_text)
-        self.assertIn("return self._apply_positional_call_arg_loop_entry_build(", positional_loop_state_apply_text)
-        self.assertIn("args.append(arg_entry)", positional_loop_build_text)
-        self.assertIn("has_comma = self._resolve_call_arg_loop_state()", loop_helper_text)
-        self.assertIn("return self._apply_call_arg_loop_state(", loop_helper_text)
-        self.assertIn('return self._cur()["k"] == ","', loop_state_text)
-        self.assertIn("if not has_comma:", loop_apply_state_text)
-        self.assertIn("self._consume_call_arg_loop_comma_token()", loop_apply_state_text)
-        self.assertIn("return self._apply_call_arg_loop_continue_state()", loop_apply_state_text)
-        self.assertIn('return self._eat(",")', loop_comma_text)
-        self.assertIn("return self._resolve_call_arg_loop_continue_kind()", loop_continue_apply_text)
-        self.assertIn('return self._cur()["k"] != ")"', loop_continue_text)
-        self.assertIn("if self._resolve_call_args_empty_state():", helper_text)
-        self.assertIn("return self._apply_call_args_empty_state(", helper_text)
-        self.assertIn("return self._consume_call_arg_entries(", helper_text)
-        self.assertIn("self._consume_call_arg_entries_loop(", nonempty_helper_text)
-        self.assertIn("args, keywords = self._resolve_call_arg_entries_result_state(", nonempty_helper_text)
-        self.assertIn("return self._apply_call_arg_entries_result_state(", nonempty_helper_text)
-        self.assertIn(
-            "return self._resolve_call_arg_entries_result_state_value(",
-            nonempty_result_state_text,
-        )
-        self.assertIn("return self._apply_call_args_empty_state(", nonempty_result_state_value_text)
-        self.assertNotIn("return self._apply_call_args_empty_state(", nonempty_result_state_text)
-        self.assertIn(
-            "return self._apply_call_arg_entries_result_state_result(",
-            nonempty_result_apply_text,
-        )
-        self.assertIn("return args, keywords", nonempty_result_apply_result_text)
-        self.assertNotIn("return args, keywords", nonempty_result_apply_text)
-        self.assertIn(
-            "should_continue = self._resolve_call_arg_entries_loop_state(",
-            nonempty_helper_loop_text,
-        )
-        self.assertIn(
-            "if not self._apply_call_arg_entries_loop_state(should_continue=should_continue):",
-            nonempty_helper_loop_text,
-        )
-        self.assertIn(
-            "return self._resolve_call_arg_entries_loop_state_value(",
-            nonempty_helper_state_text,
-        )
-        self.assertIn("return self._consume_call_arg_loop_entry(", nonempty_helper_state_value_text)
-        self.assertNotIn("return self._consume_call_arg_loop_entry(", nonempty_helper_state_text)
-        self.assertIn(
-            "return self._apply_call_arg_entries_loop_state_result(",
-            nonempty_helper_apply_text,
-        )
-        self.assertIn("return should_continue", nonempty_helper_apply_result_text)
-        self.assertNotIn("return should_continue", nonempty_helper_apply_text)
-        self.assertIn(
-            "arg_entry, keyword_entry = self._resolve_call_arg_loop_entry_state()",
-            nonempty_loop_text,
-        )
-        self.assertIn("return self._apply_call_arg_loop_entry_state(", nonempty_loop_text)
-        self.assertIn("return self._resolve_call_arg_loop_entry_state_value()", nonempty_loop_state_text)
-        self.assertIn("return self._parse_call_arg_entry()", nonempty_loop_state_value_text)
-        self.assertNotIn("return self._parse_call_arg_entry()", nonempty_loop_state_text)
-        self.assertIn("return self._apply_call_arg_loop_entry_state_result(", nonempty_loop_apply_text)
-        self.assertNotIn("self._apply_call_arg_entry(", nonempty_loop_apply_text)
-        self.assertNotIn("return self._advance_call_arg_loop()", nonempty_loop_apply_text)
-        self.assertIn("self._apply_call_arg_entry(", nonempty_loop_apply_result_text)
-        self.assertIn("return self._advance_call_arg_loop()", nonempty_loop_apply_result_text)
-        self.assertIn("return self._resolve_call_args_empty_kind()", empty_state_text)
-        self.assertIn('return self._cur()["k"] == ")"', empty_kind_text)
-        self.assertIn("return self._apply_call_args_empty_state_result(", empty_apply_text)
-        self.assertIn("return args, keywords", empty_apply_result_text)
-        self.assertNotIn("return args, keywords", empty_apply_text)
-        self.assertIn("args, keywords, rtok = self._resolve_call_suffix_token_state()", state_text)
-        self.assertIn("args, keywords, source_span, repr_text = self._resolve_call_suffix_state(", call_suffix_text)
-        self.assertNotIn("save_pos = self.pos", entry_text)
-        self.assertNotIn('return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)', entry_text)
-        self.assertNotIn("self.pos = save_pos", entry_text)
-        self.assertNotIn("return args, keywords", helper_text)
-        self.assertNotIn('return self._cur()["k"] == ")"', empty_state_text)
-        self.assertNotIn("while True:", nonempty_helper_text)
-        self.assertNotIn('if self._cur()["k"] != "NAME":', resolve_text)
-        self.assertNotIn('name_tok = self._eat("NAME")', resolve_text)
-        self.assertNotIn('return self._cur()["k"] == "="', entry_kind_text)
-        self.assertNotIn('return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)', apply_text)
-        self.assertNotIn('return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)', keyword_apply_text)
-        self.assertNotIn("return None, _sh_make_keyword_arg(kw_name, kw_val)", keyword_apply_text)
-        self.assertNotIn("self.pos = save_pos", apply_text)
-        self.assertNotIn("self.pos = save_pos", positional_apply_text)
-        self.assertNotIn("return self._parse_call_arg_expr(), None", positional_apply_text)
-        self.assertNotIn("return self._parse_call_arg_expr()", positional_apply_text)
-        self.assertNotIn("self._consume_keyword_call_arg_equals_token()", keyword_apply_text)
-        self.assertNotIn("kw_val = self._parse_ifexp()", keyword_apply_text)
-        self.assertNotIn("kw_name = self._resolve_call_arg_entry_name_value(name_tok=name_tok)", keyword_apply_text)
-        self.assertNotIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', helper_text)
-        self.assertNotIn("arg_entry, keyword_entry = self._parse_call_arg_entry()", helper_text)
-        self.assertNotIn("self._apply_call_arg_entry(", helper_text)
-        self.assertNotIn("if not self._advance_call_arg_loop():", helper_text)
-        self.assertNotIn("keywords.append(keyword_entry)", helper_text)
-        self.assertNotIn("keywords.append(keyword_entry)", keyword_loop_apply_text)
-        self.assertNotIn("args.append(arg_entry)", helper_text)
-        self.assertNotIn("args.append(arg_entry)", positional_loop_apply_text)
-        self.assertNotIn("if arg_entry is not None:", positional_loop_apply_text)
-        self.assertNotIn("args.append(arg_entry)", positional_loop_state_apply_text)
-        self.assertNotIn("if keyword_entry is not None:", loop_apply_text)
-        self.assertNotIn("return self._apply_keyword_call_arg_loop_entry(", loop_apply_text)
-        self.assertNotIn("return self._apply_positional_call_arg_loop_entry(", loop_apply_text)
-        self.assertNotIn("if is_keyword_entry and keyword_entry is not None:", loop_kind_apply_text)
-        self.assertNotIn('if self._cur()["k"] != ",":', helper_text)
-        self.assertNotIn('self._eat(",")', helper_text)
-        self.assertNotIn('if self._cur()["k"] == ")":', helper_text)
-        self.assertNotIn('self._eat(",")', loop_helper_text)
-        self.assertNotIn('self._eat(",")', loop_apply_state_text)
-        self.assertNotIn('return self._cur()["k"] != ")"', loop_apply_state_text)
-        self.assertNotIn("save_pos = self.pos", helper_text)
-        self.assertNotIn("return self._apply_call_args_empty_state(", nonempty_helper_text)
-        self.assertNotIn("arg_entry, keyword_entry = self._parse_call_arg_entry()", nonempty_helper_text)
-        self.assertNotIn("self._apply_call_arg_entry(", nonempty_helper_text)
-        self.assertNotIn("if not self._advance_call_arg_loop():", nonempty_helper_text)
-        self.assertNotIn("return self._advance_call_arg_loop()", nonempty_helper_text)
-        self.assertNotIn("if not self._consume_call_arg_loop_entry(", nonempty_helper_text)
-        self.assertNotIn("arg_entry, keyword_entry = self._parse_call_arg_entry()", nonempty_loop_text)
-        self.assertNotIn("self._apply_call_arg_entry(", nonempty_loop_text)
-        self.assertNotIn("return self._advance_call_arg_loop()", nonempty_loop_text)
-        self.assertNotIn("args, keywords = self._parse_call_args()", call_suffix_text)
-        self.assertNotIn("save_pos = self.pos", postfix_text)
-        self.assertNotIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', postfix_text)
+        self.assertIn("class _ShExprCallSuffixParserMixin:", text)
+        self.assertIn("def _parse_call_args(", text)
+        self.assertIn("def _consume_call_arg_entries(", text)
+        self.assertIn("def _consume_call_arg_entries_loop(", text)
+        self.assertIn("def _consume_call_arg_loop_entry(", text)
+        self.assertIn("def _resolve_call_args_empty_state(", text)
+        self.assertIn("def _apply_call_arg_entries_result_state(", text)
+        self.assertIn("def _advance_call_arg_loop(", core_text)
+        self.assertIn("if self._resolve_call_args_empty_state():", text)
+        self.assertIn("return self._consume_call_arg_entries(", text)
+        self.assertIn("arg_entry, keyword_entry = self._resolve_call_arg_loop_entry_state()", text)
+        self.assertIn("return self._apply_call_arg_loop_entry_state(", text)
+        self.assertIn("from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin", core_text)
+        self.assertIn("class _ShExprParser(_ShExprCallSuffixParserMixin):", core_text)
+        self.assertIn("return self._parse_call_suffix(callee=owner_expr)", postfix_text)
+        self.assertNotIn("def _parse_call_args(", core_text)
+        self.assertNotIn("def _consume_call_arg_entries(", core_text)
+        self.assertNotIn("def _consume_call_arg_entries_loop(", core_text)
+        self.assertNotIn("def _consume_call_arg_loop_entry(", core_text)
 
     def test_core_source_routes_call_suffix_through_parser_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        state_text = text.split("def _resolve_call_suffix_state", 1)[1].split(
-            "def _apply_call_suffix_token_state",
-            1,
-        )[0]
-        state_apply_text = text.split("def _apply_call_suffix_token_state", 1)[1].split(
-            "def _apply_call_suffix_span_repr_state",
-            1,
-        )[0]
-        call_suffix_span_apply_text = text.split("def _apply_call_suffix_span_repr_state", 1)[1].split(
-            "def _resolve_call_suffix_span_repr",
-            1,
-        )[0]
-        span_text = text.split("def _resolve_call_suffix_span_repr", 1)[1].split(
-            "def _resolve_call_suffix_token_state",
-            1,
-        )[0]
-        token_state_text = text.split("def _resolve_call_suffix_token_state", 1)[1].split(
-            "def _consume_call_suffix_open_token",
-            1,
-        )[0]
-        open_token_text = text.split("def _consume_call_suffix_open_token", 1)[1].split(
-            "def _consume_call_suffix_close_token",
-            1,
-        )[0]
-        close_token_text = text.split("def _consume_call_suffix_close_token", 1)[1].split(
-            "def _consume_call_suffix_arg_entries",
-            1,
-        )[0]
-        arg_entries_text = text.split("def _consume_call_suffix_arg_entries", 1)[1].split(
-            "def _apply_call_suffix_open_token_state",
-            1,
-        )[0]
-        open_state_text = text.split("def _apply_call_suffix_open_token_state", 1)[1].split(
-            "def _resolve_call_suffix_arg_entries_state",
-            1,
-        )[0]
-        open_state_resolve_text = text.split("def _resolve_call_suffix_arg_entries_state", 1)[1].split(
-            "def _apply_call_suffix_arg_entries_state",
-            1,
-        )[0]
-        open_state_apply_text = text.split("def _apply_call_suffix_arg_entries_state", 1)[1].split(
-            "def _resolve_call_suffix_close_token_state",
-            1,
-        )[0]
-        close_state_resolve_text = text.split("def _resolve_call_suffix_close_token_state", 1)[1].split(
-            "def _resolve_call_suffix_close_token_token_state",
-            1,
-        )[0]
-        close_state_token_resolve_text = text.split(
-            "def _resolve_call_suffix_close_token_token_state", 1
-        )[1].split(
-            "def _apply_call_suffix_close_token_token_state",
-            1,
-        )[0]
-        close_state_token_apply_text = text.split(
-            "def _apply_call_suffix_close_token_token_state", 1
-        )[1].split(
-            "def _apply_call_suffix_close_token_token_state_result",
-            1,
-        )[0]
-        close_state_token_result_apply_text = text.split(
-            "def _apply_call_suffix_close_token_token_state_result", 1
-        )[1].split(
-            "def _apply_call_suffix_close_token_state",
-            1,
-        )[0]
-        close_state_apply_text = text.split("def _apply_call_suffix_close_token_state", 1)[1].split(
-            "def _apply_call_suffix_close_token_state_result",
-            1,
-        )[0]
-        close_state_result_apply_text = text.split(
-            "def _apply_call_suffix_close_token_state_result", 1
-        )[1].split(
-            "def _consume_call_suffix_tokens",
-            1,
-        )[0]
-        token_text = text.split("def _consume_call_suffix_tokens", 1)[1].split(
-            "def _parse_call_suffix",
-            1,
-        )[0]
-        helper_text = text.split("def _parse_call_suffix", 1)[1].split(
-            "def _apply_call_suffix_state",
-            1,
-        )[0]
-        helper_apply_text = text.split("def _apply_call_suffix_state", 1)[1].split(
-            "def _apply_call_suffix_state_result",
-            1,
-        )[0]
-        helper_apply_result_text = text.split("def _apply_call_suffix_state_result", 1)[1].split(
-            "def _guard_named_call_args",
-            1,
-        )[0]
-        postfix_suffix_text = text.split("def _parse_postfix_suffix", 1)[1].split(
-            "def _apply_postfix_suffix_kind",
-            1,
-        )[0]
-        postfix_suffix_apply_text = text.split("def _apply_postfix_suffix_kind", 1)[1].split(
+        text = CORE_CALL_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        postfix_suffix_apply_text = core_text.split("def _apply_postfix_suffix_kind", 1)[1].split(
             "def _parse_postfix",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
-        self.assertIn("args, keywords, rtok = self._resolve_call_suffix_token_state()", state_text)
-        self.assertIn("return self._apply_call_suffix_token_state(", state_text)
-        self.assertIn("return self._consume_call_suffix_tokens()", token_state_text)
-        self.assertIn("source_span, repr_text = self._resolve_call_suffix_span_repr(", state_apply_text)
-        self.assertIn("return self._apply_call_suffix_span_repr_state(", state_apply_text)
-        self.assertIn("return self._resolve_postfix_span_repr(", span_text)
-        self.assertIn("return args, keywords, source_span, repr_text", call_suffix_span_apply_text)
-        self.assertIn('return self._eat("(")', open_token_text)
-        self.assertIn('return self._eat(")")', close_token_text)
-        self.assertIn("return self._parse_call_args()", arg_entries_text)
-        self.assertIn("args, keywords = self._resolve_call_suffix_arg_entries_state()", open_state_text)
-        self.assertIn("return self._apply_call_suffix_arg_entries_state(", open_state_text)
-        self.assertIn("return self._consume_call_suffix_arg_entries()", open_state_resolve_text)
-        self.assertIn("rtok = self._resolve_call_suffix_close_token_state()", open_state_apply_text)
-        self.assertIn("return self._apply_call_suffix_close_token_state(", open_state_apply_text)
-        self.assertIn("rtok = self._resolve_call_suffix_close_token_token_state()", close_state_resolve_text)
-        self.assertIn(
-            "return self._apply_call_suffix_close_token_token_state(rtok=rtok)",
-            close_state_resolve_text,
-        )
-        self.assertIn("return self._consume_call_suffix_close_token()", close_state_token_resolve_text)
-        self.assertIn(
-            "return self._apply_call_suffix_close_token_token_state_result(rtok=rtok)",
-            close_state_token_apply_text,
-        )
-        self.assertIn("return rtok", close_state_token_result_apply_text)
-        self.assertNotIn("return rtok", close_state_token_apply_text)
-        self.assertIn(
-            "return self._apply_call_suffix_close_token_state_result(",
-            close_state_apply_text,
-        )
-        self.assertIn("return args, keywords, rtok", close_state_result_apply_text)
-        self.assertIn("self._consume_call_suffix_open_token()", token_text)
-        self.assertIn("return self._apply_call_suffix_open_token_state()", token_text)
-        self.assertIn(
-            "args, keywords, source_span, repr_text = self._resolve_call_suffix_state(",
-            helper_text,
-        )
-        self.assertIn("return self._apply_call_suffix_state(", helper_text)
-        self.assertIn("callee=callee,", helper_text)
-        self.assertIn("args=args,", helper_text)
-        self.assertIn("keywords=keywords,", helper_text)
-        self.assertIn("source_span=source_span,", helper_text)
-        self.assertIn("repr_text=repr_text,", helper_text)
-        self.assertIn("return self._apply_call_suffix_state_result(", helper_apply_text)
-        self.assertNotIn("return self._annotate_call_expr(", helper_apply_text)
-        self.assertIn("return self._annotate_call_expr(", helper_apply_result_text)
-        self.assertNotIn('self._eat("(")', state_text)
-        self.assertNotIn('self._eat("(")', token_text)
-        self.assertNotIn("args, keywords, rtok = self._consume_call_suffix_tokens()", state_text)
-        self.assertNotIn("return args, keywords, source_span, repr_text", state_apply_text)
-        self.assertNotIn("args, keywords = self._parse_call_args()", token_state_text)
-        self.assertNotIn("args, keywords = self._parse_call_args()", token_text)
-        self.assertNotIn("args, keywords = self._consume_call_suffix_arg_entries()", token_text)
-        self.assertNotIn("args, keywords = self._consume_call_suffix_arg_entries()", open_state_text)
-        self.assertNotIn("rtok = self._consume_call_suffix_close_token()", open_state_text)
-        self.assertNotIn("rtok = self._consume_call_suffix_close_token()", open_state_apply_text)
-        self.assertNotIn("return args, keywords, rtok", open_state_apply_text)
-        self.assertNotIn("return self._consume_call_suffix_close_token()", close_state_resolve_text)
-        self.assertNotIn("return args, keywords, rtok", close_state_apply_text)
-        self.assertNotIn('rtok = self._eat(")")', state_text)
-        self.assertNotIn("rtok = self._consume_call_suffix_close_token()", token_text)
-        self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", state_text)
-        self.assertNotIn("return args, keywords, source_span, repr_text", state_text)
-        self.assertNotIn('rtok = self._eat(")")', token_text)
-        self.assertNotIn("return args, keywords, rtok", token_text)
-        self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)
-        self.assertNotIn("return self._annotate_call_expr(", helper_text)
-        self.assertIn("return self._apply_postfix_suffix_kind(", postfix_suffix_text)
+        self.assertIn("def _resolve_call_suffix_state(", text)
+        self.assertIn("def _resolve_call_suffix_token_state(", text)
+        self.assertIn("def _consume_call_suffix_tokens(", text)
+        self.assertIn("def _consume_call_suffix_open_token(", text)
+        self.assertIn("def _consume_call_suffix_close_token(", text)
+        self.assertIn("def _parse_call_suffix(", text)
+        self.assertIn("args, keywords, rtok = self._resolve_call_suffix_token_state()", text)
+        self.assertIn("return self._apply_call_suffix_token_state(", text)
+        self.assertIn("self._consume_call_suffix_open_token()", text)
+        self.assertIn("return self._apply_call_suffix_open_token_state()", text)
+        self.assertIn("return self._annotate_call_expr(", text)
+        self.assertIn("from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin", core_text)
+        self.assertIn("class _ShExprParser(_ShExprCallSuffixParserMixin):", core_text)
         self.assertIn('if tok_kind == "(":', postfix_suffix_apply_text)
         self.assertIn("return self._parse_call_suffix(callee=owner_expr)", postfix_suffix_apply_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
-        self.assertNotIn('ltok = self._eat("(")', postfix_text)
-        self.assertNotIn('rtok = self._eat(")")', postfix_text)
-        self.assertNotIn("node = self._annotate_call_expr(", postfix_text)
+        self.assertNotIn("def _resolve_call_suffix_state(", core_text)
+        self.assertNotIn("def _consume_call_suffix_tokens(", core_text)
+        self.assertNotIn("def _parse_call_suffix(", core_text)
 
     def test_core_source_routes_postfix_suffix_dispatch_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")

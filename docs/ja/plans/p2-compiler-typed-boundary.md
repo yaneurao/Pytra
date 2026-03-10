@@ -126,3 +126,4 @@
 - 2026-03-10: ただし `core.py` は 11k 行超、`test_east_core.py` は 4k 行超まで膨らみ、1 helper = 1 commit / 1 memo の進め方は前進量に対して粒度が細かすぎる状態になった。
 - 2026-03-10: 以後の `S3-02` は `S3-02-B` から `S3-02-E` の cluster 単位で進める。`TODO` は cluster 要約のみを持ち、helper 単位の細片履歴は git history と必要最小限の decision log 要約へ圧縮する。
 - 2026-03-10: `core.py` 分割を deliverable に格上げし、まず `postfix/suffix parser` cluster と `call annotation` cluster を専用 module へ出す。残る `call-arg` / `suffix tail` / `subscript tail` はその後に bundle 単位で処理する。
+- 2026-03-10: `S3-02-B` の最初の塊として `call-arg` / `call-suffix` parser cluster を `core_expr_call_suffix.py` へ移し、`core.py` は mixin import と postfix dispatch orchestration に寄せた。source guard も helper 単位ではなく split cluster 単位で監視する方針に切り替えた。
