@@ -15,6 +15,7 @@ Last updated: 2026-03-11
 
 ## Completed Plan Archive
 
+- [2026-03-11 / P3-COMPILER-CONTRACT-HARDENING-01](../plans/archive/20260311-p3-compiler-contract-hardening.md)
 - [2026-03-11 / P2-COMPILER-TYPED-BOUNDARY-01](../plans/archive/20260311-p2-compiler-typed-boundary.md)
 - [2026-03-09 / P1-EAST-TYPEEXPR-01](../plans/archive/20260309-p1-east-typeexpr-strengthening.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-CORE-BOUNDARY-01](../plans/archive/20260309-p0-cpp-pyruntime-core-boundary-realign.md)
@@ -48,7 +49,7 @@ Last updated: 2026-03-11
 
 ## Date Links
 
-- [2026-03-11](20260311.md) (1 section)
+- [2026-03-11](20260311.md) (2 sections)
 - [2026-03-09](20260309.md) (2 sections)
 - [2026-03-08](20260308.md) (8 sections)
 - [2026-03-07](20260307.md) (6 sections)
