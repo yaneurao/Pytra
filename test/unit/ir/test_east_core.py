@@ -961,6 +961,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         tail_colon_apply_text = text.split("def _apply_subscript_slice_tail_colon_state", 1)[1].split(
+            "def _resolve_subscript_slice_tail_colon_state",
+            1,
+        )[0]
+        tail_colon_state_text = text.split("def _resolve_subscript_slice_tail_colon_state", 1)[1].split(
             "def _resolve_subscript_slice_tail_upper_state",
             1,
         )[0]
@@ -1108,8 +1112,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('return self._eat("]")', tail_close_text)
         self.assertIn("self._consume_subscript_slice_tail_colon_token()", tail_token_text)
         self.assertIn("return self._apply_subscript_slice_tail_colon_state()", tail_token_text)
-        self.assertIn("upper = self._resolve_subscript_slice_tail_upper_state()", tail_colon_apply_text)
+        self.assertIn("upper = self._resolve_subscript_slice_tail_colon_state()", tail_colon_apply_text)
         self.assertIn("return self._apply_subscript_slice_tail_upper_state(upper=upper)", tail_colon_apply_text)
+        self.assertIn("return self._resolve_subscript_slice_tail_upper_state()", tail_colon_state_text)
         self.assertIn("return self._parse_subscript_slice_upper_expr()", tail_upper_state_text)
         self.assertIn("rtok = self._resolve_subscript_slice_tail_close_state()", tail_upper_apply_text)
         self.assertIn("return self._apply_subscript_slice_tail_close_state(upper=upper, rtok=rtok)", tail_upper_apply_text)
@@ -1194,6 +1199,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("return self._parse_ifexp()", upper_expr_text)
         self.assertNotIn('self._eat(":")', tail_token_text)
         self.assertNotIn("upper = self._resolve_subscript_slice_tail_upper_state()", tail_token_text)
+        self.assertNotIn("upper = self._resolve_subscript_slice_tail_upper_state()", tail_colon_apply_text)
         self.assertNotIn("rtok = self._resolve_subscript_slice_tail_close_state()", tail_token_text)
         self.assertNotIn("return upper, rtok", tail_token_text)
         self.assertNotIn("return upper, rtok", tail_upper_apply_text)
