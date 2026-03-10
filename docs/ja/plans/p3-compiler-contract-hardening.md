@@ -203,3 +203,4 @@
 - 2026-03-11: `S4-02` の最初の slice では `check_east_stage_boundary.py` を canonical `toolchain/ir/east2.py` / `backends/common/emitter/code_emitter.py` まで広げ、semantic literal drift を直接監視する形にした。`code_emitter.py` の `make_user_error` import だけは intentional dependency として allowlist し、それ以外の stage semantic key 再流入を fail-closed で検出する。
 - 2026-03-11: `S4-02` はここで完了扱いにした。guard は canonical 実装ファイルの semantic literal drift を直接監視しつつ、既知の `make_user_error` import だけを intentional dependency として許可する。
 - 2026-03-11: `S5-01` の最初の slice では `build_selfhost.py` に `check_east_stage_boundary.py` preflight を追加し、stage semantic drift が selfhost transpile / compile に入る前に expected failure で止まることを `test_build_selfhost_tool.py` で固定した。
+- 2026-03-11: `S5-01` はここで完了扱いにした。representative unit lane は `test_east_stage_boundary_guard.py` / `test_py2x_entrypoints_contract.py`、selfhost lane は `test_build_selfhost_tool.py` で、contract violation が expected failure として再現できる状態になった。
