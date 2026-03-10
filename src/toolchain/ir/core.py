@@ -4940,7 +4940,6 @@ class _ShExprParser:
                 payload,
                 fn_name=fn_name,
                 args=args,
-                call_dispatch=_sh_lookup_named_call_dispatch(fn_name),
             )
         if callee.get("kind") == "Attribute":
             return self._annotate_attr_call_expr(
@@ -4955,31 +4954,21 @@ class _ShExprParser:
         *,
         fn_name: str,
         args: list[dict[str, Any]],
-        call_dispatch: dict[str, str],
     ) -> dict[str, Any]:
         """Name callee の metadata annotation を shared helper へ寄せる。"""
-        stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))
-        stdlib_symbol_runtime_call = str(call_dispatch.get("stdlib_symbol_runtime_call", ""))
-        noncpp_symbol_runtime_call = str(call_dispatch.get("noncpp_symbol_runtime_call", ""))
-        builtin_semantic_tag = str(call_dispatch.get("builtin_semantic_tag", ""))
-        stdlib_fn_semantic_tag = str(call_dispatch.get("stdlib_fn_semantic_tag", ""))
-        stdlib_symbol_semantic_tag = str(call_dispatch.get("stdlib_symbol_semantic_tag", ""))
+        call_dispatch = _sh_lookup_named_call_dispatch(fn_name)
         builtin_payload = self._annotate_builtin_named_call_expr(
             payload,
             fn_name=fn_name,
             args=args,
-            semantic_tag=builtin_semantic_tag,
+            call_dispatch=call_dispatch,
         )
         if builtin_payload is not None:
             return builtin_payload
         runtime_payload = self._annotate_runtime_named_call_expr(
             payload,
             fn_name=fn_name,
-            stdlib_fn_runtime_call=stdlib_fn_runtime_call,
-            stdlib_symbol_runtime_call=stdlib_symbol_runtime_call,
-            noncpp_symbol_runtime_call=noncpp_symbol_runtime_call,
-            stdlib_fn_semantic_tag=stdlib_fn_semantic_tag,
-            stdlib_symbol_semantic_tag=stdlib_symbol_semantic_tag,
+            call_dispatch=call_dispatch,
         )
         if runtime_payload is not None:
             return runtime_payload
@@ -4991,9 +4980,10 @@ class _ShExprParser:
         *,
         fn_name: str,
         args: list[dict[str, Any]],
-        semantic_tag: str,
+        call_dispatch: dict[str, str],
     ) -> dict[str, Any] | None:
         """builtin named-call の annotation dispatch を parser helper へ寄せる。"""
+        semantic_tag = str(call_dispatch.get("builtin_semantic_tag", ""))
         if fn_name in {"print", "len", "range", "zip", "str"}:
             return _sh_annotate_fixed_runtime_builtin_call_expr(
                 payload,
@@ -5075,13 +5065,14 @@ class _ShExprParser:
         payload: dict[str, Any],
         *,
         fn_name: str,
-        stdlib_fn_runtime_call: str,
-        stdlib_symbol_runtime_call: str,
-        noncpp_symbol_runtime_call: str,
-        stdlib_fn_semantic_tag: str,
-        stdlib_symbol_semantic_tag: str,
+        call_dispatch: dict[str, str],
     ) -> dict[str, Any] | None:
         """stdlib / non-C++ named-call dispatch を parser helper へ寄せる。"""
+        stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))
+        stdlib_symbol_runtime_call = str(call_dispatch.get("stdlib_symbol_runtime_call", ""))
+        noncpp_symbol_runtime_call = str(call_dispatch.get("noncpp_symbol_runtime_call", ""))
+        stdlib_fn_semantic_tag = str(call_dispatch.get("stdlib_fn_semantic_tag", ""))
+        stdlib_symbol_semantic_tag = str(call_dispatch.get("stdlib_symbol_semantic_tag", ""))
         if stdlib_fn_runtime_call != "":
             return _sh_annotate_stdlib_function_call_expr(
                 payload,
