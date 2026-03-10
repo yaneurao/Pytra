@@ -600,6 +600,14 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         runtime_apply_text = text.split("def _apply_runtime_attr_expr_annotation", 1)[1].split(
+            "def _apply_runtime_call_attr_expr_annotation",
+            1,
+        )[0]
+        runtime_call_apply_text = text.split("def _apply_runtime_call_attr_expr_annotation", 1)[1].split(
+            "def _apply_runtime_semantic_attr_expr_annotation",
+            1,
+        )[0]
+        runtime_semantic_apply_text = text.split("def _apply_runtime_semantic_attr_expr_annotation", 1)[1].split(
             "def _apply_noncpp_attr_expr_annotation",
             1,
         )[0]
@@ -641,10 +649,13 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("return (\n            owner_t,", state_text)
         self.assertIn("node = _sh_make_attribute_expr(", build_text)
         self.assertIn("return node", build_text)
-        self.assertIn('if attr_runtime_call != "":', runtime_apply_text)
-        self.assertIn('_sh_annotate_runtime_attr_expr(', runtime_apply_text)
-        self.assertIn('elif attr_semantic_tag != "":', runtime_apply_text)
-        self.assertIn('node["semantic_tag"] = attr_semantic_tag', runtime_apply_text)
+        self.assertIn("if self._apply_runtime_call_attr_expr_annotation(", runtime_apply_text)
+        self.assertIn("self._apply_runtime_semantic_attr_expr_annotation(", runtime_apply_text)
+        self.assertIn('if attr_runtime_call == "":', runtime_call_apply_text)
+        self.assertIn('_sh_annotate_runtime_attr_expr(', runtime_call_apply_text)
+        self.assertIn("return True", runtime_call_apply_text)
+        self.assertIn('if attr_semantic_tag != "":', runtime_semantic_apply_text)
+        self.assertIn('node["semantic_tag"] = attr_semantic_tag', runtime_semantic_apply_text)
         self.assertIn('_sh_annotate_resolved_runtime_expr(', noncpp_apply_text)
         self.assertIn("self._apply_runtime_attr_expr_annotation(", apply_text)
         self.assertIn("self._apply_noncpp_attr_expr_annotation(", apply_text)
@@ -658,6 +669,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', apply_text)
         self.assertNotIn('_sh_annotate_resolved_runtime_expr(', apply_text)
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', helper_text)
+        self.assertNotIn('_sh_annotate_runtime_attr_expr(', runtime_apply_text)
+        self.assertNotIn('node["semantic_tag"] = attr_semantic_tag', runtime_apply_text)
         self.assertNotIn('_sh_annotate_resolved_runtime_expr(', helper_text)
         self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
@@ -734,6 +747,14 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         apply_state_text = text.split("def _resolve_subscript_expr_apply_state", 1)[1].split(
+            "def _apply_slice_subscript_expr_build",
+            1,
+        )[0]
+        slice_apply_text = text.split("def _apply_slice_subscript_expr_build", 1)[1].split(
+            "def _apply_index_subscript_expr_build",
+            1,
+        )[0]
+        index_apply_text = text.split("def _apply_index_subscript_expr_build", 1)[1].split(
             "def _apply_subscript_expr_build",
             1,
         )[0]
@@ -766,9 +787,11 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("owner_t = self._resolve_subscript_expr_annotation_state(", apply_state_text)
         self.assertIn("build_kind = self._resolve_subscript_expr_build_kind(", apply_state_text)
         self.assertIn("return owner_t, build_kind", apply_state_text)
+        self.assertIn("return self._build_slice_subscript_expr(", slice_apply_text)
+        self.assertIn("return self._build_index_subscript_expr(", index_apply_text)
         self.assertIn('if build_kind == "slice":', apply_text)
-        self.assertIn("return self._build_slice_subscript_expr(", apply_text)
-        self.assertIn("return self._build_index_subscript_expr(", apply_text)
+        self.assertIn("return self._apply_slice_subscript_expr_build(", apply_text)
+        self.assertIn("return self._apply_index_subscript_expr_build(", apply_text)
         self.assertIn("owner_t, build_kind = self._resolve_subscript_expr_apply_state(", helper_text)
         self.assertIn("return self._apply_subscript_expr_build(", helper_text)
         self.assertIn("return self._parse_subscript_suffix(owner_expr=owner_expr)", postfix_suffix_text)
@@ -779,6 +802,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("owner_t = self._resolve_subscript_expr_annotation_state(", helper_text)
         self.assertNotIn("build_kind = self._resolve_subscript_expr_build_kind(", helper_text)
         self.assertNotIn('if build_kind == "slice":', helper_text)
+        self.assertNotIn("return self._build_slice_subscript_expr(", apply_text)
+        self.assertNotIn("return self._build_index_subscript_expr(", apply_text)
         self.assertNotIn("node = _sh_make_subscript_expr(", postfix_text)
         self.assertNotIn("_sh_make_slice_node(", postfix_text)
         self.assertNotIn("out_t = self._subscript_result_type(", postfix_text)

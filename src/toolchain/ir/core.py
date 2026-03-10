@@ -6101,16 +6101,51 @@ class _ShExprParser:
         attr_runtime_symbol: str,
     ) -> None:
         """runtime attr annotation 適用を helper へ寄せる。"""
-        if attr_runtime_call != "":
-            _sh_annotate_runtime_attr_expr(
-                node,
-                runtime_call=attr_runtime_call,
-                module_id=attr_module_id,
-                runtime_symbol=attr_runtime_symbol,
-                semantic_tag=attr_semantic_tag,
-                runtime_owner=owner_expr,
-            )
-        elif attr_semantic_tag != "":
+        if self._apply_runtime_call_attr_expr_annotation(
+            node=node,
+            owner_expr=owner_expr,
+            attr_runtime_call=attr_runtime_call,
+            attr_semantic_tag=attr_semantic_tag,
+            attr_module_id=attr_module_id,
+            attr_runtime_symbol=attr_runtime_symbol,
+        ):
+            return
+        self._apply_runtime_semantic_attr_expr_annotation(
+            node=node,
+            attr_semantic_tag=attr_semantic_tag,
+        )
+
+    def _apply_runtime_call_attr_expr_annotation(
+        self,
+        *,
+        node: dict[str, Any],
+        owner_expr: dict[str, Any],
+        attr_runtime_call: str,
+        attr_semantic_tag: str,
+        attr_module_id: str,
+        attr_runtime_symbol: str,
+    ) -> bool:
+        """runtime-call attr annotation 適用を helper へ寄せる。"""
+        if attr_runtime_call == "":
+            return False
+        _sh_annotate_runtime_attr_expr(
+            node,
+            runtime_call=attr_runtime_call,
+            module_id=attr_module_id,
+            runtime_symbol=attr_runtime_symbol,
+            semantic_tag=attr_semantic_tag,
+            runtime_owner=owner_expr,
+        )
+        return True
+
+    def _apply_runtime_semantic_attr_expr_annotation(
+        self,
+        *,
+        node: dict[str, Any],
+        attr_semantic_tag: str,
+    ) -> None:
+        """semantic-tag fallback attr annotation 適用を helper へ寄せる。"""
+        if attr_semantic_tag != "":
             node["semantic_tag"] = attr_semantic_tag
 
     def _apply_noncpp_attr_expr_annotation(
@@ -6281,6 +6316,45 @@ class _ShExprParser:
         )
         return owner_t, build_kind
 
+    def _apply_slice_subscript_expr_build(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        owner_t: str,
+        lower: dict[str, Any] | None,
+        upper: dict[str, Any] | None,
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """slice subscript build apply を helper へ寄せる。"""
+        return self._build_slice_subscript_expr(
+            owner_expr=owner_expr,
+            owner_t=owner_t,
+            lower=lower,
+            upper=upper,
+            source_span=source_span,
+            repr_text=repr_text,
+        )
+
+    def _apply_index_subscript_expr_build(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        owner_t: str,
+        index_expr: dict[str, Any] | None,
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """index subscript build apply を helper へ寄せる。"""
+        assert index_expr is not None
+        return self._build_index_subscript_expr(
+            owner_expr=owner_expr,
+            owner_t=owner_t,
+            index_expr=index_expr,
+            source_span=source_span,
+            repr_text=repr_text,
+        )
+
     def _apply_subscript_expr_build(
         self,
         *,
@@ -6295,7 +6369,7 @@ class _ShExprParser:
     ) -> dict[str, Any]:
         """Subscript / Slice の build dispatch を helper へ寄せる。"""
         if build_kind == "slice":
-            return self._build_slice_subscript_expr(
+            return self._apply_slice_subscript_expr_build(
                 owner_expr=owner_expr,
                 owner_t=owner_t,
                 lower=lower,
@@ -6303,7 +6377,7 @@ class _ShExprParser:
                 source_span=source_span,
                 repr_text=repr_text,
             )
-        return self._build_index_subscript_expr(
+        return self._apply_index_subscript_expr_build(
             owner_expr=owner_expr,
             owner_t=owner_t,
             index_expr=index_expr,

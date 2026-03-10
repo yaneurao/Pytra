@@ -271,6 +271,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `Subscript / Slice` の annotation-state resolve も `_ShExprParser._resolve_subscript_expr_apply_state()` へ寄せ、`_annotate_subscript_expr()` から `owner_t + build_kind` の直列 resolve を外した。`test_east_core.py` では state helper 定義、call site、旧 inline subscript-annotation state block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument 1件分の positional/keyword 分岐も `_ShExprParser._parse_call_arg_entry()` へ寄せ、`_parse_call_args()` から `NAME` の save/rewind と inline keyword builder を外した。`test_east_core.py` では entry helper 定義、loop 側 call site、旧 inline call-arg branch の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて builtins named-call の apply も `_ShExprParser._apply_*_builtin_named_call_annotation()` 群へ分離し、`_apply_builtin_named_call_dispatch()` から direct `_sh_annotate_*` 呼び出しを外した。`test_east_core.py` では representative helper 定義、dispatch call site、旧 inline builtin-apply block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `Attribute access` の runtime apply も `_ShExprParser._apply_runtime_call_attr_expr_annotation()` と `_ShExprParser._apply_runtime_semantic_attr_expr_annotation()` へ分離し、`_apply_runtime_attr_expr_annotation()` から runtime-call / semantic-tag の inline 分岐を外した。`test_east_core.py` では両 helper 定義、orchestration call site、旧 inline attr-runtime-apply block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
