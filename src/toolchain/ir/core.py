@@ -5003,6 +5003,20 @@ class _ShExprParser:
             return runtime_payload
         return payload
 
+    def _should_use_truthy_runtime_for_bool_ctor(
+        self,
+        *,
+        args: list[dict[str, Any]],
+    ) -> bool:
+        """bool(...) が truthy runtime helper を使うべきか判定する。"""
+        if len(args) != 1:
+            return False
+        arg0 = args[0]
+        if not isinstance(arg0, dict):
+            return False
+        arg0_t = str(arg0.get("resolved_type", "unknown"))
+        return self._is_forbidden_object_receiver_type(arg0_t)
+
     def _annotate_builtin_named_call_expr(
         self,
         payload: dict[str, Any],
@@ -5020,13 +5034,9 @@ class _ShExprParser:
                 semantic_tag=semantic_tag,
             )
         if fn_name in {"int", "float", "bool"}:
-            use_truthy_runtime = False
-            if fn_name == "bool" and len(args) == 1:
-                arg0 = args[0]
-                if isinstance(arg0, dict):
-                    arg0_t = str(arg0.get("resolved_type", "unknown"))
-                    if self._is_forbidden_object_receiver_type(arg0_t):
-                        use_truthy_runtime = True
+            use_truthy_runtime = fn_name == "bool" and self._should_use_truthy_runtime_for_bool_ctor(
+                args=args,
+            )
             return _sh_annotate_scalar_ctor_call_expr(
                 payload,
                 fn_name=fn_name,
