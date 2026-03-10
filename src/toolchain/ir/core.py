@@ -5048,6 +5048,24 @@ class _ShExprParser:
         args, keywords, source_span, repr_text = self._resolve_call_suffix_state(
             callee=callee,
         )
+        return self._apply_call_suffix_state(
+            callee=callee,
+            args=args,
+            keywords=keywords,
+            source_span=source_span,
+            repr_text=repr_text,
+        )
+
+    def _apply_call_suffix_state(
+        self,
+        *,
+        callee: dict[str, Any],
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """call suffix の apply を parser helper へ寄せる。"""
         return self._annotate_call_expr(
             callee=callee,
             args=args,
