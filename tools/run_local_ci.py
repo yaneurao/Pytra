@@ -17,8 +17,8 @@ def run(cmd: list[str]) -> int:
     return int(p.returncode)
 
 
-def main() -> int:
-    steps: list[list[str]] = [
+def build_steps() -> list[list[str]]:
+    return [
         ["python3", "tools/check_transpiler_version_gate.py"],
         ["python3", "tools/check_legacy_cli_references.py"],
         ["python3", "tools/check_legacy_transpile_checkers_absent.py"],
@@ -88,6 +88,10 @@ def main() -> int:
             "strict",
         ],
     ]
+
+
+def main() -> int:
+    steps = build_steps()
     for step in steps:
         rc = run(step)
         if rc != 0:
