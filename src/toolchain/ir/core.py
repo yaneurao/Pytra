@@ -6705,7 +6705,11 @@ class _ShExprParser:
     ) -> tuple[dict[str, Any], bool]:
         """Subscript suffix の first expr 側 state resolve を helper へ寄せる。"""
         first = self._parse_ifexp()
-        return first, self._cur()["k"] == ":"
+        return first, self._resolve_subscript_suffix_first_component_kind()
+
+    def _resolve_subscript_suffix_first_component_kind(self) -> bool:
+        """Subscript suffix の first expr 側 kind resolve を helper へ寄せる。"""
+        return self._cur()["k"] == ":"
 
     def _apply_subscript_suffix_first_component_state(
         self,
@@ -6866,6 +6870,18 @@ class _ShExprParser:
     def _parse_postfix_suffix(self, *, owner_expr: dict[str, Any]) -> dict[str, Any] | None:
         """postfix suffix dispatch を parser helper へ寄せる。"""
         tok_kind = str(self._cur()["k"])
+        return self._apply_postfix_suffix_kind(
+            owner_expr=owner_expr,
+            tok_kind=tok_kind,
+        )
+
+    def _apply_postfix_suffix_kind(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        tok_kind: str,
+    ) -> dict[str, Any] | None:
+        """postfix suffix kind dispatch を parser helper へ寄せる。"""
         if tok_kind == ".":
             return self._parse_attr_suffix(owner_expr=owner_expr)
         if tok_kind == "(":
