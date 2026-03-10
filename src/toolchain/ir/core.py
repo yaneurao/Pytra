@@ -5014,11 +5014,23 @@ class _ShExprParser:
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, int], str]:
         """call suffix の token/state resolve を parser helper へ寄せる。"""
         args, keywords, rtok = self._resolve_call_suffix_token_state()
-        source_span, repr_text = self._resolve_postfix_span_repr(
-            owner_expr=callee,
+        source_span, repr_text = self._resolve_call_suffix_span_repr(
+            callee=callee,
             end_tok=rtok,
         )
         return args, keywords, source_span, repr_text
+
+    def _resolve_call_suffix_span_repr(
+        self,
+        *,
+        callee: dict[str, Any],
+        end_tok: dict[str, Any],
+    ) -> tuple[dict[str, int], str]:
+        """call suffix の postfix span/repr resolve を helper へ寄せる。"""
+        return self._resolve_postfix_span_repr(
+            owner_expr=callee,
+            end_tok=end_tok,
+        )
 
     def _resolve_call_suffix_token_state(
         self,
