@@ -4973,7 +4973,16 @@ class _ShExprParser:
 
     def _advance_call_arg_loop(self) -> bool:
         """call argument loop の comma/terminator 制御を helper へ寄せる。"""
-        if self._cur()["k"] != ",":
+        has_comma = self._resolve_call_arg_loop_state()
+        return self._apply_call_arg_loop_state(has_comma=has_comma)
+
+    def _resolve_call_arg_loop_state(self) -> bool:
+        """call argument loop の comma state resolve を helper へ寄せる。"""
+        return self._cur()["k"] == ","
+
+    def _apply_call_arg_loop_state(self, *, has_comma: bool) -> bool:
+        """call argument loop の comma/terminator apply を helper へ寄せる。"""
+        if not has_comma:
             return False
         self._eat(",")
         return self._cur()["k"] != ")"
@@ -6618,6 +6627,10 @@ class _ShExprParser:
 
     def _resolve_subscript_slice_upper_expr_state(self) -> bool:
         """Subscript slice tail の upper expr state resolve を helper へ寄せる。"""
+        return self._resolve_subscript_slice_upper_expr_kind()
+
+    def _resolve_subscript_slice_upper_expr_kind(self) -> bool:
+        """Subscript slice tail の upper expr kind resolve を helper へ寄せる。"""
         return self._cur()["k"] == "]"
 
     def _parse_subscript_slice_upper_expr(self) -> dict[str, Any] | None:

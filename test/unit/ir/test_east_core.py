@@ -879,6 +879,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         upper_state_text = text.split("def _resolve_subscript_slice_upper_expr_state", 1)[1].split(
+            "def _resolve_subscript_slice_upper_expr_kind",
+            1,
+        )[0]
+        upper_kind_text = text.split("def _resolve_subscript_slice_upper_expr_kind", 1)[1].split(
             "def _parse_subscript_slice_upper_expr",
             1,
         )[0]
@@ -1001,7 +1005,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("upper, rtok = self._resolve_subscript_slice_tail_state()", slice_tail_text)
         self.assertIn("return None, lower, upper, rtok", slice_tail_text)
         self.assertIn("return self._consume_subscript_slice_tail_tokens()", tail_state_text)
-        self.assertIn('return self._cur()["k"] == "]"', upper_state_text)
+        self.assertIn("return self._resolve_subscript_slice_upper_expr_kind()", upper_state_text)
+        self.assertIn('return self._cur()["k"] == "]"', upper_kind_text)
         self.assertIn("is_empty = self._resolve_subscript_slice_upper_expr_state()", upper_expr_text)
         self.assertIn("return self._apply_subscript_slice_upper_expr_state(is_empty=is_empty)", upper_expr_text)
         self.assertIn("if is_empty:", upper_apply_text)
@@ -1074,6 +1079,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('rtok = self._eat("]")', slice_tail_text)
         self.assertNotIn("upper = self._parse_subscript_slice_upper_expr()", tail_state_text)
         self.assertNotIn('if self._cur()["k"] == "]":', upper_expr_text)
+        self.assertNotIn('self._cur()["k"] == "]"', upper_state_text)
         self.assertNotIn("if is_empty:", upper_expr_text)
         self.assertNotIn("return self._parse_ifexp()", upper_expr_text)
         self.assertNotIn('self._eat(":")', tail_token_text)
@@ -2165,7 +2171,15 @@ x.bit_length()
             "def _advance_call_arg_loop",
             1,
         )[0]
-        loop_state_text = text.split("def _advance_call_arg_loop", 1)[1].split(
+        loop_helper_text = text.split("def _advance_call_arg_loop", 1)[1].split(
+            "def _resolve_call_arg_loop_state",
+            1,
+        )[0]
+        loop_state_text = text.split("def _resolve_call_arg_loop_state", 1)[1].split(
+            "def _apply_call_arg_loop_state",
+            1,
+        )[0]
+        loop_apply_state_text = text.split("def _apply_call_arg_loop_state", 1)[1].split(
             "def _parse_call_args",
             1,
         )[0]
@@ -2203,9 +2217,12 @@ x.bit_length()
         self.assertIn("keywords.append(keyword_entry)", loop_apply_text)
         self.assertIn("if arg_entry is not None:", loop_apply_text)
         self.assertIn("args.append(arg_entry)", loop_apply_text)
-        self.assertIn('if self._cur()["k"] != ",":', loop_state_text)
-        self.assertIn('self._eat(",")', loop_state_text)
-        self.assertIn('return self._cur()["k"] != ")"', loop_state_text)
+        self.assertIn("has_comma = self._resolve_call_arg_loop_state()", loop_helper_text)
+        self.assertIn("return self._apply_call_arg_loop_state(", loop_helper_text)
+        self.assertIn('return self._cur()["k"] == ","', loop_state_text)
+        self.assertIn("if not has_comma:", loop_apply_state_text)
+        self.assertIn('self._eat(",")', loop_apply_state_text)
+        self.assertIn('return self._cur()["k"] != ")"', loop_apply_state_text)
         self.assertIn("arg_entry, keyword_entry = self._parse_call_arg_entry()", helper_text)
         self.assertIn("self._apply_call_arg_entry(", helper_text)
         self.assertIn("if not self._advance_call_arg_loop():", helper_text)
@@ -2221,6 +2238,7 @@ x.bit_length()
         self.assertNotIn("args.append(arg_entry)", helper_text)
         self.assertNotIn('if self._cur()["k"] != ",":', helper_text)
         self.assertNotIn('self._eat(",")', helper_text)
+        self.assertNotIn('self._eat(",")', loop_helper_text)
         self.assertNotIn("save_pos = self.pos", helper_text)
         self.assertNotIn("args, keywords = self._parse_call_args()", call_suffix_text)
         self.assertNotIn("save_pos = self.pos", postfix_text)
