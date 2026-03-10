@@ -4918,7 +4918,11 @@ class _ShExprParser:
             return None, None, False
         save_pos = self.pos
         name_tok = self._eat("NAME")
-        return save_pos, name_tok, self._cur()["k"] == "="
+        return save_pos, name_tok, self._resolve_call_arg_entry_kind()
+
+    def _resolve_call_arg_entry_kind(self) -> bool:
+        """call argument 1件分の keyword 判定を helper へ寄せる。"""
+        return self._cur()["k"] == "="
 
     def _apply_call_arg_entry_state(
         self,
@@ -4988,8 +4992,12 @@ class _ShExprParser:
         """call argument loop の comma/terminator apply を helper へ寄せる。"""
         if not has_comma:
             return False
-        self._eat(",")
+        self._consume_call_arg_loop_comma_token()
         return self._cur()["k"] != ")"
+
+    def _consume_call_arg_loop_comma_token(self) -> dict[str, Any]:
+        """call argument loop の `,` consume を helper へ寄せる。"""
+        return self._eat(",")
 
     def _parse_call_args(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Call expr の位置引数と keyword 引数を parser helper へ寄せる。"""
