@@ -344,6 +344,44 @@ class LinkedProgramLoaderTests(unittest.TestCase):
                 }
             )
 
+    def test_validate_link_output_doc_rejects_unknown_diagnostic_category(self) -> None:
+        with self.assertRaisesRegex(
+            RuntimeError, r"link-output\.diagnostics\.warnings\[0\]\.category is not a recognized compiler contract category"
+        ):
+            validate_link_output_doc(
+                {
+                    "schema": LINK_OUTPUT_SCHEMA,
+                    "target": "cpp",
+                    "dispatch_mode": "native",
+                    "entry_modules": ["app.main"],
+                    "modules": [
+                        {
+                            "module_id": "app.main",
+                            "input": "raw/app/main.east3.json",
+                            "output": "linked/app/main.east3.json",
+                            "source_path": "sample/py/main.py",
+                            "is_entry": True,
+                        }
+                    ],
+                    "global": {
+                        "type_id_table": {},
+                        "call_graph": {},
+                        "sccs": [],
+                        "non_escape_summary": {},
+                        "container_ownership_hints_v1": {},
+                    },
+                    "diagnostics": {
+                        "warnings": [
+                            {
+                                "category": "backend_local_crash",
+                                "message": "unexpected crash",
+                            }
+                        ],
+                        "errors": [],
+                    },
+                }
+            )
+
     def test_validate_link_output_doc_rejects_diagnostic_object_missing_category(self) -> None:
         with self.assertRaisesRegex(RuntimeError, r"link-output\.diagnostics\.warnings\[0\]\.category must be a non-empty string"):
             validate_link_output_doc(

@@ -18,6 +18,17 @@ from toolchain.link.program_model import LinkOutputModuleEntry
 from toolchain.link.program_model import MODULE_KINDS
 from toolchain.link.program_model import normalize_writer_options
 
+_COMPILER_CONTRACT_DIAGNOSTIC_CATEGORIES: set[str] = {
+    "schema_missing",
+    "schema_type_mismatch",
+    "mirror_mismatch",
+    "invariant_missing_span",
+    "invariant_metadata_conflict",
+    "stage_semantic_drift",
+    "backend_input_missing_metadata",
+    "backend_input_unsupported",
+}
+
 
 def _iter_object_tree(value: object, path: str) -> object:
     if isinstance(value, dict):
@@ -180,6 +191,8 @@ def _validate_link_output_diagnostic_items(arr: json.JsonArr, label: str) -> Non
             category = item_obj.get_str("category")
             if category is None or category.strip() == "":
                 raise RuntimeError(item_label + ".category must be a non-empty string")
+            if category not in _COMPILER_CONTRACT_DIAGNOSTIC_CATEGORIES:
+                raise RuntimeError(item_label + ".category is not a recognized compiler contract category")
             message = item_obj.get_str("message")
             if message is None or message.strip() == "":
                 raise RuntimeError(item_label + ".message must be a non-empty string")
