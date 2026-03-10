@@ -4894,6 +4894,21 @@ class _ShExprParser:
                 break
         return args, keywords
 
+    def _parse_call_suffix(self, *, callee: dict[str, Any]) -> dict[str, Any]:
+        """`(` postfix 全体の token 消費と call annotation を parser helper へ寄せる。"""
+        ltok = self._eat("(")
+        args, keywords = self._parse_call_args()
+        rtok = self._eat(")")
+        s = int(callee["source_span"]["col"]) - self.col_base
+        e = rtok["e"]
+        return self._annotate_call_expr(
+            callee=callee,
+            args=args,
+            keywords=keywords,
+            source_span=self._node_span(s, e),
+            repr_text=self._src_slice(s, e),
+        )
+
     def _annotate_call_expr(
         self,
         *,
@@ -5281,18 +5296,7 @@ class _ShExprParser:
                 )
                 continue
             if tok["k"] == "(":
-                ltok = self._eat("(")
-                args, keywords = self._parse_call_args()
-                rtok = self._eat(")")
-                s = int(node["source_span"]["col"]) - self.col_base
-                e = rtok["e"]
-                node = self._annotate_call_expr(
-                    callee=node,
-                    args=args,
-                    keywords=keywords,
-                    source_span=self._node_span(s, e),
-                    repr_text=self._src_slice(s, e),
-                )
+                node = self._parse_call_suffix(callee=node)
                 continue
             if tok["k"] == "[":
                 node = self._parse_subscript_suffix(owner_expr=node)

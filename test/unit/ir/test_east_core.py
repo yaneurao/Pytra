@@ -1127,7 +1127,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_call_arg_parsing_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _parse_call_args", 1)[1].split(
-            "def _annotate_call_expr",
+            "def _parse_call_suffix",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -1138,6 +1138,23 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("args, keywords = self._parse_call_args()", postfix_text)
         self.assertNotIn("save_pos = self.pos", postfix_text)
         self.assertNotIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', postfix_text)
+
+    def test_core_source_routes_call_suffix_through_parser_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _parse_call_suffix", 1)[1].split(
+            "def _annotate_call_expr",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+
+        self.assertIn('ltok = self._eat("(")', helper_text)
+        self.assertIn("args, keywords = self._parse_call_args()", helper_text)
+        self.assertIn('rtok = self._eat(")")', helper_text)
+        self.assertIn("return self._annotate_call_expr(", helper_text)
+        self.assertIn("node = self._parse_call_suffix(callee=node)", postfix_text)
+        self.assertNotIn('ltok = self._eat("(")', postfix_text)
+        self.assertNotIn('rtok = self._eat(")")', postfix_text)
+        self.assertNotIn("node = self._annotate_call_expr(", postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
