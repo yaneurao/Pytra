@@ -187,3 +187,4 @@ Decision log:
 - 2026-03-11: A follow-up `S3-01` slice extended linked-output shape validation so the central validator now rejects malformed `global` payloads such as non-object `call_graph` values and non-string items in `diagnostics.warnings/errors`.
 - 2026-03-11: Representative raw EAST3 nodes now require `source_span` unless they carry synthetic provenance, and linked-output `diagnostics` may use either non-empty strings or object items with valid `source_span`.
 - 2026-03-11: The next `S3-01` slice tightened raw EAST3 so top-level `body` items must be objects with `kind` and `source_span`, and widened linked-output `diagnostics` to allow either non-empty strings or objects whose `source_span` shape is centrally validated.
+- 2026-03-11: A further `S3-01` slice made `category` and `message` mandatory non-empty strings on linked-output diagnostic objects, so the structured diagnostic contract itself is now part of central validation.

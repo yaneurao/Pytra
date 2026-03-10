@@ -145,6 +145,12 @@ def _validate_link_output_diagnostic_items(arr: json.JsonArr, label: str) -> Non
         item_label = label + "[" + str(index) + "]"
         item_obj = arr.get_obj(index)
         if item_obj is not None:
+            category = item_obj.get_str("category")
+            if category is None or category.strip() == "":
+                raise RuntimeError(item_label + ".category must be a non-empty string")
+            message = item_obj.get_str("message")
+            if message is None or message.strip() == "":
+                raise RuntimeError(item_label + ".message must be a non-empty string")
             span = item_obj.get("source_span")
             if span is None:
                 continue
