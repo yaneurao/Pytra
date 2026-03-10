@@ -138,6 +138,55 @@ class SelfhostTranspileToolTest(unittest.TestCase):
                 [str(selfhost_bin), conv_cmd[-1], "-o", str(output_cpp)],
             )
 
+    def test_main_returns_1_when_selfhost_binary_is_missing(self) -> None:
+        mod = _load_module()
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            input_json = root / "in.json"
+            output_cpp = root / "out.cpp"
+            missing_bin = root / "missing.out"
+            input_json.write_text("{}", encoding="utf-8")
+            with patch.object(
+                mod, "_resolve_selfhost_target", return_value=""
+            ), patch.object(
+                sys,
+                "argv",
+                [
+                    "selfhost_transpile.py",
+                    str(input_json),
+                    "-o",
+                    str(output_cpp),
+                    "--selfhost-bin",
+                    str(missing_bin),
+                ],
+            ):
+                self.assertEqual(mod.main(), 1)
+
+    def test_main_rejects_non_python_non_json_input(self) -> None:
+        mod = _load_module()
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            selfhost_bin = root / "py2cpp.out"
+            bad_input = root / "in.txt"
+            output_cpp = root / "out.cpp"
+            selfhost_bin.write_text("", encoding="utf-8")
+            bad_input.write_text("x", encoding="utf-8")
+            with patch.object(
+                mod, "_resolve_selfhost_target", return_value=""
+            ), patch.object(
+                sys,
+                "argv",
+                [
+                    "selfhost_transpile.py",
+                    str(bad_input),
+                    "-o",
+                    str(output_cpp),
+                    "--selfhost-bin",
+                    str(selfhost_bin),
+                ],
+            ):
+                self.assertEqual(mod.main(), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

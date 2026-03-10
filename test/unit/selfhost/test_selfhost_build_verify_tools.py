@@ -193,6 +193,37 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
             transpile_cmd = next(cmd for cmd in calls if cmd and cmd[0] == str(selfhost_bin))
             self.assertNotIn("--target", transpile_cmd)
 
+    def test_main_returns_2_when_build_selfhost_fails(self) -> None:
+        mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
+        selfhost_bin = ROOT / "selfhost" / "missing.out"
+
+        def _fake_run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+            self.assertEqual(cmd, ["python3", str(mod.BUILD_SELFHOST)])
+            return subprocess.CompletedProcess(cmd, 1, stdout="", stderr="build failed")
+
+        with patch.object(mod, "_run", side_effect=_fake_run), patch.object(
+            sys,
+            "argv",
+            ["verify_selfhost_end_to_end.py", "--selfhost-bin", str(selfhost_bin)],
+        ):
+            self.assertEqual(mod.main(), 2)
+
+    def test_main_returns_2_when_selfhost_binary_is_missing(self) -> None:
+        mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
+        with tempfile.TemporaryDirectory() as td:
+            missing_bin = Path(td) / "missing.out"
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "verify_selfhost_end_to_end.py",
+                    "--skip-build",
+                    "--selfhost-bin",
+                    str(missing_bin),
+                ],
+            ):
+                self.assertEqual(mod.main(), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
