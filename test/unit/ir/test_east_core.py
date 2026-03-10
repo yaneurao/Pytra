@@ -1006,6 +1006,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         state_text = text.split("def _resolve_subscript_suffix_state", 1)[1].split(
+            "def _apply_subscript_suffix_token_state",
+            1,
+        )[0]
+        state_apply_text = text.split("def _apply_subscript_suffix_token_state", 1)[1].split(
             "def _resolve_subscript_suffix_span_repr",
             1,
         )[0]
@@ -1093,8 +1097,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("return self._consume_subscript_index_tail_close_token()", index_tail_state_text)
         self.assertIn('return self._eat("]")', index_tail_close_text)
         self.assertIn("index_expr, lower, upper, rtok = self._resolve_subscript_suffix_token_state()", state_text)
-        self.assertIn("source_span, repr_text = self._resolve_subscript_suffix_span_repr(", state_text)
-        self.assertIn("return index_expr, lower, upper, source_span, repr_text", state_text)
+        self.assertIn("return self._apply_subscript_suffix_token_state(", state_text)
+        self.assertIn("source_span, repr_text = self._resolve_subscript_suffix_span_repr(", state_apply_text)
+        self.assertIn("return index_expr, lower, upper, source_span, repr_text", state_apply_text)
         self.assertIn("return self._resolve_postfix_span_repr(", subscript_span_text)
         self.assertIn('return self._eat("[")', open_token_text)
         self.assertIn("self._consume_subscript_suffix_open_token()", token_text)
@@ -1118,6 +1123,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('self._eat("[")', state_text)
         self.assertNotIn("index_expr, lower, upper, rtok = self._consume_subscript_suffix_tokens()", state_text)
         self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", state_text)
+        self.assertNotIn("return index_expr, lower, upper, source_span, repr_text", state_text)
         self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)
         self.assertNotIn("return self._annotate_subscript_expr(", helper_text)
         self.assertNotIn('self._eat("[")', token_text)
