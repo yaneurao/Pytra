@@ -6229,6 +6229,10 @@ class _ShExprParser:
     def _resolve_attr_suffix_name_state(self) -> tuple[dict[str, Any], str]:
         """Attribute suffix の name token/value resolve を helper へ寄せる。"""
         name_tok = self._resolve_attr_suffix_token_state()
+        return self._apply_attr_suffix_name_state(name_tok=name_tok)
+
+    def _apply_attr_suffix_name_state(self, *, name_tok: dict[str, Any]) -> tuple[dict[str, Any], str]:
+        """Attribute suffix の name token/value apply を helper へ寄せる。"""
         return name_tok, self._resolve_attr_suffix_name_value(name_tok=name_tok)
 
     def _resolve_attr_suffix_name_value(self, *, name_tok: dict[str, Any]) -> str:
