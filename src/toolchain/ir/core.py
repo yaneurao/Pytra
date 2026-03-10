@@ -4942,9 +4942,13 @@ class _ShExprParser:
         name_tok: dict[str, Any],
     ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
         """call argument 1件分の keyword apply を helper へ寄せる。"""
-        self._eat("=")
+        self._consume_keyword_call_arg_equals_token()
         kw_val = self._parse_ifexp()
         return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)
+
+    def _consume_keyword_call_arg_equals_token(self) -> dict[str, Any]:
+        """call argument keyword の `=` consume を helper へ寄せる。"""
+        return self._eat("=")
 
     def _apply_positional_call_arg_entry(
         self,
