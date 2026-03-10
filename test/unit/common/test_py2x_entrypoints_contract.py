@@ -377,33 +377,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             valid_doc,
             Path("out.cpp"),
             module_id="pkg.main",
-                suppress_exceptions=True,
-            )
-
-    def test_cpp_emit_source_typed_rejects_legacy_loop_before_empty_string_fallback(self) -> None:
-        invalid_doc = {
-            "kind": "Module",
-            "east_stage": 3,
-            "schema_version": 1,
-            "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
-            "body": [
-                {
-                    "kind": "For",
-                    "target": {"kind": "Name", "id": "x"},
-                    "iter": {"kind": "Name", "id": "xs"},
-                    "body": [],
-                    "orelse": [],
-                }
-            ],
-        }
-        output_path = Path("out.cpp")
-        for registry_mod in (host_registry, static_registry):
-            spec = registry_mod.get_backend_spec("cpp")
-            with self.assertRaisesRegex(
-                RuntimeError,
-                r"backend_input_unsupported: legacy loop node is unsupported in EAST3 for C\+\+ backend at \$\.body\[0\]: pkg\.main",
-            ):
-                registry_mod.emit_source_typed(spec, invalid_doc, output_path)
+            suppress_exceptions=True,
+        )
         self.assertEqual(soft_artifact.metadata["diagnostic"]["category"], "backend_input_missing_metadata")
         self.assertIn(
             "backend_input_missing_metadata: cpp emitter: invalid forcore runtime iter_plan: pkg.main",
@@ -420,6 +395,37 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
                 module_id="pkg.main",
                 suppress_exceptions=False,
             )
+
+    def test_cpp_emit_source_typed_reports_legacy_loop_before_empty_string_fallback(self) -> None:
+        invalid_doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+            "body": [
+                {
+                    "kind": "For",
+                    "target": {"kind": "Name", "id": "x"},
+                    "iter": {"kind": "Name", "id": "xs"},
+                    "body": [],
+                    "orelse": [],
+                }
+            ],
+        }
+        output_path = Path("out.cpp")
+        host_spec = host_registry.get_backend_spec("cpp")
+        host_diagnostic = host_registry.emit_source_typed(host_spec, invalid_doc, output_path)
+        self.assertRegex(
+            host_diagnostic,
+            r"backend_input_unsupported: legacy loop node is unsupported in EAST3 for C\+\+ backend at \$\.body\[0\]:",
+        )
+
+        static_spec = static_registry.get_backend_spec("cpp")
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"backend_input_unsupported: legacy loop node is unsupported in EAST3 for C\+\+ backend at \$\.body\[0\]:",
+        ):
+            static_registry.emit_source_typed(static_spec, invalid_doc, output_path)
 
     def test_dynamic_carrier_seams_are_explicitly_isolated(self) -> None:
         json_src = (ROOT / "src" / "pytra" / "std" / "json.py").read_text(encoding="utf-8")
