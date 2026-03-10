@@ -834,6 +834,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         component_text = text.split("def _parse_subscript_suffix_components", 1)[1].split(
+            "def _resolve_subscript_suffix_component_state",
+            1,
+        )[0]
+        component_state_text = text.split("def _resolve_subscript_suffix_component_state", 1)[1].split(
             "def _parse_subscript_suffix_first_component",
             1,
         )[0]
@@ -870,6 +874,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         state_text = text.split("def _resolve_subscript_suffix_state", 1)[1].split(
+            "def _resolve_subscript_suffix_span_repr",
+            1,
+        )[0]
+        subscript_span_text = text.split("def _resolve_subscript_suffix_span_repr", 1)[1].split(
             "def _consume_subscript_suffix_tokens",
             1,
         )[0]
@@ -897,9 +905,11 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("upper = self._parse_subscript_slice_upper_expr()", tail_token_text)
         self.assertIn('rtok = self._eat("]")', tail_token_text)
         self.assertIn("return upper, rtok", tail_token_text)
-        self.assertIn('if self._cur()["k"] == ":":', component_text)
+        self.assertIn("starts_with_slice = self._resolve_subscript_suffix_component_state()", component_text)
+        self.assertIn("if starts_with_slice:", component_text)
         self.assertIn("return self._parse_subscript_slice_tail(lower=None)", component_text)
         self.assertIn("return self._parse_subscript_suffix_first_component()", component_text)
+        self.assertIn('return self._cur()["k"] == ":"', component_state_text)
         self.assertIn("first, is_slice = self._resolve_subscript_suffix_first_component_state()", first_component_text)
         self.assertIn("return self._apply_subscript_suffix_first_component_state(", first_component_text)
         self.assertIn("first = self._parse_ifexp()", first_component_state_text)
@@ -918,8 +928,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('rtok = self._eat("]")', index_tail_text)
         self.assertIn("return index_expr, None, None, rtok", index_tail_text)
         self.assertIn("index_expr, lower, upper, rtok = self._consume_subscript_suffix_tokens()", state_text)
-        self.assertIn("source_span, repr_text = self._resolve_postfix_span_repr(", state_text)
+        self.assertIn("source_span, repr_text = self._resolve_subscript_suffix_span_repr(", state_text)
         self.assertIn("return index_expr, lower, upper, source_span, repr_text", state_text)
+        self.assertIn("return self._resolve_postfix_span_repr(", subscript_span_text)
         self.assertIn('self._eat("[")', token_text)
         self.assertIn("return self._parse_subscript_suffix_components()", token_text)
         self.assertIn(
@@ -932,11 +943,13 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("upper=upper,", helper_text)
         self.assertNotIn('self._eat("[")', state_text)
         self.assertNotIn("index_expr, lower, upper, rtok = self._parse_subscript_suffix_components()", state_text)
+        self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", state_text)
         self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)
         self.assertNotIn("return self._consume_subscript_slice_tail_tokens()", slice_tail_text)
         self.assertNotIn('self._eat(":")', slice_tail_text)
         self.assertNotIn('rtok = self._eat("]")', slice_tail_text)
         self.assertNotIn("upper = self._parse_subscript_slice_upper_expr()", tail_state_text)
+        self.assertNotIn('if self._cur()["k"] == ":":', component_text)
         self.assertNotIn("first = self._parse_ifexp()", component_text)
         self.assertNotIn("return self._parse_subscript_slice_tail(lower=first)", component_text)
         self.assertNotIn("return first, None, None, rtok", component_text)
