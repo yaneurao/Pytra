@@ -2566,6 +2566,12 @@ x.bit_length()
             1,
         )[0]
         nonempty_helper_state_text = text.split("def _resolve_call_arg_entries_loop_state", 1)[1].split(
+            "def _resolve_call_arg_entries_loop_state_value",
+            1,
+        )[0]
+        nonempty_helper_state_value_text = text.split(
+            "def _resolve_call_arg_entries_loop_state_value", 1
+        )[1].split(
             "def _apply_call_arg_entries_loop_state",
             1,
         )[0]
@@ -2712,7 +2718,12 @@ x.bit_length()
             "if not self._apply_call_arg_entries_loop_state(should_continue=should_continue):",
             nonempty_helper_loop_text,
         )
-        self.assertIn("return self._consume_call_arg_loop_entry(", nonempty_helper_state_text)
+        self.assertIn(
+            "return self._resolve_call_arg_entries_loop_state_value(",
+            nonempty_helper_state_text,
+        )
+        self.assertIn("return self._consume_call_arg_loop_entry(", nonempty_helper_state_value_text)
+        self.assertNotIn("return self._consume_call_arg_loop_entry(", nonempty_helper_state_text)
         self.assertIn("return should_continue", nonempty_helper_apply_text)
         self.assertIn(
             "arg_entry, keyword_entry = self._resolve_call_arg_loop_entry_state()",

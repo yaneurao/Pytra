@@ -5315,6 +5315,18 @@ class _ShExprParser:
         keywords: list[dict[str, Any]],
     ) -> bool:
         """call argument 非空 loop の continue state を helper へ寄せる。"""
+        return self._resolve_call_arg_entries_loop_state_value(
+            args=args,
+            keywords=keywords,
+        )
+
+    def _resolve_call_arg_entries_loop_state_value(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+    ) -> bool:
+        """call argument 非空 loop の continue state value を helper へ寄せる。"""
         return self._consume_call_arg_loop_entry(
             args=args,
             keywords=keywords,
