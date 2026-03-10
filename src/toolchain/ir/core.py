@@ -5563,6 +5563,11 @@ class _ShExprParser:
         )
         return owner_expr, owner_t, attr
 
+    def _payload_source_span(self, payload: dict[str, Any]) -> dict[str, int]:
+        """payload から source_span dict を正規化して取り出す。"""
+        source_span = payload.get("source_span")
+        return source_span if isinstance(source_span, dict) else {}
+
     def _resolve_attr_call_annotation_state(
         self,
         *,
@@ -5570,10 +5575,9 @@ class _ShExprParser:
         callee: dict[str, Any],
     ) -> tuple[dict[str, Any] | None, str, str]:
         """Attribute call の source span normalize と callee resolve を helper へ寄せる。"""
-        source_span = payload.get("source_span")
         return self._resolve_attr_callee(
             callee=callee,
-            source_span=source_span if isinstance(source_span, dict) else {},
+            source_span=self._payload_source_span(payload),
         )
 
     def _apply_attr_call_expr_annotation(

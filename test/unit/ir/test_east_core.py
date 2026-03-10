@@ -898,6 +898,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         resolve_text = text.split("def _resolve_attr_callee", 1)[1].split(
+            "def _payload_source_span",
+            1,
+        )[0]
+        payload_span_text = text.split("def _payload_source_span", 1)[1].split(
             "def _resolve_attr_call_annotation_state",
             1,
         )[0]
@@ -919,7 +923,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('owner = callee.get("value")', resolve_text)
         self.assertIn("self._resolve_attr_expr_owner_state(", resolve_text)
         self.assertIn("return owner_expr, owner_t, attr", resolve_text)
-        self.assertIn('source_span = payload.get("source_span")', state_text)
+        self.assertIn('source_span = payload.get("source_span")', payload_span_text)
+        self.assertIn("return source_span if isinstance(source_span, dict) else {}", payload_span_text)
+        self.assertIn("source_span=self._payload_source_span(payload)", state_text)
         self.assertIn("return self._resolve_attr_callee(", state_text)
         self.assertIn('_sh_annotate_noncpp_attr_call_expr(', apply_text)
         self.assertIn('_sh_annotate_runtime_method_call_expr(', apply_text)
@@ -933,6 +939,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("return self._apply_callee_call_annotation(", callee_helper_text)
         self.assertIn("return self._annotate_callee_call_expr(", call_apply_text)
         self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
+        self.assertNotIn('source_span = payload.get("source_span")', state_text)
         self.assertNotIn('source_span = payload.get("source_span")', helper_text)
         self.assertNotIn('attr = str(callee.get("attr", ""))', helper_text)
         self.assertNotIn('owner = callee.get("value")', helper_text)
