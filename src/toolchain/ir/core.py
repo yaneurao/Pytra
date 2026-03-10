@@ -5232,15 +5232,32 @@ class _ShExprParser:
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """call argument 非空 loop を helper へ寄せる。"""
         while True:
-            if not self._consume_call_arg_loop_entry(
+            should_continue = self._resolve_call_arg_entries_loop_state(
                 args=args,
                 keywords=keywords,
-            ):
+            )
+            if not self._apply_call_arg_entries_loop_state(should_continue=should_continue):
                 break
         return self._apply_call_args_empty_state(
             args=args,
             keywords=keywords,
         )
+
+    def _resolve_call_arg_entries_loop_state(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+    ) -> bool:
+        """call argument 非空 loop の continue state を helper へ寄せる。"""
+        return self._consume_call_arg_loop_entry(
+            args=args,
+            keywords=keywords,
+        )
+
+    def _apply_call_arg_entries_loop_state(self, *, should_continue: bool) -> bool:
+        """call argument 非空 loop の continue apply を helper へ寄せる。"""
+        return should_continue
 
     def _consume_call_arg_loop_entry(
         self,
