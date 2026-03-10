@@ -267,6 +267,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて subscript suffix の component parse も `_ShExprParser._parse_subscript_suffix_components()` へ寄せ、`_parse_subscript_suffix()` から `:` / `first` の inline 分岐を外した。`test_east_core.py` では component helper 定義、call site、旧 inline suffix-parse branch の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `Attribute` suffix の token/state resolve も `_ShExprParser._resolve_attr_suffix_state()` へ寄せ、`_parse_attr_suffix()` から `"." + NAME + span/repr` の直列処理を外した。`test_east_core.py` では state helper 定義、call site、旧 inline attr-suffix state block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `call suffix` の token/state resolve も `_ShExprParser._resolve_call_suffix_state()` へ寄せ、`_parse_call_suffix()` から `"(" + call-args + ")" + span/repr` の直列処理を外した。`test_east_core.py` では state helper 定義、call site、旧 inline call-suffix state block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて subscript suffix の token/state resolve も `_ShExprParser._resolve_subscript_suffix_state()` へ寄せ、`_parse_subscript_suffix()` から `"[" + component-parse + "]" + span/repr` の直列処理を外した。`test_east_core.py` では state helper 定義、call site、旧 inline subscript-suffix state block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

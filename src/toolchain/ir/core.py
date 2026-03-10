@@ -6186,13 +6186,30 @@ class _ShExprParser:
         rtok = self._eat("]")
         return first, None, None, rtok
 
-    def _parse_subscript_suffix(self, *, owner_expr: dict[str, Any]) -> dict[str, Any]:
-        """Subscript / slice suffix の token 消費を parser helper へ寄せる。"""
+    def _resolve_subscript_suffix_state(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, int],
+        str,
+    ]:
+        """Subscript / slice suffix の token/state resolve を helper へ寄せる。"""
         self._eat("[")
         index_expr, lower, upper, rtok = self._parse_subscript_suffix_components()
         source_span, repr_text = self._resolve_postfix_span_repr(
             owner_expr=owner_expr,
             end_tok=rtok,
+        )
+        return index_expr, lower, upper, source_span, repr_text
+
+    def _parse_subscript_suffix(self, *, owner_expr: dict[str, Any]) -> dict[str, Any]:
+        """Subscript / slice suffix の token 消費を parser helper へ寄せる。"""
+        index_expr, lower, upper, source_span, repr_text = self._resolve_subscript_suffix_state(
+            owner_expr=owner_expr,
         )
         return self._annotate_subscript_expr(
             owner_expr=owner_expr,

@@ -779,6 +779,10 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_subscript_suffix_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         component_text = text.split("def _parse_subscript_suffix_components", 1)[1].split(
+            "def _resolve_subscript_suffix_state",
+            1,
+        )[0]
+        state_text = text.split("def _resolve_subscript_suffix_state", 1)[1].split(
             "def _parse_subscript_suffix(",
             1,
         )[0]
@@ -797,14 +801,21 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("return None, None, up, rtok", component_text)
         self.assertIn("return None, first, up, rtok", component_text)
         self.assertIn("return first, None, None, rtok", component_text)
-        self.assertIn("index_expr, lower, upper, rtok = self._parse_subscript_suffix_components()", helper_text)
-        self.assertIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)
+        self.assertIn('self._eat("[")', state_text)
+        self.assertIn("index_expr, lower, upper, rtok = self._parse_subscript_suffix_components()", state_text)
+        self.assertIn("source_span, repr_text = self._resolve_postfix_span_repr(", state_text)
+        self.assertIn("return index_expr, lower, upper, source_span, repr_text", state_text)
+        self.assertIn(
+            "index_expr, lower, upper, source_span, repr_text = self._resolve_subscript_suffix_state(",
+            helper_text,
+        )
         self.assertIn("return self._annotate_subscript_expr(", helper_text)
         self.assertIn("index_expr=index_expr,", helper_text)
         self.assertIn("lower=lower,", helper_text)
         self.assertIn("upper=upper,", helper_text)
-        self.assertNotIn("self._node_span(", helper_text)
-        self.assertNotIn("self._src_slice(", helper_text)
+        self.assertNotIn('self._eat("[")', helper_text)
+        self.assertNotIn("index_expr, lower, upper, rtok = self._parse_subscript_suffix_components()", helper_text)
+        self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)
         self.assertIn('if tok_kind == "[":', postfix_suffix_text)
         self.assertIn("return self._parse_subscript_suffix(owner_expr=owner_expr)", postfix_suffix_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
