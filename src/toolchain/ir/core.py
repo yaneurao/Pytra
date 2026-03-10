@@ -592,6 +592,24 @@ def _sh_infer_known_name_call_return_type(
     return ""
 
 
+def _sh_infer_enumerate_item_type(args: list[dict[str, Any]]) -> str:
+    if len(args) < 1:
+        return "unknown"
+    arg0 = args[0]
+    if not isinstance(arg0, dict):
+        return "unknown"
+    return _sh_infer_item_type(arg0)
+
+
+def _sh_infer_enumerate_item_type(args: list[dict[str, Any]]) -> str:
+    if len(args) < 1:
+        return "unknown"
+    arg0 = args[0]
+    if not isinstance(arg0, dict):
+        return "unknown"
+    return _sh_infer_item_type(arg0)
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -5061,9 +5079,7 @@ class _ShExprParser:
                         semantic_tag=builtin_semantic_tag,
                     )
                 elif fn_name == "enumerate":
-                    elem_t = "unknown"
-                    if len(args) >= 1 and isinstance(args[0], dict):
-                        elem_t = self._iter_item_type(args[0])
+                    elem_t = _sh_infer_enumerate_item_type(args)
                     _sh_annotate_enumerate_call_expr(
                         payload,
                         iter_element_type=elem_t,

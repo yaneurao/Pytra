@@ -831,7 +831,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_known_name_call_returns_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_infer_known_name_call_return_type", 1)[1].split(
-            "def _sh_set_parse_context",
+            "def _sh_infer_enumerate_item_type",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -847,6 +847,21 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('elif fn_name == "open":\n                        call_ret = "PyFile"', postfix_text)
         self.assertNotIn('elif fn_name == "zip":', postfix_text)
         self.assertNotIn('call_ret = "dict[unknown,unknown]"', postfix_text)
+
+    def test_core_source_routes_enumerate_item_type_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_infer_enumerate_item_type", 1)[1].split(
+            "def _sh_set_parse_context",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn("if len(args) < 1:", helper_text)
+        self.assertIn("arg0 = args[0]", helper_text)
+        self.assertIn("return _sh_infer_item_type(arg0)", helper_text)
+        self.assertIn("elem_t = _sh_infer_enumerate_item_type(args)", postfix_text)
+        self.assertNotIn('if len(args) >= 1 and isinstance(args[0], dict):', postfix_text)
+        self.assertNotIn('elem_t = self._iter_item_type(args[0])', postfix_text)
 
     def test_core_source_routes_attr_call_returns_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
