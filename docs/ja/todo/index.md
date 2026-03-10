@@ -63,6 +63,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` は `core_expr_call_args.py`、`call suffix` は `core_expr_call_suffix.py`、`attr/subscript suffix` は `core_expr_attr_subscript_suffix.py` に寄り、残る helper 抽出も bundle 単位へ整理した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] generated selfhost core の residual `make_object` guard は `export_seam` と `parser_residual` を別 scope で固定し、さらに parser residual を `expr_parser` / `stmt_parser` / `lookup` bucket へ分けた。bucket の和集合が parser residual と一致し、export seam と交差しないことも test で固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] source-of-truth の compiler lane と native wrapper では `make_object` が export seam 以外から退き、generated selfhost core も `export_seam=to_payload` と explicit `parser_residual` guard へ再基準化できたため、`S3-02` は完了として閉じ、残る分類強化は `S4-02` へ送る。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] dynamic carrier の現状は `JsonValue` raw carrier、extern-marked stdlib surface、`typed_boundary.py` の runtime hook seam、compiler-root JSON load に集約されることを contract test で固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

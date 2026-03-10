@@ -137,3 +137,4 @@
 - 2026-03-10: parser residual 側も `expr_parser` / `stmt_parser` / `lookup` bucket に分けて固定した。以後の `S3-02-E` は bucket 単位で residual を減らし、最後に export seam 以外を空にする。
 - 2026-03-10: `expr_parser` / `stmt_parser` / `lookup` の bucket 和集合が `parser_residual` と一致し、`export_seam` と交差しないことも guard 化した。以後は bucket ごとに件数を減らすだけで進捗が測れる。
 - 2026-03-10: source-of-truth の compiler lane と native wrapper では `make_object` が export seam 以外から退いたことを確認した。generated selfhost core は `to_payload` を export seam、残りを explicit `parser_residual` guard として再基準化済みなので、`S3-02` は完了として閉じ、残る分類強化は `S4-02` で扱う。
+- 2026-03-10: `S4-01` の初手として、dynamic carrier の現状 inventory を `JsonValue` raw carrier、extern-marked stdlib surface、`typed_boundary.py` の runtime-hook seam、compiler-root JSON load の 4 区分へ整理し、contract test に固定した。

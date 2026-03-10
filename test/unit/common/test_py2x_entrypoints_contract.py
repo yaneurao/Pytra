@@ -212,6 +212,53 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             native_registry,
         )
 
+    def test_dynamic_carrier_seams_are_explicitly_isolated(self) -> None:
+        json_src = (ROOT / "src" / "pytra" / "std" / "json.py").read_text(encoding="utf-8")
+        generated_json = (
+            ROOT / "src" / "runtime" / "cpp" / "generated" / "std" / "json.h"
+        ).read_text(encoding="utf-8")
+        typed_boundary_src = (
+            ROOT / "src" / "toolchain" / "compiler" / "typed_boundary.py"
+        ).read_text(encoding="utf-8")
+        sys_std_src = (ROOT / "src" / "pytra" / "std" / "sys.py").read_text(encoding="utf-8")
+        prepare_src = (ROOT / "tools" / "prepare_selfhost_source.py").read_text(encoding="utf-8")
+        native_transpile = (
+            ROOT / "src" / "runtime" / "cpp" / "native" / "compiler" / "transpile_cli.cpp"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("class JsonObj:", json_src)
+        self.assertIn("raw: dict[str, object]", json_src)
+        self.assertIn("class JsonArr:", json_src)
+        self.assertIn("raw: list[object]", json_src)
+        self.assertIn("class JsonValue:", json_src)
+        self.assertIn("raw: object", json_src)
+        self.assertIn("def loads_obj(text: str) -> JsonObj | None:", json_src)
+        self.assertIn("def loads_arr(text: str) -> JsonArr | None:", json_src)
+
+        self.assertIn("struct JsonObj {", generated_json)
+        self.assertIn("dict<str, object> raw;", generated_json)
+        self.assertIn("struct JsonArr {", generated_json)
+        self.assertIn("object raw;", generated_json)
+        self.assertIn("struct JsonValue {", generated_json)
+        self.assertIn("::std::optional<JsonObj> loads_obj(const str& text);", generated_json)
+        self.assertIn("::std::optional<JsonArr> loads_arr(const str& text);", generated_json)
+
+        self.assertIn("runtime_hook_impl: Any", typed_boundary_src)
+        self.assertIn("fn = runtime_spec.runtime_hook_impl", typed_boundary_src)
+        self.assertIn('runtime_hook_impl = normalized.get("runtime_hook")', typed_boundary_src)
+        self.assertIn("if runtime_hook_impl is None:", typed_boundary_src)
+        self.assertIn("runtime_hook_impl = runtime_none", typed_boundary_src)
+        self.assertIn("self.set_dynamic_hooks_enabled(False)", prepare_src)
+        self.assertIn("def _build_cpp_hooks_impl() -> dict[str, Any]:", prepare_src)
+
+        self.assertIn("stderr: object = extern(__s.stderr)", sys_std_src)
+        self.assertIn("stdout: object = extern(__s.stdout)", sys_std_src)
+        self.assertIn("argv: list[str] = extern(__s.argv)", sys_std_src)
+        self.assertIn("path: list[str] = extern(__s.path)", sys_std_src)
+
+        self.assertIn("pytra::std::json::JsonObj doc = root;", native_transpile)
+        self.assertIn("export_compiler_root_document(doc)", native_transpile)
+
     def test_compiler_transpile_cli_typed_shim_skips_legacy_wrapper(self) -> None:
         shim_src = (ROOT / "src" / "toolchain" / "compiler" / "transpile_cli.py").read_text(encoding="utf-8")
         generated_header = (
