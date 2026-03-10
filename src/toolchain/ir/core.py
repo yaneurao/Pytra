@@ -5069,6 +5069,18 @@ class _ShExprParser:
         keyword_entry: dict[str, Any],
     ) -> None:
         """call argument loop の keyword append を helper へ寄せる。"""
+        return self._apply_keyword_call_arg_loop_entry_build(
+            keywords=keywords,
+            keyword_entry=keyword_entry,
+        )
+
+    def _apply_keyword_call_arg_loop_entry_build(
+        self,
+        *,
+        keywords: list[dict[str, Any]],
+        keyword_entry: dict[str, Any],
+    ) -> None:
+        """call argument loop の keyword node append を helper へ寄せる。"""
         keywords.append(keyword_entry)
 
     def _apply_positional_call_arg_loop_entry(
