@@ -39,7 +39,7 @@ Context: [docs/ja/plans/p4-backend-registry-selfhost-parity-hardening.md](../pla
 1. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01] Canonicalize `backend_registry` and strengthen selfhost parity gates.
 2. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-01] Inventory overlapping surfaces between `backend_registry.py` and `backend_registry_static.py` and classify intentional differences versus drift candidates.
 3. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-02] Inventory current gates and blind spots across `build_selfhost`, `stage2`, `verify_selfhost_end_to_end`, and multi-language selfhost flows, then fix the classification policy for known blocks and regressions in the decision log.
-4. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-01] Define a canonical source of truth for backend capability, runtime copy, option schema, and writer metadata, and move both host and static registries to derive from it.
+4. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-01] Define a canonical source of truth for backend capability, runtime copy, option schema, and writer metadata, and move both host and static registries to derive from it.
 5. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-02] Fix the boundary and diagnostics contract for intentional differences such as host-only lazy imports or selfhost-only direct routes.
 6. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S3-01] Move host/static registries onto shared metadata or generation flow and retire handwritten duplication.
 7. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S3-02] Add drift guards or diff tests so backend-surface changes made on only one side fail fast.

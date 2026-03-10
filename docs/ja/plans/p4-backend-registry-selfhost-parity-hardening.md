@@ -78,7 +78,7 @@
 
 - [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-01] `backend_registry.py` と `backend_registry_static.py` の重複 surface（backend spec、runtime copy、writer rule、option schema、direct-route behavior）を棚卸しし、intentional difference と drift 候補を分類した。
 - [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-02] `build_selfhost` / `stage2` / `verify_selfhost_end_to_end` / `multilang selfhost` の現状 gate と blind spot を整理し、known block / regression の分類方針を decision log に固定した。
-- [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-01] backend capability / runtime copy / option schema / writer metadata の canonical SoT を定義し、host/static の両方がそこから構成される形へ寄せる。
+- [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-01] backend capability / runtime copy / option schema / writer metadata の canonical SoT を定義し、host/static の両方がそこから構成される形へ寄せた。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-02] intentional difference を許す境界（例: host-only lazy import、selfhost-only direct route）と、その diagnostics 契約を固定する。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S3-01] host registry / static registry を shared metadata または generator 経由へ寄せ、手書き重複を縮退する。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S3-02] registry drift guard または diff test を追加し、片側だけ更新された backend surface を fail-fast で検知する。
@@ -131,3 +131,4 @@
 - 2026-03-11: `P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-01` の最初の slice として `toolchain/compiler/backend_registry_metadata.py` を追加し、backend target order、`target_lang` / `extension` / `runtime_mode` / `program_writer_kind`、および C++ `default_options` / `option_schema` を shared metadata row に集約した。
 - 2026-03-11: host 側の `_load_*_spec()` と static 側の `_BACKEND_SPECS` は `build_backend_spec_row(...)` 経由で metadata row を参照する形へ寄せた。これにより backend spec row の table duplication は縮退したが、runtime copy function body と emit/runtime callable wiring 自体はまだ host/static で別実装なので、S2-01 は継続しつつ S3-01 の shared 化対象として残す。
 - 2026-03-11: 同じ `S2-01` の次の slice で、shared metadata は table row だけでなく `lower_ref` / `optimizer_ref` / `emit_ref` / `emit_kind` / `runtime_hook_key` / `program_writer_key` と runtime file descriptor まで持つ形へ拡張した。host registry は lazy import を維持したまま `_load_backend_spec(target)` で canonical ref/descriptor を読み、static registry も `_build_backend_spec(target)` と `_STATIC_CALLABLES` 経由で同じ descriptor を解決する形へ寄せた。残る intentional difference は import/evaluation の eager vs lazy と `suppress_emit_exceptions=True/False` である。
+- 2026-03-11: `S2-01` の完了条件は満たしたと判断した。canonical SoT は `backend_registry_metadata.py` に固定され、backend target order、spec metadata row、lower/optimizer/emit ref、runtime hook descriptor、program writer ref を host/static の両方が参照する形になったため、次は intentional difference と diagnostics 契約を `S2-02` で固定する。
