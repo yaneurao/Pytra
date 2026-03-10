@@ -848,6 +848,25 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('elif fn_name == "zip":', postfix_text)
         self.assertNotIn('call_ret = "dict[unknown,unknown]"', postfix_text)
 
+    def test_core_source_routes_attr_call_returns_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _infer_attr_call_return_type", 1)[1].split(
+            "def _split_generic_types",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('owner_t = str(owner.get("resolved_type", "unknown"))', helper_text)
+        self.assertIn('owner_t = self.name_types.get(str(owner.get("id", "")), owner_t)', helper_text)
+        self.assertIn('if owner_t == "PyFile" and attr in {"close", "write"}:', helper_text)
+        self.assertIn('call_ret = self._lookup_method_return(owner_t, attr)', helper_text)
+        self.assertIn('stdlib_method_ret = lookup_stdlib_method_return_type(owner_t, attr)', helper_text)
+        self.assertIn('call_ret = self._infer_attr_call_return_type(', postfix_text)
+        self.assertNotIn('call_ret = self._lookup_method_return(owner_t, attr)', postfix_text)
+        self.assertNotIn('call_ret = self._lookup_builtin_method_return(owner_t, attr)', postfix_text)
+        self.assertNotIn('stdlib_method_ret = lookup_stdlib_method_return_type(owner_t, attr)', postfix_text)
+        self.assertNotIn('if owner_t == "PyFile":', postfix_text)
+
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         stmt_text = text.split("def _sh_parse_stmt_block_mutable", 1)[1].split(

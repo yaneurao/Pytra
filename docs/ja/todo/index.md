@@ -194,6 +194,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `isinstance/issubclass(...)` metadata も `_sh_annotate_type_predicate_call_expr()` へ寄せ、`TypePredicateCall` の lowered kind と builtin 名の決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 type predicate inline block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `print/len/range/zip/str(...)` metadata も `_sh_annotate_fixed_runtime_builtin_call_expr()` へ寄せ、fixed runtime-call / module / runtime-symbol 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 fixed builtin inline block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `print/len/range/zip/str(...)` metadata も `_sh_annotate_fixed_runtime_builtin_call_expr()` へ寄せ、fixed runtime call・module・runtime symbol 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 fixed builtin inline block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `Name` callee の既知 return-type 決定も `_sh_infer_known_name_call_return_type()` へ寄せ、`print/open/int/float/bool/str/len/range/zip/list/set/dict/bytes/bytearray/Exception` と stdlib imported-symbol return type の open-coded 分岐を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 `call_ret = ...` inline branch の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

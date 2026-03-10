@@ -4678,6 +4678,25 @@ class _ShExprParser:
             }
         return methods.get(method, "unknown")
 
+    def _infer_attr_call_return_type(self, owner: dict[str, Any] | None, attr: str) -> str:
+        """属性呼び出しの戻り型を owner type から推定する。"""
+        if not isinstance(owner, dict):
+            return "unknown"
+        owner_t = str(owner.get("resolved_type", "unknown"))
+        if owner_t == "" or owner_t == "unknown":
+            owner_t = self.name_types.get(str(owner.get("id", "")), owner_t)
+        if owner_t == "unknown":
+            return "unknown"
+        if owner_t == "PyFile" and attr in {"close", "write"}:
+            return "None"
+        call_ret = self._lookup_method_return(owner_t, attr)
+        if call_ret == "unknown":
+            call_ret = self._lookup_builtin_method_return(owner_t, attr)
+        stdlib_method_ret = lookup_stdlib_method_return_type(owner_t, attr)
+        if stdlib_method_ret != "":
+            return stdlib_method_ret
+        return call_ret
+
     def _split_generic_types(self, s: str) -> list[str]:
         """ジェネリック型引数をトップレベルカンマで分割する。"""
         out: list[str] = []
@@ -4954,21 +4973,10 @@ class _ShExprParser:
                 elif isinstance(node, dict) and node.get("kind") == "Attribute":
                     owner = node.get("value")
                     attr = str(node.get("attr", ""))
-                    owner_t = "unknown"
-                    if isinstance(owner, dict):
-                        owner_t = str(owner.get("resolved_type", "unknown"))
-                        if owner_t == "" or owner_t == "unknown":
-                            owner_t = self.name_types.get(str(owner.get("id", "")), owner_t)
-                        if owner_t != "unknown":
-                            call_ret = self._lookup_method_return(owner_t, attr)
-                            if call_ret == "unknown":
-                                call_ret = self._lookup_builtin_method_return(owner_t, attr)
-                            stdlib_method_ret = lookup_stdlib_method_return_type(owner_t, attr)
-                            if stdlib_method_ret != "":
-                                call_ret = stdlib_method_ret
-                        if owner_t == "PyFile":
-                            if attr in {"close", "write"}:
-                                call_ret = "None"
+                    call_ret = self._infer_attr_call_return_type(
+                        owner if isinstance(owner, dict) else None,
+                        attr,
+                    )
                 elif isinstance(node, dict) and node.get("kind") == "Lambda":
                     call_ret = str(node.get("return_type", "unknown"))
                 payload = _sh_make_call_expr(
