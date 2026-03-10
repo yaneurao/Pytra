@@ -577,6 +577,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         state_text = text.split("def _resolve_attr_expr_annotation_state", 1)[1].split(
+            "def _build_attr_expr_payload",
+            1,
+        )[0]
+        build_text = text.split("def _build_attr_expr_payload", 1)[1].split(
             "def _apply_attr_expr_annotation",
             1,
         )[0]
@@ -611,16 +615,19 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("return self._resolve_attr_expr_annotation(", metadata_text)
         self.assertIn("owner_t = self._resolve_attr_expr_owner_state(", state_text)
         self.assertIn(") = self._resolve_attr_expr_metadata(", state_text)
+        self.assertIn("node = _sh_make_attribute_expr(", build_text)
+        self.assertIn("return node", build_text)
         self.assertIn('if attr_runtime_call != "":', apply_text)
         self.assertIn('_sh_annotate_runtime_attr_expr(', apply_text)
         self.assertIn('elif attr_semantic_tag != "":', apply_text)
         self.assertIn('node["semantic_tag"] = attr_semantic_tag', apply_text)
         self.assertIn('_sh_annotate_resolved_runtime_expr(', apply_text)
         self.assertIn(") = self._resolve_attr_expr_annotation_state(", helper_text)
-        self.assertIn("_sh_make_attribute_expr(", helper_text)
+        self.assertIn("node = self._build_attr_expr_payload(", helper_text)
         self.assertIn("return self._apply_attr_expr_annotation(", helper_text)
         self.assertNotIn("owner_t = self._resolve_attr_expr_owner_state(", helper_text)
         self.assertNotIn("self._resolve_attr_expr_metadata(", helper_text)
+        self.assertNotIn("_sh_make_attribute_expr(", helper_text)
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', helper_text)
         self.assertNotIn('_sh_annotate_resolved_runtime_expr(', helper_text)
         self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_text)

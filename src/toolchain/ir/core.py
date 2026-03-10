@@ -5708,6 +5708,25 @@ class _ShExprParser:
             noncpp_module_id,
         )
 
+    def _build_attr_expr_payload(
+        self,
+        *,
+        source_span: dict[str, int],
+        owner_expr: dict[str, Any],
+        attr_name: str,
+        resolved_type: str,
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """Attribute access node 組み立てを helper へ寄せる。"""
+        node = _sh_make_attribute_expr(
+            source_span,
+            owner_expr,
+            attr_name,
+            resolved_type=resolved_type,
+            repr_text=repr_text,
+        )
+        return node
+
     def _apply_attr_expr_annotation(
         self,
         *,
@@ -5766,10 +5785,10 @@ class _ShExprParser:
             attr_name=attr_name,
             source_span=source_span,
         )
-        node = _sh_make_attribute_expr(
-            source_span,
-            owner_expr,
-            attr_name,
+        node = self._build_attr_expr_payload(
+            source_span=source_span,
+            owner_expr=owner_expr,
+            attr_name=attr_name,
             resolved_type=resolved_type,
             repr_text=repr_text,
         )
