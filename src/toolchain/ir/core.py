@@ -5486,6 +5486,19 @@ class _ShExprParser:
             noncpp_module_id,
         )
 
+    def _resolve_attr_expr_metadata(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        owner_t: str,
+        attr_name: str,
+    ) -> tuple[str, str, str, str, str, str, str]:
+        """Attribute access metadata の lookup と unpack を helper へ寄せる。"""
+        attr_meta = self._lookup_attr_expr_metadata(owner_expr, owner_t, attr_name)
+        return self._resolve_attr_expr_annotation(
+            attr_meta=attr_meta,
+        )
+
     def _apply_attr_expr_annotation(
         self,
         *,
@@ -5544,7 +5557,6 @@ class _ShExprParser:
                 source_span=source_span,
                 hint="Cast or assign to a concrete type before attribute/method access.",
             )
-        attr_meta = self._lookup_attr_expr_metadata(owner_expr, owner_t, attr_name)
         (
             resolved_type,
             attr_runtime_call,
@@ -5553,8 +5565,10 @@ class _ShExprParser:
             attr_runtime_symbol,
             noncpp_module_attr_runtime_call,
             noncpp_module_id,
-        ) = self._resolve_attr_expr_annotation(
-            attr_meta=attr_meta,
+        ) = self._resolve_attr_expr_metadata(
+            owner_expr=owner_expr,
+            owner_t=owner_t,
+            attr_name=attr_name,
         )
         node = _sh_make_attribute_expr(
             source_span,
