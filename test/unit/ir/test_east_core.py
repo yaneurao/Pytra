@@ -560,6 +560,10 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_attr_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         owner_type_text = text.split("def _owner_expr_resolved_type", 1)[1].split(
+            "def _resolve_attr_expr_owner_state",
+            1,
+        )[0]
+        owner_state_text = text.split("def _resolve_attr_expr_owner_state", 1)[1].split(
             "def _resolve_attr_callee",
             1,
         )[0]
@@ -593,6 +597,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('noncpp_module_attr_runtime_call = str(attr_meta.get("noncpp_runtime_call", ""))', resolve_text)
         self.assertIn('noncpp_module_id = str(attr_meta.get("noncpp_module_id", ""))', resolve_text)
         self.assertIn('return str(owner_expr.get("resolved_type", "unknown"))', owner_type_text)
+        self.assertIn("owner_t = self._owner_expr_resolved_type(owner_expr)", owner_state_text)
+        self.assertIn("self._guard_dynamic_helper_receiver(", owner_state_text)
+        self.assertIn("if self._is_forbidden_object_receiver_type(owner_t):", owner_state_text)
         self.assertIn("attr_meta = self._lookup_attr_expr_metadata(owner_expr, owner_t, attr_name)", metadata_text)
         self.assertIn("return self._resolve_attr_expr_annotation(", metadata_text)
         self.assertIn('if attr_runtime_call != "":', apply_text)
@@ -600,10 +607,13 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('elif attr_semantic_tag != "":', apply_text)
         self.assertIn('node["semantic_tag"] = attr_semantic_tag', apply_text)
         self.assertIn('_sh_annotate_resolved_runtime_expr(', apply_text)
-        self.assertIn('owner_t = self._owner_expr_resolved_type(owner_expr)', helper_text)
+        self.assertIn("owner_t = self._resolve_attr_expr_owner_state(", helper_text)
         self.assertIn("self._resolve_attr_expr_metadata(", helper_text)
         self.assertIn("_sh_make_attribute_expr(", helper_text)
         self.assertIn("return self._apply_attr_expr_annotation(", helper_text)
+        self.assertNotIn('owner_t = self._owner_expr_resolved_type(owner_expr)', helper_text)
+        self.assertNotIn("self._guard_dynamic_helper_receiver(", helper_text)
+        self.assertNotIn("if self._is_forbidden_object_receiver_type(owner_t):", helper_text)
         self.assertNotIn("attr_meta = self._lookup_attr_expr_metadata(", helper_text)
         self.assertNotIn("self._resolve_attr_expr_annotation(", helper_text)
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', helper_text)
