@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 from pytra.std.pathlib import Path
-from toolchain.compiler.backend_registry_metadata import get_program_writer_ref
 from toolchain.compiler.backend_registry_metadata import list_backend_targets as metadata_backend_targets
 from toolchain.compiler.backend_registry_shared import build_cpp_emit
 from toolchain.compiler.backend_registry_shared import build_emit_from_target
@@ -12,7 +11,6 @@ from toolchain.compiler.backend_registry_shared import build_java_emit
 from toolchain.compiler.backend_registry_shared import build_runtime_hook_from_key
 from toolchain.compiler.backend_registry_shared import build_program_artifact_with_backend_spec
 from toolchain.compiler.backend_registry_shared import collect_program_modules_from_artifact
-from toolchain.compiler.backend_registry_shared import default_output_path_for
 from toolchain.compiler.backend_registry_shared import default_output_path_from_backend_spec
 from toolchain.compiler.backend_registry_shared import emit_module_with_backend_spec
 from toolchain.compiler.backend_registry_shared import emit_source_with_backend_spec
@@ -36,22 +34,8 @@ from toolchain.compiler.typed_boundary import LayerOptionsCarrier
 from toolchain.compiler.typed_boundary import ModuleArtifactCarrier
 from toolchain.compiler.typed_boundary import ProgramArtifactCarrier
 from toolchain.compiler.typed_boundary import ResolvedBackendSpec
-from toolchain.compiler.typed_boundary import build_program_artifact_from_modules
 from toolchain.compiler.typed_boundary import coerce_backend_spec
-from toolchain.compiler.typed_boundary import collect_program_module_carriers
-from toolchain.compiler.typed_boundary import copy_module_dependencies
-from toolchain.compiler.typed_boundary import copy_module_metadata
-from toolchain.compiler.typed_boundary import emit_source_text_with_spec
-from toolchain.compiler.typed_boundary import execute_emit_module_with_spec
-from toolchain.compiler.typed_boundary import execute_lower_ir_with_spec
-from toolchain.compiler.typed_boundary import execute_optimize_ir_with_spec
 from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any
-from toolchain.compiler.typed_boundary import export_module_artifact_any
-from toolchain.compiler.typed_boundary import export_program_module_artifacts
-from toolchain.compiler.typed_boundary import export_program_artifact_any
-from toolchain.compiler.typed_boundary import get_program_writer_with_spec
-from toolchain.compiler.typed_boundary import resolve_layer_options_carrier
-from toolchain.compiler.typed_boundary import apply_runtime_hook_with_spec
 
 from backends.cs.lower import lower_east3_to_cs_ir
 from backends.cs.optimizer import optimize_cs_ir

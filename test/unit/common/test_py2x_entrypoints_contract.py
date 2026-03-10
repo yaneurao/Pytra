@@ -884,29 +884,29 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.compiler.backend_registry_shared import emit_source_with_backend_spec", static_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import apply_runtime_hook_from_backend_spec", host_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import apply_runtime_hook_from_backend_spec", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import execute_lower_ir_with_spec", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import execute_lower_ir_with_spec", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import execute_optimize_ir_with_spec", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import execute_optimize_ir_with_spec", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import execute_emit_module_with_spec", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import execute_emit_module_with_spec", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import emit_source_text_with_spec", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import emit_source_text_with_spec", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import collect_program_module_carriers", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import collect_program_module_carriers", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import export_program_module_artifacts", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import export_program_module_artifacts", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import build_program_artifact_from_modules", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import build_program_artifact_from_modules", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import get_program_writer_with_spec", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import get_program_writer_with_spec", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import apply_runtime_hook_with_spec", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import apply_runtime_hook_with_spec", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import build_resolved_backend_spec", shared_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", static_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import execute_lower_ir_with_spec", host_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import execute_lower_ir_with_spec", static_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import execute_optimize_ir_with_spec", host_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import execute_optimize_ir_with_spec", static_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import execute_emit_module_with_spec", host_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import execute_emit_module_with_spec", static_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import emit_source_text_with_spec", host_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import emit_source_text_with_spec", static_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import collect_program_module_carriers", host_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import collect_program_module_carriers", static_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import export_program_module_artifacts", host_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import export_program_module_artifacts", static_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import build_program_artifact_from_modules", host_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import build_program_artifact_from_modules", static_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import get_program_writer_with_spec", host_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import get_program_writer_with_spec", static_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import apply_runtime_hook_with_spec", host_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import apply_runtime_hook_with_spec", static_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", host_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", static_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", host_src)
+        self.assertNotIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", static_src)
         self.assertIn("return lower_ir_with_backend_spec(", host_src)
         self.assertIn("return lower_ir_with_backend_spec(", static_src)
         self.assertIn("return optimize_ir_with_backend_spec(", host_src)
@@ -921,7 +921,6 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("return emit_source_with_backend_spec(", static_src)
         self.assertIn("apply_runtime_hook_from_backend_spec(spec, output_path, coerce_runtime_spec=_coerce_runtime_spec)", host_src)
         self.assertIn("apply_runtime_hook_from_backend_spec(spec, output_path, coerce_runtime_spec=_coerce_runtime_spec)", static_src)
-        self.assertIn("return export_resolved_backend_spec_any(_normalize_backend_runtime_spec(spec))", host_src)
         self.assertIn("return export_layer_options_with_backend_spec(", host_src)
         self.assertIn("return export_layer_options_with_backend_spec(", static_src)
         self.assertIn("return export_module_artifact_with_backend_spec(", host_src)
@@ -937,14 +936,11 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("return export_program_artifact_with_backend_spec(", static_src)
         self.assertIn("return export_resolved_backend_spec_any(get_backend_spec_typed(target))", host_src)
         self.assertIn("_BACKEND_SPECS[target] = export_resolved_backend_spec_any(runtime_spec)", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import build_program_artifact_from_modules", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import build_program_artifact_from_modules", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import collect_program_module_carriers", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import collect_program_module_carriers", static_src)
         self.assertIn("return collect_program_modules_from_artifact(module_artifact)", host_src)
         self.assertIn("return collect_program_modules_from_artifact(module_artifact)", static_src)
         self.assertIn("return build_program_artifact_with_backend_spec(", host_src)
         self.assertIn("return build_program_artifact_with_backend_spec(", static_src)
+        self.assertNotIn("def _normalize_backend_spec(", host_src)
         self.assertNotIn("coerce_compiler_root_document(east_doc).to_legacy_dict()", host_src)
         self.assertNotIn("coerce_compiler_root_document(east_doc).to_legacy_dict()", static_src)
         self.assertNotIn("return _normalize_backend_runtime_spec(spec).to_legacy_dict()", host_src)
@@ -1736,15 +1732,17 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(program.modules[1].metadata["owner_module_id"], "pkg.main")
 
     def test_emit_source_uses_emit_module_text_wrapper(self) -> None:
-        spec = host_registry._normalize_backend_spec(
-            {
-                "target_lang": "fake",
-                "extension": ".txt",
-                "emit": lambda ir, output_path, _opts=None: "// "
-                + str(ir.get("kind", ""))
-                + " -> "
-                + output_path.name,
-            }
+        spec = typed_boundary.export_resolved_backend_spec_any(
+            host_registry._normalize_backend_runtime_spec(
+                {
+                    "target_lang": "fake",
+                    "extension": ".txt",
+                    "emit": lambda ir, output_path, _opts=None: "// "
+                    + str(ir.get("kind", ""))
+                    + " -> "
+                    + output_path.name,
+                }
+            )
         )
         artifact = host_registry.emit_module(
             spec,

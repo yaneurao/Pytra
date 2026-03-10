@@ -18,7 +18,6 @@ from toolchain.compiler.backend_registry_shared import build_java_emit
 from toolchain.compiler.backend_registry_shared import build_runtime_hook_from_key
 from toolchain.compiler.backend_registry_shared import build_program_artifact_with_backend_spec
 from toolchain.compiler.backend_registry_shared import collect_program_modules_from_artifact
-from toolchain.compiler.backend_registry_shared import default_output_path_for
 from toolchain.compiler.backend_registry_shared import default_output_path_from_backend_spec
 from toolchain.compiler.backend_registry_shared import emit_module_with_backend_spec
 from toolchain.compiler.backend_registry_shared import emit_source_with_backend_spec
@@ -42,22 +41,8 @@ from toolchain.compiler.typed_boundary import LayerOptionsCarrier
 from toolchain.compiler.typed_boundary import ModuleArtifactCarrier
 from toolchain.compiler.typed_boundary import ProgramArtifactCarrier
 from toolchain.compiler.typed_boundary import ResolvedBackendSpec
-from toolchain.compiler.typed_boundary import build_program_artifact_from_modules
 from toolchain.compiler.typed_boundary import coerce_backend_spec
-from toolchain.compiler.typed_boundary import collect_program_module_carriers
-from toolchain.compiler.typed_boundary import copy_module_dependencies
-from toolchain.compiler.typed_boundary import copy_module_metadata
-from toolchain.compiler.typed_boundary import emit_source_text_with_spec
-from toolchain.compiler.typed_boundary import execute_emit_module_with_spec
-from toolchain.compiler.typed_boundary import execute_lower_ir_with_spec
-from toolchain.compiler.typed_boundary import execute_optimize_ir_with_spec
 from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any
-from toolchain.compiler.typed_boundary import export_module_artifact_any
-from toolchain.compiler.typed_boundary import export_program_module_artifacts
-from toolchain.compiler.typed_boundary import export_program_artifact_any
-from toolchain.compiler.typed_boundary import get_program_writer_with_spec
-from toolchain.compiler.typed_boundary import resolve_layer_options_carrier
-from toolchain.compiler.typed_boundary import apply_runtime_hook_with_spec
 
 
 BackendSpec = dict
@@ -150,10 +135,6 @@ def _normalize_backend_runtime_spec(spec: BackendSpec) -> ResolvedBackendSpec:
         empty_emit_impl=empty_emit,
         runtime_none_hook=runtime_none,
     )
-
-
-def _normalize_backend_spec(spec: BackendSpec) -> BackendSpec:
-    return export_resolved_backend_spec_any(_normalize_backend_runtime_spec(spec))
 
 
 def _coerce_runtime_spec(spec: BackendSpec | ResolvedBackendSpec) -> ResolvedBackendSpec:
