@@ -40,5 +40,6 @@
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_decorators.py` を追加し、extern / abi / template の representative parser behavior 10 本を `test_east_core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_types.py` を追加し、decode-first / type-expr / typing future import の representative parser behavior 10 本を `test_east_core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] decorator/abi/template の負例 7 本と object receiver diagnostics 3 本を `test_east_core_parser_behavior_decorators.py` / `test_east_core_parser_behavior_diagnostics.py` へ切り出し、`test_east_core.py` 先頭の重複 test と stray assert を除去した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_exprs.py` を追加し、comprehension / lambda / fstring / yield / basic parser acceptance の representative 10 本を `test_east_core.py` から切り出した。
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。
