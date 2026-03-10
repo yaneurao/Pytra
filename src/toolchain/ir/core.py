@@ -6080,14 +6080,18 @@ class _ShExprParser:
             repr_text=repr_text,
         )
 
+    def _resolve_attr_suffix_name_token(self) -> dict[str, Any]:
+        """Attribute suffix の `.` + NAME consume を helper へ寄せる。"""
+        self._eat(".")
+        return self._eat("NAME")
+
     def _resolve_attr_suffix_state(
         self,
         *,
         owner_expr: dict[str, Any],
     ) -> tuple[str, dict[str, int], str]:
         """Attribute suffix の token/state resolve を helper へ寄せる。"""
-        self._eat(".")
-        name_tok = self._eat("NAME")
+        name_tok = self._resolve_attr_suffix_name_token()
         source_span, repr_text = self._resolve_postfix_span_repr(
             owner_expr=owner_expr,
             end_tok=name_tok,

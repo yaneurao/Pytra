@@ -686,12 +686,16 @@ class EastCoreTest(unittest.TestCase):
             "def _parse_call_suffix",
             1,
         )[0]
+        token_text = text.split("def _resolve_attr_suffix_name_token", 1)[1].split(
+            "def _resolve_attr_suffix_state",
+            1,
+        )[0]
         state_text = text.split("def _resolve_attr_suffix_state", 1)[1].split(
             "def _resolve_attr_expr_annotation",
             1,
         )[0]
         helper_text = text.split("def _parse_attr_suffix", 1)[1].split(
-            "def _resolve_attr_suffix_state",
+            "def _resolve_attr_suffix_name_token",
             1,
         )[0]
         resolve_text = text.split("def _resolve_attr_suffix_state", 1)[1].split(
@@ -707,14 +711,17 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('s = int(owner_expr["source_span"]["col"]) - self.col_base', span_helper_text)
         self.assertIn('e = end_tok["e"]', span_helper_text)
         self.assertIn("return self._node_span(s, e), self._src_slice(s, e)", span_helper_text)
-        self.assertIn('self._eat(".")', resolve_text)
-        self.assertIn('name_tok = self._eat("NAME")', resolve_text)
+        self.assertIn('self._eat(".")', token_text)
+        self.assertIn('return self._eat("NAME")', token_text)
+        self.assertIn("name_tok = self._resolve_attr_suffix_name_token()", resolve_text)
         self.assertIn("source_span, repr_text = self._resolve_postfix_span_repr(", resolve_text)
         self.assertIn('return str(name_tok["v"]), source_span, repr_text', resolve_text)
         self.assertIn("attr_name, source_span, repr_text = self._resolve_attr_suffix_state(", helper_text)
         self.assertIn("return self._annotate_attr_expr(", helper_text)
         self.assertNotIn("self._node_span(", helper_text)
         self.assertNotIn("self._src_slice(", helper_text)
+        self.assertNotIn('self._eat(".")', resolve_text)
+        self.assertNotIn('name_tok = self._eat("NAME")', resolve_text)
         self.assertNotIn('self._eat(".")', helper_text)
         self.assertNotIn('name_tok = self._eat("NAME")', helper_text)
         self.assertIn('if tok_kind == ".":', postfix_suffix_text)
