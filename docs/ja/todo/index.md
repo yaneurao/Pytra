@@ -225,6 +225,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] named-call 全体の annotation 適用順序も `_ShExprParser._apply_named_call_dispatch()` へ寄せ、`_annotate_named_call_expr()` から builtin/runtime apply の直列分岐を外した。`test_east_core.py` では apply helper 定義、call site、旧 inline named-call apply branch の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `Attribute` call の annotation 適用順序も `_ShExprParser._apply_attr_call_expr_annotation()` へ寄せ、`_annotate_attr_call_expr()` から non-C++ / runtime-method apply の直列分岐を外した。`test_east_core.py` では apply helper 定義、call site、旧 inline attr-call apply branch の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call payload 組み立ても `_ShExprParser._build_call_expr_payload()` へ寄せ、`_annotate_call_expr()` から `_sh_make_call_expr()` の直呼びを外した。`test_east_core.py` では builder helper 定義、call site、旧 inline call-payload block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて callee kind ごとの call annotation 適用順序も `_ShExprParser._apply_callee_call_annotation()` へ寄せ、`_annotate_callee_call_expr()` から named/attr dispatch の直列分岐を外した。`test_east_core.py` では apply helper 定義、call site、旧 inline callee-dispatch branch の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

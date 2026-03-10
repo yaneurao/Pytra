@@ -4924,7 +4924,7 @@ class _ShExprParser:
                 source_span=source_span,
             )
 
-    def _annotate_callee_call_expr(
+    def _apply_callee_call_annotation(
         self,
         payload: dict[str, Any],
         *,
@@ -4932,7 +4932,7 @@ class _ShExprParser:
         fn_name: str,
         args: list[dict[str, Any]],
     ) -> dict[str, Any]:
-        """callee kind ごとの call annotation dispatch を helper へ寄せる。"""
+        """callee kind ごとの call annotation 適用を helper へ寄せる。"""
         if fn_name != "":
             return self._annotate_named_call_expr(
                 payload,
@@ -4945,6 +4945,22 @@ class _ShExprParser:
                 callee=callee,
             )
         return payload
+
+    def _annotate_callee_call_expr(
+        self,
+        payload: dict[str, Any],
+        *,
+        callee: dict[str, Any],
+        fn_name: str,
+        args: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """callee kind ごとの call annotation dispatch を helper へ寄せる。"""
+        return self._apply_callee_call_annotation(
+            payload,
+            callee=callee,
+            fn_name=fn_name,
+            args=args,
+        )
 
     def _build_call_expr_payload(
         self,
