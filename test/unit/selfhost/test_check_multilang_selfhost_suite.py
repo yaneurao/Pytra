@@ -55,6 +55,16 @@ class CheckMultilangSelfhostSuiteTest(unittest.TestCase):
         self.assertEqual(row.top_level_category, "regression")
         self.assertEqual(row.detail_category, "self_retranspile_fail")
 
+    def test_multistage_summary_maps_unsupported_by_design_to_known_block(self) -> None:
+        mod = _load_module()
+        row = mod._multistage_row_to_summary(
+            ["swift", "pass", "skip", "skip", "unsupported_by_design", "multistage runner is not defined"]
+        )
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual(row.top_level_category, "known_block")
+        self.assertEqual(row.detail_category, "unsupported_by_design")
+
 
 if __name__ == "__main__":
     unittest.main()

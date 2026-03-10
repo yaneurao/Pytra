@@ -93,7 +93,7 @@ def infer_diagnostic_detail_from_text(text: str) -> str | None:
 
 def classify_registry_diagnostic_detail(message: str) -> str:
     inferred = infer_diagnostic_detail_from_text(message)
-    if inferred in {"unsupported_by_design", "regression"}:
+    if inferred is not None:
         return inferred
     return "regression"
 
