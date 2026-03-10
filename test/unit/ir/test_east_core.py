@@ -1537,6 +1537,14 @@ x.bit_length()
 
     def test_core_source_routes_call_expr_returns_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        named_decl_text = text.split("def _resolve_named_call_declared_return_type", 1)[1].split(
+            "def _resolve_named_call_return_state",
+            1,
+        )[0]
+        named_state_text = text.split("def _resolve_named_call_return_state", 1)[1].split(
+            "def _infer_named_call_return_type",
+            1,
+        )[0]
         named_helper_text = text.split("def _infer_named_call_return_type", 1)[1].split(
             "def _infer_call_expr_return_type",
             1,
@@ -1564,10 +1572,13 @@ x.bit_length()
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('kind = str(callee.get("kind", ""))', helper_text)
-        self.assertIn("_sh_infer_known_name_call_return_type(", named_helper_text)
-        self.assertIn("if fn_name in self.fn_return_types:", named_helper_text)
-        self.assertIn("if fn_name in self.class_method_return_types:", named_helper_text)
-        self.assertIn('return self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))', named_helper_text)
+        self.assertIn("_sh_infer_known_name_call_return_type(", named_state_text)
+        self.assertIn("lookup_stdlib_imported_symbol_return_type(fn_name, _SH_IMPORT_SYMBOLS)", named_state_text)
+        self.assertIn("if fn_name in self.fn_return_types:", named_decl_text)
+        self.assertIn("if fn_name in self.class_method_return_types:", named_decl_text)
+        self.assertIn('return self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))', named_decl_text)
+        self.assertIn("call_ret, declared_ret = self._resolve_named_call_return_state(", named_helper_text)
+        self.assertIn('if call_ret != "":', named_helper_text)
         self.assertIn("self._infer_attr_call_return_type(", helper_text)
         self.assertIn('if kind == "Lambda":', helper_text)
         self.assertIn("return self._infer_named_call_return_type(fn_name=fn_name, args=args), fn_name", helper_text)
@@ -1582,6 +1593,8 @@ x.bit_length()
         self.assertNotIn("stdlib_imported_ret = (", postfix_text)
         self.assertNotIn("call_ret = self.fn_return_types[fn_name]", postfix_text)
         self.assertNotIn('call_ret = self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))', postfix_text)
+        self.assertNotIn("lookup_stdlib_imported_symbol_return_type(fn_name, _SH_IMPORT_SYMBOLS)", named_helper_text)
+        self.assertNotIn("if fn_name in self.fn_return_types:", named_helper_text)
         self.assertNotIn("call_ret = self._infer_attr_call_return_type(", postfix_text)
         self.assertNotIn('call_ret = str(node.get("return_type", "unknown"))', postfix_text)
         self.assertNotIn("call_ret, fn_name = self._infer_call_expr_return_type(", postfix_text)

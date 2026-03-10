@@ -4706,13 +4706,25 @@ class _ShExprParser:
             return stdlib_method_ret
         return call_ret
 
-    def _infer_named_call_return_type(
+    def _resolve_named_call_declared_return_type(
+        self,
+        *,
+        fn_name: str,
+    ) -> str:
+        """named-call の declared fallback 戻り型を helper へ寄せる。"""
+        if fn_name in self.fn_return_types:
+            return self.fn_return_types[fn_name]
+        if fn_name in self.class_method_return_types:
+            return fn_name
+        return self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))
+
+    def _resolve_named_call_return_state(
         self,
         *,
         fn_name: str,
         args: list[dict[str, Any]],
-    ) -> str:
-        """Name callee の戻り型推論を helper へ寄せる。"""
+    ) -> tuple[str, str]:
+        """named-call の imported/declaration return state を helper へ寄せる。"""
         stdlib_imported_ret = (
             lookup_stdlib_imported_symbol_return_type(fn_name, _SH_IMPORT_SYMBOLS)
             if fn_name != ""
@@ -4723,13 +4735,25 @@ class _ShExprParser:
             args,
             stdlib_imported_ret,
         )
+        declared_ret = self._resolve_named_call_declared_return_type(
+            fn_name=fn_name,
+        )
+        return call_ret, declared_ret
+
+    def _infer_named_call_return_type(
+        self,
+        *,
+        fn_name: str,
+        args: list[dict[str, Any]],
+    ) -> str:
+        """Name callee の戻り型推論を helper へ寄せる。"""
+        call_ret, declared_ret = self._resolve_named_call_return_state(
+            fn_name=fn_name,
+            args=args,
+        )
         if call_ret != "":
             return call_ret
-        if fn_name in self.fn_return_types:
-            return self.fn_return_types[fn_name]
-        if fn_name in self.class_method_return_types:
-            return fn_name
-        return self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))
+        return declared_ret
 
     def _infer_call_expr_return_type(
         self,
