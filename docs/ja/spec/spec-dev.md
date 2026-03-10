@@ -288,6 +288,26 @@ category 運用ルール:
 - backend input validator は `backend_input_*` を返す。
 - backend-local crash を category なし例外へ逃がしてはならない。
 
+### 1.2.5 validator 更新必須ルール
+
+node kind / meta key / helper protocol / backend input dependency を追加または変更するときは、次を同一 change set で更新しなければならない。
+
+- `spec-dev` または等価設計文書の contract 記述
+- `program_validator.py` などの central validator、または `check_east_stage_boundary.py` のような semantic guard
+- representative unit regression
+- representative selfhost regression
+
+禁止事項:
+
+- validator / guard を更新せずに node/meta を追加すること
+- backend-local fallback や ad-hoc check だけで新 contract を吸収すること
+- 「後で validator を足す」前提で TODO/plan なしに drift を持ち込むこと
+
+migration note:
+
+- 一時的な compatibility lane を入れる場合でも、`legacy` / `compat` / `generated_by` などの escape hatch は validator と regression で同時に管理する。
+- representative regression は「正常系が通る」だけでなく、「契約違反が expected failure になる」ことを 1 本以上含める。
+
 ### 1.3 `src/pytra/` 公開API（実装基準）
 
 `src/pytra/` は selfhost を含む共通 Python ライブラリの正本です。  

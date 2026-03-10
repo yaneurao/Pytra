@@ -204,3 +204,5 @@
 - 2026-03-11: `S4-02` はここで完了扱いにした。guard は canonical 実装ファイルの semantic literal drift を直接監視しつつ、既知の `make_user_error` import だけを intentional dependency として許可する。
 - 2026-03-11: `S5-01` の最初の slice では `build_selfhost.py` に `check_east_stage_boundary.py` preflight を追加し、stage semantic drift が selfhost transpile / compile に入る前に expected failure で止まることを `test_build_selfhost_tool.py` で固定した。
 - 2026-03-11: `S5-01` はここで完了扱いにした。representative unit lane は `test_east_stage_boundary_guard.py` / `test_py2x_entrypoints_contract.py`、selfhost lane は `test_build_selfhost_tool.py` で、contract violation が expected failure として再現できる状態になった。
+- 2026-03-11: `S5-02` では `spec-dev` `1.2.5` に validator 更新必須ルールを追加し、node/meta/helper/backend input 変更時は contract 文書・central validator/semantic guard・representative unit/selfhost regression を同一 change set で更新することを固定した。
+- 2026-03-11: P3 はここで完了扱いにした。contract 文書、central validator、representative backend diagnostic、stage semantic guard、unit/selfhost regression の 5 点が揃ったので、次の優先対象は P4 へ移る。

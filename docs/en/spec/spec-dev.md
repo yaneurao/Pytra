@@ -283,6 +283,26 @@ Category rules:
 - Backend-input validators emit `backend_input_*`.
 - Backend-local crashes must not escape without a category.
 
+### 1.2.5 Mandatory Validator-Update Rule
+
+Whenever a node kind, meta key, helper protocol, or backend-input dependency is added or changed, the same change set must update all of the following:
+
+- the contract description in `spec-dev` or an equivalent design document
+- the central validator such as `program_validator.py`, or a semantic guard such as `check_east_stage_boundary.py`
+- at least one representative unit regression
+- at least one representative selfhost regression
+
+Forbidden:
+
+- adding node/meta drift without updating validators or guards
+- absorbing a new contract only through backend-local fallback or ad-hoc checks
+- deferring validator work without a linked TODO/plan entry
+
+Migration note:
+
+- Even when a temporary compatibility lane is introduced, escape hatches such as `legacy`, `compat`, or `generated_by` must be managed together with validator coverage and regressions.
+- Representative regressions must cover not only the happy path, but also at least one expected-failure case for the contract violation being introduced.
+
 ### 1.3 `src/pytra/` Public API (Implementation Baseline)
 
 `src/pytra/` is the source of truth for shared Python libraries, including selfhost.

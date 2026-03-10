@@ -36,7 +36,7 @@ Last updated: 2026-03-11
 
 Context: [docs/ja/plans/p3-compiler-contract-hardening.md](../plans/p3-compiler-contract-hardening.md)
 
-1. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01] Harden compiler contracts and make stage/pass/backend handoff fail-closed.
+1. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01] Hardened compiler contracts and made stage/pass/backend handoff fail-closed.
 2. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-01] Inventory the current `check_east_stage_boundary`, `validate_raw_east3_doc`, and backend-entry guards, then classify blind spots such as node shape, `type_expr` / `resolved_type`, `source_span`, and helper metadata.
 3. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-02] Fix the responsibility boundary between schema validators, invariant validators, and backend input validators so it does not conflict with `P1-EAST-TYPEEXPR-01` or `P2-COMPILER-TYPED-BOUNDARY-01`.
 4. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-01] Fixed `spec-dev` `1.2.2` / `1.2.4` as the source of truth for required fields, allowed omissions, and diagnostic categories for raw EAST3, linked output, and backend input.
@@ -46,7 +46,7 @@ Context: [docs/ja/plans/p3-compiler-contract-hardening.md](../plans/p3-compiler-
 8. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-01] Run representative backends, starting with C++, through compiler-contract validators at entry and replace backend-local crashes or silent fallbacks with structured diagnostics.
 9. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-02] Extended `tools/check_east_stage_boundary.py` so it also detects stage semantic drift, not only stage-boundary violations.
 10. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-01] Added representative unit/selfhost regressions so contract violations are reproducible as expected failures.
-11. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-02] Update docs / TODO / archive / migration notes so validator updates become mandatory whenever node/meta contracts change.
+11. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-02] Updated docs / TODO / archive / migration notes so validator updates become mandatory whenever node/meta contracts change.
 
 ### P4: Canonicalize `backend_registry` and strengthen selfhost parity gates
 
