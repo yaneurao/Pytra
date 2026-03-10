@@ -185,3 +185,5 @@
 - 2026-03-11: `S2-02` は `spec-dev` `1.2.3` を正本にし、`type_expr` / `resolved_type` mirror、`dispatch_mode`、`source_span`、helper metadata の矛盾を fail-closed で扱うことを固定した。
 - 2026-03-11: `S3-01` の最初の slice では `program_validator.py` に recursive raw EAST3 invariant helper を追加し、nested `meta.dispatch_mode` drift、`repr` type mismatch、`source_span` shape/reversed-range を central validator で止める形にした。
 - 2026-03-11: 続く `S3-01` slice では linked output 側にも shape validator を追加し、`global.call_graph` などの object/list shape と `diagnostics.warnings/errors` の string item 契約を central validator で止める形にした。
+- 2026-03-11: raw EAST3 representative node は synthetic provenance がない限り `source_span` 必須とし、linked output `diagnostics` では non-empty string に加えて `source_span` を持つ object item も許容する方針にした。
+- 2026-03-11: 次の `S3-01` slice では raw EAST3 の top-level `body` item を object + `kind` + `source_span` 必須に寄せ、linked output `diagnostics` は non-empty string または `source_span` shape を持つ object のみ許可する方針に拡張した。

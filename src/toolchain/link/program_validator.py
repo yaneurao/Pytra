@@ -55,15 +55,18 @@ def _validate_raw_east3_invariants(
         if not isinstance(obj, dict):
             continue
         kind = obj.get("kind")
-        if kind is not None and not isinstance(kind, str):
-            raise RuntimeError("raw EAST3 " + path + ".kind must be string: " + module_id)
+        if kind is not None and (not isinstance(kind, str) or kind.strip() == ""):
+            raise RuntimeError("raw EAST3 " + path + ".kind must be non-empty string: " + module_id)
         repr_value = obj.get("repr")
         if repr_value is not None and not isinstance(repr_value, str):
             raise RuntimeError("raw EAST3 " + path + ".repr must be string: " + module_id)
         source_span = obj.get("source_span")
+        meta = obj.get("meta")
+        generated_by = meta.get("generated_by") if isinstance(meta, dict) else None
+        if kind is not None and kind != "Module" and source_span is None and not isinstance(generated_by, str):
+            raise RuntimeError("raw EAST3 " + path + ".source_span is required: " + module_id)
         if source_span is not None:
             _validate_source_span_shape(source_span, "raw EAST3 " + path + ".source_span")
-        meta = obj.get("meta")
         if meta is None:
             continue
         if not isinstance(meta, dict):
@@ -135,6 +138,24 @@ def _require_non_empty_str_items(arr: json.JsonArr, label: str) -> None:
         item = arr.get_str(index)
         if item is None or item.strip() == "":
             raise RuntimeError(label + "[" + str(index) + "] must be a non-empty string")
+
+
+def _validate_link_output_diagnostic_items(arr: json.JsonArr, label: str) -> None:
+    for index in range(json_array_length(arr)):
+        item_label = label + "[" + str(index) + "]"
+        item_obj = arr.get_obj(index)
+        if item_obj is not None:
+            span = item_obj.get("source_span")
+            if span is None:
+                continue
+            span_obj = item_obj.get_obj("source_span")
+            if span_obj is None:
+                raise RuntimeError(item_label + ".source_span must be an object")
+            _validate_source_span_shape(export_json_object_dict(span_obj), item_label + ".source_span")
+            continue
+        item = arr.get_str(index)
+        if item is None or item.strip() == "":
+            raise RuntimeError(item_label + " must be a non-empty string or object")
 
 
 def _validate_link_output_global_shape(global_doc: json.JsonObj) -> None:
@@ -214,7 +235,10 @@ def validate_raw_east3_doc(
     stage = east.get_int("east_stage")
     if stage != 3:
         raise RuntimeError("raw EAST3 east_stage must be 3: " + module_id)
-    _require_list_field(east, "body", "raw EAST3")
+    body = _require_list_field(east, "body", "raw EAST3")
+    for idx in range(json_array_length(body)):
+        if body.get_obj(idx) is None:
+            raise RuntimeError("raw EAST3.body[" + str(idx) + "] must be an object: " + module_id)
     schema_version_value = east.get("schema_version")
     schema_version = schema_version_value.as_int() if schema_version_value is not None else None
     if schema_version_value is not None and (schema_version is None or schema_version < 1):
@@ -305,7 +329,7 @@ def validate_link_output_doc(doc_any: object) -> dict[str, object]:
         arr = diagnostics.get_arr(key)
         if arr is None:
             raise RuntimeError("link-output.diagnostics." + key + " must be a list")
-        _require_non_empty_str_items(arr, "link-output.diagnostics." + key)
+        _validate_link_output_diagnostic_items(arr, "link-output.diagnostics." + key)
     return {
         "schema": schema,
         "target": _require_str(doc, "target", "link-output"),

@@ -229,6 +229,93 @@ class LinkedProgramLoaderTests(unittest.TestCase):
         self.assertEqual(doc["global"]["type_id_table"], {})
         self.assertEqual(doc["diagnostics"]["warnings"], [])
 
+    def test_validate_link_output_doc_accepts_object_diagnostic_with_source_span(self) -> None:
+        doc = validate_link_output_doc(
+            {
+                "schema": LINK_OUTPUT_SCHEMA,
+                "target": "cpp",
+                "dispatch_mode": "native",
+                "entry_modules": ["app.main"],
+                "modules": [
+                    {
+                        "module_id": "app.main",
+                        "input": "raw/app/main.east3.json",
+                        "output": "linked/app/main.east3.json",
+                        "source_path": "sample/py/main.py",
+                        "is_entry": True,
+                    }
+                ],
+                "global": {
+                    "type_id_table": {},
+                    "call_graph": {},
+                    "sccs": [],
+                    "non_escape_summary": {},
+                    "container_ownership_hints_v1": {},
+                },
+                "diagnostics": {
+                    "warnings": [
+                        {
+                            "category": "backend_input_missing_metadata",
+                            "message": "missing metadata",
+                            "source_span": {
+                                "lineno": 1,
+                                "end_lineno": 1,
+                                "col_offset": 0,
+                                "end_col_offset": 1,
+                            },
+                        }
+                    ],
+                    "errors": [],
+                },
+            }
+        )
+
+        warnings = doc["diagnostics"]["warnings"]
+        self.assertEqual(len(warnings), 1)
+        self.assertEqual(warnings[0]["category"], "backend_input_missing_metadata")
+
+    def test_validate_link_output_doc_rejects_malformed_diagnostic_source_span(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, r"link-output\.diagnostics\.warnings\[0\]\.source_span\.lineno must be int"):
+            validate_link_output_doc(
+                {
+                    "schema": LINK_OUTPUT_SCHEMA,
+                    "target": "cpp",
+                    "dispatch_mode": "native",
+                    "entry_modules": ["app.main"],
+                    "modules": [
+                        {
+                            "module_id": "app.main",
+                            "input": "raw/app/main.east3.json",
+                            "output": "linked/app/main.east3.json",
+                            "source_path": "sample/py/main.py",
+                            "is_entry": True,
+                        }
+                    ],
+                    "global": {
+                        "type_id_table": {},
+                        "call_graph": {},
+                        "sccs": [],
+                        "non_escape_summary": {},
+                        "container_ownership_hints_v1": {},
+                    },
+                    "diagnostics": {
+                        "warnings": [
+                            {
+                                "category": "backend_input_missing_metadata",
+                                "message": "missing metadata",
+                                "source_span": {
+                                    "lineno": "1",
+                                    "end_lineno": 1,
+                                    "col_offset": 0,
+                                    "end_col_offset": 1,
+                                },
+                            }
+                        ],
+                        "errors": [],
+                    },
+                }
+            )
+
     def test_validate_link_output_doc_rejects_non_object_global_payload(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "link-output.global.call_graph must be an object"):
             validate_link_output_doc(

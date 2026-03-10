@@ -138,6 +138,44 @@ class FrontendTypeExprTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, r"\$\.body\[0\]\.value\.resolved_type mismatch"):
             validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m")
 
+    def test_validate_raw_east3_doc_rejects_non_object_body_item(self) -> None:
+        doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native"},
+            "body": [1],
+        }
+
+        with self.assertRaisesRegex(RuntimeError, r"raw EAST3\.body\[0\] must be an object"):
+            validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m")
+
+    def test_validate_raw_east3_doc_requires_source_span_for_user_node(self) -> None:
+        doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Name",
+                        "id": "x",
+                        "source_span": {
+                            "lineno": 1,
+                            "end_lineno": 1,
+                            "col_offset": 0,
+                            "end_col_offset": 1,
+                        },
+                    },
+                }
+            ],
+        }
+
+        with self.assertRaisesRegex(RuntimeError, r"\$\.body\[0\]\.source_span is required"):
+            validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m")
+
     def test_validate_raw_east3_doc_rejects_invalid_source_span_shape(self) -> None:
         doc = {
             "kind": "Module",
@@ -170,10 +208,22 @@ class FrontendTypeExprTest(unittest.TestCase):
             "body": [
                 {
                     "kind": "Expr",
+                    "source_span": {
+                        "lineno": 1,
+                        "end_lineno": 1,
+                        "col_offset": 0,
+                        "end_col_offset": 1,
+                    },
                     "value": {
                         "kind": "Name",
                         "id": "x",
                         "resolved_type": "int64",
+                        "source_span": {
+                            "lineno": 1,
+                            "end_lineno": 1,
+                            "col_offset": 0,
+                            "end_col_offset": 1,
+                        },
                         "meta": {"dispatch_mode": "type_id"},
                     },
                 }
