@@ -45,9 +45,8 @@ from toolchain.ir.core_decorator_semantics import _sh_is_sealed_decorator
 from toolchain.ir.core_decorator_semantics import _sh_is_template_decorator
 from toolchain.ir.core_decorator_semantics import _sh_parse_decorator_head_and_args
 from toolchain.ir.core_extern_semantics import _sh_collect_extern_var_metadata
-from toolchain.ir.core_runtime_decl_semantics import _sh_parse_runtime_abi_args_map
-from toolchain.ir.core_runtime_decl_semantics import _sh_parse_runtime_abi_mode
-from toolchain.ir.core_runtime_decl_semantics import _sh_parse_runtime_abi_string_literal
+from toolchain.ir.core_runtime_decl_semantics import _sh_collect_runtime_abi_metadata
+from toolchain.ir.core_runtime_decl_semantics import _sh_collect_template_metadata
 from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin
 from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin
 from toolchain.ir.core_expr_call_args import _ShExprCallArgParserMixin
@@ -2202,239 +2201,6 @@ def _sh_parse_dataclass_decorator_options(args_txt: str, *, line_no: int, line_t
             hint="Use True/False literal values.",
         )
     return out
-
-
-def _sh_parse_runtime_abi_decorator(
-    decorator_text: str,
-    *,
-    arg_order: list[str],
-    import_module_bindings: dict[str, str],
-    import_symbol_bindings: dict[str, dict[str, str]],
-    line_no: int,
-    line_text: str,
-) -> dict[str, Any] | None:
-    if not _sh_is_abi_decorator(
-        decorator_text,
-        import_module_bindings=import_module_bindings,
-        import_symbol_bindings=import_symbol_bindings,
-    ):
-        return None
-    _head, args_txt = _sh_parse_decorator_head_and_args(decorator_text)
-    if args_txt == "":
-        raise _make_east_build_error(
-            kind="unsupported_syntax",
-            message="abi decorator requires keyword-only call form",
-            source_span=_sh_span(line_no, 0, len(line_text)),
-            hint='Use `@abi(args={"name": "value"}, ret="value")`.',
-        )
-    out_args: dict[str, str] = {}
-    out_ret = "default"
-    seen_keys: set[str] = set()
-    for part_raw in _sh_split_top_commas(args_txt):
-        part = part_raw.strip()
-        if part == "":
-            continue
-        split = _sh_split_top_level_assign(part)
-        if split is None:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"abi decorator accepts keyword arguments only: {part}",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint='Use `args=...` and `ret=...` keyword arguments only.',
-            )
-        key_txt, value_txt = split
-        key = key_txt.strip()
-        if key in seen_keys:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"duplicate abi decorator option: {key}",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint="Specify each abi decorator option at most once.",
-            )
-        seen_keys.add(key)
-        if key == "args":
-            out_args = _sh_parse_runtime_abi_args_map(
-                value_txt,
-                line_no=line_no,
-                line_text=line_text,
-                split_top_commas=_sh_split_top_commas,
-                split_top_level_colon=_sh_split_top_level_colon,
-                is_identifier=_sh_is_identifier,
-                runtime_abi_arg_modes=_SH_RUNTIME_ABI_ARG_MODES,
-                runtime_abi_mode_aliases=_SH_RUNTIME_ABI_MODE_ALIASES,
-                make_east_build_error=_make_east_build_error,
-                make_span=_sh_span,
-            )
-            continue
-        if key == "ret":
-            out_ret = _sh_parse_runtime_abi_mode(
-                value_txt,
-                line_no=line_no,
-                line_text=line_text,
-                field_name="abi ret",
-                allowed_modes=_SH_RUNTIME_ABI_RET_MODES,
-                hint_text='Use one of "default" or "value".',
-                runtime_abi_mode_aliases=_SH_RUNTIME_ABI_MODE_ALIASES,
-                make_east_build_error=_make_east_build_error,
-                make_span=_sh_span,
-            )
-            continue
-        raise _make_east_build_error(
-            kind="unsupported_syntax",
-            message=f"unsupported abi decorator option: {key}",
-            source_span=_sh_span(line_no, 0, len(line_text)),
-            hint='Supported keys are `args` and `ret` only.',
-        )
-    valid_args = set(arg_order)
-    for param_name in out_args.keys():
-        if param_name not in valid_args:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"abi decorator references unknown parameter: {param_name}",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint="Use only declared function parameter names in abi args.",
-            )
-    return {
-        "schema_version": 1,
-        "args": out_args,
-        "ret": out_ret,
-    }
-
-
-def _sh_collect_runtime_abi_metadata(
-    decorators: list[str],
-    *,
-    arg_order: list[str],
-    import_module_bindings: dict[str, str],
-    import_symbol_bindings: dict[str, dict[str, str]],
-    line_no: int,
-    line_text: str,
-) -> dict[str, Any] | None:
-    runtime_abi_meta: dict[str, Any] | None = None
-    for decorator_text in decorators:
-        parsed = _sh_parse_runtime_abi_decorator(
-            decorator_text,
-            arg_order=arg_order,
-            import_module_bindings=import_module_bindings,
-            import_symbol_bindings=import_symbol_bindings,
-            line_no=line_no,
-            line_text=line_text,
-        )
-        if parsed is None:
-            continue
-        if runtime_abi_meta is not None:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message="multiple abi decorators on one function are not supported",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint="Use a single @abi(args=..., ret=...) decorator.",
-            )
-        runtime_abi_meta = parsed
-    return runtime_abi_meta
-
-
-def _sh_parse_template_decorator(
-    decorator_text: str,
-    *,
-    import_module_bindings: dict[str, str],
-    import_symbol_bindings: dict[str, dict[str, str]],
-    line_no: int,
-    line_text: str,
-) -> dict[str, Any] | None:
-    if not _sh_is_template_decorator(
-        decorator_text,
-        import_module_bindings=import_module_bindings,
-        import_symbol_bindings=import_symbol_bindings,
-    ):
-        return None
-    _head, args_txt = _sh_parse_decorator_head_and_args(decorator_text)
-    if args_txt == "":
-        raise _make_east_build_error(
-            kind="unsupported_syntax",
-            message="template decorator requires one or more string literal parameters",
-            source_span=_sh_span(line_no, 0, len(line_text)),
-            hint='Use `@template("T")` or `@template("K", "V")`.',
-        )
-    params: list[str] = []
-    seen: set[str] = set()
-    for part_raw in _sh_split_top_commas(args_txt):
-        part = part_raw.strip()
-        if part == "":
-            continue
-        if _sh_split_top_level_assign(part) is not None:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"template decorator accepts positional string literal parameters only: {part}",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint='Use `@template("T", "U")` form.',
-            )
-        param = _sh_parse_runtime_abi_string_literal(
-            part,
-            line_no=line_no,
-            line_text=line_text,
-            field_name="template parameter",
-            make_east_build_error=_make_east_build_error,
-            make_span=_sh_span,
-        )
-        if not _sh_is_identifier(param):
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"template parameter must be an identifier name: {param}",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint='Use identifier-like strings such as "T" or "Value".',
-            )
-        if param in seen:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"duplicate template parameter: {param}",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint="Specify each template parameter at most once.",
-            )
-        seen.add(param)
-        params.append(param)
-    if len(params) == 0:
-        raise _make_east_build_error(
-            kind="unsupported_syntax",
-            message="template decorator requires one or more string literal parameters",
-            source_span=_sh_span(line_no, 0, len(line_text)),
-            hint='Use `@template("T")` or `@template("K", "V")`.',
-        )
-    return {
-        "schema_version": 1,
-        "params": params,
-        "scope": _SH_TEMPLATE_SCOPE,
-        "instantiation_mode": _SH_TEMPLATE_INSTANTIATION_MODE,
-    }
-
-
-def _sh_collect_template_metadata(
-    decorators: list[str],
-    *,
-    import_module_bindings: dict[str, str],
-    import_symbol_bindings: dict[str, dict[str, str]],
-    line_no: int,
-    line_text: str,
-) -> dict[str, Any] | None:
-    template_meta: dict[str, Any] | None = None
-    for decorator_text in decorators:
-        parsed = _sh_parse_template_decorator(
-            decorator_text,
-            import_module_bindings=import_module_bindings,
-            import_symbol_bindings=import_symbol_bindings,
-            line_no=line_no,
-            line_text=line_text,
-        )
-        if parsed is None:
-            continue
-        if template_meta is not None:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message="multiple template decorators on one function are not supported",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint='Use a single `@template("T", ...)` decorator.',
-            )
-        template_meta = parsed
-    return template_meta
 
 
 def _sh_parse_augassign(text: str) -> tuple[str, str, str] | None:
@@ -8276,6 +8042,17 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 import_symbol_bindings=import_symbol_bindings,
                 line_no=i,
                 line_text=ln,
+                is_abi_decorator=_sh_is_abi_decorator,
+                parse_decorator_head_and_args=_sh_parse_decorator_head_and_args,
+                split_top_commas=_sh_split_top_commas,
+                split_top_level_assign=_sh_split_top_level_assign,
+                split_top_level_colon=_sh_split_top_level_colon,
+                is_identifier=_sh_is_identifier,
+                runtime_abi_arg_modes=_SH_RUNTIME_ABI_ARG_MODES,
+                runtime_abi_ret_modes=_SH_RUNTIME_ABI_RET_MODES,
+                runtime_abi_mode_aliases=_SH_RUNTIME_ABI_MODE_ALIASES,
+                make_east_build_error=_make_east_build_error,
+                make_span=_sh_span,
             )
             template_meta = _sh_collect_template_metadata(
                 fn_decorators,
@@ -8283,6 +8060,15 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 import_symbol_bindings=import_symbol_bindings,
                 line_no=i,
                 line_text=ln,
+                is_template_decorator=_sh_is_template_decorator,
+                parse_decorator_head_and_args=_sh_parse_decorator_head_and_args,
+                split_top_commas=_sh_split_top_commas,
+                split_top_level_assign=_sh_split_top_level_assign,
+                is_identifier=_sh_is_identifier,
+                template_scope=_SH_TEMPLATE_SCOPE,
+                template_instantiation_mode=_SH_TEMPLATE_INSTANTIATION_MODE,
+                make_east_build_error=_make_east_build_error,
+                make_span=_sh_span,
             )
             item = _sh_make_function_def_stmt(
                 fn_name,
