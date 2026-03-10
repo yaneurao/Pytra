@@ -4,6 +4,7 @@
 
 - まずチュートリアル入口を確認する: [チュートリアル](tutorial/README.md)
 - 開発補助スクリプト一覧を確認する: [ツール一覧](spec/spec-tools.md)
+- selfhost parity gate の実行順と known block の読み方を確認する: [P4 Selfhost Parity Readiness Report](plans/p4-selfhost-parity-readiness-report.md)
 - オプション設計（性能/互換性トレードオフ）を確認する: [オプション仕様](spec/spec-options.md)
 - ランタイム配置と include 規約を確認する: [ランタイム仕様](spec/spec-runtime.md)
 - 実装済み項目・未実装項目・対応予定なしを確認する: [実装状況メモ](plans/pytra-wip.md)

@@ -13,6 +13,7 @@ This folder stores long-term plans, design drafts, and investigation notes.
 - Move only concrete, actionable items into `docs/ja/todo/index.md`.
 - Each plan should map one-to-one with a TODO task ID (for example: `P1-COMP-01`).
 - In TODO entries, always list both the task ID and the corresponding plan file path.
+- If you place supporting reports such as readiness reports under `plans/`, always link them from the corresponding plan.
 - For priority-override instructions, use `docs/ja/plans/instruction-template.md`.
 
 ## Recommended Template
