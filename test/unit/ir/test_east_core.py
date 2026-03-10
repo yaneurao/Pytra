@@ -1346,12 +1346,24 @@ class EastCoreTest(unittest.TestCase):
             "def _annotate_named_call_expr",
             1,
         )[0]
+        builtin_named_apply_text = text.split("def _apply_builtin_named_call_annotation", 1)[1].split(
+            "def _apply_runtime_named_call_annotation",
+            1,
+        )[0]
+        runtime_named_apply_text = text.split("def _apply_runtime_named_call_annotation", 1)[1].split(
+            "def _resolve_named_call_dispatch",
+            1,
+        )[0]
+        coalesce_text = text.split("def _coalesce_optional_annotation_payload", 1)[1].split(
+            "def _apply_builtin_named_call_annotation",
+            1,
+        )[0]
         helper_text = text.split("def _annotate_named_call_expr", 1)[1].split(
             "def _should_use_truthy_runtime_for_bool_ctor",
             1,
         )[0]
         apply_text = text.split("def _apply_named_call_dispatch", 1)[1].split(
-            "def _resolve_named_call_dispatch",
+            "def _coalesce_optional_annotation_payload",
             1,
         )[0]
         builtin_resolve_text = text.split("def _resolve_builtin_named_call_semantic_tag", 1)[1].split(
@@ -1399,8 +1411,15 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("return self._apply_named_call_dispatch(", helper_text)
         self.assertIn('if dispatch_kind == "builtin":', apply_text)
         self.assertIn('if dispatch_kind == "runtime":', apply_text)
-        self.assertIn("builtin_payload = self._annotate_builtin_named_call_expr(", apply_text)
-        self.assertIn("runtime_payload = self._annotate_runtime_named_call_expr(", apply_text)
+        self.assertIn("return self._apply_builtin_named_call_annotation(", apply_text)
+        self.assertIn("return self._apply_runtime_named_call_annotation(", apply_text)
+        self.assertIn("return payload if annotated_payload is None else annotated_payload", coalesce_text)
+        self.assertIn("builtin_payload = self._annotate_builtin_named_call_expr(", builtin_named_apply_text)
+        self.assertIn("runtime_payload = self._annotate_runtime_named_call_expr(", runtime_named_apply_text)
+        self.assertIn("return self._coalesce_optional_annotation_payload(", builtin_named_apply_text)
+        self.assertIn("annotated_payload=builtin_payload", builtin_named_apply_text)
+        self.assertIn("return self._coalesce_optional_annotation_payload(", runtime_named_apply_text)
+        self.assertIn("annotated_payload=runtime_payload", runtime_named_apply_text)
         self.assertIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', named_guard_text)
         self.assertNotIn("call_dispatch = _sh_lookup_named_call_dispatch(fn_name)", helper_text)
         self.assertNotIn("call_dispatch = self._resolve_named_call_dispatch(", helper_text)
@@ -1408,6 +1427,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('str(call_dispatch.get("builtin_semantic_tag", ""))', helper_text)
         self.assertNotIn('str(call_dispatch.get("stdlib_fn_runtime_call", ""))', helper_text)
         self.assertNotIn('str(call_dispatch.get("stdlib_symbol_runtime_call", ""))', helper_text)
+        self.assertNotIn("builtin_payload = self._annotate_builtin_named_call_expr(", apply_text)
+        self.assertNotIn("runtime_payload = self._annotate_runtime_named_call_expr(", apply_text)
+        self.assertNotIn("return payload if annotated_payload is None else annotated_payload", apply_text)
         self.assertNotIn('str(call_dispatch.get("noncpp_symbol_runtime_call", ""))', helper_text)
         self.assertNotIn('if dispatch_kind == "builtin":', helper_text)
         self.assertNotIn('if dispatch_kind == "runtime":', helper_text)

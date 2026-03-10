@@ -5136,21 +5136,66 @@ class _ShExprParser:
     ) -> dict[str, Any]:
         """named-call dispatch の annotation 適用を helper へ寄せる。"""
         if dispatch_kind == "builtin":
-            builtin_payload = self._annotate_builtin_named_call_expr(
+            return self._apply_builtin_named_call_annotation(
                 payload,
                 fn_name=fn_name,
                 args=args,
                 call_dispatch=call_dispatch,
             )
-            return payload if builtin_payload is None else builtin_payload
         if dispatch_kind == "runtime":
-            runtime_payload = self._annotate_runtime_named_call_expr(
+            return self._apply_runtime_named_call_annotation(
                 payload,
                 fn_name=fn_name,
                 call_dispatch=call_dispatch,
             )
-            return payload if runtime_payload is None else runtime_payload
         return payload
+
+    def _coalesce_optional_annotation_payload(
+        self,
+        *,
+        payload: dict[str, Any],
+        annotated_payload: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        """optional annotation payload の fallback を helper へ寄せる。"""
+        return payload if annotated_payload is None else annotated_payload
+
+    def _apply_builtin_named_call_annotation(
+        self,
+        payload: dict[str, Any],
+        *,
+        fn_name: str,
+        args: list[dict[str, Any]],
+        call_dispatch: dict[str, str],
+    ) -> dict[str, Any]:
+        """builtin named-call apply を helper へ寄せる。"""
+        builtin_payload = self._annotate_builtin_named_call_expr(
+            payload,
+            fn_name=fn_name,
+            args=args,
+            call_dispatch=call_dispatch,
+        )
+        return self._coalesce_optional_annotation_payload(
+            payload=payload,
+            annotated_payload=builtin_payload,
+        )
+
+    def _apply_runtime_named_call_annotation(
+        self,
+        payload: dict[str, Any],
+        *,
+        fn_name: str,
+        call_dispatch: dict[str, str],
+    ) -> dict[str, Any]:
+        """runtime named-call apply を helper へ寄せる。"""
+        runtime_payload = self._annotate_runtime_named_call_expr(
+            payload,
+            fn_name=fn_name,
+            call_dispatch=call_dispatch,
+        )
+        return self._coalesce_optional_annotation_payload(
+            payload=payload,
+            annotated_payload=runtime_payload,
+        )
 
     def _resolve_named_call_dispatch(
         self,
