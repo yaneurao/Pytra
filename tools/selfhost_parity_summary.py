@@ -66,6 +66,20 @@ def build_direct_e2e_summary_row(subject: str, status: str, note: str) -> Parity
     return build_summary_row("direct_e2e", subject, detail, note)
 
 
+def build_stage2_summary_row(subject: str, status: str, note: str) -> ParitySummaryRow:
+    if status == "pass":
+        detail = "pass"
+    elif status == "build_fail":
+        detail = "stage2_build_fail"
+    elif status == "missing_binary":
+        detail = "missing_output"
+    elif status == "verify_fail":
+        detail = "direct_parity_fail"
+    else:
+        detail = "regression"
+    return build_summary_row("stage2", subject, detail, note)
+
+
 def format_summary_line(row: ParitySummaryRow) -> str:
     note = row.note.strip()
     if note == "":
