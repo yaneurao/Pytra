@@ -227,6 +227,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call payload 組み立ても `_ShExprParser._build_call_expr_payload()` へ寄せ、`_annotate_call_expr()` から `_sh_make_call_expr()` の直呼びを外した。`test_east_core.py` では builder helper 定義、call site、旧 inline call-payload block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて callee kind ごとの call annotation 適用順序も `_ShExprParser._apply_callee_call_annotation()` へ寄せ、`_annotate_callee_call_expr()` から named/attr dispatch の直列分岐を外した。`test_east_core.py` では apply helper 定義、call site、旧 inline callee-dispatch branch の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call annotation 前段の return-type 推論と named-call guard も `_ShExprParser._resolve_call_expr_annotation_state()` へ寄せ、`_annotate_call_expr()` から `_infer_call_expr_return_type()` と `_guard_named_call_args()` の直列処理を外した。`test_east_core.py` では state helper 定義、call site、旧 inline pre-annotation block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call annotation の payload build と callee apply も `_ShExprParser._apply_call_expr_annotation()` へ寄せ、`_annotate_call_expr()` から `_build_call_expr_payload()` と `_annotate_callee_call_expr()` の直列処理を外した。`test_east_core.py` では apply helper 定義、call site、旧 inline call-annotation apply block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

@@ -4998,6 +4998,33 @@ class _ShExprParser:
             repr_text=repr_text,
         )
 
+    def _apply_call_expr_annotation(
+        self,
+        *,
+        callee: dict[str, Any],
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        source_span: dict[str, int],
+        repr_text: str,
+        call_ret: str,
+        fn_name: str,
+    ) -> dict[str, Any]:
+        """Call expr annotation 適用を helper へ寄せる。"""
+        payload = self._build_call_expr_payload(
+            callee=callee,
+            args=args,
+            keywords=keywords,
+            source_span=source_span,
+            repr_text=repr_text,
+            call_ret=call_ret,
+        )
+        return self._annotate_callee_call_expr(
+            payload,
+            callee=callee,
+            fn_name=fn_name,
+            args=args,
+        )
+
     def _annotate_call_expr(
         self,
         *,
@@ -5013,19 +5040,14 @@ class _ShExprParser:
             args=args,
             source_span=source_span,
         )
-        payload = self._build_call_expr_payload(
+        return self._apply_call_expr_annotation(
             callee=callee,
             args=args,
             keywords=keywords,
             source_span=source_span,
             repr_text=repr_text,
             call_ret=call_ret,
-        )
-        return self._annotate_callee_call_expr(
-            payload,
-            callee=callee,
             fn_name=fn_name,
-            args=args,
         )
 
     def _apply_named_call_dispatch(
