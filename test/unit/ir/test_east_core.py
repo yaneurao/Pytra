@@ -1135,6 +1135,10 @@ class EastCoreTest(unittest.TestCase):
             "def _should_use_truthy_runtime_for_bool_ctor",
             1,
         )[0]
+        apply_text = text.split("def _apply_named_call_dispatch", 1)[1].split(
+            "def _annotate_named_call_expr",
+            1,
+        )[0]
         builtin_resolve_text = text.split("def _resolve_builtin_named_call_semantic_tag", 1)[1].split(
             "def _apply_builtin_named_call_dispatch",
             1,
@@ -1157,16 +1161,19 @@ class EastCoreTest(unittest.TestCase):
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
-        self.assertIn("builtin_payload = self._annotate_builtin_named_call_expr(", helper_text)
-        self.assertIn("if builtin_payload is not None:", helper_text)
-        self.assertIn("runtime_payload = self._annotate_runtime_named_call_expr(", helper_text)
-        self.assertIn("if runtime_payload is not None:", helper_text)
         self.assertIn("call_dispatch = _sh_lookup_named_call_dispatch(fn_name)", helper_text)
+        self.assertIn("return self._apply_named_call_dispatch(", helper_text)
+        self.assertIn("builtin_payload = self._annotate_builtin_named_call_expr(", apply_text)
+        self.assertIn("if builtin_payload is not None:", apply_text)
+        self.assertIn("runtime_payload = self._annotate_runtime_named_call_expr(", apply_text)
+        self.assertIn("if runtime_payload is not None:", apply_text)
         self.assertIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', named_guard_text)
         self.assertNotIn('str(call_dispatch.get("builtin_semantic_tag", ""))', helper_text)
         self.assertNotIn('str(call_dispatch.get("stdlib_fn_runtime_call", ""))', helper_text)
         self.assertNotIn('str(call_dispatch.get("stdlib_symbol_runtime_call", ""))', helper_text)
         self.assertNotIn('str(call_dispatch.get("noncpp_symbol_runtime_call", ""))', helper_text)
+        self.assertNotIn("builtin_payload = self._annotate_builtin_named_call_expr(", helper_text)
+        self.assertNotIn("runtime_payload = self._annotate_runtime_named_call_expr(", helper_text)
         self.assertIn('return str(call_dispatch.get("builtin_semantic_tag", ""))', builtin_resolve_text)
         self.assertIn("return self._apply_builtin_named_call_dispatch(", builtin_helper_text)
         self.assertIn('if fn_name in {"print", "len", "range", "zip", "str"}:', builtin_apply_text)
@@ -1188,6 +1195,10 @@ class EastCoreTest(unittest.TestCase):
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
             "def _should_use_truthy_runtime_for_bool_ctor",
+            1,
+        )[0]
+        named_apply_text = text.split("def _apply_named_call_dispatch", 1)[1].split(
+            "def _annotate_named_call_expr",
             1,
         )[0]
         truthy_helper_text = text.split("def _should_use_truthy_runtime_for_bool_ctor", 1)[1].split(
@@ -1220,7 +1231,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('if fn_name == "bool" and len(args) == 1:', apply_text)
         self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', apply_text)
         self.assertIn("return None", apply_text)
-        self.assertIn("builtin_payload = self._annotate_builtin_named_call_expr(", named_call_text)
+        self.assertIn("return self._apply_named_call_dispatch(", named_call_text)
+        self.assertIn("builtin_payload = self._annotate_builtin_named_call_expr(", named_apply_text)
         self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', postfix_text)
         self.assertNotIn('if fn_name == "bool" and len(args) == 1:', postfix_text)
         self.assertNotIn("elem_t = _sh_infer_enumerate_item_type(args)", postfix_text)
@@ -1228,7 +1240,11 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_runtime_named_call_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
-            "def _annotate_builtin_named_call_expr",
+            "def _should_use_truthy_runtime_for_bool_ctor",
+            1,
+        )[0]
+        named_apply_text = text.split("def _apply_named_call_dispatch", 1)[1].split(
+            "def _annotate_named_call_expr",
             1,
         )[0]
         resolve_text = text.split("def _resolve_runtime_named_call_dispatch", 1)[1].split(
@@ -1259,7 +1275,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('noncpp_symbol_runtime_call = str(call_dispatch.get("noncpp_symbol_runtime_call", ""))', helper_text)
         self.assertNotIn('if stdlib_fn_runtime_call != "":', helper_text)
         self.assertIn("return None", apply_text)
-        self.assertIn("runtime_payload = self._annotate_runtime_named_call_expr(", named_call_text)
+        self.assertIn("return self._apply_named_call_dispatch(", named_call_text)
+        self.assertIn("runtime_payload = self._annotate_runtime_named_call_expr(", named_apply_text)
         self.assertNotIn('_sh_lookup_named_call_dispatch(fn_name)', postfix_text)
         self.assertNotIn('if stdlib_fn_runtime_call != "":', postfix_text)
         self.assertNotIn('if stdlib_symbol_runtime_call != "":', postfix_text)

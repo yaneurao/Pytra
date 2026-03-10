@@ -4977,15 +4977,15 @@ class _ShExprParser:
             args=args,
         )
 
-    def _annotate_named_call_expr(
+    def _apply_named_call_dispatch(
         self,
         payload: dict[str, Any],
         *,
         fn_name: str,
         args: list[dict[str, Any]],
+        call_dispatch: dict[str, str],
     ) -> dict[str, Any]:
-        """Name callee の metadata annotation を shared helper へ寄せる。"""
-        call_dispatch = _sh_lookup_named_call_dispatch(fn_name)
+        """named-call dispatch の annotation 適用を helper へ寄せる。"""
         builtin_payload = self._annotate_builtin_named_call_expr(
             payload,
             fn_name=fn_name,
@@ -5002,6 +5002,22 @@ class _ShExprParser:
         if runtime_payload is not None:
             return runtime_payload
         return payload
+
+    def _annotate_named_call_expr(
+        self,
+        payload: dict[str, Any],
+        *,
+        fn_name: str,
+        args: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Name callee の metadata annotation を shared helper へ寄せる。"""
+        call_dispatch = _sh_lookup_named_call_dispatch(fn_name)
+        return self._apply_named_call_dispatch(
+            payload,
+            fn_name=fn_name,
+            args=args,
+            call_dispatch=call_dispatch,
+        )
 
     def _should_use_truthy_runtime_for_bool_ctor(
         self,
