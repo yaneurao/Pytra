@@ -42,7 +42,7 @@ Context: [docs/ja/plans/p3-compiler-contract-hardening.md](../plans/p3-compiler-
 4. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-01] Fixed `spec-dev` `1.2.2` / `1.2.4` as the source of truth for required fields, allowed omissions, and diagnostic categories for raw EAST3, linked output, and backend input.
 5. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-02] Fixed `spec-dev` `1.2.3` as the source of truth for the fail-closed policy for `type_expr` / `resolved_type` mirrors, `dispatch_mode`, `source_span`, and helper metadata.
 6. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-01] Added central validator primitives around `toolchain/link/program_validator.py` and extended coarse raw EAST3 / linked-output checks to representative node/meta invariants.
-7. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-02] Introduce pre/post validation hooks at representative pass/lowering/linker entries and stop invalid nodes from flowing through silently.
+7. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-02] Introduced pre/post validation hooks at representative pass/lowering/linker entries and stopped invalid nodes from flowing through silently.
 8. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-01] Run representative backends, starting with C++, through compiler-contract validators at entry and replace backend-local crashes or silent fallbacks with structured diagnostics.
 9. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-02] Extend `tools/check_east_stage_boundary.py` or its successor so it also detects stage semantic drift, not only stage-boundary violations.
 10. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-01] Add representative unit/selfhost regressions so contract violations are reproducible as expected failures.

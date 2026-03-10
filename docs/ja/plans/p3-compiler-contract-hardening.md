@@ -142,7 +142,7 @@
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-01] `spec-dev` または等価設計文書に、EAST3 / linked output / backend input の必須 field、許容欠落、diagnostic category を追加する。
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-02] `type_expr` / `resolved_type` mirror、`dispatch_mode`、`source_span`、helper metadata の整合ルールと fail-closed 方針を固定する。
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-01] `toolchain/link/program_validator.py` と周辺に central validator primitive を追加し、raw EAST3 / linked output の coarse check を representative な node/meta invariant まで拡張した。
-- [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-02] representative pass / lowering / linker entry に pre/post validation hook を導入し、invalid node の透過搬送を止める。
+- [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-02] representative pass / lowering / linker entry に pre/post validation hook を導入し、invalid node の透過搬送を止めた。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-01] representative backend（まず C++）の入口で compiler contract validator を通し、backend-local crash や silent fallback を structured diagnostic へ置き換える。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-02] `tools/check_east_stage_boundary.py` または後継 guard を拡張し、stage semantic contract の drift も検出できるようにする。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-01] representative unit/selfhost 回帰を追加し、契約違反が expected failure として再現できるようにする。
@@ -193,3 +193,4 @@
 - 2026-03-11: さらに `S3-01` で raw EAST3 の `meta.generated_by` を synthetic provenance 専用の non-empty string に制限し、missing `source_span` を許す escape hatch も中央 validator で型付きに固定した。
 - 2026-03-11: `S3-01` はここで完了扱いにした。central primitive は raw EAST3 の body node / `kind` / `source_span` / nested `meta.dispatch_mode` と linked output の helper metadata / `global` shape / diagnostic object contract を見る状態まで到達したので、次は hook を差し込む `S3-02` へ進む。
 - 2026-03-11: `S3-02` の representative hook は `toolchain/ir/east3.py` と `toolchain/link/global_optimizer.py` に先行投入した。raw EAST3 validator の strict `source_span` 契約は default に残しつつ、stage/linker hook では `require_source_spans=False` を使って synthetic node 混在でも `kind` / `body item shape` / `dispatch_mode` drift を fail-closed で止め、link-output 側は `validate_link_output_doc(...)` を return 前に必須化した。
+- 2026-03-11: `S3-02` はここで完了扱いにした。`toolchain/ir/east3.py` の lower/optimize 後 hook、`toolchain/link/global_optimizer.py` の input module / specialization 後 / linked output hook、`test_east2_to_east3_lowering.py` と `test_global_optimizer.py` の representative regression まで揃ったので、invalid node の透過搬送を止める代表 lane は成立した。

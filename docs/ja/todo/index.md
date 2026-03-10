@@ -42,7 +42,7 @@
 4. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-01] `spec-dev` `1.2.2` / `1.2.4` に raw EAST3 / linked output / backend input の required field、許容欠落、diagnostic category を固定した。
 5. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-02] `spec-dev` `1.2.3` に `type_expr` / `resolved_type` mirror、`dispatch_mode`、`source_span`、helper metadata の fail-closed policy を固定した。
 6. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-01] `toolchain/link/program_validator.py` と周辺に central validator primitive を追加し、raw EAST3 / linked output の coarse check を representative な node/meta invariant まで拡張した。
-7. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-02] representative pass / lowering / linker entry に pre/post validation hook を導入し、invalid node の透過搬送を止める。
+7. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-02] representative pass / lowering / linker entry に pre/post validation hook を導入し、invalid node の透過搬送を止めた。
 8. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-01] representative backend（まず C++）の入口で compiler contract validator を通し、backend-local crash や silent fallback を structured diagnostic へ置き換える。
 9. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-02] `tools/check_east_stage_boundary.py` または後継 guard を拡張し、stage semantic contract の drift も検出できるようにする。
 10. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-01] representative unit/selfhost 回帰を追加し、契約違反が expected failure として再現できるようにする。
