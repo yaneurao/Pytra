@@ -201,3 +201,4 @@
 - 2026-03-11: `S3-02` を閉じ、representative nominal ADT `Match` は EAST3 で `NominalAdtMatch` metadata、`VariantPattern` は `NominalAdtVariantPattern` metadata、payload bind は field-type 付き `PatternBind` metadata を持つ方針で固定した。
 - 2026-03-11: `S4-01` を閉じ、built-in `JsonValue` decode lane の `receiver_type.category` と user-defined nominal ADT `Match` subject の `subject_type.category` は、ともに `nominal_adt` を使う representative test で固定した。
 - 2026-03-11: `S4-02` を閉じ、C++ backend では constructor / projection / `isinstance` を既存 class lane で扱い、`NominalAdtMatch` を `if / else if` へ lower し、plain `Match` は `unsupported Match lane` で fail-closed にする representative backend test を固定した。
+- 2026-03-11: `S5-01` の first slice として rollout 順を `C++ -> Rust -> C# -> それ以外` に固定し、Rust/C# は representative nominal ADT v1 の `ClassDef.meta.nominal_adt_v1`、`Match`、`NominalAdtProjection` を `unsupported_syntax` で fail-closed にする方針をコードと test で固定した。

@@ -175,6 +175,16 @@ class CSharpEmitter(CodeEmitter):
             details,
         )
 
+    def _raise_unsupported_nominal_adt_lane(self, *, lane: str, context: str) -> None:
+        details = [context]
+        details.append("unsupported nominal ADT lane: " + lane)
+        details.append("Representative nominal ADT rollout is implemented only in the C++ backend right now.")
+        raise make_user_error(
+            "unsupported_syntax",
+            "C# backend does not support nominal ADT v1 lanes yet",
+            details,
+        )
+
     # NOTE:
     # C# selfhost generated code does not use virtual dispatch by default.
     # Keep these scoped emit helpers in CSharpEmitter so internal calls route
@@ -1521,6 +1531,12 @@ class CSharpEmitter(CodeEmitter):
     def _emit_class(self, stmt: dict[str, Any]) -> None:
         """ClassDef を C# class として出力する。"""
         class_name_raw = self.any_to_str(stmt.get("name"))
+        class_meta = self.any_to_dict_or_empty(stmt.get("meta"))
+        if len(self.any_to_dict_or_empty(class_meta.get("nominal_adt_v1"))) > 0:
+            self._raise_unsupported_nominal_adt_lane(
+                lane="declaration",
+                context="ClassDef " + class_name_raw,
+            )
         class_name = self._safe_name(class_name_raw)
         prev_class = self.current_class_name
         prev_class_field_types: dict[str, str] = dict(self.current_class_field_types)
@@ -1841,6 +1857,11 @@ class CSharpEmitter(CodeEmitter):
         kind = self.any_dict_get_str(stmt, "kind", "")
         if self.hook_on_emit_stmt_kind(kind, stmt) is True:
             return
+        if kind == "Match":
+            self._raise_unsupported_nominal_adt_lane(
+                lane="match",
+                context="Match statement",
+            )
 
         if kind == "Pass":
             self.emit(self.syntax_text("pass_stmt", ";"))
@@ -2877,6 +2898,11 @@ class CSharpEmitter(CodeEmitter):
             return "$\"" + "".join(pieces) + "\""
 
         if kind == "Attribute":
+            if self.any_dict_get_str(expr_d, "lowered_kind", "") == "NominalAdtProjection":
+                self._raise_unsupported_nominal_adt_lane(
+                    lane="projection",
+                    context="Attribute projection " + self.any_dict_get_str(expr_d, "attr", ""),
+                )
             owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
             owner_kind = self.any_dict_get_str(owner_node, "kind", "")
             owner_name = self.any_dict_get_str(owner_node, "id", "")

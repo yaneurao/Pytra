@@ -125,6 +125,16 @@ class RustEmitter(CodeEmitter):
             details,
         )
 
+    def _raise_unsupported_nominal_adt_lane(self, *, lane: str, context: str) -> None:
+        details = [context]
+        details.append("unsupported nominal ADT lane: " + lane)
+        details.append("Representative nominal ADT rollout is implemented only in the C++ backend right now.")
+        raise make_user_error(
+            "unsupported_syntax",
+            "Rust backend does not support nominal ADT v1 lanes yet",
+            details,
+        )
+
     def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
         """現在ブロック文脈を保持しつつ文リストを出力する。"""
         self._stmt_list_stack.append(stmts)
@@ -2159,6 +2169,12 @@ class RustEmitter(CodeEmitter):
     def _emit_class(self, stmt: dict[str, Any]) -> None:
         """ClassDef を最小構成の `struct + impl` として出力する。"""
         class_name_raw = self.any_to_str(stmt.get("name"))
+        class_meta = self.any_to_dict_or_empty(stmt.get("meta"))
+        if len(self.any_to_dict_or_empty(class_meta.get("nominal_adt_v1"))) > 0:
+            self._raise_unsupported_nominal_adt_lane(
+                lane="declaration",
+                context="ClassDef " + class_name_raw,
+            )
         class_name = self._safe_name(class_name_raw)
         field_types = self.any_to_dict_or_empty(stmt.get("field_types"))
         norm_field_types: dict[str, str] = {}
@@ -2418,6 +2434,11 @@ class RustEmitter(CodeEmitter):
         hooked_kind = self.hook_on_emit_stmt_kind(kind, stmt)
         if hooked_kind is True:
             return
+        if kind == "Match":
+            self._raise_unsupported_nominal_adt_lane(
+                lane="match",
+                context="Match statement",
+            )
 
         if kind == "Pass":
             self.emit(self.syntax_text("pass_stmt", "();"))
@@ -4217,6 +4238,11 @@ class RustEmitter(CodeEmitter):
             val = self.any_to_str(expr_d.get("value"))
             return "(" + self.quote_string_literal(val) + ").to_string()"
         if kind == "Attribute":
+            if self.any_dict_get_str(expr_d, "lowered_kind", "") == "NominalAdtProjection":
+                self._raise_unsupported_nominal_adt_lane(
+                    lane="projection",
+                    context="Attribute projection " + self.any_dict_get_str(expr_d, "attr", ""),
+                )
             owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
             owner = self.render_expr(owner_node)
             semantic_tag = self.any_dict_get_str(expr_d, "semantic_tag", "")

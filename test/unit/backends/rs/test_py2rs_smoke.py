@@ -790,6 +790,85 @@ def f(x: Any) -> bool:
         ):
             transpile_to_rust(east)
 
+    def test_transpile_rejects_nominal_adt_class_lane(self) -> None:
+        east = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "ClassDef",
+                    "name": "Maybe",
+                    "meta": {
+                        "nominal_adt_v1": {
+                            "schema_version": 1,
+                            "role": "family",
+                            "family_name": "Maybe",
+                        }
+                    },
+                    "body": [],
+                }
+            ],
+        }
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "unsupported_syntax\\|Rust backend does not support nominal ADT v1 lanes yet",
+        ):
+            transpile_to_rust(east)
+
+    def test_transpile_rejects_nominal_adt_match_lane(self) -> None:
+        east = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "args": [{"arg": "x"}],
+                    "arg_order": ["x"],
+                    "arg_types": {"x": "Maybe"},
+                    "arg_usage": {"x": "readonly"},
+                    "return_type": "int64",
+                    "body": [{"kind": "Match", "subject": {"kind": "Name", "id": "x", "resolved_type": "Maybe"}}],
+                }
+            ],
+        }
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "unsupported_syntax\\|Rust backend does not support nominal ADT v1 lanes yet",
+        ):
+            transpile_to_rust(east)
+
+    def test_transpile_rejects_nominal_adt_projection_lane(self) -> None:
+        east = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "args": [{"arg": "x"}],
+                    "arg_order": ["x"],
+                    "arg_types": {"x": "Just"},
+                    "arg_usage": {"x": "readonly"},
+                    "return_type": "int64",
+                    "body": [
+                        {
+                            "kind": "Return",
+                            "value": {
+                                "kind": "Attribute",
+                                "value": {"kind": "Name", "id": "x", "resolved_type": "Just"},
+                                "attr": "value",
+                                "resolved_type": "int64",
+                                "lowered_kind": "NominalAdtProjection",
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "unsupported_syntax\\|Rust backend does not support nominal ADT v1 lanes yet",
+        ):
+            transpile_to_rust(east)
+
 
 if __name__ == "__main__":
     unittest.main()

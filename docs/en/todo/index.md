@@ -53,4 +53,5 @@ Context: [docs/ja/plans/p5-nominal-adt-language-rollout.md](../plans/p5-nominal-
 9. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] Implement the minimum representative backend support, starting with C++, for constructors, variant checks, destructuring, and `match`, and forbid silent fallbacks.
    - Progress memo: the C++ backend now handles constructor / projection / `isinstance` through the existing class lane, lowers `NominalAdtMatch` into `if / else if`, and fail-closes plain `Match`.
 10. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] Define rollout order and fail-closed policy for other backends, and fix diagnostics for unsupported targets.
+   - Progress memo: as the first slice, Rust and C# now fail closed with `unsupported_syntax` for representative nominal ADT v1 `declaration`, `Match`, and `NominalAdtProjection` lanes.
 11. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] Update selfhost / docs / archive / migration notes and close the rollout as a formal language feature.
