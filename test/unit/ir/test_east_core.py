@@ -547,7 +547,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('runtime_call = lookup_stdlib_method_runtime_call(owner_type, attr_name)', helper_text)
         self.assertIn('module_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_type, attr_name)', helper_text)
         self.assertIn('_sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)', helper_text)
-        self.assertIn("self._resolve_attr_expr_metadata(", attr_expr_text)
+        self.assertIn("self._resolve_attr_expr_annotation_state(", attr_expr_text)
+        self.assertNotIn("self._resolve_attr_expr_metadata(", attr_expr_text)
         self.assertNotIn("attr_meta = self._lookup_attr_expr_metadata(", attr_expr_text)
         self.assertIn("return self._annotate_attr_expr(", attr_suffix_text)
         self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_text)
@@ -572,6 +573,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         metadata_text = text.split("def _resolve_attr_expr_metadata", 1)[1].split(
+            "def _resolve_attr_expr_annotation_state",
+            1,
+        )[0]
+        state_text = text.split("def _resolve_attr_expr_annotation_state", 1)[1].split(
             "def _apply_attr_expr_annotation",
             1,
         )[0]
@@ -602,20 +607,18 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("if self._is_forbidden_object_receiver_type(owner_t):", owner_state_text)
         self.assertIn("attr_meta = self._lookup_attr_expr_metadata(owner_expr, owner_t, attr_name)", metadata_text)
         self.assertIn("return self._resolve_attr_expr_annotation(", metadata_text)
+        self.assertIn("owner_t = self._resolve_attr_expr_owner_state(", state_text)
+        self.assertIn(") = self._resolve_attr_expr_metadata(", state_text)
         self.assertIn('if attr_runtime_call != "":', apply_text)
         self.assertIn('_sh_annotate_runtime_attr_expr(', apply_text)
         self.assertIn('elif attr_semantic_tag != "":', apply_text)
         self.assertIn('node["semantic_tag"] = attr_semantic_tag', apply_text)
         self.assertIn('_sh_annotate_resolved_runtime_expr(', apply_text)
-        self.assertIn("owner_t = self._resolve_attr_expr_owner_state(", helper_text)
-        self.assertIn("self._resolve_attr_expr_metadata(", helper_text)
+        self.assertIn(") = self._resolve_attr_expr_annotation_state(", helper_text)
         self.assertIn("_sh_make_attribute_expr(", helper_text)
         self.assertIn("return self._apply_attr_expr_annotation(", helper_text)
-        self.assertNotIn('owner_t = self._owner_expr_resolved_type(owner_expr)', helper_text)
-        self.assertNotIn("self._guard_dynamic_helper_receiver(", helper_text)
-        self.assertNotIn("if self._is_forbidden_object_receiver_type(owner_t):", helper_text)
-        self.assertNotIn("attr_meta = self._lookup_attr_expr_metadata(", helper_text)
-        self.assertNotIn("self._resolve_attr_expr_annotation(", helper_text)
+        self.assertNotIn("owner_t = self._resolve_attr_expr_owner_state(", helper_text)
+        self.assertNotIn("self._resolve_attr_expr_metadata(", helper_text)
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', helper_text)
         self.assertNotIn('_sh_annotate_resolved_runtime_expr(', helper_text)
         self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_text)

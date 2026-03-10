@@ -5533,6 +5533,43 @@ class _ShExprParser:
             attr_meta=attr_meta,
         )
 
+    def _resolve_attr_expr_annotation_state(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        attr_name: str,
+        source_span: dict[str, int],
+    ) -> tuple[str, str, str, str, str, str, str, str]:
+        """Attribute access の owner-state と metadata resolve を helper へ寄せる。"""
+        owner_t = self._resolve_attr_expr_owner_state(
+            owner_expr=owner_expr,
+            attr_name=attr_name,
+            source_span=source_span,
+        )
+        (
+            resolved_type,
+            attr_runtime_call,
+            attr_semantic_tag,
+            attr_module_id,
+            attr_runtime_symbol,
+            noncpp_module_attr_runtime_call,
+            noncpp_module_id,
+        ) = self._resolve_attr_expr_metadata(
+            owner_expr=owner_expr,
+            owner_t=owner_t,
+            attr_name=attr_name,
+        )
+        return (
+            owner_t,
+            resolved_type,
+            attr_runtime_call,
+            attr_semantic_tag,
+            attr_module_id,
+            attr_runtime_symbol,
+            noncpp_module_attr_runtime_call,
+            noncpp_module_id,
+        )
+
     def _apply_attr_expr_annotation(
         self,
         *,
@@ -5577,12 +5614,8 @@ class _ShExprParser:
         repr_text: str,
     ) -> dict[str, Any]:
         """Attribute access node の生成と annotation を parser helper へ寄せる。"""
-        owner_t = self._resolve_attr_expr_owner_state(
-            owner_expr=owner_expr,
-            attr_name=attr_name,
-            source_span=source_span,
-        )
         (
+            owner_t,
             resolved_type,
             attr_runtime_call,
             attr_semantic_tag,
@@ -5590,10 +5623,10 @@ class _ShExprParser:
             attr_runtime_symbol,
             noncpp_module_attr_runtime_call,
             noncpp_module_id,
-        ) = self._resolve_attr_expr_metadata(
+        ) = self._resolve_attr_expr_annotation_state(
             owner_expr=owner_expr,
-            owner_t=owner_t,
             attr_name=attr_name,
+            source_span=source_span,
         )
         node = _sh_make_attribute_expr(
             source_span,
