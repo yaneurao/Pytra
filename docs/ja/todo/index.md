@@ -38,5 +38,6 @@
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] shared support module と `test_east_core_source_contract_builders.py` を追加し、builder source-contract guard 10 本を `test_east_core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] source-contract guard 51 本を `test_east_core_source_contract_*.py` 5 file と既存 builders/expr-suffix file へ切り出し、`test_east_core.py` を parser behavior / representative regression 中心へ整理した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_decorators.py` を追加し、extern / abi / template の representative parser behavior 10 本を `test_east_core.py` から切り出した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_types.py` を追加し、decode-first / type-expr / typing future import の representative parser behavior 10 本を `test_east_core.py` から切り出した。
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。
