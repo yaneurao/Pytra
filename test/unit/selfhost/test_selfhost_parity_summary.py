@@ -15,6 +15,7 @@ from tools.selfhost_parity_summary import build_direct_e2e_summary_row
 from tools.selfhost_parity_summary import build_stage2_diff_summary_row
 from tools.selfhost_parity_summary import build_stage2_summary_row
 from tools.selfhost_parity_summary import build_summary_row
+from tools.selfhost_parity_summary import print_summary_block
 from tools.selfhost_parity_summary import render_summary_block
 
 
@@ -62,6 +63,21 @@ class SelfhostParitySummaryTest(unittest.TestCase):
         self.assertIn("subject=all", lines[1])
         self.assertIn("category=pass", lines[1])
         self.assertIn("detail=pass", lines[1])
+
+    def test_print_summary_block_emits_rendered_lines(self) -> None:
+        from io import StringIO
+        from contextlib import redirect_stdout
+
+        buf = StringIO()
+        with redirect_stdout(buf):
+            print_summary_block(
+                "stage2_diff",
+                [build_stage2_diff_summary_row("test/fixtures/core/add.py", "artifact_diff", "normalized artifact diff")],
+                skip_pass=True,
+            )
+        text = buf.getvalue()
+        self.assertIn("[stage2_diff summary]", text)
+        self.assertIn("detail=stage2_diff_fail", text)
 
 
 if __name__ == "__main__":

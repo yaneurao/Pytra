@@ -11,7 +11,7 @@ import tempfile
 from pathlib import Path
 
 from tools.selfhost_parity_summary import build_stage2_diff_summary_row
-from tools.selfhost_parity_summary import render_summary_block
+from tools.selfhost_parity_summary import print_summary_block
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -189,24 +189,21 @@ def main() -> int:
         ok_contract, msg_contract = _run_east3_contract_tests()
         if not ok_contract:
             summary_rows.append(build_stage2_diff_summary_row("east3-contract", "east3_contract_fail", msg_contract))
-            for line in render_summary_block("stage2_diff", summary_rows, skip_pass=True):
-                print(line)
+            print_summary_block("stage2_diff", summary_rows, skip_pass=True)
             print(f"[FAIL east3-contract] {msg_contract}")
             return 1
 
     selfhost_bin = ROOT / args.selfhost_bin
     if not selfhost_bin.exists():
         summary_rows.append(build_stage2_diff_summary_row("selfhost_binary", "missing_binary", str(selfhost_bin)))
-        for line in render_summary_block("stage2_diff", summary_rows, skip_pass=True):
-            print(line)
+        print_summary_block("stage2_diff", summary_rows, skip_pass=True)
         print(f"missing selfhost binary: {selfhost_bin}")
         return 2
     selfhost_target = _resolve_selfhost_target(selfhost_bin, str(args.selfhost_target))
     bridge_tool = ROOT / "tools" / "selfhost_transpile.py"
     if args.selfhost_driver == "bridge" and not bridge_tool.exists():
         summary_rows.append(build_stage2_diff_summary_row("bridge_tool", "missing_binary", str(bridge_tool)))
-        for line in render_summary_block("stage2_diff", summary_rows, skip_pass=True):
-            print(line)
+        print_summary_block("stage2_diff", summary_rows, skip_pass=True)
         print(f"missing bridge tool: {bridge_tool}")
         return 2
 
@@ -316,8 +313,7 @@ def main() -> int:
                 summary_rows.append(build_stage2_diff_summary_row(rel, "pass", ""))
                 print(f"[OK] {rel}")
 
-    for line in render_summary_block("stage2_diff", summary_rows, skip_pass=True):
-        print(line)
+    print_summary_block("stage2_diff", summary_rows, skip_pass=True)
     print(f"mismatches={mismatches} known_diffs={known_diffs} skipped={skipped}")
     return 1 if mismatches else 0
 

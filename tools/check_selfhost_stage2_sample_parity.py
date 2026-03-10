@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 
 from tools.selfhost_parity_summary import build_stage2_summary_row
-from tools.selfhost_parity_summary import render_summary_block
+from tools.selfhost_parity_summary import print_summary_block
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,11 +38,6 @@ def _run(cmd: list[str]) -> int:
     return cp.returncode
 
 
-def _print_stage2_summary(rows: list) -> None:
-    for line in render_summary_block("stage2", rows, skip_pass=True):
-        print(line)
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description="run full sample parity through stage2 selfhost binary")
     ap.add_argument("--skip-build", action="store_true", help="skip tools/build_selfhost_stage2.py")
@@ -58,11 +53,11 @@ def main() -> int:
         rc = _run(["python3", str(BUILD_STAGE2)])
         if rc != 0:
             summary_rows.append(build_stage2_summary_row("stage2_build", "build_fail", f"exit={rc}"))
-            _print_stage2_summary(summary_rows)
+            print_summary_block("stage2", summary_rows, skip_pass=True)
             return rc
     if not selfhost_bin.exists():
         summary_rows.append(build_stage2_summary_row("stage2_binary", "missing_binary", str(selfhost_bin)))
-        _print_stage2_summary(summary_rows)
+        print_summary_block("stage2", summary_rows, skip_pass=True)
         print(f"missing stage2 binary: {selfhost_bin}")
         return 2
 
@@ -74,7 +69,7 @@ def main() -> int:
             "" if rc == 0 else f"exit={rc}",
         )
     )
-    _print_stage2_summary(summary_rows)
+    print_summary_block("stage2", summary_rows, skip_pass=True)
     return rc
 
 

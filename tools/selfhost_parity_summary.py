@@ -123,3 +123,8 @@ def render_summary_block(title: str, rows: list[ParitySummaryRow], *, skip_pass:
     if len(filtered) == 0:
         return []
     return [f"[{title} summary]", *[format_summary_line(row) for row in filtered]]
+
+
+def print_summary_block(title: str, rows: list[ParitySummaryRow], *, skip_pass: bool) -> None:
+    for line in render_summary_block(title, rows, skip_pass=skip_pass):
+        print(line)
