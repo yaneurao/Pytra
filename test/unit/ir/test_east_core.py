@@ -965,6 +965,13 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         tail_colon_text = text.split("def _consume_subscript_slice_tail_colon_token", 1)[1].split(
+            "def _resolve_subscript_slice_tail_colon_token_state",
+            1,
+        )[0]
+        tail_colon_token_state_text = text.split(
+            "def _resolve_subscript_slice_tail_colon_token_state",
+            1,
+        )[1].split(
             "def _consume_subscript_slice_tail_close_token",
             1,
         )[0]
@@ -973,6 +980,13 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         tail_token_text = text.split("def _consume_subscript_slice_tail_tokens", 1)[1].split(
+            "def _apply_subscript_slice_tail_colon_token_state",
+            1,
+        )[0]
+        tail_colon_token_apply_text = text.split(
+            "def _apply_subscript_slice_tail_colon_token_state",
+            1,
+        )[1].split(
             "def _apply_subscript_slice_tail_colon_state",
             1,
         )[0]
@@ -993,6 +1007,12 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         tail_close_apply_text = text.split("def _apply_subscript_slice_tail_close_state", 1)[1].split(
+            "def _apply_subscript_slice_tail_close_state_result",
+            1,
+        )[0]
+        tail_close_result_apply_text = text.split(
+            "def _apply_subscript_slice_tail_close_state_result", 1
+        )[1].split(
             "def _resolve_subscript_slice_tail_close_state",
             1,
         )[0]
@@ -1133,16 +1153,26 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("return None", upper_apply_text)
         self.assertIn("return self._parse_ifexp()", upper_apply_text)
         self.assertIn('return self._eat(":")', tail_colon_text)
+        self.assertIn("return self._consume_subscript_slice_tail_colon_token()", tail_colon_token_state_text)
         self.assertIn('return self._eat("]")', tail_close_text)
-        self.assertIn("self._consume_subscript_slice_tail_colon_token()", tail_token_text)
-        self.assertIn("return self._apply_subscript_slice_tail_colon_state()", tail_token_text)
+        self.assertIn("ctok = self._resolve_subscript_slice_tail_colon_token_state()", tail_token_text)
+        self.assertIn(
+            "return self._apply_subscript_slice_tail_colon_token_state(ctok=ctok)",
+            tail_token_text,
+        )
+        self.assertIn("_ = ctok", tail_colon_token_apply_text)
+        self.assertIn("return self._apply_subscript_slice_tail_colon_state()", tail_colon_token_apply_text)
         self.assertIn("upper = self._resolve_subscript_slice_tail_colon_state()", tail_colon_apply_text)
         self.assertIn("return self._apply_subscript_slice_tail_upper_state(upper=upper)", tail_colon_apply_text)
         self.assertIn("return self._resolve_subscript_slice_tail_upper_state()", tail_colon_state_text)
         self.assertIn("return self._parse_subscript_slice_upper_expr()", tail_upper_state_text)
         self.assertIn("rtok = self._resolve_subscript_slice_tail_close_state()", tail_upper_apply_text)
         self.assertIn("return self._apply_subscript_slice_tail_close_state(upper=upper, rtok=rtok)", tail_upper_apply_text)
-        self.assertIn("return upper, rtok", tail_close_apply_text)
+        self.assertIn(
+            "return self._apply_subscript_slice_tail_close_state_result(upper=upper, rtok=rtok)",
+            tail_close_apply_text,
+        )
+        self.assertIn("return upper, rtok", tail_close_result_apply_text)
         self.assertIn("return self._consume_subscript_slice_tail_close_token()", tail_close_state_text)
         self.assertIn("starts_with_slice = self._resolve_subscript_suffix_component_state()", component_text)
         self.assertIn("return self._apply_subscript_suffix_component_state(", component_text)
@@ -1227,11 +1257,13 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("if is_empty:", upper_expr_text)
         self.assertNotIn("return self._parse_ifexp()", upper_expr_text)
         self.assertNotIn('self._eat(":")', tail_token_text)
+        self.assertNotIn("self._consume_subscript_slice_tail_colon_token()", tail_token_text)
         self.assertNotIn("upper = self._resolve_subscript_slice_tail_upper_state()", tail_token_text)
         self.assertNotIn("upper = self._resolve_subscript_slice_tail_upper_state()", tail_colon_apply_text)
         self.assertNotIn("rtok = self._resolve_subscript_slice_tail_close_state()", tail_token_text)
         self.assertNotIn("return upper, rtok", tail_token_text)
         self.assertNotIn("return upper, rtok", tail_upper_apply_text)
+        self.assertNotIn("return upper, rtok", tail_close_apply_text)
         self.assertNotIn('if self._cur()["k"] == ":":', component_text)
         self.assertNotIn("if starts_with_slice:", component_text)
         self.assertNotIn("return self._parse_subscript_slice_tail(lower=None)", component_text)
