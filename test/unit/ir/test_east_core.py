@@ -773,6 +773,10 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_attr_call_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        callee_helper_text = text.split("def _annotate_callee_call_expr", 1)[1].split(
+            "def _annotate_call_expr",
+            1,
+        )[0]
         call_helper_text = text.split("def _annotate_call_expr", 1)[1].split(
             "def _annotate_named_call_expr",
             1,
@@ -787,8 +791,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('owner = callee.get("value")', helper_text)
         self.assertIn('_sh_annotate_noncpp_attr_call_expr(', helper_text)
         self.assertIn('_sh_annotate_runtime_method_call_expr(', helper_text)
-        self.assertIn('if callee.get("kind") == "Attribute":', call_helper_text)
-        self.assertIn("return self._annotate_attr_call_expr(", call_helper_text)
+        self.assertIn('if callee.get("kind") == "Attribute":', callee_helper_text)
+        self.assertIn("return self._annotate_attr_call_expr(", callee_helper_text)
+        self.assertIn("return self._annotate_callee_call_expr(", call_helper_text)
         self.assertNotIn('attr = str(node.get("attr", ""))', postfix_text)
         self.assertNotIn('owner = node.get("value")', postfix_text)
         self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', postfix_text)
@@ -1067,6 +1072,10 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_named_call_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        callee_helper_text = text.split("def _annotate_callee_call_expr", 1)[1].split(
+            "def _annotate_call_expr",
+            1,
+        )[0]
         call_helper_text = text.split("def _annotate_call_expr", 1)[1].split(
             "def _annotate_named_call_expr",
             1,
@@ -1104,7 +1113,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', builtin_helper_text)
         self.assertIn('if stdlib_fn_runtime_call != "":', runtime_helper_text)
         self.assertIn("self._guard_named_call_args(", call_helper_text)
-        self.assertIn("return self._annotate_named_call_expr(", call_helper_text)
+        self.assertIn("return self._annotate_named_call_expr(", callee_helper_text)
+        self.assertIn("return self._annotate_callee_call_expr(", call_helper_text)
         self.assertNotIn('fn_name = str(callee.get("id", "")) if callee.get("kind") == "Name" else ""', call_helper_text)
         self.assertNotIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', call_helper_text)
         self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', postfix_text)
