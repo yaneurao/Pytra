@@ -184,3 +184,4 @@ Decision log:
 - 2026-03-11: `S2-01` fixed `spec-dev` sections `1.2.2` and `1.2.4` as the source of truth for required fields, allowed omissions, and diagnostic categories for raw EAST3 / linked output / backend input.
 - 2026-03-11: `S2-02` fixed `spec-dev` section `1.2.3` as the source of truth for fail-closed handling of `type_expr` / `resolved_type` mirror mismatches, `dispatch_mode`, `source_span`, and helper metadata conflicts.
 - 2026-03-11: The first `S3-01` slice added a recursive raw-EAST3 invariant helper in `program_validator.py` so central validation now stops nested `meta.dispatch_mode` drift, `repr` type mismatches, and malformed or reversed `source_span` payloads.
+- 2026-03-11: A follow-up `S3-01` slice extended linked-output shape validation so the central validator now rejects malformed `global` payloads such as non-object `call_graph` values and non-string items in `diagnostics.warnings/errors`.

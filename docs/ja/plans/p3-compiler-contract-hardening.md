@@ -184,3 +184,4 @@
 - 2026-03-11: `S2-01` は `spec-dev` `1.2.2` と `1.2.4` を正本にし、raw EAST3 / linked output / backend input の required field、許容欠落、diagnostic category を固定した。
 - 2026-03-11: `S2-02` は `spec-dev` `1.2.3` を正本にし、`type_expr` / `resolved_type` mirror、`dispatch_mode`、`source_span`、helper metadata の矛盾を fail-closed で扱うことを固定した。
 - 2026-03-11: `S3-01` の最初の slice では `program_validator.py` に recursive raw EAST3 invariant helper を追加し、nested `meta.dispatch_mode` drift、`repr` type mismatch、`source_span` shape/reversed-range を central validator で止める形にした。
+- 2026-03-11: 続く `S3-01` slice では linked output 側にも shape validator を追加し、`global.call_graph` などの object/list shape と `diagnostics.warnings/errors` の string item 契約を central validator で止める形にした。

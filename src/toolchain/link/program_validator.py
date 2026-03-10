@@ -130,6 +130,21 @@ def _require_str_list(doc: json.JsonObj, key: str, label: str) -> tuple[str, ...
     return tuple(out)
 
 
+def _require_non_empty_str_items(arr: json.JsonArr, label: str) -> None:
+    for index in range(json_array_length(arr)):
+        item = arr.get_str(index)
+        if item is None or item.strip() == "":
+            raise RuntimeError(label + "[" + str(index) + "] must be a non-empty string")
+
+
+def _validate_link_output_global_shape(global_doc: json.JsonObj) -> None:
+    _require_obj_field(global_doc, "type_id_table", "link-output.global")
+    _require_obj_field(global_doc, "call_graph", "link-output.global")
+    _require_list_field(global_doc, "sccs", "link-output.global")
+    _require_obj_field(global_doc, "non_escape_summary", "link-output.global")
+    _require_obj_field(global_doc, "container_ownership_hints_v1", "link-output.global")
+
+
 def validate_link_input_doc(doc_any: object) -> dict[str, object]:
     doc = coerce_json_object_doc(doc_any, label="link-input")
     schema = _require_str(doc, "schema", "link-input")
@@ -284,19 +299,13 @@ def validate_link_output_doc(doc_any: object) -> dict[str, object]:
         if item.is_entry and item.module_id not in entry_modules:
             raise RuntimeError("link-output module marked is_entry but not present in entry_modules: " + item.module_id)
     global_doc = _require_obj_field(doc, "global", "link-output")
-    for key in (
-        "type_id_table",
-        "call_graph",
-        "sccs",
-        "non_escape_summary",
-        "container_ownership_hints_v1",
-    ):
-        if global_doc.get(key) is None:
-            raise RuntimeError("link-output.global." + key + " is required")
+    _validate_link_output_global_shape(global_doc)
     diagnostics = _require_obj_field(doc, "diagnostics", "link-output")
     for key in ("warnings", "errors"):
-        if diagnostics.get_arr(key) is None:
+        arr = diagnostics.get_arr(key)
+        if arr is None:
             raise RuntimeError("link-output.diagnostics." + key + " must be a list")
+        _require_non_empty_str_items(arr, "link-output.diagnostics." + key)
     return {
         "schema": schema,
         "target": _require_str(doc, "target", "link-output"),
