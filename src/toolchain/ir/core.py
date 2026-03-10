@@ -7257,6 +7257,14 @@ class _ShExprParser:
         rtok: dict[str, Any],
     ) -> dict[str, Any]:
         """Subscript slice tail の close-token token-state apply を helper へ寄せる。"""
+        return self._apply_subscript_slice_tail_close_token_state_result(rtok=rtok)
+
+    def _apply_subscript_slice_tail_close_token_state_result(
+        self,
+        *,
+        rtok: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Subscript slice tail の close-token token-state result apply を helper へ寄せる。"""
         return rtok
 
     def _parse_subscript_suffix_components(
