@@ -78,7 +78,7 @@
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated compiler / selfhost runtime に残る `make_object` usage を `serialization/export seam` 専用まで後退させる。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-A] `S3-02` の完了条件を再定義し、TODO / plan の進捗メモを cluster 単位へ圧縮する。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] `core.py` の postfix/suffix parser cluster を分割し、`call` / `attr` / `subscript` を専用 module へ移す。
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] `core.py` の call annotation cluster を分割し、`named-call` / `attr-call` / `callee-call` を専用 module へ移す。
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] `core.py` の call annotation cluster を分割し、`named-call` / `attr-call` / `callee-call` を専用 module へ移す。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` / `suffix tail` / `subscript tail` に残る helper 抽出を 5-10 個単位の bundle で消化する。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] generated/selfhost residual guard と export seam を再基準化し、`make_object` を `serialization/export seam` 専用まで後退させて `S3-02` を閉じる。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] JSON・extern/hook・未型付け入力の dynamic carrier を compiler typed model から切り離し、`JsonValue` / explicit adapter に隔離する。
@@ -129,3 +129,4 @@
 - 2026-03-10: `S3-02-B` の最初の塊として `call-arg` / `call-suffix` parser cluster を `core_expr_call_suffix.py` へ移し、`core.py` は mixin import と postfix dispatch orchestration に寄せた。source guard も helper 単位ではなく split cluster 単位で監視する方針に切り替えた。
 - 2026-03-10: `attr/subscript suffix` parser cluster も `core_expr_attr_subscript_suffix.py` へ移し、`call` / `attr` / `subscript` の suffix parser は `core.py` から専用 module へ分割し終えた。`S3-02-B` は完了として閉じ、次は `call annotation` cluster の分割へ進む。
 - 2026-03-10: `S3-02-C` の最初の塊では `call_expr` / `callee_call` の orchestration を `core_expr_call_annotation.py` へ移し、`named-call` / `attr-call` の lower-level apply と shared helper は `core.py` に残す段階 split とした。source guard も split-cluster 前提へ切り替える。
+- 2026-03-10: `S3-02-C` は完了として閉じる。`core.py` から `call_expr` / `callee_call` / `named-call` / `attr-call` の annotation entrypoint は `core_expr_call_annotation.py` へ移り、残る細かい helper 抽出は `S3-02-D` の bundle work に寄せる。

@@ -78,7 +78,7 @@ Out of scope:
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Retreat remaining `make_object` usage in generated compiler / selfhost runtime down to serialization/export seams only.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-A] Redefine the `S3-02` completion criteria and compress TODO/plan progress notes to cluster-level summaries.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] Split the postfix/suffix parser cluster out of `core.py` and move `call` / `attr` / `subscript` parsing into dedicated modules.
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] Split the call-annotation cluster out of `core.py` and move `named-call` / `attr-call` / `callee-call` handling into dedicated modules.
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] Split the call-annotation cluster out of `core.py` and move `named-call` / `attr-call` / `callee-call` handling into dedicated modules.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] Finish the remaining `call-arg` / `suffix tail` / `subscript tail` helper extraction in bundles of 5-10 clusters.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Rebaseline generated/selfhost residual guards and export seams, retreat `make_object` to serialization/export seams only, and close `S3-02`.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Separate JSON, extern/hooks, and intentionally dynamic carriers from the compiler typed model behind `JsonValue` or explicit adapters.
@@ -129,3 +129,4 @@ Decision log:
 - 2026-03-10: The first `S3-02-B` batch moved the `call-arg` / `call-suffix` parser cluster into `core_expr_call_suffix.py`, leaving `core.py` with mixin import plus postfix-dispatch orchestration. Source guards also switched from per-helper assertions to split-cluster assertions.
 - 2026-03-10: The `attr/subscript suffix` parser cluster also moved into `core_expr_attr_subscript_suffix.py`, so the `call` / `attr` / `subscript` suffix parser family is now split out of `core.py`. `S3-02-B` is considered complete and the next target is the `call annotation` cluster split.
 - 2026-03-10: The first `S3-02-C` batch moves `call_expr` / `callee_call` orchestration into `core_expr_call_annotation.py`, while lower-level `named-call` / `attr-call` apply paths and shared helpers remain in `core.py` for now. Source guards are updated around the split-cluster boundary instead of per-helper locations.
+- 2026-03-10: Close `S3-02-C` as complete. The `call_expr` / `callee_call` / `named-call` / `attr-call` annotation entrypoints now live in `core_expr_call_annotation.py`, and the remaining fine-grained helper extraction is pushed into `S3-02-D` bundle work.
