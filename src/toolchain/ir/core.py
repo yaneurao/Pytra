@@ -5231,6 +5231,22 @@ class _ShExprParser:
         keywords: list[dict[str, Any]],
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """call argument 非空 loop を helper へ寄せる。"""
+        self._consume_call_arg_entries_loop(
+            args=args,
+            keywords=keywords,
+        )
+        return self._apply_call_args_empty_state(
+            args=args,
+            keywords=keywords,
+        )
+
+    def _consume_call_arg_entries_loop(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+    ) -> None:
+        """call argument 非空 loop 本体を helper へ寄せる。"""
         while True:
             should_continue = self._resolve_call_arg_entries_loop_state(
                 args=args,
@@ -5238,10 +5254,6 @@ class _ShExprParser:
             )
             if not self._apply_call_arg_entries_loop_state(should_continue=should_continue):
                 break
-        return self._apply_call_args_empty_state(
-            args=args,
-            keywords=keywords,
-        )
 
     def _resolve_call_arg_entries_loop_state(
         self,
@@ -5386,7 +5398,25 @@ class _ShExprParser:
         self,
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
         """call suffix の open-token state apply を helper へ寄せる。"""
-        args, keywords = self._consume_call_suffix_arg_entries()
+        args, keywords = self._resolve_call_suffix_arg_entries_state()
+        return self._apply_call_suffix_arg_entries_state(
+            args=args,
+            keywords=keywords,
+        )
+
+    def _resolve_call_suffix_arg_entries_state(
+        self,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """call suffix の arg-entry state resolve を helper へ寄せる。"""
+        return self._consume_call_suffix_arg_entries()
+
+    def _apply_call_suffix_arg_entries_state(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+        """call suffix の arg-entry state apply を helper へ寄せる。"""
         rtok = self._consume_call_suffix_close_token()
         return args, keywords, rtok
 
