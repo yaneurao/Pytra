@@ -528,6 +528,70 @@ def _sh_annotate_fixed_runtime_builtin_call_expr(
     )
 
 
+def _sh_lookup_named_call_dispatch(fn_name: str) -> dict[str, str]:
+    if fn_name.strip() == "":
+        return {
+            "builtin_semantic_tag": "",
+            "stdlib_fn_runtime_call": "",
+            "stdlib_fn_semantic_tag": "",
+            "stdlib_symbol_runtime_call": "",
+            "stdlib_symbol_semantic_tag": "",
+            "noncpp_symbol_runtime_call": "",
+        }
+    return {
+        "builtin_semantic_tag": lookup_builtin_semantic_tag(fn_name),
+        "stdlib_fn_runtime_call": lookup_stdlib_function_runtime_call(fn_name),
+        "stdlib_fn_semantic_tag": lookup_stdlib_function_semantic_tag(fn_name),
+        "stdlib_symbol_runtime_call": lookup_stdlib_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS),
+        "stdlib_symbol_semantic_tag": lookup_stdlib_symbol_semantic_tag(fn_name),
+        "noncpp_symbol_runtime_call": lookup_noncpp_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS),
+    }
+
+
+def _sh_infer_known_name_call_return_type(
+    fn_name: str,
+    args: list[dict[str, Any]],
+    stdlib_imported_ret: str,
+) -> str:
+    if fn_name == "print":
+        return "None"
+    if stdlib_imported_ret != "":
+        return stdlib_imported_ret
+    if fn_name == "open":
+        return "PyFile"
+    if fn_name == "int":
+        return "int64"
+    if fn_name == "float":
+        return "float64"
+    if fn_name == "bool":
+        return "bool"
+    if fn_name == "str":
+        return "str"
+    if fn_name == "len":
+        return "int64"
+    if fn_name == "range":
+        return "range"
+    if fn_name == "zip":
+        zip_item_types: list[str] = []
+        for arg_node in args:
+            if isinstance(arg_node, dict):
+                zip_item_types.append(_sh_infer_item_type(arg_node))
+        return f"list[tuple[{','.join(zip_item_types)}]]"
+    if fn_name == "list":
+        return "list[unknown]"
+    if fn_name == "set":
+        return "set[unknown]"
+    if fn_name == "dict":
+        return "dict[unknown,unknown]"
+    if fn_name == "bytes":
+        return "bytes"
+    if fn_name == "bytearray":
+        return "bytearray"
+    if fn_name in {"Exception", "RuntimeError"}:
+        return "Exception"
+    return ""
+
+
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -4874,42 +4938,13 @@ class _ShExprParser:
                         if fn_name != ""
                         else ""
                     )
-                    if fn_name == "print":
-                        call_ret = "None"
-                    elif stdlib_imported_ret != "":
-                        call_ret = stdlib_imported_ret
-                    elif fn_name == "open":
-                        call_ret = "PyFile"
-                    elif fn_name == "int":
-                        call_ret = "int64"
-                    elif fn_name == "float":
-                        call_ret = "float64"
-                    elif fn_name == "bool":
-                        call_ret = "bool"
-                    elif fn_name == "str":
-                        call_ret = "str"
-                    elif fn_name == "len":
-                        call_ret = "int64"
-                    elif fn_name == "range":
-                        call_ret = "range"
-                    elif fn_name == "zip":
-                        zip_item_types: list[str] = []
-                        for arg_node in args:
-                            if isinstance(arg_node, dict):
-                                zip_item_types.append(_sh_infer_item_type(arg_node))
-                        call_ret = f"list[tuple[{','.join(zip_item_types)}]]"
-                    elif fn_name == "list":
-                        call_ret = "list[unknown]"
-                    elif fn_name == "set":
-                        call_ret = "set[unknown]"
-                    elif fn_name == "dict":
-                        call_ret = "dict[unknown,unknown]"
-                    elif fn_name == "bytes":
-                        call_ret = "bytes"
-                    elif fn_name == "bytearray":
-                        call_ret = "bytearray"
-                    elif fn_name in {"Exception", "RuntimeError"}:
-                        call_ret = "Exception"
+                    call_ret = _sh_infer_known_name_call_return_type(
+                        fn_name,
+                        args,
+                        stdlib_imported_ret,
+                    )
+                    if call_ret != "":
+                        pass
                     elif fn_name in self.fn_return_types:
                         call_ret = self.fn_return_types[fn_name]
                     elif fn_name in self.class_method_return_types:
@@ -4944,22 +4979,13 @@ class _ShExprParser:
                     resolved_type=call_ret,
                     repr_text=self._src_slice(s, e),
                 )
-                stdlib_fn_runtime_call = lookup_stdlib_function_runtime_call(fn_name) if fn_name != "" else ""
-                stdlib_symbol_runtime_call = (
-                    lookup_stdlib_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)
-                    if fn_name != ""
-                    else ""
-                )
-                noncpp_symbol_runtime_call = (
-                    lookup_noncpp_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)
-                    if fn_name != ""
-                    else ""
-                )
-                builtin_semantic_tag = lookup_builtin_semantic_tag(fn_name) if fn_name != "" else ""
-                stdlib_fn_semantic_tag = lookup_stdlib_function_semantic_tag(fn_name) if fn_name != "" else ""
-                stdlib_symbol_semantic_tag = (
-                    lookup_stdlib_symbol_semantic_tag(fn_name) if fn_name != "" else ""
-                )
+                call_dispatch = _sh_lookup_named_call_dispatch(fn_name)
+                stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))
+                stdlib_symbol_runtime_call = str(call_dispatch.get("stdlib_symbol_runtime_call", ""))
+                noncpp_symbol_runtime_call = str(call_dispatch.get("noncpp_symbol_runtime_call", ""))
+                builtin_semantic_tag = str(call_dispatch.get("builtin_semantic_tag", ""))
+                stdlib_fn_semantic_tag = str(call_dispatch.get("stdlib_fn_semantic_tag", ""))
+                stdlib_symbol_semantic_tag = str(call_dispatch.get("stdlib_symbol_semantic_tag", ""))
                 if fn_name in {"print", "len", "range", "zip", "str"}:
                     _sh_annotate_fixed_runtime_builtin_call_expr(
                         payload,

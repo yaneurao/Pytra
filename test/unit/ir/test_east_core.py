@@ -775,7 +775,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_fixed_runtime_builtin_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_fixed_runtime_builtin_call_expr", 1)[1].split(
-            "def _sh_set_parse_context",
+            "def _sh_lookup_named_call_dispatch",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -800,6 +800,53 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('elif fn_name == "str":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('runtime_call = "py_to_string"', postfix_text)
         self.assertNotIn('runtime_call = "py_print"', postfix_text)
+
+    def test_core_source_routes_named_call_lookup_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_lookup_named_call_dispatch", 1)[1].split(
+            "def _sh_infer_known_name_call_return_type",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('return {\n            "builtin_semantic_tag": "",', helper_text)
+        self.assertIn('lookup_builtin_semantic_tag(fn_name)', helper_text)
+        self.assertIn('lookup_stdlib_function_runtime_call(fn_name)', helper_text)
+        self.assertIn('lookup_stdlib_function_semantic_tag(fn_name)', helper_text)
+        self.assertIn('lookup_stdlib_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)', helper_text)
+        self.assertIn('lookup_stdlib_symbol_semantic_tag(fn_name)', helper_text)
+        self.assertIn('lookup_noncpp_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)', helper_text)
+        self.assertIn('call_dispatch = _sh_lookup_named_call_dispatch(fn_name)', postfix_text)
+        self.assertNotIn('lookup_stdlib_function_runtime_call(fn_name) if fn_name != "" else ""', postfix_text)
+        self.assertNotIn('lookup_builtin_semantic_tag(fn_name) if fn_name != "" else ""', postfix_text)
+        self.assertNotIn(
+            'lookup_stdlib_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)',
+            postfix_text,
+        )
+        self.assertNotIn(
+            'lookup_noncpp_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)',
+            postfix_text,
+        )
+
+    def test_core_source_routes_known_name_call_returns_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _sh_infer_known_name_call_return_type", 1)[1].split(
+            "def _sh_set_parse_context",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('if fn_name == "print":', helper_text)
+        self.assertIn('if stdlib_imported_ret != "":', helper_text)
+        self.assertIn('if fn_name == "open":', helper_text)
+        self.assertIn('if fn_name == "zip":', helper_text)
+        self.assertIn("zip_item_types.append(_sh_infer_item_type(arg_node))", helper_text)
+        self.assertIn('return "dict[unknown,unknown]"', helper_text)
+        self.assertIn("_sh_infer_known_name_call_return_type(", postfix_text)
+        self.assertNotIn('if fn_name == "print":\n                        call_ret = "None"', postfix_text)
+        self.assertNotIn('elif fn_name == "open":\n                        call_ret = "PyFile"', postfix_text)
+        self.assertNotIn('elif fn_name == "zip":', postfix_text)
+        self.assertNotIn('call_ret = "dict[unknown,unknown]"', postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
