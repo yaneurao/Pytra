@@ -1492,6 +1492,10 @@ x.bit_length()
             1,
         )[0]
         kind_text = text.split("def _resolve_runtime_named_call_kind", 1)[1].split(
+            "def _resolve_runtime_named_call_annotation",
+            1,
+        )[0]
+        resolve_apply_text = text.split("def _resolve_runtime_named_call_apply_state", 1)[1].split(
             "def _apply_runtime_named_call_dispatch",
             1,
         )[0]
@@ -1510,17 +1514,21 @@ x.bit_length()
         self.assertIn('noncpp_symbol_runtime_call = str(call_dispatch.get("noncpp_symbol_runtime_call", ""))', resolve_text)
         self.assertIn("return (", resolve_text)
         self.assertIn('if stdlib_fn_runtime_call != "":', kind_text)
+        self.assertIn(") = self._resolve_runtime_named_call_annotation(", resolve_apply_text)
+        self.assertIn('if dispatch_kind == "stdlib_function":', resolve_apply_text)
+        self.assertIn('if dispatch_kind == "stdlib_symbol":', resolve_apply_text)
+        self.assertIn('if dispatch_kind == "noncpp_symbol":', resolve_apply_text)
         self.assertIn('if dispatch_kind == "stdlib_function":', apply_text)
         self.assertIn('if dispatch_kind == "stdlib_symbol":', apply_text)
         self.assertIn('if dispatch_kind == "noncpp_symbol":', apply_text)
-        self.assertIn("dispatch_kind = self._resolve_runtime_named_call_kind(", kind_text)
-        self.assertIn(") = self._resolve_runtime_named_call_annotation(", helper_text)
+        self.assertIn("dispatch_kind, runtime_call, semantic_tag = self._resolve_runtime_named_call_apply_state(", helper_text)
         self.assertIn("return self._apply_runtime_named_call_dispatch(", helper_text)
         self.assertNotIn('stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))', helper_text)
         self.assertNotIn('stdlib_symbol_runtime_call = str(call_dispatch.get("stdlib_symbol_runtime_call", ""))', helper_text)
         self.assertNotIn('noncpp_symbol_runtime_call = str(call_dispatch.get("noncpp_symbol_runtime_call", ""))', helper_text)
         self.assertNotIn('if stdlib_fn_runtime_call != "":', helper_text)
         self.assertNotIn("dispatch_kind = self._resolve_runtime_named_call_kind(", helper_text)
+        self.assertNotIn(") = self._resolve_runtime_named_call_annotation(", helper_text)
         self.assertIn("return None", apply_text)
         self.assertIn("return self._apply_named_call_dispatch(", named_call_text)
         self.assertIn('if dispatch_kind == "runtime":', named_apply_text)
