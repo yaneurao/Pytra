@@ -5025,18 +5025,15 @@ class _ShExprParser:
         """builtin named-call dispatch の semantic tag unpack を helper へ寄せる。"""
         return str(call_dispatch.get("builtin_semantic_tag", ""))
 
-    def _annotate_builtin_named_call_expr(
+    def _apply_builtin_named_call_dispatch(
         self,
-        payload: dict[str, Any],
         *,
+        payload: dict[str, Any],
         fn_name: str,
         args: list[dict[str, Any]],
-        call_dispatch: dict[str, str],
+        semantic_tag: str,
     ) -> dict[str, Any] | None:
-        """builtin named-call の annotation dispatch を parser helper へ寄せる。"""
-        semantic_tag = self._resolve_builtin_named_call_semantic_tag(
-            call_dispatch=call_dispatch,
-        )
+        """builtin named-call dispatch の annotation 適用を helper へ寄せる。"""
         if fn_name in {"print", "len", "range", "zip", "str"}:
             return _sh_annotate_fixed_runtime_builtin_call_expr(
                 payload,
@@ -5108,6 +5105,25 @@ class _ShExprParser:
                 semantic_tag=semantic_tag,
             )
         return None
+
+    def _annotate_builtin_named_call_expr(
+        self,
+        payload: dict[str, Any],
+        *,
+        fn_name: str,
+        args: list[dict[str, Any]],
+        call_dispatch: dict[str, str],
+    ) -> dict[str, Any] | None:
+        """builtin named-call の annotation dispatch を parser helper へ寄せる。"""
+        semantic_tag = self._resolve_builtin_named_call_semantic_tag(
+            call_dispatch=call_dispatch,
+        )
+        return self._apply_builtin_named_call_dispatch(
+            payload=payload,
+            fn_name=fn_name,
+            args=args,
+            semantic_tag=semantic_tag,
+        )
 
     def _resolve_runtime_named_call_dispatch(
         self,

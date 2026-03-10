@@ -221,6 +221,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて runtime named-call dispatch の annotation 適用も `_ShExprParser._apply_runtime_named_call_dispatch()` へ寄せ、`_annotate_runtime_named_call_expr()` から stdlib/non-C++ dispatch if-chain を外した。`test_east_core.py` では apply helper 定義、call site、旧 inline runtime-named-call branch の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] builtins 側の named-call dispatch も parser method `_ShExprParser._annotate_builtin_named_call_expr()` へ寄せ、`print/len/...`、scalar ctor、`min/max`、`enumerate`、iterator/predicate/collection ctor の分岐を `_annotate_named_call_expr()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline builtin-dispatch block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] builtins named-call annotation も parser method `_ShExprParser._annotate_builtin_named_call_expr()` へ分離し、`print/len/range/zip/str`、scalar ctor、`min/max`、`open`、`enumerate`、`iter/next/reversed`、collection ctor、type predicate などの分岐を `_annotate_named_call_expr()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline builtin-dispatch cluster の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて builtins named-call dispatch の annotation 適用も `_ShExprParser._apply_builtin_named_call_dispatch()` へ寄せ、`_annotate_builtin_named_call_expr()` から builtins if-chain を外した。`test_east_core.py` では apply helper 定義、call site、旧 inline builtin-named-call branch の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
