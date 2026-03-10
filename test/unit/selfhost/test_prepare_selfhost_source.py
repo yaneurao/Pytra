@@ -102,11 +102,12 @@ def _generated_cpp_core_make_object_functions(
     *,
     scope: str = "nonhelper",
 ) -> set[str]:
-    if scope not in {"all", "nonhelper", "helper_only"}:
+    if scope not in {"all", "nonhelper", "helper_only", "export_seam", "parser_residual"}:
         raise ValueError(f"unsupported make-object scope: {scope}")
     all_functions: set[str] = set()
     helper_functions: set[str] = set()
     nonhelper_functions: set[str] = set()
+    export_seam_functions = {"to_payload"}
     current_function: str | None = None
     current_function_brace_depth = 0
     for line in text.splitlines():
@@ -132,6 +133,10 @@ def _generated_cpp_core_make_object_functions(
         return all_functions
     if scope == "helper_only":
         return helper_functions
+    if scope == "export_seam":
+        return nonhelper_functions & export_seam_functions
+    if scope == "parser_residual":
+        return nonhelper_functions - export_seam_functions
     return nonhelper_functions
 
 
@@ -685,16 +690,23 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
 
     def test_generated_cpp_core_make_object_export_seam_function_set_is_stable(self) -> None:
         text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
-        nonhelper_make_object_functions = _generated_cpp_core_make_object_functions(
+        export_seam_functions = _generated_cpp_core_make_object_functions(
             text,
-            scope="nonhelper",
+            scope="export_seam",
         )
         self.assertEqual(
-            nonhelper_make_object_functions & {"to_payload"},
+            export_seam_functions,
             {"to_payload"},
         )
+
+    def test_generated_cpp_core_make_object_parser_residual_function_set_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        parser_residual_functions = _generated_cpp_core_make_object_functions(
+            text,
+            scope="parser_residual",
+        )
         self.assertEqual(
-            nonhelper_make_object_functions - {"to_payload"},
+            parser_residual_functions,
             {
                 "_lookup_method_return",
                 "_parse_lambda",
