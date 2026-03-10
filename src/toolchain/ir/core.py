@@ -7138,6 +7138,15 @@ class _ShExprParser:
         rtok: dict[str, Any],
     ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
         """Subscript slice tail の state apply を helper へ寄せる。"""
+        return self._apply_subscript_slice_tail_state_result(upper=upper, rtok=rtok)
+
+    def _apply_subscript_slice_tail_state_result(
+        self,
+        *,
+        upper: dict[str, Any] | None,
+        rtok: dict[str, Any],
+    ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+        """Subscript slice tail の state-result apply を helper へ寄せる。"""
         return upper, rtok
 
     def _resolve_subscript_slice_upper_expr_state(self) -> bool:
