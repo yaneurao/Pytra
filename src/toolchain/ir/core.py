@@ -5089,6 +5089,14 @@ class _ShExprParser:
             return runtime_payload
         return payload
 
+    def _resolve_named_call_dispatch(
+        self,
+        *,
+        fn_name: str,
+    ) -> dict[str, str]:
+        """named-call dispatch lookup を helper へ寄せる。"""
+        return _sh_lookup_named_call_dispatch(fn_name)
+
     def _annotate_named_call_expr(
         self,
         payload: dict[str, Any],
@@ -5097,7 +5105,9 @@ class _ShExprParser:
         args: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """Name callee の metadata annotation を shared helper へ寄せる。"""
-        call_dispatch = _sh_lookup_named_call_dispatch(fn_name)
+        call_dispatch = self._resolve_named_call_dispatch(
+            fn_name=fn_name,
+        )
         return self._apply_named_call_dispatch(
             payload,
             fn_name=fn_name,
