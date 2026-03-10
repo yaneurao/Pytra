@@ -55,5 +55,6 @@
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_text_semantics.py` を追加し、identifier/import alias/dataclass option の text helper cluster を `core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_string_semantics.py` を追加し、string/fstring scan・decode・literal append cluster を `core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_stmt_text_semantics.py` を追加し、assign/comment/except/class-header の statement/header text helper cluster を `core.py` から切り出した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_stmt_text_semantics.py` を logical-line merge / top-level split / comp-target bind / indented-block collect まで拡張し、stmt-text helper の重複定義を `core.py` から除去した。
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。
