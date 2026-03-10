@@ -14,14 +14,16 @@ from _east_core_test_support import CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ARG_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_SUFFIX_SOURCE_PATH
+from _east_core_test_support import CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
 
 
 class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
     def test_core_source_routes_named_call_lookup_through_shared_helper(self) -> None:
+        runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
-        helper_text = text.split("def _sh_lookup_named_call_dispatch", 1)[1].split(
+        helper_text = runtime_text.split("def _sh_lookup_named_call_dispatch", 1)[1].split(
             "def _sh_infer_known_name_call_return_type",
             1,
         )[0]
@@ -35,9 +37,9 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn('lookup_builtin_semantic_tag(fn_name)', helper_text)
         self.assertIn('lookup_stdlib_function_runtime_call(fn_name)', helper_text)
         self.assertIn('lookup_stdlib_function_semantic_tag(fn_name)', helper_text)
-        self.assertIn('lookup_stdlib_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)', helper_text)
+        self.assertIn('lookup_stdlib_imported_symbol_runtime_call(fn_name, import_symbols)', helper_text)
         self.assertIn('lookup_stdlib_symbol_semantic_tag(fn_name)', helper_text)
-        self.assertIn('lookup_noncpp_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)', helper_text)
+        self.assertIn('lookup_noncpp_imported_symbol_runtime_call(fn_name, import_symbols)', helper_text)
         self.assertNotIn('_sh_lookup_named_call_dispatch(fn_name)', call_helper_text)
         self.assertNotIn('lookup_stdlib_function_runtime_call(fn_name) if fn_name != "" else ""', postfix_text)
         self.assertNotIn('lookup_builtin_semantic_tag(fn_name) if fn_name != "" else ""', postfix_text)
@@ -154,7 +156,8 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn('fn_name == "bool"', truthy_state_text)
         self.assertIn("self._should_use_truthy_runtime_for_bool_ctor(args=args)", truthy_state_text)
         self.assertIn('if dispatch_kind == "enumerate":', iter_state_text)
-        self.assertIn("return _sh_infer_enumerate_item_type(args)", iter_state_text)
+        self.assertIn("return _sh_infer_enumerate_item_type(", iter_state_text)
+        self.assertIn("infer_item_type=_sh_infer_item_type", iter_state_text)
         self.assertIn("return _sh_annotate_fixed_runtime_builtin_call_expr(", fixed_apply_text)
         self.assertIn("return _sh_annotate_scalar_ctor_call_expr(", scalar_apply_text)
         self.assertIn("return _sh_annotate_enumerate_call_expr(", enumerate_apply_text)
@@ -268,8 +271,9 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertNotIn('if dispatch_kind == "noncpp_symbol":', postfix_text)
 
     def test_core_source_routes_known_name_call_returns_through_shared_helper(self) -> None:
+        runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        helper_text = text.split("def _sh_infer_known_name_call_return_type", 1)[1].split(
+        helper_text = runtime_text.split("def _sh_infer_known_name_call_return_type", 1)[1].split(
             "def _sh_infer_enumerate_item_type",
             1,
         )[0]
@@ -279,7 +283,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn('if stdlib_imported_ret != "":', helper_text)
         self.assertIn('if fn_name == "open":', helper_text)
         self.assertIn('if fn_name == "zip":', helper_text)
-        self.assertIn("zip_item_types.append(_sh_infer_item_type(arg_node))", helper_text)
+        self.assertIn("zip_item_types.append(infer_item_type(arg_node))", helper_text)
         self.assertIn('return "dict[unknown,unknown]"', helper_text)
         self.assertNotIn("_sh_infer_known_name_call_return_type(", postfix_text)
         self.assertNotIn('if fn_name == "print":\n                        call_ret = "None"', postfix_text)
@@ -288,12 +292,10 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertNotIn('call_ret = "dict[unknown,unknown]"', postfix_text)
 
     def test_core_source_routes_enumerate_item_type_through_shared_helper(self) -> None:
+        runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        self.assertEqual(text.count("def _sh_infer_enumerate_item_type"), 1)
-        helper_text = text.split("def _sh_infer_enumerate_item_type", 1)[1].split(
-            "def _sh_set_parse_context",
-            1,
-        )[0]
+        self.assertEqual(runtime_text.count("def _sh_infer_enumerate_item_type"), 1)
+        helper_text = runtime_text.split("def _sh_infer_enumerate_item_type", 1)[1]
         state_text = text.split("def _resolve_builtin_named_call_annotation_state", 1)[1].split(
             "def _apply_builtin_named_call_dispatch",
             1,
@@ -302,8 +304,9 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
 
         self.assertIn("if len(args) < 1:", helper_text)
         self.assertIn("arg0 = args[0]", helper_text)
-        self.assertIn("return _sh_infer_item_type(arg0)", helper_text)
-        self.assertIn("_sh_infer_enumerate_item_type(args)", state_text)
+        self.assertIn("return infer_item_type(arg0)", helper_text)
+        self.assertIn("return _sh_infer_enumerate_item_type(", state_text)
+        self.assertIn("infer_item_type=_sh_infer_item_type", state_text)
         self.assertNotIn('if len(args) >= 1 and isinstance(args[0], dict):', postfix_text)
         self.assertNotIn('elem_t = self._iter_item_type(args[0])', postfix_text)
 

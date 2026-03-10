@@ -45,8 +45,38 @@ from toolchain.ir.core_decorator_semantics import _sh_is_sealed_decorator
 from toolchain.ir.core_decorator_semantics import _sh_is_template_decorator
 from toolchain.ir.core_decorator_semantics import _sh_parse_decorator_head_and_args
 from toolchain.ir.core_extern_semantics import _sh_collect_extern_var_metadata
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_anyall_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_collection_ctor_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_enumerate_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_exception_ctor_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_fixed_runtime_builtin_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_iterator_builtin_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_minmax_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_noncpp_attr_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_noncpp_symbol_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_open_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_ordchr_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_resolved_runtime_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_runtime_attr_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_runtime_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_runtime_method_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_scalar_ctor_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_stdlib_function_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_stdlib_symbol_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_type_predicate_call_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_infer_enumerate_item_type
+from toolchain.ir.core_runtime_call_semantics import _sh_infer_known_name_call_return_type
+from toolchain.ir.core_runtime_call_semantics import _sh_lookup_noncpp_attr_runtime_call
+from toolchain.ir.core_runtime_call_semantics import _sh_lookup_named_call_dispatch
 from toolchain.ir.core_runtime_decl_semantics import _sh_collect_runtime_abi_metadata
 from toolchain.ir.core_runtime_decl_semantics import _sh_collect_template_metadata
+from toolchain.ir.core_text_semantics import _sh_is_dotted_identifier
+from toolchain.ir.core_text_semantics import _sh_is_identifier
+from toolchain.ir.core_text_semantics import _sh_parse_dataclass_decorator_options
+from toolchain.ir.core_text_semantics import _sh_parse_import_alias
+from toolchain.ir.core_text_semantics import _sh_split_top_keyword
+from toolchain.ir.core_text_semantics import _sh_split_top_level_as
+from toolchain.ir.core_text_semantics import _sh_strip_utf8_bom
 from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin
 from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin
 from toolchain.ir.core_expr_call_args import _ShExprCallArgParserMixin
@@ -104,517 +134,6 @@ def _sh_default_type_aliases() -> dict[str, str]:
         "float": "float64",
         "bool": "bool",
     }
-
-
-def _set_runtime_binding_fields(payload: dict[str, Any], module_id: str, runtime_symbol: str) -> None:
-    if module_id.strip() == "" or runtime_symbol.strip() == "":
-        return
-    payload["runtime_module_id"] = module_id
-    payload["runtime_symbol"] = runtime_symbol
-    adapter_kind = lookup_runtime_call_adapter_kind(module_id, runtime_symbol)
-    if adapter_kind != "":
-        payload["runtime_call_adapter_kind"] = adapter_kind
-
-
-def _sh_annotate_runtime_call_expr(
-    payload: dict[str, Any],
-    *,
-    lowered_kind: str,
-    builtin_name: str,
-    runtime_call: str = "",
-    module_id: str = "",
-    runtime_symbol: str = "",
-    semantic_tag: str | None = None,
-    runtime_owner: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    payload["lowered_kind"] = lowered_kind
-    payload["builtin_name"] = builtin_name
-    if runtime_call != "":
-        payload["runtime_call"] = runtime_call
-    _set_runtime_binding_fields(payload, module_id, runtime_symbol)
-    if semantic_tag is not None and semantic_tag != "":
-        payload["semantic_tag"] = semantic_tag
-    if runtime_owner is not None:
-        payload["runtime_owner"] = runtime_owner
-    return payload
-
-
-def _sh_annotate_resolved_runtime_expr(
-    payload: dict[str, Any],
-    *,
-    runtime_call: str,
-    runtime_source: str,
-    module_id: str = "",
-    runtime_symbol: str = "",
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    payload["resolved_runtime_call"] = runtime_call
-    payload["resolved_runtime_source"] = runtime_source
-    _set_runtime_binding_fields(payload, module_id, runtime_symbol)
-    if semantic_tag is not None and semantic_tag != "":
-        payload["semantic_tag"] = semantic_tag
-    return payload
-
-
-def _sh_annotate_runtime_attr_expr(
-    payload: dict[str, Any],
-    *,
-    runtime_call: str,
-    module_id: str = "",
-    runtime_symbol: str = "",
-    semantic_tag: str | None = None,
-    runtime_owner: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    payload["lowered_kind"] = "BuiltinAttr"
-    payload["runtime_call"] = runtime_call
-    _set_runtime_binding_fields(payload, module_id, runtime_symbol)
-    if semantic_tag is not None and semantic_tag != "":
-        payload["semantic_tag"] = semantic_tag
-    if runtime_owner is not None:
-        payload["runtime_owner"] = runtime_owner
-    return payload
-
-
-def _sh_annotate_runtime_method_call_expr(
-    payload: dict[str, Any],
-    *,
-    owner_type: str,
-    attr: str,
-    runtime_owner: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    owner_method_semantic_tag = lookup_owner_method_semantic_tag(owner_type, attr)
-    if owner_method_semantic_tag != "":
-        payload["semantic_tag"] = owner_method_semantic_tag
-    runtime_call = lookup_stdlib_method_runtime_call(owner_type, attr)
-    if runtime_call == "":
-        return payload
-    mod_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_type, attr)
-    method_semantic_tag = lookup_stdlib_method_semantic_tag(attr)
-    return _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="BuiltinCall",
-        builtin_name=attr,
-        runtime_call=runtime_call,
-        module_id=mod_id,
-        runtime_symbol=runtime_symbol,
-        semantic_tag=(
-            owner_method_semantic_tag if owner_method_semantic_tag != "" else method_semantic_tag
-        ),
-        runtime_owner=runtime_owner,
-    )
-
-
-def _sh_annotate_enumerate_call_expr(
-    payload: dict[str, Any],
-    *,
-    iter_element_type: str,
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="BuiltinCall",
-        builtin_name="enumerate",
-        runtime_call="py_enumerate",
-        module_id="pytra.built_in.iter_ops",
-        runtime_symbol="enumerate",
-        semantic_tag=semantic_tag,
-    )
-    payload["iterable_trait"] = "yes" if iter_element_type != "unknown" else "unknown"
-    payload["iter_protocol"] = "static_range"
-    payload["iter_element_type"] = iter_element_type
-    payload["resolved_type"] = f"list[tuple[int64, {iter_element_type}]]"
-    return payload
-
-
-def _sh_annotate_stdlib_function_call_expr(
-    payload: dict[str, Any],
-    *,
-    fn_name: str,
-    runtime_call: str,
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    mod_id, runtime_symbol = lookup_stdlib_function_runtime_binding(fn_name)
-    _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="BuiltinCall",
-        builtin_name=fn_name,
-        runtime_call=runtime_call,
-        module_id=mod_id,
-        runtime_symbol=runtime_symbol,
-        semantic_tag=semantic_tag,
-    )
-    sig_ret = lookup_stdlib_function_return_type(fn_name)
-    if sig_ret != "":
-        payload["resolved_type"] = sig_ret
-    return payload
-
-
-def _sh_annotate_stdlib_symbol_call_expr(
-    payload: dict[str, Any],
-    *,
-    fn_name: str,
-    runtime_call: str,
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    mod_id, runtime_symbol = lookup_stdlib_imported_symbol_runtime_binding(fn_name, _SH_IMPORT_SYMBOLS)
-    return _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="BuiltinCall",
-        builtin_name=fn_name,
-        runtime_call=runtime_call,
-        module_id=mod_id,
-        runtime_symbol=runtime_symbol,
-        semantic_tag=semantic_tag,
-    )
-
-
-def _sh_annotate_noncpp_symbol_call_expr(
-    payload: dict[str, Any],
-    *,
-    fn_name: str,
-    runtime_call: str,
-) -> dict[str, Any]:
-    mod_id = ""
-    runtime_symbol = ""
-    binding_semantic_tag = ""
-    binding = _SH_IMPORT_SYMBOLS.get(fn_name)
-    if isinstance(binding, dict):
-        mod_id = str(binding.get("module", "")).strip()
-        runtime_symbol = str(binding.get("name", "")).strip()
-        binding_semantic_tag = lookup_runtime_binding_semantic_tag(mod_id, runtime_symbol)
-    return _sh_annotate_resolved_runtime_expr(
-        payload,
-        runtime_call=runtime_call,
-        runtime_source="import_symbol",
-        module_id=mod_id,
-        runtime_symbol=runtime_symbol,
-        semantic_tag=binding_semantic_tag,
-    )
-
-
-def _sh_lookup_noncpp_attr_runtime_call(
-    owner_expr: dict[str, Any] | None,
-    attr_name: str,
-) -> tuple[str, str]:
-    if not isinstance(owner_expr, dict) or owner_expr.get("kind") != "Name":
-        return "", ""
-    owner_name = str(owner_expr.get("id", "")).strip()
-    if owner_name == "":
-        return "", ""
-    if owner_name in _SH_IMPORT_MODULES:
-        runtime_owner = _SH_IMPORT_MODULES[owner_name]
-        runtime_call = lookup_noncpp_module_attr_runtime_call(runtime_owner, attr_name)
-        if runtime_call != "":
-            return runtime_owner, runtime_call
-    if owner_name in _SH_IMPORT_SYMBOLS:
-        binding = _SH_IMPORT_SYMBOLS[owner_name]
-        mod_name = str(binding.get("module", "")).strip()
-        sym_name = str(binding.get("name", "")).strip()
-        if mod_name != "" and sym_name != "":
-            runtime_owner = mod_name + "." + sym_name
-            runtime_call = lookup_noncpp_module_attr_runtime_call(runtime_owner, attr_name)
-            if runtime_call != "":
-                return runtime_owner, runtime_call
-    return "", ""
-
-
-def _sh_annotate_noncpp_attr_call_expr(
-    payload: dict[str, Any],
-    *,
-    owner_expr: dict[str, Any] | None,
-    attr_name: str,
-) -> dict[str, Any]:
-    runtime_owner, runtime_call = _sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)
-    if runtime_call == "":
-        return payload
-    binding_semantic_tag = lookup_runtime_binding_semantic_tag(runtime_owner, attr_name)
-    _sh_annotate_resolved_runtime_expr(
-        payload,
-        runtime_call=runtime_call,
-        runtime_source="module_attr",
-        module_id=runtime_owner,
-        runtime_symbol=attr_name,
-        semantic_tag=binding_semantic_tag,
-    )
-    std_module_attr_ret = lookup_stdlib_function_return_type(attr_name)
-    if std_module_attr_ret != "":
-        payload["resolved_type"] = std_module_attr_ret
-    return payload
-
-
-def _sh_annotate_scalar_ctor_call_expr(
-    payload: dict[str, Any],
-    *,
-    fn_name: str,
-    arg_count: int,
-    use_truthy_runtime: bool = False,
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    runtime_call = "static_cast"
-    runtime_module_id = "pytra.core.py_runtime"
-    runtime_symbol = fn_name
-    if fn_name == "int" and arg_count == 2:
-        runtime_call = "py_to_int64_base"
-        runtime_module_id = "pytra.built_in.scalar_ops"
-        runtime_symbol = "py_to_int64_base"
-    elif fn_name == "bool" and arg_count == 1 and use_truthy_runtime:
-        runtime_call = "py_to_bool"
-    return _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="BuiltinCall",
-        builtin_name=fn_name,
-        runtime_call=runtime_call,
-        module_id=runtime_module_id,
-        runtime_symbol=runtime_symbol,
-        semantic_tag=semantic_tag,
-    )
-
-
-def _sh_annotate_minmax_call_expr(
-    payload: dict[str, Any],
-    *,
-    fn_name: str,
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    return _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="BuiltinCall",
-        builtin_name=fn_name,
-        runtime_call="py_min" if fn_name == "min" else "py_max",
-        module_id="pytra.core.py_runtime",
-        runtime_symbol=fn_name,
-        semantic_tag=semantic_tag,
-    )
-
-
-def _sh_annotate_collection_ctor_call_expr(
-    payload: dict[str, Any],
-    *,
-    fn_name: str,
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    runtime_call = fn_name + "_ctor"
-    if fn_name == "bytes":
-        runtime_call = "bytes_ctor"
-    elif fn_name == "bytearray":
-        runtime_call = "bytearray_ctor"
-    return _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="BuiltinCall",
-        builtin_name=fn_name,
-        runtime_call=runtime_call,
-        module_id="pytra.core.py_runtime",
-        runtime_symbol=fn_name,
-        semantic_tag=semantic_tag,
-    )
-
-
-def _sh_annotate_anyall_call_expr(
-    payload: dict[str, Any],
-    *,
-    fn_name: str,
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    return _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="BuiltinCall",
-        builtin_name=fn_name,
-        runtime_call="py_any" if fn_name == "any" else "py_all",
-        module_id="pytra.built_in.predicates",
-        runtime_symbol=fn_name,
-        semantic_tag=semantic_tag,
-    )
-
-
-def _sh_annotate_ordchr_call_expr(
-    payload: dict[str, Any],
-    *,
-    fn_name: str,
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    return _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="BuiltinCall",
-        builtin_name=fn_name,
-        runtime_call="py_ord" if fn_name == "ord" else "py_chr",
-        module_id="pytra.built_in.scalar_ops",
-        runtime_symbol="py_ord" if fn_name == "ord" else "py_chr",
-        semantic_tag=semantic_tag,
-    )
-
-
-def _sh_annotate_iterator_builtin_call_expr(
-    payload: dict[str, Any],
-    *,
-    fn_name: str,
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    runtime_call = "py_iter_or_raise"
-    module_id = "pytra.core.py_runtime"
-    if fn_name == "next":
-        runtime_call = "py_next_or_stop"
-    elif fn_name == "reversed":
-        runtime_call = "py_reversed"
-        module_id = "pytra.built_in.iter_ops"
-    return _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="BuiltinCall",
-        builtin_name=fn_name,
-        runtime_call=runtime_call,
-        module_id=module_id,
-        runtime_symbol=fn_name,
-        semantic_tag=semantic_tag,
-    )
-
-
-def _sh_annotate_open_call_expr(
-    payload: dict[str, Any],
-    *,
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    return _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="BuiltinCall",
-        builtin_name="open",
-        runtime_call="open",
-        module_id="pytra.core.py_runtime",
-        runtime_symbol="open",
-        semantic_tag=semantic_tag,
-    )
-
-
-def _sh_annotate_exception_ctor_call_expr(
-    payload: dict[str, Any],
-    *,
-    fn_name: str,
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    return _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="BuiltinCall",
-        builtin_name=fn_name,
-        runtime_call="std::runtime_error",
-        module_id="pytra.core.py_runtime",
-        runtime_symbol=fn_name,
-        semantic_tag=semantic_tag,
-    )
-
-
-def _sh_annotate_type_predicate_call_expr(
-    payload: dict[str, Any],
-    *,
-    fn_name: str,
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    return _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="TypePredicateCall",
-        builtin_name=fn_name,
-        semantic_tag=semantic_tag,
-    )
-
-
-def _sh_annotate_fixed_runtime_builtin_call_expr(
-    payload: dict[str, Any],
-    *,
-    fn_name: str,
-    semantic_tag: str | None = None,
-) -> dict[str, Any]:
-    runtime_call = "py_to_string"
-    module_id = "pytra.core.py_runtime"
-    runtime_symbol = fn_name
-    if fn_name == "print":
-        runtime_call = "py_print"
-        module_id = "pytra.built_in.io_ops"
-        runtime_symbol = "py_print"
-    elif fn_name == "len":
-        runtime_call = "py_len"
-    elif fn_name == "range":
-        runtime_call = "py_range"
-    elif fn_name == "zip":
-        runtime_call = "zip"
-    return _sh_annotate_runtime_call_expr(
-        payload,
-        lowered_kind="BuiltinCall",
-        builtin_name=fn_name,
-        runtime_call=runtime_call,
-        module_id=module_id,
-        runtime_symbol=runtime_symbol,
-        semantic_tag=semantic_tag,
-    )
-
-
-def _sh_lookup_named_call_dispatch(fn_name: str) -> dict[str, str]:
-    if fn_name.strip() == "":
-        return {
-            "builtin_semantic_tag": "",
-            "stdlib_fn_runtime_call": "",
-            "stdlib_fn_semantic_tag": "",
-            "stdlib_symbol_runtime_call": "",
-            "stdlib_symbol_semantic_tag": "",
-            "noncpp_symbol_runtime_call": "",
-        }
-    return {
-        "builtin_semantic_tag": lookup_builtin_semantic_tag(fn_name),
-        "stdlib_fn_runtime_call": lookup_stdlib_function_runtime_call(fn_name),
-        "stdlib_fn_semantic_tag": lookup_stdlib_function_semantic_tag(fn_name),
-        "stdlib_symbol_runtime_call": lookup_stdlib_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS),
-        "stdlib_symbol_semantic_tag": lookup_stdlib_symbol_semantic_tag(fn_name),
-        "noncpp_symbol_runtime_call": lookup_noncpp_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS),
-    }
-
-
-def _sh_infer_known_name_call_return_type(
-    fn_name: str,
-    args: list[dict[str, Any]],
-    stdlib_imported_ret: str,
-) -> str:
-    if fn_name == "print":
-        return "None"
-    if stdlib_imported_ret != "":
-        return stdlib_imported_ret
-    if fn_name == "open":
-        return "PyFile"
-    if fn_name == "int":
-        return "int64"
-    if fn_name == "float":
-        return "float64"
-    if fn_name == "bool":
-        return "bool"
-    if fn_name == "str":
-        return "str"
-    if fn_name == "len":
-        return "int64"
-    if fn_name == "range":
-        return "range"
-    if fn_name == "zip":
-        zip_item_types: list[str] = []
-        for arg_node in args:
-            if isinstance(arg_node, dict):
-                zip_item_types.append(_sh_infer_item_type(arg_node))
-        return f"list[tuple[{','.join(zip_item_types)}]]"
-    if fn_name == "list":
-        return "list[unknown]"
-    if fn_name == "set":
-        return "set[unknown]"
-    if fn_name == "dict":
-        return "dict[unknown,unknown]"
-    if fn_name == "bytes":
-        return "bytes"
-    if fn_name == "bytearray":
-        return "bytearray"
-    if fn_name in {"Exception", "RuntimeError"}:
-        return "Exception"
-    return ""
-
-
-def _sh_infer_enumerate_item_type(args: list[dict[str, Any]]) -> str:
-    if len(args) < 1:
-        return "unknown"
-    arg0 = args[0]
-    if not isinstance(arg0, dict):
-        return "unknown"
-    return _sh_infer_item_type(arg0)
 
 
 def _sh_set_parse_context(
@@ -2099,110 +1618,6 @@ def _sh_parse_typed_binding(text: str, *, allow_dotted_name: bool = False) -> tu
         return None
     return name_txt, ann_txt, default_txt
 
-
-def _sh_is_identifier(text: str) -> bool:
-    """ASCII 識別子（先頭英字/`_`）かを返す。"""
-    if text == "":
-        return False
-    c0 = text[0:1]
-    is_head = ("A" <= c0 <= "Z") or ("a" <= c0 <= "z") or c0 == "_"
-    if not is_head:
-        return False
-    for ch in text[1:]:
-        is_body = ("A" <= ch <= "Z") or ("a" <= ch <= "z") or ("0" <= ch <= "9") or ch == "_"
-        if not is_body:
-            return False
-    return True
-
-
-def _sh_strip_utf8_bom(source: str) -> str:
-    """UTF-8 BOM を先頭から除去する。"""
-    if source.startswith("\ufeff"):
-        return source[1:]
-    return source
-
-
-def _sh_is_dotted_identifier(text: str) -> bool:
-    """`a.b.c` 形式の識別子列かを返す。"""
-    if text.strip() == "":
-        return False
-    parts = text.split(".")
-    if len(parts) == 0:
-        return False
-    for seg in parts:
-        if not _sh_is_identifier(seg):
-            return False
-    return True
-
-
-def _sh_parse_import_alias(text: str, *, allow_dotted_name: bool) -> tuple[str, str] | None:
-    """`name` / `name as alias` を手書きパースして (name, alias_or_empty) を返す。"""
-    raw = text.strip()
-    if raw == "":
-        return None
-    name_txt = raw
-    alias_txt = ""
-    as_split = _sh_split_top_level_as(raw)
-    if as_split is not None:
-        name_txt, alias_txt = as_split
-        name_txt = name_txt.strip()
-        alias_txt = alias_txt.strip()
-    if name_txt == "":
-        return None
-    if allow_dotted_name:
-        if not _sh_is_dotted_identifier(name_txt):
-            return None
-    else:
-        if not _sh_is_identifier(name_txt):
-            return None
-    if alias_txt != "" and not _sh_is_identifier(alias_txt):
-        return None
-    return name_txt, alias_txt
-
-
-def _sh_parse_dataclass_decorator_options(args_txt: str, *, line_no: int, line_text: str) -> dict[str, bool]:
-    """`@dataclass(...)` の keyword bool オプションを抽出する。"""
-    out: dict[str, bool] = {}
-    if args_txt.strip() == "":
-        return out
-    parts = _sh_split_top_commas(args_txt)
-    for part_raw in parts:
-        part = part_raw.strip()
-        if part == "":
-            continue
-        kv = _sh_split_top_level_assign(part)
-        if kv is None:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"unsupported dataclass decorator argument: {part}",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint="Use keyword bool args only: dataclass(init=..., repr=..., eq=...).",
-            )
-        key, val = kv
-        k = key.strip()
-        v = val.strip()
-        if not _sh_is_identifier(k):
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"invalid dataclass option name: {k}",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint="Use identifier keyword options: dataclass(name=True/False, ...).",
-            )
-        if v == "True":
-            out[k] = True
-            continue
-        if v == "False":
-            out[k] = False
-            continue
-        raise _make_east_build_error(
-            kind="unsupported_syntax",
-            message=f"dataclass option must be bool literal: {k}={v}",
-            source_span=_sh_span(line_no, 0, len(line_text)),
-            hint="Use True/False literal values.",
-        )
-    return out
-
-
 def _sh_parse_augassign(text: str) -> tuple[str, str, str] | None:
     """`target <op>= expr` をトップレベルで分解して返す。"""
     raw = text.strip()
@@ -2649,40 +2064,6 @@ def _sh_split_top_commas(txt: str) -> list[str]:
         out.append(tail)
     return out
 
-
-def _sh_split_top_keyword(text: str, kw: str) -> int:
-    """トップレベルでキーワード出現位置を探す（未検出なら -1）。"""
-    depth = 0
-    in_str: str | None = None
-    esc = False
-    for i, ch in enumerate(text):
-        if in_str is not None:
-            if esc:
-                esc = False
-                continue
-            if ch == "\\":
-                esc = True
-                continue
-            if ch == in_str:
-                in_str = None
-            continue
-        if ch in {"'", '"'}:
-            in_str = ch
-            continue
-        if ch in {"(", "[", "{"}:
-            depth += 1
-            continue
-        if ch in {")", "]", "}"}:
-            depth -= 1
-            continue
-        if depth == 0 and text[i:].startswith(kw):
-            prev_ok = i == 0 or text[i - 1].isspace()
-            next_ok = (i + len(kw) >= len(text)) or text[i + len(kw)].isspace()
-            if prev_ok and next_ok:
-                return i
-    return -1
-
-
 def _sh_split_top_plus(text: str) -> list[str]:
     """トップレベルの `+` で式を分割する。"""
     out: list[str] = []
@@ -3124,19 +2505,6 @@ def _sh_split_top_level_colon(text: str) -> tuple[str, str] | None:
                 return lhs, rhs
             return None
     return None
-
-
-def _sh_split_top_level_as(text: str) -> tuple[str, str] | None:
-    """トップレベルの `lhs as rhs` を分割する。"""
-    pos = _sh_split_top_keyword(text, "as")
-    if pos < 0:
-        return None
-    lhs = text[:pos].strip()
-    rhs = text[pos + 2 :].strip()
-    if lhs == "" or rhs == "":
-        return None
-    return lhs, rhs
-
 
 def _sh_parse_except_clause(header_text: str) -> tuple[str, str | None] | None:
     """`except <Type> [as <name>]:` を手書きパースする。"""
@@ -4175,6 +3543,7 @@ class _ShExprParser(
             fn_name,
             args,
             stdlib_imported_ret,
+            infer_item_type=_sh_infer_item_type,
         )
         declared_ret = self._resolve_named_call_declared_return_type(
             fn_name=fn_name,
@@ -4223,7 +3592,12 @@ class _ShExprParser(
             semantic_tag = lookup_stdlib_method_semantic_tag(attr_name)
             if runtime_call != "":
                 module_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_type, attr_name)
-        noncpp_module_id, noncpp_runtime_call = _sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)
+        noncpp_module_id, noncpp_runtime_call = _sh_lookup_noncpp_attr_runtime_call(
+            owner_expr,
+            attr_name,
+            import_modules=_SH_IMPORT_MODULES,
+            import_symbols=_SH_IMPORT_SYMBOLS,
+        )
         return {
             "resolved_type": attr_t,
             "runtime_call": runtime_call,
@@ -4745,7 +4119,10 @@ class _ShExprParser(
         fn_name: str,
     ) -> dict[str, str]:
         """named-call dispatch lookup を helper へ寄せる。"""
-        return _sh_lookup_named_call_dispatch(fn_name)
+        return _sh_lookup_named_call_dispatch(
+            fn_name,
+            import_symbols=_SH_IMPORT_SYMBOLS,
+        )
 
     def _should_use_truthy_runtime_for_bool_ctor(
         self,
@@ -4855,7 +4232,10 @@ class _ShExprParser(
     ) -> str:
         """builtin named-call の enumerate item 型推論を helper へ寄せる。"""
         if dispatch_kind == "enumerate":
-            return _sh_infer_enumerate_item_type(args)
+            return _sh_infer_enumerate_item_type(
+                args,
+                infer_item_type=_sh_infer_item_type,
+            )
         return "unknown"
 
     def _apply_fixed_runtime_builtin_named_call_annotation(
@@ -5124,6 +4504,7 @@ class _ShExprParser(
             payload,
             fn_name=fn_name,
             runtime_call=runtime_call,
+            import_symbols=_SH_IMPORT_SYMBOLS,
             semantic_tag=semantic_tag,
         )
 
@@ -5139,6 +4520,7 @@ class _ShExprParser(
             payload,
             fn_name=fn_name,
             runtime_call=runtime_call,
+            import_symbols=_SH_IMPORT_SYMBOLS,
         )
 
     def _apply_runtime_named_call_dispatch(
@@ -5209,6 +4591,8 @@ class _ShExprParser(
             payload,
             owner_expr=owner_expr,
             attr_name=attr,
+            import_modules=_SH_IMPORT_MODULES,
+            import_symbols=_SH_IMPORT_SYMBOLS,
         )
 
     def _apply_runtime_method_call_expr_annotation(
@@ -7940,6 +7324,11 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         args_txt,
                         line_no=i,
                         line_text=ln,
+                        split_top_commas=_sh_split_top_commas,
+                        split_top_level_assign=_sh_split_top_level_assign,
+                        is_identifier=_sh_is_identifier,
+                        make_east_build_error=_make_east_build_error,
+                        make_span=_sh_span,
                     )
                     for k_opt, v_opt in parsed_opts.items():
                         pending_dataclass_options[k_opt] = v_opt

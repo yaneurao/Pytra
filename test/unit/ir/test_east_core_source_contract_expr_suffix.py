@@ -14,6 +14,7 @@ if str(TEST_DIR) not in sys.path:
 from _east_core_test_support import CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
+from _east_core_test_support import CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
 
 
@@ -56,9 +57,10 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn('dict<str, object>{{"kind", make_object("Name")}', lowered_text)
 
     def test_core_source_routes_runtime_call_metadata_through_shared_helper(self) -> None:
+        runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
-        helper_text = text.split("def _sh_annotate_runtime_call_expr", 1)[1].split(
+        helper_text = runtime_text.split("def _sh_annotate_runtime_call_expr", 1)[1].split(
             "def _sh_annotate_resolved_runtime_expr",
             1,
         )[0]
@@ -95,8 +97,9 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
 
     def test_core_source_routes_resolved_runtime_annotations_through_shared_helper(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         attr_annotation_text = CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
-        helper_text = core_text.split("def _sh_annotate_resolved_runtime_expr", 1)[1].split(
+        helper_text = runtime_text.split("def _sh_annotate_resolved_runtime_expr", 1)[1].split(
             "def _sh_annotate_runtime_attr_expr",
             1,
         )[0]
@@ -127,8 +130,9 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
 
     def test_core_source_routes_builtin_attr_metadata_through_shared_helper(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         attr_annotation_text = CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
-        helper_text = core_text.split("def _sh_annotate_runtime_attr_expr", 1)[1].split(
+        helper_text = runtime_text.split("def _sh_annotate_runtime_attr_expr", 1)[1].split(
             "def _sh_annotate_runtime_method_call_expr",
             1,
         )[0]
@@ -183,7 +187,9 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertIn('std_attr_t = lookup_stdlib_attribute_type(owner_type, attr_name)', helper_text)
         self.assertIn('runtime_call = lookup_stdlib_method_runtime_call(owner_type, attr_name)', helper_text)
         self.assertIn('module_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_type, attr_name)', helper_text)
-        self.assertIn('_sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)', helper_text)
+        self.assertIn('_sh_lookup_noncpp_attr_runtime_call(', helper_text)
+        self.assertIn('import_modules=_SH_IMPORT_MODULES', helper_text)
+        self.assertIn('import_symbols=_SH_IMPORT_SYMBOLS', helper_text)
         self.assertIn("self._resolve_attr_expr_annotation_state(", attr_expr_text)
         self.assertNotIn("self._resolve_attr_expr_metadata(", attr_expr_text)
         self.assertNotIn("attr_meta = self._lookup_attr_expr_metadata(", attr_expr_text)
