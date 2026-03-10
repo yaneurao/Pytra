@@ -44,5 +44,7 @@ Last updated: 2026-03-11
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Added `test_east_core_parser_behavior_classes.py`, then moved 7 representative class-storage / dataclass / nominal-ADT / enum parser-behavior tests out of `test_east_core.py`.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Added `test_east_core_parser_behavior_runtime.py`, then moved 12 representative runtime-annotation / builtin-call / pathlib / json / iter-lowering parser-behavior tests out of `test_east_core.py`.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Added `test_east_core_parser_behavior_statements.py`, then moved 6 representative identifier/import ambiguity, `super()`, bare `return`, arg-usage, and trailing-semicolon parser-behavior tests out of `test_east_core.py`, leaving only 3 residual source-contract regressions in the main file.
+- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Moved the `attr/subscript annotation` cluster into `core_expr_attr_subscript_annotation.py` and updated `test_east_core_source_contract_expr_suffix.py` to the split locations.
+- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Added `core_class_semantics.py`, then moved the decl-meta / nominal-ADT metadata / dataclass value-safe helper cluster out of `core.py`.
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) Split `core.py` / `test_east_core.py` by responsibility so compiler-internal improvements can proceed in cluster-sized slices again.

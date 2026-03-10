@@ -35,6 +35,10 @@ from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 from toolchain.frontends.type_expr import parse_type_expr_text
 from toolchain.frontends.type_expr import sync_type_expr_mirrors
 from toolchain.frontends.type_expr import type_expr_to_string
+from toolchain.ir.core_class_semantics import _sh_collect_nominal_adt_class_metadata
+from toolchain.ir.core_class_semantics import _sh_is_value_safe_dataclass_candidate
+from toolchain.ir.core_class_semantics import _sh_make_decl_meta
+from toolchain.ir.core_class_semantics import _sh_make_nominal_adt_v1_meta
 from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin
 from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin
 from toolchain.ir.core_expr_call_args import _ShExprCallArgParserMixin
@@ -1962,49 +1966,6 @@ def _sh_make_module_meta(
         "import_modules": import_module_bindings,
         "import_symbols": import_symbol_bindings,
     }
-
-
-def _sh_make_decl_meta(
-    *,
-    runtime_abi_v1: dict[str, Any] | None = None,
-    template_v1: dict[str, Any] | None = None,
-    extern_var_v1: dict[str, Any] | None = None,
-    nominal_adt_v1: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """宣言 node の metadata carrier を構築する。"""
-    meta: dict[str, Any] = {}
-    if runtime_abi_v1 is not None:
-        meta["runtime_abi_v1"] = runtime_abi_v1
-    if template_v1 is not None:
-        meta["template_v1"] = template_v1
-    if extern_var_v1 is not None:
-        meta["extern_var_v1"] = extern_var_v1
-    if nominal_adt_v1 is not None:
-        meta["nominal_adt_v1"] = nominal_adt_v1
-    return meta
-
-
-def _sh_make_nominal_adt_v1_meta(
-    *,
-    role: str,
-    family_name: str,
-    variant_name: str | None = None,
-    payload_style: str | None = None,
-) -> dict[str, Any]:
-    """`meta.nominal_adt_v1` carrier を構築する。"""
-    meta: dict[str, Any] = {
-        "schema_version": 1,
-        "role": role,
-        "family_name": family_name,
-        "surface_phase": "declaration_v1",
-    }
-    if role == "family":
-        meta["closed"] = 1
-    if variant_name is not None:
-        meta["variant_name"] = variant_name
-    if payload_style is not None:
-        meta["payload_style"] = payload_style
-    return meta
 
 
 def _sh_make_module_root(
@@ -5934,77 +5895,6 @@ class _ShExprParser(
                 runtime_symbol=attr_name,
             )
 
-    def _apply_attr_expr_annotation(
-        self,
-        *,
-        node: dict[str, Any],
-        owner_expr: dict[str, Any],
-        attr_name: str,
-        attr_runtime_call: str,
-        attr_semantic_tag: str,
-        attr_module_id: str,
-        attr_runtime_symbol: str,
-        noncpp_module_attr_runtime_call: str,
-        noncpp_module_id: str,
-    ) -> dict[str, Any]:
-        """Attribute access node への annotation 適用を helper へ寄せる。"""
-        self._apply_runtime_attr_expr_annotation(
-            node=node,
-            owner_expr=owner_expr,
-            attr_runtime_call=attr_runtime_call,
-            attr_semantic_tag=attr_semantic_tag,
-            attr_module_id=attr_module_id,
-            attr_runtime_symbol=attr_runtime_symbol,
-        )
-        self._apply_noncpp_attr_expr_annotation(
-            node=node,
-            attr_name=attr_name,
-            noncpp_module_attr_runtime_call=noncpp_module_attr_runtime_call,
-            noncpp_module_id=noncpp_module_id,
-        )
-        return node
-
-    def _annotate_attr_expr(
-        self,
-        *,
-        owner_expr: dict[str, Any],
-        attr_name: str,
-        source_span: dict[str, int],
-        repr_text: str,
-    ) -> dict[str, Any]:
-        """Attribute access node の生成と annotation を parser helper へ寄せる。"""
-        (
-            resolved_type,
-            attr_runtime_call,
-            attr_semantic_tag,
-            attr_module_id,
-            attr_runtime_symbol,
-            noncpp_module_attr_runtime_call,
-            noncpp_module_id,
-        ) = self._resolve_attr_expr_annotation_state(
-            owner_expr=owner_expr,
-            attr_name=attr_name,
-            source_span=source_span,
-        )
-        node = self._build_attr_expr_payload(
-            source_span=source_span,
-            owner_expr=owner_expr,
-            attr_name=attr_name,
-            resolved_type=resolved_type,
-            repr_text=repr_text,
-        )
-        return self._apply_attr_expr_annotation(
-            node=node,
-            owner_expr=owner_expr,
-            attr_name=attr_name,
-            attr_runtime_call=attr_runtime_call,
-            attr_semantic_tag=attr_semantic_tag,
-            attr_module_id=attr_module_id,
-            attr_runtime_symbol=attr_runtime_symbol,
-            noncpp_module_attr_runtime_call=noncpp_module_attr_runtime_call,
-            noncpp_module_id=noncpp_module_id,
-        )
-
     def _build_slice_subscript_expr(
         self,
         *,
@@ -6045,33 +5935,6 @@ class _ShExprParser(
             repr_text=repr_text,
         )
 
-    def _annotate_subscript_expr(
-        self,
-        *,
-        owner_expr: dict[str, Any],
-        index_expr: dict[str, Any] | None = None,
-        lower: dict[str, Any] | None = None,
-        upper: dict[str, Any] | None = None,
-        source_span: dict[str, int],
-        repr_text: str,
-    ) -> dict[str, Any]:
-        """Subscript / slice node の構築を parser helper へ寄せる。"""
-        owner_t, build_kind = self._resolve_subscript_expr_apply_state(
-            owner_expr=owner_expr,
-            index_expr=index_expr,
-            lower=lower,
-            upper=upper,
-        )
-        return self._apply_subscript_expr_build(
-            build_kind=build_kind,
-            owner_expr=owner_expr,
-            owner_t=owner_t,
-            index_expr=index_expr,
-            lower=lower,
-            upper=upper,
-            source_span=source_span,
-            repr_text=repr_text,
-        )
     def _dict_stmt_list(self, raw: Any) -> list[dict[str, Any]]:
         """動的値から `list[dict]` を安全に取り出す。"""
         out: list[dict[str, Any]] = []
@@ -8437,149 +8300,6 @@ def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[
     return _sh_parse_stmt_block_mutable(body_lines_copy, name_types=name_types_copy, scope_label=scope_label)
 
 
-_SH_VALUE_SAFE_CLASS_FIELD_TYPES: set[str] = {
-    "bool",
-    "int8",
-    "uint8",
-    "int16",
-    "uint16",
-    "int32",
-    "uint32",
-    "int64",
-    "uint64",
-    "float32",
-    "float64",
-    "str",
-    "bytes",
-    "bytearray",
-}
-
-
-def _sh_is_value_safe_dataclass_field_type(type_name: str) -> bool:
-    """dataclass 自動 value 判定用の保守的な型チェック。"""
-    t = type_name.strip()
-    if t in _SH_VALUE_SAFE_CLASS_FIELD_TYPES:
-        return True
-    if t.startswith("tuple[") and t.endswith("]"):
-        inner = t[6:-1].strip()
-        if inner == "":
-            return True
-        parts = _sh_split_top_commas(inner)
-        if len(parts) == 0:
-            return False
-        for part in parts:
-            if not _sh_is_value_safe_dataclass_field_type(part):
-                return False
-        return True
-    return False
-
-
-def _sh_is_value_safe_dataclass_candidate(
-    *,
-    is_dataclass: bool,
-    base: str,
-    has_del: bool,
-    class_body: list[dict[str, Any]],
-    field_types: dict[str, str],
-) -> bool:
-    """参照共有が不要な dataclass を value 候補として判定する。"""
-    if not is_dataclass or base != "" or has_del:
-        return False
-    # dataclass の自動 value は「データ保持専用クラス」に限定する。
-    for st in class_body:
-        if isinstance(st, dict) and st.get("kind") == "FunctionDef":
-            return False
-    if len(field_types) == 0:
-        return True
-    for field_t in field_types.values():
-        if not isinstance(field_t, str):
-            return False
-        if not _sh_is_value_safe_dataclass_field_type(field_t):
-            return False
-    return True
-
-
-def _sh_collect_nominal_adt_class_metadata(
-    class_name: str,
-    *,
-    base: str | None,
-    decorators: list[str],
-    is_dataclass: bool,
-    field_types: dict[str, str],
-    line_no: int,
-    line_text: str,
-    sealed_families: set[str],
-) -> dict[str, Any] | None:
-    """Stage A nominal ADT class metadata を収集する。"""
-    sealed_count = 0
-    for decorator_text in decorators:
-        if not _sh_is_sealed_decorator(decorator_text):
-            continue
-        head, args_txt = _sh_parse_decorator_head_and_args(decorator_text)
-        if head == "sealed" and args_txt != "":
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message="@sealed does not accept arguments",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint="Use bare `@sealed` on the family class.",
-            )
-        sealed_count += 1
-    if sealed_count > 1:
-        raise _make_east_build_error(
-            kind="unsupported_syntax",
-            message=f"multiple @sealed decorators are not supported on class '{class_name}'",
-            source_span=_sh_span(line_no, 0, len(line_text)),
-            hint="Use a single `@sealed` decorator on the family class.",
-        )
-    has_sealed = sealed_count == 1
-    base_name = base if isinstance(base, str) and base != "" else None
-    if has_sealed:
-        if base_name is not None:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"sealed family '{class_name}' cannot inherit from '{base_name}'",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint="Use `@sealed class Family:` with no base; declare variants as subclasses.",
-            )
-        if is_dataclass:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"sealed family '{class_name}' cannot be a dataclass",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint="Use `@sealed` on the family and `@dataclass` only on payload variants.",
-            )
-        if len(field_types) > 0:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"sealed family '{class_name}' cannot declare payload fields",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint="Keep payload fields on variant classes only.",
-            )
-        return _sh_make_decl_meta(
-            nominal_adt_v1=_sh_make_nominal_adt_v1_meta(
-                role="family",
-                family_name=class_name,
-            )
-        )
-    if base_name is not None and base_name in sealed_families:
-        if len(field_types) > 0 and not is_dataclass:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"payload variant '{class_name}' must use @dataclass",
-                source_span=_sh_span(line_no, 0, len(line_text)),
-                hint="Add `@dataclass` to variants that declare payload fields.",
-            )
-        return _sh_make_decl_meta(
-            nominal_adt_v1=_sh_make_nominal_adt_v1_meta(
-                role="variant",
-                family_name=base_name,
-                variant_name=class_name,
-                payload_style="dataclass" if is_dataclass else "unit",
-            )
-        )
-    return None
-
-
 def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, Any]:
     """Python ソースを self-hosted パーサで EAST Module に変換する。"""
     source = _sh_strip_utf8_bom(source)
@@ -9566,6 +9286,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 line_no=i,
                 line_text=ln,
                 sealed_families=sealed_families,
+                is_sealed_decorator=_sh_is_sealed_decorator,
+                parse_decorator_head_and_args=_sh_parse_decorator_head_and_args,
+                make_east_build_error=_make_east_build_error,
+                make_span=_sh_span,
             )
 
             cls_item = _sh_make_class_def_stmt(

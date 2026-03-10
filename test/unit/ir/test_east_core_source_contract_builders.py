@@ -10,12 +10,14 @@ TEST_DIR = Path(__file__).resolve().parent
 if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
+from _east_core_test_support import CORE_CLASS_SEMANTICS_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
 
 
 class EastCoreSourceContractBuildersTest(unittest.TestCase):
     def test_core_source_uses_builder_helpers_for_module_root_and_trivia(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        class_semantics_text = CORE_CLASS_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertIn("def _sh_make_kind_carrier(", text)
         self.assertIn("def _sh_make_node(", text)
         self.assertIn("def _sh_make_stmt_node(", text)
@@ -68,8 +70,10 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
         self.assertIn("def _sh_make_import_resolution_meta(", text)
         self.assertIn("def _sh_make_import_resolution_binding(", text)
         self.assertIn("def _sh_make_module_meta(", text)
-        self.assertIn("def _sh_make_decl_meta(", text)
-        self.assertIn("def _sh_make_nominal_adt_v1_meta(", text)
+        self.assertIn("def _sh_make_decl_meta(", class_semantics_text)
+        self.assertIn("def _sh_make_nominal_adt_v1_meta(", class_semantics_text)
+        self.assertNotIn("def _sh_make_decl_meta(", text)
+        self.assertNotIn("def _sh_make_nominal_adt_v1_meta(", text)
         self.assertIn("def _sh_import_binding_fields(", text)
         self.assertIn("def _sh_make_import_resolution_binding(", text)
         self.assertIn("def _sh_make_assign_stmt(", text)
@@ -170,6 +174,7 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
 
     def test_core_source_uses_builder_helpers_for_decl_and_import_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        class_semantics_text = CORE_CLASS_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertIn("aliases.append(_sh_make_import_alias(", text)
         self.assertIn("body_items.append(_sh_make_import_stmt(_sh_span(i, 0, len(ln)), aliases))", text)
         self.assertIn(
@@ -189,8 +194,9 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
             text,
         )
         self.assertIn("cls_item = _sh_make_class_def_stmt(", text)
-        self.assertIn("def _sh_collect_nominal_adt_class_metadata(", text)
+        self.assertIn("def _sh_collect_nominal_adt_class_metadata(", class_semantics_text)
         self.assertIn("class_meta = _sh_collect_nominal_adt_class_metadata(", text)
+        self.assertNotIn("def _sh_collect_nominal_adt_class_metadata(", text)
         self.assertNotIn('body_items.append({"kind": "Import"', text)
         self.assertNotIn('body_items.append({"kind": "ImportFrom"', text)
         self.assertNotIn('item = {"kind": "FunctionDef"', text)
