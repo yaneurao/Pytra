@@ -136,6 +136,11 @@ Function nodes contain:
 - `meta.runtime_abi_v1` (optional, canonical metadata for `@abi`)
 - `meta.template_v1` (optional, canonical metadata for `@template`)
 
+Class nodes may additionally carry:
+
+- `bases`, `decorators`
+- `meta.nominal_adt_v1` (optional, canonical metadata for nominal ADT families / variants)
+
 Rules for `FunctionDef.meta.runtime_abi_v1`:
 
 - `schema_version: 1`
@@ -159,6 +164,23 @@ Rules for `FunctionDef.meta.template_v1`:
 - In v1, `@instantiate(...)` is not materialized, so instantiation data is not carried here
 - `TypeVar` annotations alone do not create `meta.template_v1`
 
+Rules for `ClassDef.meta.nominal_adt_v1`:
+
+- `schema_version: 1`
+- `role: "family" | "variant"`
+- `family_name: str`
+- `surface_phase: "declaration_v1"`
+- For families:
+  - `closed: 1`
+  - `variant_name` / `payload_style` must not be present
+- For variants:
+  - `variant_name: str`
+  - `payload_style: "unit" | "dataclass"`
+  - metadata must not encode non-family base classes
+- Raw `decorators` / `bases` preserve Python surface syntax only; the canonical nominal ADT contract is `meta.nominal_adt_v1`
+- In v1, only top-level families and top-level variants are canonical; nested variants and namespace sugar must not be lowered into this metadata
+- Constructors stay as ordinary `Call` nodes over the variant class; EAST2 does not introduce a dedicated constructor node for nominal ADTs
+
 ### 5.1 C++ Pass-Through Notation via `leading_trivia`
 
 - EAST keeps pass-through directives inside existing `leading_trivia` (`kind: "comment"`) and does not introduce a new node kind.
@@ -178,6 +200,34 @@ Rules for `FunctionDef.meta.template_v1`:
 - Priority:
   - directive interpretation in `leading_trivia` has the highest priority
   - it is independent from docstring-to-comment rendering (`"""..."""` -> `/* ... */`) and neither overrides the other
+
+### 5.2 nominal ADT / pattern / `match` contract (v1)
+
+- Stage-A declaration surface uses `ClassDef.meta.nominal_adt_v1` as the source of truth, and represents both families and variants with ordinary `ClassDef` nodes.
+- When Stage B introduces `match/case`, it uses the following statement and helper nodes.
+  - `Match`
+    - `subject: _expr`
+    - `cases: MatchCase[]`
+    - `source_span`
+    - `repr` (optional)
+  - `MatchCase`
+    - `pattern: VariantPattern | PatternBind | PatternWildcard`
+    - `guard: null` (v1 does not allow guard patterns)
+    - `body: stmt[]`
+    - `source_span`
+  - `VariantPattern`
+    - `family_name: str`
+    - `variant_name: str`
+    - `subpatterns: (PatternBind | PatternWildcard)[]`
+    - `source_span`
+  - `PatternBind`
+    - `name: str`
+    - `source_span`
+  - `PatternWildcard`
+    - `source_span`
+- The v1 pattern surface is limited to variant patterns plus payload binds plus wildcard `_`.
+- Literal patterns, nested patterns, guard patterns, and expression-form `match` are outside the v1 node contract.
+- Backends that receive `Match` / pattern nodes are expected to implement a dedicated lowering lane and must not degrade them into `object` fallback or raw method-name reinterpretation.
 
 ## 6. Type System
 
@@ -652,11 +702,12 @@ Objective:
 ### 24.1 Node Kinds (Information Preserved in EAST2)
 
 - Syntax nodes:
-  - `Module`, `FunctionDef`, `ClassDef`, `If`, `While`, `For`, `ForRange`, `Assign`, `AnnAssign`, `AugAssign`, `Return`, `Expr`, `Import`, `ImportFrom`, `Raise`, `Try`, `Pass`, `Break`, `Continue`
+  - `Module`, `FunctionDef`, `ClassDef`, `If`, `While`, `For`, `ForRange`, `Assign`, `AnnAssign`, `AugAssign`, `Return`, `Expr`, `Import`, `ImportFrom`, `Raise`, `Try`, `Pass`, `Break`, `Continue`, `Match`
 - Expression nodes:
   - `Name`, `Constant`, `Attribute`, `Call`, `Subscript`, `Slice`, `Tuple`, `List`, `Dict`, `Set`, `ListComp`, `GeneratorExp`, `IfExp`, `Lambda`, `BinOp`, `BoolOp`, `Compare`, `UnaryOp`, `RangeExpr`
 - Auxiliary nodes:
   - before conversion into `ForCore`, keep normalization data for `For` / `ForRange`, such as `iter_mode`, `target_type`, and `range_mode`
+  - `MatchCase`, `VariantPattern`, `PatternBind`, `PatternWildcard`
 
 ### 24.2 Neutral Contract for Operators, Types, and Metadata
 
@@ -683,6 +734,7 @@ Objective:
 - Unresolvable nodes or types must stop with `ok=false` plus `error.kind` (`inference_failure`, `unsupported_syntax`, `semantic_conflict`).
 - Inputs outside the neutral contract, such as invalid `dispatch_mode`, unsupported node shapes, or missing required metadata, must fail closed instead of being rescued implicitly.
 - Fail closed with `semantic_conflict` when `type_expr` and its `resolved_type` mirror disagree.
+- `meta.nominal_adt_v1`, `Match`, and pattern nodes that fall outside the v1 contract (nested variants, guard patterns, literal patterns, namespace-sugar dependence, and similar cases) must fail closed with `unsupported_syntax` or `semantic_conflict`.
 - Compatibility fallbacks are allowed only during staged migration and must be logged together with an explicit `legacy` flag.
 
 ### 24.5 Principles for `EAST2 -> EAST3`

@@ -34,6 +34,15 @@ Pytra transpiles type-annotated Python code into multiple languages. The canonic
 - Assignments to `self.xxx` inside `__init__` are treated as instance members.
 - Members declared in class body are treated as class members (`static` in C#, `inline static` in C++).
 - Classes with `@dataclass` are treated as dataclasses, generating fields and constructor.
+- The nominal ADT declaration surface in v1 is defined as follows.
+  - Declare the family as a top-level `class` annotated with `@sealed`.
+  - Declare variants as top-level `class` declarations with exactly one base, the family class.
+  - Variants with payload use `@dataclass`; unit variants use an ordinary class body.
+  - The canonical constructor surface is an ordinary variant-class call (`Ok(...)`, `Err(...)`), and the family class itself is not a constructor entrypoint.
+  - The canonical variant-access surface is `isinstance(x, Variant)` followed by field access in the success branch.
+  - Nested variant classes, dedicated `adt` blocks, and namespace sugar such as `Result.Ok(...)` are outside v1.
+- Nominal ADT destructuring via `match/case` is reserved as the statement-first Stage B surface.
+  - `match` expressions, guard patterns, and nested patterns are not part of the v1 accepted surface.
 - Supports `import` / `from ... import ...`.
 - `from ... import *` (wildcard import) is supported (relative import is still unsupported).
 - In transpilation target code, direct imports of Python standard modules (`json`, `pathlib`, `sys`, `os`, `glob`, `argparse`, `re`, etc.) are prohibited.

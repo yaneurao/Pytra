@@ -142,6 +142,11 @@
 
 - `meta.extern_var_v1`（任意。ambient global extern variable の canonical metadata）
 
+クラスノードは以下を持ち得る。
+
+- `bases`, `decorators`
+- `meta.nominal_adt_v1`（任意。nominal ADT family / variant の canonical metadata）
+
 `FunctionDef.meta.runtime_abi_v1` の規則:
 
 - `schema_version: 1`
@@ -185,6 +190,23 @@
 - `extern(expr)` host fallback / runtime hook では付与してはならない
 - backend は raw initializer の `extern(...)` を再解釈せず、ambient-global 判定の正本として `meta.extern_var_v1` を使う
 
+`ClassDef`.meta.nominal_adt_v1 の規則:
+
+- `schema_version: 1`
+- `role: "family" | "variant"`
+- `family_name: str`
+- `surface_phase: "declaration_v1"`
+- family の場合:
+  - `closed: 1`
+  - `variant_name` / `payload_style` を持ってはならない
+- variant の場合:
+  - `variant_name: str`
+  - `payload_style: "unit" | "dataclass"`
+  - family 以外の base class を metadata にエンコードしてはならない
+- raw `decorators` / `bases` は Python surface 保存用であり、nominal ADT 判定の正本は `meta.nominal_adt_v1`
+- v1 では top-level family / top-level variant だけを正規 surface とし、nested variant や namespace sugar は metadata に落としてはならない
+- constructor は dedicated node を増やさず、variant class への通常の `Call` を正本とする
+
 ### 5.1 `leading_trivia` による C++ パススルー記法
 
 - EAST では、パススルーは新ノードを増やさず、既存の `leading_trivia`（`kind: "comment"`）で保持する。
@@ -197,13 +219,41 @@
   - `# Pytra::pass begin` ... `# Pytra::pass end`
 - 出力ルール（C++ エミッタ）:
   - directive コメントは通常コメント化（`// ...`）せず、C++ 行としてそのまま出力する。
-  - `begin/end` ブロック中の通常コメントは、`#` を除いた本文を C++ 行として順序どおり出力する。
+- `begin/end` ブロック中の通常コメントは、`#` を除いた本文を C++ 行として順序どおり出力する。
   - 出力位置は `leading_trivia` が付いている文の直前で、文のインデントに合わせる。
   - `blank` trivia は従来どおり空行として維持する。
   - 同一 `leading_trivia` 内の複数 directive は記述順に連結して出力する。
 - 優先順位:
   - `leading_trivia` の directive 解釈が最優先。
-  - 既存の docstring コメント変換（`"""..."""` -> `/* ... */`）とは独立で、互いに上書きしない。
+- 既存の docstring コメント変換（`"""..."""` -> `/* ... */`）とは独立で、互いに上書きしない。
+
+### 5.2 nominal ADT / pattern / `match` 契約（v1）
+
+- Stage A の declaration surface は `ClassDef.meta.nominal_adt_v1` を正本とし、family / variant は既存 `ClassDef` node で表す。
+- Stage B 以降の `match/case` 導入では、statement node と pattern helper node を次で表す。
+  - `Match`
+    - `subject: _expr`
+    - `cases: MatchCase[]`
+    - `source_span`
+    - `repr`（任意）
+  - `MatchCase`
+    - `pattern: VariantPattern | PatternBind | PatternWildcard`
+    - `guard: null`（v1 では guard pattern を許可しないため常に `null`）
+    - `body: stmt[]`
+    - `source_span`
+  - `VariantPattern`
+    - `family_name: str`
+    - `variant_name: str`
+    - `subpatterns: (PatternBind | PatternWildcard)[]`
+    - `source_span`
+  - `PatternBind`
+    - `name: str`
+    - `source_span`
+  - `PatternWildcard`
+    - `source_span`
+- v1 pattern surface は「variant pattern + payload bind + wildcard `_`」に限定する。
+- literal pattern、nested pattern、guard pattern、expression-form `match` は v1 の node contract に含めない。
+- `Match` / pattern node を受け取った backend は dedicated lowering lane を持つことを前提とし、`object` fallback や raw method-name 再解釈に落としてはならない。
 
 ## 6. 型システム
 
@@ -670,11 +720,12 @@ python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
 ### 24.1 ノード種別（EAST2 で保持する情報）
 
 - 構文ノード:
-  - `Module`, `FunctionDef`, `ClassDef`, `If`, `While`, `For`, `ForRange`, `Assign`, `AnnAssign`, `AugAssign`, `Return`, `Expr`, `Import`, `ImportFrom`, `Raise`, `Try`, `Pass`, `Break`, `Continue`
+  - `Module`, `FunctionDef`, `ClassDef`, `If`, `While`, `For`, `ForRange`, `Assign`, `AnnAssign`, `AugAssign`, `Return`, `Expr`, `Import`, `ImportFrom`, `Raise`, `Try`, `Pass`, `Break`, `Continue`, `Match`
 - 式ノード:
   - `Name`, `Constant`, `Attribute`, `Call`, `Subscript`, `Slice`, `Tuple`, `List`, `Dict`, `Set`, `ListComp`, `GeneratorExp`, `IfExp`, `Lambda`, `BinOp`, `BoolOp`, `Compare`, `UnaryOp`, `RangeExpr`
 - 補助ノード:
   - `ForCore` への変換前段として `For` / `ForRange` の正規化情報（`iter_mode`, `target_type`, `range_mode`）を保持
+  - `MatchCase`, `VariantPattern`, `PatternBind`, `PatternWildcard`
 
 ### 24.2 演算子・型・メタの中立契約
 
@@ -701,6 +752,7 @@ python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
 - 解決不能ノード/型は `ok=false` + `error.kind`（`inference_failure` / `unsupported_syntax` / `semantic_conflict`）で停止する。
 - 中立契約外の入力（不正 `dispatch_mode`, 未対応ノード形、必要メタ欠落）は暗黙救済せず fail-closed で終了する。
 - `type_expr` と `resolved_type` mirror が矛盾する入力は `semantic_conflict` として fail-closed で終了する。
+- `meta.nominal_adt_v1`, `Match`, pattern node が v1 契約外（nested variant、guard pattern、literal pattern、namespace sugar 依存など）の shape を持つ場合は `unsupported_syntax` または `semantic_conflict` として fail-closed にする。
 - 互換フォールバックは段階移行中のみ許可し、`legacy` 明示フラグとともにログへ記録する。
 
 ### 24.5 EAST2 -> EAST3 への接続原則

@@ -40,7 +40,8 @@ Context: [docs/ja/plans/p5-nominal-adt-language-rollout.md](../plans/p5-nominal-
 2. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-01] Inventory candidate language-surface designs for nominal ADT declarations, constructors, variant access, and `match`, then choose a selfhost-safe staged rollout.
    - Progress memo: canonical v1 reuses existing `class` / `@dataclass` / `isinstance`, and `match` is fixed as a later statement-first stage.
 3. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-02] Fix the boundary between type-system groundwork, narrowing groundwork, and full language-surface rollout so this plan does not conflict with `P1-EAST-TYPEEXPR-01`.
-4. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-01] Extend `spec-east`, `spec-user`, and `spec-dev` with nominal-ADT declarations, pattern nodes, `match` nodes, and diagnostics contracts.
+4. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-01] Extend `spec-east`, `spec-user`, and `spec-dev` with nominal-ADT declarations, pattern nodes, `match` nodes, and diagnostics contracts.
+   - Progress memo: added the Stage-A `@sealed` family / top-level variant surface, the Stage-B `Match`/pattern schema, and fail-closed diagnostics contracts to the specs.
 5. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] Fix the policy and error categories for exhaustiveness checks, duplicate patterns, and unreachable branches.
 6. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] Update the frontend and selfhost parser so representative nominal-ADT syntax is accepted.
 7. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] Introduce ADT constructors, variant tests, variant projections, and `match` lowering into EAST/EAST3.

@@ -288,6 +288,28 @@ category 運用ルール:
 - backend input validator は `backend_input_*` を返す。
 - backend-local crash を category なし例外へ逃がしてはならない。
 
+### 1.2.4.1 nominal ADT / `match` 追加時の診断契約（P5 入口）
+
+- nominal ADT declaration surface と `match` / pattern node を導入するときは、少なくとも次の fail-closed 契約を持たなければならない。
+- `unsupported_syntax`
+  - nested variant declaration
+  - `adt` block / namespace sugar / expression-form `match` / guard pattern / nested pattern など、v1 scope 外の source surface
+  - selfhost-safe 段階で未許可の function-local / class-local nominal ADT declaration
+- `semantic_conflict`
+  - sealed family を持たない variant class
+  - variant class の複数継承
+  - family 内での duplicate variant 名
+  - constructor / pattern payload arity の不一致
+  - variant pattern が別 family の variant を指すケース
+- `invariant_metadata_conflict`
+  - `ClassDef.meta.nominal_adt_v1`、`MatchCase`、pattern node の field shape 不正
+  - raw `decorators` / `bases` / pattern surface と canonical metadata の不一致
+- `backend_input_unsupported`
+  - backend が `meta.nominal_adt_v1` / `Match` / pattern node を未実装のまま受け取るケース
+  - backend が nominal ADT lane を `object` fallback や silent erase へ逃がそうとするケース
+- exhaustiveness / duplicate pattern / unreachable branch の最終 policy と category は `P5-NOMINAL-ADT-ROLLOUT-01-S2-02` で固定する。
+- それまでの段階でも、validator / backend は `Match` / pattern を「まだ実装していないから黙って削る」ことをしてはならない。
+
 ### 1.2.5 validator 更新必須ルール
 
 node kind / meta key / helper protocol / backend input dependency を追加または変更するときは、次を同一 change set で更新しなければならない。

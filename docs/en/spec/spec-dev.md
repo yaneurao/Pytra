@@ -283,6 +283,28 @@ Category rules:
 - Backend-input validators emit `backend_input_*`.
 - Backend-local crashes must not escape without a category.
 
+### 1.2.4.1 Diagnostic Contract for nominal ADT / `match` Introduction (P5 Entry)
+
+- When introducing the nominal ADT declaration surface and `match` / pattern nodes, the implementation must at minimum provide the following fail-closed contract.
+- `unsupported_syntax`
+  - nested variant declarations
+  - dedicated `adt` blocks, namespace sugar, expression-form `match`, guard patterns, nested patterns, and other source surface outside the v1 scope
+  - function-local or class-local nominal ADT declarations before the selfhost-safe stage explicitly allows them
+- `semantic_conflict`
+  - variant classes without a sealed family
+  - multiple inheritance on a variant class
+  - duplicate variant names inside one family
+  - constructor / pattern payload arity mismatch
+  - variant patterns that refer to a variant from another family
+- `invariant_metadata_conflict`
+  - malformed `ClassDef.meta.nominal_adt_v1`, `MatchCase`, or pattern-node field shapes
+  - disagreement between raw `decorators` / `bases` / pattern surface and the canonical metadata
+- `backend_input_unsupported`
+  - a backend receives `meta.nominal_adt_v1`, `Match`, or pattern nodes without implementing that lane
+  - a backend attempts to erase the nominal ADT lane through `object` fallback or another silent degradation
+- The final policy and category mapping for exhaustiveness, duplicate patterns, and unreachable branches is fixed by `P5-NOMINAL-ADT-ROLLOUT-01-S2-02`.
+- Even before that step, validators and backends must not silently drop `Match` / pattern nodes just because they are not implemented yet.
+
 ### 1.2.5 Mandatory Validator-Update Rule
 
 Whenever a node kind, meta key, helper protocol, or backend-input dependency is added or changed, the same change set must update all of the following:

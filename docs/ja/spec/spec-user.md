@@ -38,6 +38,15 @@ Pytra は、型注釈付き Python コードを複数言語へ変換するトラ
 - `self.xxx` に対する `__init__` 内代入はインスタンスメンバーとして扱います。
 - class 本体で宣言されたメンバーは class member（C# では `static`、C++ では `inline static`）として扱います。
 - `@dataclass` を付けた class は dataclass として扱い、フィールドとコンストラクタを生成します。
+- nominal ADT の declaration surface v1 は次を正本とします。
+  - family 宣言は top-level `class` に `@sealed` を付けて表します。
+  - variant 宣言は top-level `class` とし、family を単一継承しなければなりません。
+  - payload を持つ variant は `@dataclass` を付け、unit variant は通常の class body で表します。
+  - constructor surface は variant class への通常の call (`Ok(...)`, `Err(...)`) を正本とし、family class 自体は constructor entrypoint にしません。
+  - canonical な variant access surface は `isinstance(x, Variant)` と、その成功 branch での field access です。
+  - nested variant class、`adt` 専用 block、`Result.Ok(...)` のような namespace sugar は v1 に含めません。
+- `match/case` による nominal ADT 分解は statement-first の Stage B surface として予約します。
+  - `match` expression、guard pattern、nested pattern は v1 の受理対象に含めません。
 - `import` / `from ... import ...` をサポートします。
 - `from ... import *`（ワイルドカード import）をサポートします（相対 import は未対応）。
 - 文末セミコロン（`;`）はサポート対象外です（self_hosted parser では入力エラーとして扱います）。
