@@ -12,6 +12,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from tools.selfhost_parity_summary import build_direct_e2e_summary_row
+from tools.selfhost_parity_summary import build_stage2_diff_summary_row
 from tools.selfhost_parity_summary import build_stage2_summary_row
 from tools.selfhost_parity_summary import build_summary_row
 from tools.selfhost_parity_summary import render_summary_block
@@ -40,6 +41,11 @@ class SelfhostParitySummaryTest(unittest.TestCase):
         row = build_stage2_summary_row("stage2_binary", "missing_binary", "/tmp/missing")
         self.assertEqual(row.top_level_category, "regression")
         self.assertEqual(row.detail_category, "missing_output")
+
+    def test_stage2_diff_known_diff_maps_to_known_block(self) -> None:
+        row = build_stage2_diff_summary_row("test/fixtures/core/add.py", "known_diff", "expected diff")
+        self.assertEqual(row.top_level_category, "known_block")
+        self.assertEqual(row.detail_category, "known_block")
 
     def test_render_summary_block_skips_pass_rows_but_keeps_pass_aggregate(self) -> None:
         lines = render_summary_block(
