@@ -5382,6 +5382,22 @@ class _ShExprParser:
         keyword_entry: dict[str, Any] | None,
     ) -> bool:
         """call argument loop 1周分の state apply を helper へ寄せる。"""
+        return self._apply_call_arg_loop_entry_state_result(
+            args=args,
+            keywords=keywords,
+            arg_entry=arg_entry,
+            keyword_entry=keyword_entry,
+        )
+
+    def _apply_call_arg_loop_entry_state_result(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        arg_entry: dict[str, Any] | None,
+        keyword_entry: dict[str, Any] | None,
+    ) -> bool:
+        """call argument loop 1周分の state result apply を helper へ寄せる。"""
         self._apply_call_arg_entry(
             args=args,
             keywords=keywords,
