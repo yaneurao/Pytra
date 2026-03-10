@@ -17,6 +17,9 @@ from toolchain.compiler.backend_registry_metadata import list_backend_targets as
 from toolchain.compiler.backend_registry_shared import copy_php_runtime_files
 from toolchain.compiler.backend_registry_shared import copy_runtime_files
 from toolchain.compiler.backend_registry_shared import default_output_path_for
+from toolchain.compiler.backend_registry_shared import build_runtime_hook_from_descriptor
+from toolchain.compiler.backend_registry_shared import empty_emit
+from toolchain.compiler.backend_registry_shared import identity_ir
 from toolchain.compiler.backend_registry_shared import registry_src_root
 from toolchain.compiler.backend_registry_shared import runtime_none
 from toolchain.compiler.typed_boundary import LayerOptionsCarrier
@@ -26,7 +29,6 @@ from toolchain.compiler.typed_boundary import ResolvedBackendSpec
 from toolchain.compiler.typed_boundary import build_program_artifact_from_modules
 from toolchain.compiler.typed_boundary import build_resolved_backend_spec
 from toolchain.compiler.typed_boundary import coerce_backend_spec
-from toolchain.compiler.typed_boundary import coerce_ir_document
 from toolchain.compiler.typed_boundary import collect_program_module_carriers
 from toolchain.compiler.typed_boundary import copy_module_dependencies
 from toolchain.compiler.typed_boundary import copy_module_metadata
@@ -86,14 +88,6 @@ from backends.cpp.emitter import transpile_to_cpp
 from toolchain.compiler.js_runtime_shims import write_js_runtime_shims
 
 _SRC_ROOT = registry_src_root(__file__)
-
-
-def _identity_ir(doc: dict[str, Any]) -> dict[str, Any]:
-    return coerce_ir_document(doc)
-
-
-def _empty_emit(_ir: dict[str, Any], _output_path: Path, _emitter_options: dict[str, Any] | None = None) -> str:
-    return ""
 
 
 def _emit_cpp(ir: dict[str, Any], _output_path: Path, emitter_options: dict[str, Any] | None = None) -> str:
@@ -180,19 +174,14 @@ def _resolve_callable_ref(symbol_ref: str) -> Any:
 
 
 def _runtime_hook_from_key(runtime_key: str) -> Any:
-    descriptor = get_runtime_hook_descriptor(runtime_key)
-    kind = str(descriptor.get("kind", ""))
-    files_any = descriptor.get("files", [])
-    files = files_any if isinstance(files_any, list) else []
-    if kind == "none":
-        return runtime_none
-    if kind == "js_shims":
-        return _runtime_js_shims
-    if kind == "copy_files":
-        return lambda output_path: copy_runtime_files(_SRC_ROOT, files, output_path)
-    if kind == "php_runtime":
-        return lambda output_path: copy_php_runtime_files(_SRC_ROOT, files, output_path)
-    raise RuntimeError("unsupported runtime hook kind: " + runtime_key)
+    return build_runtime_hook_from_descriptor(
+        runtime_key,
+        get_runtime_hook_descriptor(runtime_key),
+        none_hook=runtime_none,
+        js_shims_hook=_runtime_js_shims,
+        copy_files_factory=lambda files: lambda output_path: copy_runtime_files(_SRC_ROOT, files, output_path),
+        php_runtime_factory=lambda files: lambda output_path: copy_php_runtime_files(_SRC_ROOT, files, output_path),
+    )
 
 
 def _emit_from_target(target: str) -> Any:
@@ -211,8 +200,8 @@ def _build_backend_spec(target: str) -> BackendSpec:
     spec = build_backend_spec_metadata(target)
     lower_ref = get_backend_lower_ref(target)
     optimizer_ref = get_backend_optimizer_ref(target)
-    spec["lower"] = _identity_ir if lower_ref == "" else _resolve_callable_ref(lower_ref)
-    spec["optimizer"] = _identity_ir if optimizer_ref == "" else _resolve_callable_ref(optimizer_ref)
+    spec["lower"] = identity_ir if lower_ref == "" else _resolve_callable_ref(lower_ref)
+    spec["optimizer"] = identity_ir if optimizer_ref == "" else _resolve_callable_ref(optimizer_ref)
     spec["emit"] = _emit_from_target(target)
     spec["runtime_hook"] = _runtime_hook_from_key(get_backend_runtime_hook_key(target))
     program_writer_key = get_backend_program_writer_key(target)
@@ -235,8 +224,8 @@ _BACKEND_RUNTIME_SPECS: dict[str, ResolvedBackendSpec] = {}
 def _normalize_backend_runtime_spec(spec: BackendSpec) -> ResolvedBackendSpec:
     return build_resolved_backend_spec(
         spec,
-        identity_ir=_identity_ir,
-        empty_emit=_empty_emit,
+        identity_ir=identity_ir,
+        empty_emit=empty_emit,
         runtime_none=runtime_none,
         default_program_writer=write_single_file_program,
         suppress_emit_exceptions=False,

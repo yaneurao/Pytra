@@ -2,11 +2,22 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pytra.std.pathlib import Path
+from toolchain.compiler.typed_boundary import coerce_ir_document
 
 
 def registry_src_root(module_file: str) -> Path:
     return Path(module_file).resolve().parents[2]
+
+
+def identity_ir(doc: object) -> dict[str, object]:
+    return coerce_ir_document(doc)
+
+
+def empty_emit(_ir: object, _output_path: Path, _emitter_options: object = None) -> str:
+    return ""
 
 
 def default_output_path_for(input_path: Path, ext: str) -> Path:
@@ -59,3 +70,26 @@ def copy_php_runtime_files(src_root: Path, file_specs: list[object], output_path
 
 def runtime_none(_output_path: Path) -> None:
     return
+
+
+def build_runtime_hook_from_descriptor(
+    runtime_key: str,
+    descriptor: dict[str, object],
+    *,
+    none_hook: Any,
+    js_shims_hook: Any,
+    copy_files_factory: Any,
+    php_runtime_factory: Any,
+) -> Any:
+    kind = str(descriptor.get("kind", ""))
+    files_any = descriptor.get("files", [])
+    files = files_any if isinstance(files_any, list) else []
+    if kind == "none":
+        return none_hook
+    if kind == "js_shims":
+        return js_shims_hook
+    if kind == "copy_files":
+        return copy_files_factory(files)
+    if kind == "php_runtime":
+        return php_runtime_factory(files)
+    raise RuntimeError("unsupported runtime hook kind: " + runtime_key)
