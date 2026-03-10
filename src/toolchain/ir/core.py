@@ -5411,7 +5411,10 @@ class _ShExprParser:
 
     def _owner_expr_resolved_type(self, owner_expr: dict[str, Any]) -> str:
         """owner expr から resolved_type を取る処理を helper へ寄せる。"""
-        return str(owner_expr.get("resolved_type", "unknown"))
+        owner_t = str(owner_expr.get("resolved_type", "unknown"))
+        if str(owner_expr.get("kind", "")) == "Name":
+            owner_t = self.name_types.get(str(owner_expr.get("id", "")), owner_t)
+        return owner_t
 
     def _resolve_attr_expr_owner_state(
         self,
@@ -5437,12 +5440,25 @@ class _ShExprParser:
             )
         return owner_t
 
-    def _resolve_attr_callee(self, *, callee: dict[str, Any]) -> tuple[dict[str, Any] | None, str, str]:
+    def _resolve_attr_callee(
+        self,
+        *,
+        callee: dict[str, Any],
+        source_span: dict[str, int],
+    ) -> tuple[dict[str, Any] | None, str, str]:
         """Attribute callee の owner / type / attr 抽出を helper へ寄せる。"""
         attr = str(callee.get("attr", ""))
         owner = callee.get("value")
         owner_expr = owner if isinstance(owner, dict) else None
-        owner_t = self._owner_expr_resolved_type(owner_expr) if owner_expr is not None else "unknown"
+        owner_t = (
+            self._resolve_attr_expr_owner_state(
+                owner_expr=owner_expr,
+                attr_name=attr,
+                source_span=source_span,
+            )
+            if owner_expr is not None
+            else "unknown"
+        )
         return owner_expr, owner_t, attr
 
     def _apply_attr_call_expr_annotation(
@@ -5474,7 +5490,11 @@ class _ShExprParser:
         callee: dict[str, Any],
     ) -> dict[str, Any]:
         """Attribute callee の annotation を shared parser helper へ寄せる。"""
-        owner_expr, owner_t, attr = self._resolve_attr_callee(callee=callee)
+        source_span = payload.get("source_span")
+        owner_expr, owner_t, attr = self._resolve_attr_callee(
+            callee=callee,
+            source_span=source_span if isinstance(source_span, dict) else {},
+        )
         return self._apply_attr_call_expr_annotation(
             payload=payload,
             owner_expr=owner_expr,

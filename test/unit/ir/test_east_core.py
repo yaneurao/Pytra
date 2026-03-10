@@ -601,7 +601,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('attr_runtime_symbol = str(attr_meta.get("runtime_symbol", ""))', resolve_text)
         self.assertIn('noncpp_module_attr_runtime_call = str(attr_meta.get("noncpp_runtime_call", ""))', resolve_text)
         self.assertIn('noncpp_module_id = str(attr_meta.get("noncpp_module_id", ""))', resolve_text)
-        self.assertIn('return str(owner_expr.get("resolved_type", "unknown"))', owner_type_text)
+        self.assertIn('owner_t = str(owner_expr.get("resolved_type", "unknown"))', owner_type_text)
+        self.assertIn('owner_t = self.name_types.get(str(owner_expr.get("id", "")), owner_t)', owner_type_text)
+        self.assertIn("return owner_t", owner_type_text)
         self.assertIn("owner_t = self._owner_expr_resolved_type(owner_expr)", owner_state_text)
         self.assertIn("self._guard_dynamic_helper_receiver(", owner_state_text)
         self.assertIn("if self._is_forbidden_object_receiver_type(owner_t):", owner_state_text)
@@ -894,16 +896,18 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         helper_text = text.split("def _annotate_attr_call_expr", 1)[1].split(
-            "def _subscript_result_type",
+            "def _parse_attr_suffix",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('attr = str(callee.get("attr", ""))', resolve_text)
         self.assertIn('owner = callee.get("value")', resolve_text)
+        self.assertIn("self._resolve_attr_expr_owner_state(", resolve_text)
         self.assertIn("return owner_expr, owner_t, attr", resolve_text)
         self.assertIn('_sh_annotate_noncpp_attr_call_expr(', apply_text)
         self.assertIn('_sh_annotate_runtime_method_call_expr(', apply_text)
+        self.assertIn('source_span = payload.get("source_span")', helper_text)
         self.assertIn("owner_expr, owner_t, attr = self._resolve_attr_callee(", helper_text)
         self.assertIn("return self._apply_attr_call_expr_annotation(", helper_text)
         self.assertIn('if callee.get("kind") == "Attribute":', callee_apply_text)
@@ -913,6 +917,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
         self.assertNotIn('attr = str(callee.get("attr", ""))', helper_text)
         self.assertNotIn('owner = callee.get("value")', helper_text)
+        self.assertNotIn("self._resolve_attr_expr_owner_state(", helper_text)
         self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', helper_text)
         self.assertNotIn('_sh_annotate_runtime_method_call_expr(', helper_text)
         self.assertNotIn('if callee.get("kind") == "Attribute":', callee_helper_text)
@@ -1291,6 +1296,15 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("self._guard_named_call_args(", call_helper_text)
         self.assertNotIn("return self._annotate_named_call_expr(", callee_helper_text)
         self.assertNotIn("return self._annotate_callee_call_expr(", call_helper_text)
+
+    def test_self_hosted_parser_rejects_object_receiver_method_call(self) -> None:
+        src = """
+x: object = 1
+x.bit_length()
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("object receiver attribute/method access is forbidden", str(cm.exception))
         self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', postfix_text)
         self.assertNotIn('if fn_name == "bool" and len(args) == 1:', postfix_text)
         self.assertNotIn("payload = self._annotate_named_call_expr(", postfix_text)
@@ -1918,6 +1932,15 @@ def f(xs: list[int]) -> list[int]:
         with self.assertRaises(RuntimeError) as cm:
             convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
         self.assertIn("template decorator accepts positional string literal parameters only", str(cm.exception))
+
+    def test_self_hosted_parser_rejects_object_receiver_method_call(self) -> None:
+        src = """
+def bad_attr(x: object) -> int:
+    return x.bit_length()
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("object receiver attribute/method access is forbidden", str(cm.exception))
 
     def test_template_decorator_is_rejected_outside_runtime_helper_modules(self) -> None:
         src = """
