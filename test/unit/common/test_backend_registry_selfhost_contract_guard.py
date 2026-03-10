@@ -25,22 +25,62 @@ class BackendRegistrySelfhostContractGuardTest(unittest.TestCase):
     def test_known_block_contract_matches_between_host_and_selfhost_lanes(self) -> None:
         cases = [
             {
-                "host_message": "unsupported target: scala",
+                "host_message": registry_diagnostics.unsupported_target_message("scala"),
                 "direct_row": build_direct_e2e_summary_row(
                     "sample/py/01_mandelbrot.py",
                     "selfhost_transpile_fail",
-                    "[unsupported_by_design] rewrite using supported form",
+                    registry_diagnostics.unsupported_target_message("scala"),
                 ),
                 "stage2_diff_row": build_stage2_diff_summary_row(
                     "sample/py/01_mandelbrot.py",
                     "selfhost_transpile_fail",
-                    "RuntimeError: unsupported target: scala",
+                    registry_diagnostics.unsupported_target_message("scala"),
                 ),
                 "multilang_row": build_summary_row(
                     "multilang_stage1",
                     "scala",
                     "unsupported_by_design",
-                    "[unsupported_by_design] stage1 runner intentionally unavailable",
+                    registry_diagnostics.unsupported_target_message("scala"),
+                ),
+                "expected": ("known_block", "unsupported_by_design"),
+            },
+            {
+                "host_message": registry_diagnostics.unsupported_target_profile_message("scala/preview"),
+                "direct_row": build_direct_e2e_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "selfhost_transpile_fail",
+                    registry_diagnostics.unsupported_target_profile_message("scala/preview"),
+                ),
+                "stage2_diff_row": build_stage2_diff_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "host_transpile_fail",
+                    registry_diagnostics.unsupported_target_profile_message("scala/preview"),
+                ),
+                "multilang_row": build_summary_row(
+                    "multilang_stage1",
+                    "scala",
+                    "unsupported_by_design",
+                    registry_diagnostics.unsupported_target_profile_message("scala/preview"),
+                ),
+                "expected": ("known_block", "unsupported_by_design"),
+            },
+            {
+                "host_message": registry_diagnostics.unsupported_noncpp_build_target_message("swift"),
+                "direct_row": build_direct_e2e_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "selfhost_transpile_fail",
+                    registry_diagnostics.unsupported_noncpp_build_target_message("swift"),
+                ),
+                "stage2_diff_row": build_stage2_diff_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "host_transpile_fail",
+                    registry_diagnostics.unsupported_noncpp_build_target_message("swift"),
+                ),
+                "multilang_row": build_summary_row(
+                    "multilang_stage1",
+                    "swift",
+                    "unsupported_by_design",
+                    registry_diagnostics.unsupported_noncpp_build_target_message("swift"),
                 ),
                 "expected": ("known_block", "unsupported_by_design"),
             },
