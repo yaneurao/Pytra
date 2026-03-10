@@ -75,12 +75,12 @@
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-02] Python 正本へ typed carrier と薄い legacy adapter を導入する。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-03] C++ selfhost/native compiler interface へ typed carrier mirror または typed wrapper API を導入し、raw `dict<str, object>` exchange を縮小する。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] selfhost parser / EAST builder の node 構築を typed constructor / builder helper へ寄せ、`dict<str, object>{{...}}` 直組み立てを段階縮退する。
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated compiler / selfhost runtime に残る `make_object` usage を `serialization/export seam` 専用まで後退させる。
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated compiler / selfhost runtime に残る `make_object` usage を `serialization/export seam` 専用まで後退させる。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-A] `S3-02` の完了条件を再定義し、TODO / plan の進捗メモを cluster 単位へ圧縮する。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] `core.py` の postfix/suffix parser cluster を分割し、`call` / `attr` / `subscript` を専用 module へ移す。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] `core.py` の call annotation cluster を分割し、`named-call` / `attr-call` / `callee-call` を専用 module へ移す。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` / `suffix tail` / `subscript tail` に残る helper 抽出を 5-10 個単位の bundle で消化する。
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] generated/selfhost residual guard と export seam を再基準化し、`make_object` を `serialization/export seam` 専用まで後退させて `S3-02` を閉じる。
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] generated/selfhost residual guard と export seam を再基準化し、`make_object` を `serialization/export seam` 専用まで後退させて `S3-02` を閉じる。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] JSON・extern/hook・未型付け入力の dynamic carrier を compiler typed model から切り離し、`JsonValue` / explicit adapter に隔離する。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] `make_object` / `py_to` / `obj_to_*` の残存 usage に分類ラベルを与え、未分類・再流入を弾く guard を追加する。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] selfhost build / diff / prepare / bridge 回帰を更新し、typed boundary 変更後の非退行を固定する。
@@ -135,3 +135,5 @@
 - 2026-03-10: `S3-02-E` の初手として、generated selfhost core に残る `make_object` usage を関数単位で再基準化した。現時点では `to_payload` を export seam、残りを parser residual として guard 化する。
 - 2026-03-10: generated selfhost core の residual `make_object` guard は `export_seam` と `parser_residual` の scope に分離し、export seam の判定が集合差分ではなく helper そのものの責務として読める形へ揃えた。
 - 2026-03-10: parser residual 側も `expr_parser` / `stmt_parser` / `lookup` bucket に分けて固定した。以後の `S3-02-E` は bucket 単位で residual を減らし、最後に export seam 以外を空にする。
+- 2026-03-10: `expr_parser` / `stmt_parser` / `lookup` の bucket 和集合が `parser_residual` と一致し、`export_seam` と交差しないことも guard 化した。以後は bucket ごとに件数を減らすだけで進捗が測れる。
+- 2026-03-10: source-of-truth の compiler lane と native wrapper では `make_object` が export seam 以外から退いたことを確認した。generated selfhost core は `to_payload` を export seam、残りを explicit `parser_residual` guard として再基準化済みなので、`S3-02` は完了として閉じ、残る分類強化は `S4-02` で扱う。

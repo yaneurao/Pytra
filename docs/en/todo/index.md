@@ -42,12 +42,12 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 5. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-02] Introduce typed carriers and thin legacy adapters in the Python source of truth.
 6. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-03] Introduce typed carrier mirrors or typed wrapper APIs in the C++ selfhost/native compiler interfaces and reduce raw `dict<str, object>` exchange.
 7. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Move selfhost parser / EAST builder node construction onto typed constructors / builder helpers and gradually retire direct `dict<str, object>{{...}}` assembly.
-8. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Retreat remaining `make_object` usage in generated compiler / selfhost runtime down to serialization/export seams only.
+8. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Retreat remaining `make_object` usage in generated compiler / selfhost runtime down to serialization/export seams only.
 9. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-A] Redefine the `S3-02` completion criteria and compress TODO/plan progress notes to cluster-level summaries.
 10. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] Split the postfix/suffix parser cluster out of `core.py` and move `call` / `attr` / `subscript` parsing into dedicated modules.
 11. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] Split the call-annotation cluster out of `core.py` and move `named-call` / `attr-call` / `callee-call` handling into dedicated modules.
 12. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] Finish the remaining `call-arg` / `suffix tail` / `subscript tail` helper extraction in bundles of 5-10 clusters instead of one-helper commits.
-13. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Rebaseline generated/selfhost residual guards and export seams, retreat `make_object` down to serialization/export seams only, and close `S3-02`.
+13. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Rebaseline generated/selfhost residual guards and export seams, retreat `make_object` down to serialization/export seams only, and close `S3-02`.
 14. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Separate JSON, extern/hooks, and intentionally dynamic carriers from the compiler typed model behind `JsonValue` or explicit adapters.
 15. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Label every remaining `make_object` / `py_to` / `obj_to_*` usage and add guards that reject uncategorized reintroduction.
 16. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] Refresh selfhost build/diff/prepare/bridge regressions and lock non-regression after the typed-boundary changes.
@@ -61,7 +61,8 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] The postfix/suffix parser cluster now lives in `core_expr_call_suffix.py` and `core_expr_attr_subscript_suffix.py`, and `core.py` has been reduced toward mixin imports plus postfix-dispatch orchestration.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] The `call_expr` / `callee_call` / `named-call` / `attr-call` annotation entrypoints now live in `core_expr_call_annotation.py`. `core.py` is reduced to shared helpers and lower-level apply logic, and the remaining fine-grained helper extraction is tracked under `S3-02-D`.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` now lives in `core_expr_call_args.py`, `call suffix` in `core_expr_call_suffix.py`, and `attr/subscript suffix` in `core_expr_attr_subscript_suffix.py`; the remaining helper extraction was also regrouped into bundle-sized batches.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Generated selfhost-core residual `make_object` guards now separate `export_seam` from `parser_residual`, and further split parser residuals into `expr_parser`, `stmt_parser`, and `lookup` buckets so the next reduction target is visible.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Generated selfhost-core residual `make_object` guards now separate `export_seam` from `parser_residual`, and further split parser residuals into `expr_parser`, `stmt_parser`, and `lookup` buckets. Tests now also fix that the bucket union matches `parser_residual` and stays disjoint from `export_seam`.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] The source-of-truth compiler lane and native wrapper are now free of `make_object` outside export seams, and generated selfhost-core usage is rebaselined into `export_seam=to_payload` plus explicit `parser_residual` guards, so `S3-02` is closed and the remaining labeling work moves to `S4-02`.
 
 ### P3: Harden compiler contracts and make stage/pass/backend handoff fail-closed
 
