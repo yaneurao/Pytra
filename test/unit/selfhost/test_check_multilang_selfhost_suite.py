@@ -43,6 +43,16 @@ class CheckMultilangSelfhostSuiteTest(unittest.TestCase):
         self.assertEqual(row.top_level_category, "toolchain_missing")
         self.assertEqual(row.detail_category, "toolchain_missing")
 
+    def test_stage1_summary_maps_unsupported_note_to_known_block(self) -> None:
+        mod = _load_module()
+        row = mod._stage1_row_to_summary(
+            ["scala", "fail", "native", "blocked", "[unsupported_by_design] stage1 runner intentionally unavailable"]
+        )
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual(row.top_level_category, "known_block")
+        self.assertEqual(row.detail_category, "unsupported_by_design")
+
     def test_multistage_summary_keeps_detail_category(self) -> None:
         mod = _load_module()
         row = mod._multistage_row_to_summary(

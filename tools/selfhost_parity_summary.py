@@ -5,8 +5,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from src.toolchain.compiler.backend_registry_diagnostics import classify_parity_note_detail
 from src.toolchain.compiler.backend_registry_diagnostics import KNOWN_BLOCK_DETAIL_CATEGORIES
-from src.toolchain.compiler.backend_registry_diagnostics import infer_diagnostic_detail_from_text
 from src.toolchain.compiler.backend_registry_diagnostics import normalize_top_level_category
 
 
@@ -30,7 +30,7 @@ def build_summary_row(lane: str, subject: str, detail_category: str, note: str) 
 
 
 def classify_known_block_detail(note: str) -> str | None:
-    inferred = infer_diagnostic_detail_from_text(note)
+    inferred = classify_parity_note_detail(note)
     if inferred in KNOWN_BLOCK_DETAIL_CATEGORIES:
         return inferred
     return None
