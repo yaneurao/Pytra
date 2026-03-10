@@ -2226,6 +2226,10 @@ x.bit_length()
             1,
         )[0]
         entry_has_name_text = text.split("def _resolve_call_arg_entry_has_name", 1)[1].split(
+            "def _resolve_call_arg_entry_save_pos",
+            1,
+        )[0]
+        save_pos_text = text.split("def _resolve_call_arg_entry_save_pos", 1)[1].split(
             "def _resolve_call_arg_entry_kind",
             1,
         )[0]
@@ -2310,7 +2314,8 @@ x.bit_length()
         self.assertIn("return self._apply_call_arg_entry_state(", entry_text)
         self.assertIn("if not self._resolve_call_arg_entry_has_name():", resolve_text)
         self.assertIn('return self._cur()["k"] == "NAME"', entry_has_name_text)
-        self.assertIn("save_pos = self.pos", resolve_text)
+        self.assertIn("save_pos = self._resolve_call_arg_entry_save_pos()", resolve_text)
+        self.assertIn("return self.pos", save_pos_text)
         self.assertIn("name_tok = self._consume_call_arg_entry_name_token()", resolve_text)
         self.assertIn("return save_pos, name_tok, self._resolve_call_arg_entry_kind()", resolve_text)
         self.assertIn("return self._resolve_call_arg_entry_is_keyword()", entry_kind_text)
@@ -2397,6 +2402,10 @@ x.bit_length()
             1,
         )[0]
         arg_entries_text = text.split("def _consume_call_suffix_arg_entries", 1)[1].split(
+            "def _apply_call_suffix_open_token_state",
+            1,
+        )[0]
+        open_state_text = text.split("def _apply_call_suffix_open_token_state", 1)[1].split(
             "def _consume_call_suffix_tokens",
             1,
         )[0]
@@ -2431,10 +2440,11 @@ x.bit_length()
         self.assertIn('return self._eat("(")', open_token_text)
         self.assertIn('return self._eat(")")', close_token_text)
         self.assertIn("return self._parse_call_args()", arg_entries_text)
+        self.assertIn("args, keywords = self._consume_call_suffix_arg_entries()", open_state_text)
+        self.assertIn("rtok = self._consume_call_suffix_close_token()", open_state_text)
+        self.assertIn("return args, keywords, rtok", open_state_text)
         self.assertIn("self._consume_call_suffix_open_token()", token_text)
-        self.assertIn("args, keywords = self._consume_call_suffix_arg_entries()", token_text)
-        self.assertIn("rtok = self._consume_call_suffix_close_token()", token_text)
-        self.assertIn("return args, keywords, rtok", token_text)
+        self.assertIn("return self._apply_call_suffix_open_token_state()", token_text)
         self.assertIn(
             "args, keywords, source_span, repr_text = self._resolve_call_suffix_state(",
             helper_text,
@@ -2451,10 +2461,13 @@ x.bit_length()
         self.assertNotIn("args, keywords, rtok = self._consume_call_suffix_tokens()", state_text)
         self.assertNotIn("args, keywords = self._parse_call_args()", token_state_text)
         self.assertNotIn("args, keywords = self._parse_call_args()", token_text)
+        self.assertNotIn("args, keywords = self._consume_call_suffix_arg_entries()", token_text)
         self.assertNotIn('rtok = self._eat(")")', state_text)
+        self.assertNotIn("rtok = self._consume_call_suffix_close_token()", token_text)
         self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", state_text)
         self.assertNotIn("return args, keywords, source_span, repr_text", state_text)
         self.assertNotIn('rtok = self._eat(")")', token_text)
+        self.assertNotIn("return args, keywords, rtok", token_text)
         self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)
         self.assertNotIn("return self._annotate_call_expr(", helper_text)
         self.assertIn("return self._apply_postfix_suffix_kind(", postfix_suffix_text)
