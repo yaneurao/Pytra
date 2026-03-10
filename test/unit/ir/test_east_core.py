@@ -360,6 +360,9 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_uses_builder_helpers_for_literal_and_target_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         name_target_text = text.split("def _parse_name_comp_target", 1)[1].split(
+            "def _parse_tuple_comp_target", 1
+        )[0]
+        tuple_target_text = text.split("def _parse_tuple_comp_target", 1)[1].split(
             "def _parse_comp_target", 1
         )[0]
         comp_target_text = text.split("def _parse_comp_target", 1)[1].split(
@@ -370,9 +373,13 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('if self._cur()["k"] != "NAME":', name_target_text)
         self.assertIn("first_node = _sh_make_name_expr(", name_target_text)
         self.assertIn("return _sh_make_tuple_expr(", name_target_text)
+        self.assertIn('if self._cur()["k"] != "(":', tuple_target_text)
+        self.assertIn("elems.append(self._parse_comp_target())", tuple_target_text)
+        self.assertIn("return _sh_make_tuple_expr(", tuple_target_text)
         self.assertIn("name_target = self._parse_name_comp_target()", comp_target_text)
         self.assertIn("if name_target is not None:", comp_target_text)
-        self.assertIn("return _sh_make_tuple_expr(", comp_target_text)
+        self.assertIn("tuple_target = self._parse_tuple_comp_target()", comp_target_text)
+        self.assertIn("if tuple_target is not None:", comp_target_text)
         self.assertIn("return _sh_make_constant_expr(", primary_text)
         self.assertIn("return _sh_make_name_expr(", primary_text)
         self.assertIn("return _sh_make_tuple_expr(", primary_text)
@@ -382,6 +389,7 @@ class EastCoreTest(unittest.TestCase):
 
         self.assertNotIn('first_node = {"kind": "Name"', name_target_text)
         self.assertNotIn("first_node = _sh_make_name_expr(", comp_target_text)
+        self.assertNotIn("return _sh_make_tuple_expr(", comp_target_text)
         self.assertNotIn('return {"kind": "Tuple"', comp_target_text)
         self.assertNotIn('return {"kind": "Constant"', primary_text)
         self.assertNotIn('return {"kind": "Name"', primary_text)

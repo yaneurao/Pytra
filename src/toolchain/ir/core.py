@@ -7047,27 +7047,34 @@ class _ShExprParser:
             repr_text=self._src_slice(first["s"], last_e),
         )
 
+    def _parse_tuple_comp_target(self) -> dict[str, Any] | None:
+        """内包表現ターゲットの `(` tuple 分岐を helper へ寄せる。"""
+        if self._cur()["k"] != "(":
+            return None
+        l = self._eat("(")
+        elems: list[dict[str, Any]] = []
+        elems.append(self._parse_comp_target())
+        while self._cur()["k"] == ",":
+            self._eat(",")
+            if self._cur()["k"] == ")":
+                break
+            elems.append(self._parse_comp_target())
+        r = self._eat(")")
+        return _sh_make_tuple_expr(
+            self._node_span(l["s"], r["e"]),
+            elems,
+            resolved_type="tuple[unknown]",
+            repr_text=self._src_slice(l["s"], r["e"]),
+        )
+
     def _parse_comp_target(self) -> dict[str, Any]:
         """内包表現のターゲット（name / tuple）を解析する。"""
         name_target = self._parse_name_comp_target()
         if name_target is not None:
             return name_target
-        if self._cur()["k"] == "(":
-            l = self._eat("(")
-            elems: list[dict[str, Any]] = []
-            elems.append(self._parse_comp_target())
-            while self._cur()["k"] == ",":
-                self._eat(",")
-                if self._cur()["k"] == ")":
-                    break
-                elems.append(self._parse_comp_target())
-            r = self._eat(")")
-            return _sh_make_tuple_expr(
-                self._node_span(l["s"], r["e"]),
-                elems,
-                resolved_type="tuple[unknown]",
-                repr_text=self._src_slice(l["s"], r["e"]),
-            )
+        tuple_target = self._parse_tuple_comp_target()
+        if tuple_target is not None:
+            return tuple_target
         tok = self._cur()
         raise _make_east_build_error(
             kind="unsupported_syntax",
