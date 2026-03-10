@@ -48,8 +48,8 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 11. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] Split the call-annotation cluster out of `core.py` and move `named-call` / `attr-call` / `callee-call` handling into dedicated modules.
 12. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] Finish the remaining `call-arg` / `suffix tail` / `subscript tail` helper extraction in bundles of 5-10 clusters instead of one-helper commits.
 13. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Rebaseline generated/selfhost residual guards and export seams, retreat `make_object` down to serialization/export seams only, and close `S3-02`.
-14. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Separate JSON, extern/hooks, and intentionally dynamic carriers from the compiler typed model behind `JsonValue` or explicit adapters.
-15. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Label every remaining `make_object` / `py_to` / `obj_to_*` usage and add guards that reject uncategorized reintroduction.
+14. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Separate JSON, extern/hooks, and intentionally dynamic carriers from the compiler typed model behind `JsonValue` or explicit adapters.
+15. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Label every remaining `make_object` / `py_to` / `obj_to_*` usage and add guards that reject uncategorized reintroduction.
 16. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] Refresh selfhost build/diff/prepare/bridge regressions and lock non-regression after the typed-boundary changes.
 17. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-02] Update docs / TODO / archive and record whether each remaining `make_object` usage is `user boundary only` or `explicit adapter only`.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-02] `S1-S2` classified object-carrier usage, fixed typed-boundary non-goals, locked typed-carrier field contracts, and moved host/static/native wrappers onto thin legacy-adapter surfaces.
@@ -74,6 +74,8 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `ir2lang` EAST JSON unwrap now also goes through `unwrap_east_root_json_doc()` / `export_json_object_dict()`, removing the last direct `.raw` reads from the outer CLI lane.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Empty `JsonObj` fallbacks and default `JsonValue -> JsonObj` coercion now also live in `toolchain.json_adapters`, removing direct `json.JsonObj({})` construction from `py2x`, `ir2lang`, and `program_validator`.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `program_loader` now coerces in-memory module docs through `coerce_json_object_dict()`, and `typed_boundary.py` keeps compiler-root raw/meta access behind named helpers.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Dynamic carriers are now confined to the explicit seams in `toolchain.json_adapters`, `RuntimeHookAdapter`, `AmbientExternBinding`, and `pytra.std.json`; the compiler/toolchain core no longer uses generic raw access.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Remaining compiler/toolchain `make_object` / `py_to` / `obj_to_*` usage is now limited to the native `transpile_cli.cpp` legacy-import seam, labeled with `P2-object-bridge: legacy_migration_adapter`, and guarded by `tools/check_compiler_object_bridge_labels.py` against unlabeled reintroduction.
 
 ### P3: Harden compiler contracts and make stage/pass/backend handoff fail-closed
 

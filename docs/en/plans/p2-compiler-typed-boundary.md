@@ -81,8 +81,8 @@ Out of scope:
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] Split the call-annotation cluster out of `core.py` and move `named-call` / `attr-call` / `callee-call` handling into dedicated modules.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] Finish the remaining `call-arg` / `suffix tail` / `subscript tail` helper extraction in bundles of 5-10 clusters.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Rebaseline generated/selfhost residual guards and export seams, retreat `make_object` to serialization/export seams only, and close `S3-02`.
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Separate JSON, extern/hooks, and intentionally dynamic carriers from the compiler typed model behind `JsonValue` or explicit adapters.
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Label every remaining `make_object` / `py_to` / `obj_to_*` usage and add guards that reject uncategorized reintroduction.
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Separate JSON, extern/hooks, and intentionally dynamic carriers from the compiler typed model behind `JsonValue` or explicit adapters.
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Label every remaining `make_object` / `py_to` / `obj_to_*` usage and add guards that reject uncategorized reintroduction.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] Refresh selfhost build/diff/prepare/bridge regressions and lock non-regression after the typed-boundary changes.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-02] Update docs / TODO / archive and record whether each remaining `make_object` usage is `user boundary only` or `explicit adapter only`.
 
@@ -147,3 +147,5 @@ Decision log:
 - 2026-03-10: `ir2lang` EAST JSON unwrap now also goes through `unwrap_east_root_json_doc()` / `export_json_object_dict()`. The remaining direct `.raw` reads on the outer toolchain CLI lane are now confined to `toolchain.json_adapters`.
 - 2026-03-10: Empty `JsonObj` fallbacks and default `JsonValue -> JsonObj` coercion also moved into `toolchain.json_adapters`. `empty_json_object_doc()` / `json_value_as_object_doc_or_empty()` now remove direct `json.JsonObj({})` construction from `py2x`, `ir2lang`, and `program_validator`.
 - 2026-03-10: `program_loader` now coerces in-memory module docs through `coerce_json_object_dict()` instead of a `JsonObj` special case, and `typed_boundary.py` keeps compiler-root `raw_module_doc/meta` access behind `export_compiler_root_module_doc()` / `compiler_root_meta_dict()`.
+- 2026-03-10: `S4-01` is now closed. Dynamic carriers are confined to the explicit seams in `toolchain.json_adapters`, `RuntimeHookAdapter`, `AmbientExternBinding`, and `pytra.std.json`, so generic raw access has retreated out of the compiler/toolchain core.
+- 2026-03-11: `S4-02` re-inventoried the remaining compiler/toolchain `make_object` / `py_to` / `obj_to_*` usage and confirmed that actual usage is now limited to three `obj_to_int64` / `obj_to_dict` sites in native `transpile_cli.cpp`. Those lines are labeled with `P2-object-bridge: legacy_migration_adapter`, and `tools/check_compiler_object_bridge_labels.py` plus unit tests fail fast on any unlabeled reintroduction.

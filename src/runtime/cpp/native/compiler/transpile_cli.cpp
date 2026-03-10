@@ -133,6 +133,7 @@ int64 _dict_get_int(const dict<str, object>& src, const str& key, int64 default_
     if (it == src.end() || !py_isinstance(it->second, PYTRA_TID_INT)) {
         return default_value;
     }
+    // P2-object-bridge: legacy_migration_adapter
     return obj_to_int64(it->second);
 }
 
@@ -157,6 +158,7 @@ dict<str, object> export_compiler_root_document(const CompilerRootDocument& doc)
     dict<str, object> meta_dict = {};
     auto meta_it = out.find("meta");
     if (meta_it != out.end() && py_isinstance(meta_it->second, PYTRA_TID_DICT)) {
+        // P2-object-bridge: legacy_migration_adapter
         meta_dict = obj_to_dict(meta_it->second);
     }
     meta_dict.update(dict<str, object>(dict<str, str>{{"dispatch_mode", doc.meta.dispatch_mode}}));
@@ -175,6 +177,7 @@ CompilerRootDocument coerce_compiler_root_document(
     dict<str, object> meta_dict = {};
     auto meta_it = raw_doc.find("meta");
     if (meta_it != raw_doc.end() && py_isinstance(meta_it->second, PYTRA_TID_DICT)) {
+        // P2-object-bridge: legacy_migration_adapter
         meta_dict = obj_to_dict(meta_it->second);
     }
     str effective_source_path = source_path != "" ? source_path : _dict_get_str(raw_doc, "source_path");

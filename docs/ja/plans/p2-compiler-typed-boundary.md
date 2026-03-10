@@ -81,8 +81,8 @@
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] `core.py` の call annotation cluster を分割し、`named-call` / `attr-call` / `callee-call` を専用 module へ移す。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` / `suffix tail` / `subscript tail` に残る helper 抽出を 5-10 個単位の bundle で消化する。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] generated/selfhost residual guard と export seam を再基準化し、`make_object` を `serialization/export seam` 専用まで後退させて `S3-02` を閉じる。
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] JSON・extern/hook・未型付け入力の dynamic carrier を compiler typed model から切り離し、`JsonValue` / explicit adapter に隔離する。
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] `make_object` / `py_to` / `obj_to_*` の残存 usage に分類ラベルを与え、未分類・再流入を弾く guard を追加する。
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] JSON・extern/hook・未型付け入力の dynamic carrier を compiler typed model から切り離し、`JsonValue` / explicit adapter に隔離する。
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] `make_object` / `py_to` / `obj_to_*` の残存 usage に分類ラベルを与え、未分類・再流入を弾く guard を追加する。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] selfhost build / diff / prepare / bridge 回帰を更新し、typed boundary 変更後の非退行を固定する。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-02] docs / TODO / archive を更新し、残る `make_object` が「user boundary 専用」か「明示 adapter 専用」かを記録して閉じる。
 
@@ -147,3 +147,5 @@
 - 2026-03-10: `ir2lang` の EAST JSON unwrap も `unwrap_east_root_json_doc()` / `export_json_object_dict()` に寄せた。toolchain 外周 CLI lane に残っていた `.raw` 直参照はこれで `toolchain.json_adapters` の外へ出なくなった。
 - 2026-03-10: 空 `JsonObj` fallback と `JsonValue -> JsonObj` 既定 coercion も `toolchain.json_adapters` に集約した。`empty_json_object_doc()` / `json_value_as_object_doc_or_empty()` を通して、`py2x` / `ir2lang` / `program_validator` から direct `json.JsonObj({})` を退けた。
 - 2026-03-10: `program_loader` の in-memory module doc 受理も `coerce_json_object_dict()` に統一し、`JsonObj` 特判を外した。`typed_boundary.py` 側の compiler-root `raw_module_doc/meta` 参照も `export_compiler_root_module_doc()` / `compiler_root_meta_dict()` へ閉じ、dynamic carrier の残りを named helper seam に寄せた。
+- 2026-03-11: `S4-02` では compiler/toolchain lane に残る `make_object` / `py_to` / `obj_to_*` usage を再棚卸しし、実 usage が native `transpile_cli.cpp` の `obj_to_int64` / `obj_to_dict` 3 箇所だけであることを確認した。各行に `P2-object-bridge: legacy_migration_adapter` を付け、`tools/check_compiler_object_bridge_labels.py` と unit test を追加して未分類・再流入を fail-fast 化した。
+- 2026-03-10: `S4-01` は完了として閉じる。dynamic carrier は `toolchain.json_adapters`、`RuntimeHookAdapter`、`AmbientExternBinding`、`pytra.std.json` の明示 seam に集約され、compiler/toolchain 本体から generic raw access は後退した。

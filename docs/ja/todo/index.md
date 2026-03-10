@@ -48,8 +48,8 @@
 11. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] `core.py` の call annotation cluster を分割し、`named-call` / `attr-call` / `callee-call` を専用 module へ移す。
 12. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` / `suffix tail` / `subscript tail` に残る helper 抽出を 5-10 個単位の bundle で消化し、1 helper = 1 commit を止める。
 13. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] generated/selfhost residual guard と export seam を再基準化し、`make_object` を `serialization/export seam` 専用まで後退させて `S3-02` を閉じる。
-14. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] JSON・extern/hook・未型付け入力の dynamic carrier を compiler typed model から切り離し、`JsonValue` / explicit adapter に隔離する。
-15. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] `make_object` / `py_to` / `obj_to_*` の残存 usage に分類ラベルを与え、未分類・再流入を弾く guard を追加する。
+14. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] JSON・extern/hook・未型付け入力の dynamic carrier を compiler typed model から切り離し、`JsonValue` / explicit adapter に隔離する。
+15. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] `make_object` / `py_to` / `obj_to_*` の残存 usage に分類ラベルを与え、未分類・再流入を弾く guard を追加する。
 16. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] selfhost build / diff / prepare / bridge 回帰を更新し、typed boundary 変更後の非退行を固定する。
 17. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-02] docs / TODO / archive を更新し、残る `make_object` が「user boundary 専用」か「明示 adapter 専用」かを記録して閉じる。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-02] `S1-S2` では object carrier の分類、typed boundary の non-goal、typed carrier の field 契約、host/static/native wrapper を固定し、公開 raw dict surface を thin legacy adapter へ後退させた。
@@ -74,6 +74,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] 空 `JsonObj` fallback と `JsonValue -> JsonObj` 既定変換も `toolchain.json_adapters` に集約し、`py2x` / `ir2lang` / `program_validator` から direct `json.JsonObj({})` を退けた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `program_validator.py` に残っていた `JsonObj/JsonArr/JsonValue` raw access も `toolchain.json_adapters` に寄せ、validator 本体は object/array/value helper 経由でのみ dynamic carrier を扱うようにした。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `program_loader` の in-memory module doc 受理も `coerce_json_object_dict()` に統一し、`typed_boundary.py` の compiler-root raw/meta 参照は helper 内へ閉じた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] これで dynamic carrier は `toolchain.json_adapters`・`RuntimeHookAdapter`・`AmbientExternBinding`・`pytra.std.json` の明示 seam に集約され、compiler/toolchain 本体から generic raw access は後退した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] compiler/toolchain lane に残る `make_object` / `py_to` / `obj_to_*` usage は native `transpile_cli.cpp` の legacy import seam だけに絞られたため、`P2-object-bridge: legacy_migration_adapter` ラベルと `tools/check_compiler_object_bridge_labels.py` guard を追加し、未分類・再流入を fail-fast 化した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
