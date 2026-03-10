@@ -6543,6 +6543,14 @@ class _ShExprParser:
     def _parse_subscript_slice_upper_expr(self) -> dict[str, Any] | None:
         """Subscript slice tail の upper expr parse を helper へ寄せる。"""
         is_empty = self._resolve_subscript_slice_upper_expr_state()
+        return self._apply_subscript_slice_upper_expr_state(is_empty=is_empty)
+
+    def _apply_subscript_slice_upper_expr_state(
+        self,
+        *,
+        is_empty: bool,
+    ) -> dict[str, Any] | None:
+        """Subscript slice tail の upper expr apply を helper へ寄せる。"""
         if is_empty:
             return None
         return self._parse_ifexp()
