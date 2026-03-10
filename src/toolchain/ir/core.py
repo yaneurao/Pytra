@@ -6669,8 +6669,12 @@ class _ShExprParser:
         dict[str, Any],
     ]:
         """Subscript index tail の `]` close を helper へ寄せる。"""
-        rtok = self._eat("]")
+        rtok = self._consume_subscript_index_tail_close_token()
         return index_expr, None, None, rtok
+
+    def _consume_subscript_index_tail_close_token(self) -> dict[str, Any]:
+        """Subscript index tail の `]` close token consume を helper へ寄せる。"""
+        return self._eat("]")
 
     def _resolve_subscript_suffix_state(
         self,
