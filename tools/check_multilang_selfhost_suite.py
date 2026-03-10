@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 from tools.selfhost_parity_summary import build_summary_row
-from tools.selfhost_parity_summary import render_summary_block
+from tools.selfhost_parity_summary import print_summary_block
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,8 +44,7 @@ def _print_stage1_summary(report: Path) -> None:
         print(f"[WARN] no stage1 rows: {report}")
         return
     summaries = [summary for row in rows if (summary := _stage1_row_to_summary(row)) is not None]
-    for line in render_summary_block("stage1", summaries, skip_pass=True):
-        print(line)
+    print_summary_block("stage1", summaries, skip_pass=True)
 
 
 def _print_multistage_summary(report: Path) -> None:
@@ -54,8 +53,7 @@ def _print_multistage_summary(report: Path) -> None:
         print(f"[WARN] no multistage rows: {report}")
         return
     summaries = [summary for row in rows if (summary := _multistage_row_to_summary(row)) is not None]
-    for line in render_summary_block("multistage", summaries, skip_pass=True):
-        print(line)
+    print_summary_block("multistage", summaries, skip_pass=True)
 
 
 def _stage1_detail_category(stage1: str, mode: str, stage2: str, note: str) -> str:

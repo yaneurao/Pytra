@@ -141,7 +141,7 @@ class CheckSelfhostCppDiffNormalizeTest(unittest.TestCase):
         self.assertEqual(row.top_level_category, "known_block")
         self.assertEqual(row.detail_category, "known_block")
 
-    def test_render_stage2_diff_summary_formats_shared_summary_line(self) -> None:
+    def test_print_stage2_diff_summary_formats_shared_summary_line(self) -> None:
         mod = _load_module()
         row = mod.build_stage2_diff_summary_row(
             "test/fixtures/core/add.py",
@@ -150,8 +150,7 @@ class CheckSelfhostCppDiffNormalizeTest(unittest.TestCase):
         )
         buf = StringIO()
         with redirect_stdout(buf):
-            for line in mod.render_summary_block("stage2_diff", [row], skip_pass=True):
-                print(line)
+            mod.print_summary_block("stage2_diff", [row], skip_pass=True)
         text = buf.getvalue()
         self.assertIn("[stage2_diff summary]", text)
         self.assertIn("subject=test/fixtures/core/add.py", text)

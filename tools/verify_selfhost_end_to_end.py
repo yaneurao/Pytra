@@ -28,7 +28,7 @@ if str(ROOT / "src") not in sys.path:
 
 from tools.cpp_runtime_deps import collect_runtime_cpp_sources
 from tools.selfhost_parity_summary import build_direct_e2e_summary_row
-from tools.selfhost_parity_summary import render_summary_block
+from tools.selfhost_parity_summary import print_summary_block
 
 
 DEFAULT_CASES = [
@@ -87,11 +87,6 @@ def _ignore_prefixes_for_case(rel: str) -> list[str]:
     return []
 
 
-def _print_direct_summary(rows: list) -> None:
-    for line in render_summary_block("direct_e2e", rows, skip_pass=True):
-        print(line)
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description="verify selfhost direct e2e output parity")
     ap.add_argument("--selfhost-bin", default=str(SELFHOST_BIN), help="path to selfhost binary")
@@ -107,14 +102,14 @@ def main() -> int:
         if cp_build.returncode != 0:
             msg = cp_build.stderr.strip() or cp_build.stdout.strip()
             summary_rows.append(build_direct_e2e_summary_row("build_selfhost", "build_selfhost_fail", msg))
-            _print_direct_summary(summary_rows)
+            print_summary_block("direct_e2e", summary_rows, skip_pass=True)
             print("[FAIL build_selfhost]", msg.splitlines()[:1])
             return 2
     if not selfhost_bin.exists():
         summary_rows.append(
             build_direct_e2e_summary_row("selfhost_binary", "missing_selfhost_binary", str(selfhost_bin))
         )
-        _print_direct_summary(summary_rows)
+        print_summary_block("direct_e2e", summary_rows, skip_pass=True)
         print(f"[FAIL] missing selfhost binary: {selfhost_bin}")
         return 2
     selfhost_target = _resolve_selfhost_target(selfhost_bin, str(args.selfhost_target))
@@ -212,7 +207,7 @@ def main() -> int:
 
             i += 1
 
-    _print_direct_summary(summary_rows)
+    print_summary_block("direct_e2e", summary_rows, skip_pass=True)
     print(f"failures={failures}")
     return 1 if failures else 0
 

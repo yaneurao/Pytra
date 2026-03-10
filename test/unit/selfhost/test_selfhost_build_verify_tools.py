@@ -217,7 +217,7 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
         )
         buf = io.StringIO()
         with redirect_stdout(buf):
-            mod._print_direct_summary([row])
+            mod.print_summary_block("direct_e2e", [row], skip_pass=True)
         text = buf.getvalue()
         self.assertIn("[direct_e2e summary]", text)
         self.assertIn("subject=test/fixtures/core/add.py", text)
