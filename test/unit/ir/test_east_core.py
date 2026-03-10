@@ -781,19 +781,27 @@ class EastCoreTest(unittest.TestCase):
             "def _annotate_named_call_expr",
             1,
         )[0]
+        resolve_text = text.split("def _resolve_attr_callee", 1)[1].split(
+            "def _annotate_attr_call_expr",
+            1,
+        )[0]
         helper_text = text.split("def _annotate_attr_call_expr", 1)[1].split(
             "def _subscript_result_type",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
-        self.assertIn('attr = str(callee.get("attr", ""))', helper_text)
-        self.assertIn('owner = callee.get("value")', helper_text)
+        self.assertIn('attr = str(callee.get("attr", ""))', resolve_text)
+        self.assertIn('owner = callee.get("value")', resolve_text)
+        self.assertIn("return owner_expr, owner_t, attr", resolve_text)
+        self.assertIn("owner_expr, owner_t, attr = self._resolve_attr_callee(", helper_text)
         self.assertIn('_sh_annotate_noncpp_attr_call_expr(', helper_text)
         self.assertIn('_sh_annotate_runtime_method_call_expr(', helper_text)
         self.assertIn('if callee.get("kind") == "Attribute":', callee_helper_text)
         self.assertIn("return self._annotate_attr_call_expr(", callee_helper_text)
         self.assertIn("return self._annotate_callee_call_expr(", call_helper_text)
+        self.assertNotIn('attr = str(callee.get("attr", ""))', helper_text)
+        self.assertNotIn('owner = callee.get("value")', helper_text)
         self.assertNotIn('attr = str(node.get("attr", ""))', postfix_text)
         self.assertNotIn('owner = node.get("value")', postfix_text)
         self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', postfix_text)

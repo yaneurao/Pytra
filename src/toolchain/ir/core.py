@@ -5124,6 +5124,14 @@ class _ShExprParser:
             )
         return None
 
+    def _resolve_attr_callee(self, *, callee: dict[str, Any]) -> tuple[dict[str, Any] | None, str, str]:
+        """Attribute callee の owner / type / attr 抽出を helper へ寄せる。"""
+        attr = str(callee.get("attr", ""))
+        owner = callee.get("value")
+        owner_expr = owner if isinstance(owner, dict) else None
+        owner_t = str(owner_expr.get("resolved_type", "unknown")) if owner_expr is not None else "unknown"
+        return owner_expr, owner_t, attr
+
     def _annotate_attr_call_expr(
         self,
         payload: dict[str, Any],
@@ -5131,10 +5139,7 @@ class _ShExprParser:
         callee: dict[str, Any],
     ) -> dict[str, Any]:
         """Attribute callee の annotation を shared parser helper へ寄せる。"""
-        attr = str(callee.get("attr", ""))
-        owner = callee.get("value")
-        owner_expr = owner if isinstance(owner, dict) else None
-        owner_t = str(owner_expr.get("resolved_type", "unknown")) if owner_expr is not None else "unknown"
+        owner_expr, owner_t, attr = self._resolve_attr_callee(callee=callee)
         _sh_annotate_noncpp_attr_call_expr(
             payload,
             owner_expr=owner_expr,
