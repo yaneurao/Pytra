@@ -59,6 +59,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Helper extraction around `call` / `attr` / `subscript` / `call-arg` has advanced substantially, but `core.py` and `test_east_core.py` became too large and one-helper commits became too fine-grained for the actual progress made.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] From this point on, `S3-02` proceeds in cluster units `S3-02-B` through `S3-02-E`; TODO keeps only cluster-level summaries, and fine-grained helper history stays in the plan decision log and git history.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] The postfix/suffix parser cluster now lives in `core_expr_call_suffix.py` and `core_expr_attr_subscript_suffix.py`, and `core.py` has been reduced toward mixin imports plus postfix-dispatch orchestration.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] The first `call/callee` annotation orchestration batch is moving into `core_expr_call_annotation.py`, while `core.py` keeps lower-level `named-call` / `attr-call` apply paths and shared helpers for now.
 
 ### P3: Harden compiler contracts and make stage/pass/backend handoff fail-closed
 

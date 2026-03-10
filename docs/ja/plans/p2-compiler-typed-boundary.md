@@ -128,3 +128,4 @@
 - 2026-03-10: `core.py` 分割を deliverable に格上げし、まず `postfix/suffix parser` cluster と `call annotation` cluster を専用 module へ出す。残る `call-arg` / `suffix tail` / `subscript tail` はその後に bundle 単位で処理する。
 - 2026-03-10: `S3-02-B` の最初の塊として `call-arg` / `call-suffix` parser cluster を `core_expr_call_suffix.py` へ移し、`core.py` は mixin import と postfix dispatch orchestration に寄せた。source guard も helper 単位ではなく split cluster 単位で監視する方針に切り替えた。
 - 2026-03-10: `attr/subscript suffix` parser cluster も `core_expr_attr_subscript_suffix.py` へ移し、`call` / `attr` / `subscript` の suffix parser は `core.py` から専用 module へ分割し終えた。`S3-02-B` は完了として閉じ、次は `call annotation` cluster の分割へ進む。
+- 2026-03-10: `S3-02-C` の最初の塊では `call_expr` / `callee_call` の orchestration を `core_expr_call_annotation.py` へ移し、`named-call` / `attr-call` の lower-level apply と shared helper は `core.py` に残す段階 split とした。source guard も split-cluster 前提へ切り替える。

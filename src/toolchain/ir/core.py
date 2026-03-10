@@ -36,6 +36,7 @@ from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 from toolchain.frontends.type_expr import parse_type_expr_text
 from toolchain.frontends.type_expr import sync_type_expr_mirrors
 from toolchain.frontends.type_expr import type_expr_to_string
+from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin
 from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprAttrSubscriptSuffixParserMixin
 from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin
 
@@ -4184,7 +4185,11 @@ def _sh_register_import_module(local_name: str, module_id: str) -> None:
     _SH_IMPORT_MODULES[local] = module
 
 
-class _ShExprParser(_ShExprCallSuffixParserMixin, _ShExprAttrSubscriptSuffixParserMixin):
+class _ShExprParser(
+    _ShExprCallSuffixParserMixin,
+    _ShExprAttrSubscriptSuffixParserMixin,
+    _ShExprCallAnnotationMixin,
+):
     src: str
     line_no: int
     col_base: int
@@ -4689,23 +4694,6 @@ class _ShExprParser(_ShExprCallSuffixParserMixin, _ShExprAttrSubscriptSuffixPars
             }
         return methods.get(method, "unknown")
 
-    def _infer_attr_call_return_type(self, owner: dict[str, Any] | None, attr: str) -> str:
-        """属性呼び出しの戻り型を owner type から推定する。"""
-        if not isinstance(owner, dict):
-            return "unknown"
-        owner_t = self._owner_expr_resolved_type(owner)
-        if owner_t == "unknown":
-            return "unknown"
-        if owner_t == "PyFile" and attr in {"close", "write"}:
-            return "None"
-        call_ret = self._lookup_method_return(owner_t, attr)
-        if call_ret == "unknown":
-            call_ret = self._lookup_builtin_method_return(owner_t, attr)
-        stdlib_method_ret = lookup_stdlib_method_return_type(owner_t, attr)
-        if stdlib_method_ret != "":
-            return stdlib_method_ret
-        return call_ret
-
     def _resolve_named_call_declared_return_type(
         self,
         *,
@@ -4754,30 +4742,6 @@ class _ShExprParser(_ShExprCallSuffixParserMixin, _ShExprAttrSubscriptSuffixPars
         if call_ret != "":
             return call_ret
         return declared_ret
-
-    def _infer_call_expr_return_type(
-        self,
-        callee: dict[str, Any] | None,
-        args: list[dict[str, Any]],
-    ) -> tuple[str, str]:
-        """呼び出し式の戻り型と name-callee 名を推定する。"""
-        if not isinstance(callee, dict):
-            return "unknown", ""
-        kind = str(callee.get("kind", ""))
-        fn_name = ""
-        if kind == "Name":
-            fn_name = str(callee.get("id", ""))
-            return self._infer_named_call_return_type(fn_name=fn_name, args=args), fn_name
-        if kind == "Attribute":
-            owner = callee.get("value")
-            attr = str(callee.get("attr", ""))
-            return self._infer_attr_call_return_type(
-                owner if isinstance(owner, dict) else None,
-                attr,
-            ), fn_name
-        if kind == "Lambda":
-            return str(callee.get("return_type", "unknown")), fn_name
-        return "unknown", fn_name
 
     def _lookup_attr_expr_metadata(
         self,
@@ -5230,117 +5194,6 @@ class _ShExprParser(_ShExprCallSuffixParserMixin, _ShExprAttrSubscriptSuffixPars
                 source_span=source_span,
             )
 
-    def _apply_callee_call_annotation(
-        self,
-        payload: dict[str, Any],
-        *,
-        callee: dict[str, Any],
-        fn_name: str,
-        args: list[dict[str, Any]],
-        callee_kind: str,
-    ) -> dict[str, Any]:
-        """callee kind ごとの call annotation 適用を helper へ寄せる。"""
-        if callee_kind == "named":
-            return self._apply_named_callee_call_annotation(
-                payload,
-                fn_name=fn_name,
-                args=args,
-            )
-        if callee_kind == "attr":
-            return self._apply_attr_callee_call_annotation(
-                payload,
-                callee=callee,
-            )
-        return payload
-
-    def _apply_named_callee_call_annotation(
-        self,
-        payload: dict[str, Any],
-        *,
-        fn_name: str,
-        args: list[dict[str, Any]],
-    ) -> dict[str, Any]:
-        """named callee-call apply を helper へ寄せる。"""
-        return self._annotate_named_call_expr(
-            payload,
-            fn_name=fn_name,
-            args=args,
-        )
-
-    def _apply_attr_callee_call_annotation(
-        self,
-        payload: dict[str, Any],
-        *,
-        callee: dict[str, Any],
-    ) -> dict[str, Any]:
-        """attr callee-call apply を helper へ寄せる。"""
-        return self._annotate_attr_call_expr(
-            payload,
-            callee=callee,
-        )
-
-    def _resolve_callee_call_annotation_kind(
-        self,
-        *,
-        callee: dict[str, Any],
-        fn_name: str,
-    ) -> str:
-        """callee kind ごとの call annotation 分類を helper へ寄せる。"""
-        if fn_name != "":
-            return "named"
-        if callee.get("kind") == "Attribute":
-            return "attr"
-        return ""
-
-    def _resolve_callee_call_annotation_state(
-        self,
-        *,
-        callee: dict[str, Any],
-        fn_name: str,
-    ) -> str:
-        """callee-call の kind resolve を annotation-state helper へ寄せる。"""
-        return self._resolve_callee_call_annotation_kind(
-            callee=callee,
-            fn_name=fn_name,
-        )
-
-    def _annotate_callee_call_expr(
-        self,
-        payload: dict[str, Any],
-        *,
-        callee: dict[str, Any],
-        fn_name: str,
-        args: list[dict[str, Any]],
-    ) -> dict[str, Any]:
-        """callee kind ごとの call annotation dispatch を helper へ寄せる。"""
-        callee_kind = self._resolve_callee_call_annotation_state(
-            callee=callee,
-            fn_name=fn_name,
-        )
-        return self._apply_callee_call_annotation(
-            payload,
-            callee=callee,
-            fn_name=fn_name,
-            args=args,
-            callee_kind=callee_kind,
-        )
-
-    def _resolve_call_expr_annotation_state(
-        self,
-        *,
-        callee: dict[str, Any],
-        args: list[dict[str, Any]],
-        source_span: dict[str, int],
-    ) -> tuple[str, str]:
-        """call annotation 前段の return-type 推論と guard を helper へ寄せる。"""
-        call_ret, fn_name = self._infer_call_expr_return_type(callee, args)
-        self._guard_named_call_args(
-            fn_name=fn_name,
-            args=args,
-            source_span=source_span,
-        )
-        return call_ret, fn_name
-
     def _build_call_expr_payload(
         self,
         *,
@@ -5359,58 +5212,6 @@ class _ShExprParser(_ShExprCallSuffixParserMixin, _ShExprAttrSubscriptSuffixPars
             keywords,
             resolved_type=call_ret,
             repr_text=repr_text,
-        )
-
-    def _apply_call_expr_annotation(
-        self,
-        *,
-        callee: dict[str, Any],
-        args: list[dict[str, Any]],
-        keywords: list[dict[str, Any]],
-        source_span: dict[str, int],
-        repr_text: str,
-        call_ret: str,
-        fn_name: str,
-    ) -> dict[str, Any]:
-        """Call expr annotation 適用を helper へ寄せる。"""
-        payload = self._build_call_expr_payload(
-            callee=callee,
-            args=args,
-            keywords=keywords,
-            source_span=source_span,
-            repr_text=repr_text,
-            call_ret=call_ret,
-        )
-        return self._annotate_callee_call_expr(
-            payload,
-            callee=callee,
-            fn_name=fn_name,
-            args=args,
-        )
-
-    def _annotate_call_expr(
-        self,
-        *,
-        callee: dict[str, Any],
-        args: list[dict[str, Any]],
-        keywords: list[dict[str, Any]],
-        source_span: dict[str, int],
-        repr_text: str,
-    ) -> dict[str, Any]:
-        """Call expr の payload 構築と annotation を parser helper へ寄せる。"""
-        call_ret, fn_name = self._resolve_call_expr_annotation_state(
-            callee=callee,
-            args=args,
-            source_span=source_span,
-        )
-        return self._apply_call_expr_annotation(
-            callee=callee,
-            args=args,
-            keywords=keywords,
-            source_span=source_span,
-            repr_text=repr_text,
-            call_ret=call_ret,
-            fn_name=fn_name,
         )
 
     def _apply_named_call_dispatch(
