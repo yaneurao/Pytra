@@ -5017,6 +5017,14 @@ class _ShExprParser:
         arg0_t = str(arg0.get("resolved_type", "unknown"))
         return self._is_forbidden_object_receiver_type(arg0_t)
 
+    def _resolve_builtin_named_call_semantic_tag(
+        self,
+        *,
+        call_dispatch: dict[str, str],
+    ) -> str:
+        """builtin named-call dispatch の semantic tag unpack を helper へ寄せる。"""
+        return str(call_dispatch.get("builtin_semantic_tag", ""))
+
     def _annotate_builtin_named_call_expr(
         self,
         payload: dict[str, Any],
@@ -5026,7 +5034,9 @@ class _ShExprParser:
         call_dispatch: dict[str, str],
     ) -> dict[str, Any] | None:
         """builtin named-call の annotation dispatch を parser helper へ寄せる。"""
-        semantic_tag = str(call_dispatch.get("builtin_semantic_tag", ""))
+        semantic_tag = self._resolve_builtin_named_call_semantic_tag(
+            call_dispatch=call_dispatch,
+        )
         if fn_name in {"print", "len", "range", "zip", "str"}:
             return _sh_annotate_fixed_runtime_builtin_call_expr(
                 payload,
@@ -5222,6 +5232,41 @@ class _ShExprParser:
             noncpp_module_id,
         )
 
+    def _apply_attr_expr_annotation(
+        self,
+        *,
+        node: dict[str, Any],
+        owner_expr: dict[str, Any],
+        attr_name: str,
+        attr_runtime_call: str,
+        attr_semantic_tag: str,
+        attr_module_id: str,
+        attr_runtime_symbol: str,
+        noncpp_module_attr_runtime_call: str,
+        noncpp_module_id: str,
+    ) -> dict[str, Any]:
+        """Attribute access node への annotation 適用を helper へ寄せる。"""
+        if attr_runtime_call != "":
+            _sh_annotate_runtime_attr_expr(
+                node,
+                runtime_call=attr_runtime_call,
+                module_id=attr_module_id,
+                runtime_symbol=attr_runtime_symbol,
+                semantic_tag=attr_semantic_tag,
+                runtime_owner=owner_expr,
+            )
+        elif attr_semantic_tag != "":
+            node["semantic_tag"] = attr_semantic_tag
+        if noncpp_module_attr_runtime_call != "":
+            _sh_annotate_resolved_runtime_expr(
+                node,
+                runtime_call=noncpp_module_attr_runtime_call,
+                runtime_source="module_attr",
+                module_id=noncpp_module_id,
+                runtime_symbol=attr_name,
+            )
+        return node
+
     def _annotate_attr_expr(
         self,
         *,
@@ -5264,26 +5309,17 @@ class _ShExprParser:
             resolved_type=resolved_type,
             repr_text=repr_text,
         )
-        if attr_runtime_call != "":
-            _sh_annotate_runtime_attr_expr(
-                node,
-                runtime_call=attr_runtime_call,
-                module_id=attr_module_id,
-                runtime_symbol=attr_runtime_symbol,
-                semantic_tag=attr_semantic_tag,
-                runtime_owner=owner_expr,
-            )
-        elif attr_semantic_tag != "":
-            node["semantic_tag"] = attr_semantic_tag
-        if noncpp_module_attr_runtime_call != "":
-            _sh_annotate_resolved_runtime_expr(
-                node,
-                runtime_call=noncpp_module_attr_runtime_call,
-                runtime_source="module_attr",
-                module_id=noncpp_module_id,
-                runtime_symbol=attr_name,
-            )
-        return node
+        return self._apply_attr_expr_annotation(
+            node=node,
+            owner_expr=owner_expr,
+            attr_name=attr_name,
+            attr_runtime_call=attr_runtime_call,
+            attr_semantic_tag=attr_semantic_tag,
+            attr_module_id=attr_module_id,
+            attr_runtime_symbol=attr_runtime_symbol,
+            noncpp_module_attr_runtime_call=noncpp_module_attr_runtime_call,
+            noncpp_module_id=noncpp_module_id,
+        )
 
     def _annotate_subscript_expr(
         self,

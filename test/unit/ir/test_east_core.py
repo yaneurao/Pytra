@@ -475,6 +475,10 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_runtime_attr_expr",
             1,
         )[0]
+        apply_text = text.split("def _apply_attr_expr_annotation", 1)[1].split(
+            "def _annotate_attr_expr",
+            1,
+        )[0]
         attr_expr_text = text.split("def _annotate_attr_expr", 1)[1].split(
             "def _subscript_result_type",
             1,
@@ -482,7 +486,8 @@ class EastCoreTest(unittest.TestCase):
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
-        self.assertIn('_sh_annotate_resolved_runtime_expr(', attr_expr_text)
+        self.assertIn('_sh_annotate_resolved_runtime_expr(', apply_text)
+        self.assertIn("return self._apply_attr_expr_annotation(", attr_expr_text)
         self.assertNotIn('payload["resolved_runtime_call"] = noncpp_symbol_runtime_call', postfix_text)
         self.assertNotIn('payload["resolved_runtime_source"] = "import_symbol"', postfix_text)
         self.assertNotIn('payload["resolved_runtime_call"] = noncpp_module_runtime_call', postfix_text)
@@ -496,6 +501,10 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_runtime_method_call_expr",
             1,
         )[0]
+        apply_text = text.split("def _apply_attr_expr_annotation", 1)[1].split(
+            "def _annotate_attr_expr",
+            1,
+        )[0]
         attr_expr_text = text.split("def _annotate_attr_expr", 1)[1].split(
             "def _subscript_result_type",
             1,
@@ -504,7 +513,8 @@ class EastCoreTest(unittest.TestCase):
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
-        self.assertIn('_sh_annotate_runtime_attr_expr(', attr_expr_text)
+        self.assertIn('_sh_annotate_runtime_attr_expr(', apply_text)
+        self.assertIn("return self._apply_attr_expr_annotation(", attr_expr_text)
         self.assertNotIn('node["lowered_kind"] = "BuiltinAttr"', postfix_text)
         self.assertNotIn('node["runtime_call"] = attr_runtime_call', postfix_text)
 
@@ -544,6 +554,10 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_attr_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         resolve_text = text.split("def _resolve_attr_expr_annotation", 1)[1].split(
+            "def _apply_attr_expr_annotation",
+            1,
+        )[0]
+        apply_text = text.split("def _apply_attr_expr_annotation", 1)[1].split(
             "def _annotate_attr_expr",
             1,
         )[0]
@@ -564,12 +578,16 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('attr_runtime_symbol = str(attr_meta.get("runtime_symbol", ""))', resolve_text)
         self.assertIn('noncpp_module_attr_runtime_call = str(attr_meta.get("noncpp_runtime_call", ""))', resolve_text)
         self.assertIn('noncpp_module_id = str(attr_meta.get("noncpp_module_id", ""))', resolve_text)
+        self.assertIn('if attr_runtime_call != "":', apply_text)
+        self.assertIn('_sh_annotate_runtime_attr_expr(', apply_text)
+        self.assertIn('elif attr_semantic_tag != "":', apply_text)
+        self.assertIn('node["semantic_tag"] = attr_semantic_tag', apply_text)
+        self.assertIn('_sh_annotate_resolved_runtime_expr(', apply_text)
         self.assertIn('owner_t = str(owner_expr.get("resolved_type", "unknown"))', helper_text)
         self.assertIn("attr_meta = self._lookup_attr_expr_metadata(", helper_text)
         self.assertIn("self._resolve_attr_expr_annotation(", helper_text)
         self.assertIn("_sh_make_attribute_expr(", helper_text)
-        self.assertIn('_sh_annotate_runtime_attr_expr(', helper_text)
-        self.assertIn('_sh_annotate_resolved_runtime_expr(', helper_text)
+        self.assertIn("return self._apply_attr_expr_annotation(", helper_text)
         self.assertNotIn('resolved_type=str(attr_meta.get("resolved_type", "unknown"))', helper_text)
         self.assertNotIn('attr_runtime_call = str(attr_meta.get("runtime_call", ""))', helper_text)
         self.assertNotIn('attr_semantic_tag = str(attr_meta.get("semantic_tag", ""))', helper_text)
@@ -577,6 +595,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('runtime_symbol=str(attr_meta.get("runtime_symbol", ""))', helper_text)
         self.assertNotIn('noncpp_module_attr_runtime_call = str(attr_meta.get("noncpp_runtime_call", ""))', helper_text)
         self.assertNotIn('module_id=str(attr_meta.get("noncpp_module_id", ""))', helper_text)
+        self.assertNotIn('_sh_annotate_runtime_attr_expr(', helper_text)
+        self.assertNotIn('_sh_annotate_resolved_runtime_expr(', helper_text)
         self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertNotIn('owner_t = str(node.get("resolved_type", "unknown"))', postfix_text)
@@ -1112,6 +1132,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         helper_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _should_use_truthy_runtime_for_bool_ctor",
+            1,
+        )[0]
+        builtin_resolve_text = text.split("def _resolve_builtin_named_call_semantic_tag", 1)[1].split(
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
@@ -1135,6 +1159,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('str(call_dispatch.get("stdlib_fn_runtime_call", ""))', helper_text)
         self.assertNotIn('str(call_dispatch.get("stdlib_symbol_runtime_call", ""))', helper_text)
         self.assertNotIn('str(call_dispatch.get("noncpp_symbol_runtime_call", ""))', helper_text)
+        self.assertIn('return str(call_dispatch.get("builtin_semantic_tag", ""))', builtin_resolve_text)
         self.assertIn('if fn_name in {"print", "len", "range", "zip", "str"}:', builtin_helper_text)
         self.assertIn('use_truthy_runtime = fn_name == "bool" and self._should_use_truthy_runtime_for_bool_ctor(', builtin_helper_text)
         self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', builtin_helper_text)
@@ -1156,6 +1181,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         truthy_helper_text = text.split("def _should_use_truthy_runtime_for_bool_ctor", 1)[1].split(
+            "def _resolve_builtin_named_call_semantic_tag",
+            1,
+        )[0]
+        resolve_text = text.split("def _resolve_builtin_named_call_semantic_tag", 1)[1].split(
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
@@ -1168,8 +1197,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("if len(args) != 1:", truthy_helper_text)
         self.assertIn('arg0_t = str(arg0.get("resolved_type", "unknown"))', truthy_helper_text)
         self.assertIn("return self._is_forbidden_object_receiver_type(arg0_t)", truthy_helper_text)
+        self.assertIn('return str(call_dispatch.get("builtin_semantic_tag", ""))', resolve_text)
         self.assertIn('if fn_name in {"print", "len", "range", "zip", "str"}:', helper_text)
-        self.assertIn('semantic_tag = str(call_dispatch.get("builtin_semantic_tag", ""))', helper_text)
+        self.assertIn("semantic_tag = self._resolve_builtin_named_call_semantic_tag(", helper_text)
+        self.assertNotIn('semantic_tag = str(call_dispatch.get("builtin_semantic_tag", ""))', helper_text)
         self.assertIn('use_truthy_runtime = fn_name == "bool" and self._should_use_truthy_runtime_for_bool_ctor(', helper_text)
         self.assertNotIn('if fn_name == "bool" and len(args) == 1:', helper_text)
         self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', helper_text)
