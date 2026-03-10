@@ -71,6 +71,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] The CLI root loaders in `py2x` and `ir2lang` now also go through `load_json_object_doc_or_none()`, aligning outer JSON-root reads with the same adapter seam.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] The remaining `JsonObj/JsonArr/JsonValue` raw access in `program_validator.py` now goes through object/array/value helpers in `toolchain.json_adapters`, so the validator no longer touches raw carriers directly.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `extern_var_v1` now flows through an `AmbientExternBinding` carrier, so ambient extern validation reads an explicit adapter seam instead of raw `dict[str, str]` bindings.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `ir2lang` EAST JSON unwrap now also goes through `unwrap_east_root_json_doc()` / `export_json_object_dict()`, removing the last direct `.raw` reads from the outer CLI lane.
 
 ### P3: Harden compiler contracts and make stage/pass/backend handoff fail-closed
 

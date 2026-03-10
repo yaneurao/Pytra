@@ -25,7 +25,9 @@ from toolchain.compiler.typed_boundary import export_program_artifact_any
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
+from toolchain.json_adapters import export_json_object_dict
 from toolchain.json_adapters import load_json_object_doc_or_none
+from toolchain.json_adapters import unwrap_east_root_json_doc
 from toolchain.link import LINK_OUTPUT_SCHEMA
 from toolchain.link import LinkedProgramModule
 from toolchain.link import load_linked_output_bundle
@@ -124,12 +126,9 @@ def _load_json_root(input_path: Path) -> json.JsonObj:
 
 
 def _unwrap_east_module(root: json.JsonObj) -> dict[str, Any]:
-    ok_any = root.get_bool("ok")
-    east_any = root.get_obj("east")
-    if ok_any is True and east_any is not None:
-        return dict(east_any.raw)
-    if root.get_str("kind") == "Module":
-        return dict(root.raw)
+    east_doc = unwrap_east_root_json_doc(root)
+    if east_doc is not None:
+        return export_json_object_dict(east_doc)
     _fatal("invalid EAST JSON structure: expected {'ok': true, 'east': {...}} or {'kind': 'Module', ...}")
     return {}
 

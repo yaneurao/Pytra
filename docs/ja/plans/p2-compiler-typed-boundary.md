@@ -144,3 +144,4 @@
 - 2026-03-10: `py2x` / `ir2lang` の CLI root loader も `load_json_object_doc_or_none()` を通るようにした。toolchain 外周の JSON root 読み込みも同じ adapter seam に揃い、`json.loads_obj(...)` は `toolchain.json_adapters` へ後退した。
 - 2026-03-10: `program_validator.py` に残っていた `JsonObj/JsonArr/JsonValue` raw access も `toolchain.json_adapters` に寄せた。`coerce_json_object_doc()` / `export_json_object_dict()` / `json_array_length()` / `export_json_value_raw()` を通し、validator 本体は raw carrier を直接触らない。
 - 2026-03-10: `extern_var_v1` も explicit adapter seam に寄せた。`toolchain/frontends/extern_var.py` は raw `dict[str, str]` の binding list を返さず、`AmbientExternBinding` carrier を通して ambient extern validation を行う。
+- 2026-03-10: `ir2lang` の EAST JSON unwrap も `unwrap_east_root_json_doc()` / `export_json_object_dict()` に寄せた。toolchain 外周 CLI lane に残っていた `.raw` 直参照はこれで `toolchain.json_adapters` の外へ出なくなった。
