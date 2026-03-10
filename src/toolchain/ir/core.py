@@ -7146,6 +7146,14 @@ class _ShExprParser:
         """Subscript slice tail の token consume を helper へ寄せる。"""
         self._consume_subscript_slice_tail_colon_token()
         upper = self._parse_subscript_slice_upper_expr()
+        return self._apply_subscript_slice_tail_upper_state(upper=upper)
+
+    def _apply_subscript_slice_tail_upper_state(
+        self,
+        *,
+        upper: dict[str, Any] | None,
+    ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+        """Subscript slice tail の upper-state apply を helper へ寄せる。"""
         rtok = self._consume_subscript_slice_tail_close_token()
         return upper, rtok
 
