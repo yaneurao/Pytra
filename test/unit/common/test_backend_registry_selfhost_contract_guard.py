@@ -146,6 +146,81 @@ class BackendRegistrySelfhostContractGuardTest(unittest.TestCase):
                     "regression",
                 ),
             },
+            {
+                "host_message": registry_diagnostics.unsupported_program_writer_key_message("broken_writer"),
+                "direct_row": build_direct_e2e_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "selfhost_transpile_fail",
+                    registry_diagnostics.unsupported_program_writer_key_message("broken_writer"),
+                ),
+                "stage2_diff_row": build_stage2_diff_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "host_transpile_fail",
+                    registry_diagnostics.unsupported_program_writer_key_message("broken_writer"),
+                ),
+                "multilang_row": build_summary_row(
+                    "multilang_stage1",
+                    "scala",
+                    "regression",
+                    registry_diagnostics.unsupported_program_writer_key_message("broken_writer"),
+                ),
+                "expected_detail_categories": (
+                    "regression",
+                    "sample_transpile_fail",
+                    "host_transpile_fail",
+                    "regression",
+                ),
+            },
+            {
+                "host_message": registry_diagnostics.unsupported_emit_kind_message("broken_emit"),
+                "direct_row": build_direct_e2e_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "selfhost_transpile_fail",
+                    registry_diagnostics.unsupported_emit_kind_message("broken_emit"),
+                ),
+                "stage2_diff_row": build_stage2_diff_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "host_transpile_fail",
+                    registry_diagnostics.unsupported_emit_kind_message("broken_emit"),
+                ),
+                "multilang_row": build_summary_row(
+                    "multilang_stage1",
+                    "scala",
+                    "regression",
+                    registry_diagnostics.unsupported_emit_kind_message("broken_emit"),
+                ),
+                "expected_detail_categories": (
+                    "regression",
+                    "sample_transpile_fail",
+                    "host_transpile_fail",
+                    "regression",
+                ),
+            },
+            {
+                "host_message": registry_diagnostics.unsupported_runtime_hook_kind_message("broken_hook_kind"),
+                "direct_row": build_direct_e2e_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "selfhost_transpile_fail",
+                    registry_diagnostics.unsupported_runtime_hook_kind_message("broken_hook_kind"),
+                ),
+                "stage2_diff_row": build_stage2_diff_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "host_transpile_fail",
+                    registry_diagnostics.unsupported_runtime_hook_kind_message("broken_hook_kind"),
+                ),
+                "multilang_row": build_summary_row(
+                    "multilang_stage1",
+                    "scala",
+                    "regression",
+                    registry_diagnostics.unsupported_runtime_hook_kind_message("broken_hook_kind"),
+                ),
+                "expected_detail_categories": (
+                    "regression",
+                    "sample_transpile_fail",
+                    "host_transpile_fail",
+                    "regression",
+                ),
+            },
         ]
 
         for case in cases:
