@@ -277,6 +277,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて builtins named-call の state も `_ShExprParser._resolve_builtin_named_call_truthy_state()` と `_ShExprParser._resolve_builtin_named_call_iter_element_type()` へ分離し、`_resolve_builtin_named_call_annotation_state()` から `bool(...)` / `enumerate(...)` の inline 特例を外した。`test_east_core.py` では両 helper 定義、state helper の call site、旧 inline builtin-state branch の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument 1件分の NAME save/peek も `_ShExprParser._resolve_call_arg_entry_state()` と `_apply_call_arg_entry_state()` に分離し、`_parse_call_arg_entry()` から `save/peek + keyword apply` の直列処理を外した。`test_east_core.py` では両 helper 定義、entry helper の call site、旧 inline call-arg state/apply block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument 1件分の apply も `_ShExprParser._apply_keyword_call_arg_entry()` と `_apply_positional_call_arg_entry()` に分離し、`_apply_call_arg_entry_state()` から keyword/positional の直列分岐を外した。`test_east_core.py` では両 helper 定義、apply helper の call site、旧 inline call-arg apply block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument loop の append も `_ShExprParser._apply_call_arg_entry()` へ寄せ、`_parse_call_args()` から positional/keyword の direct append を外した。`test_east_core.py` では loop apply helper 定義、call site、旧 inline call-arg loop append block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
