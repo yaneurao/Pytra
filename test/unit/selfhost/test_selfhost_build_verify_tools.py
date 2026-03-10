@@ -110,6 +110,56 @@ class BuildSelfhostStage2ToolTest(unittest.TestCase):
 
 
 class VerifySelfhostEndToEndToolTest(unittest.TestCase):
+    def _run_single_case_main(
+        self,
+        mod,
+        *,
+        py_run: subprocess.CompletedProcess[str],
+        transpile_run: subprocess.CompletedProcess[str],
+        compile_run: subprocess.CompletedProcess[str],
+        exec_run: subprocess.CompletedProcess[str],
+        target: str = "cpp",
+    ) -> tuple[int, list[list[str]]]:
+        with tempfile.TemporaryDirectory() as td:
+            selfhost_bin = Path(td) / "py2cpp.out"
+            selfhost_bin.write_text("", encoding="utf-8")
+            calls: list[list[str]] = []
+
+            def _clone(cmd: list[str], template: subprocess.CompletedProcess[str]) -> subprocess.CompletedProcess[str]:
+                return subprocess.CompletedProcess(
+                    cmd,
+                    template.returncode,
+                    stdout=template.stdout,
+                    stderr=template.stderr,
+                )
+
+            def _fake_run(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+                calls.append(cmd)
+                if len(cmd) >= 2 and cmd[0] == "python3" and cmd[1].endswith("add.py"):
+                    return _clone(cmd, py_run)
+                if cmd and cmd[0] == str(selfhost_bin):
+                    return _clone(cmd, transpile_run)
+                if cmd and cmd[0] == "g++":
+                    return _clone(cmd, compile_run)
+                return _clone(cmd, exec_run)
+
+            with patch.object(mod, "_run", side_effect=_fake_run), patch.object(
+                mod, "_resolve_selfhost_target", return_value=target
+            ), patch.object(mod, "collect_runtime_cpp_sources", return_value=[]), patch.object(
+                sys,
+                "argv",
+                [
+                    "verify_selfhost_end_to_end.py",
+                    "--skip-build",
+                    "--selfhost-bin",
+                    str(selfhost_bin),
+                    "--cases",
+                    "test/fixtures/core/add.py",
+                ],
+            ):
+                rc = mod.main()
+        return rc, calls
+
     def test_resolve_selfhost_target_auto_prefers_cpp_only_when_help_advertises_target(self) -> None:
         mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
         selfhost_bin = ROOT / "selfhost" / "py2cpp.out"
@@ -223,6 +273,52 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
                 ],
             ):
                 self.assertEqual(mod.main(), 2)
+
+    def test_main_returns_1_when_selfhost_transpile_fails(self) -> None:
+        mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
+        rc, calls = self._run_single_case_main(
+            mod,
+            py_run=subprocess.CompletedProcess(["python3"], 0, stdout="7\n", stderr=""),
+            transpile_run=subprocess.CompletedProcess(["selfhost"], 3, stdout="", stderr="transpile failed"),
+            compile_run=subprocess.CompletedProcess(["g++"], 0, stdout="", stderr=""),
+            exec_run=subprocess.CompletedProcess(["out"], 0, stdout="7\n", stderr=""),
+        )
+        self.assertEqual(rc, 1)
+        self.assertFalse(any(cmd and cmd[0] == "g++" for cmd in calls))
+
+    def test_main_returns_1_when_compile_fails(self) -> None:
+        mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
+        rc, calls = self._run_single_case_main(
+            mod,
+            py_run=subprocess.CompletedProcess(["python3"], 0, stdout="7\n", stderr=""),
+            transpile_run=subprocess.CompletedProcess(["selfhost"], 0, stdout="", stderr=""),
+            compile_run=subprocess.CompletedProcess(["g++"], 4, stdout="", stderr="compile failed"),
+            exec_run=subprocess.CompletedProcess(["out"], 0, stdout="7\n", stderr=""),
+        )
+        self.assertEqual(rc, 1)
+        self.assertTrue(any(cmd and cmd[0] == "g++" for cmd in calls))
+
+    def test_main_returns_1_when_executable_fails(self) -> None:
+        mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
+        rc, _calls = self._run_single_case_main(
+            mod,
+            py_run=subprocess.CompletedProcess(["python3"], 0, stdout="7\n", stderr=""),
+            transpile_run=subprocess.CompletedProcess(["selfhost"], 0, stdout="", stderr=""),
+            compile_run=subprocess.CompletedProcess(["g++"], 0, stdout="", stderr=""),
+            exec_run=subprocess.CompletedProcess(["out"], 5, stdout="", stderr="run failed"),
+        )
+        self.assertEqual(rc, 1)
+
+    def test_main_returns_1_when_stdout_differs(self) -> None:
+        mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
+        rc, _calls = self._run_single_case_main(
+            mod,
+            py_run=subprocess.CompletedProcess(["python3"], 0, stdout="7\n", stderr=""),
+            transpile_run=subprocess.CompletedProcess(["selfhost"], 0, stdout="", stderr=""),
+            compile_run=subprocess.CompletedProcess(["g++"], 0, stdout="", stderr=""),
+            exec_run=subprocess.CompletedProcess(["out"], 0, stdout="8\n", stderr=""),
+        )
+        self.assertEqual(rc, 1)
 
 
 if __name__ == "__main__":
