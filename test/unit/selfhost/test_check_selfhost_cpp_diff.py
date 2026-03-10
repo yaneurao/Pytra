@@ -141,6 +141,16 @@ class CheckSelfhostCppDiffNormalizeTest(unittest.TestCase):
         self.assertEqual(row.top_level_category, "known_block")
         self.assertEqual(row.detail_category, "known_block")
 
+    def test_stage2_diff_summary_row_maps_unsupported_target_to_known_block(self) -> None:
+        mod = _load_module()
+        row = mod.build_stage2_diff_summary_row(
+            "sample/py/01_mandelbrot.py",
+            "selfhost_transpile_fail",
+            "RuntimeError: unsupported target: scala",
+        )
+        self.assertEqual(row.top_level_category, "known_block")
+        self.assertEqual(row.detail_category, "unsupported_by_design")
+
     def test_print_stage2_diff_summary_formats_shared_summary_line(self) -> None:
         mod = _load_module()
         row = mod.build_stage2_diff_summary_row(

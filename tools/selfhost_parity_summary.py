@@ -41,12 +41,27 @@ def build_summary_row(lane: str, subject: str, detail_category: str, note: str) 
     )
 
 
-def build_direct_e2e_summary_row(subject: str, status: str, note: str) -> ParitySummaryRow:
+def classify_known_block_detail(note: str) -> str | None:
     note_lc = note.lower()
+    if "[not_implemented]" in note_lc:
+        return "not_implemented"
+    if "[unsupported_by_design]" in note_lc:
+        return "unsupported_by_design"
+    if "unsupported target:" in note_lc:
+        return "unsupported_by_design"
+    if "unsupported target profile:" in note_lc:
+        return "unsupported_by_design"
+    if "preview" in note_lc:
+        return "preview_only"
+    return None
+
+
+def build_direct_e2e_summary_row(subject: str, status: str, note: str) -> ParitySummaryRow:
+    known_block_detail = classify_known_block_detail(note)
     if status == "pass":
         detail = "pass"
-    elif status == "selfhost_transpile_fail" and "[not_implemented]" in note_lc:
-        detail = "not_implemented"
+    elif status == "selfhost_transpile_fail" and known_block_detail is not None:
+        detail = known_block_detail
     elif status == "stdout_fail":
         detail = "direct_parity_fail"
     elif status == "compile_fail":
@@ -83,10 +98,13 @@ def build_stage2_summary_row(subject: str, status: str, note: str) -> ParitySumm
 
 
 def build_stage2_diff_summary_row(subject: str, status: str, note: str) -> ParitySummaryRow:
+    known_block_detail = classify_known_block_detail(note)
     if status == "pass":
         detail = "pass"
     elif status == "selfhost_not_implemented":
         detail = "not_implemented"
+    elif status in {"selfhost_transpile_fail", "host_transpile_fail"} and known_block_detail is not None:
+        detail = known_block_detail
     elif status == "bridge_json_unavailable":
         detail = "blocked"
     elif status == "known_diff":

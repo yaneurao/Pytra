@@ -208,6 +208,16 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
         self.assertEqual(row.top_level_category, "regression")
         self.assertEqual(row.detail_category, "direct_parity_fail")
 
+    def test_direct_summary_row_maps_unsupported_by_design_to_known_block(self) -> None:
+        mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
+        row = mod.build_direct_e2e_summary_row(
+            "sample/py/01_mandelbrot.py",
+            "selfhost_transpile_fail",
+            "[unsupported_by_design] rewrite using supported form",
+        )
+        self.assertEqual(row.top_level_category, "known_block")
+        self.assertEqual(row.detail_category, "unsupported_by_design")
+
     def test_print_direct_summary_formats_shared_summary_line(self) -> None:
         mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
         row = mod.build_direct_e2e_summary_row(

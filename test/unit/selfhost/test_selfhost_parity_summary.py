@@ -15,6 +15,7 @@ from tools.selfhost_parity_summary import build_direct_e2e_summary_row
 from tools.selfhost_parity_summary import build_stage2_diff_summary_row
 from tools.selfhost_parity_summary import build_stage2_summary_row
 from tools.selfhost_parity_summary import build_summary_row
+from tools.selfhost_parity_summary import classify_known_block_detail
 from tools.selfhost_parity_summary import print_summary_block
 from tools.selfhost_parity_summary import render_summary_block
 
@@ -52,6 +53,34 @@ class SelfhostParitySummaryTest(unittest.TestCase):
         row = build_stage2_diff_summary_row("test/fixtures/core/add.py", "known_diff", "expected diff")
         self.assertEqual(row.top_level_category, "known_block")
         self.assertEqual(row.detail_category, "known_block")
+
+    def test_known_block_detail_recognizes_unsupported_by_design(self) -> None:
+        self.assertEqual(
+            classify_known_block_detail("[unsupported_by_design] rewrite using supported form"),
+            "unsupported_by_design",
+        )
+        self.assertEqual(
+            classify_known_block_detail("RuntimeError: unsupported target: scala"),
+            "unsupported_by_design",
+        )
+
+    def test_direct_e2e_unsupported_by_design_maps_to_known_block(self) -> None:
+        row = build_direct_e2e_summary_row(
+            "sample/py/01_mandelbrot.py",
+            "selfhost_transpile_fail",
+            "[unsupported_by_design] rewrite using supported form",
+        )
+        self.assertEqual(row.top_level_category, "known_block")
+        self.assertEqual(row.detail_category, "unsupported_by_design")
+
+    def test_stage2_diff_unsupported_target_maps_to_known_block(self) -> None:
+        row = build_stage2_diff_summary_row(
+            "sample/py/01_mandelbrot.py",
+            "selfhost_transpile_fail",
+            "RuntimeError: unsupported target: scala",
+        )
+        self.assertEqual(row.top_level_category, "known_block")
+        self.assertEqual(row.detail_category, "unsupported_by_design")
 
     def test_render_summary_block_skips_pass_rows_but_keeps_pass_aggregate(self) -> None:
         lines = render_summary_block(
