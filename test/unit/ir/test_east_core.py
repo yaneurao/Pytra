@@ -840,6 +840,10 @@ class EastCoreTest(unittest.TestCase):
             "def _annotate_call_expr",
             1,
         )[0]
+        call_apply_text = text.split("def _apply_call_expr_annotation", 1)[1].split(
+            "def _annotate_call_expr",
+            1,
+        )[0]
         call_helper_text = text.split("def _annotate_call_expr", 1)[1].split(
             "def _annotate_named_call_expr",
             1,
@@ -868,12 +872,14 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('if callee.get("kind") == "Attribute":', callee_apply_text)
         self.assertIn("return self._annotate_attr_call_expr(", callee_apply_text)
         self.assertIn("return self._apply_callee_call_annotation(", callee_helper_text)
-        self.assertIn("return self._annotate_callee_call_expr(", call_helper_text)
+        self.assertIn("return self._annotate_callee_call_expr(", call_apply_text)
+        self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
         self.assertNotIn('attr = str(callee.get("attr", ""))', helper_text)
         self.assertNotIn('owner = callee.get("value")', helper_text)
         self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', helper_text)
         self.assertNotIn('_sh_annotate_runtime_method_call_expr(', helper_text)
         self.assertNotIn('if callee.get("kind") == "Attribute":', callee_helper_text)
+        self.assertNotIn("return self._annotate_callee_call_expr(", call_helper_text)
         self.assertNotIn('attr = str(node.get("attr", ""))', postfix_text)
         self.assertNotIn('owner = node.get("value")', postfix_text)
         self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', postfix_text)
@@ -1160,6 +1166,10 @@ class EastCoreTest(unittest.TestCase):
             "def _annotate_call_expr",
             1,
         )[0]
+        call_apply_text = text.split("def _apply_call_expr_annotation", 1)[1].split(
+            "def _annotate_call_expr",
+            1,
+        )[0]
         call_helper_text = text.split("def _annotate_call_expr", 1)[1].split(
             "def _annotate_named_call_expr",
             1,
@@ -1228,11 +1238,13 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('if fn_name != "":', callee_apply_text)
         self.assertIn("return self._annotate_named_call_expr(", callee_apply_text)
         self.assertIn("return self._apply_callee_call_annotation(", callee_helper_text)
-        self.assertIn("return self._annotate_callee_call_expr(", call_helper_text)
+        self.assertIn("return self._annotate_callee_call_expr(", call_apply_text)
+        self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
         self.assertNotIn('fn_name = str(callee.get("id", "")) if callee.get("kind") == "Name" else ""', call_helper_text)
         self.assertNotIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', call_helper_text)
         self.assertNotIn("self._guard_named_call_args(", call_helper_text)
         self.assertNotIn("return self._annotate_named_call_expr(", callee_helper_text)
+        self.assertNotIn("return self._annotate_callee_call_expr(", call_helper_text)
         self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', postfix_text)
         self.assertNotIn('if fn_name == "bool" and len(args) == 1:', postfix_text)
         self.assertNotIn("payload = self._annotate_named_call_expr(", postfix_text)
@@ -1398,6 +1410,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         build_text = text.split("def _build_call_expr_payload", 1)[1].split(
+            "def _apply_call_expr_annotation",
+            1,
+        )[0]
+        apply_text = text.split("def _apply_call_expr_annotation", 1)[1].split(
             "def _annotate_call_expr",
             1,
         )[0]
@@ -1414,14 +1430,17 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("call_ret, fn_name = self._infer_call_expr_return_type(callee, args)", state_text)
         self.assertIn("self._guard_named_call_args(", state_text)
         self.assertIn("return _sh_make_call_expr(", build_text)
+        self.assertIn("payload = self._build_call_expr_payload(", apply_text)
+        self.assertIn("return self._annotate_callee_call_expr(", apply_text)
         self.assertIn("call_ret, fn_name = self._resolve_call_expr_annotation_state(", call_helper_text)
-        self.assertIn("payload = self._build_call_expr_payload(", call_helper_text)
+        self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
         self.assertNotIn("stdlib_imported_ret = (", postfix_text)
         self.assertNotIn("call_ret = self.fn_return_types[fn_name]", postfix_text)
         self.assertNotIn('call_ret = self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))', postfix_text)
         self.assertNotIn("call_ret = self._infer_attr_call_return_type(", postfix_text)
         self.assertNotIn('call_ret = str(node.get("return_type", "unknown"))', postfix_text)
         self.assertNotIn("call_ret, fn_name = self._infer_call_expr_return_type(", postfix_text)
+        self.assertNotIn("payload = self._build_call_expr_payload(", call_helper_text)
         self.assertNotIn("payload = _sh_make_call_expr(", call_helper_text)
         self.assertNotIn("self._guard_named_call_args(", call_helper_text)
 
