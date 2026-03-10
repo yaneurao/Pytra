@@ -16,6 +16,9 @@ if str(ROOT / "src") not in sys.path:
 
 CORE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core.py"
 CORE_CALL_SUFFIX_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_suffix.py"
+CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH = (
+    ROOT / "src" / "toolchain" / "ir" / "core_expr_attr_subscript_suffix.py"
+)
 
 from src.toolchain.compiler.east import convert_source_to_east_with_backend
 from src.toolchain.compiler.east import EastBuildError
@@ -556,28 +559,29 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('node["runtime_call"] = attr_runtime_call', postfix_text)
 
     def test_core_source_routes_attr_lookup_through_shared_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        helper_text = text.split("def _lookup_attr_expr_metadata", 1)[1].split(
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        suffix_text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = core_text.split("def _lookup_attr_expr_metadata", 1)[1].split(
             "def _split_generic_types",
             1,
         )[0]
-        postfix_suffix_text = text.split("def _parse_postfix_suffix", 1)[1].split(
+        postfix_suffix_text = suffix_text.split("def _parse_postfix_suffix", 1)[1].split(
             "def _apply_postfix_suffix_kind",
             1,
         )[0]
-        postfix_suffix_apply_text = text.split("def _apply_postfix_suffix_kind", 1)[1].split(
-            "def _parse_postfix",
+        postfix_suffix_apply_text = suffix_text.split("def _apply_postfix_suffix_kind", 1)[1].split(
+            "def _parse_postfix_suffix",
             1,
         )[0]
-        attr_suffix_text = text.split("def _parse_attr_suffix", 1)[1].split(
-            "def _annotate_attr_expr",
+        attr_suffix_text = suffix_text.split("def _parse_attr_suffix", 1)[1].split(
+            "def _apply_attr_suffix_state",
             1,
         )[0]
-        attr_expr_text = text.split("def _annotate_attr_expr", 1)[1].split(
+        attr_expr_text = core_text.split("def _annotate_attr_expr", 1)[1].split(
             "def _subscript_result_type",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
         self.assertIn('std_attr_t = lookup_stdlib_attribute_type(owner_type, attr_name)', helper_text)
         self.assertIn('runtime_call = lookup_stdlib_method_runtime_call(owner_type, attr_name)', helper_text)
@@ -586,7 +590,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("self._resolve_attr_expr_annotation_state(", attr_expr_text)
         self.assertNotIn("self._resolve_attr_expr_metadata(", attr_expr_text)
         self.assertNotIn("attr_meta = self._lookup_attr_expr_metadata(", attr_expr_text)
-        self.assertIn("return self._annotate_attr_expr(", attr_suffix_text)
+        self.assertIn("return self._apply_attr_suffix_state(", attr_suffix_text)
         self.assertIn("return self._apply_postfix_suffix_kind(", postfix_suffix_text)
         self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_apply_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
@@ -597,6 +601,7 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_attr_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        suffix_text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
         owner_type_text = text.split("def _owner_expr_resolved_type", 1)[1].split(
             "def _resolve_attr_expr_owner_state",
             1,
@@ -645,12 +650,12 @@ class EastCoreTest(unittest.TestCase):
             "def _build_slice_subscript_expr",
             1,
         )[0]
-        postfix_suffix_text = text.split("def _parse_postfix_suffix", 1)[1].split(
+        postfix_suffix_text = suffix_text.split("def _parse_postfix_suffix", 1)[1].split(
             "def _apply_postfix_suffix_kind",
             1,
         )[0]
-        postfix_suffix_apply_text = text.split("def _apply_postfix_suffix_kind", 1)[1].split(
-            "def _parse_postfix",
+        postfix_suffix_apply_text = suffix_text.split("def _apply_postfix_suffix_kind", 1)[1].split(
+            "def _parse_postfix_suffix",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
@@ -708,134 +713,41 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('_sh_annotate_resolved_runtime_expr(', postfix_text)
 
     def test_core_source_routes_attr_suffix_through_parser_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        span_helper_text = text.split("def _resolve_postfix_span_repr", 1)[1].split(
-            "def _guard_named_call_args",
-            1,
-        )[0]
-        dot_text = text.split("def _consume_attr_suffix_dot_token", 1)[1].split(
-            "def _resolve_attr_suffix_name_token",
-            1,
-        )[0]
-        token_text = text.split("def _resolve_attr_suffix_name_token", 1)[1].split(
-            "def _consume_attr_suffix_name_token",
-            1,
-        )[0]
-        consume_name_text = text.split("def _consume_attr_suffix_name_token", 1)[1].split(
-            "def _resolve_attr_suffix_state",
-            1,
-        )[0]
-        state_text = text.split("def _resolve_attr_suffix_state", 1)[1].split(
-            "def _apply_attr_suffix_name_token_state",
-            1,
-        )[0]
-        state_apply_text = text.split("def _apply_attr_suffix_name_token_state", 1)[1].split(
-            "def _apply_attr_suffix_span_repr_state",
-            1,
-        )[0]
-        span_apply_text = text.split("def _apply_attr_suffix_span_repr_state", 1)[1].split(
-            "def _resolve_attr_suffix_name_state",
-            1,
-        )[0]
-        name_state_text = text.split("def _resolve_attr_suffix_name_state", 1)[1].split(
-            "def _apply_attr_suffix_name_state",
-            1,
-        )[0]
-        name_apply_text = text.split("def _apply_attr_suffix_name_state", 1)[1].split(
-            "def _resolve_attr_suffix_name_value",
-            1,
-        )[0]
-        name_value_text = text.split("def _resolve_attr_suffix_name_value", 1)[1].split(
-            "def _resolve_attr_suffix_token_state",
-            1,
-        )[0]
-        token_state_text = text.split("def _resolve_attr_suffix_token_state", 1)[1].split(
-            "def _apply_attr_suffix_token_state",
-            1,
-        )[0]
-        token_apply_text = text.split("def _apply_attr_suffix_token_state", 1)[1].split(
-            "def _resolve_attr_suffix_span_repr",
-            1,
-        )[0]
-        span_text = text.split("def _resolve_attr_suffix_span_repr", 1)[1].split(
-            "def _resolve_attr_expr_annotation",
-            1,
-        )[0]
-        helper_text = text.split("def _parse_attr_suffix", 1)[1].split(
-            "def _apply_attr_suffix_state",
-            1,
-        )[0]
-        helper_apply_text = text.split("def _apply_attr_suffix_state", 1)[1].split(
-            "def _consume_attr_suffix_dot_token",
-            1,
-        )[0]
-        resolve_text = text.split("def _resolve_attr_suffix_state", 1)[1].split(
-            "def _annotate_attr_expr",
-            1,
-        )[0]
-        postfix_suffix_text = text.split("def _parse_postfix_suffix", 1)[1].split(
-            "def _apply_postfix_suffix_kind",
-            1,
-        )[0]
+        text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         postfix_suffix_apply_text = text.split("def _apply_postfix_suffix_kind", 1)[1].split(
-            "def _parse_postfix",
+            "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
-        self.assertIn('s = int(owner_expr["source_span"]["col"]) - self.col_base', span_helper_text)
-        self.assertIn('e = end_tok["e"]', span_helper_text)
-        self.assertIn("return self._node_span(s, e), self._src_slice(s, e)", span_helper_text)
-        self.assertIn('return self._eat(".")', dot_text)
-        self.assertIn("self._consume_attr_suffix_dot_token()", token_text)
-        self.assertIn("return self._consume_attr_suffix_name_token()", token_text)
-        self.assertIn('return self._eat("NAME")', consume_name_text)
-        self.assertIn("name_tok, attr_name = self._resolve_attr_suffix_name_state()", state_text)
-        self.assertIn("return self._apply_attr_suffix_name_token_state(", state_text)
-        self.assertIn("source_span, repr_text = self._resolve_attr_suffix_span_repr(", state_apply_text)
-        self.assertIn("return self._apply_attr_suffix_span_repr_state(", state_apply_text)
-        self.assertIn("return attr_name, source_span, repr_text", span_apply_text)
-        self.assertIn("name_tok = self._resolve_attr_suffix_token_state()", name_state_text)
-        self.assertIn("return self._apply_attr_suffix_name_state(name_tok=name_tok)", name_state_text)
-        self.assertIn("return name_tok, self._resolve_attr_suffix_name_value(name_tok=name_tok)", name_apply_text)
-        self.assertIn('return str(name_tok["v"])', name_value_text)
-        self.assertIn("name_tok = self._resolve_attr_suffix_name_token()", token_state_text)
-        self.assertIn("return self._apply_attr_suffix_token_state(name_tok=name_tok)", token_state_text)
-        self.assertIn("return name_tok", token_apply_text)
-        self.assertIn("return self._resolve_postfix_span_repr(", span_text)
-        self.assertNotIn("self._resolve_postfix_span_repr(", state_text)
-        self.assertNotIn("self._resolve_attr_suffix_name_token()", state_text)
-        self.assertNotIn('return str(name_tok["v"])', state_text)
-        self.assertNotIn("return attr_name, source_span, repr_text", state_text)
-        self.assertNotIn("return attr_name, source_span, repr_text", state_apply_text)
-        self.assertNotIn("self._resolve_postfix_span_repr(", name_state_text)
-        self.assertNotIn("return name_tok, self._resolve_attr_suffix_name_value(name_tok=name_tok)", name_state_text)
-        self.assertNotIn('return self._eat("NAME")', token_text)
-        self.assertNotIn("return self._resolve_attr_suffix_name_token()", token_state_text)
-        self.assertIn("attr_name, source_span, repr_text = self._resolve_attr_suffix_state(", helper_text)
-        self.assertIn("return self._apply_attr_suffix_state(", helper_text)
-        self.assertIn("owner_expr=owner_expr,", helper_text)
-        self.assertIn("attr_name=attr_name,", helper_text)
-        self.assertIn("source_span=source_span,", helper_text)
-        self.assertIn("repr_text=repr_text,", helper_text)
-        self.assertIn("return self._annotate_attr_expr(", helper_apply_text)
-        self.assertNotIn("self._node_span(", helper_text)
-        self.assertNotIn("self._src_slice(", helper_text)
-        self.assertNotIn("return self._annotate_attr_expr(", helper_text)
-        self.assertNotIn('self._eat(".")', state_text)
-        self.assertNotIn('name_tok = self._eat("NAME")', state_text)
-        self.assertNotIn('self._eat(".")', helper_text)
-        self.assertNotIn('name_tok = self._eat("NAME")', helper_text)
-        self.assertIn("return self._apply_postfix_suffix_kind(", postfix_suffix_text)
-        self.assertIn('if tok_kind == ".":', postfix_suffix_apply_text)
+        self.assertIn("class _ShExprAttrSubscriptSuffixParserMixin:", text)
+        self.assertIn("def _parse_attr_suffix(", text)
+        self.assertIn("def _resolve_attr_suffix_state(", text)
+        self.assertIn("def _resolve_attr_suffix_name_token(", text)
+        self.assertIn("def _resolve_attr_suffix_name_state(", text)
+        self.assertIn("def _resolve_attr_suffix_token_state(", text)
+        self.assertIn("def _resolve_attr_suffix_span_repr(", text)
+        self.assertIn("return self._annotate_attr_expr(", text)
+        self.assertIn("return self._resolve_postfix_span_repr(", text)
+        self.assertIn(
+            "from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprAttrSubscriptSuffixParserMixin",
+            core_text,
+        )
+        self.assertIn(
+            "class _ShExprParser(_ShExprCallSuffixParserMixin, _ShExprAttrSubscriptSuffixParserMixin):",
+            core_text,
+        )
         self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_apply_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
-        self.assertNotIn('self._eat(".")', postfix_text)
-        self.assertNotIn('name_tok = self._eat("NAME")', postfix_text)
-        self.assertNotIn("node = self._annotate_attr_expr(", postfix_text)
+        self.assertNotIn("def _parse_attr_suffix(", core_text)
+        self.assertNotIn("def _resolve_attr_suffix_state(", core_text)
+        self.assertNotIn("def _resolve_attr_suffix_name_token(", core_text)
+        self.assertNotIn("def _resolve_attr_suffix_span_repr(", core_text)
 
     def test_core_source_routes_subscript_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        suffix_text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
         owner_type_text = text.split("def _owner_expr_resolved_type", 1)[1].split(
             "def _resolve_attr_callee",
             1,
@@ -873,15 +785,15 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         helper_text = text.split("def _annotate_subscript_expr", 1)[1].split(
-            "def _parse_subscript_suffix",
+            "def _subscript_result_type",
             1,
         )[0]
-        postfix_suffix_text = text.split("def _parse_postfix_suffix", 1)[1].split(
+        postfix_suffix_text = suffix_text.split("def _parse_postfix_suffix", 1)[1].split(
             "def _apply_postfix_suffix_kind",
             1,
         )[0]
-        postfix_suffix_apply_text = text.split("def _apply_postfix_suffix_kind", 1)[1].split(
-            "def _parse_postfix",
+        postfix_suffix_apply_text = suffix_text.split("def _apply_postfix_suffix_kind", 1)[1].split(
+            "def _parse_postfix_suffix",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
@@ -924,7 +836,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("out_t = self._subscript_result_type(", postfix_text)
 
     def test_core_source_routes_subscript_suffix_through_parser_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         slice_tail_text = text.split("def _parse_subscript_slice_tail", 1)[1].split(
             "def _apply_subscript_slice_tail_parse_state",
             1,
@@ -1160,10 +1073,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         postfix_suffix_apply_text = text.split("def _apply_postfix_suffix_kind", 1)[1].split(
-            "def _parse_postfix",
+            "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
         self.assertIn("upper, rtok = self._resolve_subscript_slice_tail_state()", slice_tail_text)
         self.assertIn(
@@ -1572,7 +1485,7 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         helper_text = text.split("def _annotate_attr_call_expr", 1)[1].split(
-            "def _parse_attr_suffix",
+            "def _resolve_attr_expr_annotation",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -2406,8 +2319,15 @@ x.bit_length()
         self.assertIn("arg_entry, keyword_entry = self._resolve_call_arg_loop_entry_state()", text)
         self.assertIn("return self._apply_call_arg_loop_entry_state(", text)
         self.assertIn("from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin", core_text)
-        self.assertIn("class _ShExprParser(_ShExprCallSuffixParserMixin):", core_text)
-        self.assertIn("return self._parse_call_suffix(callee=owner_expr)", postfix_text)
+        self.assertIn(
+            "from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprAttrSubscriptSuffixParserMixin",
+            core_text,
+        )
+        self.assertIn(
+            "class _ShExprParser(_ShExprCallSuffixParserMixin, _ShExprAttrSubscriptSuffixParserMixin):",
+            core_text,
+        )
+        self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertNotIn("def _parse_call_args(", core_text)
         self.assertNotIn("def _consume_call_arg_entries(", core_text)
         self.assertNotIn("def _consume_call_arg_entries_loop(", core_text)
@@ -2415,9 +2335,10 @@ x.bit_length()
 
     def test_core_source_routes_call_suffix_through_parser_helper(self) -> None:
         text = CORE_CALL_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
+        suffix_text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        postfix_suffix_apply_text = core_text.split("def _apply_postfix_suffix_kind", 1)[1].split(
-            "def _parse_postfix",
+        postfix_suffix_apply_text = suffix_text.split("def _apply_postfix_suffix_kind", 1)[1].split(
+            "def _parse_postfix_suffix",
             1,
         )[0]
         postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
@@ -2434,7 +2355,14 @@ x.bit_length()
         self.assertIn("return self._apply_call_suffix_open_token_state()", text)
         self.assertIn("return self._annotate_call_expr(", text)
         self.assertIn("from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin", core_text)
-        self.assertIn("class _ShExprParser(_ShExprCallSuffixParserMixin):", core_text)
+        self.assertIn(
+            "from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprAttrSubscriptSuffixParserMixin",
+            core_text,
+        )
+        self.assertIn(
+            "class _ShExprParser(_ShExprCallSuffixParserMixin, _ShExprAttrSubscriptSuffixParserMixin):",
+            core_text,
+        )
         self.assertIn('if tok_kind == "(":', postfix_suffix_apply_text)
         self.assertIn("return self._parse_call_suffix(callee=owner_expr)", postfix_suffix_apply_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
@@ -2443,12 +2371,13 @@ x.bit_length()
         self.assertNotIn("def _parse_call_suffix(", core_text)
 
     def test_core_source_routes_postfix_suffix_dispatch_through_parser_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _apply_postfix_suffix_kind", 1)[1].split(
-            "def _parse_postfix",
+            "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
         self.assertIn('if tok_kind == ".":', helper_text)
         self.assertIn('if tok_kind == "(":', helper_text)
