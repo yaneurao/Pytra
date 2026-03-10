@@ -5199,6 +5199,29 @@ class _ShExprParser:
             repr_text=self._src_slice(s, e),
         )
 
+    def _resolve_attr_expr_annotation(
+        self,
+        *,
+        attr_meta: dict[str, Any],
+    ) -> tuple[str, str, str, str, str, str, str]:
+        """Attribute access metadata dict の field unpack を helper へ寄せる。"""
+        resolved_type = str(attr_meta.get("resolved_type", "unknown"))
+        attr_runtime_call = str(attr_meta.get("runtime_call", ""))
+        attr_semantic_tag = str(attr_meta.get("semantic_tag", ""))
+        attr_module_id = str(attr_meta.get("module_id", ""))
+        attr_runtime_symbol = str(attr_meta.get("runtime_symbol", ""))
+        noncpp_module_attr_runtime_call = str(attr_meta.get("noncpp_runtime_call", ""))
+        noncpp_module_id = str(attr_meta.get("noncpp_module_id", ""))
+        return (
+            resolved_type,
+            attr_runtime_call,
+            attr_semantic_tag,
+            attr_module_id,
+            attr_runtime_symbol,
+            noncpp_module_attr_runtime_call,
+            noncpp_module_id,
+        )
+
     def _annotate_attr_expr(
         self,
         *,
@@ -5223,33 +5246,41 @@ class _ShExprParser:
                 hint="Cast or assign to a concrete type before attribute/method access.",
             )
         attr_meta = self._lookup_attr_expr_metadata(owner_expr, owner_t, attr_name)
+        (
+            resolved_type,
+            attr_runtime_call,
+            attr_semantic_tag,
+            attr_module_id,
+            attr_runtime_symbol,
+            noncpp_module_attr_runtime_call,
+            noncpp_module_id,
+        ) = self._resolve_attr_expr_annotation(
+            attr_meta=attr_meta,
+        )
         node = _sh_make_attribute_expr(
             source_span,
             owner_expr,
             attr_name,
-            resolved_type=str(attr_meta.get("resolved_type", "unknown")),
+            resolved_type=resolved_type,
             repr_text=repr_text,
         )
-        attr_runtime_call = str(attr_meta.get("runtime_call", ""))
-        attr_semantic_tag = str(attr_meta.get("semantic_tag", ""))
         if attr_runtime_call != "":
             _sh_annotate_runtime_attr_expr(
                 node,
                 runtime_call=attr_runtime_call,
-                module_id=str(attr_meta.get("module_id", "")),
-                runtime_symbol=str(attr_meta.get("runtime_symbol", "")),
+                module_id=attr_module_id,
+                runtime_symbol=attr_runtime_symbol,
                 semantic_tag=attr_semantic_tag,
                 runtime_owner=owner_expr,
             )
         elif attr_semantic_tag != "":
             node["semantic_tag"] = attr_semantic_tag
-        noncpp_module_attr_runtime_call = str(attr_meta.get("noncpp_runtime_call", ""))
         if noncpp_module_attr_runtime_call != "":
             _sh_annotate_resolved_runtime_expr(
                 node,
                 runtime_call=noncpp_module_attr_runtime_call,
                 runtime_source="module_attr",
-                module_id=str(attr_meta.get("noncpp_module_id", "")),
+                module_id=noncpp_module_id,
                 runtime_symbol=attr_name,
             )
         return node

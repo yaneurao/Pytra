@@ -543,6 +543,10 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_attr_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        resolve_text = text.split("def _resolve_attr_expr_annotation", 1)[1].split(
+            "def _annotate_attr_expr",
+            1,
+        )[0]
         helper_text = text.split("def _annotate_attr_expr", 1)[1].split(
             "def _annotate_subscript_expr",
             1,
@@ -553,11 +557,18 @@ class EastCoreTest(unittest.TestCase):
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
+        self.assertIn('resolved_type = str(attr_meta.get("resolved_type", "unknown"))', resolve_text)
+        self.assertIn('attr_runtime_call = str(attr_meta.get("runtime_call", ""))', resolve_text)
+        self.assertIn('attr_semantic_tag = str(attr_meta.get("semantic_tag", ""))', resolve_text)
         self.assertIn('owner_t = str(owner_expr.get("resolved_type", "unknown"))', helper_text)
         self.assertIn("attr_meta = self._lookup_attr_expr_metadata(", helper_text)
+        self.assertIn("self._resolve_attr_expr_annotation(", helper_text)
         self.assertIn("_sh_make_attribute_expr(", helper_text)
         self.assertIn('_sh_annotate_runtime_attr_expr(', helper_text)
         self.assertIn('_sh_annotate_resolved_runtime_expr(', helper_text)
+        self.assertNotIn('resolved_type=str(attr_meta.get("resolved_type", "unknown"))', helper_text)
+        self.assertNotIn('attr_runtime_call = str(attr_meta.get("runtime_call", ""))', helper_text)
+        self.assertNotIn('attr_semantic_tag = str(attr_meta.get("semantic_tag", ""))', helper_text)
         self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertNotIn('owner_t = str(node.get("resolved_type", "unknown"))', postfix_text)
