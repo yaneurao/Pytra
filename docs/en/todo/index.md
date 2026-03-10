@@ -50,6 +50,7 @@ Context: [docs/ja/plans/p5-nominal-adt-language-rollout.md](../plans/p5-nominal-
    - Progress memo: representative coverage now fixes constructor / family-variant test / variant-typed projection plus `Match` as `NominalAdtMatch`, `VariantPattern` as `NominalAdtVariantPattern`, and typed payload-bind metadata.
 8. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] Confirm through representative tests that the built-in `JsonValue` lane and user-defined nominal-ADT lane share the same IR category.
    - Progress memo: representative tests now fix both the `JsonValue` receiver lane and the user-defined nominal ADT `Match` subject lane to `category=nominal_adt`.
-9. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] Implement the minimum representative backend support, starting with C++, for constructors, variant checks, destructuring, and `match`, and forbid silent fallbacks.
+9. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] Implement the minimum representative backend support, starting with C++, for constructors, variant checks, destructuring, and `match`, and forbid silent fallbacks.
+   - Progress memo: the C++ backend now handles constructor / projection / `isinstance` through the existing class lane, lowers `NominalAdtMatch` into `if / else if`, and fail-closes plain `Match`.
 10. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] Define rollout order and fail-closed policy for other backends, and fix diagnostics for unsupported targets.
 11. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] Update selfhost / docs / archive / migration notes and close the rollout as a formal language feature.

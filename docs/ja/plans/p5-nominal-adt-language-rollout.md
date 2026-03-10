@@ -79,7 +79,7 @@
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] frontend と selfhost parser を更新し、representative nominal ADT syntax を受理できるようにする。
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] EAST/EAST3 に ADT constructor、variant test、variant projection、`match` lowering を導入する。
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] built-in `JsonValue` lane と user-defined nominal ADT lane が同じ IR category に乗ることを representative test で確認する。
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] representative backend（まず C++）で constructor / variant check / destructuring / `match` の最小実装を入れ、silent fallback を禁止する。
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] representative backend（まず C++）で constructor / variant check / destructuring / `match` の最小実装を入れ、silent fallback を禁止する。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] 他 backend への rollout 順と fail-closed policy を整理し、未対応 target の診断を固定する。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] selfhost / docs / archive / migration note を更新し、正式言語機能としての nominal ADT rollout を閉じる。
 
@@ -200,3 +200,4 @@
 - 2026-03-11: `S3-02` では variant projection / `match` lowering まで一気に進めず、constructor と variant test の representative metadata lane を先に test で固定してから次段へ進むことにした。
 - 2026-03-11: `S3-02` を閉じ、representative nominal ADT `Match` は EAST3 で `NominalAdtMatch` metadata、`VariantPattern` は `NominalAdtVariantPattern` metadata、payload bind は field-type 付き `PatternBind` metadata を持つ方針で固定した。
 - 2026-03-11: `S4-01` を閉じ、built-in `JsonValue` decode lane の `receiver_type.category` と user-defined nominal ADT `Match` subject の `subject_type.category` は、ともに `nominal_adt` を使う representative test で固定した。
+- 2026-03-11: `S4-02` を閉じ、C++ backend では constructor / projection / `isinstance` を既存 class lane で扱い、`NominalAdtMatch` を `if / else if` へ lower し、plain `Match` は `unsupported Match lane` で fail-closed にする representative backend test を固定した。

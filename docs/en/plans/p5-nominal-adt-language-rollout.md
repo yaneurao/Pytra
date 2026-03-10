@@ -79,7 +79,7 @@ Planned verification commands:
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] Update frontend and selfhost parser paths so they can accept representative nominal-ADT syntax.
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] Introduce ADT constructors, variant tests, variant projection, and `match` lowering into EAST/EAST3.
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] Verify through representative tests that built-in `JsonValue` and user-defined nominal ADTs use the same IR category.
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] Implement the minimal constructor / variant-check / destructuring / `match` path in a representative backend (first C++) and forbid silent fallback.
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] Implement the minimal constructor / variant-check / destructuring / `match` path in a representative backend (first C++) and forbid silent fallback.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] Organize rollout order and fail-closed policy for other backends, and fix diagnostics for unsupported targets.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] Refresh selfhost / docs / archive / migration notes and close the full nominal-ADT rollout plan.
 
@@ -200,3 +200,4 @@ Decision log:
 - 2026-03-11: `S3-02` will not jump straight to variant projection and `match` lowering; the representative constructor and variant-test metadata lane is fixed first by tests, and the next stage can build on that.
 - 2026-03-11: Closed `S3-02` by fixing representative nominal ADT `Match` lowering with `NominalAdtMatch` metadata, `VariantPattern` with `NominalAdtVariantPattern` metadata, and payload-bind metadata carrying field types.
 - 2026-03-11: Closed `S4-01` by fixing a representative test where the built-in `JsonValue` decode lane `receiver_type.category` and the user-defined nominal ADT `Match` subject `subject_type.category` both use `nominal_adt`.
+- 2026-03-11: Closed `S4-02` by fixing representative C++ backend coverage so constructor / projection / `isinstance` stay on the existing class lane, `NominalAdtMatch` lowers to `if / else if`, and plain `Match` fail-closes with `unsupported Match lane`.

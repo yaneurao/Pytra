@@ -55,6 +55,115 @@ class CppStatementEmitter:
             while_open_default="while ({cond}) {",
         )
 
+    def _emit_match_stmt(self, stmt: dict[str, Any]) -> None:
+        """Representative nominal ADT `match` を C++ `if/else if` へ lower する。"""
+        if self.any_dict_get_str(stmt, "lowered_kind", "") != "NominalAdtMatch":
+            raise RuntimeError("cpp emitter: unsupported Match lane (expected NominalAdtMatch)")
+        match_meta = self.any_to_dict_or_empty(stmt.get("nominal_adt_match_v1"))
+        family_name = self.any_dict_get_str(match_meta, "family_name", "")
+        if family_name == "":
+            raise RuntimeError("cpp emitter: nominal ADT match requires family metadata")
+        cases = self._dict_stmt_list(stmt.get("cases"))
+        if len(cases) == 0:
+            raise RuntimeError("cpp emitter: nominal ADT match requires at least one case")
+        subject_expr = self.render_expr(stmt.get("subject"))
+        subject_tmp = self.next_tmp("__match_subject")
+        self.emit(f"auto {subject_tmp} = {subject_expr};")
+        for idx, case_stmt in enumerate(cases):
+            pattern = self.any_to_dict_or_empty(case_stmt.get("pattern"))
+            if self._node_kind_from_dict(pattern) != "VariantPattern":
+                raise RuntimeError("cpp emitter: only VariantPattern is supported in nominal ADT match")
+            if case_stmt.get("guard") is not None:
+                raise RuntimeError("cpp emitter: guards are unsupported in representative nominal ADT match")
+            pattern_meta = self.any_to_dict_or_empty(pattern.get("nominal_adt_pattern_v1"))
+            variant_name = self.any_dict_get_str(pattern_meta, "variant_name", "")
+            if variant_name == "":
+                variant_name = self.any_dict_get_str(pattern, "variant_name", "")
+            if variant_name == "":
+                variant_name = self.any_dict_get_str(pattern, "name", "")
+            if variant_name == "":
+                variant_name = self.any_dict_get_str(self.any_to_dict_or_empty(pattern.get("variant")), "id", "")
+            if variant_name == "":
+                raise RuntimeError("cpp emitter: nominal ADT match requires variant metadata")
+            cond_txt = f"py_isinstance({subject_tmp}, {variant_name}::PYTRA_TYPE_ID)"
+            if idx == 0:
+                self.emit(f"if ({cond_txt}) {{")
+            else:
+                self.emit(f"}} else if ({cond_txt}) {{")
+            self._emit_nominal_adt_match_case_body(
+                subject_tmp,
+                family_name,
+                variant_name,
+                pattern,
+                self._dict_stmt_list(case_stmt.get("body")),
+            )
+        self.emit("} else {")
+        self.indent += 1
+        self.emit(f'throw ::std::runtime_error("non-exhaustive nominal ADT match: {family_name}");')
+        self.indent -= 1
+        self.emit("}")
+
+    def _emit_nominal_adt_match_case_body(
+        self,
+        subject_tmp: str,
+        family_name: str,
+        variant_name: str,
+        pattern: dict[str, Any],
+        body_stmts: list[dict[str, Any]],
+    ) -> None:
+        self.indent += 1
+        scope_names: set[str] = set()
+        self.scope_stack.append(scope_names)
+        prev_declared_var_types = self.declared_var_types
+        self.declared_var_types = dict(self.declared_var_types)
+        try:
+            bind_nodes = self._dict_stmt_list(pattern.get("subpatterns"))
+            if len(bind_nodes) > 0:
+                variant_tmp = self.next_tmp("__match_variant")
+                self.emit(
+                    f'auto {variant_tmp} = obj_to_rc_or_raise<{variant_name}>('
+                    f'make_object({subject_tmp}), "match:{family_name}.{variant_name}");'
+                )
+                for bind_node in bind_nodes:
+                    if self._node_kind_from_dict(bind_node) != "PatternBind":
+                        raise RuntimeError("cpp emitter: only PatternBind is supported in nominal ADT match payloads")
+                    if self.any_dict_get_str(bind_node, "lowered_kind", "") != "NominalAdtPatternBind":
+                        raise RuntimeError("cpp emitter: nominal ADT payload bind metadata is missing")
+                    bind_name = self.any_dict_get_str(bind_node, "name", "")
+                    bind_meta = self.any_to_dict_or_empty(bind_node.get("nominal_adt_pattern_bind_v1"))
+                    field_name = self.any_dict_get_str(bind_meta, "field_name", "")
+                    if field_name == "":
+                        field_name = bind_name
+                    field_type = self.normalize_type_name(self.any_dict_get_str(bind_meta, "field_type", ""))
+                    if field_type == "":
+                        field_type = self.normalize_type_name(self.any_dict_get_str(bind_node, "resolved_type", ""))
+                    if bind_name == "" or field_name == "":
+                        raise RuntimeError("cpp emitter: nominal ADT payload bind requires field metadata")
+                    emitted_bind_name = self.rename_if_reserved(
+                        bind_name,
+                        self.reserved_words,
+                        self.rename_prefix,
+                        self.renamed_symbols,
+                    )
+                    emitted_field_name = self.rename_if_reserved(
+                        field_name,
+                        self.reserved_words,
+                        self.rename_prefix,
+                        self.renamed_symbols,
+                    )
+                    decl_type = "auto"
+                    if field_type not in {"", "unknown", "Any", "object"}:
+                        decl_type = self._cpp_type_text(field_type)
+                    self.emit(f"{decl_type} {emitted_bind_name} = {variant_tmp}->{emitted_field_name};")
+                    scope_names.add(bind_name)
+                    self.declared_var_types[bind_name] = field_type if field_type != "" else "unknown"
+            for body_stmt in body_stmts:
+                self.emit_stmt(body_stmt)
+        finally:
+            self.declared_var_types = prev_declared_var_types
+            self.scope_stack.pop()
+            self.indent -= 1
+
     def _render_lvalue_for_augassign(self, target_expr: Any) -> str:
         """AugAssign 向けに左辺を簡易レンダリングする。"""
         target_node = self.any_to_dict_or_empty(target_expr)

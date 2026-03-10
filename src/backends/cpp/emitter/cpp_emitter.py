@@ -1998,6 +1998,7 @@ class CppEmitter(
             raise ValueError("legacy loop node is unsupported in EAST3; lower to ForCore: " + kind)
         dispatch: dict[str, Any] = {
             "Expr": self._emit_expr_stmt,
+            "Match": self._emit_match_stmt,
             "Return": self._emit_return_stmt,
             "Assign": self._emit_assign_stmt,
             "Swap": self._emit_swap_stmt,
@@ -3469,6 +3470,23 @@ class CppEmitter(
         base_kind = self._node_kind_from_dict(base_node)
         attr = self.attr_name(expr_d)
         emitted_attr = self.rename_if_reserved(attr, self.reserved_words, self.rename_prefix, self.renamed_symbols)
+        if self.any_dict_get_str(expr_d, "lowered_kind", "") == "NominalAdtProjection":
+            projection_meta = self.any_to_dict_or_empty(expr_d.get("nominal_adt_projection_v1"))
+            variant_name = self.any_dict_get_str(projection_meta, "variant_name", "")
+            field_name = self.any_dict_get_str(projection_meta, "field_name", "")
+            if variant_name == "" or field_name == "":
+                raise RuntimeError("cpp emitter: nominal ADT projection requires variant metadata")
+            emitted_field_name = self.rename_if_reserved(
+                field_name,
+                self.reserved_words,
+                self.rename_prefix,
+                self.renamed_symbols,
+            )
+            ctx = f"{variant_name}.{field_name}"
+            base_obj = base
+            if not self.is_boxed_object_expr(base_obj):
+                base_obj = f"make_object({base_obj})"
+            return f'obj_to_rc_or_raise<{variant_name}>({base_obj}, "{ctx}")->' + emitted_field_name
         if base == "self" or base == "*this":
             if self.current_class_name is not None and attr in self.current_class_static_fields:
                 return f"{self.current_class_name}::{emitted_attr}"
@@ -3524,6 +3542,18 @@ class CppEmitter(
                 if not self.is_boxed_object_expr(base_obj):
                     base_obj = f"make_object({base_obj})"
                 return f"obj_to_rc_or_raise<{owner_m_cls}>({base_obj}, \"{ctx}\")->{emitted_attr}"
+        owner_cls = self.class_field_owner_unique.get(attr, "")
+        if (
+            owner_cls != ""
+            and owner_cls in self.ref_classes
+            and self._type_is_ref_class(bt)
+            and bt != owner_cls
+        ):
+            ctx = f"{owner_cls}.{attr}"
+            base_obj = base
+            if not self.is_boxed_object_expr(base_obj):
+                base_obj = f"make_object({base_obj})"
+            return f"obj_to_rc_or_raise<{owner_cls}>({base_obj}, \"{ctx}\")->{emitted_attr}"
         if self._type_is_ref_class(bt):
             return f"{base}->{emitted_attr}"
         return f"{base}.{emitted_attr}"

@@ -1336,6 +1336,42 @@ def f(x: object) -> bool:
         self.assertNotIn("if (expected_type_id == PYTRA_TID_OBJECT) return true;", cpp)
         self.assertNotIn("if (Base::py_isinstance_of(expected_type_id)) return true;", cpp)
 
+    def test_nominal_adt_class_lane_supports_ctor_projection_and_variant_check(self) -> None:
+        src = """from dataclasses import dataclass
+
+@sealed
+class Maybe:
+    pass
+
+@dataclass
+class Just(Maybe):
+    value: int
+
+class Nothing(Maybe):
+    pass
+
+def mk(v: int) -> Just:
+    return Just(v)
+
+def proj(x: Just) -> int:
+    return x.value
+
+def check(x: object) -> bool:
+    return isinstance(x, Just)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "nominal_adt_class_lane.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east, emit_main=False)
+
+        self.assertIn("struct Just : public Maybe {", cpp)
+        self.assertIn("rc<Just> mk(int64 v) {", cpp)
+        self.assertIn("return ::rc_new<Just>(v);", cpp)
+        self.assertIn("int64 proj(const rc<Just>& x) {", cpp)
+        self.assertIn('return obj_to_rc_or_raise<Just>(make_object(x), "Just.value")->value;', cpp)
+        self.assertIn("return py_isinstance(x, Just::PYTRA_TYPE_ID);", cpp)
+
     def test_inheritance_methods_are_emitted_as_virtual_with_override(self) -> None:
         src = """class Base:\n    def inc(self, x: int) -> int:\n        return x + 1\n\nclass Child(Base):\n    def inc(self, x: int) -> int:\n        return x + 2\n\n    def base_only(self, x: int) -> int:\n        return x\n"""
         with tempfile.TemporaryDirectory() as tmpdir:

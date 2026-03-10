@@ -13,8 +13,164 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.backends.cpp.cli import CppEmitter, load_east
+from src.backends.cpp.cli import transpile_to_cpp
+from src.toolchain.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
 from src.toolchain.compiler.transpile_cli import collect_symbols_from_stmt, parse_py2cpp_argv
 from src.toolchain.frontends.type_expr import parse_type_expr_text
+from src.toolchain.ir.core import convert_source_to_east_with_backend
+
+
+def _nominal_adt_class(
+    name: str,
+    *,
+    role: str,
+    family_name: str,
+    variant_name: str = "",
+    payload_style: str = "",
+    field_types: dict[str, object] | None = None,
+) -> dict[str, object]:
+    nominal_meta: dict[str, object] = {
+        "schema_version": 1,
+        "role": role,
+        "family_name": family_name,
+    }
+    if variant_name != "":
+        nominal_meta["variant_name"] = variant_name
+    if payload_style != "":
+        nominal_meta["payload_style"] = payload_style
+    out: dict[str, object] = {
+        "kind": "ClassDef",
+        "name": name,
+        "body": [],
+        "meta": {"nominal_adt_v1": nominal_meta},
+    }
+    out["class_storage_hint"] = "ref" if role == "variant" else "value"
+    if role == "variant":
+        out["base"] = family_name
+    if payload_style == "dataclass":
+        out["dataclass"] = True
+    if field_types is not None:
+        out["field_types"] = dict(field_types)
+    return out
+
+
+def _representative_nominal_adt_east3() -> dict[str, object]:
+    source = """
+from dataclasses import dataclass
+
+@sealed
+class Maybe:
+    pass
+
+@dataclass
+class Just(Maybe):
+    value: int
+
+class Nothing(Maybe):
+    pass
+
+def f(x: Maybe) -> int:
+    if isinstance(x, Just):
+        return x.value
+    y = Just(1)
+    return y.value
+"""
+    east2 = convert_source_to_east_with_backend(
+        source,
+        filename="sample.py",
+        parser_backend="self_hosted",
+    )
+    out = lower_east2_to_east3(east2)
+    assert isinstance(out, dict)
+    return out
+
+
+def _representative_nominal_adt_match_east3() -> dict[str, object]:
+    east2: dict[str, object] = {
+        "kind": "Module",
+        "meta": {"dispatch_mode": "native"},
+        "body": [
+            _nominal_adt_class("Maybe", role="family", family_name="Maybe"),
+            _nominal_adt_class(
+                "Just",
+                role="variant",
+                family_name="Maybe",
+                variant_name="Just",
+                payload_style="dataclass",
+                field_types={"value": "int64"},
+            ),
+            _nominal_adt_class(
+                "Nothing",
+                role="variant",
+                family_name="Maybe",
+                variant_name="Nothing",
+            ),
+            {
+                "kind": "FunctionDef",
+                "name": "f",
+                "args": [{"arg": "x", "ann": "Maybe"}],
+                "returns": "int64",
+                "body": [
+                    {
+                        "kind": "Match",
+                        "subject": {
+                            "kind": "Name",
+                            "id": "x",
+                            "resolved_type": "Maybe",
+                            "type_expr": parse_type_expr_text("Maybe"),
+                        },
+                            "cases": [
+                                {
+                                    "kind": "MatchCase",
+                                    "pattern": {
+                                        "kind": "VariantPattern",
+                                        "family_name": "Maybe",
+                                        "variant_name": "Just",
+                                        "subpatterns": [{"kind": "PatternBind", "name": "value"}],
+                                    },
+                                    "guard": None,
+                                    "body": [
+                                        {
+                                            "kind": "Return",
+                                            "value": {
+                                                "kind": "Name",
+                                            "id": "value",
+                                            "resolved_type": "int64",
+                                        },
+                                    }
+                                ],
+                                },
+                                {
+                                    "kind": "MatchCase",
+                                    "pattern": {
+                                        "kind": "VariantPattern",
+                                        "family_name": "Maybe",
+                                        "variant_name": "Nothing",
+                                        "subpatterns": [],
+                                    },
+                                    "guard": None,
+                                    "body": [{"kind": "Return", "value": _const_i(0)}],
+                                },
+                            ],
+                            "meta": {
+                                "match_analysis_v1": {
+                                    "schema_version": 1,
+                                    "family_name": "Maybe",
+                                    "coverage_kind": "exhaustive",
+                                    "covered_variants": ["Just", "Nothing"],
+                                    "uncovered_variants": [],
+                                    "duplicate_case_indexes": [],
+                                    "unreachable_case_indexes": [],
+                                }
+                            },
+                        }
+                    ],
+                },
+            ],
+        }
+    out = lower_east2_to_east3(east2)
+    assert isinstance(out, dict)
+    return out
 
 
 def _const_i(v: int) -> dict[str, object]:
@@ -29,6 +185,29 @@ def _const_i(v: int) -> dict[str, object]:
 
 
 class East3CppBridgeTest(unittest.TestCase):
+    def test_transpile_representative_nominal_adt_projection_uses_variant_cast(self) -> None:
+        cpp = transpile_to_cpp(_representative_nominal_adt_east3(), emit_main=False)
+        self.assertIn("::rc_new<Just>(1)", cpp)
+        self.assertIn("py_isinstance(x, Just::PYTRA_TYPE_ID)", cpp)
+        self.assertIn('obj_to_rc_or_raise<Just>(make_object(x), "Just.value")->value', cpp)
+        self.assertNotIn("return x->value;", cpp)
+
+    def test_transpile_representative_nominal_adt_match_emits_if_else_chain(self) -> None:
+        cpp = transpile_to_cpp(_representative_nominal_adt_match_east3(), emit_main=False)
+        self.assertIn("if (py_isinstance(__match_subject_", cpp)
+        self.assertIn('obj_to_rc_or_raise<Just>(make_object(__match_subject_', cpp)
+        self.assertIn("int64 value = __match_variant_", cpp)
+        self.assertIn("} else if (py_isinstance(__match_subject_", cpp)
+        self.assertIn('throw ::std::runtime_error("non-exhaustive nominal ADT match: Maybe")', cpp)
+
+    def test_emit_stmt_match_rejects_non_nominal_lane(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "unsupported Match lane",
+        ):
+            emitter.emit_stmt({"kind": "Match", "subject": {"kind": "Name", "id": "x"}})
+
     def test_render_expr_json_decode_call_uses_ir_receiver_instead_of_raw_attr(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         expr = {

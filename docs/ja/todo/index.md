@@ -50,6 +50,7 @@
    - 進捗メモ: representative case では constructor / family-variant test / variant-typed projection に加えて、`Match` を `NominalAdtMatch`、`VariantPattern` を `NominalAdtVariantPattern`、payload bind を typed `PatternBind` metadata として固定した。
 8. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] built-in `JsonValue` lane と user-defined nominal ADT lane が同じ IR category に乗ることを representative test で確認する。
    - 進捗メモ: `JsonValue` receiver lane と user-defined nominal ADT `Match` subject lane が、どちらも `category=nominal_adt` を使う representative test を固定した。
-9. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] representative backend（まず C++）で constructor / variant check / destructuring / `match` の最小実装を入れ、silent fallback を禁止する。
+9. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] representative backend（まず C++）で constructor / variant check / destructuring / `match` の最小実装を入れ、silent fallback を禁止する。
+   - 進捗メモ: C++ backend は constructor / projection / `isinstance` を既存 class lane で処理し、`NominalAdtMatch` を `if / else if` へ lower し、plain `Match` は fail-closed に固定した。
 10. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] 他 backend への rollout 順と fail-closed policy を整理し、未対応 target の診断を固定する。
 11. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] selfhost / docs / archive / migration note を更新し、正式言語機能としての nominal ADT rollout を閉じる。

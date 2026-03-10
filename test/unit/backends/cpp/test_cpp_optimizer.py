@@ -92,6 +92,25 @@ class CppOptimizerTest(unittest.TestCase):
         self.assertIsInstance(test_expr, dict)
         self.assertEqual(test_expr.get("cpp_expr_kind_v1"), "Constant")
 
+    def test_cpp_lower_adds_match_stmt_hint(self) -> None:
+        doc = {
+            "kind": "Module",
+            "meta": {},
+            "body": [
+                {
+                    "kind": "Match",
+                    "subject": {"kind": "Name", "id": "x", "resolved_type": "Maybe"},
+                    "cases": [],
+                }
+            ],
+        }
+        out_doc, report = lower_cpp_from_east3(doc)
+        self.assertIs(out_doc, doc)
+        self.assertTrue(bool(report.get("changed")))
+        body = out_doc.get("body")
+        self.assertIsInstance(body, list)
+        self.assertEqual(body[0].get("cpp_stmt_kind_v1"), "Match")
+
     def test_cpp_lower_does_not_annotate_non_ast_kind_maps(self) -> None:
         doc = {
             "kind": "Module",

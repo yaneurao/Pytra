@@ -7,6 +7,7 @@ from typing import Any
 
 _CPP_STMT_KINDS = {
     "Expr",
+    "Match",
     "Return",
     "Assign",
     "Swap",
