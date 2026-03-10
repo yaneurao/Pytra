@@ -4967,6 +4967,18 @@ class _ShExprParser:
     ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
         """call argument 1件分の keyword apply を helper へ寄せる。"""
         kw_name, kw_val = self._resolve_keyword_call_arg_entry_state(name_tok=name_tok)
+        return self._apply_keyword_call_arg_build(
+            kw_name=kw_name,
+            kw_val=kw_val,
+        )
+
+    def _apply_keyword_call_arg_build(
+        self,
+        *,
+        kw_name: str,
+        kw_val: dict[str, Any],
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument keyword の node build を helper へ寄せる。"""
         return None, _sh_make_keyword_arg(kw_name, kw_val)
 
     def _resolve_keyword_call_arg_entry_state(
