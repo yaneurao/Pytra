@@ -228,6 +228,19 @@ Rules for `ClassDef.meta.nominal_adt_v1`:
 - The v1 pattern surface is limited to variant patterns plus payload binds plus wildcard `_`.
 - Literal patterns, nested patterns, guard patterns, and expression-form `match` are outside the v1 node contract.
 - Backends that receive `Match` / pattern nodes are expected to implement a dedicated lowering lane and must not degrade them into `object` fallback or raw method-name reinterpretation.
+- `Match` may carry `meta.match_analysis_v1` for static checking.
+  - `schema_version: 1`
+  - `family_name: str`
+  - `coverage_kind: "exhaustive" | "wildcard_terminal" | "partial" | "invalid"`
+  - `covered_variants: str[]`
+  - `uncovered_variants: str[]`
+  - `duplicate_case_indexes: int[]`
+  - `unreachable_case_indexes: int[]`
+  - `match_analysis_v1` is auxiliary metadata that records the coverage summary fixed by validators / lowering; it is not a replacement for parser-surface nodes.
+- v1 static checking applies only to closed nominal ADT families.
+  - Exhaustiveness means either "enumerate every family variant exactly once" or "end with `PatternWildcard` that captures the remaining variants."
+  - Duplicate patterns mean either re-listing the same `variant_name` or adding a second and later `PatternWildcard`.
+  - Unreachable branches mean any `MatchCase` that appears after wildcard coverage is closed, or a later `VariantPattern` for a variant that was already covered.
 
 ## 6. Type System
 
@@ -735,6 +748,7 @@ Objective:
 - Inputs outside the neutral contract, such as invalid `dispatch_mode`, unsupported node shapes, or missing required metadata, must fail closed instead of being rescued implicitly.
 - Fail closed with `semantic_conflict` when `type_expr` and its `resolved_type` mirror disagree.
 - `meta.nominal_adt_v1`, `Match`, and pattern nodes that fall outside the v1 contract (nested variants, guard patterns, literal patterns, namespace-sugar dependence, and similar cases) must fail closed with `unsupported_syntax` or `semantic_conflict`.
+- If `Match.meta.match_analysis_v1` reports `coverage_kind=partial` or `invalid`, the program must stop with `semantic_conflict` before backend emission.
 - Compatibility fallbacks are allowed only during staged migration and must be logged together with an explicit `legacy` flag.
 
 ### 24.5 Principles for `EAST2 -> EAST3`

@@ -254,6 +254,19 @@
 - v1 pattern surface は「variant pattern + payload bind + wildcard `_`」に限定する。
 - literal pattern、nested pattern、guard pattern、expression-form `match` は v1 の node contract に含めない。
 - `Match` / pattern node を受け取った backend は dedicated lowering lane を持つことを前提とし、`object` fallback や raw method-name 再解釈に落としてはならない。
+- `Match` は static check のために `meta.match_analysis_v1` を持ってよい。
+  - `schema_version: 1`
+  - `family_name: str`
+  - `coverage_kind: "exhaustive" | "wildcard_terminal" | "partial" | "invalid"`
+  - `covered_variants: str[]`
+  - `uncovered_variants: str[]`
+  - `duplicate_case_indexes: int[]`
+  - `unreachable_case_indexes: int[]`
+  - `match_analysis_v1` は parser surface の代替ではなく、validator / lowering が確定した coverage summary を保持する補助 metadata とする。
+- v1 の static check は closed nominal ADT family にだけ適用する。
+  - exhaustive 条件は「family の全 variant を 1 回ずつ列挙する」または「末尾の `PatternWildcard` が残余全体を受ける」のどちらかとする。
+  - duplicate pattern は同じ `variant_name` の再列挙、または 2 個目以降の `PatternWildcard` を指す。
+  - unreachable branch は wildcard で coverage が閉じた後ろ、または同一 variant が既に coverage 済みの後ろに現れる `MatchCase` を指す。
 
 ## 6. 型システム
 
@@ -753,6 +766,7 @@ python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented
 - 中立契約外の入力（不正 `dispatch_mode`, 未対応ノード形、必要メタ欠落）は暗黙救済せず fail-closed で終了する。
 - `type_expr` と `resolved_type` mirror が矛盾する入力は `semantic_conflict` として fail-closed で終了する。
 - `meta.nominal_adt_v1`, `Match`, pattern node が v1 契約外（nested variant、guard pattern、literal pattern、namespace sugar 依存など）の shape を持つ場合は `unsupported_syntax` または `semantic_conflict` として fail-closed にする。
+- `Match.meta.match_analysis_v1` が `coverage_kind=partial` または `invalid` を示す場合は、backend へ流す前に `semantic_conflict` として停止する。
 - 互換フォールバックは段階移行中のみ許可し、`legacy` 明示フラグとともにログへ記録する。
 
 ### 24.5 EAST2 -> EAST3 への接続原則
