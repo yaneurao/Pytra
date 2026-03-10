@@ -4868,6 +4868,32 @@ class _ShExprParser:
                     hint=f"Decode JSON values to a concrete type before calling {helper_name}().",
                 )
 
+    def _parse_call_args(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """Call expr の位置引数と keyword 引数を parser helper へ寄せる。"""
+        args: list[dict[str, Any]] = []
+        keywords: list[dict[str, Any]] = []
+        if self._cur()["k"] == ")":
+            return args, keywords
+        while True:
+            if self._cur()["k"] == "NAME":
+                save_pos = self.pos
+                name_tok = self._eat("NAME")
+                if self._cur()["k"] == "=":
+                    self._eat("=")
+                    kw_val = self._parse_ifexp()
+                    keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))
+                else:
+                    self.pos = save_pos
+                    args.append(self._parse_call_arg_expr())
+            else:
+                args.append(self._parse_call_arg_expr())
+            if self._cur()["k"] != ",":
+                break
+            self._eat(",")
+            if self._cur()["k"] == ")":
+                break
+        return args, keywords
+
     def _annotate_call_expr(
         self,
         *,
@@ -5129,6 +5155,50 @@ class _ShExprParser:
             repr_text=repr_text,
         )
 
+    def _parse_subscript_suffix(self, *, owner_expr: dict[str, Any]) -> dict[str, Any]:
+        """Subscript / slice suffix の token 消費を parser helper へ寄せる。"""
+        self._eat("[")
+        if self._cur()["k"] == ":":
+            self._eat(":")
+            up = None
+            if self._cur()["k"] != "]":
+                up = self._parse_ifexp()
+            rtok = self._eat("]")
+            s = int(owner_expr["source_span"]["col"]) - self.col_base
+            e = rtok["e"]
+            return self._annotate_subscript_expr(
+                owner_expr=owner_expr,
+                lower=None,
+                upper=up,
+                source_span=self._node_span(s, e),
+                repr_text=self._src_slice(s, e),
+            )
+        first = self._parse_ifexp()
+        if self._cur()["k"] == ":":
+            self._eat(":")
+            up = None
+            if self._cur()["k"] != "]":
+                up = self._parse_ifexp()
+            rtok = self._eat("]")
+            s = int(owner_expr["source_span"]["col"]) - self.col_base
+            e = rtok["e"]
+            return self._annotate_subscript_expr(
+                owner_expr=owner_expr,
+                lower=first,
+                upper=up,
+                source_span=self._node_span(s, e),
+                repr_text=self._src_slice(s, e),
+            )
+        rtok = self._eat("]")
+        s = int(owner_expr["source_span"]["col"]) - self.col_base
+        e = rtok["e"]
+        return self._annotate_subscript_expr(
+            owner_expr=owner_expr,
+            index_expr=first,
+            source_span=self._node_span(s, e),
+            repr_text=self._src_slice(s, e),
+        )
+
     def _subscript_result_type(self, container_type: str) -> str:
         """添字アクセスの結果型をコンテナ型から推論する。"""
         if container_type.startswith("list[") and container_type.endswith("]"):
@@ -5212,28 +5282,7 @@ class _ShExprParser:
                 continue
             if tok["k"] == "(":
                 ltok = self._eat("(")
-                args: list[dict[str, Any]] = []
-                keywords: list[dict[str, Any]] = []
-                if self._cur()["k"] != ")":
-                    while True:
-                        if self._cur()["k"] == "NAME":
-                            save_pos = self.pos
-                            name_tok = self._eat("NAME")
-                            if self._cur()["k"] == "=":
-                                self._eat("=")
-                                kw_val = self._parse_ifexp()
-                                keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))
-                            else:
-                                self.pos = save_pos
-                                args.append(self._parse_call_arg_expr())
-                        else:
-                            args.append(self._parse_call_arg_expr())
-                        if self._cur()["k"] == ",":
-                            self._eat(",")
-                            if self._cur()["k"] == ")":
-                                break
-                            continue
-                        break
+                args, keywords = self._parse_call_args()
                 rtok = self._eat(")")
                 s = int(node["source_span"]["col"]) - self.col_base
                 e = rtok["e"]
@@ -5246,49 +5295,7 @@ class _ShExprParser:
                 )
                 continue
             if tok["k"] == "[":
-                ltok = self._eat("[")
-                if self._cur()["k"] == ":":
-                    self._eat(":")
-                    up = None
-                    if self._cur()["k"] != "]":
-                        up = self._parse_ifexp()
-                    rtok = self._eat("]")
-                    s = int(node["source_span"]["col"]) - self.col_base
-                    e = rtok["e"]
-                    node = self._annotate_subscript_expr(
-                        owner_expr=node,
-                        lower=None,
-                        upper=up,
-                        source_span=self._node_span(s, e),
-                        repr_text=self._src_slice(s, e),
-                    )
-                    continue
-                first = self._parse_ifexp()
-                if self._cur()["k"] == ":":
-                    self._eat(":")
-                    up = None
-                    if self._cur()["k"] != "]":
-                        up = self._parse_ifexp()
-                    rtok = self._eat("]")
-                    s = int(node["source_span"]["col"]) - self.col_base
-                    e = rtok["e"]
-                    node = self._annotate_subscript_expr(
-                        owner_expr=node,
-                        lower=first,
-                        upper=up,
-                        source_span=self._node_span(s, e),
-                        repr_text=self._src_slice(s, e),
-                    )
-                    continue
-                rtok = self._eat("]")
-                s = int(node["source_span"]["col"]) - self.col_base
-                e = rtok["e"]
-                node = self._annotate_subscript_expr(
-                    owner_expr=node,
-                    index_expr=first,
-                    source_span=self._node_span(s, e),
-                    repr_text=self._src_slice(s, e),
-                )
+                node = self._parse_subscript_suffix(owner_expr=node)
                 continue
             return node
 

@@ -554,19 +554,35 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_subscript_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _annotate_subscript_expr", 1)[1].split(
-            "def _subscript_result_type",
+            "def _parse_subscript_suffix",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
         self.assertIn('owner_t = str(owner_expr.get("resolved_type", "unknown"))', helper_text)
         self.assertIn("_sh_make_slice_node(lower, upper)", helper_text)
         self.assertIn("_sh_make_subscript_expr(", helper_text)
         self.assertIn("resolved_type=self._subscript_result_type(owner_t)", helper_text)
-        self.assertIn("node = self._annotate_subscript_expr(", postfix_text)
+        self.assertIn("node = self._parse_subscript_suffix(owner_expr=node)", postfix_text)
         self.assertNotIn("node = _sh_make_subscript_expr(", postfix_text)
         self.assertNotIn("_sh_make_slice_node(", postfix_text)
         self.assertNotIn("out_t = self._subscript_result_type(", postfix_text)
+
+    def test_core_source_routes_subscript_suffix_through_parser_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _parse_subscript_suffix", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+
+        self.assertIn('if self._cur()["k"] == ":":', helper_text)
+        self.assertIn("first = self._parse_ifexp()", helper_text)
+        self.assertIn("return self._annotate_subscript_expr(", helper_text)
+        self.assertIn("node = self._parse_subscript_suffix(owner_expr=node)", postfix_text)
+        self.assertNotIn('if self._cur()["k"] == ":":', postfix_text)
+        self.assertNotIn("first = self._parse_ifexp()", postfix_text)
+        self.assertNotIn("node = self._annotate_subscript_expr(", postfix_text)
 
     def test_core_source_routes_method_call_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
@@ -1107,6 +1123,21 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("call_ret = self._infer_attr_call_return_type(", postfix_text)
         self.assertNotIn('call_ret = str(node.get("return_type", "unknown"))', postfix_text)
         self.assertNotIn("call_ret, fn_name = self._infer_call_expr_return_type(", postfix_text)
+
+    def test_core_source_routes_call_arg_parsing_through_parser_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _parse_call_args", 1)[1].split(
+            "def _annotate_call_expr",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', helper_text)
+        self.assertIn("args.append(self._parse_call_arg_expr())", helper_text)
+        self.assertIn("save_pos = self.pos", helper_text)
+        self.assertIn("args, keywords = self._parse_call_args()", postfix_text)
+        self.assertNotIn("save_pos = self.pos", postfix_text)
+        self.assertNotIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
