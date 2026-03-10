@@ -5077,6 +5077,18 @@ class _ShExprParser:
                 args=args,
                 keywords=keywords,
             )
+        return self._consume_call_arg_entries(
+            args=args,
+            keywords=keywords,
+        )
+
+    def _consume_call_arg_entries(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """call argument 非空 loop を helper へ寄せる。"""
         while True:
             arg_entry, keyword_entry = self._parse_call_arg_entry()
             self._apply_call_arg_entry(
