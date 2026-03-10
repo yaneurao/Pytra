@@ -86,6 +86,33 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertEqual(host_cpp.get("default_options"), cpp_meta.get("default_options"))
         self.assertEqual(static_cpp.get("option_schema"), cpp_meta.get("option_schema"))
 
+    def test_backend_registry_intentional_differences_are_limited(self) -> None:
+        host_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry.py").read_text(encoding="utf-8")
+        static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
+
+        self.assertIn("import importlib", host_src)
+        self.assertIn("_SPEC_CACHE: dict[str, ResolvedBackendSpec] = {}", host_src)
+        self.assertIn("_load_backend_spec(target)", host_src)
+        self.assertNotIn("_STATIC_CALLABLES:", host_src)
+        self.assertIn("suppress_emit_exceptions=True", host_src)
+
+        self.assertNotIn("import importlib", static_src)
+        self.assertIn("_STATIC_CALLABLES: dict[str, Any] =", static_src)
+        self.assertIn("_build_backend_spec(target)", static_src)
+        self.assertNotIn("_SPEC_CACHE: dict[str, ResolvedBackendSpec] = {}", static_src)
+        self.assertIn("suppress_emit_exceptions=False", static_src)
+
+        self.assertIn("get_runtime_hook_descriptor(", host_src)
+        self.assertIn("get_runtime_hook_descriptor(", static_src)
+        self.assertIn("get_program_writer_ref(", host_src)
+        self.assertIn("get_program_writer_ref(", static_src)
+
+    def test_backend_registry_unsupported_target_contract_matches(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "unsupported target: missing-target"):
+            host_registry.get_backend_spec_typed("missing-target")
+        with self.assertRaisesRegex(RuntimeError, "unsupported target: missing-target"):
+            static_registry.get_backend_spec_typed("missing-target")
+
     def test_selfhost_cpp_entry_uses_direct_typed_compiler_path(self) -> None:
         selfhost_cpp = (ROOT / "selfhost" / "py2cpp.cpp").read_text(encoding="utf-8")
         selfhost_stage2 = (ROOT / "selfhost" / "py2cpp_stage2.cpp").read_text(encoding="utf-8")
