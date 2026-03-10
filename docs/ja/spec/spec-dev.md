@@ -160,6 +160,134 @@ linked module(EAST3)
 - `toolchain_missing` は `parity_fail` と別カテゴリで扱う。sample parity で compiler/runtime 未導入が原因の skip になった場合は infra baseline として記録し、backend bug へ混ぜない。
 - 2026-03-08 時点の first snapshot では `js/ts` が green、`cs` が `toolchain_missing`、`rs/go/java/scala/lua` が `target_smoke_fail`、`kotlin/swift/ruby/php/nim` が `transpile_fail` を primary failure とする。
 
+### 1.2.1 compiler contract validator 層
+
+P3 以降の compiler contract validator は、`schema validator`・`invariant validator`・`backend input validator` の 3 層に分ける。
+
+- `schema validator`
+  - 役割: serialization/container shape の検証。
+  - 対象: raw EAST3、linked input、linked output、backend input artifact の top-level schema。
+  - 禁止: node-level semantic invariant や backend-local rule の判定。
+- `invariant validator`
+  - 役割: node/meta relationship の検証。
+  - 対象: schema を通過した EAST3 / linked output / representative IR。
+  - 禁止: backend ごとの emit/lower 戦略の決定。
+- `backend input validator`
+  - 役割: target-local fail-closed diagnostic の生成。
+  - 対象: representative backend entry（まず C++）の直前 payload。
+  - 禁止: carrier coercion や raw JSON schema の再解釈。
+
+責務境界:
+
+- `P1-EAST-TYPEEXPR-01` は `TypeExpr` schema と mirror format の設計を持つ。
+- `P2-COMPILER-TYPED-BOUNDARY-01` は carrier / adapter seam を thin にする。
+- P3 validator は、その後段で「何を受け取ってよいか」を fail-closed で固定する。
+
+### 1.2.2 compiler contract 必須 field と許容欠落
+
+#### raw EAST3
+
+schema validator が最低限要求する field:
+
+- root:
+  - `kind == "Module"`
+  - `east_stage == 3`
+  - `body: list`
+  - `meta.dispatch_mode: "native" | "type_id"`
+- optional:
+  - `schema_version` は存在するなら `int >= 1`
+
+invariant validator が追加で要求する項目:
+
+- すべての representative statement / expression node は `kind` を持つ。
+- `*_type_expr` を持つ node は対応する string mirror（`resolved_type`, `annotation`, `decl_type`, `return_type`, `arg_types`）を必ず持ち、値は正規化後に一致しなければならない。
+- `dispatch_mode` は root/meta の canonical 値を正とし、node/helper metadata が別値で上書きしてはならない。
+- user-originated node で diagnostic 対象になりうるものは `source_span` を持たなければならない。
+
+許容欠落:
+
+- synthetic helper node / linked helper node は、`meta.generated_by` または等価の synthetic provenance がある場合に限り `source_span` 欠落を許す。
+- `resolved_type == "unknown"` は lowering/optimizer/backend がその node で型分岐しない場合に限り暫定許容する。
+- `repr` は cheap に保持できない synthetic node では省略可だが、`source_span` を持つ user-originated node での無言欠落は避ける。
+
+#### linked output
+
+schema validator が最低限要求する field:
+
+- root:
+  - `schema == "pytra.link_output.v1"`
+  - `target`
+  - `dispatch_mode`
+  - `entry_modules`
+  - `modules`
+  - `global`
+  - `diagnostics`
+- `global`:
+  - `type_id_table`
+  - `call_graph`
+  - `sccs`
+  - `non_escape_summary`
+  - `container_ownership_hints_v1`
+- `diagnostics`:
+  - `warnings: list`
+  - `errors: list`
+
+helper module 追加規則:
+
+- `module_kind=helper` のとき `helper_id`, `owner_module_id`, `generated_by` を必須とする。
+- `module_kind!=helper` のとき helper metadata を carry してはならない。
+
+許容欠落:
+
+- helper module の `source_path` は空文字を許す。
+- user/runtime module の `source_path` 欠落は許さない。
+
+#### backend input（representative backend）
+
+backend input validator が最低限要求する項目:
+
+- target-local lowering/emit が分岐に使う node kind / metadata / `resolved_type`
+- root `dispatch_mode` と backend mode の一致
+- helper metadata の owner stage と category が allowlist に一致していること
+
+許容欠落:
+
+- backend が参照しない optional metadata は省略可。
+- unsupported node / metadata は fallback で黙殺せず、structured diagnostic へ変換する。
+
+### 1.2.3 fail-closed mismatch policy
+
+- `type_expr` / `resolved_type`
+  - `type_expr` があるのに mirror が一致しない場合は error。
+  - backend が型分岐に使う node で `resolved_type` が空文字・不正型・未定義なら error。
+- `dispatch_mode`
+  - root/meta と backend entry expectation が不一致なら error。
+  - helper metadata が独自 `dispatch_mode` を持つことは禁止。
+- `source_span`
+  - required node で欠落・不正 shape・逆順 range の場合は error。
+- helper metadata
+  - version suffix なし、owner stage 不明、target allowlist 外、field shape 不正は error。
+
+### 1.2.4 diagnostic category（P3 契約）
+
+P3 以降の validator / guard は最低限次の category を使う。
+
+- `schema_missing`
+- `schema_type_mismatch`
+- `mirror_mismatch`
+- `invariant_missing_span`
+- `invariant_metadata_conflict`
+- `stage_semantic_drift`
+- `backend_input_missing_metadata`
+- `backend_input_unsupported`
+
+category 運用ルール:
+
+- schema validator は `schema_*` を返す。
+- invariant validator は `mirror_mismatch` / `invariant_*` / `stage_semantic_drift` を返す。
+- backend input validator は `backend_input_*` を返す。
+- backend-local crash を category なし例外へ逃がしてはならない。
+
 ### 1.3 `src/pytra/` 公開API（実装基準）
 
 `src/pytra/` は selfhost を含む共通 Python ライブラリの正本です。  

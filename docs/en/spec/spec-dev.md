@@ -155,6 +155,134 @@ Compatibility contract:
 - `toolchain_missing` is a separate category from `parity_fail`. If sample parity is skipped because the compiler or runtime is missing, record it as infrastructure baseline and do not mix it into backend bug counts.
 - In the first snapshot as of 2026-03-08, the primary failure category is `green` for `js/ts`, `toolchain_missing` for `cs`, `target_smoke_fail` for `rs/go/java/scala/lua`, and `transpile_fail` for `kotlin/swift/ruby/php/nim`.
 
+### 1.2.1 Compiler Contract Validator Layers
+
+From P3 onward, compiler-contract validation is split into three layers: `schema validator`, `invariant validator`, and `backend input validator`.
+
+- `schema validator`
+  - Responsibility: validate serialization/container shape.
+  - Scope: top-level schema for raw EAST3, linked input, linked output, and backend-input artifacts.
+  - Forbidden: node-level semantic invariants and backend-local rules.
+- `invariant validator`
+  - Responsibility: validate node/meta relationships.
+  - Scope: EAST3 / linked output / representative IR after schema validation.
+  - Forbidden: choosing backend-specific emit/lower strategy.
+- `backend input validator`
+  - Responsibility: turn target-local contract violations into fail-closed diagnostics.
+  - Scope: payloads immediately before representative backend entrypoints (first C++).
+  - Forbidden: carrier coercion and reinterpreting raw JSON schema.
+
+Responsibility boundary:
+
+- `P1-EAST-TYPEEXPR-01` owns the `TypeExpr` schema and mirror format.
+- `P2-COMPILER-TYPED-BOUNDARY-01` owns carrier / adapter seam thinning.
+- P3 validators own fail-closed rules for what each downstream stage may accept.
+
+### 1.2.2 Required Fields and Allowed Omissions for Compiler Contracts
+
+#### Raw EAST3
+
+Minimum fields required by the schema validator:
+
+- root:
+  - `kind == "Module"`
+  - `east_stage == 3`
+  - `body: list`
+  - `meta.dispatch_mode: "native" | "type_id"`
+- optional:
+  - `schema_version`, when present, must be `int >= 1`
+
+Additional requirements enforced by the invariant validator:
+
+- Every representative statement / expression node must carry `kind`.
+- Any node with `*_type_expr` must also carry the corresponding string mirror (`resolved_type`, `annotation`, `decl_type`, `return_type`, `arg_types`), and the values must match after normalization.
+- `dispatch_mode` is canonical at the root/meta level; nodes and helper metadata must not override it with a conflicting value.
+- Any user-originated node that may participate in diagnostics must carry `source_span`.
+
+Allowed omissions:
+
+- Synthetic helper nodes / linked helper nodes may omit `source_span` only when they carry `meta.generated_by` or an equivalent synthetic provenance marker.
+- `resolved_type == "unknown"` is only tolerated while lowering/optimization/backend logic does not branch on that node's type.
+- `repr` may be omitted on synthetic nodes where it is not cheap to preserve, but it should not disappear silently on user-originated nodes that still carry `source_span`.
+
+#### Linked Output
+
+Minimum fields required by the schema validator:
+
+- root:
+  - `schema == "pytra.link_output.v1"`
+  - `target`
+  - `dispatch_mode`
+  - `entry_modules`
+  - `modules`
+  - `global`
+  - `diagnostics`
+- `global`:
+  - `type_id_table`
+  - `call_graph`
+  - `sccs`
+  - `non_escape_summary`
+  - `container_ownership_hints_v1`
+- `diagnostics`:
+  - `warnings: list`
+  - `errors: list`
+
+Helper-module rules:
+
+- When `module_kind=helper`, `helper_id`, `owner_module_id`, and `generated_by` are required.
+- When `module_kind!=helper`, helper metadata must not be carried.
+
+Allowed omissions:
+
+- `source_path` may be empty for helper modules.
+- `source_path` must not be omitted for user/runtime modules.
+
+#### Backend Input (Representative Backend)
+
+The backend-input validator must at least require:
+
+- Node kinds / metadata / `resolved_type` that the target-local lowering or emitter branches on
+- Consistency between root `dispatch_mode` and backend-entry expectation
+- Helper-metadata owner stage and category matching an allowlist
+
+Allowed omissions:
+
+- Optional metadata that the backend never reads may be omitted.
+- Unsupported nodes / metadata must become structured diagnostics rather than being silently ignored.
+
+### 1.2.3 Fail-Closed Mismatch Policy
+
+- `type_expr` / `resolved_type`
+  - Error if `type_expr` exists but its mirror does not match.
+  - Error if a node used for backend type dispatch has missing, blank, or malformed `resolved_type`.
+- `dispatch_mode`
+  - Error if root/meta disagrees with backend-entry expectation.
+  - Helper metadata must not define its own competing `dispatch_mode`.
+- `source_span`
+  - Error if a required node is missing it, has malformed shape, or encodes a reversed range.
+- helper metadata
+  - Error if the metadata has no version suffix, no known owner stage, target-disallowed category, or malformed field shape.
+
+### 1.2.4 Diagnostic Categories (P3 Contract)
+
+From P3 onward, validator / guard diagnostics must use at least:
+
+- `schema_missing`
+- `schema_type_mismatch`
+- `mirror_mismatch`
+- `invariant_missing_span`
+- `invariant_metadata_conflict`
+- `stage_semantic_drift`
+- `backend_input_missing_metadata`
+- `backend_input_unsupported`
+
+Category rules:
+
+- Schema validators emit `schema_*`.
+- Invariant validators emit `mirror_mismatch`, `invariant_*`, and `stage_semantic_drift`.
+- Backend-input validators emit `backend_input_*`.
+- Backend-local crashes must not escape without a category.
+
 ### 1.3 `src/pytra/` Public API (Implementation Baseline)
 
 `src/pytra/` is the source of truth for shared Python libraries, including selfhost.
