@@ -5084,6 +5084,19 @@ class _ShExprParser:
         )
         return payload
 
+    def _parse_attr_suffix(self, *, owner_expr: dict[str, Any]) -> dict[str, Any]:
+        """Attribute suffix の token 消費を parser helper へ寄せる。"""
+        self._eat(".")
+        name_tok = self._eat("NAME")
+        s = int(owner_expr["source_span"]["col"]) - self.col_base
+        e = name_tok["e"]
+        return self._annotate_attr_expr(
+            owner_expr=owner_expr,
+            attr_name=str(name_tok["v"]),
+            source_span=self._node_span(s, e),
+            repr_text=self._src_slice(s, e),
+        )
+
     def _annotate_attr_expr(
         self,
         *,
@@ -5283,17 +5296,7 @@ class _ShExprParser:
         while True:
             tok = self._cur()
             if tok["k"] == ".":
-                self._eat(".")
-                name_tok = self._eat("NAME")
-                s = int(node["source_span"]["col"]) - self.col_base
-                e = name_tok["e"]
-                attr_name = str(name_tok["v"])
-                node = self._annotate_attr_expr(
-                    owner_expr=node,
-                    attr_name=attr_name,
-                    source_span=self._node_span(s, e),
-                    repr_text=self._src_slice(s, e),
-                )
+                node = self._parse_attr_suffix(owner_expr=node)
                 continue
             if tok["k"] == "(":
                 node = self._parse_call_suffix(callee=node)
