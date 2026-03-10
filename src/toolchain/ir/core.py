@@ -5090,19 +5090,31 @@ class _ShExprParser:
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """call argument 非空 loop を helper へ寄せる。"""
         while True:
-            arg_entry, keyword_entry = self._parse_call_arg_entry()
-            self._apply_call_arg_entry(
+            if not self._consume_call_arg_loop_entry(
                 args=args,
                 keywords=keywords,
-                arg_entry=arg_entry,
-                keyword_entry=keyword_entry,
-            )
-            if not self._advance_call_arg_loop():
+            ):
                 break
         return self._apply_call_args_empty_state(
             args=args,
             keywords=keywords,
         )
+
+    def _consume_call_arg_loop_entry(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+    ) -> bool:
+        """call argument loop 1周分の処理を helper へ寄せる。"""
+        arg_entry, keyword_entry = self._parse_call_arg_entry()
+        self._apply_call_arg_entry(
+            args=args,
+            keywords=keywords,
+            arg_entry=arg_entry,
+            keyword_entry=keyword_entry,
+        )
+        return self._advance_call_arg_loop()
 
     def _resolve_call_args_empty_state(self) -> bool:
         """call argument list の空 `)` 判定を helper へ寄せる。"""

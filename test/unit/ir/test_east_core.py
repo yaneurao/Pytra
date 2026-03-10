@@ -2317,6 +2317,10 @@ x.bit_length()
             1,
         )[0]
         nonempty_helper_text = text.split("def _consume_call_arg_entries", 1)[1].split(
+            "def _consume_call_arg_loop_entry",
+            1,
+        )[0]
+        nonempty_loop_text = text.split("def _consume_call_arg_loop_entry", 1)[1].split(
             "def _resolve_call_args_empty_state",
             1,
         )[0]
@@ -2387,10 +2391,11 @@ x.bit_length()
         self.assertIn("if self._resolve_call_args_empty_state():", helper_text)
         self.assertIn("return self._apply_call_args_empty_state(", helper_text)
         self.assertIn("return self._consume_call_arg_entries(", helper_text)
-        self.assertIn("arg_entry, keyword_entry = self._parse_call_arg_entry()", nonempty_helper_text)
-        self.assertIn("self._apply_call_arg_entry(", nonempty_helper_text)
-        self.assertIn("if not self._advance_call_arg_loop():", nonempty_helper_text)
         self.assertIn("return self._apply_call_args_empty_state(", nonempty_helper_text)
+        self.assertIn("if not self._consume_call_arg_loop_entry(", nonempty_helper_text)
+        self.assertIn("arg_entry, keyword_entry = self._parse_call_arg_entry()", nonempty_loop_text)
+        self.assertIn("self._apply_call_arg_entry(", nonempty_loop_text)
+        self.assertIn("return self._advance_call_arg_loop()", nonempty_loop_text)
         self.assertIn('return self._cur()["k"] == ")"', empty_state_text)
         self.assertIn("return args, keywords", empty_apply_text)
         self.assertIn("args, keywords = self._consume_call_suffix_arg_entries()", state_text)
@@ -2422,6 +2427,10 @@ x.bit_length()
         self.assertNotIn('return self._cur()["k"] != ")"', loop_apply_state_text)
         self.assertNotIn("save_pos = self.pos", helper_text)
         self.assertNotIn("return self._consume_call_arg_entries(", nonempty_helper_text)
+        self.assertNotIn("arg_entry, keyword_entry = self._parse_call_arg_entry()", nonempty_helper_text)
+        self.assertNotIn("self._apply_call_arg_entry(", nonempty_helper_text)
+        self.assertNotIn("if not self._advance_call_arg_loop():", nonempty_helper_text)
+        self.assertNotIn("return self._advance_call_arg_loop()", nonempty_helper_text)
         self.assertNotIn("args, keywords = self._parse_call_args()", call_suffix_text)
         self.assertNotIn("save_pos = self.pos", postfix_text)
         self.assertNotIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', postfix_text)
