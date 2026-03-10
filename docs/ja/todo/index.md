@@ -52,6 +52,7 @@
    - 進捗メモ: `JsonValue` receiver lane と user-defined nominal ADT `Match` subject lane が、どちらも `category=nominal_adt` を使う representative test を固定した。
 9. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] representative backend（まず C++）で constructor / variant check / destructuring / `match` の最小実装を入れ、silent fallback を禁止する。
    - 進捗メモ: C++ backend は constructor / projection / `isinstance` を既存 class lane で処理し、`NominalAdtMatch` を `if / else if` へ lower し、plain `Match` は fail-closed に固定した。
-10. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] 他 backend への rollout 順と fail-closed policy を整理し、未対応 target の診断を固定する。
+10. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] 他 backend への rollout 順と fail-closed policy を整理し、未対応 target の診断を固定する。
+   - 進捗メモ: rollout 順は `Rust/C#/Go/Java/Kotlin/Scala/Swift/Nim` → `JS/TS` → `Lua/Ruby/PHP` に固定し、未対応 target は representative nominal ADT `Match` を backend-local な `unsupported stmt kind: Match` 診断で fail-closed するように揃え、Nim の comment fallback も撤去した。
    - 進捗メモ: first slice として Rust/C# は representative nominal ADT v1 の `declaration` / `Match` / `NominalAdtProjection` を `unsupported_syntax` で fail-closed に固定した。
 11. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] selfhost / docs / archive / migration note を更新し、正式言語機能としての nominal ADT rollout を閉じる。

@@ -80,8 +80,19 @@
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] EAST/EAST3 に ADT constructor、variant test、variant projection、`match` lowering を導入する。
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] built-in `JsonValue` lane と user-defined nominal ADT lane が同じ IR category に乗ることを representative test で確認する。
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] representative backend（まず C++）で constructor / variant check / destructuring / `match` の最小実装を入れ、silent fallback を禁止する。
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] 他 backend への rollout 順と fail-closed policy を整理し、未対応 target の診断を固定する。
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] 他 backend への rollout 順と fail-closed policy を整理し、未対応 target の診断を固定する。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] selfhost / docs / archive / migration note を更新し、正式言語機能としての nominal ADT rollout を閉じる。
+
+### S5-01 rollout 順と fail-closed policy
+
+- rollout 順は次で固定する。
+  - Wave 1: `Rust` / `C#` / `Go` / `Java` / `Kotlin` / `Scala` / `Swift` / `Nim`
+  - Wave 2: shared JS emitter を使う `JS` / `TS`
+  - Wave 3: `Lua` / `Ruby` / `PHP`
+- 未対応 backend の representative unsupported lane は `NominalAdtMatch` を持つ `Match` statement で固定する。
+- 未対応 backend は silent fallback を禁止し、backend-local な `unsupported stmt kind: Match` 診断で fail-closed しなければならない。
+- codegen comment による握りつぶしは禁止する。Nim backend の旧 `# unsupported stmt: Match` はこの slice で撤去した。
+- non-C++ contract guard では representative nominal ADT `Match` に対して、Wave 1 / 2 / 3 の各 backend が同じ fail-closed policy を守ることを固定する。
 
 ## 実装者向けメモ
 
@@ -202,3 +213,5 @@
 - 2026-03-11: `S4-01` を閉じ、built-in `JsonValue` decode lane の `receiver_type.category` と user-defined nominal ADT `Match` subject の `subject_type.category` は、ともに `nominal_adt` を使う representative test で固定した。
 - 2026-03-11: `S4-02` を閉じ、C++ backend では constructor / projection / `isinstance` を既存 class lane で扱い、`NominalAdtMatch` を `if / else if` へ lower し、plain `Match` は `unsupported Match lane` で fail-closed にする representative backend test を固定した。
 - 2026-03-11: `S5-01` の first slice として rollout 順を `C++ -> Rust -> C# -> それ以外` に固定し、Rust/C# は representative nominal ADT v1 の `ClassDef.meta.nominal_adt_v1`、`Match`、`NominalAdtProjection` を `unsupported_syntax` で fail-closed にする方針をコードと test で固定した。
+- 2026-03-11: `S5-01` を閉じ、multi-backend rollout 順は `Rust/C#/Go/Java/Kotlin/Scala/Swift/Nim` を先頭、shared JS emitter を使う `JS/TS` を次段、`Lua/Ruby/PHP` を最終段に固定した。
+- 2026-03-11: `S5-01` を閉じ、未対応 backend の representative nominal ADT lane は `Match` statement を入口にし、backend-local な `unsupported stmt kind: Match` 診断で fail-closed する契約を固定した。Nim backend の `# unsupported stmt` comment fallback は撤去した。

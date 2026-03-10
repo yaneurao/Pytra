@@ -80,8 +80,19 @@ Planned verification commands:
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] Introduce ADT constructors, variant tests, variant projection, and `match` lowering into EAST/EAST3.
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] Verify through representative tests that built-in `JsonValue` and user-defined nominal ADTs use the same IR category.
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] Implement the minimal constructor / variant-check / destructuring / `match` path in a representative backend (first C++) and forbid silent fallback.
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] Organize rollout order and fail-closed policy for other backends, and fix diagnostics for unsupported targets.
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] Organize rollout order and fail-closed policy for other backends, and fix diagnostics for unsupported targets.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] Refresh selfhost / docs / archive / migration notes and close the full nominal-ADT rollout plan.
+
+### S5-01 Rollout Order And Fail-Closed Policy
+
+- Fix the rollout order as:
+  - Wave 1: `Rust` / `C#` / `Go` / `Java` / `Kotlin` / `Scala` / `Swift` / `Nim`
+  - Wave 2: `JS` / `TS` on the shared JS emitter lane
+  - Wave 3: `Lua` / `Ruby` / `PHP`
+- The representative unsupported lane for non-C++ backends is the `Match` statement carrying `NominalAdtMatch`.
+- Unsupported backends must fail closed with a backend-local `unsupported stmt kind: Match` diagnostic.
+- Comment-based or silent fallback is forbidden. This slice removes Nim's old `# unsupported stmt: Match` fallback.
+- The non-C++ contract guard must pin the same fail-closed policy across Wave 1 / Wave 2 / Wave 3 representative targets.
 
 ## Implementer Notes
 
@@ -202,3 +213,5 @@ Decision log:
 - 2026-03-11: Closed `S4-01` by fixing a representative test where the built-in `JsonValue` decode lane `receiver_type.category` and the user-defined nominal ADT `Match` subject `subject_type.category` both use `nominal_adt`.
 - 2026-03-11: Closed `S4-02` by fixing representative C++ backend coverage so constructor / projection / `isinstance` stay on the existing class lane, `NominalAdtMatch` lowers to `if / else if`, and plain `Match` fail-closes with `unsupported Match lane`.
 - 2026-03-11: As the first `S5-01` slice, fixed the rollout order to `C++ -> Rust -> C# -> the rest`, and locked Rust/C# to fail closed with `unsupported_syntax` for representative nominal ADT v1 `ClassDef.meta.nominal_adt_v1`, `Match`, and `NominalAdtProjection` lanes.
+- 2026-03-11: Closed `S5-01` by fixing the multi-backend rollout order as `Rust/C#/Go/Java/Kotlin/Scala/Swift/Nim`, then shared-JS `JS/TS`, then `Lua/Ruby/PHP`.
+- 2026-03-11: Closed `S5-01` by fixing the unsupported-backend contract to fail close on the representative nominal ADT `Match` lane with backend-local `unsupported stmt kind: Match` diagnostics, and by removing Nim's old `# unsupported stmt` comment fallback.
