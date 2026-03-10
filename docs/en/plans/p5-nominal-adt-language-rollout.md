@@ -1,6 +1,6 @@
 # P5: Full rollout of nominal ADTs as a language feature
 
-Last updated: 2026-03-09
+Last updated: 2026-03-11
 
 Related TODO:
 - `ID: P5-NOMINAL-ADT-ROLLOUT-01` in `docs/ja/todo/index.md`
@@ -72,7 +72,7 @@ Planned verification commands:
 
 ## Breakdown
 
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-01] Inventory candidate language surfaces for nominal ADT declarations, constructors, variant access, and `match`, then decide on a selfhost-safe staged introduction path.
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-01] Inventory candidate language surfaces for nominal ADT declarations, constructors, variant access, and `match`, then decide on a selfhost-safe staged introduction path.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-02] Fix the boundary between type-system base work and full language-feature work so this plan does not overlap with `P1-EAST-TYPEEXPR-01`.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-01] Extend `spec-east` / `spec-user` / `spec-dev` with nominal-ADT declaration surface, pattern nodes, match nodes, and diagnostic contracts.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] Fix the static-check policy and error categories for exhaustiveness, duplicate patterns, and unreachable branches.
@@ -98,6 +98,57 @@ Planned verification commands:
 - Whether `match` is an expression, a statement, or both
 - Initial scope for wildcard / guards / nested patterns
 
+### S1-01 Candidate Inventory
+
+- Candidate A: reuse existing `class` + single inheritance + `@dataclass`, with a sealed base and top-level variant classes
+  - Example: `@sealed class Result: ...`, `@dataclass class Ok(Result): value: T`, `@dataclass class Err(Result): error: E`
+  - Pros: reuses the largest possible subset of syntax that the current parser/selfhost path already understands
+  - Cons: namespace sugar such as `Result.Ok(...)` would need to come later
+- Candidate B: nest variant classes under the base class
+  - Example: `class Result: @dataclass class Ok(Result): ...`
+  - Pros: better family grouping on the surface
+  - Cons: larger impact on selfhost, symbol resolution, and backend naming
+- Candidate C: introduce a dedicated `enum`-like or `adt` declaration block
+  - Example: `adt Result: Ok(value: T); Err(error: E)`
+  - Pros: makes ADT intent the clearest
+  - Cons: too expensive for the first rollout because parser, selfhost, formatting, and diagnostics all grow at once
+- Candidate D: introduce a new expression-first surface together with `match`
+  - Example: `match expr { Ok(v) => ... }`
+  - Pros: strongest end-user ADT ergonomics
+  - Cons: not selfhost-safe for the first stage because statement/expr grammar and lowering grow simultaneously
+
+### S1-01 Decision
+
+- The canonical initial declaration surface will be Candidate A
+  - declare the sealed family with the existing `class` surface
+  - declare variants as top-level classes with single inheritance from the base nominal ADT
+  - use the existing `@dataclass` surface for payload-carrying variants
+- The canonical initial constructor surface will be ordinary class calls
+  - Example: `Ok(value=1)` or positional constructor calls
+  - `Result.Ok(...)`, factory DSLs, or macro-like sugar stay out of the first stage
+- The canonical initial variant-access surface will be `isinstance` plus field access
+  - Example: `if isinstance(x, Ok): return x.value`
+  - Do not reintroduce general dynamic helpers that overlap with the `JsonValue.as_*` lane
+- `match` remains part of the language goal, but it is staged statement-first and is not part of the initial surface
+  - Stage A uses `isinstance` narrowing plus field access as the source-of-truth surface
+  - Stage B introduces a Python-like `match/case` statement as the representative surface
+  - Stage C can add `match` expressions, guard patterns, and nested patterns
+- For variant namespacing, v1 fixes top-level variant names as canonical
+  - namespace sugar such as `Result.Ok` and nested variant declarations are deferred to Stage C or later
+
+### Selfhost-safe staged introduction path
+
+1. Stage A: allow nominal ADT families to be declared and used with existing `class` / `@dataclass` / `isinstance` only
+2. Stage B: add a `match/case` statement over the same variant-class family
+3. Stage C: add `match` expressions, guards, nested patterns, and namespace sugar
+4. Stage D: revisit concise sugar such as `adt` blocks or `Result.Ok` if still justified
+
+### S1-01 completion memo
+
+- The canonical surface before parser/selfhost expansion is limited to reused `class` / `@dataclass` syntax
+- `match` stays in scope for the overall feature, but it is deferred as a statement-first later stage
+- New-syntax-first options such as nested variants, `adt` blocks, or expression-first `match` are not chosen for the first rollout
+
 ### Representative scope example
 
 - Built-in: `JsonValue`
@@ -108,3 +159,6 @@ Decision log:
 - 2026-03-09: Added this P5 in response to the user request to treat the full nominal-ADT language rollout as later work than the current type-system foundation.
 - 2026-03-09: Fixed the scope of this P5 to user-defined ADT syntax, constructors, `match`, exhaustiveness checking, and multi-backend rollout, excluding the type-system base itself.
 - 2026-03-09: Fixed the policy that built-in `JsonValue` and user-defined ADTs must not become separate feature families; they must converge to one IR/lowering/backend category.
+- 2026-03-11: Closed `S1-01` by inventorying candidate language surfaces and fixing the initial rollout to existing `class` + single inheritance + `@dataclass` + `isinstance`.
+- 2026-03-11: Fixed `match` as a language goal but deferred it from the selfhost-safe initial stage; statement-first `match/case` is now the Stage B target.
+- 2026-03-11: Fixed `Result.Ok`-style namespace sugar and `adt` blocks as later-stage sugar rather than canonical v1 syntax.
