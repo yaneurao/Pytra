@@ -838,6 +838,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         tail_colon_text = text.split("def _consume_subscript_slice_tail_colon_token", 1)[1].split(
+            "def _consume_subscript_slice_tail_close_token",
+            1,
+        )[0]
+        tail_close_text = text.split("def _consume_subscript_slice_tail_close_token", 1)[1].split(
             "def _consume_subscript_slice_tail_tokens",
             1,
         )[0]
@@ -921,9 +925,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("return None", upper_apply_text)
         self.assertIn("return self._parse_ifexp()", upper_apply_text)
         self.assertIn('return self._eat(":")', tail_colon_text)
+        self.assertIn('return self._eat("]")', tail_close_text)
         self.assertIn("self._consume_subscript_slice_tail_colon_token()", tail_token_text)
         self.assertIn("upper = self._parse_subscript_slice_upper_expr()", tail_token_text)
-        self.assertIn('rtok = self._eat("]")', tail_token_text)
+        self.assertIn("rtok = self._consume_subscript_slice_tail_close_token()", tail_token_text)
         self.assertIn("return upper, rtok", tail_token_text)
         self.assertIn("starts_with_slice = self._resolve_subscript_suffix_component_state()", component_text)
         self.assertIn("if starts_with_slice:", component_text)
