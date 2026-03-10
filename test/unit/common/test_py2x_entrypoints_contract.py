@@ -214,6 +214,73 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             native_registry,
         )
 
+    def test_cpp_emit_module_typed_rejects_legacy_loop_before_silent_fallback(self) -> None:
+        invalid_doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+            "body": [
+                {
+                    "kind": "For",
+                    "target": {"kind": "Name", "id": "x"},
+                    "iter": {"kind": "Name", "id": "xs"},
+                    "body": [],
+                    "orelse": [],
+                }
+            ],
+        }
+        output_path = Path("out.cpp")
+        for registry_mod in (host_registry, static_registry):
+            spec = registry_mod.get_backend_spec("cpp")
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"backend_input_unsupported: legacy loop node is unsupported in EAST3 for C\+\+ backend at \$\.body\[0\]: pkg\.main",
+            ):
+                registry_mod.emit_module_typed(
+                    spec,
+                    invalid_doc,
+                    output_path,
+                    module_id="pkg.main",
+                    is_entry=True,
+                )
+
+    def test_cpp_emit_module_typed_translates_backend_crash_to_structured_diagnostic(self) -> None:
+        spec = typed_boundary.build_resolved_backend_spec(
+            {
+                "target_lang": "cpp",
+                "extension": ".cpp",
+                "emit_module": lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                    RuntimeError("cpp emitter: unsupported stmt kind: Bogus")
+                ),
+                "default_options": {"lower": {}, "optimizer": {}, "emitter": {}},
+                "option_schema": {"lower": {}, "optimizer": {}, "emitter": {}},
+            },
+            identity_ir=lambda doc: doc,
+            empty_emit=lambda *_args, **_kwargs: "",
+            runtime_none=lambda _path: None,
+            default_program_writer=lambda *_args, **_kwargs: None,
+            suppress_emit_exceptions=True,
+        )
+        valid_doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+            "body": [],
+        }
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"backend_input_unsupported: cpp emitter: unsupported stmt kind: Bogus: pkg\.main",
+        ):
+            typed_boundary.execute_emit_module_with_spec(
+                spec,
+                valid_doc,
+                Path("out.cpp"),
+                module_id="pkg.main",
+                suppress_exceptions=True,
+            )
+
     def test_dynamic_carrier_seams_are_explicitly_isolated(self) -> None:
         json_src = (ROOT / "src" / "pytra" / "std" / "json.py").read_text(encoding="utf-8")
         generated_json = (

@@ -8,6 +8,8 @@ from typing import Callable
 from typing import TypeAlias
 
 from pytra.std.pathlib import Path
+from toolchain.link.program_validator import translate_cpp_backend_emit_error
+from toolchain.link.program_validator import validate_cpp_backend_input_doc
 
 
 CompilerOptionScalar = str | int | bool
@@ -404,6 +406,36 @@ class EmitRequestCarrier:
     is_entry: bool
 
 
+def _emit_request_module_id(request: EmitRequestCarrier) -> str:
+    if request.module_id != "":
+        return request.module_id
+    if request.output_path.stem != "":
+        return request.output_path.stem
+    return "module"
+
+
+def _validate_backend_emit_request(request: EmitRequestCarrier) -> None:
+    if request.spec.target_lang != "cpp":
+        return
+    dispatch_mode = "native"
+    meta_any = request.ir_document.get("meta")
+    if isinstance(meta_any, dict):
+        dispatch_any = meta_any.get("dispatch_mode")
+        if dispatch_any in {"native", "type_id"}:
+            dispatch_mode = str(dispatch_any)
+    validate_cpp_backend_input_doc(
+        request.ir_document,
+        expected_dispatch_mode=dispatch_mode,
+        module_id=_emit_request_module_id(request),
+    )
+
+
+def _translate_backend_emit_exception(exc: Exception, *, request: EmitRequestCarrier) -> RuntimeError | None:
+    if request.spec.target_lang != "cpp":
+        return None
+    return translate_cpp_backend_emit_error(exc, module_id=_emit_request_module_id(request))
+
+
 @dataclass(frozen=True)
 class RuntimeHookAdapter:
     hook_impl: RuntimeHookCallable
@@ -774,6 +806,7 @@ def execute_emit_module_with_spec(
         module_id=module_id,
         is_entry=is_entry,
     )
+    _validate_backend_emit_request(request)
     fn = runtime_spec.emit_module_impl
     artifact_any: object = {}
     try:
@@ -794,15 +827,24 @@ def execute_emit_module_with_spec(
         except TypeError:
             try:
                 artifact_any = fn(request.ir_document, request.output_path)
-            except Exception:
+            except Exception as exc:
+                translated = _translate_backend_emit_exception(exc, request=request)
+                if translated is not None:
+                    raise translated from exc
                 if not suppress_exceptions:
                     raise
                 artifact_any = {}
-        except Exception:
+        except Exception as exc:
+            translated = _translate_backend_emit_exception(exc, request=request)
+            if translated is not None:
+                raise translated from exc
             if not suppress_exceptions:
                 raise
             artifact_any = {}
-    except Exception:
+    except Exception as exc:
+        translated = _translate_backend_emit_exception(exc, request=request)
+        if translated is not None:
+            raise translated from exc
         if not suppress_exceptions:
             raise
         artifact_any = {}

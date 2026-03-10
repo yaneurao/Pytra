@@ -29,6 +29,19 @@ _COMPILER_CONTRACT_DIAGNOSTIC_CATEGORIES: set[str] = {
     "backend_input_unsupported",
 }
 
+_CPP_BACKEND_UNSUPPORTED_ERROR_MARKERS: tuple[str, ...] = (
+    "legacy loop node is unsupported in EAST3",
+    "cpp emitter: unsupported stmt kind:",
+    "cpp emitter: unsupported expr kind:",
+    "cpp emitter: unsupported yield outside generator",
+)
+
+_CPP_BACKEND_MISSING_METADATA_ERROR_MARKERS: tuple[str, ...] = (
+    "cpp emitter: invalid forcore",
+    "cpp emitter: Expr without value node",
+    "cpp emitter: invalid generator return",
+)
+
 
 def _iter_object_tree(value: object, path: str) -> object:
     if isinstance(value, dict):
@@ -408,3 +421,40 @@ def validate_link_output_doc(doc_any: object) -> dict[str, object]:
         "global": export_json_object_dict(global_doc),
         "diagnostics": export_json_object_dict(diagnostics),
     }
+
+
+def validate_cpp_backend_input_doc(
+    doc_any: object,
+    *,
+    expected_dispatch_mode: str,
+    module_id: str,
+) -> dict[str, object]:
+    raw_doc = validate_raw_east3_doc(
+        doc_any,
+        expected_dispatch_mode=expected_dispatch_mode,
+        module_id=module_id,
+        require_source_spans=False,
+    )
+    for path, obj in _iter_object_tree(raw_doc, "$"):
+        if not isinstance(obj, dict):
+            continue
+        kind = obj.get("kind")
+        if kind in {"For", "ForRange"}:
+            raise RuntimeError(
+                "backend_input_unsupported: legacy loop node is unsupported in EAST3 for C++ backend at "
+                + path
+                + ": "
+                + module_id
+            )
+    return raw_doc
+
+
+def translate_cpp_backend_emit_error(exc: Exception, *, module_id: str) -> RuntimeError | None:
+    message = str(exc)
+    for marker in _CPP_BACKEND_UNSUPPORTED_ERROR_MARKERS:
+        if marker in message:
+            return RuntimeError("backend_input_unsupported: " + message + ": " + module_id)
+    for marker in _CPP_BACKEND_MISSING_METADATA_ERROR_MARKERS:
+        if marker in message:
+            return RuntimeError("backend_input_missing_metadata: " + message + ": " + module_id)
+    return None
