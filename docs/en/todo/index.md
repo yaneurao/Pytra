@@ -44,7 +44,7 @@ Context: [docs/ja/plans/p3-compiler-contract-hardening.md](../plans/p3-compiler-
 6. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-01] Added central validator primitives around `toolchain/link/program_validator.py` and extended coarse raw EAST3 / linked-output checks to representative node/meta invariants.
 7. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-02] Introduced pre/post validation hooks at representative pass/lowering/linker entries and stopped invalid nodes from flowing through silently.
 8. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-01] Run representative backends, starting with C++, through compiler-contract validators at entry and replace backend-local crashes or silent fallbacks with structured diagnostics.
-9. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-02] Extend `tools/check_east_stage_boundary.py` or its successor so it also detects stage semantic drift, not only stage-boundary violations.
+9. [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-02] Extended `tools/check_east_stage_boundary.py` so it also detects stage semantic drift, not only stage-boundary violations.
 10. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-01] Add representative unit/selfhost regressions so contract violations are reproducible as expected failures.
 11. [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-02] Update docs / TODO / archive / migration notes so validator updates become mandatory whenever node/meta contracts change.
 

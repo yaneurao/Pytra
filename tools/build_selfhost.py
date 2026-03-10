@@ -24,6 +24,7 @@ SELFHOST = ROOT / "selfhost"
 CPP_OUT = SELFHOST / "py2cpp.cpp"
 BIN_OUT = SELFHOST / "py2cpp.out"
 SELFHOST_ENTRY = ROOT / "src" / "py2x-selfhost.py"
+STAGE_BOUNDARY_GUARD = ROOT / "tools" / "check_east_stage_boundary.py"
 
 
 def run(cmd: list[str], cwd: Path | None = None) -> None:
@@ -35,6 +36,10 @@ def run(cmd: list[str], cwd: Path | None = None) -> None:
 def runtime_cpp_sources() -> list[str]:
     rels = collect_runtime_cpp_sources([str(CPP_OUT)], ROOT / "src")
     return [str(ROOT / rel) for rel in rels]
+
+
+def build_stage_boundary_guard_cmd(guard_path: Path) -> list[str]:
+    return ["python3", str(guard_path)]
 
 
 def build_selfhost_transpile_cmd(selfhost_entry: Path, cpp_out: Path) -> list[str]:
@@ -63,6 +68,7 @@ def build_selfhost_compile_cmd(cpp_out: Path, bin_out: Path, cpp_sources: list[s
     ]
 
 def main() -> int:
+    run(build_stage_boundary_guard_cmd(STAGE_BOUNDARY_GUARD))
     run(build_selfhost_transpile_cmd(SELFHOST_ENTRY, CPP_OUT))
 
     cpp_sources = runtime_cpp_sources()

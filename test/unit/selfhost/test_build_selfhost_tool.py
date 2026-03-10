@@ -22,6 +22,13 @@ def _load_module():
 
 
 class BuildSelfhostToolTest(unittest.TestCase):
+    def test_build_stage_boundary_guard_cmd_targets_guard_script(self) -> None:
+        mod = _load_module()
+        self.assertEqual(
+            mod.build_stage_boundary_guard_cmd(Path("/tmp/check_east_stage_boundary.py")),
+            ["python3", "/tmp/check_east_stage_boundary.py"],
+        )
+
     def test_build_selfhost_transpile_cmd_targets_selfhost_entry(self) -> None:
         mod = _load_module()
         self.assertEqual(
@@ -87,9 +94,13 @@ class BuildSelfhostToolTest(unittest.TestCase):
             rc = mod.main()
 
         self.assertEqual(rc, 0)
-        self.assertEqual(calls[0], mod.build_selfhost_transpile_cmd(mod.SELFHOST_ENTRY, mod.CPP_OUT))
+        self.assertEqual(calls[0], mod.build_stage_boundary_guard_cmd(mod.STAGE_BOUNDARY_GUARD))
         self.assertEqual(
             calls[1],
+            mod.build_selfhost_transpile_cmd(mod.SELFHOST_ENTRY, mod.CPP_OUT),
+        )
+        self.assertEqual(
+            calls[2],
             mod.build_selfhost_compile_cmd(
                 mod.CPP_OUT,
                 mod.BIN_OUT,
@@ -97,6 +108,17 @@ class BuildSelfhostToolTest(unittest.TestCase):
             ),
         )
         self.assertEqual(stdout.getvalue().strip(), str(mod.BIN_OUT))
+
+    def test_main_stops_when_stage_boundary_guard_fails(self) -> None:
+        mod = _load_module()
+
+        def _fail_first(cmd: list[str], cwd: Path | None = None) -> None:
+            raise SystemExit(1)
+
+        with patch.object(mod, "run", side_effect=_fail_first):
+            with self.assertRaises(SystemExit) as ctx:
+                mod.main()
+        self.assertEqual(ctx.exception.code, 1)
 
 
 if __name__ == "__main__":
