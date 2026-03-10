@@ -236,6 +236,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて builtins named-call の `semantic_tag` / `dispatch_kind` 解決も `_ShExprParser._resolve_builtin_named_call_dispatch()` へ寄せ、`_annotate_builtin_named_call_expr()` から 2 段の helper 呼び出しを外した。`test_east_core.py` では combined resolve helper 定義、call site、旧 inline builtin-dispatch resolve block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて runtime named-call の category 判定も `_ShExprParser._resolve_runtime_named_call_kind()` へ寄せ、`_annotate_runtime_named_call_expr()` から stdlib function / stdlib symbol / non-C++ symbol の分類分岐を外した。`test_east_core.py` では resolve helper 定義、call site、旧 inline runtime-kind block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて runtime named-call の unpack と `dispatch_kind` 解決も `_ShExprParser._resolve_runtime_named_call_annotation()` へ寄せ、`_annotate_runtime_named_call_expr()` から 2 段の helper 呼び出しを外した。`test_east_core.py` では combined resolve helper 定義、call site、旧 inline runtime-dispatch resolve block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて named-call dispatch の lookup も `_ShExprParser._resolve_named_call_dispatch()` へ寄せ、`_annotate_named_call_expr()` から `_sh_lookup_named_call_dispatch(fn_name)` の直呼びを外した。`test_east_core.py` では resolve helper 定義、call site、旧 inline named-call lookup の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
