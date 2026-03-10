@@ -5128,23 +5128,18 @@ class _ShExprParser:
             stdlib_symbol_semantic_tag,
         )
 
-    def _annotate_runtime_named_call_expr(
+    def _apply_runtime_named_call_dispatch(
         self,
-        payload: dict[str, Any],
         *,
+        payload: dict[str, Any],
         fn_name: str,
-        call_dispatch: dict[str, str],
+        stdlib_fn_runtime_call: str,
+        stdlib_symbol_runtime_call: str,
+        noncpp_symbol_runtime_call: str,
+        stdlib_fn_semantic_tag: str,
+        stdlib_symbol_semantic_tag: str,
     ) -> dict[str, Any] | None:
-        """stdlib / non-C++ named-call dispatch を parser helper へ寄せる。"""
-        (
-            stdlib_fn_runtime_call,
-            stdlib_symbol_runtime_call,
-            noncpp_symbol_runtime_call,
-            stdlib_fn_semantic_tag,
-            stdlib_symbol_semantic_tag,
-        ) = self._resolve_runtime_named_call_dispatch(
-            call_dispatch=call_dispatch,
-        )
+        """runtime named-call dispatch の annotation 適用を helper へ寄せる。"""
         if stdlib_fn_runtime_call != "":
             return _sh_annotate_stdlib_function_call_expr(
                 payload,
@@ -5166,6 +5161,33 @@ class _ShExprParser:
                 runtime_call=noncpp_symbol_runtime_call,
             )
         return None
+
+    def _annotate_runtime_named_call_expr(
+        self,
+        payload: dict[str, Any],
+        *,
+        fn_name: str,
+        call_dispatch: dict[str, str],
+    ) -> dict[str, Any] | None:
+        """stdlib / non-C++ named-call dispatch を parser helper へ寄せる。"""
+        (
+            stdlib_fn_runtime_call,
+            stdlib_symbol_runtime_call,
+            noncpp_symbol_runtime_call,
+            stdlib_fn_semantic_tag,
+            stdlib_symbol_semantic_tag,
+        ) = self._resolve_runtime_named_call_dispatch(
+            call_dispatch=call_dispatch,
+        )
+        return self._apply_runtime_named_call_dispatch(
+            payload=payload,
+            fn_name=fn_name,
+            stdlib_fn_runtime_call=stdlib_fn_runtime_call,
+            stdlib_symbol_runtime_call=stdlib_symbol_runtime_call,
+            noncpp_symbol_runtime_call=noncpp_symbol_runtime_call,
+            stdlib_fn_semantic_tag=stdlib_fn_semantic_tag,
+            stdlib_symbol_semantic_tag=stdlib_symbol_semantic_tag,
+        )
 
     def _resolve_attr_callee(self, *, callee: dict[str, Any]) -> tuple[dict[str, Any] | None, str, str]:
         """Attribute callee の owner / type / attr 抽出を helper へ寄せる。"""
