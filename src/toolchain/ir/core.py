@@ -4691,9 +4691,7 @@ class _ShExprParser:
         """属性呼び出しの戻り型を owner type から推定する。"""
         if not isinstance(owner, dict):
             return "unknown"
-        owner_t = str(owner.get("resolved_type", "unknown"))
-        if owner_t == "" or owner_t == "unknown":
-            owner_t = self.name_types.get(str(owner.get("id", "")), owner_t)
+        owner_t = self._owner_expr_resolved_type(owner)
         if owner_t == "unknown":
             return "unknown"
         if owner_t == "PyFile" and attr in {"close", "write"}:

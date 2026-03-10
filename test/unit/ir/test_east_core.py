@@ -1555,11 +1555,12 @@ x.bit_length()
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
-        self.assertIn('owner_t = str(owner.get("resolved_type", "unknown"))', helper_text)
-        self.assertIn('owner_t = self.name_types.get(str(owner.get("id", "")), owner_t)', helper_text)
+        self.assertIn("owner_t = self._owner_expr_resolved_type(owner)", helper_text)
         self.assertIn('if owner_t == "PyFile" and attr in {"close", "write"}:', helper_text)
         self.assertIn('call_ret = self._lookup_method_return(owner_t, attr)', helper_text)
         self.assertIn('stdlib_method_ret = lookup_stdlib_method_return_type(owner_t, attr)', helper_text)
+        self.assertNotIn('owner_t = str(owner.get("resolved_type", "unknown"))', helper_text)
+        self.assertNotIn('owner_t = self.name_types.get(str(owner.get("id", "")), owner_t)', helper_text)
         self.assertNotIn('call_ret = self._lookup_method_return(owner_t, attr)', postfix_text)
         self.assertNotIn('call_ret = self._lookup_builtin_method_return(owner_t, attr)', postfix_text)
         self.assertNotIn('stdlib_method_ret = lookup_stdlib_method_return_type(owner_t, attr)', postfix_text)
