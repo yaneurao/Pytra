@@ -7101,6 +7101,21 @@ class _ShExprParser:
     ]:
         """Subscript slice tail の `:` 以降 parse を helper へ寄せる。"""
         upper, rtok = self._resolve_subscript_slice_tail_state()
+        return self._apply_subscript_slice_tail_parse_state(lower=lower, upper=upper, rtok=rtok)
+
+    def _apply_subscript_slice_tail_parse_state(
+        self,
+        *,
+        lower: dict[str, Any] | None,
+        upper: dict[str, Any] | None,
+        rtok: dict[str, Any],
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any],
+    ]:
+        """Subscript slice tail の parse-state apply を helper へ寄せる。"""
         return None, lower, upper, rtok
 
     def _resolve_subscript_slice_tail_state(

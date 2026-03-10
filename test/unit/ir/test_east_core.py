@@ -925,6 +925,10 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_subscript_suffix_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         slice_tail_text = text.split("def _parse_subscript_slice_tail", 1)[1].split(
+            "def _apply_subscript_slice_tail_parse_state",
+            1,
+        )[0]
+        slice_tail_apply_text = text.split("def _apply_subscript_slice_tail_parse_state", 1)[1].split(
             "def _resolve_subscript_slice_tail_state",
             1,
         )[0]
@@ -1103,7 +1107,11 @@ class EastCoreTest(unittest.TestCase):
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
         self.assertIn("upper, rtok = self._resolve_subscript_slice_tail_state()", slice_tail_text)
-        self.assertIn("return None, lower, upper, rtok", slice_tail_text)
+        self.assertIn(
+            "return self._apply_subscript_slice_tail_parse_state(lower=lower, upper=upper, rtok=rtok)",
+            slice_tail_text,
+        )
+        self.assertIn("return None, lower, upper, rtok", slice_tail_apply_text)
         self.assertIn("upper, rtok = self._consume_subscript_slice_tail_tokens()", tail_state_text)
         self.assertIn("return self._apply_subscript_slice_tail_state(upper=upper, rtok=rtok)", tail_state_text)
         self.assertIn("return upper, rtok", tail_state_apply_text)
@@ -1198,6 +1206,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("return self._consume_subscript_slice_tail_tokens()", slice_tail_text)
         self.assertNotIn('self._eat(":")', slice_tail_text)
         self.assertNotIn('rtok = self._eat("]")', slice_tail_text)
+        self.assertNotIn("return None, lower, upper, rtok", slice_tail_text)
         self.assertNotIn("return self._consume_subscript_slice_tail_tokens()", tail_state_text)
         self.assertNotIn("return upper, rtok", tail_state_text)
         self.assertNotIn("upper = self._parse_subscript_slice_upper_expr()", tail_state_text)
