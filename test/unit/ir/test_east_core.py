@@ -492,6 +492,24 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('node["lowered_kind"] = "BuiltinAttr"', postfix_text)
         self.assertNotIn('node["runtime_call"] = attr_runtime_call', postfix_text)
 
+    def test_core_source_routes_attr_lookup_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _lookup_attr_expr_metadata", 1)[1].split(
+            "def _split_generic_types",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('std_attr_t = lookup_stdlib_attribute_type(owner_type, attr_name)', helper_text)
+        self.assertIn('runtime_call = lookup_stdlib_method_runtime_call(owner_type, attr_name)', helper_text)
+        self.assertIn('module_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_type, attr_name)', helper_text)
+        self.assertIn('_sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)', helper_text)
+        self.assertIn("attr_meta = self._lookup_attr_expr_metadata(", postfix_text)
+        self.assertNotIn('std_attr_t = lookup_stdlib_attribute_type(owner_t, attr_name)', postfix_text)
+        self.assertNotIn('attr_runtime_call = lookup_stdlib_method_runtime_call(owner_t, attr_name)', postfix_text)
+        self.assertNotIn('mod_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_t, attr_name)', postfix_text)
+        self.assertNotIn('_sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)', postfix_text)
+
     def test_core_source_routes_method_call_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_runtime_method_call_expr", 1)[1].split(
@@ -583,7 +601,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("def _sh_lookup_noncpp_attr_runtime_call(", text)
         self.assertIn("if owner_name in _SH_IMPORT_MODULES:", helper_text)
         self.assertIn("if owner_name in _SH_IMPORT_SYMBOLS:", helper_text)
-        self.assertEqual(postfix_text.count("_sh_lookup_noncpp_attr_runtime_call("), 1)
+        self.assertEqual(postfix_text.count("_sh_lookup_noncpp_attr_runtime_call("), 0)
         self.assertIn("_sh_annotate_noncpp_attr_call_expr(", postfix_text)
         self.assertNotIn("if isinstance(owner_expr, dict) and owner_expr.get(\"kind\") == \"Name\":", postfix_text)
         self.assertNotIn("if isinstance(owner, dict) and owner.get(\"kind\") == \"Name\":", postfix_text)
