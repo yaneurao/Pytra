@@ -281,6 +281,42 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
                 suppress_exceptions=True,
             )
 
+    def test_cpp_emit_module_typed_translates_missing_metadata_crash_to_structured_diagnostic(self) -> None:
+        spec = typed_boundary.build_resolved_backend_spec(
+            {
+                "target_lang": "cpp",
+                "extension": ".cpp",
+                "emit_module": lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                    RuntimeError("cpp emitter: invalid forcore runtime iter_plan")
+                ),
+                "default_options": {"lower": {}, "optimizer": {}, "emitter": {}},
+                "option_schema": {"lower": {}, "optimizer": {}, "emitter": {}},
+            },
+            identity_ir=lambda doc: doc,
+            empty_emit=lambda *_args, **_kwargs: "",
+            runtime_none=lambda _path: None,
+            default_program_writer=lambda *_args, **_kwargs: None,
+            suppress_emit_exceptions=True,
+        )
+        valid_doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+            "body": [],
+        }
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"backend_input_missing_metadata: cpp emitter: invalid forcore runtime iter_plan: pkg\.main",
+        ):
+            typed_boundary.execute_emit_module_with_spec(
+                spec,
+                valid_doc,
+                Path("out.cpp"),
+                module_id="pkg.main",
+                suppress_exceptions=True,
+            )
+
     def test_dynamic_carrier_seams_are_explicitly_isolated(self) -> None:
         json_src = (ROOT / "src" / "pytra" / "std" / "json.py").read_text(encoding="utf-8")
         generated_json = (
