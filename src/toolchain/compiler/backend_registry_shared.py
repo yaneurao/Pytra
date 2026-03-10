@@ -5,7 +5,18 @@ from __future__ import annotations
 from typing import Any
 
 from pytra.std.pathlib import Path
+from toolchain.compiler.backend_registry_metadata import build_backend_spec_metadata
+from toolchain.compiler.backend_registry_metadata import get_backend_emit_kind
+from toolchain.compiler.backend_registry_metadata import get_backend_emit_ref
+from toolchain.compiler.backend_registry_metadata import get_backend_lower_ref
+from toolchain.compiler.backend_registry_metadata import get_backend_optimizer_ref
+from toolchain.compiler.backend_registry_metadata import get_backend_program_writer_key
+from toolchain.compiler.backend_registry_metadata import get_backend_runtime_hook_key
+from toolchain.compiler.backend_registry_metadata import get_program_writer_ref
+from toolchain.compiler.typed_boundary import ResolvedBackendSpec
+from toolchain.compiler.typed_boundary import build_resolved_backend_spec
 from toolchain.compiler.typed_boundary import coerce_ir_document
+from toolchain.compiler.typed_boundary import export_layer_options_any
 
 
 def registry_src_root(module_file: str) -> Path:
@@ -72,6 +83,60 @@ def runtime_none(_output_path: Path) -> None:
     return
 
 
+def _normalize_emit_text(out: object) -> str:
+    return out if isinstance(out, str) else ""
+
+
+def build_unary_emit(emit_impl: Any) -> Any:
+    def _emit(ir: dict[str, object], _output_path: Path, _emitter_options: object = None) -> str:
+        return _normalize_emit_text(emit_impl(ir))
+
+    return _emit
+
+
+def build_cpp_emit(emit_impl: Any) -> Any:
+    def _emit_cpp(ir: dict[str, object], _output_path: Path, emitter_options: object = None) -> str:
+        opts = export_layer_options_any(emitter_options, layer="emitter")
+        return _normalize_emit_text(
+            emit_impl(
+                ir,
+                negative_index_mode=str(opts.get("negative_index_mode", "const_only")),
+                bounds_check_mode=str(opts.get("bounds_check_mode", "off")),
+                floor_div_mode=str(opts.get("floor_div_mode", "native")),
+                mod_mode=str(opts.get("mod_mode", "native")),
+            )
+        )
+
+    return _emit_cpp
+
+
+def build_java_emit(emit_impl: Any) -> Any:
+    def _emit_java(ir: dict[str, object], output_path: Path, _emitter_options: object = None) -> str:
+        class_name = output_path.stem if output_path.stem != "" else "Main"
+        return _normalize_emit_text(emit_impl(ir, class_name=class_name))
+
+    return _emit_java
+
+
+def build_emit_from_target(
+    target: str,
+    *,
+    resolve_callable_ref: Any,
+    cpp_emit_factory: Any,
+    java_emit_factory: Any,
+    unary_emit_factory: Any,
+) -> Any:
+    emit_kind = get_backend_emit_kind(target)
+    emit_impl = resolve_callable_ref(get_backend_emit_ref(target))
+    if emit_kind == "cpp":
+        return cpp_emit_factory(emit_impl)
+    if emit_kind == "java":
+        return java_emit_factory(emit_impl)
+    if emit_kind == "unary":
+        return unary_emit_factory(emit_impl)
+    raise RuntimeError("unsupported emit kind: " + emit_kind)
+
+
 def build_runtime_hook_from_descriptor(
     runtime_key: str,
     descriptor: dict[str, object],
@@ -93,3 +158,43 @@ def build_runtime_hook_from_descriptor(
     if kind == "php_runtime":
         return php_runtime_factory(files)
     raise RuntimeError("unsupported runtime hook kind: " + runtime_key)
+
+
+def build_runtime_bound_backend_spec(
+    target: str,
+    *,
+    resolve_callable_ref: Any,
+    emit_from_target: Any,
+    runtime_hook_from_key: Any,
+    identity_ir_impl: Any,
+) -> dict[str, Any]:
+    spec = build_backend_spec_metadata(target)
+    lower_ref = get_backend_lower_ref(target)
+    optimizer_ref = get_backend_optimizer_ref(target)
+    spec["lower"] = identity_ir_impl if lower_ref == "" else resolve_callable_ref(lower_ref)
+    spec["optimizer"] = identity_ir_impl if optimizer_ref == "" else resolve_callable_ref(optimizer_ref)
+    spec["emit"] = emit_from_target(target)
+    spec["runtime_hook"] = runtime_hook_from_key(get_backend_runtime_hook_key(target))
+    program_writer_key = get_backend_program_writer_key(target)
+    if program_writer_key != "":
+        spec["program_writer"] = resolve_callable_ref(get_program_writer_ref(program_writer_key))
+    return spec
+
+
+def normalize_runtime_backend_spec(
+    spec: dict[str, Any],
+    *,
+    default_program_writer: Any,
+    suppress_emit_exceptions: bool,
+    identity_ir_impl: Any,
+    empty_emit_impl: Any,
+    runtime_none_hook: Any,
+) -> ResolvedBackendSpec:
+    return build_resolved_backend_spec(
+        spec,
+        identity_ir=identity_ir_impl,
+        empty_emit=empty_emit_impl,
+        runtime_none=runtime_none_hook,
+        default_program_writer=default_program_writer,
+        suppress_emit_exceptions=suppress_emit_exceptions,
+    )

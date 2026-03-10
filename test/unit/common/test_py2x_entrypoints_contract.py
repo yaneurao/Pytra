@@ -13,8 +13,10 @@ if str(ROOT / "src") not in sys.path:
 
 import src.toolchain.compiler.backend_registry as host_registry
 import src.toolchain.compiler.backend_registry_metadata as registry_metadata
+import src.toolchain.compiler.backend_registry_shared as registry_shared
 import src.toolchain.compiler.backend_registry_static as static_registry
 import src.toolchain.compiler.typed_boundary as typed_boundary
+import toolchain.compiler.backend_registry_shared as runtime_registry_shared
 
 
 class Py2xEntrypointsContractTest(unittest.TestCase):
@@ -106,19 +108,37 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("get_runtime_hook_descriptor(", host_src)
         self.assertIn("get_runtime_hook_descriptor(", static_src)
         self.assertIn("get_program_writer_ref(", host_src)
-        self.assertIn("get_program_writer_ref(", static_src)
+        self.assertIn("get_program_writer_ref(", shared_src)
         self.assertIn("def copy_runtime_files(", shared_src)
         self.assertIn("def copy_php_runtime_files(", shared_src)
         self.assertIn("def default_output_path_for(", shared_src)
         self.assertIn("def identity_ir(", shared_src)
         self.assertIn("def empty_emit(", shared_src)
         self.assertIn("def build_runtime_hook_from_descriptor(", shared_src)
+        self.assertIn("def build_unary_emit(", shared_src)
+        self.assertIn("def build_cpp_emit(", shared_src)
+        self.assertIn("def build_java_emit(", shared_src)
+        self.assertIn("def build_emit_from_target(", shared_src)
+        self.assertIn("def build_runtime_bound_backend_spec(", shared_src)
+        self.assertIn("def normalize_runtime_backend_spec(", shared_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import copy_runtime_files", host_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import build_emit_from_target", host_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import build_cpp_emit", host_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import build_java_emit", host_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import build_unary_emit", host_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import identity_ir", host_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import empty_emit", host_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import build_runtime_bound_backend_spec", host_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import normalize_runtime_backend_spec", host_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import copy_runtime_files", static_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import build_emit_from_target", static_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import build_cpp_emit", static_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import build_java_emit", static_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import build_unary_emit", static_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import identity_ir", static_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import empty_emit", static_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import build_runtime_bound_backend_spec", static_src)
+        self.assertIn("from toolchain.compiler.backend_registry_shared import normalize_runtime_backend_spec", static_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import build_runtime_hook_from_descriptor", host_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import build_runtime_hook_from_descriptor", static_src)
         self.assertNotIn("def _copy_runtime_files(", host_src)
@@ -127,6 +147,14 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("def _identity_ir(", static_src)
         self.assertNotIn("def _empty_emit(", host_src)
         self.assertNotIn("def _empty_emit(", static_src)
+        self.assertNotIn("def _make_unary_emit_from_ref(", host_src)
+        self.assertNotIn("def _make_cpp_emit_from_ref(", host_src)
+        self.assertNotIn("def _make_java_emit_from_ref(", host_src)
+        self.assertNotIn("def _emit_cpp(", static_src)
+        self.assertNotIn("def _emit_java(", static_src)
+        self.assertNotIn("def _make_unary_emit(", static_src)
+        self.assertNotIn('spec["lower"] = identity_ir', host_src)
+        self.assertNotIn('spec["lower"] = identity_ir', static_src)
 
     def test_backend_registry_unsupported_target_contract_matches(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "unsupported target: missing-target"):
@@ -160,14 +188,14 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
 
     def test_backend_registry_emit_kind_contract_matches(self) -> None:
         with (
-            patch.object(host_registry, "get_backend_emit_kind", return_value="broken"),
-            patch.object(host_registry, "get_backend_emit_ref", return_value="backends.rs.emitter.rs_emitter:transpile_to_rust"),
+            patch.object(runtime_registry_shared, "get_backend_emit_kind", return_value="broken"),
+            patch.object(runtime_registry_shared, "get_backend_emit_ref", return_value="backends.rs.emitter.rs_emitter:transpile_to_rust"),
         ):
             with self.assertRaisesRegex(RuntimeError, "unsupported emit kind: broken"):
                 host_registry._emit_from_target("rs")
         with (
-            patch.object(static_registry, "get_backend_emit_kind", return_value="broken"),
-            patch.object(static_registry, "get_backend_emit_ref", return_value="backends.rs.emitter.rs_emitter:transpile_to_rust"),
+            patch.object(runtime_registry_shared, "get_backend_emit_kind", return_value="broken"),
+            patch.object(runtime_registry_shared, "get_backend_emit_ref", return_value="backends.rs.emitter.rs_emitter:transpile_to_rust"),
         ):
             with self.assertRaisesRegex(RuntimeError, "unsupported emit kind: broken"):
                 static_registry._emit_from_target("rs")
@@ -772,6 +800,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         ir2lang_src = (ROOT / "src" / "ir2lang.py").read_text(encoding="utf-8")
         host_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry.py").read_text(encoding="utf-8")
         static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
+        shared_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_shared.py").read_text(encoding="utf-8")
 
         self.assertIn("from toolchain.compiler.typed_boundary import backend_spec_target", py2x_src)
         self.assertIn("from toolchain.compiler.typed_boundary import compiler_root_module_id", py2x_src)
@@ -824,8 +853,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
 
         self.assertIn("from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import export_layer_options_any", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import export_layer_options_any", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import export_layer_options_any", shared_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import identity_ir", host_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import identity_ir", static_src)
         self.assertIn("from toolchain.compiler.backend_registry_shared import empty_emit", host_src)
@@ -848,8 +876,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.compiler.typed_boundary import get_program_writer_with_spec", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import apply_runtime_hook_with_spec", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import apply_runtime_hook_with_spec", static_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import build_resolved_backend_spec", host_src)
-        self.assertIn("from toolchain.compiler.typed_boundary import build_resolved_backend_spec", static_src)
+        self.assertIn("from toolchain.compiler.typed_boundary import build_resolved_backend_spec", shared_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_module_artifact_any", static_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_program_artifact_any", host_src)
@@ -873,8 +900,9 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("return export_layer_options_any(resolve_layer_options_typed(spec, layer, raw_options))", static_src)
         self.assertIn("return export_module_artifact_any(", host_src)
         self.assertIn("return export_module_artifact_any(", static_src)
-        self.assertIn("return build_resolved_backend_spec(", host_src)
-        self.assertIn("return build_resolved_backend_spec(", static_src)
+        self.assertIn("return normalize_runtime_backend_spec(", host_src)
+        self.assertIn("return normalize_runtime_backend_spec(", static_src)
+        self.assertIn("return build_resolved_backend_spec(", shared_src)
         self.assertIn('default_program_writer=_load_callable_ref(get_program_writer_ref("single_file"))', host_src)
         self.assertIn("default_program_writer=write_single_file_program", static_src)
         self.assertIn("suppress_emit_exceptions=True", host_src)
