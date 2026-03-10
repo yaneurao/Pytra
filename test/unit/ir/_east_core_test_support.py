@@ -23,7 +23,6 @@ CORE_STMT_TEXT_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core
 CORE_TEXT_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_text_semantics.py"
 CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_runtime_call_semantics.py"
 CORE_RUNTIME_DECL_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_runtime_decl_semantics.py"
-CORE_STMT_TEXT_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_stmt_text_semantics.py"
 CORE_CALL_ANNOTATION_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_annotation.py"
 CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH = (
     ROOT / "src" / "toolchain" / "ir" / "core_expr_attr_subscript_annotation.py"
