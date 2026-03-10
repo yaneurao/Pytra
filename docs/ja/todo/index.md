@@ -197,6 +197,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `Name` callee の既知 return-type 決定も `_sh_infer_known_name_call_return_type()` へ寄せ、`print/open/int/float/bool/str/len/range/zip/list/set/dict/bytes/bytearray/Exception` と stdlib imported-symbol return type の open-coded 分岐を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 `call_ret = ...` inline branch の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `enumerate(...)` の element-type 抽出も `_sh_infer_enumerate_item_type()` へ寄せ、`args[0]` probe と `elem_t` 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 inline `elem_t` block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] call 式全体の戻り型推定も `_ShExprParser._infer_call_expr_return_type()` へ寄せ、`Name` / `Attribute` / `Lambda` callee ごとの `call_ret` 分岐を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline return-inference block の不在に加えて `_sh_infer_enumerate_item_type()` が 1 回だけ定義されることも固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `Attribute` access の lookup cluster も `_ShExprParser._lookup_attr_expr_metadata()` へ寄せ、`lookup_stdlib_attribute_type()` / `lookup_stdlib_method_runtime_binding()` / `_sh_lookup_noncpp_attr_runtime_call()` を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 attr lookup inline block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
