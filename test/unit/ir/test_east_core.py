@@ -999,6 +999,12 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         tail_upper_state_text = text.split("def _resolve_subscript_slice_tail_upper_state", 1)[1].split(
+            "def _apply_subscript_slice_tail_upper_state_result",
+            1,
+        )[0]
+        tail_upper_result_apply_text = text.split(
+            "def _apply_subscript_slice_tail_upper_state_result", 1
+        )[1].split(
             "def _apply_subscript_slice_tail_upper_state",
             1,
         )[0]
@@ -1183,7 +1189,12 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("upper = self._resolve_subscript_slice_tail_colon_state()", tail_colon_apply_text)
         self.assertIn("return self._apply_subscript_slice_tail_upper_state(upper=upper)", tail_colon_apply_text)
         self.assertIn("return self._resolve_subscript_slice_tail_upper_state()", tail_colon_state_text)
-        self.assertIn("return self._parse_subscript_slice_upper_expr()", tail_upper_state_text)
+        self.assertIn("upper = self._parse_subscript_slice_upper_expr()", tail_upper_state_text)
+        self.assertIn(
+            "return self._apply_subscript_slice_tail_upper_state_result(upper=upper)",
+            tail_upper_state_text,
+        )
+        self.assertIn("return upper", tail_upper_result_apply_text)
         self.assertIn("rtok = self._resolve_subscript_slice_tail_close_state()", tail_upper_apply_text)
         self.assertIn("return self._apply_subscript_slice_tail_close_state(upper=upper, rtok=rtok)", tail_upper_apply_text)
         self.assertIn(
@@ -1291,6 +1302,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("return upper, rtok", tail_close_apply_text)
         self.assertNotIn("return self._consume_subscript_slice_tail_close_token()", tail_close_state_text)
         self.assertNotIn("return rtok", tail_close_token_apply_text)
+        self.assertNotIn("return self._parse_subscript_slice_upper_expr()", tail_upper_state_text)
         self.assertNotIn('if self._cur()["k"] == ":":', component_text)
         self.assertNotIn("if starts_with_slice:", component_text)
         self.assertNotIn("return self._parse_subscript_slice_tail(lower=None)", component_text)
@@ -2779,6 +2791,12 @@ x.bit_length()
             1,
         )[0]
         close_state_apply_text = text.split("def _apply_call_suffix_close_token_state", 1)[1].split(
+            "def _apply_call_suffix_close_token_state_result",
+            1,
+        )[0]
+        close_state_result_apply_text = text.split(
+            "def _apply_call_suffix_close_token_state_result", 1
+        )[1].split(
             "def _consume_call_suffix_tokens",
             1,
         )[0]
@@ -2820,7 +2838,11 @@ x.bit_length()
         self.assertIn("rtok = self._resolve_call_suffix_close_token_state()", open_state_apply_text)
         self.assertIn("return self._apply_call_suffix_close_token_state(", open_state_apply_text)
         self.assertIn("return self._consume_call_suffix_close_token()", close_state_resolve_text)
-        self.assertIn("return args, keywords, rtok", close_state_apply_text)
+        self.assertIn(
+            "return self._apply_call_suffix_close_token_state_result(",
+            close_state_apply_text,
+        )
+        self.assertIn("return args, keywords, rtok", close_state_result_apply_text)
         self.assertIn("self._consume_call_suffix_open_token()", token_text)
         self.assertIn("return self._apply_call_suffix_open_token_state()", token_text)
         self.assertIn(
@@ -2845,6 +2867,7 @@ x.bit_length()
         self.assertNotIn("rtok = self._consume_call_suffix_close_token()", open_state_text)
         self.assertNotIn("rtok = self._consume_call_suffix_close_token()", open_state_apply_text)
         self.assertNotIn("return args, keywords, rtok", open_state_apply_text)
+        self.assertNotIn("return args, keywords, rtok", close_state_apply_text)
         self.assertNotIn('rtok = self._eat(")")', state_text)
         self.assertNotIn("rtok = self._consume_call_suffix_close_token()", token_text)
         self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", state_text)

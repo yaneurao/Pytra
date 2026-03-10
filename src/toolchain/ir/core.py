@@ -5485,6 +5485,20 @@ class _ShExprParser:
         rtok: dict[str, Any],
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
         """call suffix の close-token state apply を helper へ寄せる。"""
+        return self._apply_call_suffix_close_token_state_result(
+            args=args,
+            keywords=keywords,
+            rtok=rtok,
+        )
+
+    def _apply_call_suffix_close_token_state_result(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        rtok: dict[str, Any],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+        """call suffix の close-token state result apply を helper へ寄せる。"""
         return args, keywords, rtok
 
     def _consume_call_suffix_tokens(
@@ -7213,7 +7227,16 @@ class _ShExprParser:
 
     def _resolve_subscript_slice_tail_upper_state(self) -> dict[str, Any] | None:
         """Subscript slice tail の upper-state resolve を helper へ寄せる。"""
-        return self._parse_subscript_slice_upper_expr()
+        upper = self._parse_subscript_slice_upper_expr()
+        return self._apply_subscript_slice_tail_upper_state_result(upper=upper)
+
+    def _apply_subscript_slice_tail_upper_state_result(
+        self,
+        *,
+        upper: dict[str, Any] | None,
+    ) -> dict[str, Any] | None:
+        """Subscript slice tail の upper-state result apply を helper へ寄せる。"""
+        return upper
 
     def _apply_subscript_slice_tail_upper_state(
         self,
