@@ -391,3 +391,5 @@ Context: [docs/ja/plans/p5-nominal-adt-language-rollout.md](../plans/p5-nominal-
 9. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] Implement the minimal constructor / variant-check / destructuring / `match` path in a representative backend (first C++) and forbid silent fallback.
 10. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] Organize rollout order and fail-closed policy for other backends, and fix diagnostics for unsupported targets.
 11. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] Refresh selfhost / docs / archive / migration notes and close the full nominal-ADT rollout plan.
+
+Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] The positional call-argument value/build path now also routes through `_ShExprParser._resolve_positional_call_arg_entry_state()` / `_ShExprParser._apply_positional_call_arg_build_state()`, so `_apply_positional_call_arg_entry()` no longer carries the direct `_parse_call_arg_expr()` call itself. `test/unit/ir/test_east_core.py` now fixes both helper definitions, the positional-apply helper call site, and the absence of the old inline positional-value block.

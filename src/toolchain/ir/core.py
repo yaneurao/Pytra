@@ -5015,7 +5015,28 @@ class _ShExprParser:
     ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
         """call argument 1件分の positional apply を helper へ寄せる。"""
         self._apply_call_arg_entry_save_pos(save_pos=save_pos)
-        return self._parse_call_arg_expr(), None
+        arg_expr = self._resolve_positional_call_arg_entry_state()
+        return self._apply_positional_call_arg_build_state(arg_expr=arg_expr)
+
+    def _resolve_positional_call_arg_entry_state(self) -> dict[str, Any]:
+        """call argument positional の value state resolve を helper へ寄せる。"""
+        return self._parse_call_arg_expr()
+
+    def _apply_positional_call_arg_build_state(
+        self,
+        *,
+        arg_expr: dict[str, Any],
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument positional の build state apply を helper へ寄せる。"""
+        return self._apply_positional_call_arg_build(arg_expr=arg_expr)
+
+    def _apply_positional_call_arg_build(
+        self,
+        *,
+        arg_expr: dict[str, Any],
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument positional の node build を helper へ寄せる。"""
+        return arg_expr, None
 
     def _apply_call_arg_entry_save_pos(self, *, save_pos: int | None) -> None:
         """call argument positional apply の save_pos 復帰を helper へ寄せる。"""

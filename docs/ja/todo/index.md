@@ -391,3 +391,5 @@
 9. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] representative backend（まず C++）で constructor / variant check / destructuring / `match` の最小実装を入れ、silent fallback を禁止する。
 10. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] 他 backend への rollout 順と fail-closed policy を整理し、未対応 target の診断を固定する。
 11. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] selfhost / docs / archive / migration note を更新し、正式言語機能としての nominal ADT rollout を閉じる。
+
+進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて positional call argument の value/build も `_ShExprParser._resolve_positional_call_arg_entry_state()` / `_ShExprParser._apply_positional_call_arg_build_state()` へ寄せ、`_apply_positional_call_arg_entry()` から direct `_parse_call_arg_expr()` を外した。`test/unit/ir/test_east_core.py` では両 helper 定義、positional-apply helper の call site、旧 inline positional value block の不在を固定した。

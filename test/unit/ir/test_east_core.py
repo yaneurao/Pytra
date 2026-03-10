@@ -2281,6 +2281,18 @@ x.bit_length()
             1,
         )[0]
         positional_apply_text = text.split("def _apply_positional_call_arg_entry", 1)[1].split(
+            "def _resolve_positional_call_arg_entry_state",
+            1,
+        )[0]
+        positional_state_text = text.split("def _resolve_positional_call_arg_entry_state", 1)[1].split(
+            "def _apply_positional_call_arg_build_state",
+            1,
+        )[0]
+        positional_state_apply_text = text.split("def _apply_positional_call_arg_build_state", 1)[1].split(
+            "def _apply_positional_call_arg_build",
+            1,
+        )[0]
+        positional_build_text = text.split("def _apply_positional_call_arg_build", 1)[1].split(
             "def _apply_call_arg_entry_save_pos",
             1,
         )[0]
@@ -2381,7 +2393,11 @@ x.bit_length()
         self.assertIn("return self._apply_keyword_call_arg_build(", keyword_apply_text)
         self.assertIn("return None, _sh_make_keyword_arg(kw_name, kw_val)", keyword_build_text)
         self.assertIn("self._apply_call_arg_entry_save_pos(save_pos=save_pos)", positional_apply_text)
-        self.assertIn("return self._parse_call_arg_expr(), None", positional_apply_text)
+        self.assertIn("arg_expr = self._resolve_positional_call_arg_entry_state()", positional_apply_text)
+        self.assertIn("return self._apply_positional_call_arg_build_state(", positional_apply_text)
+        self.assertIn("return self._parse_call_arg_expr()", positional_state_text)
+        self.assertIn("return self._apply_positional_call_arg_build(", positional_state_apply_text)
+        self.assertIn("return arg_expr, None", positional_build_text)
         self.assertIn("if save_pos is not None:", positional_save_pos_text)
         self.assertIn("self.pos = save_pos", positional_save_pos_text)
         self.assertIn("if keyword_entry is not None:", loop_apply_text)
@@ -2422,6 +2438,8 @@ x.bit_length()
         self.assertNotIn("return None, _sh_make_keyword_arg(kw_name, kw_val)", keyword_apply_text)
         self.assertNotIn("self.pos = save_pos", apply_text)
         self.assertNotIn("self.pos = save_pos", positional_apply_text)
+        self.assertNotIn("return self._parse_call_arg_expr(), None", positional_apply_text)
+        self.assertNotIn("return self._parse_call_arg_expr()", positional_apply_text)
         self.assertNotIn("self._consume_keyword_call_arg_equals_token()", keyword_apply_text)
         self.assertNotIn("kw_val = self._parse_ifexp()", keyword_apply_text)
         self.assertNotIn("kw_name = self._resolve_call_arg_entry_name_value(name_tok=name_tok)", keyword_apply_text)
