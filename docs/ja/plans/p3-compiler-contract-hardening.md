@@ -187,3 +187,4 @@
 - 2026-03-11: 続く `S3-01` slice では linked output 側にも shape validator を追加し、`global.call_graph` などの object/list shape と `diagnostics.warnings/errors` の string item 契約を central validator で止める形にした。
 - 2026-03-11: raw EAST3 representative node は synthetic provenance がない限り `source_span` 必須とし、linked output `diagnostics` では non-empty string に加えて `source_span` を持つ object item も許容する方針にした。
 - 2026-03-11: 次の `S3-01` slice では raw EAST3 の top-level `body` item を object + `kind` + `source_span` 必須に寄せ、linked output `diagnostics` は non-empty string または `source_span` shape を持つ object のみ許可する方針に拡張した。
+- 2026-03-11: さらに `S3-01` で linked output diagnostic object に `category` / `message` の non-empty string を必須化し、structured diagnostic 契約も central validator の責務に含めた。
