@@ -2369,6 +2369,10 @@ x.bit_length()
             1,
         )[0]
         loop_comma_text = text.split("def _consume_call_arg_loop_comma_token", 1)[1].split(
+            "def _apply_call_arg_loop_continue_state",
+            1,
+        )[0]
+        loop_continue_apply_text = text.split("def _apply_call_arg_loop_continue_state", 1)[1].split(
             "def _resolve_call_arg_loop_continue_kind",
             1,
         )[0]
@@ -2381,6 +2385,14 @@ x.bit_length()
             1,
         )[0]
         nonempty_helper_text = text.split("def _consume_call_arg_entries", 1)[1].split(
+            "def _resolve_call_arg_entries_result_state",
+            1,
+        )[0]
+        nonempty_result_state_text = text.split("def _resolve_call_arg_entries_result_state", 1)[1].split(
+            "def _apply_call_arg_entries_result_state",
+            1,
+        )[0]
+        nonempty_result_apply_text = text.split("def _apply_call_arg_entries_result_state", 1)[1].split(
             "def _consume_call_arg_entries_loop",
             1,
         )[0]
@@ -2499,14 +2511,18 @@ x.bit_length()
         self.assertIn('return self._cur()["k"] == ","', loop_state_text)
         self.assertIn("if not has_comma:", loop_apply_state_text)
         self.assertIn("self._consume_call_arg_loop_comma_token()", loop_apply_state_text)
-        self.assertIn("return self._resolve_call_arg_loop_continue_kind()", loop_apply_state_text)
+        self.assertIn("return self._apply_call_arg_loop_continue_state()", loop_apply_state_text)
         self.assertIn('return self._eat(",")', loop_comma_text)
+        self.assertIn("return self._resolve_call_arg_loop_continue_kind()", loop_continue_apply_text)
         self.assertIn('return self._cur()["k"] != ")"', loop_continue_text)
         self.assertIn("if self._resolve_call_args_empty_state():", helper_text)
         self.assertIn("return self._apply_call_args_empty_state(", helper_text)
         self.assertIn("return self._consume_call_arg_entries(", helper_text)
         self.assertIn("self._consume_call_arg_entries_loop(", nonempty_helper_text)
-        self.assertIn("return self._apply_call_args_empty_state(", nonempty_helper_text)
+        self.assertIn("args, keywords = self._resolve_call_arg_entries_result_state(", nonempty_helper_text)
+        self.assertIn("return self._apply_call_arg_entries_result_state(", nonempty_helper_text)
+        self.assertIn("return self._apply_call_args_empty_state(", nonempty_result_state_text)
+        self.assertIn("return args, keywords", nonempty_result_apply_text)
         self.assertIn(
             "should_continue = self._resolve_call_arg_entries_loop_state(",
             nonempty_helper_loop_text,
@@ -2570,7 +2586,7 @@ x.bit_length()
         self.assertNotIn('self._eat(",")', loop_apply_state_text)
         self.assertNotIn('return self._cur()["k"] != ")"', loop_apply_state_text)
         self.assertNotIn("save_pos = self.pos", helper_text)
-        self.assertNotIn("return self._consume_call_arg_entries(", nonempty_helper_text)
+        self.assertNotIn("return self._apply_call_args_empty_state(", nonempty_helper_text)
         self.assertNotIn("arg_entry, keyword_entry = self._parse_call_arg_entry()", nonempty_helper_text)
         self.assertNotIn("self._apply_call_arg_entry(", nonempty_helper_text)
         self.assertNotIn("if not self._advance_call_arg_loop():", nonempty_helper_text)

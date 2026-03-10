@@ -5200,11 +5200,15 @@ class _ShExprParser:
         if not has_comma:
             return False
         self._consume_call_arg_loop_comma_token()
-        return self._resolve_call_arg_loop_continue_kind()
+        return self._apply_call_arg_loop_continue_state()
 
     def _consume_call_arg_loop_comma_token(self) -> dict[str, Any]:
         """call argument loop の `,` consume を helper へ寄せる。"""
         return self._eat(",")
+
+    def _apply_call_arg_loop_continue_state(self) -> bool:
+        """call argument loop の continue state apply を helper へ寄せる。"""
+        return self._resolve_call_arg_loop_continue_kind()
 
     def _resolve_call_arg_loop_continue_kind(self) -> bool:
         """call argument loop の continue kind 判定を helper へ寄せる。"""
@@ -5235,10 +5239,35 @@ class _ShExprParser:
             args=args,
             keywords=keywords,
         )
+        args, keywords = self._resolve_call_arg_entries_result_state(
+            args=args,
+            keywords=keywords,
+        )
+        return self._apply_call_arg_entries_result_state(
+            args=args,
+            keywords=keywords,
+        )
+
+    def _resolve_call_arg_entries_result_state(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """call argument 非空 loop の result state resolve を helper へ寄せる。"""
         return self._apply_call_args_empty_state(
             args=args,
             keywords=keywords,
         )
+
+    def _apply_call_arg_entries_result_state(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """call argument 非空 loop の result state apply を helper へ寄せる。"""
+        return args, keywords
 
     def _consume_call_arg_entries_loop(
         self,
