@@ -5024,13 +5024,17 @@ class _ShExprParser:
         """call suffix の `(` open token consume を helper へ寄せる。"""
         return self._eat("(")
 
+    def _consume_call_suffix_close_token(self) -> dict[str, Any]:
+        """call suffix の `)` close token consume を helper へ寄せる。"""
+        return self._eat(")")
+
     def _consume_call_suffix_tokens(
         self,
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
         """call suffix の token consume を parser helper へ寄せる。"""
         self._consume_call_suffix_open_token()
         args, keywords = self._parse_call_args()
-        rtok = self._eat(")")
+        rtok = self._consume_call_suffix_close_token()
         return args, keywords, rtok
 
     def _parse_call_suffix(self, *, callee: dict[str, Any]) -> dict[str, Any]:
