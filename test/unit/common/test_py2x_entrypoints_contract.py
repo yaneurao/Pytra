@@ -237,6 +237,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         runtime_index_src = (
             ROOT / "src" / "toolchain" / "frontends" / "runtime_symbol_index.py"
         ).read_text(encoding="utf-8")
+        py2x_src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        ir2lang_src = (ROOT / "src" / "ir2lang.py").read_text(encoding="utf-8")
         sys_std_src = (ROOT / "src" / "pytra" / "std" / "sys.py").read_text(encoding="utf-8")
         prepare_src = (ROOT / "tools" / "prepare_selfhost_source.py").read_text(encoding="utf-8")
         native_transpile = (
@@ -269,6 +271,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("def _coerce_runtime_hook_impl(", typed_boundary_src)
 
         self.assertIn("def load_json_object_doc(path: Path, *, label: str) -> json.JsonObj:", json_adapter_src)
+        self.assertIn("def load_json_object_doc_or_none(path: Path) -> json.JsonObj | None:", json_adapter_src)
         self.assertIn("def export_json_object_dict(doc: json.JsonObj) -> dict[str, object]:", json_adapter_src)
         self.assertIn("def unwrap_east_root_json_doc(doc: json.JsonObj) -> json.JsonObj | None:", json_adapter_src)
         self.assertIn("from toolchain.json_adapters import load_json_object_doc", frontend_transpile_src)
@@ -278,11 +281,15 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.json_adapters import load_json_object_doc", link_manifest_src)
         self.assertIn("from toolchain.json_adapters import load_json_object_doc", link_materializer_src)
         self.assertIn("from toolchain.json_adapters import load_json_object_doc", runtime_index_src)
+        self.assertIn("from toolchain.json_adapters import load_json_object_doc_or_none", py2x_src)
+        self.assertIn("from toolchain.json_adapters import load_json_object_doc_or_none", ir2lang_src)
         self.assertNotIn("dict(payload.raw)", frontend_transpile_src)
         self.assertNotIn("dict(payload.raw)", east_io_src)
         self.assertNotIn("dict(payload.raw)", link_manifest_src)
         self.assertNotIn("dict(payload.raw)", link_materializer_src)
         self.assertNotIn("dict(obj.raw)", runtime_index_src)
+        self.assertNotIn("json.loads_obj(", py2x_src)
+        self.assertNotIn("json.loads_obj(", ir2lang_src)
         self.assertIn("self.set_dynamic_hooks_enabled(False)", prepare_src)
         self.assertIn("def _build_cpp_hooks_impl() -> dict[str, Any]:", prepare_src)
 

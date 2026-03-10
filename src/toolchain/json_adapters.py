@@ -18,6 +18,10 @@ def load_json_object_doc(path: Path, *, label: str) -> json.JsonObj:
     return payload
 
 
+def load_json_object_doc_or_none(path: Path) -> json.JsonObj | None:
+    return json.loads_obj(path.read_text(encoding="utf-8"))
+
+
 def export_json_object_dict(doc: json.JsonObj) -> dict[str, object]:
     return dict(doc.raw)
 
