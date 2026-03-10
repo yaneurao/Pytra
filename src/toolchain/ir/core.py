@@ -6056,6 +6056,14 @@ class _ShExprParser:
             )
         return owner_t
 
+    def _resolve_attr_callee_attr_name(
+        self,
+        *,
+        callee: dict[str, Any],
+    ) -> str:
+        """Attribute callee の attr 名抽出を helper へ寄せる。"""
+        return str(callee.get("attr", ""))
+
     def _resolve_attr_callee(
         self,
         *,
@@ -6063,7 +6071,7 @@ class _ShExprParser:
         source_span: dict[str, int],
     ) -> tuple[dict[str, Any] | None, str, str]:
         """Attribute callee の owner / type / attr 抽出を helper へ寄せる。"""
-        attr = str(callee.get("attr", ""))
+        attr = self._resolve_attr_callee_attr_name(callee=callee)
         owner = callee.get("value")
         owner_expr = owner if isinstance(owner, dict) else None
         owner_t = (

@@ -1335,6 +1335,10 @@ class EastCoreTest(unittest.TestCase):
             "def _annotate_named_call_expr",
             1,
         )[0]
+        attr_name_text = text.split("def _resolve_attr_callee_attr_name", 1)[1].split(
+            "def _resolve_attr_callee",
+            1,
+        )[0]
         resolve_text = text.split("def _resolve_attr_callee", 1)[1].split(
             "def _payload_source_span",
             1,
@@ -1365,7 +1369,8 @@ class EastCoreTest(unittest.TestCase):
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
-        self.assertIn('attr = str(callee.get("attr", ""))', resolve_text)
+        self.assertIn('return str(callee.get("attr", ""))', attr_name_text)
+        self.assertIn("attr = self._resolve_attr_callee_attr_name(callee=callee)", resolve_text)
         self.assertIn('owner = callee.get("value")', resolve_text)
         self.assertIn("self._resolve_attr_expr_owner_state(", resolve_text)
         self.assertIn("return owner_expr, owner_t, attr", resolve_text)
@@ -1390,6 +1395,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('source_span = payload.get("source_span")', state_text)
         self.assertNotIn('source_span = payload.get("source_span")', helper_text)
         self.assertNotIn('attr = str(callee.get("attr", ""))', helper_text)
+        self.assertNotIn('attr = str(callee.get("attr", ""))', resolve_text)
         self.assertNotIn('owner = callee.get("value")', helper_text)
         self.assertNotIn("self._resolve_attr_expr_owner_state(", helper_text)
         self.assertNotIn("return self._resolve_attr_callee(", helper_text)
