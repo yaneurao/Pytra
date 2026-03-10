@@ -67,6 +67,7 @@ def main() -> int:
         ["python3", "tools/check_sample_regen_clean.py"],
         ["python3", "tools/check_multilang_quality_regression.py"],
         ["python3", "tools/check_multilang_selfhost_suite.py"],
+        ["python3", "tools/check_selfhost_contract_reentry_guard.py"],
         ["python3", "tools/check_py2x_transpile.py", "--target", "cpp"],
         ["python3", "tools/check_noncpp_east3_contract.py"],
         ["python3", "tools/check_noncpp_backend_health.py", "--family", "all", "--skip-parity"],

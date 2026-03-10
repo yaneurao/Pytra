@@ -102,15 +102,17 @@ Related status reports:
 ## Routine Check Order
 
 1. `python3 tools/check_todo_priority.py`
-2. `python3 tools/build_selfhost.py`
-3. `python3 tools/build_selfhost_stage2.py`
-4. `python3 tools/check_selfhost_cpp_diff.py`
-5. `python3 tools/verify_selfhost_end_to_end.py`
-6. `python3 tools/check_multilang_selfhost_suite.py`
+2. `python3 tools/check_selfhost_contract_reentry_guard.py`
+3. `python3 tools/build_selfhost.py`
+4. `python3 tools/build_selfhost_stage2.py`
+5. `python3 tools/check_selfhost_cpp_diff.py`
+6. `python3 tools/verify_selfhost_end_to_end.py`
+7. `python3 tools/check_multilang_selfhost_suite.py`
 
 Notes:
 - Always run `python3 tools/check_transpiler_version_gate.py` when transpiler files change.
 - For representative compiler-internal changes, run `test/unit/selfhost/*.py` and `test/unit/common/test_py2x_entrypoints_contract.py` early.
+- `python3 tools/check_selfhost_contract_reentry_guard.py` is the shared host/selfhost contract gate for representative internal changes, and `run_local_ci.py` also calls it.
 
 ## Archive Handoff
 
