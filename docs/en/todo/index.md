@@ -79,6 +79,9 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] Selfhost build/diff/parity regressions now start fixing `build_selfhost_stage2.py` stage1->stage2 command/fallback behavior, `check_selfhost_cpp_diff.py` direct/bridge command contracts, and `verify_selfhost_end_to_end.py` auto-target/stdout normalization with unit tests.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] In addition to selfhost `prepare` / `verify`, `build_selfhost_stage2` and `check_selfhost_stage2_cpp_diff` now have unit-tested command/fallback helpers, so stage2 build/diff regressions are starting to be locked after the typed-boundary migration.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] `test_prepare_selfhost_source.py` now fixes generated selfhost-core `make_object` residual buckets through a category map and union invariants, so regressions that blur export seams and parser residuals are caught as selfhost regressions.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] The bridge lane in `selfhost_transpile.py` is now unit-tested through env/cmd helpers plus `main()` regressions, fixing both JSON passthrough and the `.py -> EAST JSON -> selfhost` path.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] `check_selfhost_stage2_cpp_diff.py` now fixes not only helper commands but also `main()` build failure / missing-binary / build-to-diff flow, so the stage2 diff CLI contract is covered end to end.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] `selfhost_transpile.py` now has unit tests for `.json` passthrough, `.py -> EAST JSON -> selfhost` bridging, and `PYTHONPATH` / `--target` propagation, so the bridge lane also catches typed-boundary regressions.
 
 ### P3: Harden compiler contracts and make stage/pass/backend handoff fail-closed
 

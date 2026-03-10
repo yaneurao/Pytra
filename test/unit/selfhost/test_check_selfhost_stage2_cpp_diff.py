@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
@@ -63,6 +66,71 @@ class CheckSelfhostStage2CppDiffTest(unittest.TestCase):
                 "strict",
             ],
         )
+
+    def test_main_returns_build_failure_before_diff(self) -> None:
+        mod = _load_module()
+        calls: list[list[str]] = []
+
+        def _fake_run(cmd: list[str]) -> int:
+            calls.append(cmd)
+            return 7
+
+        with patch.object(mod, "_run", side_effect=_fake_run), patch.object(
+            sys,
+            "argv",
+            ["check_selfhost_stage2_cpp_diff.py"],
+        ):
+            self.assertEqual(mod.main(), 7)
+
+        self.assertEqual(calls, [["python3", str(mod.BUILD_STAGE2)]])
+
+    def test_main_returns_2_when_stage2_binary_is_missing(self) -> None:
+        mod = _load_module()
+        with tempfile.TemporaryDirectory() as td:
+            mod.STAGE2_BIN = Path(td) / "missing-stage2.out"
+            with patch.object(
+                sys,
+                "argv",
+                ["check_selfhost_stage2_cpp_diff.py", "--skip-build"],
+            ):
+                self.assertEqual(mod.main(), 2)
+
+    def test_main_runs_build_then_diff_for_existing_stage2_binary(self) -> None:
+        mod = _load_module()
+        with tempfile.TemporaryDirectory() as td:
+            stage2_bin = Path(td) / "py2cpp_stage2.out"
+            stage2_bin.write_text("", encoding="utf-8")
+            mod.STAGE2_BIN = stage2_bin
+            calls: list[list[str]] = []
+
+            def _fake_run(cmd: list[str]) -> int:
+                calls.append(cmd)
+                return 0
+
+            with patch.object(mod, "_run", side_effect=_fake_run), patch.object(
+                sys,
+                "argv",
+                [
+                    "check_selfhost_stage2_cpp_diff.py",
+                    "--show-diff",
+                    "--mode",
+                    "strict",
+                    "--cases",
+                    "sample/py/01_mandelbrot.py",
+                ],
+            ):
+                self.assertEqual(mod.main(), 0)
+
+            self.assertEqual(calls[0], ["python3", str(mod.BUILD_STAGE2)])
+            self.assertEqual(
+                calls[1],
+                mod.build_check_diff_cmd(
+                    stage2_bin,
+                    cases=["sample/py/01_mandelbrot.py"],
+                    show_diff=True,
+                    mode="strict",
+                ),
+            )
 
 
 if __name__ == "__main__":
