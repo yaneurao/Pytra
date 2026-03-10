@@ -15,6 +15,7 @@ Last updated: 2026-03-11
 
 ## Completed Plan Archive
 
+- [2026-03-11 / P5-NOMINAL-ADT-ROLLOUT-01](../plans/archive/20260311-p5-nominal-adt-language-rollout.md)
 - [2026-03-11 / P4-BACKEND-REGISTRY-SELFHOST-PARITY-01](../plans/archive/20260311-p4-backend-registry-selfhost-parity-hardening.md)
 - [2026-03-11 / P3-COMPILER-CONTRACT-HARDENING-01](../plans/archive/20260311-p3-compiler-contract-hardening.md)
 - [2026-03-11 / P2-COMPILER-TYPED-BOUNDARY-01](../plans/archive/20260311-p2-compiler-typed-boundary.md)
@@ -50,7 +51,7 @@ Last updated: 2026-03-11
 
 ## Date Links
 
-- [2026-03-11](20260311.md) (3 sections)
+- [2026-03-11](20260311.md) (4 sections)
 - [2026-03-09](20260309.md) (2 sections)
 - [2026-03-08](20260308.md) (8 sections)
 - [2026-03-07](20260307.md) (6 sections)
