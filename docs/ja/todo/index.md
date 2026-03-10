@@ -318,6 +318,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `subscript suffix` の `first expr` 側 apply 分岐も `_ShExprParser._apply_subscript_slice_first_component()` / `_ShExprParser._apply_subscript_index_first_component()` へ分け、`_apply_subscript_suffix_first_component_state()` から direct tail helper 呼び出しを外した。`test_east_core.py` では両 apply helper 定義、state helper の call site、旧 inline apply branch の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `subscript suffix` の postfix span/repr resolve も `_ShExprParser._resolve_subscript_suffix_span_repr()` へ寄せ、`_resolve_subscript_suffix_state()` から `_resolve_postfix_span_repr()` の direct call を外した。`test_east_core.py` では span helper 定義、state helper の call site、旧 inline span-resolve block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `subscript suffix` の `[` open token consume も `_ShExprParser._consume_subscript_suffix_open_token()` へ寄せ、`_consume_subscript_suffix_tokens()` から direct `self._eat("[")` を外した。`test_east_core.py` では open-token helper 定義、token helper の call site、旧 inline open-token block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument keyword の `=` consume も `_ShExprParser._consume_keyword_call_arg_equals_token()` へ寄せ、`_apply_keyword_call_arg_entry()` から direct `self._eat("=")` を外した。`test_east_core.py` では token helper 定義、keyword-apply helper の call site、旧 inline keyword-equals block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
