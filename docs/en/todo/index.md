@@ -69,6 +69,8 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Python compiler-lane `loads_obj(...).raw` usage now funnels through `toolchain/json_adapters.py` helpers, so frontends/link/ir/runtime-index close raw `JsonObj` unwrapping inside one explicit seam.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Toolchain JSON loader seams now go through `toolchain.json_adapters`, removing raw `json.loads_obj(...).raw` usage from `frontends/transpile_cli`, `ir/east_io`, `link_*`, and `runtime_symbol_index`.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] The CLI root loaders in `py2x` and `ir2lang` now also go through `load_json_object_doc_or_none()`, aligning outer JSON-root reads with the same adapter seam.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] The remaining `JsonObj/JsonArr/JsonValue` raw access in `program_validator.py` now goes through object/array/value helpers in `toolchain.json_adapters`, so the validator no longer touches raw carriers directly.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `extern_var_v1` now flows through an `AmbientExternBinding` carrier, so ambient extern validation reads an explicit adapter seam instead of raw `dict[str, str]` bindings.
 
 ### P3: Harden compiler contracts and make stage/pass/backend handoff fail-closed
 

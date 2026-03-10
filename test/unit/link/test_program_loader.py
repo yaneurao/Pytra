@@ -156,6 +156,7 @@ class LinkedProgramLoaderTests(unittest.TestCase):
                             "is_entry": True,
                         }
                     ],
+                    "options": {"indent": 2, "pretty": True},
                 },
                 ensure_ascii=False,
             )
@@ -164,6 +165,7 @@ class LinkedProgramLoaderTests(unittest.TestCase):
         doc = validate_link_input_doc(payload)
         self.assertEqual(doc["entry_modules"], ("app.main",))
         self.assertEqual([item.module_id for item in doc["modules"]], ["app.main"])
+        self.assertEqual(doc["options"], {"indent": 2, "pretty": True})
 
     def test_load_link_output_doc_validates_required_global_keys(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -224,6 +226,8 @@ class LinkedProgramLoaderTests(unittest.TestCase):
         doc = validate_link_output_doc(payload)
         self.assertEqual(doc["entry_modules"], ("app.main",))
         self.assertEqual([item.module_id for item in doc["modules"]], ["app.main"])
+        self.assertEqual(doc["global"]["type_id_table"], {})
+        self.assertEqual(doc["diagnostics"]["warnings"], [])
 
     def test_load_link_output_doc_normalizes_and_sorts_module_entries(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
