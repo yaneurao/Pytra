@@ -5002,9 +5002,13 @@ class _ShExprParser:
         save_pos: int | None,
     ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
         """call argument 1件分の positional apply を helper へ寄せる。"""
+        self._apply_call_arg_entry_save_pos(save_pos=save_pos)
+        return self._parse_call_arg_expr(), None
+
+    def _apply_call_arg_entry_save_pos(self, *, save_pos: int | None) -> None:
+        """call argument positional apply の save_pos 復帰を helper へ寄せる。"""
         if save_pos is not None:
             self.pos = save_pos
-        return self._parse_call_arg_expr(), None
 
     def _apply_call_arg_entry(
         self,
