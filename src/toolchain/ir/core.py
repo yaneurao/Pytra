@@ -5134,23 +5134,24 @@ class _ShExprParser:
         fn_name: str,
         args: list[dict[str, Any]],
         call_dispatch: dict[str, str],
+        dispatch_kind: str,
     ) -> dict[str, Any]:
         """named-call dispatch の annotation 適用を helper へ寄せる。"""
-        builtin_payload = self._annotate_builtin_named_call_expr(
-            payload,
-            fn_name=fn_name,
-            args=args,
-            call_dispatch=call_dispatch,
-        )
-        if builtin_payload is not None:
-            return builtin_payload
-        runtime_payload = self._annotate_runtime_named_call_expr(
-            payload,
-            fn_name=fn_name,
-            call_dispatch=call_dispatch,
-        )
-        if runtime_payload is not None:
-            return runtime_payload
+        if dispatch_kind == "builtin":
+            builtin_payload = self._annotate_builtin_named_call_expr(
+                payload,
+                fn_name=fn_name,
+                args=args,
+                call_dispatch=call_dispatch,
+            )
+            return payload if builtin_payload is None else builtin_payload
+        if dispatch_kind == "runtime":
+            runtime_payload = self._annotate_runtime_named_call_expr(
+                payload,
+                fn_name=fn_name,
+                call_dispatch=call_dispatch,
+            )
+            return payload if runtime_payload is None else runtime_payload
         return payload
 
     def _resolve_named_call_dispatch(
@@ -5161,15 +5162,36 @@ class _ShExprParser:
         """named-call dispatch lookup を helper へ寄せる。"""
         return _sh_lookup_named_call_dispatch(fn_name)
 
+    def _resolve_named_call_dispatch_kind(
+        self,
+        *,
+        fn_name: str,
+        call_dispatch: dict[str, str],
+    ) -> str:
+        """named-call dispatch の builtin/runtime 分類を helper へ寄せる。"""
+        if self._resolve_builtin_named_call_kind(fn_name=fn_name) != "":
+            return "builtin"
+        dispatch_kind, *_ = self._resolve_runtime_named_call_annotation(
+            call_dispatch=call_dispatch,
+        )
+        if dispatch_kind != "":
+            return "runtime"
+        return ""
+
     def _resolve_named_call_annotation_state(
         self,
         *,
         fn_name: str,
-    ) -> dict[str, str]:
+    ) -> tuple[dict[str, str], str]:
         """named-call の dispatch resolve を annotation-state helper へ寄せる。"""
-        return self._resolve_named_call_dispatch(
+        call_dispatch = self._resolve_named_call_dispatch(
             fn_name=fn_name,
         )
+        dispatch_kind = self._resolve_named_call_dispatch_kind(
+            fn_name=fn_name,
+            call_dispatch=call_dispatch,
+        )
+        return call_dispatch, dispatch_kind
 
     def _annotate_named_call_expr(
         self,
@@ -5179,7 +5201,7 @@ class _ShExprParser:
         args: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """Name callee の metadata annotation を shared helper へ寄せる。"""
-        call_dispatch = self._resolve_named_call_annotation_state(
+        call_dispatch, dispatch_kind = self._resolve_named_call_annotation_state(
             fn_name=fn_name,
         )
         return self._apply_named_call_dispatch(
@@ -5187,6 +5209,7 @@ class _ShExprParser:
             fn_name=fn_name,
             args=args,
             call_dispatch=call_dispatch,
+            dispatch_kind=dispatch_kind,
         )
 
     def _should_use_truthy_runtime_for_bool_ctor(
