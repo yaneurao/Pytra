@@ -730,6 +730,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         build_kind_text = text.split("def _resolve_subscript_expr_build_kind", 1)[1].split(
+            "def _resolve_subscript_expr_apply_state",
+            1,
+        )[0]
+        apply_state_text = text.split("def _resolve_subscript_expr_apply_state", 1)[1].split(
             "def _apply_subscript_expr_build",
             1,
         )[0]
@@ -759,18 +763,21 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("if index_expr is None or lower is not None or upper is not None:", build_kind_text)
         self.assertIn('return "slice"', build_kind_text)
         self.assertIn('return "index"', build_kind_text)
+        self.assertIn("owner_t = self._resolve_subscript_expr_annotation_state(", apply_state_text)
+        self.assertIn("build_kind = self._resolve_subscript_expr_build_kind(", apply_state_text)
+        self.assertIn("return owner_t, build_kind", apply_state_text)
         self.assertIn('if build_kind == "slice":', apply_text)
         self.assertIn("return self._build_slice_subscript_expr(", apply_text)
         self.assertIn("return self._build_index_subscript_expr(", apply_text)
-        self.assertIn("owner_t = self._resolve_subscript_expr_annotation_state(", helper_text)
-        self.assertIn("build_kind = self._resolve_subscript_expr_build_kind(", helper_text)
+        self.assertIn("owner_t, build_kind = self._resolve_subscript_expr_apply_state(", helper_text)
         self.assertIn("return self._apply_subscript_expr_build(", helper_text)
         self.assertIn("return self._parse_subscript_suffix(owner_expr=owner_expr)", postfix_suffix_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertNotIn("_sh_make_slice_node(lower, upper)", helper_text)
         self.assertNotIn("_sh_make_subscript_expr(", helper_text)
         self.assertNotIn("owner_t = self._owner_expr_resolved_type(owner_expr)", helper_text)
-        self.assertNotIn("if index_expr is None or lower is not None or upper is not None:", helper_text)
+        self.assertNotIn("owner_t = self._resolve_subscript_expr_annotation_state(", helper_text)
+        self.assertNotIn("build_kind = self._resolve_subscript_expr_build_kind(", helper_text)
         self.assertNotIn('if build_kind == "slice":', helper_text)
         self.assertNotIn("node = _sh_make_subscript_expr(", postfix_text)
         self.assertNotIn("_sh_make_slice_node(", postfix_text)
