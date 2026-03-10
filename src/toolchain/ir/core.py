@@ -5612,6 +5612,36 @@ class _ShExprParser:
             source_span=self._payload_source_span(payload),
         )
 
+    def _apply_noncpp_attr_call_expr_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        owner_expr: dict[str, Any] | None,
+        attr: str,
+    ) -> None:
+        """non-C++ attr-call annotation 適用を helper へ寄せる。"""
+        _sh_annotate_noncpp_attr_call_expr(
+            payload,
+            owner_expr=owner_expr,
+            attr_name=attr,
+        )
+
+    def _apply_runtime_method_call_expr_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        owner_expr: dict[str, Any] | None,
+        owner_t: str,
+        attr: str,
+    ) -> None:
+        """runtime method-call annotation 適用を helper へ寄せる。"""
+        _sh_annotate_runtime_method_call_expr(
+            payload,
+            owner_type=owner_t,
+            attr=attr,
+            runtime_owner=owner_expr,
+        )
+
     def _apply_attr_call_expr_annotation(
         self,
         *,
@@ -5621,16 +5651,16 @@ class _ShExprParser:
         attr: str,
     ) -> dict[str, Any]:
         """Attribute callee annotation の適用を helper へ寄せる。"""
-        _sh_annotate_noncpp_attr_call_expr(
-            payload,
+        self._apply_noncpp_attr_call_expr_annotation(
+            payload=payload,
             owner_expr=owner_expr,
-            attr_name=attr,
-        )
-        _sh_annotate_runtime_method_call_expr(
-            payload,
-            owner_type=owner_t,
             attr=attr,
-            runtime_owner=owner_expr,
+        )
+        self._apply_runtime_method_call_expr_annotation(
+            payload=payload,
+            owner_expr=owner_expr,
+            owner_t=owner_t,
+            attr=attr,
         )
         return payload
 

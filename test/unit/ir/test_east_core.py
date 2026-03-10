@@ -452,6 +452,10 @@ class EastCoreTest(unittest.TestCase):
             "def _subscript_result_type",
             1,
         )[0]
+        runtime_method_apply_text = text.split("def _apply_runtime_method_call_expr_annotation", 1)[1].split(
+            "def _apply_attr_call_expr_annotation",
+            1,
+        )[0]
         attr_call_apply_text = text.split("def _apply_attr_call_expr_annotation", 1)[1].split(
             "def _annotate_attr_call_expr",
             1,
@@ -465,7 +469,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
         self.assertIn("_sh_annotate_fixed_runtime_builtin_call_expr(", named_call_text)
-        self.assertIn("_sh_annotate_runtime_method_call_expr(", attr_call_apply_text)
+        self.assertIn("_sh_annotate_runtime_method_call_expr(", runtime_method_apply_text)
+        self.assertIn("self._apply_runtime_method_call_expr_annotation(", attr_call_apply_text)
         self.assertIn("return self._apply_attr_call_expr_annotation(", attr_call_text)
         self.assertIn("_sh_annotate_type_predicate_call_expr(", named_call_text)
         self.assertNotIn('payload["lowered_kind"] = "BuiltinCall"', postfix_text)
@@ -768,6 +773,10 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_enumerate_call_expr",
             1,
         )[0]
+        runtime_apply_text = text.split("def _apply_runtime_method_call_expr_annotation", 1)[1].split(
+            "def _apply_attr_call_expr_annotation",
+            1,
+        )[0]
         apply_text = text.split("def _apply_attr_call_expr_annotation", 1)[1].split(
             "def _annotate_attr_call_expr",
             1,
@@ -781,7 +790,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('lookup_owner_method_semantic_tag(owner_type, attr)', helper_text)
         self.assertIn('lookup_stdlib_method_runtime_call(owner_type, attr)', helper_text)
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
-        self.assertIn('_sh_annotate_runtime_method_call_expr(', apply_text)
+        self.assertIn('_sh_annotate_runtime_method_call_expr(', runtime_apply_text)
+        self.assertIn("self._apply_runtime_method_call_expr_annotation(", apply_text)
         self.assertIn("return self._apply_attr_call_expr_annotation(", attr_call_text)
         self.assertNotIn('owner_method_semantic_tag = lookup_owner_method_semantic_tag(owner_t, attr)', postfix_text)
         self.assertNotIn('payload["semantic_tag"] = owner_method_semantic_tag', postfix_text)
@@ -873,6 +883,10 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_noncpp_attr_call_expr",
             1,
         )[0]
+        noncpp_apply_text = text.split("def _apply_noncpp_attr_call_expr_annotation", 1)[1].split(
+            "def _apply_runtime_method_call_expr_annotation",
+            1,
+        )[0]
         apply_text = text.split("def _apply_attr_call_expr_annotation", 1)[1].split(
             "def _annotate_attr_call_expr",
             1,
@@ -887,7 +901,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("if owner_name in _SH_IMPORT_MODULES:", helper_text)
         self.assertIn("if owner_name in _SH_IMPORT_SYMBOLS:", helper_text)
         self.assertEqual(postfix_text.count("_sh_lookup_noncpp_attr_runtime_call("), 0)
-        self.assertIn("_sh_annotate_noncpp_attr_call_expr(", apply_text)
+        self.assertIn("_sh_annotate_noncpp_attr_call_expr(", noncpp_apply_text)
+        self.assertIn("self._apply_noncpp_attr_call_expr_annotation(", apply_text)
         self.assertIn("return self._apply_attr_call_expr_annotation(", attr_call_text)
         self.assertNotIn("if isinstance(owner_expr, dict) and owner_expr.get(\"kind\") == \"Name\":", postfix_text)
         self.assertNotIn("if isinstance(owner, dict) and owner.get(\"kind\") == \"Name\":", postfix_text)
@@ -896,6 +911,10 @@ class EastCoreTest(unittest.TestCase):
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_noncpp_attr_call_expr", 1)[1].split(
             "def _sh_annotate_scalar_ctor_call_expr",
+            1,
+        )[0]
+        noncpp_apply_text = text.split("def _apply_noncpp_attr_call_expr_annotation", 1)[1].split(
+            "def _apply_runtime_method_call_expr_annotation",
             1,
         )[0]
         attr_call_apply_text = text.split("def _apply_attr_call_expr_annotation", 1)[1].split(
@@ -911,7 +930,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("_sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)", helper_text)
         self.assertIn("_sh_annotate_resolved_runtime_expr(", helper_text)
         self.assertIn('payload["resolved_type"] = std_module_attr_ret', helper_text)
-        self.assertIn("_sh_annotate_noncpp_attr_call_expr(", attr_call_apply_text)
+        self.assertIn("_sh_annotate_noncpp_attr_call_expr(", noncpp_apply_text)
+        self.assertIn("self._apply_noncpp_attr_call_expr_annotation(", attr_call_apply_text)
         self.assertIn("return self._apply_attr_call_expr_annotation(", attr_call_text)
         self.assertNotIn("std_module_attr_ret = lookup_stdlib_function_return_type(attr)", postfix_text)
         self.assertNotIn('payload["resolved_type"] = std_module_attr_ret', postfix_text)
@@ -951,6 +971,14 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         state_text = text.split("def _resolve_attr_call_annotation_state", 1)[1].split(
+            "def _apply_noncpp_attr_call_expr_annotation",
+            1,
+        )[0]
+        noncpp_apply_text = text.split("def _apply_noncpp_attr_call_expr_annotation", 1)[1].split(
+            "def _apply_runtime_method_call_expr_annotation",
+            1,
+        )[0]
+        runtime_apply_text = text.split("def _apply_runtime_method_call_expr_annotation", 1)[1].split(
             "def _apply_attr_call_expr_annotation",
             1,
         )[0]
@@ -972,8 +1000,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("return source_span if isinstance(source_span, dict) else {}", payload_span_text)
         self.assertIn("source_span=self._payload_source_span(payload)", state_text)
         self.assertIn("return self._resolve_attr_callee(", state_text)
-        self.assertIn('_sh_annotate_noncpp_attr_call_expr(', apply_text)
-        self.assertIn('_sh_annotate_runtime_method_call_expr(', apply_text)
+        self.assertIn('_sh_annotate_noncpp_attr_call_expr(', noncpp_apply_text)
+        self.assertIn('_sh_annotate_runtime_method_call_expr(', runtime_apply_text)
+        self.assertIn("self._apply_noncpp_attr_call_expr_annotation(", apply_text)
+        self.assertIn("self._apply_runtime_method_call_expr_annotation(", apply_text)
         self.assertIn("owner_expr, owner_t, attr = self._resolve_attr_call_annotation_state(", helper_text)
         self.assertIn("return self._apply_attr_call_expr_annotation(", helper_text)
         self.assertIn('if callee.get("kind") == "Attribute":', callee_resolve_text)
@@ -992,6 +1022,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("return self._resolve_attr_callee(", helper_text)
         self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', helper_text)
         self.assertNotIn('_sh_annotate_runtime_method_call_expr(', helper_text)
+        self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', apply_text)
+        self.assertNotIn('_sh_annotate_runtime_method_call_expr(', apply_text)
         self.assertNotIn('if callee.get("kind") == "Attribute":', callee_apply_text)
         self.assertNotIn('if callee.get("kind") == "Attribute":', callee_helper_text)
         self.assertNotIn('if callee_kind == "attr":', callee_helper_text)
