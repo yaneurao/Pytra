@@ -725,6 +725,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         state_text = text.split("def _resolve_attr_suffix_state", 1)[1].split(
+            "def _apply_attr_suffix_name_token_state",
+            1,
+        )[0]
+        state_apply_text = text.split("def _apply_attr_suffix_name_token_state", 1)[1].split(
             "def _resolve_attr_suffix_name_state",
             1,
         )[0]
@@ -779,8 +783,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('return self._eat("NAME")', consume_name_text)
         self.assertIn("return self._resolve_attr_suffix_name_token()", token_state_text)
         self.assertIn("name_tok, attr_name = self._resolve_attr_suffix_name_state()", state_text)
-        self.assertIn("source_span, repr_text = self._resolve_attr_suffix_span_repr(", state_text)
-        self.assertIn("return attr_name, source_span, repr_text", state_text)
+        self.assertIn("return self._apply_attr_suffix_name_token_state(", state_text)
+        self.assertIn("source_span, repr_text = self._resolve_attr_suffix_span_repr(", state_apply_text)
+        self.assertIn("return attr_name, source_span, repr_text", state_apply_text)
         self.assertIn("name_tok = self._resolve_attr_suffix_token_state()", name_state_text)
         self.assertIn("return self._apply_attr_suffix_name_state(name_tok=name_tok)", name_state_text)
         self.assertIn("return name_tok, self._resolve_attr_suffix_name_value(name_tok=name_tok)", name_apply_text)
@@ -789,6 +794,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("self._resolve_postfix_span_repr(", state_text)
         self.assertNotIn("self._resolve_attr_suffix_name_token()", state_text)
         self.assertNotIn('return str(name_tok["v"])', state_text)
+        self.assertNotIn("return attr_name, source_span, repr_text", state_text)
         self.assertNotIn("self._resolve_postfix_span_repr(", name_state_text)
         self.assertNotIn("return name_tok, self._resolve_attr_suffix_name_value(name_tok=name_tok)", name_state_text)
         self.assertNotIn('return self._eat("NAME")', token_text)
