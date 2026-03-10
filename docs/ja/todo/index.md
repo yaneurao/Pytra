@@ -195,6 +195,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `print/len/range/zip/str(...)` metadata も `_sh_annotate_fixed_runtime_builtin_call_expr()` へ寄せ、fixed runtime-call / module / runtime-symbol 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 fixed builtin inline block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `print/len/range/zip/str(...)` metadata も `_sh_annotate_fixed_runtime_builtin_call_expr()` へ寄せ、fixed runtime call・module・runtime symbol 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 fixed builtin inline block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `Name` callee の既知 return-type 決定も `_sh_infer_known_name_call_return_type()` へ寄せ、`print/open/int/float/bool/str/len/range/zip/list/set/dict/bytes/bytearray/Exception` と stdlib imported-symbol return type の open-coded 分岐を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 `call_ret = ...` inline branch の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `enumerate(...)` の element-type 抽出も `_sh_infer_enumerate_item_type()` へ寄せ、`args[0]` probe と `elem_t` 決定を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義と旧 inline `elem_t` block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] call 式全体の戻り型推定も `_ShExprParser._infer_call_expr_return_type()` へ寄せ、`Name` / `Attribute` / `Lambda` callee ごとの `call_ret` 分岐を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline return-inference block の不在に加えて `_sh_infer_enumerate_item_type()` が 1 回だけ定義されることも固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

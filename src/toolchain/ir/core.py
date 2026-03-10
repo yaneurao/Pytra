@@ -601,15 +601,6 @@ def _sh_infer_enumerate_item_type(args: list[dict[str, Any]]) -> str:
     return _sh_infer_item_type(arg0)
 
 
-def _sh_infer_enumerate_item_type(args: list[dict[str, Any]]) -> str:
-    if len(args) < 1:
-        return "unknown"
-    arg0 = args[0]
-    if not isinstance(arg0, dict):
-        return "unknown"
-    return _sh_infer_item_type(arg0)
-
-
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -4715,6 +4706,46 @@ class _ShExprParser:
             return stdlib_method_ret
         return call_ret
 
+    def _infer_call_expr_return_type(
+        self,
+        callee: dict[str, Any] | None,
+        args: list[dict[str, Any]],
+    ) -> tuple[str, str]:
+        """呼び出し式の戻り型と name-callee 名を推定する。"""
+        if not isinstance(callee, dict):
+            return "unknown", ""
+        kind = str(callee.get("kind", ""))
+        fn_name = ""
+        if kind == "Name":
+            fn_name = str(callee.get("id", ""))
+            stdlib_imported_ret = (
+                lookup_stdlib_imported_symbol_return_type(fn_name, _SH_IMPORT_SYMBOLS)
+                if fn_name != ""
+                else ""
+            )
+            call_ret = _sh_infer_known_name_call_return_type(
+                fn_name,
+                args,
+                stdlib_imported_ret,
+            )
+            if call_ret != "":
+                return call_ret, fn_name
+            if fn_name in self.fn_return_types:
+                return self.fn_return_types[fn_name], fn_name
+            if fn_name in self.class_method_return_types:
+                return fn_name, fn_name
+            return self._callable_return_type(str(self.name_types.get(fn_name, "unknown"))), fn_name
+        if kind == "Attribute":
+            owner = callee.get("value")
+            attr = str(callee.get("attr", ""))
+            return self._infer_attr_call_return_type(
+                owner if isinstance(owner, dict) else None,
+                attr,
+            ), fn_name
+        if kind == "Lambda":
+            return str(callee.get("return_type", "unknown")), fn_name
+        return "unknown", fn_name
+
     def _split_generic_types(self, s: str) -> list[str]:
         """ジェネリック型引数をトップレベルカンマで分割する。"""
         out: list[str] = []
@@ -4960,43 +4991,17 @@ class _ShExprParser:
                 rtok = self._eat(")")
                 s = int(node["source_span"]["col"]) - self.col_base
                 e = rtok["e"]
-                call_ret = "unknown"
-                fn_name = ""
-                if isinstance(node, dict) and node.get("kind") == "Name":
-                    fn_name = str(node.get("id", ""))
-                    if fn_name in {"sum", "zip", "sorted", "min", "max"}:
-                        self._guard_dynamic_helper_args(
-                            helper_name=fn_name,
-                            args=args,
-                            source_span=self._node_span(s, e),
-                        )
-                    stdlib_imported_ret = (
-                        lookup_stdlib_imported_symbol_return_type(fn_name, _SH_IMPORT_SYMBOLS)
-                        if fn_name != ""
-                        else ""
+                fn_name = str(node.get("id", "")) if isinstance(node, dict) and node.get("kind") == "Name" else ""
+                if fn_name in {"sum", "zip", "sorted", "min", "max"}:
+                    self._guard_dynamic_helper_args(
+                        helper_name=fn_name,
+                        args=args,
+                        source_span=self._node_span(s, e),
                     )
-                    call_ret = _sh_infer_known_name_call_return_type(
-                        fn_name,
-                        args,
-                        stdlib_imported_ret,
-                    )
-                    if call_ret != "":
-                        pass
-                    elif fn_name in self.fn_return_types:
-                        call_ret = self.fn_return_types[fn_name]
-                    elif fn_name in self.class_method_return_types:
-                        call_ret = fn_name
-                    else:
-                        call_ret = self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))
-                elif isinstance(node, dict) and node.get("kind") == "Attribute":
-                    owner = node.get("value")
-                    attr = str(node.get("attr", ""))
-                    call_ret = self._infer_attr_call_return_type(
-                        owner if isinstance(owner, dict) else None,
-                        attr,
-                    )
-                elif isinstance(node, dict) and node.get("kind") == "Lambda":
-                    call_ret = str(node.get("return_type", "unknown"))
+                call_ret, fn_name = self._infer_call_expr_return_type(
+                    node if isinstance(node, dict) else None,
+                    args,
+                )
                 payload = _sh_make_call_expr(
                     self._node_span(s, e),
                     node,

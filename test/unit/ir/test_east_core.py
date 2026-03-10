@@ -850,6 +850,7 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_enumerate_item_type_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        self.assertEqual(text.count("def _sh_infer_enumerate_item_type"), 1)
         helper_text = text.split("def _sh_infer_enumerate_item_type", 1)[1].split(
             "def _sh_set_parse_context",
             1,
@@ -866,7 +867,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_attr_call_returns_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _infer_attr_call_return_type", 1)[1].split(
-            "def _split_generic_types",
+            "def _infer_call_expr_return_type",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -881,6 +882,25 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('call_ret = self._lookup_builtin_method_return(owner_t, attr)', postfix_text)
         self.assertNotIn('stdlib_method_ret = lookup_stdlib_method_return_type(owner_t, attr)', postfix_text)
         self.assertNotIn('if owner_t == "PyFile":', postfix_text)
+
+    def test_core_source_routes_call_expr_returns_through_shared_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _infer_call_expr_return_type", 1)[1].split(
+            "def _split_generic_types",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('kind = str(callee.get("kind", ""))', helper_text)
+        self.assertIn("_sh_infer_known_name_call_return_type(", helper_text)
+        self.assertIn("self._infer_attr_call_return_type(", helper_text)
+        self.assertIn('if kind == "Lambda":', helper_text)
+        self.assertIn("call_ret, fn_name = self._infer_call_expr_return_type(", postfix_text)
+        self.assertNotIn("stdlib_imported_ret = (", postfix_text)
+        self.assertNotIn("call_ret = self.fn_return_types[fn_name]", postfix_text)
+        self.assertNotIn('call_ret = self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))', postfix_text)
+        self.assertNotIn("call_ret = self._infer_attr_call_return_type(", postfix_text)
+        self.assertNotIn('call_ret = str(node.get("return_type", "unknown"))', postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
