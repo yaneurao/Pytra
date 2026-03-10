@@ -6595,7 +6595,33 @@ class _ShExprParser:
     ]:
         """Subscript suffix の first expr 側 apply を helper へ寄せる。"""
         if is_slice:
-            return self._parse_subscript_slice_tail(lower=first)
+            return self._apply_subscript_slice_first_component(first=first)
+        return self._apply_subscript_index_first_component(first=first)
+
+    def _apply_subscript_slice_first_component(
+        self,
+        *,
+        first: dict[str, Any],
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any],
+    ]:
+        """Subscript suffix の first expr 側 slice apply を helper へ寄せる。"""
+        return self._parse_subscript_slice_tail(lower=first)
+
+    def _apply_subscript_index_first_component(
+        self,
+        *,
+        first: dict[str, Any],
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any],
+    ]:
+        """Subscript suffix の first expr 側 index apply を helper へ寄せる。"""
         return self._parse_subscript_index_tail(index_expr=first)
 
     def _parse_subscript_index_tail(
