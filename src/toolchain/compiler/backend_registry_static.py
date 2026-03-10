@@ -10,12 +10,26 @@ from toolchain.compiler.backend_registry_shared import build_cpp_emit
 from toolchain.compiler.backend_registry_shared import build_emit_from_target
 from toolchain.compiler.backend_registry_shared import build_java_emit
 from toolchain.compiler.backend_registry_shared import build_runtime_hook_from_key
+from toolchain.compiler.backend_registry_shared import build_program_artifact_with_backend_spec
+from toolchain.compiler.backend_registry_shared import collect_program_modules_from_artifact
 from toolchain.compiler.backend_registry_shared import default_output_path_for
+from toolchain.compiler.backend_registry_shared import default_output_path_from_backend_spec
+from toolchain.compiler.backend_registry_shared import emit_module_with_backend_spec
+from toolchain.compiler.backend_registry_shared import emit_source_with_backend_spec
+from toolchain.compiler.backend_registry_shared import export_layer_options_with_backend_spec
+from toolchain.compiler.backend_registry_shared import export_module_artifact_with_backend_spec
+from toolchain.compiler.backend_registry_shared import export_program_artifact_with_backend_spec
+from toolchain.compiler.backend_registry_shared import export_program_modules_from_artifact
+from toolchain.compiler.backend_registry_shared import get_program_writer_from_backend_spec
+from toolchain.compiler.backend_registry_shared import lower_ir_with_backend_spec
 from toolchain.compiler.backend_registry_shared import build_runtime_bound_backend_spec
 from toolchain.compiler.backend_registry_shared import normalize_runtime_backend_spec
+from toolchain.compiler.backend_registry_shared import optimize_ir_with_backend_spec
+from toolchain.compiler.backend_registry_shared import resolve_layer_options_with_backend_spec
 from toolchain.compiler.backend_registry_shared import build_unary_emit
 from toolchain.compiler.backend_registry_shared import empty_emit
 from toolchain.compiler.backend_registry_shared import identity_ir
+from toolchain.compiler.backend_registry_shared import apply_runtime_hook_from_backend_spec
 from toolchain.compiler.backend_registry_shared import registry_src_root
 from toolchain.compiler.backend_registry_shared import runtime_none
 from toolchain.compiler.typed_boundary import LayerOptionsCarrier
@@ -221,8 +235,7 @@ def get_backend_spec(target: str) -> BackendSpec:
 
 
 def default_output_path(input_path: Path, target: str) -> Path:
-    spec = get_backend_spec_typed(target)
-    return default_output_path_for(input_path, spec.carrier.extension)
+    return default_output_path_from_backend_spec(input_path, target, get_backend_spec_typed=get_backend_spec_typed)
 
 
 def resolve_layer_options_typed(
@@ -230,12 +243,21 @@ def resolve_layer_options_typed(
     layer: str,
     raw_options: dict[str, str],
 ) -> LayerOptionsCarrier:
-    runtime_spec = _coerce_runtime_spec(spec)
-    return resolve_layer_options_carrier(runtime_spec, layer, raw_options)
+    return resolve_layer_options_with_backend_spec(
+        spec,
+        layer,
+        raw_options,
+        coerce_runtime_spec=_coerce_runtime_spec,
+    )
 
 
 def resolve_layer_options(spec: BackendSpec, layer: str, raw_options: dict[str, str]) -> dict[str, Any]:
-    return export_layer_options_any(resolve_layer_options_typed(spec, layer, raw_options))
+    return export_layer_options_with_backend_spec(
+        spec,
+        layer,
+        raw_options,
+        coerce_runtime_spec=_coerce_runtime_spec,
+    )
 
 
 def lower_ir_typed(
@@ -243,11 +265,11 @@ def lower_ir_typed(
     east_doc: dict[str, Any] | object,
     lower_options: LayerOptionsCarrier | dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    runtime_spec = _coerce_runtime_spec(spec)
-    return execute_lower_ir_with_spec(
-        runtime_spec,
+    return lower_ir_with_backend_spec(
+        spec,
         east_doc,
         lower_options,
+        coerce_runtime_spec=_coerce_runtime_spec,
         suppress_exceptions=False,
     )
 
@@ -261,11 +283,11 @@ def optimize_ir_typed(
     ir: dict[str, Any],
     optimizer_options: LayerOptionsCarrier | dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    runtime_spec = _coerce_runtime_spec(spec)
-    return execute_optimize_ir_with_spec(
-        runtime_spec,
+    return optimize_ir_with_backend_spec(
+        spec,
         ir,
         optimizer_options,
+        coerce_runtime_spec=_coerce_runtime_spec,
         suppress_exceptions=False,
     )
 
@@ -283,14 +305,14 @@ def emit_module_typed(
     module_id: str = "",
     is_entry: bool = False,
 ) -> ModuleArtifactCarrier:
-    runtime_spec = _coerce_runtime_spec(spec)
-    return execute_emit_module_with_spec(
-        runtime_spec,
+    return emit_module_with_backend_spec(
+        spec,
         ir,
         output_path,
         emitter_options,
         module_id=module_id,
         is_entry=is_entry,
+        coerce_runtime_spec=_coerce_runtime_spec,
         suppress_exceptions=False,
     )
 
@@ -304,15 +326,15 @@ def emit_module(
     module_id: str = "",
     is_entry: bool = False,
 ) -> dict[str, Any]:
-    return export_module_artifact_any(
-        emit_module_typed(
-            spec,
-            ir,
-            output_path,
-            emitter_options,
-            module_id=module_id,
-            is_entry=is_entry,
-        )
+    return export_module_artifact_with_backend_spec(
+        spec,
+        ir,
+        output_path,
+        emitter_options,
+        module_id=module_id,
+        is_entry=is_entry,
+        coerce_runtime_spec=_coerce_runtime_spec,
+        suppress_exceptions=False,
     )
 
 
@@ -326,15 +348,15 @@ def build_program_artifact_typed(
     link_output_schema: str = "",
     writer_options: dict[str, object] | None = None,
 ) -> ProgramArtifactCarrier:
-    runtime_spec = _coerce_runtime_spec(spec)
-    return build_program_artifact_from_modules(
-        runtime_spec,
+    return build_program_artifact_with_backend_spec(
+        spec,
         modules,
         program_id=program_id,
         entry_modules=entry_modules,
         layout_mode=layout_mode,
         link_output_schema=link_output_schema,
         writer_options=writer_options,
+        coerce_runtime_spec=_coerce_runtime_spec,
     )
 
 
@@ -348,30 +370,28 @@ def build_program_artifact(
     link_output_schema: str = "",
     writer_options: dict[str, object] | None = None,
 ) -> dict[str, Any]:
-    return export_program_artifact_any(
-        build_program_artifact_typed(
-            spec,
-            modules,
-            program_id=program_id,
-            entry_modules=entry_modules,
-            layout_mode=layout_mode,
-            link_output_schema=link_output_schema,
-            writer_options=writer_options,
-        )
+    return export_program_artifact_with_backend_spec(
+        spec,
+        modules,
+        program_id=program_id,
+        entry_modules=entry_modules,
+        layout_mode=layout_mode,
+        link_output_schema=link_output_schema,
+        writer_options=writer_options,
+        coerce_runtime_spec=_coerce_runtime_spec,
     )
 
 
 def collect_program_modules_typed(module_artifact: ModuleArtifactCarrier | dict[str, Any]) -> tuple[ModuleArtifactCarrier, ...]:
-    return collect_program_module_carriers(module_artifact)
+    return collect_program_modules_from_artifact(module_artifact)
 
 
 def collect_program_modules(module_artifact: dict[str, Any]) -> list[dict[str, Any]]:
-    return export_program_module_artifacts(module_artifact)
+    return export_program_modules_from_artifact(module_artifact)
 
 
 def get_program_writer_typed(spec: BackendSpec | ResolvedBackendSpec) -> Any:
-    runtime_spec = _coerce_runtime_spec(spec)
-    return get_program_writer_with_spec(runtime_spec)
+    return get_program_writer_from_backend_spec(spec, coerce_runtime_spec=_coerce_runtime_spec)
 
 
 def get_program_writer(spec: BackendSpec) -> Any:
@@ -393,19 +413,18 @@ def emit_source_typed(
     output_path: Path,
     emitter_options: LayerOptionsCarrier | dict[str, Any] | None = None,
 ) -> str:
-    runtime_spec = _coerce_runtime_spec(spec)
-    return emit_source_text_with_spec(
-        runtime_spec,
+    return emit_source_with_backend_spec(
+        spec,
         ir,
         output_path,
         emitter_options,
+        coerce_runtime_spec=_coerce_runtime_spec,
         suppress_exceptions=False,
     )
 
 
 def apply_runtime_hook_typed(spec: BackendSpec | ResolvedBackendSpec, output_path: Path) -> None:
-    runtime_spec = _coerce_runtime_spec(spec)
-    apply_runtime_hook_with_spec(runtime_spec, output_path)
+    apply_runtime_hook_from_backend_spec(spec, output_path, coerce_runtime_spec=_coerce_runtime_spec)
 
 
 def apply_runtime_hook(spec: BackendSpec, output_path: Path) -> None:
