@@ -6569,11 +6569,18 @@ class _ShExprParser:
         dict[str, Any],
     ]:
         """Subscript suffix の first expr 側 parse を helper へ寄せる。"""
-        first = self._parse_ifexp()
-        if self._cur()["k"] == ":":
+        first, is_slice = self._resolve_subscript_suffix_first_component_state()
+        if is_slice:
             return self._parse_subscript_slice_tail(lower=first)
         rtok = self._eat("]")
         return first, None, None, rtok
+
+    def _resolve_subscript_suffix_first_component_state(
+        self,
+    ) -> tuple[dict[str, Any], bool]:
+        """Subscript suffix の first expr 側 state resolve を helper へ寄せる。"""
+        first = self._parse_ifexp()
+        return first, self._cur()["k"] == ":"
 
     def _resolve_subscript_suffix_state(
         self,
