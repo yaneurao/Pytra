@@ -6,6 +6,9 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from tools.selfhost_parity_summary import build_summary_row
+from tools.selfhost_parity_summary import format_summary_line
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -42,13 +45,10 @@ def _print_stage1_summary(report: Path) -> None:
         return
     print("[stage1 summary]")
     for row in rows:
-        lang = row[0]
-        stage1 = row[1]
-        stage2 = row[3]
-        note = row[4]
-        if stage1 == "pass" and stage2 in {"pass", "blocked", "skip"}:
+        summary = _stage1_row_to_summary(row)
+        if summary is None or summary.top_level_category == "pass":
             continue
-        print(f"- {lang}: stage1={stage1} stage2={stage2} note={note}")
+        print(format_summary_line(summary))
 
 
 def _print_multistage_summary(report: Path) -> None:
@@ -58,16 +58,45 @@ def _print_multistage_summary(report: Path) -> None:
         return
     print("[multistage summary]")
     for row in rows:
-        lang = row[0]
-        stage2 = row[2]
-        stage3 = row[3]
-        category = row[4]
-        note = row[5]
-        if category in {"pass"}:
+        summary = _multistage_row_to_summary(row)
+        if summary is None or summary.top_level_category == "pass":
             continue
-        if stage2 == "pass" and stage3 == "pass":
-            continue
-        print(f"- {lang}: stage2={stage2} stage3={stage3} category={category} note={note}")
+        print(format_summary_line(summary))
+
+
+def _stage1_detail_category(stage1: str, mode: str, stage2: str, note: str) -> str:
+    note_lc = note.lower()
+    mode_lc = mode.lower()
+    if stage1 == "pass" and stage2 in {"pass", "blocked", "skip"}:
+        return "pass"
+    if "toolchain" in note_lc or stage1 == "missing_toolchain":
+        return "toolchain_missing"
+    if "preview" in note_lc or mode_lc == "preview":
+        return "preview_only"
+    if stage2 == "blocked":
+        return "blocked"
+    return "regression"
+
+
+def _stage1_row_to_summary(row: list[str]):
+    if len(row) < 5:
+        return None
+    lang = row[0]
+    stage1 = row[1]
+    mode = row[2]
+    stage2 = row[3]
+    note = row[4]
+    detail = _stage1_detail_category(stage1, mode, stage2, note)
+    return build_summary_row("stage1", lang, detail, note)
+
+
+def _multistage_row_to_summary(row: list[str]):
+    if len(row) < 6:
+        return None
+    lang = row[0]
+    detail = row[4]
+    note = row[5]
+    return build_summary_row("multistage", lang, detail, note)
 
 
 def main() -> int:
