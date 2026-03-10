@@ -199,6 +199,8 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] call 式全体の戻り型推定も `_ShExprParser._infer_call_expr_return_type()` へ寄せ、`Name` / `Attribute` / `Lambda` callee ごとの `call_ret` 分岐を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline return-inference block の不在に加えて `_sh_infer_enumerate_item_type()` が 1 回だけ定義されることも固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `Attribute` access の lookup cluster も `_ShExprParser._lookup_attr_expr_metadata()` へ寄せ、`lookup_stdlib_attribute_type()` / `lookup_stdlib_method_runtime_binding()` / `_sh_lookup_noncpp_attr_runtime_call()` を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 attr lookup inline block の不在を固定した。
 
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/ir/core.py` に parser method `_annotate_named_call_expr()` を追加し、`call_dispatch` の field 展開と fixed builtin / scalar ctor / stdlib / non-C++ / exception / iterator / collection / predicate 分岐を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline annotation block の不在を固定した。
+
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
 文脈: [docs/ja/plans/p3-compiler-contract-hardening.md](../plans/p3-compiler-contract-hardening.md)

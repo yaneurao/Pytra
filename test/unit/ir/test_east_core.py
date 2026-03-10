@@ -448,13 +448,17 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_resolved_runtime_expr",
             1,
         )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
-        self.assertIn("_sh_annotate_fixed_runtime_builtin_call_expr(", postfix_text)
+        self.assertIn("_sh_annotate_fixed_runtime_builtin_call_expr(", named_call_text)
         self.assertIn("_sh_annotate_runtime_method_call_expr(", postfix_text)
-        self.assertIn("_sh_annotate_type_predicate_call_expr(", postfix_text)
+        self.assertIn("_sh_annotate_type_predicate_call_expr(", named_call_text)
         self.assertNotIn('payload["lowered_kind"] = "BuiltinCall"', postfix_text)
         self.assertNotIn('payload["lowered_kind"] = "TypePredicateCall"', postfix_text)
         self.assertNotIn('payload["builtin_name"] = "print"', postfix_text)
@@ -532,13 +536,17 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_stdlib_function_call_expr",
             1,
         )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('payload["iterable_trait"] = "yes" if iter_element_type != "unknown" else "unknown"', helper_text)
         self.assertIn('payload["iter_protocol"] = "static_range"', helper_text)
         self.assertIn('payload["resolved_type"] = f"list[tuple[int64, {iter_element_type}]]"', helper_text)
-        self.assertIn('_sh_annotate_enumerate_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_enumerate_call_expr(', named_call_text)
         self.assertNotIn('payload["iterable_trait"] = "yes" if elem_t != "unknown" else "unknown"', postfix_text)
         self.assertNotIn('payload["iter_protocol"] = "static_range"', postfix_text)
         self.assertNotIn('payload["iter_element_type"] = elem_t', postfix_text)
@@ -549,12 +557,16 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_stdlib_symbol_call_expr",
             1,
         )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn("lookup_stdlib_function_runtime_binding(fn_name)", helper_text)
         self.assertIn("lookup_stdlib_function_return_type(fn_name)", helper_text)
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
-        self.assertIn('_sh_annotate_stdlib_function_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_stdlib_function_call_expr(', named_call_text)
         self.assertNotIn("mod_id, runtime_symbol = lookup_stdlib_function_runtime_binding(fn_name)", postfix_text)
         self.assertNotIn("sig_ret = lookup_stdlib_function_return_type(fn_name)", postfix_text)
         self.assertNotIn('payload["resolved_type"] = sig_ret', postfix_text)
@@ -565,11 +577,15 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_noncpp_symbol_call_expr",
             1,
         )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn("lookup_stdlib_imported_symbol_runtime_binding(fn_name, _SH_IMPORT_SYMBOLS)", helper_text)
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
-        self.assertIn('_sh_annotate_stdlib_symbol_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_stdlib_symbol_call_expr(', named_call_text)
         self.assertNotIn(
             "mod_id, runtime_symbol = lookup_stdlib_imported_symbol_runtime_binding(fn_name, _SH_IMPORT_SYMBOLS)",
             postfix_text,
@@ -581,12 +597,16 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_lookup_noncpp_attr_runtime_call",
             1,
         )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn("binding = _SH_IMPORT_SYMBOLS.get(fn_name)", helper_text)
         self.assertIn("lookup_runtime_binding_semantic_tag(mod_id, runtime_symbol)", helper_text)
         self.assertIn('_sh_annotate_resolved_runtime_expr(', helper_text)
-        self.assertIn('_sh_annotate_noncpp_symbol_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_noncpp_symbol_call_expr(', named_call_text)
         self.assertNotIn("binding = _SH_IMPORT_SYMBOLS.get(fn_name)", postfix_text)
         self.assertNotIn("binding_semantic_tag = lookup_runtime_binding_semantic_tag(mod_id, runtime_symbol)", postfix_text)
 
@@ -627,6 +647,10 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_minmax_call_expr",
             1,
         )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('runtime_call = "static_cast"', helper_text)
@@ -635,7 +659,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('elif fn_name == "bool" and arg_count == 1 and use_truthy_runtime:', helper_text)
         self.assertIn('runtime_call = "py_to_bool"', helper_text)
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
-        self.assertIn('_sh_annotate_scalar_ctor_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_scalar_ctor_call_expr(', named_call_text)
         self.assertNotIn('runtime_call = "static_cast"', postfix_text)
         self.assertNotIn('runtime_call = "py_to_int64_base"', postfix_text)
         self.assertNotIn('runtime_call = "py_to_bool"', postfix_text)
@@ -648,12 +672,16 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_collection_ctor_call_expr",
             1,
         )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('runtime_call="py_min" if fn_name == "min" else "py_max"', helper_text)
         self.assertIn('module_id="pytra.core.py_runtime"', helper_text)
-        self.assertIn('_sh_annotate_minmax_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_minmax_call_expr(', named_call_text)
         self.assertNotIn('elif fn_name in {"min", "max"}:\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('runtime_call="py_min" if fn_name == "min" else "py_max"', postfix_text)
 
@@ -661,6 +689,10 @@ class EastCoreTest(unittest.TestCase):
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_collection_ctor_call_expr", 1)[1].split(
             "def _sh_annotate_anyall_call_expr",
+            1,
+        )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -671,7 +703,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('elif fn_name == "bytearray":', helper_text)
         self.assertIn('runtime_call = "bytearray_ctor"', helper_text)
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
-        self.assertIn('_sh_annotate_collection_ctor_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_collection_ctor_call_expr(', named_call_text)
         self.assertNotIn(
             'elif fn_name in {"bytes", "bytearray"}:\n                    _sh_annotate_runtime_call_expr(',
             postfix_text,
@@ -689,12 +721,16 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_ordchr_call_expr",
             1,
         )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('runtime_call="py_any" if fn_name == "any" else "py_all"', helper_text)
         self.assertIn('module_id="pytra.built_in.predicates"', helper_text)
-        self.assertIn('_sh_annotate_anyall_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_anyall_call_expr(', named_call_text)
         self.assertNotIn('elif fn_name == "any":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('elif fn_name == "all":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('runtime_call="py_any" if fn_name == "any" else "py_all"', postfix_text)
@@ -705,13 +741,17 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_iterator_builtin_call_expr",
             1,
         )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('runtime_call="py_ord" if fn_name == "ord" else "py_chr"', helper_text)
         self.assertIn('runtime_symbol="py_ord" if fn_name == "ord" else "py_chr"', helper_text)
         self.assertIn('module_id="pytra.built_in.scalar_ops"', helper_text)
-        self.assertIn('_sh_annotate_ordchr_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_ordchr_call_expr(', named_call_text)
         self.assertNotIn('elif fn_name == "ord":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('elif fn_name == "chr":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('runtime_call="py_ord" if fn_name == "ord" else "py_chr"', postfix_text)
@@ -720,6 +760,10 @@ class EastCoreTest(unittest.TestCase):
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_iterator_builtin_call_expr", 1)[1].split(
             "def _sh_annotate_open_call_expr",
+            1,
+        )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -732,7 +776,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('module_id = "pytra.core.py_runtime"', helper_text)
         self.assertIn('module_id = "pytra.built_in.iter_ops"', helper_text)
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
-        self.assertIn('_sh_annotate_iterator_builtin_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_iterator_builtin_call_expr(', named_call_text)
         self.assertNotIn('elif fn_name == "iter":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('elif fn_name == "next":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('elif fn_name == "reversed":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
@@ -746,6 +790,10 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_exception_ctor_call_expr",
             1,
         )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
@@ -753,7 +801,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('runtime_call="open"', helper_text)
         self.assertIn('module_id="pytra.core.py_runtime"', helper_text)
         self.assertIn('runtime_symbol="open"', helper_text)
-        self.assertIn('_sh_annotate_open_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_open_call_expr(', named_call_text)
         self.assertNotIn('elif fn_name == "open":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('runtime_call="open"', postfix_text)
 
@@ -763,6 +811,10 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_type_predicate_call_expr",
             1,
         )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
@@ -770,7 +822,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('runtime_call="std::runtime_error"', helper_text)
         self.assertIn('module_id="pytra.core.py_runtime"', helper_text)
         self.assertIn('runtime_symbol=fn_name', helper_text)
-        self.assertIn('_sh_annotate_exception_ctor_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_exception_ctor_call_expr(', named_call_text)
         self.assertNotIn('elif fn_name in {"Exception", "RuntimeError"}:\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('runtime_call="std::runtime_error"', postfix_text)
 
@@ -780,12 +832,16 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_fixed_runtime_builtin_call_expr",
             1,
         )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('lowered_kind="TypePredicateCall"', helper_text)
         self.assertIn('builtin_name=fn_name', helper_text)
-        self.assertIn('_sh_annotate_type_predicate_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_type_predicate_call_expr(', named_call_text)
         self.assertNotIn('elif fn_name == "isinstance":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('elif fn_name == "issubclass":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('lowered_kind="TypePredicateCall"', postfix_text)
@@ -794,6 +850,10 @@ class EastCoreTest(unittest.TestCase):
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _sh_annotate_fixed_runtime_builtin_call_expr", 1)[1].split(
             "def _sh_lookup_named_call_dispatch",
+            1,
+        )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -810,7 +870,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('elif fn_name == "zip":', helper_text)
         self.assertIn('runtime_call = "zip"', helper_text)
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
-        self.assertIn('_sh_annotate_fixed_runtime_builtin_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_fixed_runtime_builtin_call_expr(', named_call_text)
         self.assertNotIn('if fn_name == "print":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('elif fn_name == "len":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
         self.assertNotIn('elif fn_name == "range":\n                    _sh_annotate_runtime_call_expr(', postfix_text)
@@ -834,7 +894,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('lookup_stdlib_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)', helper_text)
         self.assertIn('lookup_stdlib_symbol_semantic_tag(fn_name)', helper_text)
         self.assertIn('lookup_noncpp_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)', helper_text)
-        self.assertIn('call_dispatch = _sh_lookup_named_call_dispatch(fn_name)', postfix_text)
+        self.assertIn('_sh_lookup_named_call_dispatch(fn_name)', postfix_text)
         self.assertNotIn('lookup_stdlib_function_runtime_call(fn_name) if fn_name != "" else ""', postfix_text)
         self.assertNotIn('lookup_builtin_semantic_tag(fn_name) if fn_name != "" else ""', postfix_text)
         self.assertNotIn(
@@ -845,6 +905,24 @@ class EastCoreTest(unittest.TestCase):
             'lookup_noncpp_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)',
             postfix_text,
         )
+
+    def test_core_source_routes_named_call_annotations_through_parser_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))', helper_text)
+        self.assertIn('if fn_name in {"print", "len", "range", "zip", "str"}:', helper_text)
+        self.assertIn('if fn_name == "bool" and len(args) == 1:', helper_text)
+        self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', helper_text)
+        self.assertIn("payload = self._annotate_named_call_expr(", postfix_text)
+        self.assertNotIn('stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))', postfix_text)
+        self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', postfix_text)
+        self.assertNotIn('if fn_name == "bool" and len(args) == 1:', postfix_text)
+        self.assertNotIn("elem_t = _sh_infer_enumerate_item_type(args)", postfix_text)
 
     def test_core_source_routes_known_name_call_returns_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
@@ -873,12 +951,16 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_set_parse_context",
             1,
         )[0]
+        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn("if len(args) < 1:", helper_text)
         self.assertIn("arg0 = args[0]", helper_text)
         self.assertIn("return _sh_infer_item_type(arg0)", helper_text)
-        self.assertIn("elem_t = _sh_infer_enumerate_item_type(args)", postfix_text)
+        self.assertIn("iter_element_type=_sh_infer_enumerate_item_type(args)", named_call_text)
         self.assertNotIn('if len(args) >= 1 and isinstance(args[0], dict):', postfix_text)
         self.assertNotIn('elem_t = self._iter_item_type(args[0])', postfix_text)
 

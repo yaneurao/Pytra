@@ -198,6 +198,8 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Call-expression return inference now also routes through `_ShExprParser._infer_call_expr_return_type()`, moving the `Name` / `Attribute` / `Lambda` callee `call_ret` branches out of `_parse_postfix()`. `test_east_core.py` now fixes the helper definition, the call site, the absence of the old inline return-inference block, and the fact that `_sh_infer_enumerate_item_type()` is defined exactly once.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] The `Attribute` access lookup cluster now also routes through `_ShExprParser._lookup_attr_expr_metadata()`, moving `lookup_stdlib_attribute_type()`, `lookup_stdlib_method_runtime_binding()`, and `_sh_lookup_noncpp_attr_runtime_call()` out of `_parse_postfix()`. `test_east_core.py` now fixes the helper definition, the call site, and the absence of the old attr-lookup inline block.
 
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/ir/core.py` now adds parser method `_annotate_named_call_expr()`, moving the `call_dispatch` field expansion plus the fixed-builtin, scalar-ctor, stdlib, non-C++, exception, iterator, collection, and predicate branches out of `_parse_postfix()`. `test_east_core.py` now fixes the helper definition, the call site, and the absence of the old inline annotation block.
+
 ### P3: Harden compiler contracts and make stage / pass / backend handoffs fail closed
 
 Context: [docs/ja/plans/p3-compiler-contract-hardening.md](../plans/p3-compiler-contract-hardening.md)
