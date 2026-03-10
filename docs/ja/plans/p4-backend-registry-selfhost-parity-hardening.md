@@ -83,7 +83,7 @@
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S3-01] host registry / static registry を shared metadata または generator 経由へ寄せ、手書き重複を縮退する。
 - [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S3-02] registry drift guard または diff test を追加し、片側だけ更新された backend surface を fail-fast で検知した。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S4-01] stage1 / stage2 / direct e2e / multilang selfhost の representative parity suite を整理し、failure category と summary 出力を統一する。
-- [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S4-02] unsupported / preview / known block / regression の診断カテゴリを registry と parity report で揃え、expected failure を明示管理できるようにする。
+- [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S4-02] unsupported / preview / known block / regression の診断カテゴリを registry と parity report で揃え、expected failure を明示管理できるようにする。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S5-01] docs / plan report / archive を更新し、backend readiness・known block・gate 実行手順を追跡可能にする。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S5-02] representative internal change に対して host lane と selfhost lane が同じ contract で検証されることを確認し、再流入 guard を固定する。
 
@@ -159,3 +159,4 @@
 - 2026-03-11: 続く `S4-02` の cluster で `toolchain/compiler/backend_registry_diagnostics.py` を追加し、registry/parity が共有する top-level category 正規化と diagnostic text 推定を一本化した。`unsupported target/profile/non-cpp build target` は `unsupported_by_design -> known_block`、`unsupported backend symbol ref/runtime hook key/emit kind` は `regression` と定義し、registry の error text も同 helper の message builder に寄せた。
 - 2026-03-11: 次の `S4-02` cluster では multistage selfhost report の `runner_not_defined` を `unsupported_by_design` へ寄せ、expected failure と regression を raw category の段階から分離した。`check_multilang_selfhost_suite.py` 側ではこの detail が `known_block` に正規化されることを test で固定した。
 - 2026-03-11: `S4-02` の次の cluster で parity 側の known-block detail 判定も `backend_registry_diagnostics.py` の `KNOWN_BLOCK_DETAIL_CATEGORIES` / `infer_diagnostic_detail_from_text()` に揃えた。これで `preview backend ...` は direct e2e / stage2-diff でも `known_block/preview_only` に正規化され、registry 側の `classify_registry_diagnostic()` も `preview_only` / `toolchain_missing` をそのまま top-level category へ写像する。
+- 2026-03-11: `S4-02` は完了と判断した。registry 側の diagnostics helper、direct e2e / stage2-diff parity summary、multilang selfhost summary が `unsupported_by_design` / `preview_only` / `toolchain_missing` / `regression` を同じ shared vocabulary で扱い、expected failure を代表 lane 全体で同じ category contract として追跡できるようになった。
