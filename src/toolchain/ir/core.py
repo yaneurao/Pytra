@@ -5403,6 +5403,30 @@ class _ShExprParser:
         """owner expr から resolved_type を取る処理を helper へ寄せる。"""
         return str(owner_expr.get("resolved_type", "unknown"))
 
+    def _resolve_attr_expr_owner_state(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        attr_name: str,
+        source_span: dict[str, int],
+    ) -> str:
+        """Attribute access の owner 型判定と preflight guard を helper へ寄せる。"""
+        owner_t = self._owner_expr_resolved_type(owner_expr)
+        if attr_name in {"keys", "items", "values"}:
+            self._guard_dynamic_helper_receiver(
+                helper_name=attr_name,
+                owner_t=owner_t,
+                source_span=source_span,
+            )
+        if self._is_forbidden_object_receiver_type(owner_t):
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message="object receiver attribute/method access is forbidden by language constraints",
+                source_span=source_span,
+                hint="Cast or assign to a concrete type before attribute/method access.",
+            )
+        return owner_t
+
     def _resolve_attr_callee(self, *, callee: dict[str, Any]) -> tuple[dict[str, Any] | None, str, str]:
         """Attribute callee の owner / type / attr 抽出を helper へ寄せる。"""
         attr = str(callee.get("attr", ""))
@@ -5543,20 +5567,11 @@ class _ShExprParser:
         repr_text: str,
     ) -> dict[str, Any]:
         """Attribute access node の生成と annotation を parser helper へ寄せる。"""
-        owner_t = self._owner_expr_resolved_type(owner_expr)
-        if attr_name in {"keys", "items", "values"}:
-            self._guard_dynamic_helper_receiver(
-                helper_name=attr_name,
-                owner_t=owner_t,
-                source_span=source_span,
-            )
-        if self._is_forbidden_object_receiver_type(owner_t):
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message="object receiver attribute/method access is forbidden by language constraints",
-                source_span=source_span,
-                hint="Cast or assign to a concrete type before attribute/method access.",
-            )
+        owner_t = self._resolve_attr_expr_owner_state(
+            owner_expr=owner_expr,
+            attr_name=attr_name,
+            source_span=source_span,
+        )
         (
             resolved_type,
             attr_runtime_call,
