@@ -129,12 +129,18 @@
 - `P3`
   - 「何を受け取ってよいか」を machine-checkable に固定する。carrier の型上げや language surface 追加は行わない。
 
+## S2 契約文書
+
+- `docs/ja/spec/spec-dev.md` `1.2.2` を raw EAST3 / linked output / backend input の required field と許容欠落の正本に固定した。
+- `docs/ja/spec/spec-dev.md` `1.2.3` を `type_expr` / `resolved_type` mirror、`dispatch_mode`、`source_span`、helper metadata の fail-closed mismatch policy の正本に固定した。
+- `docs/ja/spec/spec-dev.md` `1.2.4` を schema / invariant / backend-input validator の diagnostic category 最小集合の正本に固定した。
+
 ## 分解
 
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-01] `check_east_stage_boundary` / `validate_raw_east3_doc` / backend entry guard の現状を棚卸しし、未検証の blind spot（node shape、`type_expr` / `resolved_type`、`source_span`、helper metadata）を分類する。
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-02] `P1-EAST-TYPEEXPR-01` / `P2-COMPILER-TYPED-BOUNDARY-01` と責務が衝突しないように、schema validator / invariant validator / backend input validator の責務境界を decision log に固定する。
-- [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-01] `spec-dev` または等価設計文書に、EAST3 / linked output / backend input の必須 field、許容欠落、diagnostic category を追加する。
-- [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-02] `type_expr` / `resolved_type` mirror、`dispatch_mode`、`source_span`、helper metadata の整合ルールと fail-closed 方針を固定する。
+- [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-01] `spec-dev` または等価設計文書に、EAST3 / linked output / backend input の必須 field、許容欠落、diagnostic category を追加する。
+- [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-02] `type_expr` / `resolved_type` mirror、`dispatch_mode`、`source_span`、helper metadata の整合ルールと fail-closed 方針を固定する。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-01] `toolchain/link/program_validator.py` と周辺に central validator primitive を追加し、raw EAST3 / linked output の coarse check を node/meta invariant まで拡張する。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-02] representative pass / lowering / linker entry に pre/post validation hook を導入し、invalid node の透過搬送を止める。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-01] representative backend（まず C++）の入口で compiler contract validator を通し、backend-local crash や silent fallback を structured diagnostic へ置き換える。
@@ -175,3 +181,5 @@
 - 2026-03-09: `check_east_stage_boundary` のような境界 guard は残しつつ、import/call 監視だけでは足りないため semantic invariant まで広げる方針を固定した。
 - 2026-03-11: `S1-01` 棚卸しでは、現行 guard が top-level schema と import/call policing に偏っており、node shape・`source_span`・helper metadata・backend input 契約が未検証であることを確認した。
 - 2026-03-11: `S1-02` では責務境界を 3 層に固定した。schema validator は serialization/container shape、invariant validator は node/meta relationship、backend input validator は target-local fail-closed diagnostics を担当する。
+- 2026-03-11: `S2-01` は `spec-dev` `1.2.2` と `1.2.4` を正本にし、raw EAST3 / linked output / backend input の required field、許容欠落、diagnostic category を固定した。
+- 2026-03-11: `S2-02` は `spec-dev` `1.2.3` を正本にし、`type_expr` / `resolved_type` mirror、`dispatch_mode`、`source_span`、helper metadata の矛盾を fail-closed で扱うことを固定した。
