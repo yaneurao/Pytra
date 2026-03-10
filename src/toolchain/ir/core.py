@@ -5079,7 +5079,38 @@ class _ShExprParser:
         is_keyword_entry: bool,
     ) -> None:
         """call argument loop entry の dispatch apply を helper へ寄せる。"""
-        if is_keyword_entry and keyword_entry is not None:
+        has_keyword_entry = self._resolve_call_arg_loop_entry_apply_state(
+            is_keyword_entry=is_keyword_entry,
+            keyword_entry=keyword_entry,
+        )
+        return self._apply_call_arg_loop_entry_apply_state(
+            args=args,
+            keywords=keywords,
+            arg_entry=arg_entry,
+            keyword_entry=keyword_entry,
+            has_keyword_entry=has_keyword_entry,
+        )
+
+    def _resolve_call_arg_loop_entry_apply_state(
+        self,
+        *,
+        is_keyword_entry: bool,
+        keyword_entry: dict[str, Any] | None,
+    ) -> bool:
+        """call argument loop entry の keyword apply state を helper へ寄せる。"""
+        return is_keyword_entry and keyword_entry is not None
+
+    def _apply_call_arg_loop_entry_apply_state(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        arg_entry: dict[str, Any] | None,
+        keyword_entry: dict[str, Any] | None,
+        has_keyword_entry: bool,
+    ) -> None:
+        """call argument loop entry の keyword/positional apply を helper へ寄せる。"""
+        if has_keyword_entry and keyword_entry is not None:
             return self._apply_keyword_call_arg_loop_entry(
                 keywords=keywords,
                 keyword_entry=keyword_entry,
@@ -5218,7 +5249,29 @@ class _ShExprParser:
         keywords: list[dict[str, Any]],
     ) -> bool:
         """call argument loop 1周分の処理を helper へ寄せる。"""
-        arg_entry, keyword_entry = self._parse_call_arg_entry()
+        arg_entry, keyword_entry = self._resolve_call_arg_loop_entry_state()
+        return self._apply_call_arg_loop_entry_state(
+            args=args,
+            keywords=keywords,
+            arg_entry=arg_entry,
+            keyword_entry=keyword_entry,
+        )
+
+    def _resolve_call_arg_loop_entry_state(
+        self,
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument loop 1周分の state resolve を helper へ寄せる。"""
+        return self._parse_call_arg_entry()
+
+    def _apply_call_arg_loop_entry_state(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        arg_entry: dict[str, Any] | None,
+        keyword_entry: dict[str, Any] | None,
+    ) -> bool:
+        """call argument loop 1周分の state apply を helper へ寄せる。"""
         self._apply_call_arg_entry(
             args=args,
             keywords=keywords,
