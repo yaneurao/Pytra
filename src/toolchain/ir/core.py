@@ -4993,11 +4993,15 @@ class _ShExprParser:
         if not has_comma:
             return False
         self._consume_call_arg_loop_comma_token()
-        return self._cur()["k"] != ")"
+        return self._resolve_call_arg_loop_continue_kind()
 
     def _consume_call_arg_loop_comma_token(self) -> dict[str, Any]:
         """call argument loop の `,` consume を helper へ寄せる。"""
         return self._eat(",")
+
+    def _resolve_call_arg_loop_continue_kind(self) -> bool:
+        """call argument loop の continue kind 判定を helper へ寄せる。"""
+        return self._cur()["k"] != ")"
 
     def _parse_call_args(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Call expr の位置引数と keyword 引数を parser helper へ寄せる。"""
