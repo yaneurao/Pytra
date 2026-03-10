@@ -874,6 +874,10 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_attr_call_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         callee_resolve_text = text.split("def _resolve_callee_call_annotation_kind", 1)[1].split(
+            "def _resolve_callee_call_annotation_state",
+            1,
+        )[0]
+        callee_state_text = text.split("def _resolve_callee_call_annotation_state", 1)[1].split(
             "def _annotate_callee_call_expr",
             1,
         )[0]
@@ -922,9 +926,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("owner_expr, owner_t, attr = self._resolve_attr_call_annotation_state(", helper_text)
         self.assertIn("return self._apply_attr_call_expr_annotation(", helper_text)
         self.assertIn('if callee.get("kind") == "Attribute":', callee_resolve_text)
+        self.assertIn("return self._resolve_callee_call_annotation_kind(", callee_state_text)
         self.assertIn('if callee_kind == "attr":', callee_apply_text)
         self.assertIn("return self._annotate_attr_call_expr(", callee_apply_text)
-        self.assertIn("callee_kind = self._resolve_callee_call_annotation_kind(", callee_helper_text)
+        self.assertIn("callee_kind = self._resolve_callee_call_annotation_state(", callee_helper_text)
         self.assertIn("return self._apply_callee_call_annotation(", callee_helper_text)
         self.assertIn("return self._annotate_callee_call_expr(", call_apply_text)
         self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
@@ -1217,7 +1222,15 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_named_call_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        callee_resolve_text = text.split("def _resolve_callee_call_annotation_kind", 1)[1].split(
+            "def _resolve_callee_call_annotation_state",
+            1,
+        )[0]
         callee_apply_text = text.split("def _apply_callee_call_annotation", 1)[1].split(
+            "def _resolve_callee_call_annotation_kind",
+            1,
+        )[0]
+        callee_state_text = text.split("def _resolve_callee_call_annotation_state", 1)[1].split(
             "def _annotate_callee_call_expr",
             1,
         )[0]
@@ -1309,14 +1322,17 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("call_ret, fn_name = self._infer_call_expr_return_type(callee, args)", state_helper_text)
         self.assertIn("self._guard_named_call_args(", state_helper_text)
         self.assertIn("call_ret, fn_name = self._resolve_call_expr_annotation_state(", call_helper_text)
-        self.assertIn('if fn_name != "":', callee_apply_text)
+        self.assertIn('if fn_name != "":', callee_resolve_text)
         self.assertIn("return self._annotate_named_call_expr(", callee_apply_text)
+        self.assertIn("return self._resolve_callee_call_annotation_kind(", callee_state_text)
         self.assertIn("return self._apply_callee_call_annotation(", callee_helper_text)
         self.assertIn("return self._annotate_callee_call_expr(", call_apply_text)
         self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
         self.assertNotIn('fn_name = str(callee.get("id", "")) if callee.get("kind") == "Name" else ""', call_helper_text)
         self.assertNotIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', call_helper_text)
         self.assertNotIn("self._guard_named_call_args(", call_helper_text)
+        self.assertNotIn('if fn_name != "":', callee_apply_text)
+        self.assertNotIn("callee_kind = self._resolve_callee_call_annotation_kind(", callee_helper_text)
         self.assertNotIn("return self._annotate_named_call_expr(", callee_helper_text)
         self.assertNotIn("return self._annotate_callee_call_expr(", call_helper_text)
 

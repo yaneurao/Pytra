@@ -242,6 +242,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `Attribute` call の source-span normalize と callee resolve も `_ShExprParser._resolve_attr_call_annotation_state()` へ寄せ、`_annotate_attr_call_expr()` から `payload.get("source_span")` と `_resolve_attr_callee()` の直列処理を外した。`test_east_core.py` では state helper 定義、call site、旧 inline attr-call state block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて named-call dispatch の annotation-state resolve も `_ShExprParser._resolve_named_call_annotation_state()` へ寄せ、`_annotate_named_call_expr()` から `_resolve_named_call_dispatch()` の直列呼び出しを外した。`test_east_core.py` では state helper 定義、call site、旧 inline named-call state block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて callee kind ごとの dispatch 判定も `_ShExprParser._resolve_callee_call_annotation_kind()` へ寄せ、`_apply_callee_call_annotation()` から `fn_name != ""` と `callee.get("kind") == "Attribute"` の直列分岐を外した。`test_east_core.py` では resolve helper 定義、call site、旧 inline callee-kind branch の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて callee-call の annotation-state resolve も `_ShExprParser._resolve_callee_call_annotation_state()` へ寄せ、`_annotate_callee_call_expr()` から `_resolve_callee_call_annotation_kind()` の直列呼び出しを外した。`test_east_core.py` では state helper 定義、call site、旧 inline callee-state block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

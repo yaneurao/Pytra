@@ -4973,6 +4973,18 @@ class _ShExprParser:
             return "attr"
         return ""
 
+    def _resolve_callee_call_annotation_state(
+        self,
+        *,
+        callee: dict[str, Any],
+        fn_name: str,
+    ) -> str:
+        """callee-call の kind resolve を annotation-state helper へ寄せる。"""
+        return self._resolve_callee_call_annotation_kind(
+            callee=callee,
+            fn_name=fn_name,
+        )
+
     def _annotate_callee_call_expr(
         self,
         payload: dict[str, Any],
@@ -4982,7 +4994,7 @@ class _ShExprParser:
         args: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """callee kind ごとの call annotation dispatch を helper へ寄せる。"""
-        callee_kind = self._resolve_callee_call_annotation_kind(
+        callee_kind = self._resolve_callee_call_annotation_state(
             callee=callee,
             fn_name=fn_name,
         )
