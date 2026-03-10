@@ -5311,6 +5311,10 @@ class _ShExprParser:
 
     def _resolve_call_args_empty_state(self) -> bool:
         """call argument list の空 `)` 判定を helper へ寄せる。"""
+        return self._resolve_call_args_empty_kind()
+
+    def _resolve_call_args_empty_kind(self) -> bool:
+        """call argument list の空 `)` kind probe を helper へ寄せる。"""
         return self._cur()["k"] == ")"
 
     def _apply_call_args_empty_state(
