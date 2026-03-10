@@ -6559,11 +6559,15 @@ class _ShExprParser:
             return None
         return self._parse_ifexp()
 
+    def _consume_subscript_slice_tail_colon_token(self) -> dict[str, Any]:
+        """Subscript slice tail の `:` token consume を helper へ寄せる。"""
+        return self._eat(":")
+
     def _consume_subscript_slice_tail_tokens(
         self,
     ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
         """Subscript slice tail の token consume を helper へ寄せる。"""
-        self._eat(":")
+        self._consume_subscript_slice_tail_colon_token()
         upper = self._parse_subscript_slice_upper_expr()
         rtok = self._eat("]")
         return upper, rtok

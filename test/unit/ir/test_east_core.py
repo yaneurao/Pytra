@@ -834,6 +834,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         upper_apply_text = text.split("def _apply_subscript_slice_upper_expr_state", 1)[1].split(
+            "def _consume_subscript_slice_tail_colon_token",
+            1,
+        )[0]
+        tail_colon_text = text.split("def _consume_subscript_slice_tail_colon_token", 1)[1].split(
             "def _consume_subscript_slice_tail_tokens",
             1,
         )[0]
@@ -916,7 +920,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("if is_empty:", upper_apply_text)
         self.assertIn("return None", upper_apply_text)
         self.assertIn("return self._parse_ifexp()", upper_apply_text)
-        self.assertIn('self._eat(":")', tail_token_text)
+        self.assertIn('return self._eat(":")', tail_colon_text)
+        self.assertIn("self._consume_subscript_slice_tail_colon_token()", tail_token_text)
         self.assertIn("upper = self._parse_subscript_slice_upper_expr()", tail_token_text)
         self.assertIn('rtok = self._eat("]")', tail_token_text)
         self.assertIn("return upper, rtok", tail_token_text)
@@ -969,6 +974,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('if self._cur()["k"] == "]":', upper_expr_text)
         self.assertNotIn("if is_empty:", upper_expr_text)
         self.assertNotIn("return self._parse_ifexp()", upper_expr_text)
+        self.assertNotIn('self._eat(":")', tail_token_text)
         self.assertNotIn('if self._cur()["k"] == ":":', component_text)
         self.assertNotIn("first = self._parse_ifexp()", component_text)
         self.assertNotIn("return self._parse_subscript_slice_tail(lower=first)", component_text)
