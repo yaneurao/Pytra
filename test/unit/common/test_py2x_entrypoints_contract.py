@@ -133,13 +133,15 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn("CompilerRootDocument _load_json_root_document(", native_transpile)
+        self.assertIn("JsonObj _unwrap_compiler_root_json_doc(", native_transpile)
+        self.assertIn("CompilerRootDocument _coerce_compiler_root_json_doc(", native_transpile)
         self.assertNotIn("dict<str, object> _load_json_root_dict(", native_transpile)
         self.assertNotIn("coerce_compiler_root_document(\n            _load_json_root_dict(", native_transpile)
         self.assertNotIn(
             "return pytra::compiler::transpile_cli::coerce_compiler_root_document(raw_doc, source_path, parser_backend);",
             native_transpile,
         )
-        self.assertIn("pytra::std::json::JsonObj doc = root;", native_transpile)
+        self.assertNotIn("pytra::std::json::JsonObj doc = root;", native_transpile)
         self.assertIn(
             "from toolchain.compiler.typed_boundary import export_compiler_root_document; ",
             native_transpile,
@@ -243,11 +245,13 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("::std::optional<JsonObj> loads_obj(const str& text);", generated_json)
         self.assertIn("::std::optional<JsonArr> loads_arr(const str& text);", generated_json)
 
-        self.assertIn("runtime_hook_impl: Any", typed_boundary_src)
-        self.assertIn("fn = runtime_spec.runtime_hook_impl", typed_boundary_src)
-        self.assertIn('runtime_hook_impl = normalized.get("runtime_hook")', typed_boundary_src)
-        self.assertIn("if runtime_hook_impl is None:", typed_boundary_src)
-        self.assertIn("runtime_hook_impl = runtime_none", typed_boundary_src)
+        self.assertIn("RuntimeHookCallable: TypeAlias = Callable[[Path], None]", typed_boundary_src)
+        self.assertIn("class RuntimeHookAdapter:", typed_boundary_src)
+        self.assertIn("runtime_hook: RuntimeHookAdapter", typed_boundary_src)
+        self.assertIn('normalized.get("runtime_hook")', typed_boundary_src)
+        self.assertIn("runtime_spec.runtime_hook.apply(output_path)", typed_boundary_src)
+        self.assertNotIn("runtime_hook_impl: Any", typed_boundary_src)
+        self.assertNotIn("def _coerce_runtime_hook_impl(", typed_boundary_src)
         self.assertIn("self.set_dynamic_hooks_enabled(False)", prepare_src)
         self.assertIn("def _build_cpp_hooks_impl() -> dict[str, Any]:", prepare_src)
 
@@ -256,7 +260,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("argv: list[str] = extern(__s.argv)", sys_std_src)
         self.assertIn("path: list[str] = extern(__s.path)", sys_std_src)
 
-        self.assertIn("pytra::std::json::JsonObj doc = root;", native_transpile)
+        self.assertIn("JsonObj _unwrap_compiler_root_json_doc(", native_transpile)
+        self.assertIn("CompilerRootDocument _coerce_compiler_root_json_doc(", native_transpile)
         self.assertIn("export_compiler_root_document(doc)", native_transpile)
 
     def test_compiler_transpile_cli_typed_shim_skips_legacy_wrapper(self) -> None:
@@ -761,7 +766,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIs(spec.lower_impl, _identity)
         self.assertIs(spec.optimizer_impl, _identity)
         self.assertIs(spec.program_writer_impl, _default_writer)
-        self.assertIs(spec.runtime_hook_impl, _runtime_none)
+        self.assertIs(spec.runtime_hook.export(), _runtime_none)
         self.assertEqual(
             spec.emit_module_impl(
                 {"kind": "Demo"},
@@ -772,6 +777,20 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             )["text"],
             "// Demo -> demo.txt",
         )
+
+        invalid_hook_spec = typed_boundary.build_resolved_backend_spec(
+            {
+                "target_lang": "fake",
+                "extension": ".txt",
+                "runtime_hook": {"kind": "invalid"},
+            },
+            identity_ir=_identity,
+            empty_emit=_empty_emit,
+            runtime_none=_runtime_none,
+            default_program_writer=_default_writer,
+            suppress_emit_exceptions=True,
+        )
+        self.assertIs(invalid_hook_spec.runtime_hook.export(), _runtime_none)
 
     def test_build_legacy_emit_module_adapter_preserves_host_static_error_policy(self) -> None:
         host_adapter = typed_boundary.build_legacy_emit_module_adapter(

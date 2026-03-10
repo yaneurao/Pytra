@@ -66,22 +66,19 @@ void _run_host_python_command(const ::std::string& command, const str& error_pre
     _remove_if_exists(err_path);
 }
 
-pytra::compiler::transpile_cli::CompilerRootDocument _load_json_root_document(
-    const pytra::std::pathlib::Path& json_path,
+pytra::std::json::JsonObj _unwrap_compiler_root_json_doc(pytra::std::json::JsonObj root) {
+    auto east = root.get_obj("east");
+    if (east.has_value()) {
+        return east.value();
+    }
+    return root;
+}
+
+pytra::compiler::transpile_cli::CompilerRootDocument _coerce_compiler_root_json_doc(
+    pytra::std::json::JsonObj doc,
     const str& source_path,
     const str& parser_backend
 ) {
-    pytra::std::pathlib::Path json_copy = json_path;
-    auto parsed = pytra::std::json::loads_obj(json_copy.read_text());
-    if (!parsed.has_value()) {
-        throw ::std::runtime_error("invalid EAST JSON root: expected dict");
-    }
-    pytra::std::json::JsonObj root = parsed.value();
-    auto east = root.get_obj("east");
-    pytra::std::json::JsonObj doc = root;
-    if (east.has_value()) {
-        doc = east.value();
-    }
     auto meta = doc.get_obj("meta");
     str dispatch_mode = "";
     if (meta.has_value()) {
@@ -104,6 +101,23 @@ pytra::compiler::transpile_cli::CompilerRootDocument _load_json_root_document(
         kind.has_value() ? kind.value() : "",
         doc.raw,
     };
+}
+
+pytra::compiler::transpile_cli::CompilerRootDocument _load_json_root_document(
+    const pytra::std::pathlib::Path& json_path,
+    const str& source_path,
+    const str& parser_backend
+) {
+    pytra::std::pathlib::Path json_copy = json_path;
+    auto parsed = pytra::std::json::loads_obj(json_copy.read_text());
+    if (!parsed.has_value()) {
+        throw ::std::runtime_error("invalid EAST JSON root: expected dict");
+    }
+    return _coerce_compiler_root_json_doc(
+        _unwrap_compiler_root_json_doc(parsed.value()),
+        source_path,
+        parser_backend
+    );
 }
 
 str _dict_get_str(const dict<str, object>& src, const str& key, const str& default_value = "") {

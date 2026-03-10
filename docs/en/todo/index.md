@@ -64,6 +64,8 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Generated selfhost-core residual `make_object` guards now separate `export_seam` from `parser_residual`, and further split parser residuals into `expr_parser`, `stmt_parser`, and `lookup` buckets. Tests now also fix that the bucket union matches `parser_residual` and stays disjoint from `export_seam`.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] The source-of-truth compiler lane and native wrapper are now free of `make_object` outside export seams, and generated selfhost-core usage is rebaselined into `export_seam=to_payload` plus explicit `parser_residual` guards, so `S3-02` is closed and the remaining labeling work moves to `S4-02`.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Contract tests now pin the current dynamic-carrier seams to `JsonValue` raw carriers, extern-marked stdlib surfaces, the `typed_boundary.py` runtime-hook seam, and compiler-root JSON loading.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `typed_boundary.py` now routes `runtime_hook` through `RuntimeHookAdapter`, so typed specs no longer hold raw hook callables directly and instead use explicit export/apply seams.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Native compiler-root JSON loading is now funneled through `_unwrap_compiler_root_json_doc()` / `_coerce_compiler_root_json_doc()`, keeping raw `JsonObj` unwrapping inside named adapters.
 
 ### P3: Harden compiler contracts and make stage/pass/backend handoff fail-closed
 

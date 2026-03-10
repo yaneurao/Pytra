@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+from typing import Callable
+from typing import TypeAlias
 
 from pytra.std.pathlib import Path
 
 
 CompilerOptionScalar = str | int | bool
+RuntimeHookCallable: TypeAlias = Callable[[Path], None]
 
 
 def _copy_object_dict(raw: object) -> dict[str, object]:
@@ -70,6 +73,10 @@ def _copy_schema_layers(raw: object) -> dict[str, dict[str, dict[str, object]]]:
                 layer_out[key] = _copy_object_dict(rule)
         out[layer] = layer_out
     return out
+
+
+def _runtime_hook_noop(_output_path: Path) -> None:
+    return None
 
 
 def _callable_key(fn: object) -> str:
@@ -167,7 +174,7 @@ def export_resolved_backend_spec(spec: "ResolvedBackendSpec") -> dict[str, objec
     out["emit"] = spec.emit_impl
     out["emit_module"] = spec.emit_module_impl
     out["program_writer"] = spec.program_writer_impl
-    out["runtime_hook"] = spec.runtime_hook_impl
+    out["runtime_hook"] = spec.runtime_hook.export()
     return out
 
 
@@ -390,6 +397,27 @@ class EmitRequestCarrier:
 
 
 @dataclass(frozen=True)
+class RuntimeHookAdapter:
+    hook_impl: RuntimeHookCallable
+
+    @staticmethod
+    def from_raw(
+        runtime_hook_impl: object,
+        *,
+        runtime_none: RuntimeHookCallable,
+    ) -> "RuntimeHookAdapter":
+        if callable(runtime_hook_impl):
+            return RuntimeHookAdapter(hook_impl=runtime_hook_impl)
+        return RuntimeHookAdapter(hook_impl=runtime_none)
+
+    def export(self) -> RuntimeHookCallable:
+        return self.hook_impl
+
+    def apply(self, output_path: Path) -> None:
+        self.hook_impl(output_path)
+
+
+@dataclass(frozen=True)
 class ResolvedBackendSpec:
     carrier: BackendSpecCarrier
     lower_impl: Any
@@ -397,7 +425,7 @@ class ResolvedBackendSpec:
     emit_impl: Any
     emit_module_impl: Any
     program_writer_impl: Any
-    runtime_hook_impl: Any
+    runtime_hook: RuntimeHookAdapter
 
     @staticmethod
     def from_legacy_spec(raw_spec: dict[str, object]) -> "ResolvedBackendSpec":
@@ -410,7 +438,10 @@ class ResolvedBackendSpec:
             emit_impl=emit_impl,
             emit_module_impl=emit_module_impl,
             program_writer_impl=raw_spec.get("program_writer"),
-            runtime_hook_impl=raw_spec.get("runtime_hook"),
+            runtime_hook=RuntimeHookAdapter.from_raw(
+                raw_spec.get("runtime_hook"),
+                runtime_none=_runtime_hook_noop,
+            ),
         )
 
     def to_legacy_dict(self) -> dict[str, object]:
@@ -508,9 +539,10 @@ def build_resolved_backend_spec(
     program_writer_impl = normalized.get("program_writer")
     if not callable(program_writer_impl) and not isinstance(program_writer_impl, dict):
         program_writer_impl = default_program_writer
-    runtime_hook_impl = normalized.get("runtime_hook")
-    if runtime_hook_impl is None:
-        runtime_hook_impl = runtime_none
+    runtime_hook = RuntimeHookAdapter.from_raw(
+        normalized.get("runtime_hook"),
+        runtime_none=runtime_none,
+    )
 
     carrier = BackendSpecCarrier.from_legacy_spec(normalized)
     return ResolvedBackendSpec(
@@ -520,7 +552,7 @@ def build_resolved_backend_spec(
         emit_impl=emit_impl,
         emit_module_impl=emit_module_impl,
         program_writer_impl=program_writer_impl,
-        runtime_hook_impl=runtime_hook_impl,
+        runtime_hook=runtime_hook,
     )
 
 
@@ -992,6 +1024,4 @@ def get_program_writer_with_spec(runtime_spec: ResolvedBackendSpec) -> Any:
 
 
 def apply_runtime_hook_with_spec(runtime_spec: ResolvedBackendSpec, output_path: Path) -> None:
-    fn = runtime_spec.runtime_hook_impl
-    if callable(fn):
-        fn(output_path)
+    runtime_spec.runtime_hook.apply(output_path)
