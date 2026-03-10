@@ -1164,8 +1164,12 @@ class EastCoreTest(unittest.TestCase):
             "def _annotate_named_call_expr",
             1,
         )[0]
+        state_helper_text = text.split("def _resolve_call_expr_annotation_state", 1)[1].split(
+            "def _build_call_expr_payload",
+            1,
+        )[0]
         named_guard_text = text.split("def _guard_named_call_args", 1)[1].split(
-            "def _annotate_call_expr",
+            "def _apply_callee_call_annotation",
             1,
         )[0]
         helper_text = text.split("def _annotate_named_call_expr", 1)[1].split(
@@ -1218,13 +1222,16 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', builtin_apply_text)
         self.assertIn("return self._apply_runtime_named_call_dispatch(", runtime_helper_text)
         self.assertIn('if stdlib_fn_runtime_call != "":', runtime_apply_text)
-        self.assertIn("self._guard_named_call_args(", call_helper_text)
+        self.assertIn("call_ret, fn_name = self._infer_call_expr_return_type(callee, args)", state_helper_text)
+        self.assertIn("self._guard_named_call_args(", state_helper_text)
+        self.assertIn("call_ret, fn_name = self._resolve_call_expr_annotation_state(", call_helper_text)
         self.assertIn('if fn_name != "":', callee_apply_text)
         self.assertIn("return self._annotate_named_call_expr(", callee_apply_text)
         self.assertIn("return self._apply_callee_call_annotation(", callee_helper_text)
         self.assertIn("return self._annotate_callee_call_expr(", call_helper_text)
         self.assertNotIn('fn_name = str(callee.get("id", "")) if callee.get("kind") == "Name" else ""', call_helper_text)
         self.assertNotIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', call_helper_text)
+        self.assertNotIn("self._guard_named_call_args(", call_helper_text)
         self.assertNotIn("return self._annotate_named_call_expr(", callee_helper_text)
         self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', postfix_text)
         self.assertNotIn('if fn_name == "bool" and len(args) == 1:', postfix_text)
@@ -1386,6 +1393,10 @@ class EastCoreTest(unittest.TestCase):
             "def _split_generic_types",
             1,
         )[0]
+        state_text = text.split("def _resolve_call_expr_annotation_state", 1)[1].split(
+            "def _build_call_expr_payload",
+            1,
+        )[0]
         build_text = text.split("def _build_call_expr_payload", 1)[1].split(
             "def _annotate_call_expr",
             1,
@@ -1400,8 +1411,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("_sh_infer_known_name_call_return_type(", helper_text)
         self.assertIn("self._infer_attr_call_return_type(", helper_text)
         self.assertIn('if kind == "Lambda":', helper_text)
+        self.assertIn("call_ret, fn_name = self._infer_call_expr_return_type(callee, args)", state_text)
+        self.assertIn("self._guard_named_call_args(", state_text)
         self.assertIn("return _sh_make_call_expr(", build_text)
-        self.assertIn("call_ret, fn_name = self._infer_call_expr_return_type(callee, args)", call_helper_text)
+        self.assertIn("call_ret, fn_name = self._resolve_call_expr_annotation_state(", call_helper_text)
         self.assertIn("payload = self._build_call_expr_payload(", call_helper_text)
         self.assertNotIn("stdlib_imported_ret = (", postfix_text)
         self.assertNotIn("call_ret = self.fn_return_types[fn_name]", postfix_text)
@@ -1410,6 +1423,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('call_ret = str(node.get("return_type", "unknown"))', postfix_text)
         self.assertNotIn("call_ret, fn_name = self._infer_call_expr_return_type(", postfix_text)
         self.assertNotIn("payload = _sh_make_call_expr(", call_helper_text)
+        self.assertNotIn("self._guard_named_call_args(", call_helper_text)
 
     def test_core_source_routes_call_arg_parsing_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")

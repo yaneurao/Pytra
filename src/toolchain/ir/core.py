@@ -4962,6 +4962,22 @@ class _ShExprParser:
             args=args,
         )
 
+    def _resolve_call_expr_annotation_state(
+        self,
+        *,
+        callee: dict[str, Any],
+        args: list[dict[str, Any]],
+        source_span: dict[str, int],
+    ) -> tuple[str, str]:
+        """call annotation 前段の return-type 推論と guard を helper へ寄せる。"""
+        call_ret, fn_name = self._infer_call_expr_return_type(callee, args)
+        self._guard_named_call_args(
+            fn_name=fn_name,
+            args=args,
+            source_span=source_span,
+        )
+        return call_ret, fn_name
+
     def _build_call_expr_payload(
         self,
         *,
@@ -4992,9 +5008,8 @@ class _ShExprParser:
         repr_text: str,
     ) -> dict[str, Any]:
         """Call expr の payload 構築と annotation を parser helper へ寄せる。"""
-        call_ret, fn_name = self._infer_call_expr_return_type(callee, args)
-        self._guard_named_call_args(
-            fn_name=fn_name,
+        call_ret, fn_name = self._resolve_call_expr_annotation_state(
+            callee=callee,
             args=args,
             source_span=source_span,
         )
