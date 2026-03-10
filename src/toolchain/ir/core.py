@@ -4903,13 +4903,36 @@ class _ShExprParser:
         self,
     ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
         """call argument 1件分の positional/keyword 分岐を parser helper へ寄せる。"""
-        if self._cur()["k"] == "NAME":
-            save_pos = self.pos
-            name_tok = self._eat("NAME")
-            if self._cur()["k"] == "=":
-                self._eat("=")
-                kw_val = self._parse_ifexp()
-                return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)
+        save_pos, name_tok, is_keyword = self._resolve_call_arg_entry_state()
+        return self._apply_call_arg_entry_state(
+            save_pos=save_pos,
+            name_tok=name_tok,
+            is_keyword=is_keyword,
+        )
+
+    def _resolve_call_arg_entry_state(
+        self,
+    ) -> tuple[int | None, dict[str, Any] | None, bool]:
+        """call argument 1件分の token/state resolve を helper へ寄せる。"""
+        if self._cur()["k"] != "NAME":
+            return None, None, False
+        save_pos = self.pos
+        name_tok = self._eat("NAME")
+        return save_pos, name_tok, self._cur()["k"] == "="
+
+    def _apply_call_arg_entry_state(
+        self,
+        *,
+        save_pos: int | None,
+        name_tok: dict[str, Any] | None,
+        is_keyword: bool,
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument 1件分の positional/keyword apply を helper へ寄せる。"""
+        if is_keyword and name_tok is not None:
+            self._eat("=")
+            kw_val = self._parse_ifexp()
+            return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)
+        if save_pos is not None:
             self.pos = save_pos
         return self._parse_call_arg_expr(), None
 
