@@ -2281,6 +2281,14 @@ x.bit_length()
             1,
         )[0]
         loop_apply_text = text.split("def _apply_call_arg_entry", 1)[1].split(
+            "def _apply_keyword_call_arg_loop_entry",
+            1,
+        )[0]
+        keyword_loop_apply_text = text.split("def _apply_keyword_call_arg_loop_entry", 1)[1].split(
+            "def _apply_positional_call_arg_loop_entry",
+            1,
+        )[0]
+        positional_loop_apply_text = text.split("def _apply_positional_call_arg_loop_entry", 1)[1].split(
             "def _advance_call_arg_loop",
             1,
         )[0]
@@ -2359,9 +2367,11 @@ x.bit_length()
         self.assertIn("self.pos = save_pos", positional_apply_text)
         self.assertIn("return self._parse_call_arg_expr(), None", positional_apply_text)
         self.assertIn("if keyword_entry is not None:", loop_apply_text)
-        self.assertIn("keywords.append(keyword_entry)", loop_apply_text)
-        self.assertIn("if arg_entry is not None:", loop_apply_text)
-        self.assertIn("args.append(arg_entry)", loop_apply_text)
+        self.assertIn("return self._apply_keyword_call_arg_loop_entry(", loop_apply_text)
+        self.assertIn("return self._apply_positional_call_arg_loop_entry(", loop_apply_text)
+        self.assertIn("keywords.append(keyword_entry)", keyword_loop_apply_text)
+        self.assertIn("if arg_entry is not None:", positional_loop_apply_text)
+        self.assertIn("args.append(arg_entry)", positional_loop_apply_text)
         self.assertIn("has_comma = self._resolve_call_arg_loop_state()", loop_helper_text)
         self.assertIn("return self._apply_call_arg_loop_state(", loop_helper_text)
         self.assertIn('return self._cur()["k"] == ","', loop_state_text)
@@ -2395,6 +2405,8 @@ x.bit_length()
         self.assertNotIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', helper_text)
         self.assertNotIn("keywords.append(keyword_entry)", helper_text)
         self.assertNotIn("args.append(arg_entry)", helper_text)
+        self.assertNotIn("keywords.append(keyword_entry)", loop_apply_text)
+        self.assertNotIn("args.append(arg_entry)", loop_apply_text)
         self.assertNotIn('if self._cur()["k"] != ",":', helper_text)
         self.assertNotIn('self._eat(",")', helper_text)
         self.assertNotIn('if self._cur()["k"] == ")":', helper_text)

@@ -338,6 +338,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument keyword の name/value state も `_ShExprParser._resolve_keyword_call_arg_entry_state()` / `_ShExprParser._apply_keyword_call_arg_entry_state()` へ寄せ、`_apply_keyword_call_arg_entry()` から direct `=` consume と `kw_name/kw_val` 合成を外した。`test_east_core.py` では両 helper 定義、keyword-apply helper の call site、旧 inline keyword-state block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument entry の keyword kind 判定も `_ShExprParser._resolve_call_arg_entry_is_keyword()` へ寄せ、`_resolve_call_arg_entry_kind()` から direct `self._cur()["k"] == "="` を外した。`test_east_core.py` では keyword-kind helper 定義、kind helper の call site、旧 inline keyword-kind probe block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `_parse_comp_target()` の `(` tuple branch も `_ShExprParser._parse_tuple_comp_target()` へ寄せ、target cluster の open-coded tuple 構築を parser helper に閉じ込めた。`test_east_core.py` では helper 定義、`_parse_comp_target()` の call site、旧 inline tuple-target block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument loop の positional/keyword append も `_ShExprParser._apply_keyword_call_arg_loop_entry()` / `_ShExprParser._apply_positional_call_arg_loop_entry()` へ寄せ、`_apply_call_arg_entry()` から direct `keywords.append(...)` / `args.append(...)` を外した。`test_east_core.py` では両 helper 定義、loop-apply helper の call site、旧 inline append block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

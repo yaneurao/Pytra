@@ -5016,8 +5016,31 @@ class _ShExprParser:
     ) -> None:
         """call argument loop の positional/keyword append を helper へ寄せる。"""
         if keyword_entry is not None:
-            keywords.append(keyword_entry)
-            return
+            return self._apply_keyword_call_arg_loop_entry(
+                keywords=keywords,
+                keyword_entry=keyword_entry,
+            )
+        return self._apply_positional_call_arg_loop_entry(
+            args=args,
+            arg_entry=arg_entry,
+        )
+
+    def _apply_keyword_call_arg_loop_entry(
+        self,
+        *,
+        keywords: list[dict[str, Any]],
+        keyword_entry: dict[str, Any],
+    ) -> None:
+        """call argument loop の keyword append を helper へ寄せる。"""
+        keywords.append(keyword_entry)
+
+    def _apply_positional_call_arg_loop_entry(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        arg_entry: dict[str, Any] | None,
+    ) -> None:
+        """call argument loop の positional append を helper へ寄せる。"""
         if arg_entry is not None:
             args.append(arg_entry)
 
