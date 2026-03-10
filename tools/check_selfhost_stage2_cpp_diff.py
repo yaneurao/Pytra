@@ -7,6 +7,9 @@ import argparse
 import subprocess
 from pathlib import Path
 
+from tools.selfhost_parity_summary import build_stage2_summary_row
+from tools.selfhost_parity_summary import render_summary_block
+
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILD_STAGE2 = ROOT / "tools" / "build_selfhost_stage2.py"
@@ -17,6 +20,11 @@ STAGE2_BIN = ROOT / "selfhost" / "py2cpp_stage2.out"
 def _run(cmd: list[str]) -> int:
     cp = subprocess.run(cmd, cwd=str(ROOT), text=True)
     return cp.returncode
+
+
+def _print_stage2_summary(rows: list) -> None:
+    for line in render_summary_block("stage2", rows, skip_pass=True):
+        print(line)
 
 
 def build_check_diff_cmd(
@@ -51,16 +59,21 @@ def main() -> int:
     ap.add_argument("--mode", choices=["strict", "allow-not-implemented"], default="allow-not-implemented")
     ap.add_argument("--cases", nargs="*", default=[])
     args = ap.parse_args()
+    summary_rows = []
 
     if not args.skip_build:
         rc = _run(["python3", str(BUILD_STAGE2)])
         if rc != 0:
+            summary_rows.append(build_stage2_summary_row("stage2_build", "build_fail", f"exit={rc}"))
+            _print_stage2_summary(summary_rows)
             return rc
     if not STAGE2_BIN.exists():
+        summary_rows.append(build_stage2_summary_row("stage2_binary", "missing_binary", str(STAGE2_BIN)))
+        _print_stage2_summary(summary_rows)
         print(f"missing stage2 binary: {STAGE2_BIN}")
         return 2
 
-    return _run(
+    rc = _run(
         build_check_diff_cmd(
             STAGE2_BIN,
             cases=list(args.cases),
@@ -68,6 +81,15 @@ def main() -> int:
             mode=args.mode,
         )
     )
+    summary_rows.append(
+        build_stage2_summary_row(
+            "stage2_diff",
+            "pass" if rc == 0 else "diff_fail",
+            "" if rc == 0 else f"exit={rc}",
+        )
+    )
+    _print_stage2_summary(summary_rows)
+    return rc
 
 
 if __name__ == "__main__":
