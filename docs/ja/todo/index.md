@@ -263,7 +263,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて callee-call の annotation-state resolve も `_ShExprParser._resolve_callee_call_annotation_state()` へ寄せ、`_annotate_callee_call_expr()` から `_resolve_callee_call_annotation_kind()` の直列呼び出しを外した。`test_east_core.py` では state helper 定義、call site、旧 inline callee-state block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `Subscript / Slice` の owner-type resolve も `_ShExprParser._resolve_subscript_expr_annotation_state()` へ寄せ、`_annotate_subscript_expr()` から `_owner_expr_resolved_type()` の直列呼び出しを外した。`test_east_core.py` では state helper 定義、call site、旧 inline subscript owner-type block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `Subscript / Slice` の build-kind 判定も `_ShExprParser._resolve_subscript_expr_build_kind()` へ寄せ、`_annotate_subscript_expr()` から `index_expr/lower/upper` の inline 分岐を外した。`test_east_core.py` では build-kind helper 定義、call site、旧 inline slice/index branch の不在を固定した。
-- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `Subscript / Slice` の build-kind 判定も `_ShExprParser._resolve_subscript_expr_build_kind()` へ寄せ、`_annotate_subscript_expr()` から index/slice の直列条件分岐を外した。`test_east_core.py` では state helper 定義、call site、旧 inline build-kind branch の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `Subscript / Slice` の build dispatch も `_ShExprParser._apply_subscript_expr_build()` へ寄せ、`_annotate_subscript_expr()` から `_build_slice_subscript_expr()` / `_build_index_subscript_expr()` の直列呼び出しを外した。`test_east_core.py` では apply helper 定義、call site、旧 inline build dispatch の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

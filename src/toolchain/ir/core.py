@@ -6077,6 +6077,36 @@ class _ShExprParser:
             return "slice"
         return "index"
 
+    def _apply_subscript_expr_build(
+        self,
+        *,
+        build_kind: str,
+        owner_expr: dict[str, Any],
+        owner_t: str,
+        index_expr: dict[str, Any] | None,
+        lower: dict[str, Any] | None,
+        upper: dict[str, Any] | None,
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """Subscript / Slice の build dispatch を helper へ寄せる。"""
+        if build_kind == "slice":
+            return self._build_slice_subscript_expr(
+                owner_expr=owner_expr,
+                owner_t=owner_t,
+                lower=lower,
+                upper=upper,
+                source_span=source_span,
+                repr_text=repr_text,
+            )
+        return self._build_index_subscript_expr(
+            owner_expr=owner_expr,
+            owner_t=owner_t,
+            index_expr=index_expr,
+            source_span=source_span,
+            repr_text=repr_text,
+        )
+
     def _annotate_subscript_expr(
         self,
         *,
@@ -6096,19 +6126,13 @@ class _ShExprParser:
             lower=lower,
             upper=upper,
         )
-        if build_kind == "slice":
-            return self._build_slice_subscript_expr(
-                owner_expr=owner_expr,
-                owner_t=owner_t,
-                lower=lower,
-                upper=upper,
-                source_span=source_span,
-                repr_text=repr_text,
-            )
-        return self._build_index_subscript_expr(
+        return self._apply_subscript_expr_build(
+            build_kind=build_kind,
             owner_expr=owner_expr,
             owner_t=owner_t,
             index_expr=index_expr,
+            lower=lower,
+            upper=upper,
             source_span=source_span,
             repr_text=repr_text,
         )
