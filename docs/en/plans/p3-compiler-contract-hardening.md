@@ -190,4 +190,5 @@ Decision log:
 - 2026-03-11: A further `S3-01` slice made `category` and `message` mandatory non-empty strings on linked-output diagnostic objects, so the structured diagnostic contract itself is now part of central validation.
 - 2026-03-11: A further `S3-01` slice made linked-output `global.type_id_table` require int values, `call_graph` require `list[str]`, and `sccs` require non-empty `list[list[str]]`, all enforced fail-closed by the central validator.
 - 2026-03-11: A further `S3-01` slice restricted linked-output diagnostic `category` to the minimal set defined in `spec-dev` `1.2.4`, so unknown categories now fail closed in the central validator too.
+- 2026-03-11: A further `S3-01` slice restricted raw EAST3 `meta.generated_by` to a non-empty string reserved for synthetic provenance, so the missing-`source_span` escape hatch is also centrally typed and fail-closed.
 - 2026-03-11: `S3-01` is closed at this point. The central primitives now cover raw EAST3 body nodes / `kind` / `source_span` / nested `meta.dispatch_mode`, plus linked-output helper metadata, `global` shape, and diagnostic object contracts, so the next step is `S3-02` hook insertion.

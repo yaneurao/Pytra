@@ -233,6 +233,62 @@ class FrontendTypeExprTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, r"\$\.body\[0\]\.value\.meta\.dispatch_mode mismatch"):
             validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m")
 
+    def test_validate_raw_east3_doc_allows_synthetic_node_without_source_span(self) -> None:
+        doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "meta": {"generated_by": "linked_optimizer"},
+                    "value": {
+                        "kind": "Name",
+                        "id": "x",
+                        "resolved_type": "int64",
+                        "source_span": {
+                            "lineno": 1,
+                            "end_lineno": 1,
+                            "col_offset": 0,
+                            "end_col_offset": 1,
+                        },
+                    },
+                }
+            ],
+        }
+
+        out = validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m")
+        self.assertEqual(out["body"][0]["meta"]["generated_by"], "linked_optimizer")
+
+    def test_validate_raw_east3_doc_rejects_invalid_generated_by_shape(self) -> None:
+        doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "meta": {"generated_by": 1},
+                    "value": {
+                        "kind": "Name",
+                        "id": "x",
+                        "resolved_type": "int64",
+                        "source_span": {
+                            "lineno": 1,
+                            "end_lineno": 1,
+                            "col_offset": 0,
+                            "end_col_offset": 1,
+                        },
+                    },
+                }
+            ],
+        }
+
+        with self.assertRaisesRegex(RuntimeError, r"\$\.body\[0\]\.meta\.generated_by must be non-empty string"):
+            validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m")
+
 
 if __name__ == "__main__":
     unittest.main()

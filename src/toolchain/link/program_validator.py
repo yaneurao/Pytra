@@ -61,6 +61,7 @@ def _validate_raw_east3_invariants(
     *,
     expected_dispatch_mode: str,
     module_id: str,
+    require_source_spans: bool,
 ) -> None:
     for path, obj in _iter_object_tree(raw_doc, "$"):
         if not isinstance(obj, dict):
@@ -74,7 +75,15 @@ def _validate_raw_east3_invariants(
         source_span = obj.get("source_span")
         meta = obj.get("meta")
         generated_by = meta.get("generated_by") if isinstance(meta, dict) else None
-        if kind is not None and kind != "Module" and source_span is None and not isinstance(generated_by, str):
+        if generated_by is not None and (not isinstance(generated_by, str) or generated_by.strip() == ""):
+            raise RuntimeError("raw EAST3 " + path + ".meta.generated_by must be non-empty string: " + module_id)
+        if (
+            require_source_spans
+            and kind is not None
+            and kind != "Module"
+            and source_span is None
+            and not isinstance(generated_by, str)
+        ):
             raise RuntimeError("raw EAST3 " + path + ".source_span is required: " + module_id)
         if source_span is not None:
             _validate_source_span_shape(source_span, "raw EAST3 " + path + ".source_span")
@@ -282,6 +291,7 @@ def validate_raw_east3_doc(
     *,
     expected_dispatch_mode: str,
     module_id: str,
+    require_source_spans: bool = True,
 ) -> dict[str, object]:
     east = coerce_json_object_doc(east_any, label="raw EAST3")
     if east.get_str("kind") != "Module":
@@ -310,7 +320,12 @@ def validate_raw_east3_doc(
         raise RuntimeError("raw EAST3 must not contain meta.linked_program_v1: " + module_id)
     raw_doc = export_json_object_dict(east)
     sync_type_expr_mirrors(raw_doc)
-    _validate_raw_east3_invariants(raw_doc, expected_dispatch_mode=expected_dispatch_mode, module_id=module_id)
+    _validate_raw_east3_invariants(
+        raw_doc,
+        expected_dispatch_mode=expected_dispatch_mode,
+        module_id=module_id,
+        require_source_spans=require_source_spans,
+    )
     return raw_doc
 
 
