@@ -71,6 +71,8 @@ def build_stage2_summary_row(subject: str, status: str, note: str) -> ParitySumm
         detail = "pass"
     elif status == "build_fail":
         detail = "stage2_build_fail"
+    elif status == "diff_fail":
+        detail = "stage2_diff_fail"
     elif status == "missing_binary":
         detail = "missing_output"
     elif status == "verify_fail":

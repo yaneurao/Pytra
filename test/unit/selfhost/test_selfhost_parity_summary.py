@@ -42,6 +42,11 @@ class SelfhostParitySummaryTest(unittest.TestCase):
         self.assertEqual(row.top_level_category, "regression")
         self.assertEqual(row.detail_category, "missing_output")
 
+    def test_stage2_diff_fail_maps_to_regression(self) -> None:
+        row = build_stage2_summary_row("stage2_diff", "diff_fail", "exit=1")
+        self.assertEqual(row.top_level_category, "regression")
+        self.assertEqual(row.detail_category, "stage2_diff_fail")
+
     def test_stage2_diff_known_diff_maps_to_known_block(self) -> None:
         row = build_stage2_diff_summary_row("test/fixtures/core/add.py", "known_diff", "expected diff")
         self.assertEqual(row.top_level_category, "known_block")

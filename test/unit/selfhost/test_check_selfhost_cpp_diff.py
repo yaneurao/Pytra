@@ -6,6 +6,8 @@ import importlib.util
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -119,9 +121,9 @@ class CheckSelfhostCppDiffNormalizeTest(unittest.TestCase):
             ],
         )
 
-    def test_cpp_diff_summary_row_maps_not_implemented_to_known_block(self) -> None:
+    def test_stage2_diff_summary_row_maps_not_implemented_to_known_block(self) -> None:
         mod = _load_module()
-        row = mod._build_cpp_diff_summary_row(
+        row = mod.build_stage2_diff_summary_row(
             "test/fixtures/core/add.py",
             "selfhost_not_implemented",
             "[not_implemented] bridge path is not ready",
@@ -129,9 +131,9 @@ class CheckSelfhostCppDiffNormalizeTest(unittest.TestCase):
         self.assertEqual(row.top_level_category, "known_block")
         self.assertEqual(row.detail_category, "not_implemented")
 
-    def test_cpp_diff_summary_row_maps_expected_diff_to_known_block(self) -> None:
+    def test_stage2_diff_summary_row_maps_expected_diff_to_known_block(self) -> None:
         mod = _load_module()
-        row = mod._build_cpp_diff_summary_row(
+        row = mod.build_stage2_diff_summary_row(
             "test/fixtures/core/add.py",
             "known_diff",
             "normalized artifact diff",
@@ -139,22 +141,18 @@ class CheckSelfhostCppDiffNormalizeTest(unittest.TestCase):
         self.assertEqual(row.top_level_category, "known_block")
         self.assertEqual(row.detail_category, "known_block")
 
-    def test_print_cpp_diff_summary_formats_shared_summary_line(self) -> None:
+    def test_render_stage2_diff_summary_formats_shared_summary_line(self) -> None:
         mod = _load_module()
-        row = mod._build_cpp_diff_summary_row(
+        row = mod.build_stage2_diff_summary_row(
             "test/fixtures/core/add.py",
             "artifact_diff",
             "normalized artifact diff",
         )
-        with tempfile.TemporaryDirectory() as tmpdir:
-            _ = tmpdir
-            from io import StringIO
-            from contextlib import redirect_stdout
-
-            buf = StringIO()
-            with redirect_stdout(buf):
-                mod._print_cpp_diff_summary([row])
-            text = buf.getvalue()
+        buf = StringIO()
+        with redirect_stdout(buf):
+            for line in mod.render_summary_block("stage2_diff", [row], skip_pass=True):
+                print(line)
+        text = buf.getvalue()
         self.assertIn("[stage2_diff summary]", text)
         self.assertIn("subject=test/fixtures/core/add.py", text)
         self.assertIn("category=regression", text)

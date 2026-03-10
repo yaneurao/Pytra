@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -93,7 +95,11 @@ class CheckSelfhostStage2CppDiffTest(unittest.TestCase):
                 "argv",
                 ["check_selfhost_stage2_cpp_diff.py", "--skip-build"],
             ):
-                self.assertEqual(mod.main(), 2)
+                buf = io.StringIO()
+                with redirect_stdout(buf):
+                    self.assertEqual(mod.main(), 2)
+        self.assertIn("[stage2 summary]", buf.getvalue())
+        self.assertIn("detail=missing_output", buf.getvalue())
 
     def test_main_runs_build_then_diff_for_existing_stage2_binary(self) -> None:
         mod = _load_module()
@@ -119,7 +125,9 @@ class CheckSelfhostStage2CppDiffTest(unittest.TestCase):
                     "sample/py/01_mandelbrot.py",
                 ],
             ):
-                self.assertEqual(mod.main(), 0)
+                buf = io.StringIO()
+                with redirect_stdout(buf):
+                    self.assertEqual(mod.main(), 0)
 
             self.assertEqual(calls[0], ["python3", str(mod.BUILD_STAGE2)])
             self.assertEqual(
@@ -131,6 +139,8 @@ class CheckSelfhostStage2CppDiffTest(unittest.TestCase):
                     mode="strict",
                 ),
             )
+            self.assertIn("[stage2 summary]", buf.getvalue())
+            self.assertIn("detail=pass", buf.getvalue())
 
 
 if __name__ == "__main__":
