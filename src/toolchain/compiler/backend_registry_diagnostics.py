@@ -101,3 +101,14 @@ def classify_registry_diagnostic_detail(message: str) -> str:
 def classify_registry_diagnostic(message: str) -> tuple[str, str]:
     detail = classify_registry_diagnostic_detail(message)
     return normalize_top_level_category(detail), detail
+
+
+def classify_parity_note_detail(note: str) -> str | None:
+    inferred = infer_diagnostic_detail_from_text(note)
+    if inferred is None:
+        return None
+    if inferred in KNOWN_BLOCK_DETAIL_CATEGORIES:
+        return inferred
+    if inferred in TOOLCHAIN_MISSING_DETAIL_CATEGORIES:
+        return inferred
+    return None

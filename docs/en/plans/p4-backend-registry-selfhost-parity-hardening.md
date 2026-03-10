@@ -17,6 +17,9 @@ Goal:
 - Turn selfhost parity from "useful information" into a practical non-regression gate for compiler-internal work.
 - Classify stage1 / stage2 / direct-route / multilang selfhost failures so expected blocks and real regressions are easy to distinguish.
 
+Related report:
+- [P4 Selfhost Parity Readiness Report](./p4-selfhost-parity-readiness-report.md)
+
 Scope:
 - `toolchain/compiler/backend_registry.py`
 - `toolchain/compiler/backend_registry_static.py`
@@ -160,3 +163,4 @@ Decision log:
 - 2026-03-11: The following `S4-02` cluster replaced the multistage selfhost raw category `runner_not_defined` with `unsupported_by_design`, so expected unsupported lanes are separated from regressions at the report-source level. `check_multilang_selfhost_suite.py` now locks that detail to `known_block` in unit tests.
 - 2026-03-11: The next `S4-02` cluster aligned the parity-side known-block detail check with `backend_registry_diagnostics.py` by reusing `KNOWN_BLOCK_DETAIL_CATEGORIES` and `infer_diagnostic_detail_from_text()`. As a result, `preview backend ...` now normalizes to `known_block/preview_only` on direct e2e and stage2-diff lanes as well, and `classify_registry_diagnostic()` now preserves `preview_only` and `toolchain_missing` instead of collapsing them into `regression`.
 - 2026-03-11: `S4-02` is now considered complete. Registry-side diagnostic helpers, direct e2e / stage2-diff parity summaries, and multilang selfhost summaries now treat `unsupported_by_design`, `preview_only`, `toolchain_missing`, and `regression` through the same shared vocabulary, so representative expected failures are tracked under one category contract.
+- 2026-03-11: As the first `S5-01` slice, `docs/ja/plans/p4-selfhost-parity-readiness-report.md` was added to collect the representative gate order, shared category contract, and current known-block reading in one place. The P4 plan now links straight to that report, so gate procedures no longer depend on scanning the full decision log.

@@ -63,6 +63,18 @@ class BackendRegistryDiagnosticsTest(unittest.TestCase):
             ("regression", "regression"),
         )
 
+    def test_classify_parity_note_detail_for_preview_only(self) -> None:
+        self.assertEqual(
+            registry_diagnostics.classify_parity_note_detail("preview backend: intentionally disabled"),
+            "preview_only",
+        )
+
+    def test_classify_parity_note_detail_for_toolchain_missing(self) -> None:
+        self.assertEqual(
+            registry_diagnostics.classify_parity_note_detail("clang++ not found"),
+            "toolchain_missing",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
