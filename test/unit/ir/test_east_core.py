@@ -2403,6 +2403,10 @@ x.bit_length()
             1,
         )[0]
         empty_state_text = text.split("def _resolve_call_args_empty_state", 1)[1].split(
+            "def _resolve_call_args_empty_kind",
+            1,
+        )[0]
+        empty_kind_text = text.split("def _resolve_call_args_empty_kind", 1)[1].split(
             "def _apply_call_args_empty_state",
             1,
         )[0]
@@ -2515,7 +2519,8 @@ x.bit_length()
         self.assertIn("return self._parse_call_arg_entry()", nonempty_loop_state_text)
         self.assertIn("self._apply_call_arg_entry(", nonempty_loop_apply_text)
         self.assertIn("return self._advance_call_arg_loop()", nonempty_loop_apply_text)
-        self.assertIn('return self._cur()["k"] == ")"', empty_state_text)
+        self.assertIn("return self._resolve_call_args_empty_kind()", empty_state_text)
+        self.assertIn('return self._cur()["k"] == ")"', empty_kind_text)
         self.assertIn("return args, keywords", empty_apply_text)
         self.assertIn("args, keywords = self._consume_call_suffix_arg_entries()", state_text)
         self.assertIn("args, keywords, source_span, repr_text = self._resolve_call_suffix_state(", call_suffix_text)
@@ -2523,6 +2528,7 @@ x.bit_length()
         self.assertNotIn('return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)', entry_text)
         self.assertNotIn("self.pos = save_pos", entry_text)
         self.assertNotIn("return args, keywords", helper_text)
+        self.assertNotIn('return self._cur()["k"] == ")"', empty_state_text)
         self.assertNotIn("while True:", nonempty_helper_text)
         self.assertNotIn('if self._cur()["k"] != "NAME":', resolve_text)
         self.assertNotIn('name_tok = self._eat("NAME")', resolve_text)
