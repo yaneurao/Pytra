@@ -5127,22 +5127,49 @@ class _ShExprParser:
         """builtin named-call dispatch の semantic tag unpack を helper へ寄せる。"""
         return str(call_dispatch.get("builtin_semantic_tag", ""))
 
+    def _resolve_builtin_named_call_kind(self, *, fn_name: str) -> str:
+        """builtin named-call の分類決定を helper へ寄せる。"""
+        if fn_name in {"print", "len", "range", "zip", "str"}:
+            return "fixed_runtime"
+        if fn_name in {"int", "float", "bool"}:
+            return "scalar_ctor"
+        if fn_name in {"min", "max"}:
+            return "minmax"
+        if fn_name in {"Exception", "RuntimeError"}:
+            return "exception_ctor"
+        if fn_name == "open":
+            return "open"
+        if fn_name in {"iter", "next", "reversed"}:
+            return "iterator"
+        if fn_name == "enumerate":
+            return "enumerate"
+        if fn_name in {"any", "all"}:
+            return "anyall"
+        if fn_name in {"ord", "chr"}:
+            return "ordchr"
+        if fn_name in {"bytes", "bytearray", "list", "set", "dict"}:
+            return "collection_ctor"
+        if fn_name in {"isinstance", "issubclass"}:
+            return "type_predicate"
+        return ""
+
     def _apply_builtin_named_call_dispatch(
         self,
         *,
         payload: dict[str, Any],
         fn_name: str,
         args: list[dict[str, Any]],
+        dispatch_kind: str,
         semantic_tag: str,
     ) -> dict[str, Any] | None:
         """builtin named-call dispatch の annotation 適用を helper へ寄せる。"""
-        if fn_name in {"print", "len", "range", "zip", "str"}:
+        if dispatch_kind == "fixed_runtime":
             return _sh_annotate_fixed_runtime_builtin_call_expr(
                 payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
-        if fn_name in {"int", "float", "bool"}:
+        if dispatch_kind == "scalar_ctor":
             use_truthy_runtime = fn_name == "bool" and self._should_use_truthy_runtime_for_bool_ctor(
                 args=args,
             )
@@ -5153,54 +5180,54 @@ class _ShExprParser:
                 use_truthy_runtime=use_truthy_runtime,
                 semantic_tag=semantic_tag,
             )
-        if fn_name in {"min", "max"}:
+        if dispatch_kind == "minmax":
             return _sh_annotate_minmax_call_expr(
                 payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
-        if fn_name in {"Exception", "RuntimeError"}:
+        if dispatch_kind == "exception_ctor":
             return _sh_annotate_exception_ctor_call_expr(
                 payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
-        if fn_name == "open":
+        if dispatch_kind == "open":
             return _sh_annotate_open_call_expr(
                 payload,
                 semantic_tag=semantic_tag,
             )
-        if fn_name in {"iter", "next", "reversed"}:
+        if dispatch_kind == "iterator":
             return _sh_annotate_iterator_builtin_call_expr(
                 payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
-        if fn_name == "enumerate":
+        if dispatch_kind == "enumerate":
             return _sh_annotate_enumerate_call_expr(
                 payload,
                 iter_element_type=_sh_infer_enumerate_item_type(args),
                 semantic_tag=semantic_tag,
             )
-        if fn_name in {"any", "all"}:
+        if dispatch_kind == "anyall":
             return _sh_annotate_anyall_call_expr(
                 payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
-        if fn_name in {"ord", "chr"}:
+        if dispatch_kind == "ordchr":
             return _sh_annotate_ordchr_call_expr(
                 payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
-        if fn_name in {"bytes", "bytearray", "list", "set", "dict"}:
+        if dispatch_kind == "collection_ctor":
             return _sh_annotate_collection_ctor_call_expr(
                 payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
-        if fn_name in {"isinstance", "issubclass"}:
+        if dispatch_kind == "type_predicate":
             return _sh_annotate_type_predicate_call_expr(
                 payload,
                 fn_name=fn_name,
@@ -5220,10 +5247,14 @@ class _ShExprParser:
         semantic_tag = self._resolve_builtin_named_call_semantic_tag(
             call_dispatch=call_dispatch,
         )
+        dispatch_kind = self._resolve_builtin_named_call_kind(
+            fn_name=fn_name,
+        )
         return self._apply_builtin_named_call_dispatch(
             payload=payload,
             fn_name=fn_name,
             args=args,
+            dispatch_kind=dispatch_kind,
             semantic_tag=semantic_tag,
         )
 

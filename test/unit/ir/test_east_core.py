@@ -617,6 +617,10 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_attr_suffix_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        span_helper_text = text.split("def _resolve_postfix_span_repr", 1)[1].split(
+            "def _parse_call_suffix",
+            1,
+        )[0]
         helper_text = text.split("def _parse_attr_suffix", 1)[1].split(
             "def _annotate_attr_expr",
             1,
@@ -627,9 +631,15 @@ class EastCoreTest(unittest.TestCase):
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
+        self.assertIn('s = int(owner_expr["source_span"]["col"]) - self.col_base', span_helper_text)
+        self.assertIn('e = end_tok["e"]', span_helper_text)
+        self.assertIn("return self._node_span(s, e), self._src_slice(s, e)", span_helper_text)
         self.assertIn('self._eat(".")', helper_text)
         self.assertIn('name_tok = self._eat("NAME")', helper_text)
+        self.assertIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)
         self.assertIn("return self._annotate_attr_expr(", helper_text)
+        self.assertNotIn("self._node_span(", helper_text)
+        self.assertNotIn("self._src_slice(", helper_text)
         self.assertIn('if tok_kind == ".":', postfix_suffix_text)
         self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
@@ -678,7 +688,10 @@ class EastCoreTest(unittest.TestCase):
 
         self.assertIn('if self._cur()["k"] == ":":', helper_text)
         self.assertIn("first = self._parse_ifexp()", helper_text)
+        self.assertIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)
         self.assertIn("return self._annotate_subscript_expr(", helper_text)
+        self.assertNotIn("self._node_span(", helper_text)
+        self.assertNotIn("self._src_slice(", helper_text)
         self.assertIn('if tok_kind == "[":', postfix_suffix_text)
         self.assertIn("return self._parse_subscript_suffix(owner_expr=owner_expr)", postfix_suffix_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
@@ -1237,7 +1250,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("runtime_payload = self._annotate_runtime_named_call_expr(", helper_text)
         self.assertIn('return str(call_dispatch.get("builtin_semantic_tag", ""))', builtin_resolve_text)
         self.assertIn("return self._apply_builtin_named_call_dispatch(", builtin_helper_text)
-        self.assertIn('if fn_name in {"print", "len", "range", "zip", "str"}:', builtin_apply_text)
+        self.assertIn('if dispatch_kind == "fixed_runtime":', builtin_apply_text)
+        self.assertIn('if dispatch_kind == "scalar_ctor":', builtin_apply_text)
+        self.assertIn('if dispatch_kind == "enumerate":', builtin_apply_text)
         self.assertIn('use_truthy_runtime = fn_name == "bool" and self._should_use_truthy_runtime_for_bool_ctor(', builtin_apply_text)
         self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', builtin_apply_text)
         self.assertIn("return self._apply_runtime_named_call_dispatch(", runtime_helper_text)
@@ -1275,6 +1290,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         resolve_text = text.split("def _resolve_builtin_named_call_semantic_tag", 1)[1].split(
+            "def _resolve_builtin_named_call_kind",
+            1,
+        )[0]
+        kind_text = text.split("def _resolve_builtin_named_call_kind", 1)[1].split(
             "def _apply_builtin_named_call_dispatch",
             1,
         )[0]
@@ -1292,9 +1311,12 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('arg0_t = str(arg0.get("resolved_type", "unknown"))', truthy_helper_text)
         self.assertIn("return self._is_forbidden_object_receiver_type(arg0_t)", truthy_helper_text)
         self.assertIn('return str(call_dispatch.get("builtin_semantic_tag", ""))', resolve_text)
-        self.assertIn('if fn_name in {"print", "len", "range", "zip", "str"}:', apply_text)
+        self.assertIn('if fn_name in {"print", "len", "range", "zip", "str"}:', kind_text)
+        self.assertIn('if dispatch_kind == "fixed_runtime":', apply_text)
         self.assertIn("semantic_tag = self._resolve_builtin_named_call_semantic_tag(", helper_text)
+        self.assertIn("dispatch_kind = self._resolve_builtin_named_call_kind(", helper_text)
         self.assertNotIn('semantic_tag = str(call_dispatch.get("builtin_semantic_tag", ""))', helper_text)
+        self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', helper_text)
         self.assertIn("return self._apply_builtin_named_call_dispatch(", helper_text)
         self.assertIn('use_truthy_runtime = fn_name == "bool" and self._should_use_truthy_runtime_for_bool_ctor(', apply_text)
         self.assertNotIn('if fn_name == "bool" and len(args) == 1:', apply_text)
@@ -1488,7 +1510,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('ltok = self._eat("(")', helper_text)
         self.assertIn("args, keywords = self._parse_call_args()", helper_text)
         self.assertIn('rtok = self._eat(")")', helper_text)
+        self.assertIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)
         self.assertIn("return self._annotate_call_expr(", helper_text)
+        self.assertNotIn("self._node_span(", helper_text)
+        self.assertNotIn("self._src_slice(", helper_text)
         self.assertIn('if tok_kind == "(":', postfix_suffix_text)
         self.assertIn("return self._parse_call_suffix(callee=owner_expr)", postfix_suffix_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
