@@ -1581,7 +1581,19 @@ x.bit_length()
             1,
         )[0]
         state_text = text.split("def _resolve_builtin_named_call_annotation_state", 1)[1].split(
-            "def _apply_builtin_named_call_dispatch",
+            "def _apply_fixed_runtime_builtin_named_call_annotation",
+            1,
+        )[0]
+        fixed_apply_text = text.split("def _apply_fixed_runtime_builtin_named_call_annotation", 1)[1].split(
+            "def _apply_scalar_ctor_builtin_named_call_annotation",
+            1,
+        )[0]
+        scalar_apply_text = text.split("def _apply_scalar_ctor_builtin_named_call_annotation", 1)[1].split(
+            "def _apply_minmax_builtin_named_call_annotation",
+            1,
+        )[0]
+        enumerate_apply_text = text.split("def _apply_enumerate_builtin_named_call_annotation", 1)[1].split(
+            "def _apply_anyall_builtin_named_call_annotation",
             1,
         )[0]
         apply_text = text.split("def _apply_builtin_named_call_dispatch", 1)[1].split(
@@ -1604,7 +1616,13 @@ x.bit_length()
         self.assertIn("semantic_tag, dispatch_kind = self._resolve_builtin_named_call_dispatch(", state_text)
         self.assertIn('dispatch_kind == "scalar_ctor"', state_text)
         self.assertIn('dispatch_kind == "enumerate"', state_text)
+        self.assertIn("return _sh_annotate_fixed_runtime_builtin_call_expr(", fixed_apply_text)
+        self.assertIn("return _sh_annotate_scalar_ctor_call_expr(", scalar_apply_text)
+        self.assertIn("return _sh_annotate_enumerate_call_expr(", enumerate_apply_text)
         self.assertIn('if dispatch_kind == "fixed_runtime":', apply_text)
+        self.assertIn("return self._apply_fixed_runtime_builtin_named_call_annotation(", apply_text)
+        self.assertIn("return self._apply_scalar_ctor_builtin_named_call_annotation(", apply_text)
+        self.assertIn("return self._apply_enumerate_builtin_named_call_annotation(", apply_text)
         self.assertIn("_resolve_builtin_named_call_annotation_state(", helper_text)
         self.assertNotIn('semantic_tag = str(call_dispatch.get("builtin_semantic_tag", ""))', helper_text)
         self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', helper_text)
@@ -1616,6 +1634,9 @@ x.bit_length()
         self.assertIn("iter_element_type=iter_element_type", apply_text)
         self.assertNotIn('fn_name == "bool" and self._should_use_truthy_runtime_for_bool_ctor(', apply_text)
         self.assertNotIn("_sh_infer_enumerate_item_type(args)", apply_text)
+        self.assertNotIn("return _sh_annotate_fixed_runtime_builtin_call_expr(", apply_text)
+        self.assertNotIn("return _sh_annotate_scalar_ctor_call_expr(", apply_text)
+        self.assertNotIn("return _sh_annotate_enumerate_call_expr(", apply_text)
         self.assertIn("return None", apply_text)
         self.assertIn("return self._apply_named_call_dispatch(", named_call_text)
         self.assertIn('if dispatch_kind == "builtin":', named_apply_text)

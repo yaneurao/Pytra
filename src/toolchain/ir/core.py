@@ -5386,6 +5386,162 @@ class _ShExprParser:
         )
         return semantic_tag, dispatch_kind, use_truthy_runtime, iter_element_type
 
+    def _apply_fixed_runtime_builtin_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        fn_name: str,
+        semantic_tag: str,
+    ) -> dict[str, Any]:
+        """fixed-runtime builtin apply を helper へ寄せる。"""
+        return _sh_annotate_fixed_runtime_builtin_call_expr(
+            payload,
+            fn_name=fn_name,
+            semantic_tag=semantic_tag,
+        )
+
+    def _apply_scalar_ctor_builtin_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        fn_name: str,
+        args: list[dict[str, Any]],
+        use_truthy_runtime: bool,
+        semantic_tag: str,
+    ) -> dict[str, Any]:
+        """scalar ctor builtin apply を helper へ寄せる。"""
+        return _sh_annotate_scalar_ctor_call_expr(
+            payload,
+            fn_name=fn_name,
+            arg_count=len(args),
+            use_truthy_runtime=use_truthy_runtime,
+            semantic_tag=semantic_tag,
+        )
+
+    def _apply_minmax_builtin_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        fn_name: str,
+        semantic_tag: str,
+    ) -> dict[str, Any]:
+        """min/max builtin apply を helper へ寄せる。"""
+        return _sh_annotate_minmax_call_expr(
+            payload,
+            fn_name=fn_name,
+            semantic_tag=semantic_tag,
+        )
+
+    def _apply_exception_ctor_builtin_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        fn_name: str,
+        semantic_tag: str,
+    ) -> dict[str, Any]:
+        """exception ctor builtin apply を helper へ寄せる。"""
+        return _sh_annotate_exception_ctor_call_expr(
+            payload,
+            fn_name=fn_name,
+            semantic_tag=semantic_tag,
+        )
+
+    def _apply_open_builtin_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        semantic_tag: str,
+    ) -> dict[str, Any]:
+        """open builtin apply を helper へ寄せる。"""
+        return _sh_annotate_open_call_expr(
+            payload,
+            semantic_tag=semantic_tag,
+        )
+
+    def _apply_iterator_builtin_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        fn_name: str,
+        semantic_tag: str,
+    ) -> dict[str, Any]:
+        """iterator builtin apply を helper へ寄せる。"""
+        return _sh_annotate_iterator_builtin_call_expr(
+            payload,
+            fn_name=fn_name,
+            semantic_tag=semantic_tag,
+        )
+
+    def _apply_enumerate_builtin_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        iter_element_type: str,
+        semantic_tag: str,
+    ) -> dict[str, Any]:
+        """enumerate builtin apply を helper へ寄せる。"""
+        return _sh_annotate_enumerate_call_expr(
+            payload,
+            iter_element_type=iter_element_type,
+            semantic_tag=semantic_tag,
+        )
+
+    def _apply_anyall_builtin_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        fn_name: str,
+        semantic_tag: str,
+    ) -> dict[str, Any]:
+        """any/all builtin apply を helper へ寄せる。"""
+        return _sh_annotate_anyall_call_expr(
+            payload,
+            fn_name=fn_name,
+            semantic_tag=semantic_tag,
+        )
+
+    def _apply_ordchr_builtin_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        fn_name: str,
+        semantic_tag: str,
+    ) -> dict[str, Any]:
+        """ord/chr builtin apply を helper へ寄せる。"""
+        return _sh_annotate_ordchr_call_expr(
+            payload,
+            fn_name=fn_name,
+            semantic_tag=semantic_tag,
+        )
+
+    def _apply_collection_ctor_builtin_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        fn_name: str,
+        semantic_tag: str,
+    ) -> dict[str, Any]:
+        """collection ctor builtin apply を helper へ寄せる。"""
+        return _sh_annotate_collection_ctor_call_expr(
+            payload,
+            fn_name=fn_name,
+            semantic_tag=semantic_tag,
+        )
+
+    def _apply_type_predicate_builtin_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        fn_name: str,
+        semantic_tag: str,
+    ) -> dict[str, Any]:
+        """type predicate builtin apply を helper へ寄せる。"""
+        return _sh_annotate_type_predicate_call_expr(
+            payload,
+            fn_name=fn_name,
+            semantic_tag=semantic_tag,
+        )
+
     def _apply_builtin_named_call_dispatch(
         self,
         *,
@@ -5399,69 +5555,69 @@ class _ShExprParser:
     ) -> dict[str, Any] | None:
         """builtin named-call dispatch の annotation 適用を helper へ寄せる。"""
         if dispatch_kind == "fixed_runtime":
-            return _sh_annotate_fixed_runtime_builtin_call_expr(
-                payload,
+            return self._apply_fixed_runtime_builtin_named_call_annotation(
+                payload=payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "scalar_ctor":
-            return _sh_annotate_scalar_ctor_call_expr(
-                payload,
+            return self._apply_scalar_ctor_builtin_named_call_annotation(
+                payload=payload,
                 fn_name=fn_name,
-                arg_count=len(args),
+                args=args,
                 use_truthy_runtime=use_truthy_runtime,
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "minmax":
-            return _sh_annotate_minmax_call_expr(
-                payload,
+            return self._apply_minmax_builtin_named_call_annotation(
+                payload=payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "exception_ctor":
-            return _sh_annotate_exception_ctor_call_expr(
-                payload,
+            return self._apply_exception_ctor_builtin_named_call_annotation(
+                payload=payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "open":
-            return _sh_annotate_open_call_expr(
-                payload,
+            return self._apply_open_builtin_named_call_annotation(
+                payload=payload,
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "iterator":
-            return _sh_annotate_iterator_builtin_call_expr(
-                payload,
+            return self._apply_iterator_builtin_named_call_annotation(
+                payload=payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "enumerate":
-            return _sh_annotate_enumerate_call_expr(
-                payload,
+            return self._apply_enumerate_builtin_named_call_annotation(
+                payload=payload,
                 iter_element_type=iter_element_type,
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "anyall":
-            return _sh_annotate_anyall_call_expr(
-                payload,
+            return self._apply_anyall_builtin_named_call_annotation(
+                payload=payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "ordchr":
-            return _sh_annotate_ordchr_call_expr(
-                payload,
+            return self._apply_ordchr_builtin_named_call_annotation(
+                payload=payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "collection_ctor":
-            return _sh_annotate_collection_ctor_call_expr(
-                payload,
+            return self._apply_collection_ctor_builtin_named_call_annotation(
+                payload=payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "type_predicate":
-            return _sh_annotate_type_predicate_call_expr(
-                payload,
+            return self._apply_type_predicate_builtin_named_call_annotation(
+                payload=payload,
                 fn_name=fn_name,
                 semantic_tag=semantic_tag,
             )
