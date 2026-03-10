@@ -5334,6 +5334,16 @@ class _ShExprParser:
 
     def _apply_call_arg_entries_loop_state(self, *, should_continue: bool) -> bool:
         """call argument 非空 loop の continue apply を helper へ寄せる。"""
+        return self._apply_call_arg_entries_loop_state_result(
+            should_continue=should_continue,
+        )
+
+    def _apply_call_arg_entries_loop_state_result(
+        self,
+        *,
+        should_continue: bool,
+    ) -> bool:
+        """call argument 非空 loop の continue result を helper へ寄せる。"""
         return should_continue
 
     def _consume_call_arg_loop_entry(
