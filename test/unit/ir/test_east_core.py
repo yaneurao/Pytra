@@ -1151,12 +1151,16 @@ class EastCoreTest(unittest.TestCase):
             "def _parse_call_suffix",
             1,
         )[0]
+        call_suffix_text = text.split("def _parse_call_suffix", 1)[1].split(
+            "def _annotate_call_expr",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
         self.assertIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', helper_text)
         self.assertIn("args.append(self._parse_call_arg_expr())", helper_text)
         self.assertIn("save_pos = self.pos", helper_text)
-        self.assertIn("args, keywords = self._parse_call_args()", postfix_text)
+        self.assertIn("args, keywords = self._parse_call_args()", call_suffix_text)
         self.assertNotIn("save_pos = self.pos", postfix_text)
         self.assertNotIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', postfix_text)
 
