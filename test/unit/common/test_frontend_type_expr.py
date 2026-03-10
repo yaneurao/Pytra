@@ -138,6 +138,51 @@ class FrontendTypeExprTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, r"\$\.body\[0\]\.value\.resolved_type mismatch"):
             validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m")
 
+    def test_validate_raw_east3_doc_rejects_invalid_source_span_shape(self) -> None:
+        doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "source_span": {
+                        "lineno": 3,
+                        "end_lineno": 2,
+                        "col_offset": 4,
+                        "end_col_offset": 1,
+                    },
+                    "value": {"kind": "Name", "id": "x", "resolved_type": "int64"},
+                }
+            ],
+        }
+
+        with self.assertRaisesRegex(RuntimeError, r"source_span must not encode reversed range"):
+            validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m")
+
+    def test_validate_raw_east3_doc_rejects_nested_dispatch_mode_drift(self) -> None:
+        doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Name",
+                        "id": "x",
+                        "resolved_type": "int64",
+                        "meta": {"dispatch_mode": "type_id"},
+                    },
+                }
+            ],
+        }
+
+        with self.assertRaisesRegex(RuntimeError, r"\$\.body\[0\]\.value\.meta\.dispatch_mode mismatch"):
+            validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -19,6 +19,71 @@ from toolchain.link.program_model import MODULE_KINDS
 from toolchain.link.program_model import normalize_writer_options
 
 
+def _iter_object_tree(value: object, path: str) -> object:
+    if isinstance(value, dict):
+        yield (path, value)
+        for key, child in value.items():
+            yield from _iter_object_tree(child, path + "." + str(key))
+        return
+    if isinstance(value, list):
+        for idx, child in enumerate(value):
+            yield from _iter_object_tree(child, path + "[" + str(idx) + "]")
+
+
+def _validate_source_span_shape(span_any: object, label: str) -> None:
+    if not isinstance(span_any, dict):
+        raise RuntimeError(label + " must be an object")
+    for key in ("lineno", "end_lineno", "col_offset", "end_col_offset"):
+        value = span_any.get(key)
+        if type(value) is not int:
+            raise RuntimeError(label + "." + key + " must be int")
+    start_line = int(span_any["lineno"])
+    end_line = int(span_any["end_lineno"])
+    start_col = int(span_any["col_offset"])
+    end_col = int(span_any["end_col_offset"])
+    if end_line < start_line or (end_line == start_line and end_col < start_col):
+        raise RuntimeError(label + " must not encode reversed range")
+
+
+def _validate_raw_east3_invariants(
+    raw_doc: dict[str, object],
+    *,
+    expected_dispatch_mode: str,
+    module_id: str,
+) -> None:
+    for path, obj in _iter_object_tree(raw_doc, "$"):
+        if not isinstance(obj, dict):
+            continue
+        kind = obj.get("kind")
+        if kind is not None and not isinstance(kind, str):
+            raise RuntimeError("raw EAST3 " + path + ".kind must be string: " + module_id)
+        repr_value = obj.get("repr")
+        if repr_value is not None and not isinstance(repr_value, str):
+            raise RuntimeError("raw EAST3 " + path + ".repr must be string: " + module_id)
+        source_span = obj.get("source_span")
+        if source_span is not None:
+            _validate_source_span_shape(source_span, "raw EAST3 " + path + ".source_span")
+        meta = obj.get("meta")
+        if meta is None:
+            continue
+        if not isinstance(meta, dict):
+            raise RuntimeError("raw EAST3 " + path + ".meta must be an object: " + module_id)
+        node_dispatch_mode = meta.get("dispatch_mode")
+        if node_dispatch_mode is None:
+            continue
+        if not isinstance(node_dispatch_mode, str):
+            raise RuntimeError("raw EAST3 " + path + ".meta.dispatch_mode must be string: " + module_id)
+        if node_dispatch_mode != expected_dispatch_mode:
+            raise RuntimeError(
+                "raw EAST3 " + path + ".meta.dispatch_mode mismatch: "
+                + node_dispatch_mode
+                + " != "
+                + expected_dispatch_mode
+                + ": "
+                + module_id
+            )
+
+
 def _require_str(doc: json.JsonObj, key: str, label: str) -> str:
     value = doc.get_str(key)
     if value is None or value.strip() == "":
@@ -152,6 +217,7 @@ def validate_raw_east3_doc(
         raise RuntimeError("raw EAST3 must not contain meta.linked_program_v1: " + module_id)
     raw_doc = export_json_object_dict(east)
     sync_type_expr_mirrors(raw_doc)
+    _validate_raw_east3_invariants(raw_doc, expected_dispatch_mode=expected_dispatch_mode, module_id=module_id)
     return raw_doc
 
 
