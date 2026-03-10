@@ -47,7 +47,7 @@
 9. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S4-02] unsupported / preview / known block / regression の診断カテゴリを registry と parity report で揃え、expected failure を明示管理できるようにする。
 10. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S5-01] docs / plan report / archive を更新し、backend readiness・known block・gate 実行手順を追跡可能にする。
 11. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S5-02] representative internal change に対して host lane と selfhost lane が同じ contract で検証されることを確認し、再流入 guard を固定する。
-- 進捗メモ: [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S5-02] shared diagnostics の代表 case を host registry / direct e2e / stage2 diff / multilang summary で同時に固定する guard を追加中。
+- 進捗メモ: [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S5-02] shared diagnostics の representative guard を reentry guard へ束ね、known-block だけでなく regression case も host/selfhost 同時固定へ広げている。
 
 ### P5: nominal ADT の言語機能としての full rollout
 

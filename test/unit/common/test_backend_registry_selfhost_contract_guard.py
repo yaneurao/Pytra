@@ -94,6 +94,77 @@ class BackendRegistrySelfhostContractGuardTest(unittest.TestCase):
             expected,
         )
 
+    def test_regression_contract_stays_regression_across_host_and_selfhost_lanes(self) -> None:
+        cases = [
+            {
+                "host_message": registry_diagnostics.unsupported_backend_symbol_ref_message("broken.symbol"),
+                "direct_row": build_direct_e2e_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "selfhost_transpile_fail",
+                    registry_diagnostics.unsupported_backend_symbol_ref_message("broken.symbol"),
+                ),
+                "stage2_diff_row": build_stage2_diff_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "host_transpile_fail",
+                    registry_diagnostics.unsupported_backend_symbol_ref_message("broken.symbol"),
+                ),
+                "multilang_row": build_summary_row(
+                    "multilang_stage1",
+                    "scala",
+                    "regression",
+                    registry_diagnostics.unsupported_backend_symbol_ref_message("broken.symbol"),
+                ),
+                "expected_detail_categories": (
+                    "regression",
+                    "sample_transpile_fail",
+                    "host_transpile_fail",
+                    "regression",
+                ),
+            },
+            {
+                "host_message": registry_diagnostics.unsupported_runtime_hook_key_message("broken_hook"),
+                "direct_row": build_direct_e2e_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "selfhost_transpile_fail",
+                    registry_diagnostics.unsupported_runtime_hook_key_message("broken_hook"),
+                ),
+                "stage2_diff_row": build_stage2_diff_summary_row(
+                    "sample/py/01_mandelbrot.py",
+                    "host_transpile_fail",
+                    registry_diagnostics.unsupported_runtime_hook_key_message("broken_hook"),
+                ),
+                "multilang_row": build_summary_row(
+                    "multilang_stage1",
+                    "scala",
+                    "regression",
+                    registry_diagnostics.unsupported_runtime_hook_key_message("broken_hook"),
+                ),
+                "expected_detail_categories": (
+                    "regression",
+                    "sample_transpile_fail",
+                    "host_transpile_fail",
+                    "regression",
+                ),
+            },
+        ]
+
+        for case in cases:
+            with self.subTest(host_message=case["host_message"]):
+                host_contract = registry_diagnostics.classify_registry_diagnostic(case["host_message"])
+                self.assertEqual(host_contract, ("regression", "regression"))
+                self.assertEqual(case["direct_row"].top_level_category, "regression")
+                self.assertEqual(case["stage2_diff_row"].top_level_category, "regression")
+                self.assertEqual(case["multilang_row"].top_level_category, "regression")
+                self.assertEqual(
+                    (
+                        host_contract[1],
+                        case["direct_row"].detail_category,
+                        case["stage2_diff_row"].detail_category,
+                        case["multilang_row"].detail_category,
+                    ),
+                    case["expected_detail_categories"],
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

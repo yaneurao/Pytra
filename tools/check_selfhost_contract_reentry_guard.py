@@ -14,6 +14,19 @@ ROOT = Path(__file__).resolve().parents[1]
 def build_host_contract_steps() -> list[tuple[str, list[str]]]:
     return [
         (
+            "host-selfhost-contract-guard",
+            [
+                "python3",
+                "-m",
+                "unittest",
+                "discover",
+                "-s",
+                "test/unit/common",
+                "-p",
+                "test_backend_registry_selfhost_contract_guard.py",
+            ],
+        ),
+        (
             "host-entrypoint-contract",
             [
                 "python3",

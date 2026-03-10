@@ -19,6 +19,7 @@ class CheckSelfhostContractReentryGuardTest(unittest.TestCase):
         self.assertEqual(
             [label for label, _ in steps],
             [
+                "host-selfhost-contract-guard",
                 "host-entrypoint-contract",
                 "selfhost-source-contract",
                 "selfhost-build-verify-contract",
@@ -26,11 +27,12 @@ class CheckSelfhostContractReentryGuardTest(unittest.TestCase):
                 "selfhost-stage2-diff-contract",
             ],
         )
-        self.assertEqual(steps[0][1][-1], "test_py2x_entrypoints_contract.py")
-        self.assertEqual(steps[1][1][-1], "test_prepare_selfhost_source.py")
-        self.assertEqual(steps[2][1][-1], "test_selfhost_build_verify_tools.py")
-        self.assertEqual(steps[3][1][-1], "test_check_selfhost_cpp_diff.py")
-        self.assertEqual(steps[4][1][-1], "test_check_selfhost_stage2_cpp_diff.py")
+        self.assertEqual(steps[0][1][-1], "test_backend_registry_selfhost_contract_guard.py")
+        self.assertEqual(steps[1][1][-1], "test_py2x_entrypoints_contract.py")
+        self.assertEqual(steps[2][1][-1], "test_prepare_selfhost_source.py")
+        self.assertEqual(steps[3][1][-1], "test_selfhost_build_verify_tools.py")
+        self.assertEqual(steps[4][1][-1], "test_check_selfhost_cpp_diff.py")
+        self.assertEqual(steps[5][1][-1], "test_check_selfhost_stage2_cpp_diff.py")
 
     def test_run_reentry_guard_steps_stops_on_first_failure(self) -> None:
         steps = [
