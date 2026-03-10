@@ -5488,6 +5488,14 @@ class _ShExprParser:
         rtok: dict[str, Any],
     ) -> dict[str, Any]:
         """call suffix の close-token token-state apply を helper へ寄せる。"""
+        return self._apply_call_suffix_close_token_token_state_result(rtok=rtok)
+
+    def _apply_call_suffix_close_token_token_state_result(
+        self,
+        *,
+        rtok: dict[str, Any],
+    ) -> dict[str, Any]:
+        """call suffix の close-token token-state result return を helper へ寄せる。"""
         return rtok
 
     def _apply_call_suffix_close_token_state(

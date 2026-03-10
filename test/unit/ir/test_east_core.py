@@ -2811,6 +2811,12 @@ x.bit_length()
         close_state_token_apply_text = text.split(
             "def _apply_call_suffix_close_token_token_state", 1
         )[1].split(
+            "def _apply_call_suffix_close_token_token_state_result",
+            1,
+        )[0]
+        close_state_token_result_apply_text = text.split(
+            "def _apply_call_suffix_close_token_token_state_result", 1
+        )[1].split(
             "def _apply_call_suffix_close_token_state",
             1,
         )[0]
@@ -2867,7 +2873,12 @@ x.bit_length()
             close_state_resolve_text,
         )
         self.assertIn("return self._consume_call_suffix_close_token()", close_state_token_resolve_text)
-        self.assertIn("return rtok", close_state_token_apply_text)
+        self.assertIn(
+            "return self._apply_call_suffix_close_token_token_state_result(rtok=rtok)",
+            close_state_token_apply_text,
+        )
+        self.assertIn("return rtok", close_state_token_result_apply_text)
+        self.assertNotIn("return rtok", close_state_token_apply_text)
         self.assertIn(
             "return self._apply_call_suffix_close_token_state_result(",
             close_state_apply_text,
