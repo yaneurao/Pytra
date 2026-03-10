@@ -5353,6 +5353,18 @@ class _ShExprParser:
         keywords: list[dict[str, Any]],
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """call argument list の空-state apply を helper へ寄せる。"""
+        return self._apply_call_args_empty_state_result(
+            args=args,
+            keywords=keywords,
+        )
+
+    def _apply_call_args_empty_state_result(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """call argument list の空-state result return を helper へ寄せる。"""
         return args, keywords
 
     def _resolve_postfix_span_repr(

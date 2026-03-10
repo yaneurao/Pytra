@@ -2582,6 +2582,12 @@ x.bit_length()
             1,
         )[0]
         empty_apply_text = text.split("def _apply_call_args_empty_state", 1)[1].split(
+            "def _apply_call_args_empty_state_result",
+            1,
+        )[0]
+        empty_apply_result_text = text.split(
+            "def _apply_call_args_empty_state_result", 1
+        )[1].split(
             "def _resolve_postfix_span_repr",
             1,
         )[0]
@@ -2696,7 +2702,9 @@ x.bit_length()
         self.assertIn("return self._advance_call_arg_loop()", nonempty_loop_apply_text)
         self.assertIn("return self._resolve_call_args_empty_kind()", empty_state_text)
         self.assertIn('return self._cur()["k"] == ")"', empty_kind_text)
-        self.assertIn("return args, keywords", empty_apply_text)
+        self.assertIn("return self._apply_call_args_empty_state_result(", empty_apply_text)
+        self.assertIn("return args, keywords", empty_apply_result_text)
+        self.assertNotIn("return args, keywords", empty_apply_text)
         self.assertIn("args, keywords, rtok = self._resolve_call_suffix_token_state()", state_text)
         self.assertIn("args, keywords, source_span, repr_text = self._resolve_call_suffix_state(", call_suffix_text)
         self.assertNotIn("save_pos = self.pos", entry_text)
