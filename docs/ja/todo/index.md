@@ -47,5 +47,6 @@
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_class_semantics.py` を追加し、decl meta / nominal ADT metadata / dataclass value-safe cluster を `core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `attr/subscript annotation` cluster を `core_expr_attr_subscript_annotation.py` へ寄せ、`test_east_core_source_contract_expr_suffix.py` を split 後の所在へ追従させた。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_decorator_semantics.py` を追加し、`@sealed/@dataclass/@abi/@template` の pure helper cluster を `core.py` から切り出した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_extern_semantics.py` を追加し、ambient extern metadata helper cluster を `core.py` から切り出した。
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。

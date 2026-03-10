@@ -47,5 +47,6 @@ Last updated: 2026-03-11
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Moved the `attr/subscript annotation` cluster into `core_expr_attr_subscript_annotation.py` and updated `test_east_core_source_contract_expr_suffix.py` to the split locations.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Added `core_class_semantics.py`, then moved the decl-meta / nominal-ADT metadata / dataclass value-safe helper cluster out of `core.py`.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Added `core_decorator_semantics.py`, then moved the pure `@sealed/@dataclass/@abi/@template` helper cluster out of `core.py`.
+- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Added `core_extern_semantics.py`, then moved the ambient extern metadata helper cluster out of `core.py`.
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) Split `core.py` / `test_east_core.py` by responsibility so compiler-internal improvements can proceed in cluster-sized slices again.
