@@ -27,6 +27,8 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from tools.cpp_runtime_deps import collect_runtime_cpp_sources
+from tools.selfhost_parity_summary import build_summary_row
+from tools.selfhost_parity_summary import format_summary_line
 
 
 DEFAULT_CASES = [
@@ -85,6 +87,42 @@ def _ignore_prefixes_for_case(rel: str) -> list[str]:
     return []
 
 
+def _direct_detail_category(kind: str, note: str) -> str:
+    note_lc = note.lower()
+    if kind == "pass":
+        return "pass"
+    if kind == "selfhost_transpile_fail" and "[not_implemented]" in note_lc:
+        return "not_implemented"
+    if kind == "stdout_fail":
+        return "direct_parity_fail"
+    if kind == "compile_fail":
+        return "direct_compile_fail"
+    if kind == "run_fail":
+        return "direct_run_fail"
+    if kind == "selfhost_transpile_fail":
+        return "sample_transpile_fail"
+    if kind == "python_run_fail":
+        return "python_run_fail"
+    if kind == "build_selfhost_fail":
+        return "build_fail"
+    if kind == "missing_selfhost_binary":
+        return "missing_output"
+    return "regression"
+
+
+def _build_direct_summary_row(subject: str, kind: str, note: str):
+    return build_summary_row("direct", subject, _direct_detail_category(kind, note), note)
+
+
+def _print_direct_summary(rows: list) -> None:
+    nonpass_rows = [row for row in rows if row.top_level_category != "pass"]
+    if len(nonpass_rows) == 0:
+        return
+    print("[direct summary]")
+    for row in nonpass_rows:
+        print(format_summary_line(row))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="verify selfhost direct e2e output parity")
     ap.add_argument("--selfhost-bin", default=str(SELFHOST_BIN), help="path to selfhost binary")
@@ -94,13 +132,20 @@ def main() -> int:
     args = ap.parse_args()
 
     selfhost_bin = Path(args.selfhost_bin)
+    summary_rows = []
     if not args.skip_build:
         cp_build = _run(["python3", str(BUILD_SELFHOST)])
         if cp_build.returncode != 0:
             msg = cp_build.stderr.strip() or cp_build.stdout.strip()
+            summary_rows.append(_build_direct_summary_row("build_selfhost", "build_selfhost_fail", msg))
+            _print_direct_summary(summary_rows)
             print("[FAIL build_selfhost]", msg.splitlines()[:1])
             return 2
     if not selfhost_bin.exists():
+        summary_rows.append(
+            _build_direct_summary_row("selfhost_binary", "missing_selfhost_binary", str(selfhost_bin))
+        )
+        _print_direct_summary(summary_rows)
         print(f"[FAIL] missing selfhost binary: {selfhost_bin}")
         return 2
     selfhost_target = _resolve_selfhost_target(selfhost_bin, str(args.selfhost_target))
@@ -121,6 +166,7 @@ def main() -> int:
             py_run = _run(["python3", str(src)])
             if py_run.returncode != 0:
                 msg = py_run.stderr.strip() or py_run.stdout.strip()
+                summary_rows.append(_build_direct_summary_row(rel, "python_run_fail", msg))
                 print(f"[FAIL python-run] {rel}: {msg.splitlines()[:1]}")
                 failures += 1
                 i += 1
@@ -136,6 +182,7 @@ def main() -> int:
             cp_transpile = _run(transpile_cmd)
             if cp_transpile.returncode != 0:
                 msg = cp_transpile.stderr.strip() or cp_transpile.stdout.strip()
+                summary_rows.append(_build_direct_summary_row(rel, "selfhost_transpile_fail", msg))
                 print(f"[FAIL selfhost-transpile] {rel}: {msg.splitlines()[:1]}")
                 failures += 1
                 i += 1
@@ -159,6 +206,7 @@ def main() -> int:
             cp_compile = _run(compile_cmd)
             if cp_compile.returncode != 0:
                 msg = cp_compile.stderr.strip() or cp_compile.stdout.strip()
+                summary_rows.append(_build_direct_summary_row(rel, "compile_fail", msg))
                 print(f"[FAIL compile] {rel}: {msg.splitlines()[:1]}")
                 failures += 1
                 i += 1
@@ -167,6 +215,7 @@ def main() -> int:
             cp_run = _run([str(out_bin)])
             if cp_run.returncode != 0:
                 msg = cp_run.stderr.strip() or cp_run.stdout.strip()
+                summary_rows.append(_build_direct_summary_row(rel, "run_fail", msg))
                 print(f"[FAIL run] {rel}: {msg.splitlines()[:1]}")
                 failures += 1
                 i += 1
@@ -176,15 +225,24 @@ def main() -> int:
             py_stdout = _normalize_stdout(py_run.stdout, ignore_prefixes)
             cpp_stdout = _normalize_stdout(cp_run.stdout, ignore_prefixes)
             if py_stdout != cpp_stdout:
+                summary_rows.append(
+                    _build_direct_summary_row(
+                        rel,
+                        "stdout_fail",
+                        f"python={repr(py_stdout)} selfhost={repr(cpp_stdout)}",
+                    )
+                )
                 print(f"[FAIL stdout] {rel}")
                 print("  python:", repr(py_stdout))
                 print("  selfhost:", repr(cpp_stdout))
                 failures += 1
             else:
+                summary_rows.append(_build_direct_summary_row(rel, "pass", ""))
                 print(f"[OK] {rel}")
 
             i += 1
 
+    _print_direct_summary(summary_rows)
     print(f"failures={failures}")
     return 1 if failures else 0
 

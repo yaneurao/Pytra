@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -183,6 +185,42 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
         self.assertEqual(mod._normalize_stdout(text, ["elapsed_sec:", "elapsed:"]), "hello\nworld")
         self.assertEqual(mod._ignore_prefixes_for_case("sample/py/17_monte_carlo_pi.py"), ["elapsed_sec:", "elapsed:", "time_sec:"])
         self.assertEqual(mod._ignore_prefixes_for_case("test/fixtures/core/add.py"), [])
+
+    def test_direct_summary_row_maps_not_implemented_to_known_block(self) -> None:
+        mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
+        row = mod._build_direct_summary_row(
+            "test/fixtures/core/add.py",
+            "selfhost_transpile_fail",
+            "[not_implemented] direct transpile is not ready",
+        )
+        self.assertEqual(row.top_level_category, "known_block")
+        self.assertEqual(row.detail_category, "not_implemented")
+
+    def test_direct_summary_row_maps_stdout_failure_to_regression(self) -> None:
+        mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
+        row = mod._build_direct_summary_row(
+            "test/fixtures/core/add.py",
+            "stdout_fail",
+            "python='7' selfhost='8'",
+        )
+        self.assertEqual(row.top_level_category, "regression")
+        self.assertEqual(row.detail_category, "direct_parity_fail")
+
+    def test_print_direct_summary_formats_shared_summary_line(self) -> None:
+        mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
+        row = mod._build_direct_summary_row(
+            "test/fixtures/core/add.py",
+            "stdout_fail",
+            "python='7' selfhost='8'",
+        )
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            mod._print_direct_summary([row])
+        text = buf.getvalue()
+        self.assertIn("[direct summary]", text)
+        self.assertIn("subject=test/fixtures/core/add.py", text)
+        self.assertIn("category=regression", text)
+        self.assertIn("detail=direct_parity_fail", text)
 
     def test_main_uses_auto_target_result_in_transpile_command(self) -> None:
         mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
