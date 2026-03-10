@@ -224,9 +224,25 @@ class NonCppEast3ContractGuardTest(unittest.TestCase):
 
     def test_native_noncpp_backends_fail_closed_on_nominal_adt_match_stmt(self) -> None:
         east = _representative_nominal_adt_match_module()
+        strict_lane_backends = [
+            (
+                "Rust backend",
+                transpile_to_rust,
+                r"unsupported_syntax\|Rust backend does not support nominal ADT v1 lanes yet",
+            ),
+            (
+                "C# backend",
+                transpile_to_csharp,
+                r"unsupported_syntax\|C# backend does not support nominal ADT v1 lanes yet",
+            ),
+        ]
+        for backend_name, transpile, pattern in strict_lane_backends:
+            with self.subTest(backend=backend_name):
+                with self.assertRaisesRegex(RuntimeError, pattern) as cm:
+                    transpile(copy.deepcopy(east))
+                self.assertIn("unsupported nominal ADT lane: declaration", str(cm.exception))
+
         backends = [
-            ("Rust backend", transpile_to_rust, r"rust emitter: unsupported stmt kind: Match"),
-            ("C# backend", transpile_to_csharp, r"csharp emitter: unsupported stmt kind: Match"),
             ("Go backend", transpile_to_go, r"go native emitter: unsupported stmt kind: Match"),
             ("Java backend", transpile_to_java, r"java native emitter: unsupported stmt kind: Match"),
             ("Kotlin backend", transpile_to_kotlin, r"kotlin native emitter: unsupported stmt kind: Match"),

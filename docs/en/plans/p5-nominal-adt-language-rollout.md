@@ -89,8 +89,8 @@ Planned verification commands:
   - Wave 1: `Rust` / `C#` / `Go` / `Java` / `Kotlin` / `Scala` / `Swift` / `Nim`
   - Wave 2: `JS` / `TS` on the shared JS emitter lane
   - Wave 3: `Lua` / `Ruby` / `PHP`
-- The representative unsupported lane for non-C++ backends is the `Match` statement carrying `NominalAdtMatch`.
-- Unsupported backends must fail closed with a backend-local `unsupported stmt kind: Match` diagnostic.
+- The representative unsupported lane is split in two: the lane-level nominal ADT v1 guard for `Rust/C#`, and the `Match` statement carrying `NominalAdtMatch` for the remaining backends.
+- Unsupported backends must fail closed. `Rust/C#` keep the `unsupported_syntax|... does not support nominal ADT v1 lanes yet` guard; the remaining targets use backend-local `unsupported stmt kind: Match` diagnostics.
 - Comment-based or silent fallback is forbidden. This slice removes Nim's old `# unsupported stmt: Match` fallback.
 - The non-C++ contract guard must pin the same fail-closed policy across Wave 1 / Wave 2 / Wave 3 representative targets.
 
@@ -214,4 +214,4 @@ Decision log:
 - 2026-03-11: Closed `S4-02` by fixing representative C++ backend coverage so constructor / projection / `isinstance` stay on the existing class lane, `NominalAdtMatch` lowers to `if / else if`, and plain `Match` fail-closes with `unsupported Match lane`.
 - 2026-03-11: As the first `S5-01` slice, fixed the rollout order to `C++ -> Rust -> C# -> the rest`, and locked Rust/C# to fail closed with `unsupported_syntax` for representative nominal ADT v1 `ClassDef.meta.nominal_adt_v1`, `Match`, and `NominalAdtProjection` lanes.
 - 2026-03-11: Closed `S5-01` by fixing the multi-backend rollout order as `Rust/C#/Go/Java/Kotlin/Scala/Swift/Nim`, then shared-JS `JS/TS`, then `Lua/Ruby/PHP`.
-- 2026-03-11: Closed `S5-01` by fixing the unsupported-backend contract to fail close on the representative nominal ADT `Match` lane with backend-local `unsupported stmt kind: Match` diagnostics, and by removing Nim's old `# unsupported stmt` comment fallback.
+- 2026-03-11: Closed `S5-01` by fixing the unsupported-backend contract to fail close through the Rust/C# lane-level `unsupported_syntax` guard or, for the remaining targets, backend-local `unsupported stmt kind: Match` diagnostics, and by removing Nim's old `# unsupported stmt` comment fallback.

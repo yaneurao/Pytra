@@ -89,8 +89,8 @@
   - Wave 1: `Rust` / `C#` / `Go` / `Java` / `Kotlin` / `Scala` / `Swift` / `Nim`
   - Wave 2: shared JS emitter を使う `JS` / `TS`
   - Wave 3: `Lua` / `Ruby` / `PHP`
-- 未対応 backend の representative unsupported lane は `NominalAdtMatch` を持つ `Match` statement で固定する。
-- 未対応 backend は silent fallback を禁止し、backend-local な `unsupported stmt kind: Match` 診断で fail-closed しなければならない。
+- representative unsupported lane は `Rust/C#` の lane-level nominal ADT v1 guard と、それ以外の backend が受ける `NominalAdtMatch` 付き `Match` statement の 2 段で固定する。
+- 未対応 backend は silent fallback を禁止し、`Rust/C#` は `unsupported_syntax|... does not support nominal ADT v1 lanes yet`、それ以外は backend-local な `unsupported stmt kind: Match` 診断で fail-closed しなければならない。
 - codegen comment による握りつぶしは禁止する。Nim backend の旧 `# unsupported stmt: Match` はこの slice で撤去した。
 - non-C++ contract guard では representative nominal ADT `Match` に対して、Wave 1 / 2 / 3 の各 backend が同じ fail-closed policy を守ることを固定する。
 
@@ -214,4 +214,4 @@
 - 2026-03-11: `S4-02` を閉じ、C++ backend では constructor / projection / `isinstance` を既存 class lane で扱い、`NominalAdtMatch` を `if / else if` へ lower し、plain `Match` は `unsupported Match lane` で fail-closed にする representative backend test を固定した。
 - 2026-03-11: `S5-01` の first slice として rollout 順を `C++ -> Rust -> C# -> それ以外` に固定し、Rust/C# は representative nominal ADT v1 の `ClassDef.meta.nominal_adt_v1`、`Match`、`NominalAdtProjection` を `unsupported_syntax` で fail-closed にする方針をコードと test で固定した。
 - 2026-03-11: `S5-01` を閉じ、multi-backend rollout 順は `Rust/C#/Go/Java/Kotlin/Scala/Swift/Nim` を先頭、shared JS emitter を使う `JS/TS` を次段、`Lua/Ruby/PHP` を最終段に固定した。
-- 2026-03-11: `S5-01` を閉じ、未対応 backend の representative nominal ADT lane は `Match` statement を入口にし、backend-local な `unsupported stmt kind: Match` 診断で fail-closed する契約を固定した。Nim backend の `# unsupported stmt` comment fallback は撤去した。
+- 2026-03-11: `S5-01` を閉じ、未対応 backend の representative nominal ADT lane は `Rust/C#` の lane-level `unsupported_syntax` guard と、それ以外の backend が返す `unsupported stmt kind: Match` の 2 段で fail-closed する契約を固定した。Nim backend の `# unsupported stmt` comment fallback は撤去した。
