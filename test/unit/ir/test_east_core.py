@@ -242,7 +242,7 @@ class EastCoreTest(unittest.TestCase):
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertIn("node = _sh_make_attribute_expr(", text)
         self.assertIn("payload = _sh_make_call_expr(", text)
-        self.assertIn("node = _sh_make_subscript_expr(", text)
+        self.assertIn("_sh_make_subscript_expr(", text)
         self.assertIn("return _sh_make_binop_expr(", text)
         self.assertIn("node = _sh_make_binop_expr(", text)
         self.assertIn("return _sh_make_lambda_expr(", text)
@@ -534,7 +534,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_attr_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _annotate_attr_expr", 1)[1].split(
-            "def _subscript_result_type",
+            "def _annotate_subscript_expr",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -550,6 +550,23 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("_sh_make_attribute_expr(", postfix_text)
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', postfix_text)
         self.assertNotIn('_sh_annotate_resolved_runtime_expr(', postfix_text)
+
+    def test_core_source_routes_subscript_annotations_through_parser_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _annotate_subscript_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('owner_t = str(owner_expr.get("resolved_type", "unknown"))', helper_text)
+        self.assertIn("_sh_make_slice_node(lower, upper)", helper_text)
+        self.assertIn("_sh_make_subscript_expr(", helper_text)
+        self.assertIn("resolved_type=self._subscript_result_type(owner_t)", helper_text)
+        self.assertIn("node = self._annotate_subscript_expr(", postfix_text)
+        self.assertNotIn("node = _sh_make_subscript_expr(", postfix_text)
+        self.assertNotIn("_sh_make_slice_node(", postfix_text)
+        self.assertNotIn("out_t = self._subscript_result_type(", postfix_text)
 
     def test_core_source_routes_method_call_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
@@ -692,6 +709,10 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_attr_call_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        call_helper_text = text.split("def _annotate_call_expr", 1)[1].split(
+            "def _annotate_named_call_expr",
+            1,
+        )[0]
         helper_text = text.split("def _annotate_attr_call_expr", 1)[1].split(
             "def _subscript_result_type",
             1,
@@ -702,11 +723,13 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('owner = callee.get("value")', helper_text)
         self.assertIn('_sh_annotate_noncpp_attr_call_expr(', helper_text)
         self.assertIn('_sh_annotate_runtime_method_call_expr(', helper_text)
-        self.assertIn("payload = self._annotate_attr_call_expr(", postfix_text)
+        self.assertIn('if callee.get("kind") == "Attribute":', call_helper_text)
+        self.assertIn("return self._annotate_attr_call_expr(", call_helper_text)
         self.assertNotIn('attr = str(node.get("attr", ""))', postfix_text)
         self.assertNotIn('owner = node.get("value")', postfix_text)
         self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', postfix_text)
         self.assertNotIn('_sh_annotate_runtime_method_call_expr(', postfix_text)
+        self.assertNotIn("payload = self._annotate_attr_call_expr(", postfix_text)
 
     def test_core_source_routes_scalar_ctor_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
@@ -952,6 +975,10 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_infer_known_name_call_return_type",
             1,
         )[0]
+        call_helper_text = text.split("def _annotate_call_expr", 1)[1].split(
+            "def _annotate_named_call_expr",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('return {\n            "builtin_semantic_tag": "",', helper_text)
@@ -961,9 +988,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('lookup_stdlib_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)', helper_text)
         self.assertIn('lookup_stdlib_symbol_semantic_tag(fn_name)', helper_text)
         self.assertIn('lookup_noncpp_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)', helper_text)
-        self.assertIn('_sh_lookup_named_call_dispatch(fn_name)', postfix_text)
+        self.assertIn('_sh_lookup_named_call_dispatch(fn_name)', call_helper_text)
         self.assertNotIn('lookup_stdlib_function_runtime_call(fn_name) if fn_name != "" else ""', postfix_text)
         self.assertNotIn('lookup_builtin_semantic_tag(fn_name) if fn_name != "" else ""', postfix_text)
+        self.assertNotIn('_sh_lookup_named_call_dispatch(fn_name)', postfix_text)
         self.assertNotIn(
             'lookup_stdlib_imported_symbol_runtime_call(fn_name, _SH_IMPORT_SYMBOLS)',
             postfix_text,
@@ -975,6 +1003,10 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_named_call_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        call_helper_text = text.split("def _annotate_call_expr", 1)[1].split(
+            "def _annotate_named_call_expr",
+            1,
+        )[0]
         helper_text = text.split("def _annotate_named_call_expr", 1)[1].split(
             "def _subscript_result_type",
             1,
@@ -985,10 +1017,13 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('if fn_name in {"print", "len", "range", "zip", "str"}:', helper_text)
         self.assertIn('if fn_name == "bool" and len(args) == 1:', helper_text)
         self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', helper_text)
-        self.assertIn("payload = self._annotate_named_call_expr(", postfix_text)
+        self.assertIn('fn_name = str(callee.get("id", "")) if callee.get("kind") == "Name" else ""', call_helper_text)
+        self.assertIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', call_helper_text)
+        self.assertIn("return self._annotate_named_call_expr(", call_helper_text)
         self.assertNotIn('stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))', postfix_text)
         self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', postfix_text)
         self.assertNotIn('if fn_name == "bool" and len(args) == 1:', postfix_text)
+        self.assertNotIn("payload = self._annotate_named_call_expr(", postfix_text)
         self.assertNotIn("elem_t = _sh_infer_enumerate_item_type(args)", postfix_text)
 
     def test_core_source_routes_known_name_call_returns_through_shared_helper(self) -> None:
@@ -1055,18 +1090,23 @@ class EastCoreTest(unittest.TestCase):
             "def _split_generic_types",
             1,
         )[0]
+        call_helper_text = text.split("def _annotate_call_expr", 1)[1].split(
+            "def _annotate_named_call_expr",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('kind = str(callee.get("kind", ""))', helper_text)
         self.assertIn("_sh_infer_known_name_call_return_type(", helper_text)
         self.assertIn("self._infer_attr_call_return_type(", helper_text)
         self.assertIn('if kind == "Lambda":', helper_text)
-        self.assertIn("call_ret, fn_name = self._infer_call_expr_return_type(", postfix_text)
+        self.assertIn("call_ret, fn_name = self._infer_call_expr_return_type(callee, args)", call_helper_text)
         self.assertNotIn("stdlib_imported_ret = (", postfix_text)
         self.assertNotIn("call_ret = self.fn_return_types[fn_name]", postfix_text)
         self.assertNotIn('call_ret = self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))', postfix_text)
         self.assertNotIn("call_ret = self._infer_attr_call_return_type(", postfix_text)
         self.assertNotIn('call_ret = str(node.get("return_type", "unknown"))', postfix_text)
+        self.assertNotIn("call_ret, fn_name = self._infer_call_expr_return_type(", postfix_text)
 
     def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")

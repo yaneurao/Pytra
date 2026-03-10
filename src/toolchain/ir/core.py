@@ -5098,6 +5098,37 @@ class _ShExprParser:
             )
         return node
 
+    def _annotate_subscript_expr(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        index_expr: dict[str, Any] | None = None,
+        lower: dict[str, Any] | None = None,
+        upper: dict[str, Any] | None = None,
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """Subscript / slice node の構築を parser helper へ寄せる。"""
+        owner_t = str(owner_expr.get("resolved_type", "unknown"))
+        if index_expr is None or lower is not None or upper is not None:
+            return _sh_make_subscript_expr(
+                source_span,
+                owner_expr,
+                _sh_make_slice_node(lower, upper),
+                resolved_type=owner_t,
+                repr_text=repr_text,
+                lowered_kind="SliceExpr",
+                lower=lower,
+                upper=upper,
+            )
+        return _sh_make_subscript_expr(
+            source_span,
+            owner_expr,
+            index_expr,
+            resolved_type=self._subscript_result_type(owner_t),
+            repr_text=repr_text,
+        )
+
     def _subscript_result_type(self, container_type: str) -> str:
         """添字アクセスの結果型をコンテナ型から推論する。"""
         if container_type.startswith("list[") and container_type.endswith("]"):
@@ -5224,15 +5255,12 @@ class _ShExprParser:
                     rtok = self._eat("]")
                     s = int(node["source_span"]["col"]) - self.col_base
                     e = rtok["e"]
-                    node = _sh_make_subscript_expr(
-                        self._node_span(s, e),
-                        node,
-                        _sh_make_slice_node(None, up),
-                        resolved_type=str(node.get("resolved_type", "unknown")),
-                        repr_text=self._src_slice(s, e),
-                        lowered_kind="SliceExpr",
+                    node = self._annotate_subscript_expr(
+                        owner_expr=node,
                         lower=None,
                         upper=up,
+                        source_span=self._node_span(s, e),
+                        repr_text=self._src_slice(s, e),
                     )
                     continue
                 first = self._parse_ifexp()
@@ -5244,26 +5272,21 @@ class _ShExprParser:
                     rtok = self._eat("]")
                     s = int(node["source_span"]["col"]) - self.col_base
                     e = rtok["e"]
-                    node = _sh_make_subscript_expr(
-                        self._node_span(s, e),
-                        node,
-                        _sh_make_slice_node(first, up),
-                        resolved_type=str(node.get("resolved_type", "unknown")),
-                        repr_text=self._src_slice(s, e),
-                        lowered_kind="SliceExpr",
+                    node = self._annotate_subscript_expr(
+                        owner_expr=node,
                         lower=first,
                         upper=up,
+                        source_span=self._node_span(s, e),
+                        repr_text=self._src_slice(s, e),
                     )
                     continue
                 rtok = self._eat("]")
                 s = int(node["source_span"]["col"]) - self.col_base
                 e = rtok["e"]
-                out_t = self._subscript_result_type(str(node.get("resolved_type", "unknown")))
-                node = _sh_make_subscript_expr(
-                    self._node_span(s, e),
-                    node,
-                    first,
-                    resolved_type=out_t,
+                node = self._annotate_subscript_expr(
+                    owner_expr=node,
+                    index_expr=first,
+                    source_span=self._node_span(s, e),
                     repr_text=self._src_slice(s, e),
                 )
                 continue
