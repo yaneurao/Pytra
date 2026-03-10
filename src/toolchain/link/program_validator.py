@@ -9,6 +9,7 @@ from toolchain.json_adapters import coerce_json_object_doc
 from toolchain.json_adapters import export_json_object_dict
 from toolchain.json_adapters import export_json_value_raw
 from toolchain.json_adapters import json_array_length
+from toolchain.json_adapters import json_value_as_object_doc_or_empty
 from toolchain.link.program_model import DISPATCH_MODES
 from toolchain.link.program_model import LINK_INPUT_SCHEMA
 from toolchain.link.program_model import LINK_OUTPUT_SCHEMA
@@ -139,9 +140,7 @@ def validate_raw_east3_doc(
     if schema_version_value is not None and (schema_version is None or schema_version < 1):
         raise RuntimeError("raw EAST3 schema_version must be int >= 1: " + module_id)
     meta_value = east.get("meta")
-    meta = json.JsonObj({}) if meta_value is None else meta_value.as_obj()
-    if meta is None:
-        raise RuntimeError("raw EAST3.meta must be an object: " + module_id)
+    meta = json_value_as_object_doc_or_empty(meta_value)
     dispatch_mode = meta.get_str("dispatch_mode")
     if dispatch_mode is None or dispatch_mode not in DISPATCH_MODES:
         raise RuntimeError("raw EAST3.meta.dispatch_mode must be native|type_id: " + module_id)

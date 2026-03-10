@@ -71,7 +71,9 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] CLI root loader の `py2x` / `ir2lang` も `load_json_object_doc_or_none()` を通るようにし、toolchain 外周の JSON root 読み込みを同じ adapter seam に揃えた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `extern_var_v1` は `AmbientExternBinding` carrier を通るようにし、ambient extern validation が raw `dict[str, str]` ではなく explicit adapter seam だけを見る形へ寄せた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `ir2lang` の EAST JSON unwrap も `unwrap_east_root_json_doc()` / `export_json_object_dict()` に寄せ、outer CLI lane に残っていた `.raw` 直参照を toolchain adapter seam の外へ出した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] 空 `JsonObj` fallback と `JsonValue -> JsonObj` 既定変換も `toolchain.json_adapters` に集約し、`py2x` / `ir2lang` / `program_validator` から direct `json.JsonObj({})` を退けた。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `program_validator.py` に残っていた `JsonObj/JsonArr/JsonValue` raw access も `toolchain.json_adapters` に寄せ、validator 本体は object/array/value helper 経由でのみ dynamic carrier を扱うようにした。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `program_loader` の in-memory module doc 受理も `coerce_json_object_dict()` に統一し、`typed_boundary.py` の compiler-root raw/meta 参照は helper 内へ閉じた。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

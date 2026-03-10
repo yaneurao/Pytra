@@ -121,8 +121,18 @@ def _root_string(raw_doc: dict[str, object], key: str) -> str:
     return value_any if isinstance(value_any, str) else ""
 
 
+def export_compiler_root_module_doc(doc: "CompilerRootDocument") -> dict[str, object]:
+    return dict(doc.raw_module_doc)
+
+
+def compiler_root_meta_dict(doc: object) -> dict[str, object]:
+    root = coerce_compiler_root_document(doc)
+    meta_any = export_compiler_root_module_doc(root).get("meta", {})
+    return dict(meta_any) if isinstance(meta_any, dict) else {}
+
+
 def export_compiler_root_document(doc: "CompilerRootDocument") -> dict[str, object]:
-    out = dict(doc.raw_module_doc)
+    out = export_compiler_root_module_doc(doc)
     out["kind"] = doc.module_kind
     if doc.meta.source_path != "":
         out["source_path"] = doc.meta.source_path
@@ -192,11 +202,9 @@ def compiler_root_module_id(
     fallback_output_path: Path | None = None,
 ) -> str:
     root = coerce_compiler_root_document(doc)
-    meta_any = root.raw_module_doc.get("meta", {})
-    if isinstance(meta_any, dict):
-        module_id_any = meta_any.get("module_id")
-        if isinstance(module_id_any, str) and module_id_any.strip() != "":
-            return module_id_any.strip()
+    module_id_any = compiler_root_meta_dict(root).get("module_id")
+    if isinstance(module_id_any, str) and module_id_any.strip() != "":
+        return module_id_any.strip()
     if fallback_output_path is not None and fallback_output_path.stem != "":
         return fallback_output_path.stem
     return "module"

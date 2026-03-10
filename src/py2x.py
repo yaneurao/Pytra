@@ -25,6 +25,7 @@ from toolchain.compiler.transpile_cli import add_common_transpile_args, build_mo
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
 from toolchain.json_adapters import load_json_object_doc_or_none
+from toolchain.json_adapters import empty_json_object_doc
 from toolchain.link import LINK_INPUT_SCHEMA
 from toolchain.link import build_linked_program_from_module_map
 from toolchain.link import LinkedProgram
@@ -141,9 +142,9 @@ def _load_json_root(path: Path) -> json.JsonObj:
     try:
         payload = load_json_object_doc_or_none(path)
     except Exception:
-        return json.JsonObj({})
+        return empty_json_object_doc()
     if payload is None:
-        return json.JsonObj({})
+        return empty_json_object_doc()
     return payload
 
 

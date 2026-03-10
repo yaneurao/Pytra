@@ -26,6 +26,7 @@ from toolchain.frontends.extern_var import validate_ambient_global_target_suppor
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
 from toolchain.json_adapters import export_json_object_dict
+from toolchain.json_adapters import empty_json_object_doc
 from toolchain.json_adapters import load_json_object_doc_or_none
 from toolchain.json_adapters import unwrap_east_root_json_doc
 from toolchain.link import LINK_OUTPUT_SCHEMA
@@ -122,7 +123,7 @@ def _load_json_root(input_path: Path) -> json.JsonObj:
     if payload is not None:
         return payload
     _fatal("invalid EAST JSON root: expected dict")
-    return json.JsonObj({})
+    return empty_json_object_doc()
 
 
 def _unwrap_east_module(root: json.JsonObj) -> dict[str, Any]:

@@ -492,6 +492,28 @@ class LinkedProgramLoaderTests(unittest.TestCase):
 
             self.assertEqual([item.module_id for item in program.modules], ["app.helper", "app.main"])
 
+    def test_build_linked_program_from_module_map_rejects_non_object_docs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            with self.assertRaisesRegex(RuntimeError, r"module_east_map\[.*helper.py\] must be an object"):
+                build_linked_program_from_module_map(
+                    main_py,
+                    {
+                        str(helper_py): [1, 2, 3],
+                        str(main_py): {
+                            "kind": "Module",
+                            "east_stage": 3,
+                            "schema_version": 1,
+                            "meta": {"dispatch_mode": "native", "module_id": "app.main"},
+                            "body": [],
+                        },
+                    },
+                    target="cpp",
+                    dispatch_mode="native",
+                )
+
     def test_build_linked_program_from_module_map_requires_entry_module(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

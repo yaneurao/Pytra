@@ -6,6 +6,10 @@ from pytra.std import json
 from pytra.std.pathlib import Path
 
 
+def empty_json_object_doc() -> json.JsonObj:
+    return json.JsonObj({})
+
+
 def load_json_object_doc(path: Path, *, label: str) -> json.JsonObj:
     if path.exists() is False:
         raise RuntimeError(label + " not found: " + str(path))
@@ -34,8 +38,21 @@ def coerce_json_object_doc(doc: object, *, label: str) -> json.JsonObj:
     return json.JsonObj(out)
 
 
+def json_value_as_object_doc_or_empty(value: json.JsonValue | None) -> json.JsonObj:
+    if value is None:
+        return empty_json_object_doc()
+    doc = value.as_obj()
+    if doc is None:
+        return empty_json_object_doc()
+    return doc
+
+
 def export_json_object_dict(doc: json.JsonObj) -> dict[str, object]:
     return dict(doc.raw)
+
+
+def coerce_json_object_dict(doc: object, *, label: str) -> dict[str, object]:
+    return export_json_object_dict(coerce_json_object_doc(doc, label=label))
 
 
 def json_array_length(doc: json.JsonArr) -> int:
