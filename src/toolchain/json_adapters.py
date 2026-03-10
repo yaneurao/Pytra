@@ -22,8 +22,30 @@ def load_json_object_doc_or_none(path: Path) -> json.JsonObj | None:
     return json.loads_obj(path.read_text(encoding="utf-8"))
 
 
+def coerce_json_object_doc(doc: object, *, label: str) -> json.JsonObj:
+    if isinstance(doc, json.JsonObj):
+        return doc
+    if not isinstance(doc, dict):
+        raise RuntimeError(label + " must be an object")
+    out: dict[str, object] = {}
+    for key, value in doc.items():
+        if isinstance(key, str):
+            out[key] = value
+    return json.JsonObj(out)
+
+
 def export_json_object_dict(doc: json.JsonObj) -> dict[str, object]:
     return dict(doc.raw)
+
+
+def json_array_length(doc: json.JsonArr) -> int:
+    return len(doc.raw)
+
+
+def export_json_value_raw(value: json.JsonValue | None) -> object | None:
+    if value is None:
+        return None
+    return value.raw
 
 
 def unwrap_east_root_json_doc(doc: json.JsonObj) -> json.JsonObj | None:

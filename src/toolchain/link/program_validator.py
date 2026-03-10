@@ -5,6 +5,10 @@ from __future__ import annotations
 from pytra.std import json
 
 from toolchain.frontends.type_expr import sync_type_expr_mirrors
+from toolchain.json_adapters import coerce_json_object_doc
+from toolchain.json_adapters import export_json_object_dict
+from toolchain.json_adapters import export_json_value_raw
+from toolchain.json_adapters import json_array_length
 from toolchain.link.program_model import DISPATCH_MODES
 from toolchain.link.program_model import LINK_INPUT_SCHEMA
 from toolchain.link.program_model import LINK_OUTPUT_SCHEMA
@@ -12,22 +16,6 @@ from toolchain.link.program_model import LinkInputModuleEntry
 from toolchain.link.program_model import LinkOutputModuleEntry
 from toolchain.link.program_model import MODULE_KINDS
 from toolchain.link.program_model import normalize_writer_options
-
-
-def _to_raw_dict(doc: json.JsonObj) -> dict[str, object]:
-    return dict(doc.raw)
-
-
-def _require_dict(doc: object, label: str) -> json.JsonObj:
-    if isinstance(doc, json.JsonObj):
-        return doc
-    if not isinstance(doc, dict):
-        raise RuntimeError(label + " must be an object")
-    out: dict[str, object] = {}
-    for key, value in doc.items():
-        if isinstance(key, str):
-            out[key] = value
-    return json.JsonObj(out)
 
 
 def _require_str(doc: json.JsonObj, key: str, label: str) -> str:
@@ -68,7 +56,7 @@ def _require_list_field(doc: json.JsonObj, key: str, label: str) -> json.JsonArr
 def _require_str_list(doc: json.JsonObj, key: str, label: str) -> tuple[str, ...]:
     raw = _require_list_field(doc, key, label)
     out: list[str] = []
-    for index in range(len(raw.raw)):
+    for index in range(json_array_length(raw)):
         item = raw.get_str(index)
         if item is None or item.strip() == "":
             raise RuntimeError(label + "." + key + " items must be non-empty strings")
@@ -77,7 +65,7 @@ def _require_str_list(doc: json.JsonObj, key: str, label: str) -> tuple[str, ...
 
 
 def validate_link_input_doc(doc_any: object) -> dict[str, object]:
-    doc = _require_dict(doc_any, "link-input")
+    doc = coerce_json_object_doc(doc_any, label="link-input")
     schema = _require_str(doc, "schema", "link-input")
     if schema != LINK_INPUT_SCHEMA:
         raise RuntimeError("link-input.schema must be " + LINK_INPUT_SCHEMA)
@@ -92,12 +80,12 @@ def validate_link_input_doc(doc_any: object) -> dict[str, object]:
         raise RuntimeError("link-input.entry_modules must be unique")
 
     raw_modules = _require_list_field(doc, "modules", "link-input")
-    if len(raw_modules.raw) == 0:
+    if json_array_length(raw_modules) == 0:
         raise RuntimeError("link-input.modules must be a non-empty list")
 
     module_entries: list[LinkInputModuleEntry] = []
     seen_module_ids: set[str] = set()
-    for idx in range(len(raw_modules.raw)):
+    for idx in range(json_array_length(raw_modules)):
         label = "link-input.modules[" + str(idx) + "]"
         item = raw_modules.get_obj(idx)
         if item is None:
@@ -129,7 +117,7 @@ def validate_link_input_doc(doc_any: object) -> dict[str, object]:
         "dispatch_mode": dispatch_mode,
         "entry_modules": tuple(sorted(entry_modules)),
         "modules": sorted(module_entries, key=lambda item: item.module_id),
-        "options": normalize_writer_options(doc.get("options").raw if doc.get("options") is not None else None),
+        "options": normalize_writer_options(export_json_value_raw(doc.get("options"))),
     }
 
 
@@ -139,7 +127,7 @@ def validate_raw_east3_doc(
     expected_dispatch_mode: str,
     module_id: str,
 ) -> dict[str, object]:
-    east = _require_dict(east_any, "raw EAST3")
+    east = coerce_json_object_doc(east_any, label="raw EAST3")
     if east.get_str("kind") != "Module":
         raise RuntimeError("raw EAST3 kind must be Module: " + module_id)
     stage = east.get_int("east_stage")
@@ -163,13 +151,13 @@ def validate_raw_east3_doc(
         )
     if meta.get("linked_program_v1") is not None:
         raise RuntimeError("raw EAST3 must not contain meta.linked_program_v1: " + module_id)
-    raw_doc = _to_raw_dict(east)
+    raw_doc = export_json_object_dict(east)
     sync_type_expr_mirrors(raw_doc)
     return raw_doc
 
 
 def validate_link_output_doc(doc_any: object) -> dict[str, object]:
-    doc = _require_dict(doc_any, "link-output")
+    doc = coerce_json_object_doc(doc_any, label="link-output")
     schema = _require_str(doc, "schema", "link-output")
     if schema != LINK_OUTPUT_SCHEMA:
         raise RuntimeError("link-output.schema must be " + LINK_OUTPUT_SCHEMA)
@@ -181,7 +169,7 @@ def validate_link_output_doc(doc_any: object) -> dict[str, object]:
     modules_any = _require_list_field(doc, "modules", "link-output")
     module_entries: list[LinkOutputModuleEntry] = []
     seen_module_ids: set[str] = set()
-    for idx in range(len(modules_any.raw)):
+    for idx in range(json_array_length(modules_any)):
         label = "link-output.modules[" + str(idx) + "]"
         item = modules_any.get_obj(idx)
         if item is None:
@@ -250,6 +238,6 @@ def validate_link_output_doc(doc_any: object) -> dict[str, object]:
         "dispatch_mode": dispatch_mode,
         "entry_modules": entry_modules,
         "modules": sorted(module_entries, key=lambda item: item.module_id),
-        "global": _to_raw_dict(global_doc),
-        "diagnostics": _to_raw_dict(diagnostics),
+        "global": export_json_object_dict(global_doc),
+        "diagnostics": export_json_object_dict(diagnostics),
     }
