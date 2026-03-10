@@ -6558,6 +6558,17 @@ class _ShExprParser:
         """Subscript / slice suffix の component parse を helper へ寄せる。"""
         if self._cur()["k"] == ":":
             return self._parse_subscript_slice_tail(lower=None)
+        return self._parse_subscript_suffix_first_component()
+
+    def _parse_subscript_suffix_first_component(
+        self,
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any],
+    ]:
+        """Subscript suffix の first expr 側 parse を helper へ寄せる。"""
         first = self._parse_ifexp()
         if self._cur()["k"] == ":":
             return self._parse_subscript_slice_tail(lower=first)

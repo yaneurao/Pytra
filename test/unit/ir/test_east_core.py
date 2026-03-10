@@ -834,6 +834,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         component_text = text.split("def _parse_subscript_suffix_components", 1)[1].split(
+            "def _parse_subscript_suffix_first_component",
+            1,
+        )[0]
+        first_component_text = text.split("def _parse_subscript_suffix_first_component", 1)[1].split(
             "def _resolve_subscript_suffix_state",
             1,
         )[0]
@@ -866,10 +870,11 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('rtok = self._eat("]")', tail_token_text)
         self.assertIn("return upper, rtok", tail_token_text)
         self.assertIn('if self._cur()["k"] == ":":', component_text)
-        self.assertIn("first = self._parse_ifexp()", component_text)
         self.assertIn("return self._parse_subscript_slice_tail(lower=None)", component_text)
-        self.assertIn("return self._parse_subscript_slice_tail(lower=first)", component_text)
-        self.assertIn("return first, None, None, rtok", component_text)
+        self.assertIn("return self._parse_subscript_suffix_first_component()", component_text)
+        self.assertIn("first = self._parse_ifexp()", first_component_text)
+        self.assertIn("return self._parse_subscript_slice_tail(lower=first)", first_component_text)
+        self.assertIn("return first, None, None, rtok", first_component_text)
         self.assertIn("index_expr, lower, upper, rtok = self._consume_subscript_suffix_tokens()", state_text)
         self.assertIn("source_span, repr_text = self._resolve_postfix_span_repr(", state_text)
         self.assertIn("return index_expr, lower, upper, source_span, repr_text", state_text)
@@ -890,6 +895,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('self._eat(":")', slice_tail_text)
         self.assertNotIn('rtok = self._eat("]")', slice_tail_text)
         self.assertNotIn("upper = self._parse_subscript_slice_upper_expr()", tail_state_text)
+        self.assertNotIn("first = self._parse_ifexp()", component_text)
+        self.assertNotIn("return self._parse_subscript_slice_tail(lower=first)", component_text)
+        self.assertNotIn("return first, None, None, rtok", component_text)
         self.assertIn('if tok_kind == "[":', postfix_suffix_text)
         self.assertIn("return self._parse_subscript_suffix(owner_expr=owner_expr)", postfix_suffix_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)

@@ -286,6 +286,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `subscript slice tail` の upper expr parse も `_ShExprParser._parse_subscript_slice_upper_expr()` へ寄せ、`_parse_subscript_slice_tail()` から `"]"` 判定と upper expr parse の直列処理を外した。`test_east_core.py` では upper-expr helper 定義、slice-tail helper の call site、旧 inline upper-parse block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `subscript slice tail` の token consume も `_ShExprParser._consume_subscript_slice_tail_tokens()` へ寄せ、`_parse_subscript_slice_tail()` から `":" + upper + "]"` の direct token consume を外した。`test_east_core.py` では tail-token helper 定義、slice-tail helper の call site、旧 inline tail-token block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `subscript slice tail` の token/state resolve も `_ShExprParser._resolve_subscript_slice_tail_state()` へ寄せ、`_parse_subscript_slice_tail()` から tail-token helper 直呼びを外した。`test_east_core.py` では state helper 定義、slice-tail helper の call site、旧 inline slice-tail state block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `subscript suffix` の `first expr` 側 parse も `_ShExprParser._parse_subscript_suffix_first_component()` へ寄せ、`_parse_subscript_suffix_components()` から `first = _parse_ifexp()` 以降の inline 分岐を外した。`test_east_core.py` では first-component helper 定義、component helper の call site、旧 inline first-component block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
