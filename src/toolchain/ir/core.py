@@ -6088,9 +6088,13 @@ class _ShExprParser:
             repr_text=repr_text,
         )
 
+    def _consume_attr_suffix_dot_token(self) -> dict[str, Any]:
+        """Attribute suffix の `.` token consume を helper へ寄せる。"""
+        return self._eat(".")
+
     def _resolve_attr_suffix_name_token(self) -> dict[str, Any]:
         """Attribute suffix の `.` + NAME consume を helper へ寄せる。"""
-        self._eat(".")
+        self._consume_attr_suffix_dot_token()
         return self._eat("NAME")
 
     def _resolve_attr_suffix_state(
