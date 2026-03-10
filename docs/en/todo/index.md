@@ -61,7 +61,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] The postfix/suffix parser cluster now lives in `core_expr_call_suffix.py` and `core_expr_attr_subscript_suffix.py`, and `core.py` has been reduced toward mixin imports plus postfix-dispatch orchestration.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] The `call_expr` / `callee_call` / `named-call` / `attr-call` annotation entrypoints now live in `core_expr_call_annotation.py`. `core.py` is reduced to shared helpers and lower-level apply logic, and the remaining fine-grained helper extraction is tracked under `S3-02-D`.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` now lives in `core_expr_call_args.py`, `call suffix` in `core_expr_call_suffix.py`, and `attr/subscript suffix` in `core_expr_attr_subscript_suffix.py`; the remaining helper extraction was also regrouped into bundle-sized batches.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Generated selfhost-core residual `make_object` guards now separate `export_seam` from `parser_residual`, with only `to_payload` classified as the export seam.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Generated selfhost-core residual `make_object` guards now separate `export_seam` from `parser_residual`, and further split parser residuals into `expr_parser`, `stmt_parser`, and `lookup` buckets so the next reduction target is visible.
 
 ### P3: Harden compiler contracts and make stage/pass/backend handoff fail-closed
 

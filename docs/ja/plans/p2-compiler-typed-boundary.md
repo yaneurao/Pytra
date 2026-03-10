@@ -134,3 +134,4 @@
 - 2026-03-10: `S3-02-D` は完了として閉じる。`call-arg` は `core_expr_call_args.py`、`call suffix` は `core_expr_call_suffix.py`、`attr/subscript suffix` は `core_expr_attr_subscript_suffix.py` に整理され、残りの helper 抽出も bundle 単位へ再編した。
 - 2026-03-10: `S3-02-E` の初手として、generated selfhost core に残る `make_object` usage を関数単位で再基準化した。現時点では `to_payload` を export seam、残りを parser residual として guard 化する。
 - 2026-03-10: generated selfhost core の residual `make_object` guard は `export_seam` と `parser_residual` の scope に分離し、export seam の判定が集合差分ではなく helper そのものの責務として読める形へ揃えた。
+- 2026-03-10: parser residual 側も `expr_parser` / `stmt_parser` / `lookup` bucket に分けて固定した。以後の `S3-02-E` は bucket 単位で residual を減らし、最後に export seam 以外を空にする。

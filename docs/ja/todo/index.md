@@ -61,7 +61,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] postfix/suffix parser cluster は `core_expr_call_suffix.py` と `core_expr_attr_subscript_suffix.py` へ分割し、`core.py` 側は mixin import と postfix dispatch orchestration を中心に持つ形へ整理した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] `call_expr` / `callee_call` / `named-call` / `attr-call` の annotation entrypoint は `core_expr_call_annotation.py` へ移り、`core.py` 側は shared helper と lower-level apply に縮んだ。残りの微細 helper 抽出は `S3-02-D` で扱う。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` は `core_expr_call_args.py`、`call suffix` は `core_expr_call_suffix.py`、`attr/subscript suffix` は `core_expr_attr_subscript_suffix.py` に寄り、残る helper 抽出も bundle 単位へ整理した。
-- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] generated selfhost core の residual `make_object` guard は `export_seam` と `parser_residual` を別 scope で固定し、`to_payload` だけを export seam として扱う基準へ寄せた。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] generated selfhost core の residual `make_object` guard は `export_seam` と `parser_residual` を別 scope で固定し、さらに parser residual を `expr_parser` / `stmt_parser` / `lookup` bucket へ分けて、次に減らす cluster を見える形へ寄せた。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
