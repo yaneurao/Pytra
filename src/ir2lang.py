@@ -25,6 +25,7 @@ from toolchain.compiler.typed_boundary import export_program_artifact_any
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
+from toolchain.json_adapters import load_json_object_doc_or_none
 from toolchain.link import LINK_OUTPUT_SCHEMA
 from toolchain.link import LinkedProgramModule
 from toolchain.link import load_linked_output_bundle
@@ -113,7 +114,7 @@ def _load_json_root(input_path: Path) -> json.JsonObj:
     if input_path.exists() is False:
         _fatal("input not found: " + str(input_path))
     try:
-        payload = json.loads_obj(input_path.read_text(encoding="utf-8"))
+        payload = load_json_object_doc_or_none(input_path)
     except Exception as ex:
         _fatal("failed to parse json: " + str(ex))
     if payload is not None:
