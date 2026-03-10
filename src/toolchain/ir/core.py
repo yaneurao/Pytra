@@ -4909,6 +4909,21 @@ class _ShExprParser:
             repr_text=self._src_slice(s, e),
         )
 
+    def _guard_named_call_args(
+        self,
+        *,
+        fn_name: str,
+        args: list[dict[str, Any]],
+        source_span: dict[str, int],
+    ) -> None:
+        """decode-first 制約がある named-call 引数検査を helper へ寄せる。"""
+        if fn_name in {"sum", "zip", "sorted", "min", "max"}:
+            self._guard_dynamic_helper_args(
+                helper_name=fn_name,
+                args=args,
+                source_span=source_span,
+            )
+
     def _annotate_call_expr(
         self,
         *,
@@ -4919,14 +4934,12 @@ class _ShExprParser:
         repr_text: str,
     ) -> dict[str, Any]:
         """Call expr の payload 構築と annotation を parser helper へ寄せる。"""
-        fn_name = str(callee.get("id", "")) if callee.get("kind") == "Name" else ""
-        if fn_name in {"sum", "zip", "sorted", "min", "max"}:
-            self._guard_dynamic_helper_args(
-                helper_name=fn_name,
-                args=args,
-                source_span=source_span,
-            )
         call_ret, fn_name = self._infer_call_expr_return_type(callee, args)
+        self._guard_named_call_args(
+            fn_name=fn_name,
+            args=args,
+            source_span=source_span,
+        )
         payload = _sh_make_call_expr(
             source_span,
             callee,

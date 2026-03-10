@@ -1071,6 +1071,10 @@ class EastCoreTest(unittest.TestCase):
             "def _annotate_named_call_expr",
             1,
         )[0]
+        named_guard_text = text.split("def _guard_named_call_args", 1)[1].split(
+            "def _annotate_call_expr",
+            1,
+        )[0]
         helper_text = text.split("def _annotate_named_call_expr", 1)[1].split(
             "def _annotate_builtin_named_call_expr",
             1,
@@ -1090,6 +1094,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("runtime_payload = self._annotate_runtime_named_call_expr(", helper_text)
         self.assertIn("if runtime_payload is not None:", helper_text)
         self.assertIn("call_dispatch = _sh_lookup_named_call_dispatch(fn_name)", helper_text)
+        self.assertIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', named_guard_text)
         self.assertNotIn('str(call_dispatch.get("builtin_semantic_tag", ""))', helper_text)
         self.assertNotIn('str(call_dispatch.get("stdlib_fn_runtime_call", ""))', helper_text)
         self.assertNotIn('str(call_dispatch.get("stdlib_symbol_runtime_call", ""))', helper_text)
@@ -1098,9 +1103,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('if fn_name == "bool" and len(args) == 1:', builtin_helper_text)
         self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', builtin_helper_text)
         self.assertIn('if stdlib_fn_runtime_call != "":', runtime_helper_text)
-        self.assertIn('fn_name = str(callee.get("id", "")) if callee.get("kind") == "Name" else ""', call_helper_text)
-        self.assertIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', call_helper_text)
+        self.assertIn("self._guard_named_call_args(", call_helper_text)
         self.assertIn("return self._annotate_named_call_expr(", call_helper_text)
+        self.assertNotIn('fn_name = str(callee.get("id", "")) if callee.get("kind") == "Name" else ""', call_helper_text)
+        self.assertNotIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', call_helper_text)
         self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', postfix_text)
         self.assertNotIn('if fn_name == "bool" and len(args) == 1:', postfix_text)
         self.assertNotIn("payload = self._annotate_named_call_expr(", postfix_text)
