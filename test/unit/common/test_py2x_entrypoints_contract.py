@@ -256,6 +256,50 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
                 invalid_doc,
                 output_path,
                 module_id="pkg.main",
+                    is_entry=True,
+                )
+
+    def test_cpp_emit_module_typed_rejects_unsupported_forcore_iter_plan_kind(self) -> None:
+        invalid_doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+            "body": [
+                {
+                    "kind": "ForCore",
+                    "target": {"kind": "NameTarget", "id": "x", "target_type": "int"},
+                    "iter_plan": {"kind": "WeirdForPlan"},
+                    "body": [],
+                    "orelse": [],
+                }
+            ],
+        }
+        output_path = Path("out.cpp")
+        host_spec = host_registry.get_backend_spec("cpp")
+        host_artifact = host_registry.emit_module_typed(
+            host_spec,
+            invalid_doc,
+            output_path,
+            module_id="pkg.main",
+            is_entry=True,
+        )
+        self.assertEqual(host_artifact.metadata["diagnostic"]["category"], "backend_input_unsupported")
+        self.assertIn(
+            "backend_input_unsupported: C++ backend does not support ForCore.iter_plan kind WeirdForPlan at $.body[0].iter_plan.kind: pkg.main",
+            host_artifact.text,
+        )
+
+        static_spec = static_registry.get_backend_spec("cpp")
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"backend_input_unsupported: C\+\+ backend does not support ForCore\.iter_plan kind WeirdForPlan at \$\.body\[0\]\.iter_plan\.kind: pkg\.main",
+        ):
+            static_registry.emit_module_typed(
+                static_spec,
+                invalid_doc,
+                output_path,
+                module_id="pkg.main",
                 is_entry=True,
             )
 
@@ -387,6 +431,54 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         with self.assertRaisesRegex(
             RuntimeError,
             r"backend_input_missing_metadata: cpp emitter: invalid forcore runtime iter_plan: pkg\.main",
+        ):
+            typed_boundary.execute_emit_module_with_spec(
+                spec,
+                valid_doc,
+                Path("out.cpp"),
+                module_id="pkg.main",
+                suppress_exceptions=False,
+            )
+
+    def test_cpp_emit_module_typed_translates_unsupported_forcore_iter_plan_crash(self) -> None:
+        spec = typed_boundary.build_resolved_backend_spec(
+            {
+                "target_lang": "cpp",
+                "extension": ".cpp",
+                "emit_module": lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                    RuntimeError("cpp emitter: unsupported ForCore iter_plan kind: WeirdForPlan")
+                ),
+                "default_options": {"lower": {}, "optimizer": {}, "emitter": {}},
+                "option_schema": {"lower": {}, "optimizer": {}, "emitter": {}},
+            },
+            identity_ir=lambda doc: doc,
+            empty_emit=lambda *_args, **_kwargs: "",
+            runtime_none=lambda _path: None,
+            default_program_writer=lambda *_args, **_kwargs: None,
+            suppress_emit_exceptions=True,
+        )
+        valid_doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+            "body": [],
+        }
+        soft_artifact = typed_boundary.execute_emit_module_with_spec(
+            spec,
+            valid_doc,
+            Path("out.cpp"),
+            module_id="pkg.main",
+            suppress_exceptions=True,
+        )
+        self.assertEqual(soft_artifact.metadata["diagnostic"]["category"], "backend_input_unsupported")
+        self.assertIn(
+            "backend_input_unsupported: cpp emitter: unsupported ForCore iter_plan kind: WeirdForPlan: pkg.main",
+            soft_artifact.text,
+        )
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"backend_input_unsupported: cpp emitter: unsupported ForCore iter_plan kind: WeirdForPlan: pkg\.main",
         ):
             typed_boundary.execute_emit_module_with_spec(
                 spec,

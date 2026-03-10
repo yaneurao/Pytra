@@ -31,6 +31,7 @@ _COMPILER_CONTRACT_DIAGNOSTIC_CATEGORIES: set[str] = {
 
 _CPP_BACKEND_UNSUPPORTED_ERROR_MARKERS: tuple[str, ...] = (
     "legacy loop node is unsupported in EAST3",
+    "cpp emitter: unsupported ForCore iter_plan kind:",
     "cpp emitter: unsupported stmt kind:",
     "cpp emitter: unsupported expr kind:",
     "cpp emitter: unsupported yield outside generator",
@@ -458,8 +459,25 @@ def validate_cpp_backend_input_doc(
                 + ".iter_plan: "
                 + module_id
             )
-        if iter_plan.get("kind") != "RuntimeIterForPlan":
+        plan_kind = iter_plan.get("kind")
+        if not isinstance(plan_kind, str) or plan_kind == "":
+            raise RuntimeError(
+                "backend_input_missing_metadata: C++ backend requires ForCore.iter_plan.kind string at "
+                + path
+                + ".iter_plan.kind: "
+                + module_id
+            )
+        if plan_kind == "StaticRangeForPlan":
             continue
+        if plan_kind != "RuntimeIterForPlan":
+            raise RuntimeError(
+                "backend_input_unsupported: C++ backend does not support ForCore.iter_plan kind "
+                + plan_kind
+                + " at "
+                + path
+                + ".iter_plan.kind: "
+                + module_id
+            )
         iter_expr = iter_plan.get("iter_expr")
         if not isinstance(iter_expr, dict) or len(iter_expr) == 0:
             raise RuntimeError(
