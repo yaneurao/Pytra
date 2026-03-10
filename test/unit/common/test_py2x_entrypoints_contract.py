@@ -113,6 +113,22 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "unsupported target: missing-target"):
             static_registry.get_backend_spec_typed("missing-target")
 
+    def test_backend_registry_runtime_hook_key_contract_matches(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "unsupported runtime hook key: missing-hook"):
+            host_registry._runtime_hook_from_key("missing-hook")
+        with self.assertRaisesRegex(RuntimeError, "unsupported runtime hook key: missing-hook"):
+            static_registry._runtime_hook_from_key("missing-hook")
+
+    def test_backend_registry_program_writer_key_contract_matches(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "unsupported program writer key: missing-writer"):
+            registry_metadata.get_program_writer_ref("missing-writer")
+
+    def test_backend_registry_symbol_ref_contract_matches(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "unsupported backend symbol ref: missing:fn"):
+            host_registry._load_callable_ref("missing:fn")
+        with self.assertRaisesRegex(RuntimeError, "unsupported backend symbol ref: missing:fn"):
+            static_registry._resolve_callable_ref("missing:fn")
+
     def test_selfhost_cpp_entry_uses_direct_typed_compiler_path(self) -> None:
         selfhost_cpp = (ROOT / "selfhost" / "py2cpp.cpp").read_text(encoding="utf-8")
         selfhost_stage2 = (ROOT / "selfhost" / "py2cpp_stage2.cpp").read_text(encoding="utf-8")
