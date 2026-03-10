@@ -6137,26 +6137,22 @@ class _ShExprParser:
             repr_text=repr_text,
         )
 
-    def _parse_subscript_suffix(self, *, owner_expr: dict[str, Any]) -> dict[str, Any]:
-        """Subscript / slice suffix の token 消費を parser helper へ寄せる。"""
-        self._eat("[")
+    def _parse_subscript_suffix_components(
+        self,
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any],
+    ]:
+        """Subscript / slice suffix の component parse を helper へ寄せる。"""
         if self._cur()["k"] == ":":
             self._eat(":")
             up = None
             if self._cur()["k"] != "]":
                 up = self._parse_ifexp()
             rtok = self._eat("]")
-            source_span, repr_text = self._resolve_postfix_span_repr(
-                owner_expr=owner_expr,
-                end_tok=rtok,
-            )
-            return self._annotate_subscript_expr(
-                owner_expr=owner_expr,
-                lower=None,
-                upper=up,
-                source_span=source_span,
-                repr_text=repr_text,
-            )
+            return None, None, up, rtok
         first = self._parse_ifexp()
         if self._cur()["k"] == ":":
             self._eat(":")
@@ -6164,25 +6160,23 @@ class _ShExprParser:
             if self._cur()["k"] != "]":
                 up = self._parse_ifexp()
             rtok = self._eat("]")
-            source_span, repr_text = self._resolve_postfix_span_repr(
-                owner_expr=owner_expr,
-                end_tok=rtok,
-            )
-            return self._annotate_subscript_expr(
-                owner_expr=owner_expr,
-                lower=first,
-                upper=up,
-                source_span=source_span,
-                repr_text=repr_text,
-            )
+            return None, first, up, rtok
         rtok = self._eat("]")
+        return first, None, None, rtok
+
+    def _parse_subscript_suffix(self, *, owner_expr: dict[str, Any]) -> dict[str, Any]:
+        """Subscript / slice suffix の token 消費を parser helper へ寄せる。"""
+        self._eat("[")
+        index_expr, lower, upper, rtok = self._parse_subscript_suffix_components()
         source_span, repr_text = self._resolve_postfix_span_repr(
             owner_expr=owner_expr,
             end_tok=rtok,
         )
         return self._annotate_subscript_expr(
             owner_expr=owner_expr,
-            index_expr=first,
+            index_expr=index_expr,
+            lower=lower,
+            upper=upper,
             source_span=source_span,
             repr_text=repr_text,
         )
