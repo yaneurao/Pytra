@@ -5870,6 +5870,46 @@ class _ShExprParser:
             noncpp_module_id=noncpp_module_id,
         )
 
+    def _build_slice_subscript_expr(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        owner_t: str,
+        lower: dict[str, Any] | None,
+        upper: dict[str, Any] | None,
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """slice subscript node 組み立てを helper へ寄せる。"""
+        return _sh_make_subscript_expr(
+            source_span,
+            owner_expr,
+            _sh_make_slice_node(lower, upper),
+            resolved_type=owner_t,
+            repr_text=repr_text,
+            lowered_kind="SliceExpr",
+            lower=lower,
+            upper=upper,
+        )
+
+    def _build_index_subscript_expr(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        owner_t: str,
+        index_expr: dict[str, Any],
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """index subscript node 組み立てを helper へ寄せる。"""
+        return _sh_make_subscript_expr(
+            source_span,
+            owner_expr,
+            index_expr,
+            resolved_type=self._subscript_result_type(owner_t),
+            repr_text=repr_text,
+        )
+
     def _annotate_subscript_expr(
         self,
         *,
@@ -5883,21 +5923,19 @@ class _ShExprParser:
         """Subscript / slice node の構築を parser helper へ寄せる。"""
         owner_t = self._owner_expr_resolved_type(owner_expr)
         if index_expr is None or lower is not None or upper is not None:
-            return _sh_make_subscript_expr(
-                source_span,
-                owner_expr,
-                _sh_make_slice_node(lower, upper),
-                resolved_type=owner_t,
-                repr_text=repr_text,
-                lowered_kind="SliceExpr",
+            return self._build_slice_subscript_expr(
+                owner_expr=owner_expr,
+                owner_t=owner_t,
                 lower=lower,
                 upper=upper,
+                source_span=source_span,
+                repr_text=repr_text,
             )
-        return _sh_make_subscript_expr(
-            source_span,
-            owner_expr,
-            index_expr,
-            resolved_type=self._subscript_result_type(owner_t),
+        return self._build_index_subscript_expr(
+            owner_expr=owner_expr,
+            owner_t=owner_t,
+            index_expr=index_expr,
+            source_span=source_span,
             repr_text=repr_text,
         )
 

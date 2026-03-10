@@ -607,7 +607,7 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         helper_text = text.split("def _annotate_attr_expr", 1)[1].split(
-            "def _annotate_subscript_expr",
+            "def _build_slice_subscript_expr",
             1,
         )[0]
         postfix_suffix_text = text.split("def _parse_postfix_suffix", 1)[1].split(
@@ -700,6 +700,14 @@ class EastCoreTest(unittest.TestCase):
             "def _resolve_attr_callee",
             1,
         )[0]
+        slice_build_text = text.split("def _build_slice_subscript_expr", 1)[1].split(
+            "def _build_index_subscript_expr",
+            1,
+        )[0]
+        index_build_text = text.split("def _build_index_subscript_expr", 1)[1].split(
+            "def _annotate_subscript_expr",
+            1,
+        )[0]
         helper_text = text.split("def _annotate_subscript_expr", 1)[1].split(
             "def _parse_subscript_suffix",
             1,
@@ -714,11 +722,17 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('owner_t = self.name_types.get(str(owner_expr.get("id", "")), owner_t)', owner_type_text)
         self.assertIn("return owner_t", owner_type_text)
         self.assertIn('owner_t = self._owner_expr_resolved_type(owner_expr)', helper_text)
-        self.assertIn("_sh_make_slice_node(lower, upper)", helper_text)
-        self.assertIn("_sh_make_subscript_expr(", helper_text)
-        self.assertIn("resolved_type=self._subscript_result_type(owner_t)", helper_text)
+        self.assertIn("_sh_make_slice_node(lower, upper)", slice_build_text)
+        self.assertIn("_sh_make_subscript_expr(", slice_build_text)
+        self.assertIn('lowered_kind="SliceExpr"', slice_build_text)
+        self.assertIn("_sh_make_subscript_expr(", index_build_text)
+        self.assertIn("resolved_type=self._subscript_result_type(owner_t)", index_build_text)
+        self.assertIn("return self._build_slice_subscript_expr(", helper_text)
+        self.assertIn("return self._build_index_subscript_expr(", helper_text)
         self.assertIn("return self._parse_subscript_suffix(owner_expr=owner_expr)", postfix_suffix_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
+        self.assertNotIn("_sh_make_slice_node(lower, upper)", helper_text)
+        self.assertNotIn("_sh_make_subscript_expr(", helper_text)
         self.assertNotIn("node = _sh_make_subscript_expr(", postfix_text)
         self.assertNotIn("_sh_make_slice_node(", postfix_text)
         self.assertNotIn("out_t = self._subscript_result_type(", postfix_text)
