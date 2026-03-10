@@ -1,6 +1,6 @@
 # P5: nominal ADT の言語機能としての full rollout
 
-最終更新: 2026-03-09
+最終更新: 2026-03-11
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P5-NOMINAL-ADT-ROLLOUT-01`
@@ -72,7 +72,7 @@
 
 ## 分解
 
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-01] nominal ADT の language surface（宣言、constructor、variant access、`match`）の候補を棚卸しし、selfhost-safe な段階導入案を決める。
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-01] nominal ADT の language surface（宣言、constructor、variant access、`match`）の候補を棚卸しし、selfhost-safe な段階導入案を決める。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-02] `P1-EAST-TYPEEXPR-01` と責務が衝突しないように、型基盤・narrowing 基盤・full language feature の境界を decision log に固定する。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-01] `spec-east` / `spec-user` / `spec-dev` に nominal ADT declaration surface、pattern node、`match` node、diagnostic 契約を追加する。
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] exhaustiveness / duplicate pattern / unreachable branch の静的検証方針と error category を固定する。
@@ -98,6 +98,57 @@
 - `match` が expression か statement か、または両方か
 - wildcard / guard / nested pattern の初期範囲
 
+### S1-01 候補棚卸し
+
+- 候補A: 既存 `class` + 単一継承 + `@dataclass` を使い、sealed base と top-level variant class を並べる
+  - 例: `@sealed class Result: ...`, `@dataclass class Ok(Result): value: T`, `@dataclass class Err(Result): error: E`
+  - 長所: 既存 parser/selfhost が受理できる surface を最大限流用できる
+  - 短所: `Result.Ok(...)` のような namespace 付き sugar は別途必要
+- 候補B: base class の内側に variant class をネストする
+  - 例: `class Result: @dataclass class Ok(Result): ...`
+  - 長所: family のまとまりは見やすい
+  - 短所: selfhost / symbol 解決 / backend name mangling の影響が大きい
+- 候補C: `enum` 風または `adt` 専用 block を新設する
+  - 例: `adt Result: Ok(value: T); Err(error: E)`
+  - 長所: ADT としての意図は最も明瞭
+  - 短所: parser / selfhost / formatter / diagnostics を一度に増やす必要があり、初手には重い
+- 候補D: `match` も含めて新しい expression-first surface を一気に入れる
+  - 例: `match expr { Ok(v) => ... }`
+  - 長所: ADT の体験は高い
+  - 短所: statement/expr 両系統の grammar と lowering を同時に抱え、selfhost-safe ではない
+
+### S1-01 決定
+
+- canonical な初期 declaration surface は候補Aとする
+  - sealed family は既存 `class` を使って宣言する
+  - variant は top-level class として宣言し、base nominal ADT を単一継承する
+  - payload を持つ variant は既存 `@dataclass` surface を使う
+- canonical な初期 constructor surface は通常の class call とする
+  - 例: `Ok(value=1)` または positional constructor
+  - `Result.Ok(...)` / factory DSL / macro 的 sugar は後段に回す
+- canonical な初期 variant access surface は `isinstance` + field access とする
+  - 例: `if isinstance(x, Ok): return x.value`
+  - `JsonValue.as_*` lane と競合する general dynamic helper は増やさない
+- `match` は statement-first で段階導入し、初期 surface には含めない
+  - Stage A では `isinstance` narrowing + field access を正本とする
+  - Stage B で Python-like `match/case` statement を representative surface として導入する
+  - Stage C で `match` expression、guard pattern、nested pattern を検討する
+- variant namespace rule は v1 では「top-level variant 名が canonical」で固定する
+  - `Result.Ok` のような namespace sugar や nested variant declaration は Stage C 以降の検討対象とする
+
+### selfhost-safe な段階導入案
+
+1. Stage A: 既存 `class` / `@dataclass` / `isinstance` だけで nominal ADT family を宣言・利用できるようにする
+2. Stage B: 同じ variant class 群を対象に `match/case` statement を導入する
+3. Stage C: `match` expression、guard、nested pattern、namespace sugar を追加する
+4. Stage D: `adt` block や `Result.Ok` のような concise sugar を必要なら別 surface として検討する
+
+### S1-01 完了条件メモ
+
+- parser/selfhost 追加前の canonical surface は「既存 class/dataclass の再利用」に限定する
+- `match` は language feature の目標には含めるが、statement-first の後段導入とする
+- new syntax を初手で増やす案（nested variant / `adt` block / expression-first match）は採用しない
+
 ### representative scope の例
 
 - built-in: `JsonValue`
@@ -108,3 +159,6 @@
 - 2026-03-09: ユーザー指示により、nominal ADT の full language feature rollout は `P1-EAST-TYPEEXPR-01` の基盤整備とは分離し、最終段の `P5` として管理する方針を追加した。
 - 2026-03-09: この P5 は user-defined ADT syntax、constructor、`match`、exhaustiveness check、multi-backend rollout を対象とし、型基盤そのものは扱わないと固定した。
 - 2026-03-09: built-in `JsonValue` と user-defined ADT を別系統 feature にしない。IR/lowering/backend contract は最終的に同一 category へ収束させる方針を固定した。
+- 2026-03-11: `S1-01` として language surface 候補を棚卸しし、initial rollout は既存 `class` + 単一継承 + `@dataclass` + `isinstance` を canonical surface にする方針を固定した。
+- 2026-03-11: `match` は language goal に含めるが、selfhost-safe な初期導入には含めず、statement-first の Stage B として後段導入に回す方針を固定した。
+- 2026-03-11: `Result.Ok` や `adt` block のような concise sugar は canonical v1 では採用せず、parser/selfhost/backend が安定した後段で再評価する方針を固定した。

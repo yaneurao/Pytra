@@ -37,7 +37,8 @@ Last updated: 2026-03-11
 Context: [docs/ja/plans/p5-nominal-adt-language-rollout.md](../plans/p5-nominal-adt-language-rollout.md)
 
 1. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01] Perform the full rollout of nominal ADT as a language feature.
-2. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-01] Inventory candidate language-surface designs for nominal ADT declarations, constructors, variant access, and `match`, then choose a selfhost-safe staged rollout.
+2. [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-01] Inventory candidate language-surface designs for nominal ADT declarations, constructors, variant access, and `match`, then choose a selfhost-safe staged rollout.
+   - Progress memo: canonical v1 reuses existing `class` / `@dataclass` / `isinstance`, and `match` is fixed as a later statement-first stage.
 3. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S1-02] Fix the boundary between type-system groundwork, narrowing groundwork, and full language-surface rollout so this plan does not conflict with `P1-EAST-TYPEEXPR-01`.
 4. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-01] Extend `spec-east`, `spec-user`, and `spec-dev` with nominal-ADT declarations, pattern nodes, `match` nodes, and diagnostics contracts.
 5. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] Fix the policy and error categories for exhaustiveness checks, duplicate patterns, and unreachable branches.
