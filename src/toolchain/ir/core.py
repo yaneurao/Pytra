@@ -6524,11 +6524,15 @@ class _ShExprParser:
     ]:
         """Subscript slice tail の `:` 以降 parse を helper へ寄せる。"""
         self._eat(":")
-        upper = None
-        if self._cur()["k"] != "]":
-            upper = self._parse_ifexp()
+        upper = self._parse_subscript_slice_upper_expr()
         rtok = self._eat("]")
         return None, lower, upper, rtok
+
+    def _parse_subscript_slice_upper_expr(self) -> dict[str, Any] | None:
+        """Subscript slice tail の upper expr parse を helper へ寄せる。"""
+        if self._cur()["k"] == "]":
+            return None
+        return self._parse_ifexp()
 
     def _parse_subscript_suffix_components(
         self,
