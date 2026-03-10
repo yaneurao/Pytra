@@ -6523,8 +6523,14 @@ class _ShExprParser:
         dict[str, Any],
     ]:
         """Subscript slice tail の `:` 以降 parse を helper へ寄せる。"""
-        upper, rtok = self._consume_subscript_slice_tail_tokens()
+        upper, rtok = self._resolve_subscript_slice_tail_state()
         return None, lower, upper, rtok
+
+    def _resolve_subscript_slice_tail_state(
+        self,
+    ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+        """Subscript slice tail の token/state resolve を helper へ寄せる。"""
+        return self._consume_subscript_slice_tail_tokens()
 
     def _parse_subscript_slice_upper_expr(self) -> dict[str, Any] | None:
         """Subscript slice tail の upper expr parse を helper へ寄せる。"""
