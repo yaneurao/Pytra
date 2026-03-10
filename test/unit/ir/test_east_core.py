@@ -2375,6 +2375,14 @@ x.bit_length()
             1,
         )[0]
         nonempty_helper_text = text.split("def _consume_call_arg_entries", 1)[1].split(
+            "def _resolve_call_arg_entries_loop_state",
+            1,
+        )[0]
+        nonempty_helper_state_text = text.split("def _resolve_call_arg_entries_loop_state", 1)[1].split(
+            "def _apply_call_arg_entries_loop_state",
+            1,
+        )[0]
+        nonempty_helper_apply_text = text.split("def _apply_call_arg_entries_loop_state", 1)[1].split(
             "def _consume_call_arg_loop_entry",
             1,
         )[0]
@@ -2484,7 +2492,16 @@ x.bit_length()
         self.assertIn("return self._apply_call_args_empty_state(", helper_text)
         self.assertIn("return self._consume_call_arg_entries(", helper_text)
         self.assertIn("return self._apply_call_args_empty_state(", nonempty_helper_text)
-        self.assertIn("if not self._consume_call_arg_loop_entry(", nonempty_helper_text)
+        self.assertIn(
+            "should_continue = self._resolve_call_arg_entries_loop_state(",
+            nonempty_helper_text,
+        )
+        self.assertIn(
+            "if not self._apply_call_arg_entries_loop_state(should_continue=should_continue):",
+            nonempty_helper_text,
+        )
+        self.assertIn("return self._consume_call_arg_loop_entry(", nonempty_helper_state_text)
+        self.assertIn("return should_continue", nonempty_helper_apply_text)
         self.assertIn(
             "arg_entry, keyword_entry = self._resolve_call_arg_loop_entry_state()",
             nonempty_loop_text,
@@ -2540,6 +2557,7 @@ x.bit_length()
         self.assertNotIn("self._apply_call_arg_entry(", nonempty_helper_text)
         self.assertNotIn("if not self._advance_call_arg_loop():", nonempty_helper_text)
         self.assertNotIn("return self._advance_call_arg_loop()", nonempty_helper_text)
+        self.assertNotIn("if not self._consume_call_arg_loop_entry(", nonempty_helper_text)
         self.assertNotIn("arg_entry, keyword_entry = self._parse_call_arg_entry()", nonempty_loop_text)
         self.assertNotIn("self._apply_call_arg_entry(", nonempty_loop_text)
         self.assertNotIn("return self._advance_call_arg_loop()", nonempty_loop_text)
