@@ -4936,14 +4936,25 @@ class _ShExprParser:
         e = end_tok["e"]
         return self._node_span(s, e), self._src_slice(s, e)
 
-    def _parse_call_suffix(self, *, callee: dict[str, Any]) -> dict[str, Any]:
-        """`(` postfix 全体の token 消費と call annotation を parser helper へ寄せる。"""
-        ltok = self._eat("(")
+    def _resolve_call_suffix_state(
+        self,
+        *,
+        callee: dict[str, Any],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, int], str]:
+        """call suffix の token/state resolve を parser helper へ寄せる。"""
+        self._eat("(")
         args, keywords = self._parse_call_args()
         rtok = self._eat(")")
         source_span, repr_text = self._resolve_postfix_span_repr(
             owner_expr=callee,
             end_tok=rtok,
+        )
+        return args, keywords, source_span, repr_text
+
+    def _parse_call_suffix(self, *, callee: dict[str, Any]) -> dict[str, Any]:
+        """`(` postfix 全体の token 消費と call annotation を parser helper へ寄せる。"""
+        args, keywords, source_span, repr_text = self._resolve_call_suffix_state(
+            callee=callee,
         )
         return self._annotate_call_expr(
             callee=callee,

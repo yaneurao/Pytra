@@ -1819,7 +1819,11 @@ x.bit_length()
             1,
         )[0]
         call_suffix_text = text.split("def _parse_call_suffix", 1)[1].split(
-            "def _annotate_call_expr",
+            "def _guard_named_call_args",
+            1,
+        )[0]
+        state_text = text.split("def _resolve_call_suffix_state", 1)[1].split(
+            "def _parse_call_suffix",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
@@ -1827,14 +1831,20 @@ x.bit_length()
         self.assertIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', helper_text)
         self.assertIn("args.append(self._parse_call_arg_expr())", helper_text)
         self.assertIn("save_pos = self.pos", helper_text)
-        self.assertIn("args, keywords = self._parse_call_args()", call_suffix_text)
+        self.assertIn("args, keywords = self._parse_call_args()", state_text)
+        self.assertIn("args, keywords, source_span, repr_text = self._resolve_call_suffix_state(", call_suffix_text)
+        self.assertNotIn("args, keywords = self._parse_call_args()", call_suffix_text)
         self.assertNotIn("save_pos = self.pos", postfix_text)
         self.assertNotIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', postfix_text)
 
     def test_core_source_routes_call_suffix_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        state_text = text.split("def _resolve_call_suffix_state", 1)[1].split(
+            "def _parse_call_suffix",
+            1,
+        )[0]
         helper_text = text.split("def _parse_call_suffix", 1)[1].split(
-            "def _annotate_call_expr",
+            "def _guard_named_call_args",
             1,
         )[0]
         postfix_suffix_text = text.split("def _parse_postfix_suffix", 1)[1].split(
@@ -1843,13 +1853,20 @@ x.bit_length()
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
-        self.assertIn('ltok = self._eat("(")', helper_text)
-        self.assertIn("args, keywords = self._parse_call_args()", helper_text)
-        self.assertIn('rtok = self._eat(")")', helper_text)
-        self.assertIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)
+        self.assertIn('self._eat("(")', state_text)
+        self.assertIn("args, keywords = self._parse_call_args()", state_text)
+        self.assertIn('rtok = self._eat(")")', state_text)
+        self.assertIn("source_span, repr_text = self._resolve_postfix_span_repr(", state_text)
+        self.assertIn("return args, keywords, source_span, repr_text", state_text)
+        self.assertIn(
+            "args, keywords, source_span, repr_text = self._resolve_call_suffix_state(",
+            helper_text,
+        )
         self.assertIn("return self._annotate_call_expr(", helper_text)
-        self.assertNotIn("self._node_span(", helper_text)
-        self.assertNotIn("self._src_slice(", helper_text)
+        self.assertNotIn('self._eat("(")', helper_text)
+        self.assertNotIn("args, keywords = self._parse_call_args()", helper_text)
+        self.assertNotIn('rtok = self._eat(")")', helper_text)
+        self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)
         self.assertIn('if tok_kind == "(":', postfix_suffix_text)
         self.assertIn("return self._parse_call_suffix(callee=owner_expr)", postfix_suffix_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
