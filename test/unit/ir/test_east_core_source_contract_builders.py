@@ -401,3 +401,18 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
             'entries.append(\n                    {\n                        "key": _sh_parse_expr_lowered(',
             lowered_text,
         )
+
+    def test_core_source_uses_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        stmt_text = text.split("def _sh_parse_stmt_block_mutable", 1)[1].split(
+            "def _sh_build_module_root",
+            1,
+        )[0]
+
+        self.assertIn("def _sh_make_tuple_destructure_assign_stmt(", text)
+        self.assertIn("_sh_make_tuple_destructure_assign_stmt(", stmt_text)
+        self.assertIn('resolved_type=name_types.get(n1, "unknown")', stmt_text)
+        self.assertIn('resolved_type=name_types.get(n2, "unknown")', stmt_text)
+        self.assertNotIn("target_expr = _sh_make_tuple_expr(", stmt_text)
+        self.assertNotIn('target_expr = {"kind": "Tuple"', stmt_text)
+        self.assertNotIn('pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, dict<str, object>{{"kind", make_object("Assign")}', stmt_text)

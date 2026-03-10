@@ -46,7 +46,7 @@
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S1-01] `core.py` / `test_east_core.py` の split boundary を棚卸しし、source-contract / parser behavior / suffix-call cluster の分割順を固定する。
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S1-02] TODO / plan の進捗メモを cluster 単位へ圧縮する運用ルールをこの計画に反映する。
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] `test_east_core.py` の先頭 source-contract builder cluster を shared support module と専用 test file へ切り出す。
-- [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] 残る source-contract guard を cluster ごとの `test_east_core_source_contract_*.py` へ分割する。
+- [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] 残る source-contract guard を cluster ごとの `test_east_core_source_contract_*.py` へ分割する。
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] parser behavior / diagnostics / nominal ADT representative tests を別 test file へ分割する。
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core.py` 側の残 cluster を bundle 単位で専用 module へ寄せる。
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] representative IR/selfhost regression を通し、分割後の運用メモを圧縮して安定化する。
@@ -58,3 +58,4 @@
 - 2026-03-11: `test/unit/ir/_east_core_test_support.py` と `test/unit/ir/test_east_core_source_contract_builders.py` を追加し、`test_east_core.py` 先頭の builder source-contract guard 10 本を専用 test file へ移した。
 - 2026-03-11: `test/unit/ir/test_east_core_source_contract_expr_suffix.py` を追加し、call/attr/subscript の source-contract guard 10 本を `test_east_core.py` から切り出した。`S2-02` は残り source-contract cluster があるため継続する。
 - 2026-03-11: `test/unit/ir/test_east_core_source_contract_call_metadata.py` を追加し、method/named-call metadata source-contract guard 10 本を `test_east_core.py` から切り出した。`S2-02` は残りの call suffix / parser helper / tuple-destructure cluster があるため継続する。
+- 2026-03-11: `test/unit/ir/test_east_core_source_contract_runtime_builtins.py` と `test/unit/ir/test_east_core_source_contract_call_dispatch.py` を追加し、残りの runtime-builtin / named-call / call-suffix source-contract guard 19 本を `test_east_core.py` から切り出した。tuple-destructure と residual-inline-kind guard も既存 source-contract file へ吸収し、`test_east_core.py` は parser behavior / representative regression 中心へ整理した。

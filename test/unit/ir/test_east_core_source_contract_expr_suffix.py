@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -875,3 +876,58 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn("first = self._parse_ifexp()", postfix_text)
         self.assertNotIn("node = self._annotate_subscript_expr(", postfix_text)
 
+    def test_core_source_known_inline_kind_residual_set_is_helper_only(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        raw_kinds = re.findall(r'\{"kind": "([^"]+)"', text)
+        inline_kinds = {kind for kind in raw_kinds if kind != "" and kind[0].isupper()}
+        trivia_kinds = {kind for kind in raw_kinds if kind != "" and kind[0].islower()}
+        multiline_kind_literals = set(
+            re.findall(r'(?:return|node:\s*dict\[str, Any\]\s*=)\s*\{\s*"kind":\s*"([^"]+)"', text, re.S)
+        )
+
+        self.assertIn('node = _sh_make_stmt_node("Expr", source_span)', text)
+        self.assertIn('return _sh_make_node("Slice", lower=lower, upper=upper, step=step)', text)
+        self.assertIn('return _sh_make_node("blank", count=count)', text)
+        self.assertIn('return _sh_make_node("comment", text=text)', text)
+        self.assertNotIn('return {"kind": "Expr", "source_span": source_span, "value": value}', text)
+        self.assertNotIn('return {"kind": "Slice", "lower": lower, "upper": upper, "step": step}', text)
+        self.assertNotIn('return {"kind": "blank", "count": count}', text)
+        self.assertNotIn('return {"kind": "comment", "text": text}', text)
+        self.assertEqual(inline_kinds, set())
+        self.assertEqual(trivia_kinds, set())
+        self.assertEqual(multiline_kind_literals, set())
+        self.assertTrue(
+            {
+                "If",
+                "While",
+                "ExceptHandler",
+                "Try",
+                "For",
+                "ForRange",
+                "Raise",
+                "Pass",
+                "Return",
+                "AugAssign",
+                "Swap",
+                "RangeExpr",
+                "ListComp",
+                "DictComp",
+                "SetComp",
+                "FormattedValue",
+                "JoinedStr",
+                "Subscript",
+                "BoolOp",
+                "UnaryOp",
+                "Compare",
+                "BinOp",
+                "Lambda",
+                "Call",
+                "Dict",
+                "Tuple",
+                "Name",
+                "Module",
+                "Assign",
+                "AnnAssign",
+                "FormattedValue",
+            }.isdisjoint(inline_kinds)
+        )
