@@ -1158,18 +1158,27 @@ class EastCoreTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
+        resolve_text = text.split("def _resolve_runtime_named_call_dispatch", 1)[1].split(
+            "def _annotate_runtime_named_call_expr",
+            1,
+        )[0]
         helper_text = text.split("def _annotate_runtime_named_call_expr", 1)[1].split(
             "def _annotate_attr_call_expr",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
+        self.assertIn('stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))', resolve_text)
+        self.assertIn('stdlib_symbol_runtime_call = str(call_dispatch.get("stdlib_symbol_runtime_call", ""))', resolve_text)
+        self.assertIn('noncpp_symbol_runtime_call = str(call_dispatch.get("noncpp_symbol_runtime_call", ""))', resolve_text)
+        self.assertIn("return (", resolve_text)
         self.assertIn('if stdlib_fn_runtime_call != "":', helper_text)
         self.assertIn('if stdlib_symbol_runtime_call != "":', helper_text)
         self.assertIn('if noncpp_symbol_runtime_call != "":', helper_text)
-        self.assertIn('stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))', helper_text)
-        self.assertIn('stdlib_symbol_runtime_call = str(call_dispatch.get("stdlib_symbol_runtime_call", ""))', helper_text)
-        self.assertIn('noncpp_symbol_runtime_call = str(call_dispatch.get("noncpp_symbol_runtime_call", ""))', helper_text)
+        self.assertIn(") = self._resolve_runtime_named_call_dispatch(", helper_text)
+        self.assertNotIn('stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))', helper_text)
+        self.assertNotIn('stdlib_symbol_runtime_call = str(call_dispatch.get("stdlib_symbol_runtime_call", ""))', helper_text)
+        self.assertNotIn('noncpp_symbol_runtime_call = str(call_dispatch.get("noncpp_symbol_runtime_call", ""))', helper_text)
         self.assertIn("return None", helper_text)
         self.assertIn("runtime_payload = self._annotate_runtime_named_call_expr(", named_call_text)
         self.assertNotIn('_sh_lookup_named_call_dispatch(fn_name)', postfix_text)

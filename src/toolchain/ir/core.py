@@ -5089,6 +5089,25 @@ class _ShExprParser:
             )
         return None
 
+    def _resolve_runtime_named_call_dispatch(
+        self,
+        *,
+        call_dispatch: dict[str, str],
+    ) -> tuple[str, str, str, str, str]:
+        """runtime named-call dispatch field unpack を helper へ寄せる。"""
+        stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))
+        stdlib_symbol_runtime_call = str(call_dispatch.get("stdlib_symbol_runtime_call", ""))
+        noncpp_symbol_runtime_call = str(call_dispatch.get("noncpp_symbol_runtime_call", ""))
+        stdlib_fn_semantic_tag = str(call_dispatch.get("stdlib_fn_semantic_tag", ""))
+        stdlib_symbol_semantic_tag = str(call_dispatch.get("stdlib_symbol_semantic_tag", ""))
+        return (
+            stdlib_fn_runtime_call,
+            stdlib_symbol_runtime_call,
+            noncpp_symbol_runtime_call,
+            stdlib_fn_semantic_tag,
+            stdlib_symbol_semantic_tag,
+        )
+
     def _annotate_runtime_named_call_expr(
         self,
         payload: dict[str, Any],
@@ -5097,11 +5116,15 @@ class _ShExprParser:
         call_dispatch: dict[str, str],
     ) -> dict[str, Any] | None:
         """stdlib / non-C++ named-call dispatch を parser helper へ寄せる。"""
-        stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))
-        stdlib_symbol_runtime_call = str(call_dispatch.get("stdlib_symbol_runtime_call", ""))
-        noncpp_symbol_runtime_call = str(call_dispatch.get("noncpp_symbol_runtime_call", ""))
-        stdlib_fn_semantic_tag = str(call_dispatch.get("stdlib_fn_semantic_tag", ""))
-        stdlib_symbol_semantic_tag = str(call_dispatch.get("stdlib_symbol_semantic_tag", ""))
+        (
+            stdlib_fn_runtime_call,
+            stdlib_symbol_runtime_call,
+            noncpp_symbol_runtime_call,
+            stdlib_fn_semantic_tag,
+            stdlib_symbol_semantic_tag,
+        ) = self._resolve_runtime_named_call_dispatch(
+            call_dispatch=call_dispatch,
+        )
         if stdlib_fn_runtime_call != "":
             return _sh_annotate_stdlib_function_call_expr(
                 payload,
