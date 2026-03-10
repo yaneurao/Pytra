@@ -15,6 +15,7 @@ if str(ROOT / "src") not in sys.path:
 CORE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core.py"
 CORE_CALL_ARG_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_args.py"
 CORE_CALL_SUFFIX_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_suffix.py"
+CORE_CLASS_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_class_semantics.py"
 CORE_CALL_ANNOTATION_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_annotation.py"
 CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH = (
     ROOT / "src" / "toolchain" / "ir" / "core_expr_attr_subscript_annotation.py"

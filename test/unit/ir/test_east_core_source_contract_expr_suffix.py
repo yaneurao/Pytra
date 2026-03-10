@@ -94,24 +94,25 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn('payload["runtime_call"] = "py_range"', postfix_text)
 
     def test_core_source_routes_resolved_runtime_annotations_through_shared_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        helper_text = text.split("def _sh_annotate_resolved_runtime_expr", 1)[1].split(
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        attr_annotation_text = CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = core_text.split("def _sh_annotate_resolved_runtime_expr", 1)[1].split(
             "def _sh_annotate_runtime_attr_expr",
             1,
         )[0]
-        noncpp_apply_text = text.split("def _apply_noncpp_attr_expr_annotation", 1)[1].split(
-            "def _apply_attr_expr_annotation",
+        noncpp_apply_text = core_text.split("def _apply_noncpp_attr_expr_annotation", 1)[1].split(
+            "def _build_slice_subscript_expr",
             1,
         )[0]
-        apply_text = text.split("def _apply_attr_expr_annotation", 1)[1].split(
+        apply_text = attr_annotation_text.split("def _apply_attr_expr_annotation", 1)[1].split(
             "def _annotate_attr_expr",
             1,
         )[0]
-        attr_expr_text = text.split("def _annotate_attr_expr", 1)[1].split(
-            "def _subscript_result_type",
+        attr_expr_text = attr_annotation_text.split("def _annotate_attr_expr", 1)[1].split(
+            "def _resolve_attr_expr_annotation",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('_sh_annotate_resolved_runtime_expr(', noncpp_apply_text)
@@ -125,24 +126,25 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn('node["resolved_runtime_source"] = "module_attr"', postfix_text)
 
     def test_core_source_routes_builtin_attr_metadata_through_shared_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        helper_text = text.split("def _sh_annotate_runtime_attr_expr", 1)[1].split(
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        attr_annotation_text = CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = core_text.split("def _sh_annotate_runtime_attr_expr", 1)[1].split(
             "def _sh_annotate_runtime_method_call_expr",
             1,
         )[0]
-        runtime_apply_text = text.split("def _apply_runtime_attr_expr_annotation", 1)[1].split(
+        runtime_apply_text = core_text.split("def _apply_runtime_attr_expr_annotation", 1)[1].split(
             "def _apply_noncpp_attr_expr_annotation",
             1,
         )[0]
-        apply_text = text.split("def _apply_attr_expr_annotation", 1)[1].split(
+        apply_text = attr_annotation_text.split("def _apply_attr_expr_annotation", 1)[1].split(
             "def _annotate_attr_expr",
             1,
         )[0]
-        attr_expr_text = text.split("def _annotate_attr_expr", 1)[1].split(
-            "def _subscript_result_type",
+        attr_expr_text = attr_annotation_text.split("def _annotate_attr_expr", 1)[1].split(
+            "def _resolve_attr_expr_annotation",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
@@ -155,6 +157,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
     def test_core_source_routes_attr_lookup_through_shared_helper(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         suffix_text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
+        attr_annotation_text = CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = core_text.split("def _lookup_attr_expr_metadata", 1)[1].split(
             "def _split_generic_types",
             1,
@@ -171,8 +174,8 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _apply_attr_suffix_state",
             1,
         )[0]
-        attr_expr_text = core_text.split("def _annotate_attr_expr", 1)[1].split(
-            "def _subscript_result_type",
+        attr_expr_text = attr_annotation_text.split("def _annotate_attr_expr", 1)[1].split(
+            "def _resolve_attr_expr_annotation",
             1,
         )[0]
         postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
@@ -238,12 +241,12 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _apply_attr_expr_annotation",
             1,
         )[0]
-        apply_text = text.split("def _apply_attr_expr_annotation", 1)[1].split(
+        apply_text = attr_annotation_text.split("def _apply_attr_expr_annotation", 1)[1].split(
             "def _annotate_attr_expr",
             1,
         )[0]
-        helper_text = text.split("def _annotate_attr_expr", 1)[1].split(
-            "def _build_slice_subscript_expr",
+        helper_text = attr_annotation_text.split("def _annotate_attr_expr", 1)[1].split(
+            "def _resolve_attr_expr_annotation",
             1,
         )[0]
         postfix_suffix_text = suffix_text.split("def _parse_postfix_suffix", 1)[1].split(
@@ -300,6 +303,8 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn("def _resolve_attr_expr_annotation(", text)
         self.assertNotIn("def _resolve_attr_expr_metadata(", text)
         self.assertNotIn("def _resolve_attr_expr_annotation_state(", text)
+        self.assertNotIn("def _apply_attr_expr_annotation(", text)
+        self.assertNotIn("def _annotate_attr_expr(", text)
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', apply_text)
         self.assertNotIn('_sh_annotate_resolved_runtime_expr(', apply_text)
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', helper_text)
@@ -389,8 +394,8 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _subscript_result_type",
             1,
         )[0]
-        helper_text = text.split("def _annotate_subscript_expr", 1)[1].split(
-            "def _dict_stmt_list",
+        helper_text = attr_annotation_text.split("def _annotate_subscript_expr", 1)[1].split(
+            "def _subscript_result_type",
             1,
         )[0]
         postfix_suffix_text = suffix_text.split("def _parse_postfix_suffix", 1)[1].split(
@@ -446,6 +451,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn("def _apply_slice_subscript_expr_build(", text)
         self.assertNotIn("def _apply_index_subscript_expr_build(", text)
         self.assertNotIn("def _apply_subscript_expr_build(", text)
+        self.assertNotIn("def _annotate_subscript_expr(", text)
         self.assertNotIn("node = _sh_make_subscript_expr(", postfix_text)
         self.assertNotIn("_sh_make_slice_node(", postfix_text)
         self.assertNotIn("out_t = self._subscript_result_type(", postfix_text)

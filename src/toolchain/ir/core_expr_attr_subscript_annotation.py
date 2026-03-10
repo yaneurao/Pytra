@@ -7,6 +7,77 @@ from typing import Any
 
 
 class _ShExprAttrSubscriptAnnotationMixin:
+    def _apply_attr_expr_annotation(
+        self,
+        *,
+        node: dict[str, Any],
+        owner_expr: dict[str, Any],
+        attr_name: str,
+        attr_runtime_call: str,
+        attr_semantic_tag: str,
+        attr_module_id: str,
+        attr_runtime_symbol: str,
+        noncpp_module_attr_runtime_call: str,
+        noncpp_module_id: str,
+    ) -> dict[str, Any]:
+        """Attribute access node への annotation 適用を helper へ寄せる。"""
+        self._apply_runtime_attr_expr_annotation(
+            node=node,
+            owner_expr=owner_expr,
+            attr_runtime_call=attr_runtime_call,
+            attr_semantic_tag=attr_semantic_tag,
+            attr_module_id=attr_module_id,
+            attr_runtime_symbol=attr_runtime_symbol,
+        )
+        self._apply_noncpp_attr_expr_annotation(
+            node=node,
+            attr_name=attr_name,
+            noncpp_module_attr_runtime_call=noncpp_module_attr_runtime_call,
+            noncpp_module_id=noncpp_module_id,
+        )
+        return node
+
+    def _annotate_attr_expr(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        attr_name: str,
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """Attribute access node の生成と annotation を parser helper へ寄せる。"""
+        (
+            resolved_type,
+            attr_runtime_call,
+            attr_semantic_tag,
+            attr_module_id,
+            attr_runtime_symbol,
+            noncpp_module_attr_runtime_call,
+            noncpp_module_id,
+        ) = self._resolve_attr_expr_annotation_state(
+            owner_expr=owner_expr,
+            attr_name=attr_name,
+            source_span=source_span,
+        )
+        node = self._build_attr_expr_payload(
+            source_span=source_span,
+            owner_expr=owner_expr,
+            attr_name=attr_name,
+            resolved_type=resolved_type,
+            repr_text=repr_text,
+        )
+        return self._apply_attr_expr_annotation(
+            node=node,
+            owner_expr=owner_expr,
+            attr_name=attr_name,
+            attr_runtime_call=attr_runtime_call,
+            attr_semantic_tag=attr_semantic_tag,
+            attr_module_id=attr_module_id,
+            attr_runtime_symbol=attr_runtime_symbol,
+            noncpp_module_attr_runtime_call=noncpp_module_attr_runtime_call,
+            noncpp_module_id=noncpp_module_id,
+        )
+
     def _resolve_attr_expr_annotation(
         self,
         *,
@@ -183,6 +254,34 @@ class _ShExprAttrSubscriptAnnotationMixin:
             owner_expr=owner_expr,
             owner_t=owner_t,
             index_expr=index_expr,
+            source_span=source_span,
+            repr_text=repr_text,
+        )
+
+    def _annotate_subscript_expr(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        index_expr: dict[str, Any] | None = None,
+        lower: dict[str, Any] | None = None,
+        upper: dict[str, Any] | None = None,
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """Subscript / slice node の構築を parser helper へ寄せる。"""
+        owner_t, build_kind = self._resolve_subscript_expr_apply_state(
+            owner_expr=owner_expr,
+            index_expr=index_expr,
+            lower=lower,
+            upper=upper,
+        )
+        return self._apply_subscript_expr_build(
+            build_kind=build_kind,
+            owner_expr=owner_expr,
+            owner_t=owner_t,
+            index_expr=index_expr,
+            lower=lower,
+            upper=upper,
             source_span=source_span,
             repr_text=repr_text,
         )
