@@ -77,7 +77,7 @@ Planned verification commands:
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-01] Extend `spec-east` / `spec-user` / `spec-dev` with nominal-ADT declaration surface, pattern nodes, match nodes, and diagnostic contracts.
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S2-02] Fix the static-check policy and error categories for exhaustiveness, duplicate patterns, and unreachable branches.
 - [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-01] Update frontend and selfhost parser paths so they can accept representative nominal-ADT syntax.
-- [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] Introduce ADT constructors, variant tests, variant projection, and `match` lowering into EAST/EAST3.
+- [x] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S3-02] Introduce ADT constructors, variant tests, variant projection, and `match` lowering into EAST/EAST3.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-01] Verify through representative tests that built-in `JsonValue` and user-defined nominal ADTs use the same IR category.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S4-02] Implement the minimal constructor / variant-check / destructuring / `match` path in a representative backend (first C++) and forbid silent fallback.
 - [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-01] Organize rollout order and fail-closed policy for other backends, and fix diagnostics for unsupported targets.
@@ -198,3 +198,4 @@ Decision log:
 - 2026-03-11: In `S3-02`, fixed representative constructor / family-variant test metadata plus variant-typed field access as `Attribute` with `NominalAdtProjection` metadata, while leaving branch-local narrowing projection and `match` lowering to later slices.
 - 2026-03-11: As the first slice of `S3-02`, lowering now consults the same-module nominal ADT family/variant declaration table, seeds user-defined variant constructor calls as `NominalAdtCtorCall`, and seeds `isinstance(..., Variant/Family)` checks with `nominal_adt_test_v1` and `narrowing_lane_v1.predicate_category=nominal_adt`.
 - 2026-03-11: `S3-02` will not jump straight to variant projection and `match` lowering; the representative constructor and variant-test metadata lane is fixed first by tests, and the next stage can build on that.
+- 2026-03-11: Closed `S3-02` by fixing representative nominal ADT `Match` lowering to preserve node shape in EAST3 while attaching `meta.match_analysis_v1` with `family_name`, `coverage_kind`, `covered_variants`, `uncovered_variants`, `duplicate_case_indexes`, and `unreachable_case_indexes`.

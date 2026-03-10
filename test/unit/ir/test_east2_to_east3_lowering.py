@@ -32,6 +32,7 @@ def _nominal_adt_class(
     family_name: str,
     variant_name: str = "",
     payload_style: str = "",
+    field_types: dict[str, object] | None = None,
 ) -> dict[str, object]:
     nominal_meta: dict[str, object] = {
         "schema_version": 1,
@@ -42,12 +43,15 @@ def _nominal_adt_class(
         nominal_meta["variant_name"] = variant_name
     if payload_style != "":
         nominal_meta["payload_style"] = payload_style
-    return {
+    out: dict[str, object] = {
         "kind": "ClassDef",
         "name": name,
         "body": [],
         "meta": {"nominal_adt_v1": nominal_meta},
     }
+    if field_types is not None:
+        out["field_types"] = dict(field_types)
+    return out
 
 
 class East2ToEast3LoweringTest(unittest.TestCase):
@@ -77,6 +81,165 @@ def f(x: Maybe) -> int:
             filename="sample.py",
             parser_backend="self_hosted",
         )
+
+    def _representative_nominal_adt_match_east2(self) -> dict[str, object]:
+        return {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                _nominal_adt_class("Maybe", role="family", family_name="Maybe"),
+                _nominal_adt_class(
+                    "Just",
+                    role="variant",
+                    family_name="Maybe",
+                    variant_name="Just",
+                    payload_style="dataclass",
+                    field_types={"value": "int64"},
+                ),
+                _nominal_adt_class(
+                    "Nothing",
+                    role="variant",
+                    family_name="Maybe",
+                    variant_name="Nothing",
+                ),
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "args": [{"arg": "x", "ann": "Maybe"}],
+                    "returns": "int64",
+                    "body": [
+                        {
+                            "kind": "Match",
+                            "subject": {
+                                "kind": "Name",
+                                "id": "x",
+                                "resolved_type": "Maybe",
+                                "type_expr": parse_type_expr_text("Maybe"),
+                            },
+                            "cases": [
+                                {
+                                    "kind": "MatchCase",
+                                    "pattern": {
+                                        "kind": "VariantPattern",
+                                        "family_name": "Maybe",
+                                        "variant_name": "Just",
+                                        "subpatterns": [
+                                            {
+                                                "kind": "PatternBind",
+                                                "name": "value",
+                                            }
+                                        ],
+                                    },
+                                    "guard": None,
+                                    "body": [
+                                        {
+                                            "kind": "Return",
+                                            "value": {
+                                                "kind": "Name",
+                                                "id": "value",
+                                                "resolved_type": "int64",
+                                                "type_expr": parse_type_expr_text("int"),
+                                            },
+                                        }
+                                    ],
+                                },
+                                {
+                                    "kind": "MatchCase",
+                                    "pattern": {
+                                        "kind": "VariantPattern",
+                                        "family_name": "Maybe",
+                                        "variant_name": "Nothing",
+                                        "subpatterns": [],
+                                    },
+                                    "guard": None,
+                                    "body": [
+                                        {
+                                            "kind": "Return",
+                                            "value": _const_i(0),
+                                        }
+                                    ],
+                                },
+                            ],
+                            "meta": {
+                                "match_analysis_v1": {
+                                    "schema_version": 1,
+                                    "family_name": "Maybe",
+                                    "coverage_kind": "exhaustive",
+                                    "covered_variants": ["Just", "Nothing"],
+                                    "uncovered_variants": [],
+                                    "duplicate_case_indexes": [],
+                                    "unreachable_case_indexes": [],
+                                }
+                            },
+                        }
+                    ],
+                },
+            ],
+        }
+
+    def _representative_nominal_adt_match_east2(self) -> dict[str, object]:
+        return {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                _nominal_adt_class("Maybe", role="family", family_name="Maybe"),
+                {
+                    **_nominal_adt_class(
+                        "Just",
+                        role="variant",
+                        family_name="Maybe",
+                        variant_name="Just",
+                        payload_style="dataclass",
+                    ),
+                    "field_types": {"value": "int64"},
+                },
+                _nominal_adt_class("Nothing", role="variant", family_name="Maybe", variant_name="Nothing"),
+                {
+                    "kind": "FunctionDef",
+                    "name": "g",
+                    "body": [
+                        {
+                            "kind": "Match",
+                            "subject": {
+                                "kind": "Name",
+                                "id": "x",
+                                "resolved_type": "Maybe",
+                                "type_expr": parse_type_expr_text("Maybe"),
+                            },
+                            "cases": [
+                                {
+                                    "kind": "MatchCase",
+                                    "pattern": {
+                                        "kind": "VariantPattern",
+                                        "family_name": "Maybe",
+                                        "variant_name": "Just",
+                                        "subpatterns": [
+                                            {
+                                                "kind": "PatternBind",
+                                                "name": "value",
+                                            }
+                                        ],
+                                    },
+                                    "guard": None,
+                                    "body": [{"kind": "Return", "value": _const_i(1)}],
+                                },
+                                {
+                                    "kind": "MatchCase",
+                                    "pattern": {
+                                        "kind": "VariantPattern",
+                                        "family_name": "Maybe",
+                                        "variant_name": "Nothing",
+                                        "subpatterns": [],
+                                    },
+                                    "guard": None,
+                                    "body": [{"kind": "Return", "value": _const_i(0)}],
+                                },
+                            ],
+                        }
+                    ],
+                },
+            ],
+        }
 
     def _collect_runtime_iter_plans(self, node: object) -> list[dict[str, object]]:
         plans: list[dict[str, object]] = []
@@ -1207,6 +1370,93 @@ def f(x: Maybe) -> int:
         self.assertEqual(projection.get("nominal_adt_projection_v1", {}).get("field_type"), "int64")
         self.assertEqual(projection.get("nominal_adt_projection_v1", {}).get("payload_style"), "dataclass")
         self.assertEqual(projection.get("type_expr_summary_v1", {}).get("mirror"), "int64")
+
+    def test_lower_user_nominal_adt_match_attaches_match_metadata(self) -> None:
+        east2 = self._representative_nominal_adt_match_east2()
+        out = lower_east2_to_east3(east2)
+        fn = out.get("body", [])[3]
+        match_stmt = fn.get("body", [])[0]
+        self.assertEqual(match_stmt.get("kind"), "Match")
+        self.assertEqual(match_stmt.get("lowered_kind"), "NominalAdtMatch")
+        self.assertEqual(match_stmt.get("semantic_tag"), "nominal_adt.match")
+        match_meta = match_stmt.get("nominal_adt_match_v1", {})
+        self.assertEqual(match_meta.get("ir_category"), "NominalAdtMatch")
+        self.assertEqual(match_meta.get("family_name"), "Maybe")
+        self.assertEqual(match_meta.get("coverage_kind"), "exhaustive")
+        self.assertEqual(match_meta.get("covered_variants"), ["Just", "Nothing"])
+        self.assertEqual(match_meta.get("subject_type", {}).get("category"), "nominal_adt")
+        self.assertEqual(match_meta.get("subject_type", {}).get("nominal_adt_name"), "Maybe")
+        self.assertEqual(match_meta.get("subject_type", {}).get("nominal_adt_family"), "Maybe")
+
+        first_case = match_stmt.get("cases", [])[0]
+        first_pattern = first_case.get("pattern", {})
+        self.assertEqual(first_pattern.get("kind"), "VariantPattern")
+        self.assertEqual(first_pattern.get("lowered_kind"), "NominalAdtVariantPattern")
+        self.assertEqual(first_pattern.get("semantic_tag"), "nominal_adt.variant_pattern")
+        first_pattern_meta = first_pattern.get("nominal_adt_pattern_v1", {})
+        self.assertEqual(first_pattern_meta.get("ir_category"), "NominalAdtVariantPattern")
+        self.assertEqual(first_pattern_meta.get("family_name"), "Maybe")
+        self.assertEqual(first_pattern_meta.get("variant_name"), "Just")
+        self.assertEqual(first_pattern_meta.get("payload_style"), "dataclass")
+        self.assertEqual(first_pattern_meta.get("bind_names"), ["value"])
+
+        first_bind = first_pattern.get("subpatterns", [])[0]
+        self.assertEqual(first_bind.get("kind"), "PatternBind")
+        self.assertEqual(first_bind.get("lowered_kind"), "NominalAdtPatternBind")
+        self.assertEqual(first_bind.get("semantic_tag"), "nominal_adt.pattern_bind")
+        self.assertEqual(first_bind.get("nominal_adt_pattern_bind_v1", {}).get("field_name"), "value")
+        self.assertEqual(first_bind.get("nominal_adt_pattern_bind_v1", {}).get("field_type"), "int64")
+        self.assertEqual(first_bind.get("type_expr_summary_v1", {}).get("mirror"), "int64")
+
+        second_pattern = match_stmt.get("cases", [])[1].get("pattern", {})
+        self.assertEqual(second_pattern.get("lowered_kind"), "NominalAdtVariantPattern")
+        self.assertEqual(second_pattern.get("nominal_adt_pattern_v1", {}).get("variant_name"), "Nothing")
+
+    def test_lower_user_nominal_adt_match_attaches_analysis_metadata(self) -> None:
+        east2 = self._representative_nominal_adt_match_east2()
+        out = lower_east2_to_east3(east2)
+        fn = out.get("body", [])[3]
+        match_stmt = fn.get("body", [])[0]
+        self.assertEqual(match_stmt.get("kind"), "Match")
+        analysis = match_stmt.get("meta", {}).get("match_analysis_v1", {})
+        self.assertEqual(analysis.get("family_name"), "Maybe")
+        self.assertEqual(analysis.get("coverage_kind"), "exhaustive")
+        self.assertEqual(analysis.get("covered_variants"), ["Just", "Nothing"])
+        self.assertEqual(analysis.get("uncovered_variants"), [])
+        self.assertEqual(analysis.get("duplicate_case_indexes"), [])
+        self.assertEqual(analysis.get("unreachable_case_indexes"), [])
+        first_case = match_stmt.get("cases", [])[0]
+        first_pattern = first_case.get("pattern", {})
+        self.assertEqual(first_pattern.get("kind"), "VariantPattern")
+        self.assertEqual(first_pattern.get("family_name"), "Maybe")
+        self.assertEqual(first_pattern.get("variant_name"), "Just")
+        self.assertEqual(first_pattern.get("subpatterns", [])[0].get("kind"), "PatternBind")
+        self.assertEqual(first_pattern.get("subpatterns", [])[0].get("name"), "value")
+
+    def test_lower_user_nominal_adt_match_marks_duplicate_variant_invalid(self) -> None:
+        east2 = self._representative_nominal_adt_match_east2()
+        match_stmt = east2["body"][3]["body"][0]
+        match_stmt["cases"].insert(
+            1,
+            {
+                "kind": "MatchCase",
+                "pattern": {
+                    "kind": "VariantPattern",
+                    "family_name": "Maybe",
+                    "variant_name": "Just",
+                    "subpatterns": [{"kind": "PatternBind", "name": "other"}],
+                },
+                "guard": None,
+                "body": [{"kind": "Return", "value": _const_i(2)}],
+            },
+        )
+        out = lower_east2_to_east3(east2)
+        fn = out.get("body", [])[3]
+        analysis = fn.get("body", [])[0].get("meta", {}).get("match_analysis_v1", {})
+        self.assertEqual(analysis.get("coverage_kind"), "invalid")
+        self.assertEqual(analysis.get("covered_variants"), ["Just", "Nothing"])
+        self.assertEqual(analysis.get("duplicate_case_indexes"), [1])
+        self.assertEqual(analysis.get("unreachable_case_indexes"), [1])
 
     def test_lower_json_value_helper_call_attaches_decode_metadata(self) -> None:
         east2 = {
