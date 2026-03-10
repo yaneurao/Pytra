@@ -75,12 +75,12 @@ Out of scope:
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-02] Introduce typed carriers and thin legacy adapters in the Python source of truth.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-03] Introduce typed carrier mirrors or typed wrapper APIs in the C++ selfhost/native compiler interfaces and reduce raw `dict<str, object>` exchange.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Move selfhost parser / EAST builder node construction onto typed constructors / builder helpers and gradually retire direct `dict<str, object>{{...}}` assembly.
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Retreat remaining `make_object` usage in generated compiler / selfhost runtime down to serialization/export seams only.
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Retreat remaining `make_object` usage in generated compiler / selfhost runtime down to serialization/export seams only.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-A] Redefine the `S3-02` completion criteria and compress TODO/plan progress notes to cluster-level summaries.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] Split the postfix/suffix parser cluster out of `core.py` and move `call` / `attr` / `subscript` parsing into dedicated modules.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] Split the call-annotation cluster out of `core.py` and move `named-call` / `attr-call` / `callee-call` handling into dedicated modules.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] Finish the remaining `call-arg` / `suffix tail` / `subscript tail` helper extraction in bundles of 5-10 clusters.
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Rebaseline generated/selfhost residual guards and export seams, retreat `make_object` to serialization/export seams only, and close `S3-02`.
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Rebaseline generated/selfhost residual guards and export seams, retreat `make_object` to serialization/export seams only, and close `S3-02`.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Separate JSON, extern/hooks, and intentionally dynamic carriers from the compiler typed model behind `JsonValue` or explicit adapters.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Label every remaining `make_object` / `py_to` / `obj_to_*` usage and add guards that reject uncategorized reintroduction.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] Refresh selfhost build/diff/prepare/bridge regressions and lock non-regression after the typed-boundary changes.
@@ -135,3 +135,5 @@ Decision log:
 - 2026-03-10: As the first `S3-02-E` step, rebaseline generated selfhost-core `make_object` usage at function granularity. For now, `to_payload` is treated as the export seam and the rest is guarded explicitly as parser residual.
 - 2026-03-10: Residual generated selfhost-core `make_object` guards were split into explicit `export_seam` and `parser_residual` scopes so the export seam classification is readable as a first-class contract instead of a set-difference convention.
 - 2026-03-10: The parser residual scope was further split into `expr_parser`, `stmt_parser`, and `lookup` buckets. From here `S3-02-E` can reduce residuals bucket by bucket until only the export seam remains.
+- 2026-03-10: The guard now also fixes that `expr_parser | stmt_parser | lookup == parser_residual` and that `export_seam` stays disjoint. From here progress can be measured simply by shrinking each bucket.
+- 2026-03-10: Confirm that the source-of-truth compiler lane and native wrapper no longer use `make_object` outside export seams. Generated selfhost-core usage is now rebaselined as `export_seam=to_payload` plus explicit `parser_residual` guards, so `S3-02` is closed and the remaining labeling work moves to `S4-02`.
