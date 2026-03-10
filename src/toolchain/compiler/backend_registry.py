@@ -145,13 +145,16 @@ def _load_callable(module_name: str, symbol_name: str) -> Any:
 def _split_symbol_ref(symbol_ref: str) -> tuple[str, str]:
     parts = symbol_ref.split(":", 1)
     if len(parts) != 2 or parts[0] == "" or parts[1] == "":
-        raise RuntimeError("invalid backend symbol ref: " + symbol_ref)
+        raise RuntimeError("unsupported backend symbol ref: " + symbol_ref)
     return parts[0], parts[1]
 
 
 def _load_callable_ref(symbol_ref: str) -> Any:
     module_name, symbol_name = _split_symbol_ref(symbol_ref)
-    return _load_callable(module_name, symbol_name)
+    try:
+        return _load_callable(module_name, symbol_name)
+    except Exception as exc:
+        raise RuntimeError("unsupported backend symbol ref: " + symbol_ref) from exc
 
 
 def _make_unary_emit_from_ref(symbol_ref: str) -> Any:

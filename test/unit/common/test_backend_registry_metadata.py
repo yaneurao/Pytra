@@ -15,6 +15,8 @@ from src.toolchain.compiler.backend_registry import get_backend_spec_typed as ho
 from src.toolchain.compiler.backend_registry import list_backend_targets as host_list_backend_targets
 from src.toolchain.compiler.backend_registry_metadata import backend_target_order
 from src.toolchain.compiler.backend_registry_metadata import get_backend_metadata
+from src.toolchain.compiler.backend_registry_metadata import get_program_writer_ref
+from src.toolchain.compiler.backend_registry_metadata import get_runtime_hook_descriptor
 from src.toolchain.compiler.backend_registry_static import get_backend_spec_typed as static_get_backend_spec_typed
 from src.toolchain.compiler.backend_registry_static import list_backend_targets as static_list_backend_targets
 
@@ -43,3 +45,11 @@ class BackendRegistryMetadataTest(unittest.TestCase):
         self.assertEqual(static_spec.carrier.default_options_by_layer, metadata["default_options"])
         self.assertEqual(host_spec.carrier.option_schema_by_layer, metadata["option_schema"])
         self.assertEqual(static_spec.carrier.option_schema_by_layer, metadata["option_schema"])
+
+    def test_metadata_rejects_unknown_runtime_hook_key(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "unsupported runtime hook key: missing-hook"):
+            get_runtime_hook_descriptor("missing-hook")
+
+    def test_metadata_rejects_unknown_program_writer_key(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "unsupported program writer key: missing-writer"):
+            get_program_writer_ref("missing-writer")
