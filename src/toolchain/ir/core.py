@@ -4926,6 +4926,10 @@ class _ShExprParser:
 
     def _resolve_call_arg_entry_kind(self) -> bool:
         """call argument 1件分の keyword 判定を helper へ寄せる。"""
+        return self._resolve_call_arg_entry_is_keyword()
+
+    def _resolve_call_arg_entry_is_keyword(self) -> bool:
+        """call argument entry の keyword kind 判定を helper へ寄せる。"""
         return self._cur()["k"] == "="
 
     def _consume_call_arg_entry_name_token(self) -> dict[str, Any]:
@@ -7012,35 +7016,42 @@ class _ShExprParser:
                 return node
             node = next_node
 
+    def _parse_name_comp_target(self) -> dict[str, Any] | None:
+        """内包表現ターゲットの `NAME` / `NAME, ...` 分岐を helper へ寄せる。"""
+        if self._cur()["k"] != "NAME":
+            return None
+        first = self._eat("NAME")
+        first_name = str(first["v"])
+        first_t = self.name_types.get(first_name, "unknown")
+        first_node = _sh_make_name_expr(
+            self._node_span(first["s"], first["e"]),
+            first_name,
+            resolved_type=first_t,
+        )
+        if self._cur()["k"] != ",":
+            return first_node
+        elems: list[dict[str, Any]] = [first_node]
+        last_e = first["e"]
+        while self._cur()["k"] == ",":
+            self._eat(",")
+            if self._cur()["k"] != "NAME":
+                break
+            nm_tok = self._eat("NAME")
+            nm = str(nm_tok["v"])
+            t = self.name_types.get(nm, "unknown")
+            elems.append(_sh_make_name_expr(self._node_span(nm_tok["s"], nm_tok["e"]), nm, resolved_type=t))
+            last_e = nm_tok["e"]
+        return _sh_make_tuple_expr(
+            self._node_span(first["s"], last_e),
+            elems,
+            repr_text=self._src_slice(first["s"], last_e),
+        )
+
     def _parse_comp_target(self) -> dict[str, Any]:
         """内包表現のターゲット（name / tuple）を解析する。"""
-        if self._cur()["k"] == "NAME":
-            first = self._eat("NAME")
-            first_name = str(first["v"])
-            first_t = self.name_types.get(first_name, "unknown")
-            first_node = _sh_make_name_expr(
-                self._node_span(first["s"], first["e"]),
-                first_name,
-                resolved_type=first_t,
-            )
-            if self._cur()["k"] != ",":
-                return first_node
-            elems: list[dict[str, Any]] = [first_node]
-            last_e = first["e"]
-            while self._cur()["k"] == ",":
-                self._eat(",")
-                if self._cur()["k"] != "NAME":
-                    break
-                nm_tok = self._eat("NAME")
-                nm = str(nm_tok["v"])
-                t = self.name_types.get(nm, "unknown")
-                elems.append(_sh_make_name_expr(self._node_span(nm_tok["s"], nm_tok["e"]), nm, resolved_type=t))
-                last_e = nm_tok["e"]
-            return _sh_make_tuple_expr(
-                self._node_span(first["s"], last_e),
-                elems,
-                repr_text=self._src_slice(first["s"], last_e),
-            )
+        name_target = self._parse_name_comp_target()
+        if name_target is not None:
+            return name_target
         if self._cur()["k"] == "(":
             l = self._eat("(")
             elems: list[dict[str, Any]] = []

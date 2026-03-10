@@ -359,12 +359,19 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_uses_builder_helpers_for_literal_and_target_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        name_target_text = text.split("def _parse_name_comp_target", 1)[1].split(
+            "def _parse_comp_target", 1
+        )[0]
         comp_target_text = text.split("def _parse_comp_target", 1)[1].split(
             "def _collect_and_bind_comp_target_types", 1
         )[0]
         primary_text = text.split("def _parse_primary", 1)[1].split("def _sh_parse_expr", 1)[0]
 
-        self.assertIn("first_node = _sh_make_name_expr(", comp_target_text)
+        self.assertIn('if self._cur()["k"] != "NAME":', name_target_text)
+        self.assertIn("first_node = _sh_make_name_expr(", name_target_text)
+        self.assertIn("return _sh_make_tuple_expr(", name_target_text)
+        self.assertIn("name_target = self._parse_name_comp_target()", comp_target_text)
+        self.assertIn("if name_target is not None:", comp_target_text)
         self.assertIn("return _sh_make_tuple_expr(", comp_target_text)
         self.assertIn("return _sh_make_constant_expr(", primary_text)
         self.assertIn("return _sh_make_name_expr(", primary_text)
@@ -373,7 +380,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("return _sh_make_dict_expr(", primary_text)
         self.assertIn("return _sh_make_set_expr(", primary_text)
 
-        self.assertNotIn('first_node = {"kind": "Name"', comp_target_text)
+        self.assertNotIn('first_node = {"kind": "Name"', name_target_text)
+        self.assertNotIn("first_node = _sh_make_name_expr(", comp_target_text)
         self.assertNotIn('return {"kind": "Tuple"', comp_target_text)
         self.assertNotIn('return {"kind": "Constant"', primary_text)
         self.assertNotIn('return {"kind": "Name"', primary_text)
@@ -2169,6 +2177,10 @@ x.bit_length()
             1,
         )[0]
         entry_kind_text = text.split("def _resolve_call_arg_entry_kind", 1)[1].split(
+            "def _resolve_call_arg_entry_is_keyword",
+            1,
+        )[0]
+        entry_is_keyword_text = text.split("def _resolve_call_arg_entry_is_keyword", 1)[1].split(
             "def _consume_call_arg_entry_name_token",
             1,
         )[0]
@@ -2248,7 +2260,8 @@ x.bit_length()
         self.assertIn("save_pos = self.pos", resolve_text)
         self.assertIn("name_tok = self._consume_call_arg_entry_name_token()", resolve_text)
         self.assertIn("return save_pos, name_tok, self._resolve_call_arg_entry_kind()", resolve_text)
-        self.assertIn('return self._cur()["k"] == "="', entry_kind_text)
+        self.assertIn("return self._resolve_call_arg_entry_is_keyword()", entry_kind_text)
+        self.assertIn('return self._cur()["k"] == "="', entry_is_keyword_text)
         self.assertIn('return self._eat("NAME")', entry_name_text)
         self.assertIn('return str(name_tok["v"])', entry_name_value_text)
         self.assertIn("if is_keyword and name_tok is not None:", apply_text)
@@ -2285,7 +2298,7 @@ x.bit_length()
         self.assertNotIn("self.pos = save_pos", entry_text)
         self.assertNotIn('if self._cur()["k"] != "NAME":', resolve_text)
         self.assertNotIn('name_tok = self._eat("NAME")', resolve_text)
-        self.assertNotIn('return save_pos, name_tok, self._cur()["k"] == "="', resolve_text)
+        self.assertNotIn('return self._cur()["k"] == "="', entry_kind_text)
         self.assertNotIn('return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)', apply_text)
         self.assertNotIn('return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)', keyword_apply_text)
         self.assertNotIn("self.pos = save_pos", apply_text)
