@@ -475,10 +475,14 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_runtime_attr_expr",
             1,
         )[0]
+        attr_expr_text = text.split("def _annotate_attr_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
-        self.assertIn('_sh_annotate_resolved_runtime_expr(', postfix_text)
+        self.assertIn('_sh_annotate_resolved_runtime_expr(', attr_expr_text)
         self.assertNotIn('payload["resolved_runtime_call"] = noncpp_symbol_runtime_call', postfix_text)
         self.assertNotIn('payload["resolved_runtime_source"] = "import_symbol"', postfix_text)
         self.assertNotIn('payload["resolved_runtime_call"] = noncpp_module_runtime_call', postfix_text)
@@ -492,11 +496,15 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_runtime_method_call_expr",
             1,
         )[0]
+        attr_expr_text = text.split("def _annotate_attr_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
-        self.assertIn('_sh_annotate_runtime_attr_expr(', postfix_text)
+        self.assertIn('_sh_annotate_runtime_attr_expr(', attr_expr_text)
         self.assertNotIn('node["lowered_kind"] = "BuiltinAttr"', postfix_text)
         self.assertNotIn('node["runtime_call"] = attr_runtime_call', postfix_text)
 
@@ -506,17 +514,42 @@ class EastCoreTest(unittest.TestCase):
             "def _split_generic_types",
             1,
         )[0]
+        attr_expr_text = text.split("def _annotate_attr_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('std_attr_t = lookup_stdlib_attribute_type(owner_type, attr_name)', helper_text)
         self.assertIn('runtime_call = lookup_stdlib_method_runtime_call(owner_type, attr_name)', helper_text)
         self.assertIn('module_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_type, attr_name)', helper_text)
         self.assertIn('_sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)', helper_text)
-        self.assertIn("attr_meta = self._lookup_attr_expr_metadata(", postfix_text)
+        self.assertIn("attr_meta = self._lookup_attr_expr_metadata(", attr_expr_text)
+        self.assertIn("node = self._annotate_attr_expr(", postfix_text)
         self.assertNotIn('std_attr_t = lookup_stdlib_attribute_type(owner_t, attr_name)', postfix_text)
         self.assertNotIn('attr_runtime_call = lookup_stdlib_method_runtime_call(owner_t, attr_name)', postfix_text)
         self.assertNotIn('mod_id, runtime_symbol = lookup_stdlib_method_runtime_binding(owner_t, attr_name)', postfix_text)
         self.assertNotIn('_sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)', postfix_text)
+
+    def test_core_source_routes_attr_annotations_through_parser_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _annotate_attr_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('owner_t = str(owner_expr.get("resolved_type", "unknown"))', helper_text)
+        self.assertIn("attr_meta = self._lookup_attr_expr_metadata(", helper_text)
+        self.assertIn("_sh_make_attribute_expr(", helper_text)
+        self.assertIn('_sh_annotate_runtime_attr_expr(', helper_text)
+        self.assertIn('_sh_annotate_resolved_runtime_expr(', helper_text)
+        self.assertIn("node = self._annotate_attr_expr(", postfix_text)
+        self.assertNotIn('owner_t = str(node.get("resolved_type", "unknown"))', postfix_text)
+        self.assertNotIn("attr_meta = self._lookup_attr_expr_metadata(", postfix_text)
+        self.assertNotIn("_sh_make_attribute_expr(", postfix_text)
+        self.assertNotIn('_sh_annotate_runtime_attr_expr(', postfix_text)
+        self.assertNotIn('_sh_annotate_resolved_runtime_expr(', postfix_text)
 
     def test_core_source_routes_method_call_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
