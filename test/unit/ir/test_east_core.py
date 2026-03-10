@@ -729,6 +729,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         state_apply_text = text.split("def _apply_attr_suffix_name_token_state", 1)[1].split(
+            "def _apply_attr_suffix_span_repr_state",
+            1,
+        )[0]
+        span_apply_text = text.split("def _apply_attr_suffix_span_repr_state", 1)[1].split(
             "def _resolve_attr_suffix_name_state",
             1,
         )[0]
@@ -788,7 +792,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("name_tok, attr_name = self._resolve_attr_suffix_name_state()", state_text)
         self.assertIn("return self._apply_attr_suffix_name_token_state(", state_text)
         self.assertIn("source_span, repr_text = self._resolve_attr_suffix_span_repr(", state_apply_text)
-        self.assertIn("return attr_name, source_span, repr_text", state_apply_text)
+        self.assertIn("return self._apply_attr_suffix_span_repr_state(", state_apply_text)
+        self.assertIn("return attr_name, source_span, repr_text", span_apply_text)
         self.assertIn("name_tok = self._resolve_attr_suffix_token_state()", name_state_text)
         self.assertIn("return self._apply_attr_suffix_name_state(name_tok=name_tok)", name_state_text)
         self.assertIn("return name_tok, self._resolve_attr_suffix_name_value(name_tok=name_tok)", name_apply_text)
@@ -801,6 +806,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("self._resolve_attr_suffix_name_token()", state_text)
         self.assertNotIn('return str(name_tok["v"])', state_text)
         self.assertNotIn("return attr_name, source_span, repr_text", state_text)
+        self.assertNotIn("return attr_name, source_span, repr_text", state_apply_text)
         self.assertNotIn("self._resolve_postfix_span_repr(", name_state_text)
         self.assertNotIn("return name_tok, self._resolve_attr_suffix_name_value(name_tok=name_tok)", name_state_text)
         self.assertNotIn('return self._eat("NAME")', token_text)
@@ -2309,6 +2315,10 @@ x.bit_length()
             1,
         )[0]
         positional_loop_apply_text = text.split("def _apply_positional_call_arg_loop_entry", 1)[1].split(
+            "def _apply_positional_call_arg_loop_entry_build",
+            1,
+        )[0]
+        positional_loop_build_text = text.split("def _apply_positional_call_arg_loop_entry_build", 1)[1].split(
             "def _advance_call_arg_loop",
             1,
         )[0]
@@ -2405,7 +2415,8 @@ x.bit_length()
         self.assertIn("return self._apply_positional_call_arg_loop_entry(", loop_apply_text)
         self.assertIn("keywords.append(keyword_entry)", keyword_loop_apply_text)
         self.assertIn("if arg_entry is not None:", positional_loop_apply_text)
-        self.assertIn("args.append(arg_entry)", positional_loop_apply_text)
+        self.assertIn("return self._apply_positional_call_arg_loop_entry_build(", positional_loop_apply_text)
+        self.assertIn("args.append(arg_entry)", positional_loop_build_text)
         self.assertIn("has_comma = self._resolve_call_arg_loop_state()", loop_helper_text)
         self.assertIn("return self._apply_call_arg_loop_state(", loop_helper_text)
         self.assertIn('return self._cur()["k"] == ","', loop_state_text)
@@ -2449,6 +2460,7 @@ x.bit_length()
         self.assertNotIn("if not self._advance_call_arg_loop():", helper_text)
         self.assertNotIn("keywords.append(keyword_entry)", helper_text)
         self.assertNotIn("args.append(arg_entry)", helper_text)
+        self.assertNotIn("args.append(arg_entry)", positional_loop_apply_text)
         self.assertNotIn('if self._cur()["k"] != ",":', helper_text)
         self.assertNotIn('self._eat(",")', helper_text)
         self.assertNotIn('if self._cur()["k"] == ")":', helper_text)

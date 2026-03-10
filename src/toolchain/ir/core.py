@@ -5079,7 +5079,19 @@ class _ShExprParser:
     ) -> None:
         """call argument loop の positional append を helper へ寄せる。"""
         if arg_entry is not None:
-            args.append(arg_entry)
+            return self._apply_positional_call_arg_loop_entry_build(
+                args=args,
+                arg_entry=arg_entry,
+            )
+
+    def _apply_positional_call_arg_loop_entry_build(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        arg_entry: dict[str, Any],
+    ) -> None:
+        """call argument loop の positional node append を helper へ寄せる。"""
+        args.append(arg_entry)
 
     def _advance_call_arg_loop(self) -> bool:
         """call argument loop の comma/terminator 制御を helper へ寄せる。"""
@@ -6384,6 +6396,20 @@ class _ShExprParser:
             owner_expr=owner_expr,
             end_tok=name_tok,
         )
+        return self._apply_attr_suffix_span_repr_state(
+            attr_name=attr_name,
+            source_span=source_span,
+            repr_text=repr_text,
+        )
+
+    def _apply_attr_suffix_span_repr_state(
+        self,
+        *,
+        attr_name: str,
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> tuple[str, dict[str, int], str]:
+        """Attribute suffix の span/repr state apply を helper へ寄せる。"""
         return attr_name, source_span, repr_text
 
     def _resolve_attr_suffix_name_state(self) -> tuple[dict[str, Any], str]:

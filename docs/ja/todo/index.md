@@ -393,3 +393,4 @@
 11. [ ] [ID: P5-NOMINAL-ADT-ROLLOUT-01-S5-02] selfhost / docs / archive / migration note を更新し、正式言語機能としての nominal ADT rollout を閉じる。
 
 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて positional call argument の value/build も `_ShExprParser._resolve_positional_call_arg_entry_state()` / `_ShExprParser._apply_positional_call_arg_build_state()` へ寄せ、`_apply_positional_call_arg_entry()` から direct `_parse_call_arg_expr()` を外した。`test/unit/ir/test_east_core.py` では両 helper 定義、positional-apply helper の call site、旧 inline positional value block の不在を固定した。
+進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument loop の positional append も `_ShExprParser._apply_positional_call_arg_loop_entry_build()` へ寄せ、`_apply_positional_call_arg_loop_entry()` から direct `args.append(arg_entry)` を外した。`test/unit/ir/test_east_core.py` では helper 定義、positional-loop helper の call site、旧 inline positional-append block の不在を固定した。
