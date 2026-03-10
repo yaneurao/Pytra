@@ -141,7 +141,7 @@
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S1-02] `P1-EAST-TYPEEXPR-01` / `P2-COMPILER-TYPED-BOUNDARY-01` と責務が衝突しないように、schema validator / invariant validator / backend input validator の責務境界を decision log に固定する。
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-01] `spec-dev` または等価設計文書に、EAST3 / linked output / backend input の必須 field、許容欠落、diagnostic category を追加する。
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-02] `type_expr` / `resolved_type` mirror、`dispatch_mode`、`source_span`、helper metadata の整合ルールと fail-closed 方針を固定する。
-- [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-01] `toolchain/link/program_validator.py` と周辺に central validator primitive を追加し、raw EAST3 / linked output の coarse check を node/meta invariant まで拡張する。
+- [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-01] `toolchain/link/program_validator.py` と周辺に central validator primitive を追加し、raw EAST3 / linked output の coarse check を representative な node/meta invariant まで拡張した。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-02] representative pass / lowering / linker entry に pre/post validation hook を導入し、invalid node の透過搬送を止める。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-01] representative backend（まず C++）の入口で compiler contract validator を通し、backend-local crash や silent fallback を structured diagnostic へ置き換える。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-02] `tools/check_east_stage_boundary.py` または後継 guard を拡張し、stage semantic contract の drift も検出できるようにする。
@@ -188,3 +188,4 @@
 - 2026-03-11: raw EAST3 representative node は synthetic provenance がない限り `source_span` 必須とし、linked output `diagnostics` では non-empty string に加えて `source_span` を持つ object item も許容する方針にした。
 - 2026-03-11: 次の `S3-01` slice では raw EAST3 の top-level `body` item を object + `kind` + `source_span` 必須に寄せ、linked output `diagnostics` は non-empty string または `source_span` shape を持つ object のみ許可する方針に拡張した。
 - 2026-03-11: さらに `S3-01` で linked output diagnostic object に `category` / `message` の non-empty string を必須化し、structured diagnostic 契約も central validator の責務に含めた。
+- 2026-03-11: `S3-01` はここで完了扱いにした。central primitive は raw EAST3 の body node / `kind` / `source_span` / nested `meta.dispatch_mode` と linked output の helper metadata / `global` shape / diagnostic object contract を見る状態まで到達したので、次は hook を差し込む `S3-02` へ進む。
