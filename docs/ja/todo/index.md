@@ -200,6 +200,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `Attribute` access の lookup cluster も `_ShExprParser._lookup_attr_expr_metadata()` へ寄せ、`lookup_stdlib_attribute_type()` / `lookup_stdlib_method_runtime_binding()` / `_sh_lookup_noncpp_attr_runtime_call()` を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 attr lookup inline block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `src/toolchain/ir/core.py` に parser method `_annotate_named_call_expr()` を追加し、`call_dispatch` の field 展開と fixed builtin / scalar ctor / stdlib / non-C++ / exception / iterator / collection / predicate 分岐を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline annotation block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `Call(Attribute)` annotation も `_ShExprParser._annotate_attr_call_expr()` へ寄せ、`attr/owner/owner_t` 抽出と non-C++ / method metadata 付与を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline attr-call annotation block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] `Attribute` access 自体も `_ShExprParser._annotate_attr_expr()` へ寄せ、owner 型ガード、lookup、`_sh_make_attribute_expr()`、runtime / resolved-runtime annotation の直列処理を `_parse_postfix()` から外した。`test_east_core.py` では helper 定義、call site、旧 inline attribute-access block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 

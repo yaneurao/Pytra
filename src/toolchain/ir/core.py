@@ -4868,6 +4868,46 @@ class _ShExprParser:
                     hint=f"Decode JSON values to a concrete type before calling {helper_name}().",
                 )
 
+    def _annotate_call_expr(
+        self,
+        *,
+        callee: dict[str, Any],
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """Call expr の payload 構築と annotation を parser helper へ寄せる。"""
+        fn_name = str(callee.get("id", "")) if callee.get("kind") == "Name" else ""
+        if fn_name in {"sum", "zip", "sorted", "min", "max"}:
+            self._guard_dynamic_helper_args(
+                helper_name=fn_name,
+                args=args,
+                source_span=source_span,
+            )
+        call_ret, fn_name = self._infer_call_expr_return_type(callee, args)
+        payload = _sh_make_call_expr(
+            source_span,
+            callee,
+            args,
+            keywords,
+            resolved_type=call_ret,
+            repr_text=repr_text,
+        )
+        if fn_name != "":
+            return self._annotate_named_call_expr(
+                payload,
+                fn_name=fn_name,
+                args=args,
+                call_dispatch=_sh_lookup_named_call_dispatch(fn_name),
+            )
+        if callee.get("kind") == "Attribute":
+            return self._annotate_attr_call_expr(
+                payload,
+                callee=callee,
+            )
+        return payload
+
     def _annotate_named_call_expr(
         self,
         payload: dict[str, Any],
@@ -5003,6 +5043,61 @@ class _ShExprParser:
         )
         return payload
 
+    def _annotate_attr_expr(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        attr_name: str,
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """Attribute access node の生成と annotation を parser helper へ寄せる。"""
+        owner_t = str(owner_expr.get("resolved_type", "unknown"))
+        if attr_name in {"keys", "items", "values"}:
+            self._guard_dynamic_helper_receiver(
+                helper_name=attr_name,
+                owner_t=owner_t,
+                source_span=source_span,
+            )
+        if self._is_forbidden_object_receiver_type(owner_t):
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message="object receiver attribute/method access is forbidden by language constraints",
+                source_span=source_span,
+                hint="Cast or assign to a concrete type before attribute/method access.",
+            )
+        attr_meta = self._lookup_attr_expr_metadata(owner_expr, owner_t, attr_name)
+        node = _sh_make_attribute_expr(
+            source_span,
+            owner_expr,
+            attr_name,
+            resolved_type=str(attr_meta.get("resolved_type", "unknown")),
+            repr_text=repr_text,
+        )
+        attr_runtime_call = str(attr_meta.get("runtime_call", ""))
+        attr_semantic_tag = str(attr_meta.get("semantic_tag", ""))
+        if attr_runtime_call != "":
+            _sh_annotate_runtime_attr_expr(
+                node,
+                runtime_call=attr_runtime_call,
+                module_id=str(attr_meta.get("module_id", "")),
+                runtime_symbol=str(attr_meta.get("runtime_symbol", "")),
+                semantic_tag=attr_semantic_tag,
+                runtime_owner=owner_expr,
+            )
+        elif attr_semantic_tag != "":
+            node["semantic_tag"] = attr_semantic_tag
+        noncpp_module_attr_runtime_call = str(attr_meta.get("noncpp_runtime_call", ""))
+        if noncpp_module_attr_runtime_call != "":
+            _sh_annotate_resolved_runtime_expr(
+                node,
+                runtime_call=noncpp_module_attr_runtime_call,
+                runtime_source="module_attr",
+                module_id=str(attr_meta.get("noncpp_module_id", "")),
+                runtime_symbol=attr_name,
+            )
+        return node
+
     def _subscript_result_type(self, container_type: str) -> str:
         """添字アクセスの結果型をコンテナ型から推論する。"""
         if container_type.startswith("list[") and container_type.endswith("]"):
@@ -5077,55 +5172,12 @@ class _ShExprParser:
                 s = int(node["source_span"]["col"]) - self.col_base
                 e = name_tok["e"]
                 attr_name = str(name_tok["v"])
-                owner_t = str(node.get("resolved_type", "unknown"))
-                if attr_name in {"keys", "items", "values"}:
-                    self._guard_dynamic_helper_receiver(
-                        helper_name=attr_name,
-                        owner_t=owner_t,
-                        source_span=self._node_span(s, e),
-                    )
-                if self._is_forbidden_object_receiver_type(owner_t):
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message="object receiver attribute/method access is forbidden by language constraints",
-                        source_span=self._node_span(s, e),
-                        hint="Cast or assign to a concrete type before attribute/method access.",
-                    )
-                owner_expr = node
-                attr_meta = self._lookup_attr_expr_metadata(
-                    owner_expr if isinstance(owner_expr, dict) else None,
-                    owner_t,
-                    attr_name,
-                )
-                node = _sh_make_attribute_expr(
-                    self._node_span(s, e),
-                    owner_expr,
-                    attr_name,
-                    resolved_type=str(attr_meta.get("resolved_type", "unknown")),
+                node = self._annotate_attr_expr(
+                    owner_expr=node,
+                    attr_name=attr_name,
+                    source_span=self._node_span(s, e),
                     repr_text=self._src_slice(s, e),
                 )
-                attr_runtime_call = str(attr_meta.get("runtime_call", ""))
-                attr_semantic_tag = str(attr_meta.get("semantic_tag", ""))
-                if attr_runtime_call != "":
-                    _sh_annotate_runtime_attr_expr(
-                        node,
-                        runtime_call=attr_runtime_call,
-                        module_id=str(attr_meta.get("module_id", "")),
-                        runtime_symbol=str(attr_meta.get("runtime_symbol", "")),
-                        semantic_tag=attr_semantic_tag,
-                        runtime_owner=owner_expr,
-                    )
-                elif attr_semantic_tag != "":
-                    node["semantic_tag"] = attr_semantic_tag
-                noncpp_module_attr_runtime_call = str(attr_meta.get("noncpp_runtime_call", ""))
-                if noncpp_module_attr_runtime_call != "":
-                    _sh_annotate_resolved_runtime_expr(
-                        node,
-                        runtime_call=noncpp_module_attr_runtime_call,
-                        runtime_source="module_attr",
-                        module_id=str(attr_meta.get("noncpp_module_id", "")),
-                        runtime_symbol=attr_name,
-                    )
                 continue
             if tok["k"] == "(":
                 ltok = self._eat("(")
@@ -5154,38 +5206,13 @@ class _ShExprParser:
                 rtok = self._eat(")")
                 s = int(node["source_span"]["col"]) - self.col_base
                 e = rtok["e"]
-                fn_name = str(node.get("id", "")) if isinstance(node, dict) and node.get("kind") == "Name" else ""
-                if fn_name in {"sum", "zip", "sorted", "min", "max"}:
-                    self._guard_dynamic_helper_args(
-                        helper_name=fn_name,
-                        args=args,
-                        source_span=self._node_span(s, e),
-                    )
-                call_ret, fn_name = self._infer_call_expr_return_type(
-                    node if isinstance(node, dict) else None,
-                    args,
-                )
-                payload = _sh_make_call_expr(
-                    self._node_span(s, e),
-                    node,
-                    args,
-                    keywords,
-                    resolved_type=call_ret,
+                node = self._annotate_call_expr(
+                    callee=node,
+                    args=args,
+                    keywords=keywords,
+                    source_span=self._node_span(s, e),
                     repr_text=self._src_slice(s, e),
                 )
-                if fn_name != "":
-                    payload = self._annotate_named_call_expr(
-                        payload,
-                        fn_name=fn_name,
-                        args=args,
-                        call_dispatch=_sh_lookup_named_call_dispatch(fn_name),
-                    )
-                elif isinstance(node, dict) and node.get("kind") == "Attribute":
-                    payload = self._annotate_attr_call_expr(
-                        payload,
-                        callee=node,
-                    )
-                node = payload
                 continue
             if tok["k"] == "[":
                 ltok = self._eat("[")
