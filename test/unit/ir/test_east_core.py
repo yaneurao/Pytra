@@ -2576,6 +2576,12 @@ x.bit_length()
             1,
         )[0]
         nonempty_helper_apply_text = text.split("def _apply_call_arg_entries_loop_state", 1)[1].split(
+            "def _apply_call_arg_entries_loop_state_result",
+            1,
+        )[0]
+        nonempty_helper_apply_result_text = text.split(
+            "def _apply_call_arg_entries_loop_state_result", 1
+        )[1].split(
             "def _consume_call_arg_loop_entry",
             1,
         )[0]
@@ -2724,7 +2730,12 @@ x.bit_length()
         )
         self.assertIn("return self._consume_call_arg_loop_entry(", nonempty_helper_state_value_text)
         self.assertNotIn("return self._consume_call_arg_loop_entry(", nonempty_helper_state_text)
-        self.assertIn("return should_continue", nonempty_helper_apply_text)
+        self.assertIn(
+            "return self._apply_call_arg_entries_loop_state_result(",
+            nonempty_helper_apply_text,
+        )
+        self.assertIn("return should_continue", nonempty_helper_apply_result_text)
+        self.assertNotIn("return should_continue", nonempty_helper_apply_text)
         self.assertIn(
             "arg_entry, keyword_entry = self._resolve_call_arg_loop_entry_state()",
             nonempty_loop_text,
