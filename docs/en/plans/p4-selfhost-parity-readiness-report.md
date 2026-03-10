@@ -88,6 +88,17 @@ Shared sources:
 - `toolchain_missing/toolchain_missing`: a local environment issue, not a backend-quality regression.
 - `regression/*`: a representative lane is failing under the same contract that previously passed and should be triaged first.
 
+## Current Snapshot (2026-03-11)
+
+- C++ `stage2_diff`: `pass / pass`
+- C++ `direct_e2e`: `pass / pass`
+- multilang `stage1`: all of `rs/cs/js/ts/go/java/swift/kotlin` are currently `fail / unknown / skip`
+- multilang `multistage`: the same 8 targets are all currently `stage1_transpile_fail`
+
+Related status reports:
+- [P1-MQ-04 Stage1 Status](./p1-multilang-selfhost-status.md)
+- [P1-MQ-05 Multistage Selfhost Status](./p1-multilang-selfhost-multistage-status.md)
+
 ## Routine Check Order
 
 1. `python3 tools/check_todo_priority.py`
@@ -100,3 +111,10 @@ Shared sources:
 Notes:
 - Always run `python3 tools/check_transpiler_version_gate.py` when transpiler files change.
 - For representative compiler-internal changes, run `test/unit/selfhost/*.py` and `test/unit/common/test_py2x_entrypoints_contract.py` early.
+
+## Archive Handoff
+
+- When P4 is complete, do not leave this report isolated; archive it alongside the corresponding plan on the same completion date.
+- Move the main plan to `docs/ja/plans/archive/YYYYMMDD-<task-group>.md`.
+- Record the matching completion context in `docs/ja/todo/archive/index.md` and `docs/ja/todo/archive/YYYYMMDD.md`.
+- If the readiness report remains as a separate file, keep bidirectional links so the archive can still reach it.

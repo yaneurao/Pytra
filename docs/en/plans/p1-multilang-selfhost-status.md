@@ -1,6 +1,6 @@
 # P1-MQ-04 Stage1 Status
 
-Measurement date: 2026-03-02
+Measurement date: 2026-03-11
 
 Command:
 
@@ -10,16 +10,16 @@ python3 tools/check_multilang_selfhost_stage1.py
 
 | lang | stage1 (self-transpile) | generated_mode | stage2 (selfhost run) | note |
 |---|---|---|---|---|
-| rs | pass | native | fail | error[E0433]: failed to resolve: could not find `compiler` in `pytra` |
-| cs | pass | native | fail | /tmp/tmpj4f9_30m/cs_selfhost_stage1.cs(197,19): error CS0266: Cannot implicitly convert type `object' to `string'. An explicit conversion exists (are you missing a cast?) |
-| js | pass | native | pass | sample/py/01 transpile ok |
-| ts | pass | native | skip | stage2 scope is rs/cs/js only |
-| go | pass | native | skip | stage2 scope is rs/cs/js only |
-| java | pass | native | skip | stage2 scope is rs/cs/js only |
-| swift | pass | native | skip | stage2 scope is rs/cs/js only |
-| kotlin | pass | native | skip | stage2 scope is rs/cs/js only |
+| rs | fail | unknown | skip | raise _make_east_build_error( |
+| cs | fail | unknown | skip | raise _make_east_build_error( |
+| js | fail | unknown | skip | raise _make_east_build_error( |
+| ts | fail | unknown | skip | raise _make_east_build_error( |
+| go | fail | unknown | skip | raise _make_east_build_error( |
+| java | fail | unknown | skip | raise _make_east_build_error( |
+| swift | fail | unknown | skip | raise _make_east_build_error( |
+| kotlin | fail | unknown | skip | raise _make_east_build_error( |
 
 Notes:
-- `stage1`: whether `src/py2<lang>.py` can self-transpile into the same language.
+- `stage1`: whether `src/py2x.py --target <lang>` can self-transpile into the same language.
 - `generated_mode`: whether the generated output is preview.
 - `stage2`: whether the generated transpiler can re-transpile `sample/py/01_mandelbrot.py`.

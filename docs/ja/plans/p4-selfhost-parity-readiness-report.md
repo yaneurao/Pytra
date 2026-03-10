@@ -88,6 +88,17 @@ shared source:
 - `toolchain_missing/toolchain_missing`: ローカル環境不足。backend quality とは分離して扱う。
 - `regression/*`: 以前の representative lane と同じ contract で失敗している。優先的に triage する。
 
+## Current Snapshot (2026-03-11)
+
+- C++ `stage2_diff`: `pass / pass`
+- C++ `direct_e2e`: `pass / pass`
+- multilang `stage1`: `rs/cs/js/ts/go/java/swift/kotlin` がすべて `fail / unknown / skip`
+- multilang `multistage`: 同 8 target がすべて `stage1_transpile_fail`
+
+関連 status:
+- [P1-MQ-04 Stage1 Status](./p1-multilang-selfhost-status.md)
+- [P1-MQ-05 Multistage Selfhost Status](./p1-multilang-selfhost-multistage-status.md)
+
 ## Routine Check Order
 
 1. `python3 tools/check_todo_priority.py`
@@ -100,3 +111,10 @@ shared source:
 補足:
 - `python3 tools/check_transpiler_version_gate.py` は transpiler 変更時に必ず実行する。
 - representative change では `test/unit/selfhost/*.py` と `test/unit/common/test_py2x_entrypoints_contract.py` を先に通す。
+
+## Archive Handoff
+
+- P4 全体が完了したら、この report だけを孤立させず、対応する plan と同じ完了日で archive へ移す。
+- plan 本体は `docs/ja/plans/archive/YYYYMMDD-<task-group>.md` へ移動する。
+- TODO 側は `docs/ja/todo/archive/index.md` と `docs/ja/todo/archive/YYYYMMDD.md` に同じ完了文脈を残す。
+- readiness report を残す場合も、archive 側から辿れるように相互リンクを張る。
