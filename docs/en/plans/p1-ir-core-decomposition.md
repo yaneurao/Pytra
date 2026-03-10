@@ -44,7 +44,7 @@ Validation commands:
 ## Breakdown
 
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S1-01] Inventory split boundaries in `core.py` and `test_east_core.py`, then lock the split order for source-contract, parser-behavior, and suffix/call clusters.
-- [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S1-02] Record the cluster-level progress-note rule in this plan and align TODO wording with it.
+- [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S1-02] Record the cluster-level progress-note rule in this plan and align TODO wording with it.
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] Extract the leading source-contract builder cluster from `test_east_core.py` into a shared support module plus a dedicated test file.
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] Split the remaining source-contract guards into cluster-specific `test_east_core_source_contract_*.py` files.
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Split parser behavior, diagnostics, and representative nominal-ADT tests into dedicated test files.
@@ -54,3 +54,4 @@ Validation commands:
 Decision log:
 - 2026-03-11: Created this task using `core.py=10081 lines` and `test_east_core.py=3912 lines` as the baseline. The first slice will extract the leading source-contract builder cluster from `test_east_core.py` into a shared support module and a dedicated test file.
 - 2026-03-11: Future splits should operate on bundles of roughly 5-10 helpers or test clusters, not one-helper-per-commit micro-slices. TODO / plan notes should stay at the same bundle-level granularity.
+- 2026-03-11: Keep only one-line cluster-level progress notes in TODO, and record verification logs or rationale in this plan's decision log. All later `S2+` slices should keep that convention.

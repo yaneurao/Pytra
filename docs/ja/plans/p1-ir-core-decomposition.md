@@ -44,7 +44,7 @@
 ## 分解
 
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S1-01] `core.py` / `test_east_core.py` の split boundary を棚卸しし、source-contract / parser behavior / suffix-call cluster の分割順を固定する。
-- [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S1-02] TODO / plan の進捗メモを cluster 単位へ圧縮する運用ルールをこの計画に反映する。
+- [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S1-02] TODO / plan の進捗メモを cluster 単位へ圧縮する運用ルールをこの計画に反映する。
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] `test_east_core.py` の先頭 source-contract builder cluster を shared support module と専用 test file へ切り出す。
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] 残る source-contract guard を cluster ごとの `test_east_core_source_contract_*.py` へ分割する。
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] parser behavior / diagnostics / nominal ADT representative tests を別 test file へ分割する。
@@ -54,3 +54,4 @@
 決定ログ:
 - 2026-03-11: `core.py=10081 lines`, `test_east_core.py=3912 lines` を基準に、本タスクを起票した。最初の slice は `test_east_core.py` の先頭 source-contract builder cluster を shared support module と専用 test file に切り出す方針とする。
 - 2026-03-11: 以後の分割は「1 helper = 1 commit」ではなく、5-10 個の helper / test cluster をまとめた bundle で扱う。TODO / plan の進捗メモも bundle 単位の 1 行要約へ圧縮する。
+- 2026-03-11: TODO には cluster 単位の一行進捗だけを残し、検証ログや判断理由は plan の `決定ログ` に集約する。以後の `S2` 以降もこの運用を維持する。
