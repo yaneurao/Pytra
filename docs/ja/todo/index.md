@@ -36,6 +36,6 @@
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S1-01] `core.py=10081 lines`、`test_east_core.py=3912 lines` を基準に、source-contract / parser behavior / suffix-call cluster の split boundary と bundle 粒度を固定した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S1-02] TODO には cluster 単位の一行進捗のみを残し、詳細ログは plan の `決定ログ` へ集約する運用に固定した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] shared support module と `test_east_core_source_contract_builders.py` を追加し、builder source-contract guard 10 本を `test_east_core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] `test_east_core_source_contract_expr_suffix.py` を追加し、call/attr/subscript の source-contract guard 10 本を `test_east_core.py` から切り出した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] `test_east_core_source_contract_expr_suffix.py` と `test_east_core_source_contract_call_metadata.py` を追加し、source-contract guard 20 本を `test_east_core.py` から切り出した。
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。

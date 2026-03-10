@@ -57,3 +57,4 @@
 - 2026-03-11: TODO には cluster 単位の一行進捗だけを残し、検証ログや判断理由は plan の `決定ログ` に集約する。以後の `S2` 以降もこの運用を維持する。
 - 2026-03-11: `test/unit/ir/_east_core_test_support.py` と `test/unit/ir/test_east_core_source_contract_builders.py` を追加し、`test_east_core.py` 先頭の builder source-contract guard 10 本を専用 test file へ移した。
 - 2026-03-11: `test/unit/ir/test_east_core_source_contract_expr_suffix.py` を追加し、call/attr/subscript の source-contract guard 10 本を `test_east_core.py` から切り出した。`S2-02` は残り source-contract cluster があるため継続する。
+- 2026-03-11: `test/unit/ir/test_east_core_source_contract_call_metadata.py` を追加し、method/named-call metadata source-contract guard 10 本を `test_east_core.py` から切り出した。`S2-02` は残りの call suffix / parser helper / tuple-destructure cluster があるため継続する。

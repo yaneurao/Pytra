@@ -57,3 +57,4 @@ Decision log:
 - 2026-03-11: Keep only one-line cluster-level progress notes in TODO, and record verification logs or rationale in this plan's decision log. All later `S2+` slices should keep that convention.
 - 2026-03-11: Added `test/unit/ir/_east_core_test_support.py` plus `test/unit/ir/test_east_core_source_contract_builders.py`, then moved the leading 10 builder source-contract guards out of `test_east_core.py`.
 - 2026-03-11: Added `test/unit/ir/test_east_core_source_contract_expr_suffix.py`, then moved 10 call/attr/subscript source-contract guards out of `test_east_core.py`. `S2-02` stays open because more source-contract clusters remain.
+- 2026-03-11: Added `test/unit/ir/test_east_core_source_contract_call_metadata.py`, then moved 10 method/named-call metadata source-contract guards out of `test_east_core.py`. `S2-02` remains open because call-suffix, parser-helper, and tuple-destructure clusters are still in the main file.
