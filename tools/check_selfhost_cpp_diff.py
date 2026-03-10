@@ -10,6 +10,9 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from tools.selfhost_parity_summary import build_summary_row
+from tools.selfhost_parity_summary import format_summary_line
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PY2X_SELFHOST = ROOT / "src" / "py2x-selfhost.py"
@@ -147,6 +150,43 @@ def _run_east3_contract_tests() -> tuple[bool, str]:
     return True, ""
 
 
+def _cpp_diff_detail_category(kind: str) -> str:
+    if kind == "pass":
+        return "pass"
+    if kind == "selfhost_not_implemented":
+        return "not_implemented"
+    if kind == "bridge_json_unavailable":
+        return "blocked"
+    if kind == "known_diff":
+        return "known_block"
+    if kind == "artifact_diff":
+        return "stage2_diff_fail"
+    if kind == "selfhost_transpile_fail":
+        return "stage2_transpile_fail"
+    if kind == "missing_output":
+        return "missing_output"
+    if kind == "missing_binary":
+        return "missing_output"
+    if kind == "host_transpile_fail":
+        return "host_transpile_fail"
+    if kind == "east3_contract_fail":
+        return "east3_contract_fail"
+    return "regression"
+
+
+def _build_cpp_diff_summary_row(subject: str, kind: str, note: str):
+    return build_summary_row("stage2-diff", subject, _cpp_diff_detail_category(kind), note)
+
+
+def _print_cpp_diff_summary(rows: list) -> None:
+    nonpass_rows = [row for row in rows if row.top_level_category != "pass"]
+    if len(nonpass_rows) == 0:
+        return
+    print("[stage2 diff summary]")
+    for row in nonpass_rows:
+        print(format_summary_line(row))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="compare host(py2x-selfhost) vs selfhost outputs")
     ap.add_argument("--selfhost-bin", default="selfhost/py2cpp.out")
@@ -180,20 +220,27 @@ def main() -> int:
         help="skip EAST3 schema/lowering preflight tests",
     )
     args = ap.parse_args()
+    summary_rows = []
 
     if not args.skip_east3_contract_tests:
         ok_contract, msg_contract = _run_east3_contract_tests()
         if not ok_contract:
+            summary_rows.append(_build_cpp_diff_summary_row("east3-contract", "east3_contract_fail", msg_contract))
+            _print_cpp_diff_summary(summary_rows)
             print(f"[FAIL east3-contract] {msg_contract}")
             return 1
 
     selfhost_bin = ROOT / args.selfhost_bin
     if not selfhost_bin.exists():
+        summary_rows.append(_build_cpp_diff_summary_row("selfhost_binary", "missing_binary", str(selfhost_bin)))
+        _print_cpp_diff_summary(summary_rows)
         print(f"missing selfhost binary: {selfhost_bin}")
         return 2
     selfhost_target = _resolve_selfhost_target(selfhost_bin, str(args.selfhost_target))
     bridge_tool = ROOT / "tools" / "selfhost_transpile.py"
     if args.selfhost_driver == "bridge" and not bridge_tool.exists():
+        summary_rows.append(_build_cpp_diff_summary_row("bridge_tool", "missing_binary", str(bridge_tool)))
+        _print_cpp_diff_summary(summary_rows)
         print(f"missing bridge tool: {bridge_tool}")
         return 2
 
@@ -214,6 +261,8 @@ def main() -> int:
 
             cp1 = _run(build_host_transpile_cmd(src, out_py))
             if cp1.returncode != 0:
+                msg = cp1.stderr.strip() or cp1.stdout.strip()
+                summary_rows.append(_build_cpp_diff_summary_row(rel, "host_transpile_fail", msg))
                 print(f"[FAIL host] {rel}: {(cp1.stderr.strip() or cp1.stdout.strip()).splitlines()[:1]}")
                 mismatches += 1
                 continue
@@ -243,24 +292,34 @@ def main() -> int:
                 msg = (cp2.stderr.strip() or cp2.stdout.strip())
                 if args.mode == "allow-not-implemented" and "[not_implemented]" in msg:
                     skipped += 1
+                    summary_rows.append(_build_cpp_diff_summary_row(rel, "selfhost_not_implemented", msg))
                     print(f"[SKIP selfhost-not-implemented] {rel}")
                     continue
                 if args.mode == "allow-not-implemented" and args.selfhost_driver == "bridge" and "[input_invalid]" in msg:
                     skipped += 1
+                    summary_rows.append(_build_cpp_diff_summary_row(rel, "bridge_json_unavailable", msg))
                     print(f"[SKIP selfhost-bridge-json-unavailable] {rel}")
                     continue
                 if rel in expected_diff_cases:
                     known_diffs += 1
+                    summary_rows.append(_build_cpp_diff_summary_row(rel, "known_diff", msg))
                     print(f"[KNOWN DIFF selfhost] {rel}: {msg.splitlines()[:1]}")
                 else:
+                    summary_rows.append(_build_cpp_diff_summary_row(rel, "selfhost_transpile_fail", msg))
                     print(f"[FAIL selfhost] {rel}: {msg.splitlines()[:1]}")
                     mismatches += 1
                 continue
             if not out_sh.exists():
                 if rel in expected_diff_cases:
                     known_diffs += 1
+                    summary_rows.append(
+                        _build_cpp_diff_summary_row(rel, "known_diff", f"output file was not generated ({out_sh})")
+                    )
                     print(f"[KNOWN DIFF selfhost] {rel}: output file was not generated ({out_sh})")
                 else:
+                    summary_rows.append(
+                        _build_cpp_diff_summary_row(rel, "missing_output", f"output file was not generated ({out_sh})")
+                    )
                     print(f"[FAIL selfhost] {rel}: output file was not generated ({out_sh})")
                     mismatches += 1
                 continue
@@ -272,9 +331,11 @@ def main() -> int:
             if a_norm != b_norm:
                 if rel in expected_diff_cases:
                     known_diffs += 1
+                    summary_rows.append(_build_cpp_diff_summary_row(rel, "known_diff", "normalized artifact diff"))
                     print(f"[KNOWN DIFF] {rel}")
                 else:
                     mismatches += 1
+                    summary_rows.append(_build_cpp_diff_summary_row(rel, "artifact_diff", "normalized artifact diff"))
                     print(f"[DIFF] {rel}")
                     if args.show_diff:
                         for ln in difflib.unified_diff(
@@ -286,8 +347,10 @@ def main() -> int:
                         ):
                             print(ln)
             else:
+                summary_rows.append(_build_cpp_diff_summary_row(rel, "pass", ""))
                 print(f"[OK] {rel}")
 
+    _print_cpp_diff_summary(summary_rows)
     print(f"mismatches={mismatches} known_diffs={known_diffs} skipped={skipped}")
     return 1 if mismatches else 0
 

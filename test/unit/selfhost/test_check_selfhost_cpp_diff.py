@@ -119,6 +119,47 @@ class CheckSelfhostCppDiffNormalizeTest(unittest.TestCase):
             ],
         )
 
+    def test_cpp_diff_summary_row_maps_not_implemented_to_known_block(self) -> None:
+        mod = _load_module()
+        row = mod._build_cpp_diff_summary_row(
+            "test/fixtures/core/add.py",
+            "selfhost_not_implemented",
+            "[not_implemented] bridge path is not ready",
+        )
+        self.assertEqual(row.top_level_category, "known_block")
+        self.assertEqual(row.detail_category, "not_implemented")
+
+    def test_cpp_diff_summary_row_maps_expected_diff_to_known_block(self) -> None:
+        mod = _load_module()
+        row = mod._build_cpp_diff_summary_row(
+            "test/fixtures/core/add.py",
+            "known_diff",
+            "normalized artifact diff",
+        )
+        self.assertEqual(row.top_level_category, "known_block")
+        self.assertEqual(row.detail_category, "known_block")
+
+    def test_print_cpp_diff_summary_formats_shared_summary_line(self) -> None:
+        mod = _load_module()
+        row = mod._build_cpp_diff_summary_row(
+            "test/fixtures/core/add.py",
+            "artifact_diff",
+            "normalized artifact diff",
+        )
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _ = tmpdir
+            from io import StringIO
+            from contextlib import redirect_stdout
+
+            buf = StringIO()
+            with redirect_stdout(buf):
+                mod._print_cpp_diff_summary([row])
+            text = buf.getvalue()
+        self.assertIn("[stage2 diff summary]", text)
+        self.assertIn("subject=test/fixtures/core/add.py", text)
+        self.assertIn("category=regression", text)
+        self.assertIn("detail=stage2_diff_fail", text)
+
 
 if __name__ == "__main__":
     unittest.main()

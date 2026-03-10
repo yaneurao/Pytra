@@ -41,6 +41,31 @@ def build_summary_row(lane: str, subject: str, detail_category: str, note: str) 
     )
 
 
+def build_direct_e2e_summary_row(subject: str, status: str, note: str) -> ParitySummaryRow:
+    note_lc = note.lower()
+    if status == "pass":
+        detail = "pass"
+    elif status == "selfhost_transpile_fail" and "[not_implemented]" in note_lc:
+        detail = "not_implemented"
+    elif status == "stdout_fail":
+        detail = "direct_parity_fail"
+    elif status == "compile_fail":
+        detail = "direct_compile_fail"
+    elif status == "run_fail":
+        detail = "direct_run_fail"
+    elif status == "selfhost_transpile_fail":
+        detail = "sample_transpile_fail"
+    elif status == "python_run_fail":
+        detail = "python_run_fail"
+    elif status == "build_selfhost_fail":
+        detail = "build_fail"
+    elif status in {"missing_selfhost_binary", "missing_source"}:
+        detail = "missing_output"
+    else:
+        detail = "regression"
+    return build_summary_row("direct_e2e", subject, detail, note)
+
+
 def format_summary_line(row: ParitySummaryRow) -> str:
     note = row.note.strip()
     if note == "":
@@ -49,3 +74,12 @@ def format_summary_line(row: ParitySummaryRow) -> str:
         f"- {row.lane}: subject={row.subject} category={row.top_level_category} "
         f"detail={row.detail_category} note={note}"
     )
+
+
+def render_summary_block(title: str, rows: list[ParitySummaryRow], *, skip_pass: bool) -> list[str]:
+    filtered = [row for row in rows if not (skip_pass and row.top_level_category == "pass")]
+    if len(filtered) == 0 and len(rows) != 0:
+        filtered = [build_summary_row(title, "all", "pass", "")]
+    if len(filtered) == 0:
+        return []
+    return [f"[{title} summary]", *[format_summary_line(row) for row in filtered]]

@@ -121,7 +121,7 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
         compile_run: subprocess.CompletedProcess[str],
         exec_run: subprocess.CompletedProcess[str],
         target: str = "cpp",
-    ) -> tuple[int, list[list[str]]]:
+    ) -> tuple[int, list[list[str]], str]:
         with tempfile.TemporaryDirectory() as td:
             selfhost_bin = Path(td) / "py2cpp.out"
             selfhost_bin.write_text("", encoding="utf-8")
@@ -159,8 +159,10 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
                     "test/fixtures/core/add.py",
                 ],
             ):
-                rc = mod.main()
-        return rc, calls
+                buf = io.StringIO()
+                with redirect_stdout(buf):
+                    rc = mod.main()
+        return rc, calls, buf.getvalue()
 
     def test_resolve_selfhost_target_auto_prefers_cpp_only_when_help_advertises_target(self) -> None:
         mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
@@ -188,7 +190,7 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
 
     def test_direct_summary_row_maps_not_implemented_to_known_block(self) -> None:
         mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
-        row = mod._build_direct_summary_row(
+        row = mod.build_direct_e2e_summary_row(
             "test/fixtures/core/add.py",
             "selfhost_transpile_fail",
             "[not_implemented] direct transpile is not ready",
@@ -198,7 +200,7 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
 
     def test_direct_summary_row_maps_stdout_failure_to_regression(self) -> None:
         mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
-        row = mod._build_direct_summary_row(
+        row = mod.build_direct_e2e_summary_row(
             "test/fixtures/core/add.py",
             "stdout_fail",
             "python='7' selfhost='8'",
@@ -208,7 +210,7 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
 
     def test_print_direct_summary_formats_shared_summary_line(self) -> None:
         mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
-        row = mod._build_direct_summary_row(
+        row = mod.build_direct_e2e_summary_row(
             "test/fixtures/core/add.py",
             "stdout_fail",
             "python='7' selfhost='8'",
@@ -217,7 +219,7 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
         with redirect_stdout(buf):
             mod._print_direct_summary([row])
         text = buf.getvalue()
-        self.assertIn("[direct summary]", text)
+        self.assertIn("[direct_e2e summary]", text)
         self.assertIn("subject=test/fixtures/core/add.py", text)
         self.assertIn("category=regression", text)
         self.assertIn("detail=direct_parity_fail", text)
@@ -314,7 +316,7 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
 
     def test_main_returns_1_when_selfhost_transpile_fails(self) -> None:
         mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
-        rc, calls = self._run_single_case_main(
+        rc, calls, out = self._run_single_case_main(
             mod,
             py_run=subprocess.CompletedProcess(["python3"], 0, stdout="7\n", stderr=""),
             transpile_run=subprocess.CompletedProcess(["selfhost"], 3, stdout="", stderr="transpile failed"),
@@ -323,10 +325,12 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
         )
         self.assertEqual(rc, 1)
         self.assertFalse(any(cmd and cmd[0] == "g++" for cmd in calls))
+        self.assertIn("[direct_e2e summary]", out)
+        self.assertIn("detail=sample_transpile_fail", out)
 
     def test_main_returns_1_when_compile_fails(self) -> None:
         mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
-        rc, calls = self._run_single_case_main(
+        rc, calls, out = self._run_single_case_main(
             mod,
             py_run=subprocess.CompletedProcess(["python3"], 0, stdout="7\n", stderr=""),
             transpile_run=subprocess.CompletedProcess(["selfhost"], 0, stdout="", stderr=""),
@@ -335,10 +339,11 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
         )
         self.assertEqual(rc, 1)
         self.assertTrue(any(cmd and cmd[0] == "g++" for cmd in calls))
+        self.assertIn("detail=direct_compile_fail", out)
 
     def test_main_returns_1_when_executable_fails(self) -> None:
         mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
-        rc, _calls = self._run_single_case_main(
+        rc, _calls, out = self._run_single_case_main(
             mod,
             py_run=subprocess.CompletedProcess(["python3"], 0, stdout="7\n", stderr=""),
             transpile_run=subprocess.CompletedProcess(["selfhost"], 0, stdout="", stderr=""),
@@ -346,10 +351,11 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
             exec_run=subprocess.CompletedProcess(["out"], 5, stdout="", stderr="run failed"),
         )
         self.assertEqual(rc, 1)
+        self.assertIn("detail=direct_run_fail", out)
 
     def test_main_returns_1_when_stdout_differs(self) -> None:
         mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
-        rc, _calls = self._run_single_case_main(
+        rc, _calls, out = self._run_single_case_main(
             mod,
             py_run=subprocess.CompletedProcess(["python3"], 0, stdout="7\n", stderr=""),
             transpile_run=subprocess.CompletedProcess(["selfhost"], 0, stdout="", stderr=""),
@@ -357,6 +363,22 @@ class VerifySelfhostEndToEndToolTest(unittest.TestCase):
             exec_run=subprocess.CompletedProcess(["out"], 0, stdout="8\n", stderr=""),
         )
         self.assertEqual(rc, 1)
+        self.assertIn("detail=direct_parity_fail", out)
+
+    def test_main_emits_pass_summary_when_all_cases_pass(self) -> None:
+        mod = _load_module(VERIFY_E2E_PATH, "verify_selfhost_end_to_end_mod")
+        rc, _calls, out = self._run_single_case_main(
+            mod,
+            py_run=subprocess.CompletedProcess(["python3"], 0, stdout="7\n", stderr=""),
+            transpile_run=subprocess.CompletedProcess(["selfhost"], 0, stdout="", stderr=""),
+            compile_run=subprocess.CompletedProcess(["g++"], 0, stdout="", stderr=""),
+            exec_run=subprocess.CompletedProcess(["out"], 0, stdout="7\n", stderr=""),
+        )
+        self.assertEqual(rc, 0)
+        self.assertIn("[direct_e2e summary]", out)
+        self.assertIn("subject=all", out)
+        self.assertIn("category=pass", out)
+        self.assertIn("detail=pass", out)
 
 
 if __name__ == "__main__":
