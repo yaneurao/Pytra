@@ -452,12 +452,16 @@ class EastCoreTest(unittest.TestCase):
             "def _subscript_result_type",
             1,
         )[0]
+        attr_call_text = text.split("def _annotate_attr_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
         self.assertIn("_sh_annotate_fixed_runtime_builtin_call_expr(", named_call_text)
-        self.assertIn("_sh_annotate_runtime_method_call_expr(", postfix_text)
+        self.assertIn("_sh_annotate_runtime_method_call_expr(", attr_call_text)
         self.assertIn("_sh_annotate_type_predicate_call_expr(", named_call_text)
         self.assertNotIn('payload["lowered_kind"] = "BuiltinCall"', postfix_text)
         self.assertNotIn('payload["lowered_kind"] = "TypePredicateCall"', postfix_text)
@@ -520,12 +524,16 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_enumerate_call_expr",
             1,
         )[0]
+        attr_call_text = text.split("def _annotate_attr_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('lookup_owner_method_semantic_tag(owner_type, attr)', helper_text)
         self.assertIn('lookup_stdlib_method_runtime_call(owner_type, attr)', helper_text)
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
-        self.assertIn('_sh_annotate_runtime_method_call_expr(', postfix_text)
+        self.assertIn('_sh_annotate_runtime_method_call_expr(', attr_call_text)
         self.assertNotIn('owner_method_semantic_tag = lookup_owner_method_semantic_tag(owner_t, attr)', postfix_text)
         self.assertNotIn('payload["semantic_tag"] = owner_method_semantic_tag', postfix_text)
         self.assertNotIn('rc = lookup_stdlib_method_runtime_call(owner_t, attr)', postfix_text)
@@ -616,13 +624,17 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_noncpp_attr_call_expr",
             1,
         )[0]
+        attr_call_text = text.split("def _annotate_attr_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn("def _sh_lookup_noncpp_attr_runtime_call(", text)
         self.assertIn("if owner_name in _SH_IMPORT_MODULES:", helper_text)
         self.assertIn("if owner_name in _SH_IMPORT_SYMBOLS:", helper_text)
         self.assertEqual(postfix_text.count("_sh_lookup_noncpp_attr_runtime_call("), 0)
-        self.assertIn("_sh_annotate_noncpp_attr_call_expr(", postfix_text)
+        self.assertIn("_sh_annotate_noncpp_attr_call_expr(", attr_call_text)
         self.assertNotIn("if isinstance(owner_expr, dict) and owner_expr.get(\"kind\") == \"Name\":", postfix_text)
         self.assertNotIn("if isinstance(owner, dict) and owner.get(\"kind\") == \"Name\":", postfix_text)
 
@@ -632,14 +644,36 @@ class EastCoreTest(unittest.TestCase):
             "def _sh_annotate_scalar_ctor_call_expr",
             1,
         )[0]
+        attr_call_text = text.split("def _annotate_attr_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn("_sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)", helper_text)
         self.assertIn("_sh_annotate_resolved_runtime_expr(", helper_text)
         self.assertIn('payload["resolved_type"] = std_module_attr_ret', helper_text)
-        self.assertIn("_sh_annotate_noncpp_attr_call_expr(", postfix_text)
+        self.assertIn("_sh_annotate_noncpp_attr_call_expr(", attr_call_text)
         self.assertNotIn("std_module_attr_ret = lookup_stdlib_function_return_type(attr)", postfix_text)
         self.assertNotIn('payload["resolved_type"] = std_module_attr_ret', postfix_text)
+
+    def test_core_source_routes_attr_call_annotations_through_parser_helper(self) -> None:
+        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = text.split("def _annotate_attr_call_expr", 1)[1].split(
+            "def _subscript_result_type",
+            1,
+        )[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+
+        self.assertIn('attr = str(callee.get("attr", ""))', helper_text)
+        self.assertIn('owner = callee.get("value")', helper_text)
+        self.assertIn('_sh_annotate_noncpp_attr_call_expr(', helper_text)
+        self.assertIn('_sh_annotate_runtime_method_call_expr(', helper_text)
+        self.assertIn("payload = self._annotate_attr_call_expr(", postfix_text)
+        self.assertNotIn('attr = str(node.get("attr", ""))', postfix_text)
+        self.assertNotIn('owner = node.get("value")', postfix_text)
+        self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', postfix_text)
+        self.assertNotIn('_sh_annotate_runtime_method_call_expr(', postfix_text)
 
     def test_core_source_routes_scalar_ctor_metadata_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")

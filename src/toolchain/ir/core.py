@@ -4979,6 +4979,30 @@ class _ShExprParser:
             )
         return payload
 
+    def _annotate_attr_call_expr(
+        self,
+        payload: dict[str, Any],
+        *,
+        callee: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Attribute callee の annotation を shared parser helper へ寄せる。"""
+        attr = str(callee.get("attr", ""))
+        owner = callee.get("value")
+        owner_expr = owner if isinstance(owner, dict) else None
+        owner_t = str(owner_expr.get("resolved_type", "unknown")) if owner_expr is not None else "unknown"
+        _sh_annotate_noncpp_attr_call_expr(
+            payload,
+            owner_expr=owner_expr,
+            attr_name=attr,
+        )
+        _sh_annotate_runtime_method_call_expr(
+            payload,
+            owner_type=owner_t,
+            attr=attr,
+            runtime_owner=owner_expr,
+        )
+        return payload
+
     def _subscript_result_type(self, container_type: str) -> str:
         """添字アクセスの結果型をコンテナ型から推論する。"""
         if container_type.startswith("list[") and container_type.endswith("]"):
@@ -5157,19 +5181,9 @@ class _ShExprParser:
                         call_dispatch=_sh_lookup_named_call_dispatch(fn_name),
                     )
                 elif isinstance(node, dict) and node.get("kind") == "Attribute":
-                    attr = str(node.get("attr", ""))
-                    owner = node.get("value")
-                    owner_t = str(owner.get("resolved_type", "unknown")) if isinstance(owner, dict) else "unknown"
-                    _sh_annotate_noncpp_attr_call_expr(
+                    payload = self._annotate_attr_call_expr(
                         payload,
-                        owner_expr=owner if isinstance(owner, dict) else None,
-                        attr_name=attr,
-                    )
-                    _sh_annotate_runtime_method_call_expr(
-                        payload,
-                        owner_type=owner_t,
-                        attr=attr,
-                        runtime_owner=owner if isinstance(owner, dict) else None,
+                        callee=node,
                     )
                 node = payload
                 continue
