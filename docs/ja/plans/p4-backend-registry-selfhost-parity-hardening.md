@@ -79,7 +79,7 @@
 - [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-01] `backend_registry.py` と `backend_registry_static.py` の重複 surface（backend spec、runtime copy、writer rule、option schema、direct-route behavior）を棚卸しし、intentional difference と drift 候補を分類した。
 - [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-02] `build_selfhost` / `stage2` / `verify_selfhost_end_to_end` / `multilang selfhost` の現状 gate と blind spot を整理し、known block / regression の分類方針を decision log に固定した。
 - [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-01] backend capability / runtime copy / option schema / writer metadata の canonical SoT を定義し、host/static の両方がそこから構成される形へ寄せた。
-- [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-02] intentional difference を許す境界（例: host-only lazy import、selfhost-only direct route）と、その diagnostics 契約を固定する。
+- [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-02] intentional difference を許す境界（例: host-only lazy import、selfhost-only direct route）と、その diagnostics 契約を固定した。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S3-01] host registry / static registry を shared metadata または generator 経由へ寄せ、手書き重複を縮退する。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S3-02] registry drift guard または diff test を追加し、片側だけ更新された backend surface を fail-fast で検知する。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S4-01] stage1 / stage2 / direct e2e / multilang selfhost の representative parity suite を整理し、failure category と summary 出力を統一する。
@@ -136,3 +136,4 @@
 - 2026-03-11: `S2-02` の次の slice では diagnostics 契約を追加で固定し、host 側の backend symbol ref 解決失敗も static 側と同じ `RuntimeError("unsupported backend symbol ref: ...")` に正規化した。runtime hook key / program writer key / backend symbol ref は host/static で同じ canonical error を返す。
 - 2026-03-11: `S2-02` の diagnostics 契約として、canonical metadata layer の unknown `runtime_hook_key` / `program_writer_key` は `RuntimeError("unsupported ... key: ...")` で fail-fast する test を追加した。registry 側はこの metadata error を隠蔽せず、そのまま drift/設定ミスとして扱う。
 - 2026-03-11: さらに `S2-02` で、metadata descriptor 自体が壊れて `runtime_hook kind` / `emit kind` が不正になった場合も host/static 両方で同じ `RuntimeError("unsupported ... kind: ...")` を返す contract test を追加した。kind-level diagnostics も eager/lazy 差分の外側では一致させる。
+- 2026-03-11: `S2-02` は完了と判断した。intentional difference は lazy import / eager resolve / `suppress_emit_exceptions` のみに固定され、unsupported target / metadata key / backend symbol ref / kind-level diagnostics は host/static 両 lane で同じ canonical error text を返す guard が入った。
