@@ -9,7 +9,7 @@ from toolchain.frontends.type_expr import summarize_type_text
 
 
 _LEGACY_COMPAT_BRIDGE_ENABLED = True
-_NOMINAL_ADT_DECL_SUMMARY_TABLE: dict[str, dict[str, str]] = {}
+_NOMINAL_ADT_DECL_SUMMARY_TABLE: dict[str, dict[str, Any]] = {}
 _TYPE_EXPR_SUMMARY_KEY = "type_expr_summary_v1"
 _JSON_DECODE_META_KEY = "json_decode_v1"
 _JSON_RECEIVER_NAME_PREFIXES = {
@@ -60,7 +60,7 @@ def _type_expr_summary_from_node(node: Any) -> dict[str, Any]:
     return _type_expr_summary_from_payload(node.get("type_expr"), node.get("resolved_type"))
 
 
-def _lookup_nominal_adt_decl(name: Any) -> dict[str, str] | None:
+def _lookup_nominal_adt_decl(name: Any) -> dict[str, Any] | None:
     type_name = _normalize_type_name(name)
     if type_name == "unknown":
         return None
@@ -287,8 +287,8 @@ def _copy_source_span_and_repr(source_expr: Any, out: dict[str, Any]) -> None:
         out["repr"] = repr_txt
 
 
-def _collect_nominal_adt_decl_summary_table(east_module: dict[str, Any]) -> dict[str, dict[str, str]]:
-    out: dict[str, dict[str, str]] = {}
+def _collect_nominal_adt_decl_summary_table(east_module: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
     body_obj = east_module.get("body")
     body: list[Any] = body_obj if isinstance(body_obj, list) else []
     for item in body:
@@ -305,7 +305,7 @@ def _collect_nominal_adt_decl_summary_table(east_module: dict[str, Any]) -> dict
         family_name = str(nominal.get("family_name", "")).strip()
         if role not in {"family", "variant"} or family_name == "":
             continue
-        entry: dict[str, str] = {
+        entry: dict[str, Any] = {
             "role": role,
             "family_name": family_name,
         }
@@ -315,6 +315,19 @@ def _collect_nominal_adt_decl_summary_table(east_module: dict[str, Any]) -> dict
         payload_style = str(nominal.get("payload_style", "")).strip()
         if payload_style != "":
             entry["payload_style"] = payload_style
+        field_types_obj = item.get("field_types")
+        if isinstance(field_types_obj, dict):
+            field_types: dict[str, str] = {}
+            for field_name_obj, field_type_obj in field_types_obj.items():
+                field_name = str(field_name_obj).strip()
+                if field_name == "":
+                    continue
+                field_type = _normalize_type_name(field_type_obj)
+                if field_type == "unknown":
+                    continue
+                field_types[field_name] = field_type
+            if len(field_types) != 0:
+                entry["field_types"] = field_types
         out[class_name] = entry
     return out
 
@@ -1059,6 +1072,51 @@ def _decorate_nominal_adt_ctor_call(call: dict[str, Any]) -> dict[str, Any]:
     return call
 
 
+def _build_nominal_adt_projection_meta(attr_expr: dict[str, Any]) -> dict[str, Any] | None:
+    attr_name = str(attr_expr.get("attr", "")).strip()
+    if attr_name == "":
+        return None
+    owner_summary = _expr_type_summary(attr_expr.get("value"))
+    if str(owner_summary.get("category", "unknown")).strip() != "nominal_adt":
+        return None
+    variant_name = _normalize_type_name(owner_summary.get("nominal_adt_name"))
+    if variant_name == "unknown":
+        variant_name = _normalize_type_name(owner_summary.get("mirror"))
+    decl = _lookup_nominal_adt_decl(variant_name)
+    if decl is None or str(decl.get("role", "")).strip() != "variant":
+        return None
+    field_types_obj = decl.get("field_types")
+    field_types = field_types_obj if isinstance(field_types_obj, dict) else {}
+    field_type = _normalize_type_name(field_types.get(attr_name))
+    if field_type == "unknown":
+        return None
+    meta: dict[str, Any] = {
+        "schema_version": 1,
+        "ir_category": "NominalAdtProjection",
+        "family_name": str(decl.get("family_name", variant_name)),
+        "variant_name": variant_name,
+        "field_name": attr_name,
+        "field_type": field_type,
+    }
+    payload_style = str(decl.get("payload_style", "")).strip()
+    if payload_style != "":
+        meta["payload_style"] = payload_style
+    return meta
+
+
+def _decorate_nominal_adt_projection_attr(attr_expr: dict[str, Any]) -> dict[str, Any]:
+    meta = _build_nominal_adt_projection_meta(attr_expr)
+    if meta is None:
+        return attr_expr
+    field_type = str(meta.get("field_type", "unknown"))
+    attr_expr["semantic_tag"] = "nominal_adt.variant_projection"
+    attr_expr["lowered_kind"] = "NominalAdtProjection"
+    attr_expr["nominal_adt_projection_v1"] = meta
+    attr_expr["resolved_type"] = field_type
+    _set_type_expr_summary(attr_expr, _type_expr_summary_from_payload(None, field_type))
+    return attr_expr
+
+
 def _structured_type_expr_summary_from_node(node: Any) -> dict[str, Any]:
     if not isinstance(node, dict):
         return _unknown_type_summary()
@@ -1348,6 +1406,13 @@ def _lower_forcore_stmt(stmt: dict[str, Any], *, dispatch_mode: str) -> dict[str
     return out
 
 
+def _lower_attribute_expr(expr: dict[str, Any], *, dispatch_mode: str) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    for key in expr:
+        out[key] = _lower_node(expr[key], dispatch_mode=dispatch_mode)
+    return _decorate_nominal_adt_projection_attr(out)
+
+
 def _lower_node(node: Any, *, dispatch_mode: str) -> Any:
     if isinstance(node, list):
         out_list: list[Any] = []
@@ -1364,6 +1429,8 @@ def _lower_node(node: Any, *, dispatch_mode: str) -> Any:
             return _lower_assignment_like_stmt(node, dispatch_mode=dispatch_mode)
         if kind == "Call":
             return _lower_call_expr(node, dispatch_mode=dispatch_mode)
+        if kind == "Attribute":
+            return _lower_attribute_expr(node, dispatch_mode=dispatch_mode)
         if kind == "ForCore":
             return _lower_forcore_stmt(node, dispatch_mode=dispatch_mode)
         out_dict: dict[str, Any] = {}

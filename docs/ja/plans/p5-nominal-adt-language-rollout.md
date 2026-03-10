@@ -195,5 +195,6 @@
 - 2026-03-11: `S3-01` の representative parser として、selfhost parser は `@sealed` family、same-module に先行定義された family からの variant、payload variant の `@dataclass` 必須、`ClassDef.meta.nominal_adt_v1` 付与までを受理する方針で進めることにした。
 - 2026-03-11: `S3-01` では imported family や family より前に定義された variant までは扱わず、まず same-module / family-first の representative case を正本にすることにした。
 - 2026-03-11: `S3-01` を閉じ、representative parser case は `@sealed` family、same-module family-first variant、payload variant の `@dataclass` 必須、`ClassDef.meta.nominal_adt_v1` 生成、misuse の fail-closed 診断まで通す方針で固定した。
+- 2026-03-11: `S3-02` では constructor / family-variant test に加えて、variant-typed receiver からの field access を `NominalAdtProjection` metadata 付き `Attribute` として固定し、branch-local narrowing projection と `match` lowering は後続 slice に分離した。
 - 2026-03-11: `S3-02` の第一段として、same-module nominal ADT family/variant 宣言表を参照し、user-defined variant constructor call を `NominalAdtCtorCall`、`isinstance(..., Variant/Family)` を `nominal_adt_test_v1` / `narrowing_lane_v1.predicate_category=nominal_adt` 付き representative lane へ seeded する方針を固定した。
 - 2026-03-11: `S3-02` では variant projection / `match` lowering まで一気に進めず、constructor と variant test の representative metadata lane を先に test で固定してから次段へ進むことにした。

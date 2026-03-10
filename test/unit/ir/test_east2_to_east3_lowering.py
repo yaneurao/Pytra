@@ -70,7 +70,7 @@ def f(x: Maybe) -> int:
     if isinstance(x, Just):
         return x.value
     y = Just(1)
-    return 0
+    return y.value
 """
         return convert_source_to_east_with_backend(
             source,
@@ -1190,6 +1190,23 @@ def f(x: Maybe) -> int:
         self.assertEqual(ctor_call.get("type_expr_summary_v1", {}).get("category"), "nominal_adt")
         self.assertEqual(ctor_call.get("type_expr_summary_v1", {}).get("nominal_adt_name"), "Just")
         self.assertEqual(ctor_call.get("type_expr_summary_v1", {}).get("nominal_adt_family"), "Maybe")
+
+    def test_lower_user_nominal_adt_projection_attaches_projection_metadata(self) -> None:
+        east2 = self._representative_nominal_adt_east2()
+        out = lower_east2_to_east3(east2)
+        fn = out.get("body", [])[3]
+        projection = fn.get("body", [])[2].get("value", {})
+        self.assertEqual(projection.get("kind"), "Attribute")
+        self.assertEqual(projection.get("lowered_kind"), "NominalAdtProjection")
+        self.assertEqual(projection.get("semantic_tag"), "nominal_adt.variant_projection")
+        self.assertEqual(projection.get("resolved_type"), "int64")
+        self.assertEqual(projection.get("nominal_adt_projection_v1", {}).get("ir_category"), "NominalAdtProjection")
+        self.assertEqual(projection.get("nominal_adt_projection_v1", {}).get("family_name"), "Maybe")
+        self.assertEqual(projection.get("nominal_adt_projection_v1", {}).get("variant_name"), "Just")
+        self.assertEqual(projection.get("nominal_adt_projection_v1", {}).get("field_name"), "value")
+        self.assertEqual(projection.get("nominal_adt_projection_v1", {}).get("field_type"), "int64")
+        self.assertEqual(projection.get("nominal_adt_projection_v1", {}).get("payload_style"), "dataclass")
+        self.assertEqual(projection.get("type_expr_summary_v1", {}).get("mirror"), "int64")
 
     def test_lower_json_value_helper_call_attaches_decode_metadata(self) -> None:
         east2 = {

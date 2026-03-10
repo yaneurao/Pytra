@@ -105,12 +105,12 @@ PY2X_REQUIRED_PATTERNS = [
     'choices=["2", "3"]',
     "--object-dispatch-mode",
     "--east-stage 2 is no longer supported; use EAST3 (default).",
-    "resolve_layer_options(",
-    "lower_ir(",
-    "optimize_ir(",
-    "emit_module(",
-    "build_program_artifact(",
-    "get_program_writer(",
+    "resolve_layer_options_typed(",
+    "lower_ir_typed(",
+    "optimize_ir_typed(",
+    "emit_module_typed(",
+    "build_program_artifact_typed(",
+    "get_program_writer_typed(",
 ]
 
 COMMON_SMOKE_PATH = "test/unit/common/test_py2x_smoke_common.py"
