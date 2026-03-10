@@ -5229,14 +5229,15 @@ class _ShExprParser:
         owner_t = str(owner_expr.get("resolved_type", "unknown")) if owner_expr is not None else "unknown"
         return owner_expr, owner_t, attr
 
-    def _annotate_attr_call_expr(
+    def _apply_attr_call_expr_annotation(
         self,
-        payload: dict[str, Any],
         *,
-        callee: dict[str, Any],
+        payload: dict[str, Any],
+        owner_expr: dict[str, Any] | None,
+        owner_t: str,
+        attr: str,
     ) -> dict[str, Any]:
-        """Attribute callee の annotation を shared parser helper へ寄せる。"""
-        owner_expr, owner_t, attr = self._resolve_attr_callee(callee=callee)
+        """Attribute callee annotation の適用を helper へ寄せる。"""
         _sh_annotate_noncpp_attr_call_expr(
             payload,
             owner_expr=owner_expr,
@@ -5249,6 +5250,21 @@ class _ShExprParser:
             runtime_owner=owner_expr,
         )
         return payload
+
+    def _annotate_attr_call_expr(
+        self,
+        payload: dict[str, Any],
+        *,
+        callee: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Attribute callee の annotation を shared parser helper へ寄せる。"""
+        owner_expr, owner_t, attr = self._resolve_attr_callee(callee=callee)
+        return self._apply_attr_call_expr_annotation(
+            payload=payload,
+            owner_expr=owner_expr,
+            owner_t=owner_t,
+            attr=attr,
+        )
 
     def _parse_attr_suffix(self, *, owner_expr: dict[str, Any]) -> dict[str, Any]:
         """Attribute suffix の token 消費を parser helper へ寄せる。"""
