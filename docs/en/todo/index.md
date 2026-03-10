@@ -54,5 +54,6 @@ Last updated: 2026-03-11
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Added `core_string_semantics.py`, then moved the string/f-string scan/decode/literal helper cluster out of `core.py`.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Added `core_text_semantics.py`, then moved the identifier/import-alias/dataclass-option text helper cluster out of `core.py`.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Added `core_string_semantics.py`, then moved the string/f-string scan/decode/literal-append helper cluster out of `core.py`.
+- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Added `core_stmt_text_semantics.py`, then moved the assign/comment/except/class-header statement/header text helper cluster out of `core.py`.
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) Split `core.py` / `test_east_core.py` by responsibility so compiler-internal improvements can proceed in cluster-sized slices again.

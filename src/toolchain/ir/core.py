@@ -75,6 +75,25 @@ from toolchain.ir.core_runtime_decl_semantics import _sh_reject_runtime_decl_non
 from toolchain.ir.core_string_semantics import _sh_append_fstring_literal
 from toolchain.ir.core_string_semantics import _sh_decode_py_string_body
 from toolchain.ir.core_string_semantics import _sh_scan_string_token
+from toolchain.ir.core_stmt_text_semantics import _sh_bind_comp_target_types
+from toolchain.ir.core_stmt_text_semantics import _sh_collect_indented_block
+from toolchain.ir.core_stmt_text_semantics import _sh_find_top_char
+from toolchain.ir.core_stmt_text_semantics import _sh_has_explicit_line_continuation
+from toolchain.ir.core_stmt_text_semantics import _sh_infer_item_type
+from toolchain.ir.core_stmt_text_semantics import _sh_merge_logical_lines
+from toolchain.ir.core_stmt_text_semantics import _sh_parse_class_header
+from toolchain.ir.core_stmt_text_semantics import _sh_parse_class_header_base_list
+from toolchain.ir.core_stmt_text_semantics import _sh_parse_except_clause
+from toolchain.ir.core_stmt_text_semantics import _sh_raise_if_trailing_stmt_terminator
+from toolchain.ir.core_stmt_text_semantics import _sh_scan_logical_line_state
+from toolchain.ir.core_stmt_text_semantics import _sh_split_def_header_and_inline_stmt
+from toolchain.ir.core_stmt_text_semantics import _sh_split_top_commas
+from toolchain.ir.core_stmt_text_semantics import _sh_split_top_plus
+from toolchain.ir.core_stmt_text_semantics import _sh_split_top_level_assign
+from toolchain.ir.core_stmt_text_semantics import _sh_split_top_level_colon
+from toolchain.ir.core_stmt_text_semantics import _sh_split_top_level_from
+from toolchain.ir.core_stmt_text_semantics import _sh_split_top_level_in
+from toolchain.ir.core_stmt_text_semantics import _sh_strip_inline_comment
 from toolchain.ir.core_text_semantics import _sh_is_dotted_identifier
 from toolchain.ir.core_text_semantics import _sh_is_identifier
 from toolchain.ir.core_text_semantics import _sh_parse_dataclass_decorator_options
@@ -2226,250 +2245,6 @@ def _sh_collect_indented_block(
     return out, j
 
 
-def _sh_split_top_level_assign(text: str) -> tuple[str, str] | None:
-    """トップレベルの `=` を 1 つだけ持つ代入式を分割する。"""
-    depth = 0
-    in_str = ""
-    in_str_len = 0
-    esc = False
-    skip = 0
-    for i, ch in enumerate(text):
-        if skip > 0:
-            skip -= 1
-            continue
-        if in_str != "":
-            if esc:
-                esc = False
-            elif ch == "\\":
-                esc = True
-            elif ch == in_str:
-                if in_str_len == 3 and i + 2 < len(text) and text[i : i + 3] == (in_str + in_str + in_str):
-                    skip = 2
-                else:
-                    in_str = ""
-                    in_str_len = 0
-            continue
-        if i + 2 < len(text) and text[i : i + 3] in {"'''", '"""'}:
-            in_str = text[i]
-            in_str_len = 3
-            skip = 2
-            continue
-        if ch in {"'", '"'}:
-            in_str = ch
-            in_str_len = 1
-            continue
-        if ch == "#":
-            break
-        if ch in {"(", "[", "{"}:
-            depth += 1
-            continue
-        if ch in {")", "]", "}"}:
-            depth -= 1
-            continue
-        if ch == "=" and depth == 0:
-            prev = text[i - 1] if i - 1 >= 0 else ""
-            nxt = text[i + 1] if i + 1 < len(text) else ""
-            if prev in {"!", "<", ">", "="} or nxt == "=":
-                continue
-            lhs = text[:i].strip()
-            rhs = text[i + 1 :].strip()
-            if lhs != "" and rhs != "":
-                return lhs, rhs
-            return None
-    return None
-
-
-def _sh_strip_inline_comment(text: str) -> str:
-    """文字列リテラル外の末尾コメントを除去する。"""
-    in_str: str | None = None
-    esc = False
-    for i, ch in enumerate(text):
-        if in_str is not None:
-            if esc:
-                esc = False
-            elif ch == "\\":
-                esc = True
-            elif ch == in_str:
-                in_str = None
-            continue
-        if ch in {"'", '"'}:
-            in_str = ch
-            continue
-        if ch == "#":
-            return text[:i].rstrip()
-    return text
-
-
-def _sh_raise_if_trailing_stmt_terminator(text: str, *, line_no: int, line_text: str) -> None:
-    """文末 `;` を検出したらエラーにする。"""
-    out = text.rstrip()
-    if out.endswith(";"):
-        raise _make_east_build_error(
-            kind="input_invalid",
-            message="self_hosted parser does not accept statement terminator ';'",
-            source_span=_sh_span(line_no, 0, len(line_text)),
-            hint="Remove trailing ';' from the statement.",
-        )
-
-
-def _sh_split_top_level_from(text: str) -> tuple[str, str] | None:
-    """トップレベルの `for ... in ...` を target/iter に分解する。"""
-    depth = 0
-    in_str: str | None = None
-    esc = False
-    for i, ch in enumerate(text):
-        if in_str is not None:
-            if esc:
-                esc = False
-            elif ch == "\\":
-                esc = True
-            elif ch == in_str:
-                in_str = None
-            continue
-        if ch in {"'", '"'}:
-            in_str = ch
-            continue
-        if ch in {"(", "[", "{"}:
-            depth += 1
-            continue
-        if ch in {")", "]", "}"}:
-            depth -= 1
-            continue
-        if depth == 0 and text[i:].startswith(" from "):
-            lhs = text[:i].strip()
-            rhs = text[i + 6 :].strip()
-            if lhs != "" and rhs != "":
-                return lhs, rhs
-            return None
-    return None
-
-
-def _sh_split_top_level_in(text: str) -> tuple[str, str] | None:
-    """トップレベルの `target in iter` を target/iter に分割する。"""
-    depth = 0
-    in_str: str | None = None
-    esc = False
-    for i, ch in enumerate(text):
-        if in_str is not None:
-            if esc:
-                esc = False
-            elif ch == "\\":
-                esc = True
-            elif ch == in_str:
-                in_str = None
-            continue
-        if ch in {"'", '"'}:
-            in_str = ch
-            continue
-        if ch in {"(", "[", "{"}:
-            depth += 1
-            continue
-        if ch in {")", "]", "}"}:
-            depth -= 1
-            continue
-        if depth == 0 and text[i:].startswith(" in "):
-            lhs = text[:i].strip()
-            rhs = text[i + 4 :].strip()
-            if lhs != "" and rhs != "":
-                return lhs, rhs
-            return None
-    return None
-
-
-def _sh_split_top_level_colon(text: str) -> tuple[str, str] | None:
-    """トップレベルの `head: tail` を 1 箇所分割する。"""
-    depth = 0
-    in_str: str | None = None
-    esc = False
-    for i, ch in enumerate(text):
-        if in_str is not None:
-            if esc:
-                esc = False
-                continue
-            if ch == "\\":
-                esc = True
-                continue
-            if ch == in_str:
-                in_str = None
-            continue
-        if ch in {"'", '"'}:
-            in_str = ch
-            continue
-        if ch in {"(", "[", "{"}:
-            depth += 1
-            continue
-        if ch in {")", "]", "}"}:
-            depth -= 1
-            continue
-        if ch == ":" and depth == 0:
-            lhs = text[:i].strip()
-            rhs = text[i + 1 :].strip()
-            if lhs != "" and rhs != "":
-                return lhs, rhs
-            return None
-    return None
-
-def _sh_parse_except_clause(header_text: str) -> tuple[str, str | None] | None:
-    """`except <Type> [as <name>]:` を手書きパースする。"""
-    raw = header_text.strip()
-    if not raw.startswith("except") or not raw.endswith(":"):
-        return None
-    inner = raw[len("except") : -1].strip()
-    if inner == "":
-        return "Exception", None
-    as_split = _sh_split_top_level_as(inner)
-    if as_split is None:
-        return inner, None
-    ex_type_txt, ex_name_txt = as_split
-    if ex_type_txt.strip() == "":
-        return None
-    if not _sh_is_identifier(ex_name_txt.strip()):
-        return None
-    return ex_type_txt.strip(), ex_name_txt.strip()
-
-
-def _sh_parse_class_header_base_list(ln: str) -> tuple[str, list[str]] | None:
-    """`class Name(...):` から class 名と基底リスト（0..n）を抽出する。"""
-    s = ln.strip()
-    if not s.startswith("class ") or not s.endswith(":"):
-        return None
-    head = s[len("class ") : -1].strip()
-    if head == "":
-        return None
-    lp = head.find("(")
-    if lp < 0:
-        if not _sh_is_identifier(head):
-            return None
-        return head, []
-    rp = head.rfind(")")
-    if rp < 0 or rp < lp:
-        return None
-    if head[rp + 1 :].strip() != "":
-        return None
-    cls_name = head[:lp].strip()
-    if not _sh_is_identifier(cls_name):
-        return None
-    base_expr = head[lp + 1 : rp].strip()
-    bases = _sh_split_top_commas(base_expr)
-    return cls_name, bases
-
-
-def _sh_parse_class_header(ln: str) -> tuple[str, str] | None:
-    """`class Name:` / `class Name(Base):` を簡易解析する。"""
-    parsed = _sh_parse_class_header_base_list(ln)
-    if parsed is None:
-        return None
-    cls_name, bases = parsed
-    if len(bases) == 0:
-        return cls_name, ""
-    if len(bases) != 1:
-        return None
-    base_name = bases[0]
-    if not _sh_is_identifier(base_name):
-        return None
-    return cls_name, base_name
-
-
 def _sh_parse_if_tail(
     *,
     start_idx: int,
@@ -2488,7 +2263,13 @@ def _sh_parse_if_tail(
         if t_indent != parent_indent:
             return [], idx
         t_s = _sh_strip_inline_comment(t_ln.strip())
-        _sh_raise_if_trailing_stmt_terminator(t_s, line_no=t_no, line_text=t_ln)
+        _sh_raise_if_trailing_stmt_terminator(
+            t_s,
+            line_no=t_no,
+            line_text=t_ln,
+            make_east_build_error=_make_east_build_error,
+            make_span=_sh_span,
+        )
         if t_s == "":
             idx += 1
             continue
@@ -6117,7 +5898,13 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
         indent = len(ln_txt) - len(ln_txt.lstrip(" "))
         raw_s = ln_txt.strip()
         s = _sh_strip_inline_comment(raw_s)
-        _sh_raise_if_trailing_stmt_terminator(s, line_no=ln_no, line_text=ln_txt)
+        _sh_raise_if_trailing_stmt_terminator(
+            s,
+            line_no=ln_no,
+            line_text=ln_txt,
+            make_east_build_error=_make_east_build_error,
+            make_span=_sh_span,
+        )
 
         if raw_s == "":
             pending_blank_count += 1
@@ -7155,7 +6942,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 pre_left, pre_right = asg_pre
                 _sh_register_type_alias(type_aliases, pre_left, pre_right)
                 continue
-        cls_hdr_info = _sh_parse_class_header_base_list(s)
+        cls_hdr_info = _sh_parse_class_header_base_list(s, split_top_commas=_sh_split_top_commas)
         if cls_hdr_info is not None:
             cls_name_info, bases_info = cls_hdr_info
             if len(bases_info) > 1:
@@ -7165,7 +6952,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     source_span=_sh_span(ln_no, 0, len(ln)),
                     hint="Use single inheritance (`class Child(Base):`) or composition.",
                 )
-        cls_hdr = _sh_parse_class_header(s)
+        cls_hdr = _sh_parse_class_header(s, split_top_commas=_sh_split_top_commas)
         if cls_hdr is not None:
             cur_cls_name, cur_base = cls_hdr
             cur_cls = cur_cls_name
@@ -7230,7 +7017,13 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         logical_end = int(logical_end_pair[0])
         raw_s = ln.strip()
         s = _sh_strip_inline_comment(raw_s)
-        _sh_raise_if_trailing_stmt_terminator(s, line_no=i, line_text=ln)
+        _sh_raise_if_trailing_stmt_terminator(
+            s,
+            line_no=i,
+            line_text=ln,
+            make_east_build_error=_make_east_build_error,
+            make_span=_sh_span,
+        )
         if s == "" or s.startswith("#"):
             i += 1
             continue
@@ -7648,7 +7441,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 )
             i = logical_end + 1
             continue
-        cls_hdr_info = _sh_parse_class_header_base_list(s)
+        cls_hdr_info = _sh_parse_class_header_base_list(s, split_top_commas=_sh_split_top_commas)
         if cls_hdr_info is not None:
             cls_name_info, bases_info = cls_hdr_info
             if len(bases_info) > 1:
@@ -7658,7 +7451,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     source_span=_sh_span(i, 0, len(ln)),
                     hint="Use single inheritance (`class Child(Base):`) or composition.",
                 )
-        cls_hdr = _sh_parse_class_header(s)
+        cls_hdr = _sh_parse_class_header(s, split_top_commas=_sh_split_top_commas)
         if cls_hdr is not None:
             class_decorators = list(pending_top_level_decorators)
             pending_top_level_decorators = []
