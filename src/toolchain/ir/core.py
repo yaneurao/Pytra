@@ -5801,18 +5801,29 @@ class _ShExprParser:
 
     def _parse_attr_suffix(self, *, owner_expr: dict[str, Any]) -> dict[str, Any]:
         """Attribute suffix の token 消費を parser helper へ寄せる。"""
+        attr_name, source_span, repr_text = self._resolve_attr_suffix_state(
+            owner_expr=owner_expr,
+        )
+        return self._annotate_attr_expr(
+            owner_expr=owner_expr,
+            attr_name=attr_name,
+            source_span=source_span,
+            repr_text=repr_text,
+        )
+
+    def _resolve_attr_suffix_state(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+    ) -> tuple[str, dict[str, int], str]:
+        """Attribute suffix の token/state resolve を helper へ寄せる。"""
         self._eat(".")
         name_tok = self._eat("NAME")
         source_span, repr_text = self._resolve_postfix_span_repr(
             owner_expr=owner_expr,
             end_tok=name_tok,
         )
-        return self._annotate_attr_expr(
-            owner_expr=owner_expr,
-            attr_name=str(name_tok["v"]),
-            source_span=source_span,
-            repr_text=repr_text,
-        )
+        return str(name_tok["v"]), source_span, repr_text
 
     def _resolve_attr_expr_annotation(
         self,
