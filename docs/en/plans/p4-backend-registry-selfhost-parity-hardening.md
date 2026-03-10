@@ -1,6 +1,6 @@
 # P4: Canonicalize Backend Registry Metadata and Strengthen Selfhost Parity Gates
 
-Last updated: 2026-03-09
+Last updated: 2026-03-11
 
 Related TODO:
 - `ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01` in `docs/ja/todo/index.md`
@@ -128,3 +128,5 @@ Decision log:
 - 2026-03-11: `P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-02` fixed the representative gate inventory to four lanes: `build_selfhost.py` as the C++ stage1 build gate, `build_selfhost_stage2.py` plus `check_selfhost_stage2_cpp_diff.py` as the C++ stage2/self-diff gate, `verify_selfhost_end_to_end.py` as the C++ direct-route stdout-parity gate, and `check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` / `check_multilang_selfhost_suite.py` as the non-C++ parity-report gate.
 - 2026-03-11: Blind spots were classified into four groups: `build_selfhost.py` / `build_selfhost_stage2.py` still rely on raw exit codes and fallback warnings instead of structured categories; `verify_selfhost_end_to_end.py` is biased toward stdout parity on a small fixed case list and lacks artifact-diff and failure-taxonomy output; `check_selfhost_cpp_diff.py` and direct-route lanes still externalize expected blocks through modes such as `allow-not-implemented`; and the multilang suite already has categories like `preview_only` / `toolchain_missing` / `self_retranspile_fail`, but its summary vocabulary is not aligned with the C++ lane yet.
 - 2026-03-11: Future parity reports should use `pass`, `known_block`, `toolchain_missing`, and `regression` as top-level categories, while preserving detail categories such as `preview_only`, `not_implemented`, `unsupported_by_design`, `self_retranspile_fail`, `stage2_compile_fail`, `sample_transpile_fail`, and `direct_parity_fail`. Intentional blocks normalize to `known_block`; failures on previously passing representative lanes, unexpected fallback, artifact/stdout diffs, and missing outputs are treated as `regression`.
+- 2026-03-11: As the first `P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-01` slice, `toolchain/compiler/backend_registry_metadata.py` was added to hold shared backend target order, `target_lang` / `extension` / `runtime_mode` / `program_writer_kind`, and the C++ `default_options` / `option_schema` rows.
+- 2026-03-11: Host `_load_*_spec()` and static `_BACKEND_SPECS` now derive backend spec rows through `build_backend_spec_row(...)`. This removes duplicated metadata tables, but runtime-copy function bodies and emit/runtime callable wiring are still separate host/static implementations, so S2-01 remains open and those seams stay in scope for S3-01 sharing.

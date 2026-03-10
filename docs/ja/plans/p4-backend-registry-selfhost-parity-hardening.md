@@ -1,6 +1,6 @@
 # P4: backend_registry の正本化と selfhost parity gate の強化
 
-最終更新: 2026-03-09
+最終更新: 2026-03-11
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01`
@@ -128,3 +128,5 @@
 - 2026-03-11: `P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-02` では representative gate を 4 系統に固定した。`build_selfhost.py` は C++ stage1 build gate、`build_selfhost_stage2.py` と `check_selfhost_stage2_cpp_diff.py` は C++ stage2/self-diff gate、`verify_selfhost_end_to_end.py` は C++ direct-route stdout parity gate、`check_multilang_selfhost_stage1.py` / `check_multilang_selfhost_multistage.py` / `check_multilang_selfhost_suite.py` は non-C++ parity report gate と扱う。
 - 2026-03-11: blind spot も 4 系統に分類した。`build_selfhost.py` / `build_selfhost_stage2.py` は raw exit code と fallback warning に依存して structured category を返さないこと、`verify_selfhost_end_to_end.py` は小さい固定ケースの stdout parity に偏り artifact diff と failure taxonomy を持たないこと、`check_selfhost_cpp_diff.py` と direct-route lane が `allow-not-implemented` のような mode で expected block を外部化していること、multilang suite は `preview_only` / `toolchain_missing` / `self_retranspile_fail` などの category を持つ一方で C++ lane と summary vocabulary が揃っていないことである。
 - 2026-03-11: 以後の parity report は top-level で `pass` / `known_block` / `toolchain_missing` / `regression` を使い、detail category として `preview_only` / `not_implemented` / `unsupported_by_design` / `self_retranspile_fail` / `stage2_compile_fail` / `sample_transpile_fail` / `direct_parity_fail` を保持する方針にした。意図的 block は `known_block` に正規化し、以前に pass していた representative lane の失敗、unexpected fallback、artifact/stdout diff、missing output は `regression` と扱う。
+- 2026-03-11: `P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-01` の最初の slice として `toolchain/compiler/backend_registry_metadata.py` を追加し、backend target order、`target_lang` / `extension` / `runtime_mode` / `program_writer_kind`、および C++ `default_options` / `option_schema` を shared metadata row に集約した。
+- 2026-03-11: host 側の `_load_*_spec()` と static 側の `_BACKEND_SPECS` は `build_backend_spec_row(...)` 経由で metadata row を参照する形へ寄せた。これにより backend spec row の table duplication は縮退したが、runtime copy function body と emit/runtime callable wiring 自体はまだ host/static で別実装なので、S2-01 は継続しつつ S3-01 の shared 化対象として残す。

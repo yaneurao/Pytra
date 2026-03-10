@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 from pytra.std.pathlib import Path
+from toolchain.compiler.backend_registry_metadata import backend_target_order
+from toolchain.compiler.backend_registry_metadata import build_backend_spec_row
 from toolchain.compiler.typed_boundary import LayerOptionsCarrier
 from toolchain.compiler.typed_boundary import ModuleArtifactCarrier
 from toolchain.compiler.typed_boundary import ProgramArtifactCarrier
@@ -253,139 +255,27 @@ BackendSpec = dict[str, Any]
 
 
 _BACKEND_SPECS: dict[str, BackendSpec] = {
-    "cpp": {
-        "target_lang": "cpp",
-        "extension": ".cpp",
-        "lower": _identity_ir,
-        "optimizer": _identity_ir,
-        "emit": _emit_cpp,
-        "program_writer": write_cpp_program,
-        "runtime_hook": _runtime_none,
-        "default_options": {
-            "lower": {},
-            "optimizer": {},
-            "emitter": {
-                "negative_index_mode": "const_only",
-                "bounds_check_mode": "off",
-                "floor_div_mode": "native",
-                "mod_mode": "native",
-            },
-        },
-        "option_schema": {
-            "lower": {},
-            "optimizer": {},
-            "emitter": {
-                "negative_index_mode": {"type": "str", "choices": ["always", "const_only", "off"]},
-                "bounds_check_mode": {"type": "str", "choices": ["off", "always", "debug"]},
-                "floor_div_mode": {"type": "str", "choices": ["native", "python"]},
-                "mod_mode": {"type": "str", "choices": ["native", "python"]},
-            },
-        },
-    },
-    "rs": {
-        "target_lang": "rs",
-        "extension": ".rs",
-        "lower": lower_east3_to_rs_ir,
-        "optimizer": optimize_rs_ir,
-        "emit": _emit_rs,
-        "runtime_hook": _runtime_rs,
-    },
-    "cs": {
-        "target_lang": "cs",
-        "extension": ".cs",
-        "lower": lower_east3_to_cs_ir,
-        "optimizer": optimize_cs_ir,
-        "emit": _emit_cs,
-        "runtime_hook": _runtime_none,
-    },
-    "js": {
-        "target_lang": "js",
-        "extension": ".js",
-        "lower": lower_east3_to_js_ir,
-        "optimizer": optimize_js_ir,
-        "emit": _emit_js,
-        "runtime_hook": _runtime_js_shims,
-    },
-    "ts": {
-        "target_lang": "ts",
-        "extension": ".ts",
-        "lower": lower_east3_to_ts_ir,
-        "optimizer": optimize_ts_ir,
-        "emit": _emit_ts,
-        "runtime_hook": _runtime_js_shims,
-    },
-    "go": {
-        "target_lang": "go",
-        "extension": ".go",
-        "lower": lower_east3_to_go_ir,
-        "optimizer": optimize_go_ir,
-        "emit": _emit_go,
-        "runtime_hook": _runtime_go,
-    },
-    "java": {
-        "target_lang": "java",
-        "extension": ".java",
-        "lower": lower_east3_to_java_ir,
-        "optimizer": optimize_java_ir,
-        "emit": _emit_java,
-        "runtime_hook": _runtime_java,
-    },
-    "kotlin": {
-        "target_lang": "kotlin",
-        "extension": ".kt",
-        "lower": lower_east3_to_kotlin_ir,
-        "optimizer": optimize_kotlin_ir,
-        "emit": _emit_kotlin,
-        "runtime_hook": _runtime_kotlin,
-    },
-    "swift": {
-        "target_lang": "swift",
-        "extension": ".swift",
-        "lower": lower_east3_to_swift_ir,
-        "optimizer": optimize_swift_ir,
-        "emit": _emit_swift,
-        "runtime_hook": _runtime_swift,
-    },
-    "ruby": {
-        "target_lang": "ruby",
-        "extension": ".rb",
-        "lower": lower_east3_to_ruby_ir,
-        "optimizer": optimize_ruby_ir,
-        "emit": _emit_ruby,
-        "runtime_hook": _runtime_ruby,
-    },
-    "lua": {
-        "target_lang": "lua",
-        "extension": ".lua",
-        "lower": lower_east3_to_lua_ir,
-        "optimizer": optimize_lua_ir,
-        "emit": _emit_lua,
-        "runtime_hook": _runtime_lua,
-    },
-    "scala": {
-        "target_lang": "scala",
-        "extension": ".scala",
-        "lower": lower_east3_to_scala_ir,
-        "optimizer": optimize_scala_ir,
-        "emit": _emit_scala,
-        "runtime_hook": _runtime_scala,
-    },
-    "php": {
-        "target_lang": "php",
-        "extension": ".php",
-        "lower": lower_east3_to_php_ir,
-        "optimizer": optimize_php_ir,
-        "emit": _emit_php,
-        "runtime_hook": _copy_php_runtime,
-    },
-    "nim": {
-        "target_lang": "nim",
-        "extension": ".nim",
-        "lower": _identity_ir,
-        "optimizer": _identity_ir,
-        "emit": _emit_nim,
-        "runtime_hook": _runtime_nim,
-    },
+    "cpp": build_backend_spec_row(
+        "cpp",
+        lower=_identity_ir,
+        optimizer=_identity_ir,
+        emit=_emit_cpp,
+        runtime_hook=_runtime_none,
+        program_writer=write_cpp_program,
+    ),
+    "rs": build_backend_spec_row("rs", lower=lower_east3_to_rs_ir, optimizer=optimize_rs_ir, emit=_emit_rs, runtime_hook=_runtime_rs),
+    "cs": build_backend_spec_row("cs", lower=lower_east3_to_cs_ir, optimizer=optimize_cs_ir, emit=_emit_cs, runtime_hook=_runtime_none),
+    "js": build_backend_spec_row("js", lower=lower_east3_to_js_ir, optimizer=optimize_js_ir, emit=_emit_js, runtime_hook=_runtime_js_shims),
+    "ts": build_backend_spec_row("ts", lower=lower_east3_to_ts_ir, optimizer=optimize_ts_ir, emit=_emit_ts, runtime_hook=_runtime_js_shims),
+    "go": build_backend_spec_row("go", lower=lower_east3_to_go_ir, optimizer=optimize_go_ir, emit=_emit_go, runtime_hook=_runtime_go),
+    "java": build_backend_spec_row("java", lower=lower_east3_to_java_ir, optimizer=optimize_java_ir, emit=_emit_java, runtime_hook=_runtime_java),
+    "kotlin": build_backend_spec_row("kotlin", lower=lower_east3_to_kotlin_ir, optimizer=optimize_kotlin_ir, emit=_emit_kotlin, runtime_hook=_runtime_kotlin),
+    "swift": build_backend_spec_row("swift", lower=lower_east3_to_swift_ir, optimizer=optimize_swift_ir, emit=_emit_swift, runtime_hook=_runtime_swift),
+    "ruby": build_backend_spec_row("ruby", lower=lower_east3_to_ruby_ir, optimizer=optimize_ruby_ir, emit=_emit_ruby, runtime_hook=_runtime_ruby),
+    "lua": build_backend_spec_row("lua", lower=lower_east3_to_lua_ir, optimizer=optimize_lua_ir, emit=_emit_lua, runtime_hook=_runtime_lua),
+    "scala": build_backend_spec_row("scala", lower=lower_east3_to_scala_ir, optimizer=optimize_scala_ir, emit=_emit_scala, runtime_hook=_runtime_scala),
+    "php": build_backend_spec_row("php", lower=lower_east3_to_php_ir, optimizer=optimize_php_ir, emit=_emit_php, runtime_hook=_copy_php_runtime),
+    "nim": build_backend_spec_row("nim", lower=_identity_ir, optimizer=_identity_ir, emit=_emit_nim, runtime_hook=_runtime_nim),
 }
 
 
@@ -418,7 +308,7 @@ _normalize_backend_specs()
 
 
 def list_backend_targets() -> list[str]:
-    return list(_BACKEND_SPECS.keys())
+    return list(backend_target_order())
 
 
 def get_backend_spec_typed(target: str) -> ResolvedBackendSpec:
