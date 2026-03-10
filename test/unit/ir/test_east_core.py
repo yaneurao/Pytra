@@ -710,7 +710,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_attr_suffix_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         span_helper_text = text.split("def _resolve_postfix_span_repr", 1)[1].split(
-            "def _parse_call_suffix",
+            "def _guard_named_call_args",
             1,
         )[0]
         dot_text = text.split("def _consume_attr_suffix_dot_token", 1)[1].split(
