@@ -6156,11 +6156,23 @@ class _ShExprParser:
     ) -> tuple[str, dict[str, int], str]:
         """Attribute suffix の token/state resolve を helper へ寄せる。"""
         name_tok = self._resolve_attr_suffix_name_token()
-        source_span, repr_text = self._resolve_postfix_span_repr(
+        source_span, repr_text = self._resolve_attr_suffix_span_repr(
             owner_expr=owner_expr,
             end_tok=name_tok,
         )
         return str(name_tok["v"]), source_span, repr_text
+
+    def _resolve_attr_suffix_span_repr(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        end_tok: dict[str, Any],
+    ) -> tuple[dict[str, int], str]:
+        """Attribute suffix の postfix span/repr resolve を helper へ寄せる。"""
+        return self._resolve_postfix_span_repr(
+            owner_expr=owner_expr,
+            end_tok=end_tok,
+        )
 
     def _resolve_attr_expr_annotation(
         self,
