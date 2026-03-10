@@ -5475,7 +5475,20 @@ class _ShExprParser:
 
     def _resolve_call_suffix_close_token_state(self) -> dict[str, Any]:
         """call suffix の close-token state resolve を helper へ寄せる。"""
+        rtok = self._resolve_call_suffix_close_token_token_state()
+        return self._apply_call_suffix_close_token_token_state(rtok=rtok)
+
+    def _resolve_call_suffix_close_token_token_state(self) -> dict[str, Any]:
+        """call suffix の close-token token-state resolve を helper へ寄せる。"""
         return self._consume_call_suffix_close_token()
+
+    def _apply_call_suffix_close_token_token_state(
+        self,
+        *,
+        rtok: dict[str, Any],
+    ) -> dict[str, Any]:
+        """call suffix の close-token token-state apply を helper へ寄せる。"""
+        return rtok
 
     def _apply_call_suffix_close_token_state(
         self,
