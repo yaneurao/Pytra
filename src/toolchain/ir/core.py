@@ -5052,7 +5052,34 @@ class _ShExprParser:
         keyword_entry: dict[str, Any] | None,
     ) -> None:
         """call argument loop の positional/keyword append を helper へ寄せる。"""
-        if keyword_entry is not None:
+        is_keyword_entry = self._resolve_call_arg_loop_entry_kind(keyword_entry=keyword_entry)
+        return self._apply_call_arg_loop_entry_kind(
+            args=args,
+            keywords=keywords,
+            arg_entry=arg_entry,
+            keyword_entry=keyword_entry,
+            is_keyword_entry=is_keyword_entry,
+        )
+
+    def _resolve_call_arg_loop_entry_kind(
+        self,
+        *,
+        keyword_entry: dict[str, Any] | None,
+    ) -> bool:
+        """call argument loop entry の dispatch kind を helper へ寄せる。"""
+        return keyword_entry is not None
+
+    def _apply_call_arg_loop_entry_kind(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        arg_entry: dict[str, Any] | None,
+        keyword_entry: dict[str, Any] | None,
+        is_keyword_entry: bool,
+    ) -> None:
+        """call argument loop entry の dispatch apply を helper へ寄せる。"""
+        if is_keyword_entry and keyword_entry is not None:
             return self._apply_keyword_call_arg_loop_entry(
                 keywords=keywords,
                 keyword_entry=keyword_entry,
@@ -5090,7 +5117,30 @@ class _ShExprParser:
         arg_entry: dict[str, Any] | None,
     ) -> None:
         """call argument loop の positional append を helper へ寄せる。"""
-        if arg_entry is not None:
+        has_arg_entry = self._resolve_positional_call_arg_loop_entry_state(arg_entry=arg_entry)
+        return self._apply_positional_call_arg_loop_entry_state(
+            args=args,
+            arg_entry=arg_entry,
+            has_arg_entry=has_arg_entry,
+        )
+
+    def _resolve_positional_call_arg_loop_entry_state(
+        self,
+        *,
+        arg_entry: dict[str, Any] | None,
+    ) -> bool:
+        """call argument loop の positional append state を helper へ寄せる。"""
+        return arg_entry is not None
+
+    def _apply_positional_call_arg_loop_entry_state(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        arg_entry: dict[str, Any] | None,
+        has_arg_entry: bool,
+    ) -> None:
+        """call argument loop の positional append apply を helper へ寄せる。"""
+        if has_arg_entry and arg_entry is not None:
             return self._apply_positional_call_arg_loop_entry_build(
                 args=args,
                 arg_entry=arg_entry,

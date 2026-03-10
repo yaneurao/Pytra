@@ -2307,6 +2307,14 @@ x.bit_length()
             1,
         )[0]
         loop_apply_text = text.split("def _apply_call_arg_entry", 1)[1].split(
+            "def _resolve_call_arg_loop_entry_kind",
+            1,
+        )[0]
+        loop_kind_text = text.split("def _resolve_call_arg_loop_entry_kind", 1)[1].split(
+            "def _apply_call_arg_loop_entry_kind",
+            1,
+        )[0]
+        loop_kind_apply_text = text.split("def _apply_call_arg_loop_entry_kind", 1)[1].split(
             "def _apply_keyword_call_arg_loop_entry",
             1,
         )[0]
@@ -2319,6 +2327,14 @@ x.bit_length()
             1,
         )[0]
         positional_loop_apply_text = text.split("def _apply_positional_call_arg_loop_entry", 1)[1].split(
+            "def _resolve_positional_call_arg_loop_entry_state",
+            1,
+        )[0]
+        positional_loop_state_text = text.split("def _resolve_positional_call_arg_loop_entry_state", 1)[1].split(
+            "def _apply_positional_call_arg_loop_entry_state",
+            1,
+        )[0]
+        positional_loop_state_apply_text = text.split("def _apply_positional_call_arg_loop_entry_state", 1)[1].split(
             "def _apply_positional_call_arg_loop_entry_build",
             1,
         )[0]
@@ -2414,13 +2430,25 @@ x.bit_length()
         self.assertIn("return arg_expr, None", positional_build_text)
         self.assertIn("if save_pos is not None:", positional_save_pos_text)
         self.assertIn("self.pos = save_pos", positional_save_pos_text)
-        self.assertIn("if keyword_entry is not None:", loop_apply_text)
-        self.assertIn("return self._apply_keyword_call_arg_loop_entry(", loop_apply_text)
-        self.assertIn("return self._apply_positional_call_arg_loop_entry(", loop_apply_text)
+        self.assertIn(
+            "is_keyword_entry = self._resolve_call_arg_loop_entry_kind(keyword_entry=keyword_entry)",
+            loop_apply_text,
+        )
+        self.assertIn("return self._apply_call_arg_loop_entry_kind(", loop_apply_text)
+        self.assertIn("return keyword_entry is not None", loop_kind_text)
+        self.assertIn("if is_keyword_entry and keyword_entry is not None:", loop_kind_apply_text)
+        self.assertIn("return self._apply_keyword_call_arg_loop_entry(", loop_kind_apply_text)
+        self.assertIn("return self._apply_positional_call_arg_loop_entry(", loop_kind_apply_text)
         self.assertIn("return self._apply_keyword_call_arg_loop_entry_build(", keyword_loop_apply_text)
         self.assertIn("keywords.append(keyword_entry)", keyword_loop_build_text)
-        self.assertIn("if arg_entry is not None:", positional_loop_apply_text)
-        self.assertIn("return self._apply_positional_call_arg_loop_entry_build(", positional_loop_apply_text)
+        self.assertIn(
+            "has_arg_entry = self._resolve_positional_call_arg_loop_entry_state(arg_entry=arg_entry)",
+            positional_loop_apply_text,
+        )
+        self.assertIn("return self._apply_positional_call_arg_loop_entry_state(", positional_loop_apply_text)
+        self.assertIn("return arg_entry is not None", positional_loop_state_text)
+        self.assertIn("if has_arg_entry and arg_entry is not None:", positional_loop_state_apply_text)
+        self.assertIn("return self._apply_positional_call_arg_loop_entry_build(", positional_loop_state_apply_text)
         self.assertIn("args.append(arg_entry)", positional_loop_build_text)
         self.assertIn("has_comma = self._resolve_call_arg_loop_state()", loop_helper_text)
         self.assertIn("return self._apply_call_arg_loop_state(", loop_helper_text)
@@ -2467,6 +2495,11 @@ x.bit_length()
         self.assertNotIn("keywords.append(keyword_entry)", keyword_loop_apply_text)
         self.assertNotIn("args.append(arg_entry)", helper_text)
         self.assertNotIn("args.append(arg_entry)", positional_loop_apply_text)
+        self.assertNotIn("if arg_entry is not None:", positional_loop_apply_text)
+        self.assertNotIn("args.append(arg_entry)", positional_loop_state_apply_text)
+        self.assertNotIn("if keyword_entry is not None:", loop_apply_text)
+        self.assertNotIn("return self._apply_keyword_call_arg_loop_entry(", loop_apply_text)
+        self.assertNotIn("return self._apply_positional_call_arg_loop_entry(", loop_apply_text)
         self.assertNotIn('if self._cur()["k"] != ",":', helper_text)
         self.assertNotIn('self._eat(",")', helper_text)
         self.assertNotIn('if self._cur()["k"] == ")":', helper_text)
