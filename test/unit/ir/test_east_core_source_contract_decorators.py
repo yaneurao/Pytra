@@ -40,8 +40,9 @@ class EastCoreSourceContractDecoratorsTest(unittest.TestCase):
 
         self.assertIn("if _sh_is_dataclass_decorator(", core_text)
         self.assertIn("if _sh_is_sealed_decorator(decorator_text):", core_text)
-        self.assertIn("if _sh_is_abi_decorator(", core_text)
-        self.assertIn("if _sh_is_template_decorator(", core_text)
+        self.assertIn("_sh_reject_runtime_decl_class_decorators(", core_text)
+        self.assertIn("_sh_reject_runtime_decl_method_decorator(", core_text)
+        self.assertIn("_sh_reject_runtime_decl_nonfunction_decorators(", core_text)
         self.assertIn("parse_decorator_head_and_args=_sh_parse_decorator_head_and_args", core_text)
 
 
