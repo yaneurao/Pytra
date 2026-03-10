@@ -80,6 +80,30 @@ def build_stage2_summary_row(subject: str, status: str, note: str) -> ParitySumm
     return build_summary_row("stage2", subject, detail, note)
 
 
+def build_stage2_diff_summary_row(subject: str, status: str, note: str) -> ParitySummaryRow:
+    if status == "pass":
+        detail = "pass"
+    elif status == "selfhost_not_implemented":
+        detail = "not_implemented"
+    elif status == "bridge_json_unavailable":
+        detail = "blocked"
+    elif status == "known_diff":
+        detail = "known_block"
+    elif status == "artifact_diff":
+        detail = "stage2_diff_fail"
+    elif status == "selfhost_transpile_fail":
+        detail = "stage2_transpile_fail"
+    elif status in {"missing_output", "missing_binary"}:
+        detail = "missing_output"
+    elif status == "host_transpile_fail":
+        detail = "host_transpile_fail"
+    elif status == "east3_contract_fail":
+        detail = "east3_contract_fail"
+    else:
+        detail = "regression"
+    return build_summary_row("stage2_diff", subject, detail, note)
+
+
 def format_summary_line(row: ParitySummaryRow) -> str:
     note = row.note.strip()
     if note == "":

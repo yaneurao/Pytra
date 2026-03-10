@@ -155,7 +155,7 @@ class CheckSelfhostCppDiffNormalizeTest(unittest.TestCase):
             with redirect_stdout(buf):
                 mod._print_cpp_diff_summary([row])
             text = buf.getvalue()
-        self.assertIn("[stage2 diff summary]", text)
+        self.assertIn("[stage2_diff summary]", text)
         self.assertIn("subject=test/fixtures/core/add.py", text)
         self.assertIn("category=regression", text)
         self.assertIn("detail=stage2_diff_fail", text)

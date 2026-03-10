@@ -10,8 +10,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from tools.selfhost_parity_summary import build_summary_row
-from tools.selfhost_parity_summary import format_summary_line
+from tools.selfhost_parity_summary import build_stage2_diff_summary_row
+from tools.selfhost_parity_summary import render_summary_block
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -150,41 +150,13 @@ def _run_east3_contract_tests() -> tuple[bool, str]:
     return True, ""
 
 
-def _cpp_diff_detail_category(kind: str) -> str:
-    if kind == "pass":
-        return "pass"
-    if kind == "selfhost_not_implemented":
-        return "not_implemented"
-    if kind == "bridge_json_unavailable":
-        return "blocked"
-    if kind == "known_diff":
-        return "known_block"
-    if kind == "artifact_diff":
-        return "stage2_diff_fail"
-    if kind == "selfhost_transpile_fail":
-        return "stage2_transpile_fail"
-    if kind == "missing_output":
-        return "missing_output"
-    if kind == "missing_binary":
-        return "missing_output"
-    if kind == "host_transpile_fail":
-        return "host_transpile_fail"
-    if kind == "east3_contract_fail":
-        return "east3_contract_fail"
-    return "regression"
-
-
 def _build_cpp_diff_summary_row(subject: str, kind: str, note: str):
-    return build_summary_row("stage2-diff", subject, _cpp_diff_detail_category(kind), note)
+    return build_stage2_diff_summary_row(subject, kind, note)
 
 
 def _print_cpp_diff_summary(rows: list) -> None:
-    nonpass_rows = [row for row in rows if row.top_level_category != "pass"]
-    if len(nonpass_rows) == 0:
-        return
-    print("[stage2 diff summary]")
-    for row in nonpass_rows:
-        print(format_summary_line(row))
+    for line in render_summary_block("stage2_diff", rows, skip_pass=True):
+        print(line)
 
 
 def main() -> int:
