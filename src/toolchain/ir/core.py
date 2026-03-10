@@ -4944,20 +4944,34 @@ class _ShExprParser:
         callee: dict[str, Any],
         fn_name: str,
         args: list[dict[str, Any]],
+        callee_kind: str,
     ) -> dict[str, Any]:
         """callee kind ごとの call annotation 適用を helper へ寄せる。"""
-        if fn_name != "":
+        if callee_kind == "named":
             return self._annotate_named_call_expr(
                 payload,
                 fn_name=fn_name,
                 args=args,
             )
-        if callee.get("kind") == "Attribute":
+        if callee_kind == "attr":
             return self._annotate_attr_call_expr(
                 payload,
                 callee=callee,
             )
         return payload
+
+    def _resolve_callee_call_annotation_kind(
+        self,
+        *,
+        callee: dict[str, Any],
+        fn_name: str,
+    ) -> str:
+        """callee kind ごとの call annotation 分類を helper へ寄せる。"""
+        if fn_name != "":
+            return "named"
+        if callee.get("kind") == "Attribute":
+            return "attr"
+        return ""
 
     def _annotate_callee_call_expr(
         self,
@@ -4968,11 +4982,16 @@ class _ShExprParser:
         args: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """callee kind ごとの call annotation dispatch を helper へ寄せる。"""
+        callee_kind = self._resolve_callee_call_annotation_kind(
+            callee=callee,
+            fn_name=fn_name,
+        )
         return self._apply_callee_call_annotation(
             payload,
             callee=callee,
             fn_name=fn_name,
             args=args,
+            callee_kind=callee_kind,
         )
 
     def _resolve_call_expr_annotation_state(
@@ -5097,6 +5116,16 @@ class _ShExprParser:
         """named-call dispatch lookup を helper へ寄せる。"""
         return _sh_lookup_named_call_dispatch(fn_name)
 
+    def _resolve_named_call_annotation_state(
+        self,
+        *,
+        fn_name: str,
+    ) -> dict[str, str]:
+        """named-call の dispatch resolve を annotation-state helper へ寄せる。"""
+        return self._resolve_named_call_dispatch(
+            fn_name=fn_name,
+        )
+
     def _annotate_named_call_expr(
         self,
         payload: dict[str, Any],
@@ -5105,7 +5134,7 @@ class _ShExprParser:
         args: list[dict[str, Any]],
     ) -> dict[str, Any]:
         """Name callee の metadata annotation を shared helper へ寄せる。"""
-        call_dispatch = self._resolve_named_call_dispatch(
+        call_dispatch = self._resolve_named_call_annotation_state(
             fn_name=fn_name,
         )
         return self._apply_named_call_dispatch(

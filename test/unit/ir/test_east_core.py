@@ -873,8 +873,12 @@ class EastCoreTest(unittest.TestCase):
 
     def test_core_source_routes_attr_call_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        callee_apply_text = text.split("def _apply_callee_call_annotation", 1)[1].split(
+        callee_resolve_text = text.split("def _resolve_callee_call_annotation_kind", 1)[1].split(
             "def _annotate_callee_call_expr",
+            1,
+        )[0]
+        callee_apply_text = text.split("def _apply_callee_call_annotation", 1)[1].split(
+            "def _resolve_callee_call_annotation_kind",
             1,
         )[0]
         callee_helper_text = text.split("def _annotate_callee_call_expr", 1)[1].split(
@@ -917,8 +921,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn('_sh_annotate_runtime_method_call_expr(', apply_text)
         self.assertIn("owner_expr, owner_t, attr = self._resolve_attr_call_annotation_state(", helper_text)
         self.assertIn("return self._apply_attr_call_expr_annotation(", helper_text)
-        self.assertIn('if callee.get("kind") == "Attribute":', callee_apply_text)
+        self.assertIn('if callee.get("kind") == "Attribute":', callee_resolve_text)
+        self.assertIn('if callee_kind == "attr":', callee_apply_text)
         self.assertIn("return self._annotate_attr_call_expr(", callee_apply_text)
+        self.assertIn("callee_kind = self._resolve_callee_call_annotation_kind(", callee_helper_text)
         self.assertIn("return self._apply_callee_call_annotation(", callee_helper_text)
         self.assertIn("return self._annotate_callee_call_expr(", call_apply_text)
         self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
@@ -929,7 +935,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("return self._resolve_attr_callee(", helper_text)
         self.assertNotIn('_sh_annotate_noncpp_attr_call_expr(', helper_text)
         self.assertNotIn('_sh_annotate_runtime_method_call_expr(', helper_text)
+        self.assertNotIn('if callee.get("kind") == "Attribute":', callee_apply_text)
         self.assertNotIn('if callee.get("kind") == "Attribute":', callee_helper_text)
+        self.assertNotIn('if callee_kind == "attr":', callee_helper_text)
         self.assertNotIn("return self._annotate_callee_call_expr(", call_helper_text)
         self.assertNotIn('attr = str(node.get("attr", ""))', postfix_text)
         self.assertNotIn('owner = node.get("value")', postfix_text)
@@ -1234,6 +1242,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         resolve_named_text = text.split("def _resolve_named_call_dispatch", 1)[1].split(
+            "def _resolve_named_call_annotation_state",
+            1,
+        )[0]
+        state_named_text = text.split("def _resolve_named_call_annotation_state", 1)[1].split(
             "def _annotate_named_call_expr",
             1,
         )[0]
@@ -1268,7 +1280,8 @@ class EastCoreTest(unittest.TestCase):
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn("return _sh_lookup_named_call_dispatch(fn_name)", resolve_named_text)
-        self.assertIn("call_dispatch = self._resolve_named_call_dispatch(", helper_text)
+        self.assertIn("return self._resolve_named_call_dispatch(", state_named_text)
+        self.assertIn("call_dispatch = self._resolve_named_call_annotation_state(", helper_text)
         self.assertIn("return self._apply_named_call_dispatch(", helper_text)
         self.assertIn("builtin_payload = self._annotate_builtin_named_call_expr(", apply_text)
         self.assertIn("if builtin_payload is not None:", apply_text)
@@ -1276,6 +1289,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("if runtime_payload is not None:", apply_text)
         self.assertIn('if fn_name in {"sum", "zip", "sorted", "min", "max"}:', named_guard_text)
         self.assertNotIn("call_dispatch = _sh_lookup_named_call_dispatch(fn_name)", helper_text)
+        self.assertNotIn("call_dispatch = self._resolve_named_call_dispatch(", helper_text)
         self.assertNotIn('str(call_dispatch.get("builtin_semantic_tag", ""))', helper_text)
         self.assertNotIn('str(call_dispatch.get("stdlib_fn_runtime_call", ""))', helper_text)
         self.assertNotIn('str(call_dispatch.get("stdlib_symbol_runtime_call", ""))', helper_text)
