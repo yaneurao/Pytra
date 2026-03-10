@@ -4,7 +4,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-09
+Last updated: 2026-03-11
 
 ## Operation Policy
 
@@ -15,6 +15,7 @@ Last updated: 2026-03-09
 
 ## Completed Plan Archive
 
+- [2026-03-11 / P2-COMPILER-TYPED-BOUNDARY-01](../plans/archive/20260311-p2-compiler-typed-boundary.md)
 - [2026-03-09 / P1-EAST-TYPEEXPR-01](../plans/archive/20260309-p1-east-typeexpr-strengthening.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-CORE-BOUNDARY-01](../plans/archive/20260309-p0-cpp-pyruntime-core-boundary-realign.md)
 - [2026-03-08 / P2-LINKED-RUNTIME-TEMPLATE-01](../plans/archive/20260308-p2-linked-runtime-helper-template-v1.md)
@@ -47,6 +48,7 @@ Last updated: 2026-03-09
 
 ## Date Links
 
+- [2026-03-11](20260311.md) (1 section)
 - [2026-03-09](20260309.md) (2 sections)
 - [2026-03-08](20260308.md) (8 sections)
 - [2026-03-07](20260307.md) (6 sections)

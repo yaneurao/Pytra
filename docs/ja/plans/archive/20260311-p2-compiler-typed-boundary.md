@@ -1,6 +1,6 @@
 # P2: compiler boundary の typed 化と internal object carrier の後退
 
-最終更新: 2026-03-10
+最終更新: 2026-03-11
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P2-COMPILER-TYPED-BOUNDARY-01`
@@ -83,8 +83,8 @@
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] generated/selfhost residual guard と export seam を再基準化し、`make_object` を `serialization/export seam` 専用まで後退させて `S3-02` を閉じる。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] JSON・extern/hook・未型付け入力の dynamic carrier を compiler typed model から切り離し、`JsonValue` / explicit adapter に隔離する。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] `make_object` / `py_to` / `obj_to_*` の残存 usage に分類ラベルを与え、未分類・再流入を弾く guard を追加する。
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] selfhost build / diff / prepare / bridge 回帰を更新し、typed boundary 変更後の非退行を固定する。
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-02] docs / TODO / archive を更新し、残る `make_object` が「user boundary 専用」か「明示 adapter 専用」かを記録して閉じる。
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] selfhost build / diff / prepare / bridge 回帰を更新し、typed boundary 変更後の非退行を固定する。
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-02] docs / TODO / archive を更新し、残る `make_object` が「user boundary 専用」か「明示 adapter 専用」かを記録して閉じる。
 
 ## `core.py` 分割方針
 
@@ -157,3 +157,5 @@
 - 2026-03-11: `S5-01` の次の束として `test_check_selfhost_stage2_cpp_diff.py` に `main()` regression を追加し、stage2 build failure、`--skip-build` での missing binary、existing stage2 binary に対する build→diff flow を unit test で固定した。stage2 diff lane は helper command だけでなく CLI orchestration まで回帰化された。
 - 2026-03-11: `S5-01` の次の束として `tools/selfhost_transpile.py` に command/env helper を追加し、`.json` passthrough、`.py -> EAST JSON -> selfhost` bridge、`PYTHONPATH` 付与、`--target` 伝播を `test_selfhost_transpile_tool.py` で固定した。bridge driver lane も typed-boundary regression の unit test 対象になった。
 - 2026-03-11: `S5-01` の次の束として `tools/build_selfhost.py` に command helper を追加し、`test_build_selfhost_tool.py` で stage1 transpile command、compile command、runtime source resolve、`main()` の transpile→compile flow を unit test 化した。stage1 build lane も typed-boundary regression として固定した。
+- 2026-03-11: `S5-01` は `build_selfhost.py` / `build_selfhost_stage2.py` / `verify_selfhost_end_to_end.py` / `check_selfhost_cpp_diff.py` / `check_selfhost_stage2_cpp_diff.py` / `selfhost_transpile.py` の command/helper/main regression と、generated selfhost core の residual bucket invariant を unit test で固定したことで完了とした。
+- 2026-03-11: `S5-02` では docs/TODO/archive を更新し、compiler/toolchain tracked source に残る object bridge は native `transpile_cli.cpp` の `legacy_migration_adapter` 3 箇所だけ、generated selfhost core の `make_object` residual は `serialization_export_seam` と explicit parser residual guard だけであることを end state として固定した。user-facing `Any/object` 境界は P2 の非対象として runtime 側に残る。
