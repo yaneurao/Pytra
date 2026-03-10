@@ -77,7 +77,7 @@ Out of scope:
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Move selfhost parser / EAST builder node construction onto typed constructors / builder helpers and gradually retire direct `dict<str, object>{{...}}` assembly.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Retreat remaining `make_object` usage in generated compiler / selfhost runtime down to serialization/export seams only.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-A] Redefine the `S3-02` completion criteria and compress TODO/plan progress notes to cluster-level summaries.
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] Split the postfix/suffix parser cluster out of `core.py` and move `call` / `attr` / `subscript` parsing into dedicated modules.
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] Split the postfix/suffix parser cluster out of `core.py` and move `call` / `attr` / `subscript` parsing into dedicated modules.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] Split the call-annotation cluster out of `core.py` and move `named-call` / `attr-call` / `callee-call` handling into dedicated modules.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] Finish the remaining `call-arg` / `suffix tail` / `subscript tail` helper extraction in bundles of 5-10 clusters.
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Rebaseline generated/selfhost residual guards and export seams, retreat `make_object` to serialization/export seams only, and close `S3-02`.
@@ -127,3 +127,4 @@ Decision log:
 - 2026-03-10: From this point on, `S3-02` proceeds only through `S3-02-B` to `S3-02-E` cluster units. TODO keeps only cluster summaries, and helper-level history is compressed into git history plus minimal decision-log summaries.
 - 2026-03-10: `core.py` splitting is now an explicit deliverable. The first split targets are the `postfix/suffix parser` cluster and the `call annotation` cluster; only after that do the remaining `call-arg` / `suffix tail` / `subscript tail` bundles continue.
 - 2026-03-10: The first `S3-02-B` batch moved the `call-arg` / `call-suffix` parser cluster into `core_expr_call_suffix.py`, leaving `core.py` with mixin import plus postfix-dispatch orchestration. Source guards also switched from per-helper assertions to split-cluster assertions.
+- 2026-03-10: The `attr/subscript suffix` parser cluster also moved into `core_expr_attr_subscript_suffix.py`, so the `call` / `attr` / `subscript` suffix parser family is now split out of `core.py`. `S3-02-B` is considered complete and the next target is the `call annotation` cluster split.
