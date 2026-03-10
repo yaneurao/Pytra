@@ -279,6 +279,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument 1件分の apply も `_ShExprParser._apply_keyword_call_arg_entry()` と `_apply_positional_call_arg_entry()` に分離し、`_apply_call_arg_entry_state()` から keyword/positional の直列分岐を外した。`test_east_core.py` では両 helper 定義、apply helper の call site、旧 inline call-arg apply block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument loop の append も `_ShExprParser._apply_call_arg_entry()` へ寄せ、`_parse_call_args()` から positional/keyword の direct append を外した。`test_east_core.py` では loop apply helper 定義、call site、旧 inline call-arg loop append block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument loop の comma/terminator 制御も `_ShExprParser._advance_call_arg_loop()` へ寄せ、`_parse_call_args()` から `,` / `)` の direct consume を外した。`test_east_core.py` では loop state helper 定義、call site、旧 inline call-arg terminator block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call suffix の token consume も `_ShExprParser._consume_call_suffix_tokens()` へ寄せ、`_resolve_call_suffix_state()` から `"(" + call-args + ")"` の直列処理を外した。`test_east_core.py` では token helper 定義、state helper の call site、旧 inline call-suffix token block の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
