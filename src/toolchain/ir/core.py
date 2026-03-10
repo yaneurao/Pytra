@@ -6173,7 +6173,11 @@ class _ShExprParser:
             owner_expr=owner_expr,
             end_tok=name_tok,
         )
-        return str(name_tok["v"]), source_span, repr_text
+        return self._resolve_attr_suffix_name_value(name_tok=name_tok), source_span, repr_text
+
+    def _resolve_attr_suffix_name_value(self, *, name_tok: dict[str, Any]) -> str:
+        """Attribute suffix の attr 名 value 取得を helper へ寄せる。"""
+        return str(name_tok["v"])
 
     def _resolve_attr_suffix_token_state(self) -> dict[str, Any]:
         """Attribute suffix の token-state resolve を helper へ寄せる。"""
