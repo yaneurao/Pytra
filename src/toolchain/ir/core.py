@@ -5563,6 +5563,52 @@ class _ShExprParser:
             return dispatch_kind, noncpp_symbol_runtime_call, ""
         return "", "", ""
 
+    def _apply_stdlib_function_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        fn_name: str,
+        runtime_call: str,
+        semantic_tag: str,
+    ) -> dict[str, Any]:
+        """stdlib function named-call annotation 適用を helper へ寄せる。"""
+        return _sh_annotate_stdlib_function_call_expr(
+            payload,
+            fn_name=fn_name,
+            runtime_call=runtime_call,
+            semantic_tag=semantic_tag,
+        )
+
+    def _apply_stdlib_symbol_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        fn_name: str,
+        runtime_call: str,
+        semantic_tag: str,
+    ) -> dict[str, Any]:
+        """stdlib symbol named-call annotation 適用を helper へ寄せる。"""
+        return _sh_annotate_stdlib_symbol_call_expr(
+            payload,
+            fn_name=fn_name,
+            runtime_call=runtime_call,
+            semantic_tag=semantic_tag,
+        )
+
+    def _apply_noncpp_symbol_named_call_annotation(
+        self,
+        *,
+        payload: dict[str, Any],
+        fn_name: str,
+        runtime_call: str,
+    ) -> dict[str, Any]:
+        """non-C++ symbol named-call annotation 適用を helper へ寄せる。"""
+        return _sh_annotate_noncpp_symbol_call_expr(
+            payload,
+            fn_name=fn_name,
+            runtime_call=runtime_call,
+        )
+
     def _apply_runtime_named_call_dispatch(
         self,
         *,
@@ -5574,22 +5620,22 @@ class _ShExprParser:
     ) -> dict[str, Any] | None:
         """runtime named-call dispatch の annotation 適用を helper へ寄せる。"""
         if dispatch_kind == "stdlib_function":
-            return _sh_annotate_stdlib_function_call_expr(
-                payload,
+            return self._apply_stdlib_function_named_call_annotation(
+                payload=payload,
                 fn_name=fn_name,
                 runtime_call=runtime_call,
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "stdlib_symbol":
-            return _sh_annotate_stdlib_symbol_call_expr(
-                payload,
+            return self._apply_stdlib_symbol_named_call_annotation(
+                payload=payload,
                 fn_name=fn_name,
                 runtime_call=runtime_call,
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "noncpp_symbol":
-            return _sh_annotate_noncpp_symbol_call_expr(
-                payload,
+            return self._apply_noncpp_symbol_named_call_annotation(
+                payload=payload,
                 fn_name=fn_name,
                 runtime_call=runtime_call,
             )
