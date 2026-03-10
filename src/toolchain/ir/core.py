@@ -5365,6 +5365,12 @@ class _ShExprParser:
         self,
     ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
         """call argument loop 1周分の state resolve を helper へ寄せる。"""
+        return self._resolve_call_arg_loop_entry_state_value()
+
+    def _resolve_call_arg_loop_entry_state_value(
+        self,
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument loop 1周分の state value を helper へ寄せる。"""
         return self._parse_call_arg_entry()
 
     def _apply_call_arg_loop_entry_state(

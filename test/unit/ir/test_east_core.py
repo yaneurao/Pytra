@@ -2590,6 +2590,12 @@ x.bit_length()
             1,
         )[0]
         nonempty_loop_state_text = text.split("def _resolve_call_arg_loop_entry_state", 1)[1].split(
+            "def _resolve_call_arg_loop_entry_state_value",
+            1,
+        )[0]
+        nonempty_loop_state_value_text = text.split(
+            "def _resolve_call_arg_loop_entry_state_value", 1
+        )[1].split(
             "def _apply_call_arg_loop_entry_state",
             1,
         )[0]
@@ -2741,7 +2747,9 @@ x.bit_length()
             nonempty_loop_text,
         )
         self.assertIn("return self._apply_call_arg_loop_entry_state(", nonempty_loop_text)
-        self.assertIn("return self._parse_call_arg_entry()", nonempty_loop_state_text)
+        self.assertIn("return self._resolve_call_arg_loop_entry_state_value()", nonempty_loop_state_text)
+        self.assertIn("return self._parse_call_arg_entry()", nonempty_loop_state_value_text)
+        self.assertNotIn("return self._parse_call_arg_entry()", nonempty_loop_state_text)
         self.assertIn("self._apply_call_arg_entry(", nonempty_loop_apply_text)
         self.assertIn("return self._advance_call_arg_loop()", nonempty_loop_apply_text)
         self.assertIn("return self._resolve_call_args_empty_kind()", empty_state_text)
