@@ -20,6 +20,8 @@ from toolchain.link.program_call_graph import build_linked_program_call_graph
 from toolchain.link.program_model import LINK_OUTPUT_SCHEMA
 from toolchain.link.program_model import LinkedProgram
 from toolchain.link.program_model import LinkedProgramModule
+from toolchain.link.program_validator import validate_link_output_doc
+from toolchain.link.program_validator import validate_raw_east3_doc
 from toolchain.link.runtime_template_specializer import materialize_runtime_template_specializations
 
 
@@ -341,18 +343,32 @@ def _linked_output_path(module_id: str) -> str:
 def _input_label(module: LinkedProgramModule) -> str:
     if module.artifact_path is not None:
         return str(module.artifact_path)
-    return module.source_path
+    if module.source_path != "":
+        return module.source_path
+    return module.module_id
 
 
 def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimizationResult:
     for module in program.modules:
         doc = module.east_doc if isinstance(module.east_doc, dict) else {}
+        validate_raw_east3_doc(
+            doc,
+            expected_dispatch_mode=program.dispatch_mode,
+            module_id=module.module_id,
+            require_source_spans=False,
+        )
         validate_template_module(doc)
     linked_input_program = program
     template_summary: dict[str, object] = {}
     linked_input_program, template_summary = materialize_runtime_template_specializations(program)
     for module in linked_input_program.modules:
         doc = module.east_doc if isinstance(module.east_doc, dict) else {}
+        validate_raw_east3_doc(
+            doc,
+            expected_dispatch_mode=program.dispatch_mode,
+            module_id=module.module_id,
+            require_source_spans=False,
+        )
         validate_runtime_abi_module(doc)
         validate_template_module(doc)
         validate_runtime_abi_target_support(doc, target=program.target)
@@ -442,6 +458,7 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
         },
         "diagnostics": {"warnings": [], "errors": []},
     }
+    _ = validate_link_output_doc(link_output_doc)
 
     return LinkedProgramOptimizationResult(
         linked_program=LinkedProgram(

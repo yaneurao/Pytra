@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from pytra.std.pathlib import Path
 
@@ -48,6 +49,33 @@ def _fn(name: str, body: list[dict[str, object]], args: list[str] | None = None)
 
 
 class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
+    def test_optimizer_validates_raw_east3_input_modules(self) -> None:
+        program = LinkedProgram(
+            schema="pytra.link_input.v1",
+            manifest_path=None,
+            target="cpp",
+            dispatch_mode="native",
+            entry_modules=("pkg.main",),
+            modules=(
+                LinkedProgramModule(
+                    module_id="pkg.main",
+                    source_path="main.py",
+                    is_entry=True,
+                    east_doc={
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+                        "body": [1],
+                    },
+                ),
+            ),
+            options={},
+        )
+
+        with self.assertRaisesRegex(RuntimeError, r"raw EAST3\.body\[0\] must be an object: pkg\.main"):
+            optimize_linked_program(program)
+
     def test_optimizer_rejects_value_mutation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -654,6 +682,16 @@ class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
             )
 
     def test_optimizer_preserves_helper_module_metadata(self) -> None:
+        owner_doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {
+                "dispatch_mode": "native",
+                "module_id": "app.main",
+            },
+            "body": [],
+        }
         helper_doc = {
             "kind": "Module",
             "east_stage": 3,
@@ -677,6 +715,14 @@ class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
             entry_modules=("app.main",),
             modules=(
                 LinkedProgramModule(
+                    module_id="app.main",
+                    source_path="app/main.py",
+                    is_entry=True,
+                    east_doc=owner_doc,
+                    artifact_path=None,
+                    module_kind="user",
+                ),
+                LinkedProgramModule(
                     module_id="__pytra_helper__.cpp.demo",
                     source_path="",
                     is_entry=False,
@@ -693,16 +739,45 @@ class LinkedProgramGlobalOptimizerTests(unittest.TestCase):
 
         result = optimize_linked_program(program)
 
-        module_entry = result.link_output_doc["modules"][0]
+        helper_entry = next(
+            item for item in result.link_output_doc["modules"] if item.get("module_id") == "__pytra_helper__.cpp.demo"
+        )
+        module_entry = helper_entry
         self.assertEqual(module_entry["module_kind"], "helper")
         self.assertEqual(module_entry["helper_id"], "cpp.demo")
         self.assertEqual(module_entry["owner_module_id"], "app.main")
         self.assertEqual(module_entry["generated_by"], "linked_optimizer")
-        linked_module = result.linked_program.modules[0]
+        linked_module = next(item for item in result.linked_program.modules if item.module_id == "__pytra_helper__.cpp.demo")
         self.assertEqual(linked_module.module_kind, "helper")
         self.assertEqual(linked_module.helper_id, "cpp.demo")
         self.assertEqual(linked_module.owner_module_id, "app.main")
         self.assertEqual(linked_module.generated_by, "linked_optimizer")
+
+    def test_optimizer_validates_link_output_before_return(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            main_py = root / "main.py"
+            program = build_linked_program_from_module_map(
+                main_py,
+                {
+                    str(main_py): {
+                        "kind": "Module",
+                        "east_stage": 3,
+                        "schema_version": 1,
+                        "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+                        "body": [],
+                    }
+                },
+                target="cpp",
+                dispatch_mode="native",
+            )
+
+            with patch("toolchain.link.global_optimizer._build_type_id_table", return_value={"pkg.main.Foo": "oops"}):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    r"link-output\.global\.type_id_table\.pkg\.main\.Foo must be int",
+                ):
+                    optimize_linked_program(program)
 
 
 if __name__ == "__main__":
