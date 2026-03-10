@@ -76,7 +76,7 @@
 
 ## 分解
 
-- [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-01] `backend_registry.py` と `backend_registry_static.py` の重複 surface（backend spec、runtime copy、writer rule、option schema、direct-route behavior）を棚卸しし、intentional difference と drift 候補を分類する。
+- [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-01] `backend_registry.py` と `backend_registry_static.py` の重複 surface（backend spec、runtime copy、writer rule、option schema、direct-route behavior）を棚卸しし、intentional difference と drift 候補を分類した。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-02] `build_selfhost` / `stage2` / `verify_selfhost_end_to_end` / `multilang selfhost` の現状 gate と blind spot を整理し、known block / regression の分類方針を decision log に固定する。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-01] backend capability / runtime copy / option schema / writer metadata の canonical SoT を定義し、host/static の両方がそこから構成される形へ寄せる。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-02] intentional difference を許す境界（例: host-only lazy import、selfhost-only direct route）と、その diagnostics 契約を固定する。
@@ -118,3 +118,6 @@
 - 2026-03-09: ユーザー指示により、backend registry の重複と selfhost parity 運用を内部改善タスクとして独立 P4 に切り出した。
 - 2026-03-09: この P4 は backend language feature 追加ではなく、registry の SoT 一本化と selfhost non-regression gate の強化を主眼に置く。
 - 2026-03-09: host lane と selfhost lane の差分を全面禁止するのではなく、intentional difference と drift を区別し、両者を report / guard で管理する方針を固定した。
+- 2026-03-11: `P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-01` の棚卸しとして、intentional difference は host 側の lazy import (`importlib`, `_TARGET_LOADERS`, `_SPEC_CACHE`)、static 側の eager import (`_BACKEND_SPECS`, `_BACKEND_RUNTIME_SPECS`)、および `build_resolved_backend_spec(..., suppress_emit_exceptions=True/False)` に限定して扱うと決めた。
+- 2026-03-11: drift 候補は 4 系統に分類した。`_runtime_*` / `_copy_runtime_file` / `_copy_php_runtime` の runtime copy 実装重複、backend metadata table（`target_lang`, `extension`, `lower/optimizer/emit`, `runtime_hook`, C++ `default_options` / `option_schema`）、emit wrapper 差分（host `_load_*_spec` / `_make_unary_emit` と static `_emit_*`）、default writer 注入（lazy `_load_callable(...)` と direct `write_single_file_program`）である。
+- 2026-03-11: `resolve_layer_options_*`, `lower_ir_*`, `optimize_ir_*`, `emit_module_*`, `emit_source_*`, `get_program_writer_*`, `apply_runtime_hook_*` の execution surface は `typed_boundary` helper でほぼ共有済みであり、P4 の主対象は execute path ではなく backend metadata 構築と runtime/report path の SoT 一本化だと判断した。

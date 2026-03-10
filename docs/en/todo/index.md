@@ -53,7 +53,7 @@ Context: [docs/ja/plans/p3-compiler-contract-hardening.md](../plans/p3-compiler-
 Context: [docs/ja/plans/p4-backend-registry-selfhost-parity-hardening.md](../plans/p4-backend-registry-selfhost-parity-hardening.md)
 
 1. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01] Canonicalize `backend_registry` and strengthen selfhost parity gates.
-2. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-01] Inventory overlapping surfaces between `backend_registry.py` and `backend_registry_static.py` and classify intentional differences versus drift candidates.
+2. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-01] Inventory overlapping surfaces between `backend_registry.py` and `backend_registry_static.py` and classify intentional differences versus drift candidates.
 3. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-02] Inventory current gates and blind spots across `build_selfhost`, `stage2`, `verify_selfhost_end_to_end`, and multi-language selfhost flows, then fix the classification policy for known blocks and regressions in the decision log.
 4. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-01] Define a canonical source of truth for backend capability, runtime copy, option schema, and writer metadata, and move both host and static registries to derive from it.
 5. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-02] Fix the boundary and diagnostics contract for intentional differences such as host-only lazy imports or selfhost-only direct routes.
