@@ -42,5 +42,7 @@
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] decorator/abi/template の負例 7 本と object receiver diagnostics 3 本を `test_east_core_parser_behavior_decorators.py` / `test_east_core_parser_behavior_diagnostics.py` へ切り出し、`test_east_core.py` 先頭の重複 test と stray assert を除去した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_exprs.py` を追加し、comprehension / lambda / fstring / yield / basic parser acceptance の representative 10 本を `test_east_core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_classes.py` を追加し、class storage hint / dataclass / nominal ADT / enum の representative parser behavior 7 本を `test_east_core.py` から切り出した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_runtime.py` を追加し、runtime call / pathlib / json / builtin lowering / iter lowering の representative 12 本を `test_east_core.py` から切り出した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_runtime.py` を追加し、runtime annotation / builtin call / pathlib の representative parser behavior 12 本を `test_east_core.py` から切り出した。
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。
