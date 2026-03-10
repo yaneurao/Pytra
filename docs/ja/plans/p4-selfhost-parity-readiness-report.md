@@ -102,15 +102,17 @@ shared source:
 ## Routine Check Order
 
 1. `python3 tools/check_todo_priority.py`
-2. `python3 tools/build_selfhost.py`
-3. `python3 tools/build_selfhost_stage2.py`
-4. `python3 tools/check_selfhost_cpp_diff.py`
-5. `python3 tools/verify_selfhost_end_to_end.py`
-6. `python3 tools/check_multilang_selfhost_suite.py`
+2. `python3 tools/check_selfhost_contract_reentry_guard.py`
+3. `python3 tools/build_selfhost.py`
+4. `python3 tools/build_selfhost_stage2.py`
+5. `python3 tools/check_selfhost_cpp_diff.py`
+6. `python3 tools/verify_selfhost_end_to_end.py`
+7. `python3 tools/check_multilang_selfhost_suite.py`
 
 補足:
 - `python3 tools/check_transpiler_version_gate.py` は transpiler 変更時に必ず実行する。
 - representative change では `test/unit/selfhost/*.py` と `test/unit/common/test_py2x_entrypoints_contract.py` を先に通す。
+- `python3 tools/check_selfhost_contract_reentry_guard.py` は representative internal change 向けの共通 host/selfhost contract gate で、`run_local_ci.py` にも組み込まれている。
 
 ## Archive Handoff
 
