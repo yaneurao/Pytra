@@ -19,6 +19,31 @@ def _run(cmd: list[str]) -> int:
     return cp.returncode
 
 
+def build_check_diff_cmd(
+    selfhost_bin: Path,
+    *,
+    cases: list[str],
+    show_diff: bool,
+    mode: str,
+) -> list[str]:
+    cmd = [
+        "python3",
+        str(CHECK_DIFF),
+        "--selfhost-bin",
+        str(selfhost_bin),
+        "--selfhost-driver",
+        "direct",
+        "--mode",
+        mode,
+    ]
+    if show_diff:
+        cmd.append("--show-diff")
+    if len(cases) > 0:
+        cmd.append("--cases")
+        cmd.extend(cases)
+    return cmd
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="compare outputs: python vs selfhost stage2")
     ap.add_argument("--skip-build", action="store_true", help="skip building stage2 selfhost binary")
@@ -35,22 +60,14 @@ def main() -> int:
         print(f"missing stage2 binary: {STAGE2_BIN}")
         return 2
 
-    cmd = [
-        "python3",
-        str(CHECK_DIFF),
-        "--selfhost-bin",
-        str(STAGE2_BIN),
-        "--selfhost-driver",
-        "direct",
-        "--mode",
-        args.mode,
-    ]
-    if args.show_diff:
-        cmd.append("--show-diff")
-    if len(args.cases) > 0:
-        cmd.append("--cases")
-        cmd.extend(args.cases)
-    return _run(cmd)
+    return _run(
+        build_check_diff_cmd(
+            STAGE2_BIN,
+            cases=list(args.cases),
+            show_diff=bool(args.show_diff),
+            mode=args.mode,
+        )
+    )
 
 
 if __name__ == "__main__":

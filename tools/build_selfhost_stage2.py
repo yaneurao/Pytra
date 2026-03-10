@@ -35,6 +35,32 @@ def _run_capture(cmd: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
 
 
+def build_stage1_transpile_cmd(stage1_bin: Path, stage1_src: Path, stage2_cpp: Path) -> list[str]:
+    return [str(stage1_bin), str(stage1_src), "--target", "cpp", "-o", str(stage2_cpp)]
+
+
+def should_reuse_stage1_cpp(stage1_cp: subprocess.CompletedProcess[str]) -> bool:
+    msg = (stage1_cp.stderr or "") + "\n" + (stage1_cp.stdout or "")
+    return stage1_cp.returncode != 0 and "[not_implemented]" in msg
+
+
+def build_stage2_compile_cmd(stage2_cpp: Path) -> list[str]:
+    return [
+        "g++",
+        "-std=c++20",
+        "-O2",
+        "-Isrc",
+        "-Isrc/runtime/cpp",
+        str(stage2_cpp),
+        *[
+            str(ROOT / rel_path)
+            for rel_path in collect_runtime_cpp_sources([str(stage2_cpp)], ROOT / "src")
+        ],
+        "-o",
+        str(STAGE2_BIN),
+    ]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="build stage2 selfhost transpiler")
     ap.add_argument("--skip-stage1-build", action="store_true", help="skip tools/build_selfhost.py")
@@ -47,10 +73,9 @@ def main() -> int:
     if not STAGE1_SRC.exists():
         raise SystemExit("missing source: src/py2x-selfhost.py")
 
-    stage1_cp = _run_capture([str(STAGE1_BIN), str(STAGE1_SRC), "--target", "cpp", "-o", str(STAGE2_CPP)])
+    stage1_cp = _run_capture(build_stage1_transpile_cmd(STAGE1_BIN, STAGE1_SRC, STAGE2_CPP))
     if stage1_cp.returncode != 0:
-        msg = (stage1_cp.stderr or "") + "\n" + (stage1_cp.stdout or "")
-        if "[not_implemented]" in msg:
+        if should_reuse_stage1_cpp(stage1_cp):
             if not STAGE1_CPP.exists():
                 raise SystemExit("missing fallback source: " + str(STAGE1_CPP))
             STAGE2_CPP.parent.mkdir(parents=True, exist_ok=True)
@@ -59,21 +84,7 @@ def main() -> int:
         else:
             raise SystemExit(stage1_cp.returncode)
 
-    cmd = [
-        "g++",
-        "-std=c++20",
-        "-O2",
-        "-Isrc",
-        "-Isrc/runtime/cpp",
-        str(STAGE2_CPP),
-        *[
-            str(ROOT / rel_path)
-            for rel_path in collect_runtime_cpp_sources([str(STAGE2_CPP)], ROOT / "src")
-        ],
-        "-o",
-        str(STAGE2_BIN),
-    ]
-    _run(cmd)
+    _run(build_stage2_compile_cmd(STAGE2_CPP))
     print(str(STAGE2_BIN))
     return 0
 
