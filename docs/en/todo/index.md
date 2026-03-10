@@ -42,5 +42,7 @@ Last updated: 2026-03-11
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Moved 7 decorator/abi/template negative tests and 3 object-receiver diagnostics into `test_east_core_parser_behavior_decorators.py` / `test_east_core_parser_behavior_diagnostics.py`, removing the duplicate leading test and stray assertions from `test_east_core.py`.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Added `test_east_core_parser_behavior_exprs.py`, then moved 10 representative comprehension / lambda / fstring / yield / basic-parser-acceptance tests out of `test_east_core.py`.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Added `test_east_core_parser_behavior_classes.py`, then moved 7 representative class-storage / dataclass / nominal-ADT / enum parser-behavior tests out of `test_east_core.py`.
+- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Added `test_east_core_parser_behavior_runtime.py`, then moved 12 representative runtime-call / pathlib / json / builtin-lowering / iter-lowering parser-behavior tests out of `test_east_core.py`.
+- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Added `test_east_core_parser_behavior_runtime.py`, then moved 12 representative runtime-annotation / builtin-call / pathlib parser-behavior tests out of `test_east_core.py`.
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) Split `core.py` / `test_east_core.py` by responsibility so compiler-internal improvements can proceed in cluster-sized slices again.
