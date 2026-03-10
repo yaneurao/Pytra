@@ -169,6 +169,27 @@ def _generated_cpp_core_make_object_functions(
     return nonhelper_functions
 
 
+def _generated_cpp_core_make_object_category_map(text: str) -> dict[str, set[str]]:
+    return {
+        "serialization_export_seam": _generated_cpp_core_make_object_functions(
+            text,
+            scope="export_seam",
+        ),
+        "expr_parser_residual": _generated_cpp_core_make_object_functions(
+            text,
+            scope="expr_parser_residual",
+        ),
+        "stmt_parser_residual": _generated_cpp_core_make_object_functions(
+            text,
+            scope="stmt_parser_residual",
+        ),
+        "lookup_residual": _generated_cpp_core_make_object_functions(
+            text,
+            scope="lookup_residual",
+        ),
+    }
+
+
 class PrepareSelfhostSourceTest(unittest.TestCase):
     def test_load_cpp_hooks_patch_function_is_absent(self) -> None:
         mod = _load_prepare_module()
@@ -809,6 +830,39 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
             parser_residual_functions,
         )
         self.assertEqual(export_seam_functions & parser_residual_functions, set())
+
+    def test_generated_cpp_core_make_object_category_map_is_stable(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        self.assertEqual(
+            _generated_cpp_core_make_object_category_map(text),
+            {
+                "serialization_export_seam": {"to_payload"},
+                "expr_parser_residual": {
+                    "_parse_lambda",
+                    "_parse_not",
+                    "_parse_postfix",
+                    "_parse_primary",
+                    "_parse_unary",
+                    "_sh_parse_expr_lowered",
+                },
+                "stmt_parser_residual": {
+                    "_sh_parse_stmt_block_mutable",
+                    "_sh_push_stmt_with_trivia",
+                    "convert_source_to_east_self_hosted",
+                },
+                "lookup_residual": {"_lookup_method_return"},
+            },
+        )
+
+    def test_generated_cpp_core_make_object_categories_cover_all_nonhelper_usage(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        category_map = _generated_cpp_core_make_object_category_map(text)
+        all_nonhelper = _generated_cpp_core_make_object_functions(text, scope="nonhelper")
+        covered: set[str] = set()
+        for functions in category_map.values():
+            self.assertEqual(covered & functions, set())
+            covered |= functions
+        self.assertEqual(covered, all_nonhelper)
 
     def test_generated_cpp_core_known_inline_lowered_callsite_kind_residual_set_is_stable(self) -> None:
         text = GENERATED_CPP_CORE.read_text(encoding="utf-8")

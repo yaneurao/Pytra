@@ -78,6 +78,7 @@ Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-type
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Remaining compiler/toolchain `make_object` / `py_to` / `obj_to_*` usage is now limited to the native `transpile_cli.cpp` legacy-import seam, labeled with `P2-object-bridge: legacy_migration_adapter`, and guarded by `tools/check_compiler_object_bridge_labels.py` against unlabeled reintroduction.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] Selfhost build/parity regressions now start fixing `build_selfhost_stage2.py` stage1->stage2 command/fallback behavior and `verify_selfhost_end_to_end.py` auto-target/stdout normalization with unit tests.
 - Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] In addition to selfhost `prepare` / `verify`, `build_selfhost_stage2` and `check_selfhost_stage2_cpp_diff` now have unit-tested command/fallback helpers, so stage2 build/diff regressions are starting to be locked after the typed-boundary migration.
+- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] `test_prepare_selfhost_source.py` now fixes generated selfhost-core `make_object` residual buckets through a category map and union invariants, so regressions that blur export seams and parser residuals are caught as selfhost regressions.
 
 ### P3: Harden compiler contracts and make stage/pass/backend handoff fail-closed
 
