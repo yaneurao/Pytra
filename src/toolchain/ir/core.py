@@ -5306,6 +5306,35 @@ class _ShExprParser:
             return "noncpp_symbol"
         return ""
 
+    def _resolve_runtime_named_call_annotation(
+        self,
+        *,
+        call_dispatch: dict[str, str],
+    ) -> tuple[str, str, str, str, str, str]:
+        """runtime named-call の unpack と kind 判定を helper へ寄せる。"""
+        (
+            stdlib_fn_runtime_call,
+            stdlib_symbol_runtime_call,
+            noncpp_symbol_runtime_call,
+            stdlib_fn_semantic_tag,
+            stdlib_symbol_semantic_tag,
+        ) = self._resolve_runtime_named_call_dispatch(
+            call_dispatch=call_dispatch,
+        )
+        dispatch_kind = self._resolve_runtime_named_call_kind(
+            stdlib_fn_runtime_call=stdlib_fn_runtime_call,
+            stdlib_symbol_runtime_call=stdlib_symbol_runtime_call,
+            noncpp_symbol_runtime_call=noncpp_symbol_runtime_call,
+        )
+        return (
+            dispatch_kind,
+            stdlib_fn_runtime_call,
+            stdlib_symbol_runtime_call,
+            noncpp_symbol_runtime_call,
+            stdlib_fn_semantic_tag,
+            stdlib_symbol_semantic_tag,
+        )
+
     def _apply_runtime_named_call_dispatch(
         self,
         *,
@@ -5350,18 +5379,14 @@ class _ShExprParser:
     ) -> dict[str, Any] | None:
         """stdlib / non-C++ named-call dispatch を parser helper へ寄せる。"""
         (
+            dispatch_kind,
             stdlib_fn_runtime_call,
             stdlib_symbol_runtime_call,
             noncpp_symbol_runtime_call,
             stdlib_fn_semantic_tag,
             stdlib_symbol_semantic_tag,
-        ) = self._resolve_runtime_named_call_dispatch(
+        ) = self._resolve_runtime_named_call_annotation(
             call_dispatch=call_dispatch,
-        )
-        dispatch_kind = self._resolve_runtime_named_call_kind(
-            stdlib_fn_runtime_call=stdlib_fn_runtime_call,
-            stdlib_symbol_runtime_call=stdlib_symbol_runtime_call,
-            noncpp_symbol_runtime_call=noncpp_symbol_runtime_call,
         )
         return self._apply_runtime_named_call_dispatch(
             payload=payload,
