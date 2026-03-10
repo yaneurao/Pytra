@@ -37,5 +37,6 @@ Last updated: 2026-03-11
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S1-02] TODO now keeps only one-line cluster summaries, while detailed verification and rationale live in the plan decision log.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] Added a shared support module and `test_east_core_source_contract_builders.py`, then moved 10 builder source-contract guards out of `test_east_core.py`.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] Moved 51 source-contract guards into five `test_east_core_source_contract_*.py` files plus the existing builders/expr-suffix files, leaving `test_east_core.py` focused on parser behavior and representative regressions.
+- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Added `test_east_core_parser_behavior_decorators.py`, then moved 10 representative extern / abi / template parser-behavior tests out of `test_east_core.py`.
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) Split `core.py` / `test_east_core.py` by responsibility so compiler-internal improvements can proceed in cluster-sized slices again.
