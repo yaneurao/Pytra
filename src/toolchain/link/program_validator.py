@@ -140,6 +140,38 @@ def _require_non_empty_str_items(arr: json.JsonArr, label: str) -> None:
             raise RuntimeError(label + "[" + str(index) + "] must be a non-empty string")
 
 
+def _validate_link_output_type_id_table(type_id_table_doc: json.JsonObj) -> None:
+    for fqcn, type_id in export_json_object_dict(type_id_table_doc).items():
+        label = "link-output.global.type_id_table." + fqcn
+        if fqcn.strip() == "":
+            raise RuntimeError("link-output.global.type_id_table keys must be non-empty strings")
+        if type(type_id) is not int:
+            raise RuntimeError(label + " must be int")
+
+
+def _validate_link_output_call_graph(graph_doc: json.JsonObj) -> None:
+    for caller, callees in export_json_object_dict(graph_doc).items():
+        label = "link-output.global.call_graph." + caller
+        if caller.strip() == "":
+            raise RuntimeError("link-output.global.call_graph keys must be non-empty strings")
+        if not isinstance(callees, list):
+            raise RuntimeError(label + " must be a list")
+        for index, callee in enumerate(callees):
+            if not isinstance(callee, str) or callee.strip() == "":
+                raise RuntimeError(label + "[" + str(index) + "] must be a non-empty string")
+
+
+def _validate_link_output_sccs(sccs: json.JsonArr) -> None:
+    for index in range(json_array_length(sccs)):
+        label = "link-output.global.sccs[" + str(index) + "]"
+        component = sccs.get_arr(index)
+        if component is None:
+            raise RuntimeError(label + " must be a list")
+        if json_array_length(component) == 0:
+            raise RuntimeError(label + " must be a non-empty list")
+        _require_non_empty_str_items(component, label)
+
+
 def _validate_link_output_diagnostic_items(arr: json.JsonArr, label: str) -> None:
     for index in range(json_array_length(arr)):
         item_label = label + "[" + str(index) + "]"
@@ -165,9 +197,12 @@ def _validate_link_output_diagnostic_items(arr: json.JsonArr, label: str) -> Non
 
 
 def _validate_link_output_global_shape(global_doc: json.JsonObj) -> None:
-    _require_obj_field(global_doc, "type_id_table", "link-output.global")
-    _require_obj_field(global_doc, "call_graph", "link-output.global")
-    _require_list_field(global_doc, "sccs", "link-output.global")
+    type_id_table_doc = _require_obj_field(global_doc, "type_id_table", "link-output.global")
+    _validate_link_output_type_id_table(type_id_table_doc)
+    call_graph_doc = _require_obj_field(global_doc, "call_graph", "link-output.global")
+    _validate_link_output_call_graph(call_graph_doc)
+    sccs = _require_list_field(global_doc, "sccs", "link-output.global")
+    _validate_link_output_sccs(sccs)
     _require_obj_field(global_doc, "non_escape_summary", "link-output.global")
     _require_obj_field(global_doc, "container_ownership_hints_v1", "link-output.global")
 
