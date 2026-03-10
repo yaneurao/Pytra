@@ -6117,6 +6117,22 @@ class _ShExprParser:
         attr_name, source_span, repr_text = self._resolve_attr_suffix_state(
             owner_expr=owner_expr,
         )
+        return self._apply_attr_suffix_state(
+            owner_expr=owner_expr,
+            attr_name=attr_name,
+            source_span=source_span,
+            repr_text=repr_text,
+        )
+
+    def _apply_attr_suffix_state(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        attr_name: str,
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """Attribute suffix の apply を parser helper へ寄せる。"""
         return self._annotate_attr_expr(
             owner_expr=owner_expr,
             attr_name=attr_name,

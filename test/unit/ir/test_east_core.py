@@ -699,6 +699,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         helper_text = text.split("def _parse_attr_suffix", 1)[1].split(
+            "def _apply_attr_suffix_state",
+            1,
+        )[0]
+        helper_apply_text = text.split("def _apply_attr_suffix_state", 1)[1].split(
             "def _consume_attr_suffix_dot_token",
             1,
         )[0]
@@ -722,9 +726,15 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("source_span, repr_text = self._resolve_postfix_span_repr(", resolve_text)
         self.assertIn('return str(name_tok["v"]), source_span, repr_text', resolve_text)
         self.assertIn("attr_name, source_span, repr_text = self._resolve_attr_suffix_state(", helper_text)
-        self.assertIn("return self._annotate_attr_expr(", helper_text)
+        self.assertIn("return self._apply_attr_suffix_state(", helper_text)
+        self.assertIn("owner_expr=owner_expr,", helper_text)
+        self.assertIn("attr_name=attr_name,", helper_text)
+        self.assertIn("source_span=source_span,", helper_text)
+        self.assertIn("repr_text=repr_text,", helper_text)
+        self.assertIn("return self._annotate_attr_expr(", helper_apply_text)
         self.assertNotIn("self._node_span(", helper_text)
         self.assertNotIn("self._src_slice(", helper_text)
+        self.assertNotIn("return self._annotate_attr_expr(", helper_text)
         self.assertNotIn('self._eat(".")', resolve_text)
         self.assertNotIn('name_tok = self._eat("NAME")', resolve_text)
         self.assertNotIn('self._eat(".")', helper_text)
