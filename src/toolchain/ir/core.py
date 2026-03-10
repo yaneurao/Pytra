@@ -6768,7 +6768,7 @@ class _ShExprParser:
         str,
     ]:
         """Subscript / slice suffix の token/state resolve を helper へ寄せる。"""
-        index_expr, lower, upper, rtok = self._consume_subscript_suffix_tokens()
+        index_expr, lower, upper, rtok = self._resolve_subscript_suffix_token_state()
         source_span, repr_text = self._resolve_subscript_suffix_span_repr(
             owner_expr=owner_expr,
             end_tok=rtok,
@@ -6802,6 +6802,17 @@ class _ShExprParser:
         """Subscript / slice suffix の token consume を helper へ寄せる。"""
         self._consume_subscript_suffix_open_token()
         return self._parse_subscript_suffix_components()
+
+    def _resolve_subscript_suffix_token_state(
+        self,
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any],
+    ]:
+        """Subscript / slice suffix の token-state resolve を helper へ寄せる。"""
+        return self._consume_subscript_suffix_tokens()
 
     def _parse_subscript_suffix(self, *, owner_expr: dict[str, Any]) -> dict[str, Any]:
         """Subscript / slice suffix の token 消費を parser helper へ寄せる。"""
