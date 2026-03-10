@@ -7363,6 +7363,17 @@ class _ShExprParser:
         """Subscript suffix の `[` open token consume を helper へ寄せる。"""
         return self._eat("[")
 
+    def _apply_subscript_suffix_open_token_state(
+        self,
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any],
+    ]:
+        """Subscript suffix の open-token state apply を helper へ寄せる。"""
+        return self._parse_subscript_suffix_components()
+
     def _consume_subscript_suffix_tokens(
         self,
     ) -> tuple[
@@ -7373,7 +7384,7 @@ class _ShExprParser:
     ]:
         """Subscript / slice suffix の token consume を helper へ寄せる。"""
         self._consume_subscript_suffix_open_token()
-        return self._parse_subscript_suffix_components()
+        return self._apply_subscript_suffix_open_token_state()
 
     def _resolve_subscript_suffix_token_state(
         self,
