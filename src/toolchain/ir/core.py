@@ -44,6 +44,7 @@ from toolchain.ir.core_decorator_semantics import _sh_is_dataclass_decorator
 from toolchain.ir.core_decorator_semantics import _sh_is_sealed_decorator
 from toolchain.ir.core_decorator_semantics import _sh_is_template_decorator
 from toolchain.ir.core_decorator_semantics import _sh_parse_decorator_head_and_args
+from toolchain.ir.core_extern_semantics import _sh_collect_extern_var_metadata
 from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin
 from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin
 from toolchain.ir.core_expr_call_args import _ShExprCallArgParserMixin
@@ -2198,90 +2199,6 @@ def _sh_parse_dataclass_decorator_options(args_txt: str, *, line_no: int, line_t
             hint="Use True/False literal values.",
         )
     return out
-
-
-def _sh_expr_attr_chain(expr: Any) -> str:
-    """Name/Attribute 式から `a.b.c` 形式の head 文字列を抽出する。"""
-    if not isinstance(expr, dict):
-        return ""
-    kind = str(expr.get("kind", ""))
-    if kind == "Name":
-        return str(expr.get("id", ""))
-    if kind != "Attribute":
-        return ""
-    owner = _sh_expr_attr_chain(expr.get("value"))
-    attr = str(expr.get("attr", ""))
-    if owner == "" or attr == "":
-        return ""
-    return owner + "." + attr
-
-
-def _sh_is_extern_symbol_ref(
-    head: str,
-    *,
-    import_module_bindings: dict[str, str],
-    import_symbol_bindings: dict[str, dict[str, str]],
-) -> bool:
-    """call head が `pytra.std.extern` を指すか判定する。"""
-    if head == "":
-        return False
-    ent = import_symbol_bindings.get(head)
-    if isinstance(ent, dict):
-        return str(ent.get("module", "")) == "pytra.std" and str(ent.get("name", "")) == "extern"
-    if head.endswith(".extern"):
-        owner = head[: -len(".extern")]
-        if owner == "pytra.std":
-            return True
-        mod_name = import_module_bindings.get(owner, "")
-        return mod_name == "pytra.std"
-    return False
-
-
-def _sh_collect_extern_var_metadata(
-    *,
-    target_name: str,
-    annotation: str,
-    value_expr: Any,
-    import_module_bindings: dict[str, str],
-    import_symbol_bindings: dict[str, dict[str, str]],
-) -> dict[str, Any] | None:
-    """`name: Any = extern(...)` から ambient global metadata を抽出する。"""
-    if annotation != "Any":
-        return None
-    if not isinstance(value_expr, dict) or str(value_expr.get("kind", "")) != "Call":
-        return None
-    call_head = _sh_expr_attr_chain(value_expr.get("func"))
-    if not _sh_is_extern_symbol_ref(
-        call_head,
-        import_module_bindings=import_module_bindings,
-        import_symbol_bindings=import_symbol_bindings,
-    ):
-        return None
-    args = value_expr.get("args")
-    keywords = value_expr.get("keywords")
-    if not isinstance(args, list) or not isinstance(keywords, list) or len(keywords) != 0:
-        return None
-    symbol = target_name
-    if len(args) == 0:
-        symbol = target_name
-    elif len(args) == 1:
-        arg0 = args[0]
-        if (
-            not isinstance(arg0, dict)
-            or str(arg0.get("kind", "")) != "Constant"
-            or str(arg0.get("resolved_type", "")) != "str"
-        ):
-            return None
-        symbol = str(arg0.get("value", "")).strip()
-        if symbol == "":
-            return None
-    else:
-        return None
-    return {
-        "schema_version": 1,
-        "symbol": symbol,
-        "same_name": 1 if symbol == target_name else 0,
-    }
 
 
 def _sh_parse_runtime_abi_string_literal(text: str, *, line_no: int, line_text: str, field_name: str) -> str:
