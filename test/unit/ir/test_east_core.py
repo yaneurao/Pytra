@@ -960,6 +960,12 @@ class EastCoreTest(unittest.TestCase):
         first_component_state_text = text.split(
             "def _resolve_subscript_suffix_first_component_state", 1
         )[1].split(
+            "def _apply_subscript_suffix_first_component_kind_state",
+            1,
+        )[0]
+        first_component_kind_apply_text = text.split(
+            "def _apply_subscript_suffix_first_component_kind_state", 1
+        )[1].split(
             "def _resolve_subscript_suffix_first_component_kind",
             1,
         )[0]
@@ -1062,7 +1068,14 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("first, is_slice = self._resolve_subscript_suffix_first_component_state()", first_component_text)
         self.assertIn("return self._apply_subscript_suffix_first_component_state(", first_component_text)
         self.assertIn("first = self._parse_ifexp()", first_component_state_text)
-        self.assertIn("return first, self._resolve_subscript_suffix_first_component_kind()", first_component_state_text)
+        self.assertIn(
+            "return self._apply_subscript_suffix_first_component_kind_state(first=first)",
+            first_component_state_text,
+        )
+        self.assertIn(
+            "return first, self._resolve_subscript_suffix_first_component_kind()",
+            first_component_kind_apply_text,
+        )
         self.assertIn('return self._cur()["k"] == ":"', first_component_kind_text)
         self.assertIn("if is_slice:", first_component_apply_text)
         self.assertIn("return self._apply_subscript_slice_first_component(first=first)", first_component_apply_text)
@@ -1131,6 +1144,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("return first, None, None, rtok", first_component_text)
         self.assertNotIn('self._cur()["k"] == ":"', first_component_text)
         self.assertNotIn('self._cur()["k"] == ":"', first_component_state_text)
+        self.assertNotIn(
+            "return first, self._resolve_subscript_suffix_first_component_kind()",
+            first_component_state_text,
+        )
         self.assertNotIn('rtok = self._eat("]")', first_component_apply_text)
         self.assertNotIn("return self._parse_subscript_slice_tail(lower=first)", first_component_apply_text)
         self.assertNotIn("return self._parse_subscript_index_tail(index_expr=first)", first_component_apply_text)
