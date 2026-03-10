@@ -2253,6 +2253,14 @@ x.bit_length()
             1,
         )[0]
         entry_name_value_text = text.split("def _resolve_call_arg_entry_name_value", 1)[1].split(
+            "def _resolve_keyword_call_arg_entry_state",
+            1,
+        )[0]
+        keyword_state_text = text.split("def _resolve_keyword_call_arg_entry_state", 1)[1].split(
+            "def _apply_keyword_call_arg_entry_state",
+            1,
+        )[0]
+        keyword_state_apply_text = text.split("def _apply_keyword_call_arg_entry_state", 1)[1].split(
             "def _apply_call_arg_entry_state",
             1,
         )[0]
@@ -2265,7 +2273,7 @@ x.bit_length()
             1,
         )[0]
         keyword_apply_text = text.split("def _apply_keyword_call_arg_entry", 1)[1].split(
-            "def _consume_keyword_call_arg_equals_token",
+            "def _resolve_keyword_call_arg_entry_state",
             1,
         )[0]
         positional_apply_text = text.split("def _apply_positional_call_arg_entry", 1)[1].split(
@@ -2333,12 +2341,19 @@ x.bit_length()
         self.assertIn('return self._cur()["k"] == "="', entry_is_keyword_text)
         self.assertIn('return self._eat("NAME")', entry_name_text)
         self.assertIn('return str(name_tok["v"])', entry_name_value_text)
+        self.assertIn("self._consume_keyword_call_arg_equals_token()", keyword_state_text)
+        self.assertIn("kw_val = self._parse_ifexp()", keyword_state_text)
+        self.assertIn("kw_name = self._resolve_call_arg_entry_name_value(name_tok=name_tok)", keyword_state_text)
+        self.assertIn("return self._apply_keyword_call_arg_entry_state(", keyword_state_text)
+        self.assertIn("return kw_name, kw_val", keyword_state_apply_text)
         self.assertIn("if is_keyword and name_tok is not None:", apply_text)
         self.assertIn("return self._apply_keyword_call_arg_entry(", apply_text)
         self.assertIn("return self._apply_positional_call_arg_entry(", apply_text)
         self.assertIn('return self._eat("=")', keyword_token_text)
-        self.assertIn("self._consume_keyword_call_arg_equals_token()", keyword_apply_text)
-        self.assertIn("kw_name = self._resolve_call_arg_entry_name_value(name_tok=name_tok)", keyword_apply_text)
+        self.assertIn(
+            "kw_name, kw_val = self._resolve_keyword_call_arg_entry_state(name_tok=name_tok)",
+            keyword_apply_text,
+        )
         self.assertIn("return None, _sh_make_keyword_arg(kw_name, kw_val)", keyword_apply_text)
         self.assertIn("if save_pos is not None:", positional_apply_text)
         self.assertIn("self.pos = save_pos", positional_apply_text)
@@ -2374,7 +2389,9 @@ x.bit_length()
         self.assertNotIn('return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)', apply_text)
         self.assertNotIn('return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)', keyword_apply_text)
         self.assertNotIn("self.pos = save_pos", apply_text)
-        self.assertNotIn('self._eat("=")', keyword_apply_text)
+        self.assertNotIn("self._consume_keyword_call_arg_equals_token()", keyword_apply_text)
+        self.assertNotIn("kw_val = self._parse_ifexp()", keyword_apply_text)
+        self.assertNotIn("kw_name = self._resolve_call_arg_entry_name_value(name_tok=name_tok)", keyword_apply_text)
         self.assertNotIn('keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))', helper_text)
         self.assertNotIn("keywords.append(keyword_entry)", helper_text)
         self.assertNotIn("args.append(arg_entry)", helper_text)

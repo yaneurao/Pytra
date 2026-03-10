@@ -4966,10 +4966,31 @@ class _ShExprParser:
         name_tok: dict[str, Any],
     ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
         """call argument 1件分の keyword apply を helper へ寄せる。"""
+        kw_name, kw_val = self._resolve_keyword_call_arg_entry_state(name_tok=name_tok)
+        return None, _sh_make_keyword_arg(kw_name, kw_val)
+
+    def _resolve_keyword_call_arg_entry_state(
+        self,
+        *,
+        name_tok: dict[str, Any],
+    ) -> tuple[str, dict[str, Any]]:
+        """call argument keyword の name/value state resolve を helper へ寄せる。"""
         self._consume_keyword_call_arg_equals_token()
         kw_val = self._parse_ifexp()
         kw_name = self._resolve_call_arg_entry_name_value(name_tok=name_tok)
-        return None, _sh_make_keyword_arg(kw_name, kw_val)
+        return self._apply_keyword_call_arg_entry_state(
+            kw_name=kw_name,
+            kw_val=kw_val,
+        )
+
+    def _apply_keyword_call_arg_entry_state(
+        self,
+        *,
+        kw_name: str,
+        kw_val: dict[str, Any],
+    ) -> tuple[str, dict[str, Any]]:
+        """call argument keyword の state apply を helper へ寄せる。"""
+        return kw_name, kw_val
 
     def _consume_keyword_call_arg_equals_token(self) -> dict[str, Any]:
         """call argument keyword の `=` consume を helper へ寄せる。"""
