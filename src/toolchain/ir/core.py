@@ -4914,11 +4914,15 @@ class _ShExprParser:
         self,
     ) -> tuple[int | None, dict[str, Any] | None, bool]:
         """call argument 1件分の token/state resolve を helper へ寄せる。"""
-        if self._cur()["k"] != "NAME":
+        if not self._resolve_call_arg_entry_has_name():
             return None, None, False
         save_pos = self.pos
         name_tok = self._consume_call_arg_entry_name_token()
         return save_pos, name_tok, self._resolve_call_arg_entry_kind()
+
+    def _resolve_call_arg_entry_has_name(self) -> bool:
+        """call argument entry の `NAME` 開始判定を helper へ寄せる。"""
+        return self._cur()["k"] == "NAME"
 
     def _resolve_call_arg_entry_kind(self) -> bool:
         """call argument 1件分の keyword 判定を helper へ寄せる。"""
