@@ -31,4 +31,8 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
+1. [ ] [ID: P1-IR-CORE-DECOMPOSITION-01] Decompose `core.py` and `test_east_core.py` in cluster-sized slices so source-contract guards and parser behavior no longer share one file.
+   Context: [docs/ja/plans/p1-ir-core-decomposition.md](../../ja/plans/p1-ir-core-decomposition.md)
+- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S1-01] Using `core.py=10081 lines` and `test_east_core.py=3912 lines` as the baseline, the split boundaries and bundle-sized work units for source-contract, parser behavior, and suffix/call clusters were fixed.
+
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) Split `core.py` / `test_east_core.py` by responsibility so compiler-internal improvements can proceed in cluster-sized slices again.

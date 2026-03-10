@@ -31,4 +31,8 @@
 
 ## 未完了タスク
 
+1. [ ] [ID: P1-IR-CORE-DECOMPOSITION-01] `core.py` / `test_east_core.py` を cluster 単位で分割し、source-contract と parser behavior の責務境界を整理する。
+   文脈: [docs/ja/plans/p1-ir-core-decomposition.md](../plans/p1-ir-core-decomposition.md)
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S1-01] `core.py=10081 lines`、`test_east_core.py=3912 lines` を基準に、source-contract / parser behavior / suffix-call cluster の split boundary と bundle 粒度を固定した。
+
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。
