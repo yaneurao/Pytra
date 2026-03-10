@@ -4932,6 +4932,10 @@ class _ShExprParser:
         """call argument entry の `NAME` consume を helper へ寄せる。"""
         return self._eat("NAME")
 
+    def _resolve_call_arg_entry_name_value(self, *, name_tok: dict[str, Any]) -> str:
+        """call argument entry の `NAME` value 取得を helper へ寄せる。"""
+        return str(name_tok["v"])
+
     def _apply_call_arg_entry_state(
         self,
         *,
@@ -4956,7 +4960,8 @@ class _ShExprParser:
         """call argument 1件分の keyword apply を helper へ寄せる。"""
         self._consume_keyword_call_arg_equals_token()
         kw_val = self._parse_ifexp()
-        return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)
+        kw_name = self._resolve_call_arg_entry_name_value(name_tok=name_tok)
+        return None, _sh_make_keyword_arg(kw_name, kw_val)
 
     def _consume_keyword_call_arg_equals_token(self) -> dict[str, Any]:
         """call argument keyword の `=` consume を helper へ寄せる。"""
