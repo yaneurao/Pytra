@@ -1013,11 +1013,23 @@ class EastCoreTest(unittest.TestCase):
         tail_close_result_apply_text = text.split(
             "def _apply_subscript_slice_tail_close_state_result", 1
         )[1].split(
-            "def _resolve_subscript_slice_tail_close_state",
+            "def _resolve_subscript_slice_tail_close_token_state",
+            1,
+        )[0]
+        tail_close_token_state_text = text.split(
+            "def _resolve_subscript_slice_tail_close_token_state", 1
+        )[1].split(
+            "def _apply_subscript_slice_tail_close_token_state",
+            1,
+        )[0]
+        tail_close_token_apply_text = text.split(
+            "def _apply_subscript_slice_tail_close_token_state", 1
+        )[1].split(
+            "def _parse_subscript_suffix_components",
             1,
         )[0]
         tail_close_state_text = text.split("def _resolve_subscript_slice_tail_close_state", 1)[1].split(
-            "def _parse_subscript_suffix_components",
+            "def _resolve_subscript_slice_tail_close_token_state",
             1,
         )[0]
         component_text = text.split("def _parse_subscript_suffix_components", 1)[1].split(
@@ -1173,7 +1185,10 @@ class EastCoreTest(unittest.TestCase):
             tail_close_apply_text,
         )
         self.assertIn("return upper, rtok", tail_close_result_apply_text)
-        self.assertIn("return self._consume_subscript_slice_tail_close_token()", tail_close_state_text)
+        self.assertIn("return self._consume_subscript_slice_tail_close_token()", tail_close_token_state_text)
+        self.assertIn("return rtok", tail_close_token_apply_text)
+        self.assertIn("rtok = self._resolve_subscript_slice_tail_close_token_state()", tail_close_state_text)
+        self.assertIn("return self._apply_subscript_slice_tail_close_token_state(rtok=rtok)", tail_close_state_text)
         self.assertIn("starts_with_slice = self._resolve_subscript_suffix_component_state()", component_text)
         self.assertIn("return self._apply_subscript_suffix_component_state(", component_text)
         self.assertIn('return self._cur()["k"] == ":"', component_state_text)
@@ -1264,6 +1279,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("return upper, rtok", tail_token_text)
         self.assertNotIn("return upper, rtok", tail_upper_apply_text)
         self.assertNotIn("return upper, rtok", tail_close_apply_text)
+        self.assertNotIn("return self._consume_subscript_slice_tail_close_token()", tail_close_state_text)
         self.assertNotIn('if self._cur()["k"] == ":":', component_text)
         self.assertNotIn("if starts_with_slice:", component_text)
         self.assertNotIn("return self._parse_subscript_slice_tail(lower=None)", component_text)
