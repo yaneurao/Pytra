@@ -7,7 +7,6 @@ import subprocess
 from pathlib import Path
 
 from tools.selfhost_parity_summary import build_summary_row
-from tools.selfhost_parity_summary import format_summary_line
 from tools.selfhost_parity_summary import render_summary_block
 
 
