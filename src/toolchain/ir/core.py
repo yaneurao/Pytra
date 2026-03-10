@@ -7223,7 +7223,16 @@ class _ShExprParser:
 
     def _resolve_subscript_slice_tail_colon_state(self) -> dict[str, Any] | None:
         """Subscript slice tail の colon-state resolve を helper へ寄せる。"""
-        return self._resolve_subscript_slice_tail_upper_state()
+        upper = self._resolve_subscript_slice_tail_upper_state()
+        return self._apply_subscript_slice_tail_colon_state_result(upper=upper)
+
+    def _apply_subscript_slice_tail_colon_state_result(
+        self,
+        *,
+        upper: dict[str, Any] | None,
+    ) -> dict[str, Any] | None:
+        """Subscript slice tail の colon-state result apply を helper へ寄せる。"""
+        return upper
 
     def _resolve_subscript_slice_tail_upper_state(self) -> dict[str, Any] | None:
         """Subscript slice tail の upper-state resolve を helper へ寄せる。"""
