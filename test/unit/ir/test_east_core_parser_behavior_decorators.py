@@ -15,6 +15,100 @@ from src.toolchain.compiler.east import convert_source_to_east_with_backend
 
 
 class EastCoreParserBehaviorDecoratorsTest(unittest.TestCase):
+    def test_template_decorator_rejects_duplicate_params(self) -> None:
+        src = """
+from pytra.std.template import template
+
+@template("T", "T")
+def f(xs: list[int]) -> list[int]:
+    return xs
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("duplicate template parameter", str(cm.exception))
+
+    def test_template_decorator_rejects_keyword_form(self) -> None:
+        src = """
+from pytra.std.template import template
+
+@template(name="T")
+def f(xs: list[int]) -> list[int]:
+    return xs
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn(
+            "template decorator accepts positional string literal parameters only",
+            str(cm.exception),
+        )
+
+    def test_template_decorator_is_rejected_outside_runtime_helper_modules(self) -> None:
+        src = """
+from pytra.std.template import template
+
+@template("T")
+def f(xs: list[T]) -> list[T]:
+    return xs
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(
+                src,
+                "sample/py/template_demo.py",
+                parser_backend="self_hosted",
+            )
+        self.assertIn("@template is supported on runtime helper modules only", str(cm.exception))
+
+    def test_method_level_abi_decorator_is_rejected(self) -> None:
+        src = """
+from pytra.std import abi
+
+class Box:
+    @abi(args={"xs": "value"})
+    def f(self, xs: list[int]) -> list[int]:
+        return xs
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("@abi is not supported on methods", str(cm.exception))
+
+    def test_positional_abi_decorator_is_rejected(self) -> None:
+        src = """
+from pytra.std import abi
+
+@abi("value")
+def f(xs: list[int]) -> list[int]:
+    return xs
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("abi decorator accepts keyword arguments only", str(cm.exception))
+
+    def test_value_mut_is_rejected_for_return_mode(self) -> None:
+        src = """
+from pytra.std import abi
+
+@abi(ret="value_mut")
+def f(xs: list[int]) -> list[int]:
+    return xs
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("unsupported abi mode for abi ret", str(cm.exception))
+
+    def test_value_abi_rejects_mutating_append(self) -> None:
+        src = """
+from pytra.std import abi
+
+@abi(args={"parts": "value"})
+def py_join(parts: list[str]) -> str:
+    parts.append("x")
+    return ""
+"""
+        with self.assertRaises(RuntimeError) as cm:
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        self.assertIn("value parameter mutated", str(cm.exception))
+        self.assertIn("parts", str(cm.exception))
+
     def test_top_level_extern_decorator_is_preserved(self) -> None:
         src = """
 from pytra.std import extern
