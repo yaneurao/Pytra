@@ -81,7 +81,7 @@
 - [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-01] backend capability / runtime copy / option schema / writer metadata の canonical SoT を定義し、host/static の両方がそこから構成される形へ寄せた。
 - [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-02] intentional difference を許す境界（例: host-only lazy import、selfhost-only direct route）と、その diagnostics 契約を固定した。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S3-01] host registry / static registry を shared metadata または generator 経由へ寄せ、手書き重複を縮退する。
-- [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S3-02] registry drift guard または diff test を追加し、片側だけ更新された backend surface を fail-fast で検知する。
+- [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S3-02] registry drift guard または diff test を追加し、片側だけ更新された backend surface を fail-fast で検知した。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S4-01] stage1 / stage2 / direct e2e / multilang selfhost の representative parity suite を整理し、failure category と summary 出力を統一する。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S4-02] unsupported / preview / known block / regression の診断カテゴリを registry と parity report で揃え、expected failure を明示管理できるようにする。
 - [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S5-01] docs / plan report / archive を更新し、backend readiness・known block・gate 実行手順を追跡可能にする。
@@ -145,3 +145,5 @@
 - 2026-03-11: 次の `S3-01` cluster では、`default_output_path`、`resolve_layer_options_*`、`lower/optimize/emit`、program artifact / writer / runtime hook までの typed execution wrapper 群も `backend_registry_shared.py` の `*_with_backend_spec` helper へ寄せた。これで host/static に残る大きな差分は eager-vs-lazy callable resolve、spec cache shape、default writer 注入、`suppress_emit_exceptions` まで縮んだ。
 - 2026-03-11: 続く `S3-01` cluster では、host/static registry から未使用の `typed_boundary` execution import と dead adapter を外し、contract test も shared execution wrapper 前提へ更新した。registry 側の direct `typed_boundary` 依存は carrier 型、`coerce_backend_spec`、`export_resolved_backend_spec_any` まで縮める。
 - 2026-03-11: `S3-01` は完了と判断した。host/static に残る差分は lazy/eager callable resolve、`_SPEC_CACHE` と `_BACKEND_RUNTIME_SPECS` の cache shape、default writer 注入、`suppress_emit_exceptions` の intentional difference に限られ、runtime copy・emit wrapper・backend spec assemble・typed execution wrapper の手書き重複は shared helper 側へ後退した。
+- 2026-03-11: `S3-02` では `test_backend_registry_drift_guard.py` を追加し、host/static registry の public function signature、`backend_registry_shared` import、`typed_boundary` import、intentional private helper/state difference を AST ベースで固定した。これにより片側だけ helper/import/private cache を更新した場合は unit test が fail-fast する。
+- 2026-03-11: `S3-02` は完了と判断した。canonical backend metadata parity は既存の metadata/contract test が、registry source topology parity は新しい drift guard test が担当する形で、backend surface の一方更新を representative lane で検知できる。
