@@ -1029,6 +1029,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         state_apply_text = text.split("def _apply_subscript_suffix_token_state", 1)[1].split(
+            "def _apply_subscript_suffix_span_repr_state",
+            1,
+        )[0]
+        subscript_span_apply_text = text.split("def _apply_subscript_suffix_span_repr_state", 1)[1].split(
             "def _resolve_subscript_suffix_span_repr",
             1,
         )[0]
@@ -1118,7 +1122,8 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("index_expr, lower, upper, rtok = self._resolve_subscript_suffix_token_state()", state_text)
         self.assertIn("return self._apply_subscript_suffix_token_state(", state_text)
         self.assertIn("source_span, repr_text = self._resolve_subscript_suffix_span_repr(", state_apply_text)
-        self.assertIn("return index_expr, lower, upper, source_span, repr_text", state_apply_text)
+        self.assertIn("return self._apply_subscript_suffix_span_repr_state(", state_apply_text)
+        self.assertIn("return index_expr, lower, upper, source_span, repr_text", subscript_span_apply_text)
         self.assertIn("return self._resolve_postfix_span_repr(", subscript_span_text)
         self.assertIn('return self._eat("[")', open_token_text)
         self.assertIn("self._consume_subscript_suffix_open_token()", token_text)
@@ -1143,6 +1148,7 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("index_expr, lower, upper, rtok = self._consume_subscript_suffix_tokens()", state_text)
         self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", state_text)
         self.assertNotIn("return index_expr, lower, upper, source_span, repr_text", state_text)
+        self.assertNotIn("return index_expr, lower, upper, source_span, repr_text", state_apply_text)
         self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", helper_text)
         self.assertNotIn("return self._annotate_subscript_expr(", helper_text)
         self.assertNotIn('self._eat("[")', token_text)
@@ -2620,6 +2626,14 @@ x.bit_length()
             1,
         )[0]
         open_state_apply_text = text.split("def _apply_call_suffix_arg_entries_state", 1)[1].split(
+            "def _resolve_call_suffix_close_token_state",
+            1,
+        )[0]
+        close_state_resolve_text = text.split("def _resolve_call_suffix_close_token_state", 1)[1].split(
+            "def _apply_call_suffix_close_token_state",
+            1,
+        )[0]
+        close_state_apply_text = text.split("def _apply_call_suffix_close_token_state", 1)[1].split(
             "def _consume_call_suffix_tokens",
             1,
         )[0]
@@ -2658,8 +2672,10 @@ x.bit_length()
         self.assertIn("args, keywords = self._resolve_call_suffix_arg_entries_state()", open_state_text)
         self.assertIn("return self._apply_call_suffix_arg_entries_state(", open_state_text)
         self.assertIn("return self._consume_call_suffix_arg_entries()", open_state_resolve_text)
-        self.assertIn("rtok = self._consume_call_suffix_close_token()", open_state_apply_text)
-        self.assertIn("return args, keywords, rtok", open_state_apply_text)
+        self.assertIn("rtok = self._resolve_call_suffix_close_token_state()", open_state_apply_text)
+        self.assertIn("return self._apply_call_suffix_close_token_state(", open_state_apply_text)
+        self.assertIn("return self._consume_call_suffix_close_token()", close_state_resolve_text)
+        self.assertIn("return args, keywords, rtok", close_state_apply_text)
         self.assertIn("self._consume_call_suffix_open_token()", token_text)
         self.assertIn("return self._apply_call_suffix_open_token_state()", token_text)
         self.assertIn(
@@ -2682,6 +2698,8 @@ x.bit_length()
         self.assertNotIn("args, keywords = self._consume_call_suffix_arg_entries()", token_text)
         self.assertNotIn("args, keywords = self._consume_call_suffix_arg_entries()", open_state_text)
         self.assertNotIn("rtok = self._consume_call_suffix_close_token()", open_state_text)
+        self.assertNotIn("rtok = self._consume_call_suffix_close_token()", open_state_apply_text)
+        self.assertNotIn("return args, keywords, rtok", open_state_apply_text)
         self.assertNotIn('rtok = self._eat(")")', state_text)
         self.assertNotIn("rtok = self._consume_call_suffix_close_token()", token_text)
         self.assertNotIn("source_span, repr_text = self._resolve_postfix_span_repr(", state_text)
