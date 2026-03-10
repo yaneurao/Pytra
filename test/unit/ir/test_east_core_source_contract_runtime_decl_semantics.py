@@ -20,17 +20,29 @@ class EastCoreSourceContractRuntimeDeclSemanticsTest(unittest.TestCase):
         helper_text = CORE_RUNTIME_DECL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn(
-            "from toolchain.ir.core_runtime_decl_semantics import _sh_collect_runtime_abi_metadata",
+            "from toolchain.ir.core_runtime_decl_semantics import _sh_collect_function_runtime_decl_metadata",
             core_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_runtime_decl_semantics import _sh_collect_template_metadata",
+            "from toolchain.ir.core_runtime_decl_semantics import _sh_reject_runtime_decl_class_decorators",
+            core_text,
+        )
+        self.assertIn(
+            "from toolchain.ir.core_runtime_decl_semantics import _sh_reject_runtime_decl_method_decorator",
+            core_text,
+        )
+        self.assertIn(
+            "from toolchain.ir.core_runtime_decl_semantics import _sh_reject_runtime_decl_nonfunction_decorators",
             core_text,
         )
         self.assertIn("def _sh_parse_runtime_abi_decorator(", helper_text)
         self.assertIn("def _sh_collect_runtime_abi_metadata(", helper_text)
         self.assertIn("def _sh_parse_template_decorator(", helper_text)
         self.assertIn("def _sh_collect_template_metadata(", helper_text)
+        self.assertIn("def _sh_collect_function_runtime_decl_metadata(", helper_text)
+        self.assertIn("def _sh_reject_runtime_decl_class_decorators(", helper_text)
+        self.assertIn("def _sh_reject_runtime_decl_method_decorator(", helper_text)
+        self.assertIn("def _sh_reject_runtime_decl_nonfunction_decorators(", helper_text)
         self.assertIn("def _sh_parse_runtime_abi_string_literal(", helper_text)
         self.assertIn("def _sh_parse_runtime_abi_mode(", helper_text)
         self.assertIn("def _sh_parse_runtime_abi_args_map(", helper_text)
@@ -38,6 +50,10 @@ class EastCoreSourceContractRuntimeDeclSemanticsTest(unittest.TestCase):
         self.assertNotIn("def _sh_collect_runtime_abi_metadata(", core_text)
         self.assertNotIn("def _sh_parse_template_decorator(", core_text)
         self.assertNotIn("def _sh_collect_template_metadata(", core_text)
+        self.assertNotIn("def _sh_collect_function_runtime_decl_metadata(", core_text)
+        self.assertNotIn("def _sh_reject_runtime_decl_class_decorators(", core_text)
+        self.assertNotIn("def _sh_reject_runtime_decl_method_decorator(", core_text)
+        self.assertNotIn("def _sh_reject_runtime_decl_nonfunction_decorators(", core_text)
         self.assertNotIn("def _sh_parse_runtime_abi_string_literal(", core_text)
         self.assertNotIn("def _sh_parse_runtime_abi_mode(", core_text)
         self.assertNotIn("def _sh_parse_runtime_abi_args_map(", core_text)
@@ -61,8 +77,10 @@ class EastCoreSourceContractRuntimeDeclSemanticsTest(unittest.TestCase):
     def test_core_source_routes_runtime_decl_collectors_through_callback_injection(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("_sh_collect_runtime_abi_metadata(", core_text)
-        self.assertIn("_sh_collect_template_metadata(", core_text)
+        self.assertIn("_sh_collect_function_runtime_decl_metadata(", core_text)
+        self.assertIn("_sh_reject_runtime_decl_class_decorators(", core_text)
+        self.assertIn("_sh_reject_runtime_decl_method_decorator(", core_text)
+        self.assertIn("_sh_reject_runtime_decl_nonfunction_decorators(", core_text)
         self.assertIn("runtime_abi_ret_modes=_SH_RUNTIME_ABI_RET_MODES", core_text)
         self.assertIn("template_scope=_SH_TEMPLATE_SCOPE", core_text)
         self.assertIn("template_instantiation_mode=_SH_TEMPLATE_INSTANTIATION_MODE", core_text)

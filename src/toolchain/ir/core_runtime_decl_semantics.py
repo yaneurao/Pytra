@@ -424,3 +424,174 @@ def _sh_collect_template_metadata(
             )
         template_meta = parsed
     return template_meta
+
+
+def _sh_collect_function_runtime_decl_metadata(
+    decorators: list[str],
+    *,
+    arg_order: list[str],
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+    line_no: int,
+    line_text: str,
+    is_abi_decorator: Any,
+    is_template_decorator: Any,
+    parse_decorator_head_and_args: Any,
+    split_top_commas: Any,
+    split_top_level_assign: Any,
+    split_top_level_colon: Any,
+    is_identifier: Any,
+    runtime_abi_arg_modes: set[str],
+    runtime_abi_ret_modes: set[str],
+    runtime_abi_mode_aliases: dict[str, str],
+    template_scope: str,
+    template_instantiation_mode: str,
+    make_east_build_error: Any,
+    make_span: Any,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    runtime_abi_meta = _sh_collect_runtime_abi_metadata(
+        decorators,
+        arg_order=arg_order,
+        import_module_bindings=import_module_bindings,
+        import_symbol_bindings=import_symbol_bindings,
+        line_no=line_no,
+        line_text=line_text,
+        is_abi_decorator=is_abi_decorator,
+        parse_decorator_head_and_args=parse_decorator_head_and_args,
+        split_top_commas=split_top_commas,
+        split_top_level_assign=split_top_level_assign,
+        split_top_level_colon=split_top_level_colon,
+        is_identifier=is_identifier,
+        runtime_abi_arg_modes=runtime_abi_arg_modes,
+        runtime_abi_ret_modes=runtime_abi_ret_modes,
+        runtime_abi_mode_aliases=runtime_abi_mode_aliases,
+        make_east_build_error=make_east_build_error,
+        make_span=make_span,
+    )
+    template_meta = _sh_collect_template_metadata(
+        decorators,
+        import_module_bindings=import_module_bindings,
+        import_symbol_bindings=import_symbol_bindings,
+        line_no=line_no,
+        line_text=line_text,
+        is_template_decorator=is_template_decorator,
+        parse_decorator_head_and_args=parse_decorator_head_and_args,
+        split_top_commas=split_top_commas,
+        split_top_level_assign=split_top_level_assign,
+        is_identifier=is_identifier,
+        template_scope=template_scope,
+        template_instantiation_mode=template_instantiation_mode,
+        make_east_build_error=make_east_build_error,
+        make_span=make_span,
+    )
+    return runtime_abi_meta, template_meta
+
+
+def _sh_reject_runtime_decl_class_decorators(
+    decorators: list[str],
+    *,
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+    line_no: int,
+    line_text: str,
+    is_abi_decorator: Any,
+    is_template_decorator: Any,
+    make_east_build_error: Any,
+    make_span: Any,
+) -> None:
+    for decorator_text in decorators:
+        if is_abi_decorator(
+            decorator_text,
+            import_module_bindings=import_module_bindings,
+            import_symbol_bindings=import_symbol_bindings,
+        ):
+            raise make_east_build_error(
+                kind="unsupported_syntax",
+                message="@abi is not supported on class definitions",
+                source_span=make_span(line_no, 0, len(line_text)),
+                hint="Use @abi on top-level runtime helper functions only.",
+            )
+        if is_template_decorator(
+            decorator_text,
+            import_module_bindings=import_module_bindings,
+            import_symbol_bindings=import_symbol_bindings,
+        ):
+            raise make_east_build_error(
+                kind="unsupported_syntax",
+                message="@template is not supported on class definitions",
+                source_span=make_span(line_no, 0, len(line_text)),
+                hint="Use @template on top-level runtime helper functions only.",
+            )
+
+
+def _sh_reject_runtime_decl_method_decorator(
+    decorator_text: str,
+    *,
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+    line_no: int,
+    line_text: str,
+    is_abi_decorator: Any,
+    is_template_decorator: Any,
+    make_east_build_error: Any,
+    make_span: Any,
+) -> None:
+    if is_abi_decorator(
+        decorator_text,
+        import_module_bindings=import_module_bindings,
+        import_symbol_bindings=import_symbol_bindings,
+    ):
+        raise make_east_build_error(
+            kind="unsupported_syntax",
+            message="@abi is not supported on methods",
+            source_span=make_span(line_no, 0, len(line_text)),
+            hint="Use @abi on top-level runtime helper functions only.",
+        )
+    if is_template_decorator(
+        decorator_text,
+        import_module_bindings=import_module_bindings,
+        import_symbol_bindings=import_symbol_bindings,
+    ):
+        raise make_east_build_error(
+            kind="unsupported_syntax",
+            message="@template is not supported on methods",
+            source_span=make_span(line_no, 0, len(line_text)),
+            hint="Use @template on top-level runtime helper functions only.",
+        )
+
+
+def _sh_reject_runtime_decl_nonfunction_decorators(
+    decorators: list[str],
+    *,
+    import_module_bindings: dict[str, str],
+    import_symbol_bindings: dict[str, dict[str, str]],
+    line_no: int,
+    line_text: str,
+    is_abi_decorator: Any,
+    is_template_decorator: Any,
+    make_east_build_error: Any,
+    make_span: Any,
+) -> None:
+    for decorator_text in decorators:
+        if is_abi_decorator(
+            decorator_text,
+            import_module_bindings=import_module_bindings,
+            import_symbol_bindings=import_symbol_bindings,
+        ):
+            raise make_east_build_error(
+                kind="unsupported_syntax",
+                message="@abi is supported on top-level functions only",
+                source_span=make_span(line_no, 0, len(line_text)),
+                hint="Move @abi to a top-level runtime helper function definition.",
+            )
+        if is_template_decorator(
+            decorator_text,
+            import_module_bindings=import_module_bindings,
+            import_symbol_bindings=import_symbol_bindings,
+        ):
+            raise make_east_build_error(
+                kind="unsupported_syntax",
+                message="@template is supported on top-level functions only",
+                source_span=make_span(line_no, 0, len(line_text)),
+                hint="Move @template to a top-level runtime helper function definition.",
+            )
