@@ -63,3 +63,4 @@
 - 2026-03-11: `test/unit/ir/test_east_core_parser_behavior_types.py` を追加し、decode-first guard・type-expr・`typing` / `__future__` の representative parser behavior 10 本を `test_east_core.py` から切り出した。
 - 2026-03-11: `test/unit/ir/test_east_core_parser_behavior_diagnostics.py` を追加し、object receiver diagnostics 3 本を `test_east_core.py` から切り出した。あわせて decorator / abi / template の負例 7 本も `test_east_core_parser_behavior_decorators.py` へ寄せ、`test_east_core.py` 先頭の重複 test と stray assert を除去した。
 - 2026-03-11: `test/unit/ir/test_east_core_parser_behavior_exprs.py` を追加し、comprehension / lambda / fstring / yield / basic parser acceptance の representative 10 本を `test_east_core.py` から切り出した。
+- 2026-03-11: `test/unit/ir/test_east_core_parser_behavior_classes.py` を追加し、class storage hint / dataclass / nominal ADT / enum の representative parser behavior 7 本を `test_east_core.py` から切り出した。

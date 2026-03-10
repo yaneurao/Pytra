@@ -15,10 +15,11 @@ from src.toolchain.compiler.east import convert_source_to_east_with_backend
 
 
 class EastCoreParserBehaviorDiagnosticsTest(unittest.TestCase):
-    def test_self_hosted_parser_rejects_top_level_object_receiver_method_call(self) -> None:
+    def test_self_hosted_parser_rejects_local_object_receiver_method_call(self) -> None:
         src = """
-x: object = 1
-x.bit_length()
+def main() -> None:
+    x: object = 1
+    x.bit_length()
 """
         with self.assertRaises(RuntimeError) as cm:
             convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
