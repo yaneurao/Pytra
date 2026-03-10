@@ -6532,9 +6532,14 @@ class _ShExprParser:
         """Subscript slice tail の token/state resolve を helper へ寄せる。"""
         return self._consume_subscript_slice_tail_tokens()
 
+    def _resolve_subscript_slice_upper_expr_state(self) -> bool:
+        """Subscript slice tail の upper expr state resolve を helper へ寄せる。"""
+        return self._cur()["k"] == "]"
+
     def _parse_subscript_slice_upper_expr(self) -> dict[str, Any] | None:
         """Subscript slice tail の upper expr parse を helper へ寄せる。"""
-        if self._cur()["k"] == "]":
+        is_empty = self._resolve_subscript_slice_upper_expr_state()
+        if is_empty:
             return None
         return self._parse_ifexp()
 
