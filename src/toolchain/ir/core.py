@@ -5255,6 +5255,18 @@ class _ShExprParser:
         keywords: list[dict[str, Any]],
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """call argument 非空 loop の result state resolve を helper へ寄せる。"""
+        return self._resolve_call_arg_entries_result_state_value(
+            args=args,
+            keywords=keywords,
+        )
+
+    def _resolve_call_arg_entries_result_state_value(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """call argument 非空 loop の result state value を helper へ寄せる。"""
         return self._apply_call_args_empty_state(
             args=args,
             keywords=keywords,
@@ -5267,6 +5279,18 @@ class _ShExprParser:
         keywords: list[dict[str, Any]],
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """call argument 非空 loop の result state apply を helper へ寄せる。"""
+        return self._apply_call_arg_entries_result_state_result(
+            args=args,
+            keywords=keywords,
+        )
+
+    def _apply_call_arg_entries_result_state_result(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """call argument 非空 loop の result return を helper へ寄せる。"""
         return args, keywords
 
     def _consume_call_arg_entries_loop(

@@ -2542,10 +2542,22 @@ x.bit_length()
             1,
         )[0]
         nonempty_result_state_text = text.split("def _resolve_call_arg_entries_result_state", 1)[1].split(
+            "def _resolve_call_arg_entries_result_state_value",
+            1,
+        )[0]
+        nonempty_result_state_value_text = text.split(
+            "def _resolve_call_arg_entries_result_state_value", 1
+        )[1].split(
             "def _apply_call_arg_entries_result_state",
             1,
         )[0]
         nonempty_result_apply_text = text.split("def _apply_call_arg_entries_result_state", 1)[1].split(
+            "def _apply_call_arg_entries_result_state_result",
+            1,
+        )[0]
+        nonempty_result_apply_result_text = text.split(
+            "def _apply_call_arg_entries_result_state_result", 1
+        )[1].split(
             "def _consume_call_arg_entries_loop",
             1,
         )[0]
@@ -2680,8 +2692,18 @@ x.bit_length()
         self.assertIn("self._consume_call_arg_entries_loop(", nonempty_helper_text)
         self.assertIn("args, keywords = self._resolve_call_arg_entries_result_state(", nonempty_helper_text)
         self.assertIn("return self._apply_call_arg_entries_result_state(", nonempty_helper_text)
-        self.assertIn("return self._apply_call_args_empty_state(", nonempty_result_state_text)
-        self.assertIn("return args, keywords", nonempty_result_apply_text)
+        self.assertIn(
+            "return self._resolve_call_arg_entries_result_state_value(",
+            nonempty_result_state_text,
+        )
+        self.assertIn("return self._apply_call_args_empty_state(", nonempty_result_state_value_text)
+        self.assertNotIn("return self._apply_call_args_empty_state(", nonempty_result_state_text)
+        self.assertIn(
+            "return self._apply_call_arg_entries_result_state_result(",
+            nonempty_result_apply_text,
+        )
+        self.assertIn("return args, keywords", nonempty_result_apply_result_text)
+        self.assertNotIn("return args, keywords", nonempty_result_apply_text)
         self.assertIn(
             "should_continue = self._resolve_call_arg_entries_loop_state(",
             nonempty_helper_loop_text,
