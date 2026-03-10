@@ -6570,10 +6570,10 @@ class _ShExprParser:
     ]:
         """Subscript suffix の first expr 側 parse を helper へ寄せる。"""
         first, is_slice = self._resolve_subscript_suffix_first_component_state()
-        if is_slice:
-            return self._parse_subscript_slice_tail(lower=first)
-        rtok = self._eat("]")
-        return first, None, None, rtok
+        return self._apply_subscript_suffix_first_component_state(
+            first=first,
+            is_slice=is_slice,
+        )
 
     def _resolve_subscript_suffix_first_component_state(
         self,
@@ -6581,6 +6581,36 @@ class _ShExprParser:
         """Subscript suffix の first expr 側 state resolve を helper へ寄せる。"""
         first = self._parse_ifexp()
         return first, self._cur()["k"] == ":"
+
+    def _apply_subscript_suffix_first_component_state(
+        self,
+        *,
+        first: dict[str, Any],
+        is_slice: bool,
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any],
+    ]:
+        """Subscript suffix の first expr 側 apply を helper へ寄せる。"""
+        if is_slice:
+            return self._parse_subscript_slice_tail(lower=first)
+        return self._parse_subscript_index_tail(index_expr=first)
+
+    def _parse_subscript_index_tail(
+        self,
+        *,
+        index_expr: dict[str, Any],
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any],
+    ]:
+        """Subscript index tail の `]` close を helper へ寄せる。"""
+        rtok = self._eat("]")
+        return index_expr, None, None, rtok
 
     def _resolve_subscript_suffix_state(
         self,
