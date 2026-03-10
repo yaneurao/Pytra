@@ -782,6 +782,34 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
             {"_lookup_method_return"},
         )
 
+    def test_generated_cpp_core_make_object_bucket_union_matches_parser_residual(self) -> None:
+        text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
+        export_seam_functions = _generated_cpp_core_make_object_functions(
+            text,
+            scope="export_seam",
+        )
+        expr_parser_functions = _generated_cpp_core_make_object_functions(
+            text,
+            scope="expr_parser_residual",
+        )
+        stmt_parser_functions = _generated_cpp_core_make_object_functions(
+            text,
+            scope="stmt_parser_residual",
+        )
+        lookup_functions = _generated_cpp_core_make_object_functions(
+            text,
+            scope="lookup_residual",
+        )
+        parser_residual_functions = _generated_cpp_core_make_object_functions(
+            text,
+            scope="parser_residual",
+        )
+        self.assertEqual(
+            expr_parser_functions | stmt_parser_functions | lookup_functions,
+            parser_residual_functions,
+        )
+        self.assertEqual(export_seam_functions & parser_residual_functions, set())
+
     def test_generated_cpp_core_known_inline_lowered_callsite_kind_residual_set_is_stable(self) -> None:
         text = GENERATED_CPP_CORE.read_text(encoding="utf-8")
         lowered_inline_kinds = _generated_cpp_core_inline_kinds(
