@@ -18,6 +18,7 @@ CORE_CALL_SUFFIX_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_ca
 CORE_CLASS_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_class_semantics.py"
 CORE_DECORATOR_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_decorator_semantics.py"
 CORE_EXTERN_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_extern_semantics.py"
+CORE_STMT_ANALYSIS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_stmt_analysis.py"
 CORE_STRING_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_string_semantics.py"
 CORE_STMT_TEXT_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_stmt_text_semantics.py"
 CORE_TEXT_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_text_semantics.py"
