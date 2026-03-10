@@ -5374,17 +5374,41 @@ class _ShExprParser:
             fn_name=fn_name,
             call_dispatch=call_dispatch,
         )
-        use_truthy_runtime = (
+        use_truthy_runtime = self._resolve_builtin_named_call_truthy_state(
+            fn_name=fn_name,
+            dispatch_kind=dispatch_kind,
+            args=args,
+        )
+        iter_element_type = self._resolve_builtin_named_call_iter_element_type(
+            dispatch_kind=dispatch_kind,
+            args=args,
+        )
+        return semantic_tag, dispatch_kind, use_truthy_runtime, iter_element_type
+
+    def _resolve_builtin_named_call_truthy_state(
+        self,
+        *,
+        fn_name: str,
+        dispatch_kind: str,
+        args: list[dict[str, Any]],
+    ) -> bool:
+        """builtin named-call の truthy-runtime 特例を helper へ寄せる。"""
+        return (
             dispatch_kind == "scalar_ctor"
             and fn_name == "bool"
             and self._should_use_truthy_runtime_for_bool_ctor(args=args)
         )
-        iter_element_type = (
-            _sh_infer_enumerate_item_type(args)
-            if dispatch_kind == "enumerate"
-            else "unknown"
-        )
-        return semantic_tag, dispatch_kind, use_truthy_runtime, iter_element_type
+
+    def _resolve_builtin_named_call_iter_element_type(
+        self,
+        *,
+        dispatch_kind: str,
+        args: list[dict[str, Any]],
+    ) -> str:
+        """builtin named-call の enumerate item 型推論を helper へ寄せる。"""
+        if dispatch_kind == "enumerate":
+            return _sh_infer_enumerate_item_type(args)
+        return "unknown"
 
     def _apply_fixed_runtime_builtin_named_call_annotation(
         self,

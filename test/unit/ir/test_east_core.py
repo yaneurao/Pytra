@@ -1606,6 +1606,14 @@ x.bit_length()
             1,
         )[0]
         state_text = text.split("def _resolve_builtin_named_call_annotation_state", 1)[1].split(
+            "def _resolve_builtin_named_call_truthy_state",
+            1,
+        )[0]
+        truthy_state_text = text.split("def _resolve_builtin_named_call_truthy_state", 1)[1].split(
+            "def _resolve_builtin_named_call_iter_element_type",
+            1,
+        )[0]
+        iter_state_text = text.split("def _resolve_builtin_named_call_iter_element_type", 1)[1].split(
             "def _apply_fixed_runtime_builtin_named_call_annotation",
             1,
         )[0]
@@ -1639,8 +1647,13 @@ x.bit_length()
         self.assertIn("semantic_tag = self._resolve_builtin_named_call_semantic_tag(", dispatch_text)
         self.assertIn("dispatch_kind = self._resolve_builtin_named_call_kind(", dispatch_text)
         self.assertIn("semantic_tag, dispatch_kind = self._resolve_builtin_named_call_dispatch(", state_text)
-        self.assertIn('dispatch_kind == "scalar_ctor"', state_text)
-        self.assertIn('dispatch_kind == "enumerate"', state_text)
+        self.assertIn("use_truthy_runtime = self._resolve_builtin_named_call_truthy_state(", state_text)
+        self.assertIn("iter_element_type = self._resolve_builtin_named_call_iter_element_type(", state_text)
+        self.assertIn('dispatch_kind == "scalar_ctor"', truthy_state_text)
+        self.assertIn('fn_name == "bool"', truthy_state_text)
+        self.assertIn("self._should_use_truthy_runtime_for_bool_ctor(args=args)", truthy_state_text)
+        self.assertIn('if dispatch_kind == "enumerate":', iter_state_text)
+        self.assertIn("return _sh_infer_enumerate_item_type(args)", iter_state_text)
         self.assertIn("return _sh_annotate_fixed_runtime_builtin_call_expr(", fixed_apply_text)
         self.assertIn("return _sh_annotate_scalar_ctor_call_expr(", scalar_apply_text)
         self.assertIn("return _sh_annotate_enumerate_call_expr(", enumerate_apply_text)
@@ -1662,6 +1675,8 @@ x.bit_length()
         self.assertNotIn("return _sh_annotate_fixed_runtime_builtin_call_expr(", apply_text)
         self.assertNotIn("return _sh_annotate_scalar_ctor_call_expr(", apply_text)
         self.assertNotIn("return _sh_annotate_enumerate_call_expr(", apply_text)
+        self.assertNotIn('dispatch_kind == "scalar_ctor"', state_text)
+        self.assertNotIn('dispatch_kind == "enumerate"', state_text)
         self.assertIn("return None", apply_text)
         self.assertIn("return self._apply_named_call_dispatch(", named_call_text)
         self.assertIn('if dispatch_kind == "builtin":', named_apply_text)
