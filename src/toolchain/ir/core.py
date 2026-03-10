@@ -6873,9 +6873,33 @@ class _ShExprParser:
     ]:
         """Subscript / slice suffix の token/state resolve を helper へ寄せる。"""
         index_expr, lower, upper, rtok = self._resolve_subscript_suffix_token_state()
+        return self._apply_subscript_suffix_token_state(
+            owner_expr=owner_expr,
+            index_expr=index_expr,
+            lower=lower,
+            upper=upper,
+            end_tok=rtok,
+        )
+
+    def _apply_subscript_suffix_token_state(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        index_expr: dict[str, Any] | None,
+        lower: dict[str, Any] | None,
+        upper: dict[str, Any] | None,
+        end_tok: dict[str, Any],
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, int],
+        str,
+    ]:
+        """Subscript / slice suffix の token-state apply を helper へ寄せる。"""
         source_span, repr_text = self._resolve_subscript_suffix_span_repr(
             owner_expr=owner_expr,
-            end_tok=rtok,
+            end_tok=end_tok,
         )
         return index_expr, lower, upper, source_span, repr_text
 
