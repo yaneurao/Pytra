@@ -1373,6 +1373,10 @@ class EastCoreTest(unittest.TestCase):
             "def _split_generic_types",
             1,
         )[0]
+        build_text = text.split("def _build_call_expr_payload", 1)[1].split(
+            "def _annotate_call_expr",
+            1,
+        )[0]
         call_helper_text = text.split("def _annotate_call_expr", 1)[1].split(
             "def _annotate_named_call_expr",
             1,
@@ -1383,13 +1387,16 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("_sh_infer_known_name_call_return_type(", helper_text)
         self.assertIn("self._infer_attr_call_return_type(", helper_text)
         self.assertIn('if kind == "Lambda":', helper_text)
+        self.assertIn("return _sh_make_call_expr(", build_text)
         self.assertIn("call_ret, fn_name = self._infer_call_expr_return_type(callee, args)", call_helper_text)
+        self.assertIn("payload = self._build_call_expr_payload(", call_helper_text)
         self.assertNotIn("stdlib_imported_ret = (", postfix_text)
         self.assertNotIn("call_ret = self.fn_return_types[fn_name]", postfix_text)
         self.assertNotIn('call_ret = self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))', postfix_text)
         self.assertNotIn("call_ret = self._infer_attr_call_return_type(", postfix_text)
         self.assertNotIn('call_ret = str(node.get("return_type", "unknown"))', postfix_text)
         self.assertNotIn("call_ret, fn_name = self._infer_call_expr_return_type(", postfix_text)
+        self.assertNotIn("payload = _sh_make_call_expr(", call_helper_text)
 
     def test_core_source_routes_call_arg_parsing_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")

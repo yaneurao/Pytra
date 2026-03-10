@@ -4946,6 +4946,26 @@ class _ShExprParser:
             )
         return payload
 
+    def _build_call_expr_payload(
+        self,
+        *,
+        callee: dict[str, Any],
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        source_span: dict[str, int],
+        repr_text: str,
+        call_ret: str,
+    ) -> dict[str, Any]:
+        """Call expr payload 組み立てを helper へ寄せる。"""
+        return _sh_make_call_expr(
+            source_span,
+            callee,
+            args,
+            keywords,
+            resolved_type=call_ret,
+            repr_text=repr_text,
+        )
+
     def _annotate_call_expr(
         self,
         *,
@@ -4962,13 +4982,13 @@ class _ShExprParser:
             args=args,
             source_span=source_span,
         )
-        payload = _sh_make_call_expr(
-            source_span,
-            callee,
-            args,
-            keywords,
-            resolved_type=call_ret,
+        payload = self._build_call_expr_payload(
+            callee=callee,
+            args=args,
+            keywords=keywords,
+            source_span=source_span,
             repr_text=repr_text,
+            call_ret=call_ret,
         )
         return self._annotate_callee_call_expr(
             payload,
