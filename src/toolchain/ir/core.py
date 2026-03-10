@@ -32,9 +32,7 @@ from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_template import validate_template_module
 from toolchain.frontends.runtime_symbol_index import lookup_runtime_call_adapter_kind
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
-from toolchain.frontends.type_expr import parse_type_expr_text
 from toolchain.frontends.type_expr import sync_type_expr_mirrors
-from toolchain.frontends.type_expr import type_expr_to_string
 from toolchain.ir.core_class_semantics import _sh_collect_nominal_adt_class_metadata
 from toolchain.ir.core_class_semantics import _sh_is_value_safe_dataclass_candidate
 from toolchain.ir.core_class_semantics import _sh_make_decl_meta
@@ -109,6 +107,14 @@ from toolchain.ir.core_text_semantics import _sh_parse_import_alias
 from toolchain.ir.core_text_semantics import _sh_split_top_keyword
 from toolchain.ir.core_text_semantics import _sh_split_top_level_as
 from toolchain.ir.core_text_semantics import _sh_strip_utf8_bom
+from toolchain.ir.core_type_semantics import _sh_ann_to_type
+from toolchain.ir.core_type_semantics import _sh_ann_to_type_expr
+from toolchain.ir.core_type_semantics import _sh_default_type_aliases
+from toolchain.ir.core_type_semantics import _sh_is_type_expr_text
+from toolchain.ir.core_type_semantics import _sh_register_type_alias
+from toolchain.ir.core_type_semantics import _sh_split_args_with_offsets
+from toolchain.ir.core_type_semantics import _sh_type_expr_to_type_name
+from toolchain.ir.core_type_semantics import _sh_typing_alias_to_type_name
 from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin
 from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin
 from toolchain.ir.core_expr_call_args import _ShExprCallArgParserMixin
@@ -151,23 +157,6 @@ _SH_TEMPLATE_SCOPE = "runtime_helper"
 _SH_TEMPLATE_INSTANTIATION_MODE = "linked_implicit"
 
 
-def _sh_default_type_aliases() -> dict[str, str]:
-    """型解決用の初期別名テーブルを作成する。"""
-    return {
-        "List": "list",
-        "Dict": "dict",
-        "Tuple": "tuple",
-        "Set": "set",
-        "Optional": "Optional",
-        "Any": "Any",
-        "None": "None",
-        "str": "str",
-        "int": "int64",
-        "float": "float64",
-        "bool": "bool",
-    }
-
-
 def _sh_set_parse_context(
     fn_returns: dict[str, str],
     class_method_returns: dict[str, dict[str, str]],
@@ -186,63 +175,6 @@ def _sh_set_parse_context(
         _SH_TYPE_ALIASES.update(_sh_default_type_aliases())
     else:
         _SH_TYPE_ALIASES.update(type_aliases)
-
-
-def _sh_is_type_expr_text(txt: str) -> bool:
-    """型注釈として妥当そうな文字列かを軽量判定する。"""
-    raw: str = txt.strip()
-    if raw == "":
-        return False
-    for ch in raw:
-        if ch.isspace():
-            continue
-        if ch.isalnum() or ch in {"[", "]", ",", "|", ":", ".", "_"}:
-            continue
-        return False
-    return True
-
-
-def _sh_typing_alias_to_type_name(sym: str) -> str:
-    """`from typing` で import される代表的シンボルを EAST 型名へ正規化する。"""
-    key = sym.strip()
-    if key.startswith("typing."):
-        key = key[len("typing.") :].strip()
-    mapping = {
-        "List": "list",
-        "Dict": "dict",
-        "Tuple": "tuple",
-        "Set": "set",
-        "Optional": "Optional",
-        "Any": "Any",
-        "None": "None",
-        "bool": "bool",
-        "float": "float64",
-        "int": "int64",
-        "str": "str",
-        "bytes": "bytes",
-        "bytearray": "bytearray",
-    }
-    return mapping.get(key, "")
-
-
-def _sh_register_type_alias(type_aliases: dict[str, str], alias_name: str, rhs_txt: str) -> None:
-    """型っぽい代入式からトップレベルの型エイリアス定義を登録する。"""
-    name = alias_name.strip()
-    rhs = rhs_txt.strip()
-    if not _sh_is_identifier(name):
-        return
-    if rhs == "":
-        return
-    if not _sh_is_type_expr_text(rhs):
-        return
-    normalized = _sh_typing_alias_to_type_name(rhs)
-    ann_type = _sh_ann_to_type(rhs, type_aliases=type_aliases)
-    if normalized != "":
-        type_aliases[name] = normalized
-    elif ann_type == "Any":
-        type_aliases[name] = ann_type
-    elif ann_type != "unknown" and ann_type != rhs:
-        type_aliases[name] = ann_type
 
 
 class EastBuildError(Exception):
@@ -1558,60 +1490,6 @@ def _sh_make_module_root(
         renamed_symbols=renamed_symbols,
         meta=meta,
     )
-
-
-def _sh_ann_to_type(ann: str, *, type_aliases: dict[str, str] | None = None) -> str:
-    """型注釈文字列を EAST 正規型へ変換する。"""
-    aliases: dict[str, str] = type_aliases if type_aliases is not None else _SH_TYPE_ALIASES
-    return type_expr_to_string(parse_type_expr_text(ann, type_aliases=aliases))
-
-
-def _sh_ann_to_type_expr(
-    ann: str,
-    *,
-    type_aliases: dict[str, str] | None = None,
-) -> dict[str, Any]:
-    aliases: dict[str, str] = type_aliases if type_aliases is not None else _SH_TYPE_ALIASES
-    return parse_type_expr_text(ann, type_aliases=aliases)
-
-
-def _sh_type_expr_to_type_name(expr: dict[str, Any]) -> str:
-    return type_expr_to_string(expr)
-
-
-def _sh_split_args_with_offsets(arg_text: str) -> list[tuple[str, int]]:
-    """引数文字列をトップレベルのカンマで分割し、相対オフセットも返す。"""
-    out: list[tuple[str, int]] = []
-    depth = 0
-    in_str: str | None = None
-    esc = False
-    start = 0
-    for i, ch in enumerate(arg_text):
-        if in_str is not None:
-            if esc:
-                esc = False
-            elif ch == "\\":
-                esc = True
-            elif ch == in_str:
-                in_str = None
-            continue
-        if ch in {"'", '"'}:
-            in_str = ch
-            continue
-        if ch in {"(", "[", "{"}:
-            depth += 1
-            continue
-        if ch in {")", "]", "}"}:
-            depth -= 1
-            continue
-        if ch == "," and depth == 0:
-            part = arg_text[start:i]
-            out.append((part.strip(), start + (len(part) - len(part.lstrip()))))
-            start = i + 1
-    tail = arg_text[start:]
-    if tail.strip() != "":
-        out.append((tail.strip(), start + (len(tail) - len(tail.lstrip()))))
-    return out
 
 
 def _sh_parse_typed_binding(text: str, *, allow_dotted_name: bool = False) -> tuple[str, str, str] | None:
@@ -5383,7 +5261,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             yield_value_type = "unknown"
             if is_generator:
                 fn_ret_effective, yield_value_type = _sh_make_generator_return_type(fn_ret, yield_types)
-            fn_ret_type_expr = _sh_ann_to_type_expr(fn_ret_effective)
+            fn_ret_type_expr = _sh_ann_to_type_expr(fn_ret_effective, type_aliases=_SH_TYPE_ALIASES)
             arg_defaults: dict[str, Any] = {}
             arg_index_map: dict[str, int] = {}
             for arg_pos, arg_name in enumerate(arg_order):
@@ -6077,8 +5955,8 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
         if parsed_typed is not None and typed_default == "":
             target_txt = typed_target
             ann_txt = typed_ann
-            ann = _sh_ann_to_type(ann_txt)
-            ann_expr = _sh_ann_to_type_expr(ann)
+            ann = _sh_ann_to_type(ann_txt, type_aliases=_SH_TYPE_ALIASES)
+            ann_expr = _sh_ann_to_type_expr(ann, type_aliases=_SH_TYPE_ALIASES)
             target_col = ln_txt.find(target_txt)
             target_expr = _sh_parse_expr_lowered(target_txt, ln_no=ln_no, col=target_col, name_types=dict(name_types))
             _maybe_bind_self_field(target_expr, None, explicit=ann)
@@ -6107,8 +5985,8 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             target_txt = typed_target
             ann_txt = typed_ann
             expr_txt = typed_default
-            ann = _sh_ann_to_type(ann_txt)
-            ann_expr = _sh_ann_to_type_expr(ann)
+            ann = _sh_ann_to_type(ann_txt, type_aliases=_SH_TYPE_ALIASES)
+            ann_expr = _sh_ann_to_type_expr(ann, type_aliases=_SH_TYPE_ALIASES)
             expr_col = ln_txt.find(expr_txt)
             val_expr = _sh_parse_expr_lowered(expr_txt, ln_no=ln_no, col=expr_col, name_types=dict(name_types))
             target_col = ln_txt.find(target_txt)
@@ -6540,7 +6418,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             yield_value_type = "unknown"
             if is_generator:
                 fn_ret_effective, yield_value_type = _sh_make_generator_return_type(fn_ret, yield_types)
-            fn_ret_type_expr = _sh_ann_to_type_expr(fn_ret_effective)
+            fn_ret_type_expr = _sh_ann_to_type_expr(fn_ret_effective, type_aliases=_SH_TYPE_ALIASES)
             arg_defaults: dict[str, Any] = {}
             arg_index_map: dict[str, int] = {}
             for arg_pos, arg_name in enumerate(arg_order):
@@ -6991,8 +6869,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     parsed_field = _sh_parse_typed_binding(s2, allow_dotted_name=False)
                     if parsed_field is not None:
                         fname, fty_txt, fdefault = parsed_field
-                        fty = _sh_ann_to_type(fty_txt)
-                        fty_expr = _sh_ann_to_type_expr(fty)
+                        fty = _sh_ann_to_type(fty_txt, type_aliases=_SH_TYPE_ALIASES)
+                        fty_expr = _sh_ann_to_type_expr(fty, type_aliases=_SH_TYPE_ALIASES)
                         field_types[fname] = fty
                         val_node: dict[str, Any] | None = None
                         if fdefault != "":
@@ -7429,8 +7307,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             name = top_name
             ann_txt = top_ann
             expr_txt = top_default
-            ann = _sh_ann_to_type(ann_txt)
-            ann_expr = _sh_ann_to_type_expr(ann)
+            ann = _sh_ann_to_type(ann_txt, type_aliases=_SH_TYPE_ALIASES)
+            ann_expr = _sh_ann_to_type_expr(ann, type_aliases=_SH_TYPE_ALIASES)
             expr_col = ln.find(expr_txt)
             value_expr = _sh_parse_expr_lowered(expr_txt, ln_no=i, col=expr_col, name_types={})
             ann_item = _sh_make_ann_assign_stmt(
