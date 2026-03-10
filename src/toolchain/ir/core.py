@@ -6782,6 +6782,14 @@ class _ShExprParser:
     ) -> tuple[dict[str, Any], bool]:
         """Subscript suffix の first expr 側 state resolve を helper へ寄せる。"""
         first = self._parse_ifexp()
+        return self._apply_subscript_suffix_first_component_kind_state(first=first)
+
+    def _apply_subscript_suffix_first_component_kind_state(
+        self,
+        *,
+        first: dict[str, Any],
+    ) -> tuple[dict[str, Any], bool]:
+        """Subscript suffix の first expr 側 kind apply を helper へ寄せる。"""
         return first, self._resolve_subscript_suffix_first_component_kind()
 
     def _resolve_subscript_suffix_first_component_kind(self) -> bool:
