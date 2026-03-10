@@ -3,7 +3,7 @@
 最終更新: 2026-03-11
 
 関連計画:
-- [P4 backend_registry の正本化と selfhost parity gate の強化](./p4-backend-registry-selfhost-parity-hardening.md)
+- [P4 backend_registry の正本化と selfhost parity gate の強化](./archive/20260311-p4-backend-registry-selfhost-parity-hardening.md)
 
 目的:
 - representative selfhost gate の実行入口を 1 箇所にまとめる。

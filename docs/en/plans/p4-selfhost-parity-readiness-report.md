@@ -3,7 +3,7 @@
 Last updated: 2026-03-11
 
 Related plan:
-- [P4 Canonicalize backend_registry and strengthen selfhost parity gates](./p4-backend-registry-selfhost-parity-hardening.md)
+- [P4 Canonicalize backend_registry and strengthen selfhost parity gates](./archive/20260311-p4-backend-registry-selfhost-parity-hardening.md)
 
 Purpose:
 - Keep the representative selfhost gate entrypoints in one place.

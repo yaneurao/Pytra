@@ -32,23 +32,6 @@ Last updated: 2026-03-11
 ## Unfinished Tasks
 
 
-### P4: Canonicalize `backend_registry` and strengthen selfhost parity gates
-
-Context: [docs/ja/plans/p4-backend-registry-selfhost-parity-hardening.md](../plans/p4-backend-registry-selfhost-parity-hardening.md)
-
-1. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01] Canonicalize `backend_registry` and strengthen selfhost parity gates.
-2. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-01] Inventory overlapping surfaces between `backend_registry.py` and `backend_registry_static.py` and classify intentional differences versus drift candidates.
-3. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S1-02] Inventory current gates and blind spots across `build_selfhost`, `stage2`, `verify_selfhost_end_to_end`, and multi-language selfhost flows, then fix the classification policy for known blocks and regressions in the decision log.
-4. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-01] Define a canonical source of truth for backend capability, runtime copy, option schema, and writer metadata, and move both host and static registries to derive from it.
-5. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S2-02] Fix the boundary and diagnostics contract for intentional differences such as host-only lazy imports or selfhost-only direct routes.
-6. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S3-01] Move host/static registries onto shared metadata or generation flow and retire handwritten duplication.
-7. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S3-02] Add drift guards or diff tests so backend-surface changes made on only one side fail fast.
-8. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S4-01] Reorganize representative parity suites for stage1, stage2, direct e2e, and multi-language selfhost, and unify failure categorization and summaries.
-9. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S4-02] Align unsupported / preview / known-block / regression diagnostics between registry metadata and parity reports so expected failures are explicitly managed.
-10. [x] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S5-01] Update docs / plan reports / archive so backend readiness, known blocks, and gate execution procedures stay traceable.
-11. [ ] [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S5-02] Verify that representative internal changes are checked under the same contract in both host and selfhost lanes, then lock that re-entry guard.
-- Progress memo: [ID: P4-BACKEND-REGISTRY-SELFHOST-PARITY-01-S5-02] The representative shared-diagnostic guard is now bundled into the reentry guard, and coverage is expanding from known-block cases to regression cases across host/selfhost lanes.
-
 ### P5: Full rollout of nominal ADT as a language feature
 
 Context: [docs/ja/plans/p5-nominal-adt-language-rollout.md](../plans/p5-nominal-adt-language-rollout.md)
