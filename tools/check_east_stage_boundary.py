@@ -52,6 +52,14 @@ def _iter_calls(tree: ast.Module) -> list[tuple[str, int]]:
     return out
 
 
+def _iter_string_literals(tree: ast.Module) -> list[tuple[str, int]]:
+    out: list[tuple[str, int]] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            out.append((node.value, int(getattr(node, "lineno", 0))))
+    return out
+
+
 def _matches_prefix(name: str, prefixes: tuple[str, ...]) -> bool:
     for prefix in prefixes:
         if name == prefix or name.startswith(prefix + "."):
@@ -71,33 +79,99 @@ def _load_ast(path: Path) -> ast.Module:
     return ast.parse(text, filename=str(path))
 
 
-def _check_east2_boundary(errors: list[str]) -> None:
-    path = ROOT / "src" / "toolchain" / "compiler" / "east_parts" / "east2.py"
+def _display_path(path: Path) -> str:
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _check_import_call_boundary(
+    path: Path,
+    *,
+    forbidden_import_prefixes: tuple[str, ...],
+    forbidden_calls: tuple[str, ...],
+    allowed_imports: tuple[str, ...] = (),
+    stage_label: str,
+    errors: list[str],
+) -> None:
     tree = _load_ast(path)
-    rel = path.relative_to(ROOT).as_posix()
+    rel = _display_path(path)
+    for name, lineno in _iter_imports(tree):
+        if name in allowed_imports:
+            continue
+        if _matches_prefix(name, forbidden_import_prefixes):
+            errors.append(f"{rel}:{lineno} disallowed import in {stage_label}: {name}")
+    for name, lineno in _iter_calls(tree):
+        if _matches_call(name, forbidden_calls):
+            errors.append(f"{rel}:{lineno} disallowed call in {stage_label}: {name}")
+
+
+def _check_semantic_literals(
+    path: Path,
+    *,
+    forbidden_literals: tuple[str, ...],
+    stage_label: str,
+    errors: list[str],
+) -> None:
+    tree = _load_ast(path)
+    rel = _display_path(path)
+    for value, lineno in _iter_string_literals(tree):
+        if value in forbidden_literals:
+            errors.append(f"{rel}:{lineno} disallowed semantic literal in {stage_label}: {value}")
+
+
+def _check_east2_boundary(errors: list[str]) -> None:
+    paths = (
+        ROOT / "src" / "toolchain" / "compiler" / "east_parts" / "east2.py",
+        ROOT / "src" / "toolchain" / "ir" / "east2.py",
+    )
     forbidden_import_prefixes = (
         "toolchain.compiler.east_parts.east3",
         "toolchain.compiler.east_parts.east2_to_east3_lowering",
+        "toolchain.ir.east3",
+        "toolchain.ir.east2_to_east3_lowering",
         "src.toolchain.compiler.east_parts.east3",
         "src.toolchain.compiler.east_parts.east2_to_east3_lowering",
+        "src.toolchain.ir.east3",
+        "src.toolchain.ir.east2_to_east3_lowering",
     )
     forbidden_calls = (
         "lower_east2_to_east3",
         "lower_east2_to_east3_document",
         "load_east3_document",
     )
-    for name, lineno in _iter_imports(tree):
-        if _matches_prefix(name, forbidden_import_prefixes):
-            errors.append(f"{rel}:{lineno} disallowed import in EAST2 stage: {name}")
-    for name, lineno in _iter_calls(tree):
-        if _matches_call(name, forbidden_calls):
-            errors.append(f"{rel}:{lineno} disallowed lowering call in EAST2 stage: {name}")
+    forbidden_literals = ("dispatch_mode", "schema_version", "linked_program_v1")
+    for path in paths:
+        _check_import_call_boundary(
+            path,
+            forbidden_import_prefixes=forbidden_import_prefixes,
+            forbidden_calls=forbidden_calls,
+            stage_label="EAST2 stage",
+            errors=errors,
+        )
+        if path.parent.name == "ir":
+            _check_semantic_literals(
+                path,
+                forbidden_literals=forbidden_literals,
+                stage_label="EAST2 stage",
+                errors=errors,
+            )
 
 
 def _check_code_emitter_boundary(errors: list[str]) -> None:
-    path = ROOT / "src" / "toolchain" / "compiler" / "east_parts" / "code_emitter.py"
-    tree = _load_ast(path)
-    rel = path.relative_to(ROOT).as_posix()
+    shim_path = ROOT / "src" / "toolchain" / "compiler" / "east_parts" / "code_emitter.py"
+    impl_path = ROOT / "src" / "backends" / "common" / "emitter" / "code_emitter.py"
+    paths = (
+        (shim_path, ()),
+        (
+            impl_path,
+            (
+                "toolchain.compiler.transpile_cli",
+                "toolchain.compiler.transpile_cli.make_user_error",
+            ),
+        ),
+    )
     forbidden_import_prefixes = (
         "toolchain.compiler.east",
         "toolchain.compiler.transpile_cli",
@@ -122,12 +196,23 @@ def _check_code_emitter_boundary(errors: list[str]) -> None:
         "lower_east2_to_east3",
         "lower_east2_to_east3_document",
     )
-    for name, lineno in _iter_imports(tree):
-        if _matches_prefix(name, forbidden_import_prefixes):
-            errors.append(f"{rel}:{lineno} disallowed import in CodeEmitter base: {name}")
-    for name, lineno in _iter_calls(tree):
-        if _matches_call(name, forbidden_calls):
-            errors.append(f"{rel}:{lineno} disallowed stage reinterpretation call in CodeEmitter base: {name}")
+    forbidden_literals = ("east_stage", "schema_version", "linked_program_v1")
+    for path, allowed_imports in paths:
+        _check_import_call_boundary(
+            path,
+            forbidden_import_prefixes=forbidden_import_prefixes,
+            forbidden_calls=forbidden_calls,
+            allowed_imports=allowed_imports,
+            stage_label="CodeEmitter base",
+            errors=errors,
+        )
+        if path.parent.name == "emitter":
+            _check_semantic_literals(
+                path,
+                forbidden_literals=forbidden_literals,
+                stage_label="CodeEmitter base",
+                errors=errors,
+            )
 
 
 def main() -> int:
