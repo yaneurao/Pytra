@@ -6,34 +6,20 @@ import re
 import sys
 import unittest
 from pathlib import Path
-from typing import Any
 
-ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-if str(ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(ROOT / "src"))
+TEST_DIR = Path(__file__).resolve().parent
+if str(TEST_DIR) not in sys.path:
+    sys.path.insert(0, str(TEST_DIR))
 
-CORE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core.py"
-CORE_CALL_ARG_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_args.py"
-CORE_CALL_SUFFIX_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_suffix.py"
-CORE_CALL_ANNOTATION_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_annotation.py"
-CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH = (
-    ROOT / "src" / "toolchain" / "ir" / "core_expr_attr_subscript_suffix.py"
-)
-
+from _east_core_test_support import CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH
+from _east_core_test_support import CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH
+from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
+from _east_core_test_support import CORE_CALL_ARG_SOURCE_PATH
+from _east_core_test_support import CORE_CALL_SUFFIX_SOURCE_PATH
+from _east_core_test_support import CORE_SOURCE_PATH
+from _east_core_test_support import _walk
 from src.toolchain.compiler.east import convert_source_to_east_with_backend
 from src.toolchain.compiler.east import EastBuildError
-
-
-def _walk(node: Any):
-    if isinstance(node, dict):
-        yield node
-        for v in node.values():
-            yield from _walk(v)
-    elif isinstance(node, list):
-        for it in node:
-            yield from _walk(it)
 
 
 class EastCoreTest(unittest.TestCase):
@@ -608,6 +594,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_attr_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        attr_annotation_text = CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         suffix_text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
         owner_type_text = annotation_text.split("def _owner_expr_resolved_type", 1)[1].split(
             "def _resolve_attr_callee_attr_name",
@@ -617,16 +604,16 @@ class EastCoreTest(unittest.TestCase):
             "def _resolve_attr_callee",
             1,
         )[0]
-        resolve_text = text.split("def _resolve_attr_expr_annotation", 1)[1].split(
+        resolve_text = attr_annotation_text.split("def _resolve_attr_expr_annotation", 1)[1].split(
             "def _resolve_attr_expr_metadata",
             1,
         )[0]
-        metadata_text = text.split("def _resolve_attr_expr_metadata", 1)[1].split(
+        metadata_text = attr_annotation_text.split("def _resolve_attr_expr_metadata", 1)[1].split(
             "def _resolve_attr_expr_annotation_state",
             1,
         )[0]
-        state_text = text.split("def _resolve_attr_expr_annotation_state", 1)[1].split(
-            "def _build_attr_expr_payload",
+        state_text = attr_annotation_text.split("def _resolve_attr_expr_annotation_state", 1)[1].split(
+            "def _resolve_subscript_expr_annotation_state",
             1,
         )[0]
         build_text = text.split("def _build_attr_expr_payload", 1)[1].split(
@@ -685,6 +672,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("owner_t = self._resolve_attr_expr_owner_state(", state_text)
         self.assertIn(") = self._resolve_attr_expr_metadata(", state_text)
         self.assertNotIn("return (\n            owner_t,", state_text)
+        self.assertIn(
+            "from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin",
+            text,
+        )
         self.assertIn("node = _sh_make_attribute_expr(", build_text)
         self.assertIn("return node", build_text)
         self.assertIn("if self._apply_runtime_call_attr_expr_annotation(", runtime_apply_text)
@@ -704,6 +695,9 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("owner_t = self._resolve_attr_expr_owner_state(", helper_text)
         self.assertNotIn("self._resolve_attr_expr_metadata(", helper_text)
         self.assertNotIn("_sh_make_attribute_expr(", helper_text)
+        self.assertNotIn("def _resolve_attr_expr_annotation(", text)
+        self.assertNotIn("def _resolve_attr_expr_metadata(", text)
+        self.assertNotIn("def _resolve_attr_expr_annotation_state(", text)
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', apply_text)
         self.assertNotIn('_sh_annotate_resolved_runtime_expr(', apply_text)
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', helper_text)
@@ -755,6 +749,7 @@ class EastCoreTest(unittest.TestCase):
     def test_core_source_routes_subscript_annotations_through_parser_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        attr_annotation_text = CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         suffix_text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
         owner_type_text = annotation_text.split("def _owner_expr_resolved_type", 1)[1].split(
             "def _resolve_attr_callee_attr_name",
@@ -765,35 +760,35 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         index_build_text = text.split("def _build_index_subscript_expr", 1)[1].split(
-            "def _resolve_subscript_expr_annotation_state",
-            1,
-        )[0]
-        state_text = text.split("def _resolve_subscript_expr_annotation_state", 1)[1].split(
-            "def _resolve_subscript_expr_build_kind",
-            1,
-        )[0]
-        build_kind_text = text.split("def _resolve_subscript_expr_build_kind", 1)[1].split(
-            "def _resolve_subscript_expr_apply_state",
-            1,
-        )[0]
-        apply_state_text = text.split("def _resolve_subscript_expr_apply_state", 1)[1].split(
-            "def _apply_slice_subscript_expr_build",
-            1,
-        )[0]
-        slice_apply_text = text.split("def _apply_slice_subscript_expr_build", 1)[1].split(
-            "def _apply_index_subscript_expr_build",
-            1,
-        )[0]
-        index_apply_text = text.split("def _apply_index_subscript_expr_build", 1)[1].split(
-            "def _apply_subscript_expr_build",
-            1,
-        )[0]
-        apply_text = text.split("def _apply_subscript_expr_build", 1)[1].split(
             "def _annotate_subscript_expr",
             1,
         )[0]
-        helper_text = text.split("def _annotate_subscript_expr", 1)[1].split(
+        state_text = attr_annotation_text.split("def _resolve_subscript_expr_annotation_state", 1)[1].split(
+            "def _resolve_subscript_expr_build_kind",
+            1,
+        )[0]
+        build_kind_text = attr_annotation_text.split("def _resolve_subscript_expr_build_kind", 1)[1].split(
+            "def _resolve_subscript_expr_apply_state",
+            1,
+        )[0]
+        apply_state_text = attr_annotation_text.split("def _resolve_subscript_expr_apply_state", 1)[1].split(
+            "def _apply_slice_subscript_expr_build",
+            1,
+        )[0]
+        slice_apply_text = attr_annotation_text.split("def _apply_slice_subscript_expr_build", 1)[1].split(
+            "def _apply_index_subscript_expr_build",
+            1,
+        )[0]
+        index_apply_text = attr_annotation_text.split("def _apply_index_subscript_expr_build", 1)[1].split(
+            "def _apply_subscript_expr_build",
+            1,
+        )[0]
+        apply_text = attr_annotation_text.split("def _apply_subscript_expr_build", 1)[1].split(
             "def _subscript_result_type",
+            1,
+        )[0]
+        helper_text = text.split("def _annotate_subscript_expr", 1)[1].split(
+            "def _dict_stmt_list",
             1,
         )[0]
         postfix_suffix_text = suffix_text.split("def _parse_postfix_suffix", 1)[1].split(
@@ -831,6 +826,10 @@ class EastCoreTest(unittest.TestCase):
         self.assertIn("return self._apply_postfix_suffix_kind(", postfix_suffix_text)
         self.assertIn("return self._parse_subscript_suffix(owner_expr=owner_expr)", postfix_suffix_apply_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
+        self.assertIn(
+            "from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin",
+            text,
+        )
         self.assertNotIn("_sh_make_slice_node(lower, upper)", helper_text)
         self.assertNotIn("_sh_make_subscript_expr(", helper_text)
         self.assertNotIn("owner_t = self._owner_expr_resolved_type(owner_expr)", helper_text)
@@ -839,6 +838,12 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn('if build_kind == "slice":', helper_text)
         self.assertNotIn("return self._build_slice_subscript_expr(", apply_text)
         self.assertNotIn("return self._build_index_subscript_expr(", apply_text)
+        self.assertNotIn("def _resolve_subscript_expr_annotation_state(", text)
+        self.assertNotIn("def _resolve_subscript_expr_build_kind(", text)
+        self.assertNotIn("def _resolve_subscript_expr_apply_state(", text)
+        self.assertNotIn("def _apply_slice_subscript_expr_build(", text)
+        self.assertNotIn("def _apply_index_subscript_expr_build(", text)
+        self.assertNotIn("def _apply_subscript_expr_build(", text)
         self.assertNotIn("node = _sh_make_subscript_expr(", postfix_text)
         self.assertNotIn("_sh_make_slice_node(", postfix_text)
         self.assertNotIn("out_t = self._subscript_result_type(", postfix_text)

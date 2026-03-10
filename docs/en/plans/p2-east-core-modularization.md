@@ -41,7 +41,7 @@ Validation Commands:
 
 Breakdown:
 - [x] [ID: P2-EAST-CORE-MODULARIZATION-01-S1-01] Inventory remaining clusters in `core.py` / `test_east_core.py` and fix split boundaries as `suffix parser` / `annotation` / `builder` / `source guard`.
-- [ ] [ID: P2-EAST-CORE-MODULARIZATION-01-S2-01] Extract the `attr/subscript annotation` cluster into a dedicated mixin module and push state/build-dispatch helpers out of `core.py`.
+- [x] [ID: P2-EAST-CORE-MODULARIZATION-01-S2-01] Extract the `attr/subscript annotation` cluster into a dedicated mixin module and push state/build-dispatch helpers out of `core.py`.
 - [ ] [ID: P2-EAST-CORE-MODULARIZATION-01-S2-02] Move the remaining `call/attr/subscript` suffix parser clusters into dedicated modules and reduce `core.py` postfix parsing to orchestration.
 - [ ] [ID: P2-EAST-CORE-MODULARIZATION-01-S3-01] Split `test_east_core.py` source guards into feature-specific test modules so they track module boundaries one-to-one.
 - [ ] [ID: P2-EAST-CORE-MODULARIZATION-01-S3-02] Compress TODO/plan progress notes and keep detailed history only in the `Decision Log`.
@@ -74,3 +74,4 @@ Why start with `attr/subscript annotation`:
 
 - 2026-03-11: Based on user feedback, switched from helper-by-helper changes to cluster-sized splitting for `core.py`. Progress notes should also be compressed and moved out of TODO.
 - 2026-03-11: As `S1-01`, inventoried the remaining clusters in `core.py` / `test_east_core.py` and fixed `attr/subscript annotation` as the first split target.
+- 2026-03-11: As `S2-01`, extracted the `attr/subscript annotation` cluster into `core_expr_attr_subscript_annotation.py`. The split boundary intentionally leaves the build bodies and top-level `_sh_*`-heavy orchestration in `core.py`, while moving only the state/build-dispatch helpers out.
