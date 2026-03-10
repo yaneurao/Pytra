@@ -5677,7 +5677,7 @@ class _ShExprParser:
         owner_expr: dict[str, Any],
         attr_name: str,
         source_span: dict[str, int],
-    ) -> tuple[str, str, str, str, str, str, str, str]:
+    ) -> tuple[str, str, str, str, str, str, str]:
         """Attribute access の owner-state と metadata resolve を helper へ寄せる。"""
         owner_t = self._resolve_attr_expr_owner_state(
             owner_expr=owner_expr,
@@ -5698,7 +5698,6 @@ class _ShExprParser:
             attr_name=attr_name,
         )
         return (
-            owner_t,
             resolved_type,
             attr_runtime_call,
             attr_semantic_tag,
@@ -5772,7 +5771,6 @@ class _ShExprParser:
     ) -> dict[str, Any]:
         """Attribute access node の生成と annotation を parser helper へ寄せる。"""
         (
-            owner_t,
             resolved_type,
             attr_runtime_call,
             attr_semantic_tag,
