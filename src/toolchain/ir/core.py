@@ -5364,6 +5364,22 @@ class _ShExprParser:
             callee=callee,
             end_tok=end_tok,
         )
+        return self._apply_call_suffix_span_repr_state(
+            args=args,
+            keywords=keywords,
+            source_span=source_span,
+            repr_text=repr_text,
+        )
+
+    def _apply_call_suffix_span_repr_state(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, int], str]:
+        """call suffix の span/repr apply を helper へ寄せる。"""
         return args, keywords, source_span, repr_text
 
     def _resolve_call_suffix_span_repr(

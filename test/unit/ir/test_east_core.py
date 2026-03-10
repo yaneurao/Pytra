@@ -2584,6 +2584,10 @@ x.bit_length()
             1,
         )[0]
         state_apply_text = text.split("def _apply_call_suffix_token_state", 1)[1].split(
+            "def _apply_call_suffix_span_repr_state",
+            1,
+        )[0]
+        call_suffix_span_apply_text = text.split("def _apply_call_suffix_span_repr_state", 1)[1].split(
             "def _resolve_call_suffix_span_repr",
             1,
         )[0]
@@ -2645,8 +2649,9 @@ x.bit_length()
         self.assertIn("return self._apply_call_suffix_token_state(", state_text)
         self.assertIn("return self._consume_call_suffix_tokens()", token_state_text)
         self.assertIn("source_span, repr_text = self._resolve_call_suffix_span_repr(", state_apply_text)
+        self.assertIn("return self._apply_call_suffix_span_repr_state(", state_apply_text)
         self.assertIn("return self._resolve_postfix_span_repr(", span_text)
-        self.assertIn("return args, keywords, source_span, repr_text", state_apply_text)
+        self.assertIn("return args, keywords, source_span, repr_text", call_suffix_span_apply_text)
         self.assertIn('return self._eat("(")', open_token_text)
         self.assertIn('return self._eat(")")', close_token_text)
         self.assertIn("return self._parse_call_args()", arg_entries_text)
@@ -2671,6 +2676,7 @@ x.bit_length()
         self.assertNotIn('self._eat("(")', state_text)
         self.assertNotIn('self._eat("(")', token_text)
         self.assertNotIn("args, keywords, rtok = self._consume_call_suffix_tokens()", state_text)
+        self.assertNotIn("return args, keywords, source_span, repr_text", state_apply_text)
         self.assertNotIn("args, keywords = self._parse_call_args()", token_state_text)
         self.assertNotIn("args, keywords = self._parse_call_args()", token_text)
         self.assertNotIn("args, keywords = self._consume_call_suffix_arg_entries()", token_text)
