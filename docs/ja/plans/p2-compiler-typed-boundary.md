@@ -77,7 +77,7 @@
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] selfhost parser / EAST builder の node 構築を typed constructor / builder helper へ寄せ、`dict<str, object>{{...}}` 直組み立てを段階縮退する。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] generated compiler / selfhost runtime に残る `make_object` usage を `serialization/export seam` 専用まで後退させる。
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-A] `S3-02` の完了条件を再定義し、TODO / plan の進捗メモを cluster 単位へ圧縮する。
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] `core.py` の postfix/suffix parser cluster を分割し、`call` / `attr` / `subscript` を専用 module へ移す。
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] `core.py` の postfix/suffix parser cluster を分割し、`call` / `attr` / `subscript` を専用 module へ移す。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] `core.py` の call annotation cluster を分割し、`named-call` / `attr-call` / `callee-call` を専用 module へ移す。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` / `suffix tail` / `subscript tail` に残る helper 抽出を 5-10 個単位の bundle で消化する。
 - [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] generated/selfhost residual guard と export seam を再基準化し、`make_object` を `serialization/export seam` 専用まで後退させて `S3-02` を閉じる。
@@ -127,3 +127,4 @@
 - 2026-03-10: 以後の `S3-02` は `S3-02-B` から `S3-02-E` の cluster 単位で進める。`TODO` は cluster 要約のみを持ち、helper 単位の細片履歴は git history と必要最小限の decision log 要約へ圧縮する。
 - 2026-03-10: `core.py` 分割を deliverable に格上げし、まず `postfix/suffix parser` cluster と `call annotation` cluster を専用 module へ出す。残る `call-arg` / `suffix tail` / `subscript tail` はその後に bundle 単位で処理する。
 - 2026-03-10: `S3-02-B` の最初の塊として `call-arg` / `call-suffix` parser cluster を `core_expr_call_suffix.py` へ移し、`core.py` は mixin import と postfix dispatch orchestration に寄せた。source guard も helper 単位ではなく split cluster 単位で監視する方針に切り替えた。
+- 2026-03-10: `attr/subscript suffix` parser cluster も `core_expr_attr_subscript_suffix.py` へ移し、`call` / `attr` / `subscript` の suffix parser は `core.py` から専用 module へ分割し終えた。`S3-02-B` は完了として閉じ、次は `call annotation` cluster の分割へ進む。
