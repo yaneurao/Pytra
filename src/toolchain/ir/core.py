@@ -5437,7 +5437,25 @@ class _ShExprParser:
         keywords: list[dict[str, Any]],
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
         """call suffix の arg-entry state apply を helper へ寄せる。"""
-        rtok = self._consume_call_suffix_close_token()
+        rtok = self._resolve_call_suffix_close_token_state()
+        return self._apply_call_suffix_close_token_state(
+            args=args,
+            keywords=keywords,
+            rtok=rtok,
+        )
+
+    def _resolve_call_suffix_close_token_state(self) -> dict[str, Any]:
+        """call suffix の close-token state resolve を helper へ寄せる。"""
+        return self._consume_call_suffix_close_token()
+
+    def _apply_call_suffix_close_token_state(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        rtok: dict[str, Any],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+        """call suffix の close-token state apply を helper へ寄せる。"""
         return args, keywords, rtok
 
     def _consume_call_suffix_tokens(
@@ -7274,6 +7292,30 @@ class _ShExprParser:
             owner_expr=owner_expr,
             end_tok=end_tok,
         )
+        return self._apply_subscript_suffix_span_repr_state(
+            index_expr=index_expr,
+            lower=lower,
+            upper=upper,
+            source_span=source_span,
+            repr_text=repr_text,
+        )
+
+    def _apply_subscript_suffix_span_repr_state(
+        self,
+        *,
+        index_expr: dict[str, Any] | None,
+        lower: dict[str, Any] | None,
+        upper: dict[str, Any] | None,
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> tuple[
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, Any] | None,
+        dict[str, int],
+        str,
+    ]:
+        """Subscript suffix の span/repr apply を helper へ寄せる。"""
         return index_expr, lower, upper, source_span, repr_text
 
     def _resolve_subscript_suffix_span_repr(
