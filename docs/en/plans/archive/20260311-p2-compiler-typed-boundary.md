@@ -1,6 +1,6 @@
 # P2: Typed Compiler Boundaries and Retreat of Internal Object Carriers
 
-Last updated: 2026-03-10
+Last updated: 2026-03-11
 
 Related TODO:
 - `ID: P2-COMPILER-TYPED-BOUNDARY-01` in `docs/ja/todo/index.md`
@@ -83,8 +83,8 @@ Out of scope:
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Rebaseline generated/selfhost residual guards and export seams, retreat `make_object` to serialization/export seams only, and close `S3-02`.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Separate JSON, extern/hooks, and intentionally dynamic carriers from the compiler typed model behind `JsonValue` or explicit adapters.
 - [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Label every remaining `make_object` / `py_to` / `obj_to_*` usage and add guards that reject uncategorized reintroduction.
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] Refresh selfhost build/diff/prepare/bridge regressions and lock non-regression after the typed-boundary changes.
-- [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-02] Update docs / TODO / archive and record whether each remaining `make_object` usage is `user boundary only` or `explicit adapter only`.
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] Refresh selfhost build/diff/prepare/bridge regressions and lock non-regression after the typed-boundary changes.
+- [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-02] Update docs / TODO / archive and record whether each remaining `make_object` usage is `user boundary only` or `explicit adapter only`.
 
 ## `core.py` Split Policy
 
@@ -157,3 +157,5 @@ Decision log:
 - 2026-03-11: The next `S5-01` bundle added `main()` regressions to `test_check_selfhost_stage2_cpp_diff.py`, fixing stage2 build failure, missing-binary under `--skip-build`, and build-to-diff flow with an existing stage2 binary. The stage2 diff lane is now guarded at the CLI orchestration level, not only through helper command tests.
 - 2026-03-11: The next `S5-01` bundle added command/env helpers to `tools/selfhost_transpile.py` and fixed `.json` passthrough, `.py -> EAST JSON -> selfhost` bridging, `PYTHONPATH` injection, and `--target` propagation in `test_selfhost_transpile_tool.py`. The bridge-driver lane is now also covered by typed-boundary regressions.
 - 2026-03-11: The next `S5-01` bundle also added command helpers to `tools/build_selfhost.py`, and `test_build_selfhost_tool.py` now fixes the stage1 transpile command, compile command, runtime-source resolution, and the `main()` transpile-to-compile flow. The stage1 build lane is now guarded as a typed-boundary selfhost regression too.
+- 2026-03-11: `S5-01` is now complete. Unit tests lock the command/helper/main flows for `build_selfhost.py`, `build_selfhost_stage2.py`, `verify_selfhost_end_to_end.py`, `check_selfhost_cpp_diff.py`, `check_selfhost_stage2_cpp_diff.py`, and `selfhost_transpile.py`, and they also pin the generated selfhost-core residual bucket invariants.
+- 2026-03-11: `S5-02` closes the plan by recording the end state in docs/TODO/archive: tracked compiler/toolchain object bridges are limited to the three `legacy_migration_adapter` sites in native `transpile_cli.cpp`, while generated selfhost-core `make_object` residuals remain confined to `serialization_export_seam` plus explicit parser-residual guards. User-facing `Any/object` boundaries remain out of scope for P2 and stay on the runtime side.

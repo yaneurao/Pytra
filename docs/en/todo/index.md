@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-10
+Last updated: 2026-03-11
 
 ## Context Operation Rules
 
@@ -31,58 +31,6 @@ Last updated: 2026-03-10
 
 ## Unfinished Tasks
 
-### P2: Move compiler boundaries to typed carriers and retreat internal object-carrier / `make_object` usage
-
-Context: [docs/ja/plans/p2-compiler-typed-boundary.md](../plans/p2-compiler-typed-boundary.md)
-
-1. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01] Move compiler boundaries to typed carriers and retreat internal object-carrier / `make_object` usage.
-2. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-01] Inventory remaining `dict[str, object]`, `list[object]`, `make_object`, and `py_to` usage across `transpile_cli`, `backend_registry_static`, selfhost parser paths, and generated compiler runtime, then classify each usage as `compiler_internal`, `json_adapter`, `extern_hook`, or `legacy_bridge`.
-3. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-02] Lock the typed-boundary contract and non-goals so they stay consistent with `spec-dev`, `spec-runtime`, and `spec-boxing`.
-4. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-01] Define typed carrier specs for compiler root payloads: EAST document, backend spec, layer options, and emit request/result.
-5. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-02] Introduce typed carriers and thin legacy adapters in the Python source of truth.
-6. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S2-03] Introduce typed carrier mirrors or typed wrapper APIs in the C++ selfhost/native compiler interfaces and reduce raw `dict<str, object>` exchange.
-7. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Move selfhost parser / EAST builder node construction onto typed constructors / builder helpers and gradually retire direct `dict<str, object>{{...}}` assembly.
-8. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Retreat remaining `make_object` usage in generated compiler / selfhost runtime down to serialization/export seams only.
-9. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-A] Redefine the `S3-02` completion criteria and compress TODO/plan progress notes to cluster-level summaries.
-10. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] Split the postfix/suffix parser cluster out of `core.py` and move `call` / `attr` / `subscript` parsing into dedicated modules.
-11. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] Split the call-annotation cluster out of `core.py` and move `named-call` / `attr-call` / `callee-call` handling into dedicated modules.
-12. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] Finish the remaining `call-arg` / `suffix tail` / `subscript tail` helper extraction in bundles of 5-10 clusters instead of one-helper commits.
-13. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Rebaseline generated/selfhost residual guards and export seams, retreat `make_object` down to serialization/export seams only, and close `S3-02`.
-14. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Separate JSON, extern/hooks, and intentionally dynamic carriers from the compiler typed model behind `JsonValue` or explicit adapters.
-15. [x] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Label every remaining `make_object` / `py_to` / `obj_to_*` usage and add guards that reject uncategorized reintroduction.
-16. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] Refresh selfhost build/diff/prepare/bridge regressions and lock non-regression after the typed-boundary changes.
-17. [ ] [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-02] Update docs / TODO / archive and record whether each remaining `make_object` usage is `user boundary only` or `explicit adapter only`.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S1-02] `S1-S2` classified object-carrier usage, fixed typed-boundary non-goals, locked typed-carrier field contracts, and moved host/static/native wrappers onto thin legacy-adapter surfaces.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-01] Checked-in node construction is now mostly on `_sh_make_*` builder helpers; module root, imports, expr/stmt nodes, comprehensions, f-strings, trivia, and span carriers are guarded on the source-of-truth side.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] The host/static/native typed export seam is now centered on `typed_boundary.py`, and the selfhost entrypoint also routes through the direct typed path. Version gates and entrypoint contract tests guard against regressions.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Generated/selfhost residual guards now cover module-root, import, expr, stmt, literal, comprehension, and f-string lanes, while the source-of-truth side fail-fast checks raw inline `kind` and open-coded dict regressions.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] Helper extraction around `call` / `attr` / `subscript` / `call-arg` has advanced substantially, but `core.py` and `test_east_core.py` became too large and one-helper commits became too fine-grained for the actual progress made.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] From this point on, `S3-02` proceeds in cluster units `S3-02-B` through `S3-02-E`; TODO keeps only cluster-level summaries, and fine-grained helper history stays in the plan decision log and git history.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-B] The postfix/suffix parser cluster now lives in `core_expr_call_suffix.py` and `core_expr_attr_subscript_suffix.py`, and `core.py` has been reduced toward mixin imports plus postfix-dispatch orchestration.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-C] The `call_expr` / `callee_call` / `named-call` / `attr-call` annotation entrypoints now live in `core_expr_call_annotation.py`. `core.py` is reduced to shared helpers and lower-level apply logic, and the remaining fine-grained helper extraction is tracked under `S3-02-D`.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-D] `call-arg` now lives in `core_expr_call_args.py`, `call suffix` in `core_expr_call_suffix.py`, and `attr/subscript suffix` in `core_expr_attr_subscript_suffix.py`; the remaining helper extraction was also regrouped into bundle-sized batches.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] Generated selfhost-core residual `make_object` guards now separate `export_seam` from `parser_residual`, and further split parser residuals into `expr_parser`, `stmt_parser`, and `lookup` buckets. Tests now also fix that the bucket union matches `parser_residual` and stays disjoint from `export_seam`.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02-E] The source-of-truth compiler lane and native wrapper are now free of `make_object` outside export seams, and generated selfhost-core usage is rebaselined into `export_seam=to_payload` plus explicit `parser_residual` guards, so `S3-02` is closed and the remaining labeling work moves to `S4-02`.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Contract tests now pin the current dynamic-carrier seams to `JsonValue` raw carriers, extern-marked stdlib surfaces, the `typed_boundary.py` runtime-hook seam, and compiler-root JSON loading.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `typed_boundary.py` now routes `runtime_hook` through `RuntimeHookAdapter`, so typed specs no longer hold raw hook callables directly and instead use explicit export/apply seams.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Native compiler-root JSON loading is now funneled through `_unwrap_compiler_root_json_doc()` / `_coerce_compiler_root_json_doc()`, keeping raw `JsonObj` unwrapping inside named adapters.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Python compiler-lane `loads_obj(...).raw` usage now funnels through `toolchain/json_adapters.py` helpers, so frontends/link/ir/runtime-index close raw `JsonObj` unwrapping inside one explicit seam.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Toolchain JSON loader seams now go through `toolchain.json_adapters`, removing raw `json.loads_obj(...).raw` usage from `frontends/transpile_cli`, `ir/east_io`, `link_*`, and `runtime_symbol_index`.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] The CLI root loaders in `py2x` and `ir2lang` now also go through `load_json_object_doc_or_none()`, aligning outer JSON-root reads with the same adapter seam.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] The remaining `JsonObj/JsonArr/JsonValue` raw access in `program_validator.py` now goes through object/array/value helpers in `toolchain.json_adapters`, so the validator no longer touches raw carriers directly.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `extern_var_v1` now flows through an `AmbientExternBinding` carrier, so ambient extern validation reads an explicit adapter seam instead of raw `dict[str, str]` bindings.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `ir2lang` EAST JSON unwrap now also goes through `unwrap_east_root_json_doc()` / `export_json_object_dict()`, removing the last direct `.raw` reads from the outer CLI lane.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Empty `JsonObj` fallbacks and default `JsonValue -> JsonObj` coercion now also live in `toolchain.json_adapters`, removing direct `json.JsonObj({})` construction from `py2x`, `ir2lang`, and `program_validator`.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] `program_loader` now coerces in-memory module docs through `coerce_json_object_dict()`, and `typed_boundary.py` keeps compiler-root raw/meta access behind named helpers.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-01] Dynamic carriers are now confined to the explicit seams in `toolchain.json_adapters`, `RuntimeHookAdapter`, `AmbientExternBinding`, and `pytra.std.json`; the compiler/toolchain core no longer uses generic raw access.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S4-02] Remaining compiler/toolchain `make_object` / `py_to` / `obj_to_*` usage is now limited to the native `transpile_cli.cpp` legacy-import seam, labeled with `P2-object-bridge: legacy_migration_adapter`, and guarded by `tools/check_compiler_object_bridge_labels.py` against unlabeled reintroduction.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] Selfhost build/diff/parity regressions now start fixing `build_selfhost_stage2.py` stage1->stage2 command/fallback behavior, `check_selfhost_cpp_diff.py` direct/bridge command contracts, and `verify_selfhost_end_to_end.py` auto-target/stdout normalization with unit tests.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] In addition to selfhost `prepare` / `verify`, `build_selfhost_stage2` and `check_selfhost_stage2_cpp_diff` now have unit-tested command/fallback helpers, so stage2 build/diff regressions are starting to be locked after the typed-boundary migration.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] `test_prepare_selfhost_source.py` now fixes generated selfhost-core `make_object` residual buckets through a category map and union invariants, so regressions that blur export seams and parser residuals are caught as selfhost regressions.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] The bridge lane in `selfhost_transpile.py` is now unit-tested through env/cmd helpers plus `main()` regressions, fixing both JSON passthrough and the `.py -> EAST JSON -> selfhost` path.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] `check_selfhost_stage2_cpp_diff.py` now fixes not only helper commands but also `main()` build failure / missing-binary / build-to-diff flow, so the stage2 diff CLI contract is covered end to end.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] `selfhost_transpile.py` now has unit tests for `.json` passthrough, `.py -> EAST JSON -> selfhost` bridging, and `PYTHONPATH` / `--target` propagation, so the bridge lane also catches typed-boundary regressions.
-- Progress memo: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S5-01] `build_selfhost.py` now fixes the stage1 transpile command, compile command, runtime-source resolution, and the `main()` transpile-to-compile flow with unit tests, so drift in the stage1 build lane is also guarded.
 
 ### P3: Harden compiler contracts and make stage/pass/backend handoff fail-closed
 

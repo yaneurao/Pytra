@@ -4,7 +4,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-09
+最終更新: 2026-03-11
 
 ## 運用方針
 
@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-11 / P2-COMPILER-TYPED-BOUNDARY-01](../plans/archive/20260311-p2-compiler-typed-boundary.md)
 - [2026-03-09 / P1-EAST-TYPEEXPR-01](../plans/archive/20260309-p1-east-typeexpr-strengthening.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-CORE-BOUNDARY-01](../plans/archive/20260309-p0-cpp-pyruntime-core-boundary-realign.md)
 - [2026-03-09 / P0-CPP-PYRUNTIME-ARGV-STATE-01](../plans/archive/20260309-p0-cpp-pyruntime-argv-state-slim.md)
@@ -95,6 +96,7 @@
 
 ## 日付別リンク
 
+- [2026-03-11](20260311.md)（1 セクション）
 - [2026-03-09](20260309.md)（29 セクション）
 - [2026-03-08](20260308.md)（31 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
