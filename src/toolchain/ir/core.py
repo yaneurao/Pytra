@@ -6065,6 +6065,18 @@ class _ShExprParser:
         """Subscript / slice の owner-type resolve を helper へ寄せる。"""
         return self._owner_expr_resolved_type(owner_expr)
 
+    def _resolve_subscript_expr_build_kind(
+        self,
+        *,
+        index_expr: dict[str, Any] | None,
+        lower: dict[str, Any] | None,
+        upper: dict[str, Any] | None,
+    ) -> str:
+        """Subscript / Slice の build 分岐を helper へ寄せる。"""
+        if index_expr is None or lower is not None or upper is not None:
+            return "slice"
+        return "index"
+
     def _annotate_subscript_expr(
         self,
         *,
@@ -6079,7 +6091,12 @@ class _ShExprParser:
         owner_t = self._resolve_subscript_expr_annotation_state(
             owner_expr=owner_expr,
         )
-        if index_expr is None or lower is not None or upper is not None:
+        build_kind = self._resolve_subscript_expr_build_kind(
+            index_expr=index_expr,
+            lower=lower,
+            upper=upper,
+        )
+        if build_kind == "slice":
             return self._build_slice_subscript_expr(
                 owner_expr=owner_expr,
                 owner_t=owner_t,
