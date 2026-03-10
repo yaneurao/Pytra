@@ -1881,6 +1881,8 @@ def _sh_make_class_def_stmt(
     base: str | None = None,
     dataclass: bool = False,
     dataclass_options: dict[str, Any] | None = None,
+    decorators: list[str] | None = None,
+    meta: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`ClassDef` 文 node を構築する。"""
     node = _sh_make_stmt_node("ClassDef", source_span)
@@ -1892,6 +1894,10 @@ def _sh_make_class_def_stmt(
     node["body"] = body
     if dataclass_options is not None:
         node["dataclass_options"] = dataclass_options
+    if decorators is not None:
+        node["decorators"] = decorators
+    if meta is not None:
+        node["meta"] = meta
     return node
 
 
@@ -1962,6 +1968,7 @@ def _sh_make_decl_meta(
     runtime_abi_v1: dict[str, Any] | None = None,
     template_v1: dict[str, Any] | None = None,
     extern_var_v1: dict[str, Any] | None = None,
+    nominal_adt_v1: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """宣言 node の metadata carrier を構築する。"""
     meta: dict[str, Any] = {}
@@ -1971,6 +1978,31 @@ def _sh_make_decl_meta(
         meta["template_v1"] = template_v1
     if extern_var_v1 is not None:
         meta["extern_var_v1"] = extern_var_v1
+    if nominal_adt_v1 is not None:
+        meta["nominal_adt_v1"] = nominal_adt_v1
+    return meta
+
+
+def _sh_make_nominal_adt_v1_meta(
+    *,
+    role: str,
+    family_name: str,
+    variant_name: str | None = None,
+    payload_style: str | None = None,
+) -> dict[str, Any]:
+    """`meta.nominal_adt_v1` carrier を構築する。"""
+    meta: dict[str, Any] = {
+        "schema_version": 1,
+        "role": role,
+        "family_name": family_name,
+        "surface_phase": "declaration_v1",
+    }
+    if role == "family":
+        meta["closed"] = 1
+    if variant_name is not None:
+        meta["variant_name"] = variant_name
+    if payload_style is not None:
+        meta["payload_style"] = payload_style
     return meta
 
 
@@ -2262,6 +2294,14 @@ def _sh_is_dataclass_decorator(
     mod_name = str(ent.get("module", ""))
     sym_name = str(ent.get("name", ""))
     return mod_name == "dataclasses" and sym_name == "dataclass"
+
+
+def _sh_is_sealed_decorator(
+    decorator_text: str,
+) -> bool:
+    """decorator 文字列が Stage A nominal ADT の `@sealed` か判定する。"""
+    head, _args_txt = _sh_parse_decorator_head_and_args(decorator_text)
+    return head == "sealed"
 
 
 def _sh_parse_dataclass_decorator_options(args_txt: str, *, line_no: int, line_text: str) -> dict[str, bool]:
@@ -8655,6 +8695,87 @@ def _sh_is_value_safe_dataclass_candidate(
     return True
 
 
+def _sh_collect_nominal_adt_class_metadata(
+    class_name: str,
+    *,
+    base: str | None,
+    decorators: list[str],
+    is_dataclass: bool,
+    field_types: dict[str, str],
+    line_no: int,
+    line_text: str,
+    sealed_families: set[str],
+) -> dict[str, Any] | None:
+    """Stage A nominal ADT class metadata を収集する。"""
+    sealed_count = 0
+    for decorator_text in decorators:
+        if not _sh_is_sealed_decorator(decorator_text):
+            continue
+        head, args_txt = _sh_parse_decorator_head_and_args(decorator_text)
+        if head == "sealed" and args_txt != "":
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message="@sealed does not accept arguments",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint="Use bare `@sealed` on the family class.",
+            )
+        sealed_count += 1
+    if sealed_count > 1:
+        raise _make_east_build_error(
+            kind="unsupported_syntax",
+            message=f"multiple @sealed decorators are not supported on class '{class_name}'",
+            source_span=_sh_span(line_no, 0, len(line_text)),
+            hint="Use a single `@sealed` decorator on the family class.",
+        )
+    has_sealed = sealed_count == 1
+    base_name = base if isinstance(base, str) and base != "" else None
+    if has_sealed:
+        if base_name is not None:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"sealed family '{class_name}' cannot inherit from '{base_name}'",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint="Use `@sealed class Family:` with no base; declare variants as subclasses.",
+            )
+        if is_dataclass:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"sealed family '{class_name}' cannot be a dataclass",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint="Use `@sealed` on the family and `@dataclass` only on payload variants.",
+            )
+        if len(field_types) > 0:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"sealed family '{class_name}' cannot declare payload fields",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint="Keep payload fields on variant classes only.",
+            )
+        return _sh_make_decl_meta(
+            nominal_adt_v1=_sh_make_nominal_adt_v1_meta(
+                role="family",
+                family_name=class_name,
+            )
+        )
+    if base_name is not None and base_name in sealed_families:
+        if len(field_types) > 0 and not is_dataclass:
+            raise _make_east_build_error(
+                kind="unsupported_syntax",
+                message=f"payload variant '{class_name}' must use @dataclass",
+                source_span=_sh_span(line_no, 0, len(line_text)),
+                hint="Add `@dataclass` to variants that declare payload fields.",
+            )
+        return _sh_make_decl_meta(
+            nominal_adt_v1=_sh_make_nominal_adt_v1_meta(
+                role="variant",
+                family_name=base_name,
+                variant_name=class_name,
+                payload_style="dataclass" if is_dataclass else "unit",
+            )
+        )
+    return None
+
+
 def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, Any]:
     """Python ソースを self-hosted パーサで EAST Module に変換する。"""
     source = _sh_strip_utf8_bom(source)
@@ -8803,6 +8924,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     pending_dataclass = False
     pending_dataclass_options: dict[str, bool] = {}
     pending_top_level_decorators: list[str] = []
+    sealed_families: set[str] = set()
 
     top_lines: list[tuple[int, str]] = []
     line_idx = 1
@@ -8932,6 +9054,14 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         )
             fn_decorators = list(pending_top_level_decorators)
             pending_top_level_decorators = []
+            for decorator_text in fn_decorators:
+                if _sh_is_sealed_decorator(decorator_text):
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="@sealed is supported on top-level classes only",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Move `@sealed` to a family class declaration.",
+                    )
             runtime_abi_meta = _sh_collect_runtime_abi_metadata(
                 fn_decorators,
                 arg_order=arg_order,
@@ -8981,31 +9111,6 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             i = j
             continue
 
-        if len(pending_top_level_decorators) > 0:
-            for decorator_text in pending_top_level_decorators:
-                if _sh_is_abi_decorator(
-                    decorator_text,
-                    import_module_bindings=import_module_bindings,
-                    import_symbol_bindings=import_symbol_bindings,
-                ):
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message="@abi is supported on top-level functions only",
-                        source_span=_sh_span(i, 0, len(ln)),
-                        hint="Move @abi to a top-level runtime helper function definition.",
-                    )
-                if _sh_is_template_decorator(
-                    decorator_text,
-                    import_module_bindings=import_module_bindings,
-                    import_symbol_bindings=import_symbol_bindings,
-                ):
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message="@template is supported on top-level functions only",
-                        source_span=_sh_span(i, 0, len(ln)),
-                        hint="Move @template to a top-level runtime helper function definition.",
-                    )
-            pending_top_level_decorators = []
         m_import: re.Match | None = re.match(r"^import\s+(.+)$", s, flags=re.S)
         if m_import is not None:
             names_txt = re.strip_group(m_import, 1)
@@ -9259,7 +9364,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 )
         cls_hdr = _sh_parse_class_header(s)
         if cls_hdr is not None:
-            for decorator_text in pending_top_level_decorators:
+            class_decorators = list(pending_top_level_decorators)
+            pending_top_level_decorators = []
+            for decorator_text in class_decorators:
                 if _sh_is_abi_decorator(
                     decorator_text,
                     import_module_bindings=import_module_bindings,
@@ -9346,6 +9453,13 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                                 message="@template is not supported on methods",
                                 source_span=_sh_span(ln_no, 0, len(ln_txt)),
                                 hint="Use @template on top-level runtime helper functions only.",
+                            )
+                        if _sh_is_sealed_decorator(dec_name):
+                            raise _make_east_build_error(
+                                kind="unsupported_syntax",
+                                message="@sealed is not supported on methods",
+                                source_span=_sh_span(ln_no, 0, len(ln_txt)),
+                                hint="Use @sealed on top-level family classes only.",
                             )
                         pending_method_decorators.append(dec_name)
                     k += 1
@@ -9639,6 +9753,16 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             base_value: str | None = None
             if base != "":
                 base_value = base
+            class_meta = _sh_collect_nominal_adt_class_metadata(
+                cls_name,
+                base=base_value,
+                decorators=class_decorators,
+                is_dataclass=pending_dataclass,
+                field_types=field_types,
+                line_no=i,
+                line_text=ln,
+                sealed_families=sealed_families,
+            )
 
             cls_item = _sh_make_class_def_stmt(
                 cls_name,
@@ -9648,6 +9772,8 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 base=base_value,
                 dataclass=pending_dataclass,
                 dataclass_options=dict(pending_dataclass_options) if len(pending_dataclass_options) > 0 else None,
+                decorators=list(class_decorators) if len(class_decorators) > 0 else None,
+                meta=class_meta,
             )
             static_field_names: set[str] = set()
             if not pending_dataclass:
@@ -9685,6 +9811,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 cls_item["class_storage_hint"] = "value"
             else:
                 cls_item["class_storage_hint"] = "ref"
+            if isinstance(class_meta, dict):
+                nominal_adt_meta = class_meta.get("nominal_adt_v1")
+                if isinstance(nominal_adt_meta, dict) and nominal_adt_meta.get("role") == "family":
+                    sealed_families.add(cls_name)
             pending_dataclass = False
             pending_dataclass_options.clear()
             if not first_item_attached:
@@ -9694,6 +9824,39 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             body_items.append(cls_item)
             i = j
             continue
+
+        if len(pending_top_level_decorators) > 0:
+            for decorator_text in pending_top_level_decorators:
+                if _sh_is_sealed_decorator(decorator_text):
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="@sealed is supported on top-level classes only",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Place `@sealed` immediately above a family class definition.",
+                    )
+                if _sh_is_abi_decorator(
+                    decorator_text,
+                    import_module_bindings=import_module_bindings,
+                    import_symbol_bindings=import_symbol_bindings,
+                ):
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="@abi is supported on top-level functions only",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Move @abi to a top-level runtime helper function definition.",
+                    )
+                if _sh_is_template_decorator(
+                    decorator_text,
+                    import_module_bindings=import_module_bindings,
+                    import_symbol_bindings=import_symbol_bindings,
+                ):
+                    raise _make_east_build_error(
+                        kind="unsupported_syntax",
+                        message="@template is supported on top-level functions only",
+                        source_span=_sh_span(i, 0, len(ln)),
+                        hint="Move @template to a top-level runtime helper function definition.",
+                    )
+            pending_top_level_decorators = []
 
         top_indent = len(ln) - len(ln.lstrip(" "))
         if s.startswith("if ") and s.endswith(":"):

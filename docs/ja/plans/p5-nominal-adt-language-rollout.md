@@ -192,3 +192,5 @@
 - 2026-03-11: Stage A の `class` / `@dataclass` / `isinstance` bridge は P5 の representative surface に含めるが、`isinstance` 自体の generic type-predicate semantics と `JsonValue` decode-first IR 契約は P1 の成果物を再利用し、P5 で再定義しない方針を固定した。
 - 2026-03-11: `S2-01` として、`spec-user` に Stage A の `@sealed` family / top-level variant / `isinstance` access surface を追加し、`spec-east` に `ClassDef.meta.nominal_adt_v1` と `Match` / `MatchCase` / `VariantPattern` / `PatternBind` / `PatternWildcard` schema を追加し、`spec-dev` に nominal ADT / `match` 導入時の fail-closed diagnostic 契約を固定した。
 - 2026-03-11: `S2-02` として、closed nominal ADT family に対する `Match` は exhaustive 必須、duplicate pattern / unreachable branch は `semantic_conflict` で fail-closed とし、coverage summary は `Match.meta.match_analysis_v1` で保持する方針を固定した。
+- 2026-03-11: `S3-01` の representative parser として、selfhost parser は `@sealed` family、same-module に先行定義された family からの variant、payload variant の `@dataclass` 必須、`ClassDef.meta.nominal_adt_v1` 付与までを受理する方針で進めることにした。
+- 2026-03-11: `S3-01` では imported family や family より前に定義された variant までは扱わず、まず same-module / family-first の representative case を正本にすることにした。
