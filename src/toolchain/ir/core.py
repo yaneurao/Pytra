@@ -4899,6 +4899,20 @@ class _ShExprParser:
                     hint=f"Decode JSON values to a concrete type before calling {helper_name}().",
                 )
 
+    def _parse_call_arg_entry(
+        self,
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument 1件分の positional/keyword 分岐を parser helper へ寄せる。"""
+        if self._cur()["k"] == "NAME":
+            save_pos = self.pos
+            name_tok = self._eat("NAME")
+            if self._cur()["k"] == "=":
+                self._eat("=")
+                kw_val = self._parse_ifexp()
+                return None, _sh_make_keyword_arg(str(name_tok["v"]), kw_val)
+            self.pos = save_pos
+        return self._parse_call_arg_expr(), None
+
     def _parse_call_args(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Call expr の位置引数と keyword 引数を parser helper へ寄せる。"""
         args: list[dict[str, Any]] = []
@@ -4906,18 +4920,11 @@ class _ShExprParser:
         if self._cur()["k"] == ")":
             return args, keywords
         while True:
-            if self._cur()["k"] == "NAME":
-                save_pos = self.pos
-                name_tok = self._eat("NAME")
-                if self._cur()["k"] == "=":
-                    self._eat("=")
-                    kw_val = self._parse_ifexp()
-                    keywords.append(_sh_make_keyword_arg(str(name_tok["v"]), kw_val))
-                else:
-                    self.pos = save_pos
-                    args.append(self._parse_call_arg_expr())
-            else:
-                args.append(self._parse_call_arg_expr())
+            arg_entry, keyword_entry = self._parse_call_arg_entry()
+            if keyword_entry is not None:
+                keywords.append(keyword_entry)
+            elif arg_entry is not None:
+                args.append(arg_entry)
             if self._cur()["k"] != ",":
                 break
             self._eat(",")

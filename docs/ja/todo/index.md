@@ -269,6 +269,7 @@
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `call suffix` の token/state resolve も `_ShExprParser._resolve_call_suffix_state()` へ寄せ、`_parse_call_suffix()` から `"(" + call-args + ")" + span/repr` の直列処理を外した。`test_east_core.py` では state helper 定義、call site、旧 inline call-suffix state block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて subscript suffix の token/state resolve も `_ShExprParser._resolve_subscript_suffix_state()` へ寄せ、`_parse_subscript_suffix()` から `"[" + component-parse + "]" + span/repr` の直列処理を外した。`test_east_core.py` では state helper 定義、call site、旧 inline subscript-suffix state block の不在を固定した。
 - 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて `Subscript / Slice` の annotation-state resolve も `_ShExprParser._resolve_subscript_expr_apply_state()` へ寄せ、`_annotate_subscript_expr()` から `owner_t + build_kind` の直列 resolve を外した。`test_east_core.py` では state helper 定義、call site、旧 inline subscript-annotation state block の不在を固定した。
+- 進捗メモ: [ID: P2-COMPILER-TYPED-BOUNDARY-01-S3-02] 続けて call argument 1件分の positional/keyword 分岐も `_ShExprParser._parse_call_arg_entry()` へ寄せ、`_parse_call_args()` から `NAME` の save/rewind と inline keyword builder を外した。`test_east_core.py` では entry helper 定義、loop 側 call site、旧 inline call-arg branch の不在を固定した。
 
 ### P3: compiler contract を harden し、stage / pass / backend handoff を fail-closed にする
 
