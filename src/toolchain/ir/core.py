@@ -5029,7 +5029,10 @@ class _ShExprParser:
         args: list[dict[str, Any]] = []
         keywords: list[dict[str, Any]] = []
         if self._resolve_call_args_empty_state():
-            return args, keywords
+            return self._apply_call_args_empty_state(
+                args=args,
+                keywords=keywords,
+            )
         while True:
             arg_entry, keyword_entry = self._parse_call_arg_entry()
             self._apply_call_arg_entry(
@@ -5040,11 +5043,23 @@ class _ShExprParser:
             )
             if not self._advance_call_arg_loop():
                 break
-        return args, keywords
+        return self._apply_call_args_empty_state(
+            args=args,
+            keywords=keywords,
+        )
 
     def _resolve_call_args_empty_state(self) -> bool:
         """call argument list の空 `)` 判定を helper へ寄せる。"""
         return self._cur()["k"] == ")"
+
+    def _apply_call_args_empty_state(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """call argument list の空-state apply を helper へ寄せる。"""
+        return args, keywords
 
     def _resolve_postfix_span_repr(
         self,
@@ -6281,7 +6296,12 @@ class _ShExprParser:
 
     def _resolve_attr_suffix_token_state(self) -> dict[str, Any]:
         """Attribute suffix の token-state resolve を helper へ寄せる。"""
-        return self._resolve_attr_suffix_name_token()
+        name_tok = self._resolve_attr_suffix_name_token()
+        return self._apply_attr_suffix_token_state(name_tok=name_tok)
+
+    def _apply_attr_suffix_token_state(self, *, name_tok: dict[str, Any]) -> dict[str, Any]:
+        """Attribute suffix の token-state apply を helper へ寄せる。"""
+        return name_tok
 
     def _resolve_attr_suffix_span_repr(
         self,
