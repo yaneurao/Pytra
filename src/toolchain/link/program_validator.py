@@ -438,12 +438,34 @@ def validate_cpp_backend_input_doc(
     for path, obj in _iter_object_tree(raw_doc, "$"):
         if not isinstance(obj, dict):
             continue
+        if path.endswith(".meta") or ".meta." in path:
+            continue
         kind = obj.get("kind")
         if kind in {"For", "ForRange"}:
             raise RuntimeError(
                 "backend_input_unsupported: legacy loop node is unsupported in EAST3 for C++ backend at "
                 + path
                 + ": "
+                + module_id
+            )
+        if kind != "ForCore":
+            continue
+        iter_plan = obj.get("iter_plan")
+        if not isinstance(iter_plan, dict):
+            raise RuntimeError(
+                "backend_input_missing_metadata: C++ backend requires ForCore.iter_plan object at "
+                + path
+                + ".iter_plan: "
+                + module_id
+            )
+        if iter_plan.get("kind") != "RuntimeIterForPlan":
+            continue
+        iter_expr = iter_plan.get("iter_expr")
+        if not isinstance(iter_expr, dict) or len(iter_expr) == 0:
+            raise RuntimeError(
+                "backend_input_missing_metadata: C++ backend requires RuntimeIterForPlan.iter_expr object at "
+                + path
+                + ".iter_plan.iter_expr: "
                 + module_id
             )
     return raw_doc

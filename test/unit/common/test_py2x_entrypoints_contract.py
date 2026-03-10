@@ -231,19 +231,77 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             ],
         }
         output_path = Path("out.cpp")
-        for registry_mod in (host_registry, static_registry):
-            spec = registry_mod.get_backend_spec("cpp")
-            with self.assertRaisesRegex(
-                RuntimeError,
-                r"backend_input_unsupported: legacy loop node is unsupported in EAST3 for C\+\+ backend at \$\.body\[0\]: pkg\.main",
-            ):
-                registry_mod.emit_module_typed(
-                    spec,
-                    invalid_doc,
-                    output_path,
-                    module_id="pkg.main",
-                    is_entry=True,
-                )
+        host_spec = host_registry.get_backend_spec("cpp")
+        host_artifact = host_registry.emit_module_typed(
+            host_spec,
+            invalid_doc,
+            output_path,
+            module_id="pkg.main",
+            is_entry=True,
+        )
+        self.assertEqual(host_artifact.metadata["diagnostic"]["category"], "backend_input_unsupported")
+        self.assertEqual(host_artifact.metadata["diagnostic"]["module_id"], "pkg.main")
+        self.assertIn(
+            "backend_input_unsupported: legacy loop node is unsupported in EAST3 for C++ backend at $.body[0]: pkg.main",
+            host_artifact.text,
+        )
+
+        static_spec = static_registry.get_backend_spec("cpp")
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"backend_input_unsupported: legacy loop node is unsupported in EAST3 for C\+\+ backend at \$\.body\[0\]: pkg\.main",
+        ):
+            static_registry.emit_module_typed(
+                static_spec,
+                invalid_doc,
+                output_path,
+                module_id="pkg.main",
+                is_entry=True,
+            )
+
+    def test_cpp_emit_module_typed_rejects_missing_runtime_iter_metadata_before_backend_crash(self) -> None:
+        invalid_doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+            "body": [
+                {
+                    "kind": "ForCore",
+                    "iter_plan": {"kind": "RuntimeIterForPlan"},
+                    "target_plan": {"kind": "NameTarget", "id": "x", "target_type": "object"},
+                    "body": [],
+                    "orelse": [],
+                }
+            ],
+        }
+        output_path = Path("out.cpp")
+        host_spec = host_registry.get_backend_spec("cpp")
+        host_artifact = host_registry.emit_module_typed(
+            host_spec,
+            invalid_doc,
+            output_path,
+            module_id="pkg.main",
+            is_entry=True,
+        )
+        self.assertEqual(host_artifact.metadata["diagnostic"]["category"], "backend_input_missing_metadata")
+        self.assertIn(
+            "backend_input_missing_metadata: C++ backend requires RuntimeIterForPlan.iter_expr object at $.body[0].iter_plan.iter_expr: pkg.main",
+            host_artifact.text,
+        )
+
+        static_spec = static_registry.get_backend_spec("cpp")
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"backend_input_missing_metadata: C\+\+ backend requires RuntimeIterForPlan\.iter_expr object at \$\.body\[0\]\.iter_plan\.iter_expr: pkg\.main",
+        ):
+            static_registry.emit_module_typed(
+                static_spec,
+                invalid_doc,
+                output_path,
+                module_id="pkg.main",
+                is_entry=True,
+            )
 
     def test_cpp_emit_module_typed_translates_backend_crash_to_structured_diagnostic(self) -> None:
         spec = typed_boundary.build_resolved_backend_spec(
@@ -269,6 +327,15 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
             "body": [],
         }
+        soft_artifact = typed_boundary.execute_emit_module_with_spec(
+            spec,
+            valid_doc,
+            Path("out.cpp"),
+            module_id="pkg.main",
+            suppress_exceptions=True,
+        )
+        self.assertEqual(soft_artifact.metadata["diagnostic"]["category"], "backend_input_unsupported")
+        self.assertIn("backend_input_unsupported: cpp emitter: unsupported stmt kind: Bogus: pkg.main", soft_artifact.text)
         with self.assertRaisesRegex(
             RuntimeError,
             r"backend_input_unsupported: cpp emitter: unsupported stmt kind: Bogus: pkg\.main",
@@ -278,7 +345,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
                 valid_doc,
                 Path("out.cpp"),
                 module_id="pkg.main",
-                suppress_exceptions=True,
+                suppress_exceptions=False,
             )
 
     def test_cpp_emit_module_typed_translates_missing_metadata_crash_to_structured_diagnostic(self) -> None:
@@ -305,6 +372,43 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
             "body": [],
         }
+        soft_artifact = typed_boundary.execute_emit_module_with_spec(
+            spec,
+            valid_doc,
+            Path("out.cpp"),
+            module_id="pkg.main",
+                suppress_exceptions=True,
+            )
+
+    def test_cpp_emit_source_typed_rejects_legacy_loop_before_empty_string_fallback(self) -> None:
+        invalid_doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
+            "body": [
+                {
+                    "kind": "For",
+                    "target": {"kind": "Name", "id": "x"},
+                    "iter": {"kind": "Name", "id": "xs"},
+                    "body": [],
+                    "orelse": [],
+                }
+            ],
+        }
+        output_path = Path("out.cpp")
+        for registry_mod in (host_registry, static_registry):
+            spec = registry_mod.get_backend_spec("cpp")
+            with self.assertRaisesRegex(
+                RuntimeError,
+                r"backend_input_unsupported: legacy loop node is unsupported in EAST3 for C\+\+ backend at \$\.body\[0\]: pkg\.main",
+            ):
+                registry_mod.emit_source_typed(spec, invalid_doc, output_path)
+        self.assertEqual(soft_artifact.metadata["diagnostic"]["category"], "backend_input_missing_metadata")
+        self.assertIn(
+            "backend_input_missing_metadata: cpp emitter: invalid forcore runtime iter_plan: pkg.main",
+            soft_artifact.text,
+        )
         with self.assertRaisesRegex(
             RuntimeError,
             r"backend_input_missing_metadata: cpp emitter: invalid forcore runtime iter_plan: pkg\.main",
@@ -314,7 +418,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
                 valid_doc,
                 Path("out.cpp"),
                 module_id="pkg.main",
-                suppress_exceptions=True,
+                suppress_exceptions=False,
             )
 
     def test_dynamic_carrier_seams_are_explicitly_isolated(self) -> None:
@@ -979,6 +1083,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             + str(ir.get("kind", ""))
             + " -> "
             + output_path.name,
+            target_lang="fake",
             extension=".txt",
             suppress_emit_exceptions=True,
         )
@@ -995,6 +1100,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
 
         fallback_adapter = typed_boundary.build_legacy_emit_module_adapter(
             lambda ir, output_path: "// " + str(ir.get("kind", "")) + " -> " + output_path.name,
+            target_lang="fake",
             extension=".txt",
             suppress_emit_exceptions=True,
         )
@@ -1013,11 +1119,13 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
 
         soft_adapter = typed_boundary.build_legacy_emit_module_adapter(
             _emit_raises_after_typeerror,
+            target_lang="fake",
             extension=".txt",
             suppress_emit_exceptions=True,
         )
         strict_adapter = typed_boundary.build_legacy_emit_module_adapter(
             _emit_raises_after_typeerror,
+            target_lang="fake",
             extension=".txt",
             suppress_emit_exceptions=False,
         )
@@ -1028,6 +1136,29 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         )
         with self.assertRaisesRegex(RuntimeError, "emit failed for boom.txt"):
             strict_adapter({"kind": "Boom"}, Path("out/boom.txt"), {"mode": "typed"})
+
+    def test_build_legacy_emit_module_adapter_preserves_cpp_structured_diagnostic(self) -> None:
+        def _emit_cpp_unsupported(_ir: dict[str, object], _output_path: Path) -> str:
+            raise RuntimeError("cpp emitter: unsupported stmt kind: Bogus")
+
+        cpp_adapter = typed_boundary.build_legacy_emit_module_adapter(
+            _emit_cpp_unsupported,
+            target_lang="cpp",
+            extension=".cpp",
+            suppress_emit_exceptions=True,
+        )
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r"backend_input_unsupported: cpp emitter: unsupported stmt kind: Bogus: pkg\.main",
+        ):
+            cpp_adapter(
+                {"kind": "Module"},
+                Path("out/main.cpp"),
+                {"mode": "typed"},
+                module_id="pkg.main",
+                is_entry=True,
+            )
 
     def test_execute_typed_boundary_helpers_preserve_host_static_error_policy(self) -> None:
         def _identity(doc: object) -> dict[str, object]:

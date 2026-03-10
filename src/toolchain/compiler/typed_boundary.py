@@ -414,6 +414,14 @@ def _emit_request_module_id(request: EmitRequestCarrier) -> str:
     return "module"
 
 
+def _legacy_emit_module_id(*, module_id: str, output_path: Path) -> str:
+    if module_id != "":
+        return module_id
+    if output_path.stem != "":
+        return output_path.stem
+    return "module"
+
+
 def _validate_backend_emit_request(request: EmitRequestCarrier) -> None:
     if request.spec.target_lang != "cpp":
         return
@@ -433,7 +441,63 @@ def _validate_backend_emit_request(request: EmitRequestCarrier) -> None:
 def _translate_backend_emit_exception(exc: Exception, *, request: EmitRequestCarrier) -> RuntimeError | None:
     if request.spec.target_lang != "cpp":
         return None
+    message = str(exc)
+    for category in ("backend_input_missing_metadata", "backend_input_unsupported"):
+        if message.startswith(category + ":"):
+            return exc if isinstance(exc, RuntimeError) else RuntimeError(message)
     return translate_cpp_backend_emit_error(exc, module_id=_emit_request_module_id(request))
+
+
+def _build_backend_emit_diagnostic_artifact(
+    exc: RuntimeError,
+    *,
+    request: EmitRequestCarrier,
+) -> ModuleArtifactCarrier:
+    message = str(exc)
+    category = "backend_input_unsupported"
+    detail = message
+    for candidate in ("backend_input_missing_metadata", "backend_input_unsupported"):
+        prefix = candidate + ":"
+        if message.startswith(prefix):
+            category = candidate
+            detail = message[len(prefix) :].strip()
+            break
+    module_id = _emit_request_module_id(request)
+    label = request.output_path.stem if request.output_path.stem != "" else module_id.rsplit(".", 1)[-1]
+    extension = request.spec.extension if request.spec.extension != "" else request.output_path.suffix
+    return ModuleArtifactCarrier(
+        module_id=module_id,
+        kind="user",
+        label=label if label != "" else "module",
+        extension=extension,
+        text=message,
+        is_entry=request.is_entry,
+        dependencies=(),
+        metadata={
+            "diagnostic": {
+                "category": category,
+                "message": detail,
+                "module_id": module_id,
+                "output_path": str(request.output_path),
+            }
+        },
+    )
+
+
+def _handle_backend_emit_failure(
+    exc: Exception,
+    *,
+    request: EmitRequestCarrier,
+    suppress_exceptions: bool,
+) -> ModuleArtifactCarrier:
+    translated = _translate_backend_emit_exception(exc, request=request)
+    if translated is not None:
+        if suppress_exceptions:
+            return _build_backend_emit_diagnostic_artifact(translated, request=request)
+        raise translated from exc
+    if not suppress_exceptions:
+        raise exc
+    return normalize_emitted_module_artifact({}, request=request)
 
 
 @dataclass(frozen=True)
@@ -558,6 +622,7 @@ def build_resolved_backend_spec(
     suppress_emit_exceptions: bool,
 ) -> "ResolvedBackendSpec":
     normalized = normalize_legacy_backend_spec_dict(raw_spec)
+    target_lang = str(normalized.get("target_lang", ""))
     extension = str(normalized.get("extension", ""))
 
     lower_impl = normalized.get("lower")
@@ -573,6 +638,7 @@ def build_resolved_backend_spec(
     if not callable(emit_module_impl):
         emit_module_impl = build_legacy_emit_module_adapter(
             emit_impl,
+            target_lang=target_lang,
             extension=extension,
             suppress_emit_exceptions=suppress_emit_exceptions,
         )
@@ -806,7 +872,14 @@ def execute_emit_module_with_spec(
         module_id=module_id,
         is_entry=is_entry,
     )
-    _validate_backend_emit_request(request)
+    try:
+        _validate_backend_emit_request(request)
+    except Exception as exc:
+        return _handle_backend_emit_failure(
+            exc,
+            request=request,
+            suppress_exceptions=suppress_exceptions,
+        )
     fn = runtime_spec.emit_module_impl
     artifact_any: object = {}
     try:
@@ -828,26 +901,23 @@ def execute_emit_module_with_spec(
             try:
                 artifact_any = fn(request.ir_document, request.output_path)
             except Exception as exc:
-                translated = _translate_backend_emit_exception(exc, request=request)
-                if translated is not None:
-                    raise translated from exc
-                if not suppress_exceptions:
-                    raise
-                artifact_any = {}
+                return _handle_backend_emit_failure(
+                    exc,
+                    request=request,
+                    suppress_exceptions=suppress_exceptions,
+                )
         except Exception as exc:
-            translated = _translate_backend_emit_exception(exc, request=request)
-            if translated is not None:
-                raise translated from exc
-            if not suppress_exceptions:
-                raise
-            artifact_any = {}
+            return _handle_backend_emit_failure(
+                exc,
+                request=request,
+                suppress_exceptions=suppress_exceptions,
+            )
     except Exception as exc:
-        translated = _translate_backend_emit_exception(exc, request=request)
-        if translated is not None:
-            raise translated from exc
-        if not suppress_exceptions:
-            raise
-        artifact_any = {}
+        return _handle_backend_emit_failure(
+            exc,
+            request=request,
+            suppress_exceptions=suppress_exceptions,
+        )
     return normalize_emitted_module_artifact(artifact_any, request=request)
 
 
@@ -871,6 +941,7 @@ def emit_source_text_with_spec(
 def build_legacy_emit_module_adapter(
     emit_impl: Any,
     *,
+    target_lang: str,
     extension: str,
     suppress_emit_exceptions: bool,
 ) -> Any:
@@ -883,16 +954,27 @@ def build_legacy_emit_module_adapter(
         is_entry: bool = False,
     ) -> dict[str, object]:
         source_any: object = ""
+        resolved_module_id = _legacy_emit_module_id(module_id=module_id, output_path=output_path)
         try:
             source_any = emit_impl(ir, output_path, export_layer_options_any(emitter_options, layer="emitter"))
         except TypeError:
             try:
                 source_any = emit_impl(ir, output_path)
-            except Exception:
+            except Exception as exc:
+                translated = None
+                if target_lang == "cpp":
+                    translated = translate_cpp_backend_emit_error(exc, module_id=resolved_module_id)
+                if translated is not None:
+                    raise translated from exc
                 if not suppress_emit_exceptions:
                     raise
                 source_any = ""
-        except Exception:
+        except Exception as exc:
+            translated = None
+            if target_lang == "cpp":
+                translated = translate_cpp_backend_emit_error(exc, module_id=resolved_module_id)
+            if translated is not None:
+                raise translated from exc
             if not suppress_emit_exceptions:
                 raise
             source_any = ""

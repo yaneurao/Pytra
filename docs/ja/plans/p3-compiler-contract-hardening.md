@@ -143,7 +143,7 @@
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S2-02] `type_expr` / `resolved_type` mirror、`dispatch_mode`、`source_span`、helper metadata の整合ルールと fail-closed 方針を固定する。
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-01] `toolchain/link/program_validator.py` と周辺に central validator primitive を追加し、raw EAST3 / linked output の coarse check を representative な node/meta invariant まで拡張した。
 - [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S3-02] representative pass / lowering / linker entry に pre/post validation hook を導入し、invalid node の透過搬送を止めた。
-- [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-01] representative backend（まず C++）の入口で compiler contract validator を通し、backend-local crash や silent fallback を structured diagnostic へ置き換える。
+- [x] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-01] representative backend（まず C++）の入口で compiler contract validator を通し、backend-local crash や silent fallback を structured diagnostic へ置き換える。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S4-02] `tools/check_east_stage_boundary.py` または後継 guard を拡張し、stage semantic contract の drift も検出できるようにする。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-01] representative unit/selfhost 回帰を追加し、契約違反が expected failure として再現できるようにする。
 - [ ] [ID: P3-COMPILER-CONTRACT-HARDENING-01-S5-02] docs / TODO / archive / migration note を更新し、今後 node/meta 追加時に validator 更新が必須であることを固定する。
@@ -197,3 +197,5 @@
 - 2026-03-11: `S4-01` は `typed_boundary.execute_emit_module_with_spec(...)` を representative backend entry に選び、まず C++ lane だけに backend-input validator を差す方針にした。host/static 両 registry で共有される narrow seam なので、silent fallback を最小差分で止めやすい。
 - 2026-03-11: `S4-01` の最初の slice では `validate_cpp_backend_input_doc(...)` と `translate_cpp_backend_emit_error(...)` を追加し、legacy loop node と C++ emitter の代表的 `unsupported/invalid` crash を `backend_input_unsupported` / `backend_input_missing_metadata` へ正規化する方針にした。
 - 2026-03-11: 次の `S4-01` slice では `backend_input_missing_metadata` lane も regression で固定し、`cpp emitter: invalid forcore ...` のような backend-local crash が host lane の silent fallback に戻らないことを `test_py2x_entrypoints_contract.py` で押さえた。
+- 2026-03-11: 続く `S4-01` slice では `build_legacy_emit_module_adapter(...)` でも C++ の既知 `backend_input_*` crash を飲まないようにし、`emit_source_typed(...)` と legacy emit adapter の両方で structured diagnostic が空文字 fallback に戻らないことを regression で固定した。
+- 2026-03-11: `S4-01` はここで完了扱いにした。C++ backend input validator は `meta.*` 配下の補助 CFG を非対象にしつつ、representative な `ForCore.RuntimeIterForPlan.iter_expr` 欠落を `backend_input_missing_metadata` として host lane では diagnostic artifact、static lane では category 付き例外へ分岐させる。
