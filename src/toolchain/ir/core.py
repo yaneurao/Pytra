@@ -6736,6 +6736,26 @@ class _ShExprParser:
         index_expr, lower, upper, source_span, repr_text = self._resolve_subscript_suffix_state(
             owner_expr=owner_expr,
         )
+        return self._apply_subscript_suffix_state(
+            owner_expr=owner_expr,
+            index_expr=index_expr,
+            lower=lower,
+            upper=upper,
+            source_span=source_span,
+            repr_text=repr_text,
+        )
+
+    def _apply_subscript_suffix_state(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        index_expr: dict[str, Any] | None,
+        lower: dict[str, Any] | None,
+        upper: dict[str, Any] | None,
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """Subscript suffix の apply を helper へ寄せる。"""
         return self._annotate_subscript_expr(
             owner_expr=owner_expr,
             index_expr=index_expr,
