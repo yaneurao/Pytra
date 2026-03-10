@@ -4706,6 +4706,31 @@ class _ShExprParser:
             return stdlib_method_ret
         return call_ret
 
+    def _infer_named_call_return_type(
+        self,
+        *,
+        fn_name: str,
+        args: list[dict[str, Any]],
+    ) -> str:
+        """Name callee の戻り型推論を helper へ寄せる。"""
+        stdlib_imported_ret = (
+            lookup_stdlib_imported_symbol_return_type(fn_name, _SH_IMPORT_SYMBOLS)
+            if fn_name != ""
+            else ""
+        )
+        call_ret = _sh_infer_known_name_call_return_type(
+            fn_name,
+            args,
+            stdlib_imported_ret,
+        )
+        if call_ret != "":
+            return call_ret
+        if fn_name in self.fn_return_types:
+            return self.fn_return_types[fn_name]
+        if fn_name in self.class_method_return_types:
+            return fn_name
+        return self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))
+
     def _infer_call_expr_return_type(
         self,
         callee: dict[str, Any] | None,
@@ -4718,23 +4743,7 @@ class _ShExprParser:
         fn_name = ""
         if kind == "Name":
             fn_name = str(callee.get("id", ""))
-            stdlib_imported_ret = (
-                lookup_stdlib_imported_symbol_return_type(fn_name, _SH_IMPORT_SYMBOLS)
-                if fn_name != ""
-                else ""
-            )
-            call_ret = _sh_infer_known_name_call_return_type(
-                fn_name,
-                args,
-                stdlib_imported_ret,
-            )
-            if call_ret != "":
-                return call_ret, fn_name
-            if fn_name in self.fn_return_types:
-                return self.fn_return_types[fn_name], fn_name
-            if fn_name in self.class_method_return_types:
-                return fn_name, fn_name
-            return self._callable_return_type(str(self.name_types.get(fn_name, "unknown"))), fn_name
+            return self._infer_named_call_return_type(fn_name=fn_name, args=args), fn_name
         if kind == "Attribute":
             owner = callee.get("value")
             attr = str(callee.get("attr", ""))
@@ -5219,6 +5228,30 @@ class _ShExprParser:
         )
         return semantic_tag, dispatch_kind
 
+    def _resolve_builtin_named_call_annotation_state(
+        self,
+        *,
+        fn_name: str,
+        args: list[dict[str, Any]],
+        call_dispatch: dict[str, str],
+    ) -> tuple[str, str, bool, str]:
+        """builtin named-call の annotation 前段 state を helper へ寄せる。"""
+        semantic_tag, dispatch_kind = self._resolve_builtin_named_call_dispatch(
+            fn_name=fn_name,
+            call_dispatch=call_dispatch,
+        )
+        use_truthy_runtime = (
+            dispatch_kind == "scalar_ctor"
+            and fn_name == "bool"
+            and self._should_use_truthy_runtime_for_bool_ctor(args=args)
+        )
+        iter_element_type = (
+            _sh_infer_enumerate_item_type(args)
+            if dispatch_kind == "enumerate"
+            else "unknown"
+        )
+        return semantic_tag, dispatch_kind, use_truthy_runtime, iter_element_type
+
     def _apply_builtin_named_call_dispatch(
         self,
         *,
@@ -5227,6 +5260,8 @@ class _ShExprParser:
         args: list[dict[str, Any]],
         dispatch_kind: str,
         semantic_tag: str,
+        use_truthy_runtime: bool,
+        iter_element_type: str,
     ) -> dict[str, Any] | None:
         """builtin named-call dispatch の annotation 適用を helper へ寄せる。"""
         if dispatch_kind == "fixed_runtime":
@@ -5236,9 +5271,6 @@ class _ShExprParser:
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "scalar_ctor":
-            use_truthy_runtime = fn_name == "bool" and self._should_use_truthy_runtime_for_bool_ctor(
-                args=args,
-            )
             return _sh_annotate_scalar_ctor_call_expr(
                 payload,
                 fn_name=fn_name,
@@ -5272,7 +5304,7 @@ class _ShExprParser:
         if dispatch_kind == "enumerate":
             return _sh_annotate_enumerate_call_expr(
                 payload,
-                iter_element_type=_sh_infer_enumerate_item_type(args),
+                iter_element_type=iter_element_type,
                 semantic_tag=semantic_tag,
             )
         if dispatch_kind == "anyall":
@@ -5310,9 +5342,12 @@ class _ShExprParser:
         call_dispatch: dict[str, str],
     ) -> dict[str, Any] | None:
         """builtin named-call の annotation dispatch を parser helper へ寄せる。"""
-        semantic_tag, dispatch_kind = self._resolve_builtin_named_call_dispatch(
-            fn_name=fn_name,
-            call_dispatch=call_dispatch,
+        semantic_tag, dispatch_kind, use_truthy_runtime, iter_element_type = (
+            self._resolve_builtin_named_call_annotation_state(
+                fn_name=fn_name,
+                args=args,
+                call_dispatch=call_dispatch,
+            )
         )
         return self._apply_builtin_named_call_dispatch(
             payload=payload,
@@ -5320,6 +5355,8 @@ class _ShExprParser:
             args=args,
             dispatch_kind=dispatch_kind,
             semantic_tag=semantic_tag,
+            use_truthy_runtime=use_truthy_runtime,
+            iter_element_type=iter_element_type,
         )
 
     def _resolve_runtime_named_call_dispatch(

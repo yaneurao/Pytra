@@ -1271,6 +1271,10 @@ class EastCoreTest(unittest.TestCase):
             1,
         )[0]
         builtin_resolve_text = text.split("def _resolve_builtin_named_call_semantic_tag", 1)[1].split(
+            "def _resolve_builtin_named_call_annotation_state",
+            1,
+        )[0]
+        builtin_state_text = text.split("def _resolve_builtin_named_call_annotation_state", 1)[1].split(
             "def _apply_builtin_named_call_dispatch",
             1,
         )[0]
@@ -1311,12 +1315,15 @@ class EastCoreTest(unittest.TestCase):
         self.assertNotIn("runtime_payload = self._annotate_runtime_named_call_expr(", helper_text)
         self.assertIn('return str(call_dispatch.get("builtin_semantic_tag", ""))', builtin_resolve_text)
         self.assertIn("return self._apply_builtin_named_call_dispatch(", builtin_helper_text)
-        self.assertIn("semantic_tag, dispatch_kind = self._resolve_builtin_named_call_dispatch(", builtin_helper_text)
+        self.assertIn("semantic_tag, dispatch_kind = self._resolve_builtin_named_call_dispatch(", builtin_state_text)
+        self.assertIn('dispatch_kind == "scalar_ctor"', builtin_state_text)
+        self.assertIn('dispatch_kind == "enumerate"', builtin_state_text)
+        self.assertIn("_resolve_builtin_named_call_annotation_state(", builtin_helper_text)
         self.assertIn('if dispatch_kind == "fixed_runtime":', builtin_apply_text)
         self.assertIn('if dispatch_kind == "scalar_ctor":', builtin_apply_text)
         self.assertIn('if dispatch_kind == "enumerate":', builtin_apply_text)
-        self.assertIn('use_truthy_runtime = fn_name == "bool" and self._should_use_truthy_runtime_for_bool_ctor(', builtin_apply_text)
-        self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', builtin_apply_text)
+        self.assertIn("use_truthy_runtime=use_truthy_runtime", builtin_apply_text)
+        self.assertIn("iter_element_type=iter_element_type", builtin_apply_text)
         self.assertIn("return self._apply_runtime_named_call_dispatch(", runtime_helper_text)
         self.assertIn('if dispatch_kind == "stdlib_function":', runtime_apply_text)
         self.assertIn("call_ret, fn_name = self._infer_call_expr_return_type(callee, args)", state_helper_text)
@@ -1368,6 +1375,14 @@ x.bit_length()
             1,
         )[0]
         kind_text = text.split("def _resolve_builtin_named_call_kind", 1)[1].split(
+            "def _resolve_builtin_named_call_dispatch",
+            1,
+        )[0]
+        dispatch_text = text.split("def _resolve_builtin_named_call_dispatch", 1)[1].split(
+            "def _resolve_builtin_named_call_annotation_state",
+            1,
+        )[0]
+        state_text = text.split("def _resolve_builtin_named_call_annotation_state", 1)[1].split(
             "def _apply_builtin_named_call_dispatch",
             1,
         )[0]
@@ -1386,18 +1401,23 @@ x.bit_length()
         self.assertIn("return self._is_forbidden_object_receiver_type(arg0_t)", truthy_helper_text)
         self.assertIn('return str(call_dispatch.get("builtin_semantic_tag", ""))', resolve_text)
         self.assertIn('if fn_name in {"print", "len", "range", "zip", "str"}:', kind_text)
+        self.assertIn("semantic_tag = self._resolve_builtin_named_call_semantic_tag(", dispatch_text)
+        self.assertIn("dispatch_kind = self._resolve_builtin_named_call_kind(", dispatch_text)
+        self.assertIn("semantic_tag, dispatch_kind = self._resolve_builtin_named_call_dispatch(", state_text)
+        self.assertIn('dispatch_kind == "scalar_ctor"', state_text)
+        self.assertIn('dispatch_kind == "enumerate"', state_text)
         self.assertIn('if dispatch_kind == "fixed_runtime":', apply_text)
-        self.assertIn("semantic_tag = self._resolve_builtin_named_call_semantic_tag(", kind_text)
-        self.assertIn("dispatch_kind = self._resolve_builtin_named_call_kind(", kind_text)
-        self.assertIn("semantic_tag, dispatch_kind = self._resolve_builtin_named_call_dispatch(", helper_text)
+        self.assertIn("_resolve_builtin_named_call_annotation_state(", helper_text)
         self.assertNotIn('semantic_tag = str(call_dispatch.get("builtin_semantic_tag", ""))', helper_text)
         self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', helper_text)
         self.assertNotIn("semantic_tag = self._resolve_builtin_named_call_semantic_tag(", helper_text)
         self.assertNotIn("dispatch_kind = self._resolve_builtin_named_call_kind(", helper_text)
+        self.assertNotIn("semantic_tag, dispatch_kind = self._resolve_builtin_named_call_dispatch(", helper_text)
         self.assertIn("return self._apply_builtin_named_call_dispatch(", helper_text)
-        self.assertIn('use_truthy_runtime = fn_name == "bool" and self._should_use_truthy_runtime_for_bool_ctor(', apply_text)
-        self.assertNotIn('if fn_name == "bool" and len(args) == 1:', apply_text)
-        self.assertIn('iter_element_type=_sh_infer_enumerate_item_type(args)', apply_text)
+        self.assertIn("use_truthy_runtime=use_truthy_runtime", apply_text)
+        self.assertIn("iter_element_type=iter_element_type", apply_text)
+        self.assertNotIn('fn_name == "bool" and self._should_use_truthy_runtime_for_bool_ctor(', apply_text)
+        self.assertNotIn("_sh_infer_enumerate_item_type(args)", apply_text)
         self.assertIn("return None", apply_text)
         self.assertIn("return self._apply_named_call_dispatch(", named_call_text)
         self.assertIn("builtin_payload = self._annotate_builtin_named_call_expr(", named_apply_text)
@@ -1484,8 +1504,8 @@ x.bit_length()
             "def _sh_set_parse_context",
             1,
         )[0]
-        named_call_text = text.split("def _annotate_named_call_expr", 1)[1].split(
-            "def _subscript_result_type",
+        state_text = text.split("def _resolve_builtin_named_call_annotation_state", 1)[1].split(
+            "def _apply_builtin_named_call_dispatch",
             1,
         )[0]
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
@@ -1493,7 +1513,7 @@ x.bit_length()
         self.assertIn("if len(args) < 1:", helper_text)
         self.assertIn("arg0 = args[0]", helper_text)
         self.assertIn("return _sh_infer_item_type(arg0)", helper_text)
-        self.assertIn("iter_element_type=_sh_infer_enumerate_item_type(args)", named_call_text)
+        self.assertIn("_sh_infer_enumerate_item_type(args)", state_text)
         self.assertNotIn('if len(args) >= 1 and isinstance(args[0], dict):', postfix_text)
         self.assertNotIn('elem_t = self._iter_item_type(args[0])', postfix_text)
 
@@ -1517,6 +1537,10 @@ x.bit_length()
 
     def test_core_source_routes_call_expr_returns_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        named_helper_text = text.split("def _infer_named_call_return_type", 1)[1].split(
+            "def _infer_call_expr_return_type",
+            1,
+        )[0]
         helper_text = text.split("def _infer_call_expr_return_type", 1)[1].split(
             "def _split_generic_types",
             1,
@@ -1540,9 +1564,13 @@ x.bit_length()
         postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('kind = str(callee.get("kind", ""))', helper_text)
-        self.assertIn("_sh_infer_known_name_call_return_type(", helper_text)
+        self.assertIn("_sh_infer_known_name_call_return_type(", named_helper_text)
+        self.assertIn("if fn_name in self.fn_return_types:", named_helper_text)
+        self.assertIn("if fn_name in self.class_method_return_types:", named_helper_text)
+        self.assertIn('return self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))', named_helper_text)
         self.assertIn("self._infer_attr_call_return_type(", helper_text)
         self.assertIn('if kind == "Lambda":', helper_text)
+        self.assertIn("return self._infer_named_call_return_type(fn_name=fn_name, args=args), fn_name", helper_text)
         self.assertIn("call_ret, fn_name = self._infer_call_expr_return_type(callee, args)", state_text)
         self.assertIn("self._guard_named_call_args(", state_text)
         self.assertIn("return _sh_make_call_expr(", build_text)
@@ -1550,6 +1578,7 @@ x.bit_length()
         self.assertIn("return self._annotate_callee_call_expr(", apply_text)
         self.assertIn("call_ret, fn_name = self._resolve_call_expr_annotation_state(", call_helper_text)
         self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
+        self.assertNotIn("_sh_infer_known_name_call_return_type(", helper_text)
         self.assertNotIn("stdlib_imported_ret = (", postfix_text)
         self.assertNotIn("call_ret = self.fn_return_types[fn_name]", postfix_text)
         self.assertNotIn('call_ret = self._callable_return_type(str(self.name_types.get(fn_name, "unknown")))', postfix_text)
