@@ -36,6 +36,6 @@ Last updated: 2026-03-11
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S1-01] Using `core.py=10081 lines` and `test_east_core.py=3912 lines` as the baseline, the split boundaries and bundle-sized work units for source-contract, parser behavior, and suffix/call clusters were fixed.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S1-02] TODO now keeps only one-line cluster summaries, while detailed verification and rationale live in the plan decision log.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] Added a shared support module and `test_east_core_source_contract_builders.py`, then moved 10 builder source-contract guards out of `test_east_core.py`.
-- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] Added `test_east_core_source_contract_expr_suffix.py`, then moved 10 call/attr/subscript source-contract guards out of `test_east_core.py`.
+- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] Added `test_east_core_source_contract_expr_suffix.py` and `test_east_core_source_contract_call_metadata.py`, then moved 20 source-contract guards out of `test_east_core.py`.
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) Split `core.py` / `test_east_core.py` by responsibility so compiler-internal improvements can proceed in cluster-sized slices again.
