@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 from pytra.std.pathlib import Path
+from toolchain.compiler.backend_registry_diagnostics import unsupported_emit_kind_message
+from toolchain.compiler.backend_registry_diagnostics import unsupported_runtime_hook_kind_message
 from toolchain.compiler.backend_registry_metadata import build_backend_spec_metadata
 from toolchain.compiler.backend_registry_metadata import get_backend_emit_kind
 from toolchain.compiler.backend_registry_metadata import get_backend_emit_ref
@@ -147,7 +149,7 @@ def build_emit_from_target(
         return java_emit_factory(emit_impl)
     if emit_kind == "unary":
         return unary_emit_factory(emit_impl)
-    raise RuntimeError("unsupported emit kind: " + emit_kind)
+    raise RuntimeError(unsupported_emit_kind_message(emit_kind))
 
 
 def build_runtime_hook_from_descriptor(
@@ -170,7 +172,7 @@ def build_runtime_hook_from_descriptor(
         return copy_files_factory(files)
     if kind == "php_runtime":
         return php_runtime_factory(files)
-    raise RuntimeError("unsupported runtime hook kind: " + runtime_key)
+    raise RuntimeError(unsupported_runtime_hook_kind_message(runtime_key))
 
 
 def build_runtime_hook_from_key(

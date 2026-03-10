@@ -9,6 +9,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from toolchain.compiler.backend_registry_diagnostics import unsupported_noncpp_build_target_message
+from toolchain.compiler.backend_registry_diagnostics import unsupported_target_profile_message
+
 
 SUPPORTED_TARGETS: list[str] = [
     "cpp",
@@ -77,7 +80,7 @@ def get_target_profile(target: str) -> TargetProfile:
     profile = _TARGET_PROFILES.get(target)
     if isinstance(profile, TargetProfile):
         return profile
-    raise RuntimeError("unsupported target profile: " + target)
+    raise RuntimeError(unsupported_target_profile_message(target))
 
 
 def list_supported_targets() -> list[str]:
@@ -264,4 +267,4 @@ def make_noncpp_build_plan(
         build_cmd.append(str(output_path))
         return NonCppBuildPlan(build_cmd=build_cmd, run_cmd=None)
 
-    raise RuntimeError("unsupported non-cpp build target: " + target)
+    raise RuntimeError(unsupported_noncpp_build_target_message(target))

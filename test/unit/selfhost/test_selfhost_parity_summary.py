@@ -54,6 +54,11 @@ class SelfhostParitySummaryTest(unittest.TestCase):
         self.assertEqual(row.top_level_category, "known_block")
         self.assertEqual(row.detail_category, "known_block")
 
+    def test_unsupported_by_design_detail_maps_to_known_block(self) -> None:
+        row = build_summary_row("registry", "missing-target", "unsupported_by_design", "unsupported target: missing-target")
+        self.assertEqual(row.top_level_category, "known_block")
+        self.assertEqual(row.detail_category, "unsupported_by_design")
+
     def test_known_block_detail_recognizes_unsupported_by_design(self) -> None:
         self.assertEqual(
             classify_known_block_detail("[unsupported_by_design] rewrite using supported form"),

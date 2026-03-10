@@ -12,6 +12,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 import src.toolchain.compiler.backend_registry as host_registry
+import src.toolchain.compiler.backend_registry_diagnostics as registry_diagnostics
 import src.toolchain.compiler.backend_registry_metadata as registry_metadata
 import src.toolchain.compiler.backend_registry_shared as registry_shared
 import src.toolchain.compiler.backend_registry_static as static_registry
@@ -197,6 +198,28 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         ):
             with self.assertRaisesRegex(RuntimeError, "unsupported emit kind: broken"):
                 static_registry._emit_from_target("rs")
+
+    def test_backend_registry_diagnostic_categories_align_with_parity_vocab(self) -> None:
+        self.assertEqual(
+            registry_diagnostics.classify_registry_diagnostic("unsupported target: missing-target"),
+            ("known_block", "unsupported_by_design"),
+        )
+        self.assertEqual(
+            registry_diagnostics.classify_registry_diagnostic("unsupported target profile: missing-target"),
+            ("known_block", "unsupported_by_design"),
+        )
+        self.assertEqual(
+            registry_diagnostics.classify_registry_diagnostic("unsupported backend symbol ref: missing:fn"),
+            ("regression", "regression"),
+        )
+        self.assertEqual(
+            registry_diagnostics.classify_registry_diagnostic("unsupported runtime hook key: missing-hook"),
+            ("regression", "regression"),
+        )
+        self.assertEqual(
+            registry_diagnostics.classify_registry_diagnostic("unsupported emit kind: broken"),
+            ("regression", "regression"),
+        )
 
     def test_selfhost_cpp_entry_uses_direct_typed_compiler_path(self) -> None:
         selfhost_cpp = (ROOT / "selfhost" / "py2cpp.cpp").read_text(encoding="utf-8")

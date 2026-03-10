@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from toolchain.compiler.backend_registry_diagnostics import unsupported_program_writer_key_message
+from toolchain.compiler.backend_registry_diagnostics import unsupported_runtime_hook_key_message
+from toolchain.compiler.backend_registry_diagnostics import unsupported_target_message
+
 
 CompilerOptionScalar = str | int | bool
 BackendDescriptor = dict[str, object]
@@ -306,7 +310,7 @@ def backend_target_order() -> tuple[str, ...]:
 def get_backend_descriptor(target: str) -> BackendDescriptor:
     descriptor = _BACKEND_DESCRIPTORS.get(target)
     if descriptor is None:
-        raise RuntimeError("unsupported target: " + target)
+        raise RuntimeError(unsupported_target_message(target))
     return _copy_dict(descriptor)
 
 
@@ -375,12 +379,12 @@ def get_backend_program_writer_key(target: str) -> str:
 def get_runtime_hook_descriptor(runtime_key: str) -> RuntimeHookDescriptor:
     descriptor = _RUNTIME_HOOK_DESCRIPTORS.get(runtime_key)
     if descriptor is None:
-        raise RuntimeError("unsupported runtime hook key: " + runtime_key)
+        raise RuntimeError(unsupported_runtime_hook_key_message(runtime_key))
     return _copy_dict(descriptor)
 
 
 def get_program_writer_ref(writer_key: str) -> str:
     ref = _PROGRAM_WRITER_REFS.get(writer_key)
     if ref is None:
-        raise RuntimeError("unsupported program writer key: " + writer_key)
+        raise RuntimeError(unsupported_program_writer_key_message(writer_key))
     return ref

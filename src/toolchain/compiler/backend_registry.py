@@ -10,6 +10,7 @@ import importlib
 
 from typing import Any
 from pytra.std.pathlib import Path
+from toolchain.compiler.backend_registry_diagnostics import unsupported_backend_symbol_ref_message
 from toolchain.compiler.backend_registry_metadata import get_program_writer_ref
 from toolchain.compiler.backend_registry_metadata import list_backend_targets as metadata_backend_targets
 from toolchain.compiler.backend_registry_shared import build_cpp_emit
@@ -82,7 +83,7 @@ def _load_callable(module_name: str, symbol_name: str) -> Any:
 def _split_symbol_ref(symbol_ref: str) -> tuple[str, str]:
     parts = symbol_ref.split(":", 1)
     if len(parts) != 2 or parts[0] == "" or parts[1] == "":
-        raise RuntimeError("unsupported backend symbol ref: " + symbol_ref)
+        raise RuntimeError(unsupported_backend_symbol_ref_message(symbol_ref))
     return parts[0], parts[1]
 
 
@@ -91,7 +92,7 @@ def _load_callable_ref(symbol_ref: str) -> Any:
     try:
         return _load_callable(module_name, symbol_name)
     except Exception as exc:
-        raise RuntimeError("unsupported backend symbol ref: " + symbol_ref) from exc
+        raise RuntimeError(unsupported_backend_symbol_ref_message(symbol_ref)) from exc
 
 
 def _runtime_hook_from_key(runtime_key: str) -> Any:

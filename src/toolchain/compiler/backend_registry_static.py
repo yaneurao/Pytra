@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 from pytra.std.pathlib import Path
+from toolchain.compiler.backend_registry_diagnostics import unsupported_backend_symbol_ref_message
+from toolchain.compiler.backend_registry_diagnostics import unsupported_target_message
 from toolchain.compiler.backend_registry_metadata import list_backend_targets as metadata_backend_targets
 from toolchain.compiler.backend_registry_shared import build_cpp_emit
 from toolchain.compiler.backend_registry_shared import build_emit_from_target
@@ -133,7 +135,7 @@ _STATIC_CALLABLES: dict[str, Any] = {
 def _resolve_callable_ref(symbol_ref: str) -> Any:
     fn = _STATIC_CALLABLES.get(symbol_ref)
     if fn is None:
-        raise RuntimeError("unsupported backend symbol ref: " + symbol_ref)
+        raise RuntimeError(unsupported_backend_symbol_ref_message(symbol_ref))
     return fn
 
 
@@ -208,13 +210,13 @@ def list_backend_targets() -> list[str]:
 
 def get_backend_spec_typed(target: str) -> ResolvedBackendSpec:
     if target not in _BACKEND_RUNTIME_SPECS:
-        raise RuntimeError("unsupported target: " + target)
+        raise RuntimeError(unsupported_target_message(target))
     return _BACKEND_RUNTIME_SPECS[target]
 
 
 def get_backend_spec(target: str) -> BackendSpec:
     if target not in _BACKEND_SPECS:
-        raise RuntimeError("unsupported target: " + target)
+        raise RuntimeError(unsupported_target_message(target))
     return _BACKEND_SPECS[target]
 
 

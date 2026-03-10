@@ -6,6 +6,7 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from src.toolchain.compiler.backend_registry_diagnostics import infer_diagnostic_detail_from_text
 from tools.selfhost_parity_summary import build_summary_row
 from tools.selfhost_parity_summary import print_summary_block
 
@@ -57,13 +58,13 @@ def _print_multistage_summary(report: Path) -> None:
 
 
 def _stage1_detail_category(stage1: str, mode: str, stage2: str, note: str) -> str:
-    note_lc = note.lower()
+    inferred_detail = infer_diagnostic_detail_from_text(note)
     mode_lc = mode.lower()
     if stage1 == "pass" and stage2 in {"pass", "blocked", "skip"}:
         return "pass"
-    if "toolchain" in note_lc or stage1 == "missing_toolchain":
+    if inferred_detail == "toolchain_missing" or stage1 == "missing_toolchain":
         return "toolchain_missing"
-    if "preview" in note_lc or mode_lc == "preview":
+    if inferred_detail == "preview_only" or mode_lc == "preview":
         return "preview_only"
     if stage2 == "blocked":
         return "blocked"

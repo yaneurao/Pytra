@@ -5,6 +5,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from src.toolchain.compiler.backend_registry_diagnostics import infer_diagnostic_detail_from_text
+from src.toolchain.compiler.backend_registry_diagnostics import normalize_top_level_category
+
 
 @dataclass(frozen=True)
 class ParitySummaryRow:
@@ -13,22 +16,6 @@ class ParitySummaryRow:
     top_level_category: str
     detail_category: str
     note: str
-
-
-def normalize_top_level_category(detail_category: str) -> str:
-    if detail_category == "pass":
-        return "pass"
-    if detail_category == "toolchain_missing":
-        return "toolchain_missing"
-    if detail_category in {
-        "known_block",
-        "preview_only",
-        "not_implemented",
-        "unsupported_by_design",
-        "blocked",
-    }:
-        return "known_block"
-    return "regression"
 
 
 def build_summary_row(lane: str, subject: str, detail_category: str, note: str) -> ParitySummaryRow:
@@ -42,17 +29,9 @@ def build_summary_row(lane: str, subject: str, detail_category: str, note: str) 
 
 
 def classify_known_block_detail(note: str) -> str | None:
-    note_lc = note.lower()
-    if "[not_implemented]" in note_lc:
-        return "not_implemented"
-    if "[unsupported_by_design]" in note_lc:
-        return "unsupported_by_design"
-    if "unsupported target:" in note_lc:
-        return "unsupported_by_design"
-    if "unsupported target profile:" in note_lc:
-        return "unsupported_by_design"
-    if "preview" in note_lc:
-        return "preview_only"
+    inferred = infer_diagnostic_detail_from_text(note)
+    if inferred in {"not_implemented", "unsupported_by_design", "preview_only"}:
+        return inferred
     return None
 
 
