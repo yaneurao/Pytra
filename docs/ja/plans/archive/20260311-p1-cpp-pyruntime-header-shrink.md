@@ -54,8 +54,8 @@ end state:
 - [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S1-01] `py_runtime.h` の残存 helper を `object_bridge_mutation` / `typed_collection_compat` / `shared_type_id_compat` に棚卸しし、inventory/tooling を追加する。
 - [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S1-02] `py_runtime.h` の target end state と bundle 単位の削減順を docs/source guard に固定する。
 - [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-01] `typed_collection_compat` のうち不要な list/dict wrapper を bundle 単位で削減する。
-- [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-02] `shared_type_id_compat` の thin wrapper を source guard 前提でさらに縮める。
-- [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S3-01] representative runtime test / docs / archive を更新して閉じる。
+- [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-02] `shared_type_id_compat` の thin wrapper を source guard 前提でさらに縮める。
+- [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S3-01] representative runtime test / docs / archive を更新して閉じる。
 
 決定ログ:
 - 2026-03-11: `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01` 完了後の follow-up として起票した。次段階は emitter 側ではなく `py_runtime.h` 本体の残存 surface を実際に削減する。
@@ -64,3 +64,5 @@ end state:
 - 2026-03-11: `S2-01` の第1束として source-of-truth で未使用だった `py_set_at(dict<K, V>& ...)` を header / inventory / source guard から削除した。残る `typed_collection_compat` は `py_append(list<T>& ...)` のみ。
 - 2026-03-11: `S2-01` の第2束として C++ emitter の local concrete list 判定を value lane へ戻し、generated `json.cpp` の local array append を direct `.append(...)` に再同期したうえで `py_append(list<T>& ...)` を header / inventory / source guard から削除した。object helper である `iter_ops.cpp` は `py_list_append_mut(obj_to_list_ref_or_raise(...))` に留め、`typed_collection_compat` bucket は空になった。
 - 2026-03-11: `S2-02` の第1束として C++ emitter / runtime test を `py_runtime_object_type_id` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` へ寄せ、header から `py_is_subtype` / `py_issubclass` / `py_runtime_type_id(const object&)` alias を削除した。`shared_type_id_compat` bucket は template `py_runtime_type_id` と `py_isinstance` のみになった。
+- 2026-03-11: `S2-02` を完了として、`shared_type_id_compat` の残存を template `py_runtime_type_id` / `py_isinstance` の 2 本に固定した。これ以上の削減は header 単体ではなく C++/Rust/C#/generated lane の follow-up が前提になるため、残りは low-priority cross-runtime task へ切り出す。
+- 2026-03-11: `S3-01` として representative runtime test / header surface tooling / docs / archive を更新し、この task を closed とした。
