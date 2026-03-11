@@ -29,7 +29,7 @@ Acceptance criteria:
 
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-01] Inventory the `py_runtime` dependencies in the C++ / Rust / C# emitters and classify them into typed lanes, object bridge, and shared type_id seams.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-01] Re-audit the C++ emitter to separate object-bridge-only helpers from already-upstreamed typed lanes and define header-shrink regressions.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-02] Fix the plan for Rust / C# mutation and `isinstance` / `issubclass` lowering so they target thin seams instead of the current shared contract directly.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-02] Fix the plan for Rust / C# mutation and `isinstance` / `issubclass` lowering so they target thin seams instead of the current shared contract directly.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S3-01] Define representative inventory, smoke, and source-guard lanes so post-shrink contract re-entry fails closed.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S4-01] Connect the removable `py_runtime.h` surface and the final residual seam to the follow-up shrink task.
 
@@ -83,3 +83,4 @@ Representative guards:
 - 2026-03-12: `S1-01` is now closed by adopting the existing inventory tool as the source of truth for this follow-up task and freezing the current residuals into five buckets (`cpp_emitter_object_bridge_residual`, `cpp_emitter_shared_type_id_residual`, `rs_emitter_shared_type_id_residual`, `cs_emitter_shared_type_id_residual`, `crossruntime_mutation_helper_residual`).
 - 2026-03-12: `S2-01` freezes the C++ direct typed-lane helpers (`py_list_*_mut`) separately from the object-bridge wrapper names (`py_append` family), and fails closed if wrapper symbols escape `call.py`.
 - 2026-03-12: The first `S2-01` bundle locks C++ wrapper re-entry so `py_append` / `py_extend` / `py_pop` / `py_clear` / `py_reverse` / `py_sort` / `py_set_at` must not reappear in `cpp_emitter.py`, `runtime_expr.py`, or `stmt.py`, and fixes the representative split as `typed list append/set_at -> py_list_*_mut(rc_list_ref(...))` versus `pyobj Any list -> obj_to_list_ref_or_raise(..., "py_append" | "py_set_at")`.
+- 2026-03-12: `S2-02` is now fixed as `Rust = thin shared type_id seam only` and `C# = the same thin seam plus intentional bytes/bytearray compat residuals for py_append / py_pop / py_get / py_slice / py_set`.

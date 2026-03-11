@@ -420,6 +420,26 @@ class Child(Base):
         self.assertIn("Pytra.CsModule.py_runtime.py_append(buf, 2);", cs)
         self.assertIn("Pytra.CsModule.py_runtime.py_pop(buf)", cs)
 
+    def test_bytearray_index_and_slice_compat_helpers_stay_explicit(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "bytearray_index_slice.py"
+            src.write_text(
+                "def f(buf: bytearray, i: int) -> int:\n"
+                "    head = buf[i]\n"
+                "    seg = buf[0:2]\n"
+                "    buf[i] = head\n"
+                "    return head + len(seg)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+        self.assertIn("Pytra.CsModule.py_runtime.py_get(buf, i)", cs)
+        self.assertIn(
+            "Pytra.CsModule.py_runtime.py_slice(buf, System.Convert.ToInt64(0), System.Convert.ToInt64(2))",
+            cs,
+        )
+        self.assertIn("Pytra.CsModule.py_runtime.py_set(buf, i, head);", cs)
+
     def test_try_with_multiple_except_handlers_is_emitted(self) -> None:
         east = {
             "kind": "Module",
