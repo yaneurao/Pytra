@@ -32,7 +32,7 @@
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-01] representative backend → secondary backend → long-tail backend の rollout tier と優先順を固定する。
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-02] 新 feature merge 時の parity review checklist と fail-closed requirement を定義する。
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S3-01] support matrix を docs / release note / tooling に handoff する手順を決める。
-- [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S4-01] rollout policy と matrix maintenance の archive / operations rule を整える。
+- [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S4-01] rollout policy と matrix maintenance の archive / operations rule を整える。
 
 ## 決定ログ
 
@@ -117,3 +117,19 @@
   - handoff manifest は matrix / conformance summary / review checklist / rollout tier の vocabulary をそのまま使う
 
 - 2026-03-12: `S3-01` では docs / release note / tooling handoff を `backend_parity_handoff_contract.py` に固定し、matrix page と docs entrypoint を publish target に追加した。
+
+## S4-01 Archive / Operations Rule
+
+- source of truth:
+  - operations contract: [backend_parity_operations_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_operations_contract.py)
+  - validation: [check_backend_parity_operations_contract.py](/workspace/Pytra/tools/check_backend_parity_operations_contract.py), [test_check_backend_parity_operations_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_operations_contract.py)
+  - export seam: [export_backend_parity_operations_manifest.py](/workspace/Pytra/tools/export_backend_parity_operations_manifest.py), [test_export_backend_parity_operations_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_parity_operations_manifest.py)
+- operations rule:
+  - maintenance order は `contract_seed -> docs_publish -> docs_entrypoints -> release_note_link -> tooling_export -> archive_handoff`
+  - docs / README / news の parity matrix link は checker で固定し、publish target drift を fail-closed にする
+  - tooling export は `export_backend_parity_matrix_manifest.py` と `export_backend_parity_handoff_manifest.py` を基準にする
+- archive handoff rule:
+  - `P7` 完了時は `docs/ja|en/todo/archive/index.md` と `docs/ja|en/plans/archive/` への handoff を同日で行う
+  - archive handoff 後も live file として残すのは matrix page と parity contract 群
+
+- 2026-03-12: `S4-01` では parity matrix maintenance order と archive handoff target を `backend_parity_operations_contract.py` に固定し、README / news / docs index の matrix link まで checker で監視するようにした。

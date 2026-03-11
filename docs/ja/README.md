@@ -50,6 +50,7 @@
 > バージョン 0.10.0 リリース、`@template` を使えるようになりました。現在、各言語の runtime を整備中です。
 
 - 過去ニュース: [docs/ja/news/index.md](news/index.md)
+- backend parity の現行 support state: [language/backend-parity-matrix.md](language/backend-parity-matrix.md)
 
 
 ## 特徴

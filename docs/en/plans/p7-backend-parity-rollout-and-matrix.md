@@ -32,7 +32,7 @@ Acceptance criteria:
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-01] Fix rollout tiers and ordering from representative backends to secondary and long-tail backends.
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-02] Define the parity review checklist and fail-closed requirement for new feature merges.
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S3-01] Define how the support matrix flows into docs, release notes, and tooling.
-- [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S4-01] Fix the archive / operations rules for maintaining rollout policy and the support matrix.
+- [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S4-01] Fix the archive / operations rules for maintaining rollout policy and the support matrix.
 
 ## Decision log
 
@@ -117,3 +117,19 @@ Acceptance criteria:
   - the handoff manifest reuses the same matrix / conformance summary / review checklist / rollout-tier vocabulary
 
 - 2026-03-12: `S3-01` fixes docs / release note / tooling handoff in `backend_parity_handoff_contract.py` and adds the matrix page plus docs entrypoints as canonical publish targets.
+
+## S4-01 Archive / Operations Rule
+
+- source of truth:
+  - operations contract: [backend_parity_operations_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_operations_contract.py)
+  - validation: [check_backend_parity_operations_contract.py](/workspace/Pytra/tools/check_backend_parity_operations_contract.py), [test_check_backend_parity_operations_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_operations_contract.py)
+  - export seam: [export_backend_parity_operations_manifest.py](/workspace/Pytra/tools/export_backend_parity_operations_manifest.py), [test_export_backend_parity_operations_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_parity_operations_manifest.py)
+- operations rule:
+  - maintenance order is `contract_seed -> docs_publish -> docs_entrypoints -> release_note_link -> tooling_export -> archive_handoff`
+  - docs / README / news links to the parity matrix are checker-owned so publish-target drift fails closed
+  - tooling export is anchored to `export_backend_parity_matrix_manifest.py` and `export_backend_parity_handoff_manifest.py`
+- archive handoff rule:
+  - when `P7` closes, hand off on the same day into `docs/ja|en/todo/archive/index.md` and `docs/ja|en/plans/archive/`
+  - the live files that remain after archive handoff are the matrix page and the parity contract modules
+
+- 2026-03-12: `S4-01` fixes the parity matrix maintenance order and archive handoff targets in `backend_parity_operations_contract.py`, and moves README / news / docs-index matrix links under checker control.

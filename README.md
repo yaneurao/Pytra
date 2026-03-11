@@ -47,6 +47,7 @@
 > Version 0.10.0 was released. `@template` is now available, and runtime support for each target language is currently being refined.
 
 - Past News: [docs/en/news/index.md](docs/en/news/index.md)
+- Current backend parity status: [docs/en/language/backend-parity-matrix.md](docs/en/language/backend-parity-matrix.md)
 
 ## Features
 

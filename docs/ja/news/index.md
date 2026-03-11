@@ -6,6 +6,8 @@
 
 このディレクトリは、`docs/ja/README.md` の「最新ニュース」から移動した過去ニュースの保管場所です。
 
+- backend parity の canonical publish target: [../language/backend-parity-matrix.md](../language/backend-parity-matrix.md)
+
 ## 運用ルール
 
 - `docs/ja/README.md` には最新 4 件までを掲載します。

@@ -6,6 +6,8 @@
 
 This directory stores past news items that were moved from the “Latest News” section of `README.md`.
 
+- Canonical backend parity publish target: [../language/backend-parity-matrix.md](../language/backend-parity-matrix.md)
+
 ## Maintenance Rules
 
 - `README.md` keeps only the latest four news items.
