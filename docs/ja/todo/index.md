@@ -38,6 +38,6 @@
 1. [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01] relative import の current contract を entrypoint / docs / smoke に揃える。
 2. [x] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S1-01] relative import の current contract と stale surface を plan / TODO に固定する。
 3. [x] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S2-01] `py2x.py` entrypoint の relative import representative regression を追加する。
-4. [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S2-02] C++ support matrix の relative import / wildcard import 記述を current contract に同期する。
+4. [x] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S2-02] C++ support matrix の relative import / wildcard import 記述を current contract に同期する。
 5. [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S3-01] targeted regression / docs / archive を更新して閉じる。
 - 進捗メモ: relative import 本体は既に実装済みなので、`py2x.py` representative regression と support matrix の stale “unsupported” 記述を close-out 対象にする。

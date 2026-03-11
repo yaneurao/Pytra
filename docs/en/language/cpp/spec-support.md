@@ -46,8 +46,8 @@ This document summarizes language-feature support status in `src/py2cpp.py` at a
 | `from M import S` | supported | Supported. | `test/unit/test_py2cpp_features.py:242`, `test/unit/test_py2cpp_features.py:1283`, `test/fixtures/imports/from_import_symbols.py:3` |
 | `from M import S as A` | supported | Supported. | `test/unit/test_py2cpp_features.py:1283`, `test/fixtures/imports/from_import_symbols.py:3` |
 | Circular import detection | unsupported | Detects and stops with `input_invalid(kind=import_cycle)`. | `src/py2cpp.py:5734`, `test/unit/test_py2cpp_features.py:567` |
-| Relative import (`from .m import x`) | unsupported | `input_invalid(kind=unsupported_import_form)`. | `src/py2cpp.py:4693`, `test/unit/test_py2cpp_features.py:596` |
-| `from M import *` | unsupported | `input_invalid(kind=unsupported_import_form)`. | `src/py2cpp.py:4686`, `test/unit/test_py2cpp_features.py:618` |
+| Relative import (`from .m import x`) | supported | Sibling and parent relative `from-import` are supported. Root-escape cases that climb above the entry root stay fail-closed with `input_invalid(kind=unsupported_import_form)`. | `test/unit/tooling/test_py2x_cli.py:67`, `test/unit/tooling/test_py2x_cli.py:90`, `test/unit/backends/cpp/test_py2cpp_features.py:2248`, `test/unit/backends/cpp/test_py2cpp_features.py:2283` |
+| `from M import *` | partial | Wildcard imports work only when exported symbols can be resolved statically. Unresolved wildcard imports stay fail-closed with `input_invalid(kind=unresolved_wildcard)`. | `test/unit/backends/cpp/test_py2cpp_features.py:720`, `test/unit/backends/cpp/test_py2cpp_features.py:2328`, `test/unit/backends/cpp/test_py2cpp_features.py:2498` |
 | Unresolved module import | unsupported | `input_invalid(kind=missing_module)`. | `test/unit/test_py2cpp_features.py:544` |
 | Duplicate import binding | unsupported | `input_invalid(kind=duplicate_binding)`. | `test/unit/test_py2cpp_features.py:645`, `test/unit/test_py2cpp_features.py:675` |
 | Referencing `M.T` after `from M import S` | unsupported | Treated as `input_invalid(kind=missing_symbol)`. | `test/unit/test_py2cpp_features.py:732` |
