@@ -62,13 +62,13 @@ bundle 順:
 - `git diff --check`
 
 分解:
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01] `py_runtime.h` をさらに縮められるよう、C++/Rust/C# emitter 側の residual helper 依存を整理する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01] `py_runtime.h` をさらに縮められるよう、C++/Rust/C# emitter 側の residual helper 依存を整理する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-01] C++/Rust/C# emitter の residual `py_runtime` helper 使用を bucket 化し、inventory/test を追加する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-02] mutation / `type_id` / object bridge の end state と削減順を docs/source guard に固定する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-01] C++ emitter の residual helper 依存を thin/object-bridge seam に寄せる。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-02] Rust emitter の residual helper 依存を shared contract へ揃える。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-03] C# emitter の residual helper 依存を shared contract へ揃える。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S3-01] representative smoke / docs / archive を更新し、header shrink follow-up を閉じる。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S3-01] representative smoke / docs / archive を更新し、header shrink follow-up を閉じる。
 
 決定ログ:
 - 2026-03-11: `P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01` 完了後の follow-up として起票した。header 側の generic thin compat は除去済みなので、次の shrink は caller-side residual 契約を整理しないと進まない。
@@ -78,3 +78,4 @@ bundle 順:
 - 2026-03-11: `S2-02` として Rust emitter の runtime prelude から generic alias `py_runtime_type_id` / `py_is_subtype` / `py_issubclass` / `py_isinstance` 定義を削除し、shared contract を `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` のみへ固定した。representative smoke でも generic alias 再流入を禁止した。
 - 2026-03-11: `S2-03` として C# emitter の shared helper surface 名を `py_runtime_value_*` / `py_runtime_type_id_*` に統一し、type-predicate smoke で legacy alias `py_runtime_type_id` / `py_is_subtype` / `py_issubclass` / `py_isinstance` が再流入しないことを固定した。
 - 2026-03-11: `S3-01` の first bundle として C# emitter の bytes/bytearray mutation residual を `_render_bytes_mutation_call()` に隔離し、representative smoke で `bytearray` だけが `py_append` / `py_pop` を使い、`list[...]` は `.Add()` に留まることを固定した。`crossruntime_mutation_helper_residual` の intent を code と smoke の両方で明示した。
+- 2026-03-11: `S3-01` を representative smoke / docs / archive 更新まで完了し、`crossruntime_mutation_helper_residual` は C# `bytearray` lane、`cpp_emitter_object_bridge_residual` は object bridge fallback、`rs/cs_emitter_shared_type_id_residual` は shared thin helper naming に固定された状態で follow-up を閉じた。
