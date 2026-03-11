@@ -17,6 +17,13 @@ import src.toolchain.ir.core_entrypoints as core_entrypoints
 
 
 class ImportDiagnosticsTest(unittest.TestCase):
+    def test_transpile_cli_source_has_no_legacy_relative_import_fallback(self) -> None:
+        src = (
+            ROOT / "src" / "toolchain" / "frontends" / "transpile_cli.py"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn('if err_code == "unsupported_import_form":', src)
+        self.assertNotIn("def _is_legacy_relative_import_escape_message(", src)
+
     def test_classify_self_hosted_syntax_error_includes_filepath(self) -> None:
         err = transpile_cli._classify_self_hosted_syntax_user_error(
             "unsupported_syntax: self_hosted parser cannot parse expression token: * at 7:18 hint=Fix Python syntax errors before EAST conversion.",
