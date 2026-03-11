@@ -36,8 +36,27 @@ HANDOFF_BUCKETS = {
     },
 }
 
-FOLLOWUP_TASK_ID = "P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01"
-FOLLOWUP_PLAN_PATH = "docs/ja/plans/archive/20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md"
+FOLLOWUP_TASK_ID = "P0-CPP-PYRUNTIME-FINAL-SHRINK-01"
+FOLLOWUP_PLAN_PATH = "docs/ja/plans/p0-cpp-pyruntime-final-shrink.md"
+
+TARGET_END_STATE = {
+    "object_bridge_mutation": "remove or reduce to the minimum object-only seam",
+    "typed_collection_compat": "must stay empty",
+    "shared_type_id_compat": "must stay empty",
+    "shared_type_id_thin_helpers": {
+        "py_runtime_type_id_is_subtype",
+        "py_runtime_type_id_issubclass",
+        "py_runtime_object_type_id",
+        "py_runtime_object_isinstance",
+    },
+}
+
+BUNDLE_ORDER = (
+    "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S1-01",
+    "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01",
+    "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02",
+    "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S3-01",
+)
 
 
 def _header_text() -> str:
@@ -102,6 +121,21 @@ def _collect_handoff_issues() -> list[str]:
             issues.append(f"follow-up residual bucket unexpectedly empty: {bucket}")
     if not (ROOT / FOLLOWUP_PLAN_PATH).exists():
         issues.append(f"follow-up plan missing: {FOLLOWUP_PLAN_PATH}")
+    if BUNDLE_ORDER != (
+        "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S1-01",
+        "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01",
+        "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02",
+        "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S3-01",
+    ):
+        issues.append("bundle order drifted from the active final-shrink contract")
+    thin_helper_names = TARGET_END_STATE["shared_type_id_thin_helpers"]
+    if not isinstance(thin_helper_names, set) or thin_helper_names != {
+        "py_runtime_type_id_is_subtype",
+        "py_runtime_type_id_issubclass",
+        "py_runtime_object_type_id",
+        "py_runtime_object_isinstance",
+    }:
+        issues.append("shared type-id thin-helper target end state drifted")
     return issues
 
 
