@@ -31,8 +31,11 @@ Read `docs/en/spec/spec-runtime.md` first.
 - This section fixes the target contract for relative imports. Implementation rollout is staged, but syntax / diagnostics / root-escape policy are defined here as the source of truth.
 - Stage 1 accepts only the following relative forms:
   - `from .m import x`
+  - `from .m import x as a`
   - `from ..pkg import y`
+  - `from ..pkg import y as z`
   - `from .. import helper`
+  - `from .. import helper as h`
   - `from . import x`
   - `from .m import *`
 - Illegal Python syntax such as `import .m` is never accepted.
@@ -42,6 +45,8 @@ Read `docs/en/spec/spec-runtime.md` first.
 - If normalization succeeds but the target module does not exist, it fails as `input_invalid(kind=missing_module)`, the same as absolute imports.
 - `missing_symbol`, `duplicate_binding`, and `unresolved_wildcard` for relative imports are evaluated against the normalized absolute `module_id`, using the existing absolute-import contract.
 - After frontend normalization, `ImportFrom.module`, `meta.import_bindings[].module_id`, `meta.import_symbols[*].module`, and `meta.qualified_symbol_refs[*].module_id` must all be absolute module IDs.
+- Module aliases keep `binding_kind=module` and `local_name=<alias>`; `from .. import helper as h` normalizes to `module_id=helper, local_name=h`.
+- Symbol aliases use `meta.import_symbols[<alias>] = {"module": <absolute_module>, "name": <export_name>}` as the canonical carrier; `from ..helper import f as g` normalizes to `g -> {module: helper, name: f}`.
 
 This document defines how syntax like the following is converted in `py2cpp.py`.
 

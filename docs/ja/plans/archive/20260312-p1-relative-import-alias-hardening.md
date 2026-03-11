@@ -46,10 +46,11 @@
 
 ## 分解
 
-- [ ] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01-S1-01] alias relative import の target contract と representative scope を plan / TODO に固定する。
+- [x] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01-S1-01] alias relative import の target contract と representative scope を plan / TODO に固定する。
 - [x] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01-S2-01] import graph / normalization focused test で module alias と symbol alias の metadata carrier を固定する。
 - [x] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01-S2-02] `py2x.py` と C++ multi-file smoke で alias relative import の current support を固定する。
-- [ ] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01-S3-01] spec-import / C++ support matrix の representative 例を alias case まで同期する。
+- [x] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01-S3-01] spec-import / C++ support matrix の representative 例を alias case まで同期する。
 
 - 2026-03-12: current implementation が `from .. import helper as h` と `from ..helper import f as g` を受理することを確認し、import graph / CLI / C++ multi-file build-run regression を追加して `S2-01` / `S2-02` を完了にした。
 - 2026-03-12: `validate_from_import_symbols_or_raise()` でも importer 側 `__init__.py` chain を基準に relative `module_id` を normalize するようにして、raw relative carrier が残る focused import-graph test でも alias symbol binding が absolute `module_id` に揃うようにした。
+- 2026-03-12: `spec-import` と C++ support matrix に alias representative case を追記し、`from .. import helper as h` / `from ..helper import f as g` を current support contract として docs まで閉じた。

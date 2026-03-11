@@ -32,8 +32,11 @@
 - 本節は relative import の target contract を固定する。実装 rollout は段階的に進めるが、syntax / diagnostics / root escape policy はこの節を正本とする。
 - Stage 1 で受理する relative import は次に限定する。
   - `from .m import x`
+  - `from .m import x as a`
   - `from ..pkg import y`
+  - `from ..pkg import y as z`
   - `from .. import helper`
+  - `from .. import helper as h`
   - `from . import x`
   - `from .m import *`
 - Python 非合法構文である `import .m` は受理しない。
@@ -43,6 +46,8 @@
 - 正規化後 module が存在しない場合は absolute import と同じく `input_invalid(kind=missing_module)` とする。
 - relative import の `missing_symbol` / `duplicate_binding` / `unresolved_wildcard` は、正規化後 absolute module_id に対して既存 import contract のまま判定する。
 - frontend 後段では `ImportFrom.module` / `meta.import_bindings[].module_id` / `meta.import_symbols[*].module` / `meta.qualified_symbol_refs[*].module_id` を absolute module_id に揃える。
+- module alias は `binding_kind=module` と `local_name=<alias>` を保持し、`from .. import helper as h` は `module_id=helper, local_name=h` へ正規化する。
+- symbol alias は `meta.import_symbols[<alias>] = {"module": <absolute_module>, "name": <export_name>}` を正本とし、`from ..helper import f as g` は `g -> {module: helper, name: f}` へ正規化する。
 
 ## Yanesdk 重複配置の扱い（運用ルール）
 

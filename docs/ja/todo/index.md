@@ -31,10 +31,6 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01] relative import alias の current support を representative regression と spec/doc contract に固定する。
-   文脈: [docs/ja/plans/p1-relative-import-alias-hardening.md](../plans/p1-relative-import-alias-hardening.md)
-   進捗メモ: alias 付き sibling / parent relative `from-import` を import graph / CLI / C++ smoke / spec-support まで揃えて固定する。
-
 ### P2: relative import non-C++ rollout staging
 
 文脈: [p2-relative-import-noncpp-rollout.md](../plans/p2-relative-import-noncpp-rollout.md)
