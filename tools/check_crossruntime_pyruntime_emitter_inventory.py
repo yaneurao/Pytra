@@ -13,6 +13,12 @@ ROOT = Path(__file__).resolve().parents[1]
 SYMBOL_PATTERNS = {
     symbol: re.compile(rf"\b{re.escape(symbol)}\b")
     for symbol in {
+        "py_runtime_object_type_id",
+        "py_runtime_object_isinstance",
+        "py_runtime_value_type_id",
+        "py_runtime_value_isinstance",
+        "py_runtime_type_id_is_subtype",
+        "py_runtime_type_id_issubclass",
         "py_append",
         "py_extend",
         "py_pop",
@@ -20,10 +26,6 @@ SYMBOL_PATTERNS = {
         "py_reverse",
         "py_sort",
         "py_set_at",
-        "py_runtime_type_id",
-        "py_isinstance",
-        "py_is_subtype",
-        "py_issubclass",
     }
 }
 
@@ -37,7 +39,28 @@ TRACKED_PATHS = {
 }
 
 EXPECTED_BUCKETS = {
-    "cpp_object_bridge_residual": {
+    "cpp_emitter_object_bridge_residual": {
+        ("py_runtime_object_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
+        ("py_runtime_object_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
+        ("py_runtime_object_isinstance", "src/backends/cpp/emitter/stmt.py"),
+    },
+    "cpp_emitter_shared_type_id_residual": {
+        ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
+        ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
+    },
+    "rs_emitter_shared_type_id_residual": {
+        ("py_runtime_value_type_id", "src/backends/rs/emitter/rs_emitter.py"),
+        ("py_runtime_value_isinstance", "src/backends/rs/emitter/rs_emitter.py"),
+        ("py_runtime_type_id_is_subtype", "src/backends/rs/emitter/rs_emitter.py"),
+        ("py_runtime_type_id_issubclass", "src/backends/rs/emitter/rs_emitter.py"),
+    },
+    "cs_emitter_shared_type_id_residual": {
+        ("py_runtime_value_type_id", "src/backends/cs/emitter/cs_emitter.py"),
+        ("py_runtime_value_isinstance", "src/backends/cs/emitter/cs_emitter.py"),
+        ("py_runtime_type_id_is_subtype", "src/backends/cs/emitter/cs_emitter.py"),
+        ("py_runtime_type_id_issubclass", "src/backends/cs/emitter/cs_emitter.py"),
+    },
+    "crossruntime_mutation_helper_residual": {
         ("py_append", "src/backends/cpp/emitter/call.py"),
         ("py_extend", "src/backends/cpp/emitter/call.py"),
         ("py_pop", "src/backends/cpp/emitter/call.py"),
@@ -45,24 +68,6 @@ EXPECTED_BUCKETS = {
         ("py_reverse", "src/backends/cpp/emitter/call.py"),
         ("py_sort", "src/backends/cpp/emitter/call.py"),
         ("py_set_at", "src/backends/cpp/emitter/call.py"),
-    },
-    "shared_type_id_contract": {
-        ("py_runtime_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_isinstance", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_is_subtype", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_issubclass", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
-        ("py_isinstance", "src/backends/cpp/emitter/stmt.py"),
-        ("py_runtime_type_id", "src/backends/rs/emitter/rs_emitter.py"),
-        ("py_isinstance", "src/backends/rs/emitter/rs_emitter.py"),
-        ("py_is_subtype", "src/backends/rs/emitter/rs_emitter.py"),
-        ("py_issubclass", "src/backends/rs/emitter/rs_emitter.py"),
-        ("py_runtime_type_id", "src/backends/cs/emitter/cs_emitter.py"),
-        ("py_isinstance", "src/backends/cs/emitter/cs_emitter.py"),
-        ("py_is_subtype", "src/backends/cs/emitter/cs_emitter.py"),
-        ("py_issubclass", "src/backends/cs/emitter/cs_emitter.py"),
-    },
-    "crossruntime_object_bridge_residual": {
         ("py_append", "src/backends/cs/emitter/cs_emitter.py"),
         ("py_pop", "src/backends/cs/emitter/cs_emitter.py"),
     },

@@ -58,7 +58,7 @@ Checks:
 
 Breakdown:
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01] Align the remaining emitter-side helper dependencies across C++/Rust/C# so `py_runtime.h` can shrink further.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-01] Bucket residual emitter-side `py_runtime` helper usage across C++/Rust/C# and add inventory/tests.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-01] Bucket residual emitter-side `py_runtime` helper usage across C++/Rust/C# and add inventory/tests.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-02] Fix the end state and removal order for mutation / `type_id` / object-bridge helpers in docs/source guards.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-01] Move remaining C++ emitter helper dependencies onto thin/object-bridge seams.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-02] Align remaining Rust emitter helper dependencies to the shared contract.
@@ -67,3 +67,4 @@ Breakdown:
 
 Decision log:
 - 2026-03-11: Created as the next follow-up after `P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01` completed. The generic thin compat layer is gone from the header, so the next shrink step must classify and reduce caller-side residual helper contracts instead.
+- 2026-03-11: Completed `S1-01` by retargeting `tools/check_crossruntime_pyruntime_emitter_inventory.py` onto thin-helper names and classifying the current residuals into `cpp_emitter_object_bridge_residual`, `cpp_emitter_shared_type_id_residual`, `rs_emitter_shared_type_id_residual`, `cs_emitter_shared_type_id_residual`, and `crossruntime_mutation_helper_residual`. C++ now tracks `py_runtime_object_*` and `py_runtime_type_id_*`, Rust/C# track `py_runtime_value_*` / `py_runtime_type_id_*`, and mutation helpers are limited to the C++ object-bridge fallback plus the C# bytes/bytearray lane.
