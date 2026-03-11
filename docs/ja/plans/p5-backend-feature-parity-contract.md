@@ -31,7 +31,7 @@
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S1-01] syntax / builtins / `pytra.std.*` の representative feature を feature ID 単位で棚卸しし、inventory の category と naming rule を固定する。
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S1-02] backend support state（`supported` / `fail_closed` / `not_started` / `experimental`）と、その判定条件を decision log に固定する。
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-01] backend 未対応 feature の fail-closed policy と diagnostic category を整理し、silent fallback 禁止 rule を明文化する。
-- [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-02] 新 feature 導入時の acceptance rule を決め、`C++ だけ通れば完了` としない運用を定義する。
+- [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-02] 新 feature 導入時の acceptance rule を決め、`C++ だけ通れば完了` としない運用を定義する。
 - [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S3-01] representative inventory document / tooling / docs handoff を整え、後段 conformance suite と support matrix へ接続する。
 
 ## S1-01 Representative Inventory
@@ -93,6 +93,18 @@
   - `emit_and_runtime`: unsupported backend lane は known-block diagnostic で止まり、汎用 object/String/comment 出力へ落とさない。
   - `preview_rollout`: preview-only lane は `experimental` から昇格するまで `supported` 扱いしない。
 
+## S2-02 New-feature Acceptance Rule
+
+- source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py)
+- fixed acceptance rules:
+  - `feature_id_required`: 新 feature は representative scope 外と明示しない限り feature ID を持つ。
+  - `inventory_or_followup_required`: representative fixture entry か parity follow-up task のどちらかを merge 前に持つ。
+  - `cxx_only_not_complete`: C++ support 単独では feature contract を閉じない。
+  - `noncpp_state_required`: merge 時点で少なくとも 1 つの non-C++ backend state を記録する。
+  - `unsupported_lanes_fail_closed`: `supported` 以外の lane は `fail_closed` / `not_started` / `experimental` のいずれかで、silent fallback を使わない。
+  - `docs_mirror_required`: parity contract 更新時は `docs/en` mirror を同時更新する。
+
 ## 決定ログ
 
 - 2026-03-12: backend parity は重要だが、直近の `py_runtime.h` shrink 系 `P0-P4` を止めるべきではないため `P5` に置く。
@@ -100,3 +112,4 @@
 - 2026-03-12: `S1-01` の representative inventory 正本は [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py) に置き、category は `syntax` / `builtin` / `stdlib` の 3 系統に固定する。
 - 2026-03-12: `S1-02` では backend support state を `supported` / `fail_closed` / `not_started` / `experimental` の 4 つへ固定し、`fail_closed` を parity summary 上の正式 state として扱う。
 - 2026-03-12: `S2-01` では unsupported backend lane の diagnostic category を `not_implemented` / `unsupported_by_design` / `preview_only` / `blocked` に固定し、`object/String/comment/empty-output` fallback を parity contract 上の forbidden silent fallback とする。
+- 2026-03-12: `S2-02` では feature merge acceptance rule を固定し、C++ lane が通っても non-C++ state と docs mirror が揃うまでは feature-complete とみなさない。

@@ -48,6 +48,15 @@ FORBIDDEN_SILENT_FALLBACK_LABELS: Final[tuple[str, ...]] = (
     "empty_output_fallback",
 )
 
+NEW_FEATURE_ACCEPTANCE_RULES: Final[dict[str, str]] = {
+    "feature_id_required": "Every new syntax / builtin / stdlib feature must declare a feature ID or explicitly state why it is out of representative scope.",
+    "inventory_or_followup_required": "A representative fixture entry or an explicit follow-up parity task must be recorded before merge.",
+    "cxx_only_not_complete": "C++ support alone may merge as parity-incomplete work, but it must not close the feature contract by itself.",
+    "noncpp_state_required": "At least one non-C++ backend support state must be recorded at merge time, even if that state is fail_closed or not_started.",
+    "unsupported_lanes_fail_closed": "Any backend lane that is not marked supported must be explicitly fail_closed, not_started, or experimental; silent fallback is forbidden.",
+    "docs_mirror_required": "The docs/en mirror must be updated in the same change that modifies the parity contract.",
+}
+
 CATEGORY_ID_PATTERNS: Final[dict[str, re.Pattern[str]]] = {
     category: re.compile("^" + rule.replace(".", r"\.").replace("<", "(?P<").replace(">", ">[a-z0-9_]+)") + "$")
     for category, rule in CATEGORY_NAMING_RULES.items()

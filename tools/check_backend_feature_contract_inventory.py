@@ -71,11 +71,29 @@ def _collect_fail_closed_policy_issues() -> list[str]:
     return issues
 
 
+def _collect_acceptance_rule_issues() -> list[str]:
+    issues: list[str] = []
+    if set(inventory_mod.NEW_FEATURE_ACCEPTANCE_RULES.keys()) != {
+        "feature_id_required",
+        "inventory_or_followup_required",
+        "cxx_only_not_complete",
+        "noncpp_state_required",
+        "unsupported_lanes_fail_closed",
+        "docs_mirror_required",
+    }:
+        issues.append("new-feature acceptance rules drifted from the fixed key set")
+    for key, text in sorted(inventory_mod.NEW_FEATURE_ACCEPTANCE_RULES.items()):
+        if text.strip() == "":
+            issues.append(f"new-feature acceptance rule is empty: {key}")
+    return issues
+
+
 def main() -> int:
     issues = (
         _collect_inventory_issues()
         + _collect_support_state_issues()
         + _collect_fail_closed_policy_issues()
+        + _collect_acceptance_rule_issues()
     )
     if issues:
         for issue in issues:

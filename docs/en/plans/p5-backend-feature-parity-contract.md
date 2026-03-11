@@ -31,7 +31,7 @@ Acceptance criteria:
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S1-01] Inventory representative syntax / builtin / `pytra.std.*` features by feature ID and fix the category and naming rules.
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S1-02] Fix backend support-state categories (`supported` / `fail_closed` / `not_started` / `experimental`) and the conditions for each.
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-01] Define fail-closed policy and diagnostic categories for unsupported backend lanes and forbid silent fallback.
-- [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-02] Define the acceptance rule for new features so the project does not treat “works in C++ only” as completion.
+- [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-02] Define the acceptance rule for new features so the project does not treat “works in C++ only” as completion.
 - [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S3-01] Prepare the representative inventory document/tooling handoff so later conformance-suite and support-matrix work can attach cleanly.
 
 ## S1-01 Representative Inventory
@@ -93,6 +93,18 @@ Acceptance criteria:
   - `emit_and_runtime`: unsupported backend lanes stop with known-block diagnostics instead of degrading into object/String/comment fallback output.
   - `preview_rollout`: preview-only lanes remain `experimental` until explicitly promoted.
 
+## S2-02 New-feature Acceptance Rule
+
+- source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py)
+- fixed acceptance rules:
+  - `feature_id_required`: a new feature must have a feature ID unless it is explicitly declared out of representative scope.
+  - `inventory_or_followup_required`: a representative fixture entry or a parity follow-up task must exist before merge.
+  - `cxx_only_not_complete`: C++ support alone does not close the feature contract.
+  - `noncpp_state_required`: at least one non-C++ backend support state must be recorded at merge time.
+  - `unsupported_lanes_fail_closed`: any lane not marked `supported` must be `fail_closed`, `not_started`, or `experimental`, without silent fallback.
+  - `docs_mirror_required`: parity-contract updates must update the `docs/en` mirror in the same change.
+
 ## Decision log
 
 - 2026-03-12: Backend parity matters, but it should not block the near-term `P0-P4` `py_runtime.h` shrink work, so it is tracked as `P5`.
@@ -100,3 +112,4 @@ Acceptance criteria:
 - 2026-03-12: `S1-01` fixes the representative inventory source of truth in [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py) and freezes the category set at `syntax` / `builtin` / `stdlib`.
 - 2026-03-12: `S1-02` fixes the backend support-state taxonomy at `supported` / `fail_closed` / `not_started` / `experimental`, and `fail_closed` is treated as an explicit parity-summary state rather than an implicit note.
 - 2026-03-12: `S2-01` fixes unsupported backend diagnostics to `not_implemented` / `unsupported_by_design` / `preview_only` / `blocked`, and treats object/String/comment/empty-output fallback as forbidden silent fallback behavior.
+- 2026-03-12: `S2-02` fixes merge acceptance rules so a passing C++ lane does not count as feature completion unless non-C++ state and docs-mirror updates are also recorded.
