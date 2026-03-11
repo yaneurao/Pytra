@@ -23,9 +23,36 @@ Acceptance criteria:
 - Plans intentionally left as backlog can be recognized as backlog from the plan text or README instead of being mistaken for active work.
 - The `docs/en/` mirror follows the same operating policy as the Japanese source.
 
+## Classification Rules And Inventory Snapshot
+
+- Count only tracked `p*-*.md` files directly under `docs/ja/plans/`; ignore untracked plan drafts.
+- `active`: a live plan that is directly referenced by an unfinished task in `docs/ja/todo/index.md`.
+- `stale-complete`: a live plan that is no longer referenced by TODO and already has an archive twin with the same basename under `docs/ja/plans/archive/`.
+- `backlog`: a live plan that is no longer referenced by TODO and has no archive twin yet.
+
+Tracked inventory as of 2026-03-12:
+- live `p*-*.md`: 146
+- active: 6
+- stale-complete: 2
+- backlog: 138
+
+Representative active:
+- `p4-plan-archive-hygiene.md`
+- `p4-crossruntime-pyruntime-emitter-shrink.md`
+- `p4-crossruntime-pyruntime-residual-caller-shrink.md`
+
+Representative stale-complete:
+- `p1-multilang-selfhost-status.md`
+- `p1-multilang-selfhost-multistage-status.md`
+
+Representative backlog:
+- `p0-cpp-backend-dir-realign.md`
+- `p1-pytra-cli-rs-target.md`
+- `p2-wildcard-import-support.md`
+
 ## Child tasks
 
-- [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S1-01] Inventory live plans and record the classification rules plus representative counts for `active`, `backlog`, and `stale-complete`.
+- [x] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S1-01] Inventory live plans and record the classification rules plus representative counts for `active`, `backlog`, and `stale-complete`.
 - [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S2-01] Move representative stale-complete live plans into the archive and repair TODO/archive index links.
 - [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S3-01] Decide the placement or labeling rules for backlog plans so the top-level `plans/` directory becomes active-first again.
 - [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S4-01] Reflect the archive handoff workflow in README / operations docs and prevent future completed-plan drift.
@@ -34,3 +61,4 @@ Acceptance criteria:
 
 - 2026-03-11: This task is important for docs hygiene but not urgent enough to block current compiler/runtime work, so it is tracked as `P4`.
 - 2026-03-11: Start with explicit classification rules and representative stale-complete handoff, instead of trying to archive every remaining live plan in one pass.
+- 2026-03-12: The tracked live-plan inventory is now fixed at `active=6 / stale-complete=2 / backlog=138`, with `p1-multilang-selfhost-status.md` and `p1-multilang-selfhost-multistage-status.md` chosen as the representative stale-complete cases.

@@ -23,9 +23,36 @@
 - backlog として残す plan は、TODO 未登録の backlog であることが plan か README から判別できる。
 - `docs/en/` mirror が日本語版と同じ運用方針に追従している。
 
+## 分類基準と棚卸しスナップショット
+
+- 集計対象は `git ls-files` に載っている `docs/ja/plans/` 直下の `p*-*.md` とし、未追跡の plan draft は数えない。
+- `active`: `docs/ja/todo/index.md` の未完了タスクから直接参照されている live plan。
+- `stale-complete`: live plan が TODO 未登録で、同名 plan が `docs/ja/plans/archive/` に既に存在するもの。
+- `backlog`: live plan が TODO 未登録で、archive 側に同名 plan がまだ無いもの。
+
+2026-03-12 時点の tracked inventory:
+- live `p*-*.md`: 146 件
+- active: 6 件
+- stale-complete: 2 件
+- backlog: 138 件
+
+representative active:
+- `p4-plan-archive-hygiene.md`
+- `p4-crossruntime-pyruntime-emitter-shrink.md`
+- `p4-crossruntime-pyruntime-residual-caller-shrink.md`
+
+representative stale-complete:
+- `p1-multilang-selfhost-status.md`
+- `p1-multilang-selfhost-multistage-status.md`
+
+representative backlog:
+- `p0-cpp-backend-dir-realign.md`
+- `p1-pytra-cli-rs-target.md`
+- `p2-wildcard-import-support.md`
+
 ## 子タスク
 
-- [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S1-01] live plan inventory を棚卸しし、`active` / `backlog` / `stale-complete` の分類基準と representative 件数を記録する。
+- [x] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S1-01] live plan inventory を棚卸しし、`active` / `backlog` / `stale-complete` の分類基準と representative 件数を記録する。
 - [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S2-01] representative な stale-complete live plan を archive へ移し、TODO/archive index のリンク整合を回復する。
 - [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S3-01] backlog plan の置き場所または表記ルールを決め、`plans/` 直下の意味を active-first に揃える。
 - [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S4-01] archive handoff 手順を README / 運用文書へ反映し、以後の完了 plan 滞留を防ぐ。
@@ -34,3 +61,4 @@
 
 - 2026-03-11: この task は緊急度が低く、直近の変換器機能や runtime 契約整理を止める性質ではないため `P4` とする。
 - 2026-03-11: まずは live plan 全件の archive ではなく、分類基準の明文化と representative stale-complete handoff から始める。
+- 2026-03-12: tracked live plan inventory は `active=6 / stale-complete=2 / backlog=138` で、stale-complete の代表は `p1-multilang-selfhost-status.md` と `p1-multilang-selfhost-multistage-status.md` に固定した。
