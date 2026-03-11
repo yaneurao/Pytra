@@ -35,3 +35,5 @@ Last updated: 2026-03-11
    Context: [docs/ja/plans/p1-ir-core-import-surface-pruning.md](../../ja/plans/p1-ir-core-import-surface-pruning.md)
 - Progress memo: [ID: P1-IR-CORE-IMPORT-SURFACE-01-S1-02] facade exports are fixed as `CORE_PUBLIC_FACADE_EXPORTS` and `CORE_BRIDGE_COMPAT_EXPORTS`, and new `toolchain.ir.core` dependencies from `internal_split_module` are now forbidden by policy.
 - Progress memo: [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-01] representative lanes moved `core_entrypoints`, `core_string_semantics`, `core_expr_primary`, `core_expr_lowered`, and `core_expr_call_args` off the `toolchain.ir.core` import hub onto dedicated modules.
+- Progress memo: [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-02] helper and bridge lanes now source `INT_TYPES/FLOAT_TYPES` from `core_numeric_types`, removing `toolchain.ir.core` imports from `east2_to_human_repr` and `east_parts.__init__`.
+- Progress memo: [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-01] `core_stmt_parser` and `core_module_parser` now use dedicated `*_parser_support` imports, so direct `from toolchain.ir.core import (...)` usage under `src/toolchain/ir` is gone.

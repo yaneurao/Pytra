@@ -9,7 +9,7 @@ from typing import Any
 
 def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
     """インデントブロックを文単位で解析し、EAST 文リストを返す。"""
-    from toolchain.ir.core import (
+    from toolchain.ir.core_stmt_parser_support import (
         _SH_FN_RETURNS,
         _SH_IMPORT_MODULES,
         _SH_IMPORT_SYMBOLS,

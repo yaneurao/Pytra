@@ -9,7 +9,7 @@ from typing import Any
 
 def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[str, Any]:
     """Python ソースを self-hosted パーサで EAST Module に変換する。"""
-    from toolchain.ir.core import (
+    from toolchain.ir.core_module_parser_support import (
         _SH_CLASS_BASE,
         _SH_CLASS_METHOD_RETURNS,
         _SH_FN_RETURNS,

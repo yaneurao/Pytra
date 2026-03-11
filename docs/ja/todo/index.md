@@ -35,3 +35,5 @@
    文脈: [docs/ja/plans/p1-ir-core-import-surface-pruning.md](../plans/p1-ir-core-import-surface-pruning.md)
 - 進捗メモ: [ID: P1-IR-CORE-IMPORT-SURFACE-01-S1-02] facade export は `CORE_PUBLIC_FACADE_EXPORTS` と `CORE_BRIDGE_COMPAT_EXPORTS` に固定し、`internal_split_module` の `toolchain.ir.core` 新規依存は禁止方針にした。
 - 進捗メモ: [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-01] representative lane として `core_entrypoints` / `core_string_semantics` / `core_expr_primary` / `core_expr_lowered` / `core_expr_call_args` の import hub 依存を dedicated module import へ移した。
+- 進捗メモ: [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-02] helper / bridge lane として `INT_TYPES/FLOAT_TYPES` を `core_numeric_types` に出し、`east2_to_human_repr` と `east_parts.__init__` の `toolchain.ir.core` 依存を外した。
+- 進捗メモ: [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-01] `core_stmt_parser` / `core_module_parser` も `*_parser_support` へ寄せ、`src/toolchain/ir` 直下の `from toolchain.ir.core import (...)` は解消した。
