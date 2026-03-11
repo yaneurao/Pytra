@@ -248,6 +248,47 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             ],
         )
         self.assertEqual(inventory_mod._collect_future_followup_issues(), [])
+        self.assertEqual(
+            inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION,
+            {
+                "future_reducible": {
+                    ("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
+                },
+                "must_remain_until_runtime_task": {
+                    ("py_runtime_value_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
+                    ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
+                    ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
+                    ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
+                },
+            },
+        )
+        self.assertEqual(
+            inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_REDUCIBLE_ONLY,
+            {("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py")},
+        )
+        self.assertEqual(
+            inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_MUST_REMAIN_ONLY,
+            {
+                ("py_runtime_value_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
+                ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
+                ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
+                ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
+            },
+        )
+
+    def test_cpp_future_shared_type_id_classification_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod._collect_cpp_future_shared_type_id_classification_issues(),
+            [],
+        )
+        self.assertEqual(
+            inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION["future_reducible"],
+            inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_REDUCIBLE_ONLY,
+        )
+        self.assertEqual(
+            inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION["must_remain_until_runtime_task"],
+            inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_MUST_REMAIN_ONLY,
+        )
 
     def test_reduction_order_is_stable_and_complete(self) -> None:
         self.assertEqual(

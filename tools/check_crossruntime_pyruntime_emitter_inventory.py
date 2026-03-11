@@ -285,6 +285,29 @@ FUTURE_REDUCTION_ORDER = [
     "crossruntime_mutation_helper_residual",
 ]
 
+FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION = {
+    "future_reducible": {
+        ("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
+    },
+    "must_remain_until_runtime_task": {
+        ("py_runtime_value_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
+        ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
+        ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
+        ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
+    },
+}
+
+FUTURE_CPP_SHARED_TYPE_ID_REDUCIBLE_ONLY = {
+    ("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
+}
+
+FUTURE_CPP_SHARED_TYPE_ID_MUST_REMAIN_ONLY = {
+    ("py_runtime_value_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
+    ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
+    ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
+    ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
+}
+
 
 def _iter_target_files() -> list[Path]:
     return [ROOT / rel for rel in sorted(TRACKED_PATHS)]
@@ -443,6 +466,39 @@ def _collect_future_followup_issues() -> list[str]:
         issues.append("future reduction order drifted")
     if set(FUTURE_FOLLOWUP_BASELINE_BUCKETS) - set(EXPECTED_BUCKETS.keys()):
         issues.append("future follow-up baseline references unknown emitter residual buckets")
+    issues.extend(_collect_cpp_future_shared_type_id_classification_issues())
+    return issues
+
+
+def _collect_cpp_future_shared_type_id_classification_issues() -> list[str]:
+    issues: list[str] = []
+    if set(FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION.keys()) != {
+        "future_reducible",
+        "must_remain_until_runtime_task",
+    }:
+        issues.append("future cpp shared type-id classification keys drifted")
+        return issues
+    future_reducible = FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION["future_reducible"]
+    must_remain = FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION["must_remain_until_runtime_task"]
+    overlaps = future_reducible & must_remain
+    for symbol, rel in sorted(overlaps):
+        issues.append(
+            "future cpp shared type-id classification overlap: "
+            f"{symbol} @ {rel}"
+        )
+    union = future_reducible | must_remain
+    if union != EXPECTED_BUCKETS["cpp_emitter_shared_type_id_residual"]:
+        issues.append("future cpp shared type-id classification drifted from residual bucket")
+    if future_reducible != FUTURE_CPP_SHARED_TYPE_ID_REDUCIBLE_ONLY:
+        issues.append("future cpp shared type-id reducible classification drifted")
+    if must_remain != FUTURE_CPP_SHARED_TYPE_ID_MUST_REMAIN_ONLY:
+        issues.append("future cpp shared type-id must-remain classification drifted")
+    for symbol, rel in sorted(union):
+        if not rel.startswith("src/backends/cpp/"):
+            issues.append(
+                "future cpp shared type-id classification contains non-cpp path: "
+                f"{symbol} @ {rel}"
+            )
     return issues
 
 

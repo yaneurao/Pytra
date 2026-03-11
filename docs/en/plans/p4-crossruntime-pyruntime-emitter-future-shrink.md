@@ -28,7 +28,7 @@ Acceptance criteria:
 ## Child Tasks
 
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S1-01] Lock the future-shrink follow-up baseline and bundle order into the live plan / TODO / inventory tool.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-01] Re-audit the C++ emitter shared type-id thin seam and classify reducible callers vs must-remain seam.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-01] Re-audit the C++ emitter shared type-id thin seam and classify reducible callers vs must-remain seam.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-02] Re-audit the Rust / C# shared thin helper seam and the C# bytearray compatibility seam, then lock the future reduction order.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S3-01] Refresh representative smoke / source guard / inventory drift guard for the future-shrink baseline.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S4-01] Connect the future emitter shrink handoff to the next header-shrink / runtime-SoT task.
@@ -67,6 +67,20 @@ Acceptance criteria:
 3. `cs_emitter_shared_type_id_residual`
 4. `crossruntime_mutation_helper_residual`
 
+## C++ Shared Type ID Classification
+
+- `future_reducible`
+  - `py_runtime_value_type_id` in `src/backends/cpp/emitter/cpp_emitter.py`
+  - Interpretation:
+    - value type-id lookups can still move into emitter-local metadata or lowered helpers and are independent from the nominal ADT match / type-predicate shared seam.
+- `must_remain_until_runtime_task`
+  - `py_runtime_value_isinstance` in `src/backends/cpp/emitter/runtime_expr.py`
+  - `py_runtime_value_isinstance` in `src/backends/cpp/emitter/stmt.py`
+  - `py_runtime_type_id_is_subtype` in `src/backends/cpp/emitter/runtime_expr.py`
+  - `py_runtime_type_id_issubclass` in `src/backends/cpp/emitter/runtime_expr.py`
+  - Interpretation:
+    - these are the representative thin seam for nominal ADT match and type-predicate lowering, so they stay intentional residuals until the runtime / type-id ownership task moves first.
+
 ## Handoff Condition
 
 - The C++ emitter must not reintroduce generic or object-type-id aliases beyond the current thin helper seam.
@@ -78,3 +92,4 @@ Acceptance criteria:
 
 - 2026-03-12: The archived `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01` / `...-RESIDUAL-REDUCTION-01` tasks already completed the current residual cleanup, so this follow-up is limited to future reduction only.
 - 2026-03-12: `S1-01` fixes the current residual inventory as the baseline and sets the future reduction order to `C++ shared type_id -> Rust shared type_id -> C# shared type_id -> C# bytearray compat`.
+- 2026-03-12: `S2-01` splits the C++ shared type-id residual into `future_reducible=py_runtime_value_type_id only` and `must_remain_until_runtime_task=nominal ADT match / type-predicate seam`, and the inventory tool now guards the same classification.

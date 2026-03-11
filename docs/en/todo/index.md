@@ -33,7 +33,7 @@ Last updated: 2026-03-12
 
 1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01] Define the future C++ / Rust / C# emitter follow-up that still blocks further `py_runtime.h` shrink.
 2. [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S1-01] Lock the current residual baseline and future bundle order into the live plan / TODO / inventory tool.
-3. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-01] Re-audit the C++ emitter shared type_id thin seam and classify future-reduction candidates vs must-remain seam.
+3. [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-01] Re-audit the C++ emitter shared type_id thin seam and classify `py_runtime_value_type_id` vs the nominal ADT / type-predicate seam into future-reducible and must-remain buckets.
 4. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-02] Re-audit the Rust / C# shared thin seam and the C# bytearray compatibility seam, then fix the future bundle order.
 5. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S3-01] Refresh representative smoke / source guard / inventory drift guard for the future-shrink baseline.
 6. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S4-01] Connect the future emitter shrink handoff to the next task.
