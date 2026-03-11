@@ -26,6 +26,19 @@ EXPECTED_BUCKETS = {
     "shared_type_id_compat": set(),
 }
 
+HANDOFF_BUCKETS = {
+    "removable_after_emitter_shrink": {
+        "typed_collection_compat",
+        "shared_type_id_compat",
+    },
+    "followup_residual_caller_owned": {
+        "object_bridge_mutation",
+    },
+}
+
+FOLLOWUP_TASK_ID = "P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01"
+FOLLOWUP_PLAN_PATH = "docs/ja/plans/p4-crossruntime-pyruntime-residual-caller-shrink.md"
+
 
 def _header_text() -> str:
     return HEADER.read_text(encoding="utf-8")
@@ -72,8 +85,29 @@ def _collect_inventory_issues() -> list[str]:
     return issues
 
 
+def _collect_handoff_issues() -> list[str]:
+    issues: list[str] = []
+    bucket_names = set(EXPECTED_BUCKETS.keys())
+    removable = set(HANDOFF_BUCKETS["removable_after_emitter_shrink"])
+    residual = set(HANDOFF_BUCKETS["followup_residual_caller_owned"])
+    if removable | residual != bucket_names:
+        issues.append("handoff buckets do not cover the same header buckets as EXPECTED_BUCKETS")
+    if removable & residual:
+        issues.append("handoff buckets overlap between removable and follow-up residual ownership")
+    for bucket in sorted(removable):
+        if EXPECTED_BUCKETS[bucket] != set():
+            issues.append(f"removable-after-emitter bucket is not empty: {bucket}")
+    for bucket in sorted(residual):
+        if EXPECTED_BUCKETS[bucket] == set():
+            issues.append(f"follow-up residual bucket unexpectedly empty: {bucket}")
+    if not (ROOT / FOLLOWUP_PLAN_PATH).exists():
+        issues.append(f"follow-up plan missing: {FOLLOWUP_PLAN_PATH}")
+    return issues
+
+
 def main() -> int:
     issues = _collect_inventory_issues()
+    issues.extend(_collect_handoff_issues())
     if not issues:
         print("[OK] cpp py_runtime header surface is classified")
         return 0

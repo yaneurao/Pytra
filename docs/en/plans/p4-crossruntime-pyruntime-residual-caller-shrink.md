@@ -33,7 +33,14 @@ Acceptance criteria:
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-03] Inventory Rust/C# runtime builtin dependencies on the shared seams and define the final cross-runtime residual contract shape.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S3-01] Add residual-caller inventory tooling, source guards, and smoke coverage, then connect the final residual seam to the later header-shrink handoff.
 
+## Emitter Handoff Snapshot
+
+- The preceding [20260312-p4-crossruntime-pyruntime-emitter-shrink.md](./archive/20260312-p4-crossruntime-pyruntime-emitter-shrink.md) task already reduced the emitter-driven `typed_collection_compat` and `shared_type_id_compat` buckets to empty.
+- The only header residual bucket handed to this task is `object_bridge_mutation`, and the header surface source of truth remains [check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/check_cpp_pyruntime_header_surface.py).
+- This task therefore focuses on non-emitter callers that still keep `object_bridge_mutation` alive, while the preceding emitter inventory tool keeps watching for emitter-side re-entry.
+
 ## Decision log
 
 - 2026-03-12: Emitter-side cleanup alone is not enough to reduce the remaining `py_runtime.h` surface, so a separate `P4` was added for native/generated/runtime-builtin callers.
 - 2026-03-12: This task is a residual caller inventory and thin-seam cleanup step, not the final header deletion step, so it remains a `P4`.
+- 2026-03-12: The emitter-shrink handoff is fixed as `typed_collection_compat = empty`, `shared_type_id_compat = empty`, and `object_bridge_mutation = residual caller owned`, so this task now owns the last non-emitter header blocker.

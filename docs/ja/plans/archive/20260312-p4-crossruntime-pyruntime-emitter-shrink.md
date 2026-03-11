@@ -31,7 +31,7 @@
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-01] C++ emitter で object bridge 専用に残す helper と upstream 済み typed lane を再棚卸しし、header shrink 前提の regression を整理する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-02] Rust / C# emitter の `isinstance` / `issubclass` / mutation lowering を thin seam 前提へ揃える方針を確定する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S3-01] cross-runtime inventory tool / smoke / source guard の representative lane を決め、header shrink 後の再流入を fail-closed にする。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S4-01] `py_runtime.h` から落とせる surface と、final residual seam の handoff 条件を次段 task へ接続する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S4-01] `py_runtime.h` から落とせる surface と、final residual seam の handoff 条件を次段 task へ接続する。
 
 ## 現在の residual inventory（2026-03-12）
 
@@ -84,6 +84,15 @@
   - tooling guard で `py_list_*_mut` が typed lane (`cpp_emitter.py` / `stmt.py`) に存在することを固定する。
   - tooling guard で wrapper 名が `call.py` 以外へ漏れないことを固定する。
 
+## Header Shrink Handoff（S4-01）
+
+- emitter shrink 完了時点で、header surface tool 上の `typed_collection_compat` と `shared_type_id_compat` は空である。
+- emitter 観点で最後まで残る header bucket は `object_bridge_mutation` のみで、これは次段 [p4-crossruntime-pyruntime-residual-caller-shrink.md](./p4-crossruntime-pyruntime-residual-caller-shrink.md) が引き取る。
+- handoff 正本:
+  - header surface: [check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/check_cpp_pyruntime_header_surface.py)
+  - header unit guard: [test_check_cpp_pyruntime_header_surface.py](/workspace/Pytra/test/unit/tooling/test_check_cpp_pyruntime_header_surface.py)
+  - follow-up task: `P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01`
+
 ## 決定ログ
 
 - 2026-03-12: この task は `py_runtime.h` 縮小の前提整理だが、直近で優先すべき parser / compiler task を止める性質ではないため `P4` とする。
@@ -93,4 +102,6 @@
 - 2026-03-12: `S2-01` では C++ emitter の typed lane direct helper (`py_list_*_mut`) と object bridge wrapper (`py_append` 系) を別 inventory として固定し、wrapper 名が `call.py` 以外へ漏れたら fail-closed にした。
 - 2026-03-12: `S2-02` は Rust を `py_runtime_value_*` / `py_runtime_type_id_*` thin seam only として維持し、C# は同じ thin seamに加えて bytes/bytearray の `py_append/py_pop/py_get/py_slice/py_set` compat residual のみを intentional seam として固定した。
 - 2026-03-12: `S3-01` は inventory tool に Rust/C# thin seam と C# bytes/bytearray residual の source guard pattern を追加し、representative smoke を `test_east3_cpp_bridge.py` / `test_py2rs_smoke.py` / `test_py2cs_smoke.py` へ固定して完了扱いにした。
+- 2026-03-12: `S3-01` の second bundle として representative manifest (`smoke_file + smoke_tests + source_guard_paths`) を inventory tool に固定し、C++ object bridge / C++ shared type_id / Rust thin seam / C# thin seam / C# bytes compat residual の test-name drift を fail-closed にした。
+- 2026-03-12: `S4-01` では header surface handoff を `typed_collection_compat = empty`, `shared_type_id_compat = empty`, `object_bridge_mutation = follow-up residual caller owned` に固定し、次段 `P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01` へ正式に handoff した。
 - 2026-03-12: `S3-01` の second bundle として bucket ごとの representative manifest (`smoke_file + smoke_tests + source_guard_paths`) を inventory tool に固定し、C++ object bridge / C++ shared type_id / Rust thin seam / C# thin seam / C# bytes compat residual の test 名 drift を fail-closed にした。
