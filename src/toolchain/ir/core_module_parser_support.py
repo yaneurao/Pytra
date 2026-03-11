@@ -24,6 +24,7 @@ from toolchain.ir.core_decorator_semantics import _sh_is_sealed_decorator
 from toolchain.ir.core_decorator_semantics import _sh_is_template_decorator
 from toolchain.ir.core_decorator_semantics import _sh_parse_decorator_head_and_args
 from toolchain.ir.core_entrypoints import _make_east_build_error
+from toolchain.ir.core_entrypoints import _make_import_build_error
 from toolchain.ir.core_extern_semantics import _sh_collect_extern_var_metadata
 from toolchain.ir.core_import_module_builders import _sh_make_import_alias
 from toolchain.ir.core_import_module_builders import _sh_make_import_binding

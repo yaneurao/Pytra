@@ -27,12 +27,16 @@ class EastCoreSourceContractEntrypointsTest(unittest.TestCase):
 
         self.assertIn("class EastBuildError(Exception):", helper_text)
         self.assertIn("def _make_east_build_error(", helper_text)
+        self.assertIn("def _make_import_build_error(", helper_text)
+        self.assertIn("def parse_import_build_error(", helper_text)
         self.assertIn("def convert_source_to_east(", helper_text)
         self.assertIn("def convert_source_to_east_with_backend(", helper_text)
         self.assertIn("def convert_path(", helper_text)
 
         self.assertNotIn("class EastBuildError(Exception):", core_text)
         self.assertNotIn("def _make_east_build_error(", core_text)
+        self.assertNotIn("def _make_import_build_error(", core_text)
+        self.assertNotIn("def parse_import_build_error(", core_text)
         self.assertNotIn("def convert_source_to_east(", core_text)
         self.assertNotIn("def convert_source_to_east_with_backend(", core_text)
         self.assertNotIn("def convert_path(", core_text)

@@ -22,6 +22,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
         _SH_TEMPLATE_SCOPE,
         _SH_TYPE_ALIASES,
         _make_east_build_error,
+        _make_import_build_error,
         _sh_ann_to_type,
         _sh_ann_to_type_expr,
         _sh_append_import_binding,
@@ -522,6 +523,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                     source_file=filename,
                     source_line=i,
                     make_east_build_error=_make_east_build_error,
+                    make_import_build_error=_make_import_build_error,
                     make_span=_sh_span,
                     make_import_binding=_sh_make_import_binding,
                 )
@@ -645,6 +647,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                     source_file=filename,
                     source_line=i,
                     make_east_build_error=_make_east_build_error,
+                    make_import_build_error=_make_import_build_error,
                     make_span=_sh_span,
                     make_import_binding=_sh_make_import_binding,
                 )
@@ -705,6 +708,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                         source_file=filename,
                         source_line=i,
                         make_east_build_error=_make_east_build_error,
+                        make_import_build_error=_make_import_build_error,
                         make_span=_sh_span,
                         make_import_binding=_sh_make_import_binding,
                     )
