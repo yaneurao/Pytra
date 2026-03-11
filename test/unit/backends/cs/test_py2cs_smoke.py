@@ -69,12 +69,24 @@ class Py2CsSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
+    def test_bitwise_invert_basic_uses_csharp_invert_operator(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("~y", cs)
+
     def test_comment_fidelity_preserves_source_comments(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
         cs = transpile_to_csharp(east)
         assert_no_generated_comments(self, cs)
         assert_sample01_module_comments(self, cs, prefix="//")
+
+    def test_bitwise_invert_fixture_uses_csharp_bitwise_not(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("~y", cs)
 
     def test_sample_01_uses_float_division_for_typed_div(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"

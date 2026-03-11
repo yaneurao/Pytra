@@ -68,12 +68,24 @@ class Py2JsSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
+    def test_bitwise_invert_basic_uses_js_invert_operator(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        js = transpile_to_js(east)
+        self.assertIn("~y", js)
+
     def test_comment_fidelity_blocks_generated_comments_and_preserves_source_comments(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
         js = transpile_to_js(east)
         assert_no_generated_comments(self, js)
         assert_sample01_module_comments(self, js, prefix="//")
+
+    def test_bitwise_invert_fixture_uses_js_bitwise_not(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        js = transpile_to_js(east)
+        self.assertIn("~y", js)
 
     def test_for_core_static_range_plan_is_emitted(self) -> None:
         east = {

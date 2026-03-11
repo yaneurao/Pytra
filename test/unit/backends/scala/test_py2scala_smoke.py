@@ -66,6 +66,12 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
+    def test_bitwise_invert_basic_uses_scala_invert_operator(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        scala = transpile_to_scala_native(east)
+        self.assertIn("~y", scala)
+
     def test_scala_native_emitter_skeleton_handles_module_function_class(self) -> None:
         fixture = find_fixture_case("inheritance")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -74,6 +80,12 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertIn("class Animal()", scala)
         self.assertIn("class Dog() extends Animal()", scala)
         self.assertIn("def _case_main(): Unit =", scala)
+
+    def test_bitwise_invert_fixture_uses_scala_bitwise_not(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        scala = transpile_to_scala_native(east)
+        self.assertIn("~y", scala)
 
     def test_scala_native_emitter_emits_override_and_super_for_dispatch_fixture(self) -> None:
         fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")

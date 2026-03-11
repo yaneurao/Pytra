@@ -2984,6 +2984,10 @@ class CSharpEmitter(CodeEmitter):
                 if simple_operand:
                     return "-" + operand
                 return "-(" + operand + ")"
+            if op == "Invert":
+                if simple_operand:
+                    return "~" + operand
+                return "~(" + operand + ")"
             if op == "Not":
                 if simple_operand:
                     return "!" + operand

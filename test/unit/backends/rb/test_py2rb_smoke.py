@@ -75,6 +75,12 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
+    def test_bitwise_invert_basic_uses_ruby_invert_operator(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn("~y", ruby)
+
     def test_ruby_native_emitter_skeleton_handles_module_function_class(self) -> None:
         fixture = find_fixture_case("inheritance")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -82,6 +88,12 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("class Animal", ruby)
         self.assertIn("class Dog < Animal", ruby)
         self.assertIn("def _case_main()", ruby)
+
+    def test_bitwise_invert_fixture_uses_ruby_bitwise_not(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn("~y", ruby)
 
     def test_module_leading_comments_are_emitted(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"

@@ -433,6 +433,8 @@ def _render_unary_expr(expr: dict[str, Any]) -> str:
         return "(-" + operand + ")"
     if op == "UAdd":
         return "(+" + operand + ")"
+    if op == "Invert":
+        return "(~" + operand + ")"
     if op == "Not":
         return "(!" + _render_truthy_expr(expr.get("operand")) + ")"
     return operand

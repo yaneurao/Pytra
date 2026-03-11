@@ -69,12 +69,24 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
+    def test_bitwise_invert_basic_uses_rust_not_operator(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("!y", rust)
+
     def test_comment_fidelity_preserves_source_comments(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")
         rust = transpile_to_rust(east)
         assert_no_generated_comments(self, rust)
         assert_sample01_module_comments(self, rust, prefix="//")
+
+    def test_bitwise_invert_fixture_uses_rust_not_operator(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("!y", rust)
 
     def test_transpile_for_range_fixture_lowers_to_for_fastpath(self) -> None:
         fixture = find_fixture_case("for_range")
