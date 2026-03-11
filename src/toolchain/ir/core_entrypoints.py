@@ -52,11 +52,14 @@ def _make_import_build_error(
     hint: str,
     *,
     local_name: str = "",
+    import_label: str = "",
 ) -> RuntimeError:
     """import 系 parser 診断を frontend 向けの structured envelope へ包む。"""
     payload = _IMPORT_BUILD_ERROR_TAG + code + "|" + message
     if local_name != "":
         payload += "\nlocal_name=" + local_name
+    if import_label != "":
+        payload += "\nimport_label=" + import_label
     src_line = int(source_span.get("lineno", 0))
     src_col = int(source_span.get("col", 0))
     if src_line > 0:

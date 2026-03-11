@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01] import diagnostics の brittle な文字列分類を helper / structured envelope に移す。文脈: `docs/ja/plans/p1-import-diagnostic-structure.md`
+1. [ ] [ID: P1-IMPORT-GRAPH-ISSUE-STRUCTURE-01] import graph issue の `"<file>: <module>"` carrier を helper-structured seam に寄せる。文脈: `docs/ja/plans/p1-import-graph-issue-structure.md`

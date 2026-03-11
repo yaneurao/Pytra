@@ -3,10 +3,10 @@
 最終更新: 2026-03-11
 
 関連 TODO:
-- `docs/ja/todo/index.md` の `ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01`
+- `docs/ja/todo/archive/20260311.md` の `ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01`
 
 背景:
-- relative import / wildcard import / duplicate import binding まわりの診断は、現状 [transpile_cli.py](/workspace/Pytra/src/toolchain/frontends/transpile_cli.py) の `load_east_document()` で英語断片の substring matching に依存している。
+- relative import / wildcard import / duplicate import binding まわりの診断は、現状 [transpile_cli.py](/workspace/Pytra/src/toolchain/frontends/transpile_cli.py) の `load_east_document()` で英語断片の substring matching に依存していた。
 - parser 側の feature 実装は進んでいるが、frontend の診断 transport が文字列依存のままだと、parser 側メッセージ変更がそのまま CLI 契約破壊になる。
 - 特に `duplicate import binding` は parser/import semantics 由来の診断であり、将来的には parser → frontend 間で structured envelope に寄せたい。
 
@@ -42,10 +42,11 @@
 - 2026-03-11: TODO が空になったため、relative import / wildcard import 実装の次段として import diagnostics transport の構造化を `P1` 起票した。v1 は current CLI 契約維持を優先し、まず frontend の substring matching を helper 境界へ集約する。
 - 2026-03-11: `S2-01` として `load_east_document()` の import 例外分類を `_classify_import_user_error()` へ集約し、wildcard / relative / duplicate-binding の current CLI contract を focused unit test と 1 本の integration test で固定した。
 - 2026-03-11: `S2-02` として duplicate import binding だけを parser 側 structured envelope (`_make_import_build_error` / `parse_import_build_error`) に移し、frontend は structured payload を優先して current CLI contract へ再分類する形にした。legacy 文字列 fallback は後続 slice まで維持する。
+- 2026-03-11: `S3-01` として `relative import` / `wildcard import` も structured envelope decode の対象へ拡張し、import detail 生成を `make_import_diagnostic_detail()` と structured/legacy classify helper へ集約した。残る legacy substring 依存は `_legacy_import_user_error_payload()` の fallback seam に隔離したので archive 可能と判断した。
 
 ## 分解
 
 - [x] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S1-01] current import diagnostics transport と staged end state を棚卸しし、plan/TODO に固定する。
 - [x] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S2-01] `transpile_cli.load_east_document()` の import 例外分類を helper 1 箇所へ集約し、focused unit test を追加する。
 - [x] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S2-02] duplicate import binding を parser/import semantics 側から structured envelope として transport できる seam を追加する。
-- [ ] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S3-01] import diagnostics の remaining ad hoc 文字列依存を整理し、archive 可能な end state にまとめる。
+- [x] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S3-01] import diagnostics の remaining ad hoc 文字列依存を整理し、archive 可能な end state にまとめる。

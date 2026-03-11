@@ -71,6 +71,54 @@ class ImportDiagnosticsTest(unittest.TestCase):
             ),
         )
 
+    def test_classify_structured_relative_import_error(self) -> None:
+        err_text = str(
+            core_entrypoints._make_import_build_error(
+                "unsupported_import_form",
+                "relative import is not supported",
+                {"lineno": 1, "col": 0},
+                "Use absolute imports.",
+                import_label="from ..helper import f",
+            )
+        )
+        err = transpile_cli._classify_import_user_error(
+            err_text,
+            "from ..helper import f\n",
+            Path("pkg/main.py"),
+        )
+        self.assertEqual(
+            err,
+            (
+                "input_invalid",
+                "Unsupported import syntax.",
+                ["kind=unsupported_import_form file=pkg/main.py import=from ..helper import f"],
+            ),
+        )
+
+    def test_classify_structured_wildcard_import_error(self) -> None:
+        err_text = str(
+            core_entrypoints._make_import_build_error(
+                "unresolved_wildcard",
+                "from-import wildcard is not supported",
+                {"lineno": 1, "col": 0},
+                "Use explicit imports.",
+                import_label="from helper import *",
+            )
+        )
+        err = transpile_cli._classify_import_user_error(
+            err_text,
+            "from helper import *\n",
+            Path("main.py"),
+        )
+        self.assertEqual(
+            err,
+            (
+                "input_invalid",
+                "Failed to resolve imports (missing/conflict/wildcard).",
+                ["kind=unresolved_wildcard file=main.py import=from helper import *"],
+            ),
+        )
+
     def test_classify_legacy_duplicate_binding_error(self) -> None:
         err = transpile_cli._classify_import_user_error(
             "unsupported_syntax: duplicate import binding: value",

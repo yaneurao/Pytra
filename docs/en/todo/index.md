@@ -31,4 +31,4 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-1. [ ] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01] Move brittle import-diagnostic string matching to helper / structured envelopes. Context: `docs/ja/plans/p1-import-diagnostic-structure.md`
+1. [ ] [ID: P1-IMPORT-GRAPH-ISSUE-STRUCTURE-01] Move the import-graph `"<file>: <module>"` carrier onto a helper-structured seam. Context: `docs/ja/plans/p1-import-graph-issue-structure.md`

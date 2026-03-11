@@ -213,35 +213,105 @@ def _classify_import_user_error(
     parsed_import_err = parse_import_build_error(msg)
     if parsed_import_err is not None:
         err_code, parsed_message, fields = parsed_import_err
-        if err_code == "duplicate_binding":
-            local_name = fields.get("local_name", "").strip()
-            import_detail = parsed_message
-            if local_name != "":
-                import_detail = "duplicate import binding: " + local_name
-            return (
-                "input_invalid",
-                "Duplicate import binding.",
-                [f"kind=duplicate_binding file={input_path} import={import_detail}"],
-            )
+        structured_payload = _structured_import_user_error_payload(
+            err_code,
+            parsed_message,
+            fields,
+            source_text,
+            input_path,
+        )
+        if structured_payload is not None:
+            return structured_payload
+    return _legacy_import_user_error_payload(msg, source_text, input_path)
+
+
+def make_import_diagnostic_detail(kind: str, file_value: Path | str, import_detail: str) -> str:
+    """import user error detail を current CLI contract 形式で整形する。"""
+    return f"kind={kind} file={file_value} import={import_detail}"
+
+
+def _make_import_user_error_payload(
+    *,
+    summary: str,
+    kind: str,
+    file_value: Path | str,
+    import_detail: str,
+) -> tuple[str, str, list[str]]:
+    """単一 import detail を持つ current CLI contract payload を返す。"""
+    return (
+        "input_invalid",
+        summary,
+        [make_import_diagnostic_detail(kind, file_value, import_detail)],
+    )
+
+
+def _structured_import_user_error_payload(
+    err_code: str,
+    parsed_message: str,
+    fields: dict[str, str],
+    source_text: str,
+    input_path: Path,
+) -> tuple[str, str, list[str]] | None:
+    """structured import build error を current CLI contract へ正規化する。"""
+    import_label = fields.get("import_label", "").strip()
+    if err_code == "duplicate_binding":
+        local_name = fields.get("local_name", "").strip()
+        import_detail = import_label if import_label != "" else parsed_message
+        if local_name != "":
+            import_detail = "duplicate import binding: " + local_name
+        return _make_import_user_error_payload(
+            summary="Duplicate import binding.",
+            kind="duplicate_binding",
+            file_value=input_path,
+            import_detail=import_detail,
+        )
+    if err_code == "unsupported_import_form":
+        label = import_label if import_label != "" else first_import_detail_line(source_text, "relative")
+        return _make_import_user_error_payload(
+            summary="Unsupported import syntax.",
+            kind="unsupported_import_form",
+            file_value=input_path,
+            import_detail=label,
+        )
+    if err_code == "unresolved_wildcard":
+        label = import_label if import_label != "" else first_import_detail_line(source_text, "wildcard")
+        return _make_import_user_error_payload(
+            summary="Failed to resolve imports (missing/conflict/wildcard).",
+            kind="unresolved_wildcard",
+            file_value=input_path,
+            import_detail=label,
+        )
+    return None
+
+
+def _legacy_import_user_error_payload(
+    msg: str,
+    source_text: str,
+    input_path: Path,
+) -> tuple[str, str, list[str]] | None:
+    """legacy 文字列診断を current CLI contract へ正規化する。"""
     if "from-import wildcard is not supported" in msg:
         label = first_import_detail_line(source_text, "wildcard")
-        return (
-            "input_invalid",
-            "Failed to resolve imports (missing/conflict/wildcard).",
-            [f"kind=unresolved_wildcard file={input_path} import={label}"],
+        return _make_import_user_error_payload(
+            summary="Failed to resolve imports (missing/conflict/wildcard).",
+            kind="unresolved_wildcard",
+            file_value=input_path,
+            import_detail=label,
         )
     if "relative import is not supported" in msg:
         label = first_import_detail_line(source_text, "relative")
-        return (
-            "input_invalid",
-            "Unsupported import syntax.",
-            [f"kind=unsupported_import_form file={input_path} import={label}"],
+        return _make_import_user_error_payload(
+            summary="Unsupported import syntax.",
+            kind="unsupported_import_form",
+            file_value=input_path,
+            import_detail=label,
         )
     if "duplicate import binding:" in msg:
-        return (
-            "input_invalid",
-            "Duplicate import binding.",
-            [f"kind=duplicate_binding file={input_path} import={msg}"],
+        return _make_import_user_error_payload(
+            summary="Duplicate import binding.",
+            kind="duplicate_binding",
+            file_value=input_path,
+            import_detail=msg,
         )
     return None
 
@@ -2290,20 +2360,20 @@ def validate_import_graph_or_raise(analysis: dict[str, object]) -> None:
     details: list[str] = []
     for v in dict_any_get_str_list(analysis, "reserved_conflicts"):
         if v != "":
-            details.append(f"kind=reserved_conflict file={v} import=pytra")
+            details.append(make_import_diagnostic_detail("reserved_conflict", v, "pytra"))
     for v_txt in dict_any_get_str_list(analysis, "relative_imports"):
         if v_txt == "":
             continue
         file_part, mod_part = split_graph_issue_entry(v_txt)
-        details.append(f"kind=unsupported_import_form file={file_part} import=from {mod_part} import ...")
+        details.append(make_import_diagnostic_detail("unsupported_import_form", file_part, "from " + mod_part + " import ..."))
     for v_txt in dict_any_get_str_list(analysis, "missing_modules"):
         if v_txt == "":
             continue
         file_part, mod_part = split_graph_issue_entry(v_txt)
-        details.append(f"kind=missing_module file={file_part} import={mod_part}")
+        details.append(make_import_diagnostic_detail("missing_module", file_part, mod_part))
     for v in dict_any_get_str_list(analysis, "cycles"):
         if v != "":
-            details.append(f"kind=import_cycle file=(graph) import={v}")
+            details.append(make_import_diagnostic_detail("import_cycle", "(graph)", v))
     if len(details) > 0:
         raise make_user_error(
             "input_invalid",
