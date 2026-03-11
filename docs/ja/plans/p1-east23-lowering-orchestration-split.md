@@ -46,8 +46,8 @@
 分解:
 - [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-01] 残 cluster を `call_metadata` / `stmt_lowering` / `dispatch_orchestration` に棚卸しし、split 順を固定する。
 - [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-02] 進捗メモは bundle 単位に圧縮し、main file の end state を `dispatch + lifecycle` 中心に固定する。
-- [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-01] `call metadata` / `json decode fastpath` cluster を dedicated module へ分割する。
-- [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-02] `Assign` / `For` / `ForRange` lowering cluster を dedicated module へ分割する。
+- [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-01] `call metadata` / `json decode fastpath` cluster を dedicated module へ分割する。
+- [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-02] `Assign` / `For` / `ForRange` lowering cluster を dedicated module へ分割する。
 - [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-03] `Attribute` / `Match` / `ForCore` loweringと node dispatch orchestration を dedicated module へ分割する。
 - [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S3-01] source-contract と representative regression を second-wave split layout へ追従させる。
 - [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S4-01] docs / TODO / archive を更新して閉じる。
@@ -56,3 +56,5 @@
 - 2026-03-11: first-wave split 完了後の残り 833 行を棚卸しし、`call metadata/json decode`, `stmt lowering`, `dispatch/orchestration` の 3 cluster に整理した。
 - 2026-03-11: second wave の先頭は `call metadata/json decode fastpath` を優先する。JsonValue contract と object bridge fallback が同居しており、main file の複雑さに対する削減効果が最も高いため。
 - 2026-03-11: 進捗メモは cluster/bundle 単位の 1 行に留め、helper 単位の履歴は決定ログか commit message にのみ残す。
+- 2026-03-11: `S2-01` として `_infer_json_semantic_tag` / `_build_json_decode_meta` / `_lower_representative_json_decode_call` / `_decorate_call_metadata` を `east2_to_east3_call_metadata.py` へ切り出した。source-contract には dedicated module ownership assert を追加し、split regression には representative `json.value.as_obj` lane を追加した。
+- 2026-03-11: `S2-02` として assign target planning と `_lower_assignment_like_stmt` / `_lower_for_stmt` / `_lower_forrange_stmt` / `_lower_forcore_stmt` を `east2_to_east3_stmt_lowering.py` へ切り出した。source-contract には stmt-module ownership assert を追加し、split regression には `Box + StaticRangeForPlan` の representative lane を追加した。

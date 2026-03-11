@@ -11,6 +11,8 @@ if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
 from _east_core_test_support import EAST23_LOWERING_SOURCE_PATH
+from _east_core_test_support import EAST23_CALL_METADATA_SOURCE_PATH
+from _east_core_test_support import EAST23_STMT_LOWERING_SOURCE_PATH
 from _east_core_test_support import EAST23_NOMINAL_ADT_META_SOURCE_PATH
 from _east_core_test_support import EAST23_TYPE_ID_PREDICATE_SOURCE_PATH
 from _east_core_test_support import EAST23_TYPE_SUMMARY_SOURCE_PATH
@@ -19,13 +21,13 @@ from _east_core_test_support import EAST23_TYPE_SUMMARY_SOURCE_PATH
 class East2ToEast3SourceContractTest(unittest.TestCase):
     def test_main_lowering_imports_type_summary_cluster(self) -> None:
         text = EAST23_LOWERING_SOURCE_PATH.read_text(encoding="utf-8")
-        self.assertIn("from toolchain.ir.east2_to_east3_type_summary import _JSON_DECODE_META_KEY", text)
         self.assertIn("from toolchain.ir.east2_to_east3_type_summary import _swap_nominal_adt_decl_summary_table", text)
+        self.assertIn("from toolchain.ir.east2_to_east3_call_metadata import _decorate_call_metadata", text)
+        self.assertIn("from toolchain.ir.east2_to_east3_stmt_lowering import _lower_assignment_like_stmt", text)
+        self.assertIn("from toolchain.ir.east2_to_east3_stmt_lowering import _lower_for_stmt", text)
+        self.assertIn("from toolchain.ir.east2_to_east3_stmt_lowering import _lower_forrange_stmt", text)
+        self.assertIn("from toolchain.ir.east2_to_east3_stmt_lowering import _lower_forcore_stmt", text)
         self.assertIn("from toolchain.ir.east2_to_east3_type_id_predicate import _lower_type_id_call_expr", text)
-        self.assertIn(
-            "from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_ctor_call",
-            text,
-        )
         self.assertIn(
             "from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_match_stmt",
             text,
@@ -54,12 +56,51 @@ class East2ToEast3SourceContractTest(unittest.TestCase):
             "_make_type_predicate_expr",
             "_collect_expected_type_id_specs",
             "_lower_type_id_call_expr",
-            "_decorate_nominal_adt_ctor_call",
+            "_infer_json_semantic_tag",
+            "_build_json_decode_meta",
+            "_lower_representative_json_decode_call",
+            "_decorate_call_metadata",
+            "_normalize_iter_mode",
+            "_resolve_assign_target_type_summary",
+            "_resolve_assign_target_type",
+            "_build_target_plan",
+            "_lower_assignment_like_stmt",
+            "_lower_for_stmt",
+            "_lower_forrange_stmt",
+            "_lower_forcore_stmt",
             "_decorate_nominal_adt_projection_attr",
             "_decorate_nominal_adt_variant_pattern",
             "_decorate_nominal_adt_match_stmt",
         ):
             self.assertNotIn(f"def {helper_name}(", text)
+
+    def test_call_metadata_module_owns_split_helpers(self) -> None:
+        text = EAST23_CALL_METADATA_SOURCE_PATH.read_text(encoding="utf-8")
+        self.assertIn(
+            "from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_ctor_call",
+            text,
+        )
+        for helper_name in (
+            "_infer_json_semantic_tag",
+            "_build_json_decode_meta",
+            "_lower_representative_json_decode_call",
+            "_decorate_call_metadata",
+        ):
+            self.assertIn(f"def {helper_name}(", text)
+
+    def test_stmt_lowering_module_owns_split_helpers(self) -> None:
+        text = EAST23_STMT_LOWERING_SOURCE_PATH.read_text(encoding="utf-8")
+        for helper_name in (
+            "_normalize_iter_mode",
+            "_resolve_assign_target_type_summary",
+            "_resolve_assign_target_type",
+            "_build_target_plan",
+            "_lower_assignment_like_stmt",
+            "_lower_for_stmt",
+            "_lower_forrange_stmt",
+            "_lower_forcore_stmt",
+        ):
+            self.assertIn(f"def {helper_name}(", text)
 
     def test_type_summary_module_owns_split_helpers(self) -> None:
         text = EAST23_TYPE_SUMMARY_SOURCE_PATH.read_text(encoding="utf-8")

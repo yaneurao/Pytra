@@ -64,6 +64,8 @@ CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH = (
     ROOT / "src" / "toolchain" / "ir" / "core_expr_attr_subscript_suffix.py"
 )
 EAST23_LOWERING_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "east2_to_east3_lowering.py"
+EAST23_CALL_METADATA_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "east2_to_east3_call_metadata.py"
+EAST23_STMT_LOWERING_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "east2_to_east3_stmt_lowering.py"
 EAST23_NOMINAL_ADT_META_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "east2_to_east3_nominal_adt_meta.py"
 EAST23_TYPE_ID_PREDICATE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "east2_to_east3_type_id_predicate.py"
 EAST23_TYPE_SUMMARY_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "east2_to_east3_type_summary.py"
