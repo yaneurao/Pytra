@@ -30,3 +30,7 @@ Last updated: 2026-03-11
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+
+1. [ ] [ID: P1-IR-CORE-IMPORT-SURFACE-01] Push `toolchain.ir.core` toward an external thin facade and shrink internal split-module dependence on it as an import hub.
+   Context: [docs/ja/plans/p1-ir-core-import-surface-pruning.md](../../ja/plans/p1-ir-core-import-surface-pruning.md)
+- Progress memo: [ID: P1-IR-CORE-IMPORT-SURFACE-01-S1-02] facade exports are fixed as `CORE_PUBLIC_FACADE_EXPORTS` and `CORE_BRIDGE_COMPAT_EXPORTS`, and new `toolchain.ir.core` dependencies from `internal_split_module` are now forbidden by policy.

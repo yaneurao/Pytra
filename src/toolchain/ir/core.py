@@ -184,6 +184,20 @@ from toolchain.ir.core_expr_shell import _sh_parse_expr_lowered
 from toolchain.ir.core_stmt_parser import _sh_parse_stmt_block as _sh_parse_stmt_block_impl
 from toolchain.ir.core_stmt_parser import _sh_parse_stmt_block_mutable as _sh_parse_stmt_block_mutable_impl
 
+CORE_PUBLIC_FACADE_EXPORTS = (
+    "EastBuildError",
+    "convert_path",
+    "convert_source_to_east",
+    "convert_source_to_east_with_backend",
+)
+CORE_BRIDGE_COMPAT_EXPORTS = (
+    "convert_source_to_east_self_hosted",
+    "_sh_parse_stmt_block",
+    "_sh_parse_stmt_block_mutable",
+    "INT_TYPES",
+    "FLOAT_TYPES",
+)
+__all__ = [*CORE_PUBLIC_FACADE_EXPORTS, *CORE_BRIDGE_COMPAT_EXPORTS]
 
 # `BorrowKind` は実体のない型エイリアス用途のみなので、
 # selfhost 生成コードでは値として生成しない。

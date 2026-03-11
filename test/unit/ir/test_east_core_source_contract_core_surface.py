@@ -33,6 +33,28 @@ class EastCoreSourceContractCoreSurfaceTest(unittest.TestCase):
         self.assertNotIn("def _parse_primary(", core_text)
         self.assertNotIn("def _sh_parse_expr_lowered_impl(", core_text)
 
+    def test_core_surface_locks_public_and_bridge_exports(self) -> None:
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+
+        self.assertIn(
+            'CORE_PUBLIC_FACADE_EXPORTS = (',
+            core_text,
+        )
+        self.assertIn('"EastBuildError"', core_text)
+        self.assertIn('"convert_path"', core_text)
+        self.assertIn('"convert_source_to_east"', core_text)
+        self.assertIn('"convert_source_to_east_with_backend"', core_text)
+        self.assertIn(
+            'CORE_BRIDGE_COMPAT_EXPORTS = (',
+            core_text,
+        )
+        self.assertIn('"convert_source_to_east_self_hosted"', core_text)
+        self.assertIn('"_sh_parse_stmt_block"', core_text)
+        self.assertIn('"_sh_parse_stmt_block_mutable"', core_text)
+        self.assertIn('"INT_TYPES"', core_text)
+        self.assertIn('"FLOAT_TYPES"', core_text)
+        self.assertIn("__all__ = [*CORE_PUBLIC_FACADE_EXPORTS, *CORE_BRIDGE_COMPAT_EXPORTS]", core_text)
+
     def test_core_surface_delegates_stmt_and_module_entrypoints(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         stmt_parser_text = CORE_STMT_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
