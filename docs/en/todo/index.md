@@ -30,15 +30,3 @@ Last updated: 2026-03-11
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
-
-### P1: Decompose large expression split modules by cluster
-
-Context: [docs/en/plans/p1-ir-expr-module-decomposition.md](../plans/p1-ir-expr-module-decomposition.md)
-
-1. [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01] Decompose the large expression-side split modules under `toolchain/ir` by cluster and make the `attr/subscript/call` responsibility boundaries explicit.
-2. [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-01] Lock the split boundary so `core_expr_attr_subscript_suffix.py` becomes `attr_suffix` / `subscript_suffix` / `shared_postfix_orchestration`, and `core_expr_call_annotation.py` becomes `named_call` / `attr_call` / `callee_call` / `shared_state_orchestration`.
-3. [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-02] Fix the progress-note rule for this task so TODO stays at one-line bundle summaries and helper-level detail lives in the plan.
-4. [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S2-01] Split the `attr suffix` / `subscript suffix` cluster into [core_expr_attr_suffix.py](../../src/toolchain/ir/core_expr_attr_suffix.py) / [core_expr_subscript_suffix.py](../../src/toolchain/ir/core_expr_subscript_suffix.py), and shrink [core_expr_attr_subscript_suffix.py](../../src/toolchain/ir/core_expr_attr_subscript_suffix.py) to a postfix facade.
-5. [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S2-02] Split the `named-call` / `attr-call` / `callee-call` annotation cluster into [core_expr_named_call_annotation.py](../../src/toolchain/ir/core_expr_named_call_annotation.py), [core_expr_attr_call_annotation.py](../../src/toolchain/ir/core_expr_attr_call_annotation.py), and [core_expr_callee_call_annotation.py](../../src/toolchain/ir/core_expr_callee_call_annotation.py), and shrink [core_expr_call_annotation.py](../../src/toolchain/ir/core_expr_call_annotation.py) to the shared call-orchestration facade.
-6. [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S3-01] Updated source-contract tests to the post-split layout and passed representative regressions.
-7. [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S4-01] Update docs / TODO / archive and move the completed task to archive.

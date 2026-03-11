@@ -17,6 +17,7 @@
 
 - [2026-03-11 / P1-IR-ENTRYPOINT-FACADE-PRUNING-01](../plans/archive/20260311-p1-ir-entrypoint-facade-pruning.md)
 - [2026-03-11 / P1-IR-CORE-DECOMPOSITION-01](../plans/archive/20260311-p1-ir-core-decomposition.md)
+- [2026-03-11 / P1-IR-EXPR-MODULE-DECOMPOSITION-01](../plans/archive/20260311-p1-ir-expr-module-decomposition.md)
 - [2026-03-11 / P1-IR-CORE-IMPORT-SURFACE-01](../plans/archive/20260311-p1-ir-core-import-surface-pruning.md)
 - [2026-03-11 / P2-EAST-CORE-MODULARIZATION-01](../plans/archive/20260311-p2-east-core-modularization.md)
 - [2026-03-11 / P5-NOMINAL-ADT-ROLLOUT-01](../plans/archive/20260311-p5-nominal-adt-language-rollout.md)
@@ -103,7 +104,7 @@
 
 ## 日付別リンク
 
-- [2026-03-11](20260311.md)（7 セクション）
+- [2026-03-11](20260311.md)（8 セクション）
 - [2026-03-09](20260309.md)（29 セクション）
 - [2026-03-08](20260308.md)（31 セクション）
 - [2026-03-07](20260307.md)（6 セクション）

@@ -30,15 +30,3 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-
-### P1: 大型 expr split module を cluster 単位で分割する
-
-文脈: [docs/ja/plans/p1-ir-expr-module-decomposition.md](../plans/p1-ir-expr-module-decomposition.md)
-
-1. [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01] `toolchain/ir` の大型 expr split module を cluster 単位で分割し、`attr/subscript/call` の責務境界を明確にする。
-2. [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-01] `core_expr_attr_subscript_suffix.py` は `attr_suffix` / `subscript_suffix` / `shared_postfix_orchestration`、`core_expr_call_annotation.py` は `named_call` / `attr_call` / `callee_call` / `shared_state_orchestration` に分ける方針を固定した。
-3. [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-02] この task の進捗メモは bundle 単位の 1 行要約に圧縮し、helper 単位の列挙は plan 側へ寄せる運用に固定した。
-4. [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S2-01] `attr suffix` / `subscript suffix` cluster を [core_expr_attr_suffix.py](../../src/toolchain/ir/core_expr_attr_suffix.py) / [core_expr_subscript_suffix.py](../../src/toolchain/ir/core_expr_subscript_suffix.py) へ分割し、[core_expr_attr_subscript_suffix.py](../../src/toolchain/ir/core_expr_attr_subscript_suffix.py) は postfix facade に縮めた。
-5. [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S2-02] `named-call` / `attr-call` / `callee-call` annotation cluster を [core_expr_named_call_annotation.py](../../src/toolchain/ir/core_expr_named_call_annotation.py) / [core_expr_attr_call_annotation.py](../../src/toolchain/ir/core_expr_attr_call_annotation.py) / [core_expr_callee_call_annotation.py](../../src/toolchain/ir/core_expr_callee_call_annotation.py) へ分割し、[core_expr_call_annotation.py](../../src/toolchain/ir/core_expr_call_annotation.py) は shared call orchestration facade に縮めた。
-6. [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S3-01] source-contract test を split 後の module 構成へ追従させ、representative regression を通した。
-7. [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S4-01] docs / TODO / archive を更新し、完了 task を archive へ移す。
