@@ -32,4 +32,4 @@
 ## 未完了タスク
 
 1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01] C++/Rust/C# emitter に残る `py_runtime` residual contract を揃え、`object bridge residual` と `shared type_id contract` の境界を固定する。文脈: [docs/ja/plans/p4-crossruntime-pyruntime-emitter-align.md](../plans/p4-crossruntime-pyruntime-emitter-align.md)
-   進捗メモ: 計画を起票し、次は `S1-01` として cross-runtime inventory と drift guard を追加する。
+   進捗メモ: `S1-01` で cross-runtime inventory と drift guard を追加し、emitters の residual `py_runtime` symbol を 3 bucket に固定した。

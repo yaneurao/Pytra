@@ -51,7 +51,7 @@
 - `git diff --check`
 
 分解:
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-01] C++/Rust/C# emitter の residual `py_runtime` symbol を bucket 化し、inventory と drift guard を追加する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-01] C++/Rust/C# emitter の residual `py_runtime` symbol を bucket 化し、inventory と drift guard を追加する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-02] `object bridge residual` / `shared type_id contract` / `cross-runtime bridge residual` の end state を docs に固定する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-01] C++ emitter の residual object-bridge mutation helper 呼び出しを representative lane で整理する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-02] Rust/C# emitter の `type_id` / type predicate lowering を shared contract 前提に揃える。
@@ -59,3 +59,4 @@
 
 決定ログ:
 - 2026-03-11: `P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01` 完了後の follow-up として起票した。`py_runtime.h` 自体の削減ではなく、cross-runtime emitter が要求する residual contract の可視化と整列をこの P4 の責務にする。
+- 2026-03-11: `S1-01` として `tools/check_crossruntime_pyruntime_emitter_inventory.py` と unit test を追加し、emitters の residual `py_runtime` symbol を `cpp_object_bridge_residual` / `shared_type_id_contract` / `crossruntime_object_bridge_residual` に bucket 化した。

@@ -51,7 +51,7 @@ Verification commands:
 - `git diff --check`
 
 Breakdown:
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-01] Bucket residual `py_runtime` symbols across the C++/Rust/C# emitters and add an inventory drift guard.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-01] Bucket residual `py_runtime` symbols across the C++/Rust/C# emitters and add an inventory drift guard.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-02] Lock the end state for `object bridge residual`, `shared type_id contract`, and `cross-runtime bridge residual` in docs.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-01] Clean up representative C++ object-bridge mutation-helper residuals.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-02] Align Rust/C# `type_id` and type-predicate lowering to the shared contract.
@@ -59,3 +59,4 @@ Breakdown:
 
 Decision log:
 - 2026-03-11: Opened as the post-`P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01` follow-up. This P4 is about making the cross-runtime emitter contract explicit and aligned, not about directly shrinking `py_runtime.h` again.
+- 2026-03-11: As `S1-01`, we added `tools/check_crossruntime_pyruntime_emitter_inventory.py` and its unit test, then bucketed emitter-side residual `py_runtime` symbols into `cpp_object_bridge_residual`, `shared_type_id_contract`, and `crossruntime_object_bridge_residual`.
