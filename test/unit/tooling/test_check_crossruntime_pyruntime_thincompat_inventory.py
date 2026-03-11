@@ -24,13 +24,7 @@ class CheckCrossRuntimePyRuntimeThinCompatInventoryTest(unittest.TestCase):
 
     def test_cpp_header_blocker_bucket_is_cpp_only_and_small(self) -> None:
         bucket = inventory_mod.EXPECTED_BUCKETS["cpp_header_thincompat_blocker"]
-        self.assertEqual(
-            bucket,
-            {
-                ("py_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
-                ("py_isinstance", "src/backends/cpp/emitter/stmt.py"),
-            },
-        )
+        self.assertEqual(bucket, set())
 
     def test_shared_type_id_api_bucket_is_rs_cs_only(self) -> None:
         bucket = inventory_mod.EXPECTED_BUCKETS["crossruntime_shared_type_id_api"]

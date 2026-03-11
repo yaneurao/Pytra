@@ -67,6 +67,12 @@ class CppStatementEmitter:
         if len(cases) == 0:
             raise RuntimeError("cpp emitter: nominal ADT match requires at least one case")
         subject_expr = self.render_expr(stmt.get("subject"))
+        subject_node = stmt.get("subject")
+        subject_type = ""
+        if isinstance(subject_node, dict):
+            subject_type = self.normalize_type_name(str(subject_node.get("resolved_type", "")))
+        if subject_type == "":
+            subject_type = self.normalize_type_name(self.get_expr_type(subject_node))
         subject_tmp = self.next_tmp("__match_subject")
         self.emit(f"auto {subject_tmp} = {subject_expr};")
         for idx, case_stmt in enumerate(cases):
@@ -85,7 +91,13 @@ class CppStatementEmitter:
                 variant_name = self.any_dict_get_str(self.any_to_dict_or_empty(pattern.get("variant")), "id", "")
             if variant_name == "":
                 raise RuntimeError("cpp emitter: nominal ADT match requires variant metadata")
-            cond_txt = f"py_isinstance({subject_tmp}, {variant_name}::PYTRA_TYPE_ID)"
+            if subject_type == "object":
+                cond_txt = f"py_runtime_object_isinstance({subject_tmp}, {variant_name}::PYTRA_TYPE_ID)"
+            else:
+                cond_txt = (
+                    f"py_runtime_object_isinstance(make_object({subject_tmp}), "
+                    f"{variant_name}::PYTRA_TYPE_ID)"
+                )
             if idx == 0:
                 self.emit(f"if ({cond_txt}) {{")
             else:

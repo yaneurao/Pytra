@@ -32,4 +32,4 @@
 ## 未完了タスク
 
 1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01] `py_runtime.h` の final thin compat 2 本を将来縮められるよう、C++/Rust/C# emitter 側の blocker と shared API residual を整理する。文脈: [docs/ja/plans/p4-crossruntime-pyruntime-thincompat-followup.md](../plans/p4-crossruntime-pyruntime-thincompat-followup.md)
-   進捗メモ: `S1-01` で C++ emitter の `py_isinstance` blocker 2 箇所と Rust/C# emitter の shared `type_id` API residual を inventory 化した。次は end state と削減順を docs/source guard に固定する。
+   進捗メモ: `S1-01/S1-02/S2-01` を完了し、C++ emitter の generic `py_isinstance` blocker 2 箇所は `py_runtime_object_isinstance` へ移したので `cpp_header_thincompat_blocker` bucket は空になった。次は Rust/C# の shared `type_id` API residual を naming/bridge end state に揃える。

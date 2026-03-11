@@ -188,16 +188,16 @@ class East3CppBridgeTest(unittest.TestCase):
     def test_transpile_representative_nominal_adt_projection_uses_variant_cast(self) -> None:
         cpp = transpile_to_cpp(_representative_nominal_adt_east3(), emit_main=False)
         self.assertIn("::rc_new<Just>(1)", cpp)
-        self.assertIn("py_isinstance(x, Just::PYTRA_TYPE_ID)", cpp)
+        self.assertIn("py_runtime_object_isinstance(make_object(x), Just::PYTRA_TYPE_ID)", cpp)
         self.assertIn('obj_to_rc_or_raise<Just>(make_object(x), "Just.value")->value', cpp)
         self.assertNotIn("return x->value;", cpp)
 
     def test_transpile_representative_nominal_adt_match_emits_if_else_chain(self) -> None:
         cpp = transpile_to_cpp(_representative_nominal_adt_match_east3(), emit_main=False)
-        self.assertIn("if (py_isinstance(__match_subject_", cpp)
+        self.assertIn("if (py_runtime_object_isinstance(make_object(__match_subject_", cpp)
         self.assertIn('obj_to_rc_or_raise<Just>(make_object(__match_subject_', cpp)
         self.assertIn("int64 value = __match_variant_", cpp)
-        self.assertIn("} else if (py_isinstance(__match_subject_", cpp)
+        self.assertIn("} else if (py_runtime_object_isinstance(make_object(__match_subject_", cpp)
         self.assertIn('throw ::std::runtime_error("non-exhaustive nominal ADT match: Maybe")', cpp)
 
     def test_emit_stmt_match_rejects_non_nominal_lane(self) -> None:
@@ -637,11 +637,11 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(unbox_expr), "py_to<int64>(v)")
         self.assertEqual(
             emitter.render_expr(is_instance),
-            "py_isinstance(v, PYTRA_TID_INT)",
+            "py_runtime_object_isinstance(make_object(v), PYTRA_TID_INT)",
         )
         self.assertEqual(
             emitter.render_expr(is_instance_class),
-            "py_isinstance(v, Base::PYTRA_TYPE_ID)",
+            "py_runtime_object_isinstance(make_object(v), Base::PYTRA_TYPE_ID)",
         )
         self.assertEqual(
             emitter.render_expr(is_subclass),
@@ -2677,7 +2677,10 @@ class East3CppBridgeTest(unittest.TestCase):
             ],
             "keywords": [],
         }
-        self.assertEqual(emitter.render_expr(plain_isinstance), "py_isinstance(x, PYTRA_TID_INT)")
+        self.assertEqual(
+            emitter.render_expr(plain_isinstance),
+            "py_runtime_object_isinstance(x, PYTRA_TID_INT)",
+        )
 
     def test_class_method_dispatch_mode_routes_virtual_direct_and_fallback(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

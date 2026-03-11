@@ -52,11 +52,13 @@ end state:
 
 分解:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S1-01] final thin compat blocker を `cpp_header_thincompat_blocker` / `crossruntime_shared_type_id_api` に棚卸しし、inventory / test を追加する。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S1-02] end state と bundle 単位の削減順を docs / source guard に固定する。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S2-01] C++ emitter の `py_isinstance` blocker lane を explicit helper へ寄せ、`cpp_header_thincompat_blocker` を縮める。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S1-02] end state と bundle 単位の削減順を docs / source guard に固定する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S2-01] C++ emitter の `py_isinstance` blocker lane を explicit helper へ寄せ、`cpp_header_thincompat_blocker` を縮める。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S2-02] Rust/C# emitter の shared `type_id` API residual を naming / bridge end state に揃え、残る non-blocker を docs へ固定する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S3-01] representative smoke / docs / archive を更新して閉じる。
 
 決定ログ:
 - 2026-03-11: `P1-CPP-PYRUNTIME-HEADER-SHRINK-01` を archive した時点で、header に残る final thin compat は template `py_runtime_type_id` / `py_isinstance` の 2 本だけになった。次段階は header 単体の掃除ではなく、C++/Rust/C# emitter 側の blocker と shared API residual の分離になる。
 - 2026-03-11: `S1-01` として `tools/check_crossruntime_pyruntime_thincompat_inventory.py` と unit test を追加し、C++ emitter の `py_isinstance` blocker 2 箇所と Rust/C# emitter の shared `type_id` API residual を bucket 化した。
+- 2026-03-11: `S1-02` として end state を「`cpp_header_thincompat_blocker` は空 bucket が目標、Rust/C# 側は `crossruntime_shared_type_id_api` へ隔離したまま naming/bridge follow-up を待つ」に固定した。
+- 2026-03-11: `S2-01` として C++ emitter の `runtime_expr.py` / `stmt.py` に残っていた generic `py_isinstance` 2 箇所を `py_runtime_object_isinstance` へ寄せ、`cpp_header_thincompat_blocker` bucket を空にした。

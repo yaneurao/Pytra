@@ -28,10 +28,7 @@ TRACKED_PATHS = {
 }
 
 EXPECTED_BUCKETS = {
-    "cpp_header_thincompat_blocker": {
-        ("py_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
-        ("py_isinstance", "src/backends/cpp/emitter/stmt.py"),
-    },
+    "cpp_header_thincompat_blocker": set(),
     "crossruntime_shared_type_id_api": {
         ("py_runtime_type_id", "src/backends/rs/emitter/rs_emitter.py"),
         ("py_isinstance", "src/backends/rs/emitter/rs_emitter.py"),

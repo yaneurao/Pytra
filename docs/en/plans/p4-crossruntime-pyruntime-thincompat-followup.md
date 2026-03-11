@@ -52,11 +52,13 @@ Verification commands:
 
 Breakdown:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S1-01] Inventory the final thin-compat blockers into `cpp_header_thincompat_blocker` and `crossruntime_shared_type_id_api`, then add tooling/tests.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S1-02] Lock the end state and bundle-sized removal order in docs/source guards.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S2-01] Move the C++ emitter `py_isinstance` blocker lanes onto explicit helpers and shrink `cpp_header_thincompat_blocker`.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S1-02] Lock the end state and bundle-sized removal order in docs/source guards.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S2-01] Move the C++ emitter `py_isinstance` blocker lanes onto explicit helpers and shrink `cpp_header_thincompat_blocker`.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S2-02] Align Rust/C# shared `type_id` API residuals to the intended naming/bridge end state and document the remaining non-blockers.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S3-01] Refresh representative smoke/tests/docs and archive the task.
 
 Decision log:
 - 2026-03-11: Opened immediately after archiving `P1-CPP-PYRUNTIME-HEADER-SHRINK-01`, once the C++ header was down to object-bridge helpers plus the final thin `py_runtime_type_id` / `py_isinstance` compatibility surface.
 - 2026-03-11: As `S1-01`, added `tools/check_crossruntime_pyruntime_thincompat_inventory.py` plus unit coverage and bucketed the two C++ `py_isinstance` blockers separately from the Rust/C# shared `type_id` API residuals.
+- 2026-03-11: As `S1-02`, fixed the end state as “`cpp_header_thincompat_blocker` should become an empty bucket, while Rust/C# remain isolated in `crossruntime_shared_type_id_api` until the naming/bridge follow-up.”
+- 2026-03-11: As `S2-01`, retargeted the two generic C++ `py_isinstance` sites in `runtime_expr.py` and `stmt.py` onto `py_runtime_object_isinstance`, leaving `cpp_header_thincompat_blocker` empty.
