@@ -49,7 +49,7 @@ Breakdown:
 - [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] Split the `type_id predicate`, `isinstance`, and `issubclass` lowering cluster into a dedicated module.
 - [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-03] Split the `nominal ADT ctor/projection/match metadata` cluster into a dedicated module.
 - [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S3-01] Update source-contract tests and representative regressions to the split module layout.
-- [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S4-01] Update docs / TODO / archive and move the task to archive when complete.
+- [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S4-01] Update docs / TODO / archive and move the task to archive when complete.
 
 Decision log:
 - 2026-03-11: Initial version. After `core.py` and expr facade decomposition, `east2_to_east3_lowering.py` is the next clear large monolith.
@@ -58,5 +58,4 @@ Decision log:
 - 2026-03-11: The first `S2-01` bundle moved `type summary`, `nominal decl summary`, and `json receiver contract` helpers into `east2_to_east3_type_summary.py`. The main file now uses `_swap_nominal_adt_decl_summary_table()` for lifecycle management, and a dedicated `test_east2_to_east3_source_contract.py` locks the split surface.
 - 2026-03-11: The second `S2-02` bundle moved `type_id predicate`, `isinstance`, and `issubclass` lowering into `east2_to_east3_type_id_predicate.py`. The main file now shrinks to an imported `_lower_type_id_call_expr(...)` dispatch, and the source-contract suite asserts the split module directly.
 - 2026-03-11: The third `S2-03` bundle moved nominal ADT ctor/projection/match metadata into `east2_to_east3_nominal_adt_meta.py`. The main file now stays at decoration orchestration level, and the dead duplicate `_decorate_nominal_adt_match_stmt` definition disappeared as part of the split.
-- 2026-03-11: `S3-01` was considered complete once `test_east2_to_east3_source_contract.py` plus the representative regressions (`test_east2_to_east3_lowering.py`, `test_prepare_selfhost_source.py`, and `build_selfhost.py`) all passed against the split layout directly.
-- 2026-03-11: `S4-01` archived this plan and switched the next task to a second-wave split of the remaining `call metadata`, `statement lowering`, and node-dispatch orchestration still living in the main file.
+- 2026-03-11: `S3-01` tightened the split source-contract with explicit `projection` / `variant pattern` import checks and moved representative nominal ADT / type-id regressions into `test_east2_to_east3_split_regressions.py` with shared fixtures in `_east23_lowering_test_support.py`. Broad lowering coverage remains in `test_east2_to_east3_lowering.py`, while split-layout coverage now has a dedicated suite.

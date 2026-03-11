@@ -31,6 +31,14 @@ class East2ToEast3SourceContractTest(unittest.TestCase):
             text,
         )
         self.assertIn(
+            "from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_projection_attr",
+            text,
+        )
+        self.assertIn(
+            "from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_variant_pattern",
+            text,
+        )
+        self.assertIn(
             "prev_nominal_adt_decl_table = _swap_nominal_adt_decl_summary_table(",
             text,
         )

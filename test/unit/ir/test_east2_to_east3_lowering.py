@@ -14,168 +14,15 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
+from _east23_lowering_test_support import _const_i
+from _east23_lowering_test_support import East23LoweringNominalAdtFixtureMixin
 from src.toolchain.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
 from src.toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.frontends.type_expr import parse_type_expr_text
-from src.toolchain.ir.core_entrypoints import convert_source_to_east_with_backend
 from src.toolchain.ir.east3 import load_east3_document as load_east3_stage
 
 
-def _const_i(v: int) -> dict[str, object]:
-    return {"kind": "Constant", "value": v, "resolved_type": "int64"}
-
-
-def _nominal_adt_class(
-    name: str,
-    *,
-    role: str,
-    family_name: str,
-    variant_name: str = "",
-    payload_style: str = "",
-    field_types: dict[str, object] | None = None,
-) -> dict[str, object]:
-    nominal_meta: dict[str, object] = {
-        "schema_version": 1,
-        "role": role,
-        "family_name": family_name,
-    }
-    if variant_name != "":
-        nominal_meta["variant_name"] = variant_name
-    if payload_style != "":
-        nominal_meta["payload_style"] = payload_style
-    out: dict[str, object] = {
-        "kind": "ClassDef",
-        "name": name,
-        "body": [],
-        "meta": {"nominal_adt_v1": nominal_meta},
-    }
-    if field_types is not None:
-        out["field_types"] = dict(field_types)
-    return out
-
-
-class East2ToEast3LoweringTest(unittest.TestCase):
-    def _representative_nominal_adt_east2(self) -> dict[str, object]:
-        source = """
-from dataclasses import dataclass
-
-@sealed
-class Maybe:
-    pass
-
-@dataclass
-class Just(Maybe):
-    value: int
-
-class Nothing(Maybe):
-    pass
-
-def f(x: Maybe) -> int:
-    if isinstance(x, Just):
-        return x.value
-    y = Just(1)
-    return y.value
-"""
-        return convert_source_to_east_with_backend(
-            source,
-            filename="sample.py",
-            parser_backend="self_hosted",
-        )
-
-    def _representative_nominal_adt_match_east2(self) -> dict[str, object]:
-        return {
-            "kind": "Module",
-            "meta": {"dispatch_mode": "native"},
-            "body": [
-                _nominal_adt_class("Maybe", role="family", family_name="Maybe"),
-                _nominal_adt_class(
-                    "Just",
-                    role="variant",
-                    family_name="Maybe",
-                    variant_name="Just",
-                    payload_style="dataclass",
-                    field_types={"value": "int64"},
-                ),
-                _nominal_adt_class(
-                    "Nothing",
-                    role="variant",
-                    family_name="Maybe",
-                    variant_name="Nothing",
-                ),
-                {
-                    "kind": "FunctionDef",
-                    "name": "f",
-                    "args": [{"arg": "x", "ann": "Maybe"}],
-                    "returns": "int64",
-                    "body": [
-                        {
-                            "kind": "Match",
-                            "subject": {
-                                "kind": "Name",
-                                "id": "x",
-                                "resolved_type": "Maybe",
-                                "type_expr": parse_type_expr_text("Maybe"),
-                            },
-                            "cases": [
-                                {
-                                    "kind": "MatchCase",
-                                    "pattern": {
-                                        "kind": "VariantPattern",
-                                        "family_name": "Maybe",
-                                        "variant_name": "Just",
-                                        "subpatterns": [
-                                            {
-                                                "kind": "PatternBind",
-                                                "name": "value",
-                                            }
-                                        ],
-                                    },
-                                    "guard": None,
-                                    "body": [
-                                        {
-                                            "kind": "Return",
-                                            "value": {
-                                                "kind": "Name",
-                                                "id": "value",
-                                                "resolved_type": "int64",
-                                                "type_expr": parse_type_expr_text("int"),
-                                            },
-                                        }
-                                    ],
-                                },
-                                {
-                                    "kind": "MatchCase",
-                                    "pattern": {
-                                        "kind": "VariantPattern",
-                                        "family_name": "Maybe",
-                                        "variant_name": "Nothing",
-                                        "subpatterns": [],
-                                    },
-                                    "guard": None,
-                                    "body": [
-                                        {
-                                            "kind": "Return",
-                                            "value": _const_i(0),
-                                        }
-                                    ],
-                                },
-                            ],
-                            "meta": {
-                                "match_analysis_v1": {
-                                    "schema_version": 1,
-                                    "family_name": "Maybe",
-                                    "coverage_kind": "exhaustive",
-                                    "covered_variants": ["Just", "Nothing"],
-                                    "uncovered_variants": [],
-                                    "duplicate_case_indexes": [],
-                                    "unreachable_case_indexes": [],
-                                }
-                            },
-                        }
-                    ],
-                },
-            ],
-        }
+class East2ToEast3LoweringTest(East23LoweringNominalAdtFixtureMixin, unittest.TestCase):
 
     def _collect_runtime_iter_plans(self, node: object) -> list[dict[str, object]]:
         plans: list[dict[str, object]] = []
@@ -600,7 +447,7 @@ def f(x: Maybe) -> int:
         self.assertEqual(runtime_plan.get("dispatch_mode"), "type_id")
 
     def test_load_east3_document_preserves_nominal_adt_match_metadata(self) -> None:
-        payload = self._representative_nominal_adt_match_east2()
+        payload = self.representative_nominal_adt_match_east2()
         with tempfile.TemporaryDirectory() as tmpdir:
             p = Path(tmpdir) / "east.json"
             p.write_text(json.dumps(payload), encoding="utf-8")
@@ -1270,7 +1117,7 @@ def f(x: Maybe) -> int:
         self.assertEqual(value.get("narrowing_lane_v1", {}).get("source_category"), "optional")
 
     def test_lower_user_nominal_adt_isinstance_attaches_variant_test_metadata(self) -> None:
-        east2 = self._representative_nominal_adt_east2()
+        east2 = self.representative_nominal_adt_east2()
         out = lower_east2_to_east3(east2)
         fn = out.get("body", [])[3]
         test_expr = fn.get("body", [])[0].get("test", {})
@@ -1286,7 +1133,7 @@ def f(x: Maybe) -> int:
         self.assertEqual(test_expr.get("nominal_adt_test_v1", {}).get("variant_name"), "Just")
 
     def test_lower_user_nominal_adt_isinstance_attaches_family_test_metadata(self) -> None:
-        east2 = self._representative_nominal_adt_east2()
+        east2 = self.representative_nominal_adt_east2()
         east2["body"][3]["body"].insert(
             0,
             {
@@ -1322,7 +1169,7 @@ def f(x: Maybe) -> int:
         self.assertEqual(family_check.get("narrowing_lane_v1", {}).get("predicate_kind"), "family")
 
     def test_lower_user_nominal_adt_constructor_attaches_ctor_metadata(self) -> None:
-        east2 = self._representative_nominal_adt_east2()
+        east2 = self.representative_nominal_adt_east2()
         out = lower_east2_to_east3(east2)
         fn = out.get("body", [])[3]
         ctor_call = fn.get("body", [])[1].get("value", {})
@@ -1338,7 +1185,7 @@ def f(x: Maybe) -> int:
         self.assertEqual(ctor_call.get("type_expr_summary_v1", {}).get("nominal_adt_family"), "Maybe")
 
     def test_lower_user_nominal_adt_projection_attaches_projection_metadata(self) -> None:
-        east2 = self._representative_nominal_adt_east2()
+        east2 = self.representative_nominal_adt_east2()
         out = lower_east2_to_east3(east2)
         fn = out.get("body", [])[3]
         projection = fn.get("body", [])[2].get("value", {})
@@ -1355,7 +1202,7 @@ def f(x: Maybe) -> int:
         self.assertEqual(projection.get("type_expr_summary_v1", {}).get("mirror"), "int64")
 
     def test_lower_user_nominal_adt_match_attaches_match_metadata(self) -> None:
-        east2 = self._representative_nominal_adt_match_east2()
+        east2 = self.representative_nominal_adt_match_east2()
         out = lower_east2_to_east3(east2)
         fn = out.get("body", [])[3]
         match_stmt = fn.get("body", [])[0]
@@ -1396,7 +1243,7 @@ def f(x: Maybe) -> int:
         self.assertEqual(second_pattern.get("nominal_adt_pattern_v1", {}).get("variant_name"), "Nothing")
 
     def test_lower_user_nominal_adt_match_attaches_analysis_metadata(self) -> None:
-        east2 = self._representative_nominal_adt_match_east2()
+        east2 = self.representative_nominal_adt_match_east2()
         out = lower_east2_to_east3(east2)
         fn = out.get("body", [])[3]
         match_stmt = fn.get("body", [])[0]
@@ -1417,7 +1264,7 @@ def f(x: Maybe) -> int:
         self.assertEqual(first_pattern.get("subpatterns", [])[0].get("name"), "value")
 
     def test_lower_user_nominal_adt_match_marks_duplicate_variant_invalid(self) -> None:
-        east2 = self._representative_nominal_adt_match_east2()
+        east2 = self.representative_nominal_adt_match_east2()
         match_stmt = east2["body"][3]["body"][0]
         match_stmt["cases"].insert(
             1,
@@ -1442,7 +1289,7 @@ def f(x: Maybe) -> int:
         self.assertEqual(analysis.get("unreachable_case_indexes"), [1])
 
     def test_lower_builtin_jsonvalue_and_user_nominal_adt_share_nominal_adt_category(self) -> None:
-        user_out = lower_east2_to_east3(self._representative_nominal_adt_match_east2())
+        user_out = lower_east2_to_east3(self.representative_nominal_adt_match_east2())
         user_match = user_out.get("body", [])[3].get("body", [])[0]
         user_subject_type = user_match.get("nominal_adt_match_v1", {}).get("subject_type", {})
         self.assertEqual(user_subject_type.get("category"), "nominal_adt")
