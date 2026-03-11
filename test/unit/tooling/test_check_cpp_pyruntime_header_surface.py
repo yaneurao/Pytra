@@ -60,7 +60,7 @@ class CheckCppPyRuntimeHeaderSurfaceTest(unittest.TestCase):
         )
         self.assertEqual(
             surface_mod.FOLLOWUP_PLAN_PATH,
-            "docs/ja/plans/p4-crossruntime-pyruntime-residual-caller-shrink.md",
+            "docs/ja/plans/archive/20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md",
         )
 
 

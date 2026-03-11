@@ -31,7 +31,7 @@ Acceptance criteria:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-01] Move native compiler-wrapper `type_id` / object-bridge callers toward thin helper seams and define representative regressions.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-02] Re-classify residual callers in the generated C++ runtime and separate callers that must remain from callers that can be re-delegated before header shrink.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-03] Inventory Rust/C# runtime builtin dependencies on the shared seams and define the final cross-runtime residual contract shape.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S3-01] Add residual-caller inventory tooling, source guards, and smoke coverage, then connect the final residual seam to the later header-shrink handoff.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S3-01] Add residual-caller inventory tooling, source guards, and smoke coverage, then connect the final residual seam to the later header-shrink handoff.
 
 ## Emitter Handoff Snapshot
 
@@ -97,6 +97,20 @@ Rust/C# runtime builtin policy (S2-03):
   - the four helpers above must stay as the public thin seam in the Rust/C# runtime builtins
   - `py_runtime_type_id` / `py_isinstance` / `py_is_subtype` / `py_issubclass` must not re-enter the public surface
 
+Representative smoke lanes (S3-01):
+- native wrapper residual
+  - `test/unit/common/test_py2x_entrypoints_contract.py`
+  - `py_runtime_object_isinstance` count guards in `transpile_cli.cpp` / `backend_registry_static.cpp`
+- generated C++ residual
+  - `test/unit/backends/cpp/test_cpp_runtime_iterable.py`
+  - `test/unit/backends/cpp/test_cpp_runtime_type_id.py`
+- Rust runtime builtin residual
+  - `test/unit/backends/rs/test_py2rs_smoke.py`
+  - `type_predicate` lowering must stay on runtime builtin thin helpers
+- C# residual
+  - `test/unit/backends/cs/test_py2cs_smoke.py`
+  - `type_predicate` lowering and the `pytra.utils.gif` runtime-import helper lane stay explicit
+
 ## Decision log
 
 - 2026-03-12: Emitter-side cleanup alone is not enough to reduce the remaining `py_runtime.h` surface, so a separate `P4` was added for native/generated/runtime-builtin callers.
@@ -107,3 +121,4 @@ Rust/C# runtime builtin policy (S2-03):
 - 2026-03-12: `S2-01` completes by adding a representative smoke/source-guard manifest for the native wrapper residual bucket and wiring the `_object_is_runtime_type(...)` guard in `test_py2x_entrypoints_contract.py` into the inventory source of truth.
 - 2026-03-12: `S2-02` separates the generated C++ residual callers into must-remain and re-delegatable buckets, and currently freezes `json.cpp` / `iter_ops.cpp` / `type_id.cpp` as must-remain with no re-delegatable generated callers left.
 - 2026-03-12: `S2-03` separates the Rust/C# runtime builtin residuals into must-remain and re-delegatable buckets, and fixes the public residual contract in both runtime trees to the four thin helpers `py_runtime_value_type_id`, `py_runtime_value_isinstance`, `py_runtime_type_id_is_subtype`, and `py_runtime_type_id_issubclass`.
+- 2026-03-12: `S3-01` registers the representative smoke lanes in the inventory tool and makes native-wrapper / generated-C++ / Rust-runtime-builtin / C# residual test-name drift fail closed.

@@ -28,6 +28,9 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
     def test_source_guard_issues_are_empty(self) -> None:
         self.assertEqual(inventory_mod._collect_source_guard_issues(), [])
 
+    def test_smoke_lane_issues_are_empty(self) -> None:
+        self.assertEqual(inventory_mod._collect_smoke_lane_issues(), [])
+
     def test_generated_cpp_policy_issues_are_empty(self) -> None:
         self.assertEqual(inventory_mod._collect_generated_cpp_policy_issues(), [])
 
@@ -128,7 +131,19 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
             set(inventory_mod.EXPECTED_BUCKETS.keys()),
         )
 
-    def test_representative_bucket_manifest_is_native_wrapper_only(self) -> None:
+    def test_smoke_lane_files_are_stable(self) -> None:
+        self.assertEqual(
+            set(inventory_mod.SMOKE_LANE_REQUIRED_SUBSTRINGS.keys()),
+            {
+                "test/unit/common/test_py2x_entrypoints_contract.py",
+                "test/unit/backends/cpp/test_cpp_runtime_iterable.py",
+                "test/unit/backends/cpp/test_cpp_runtime_type_id.py",
+                "test/unit/backends/rs/test_py2rs_smoke.py",
+                "test/unit/backends/cs/test_py2cs_smoke.py",
+            },
+        )
+
+    def test_representative_bucket_manifest_is_bucket_complete(self) -> None:
         self.assertEqual(
             inventory_mod.REPRESENTATIVE_BUCKET_MANIFEST,
             {
@@ -141,7 +156,54 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
                         "src/runtime/cpp/native/compiler/transpile_cli.cpp",
                         "src/runtime/cpp/native/compiler/backend_registry_static.cpp",
                     },
-                }
+                },
+                "generated_cpp_object_bridge_residual": {
+                    "smoke_file": "test/unit/backends/cpp/test_cpp_runtime_iterable.py",
+                    "smoke_tests": {
+                        "test_runtime_list_overload_inventory",
+                    },
+                    "source_guard_paths": {
+                        "src/runtime/cpp/generated/std/json.cpp",
+                        "src/runtime/cpp/generated/built_in/iter_ops.cpp",
+                    },
+                },
+                "generated_cpp_shared_type_id_residual": {
+                    "smoke_file": "test/unit/backends/cpp/test_cpp_runtime_iterable.py",
+                    "smoke_tests": {
+                        "test_runtime_list_overload_inventory",
+                    },
+                    "source_guard_paths": {
+                        "src/runtime/cpp/generated/built_in/type_id.cpp",
+                    },
+                },
+                "cs_runtime_utils_object_bridge_residual": {
+                    "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+                    "smoke_tests": {
+                        "test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not",
+                        "test_bytearray_index_and_slice_compat_helpers_stay_explicit",
+                    },
+                    "source_guard_paths": set(),
+                },
+                "rs_runtime_builtin_shared_type_id_residual": {
+                    "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",
+                    "smoke_tests": {
+                        "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
+                    },
+                    "source_guard_paths": {
+                        "src/runtime/rs/pytra/built_in/py_runtime.rs",
+                        "src/runtime/rs/pytra-core/built_in/py_runtime.rs",
+                    },
+                },
+                "cs_runtime_builtin_shared_type_id_residual": {
+                    "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+                    "smoke_tests": {
+                        "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
+                    },
+                    "source_guard_paths": {
+                        "src/runtime/cs/pytra/built_in/py_runtime.cs",
+                        "src/runtime/cs/pytra-core/built_in/py_runtime.cs",
+                    },
+                },
             },
         )
 

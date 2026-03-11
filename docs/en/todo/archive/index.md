@@ -15,6 +15,7 @@ Last updated: 2026-03-12
 
 ## Completed Plan Archive
 
+- [2026-03-12 / P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01](../plans/archive/20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md)
 - [2026-03-12 / P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01](../plans/archive/20260312-p4-crossruntime-pyruntime-emitter-shrink.md)
 - [2026-03-12 / P4-PLAN-ARCHIVE-HYGIENE-01](../plans/archive/20260312-p4-plan-archive-hygiene.md)
 - [2026-03-12 / P0-BACKENDS-COMMON-FOUNDATION-01](../plans/archive/20260312-p0-backends-common-foundation.md)
@@ -85,7 +86,7 @@ Last updated: 2026-03-12
 
 ## Date Links
 
-- [2026-03-12](20260312.md) (5 sections)
+- [2026-03-12](20260312.md) (6 sections)
 - [2026-03-11](20260311.md) (25 sections)
 - [2026-03-09](20260309.md) (2 sections)
 - [2026-03-08](20260308.md) (8 sections)

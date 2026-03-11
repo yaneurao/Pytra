@@ -87,7 +87,7 @@ Representative guards:
 ## Header Shrink Handoff (S4-01)
 
 - After emitter shrink completes, the header surface tool must keep both `typed_collection_compat` and `shared_type_id_compat` empty.
-- The only remaining header bucket on the emitter side is `object_bridge_mutation`, and it is now explicitly handed off to the follow-up [p4-crossruntime-pyruntime-residual-caller-shrink.md](./p4-crossruntime-pyruntime-residual-caller-shrink.md) task.
+- The only remaining header bucket on the emitter side is `object_bridge_mutation`, and it is now explicitly handed off to the follow-up [20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md](./20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md) task.
 - Handoff sources of truth:
   - header surface: [check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/check_cpp_pyruntime_header_surface.py)
   - header unit guard: [test_check_cpp_pyruntime_header_surface.py](/workspace/Pytra/test/unit/tooling/test_check_cpp_pyruntime_header_surface.py)

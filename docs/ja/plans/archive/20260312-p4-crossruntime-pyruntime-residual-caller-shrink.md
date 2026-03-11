@@ -31,7 +31,7 @@
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-01] native compiler wrapper の `type_id` / object bridge caller を thin helper seam 前提へ寄せ、representative regression を整理する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-02] generated C++ runtime の residual caller を再分類し、header shrink 前提で残す caller と再委譲できる caller を切り分ける。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-03] Rust/C# runtime builtins の shared seam 依存を inventory 化し、cross-runtime residual contract の最終形を固定する。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S3-01] residual caller inventory tool / source guard / smoke を整備し、`py_runtime.h` shrink handoff 条件を次段 task へ接続する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S3-01] residual caller inventory tool / source guard / smoke を整備し、`py_runtime.h` shrink handoff 条件を次段 task へ接続する。
 
 ## Emitter Handoff Snapshot
 
@@ -97,6 +97,20 @@ Rust/C# runtime builtin policy（S2-03）:
   - Rust/C# runtime builtin では上記 4 helper が public の thin seam として存在すること
   - `py_runtime_type_id` / `py_isinstance` / `py_is_subtype` / `py_issubclass` は public surface へ再流入しないこと
 
+Representative smoke lanes（S3-01）:
+- native wrapper residual
+  - `test/unit/common/test_py2x_entrypoints_contract.py`
+  - `py_runtime_object_isinstance` count guard in `transpile_cli.cpp` / `backend_registry_static.cpp`
+- generated C++ residual
+  - `test/unit/backends/cpp/test_cpp_runtime_iterable.py`
+  - `test/unit/backends/cpp/test_cpp_runtime_type_id.py`
+- Rust runtime builtin residual
+  - `test/unit/backends/rs/test_py2rs_smoke.py`
+  - `type_predicate` lowering must stay on runtime builtin thin helpers
+- C# residual
+  - `test/unit/backends/cs/test_py2cs_smoke.py`
+  - `type_predicate` lowering and `pytra.utils.gif` runtime import helper lane stay explicit
+
 ## 決定ログ
 
 - 2026-03-12: emitter 側整理だけでは `py_runtime.h` の residual surface を十分に削れないため、native/generated/runtime builtins を対象にした caller 観点の P4 を追加した。
@@ -107,3 +121,4 @@ Rust/C# runtime builtin policy（S2-03）:
 - 2026-03-12: `S2-01` は inventory tool に native wrapper residual の representative smoke/source-guard manifest を追加し、`test_py2x_entrypoints_contract.py` の `_object_is_runtime_type(...)` guard を inventory 正本へ接続して完了とする。
 - 2026-03-12: `S2-02` では generated C++ residual caller を must-remain と re-delegatable に分け、現時点の `json.cpp` / `iter_ops.cpp` / `type_id.cpp` residual はすべて must-remain として inventory tool に固定した。
 - 2026-03-12: `S2-03` では Rust/C# runtime builtin residual を must-remain / re-delegatable に分け、両 runtime tree の public residual contract は `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` の 4 helper だけに固定した。
+- 2026-03-12: `S3-01` では representative smoke lane を inventory tool に登録し、native wrapper / generated C++ / Rust runtime builtin / C# residual caller の test-name drift も fail-closed にした。
