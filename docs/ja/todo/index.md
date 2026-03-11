@@ -64,6 +64,8 @@
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_builder_base.py` / `core_ast_builders.py` / `core_stmt_builders.py` を追加し、node/value/trivia primitive・expression builder・statement builder cluster を `core.py` から切り出して builder source-contract を split module 前提へ更新した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_expr_precedence.py` を追加し、`lambda/ifexp/or..unary` の precedence parser cluster を `core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_entrypoints.py` を追加し、user-facing convert / error helper cluster を `core.py` から切り出した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_parse_context.py` に parse/import/runtime/template context cluster を集約し、`core.py` の top-level `_SH_*` 定義を import 側へ寄せた。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_parse_context.py` を追加し、`_SH_FN_RETURNS/_SH_CLASS_METHOD_RETURNS/_SH_CLASS_BASE/_SH_TYPE_ALIASES/_sh_set_parse_context` cluster を `core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_expr_parser_base.py` を追加し、tokenize / token-cursor / span / parse の expr parser base cluster を `core.py` から切り出した。
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。

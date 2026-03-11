@@ -25,6 +25,7 @@ CORE_DECORATOR_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core
 CORE_EXTERN_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_extern_semantics.py"
 CORE_IMPORT_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_import_semantics.py"
 CORE_IMPORT_MODULE_BUILDERS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_import_module_builders.py"
+CORE_PARSE_CONTEXT_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_parse_context.py"
 CORE_STMT_ANALYSIS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_stmt_analysis.py"
 CORE_STRING_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_string_semantics.py"
 CORE_STMT_TEXT_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_stmt_text_semantics.py"

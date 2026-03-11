@@ -46,7 +46,6 @@ class EastCoreSourceContractTypeSemanticsTest(unittest.TestCase):
     def test_core_source_routes_type_alias_and_annotation_parsing_through_helper_module(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("_SH_TYPE_ALIASES.update(_sh_default_type_aliases())", core_text)
         self.assertIn("target = _sh_typing_alias_to_type_name(sym_txt)", core_text)
         self.assertIn("_sh_register_type_alias(type_aliases, pre_left, pre_right)", core_text)
         self.assertIn("ann = _sh_ann_to_type(ann_txt, type_aliases=_SH_TYPE_ALIASES)", core_text)
