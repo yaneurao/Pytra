@@ -33,7 +33,7 @@ from toolchain.ir.core_text_semantics import _sh_split_top_keyword
 
 def _sh_parse_expr_lowered_impl(expr_txt: str, *, ln_no: int, col: int, name_types: dict[str, str]) -> dict[str, Any]:
     """Convert expression text into an EAST expression node with light lowering."""
-    from toolchain.ir.core import _sh_parse_expr
+    from toolchain.ir.core_expr_shell import _sh_parse_expr
 
     _sh_parse_expr_lowered = _sh_parse_expr_lowered_impl
     raw = expr_txt

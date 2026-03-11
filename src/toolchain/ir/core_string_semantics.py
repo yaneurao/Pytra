@@ -17,7 +17,7 @@ def _sh_extract_adjacent_string_parts(
     name_types: dict[str, str],
 ) -> list[tuple[str, int]] | None:
     """トップレベルで `STR STR ...` のみで構成される式を、文字列トークン分割して返す。"""
-    from toolchain.ir.core import _ShExprParser
+    from toolchain.ir.core_expr_shell import _ShExprParser
 
     parser = _ShExprParser(
         text,

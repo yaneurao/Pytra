@@ -43,10 +43,10 @@ class EastCoreSourceContractEntrypointsTest(unittest.TestCase):
 
         self.assertIn("def convert_source_to_east_self_hosted(", core_text)
         self.assertIn(
-            "from toolchain.ir.core import convert_source_to_east_self_hosted as _convert_source_to_east_self_hosted",
+            "from toolchain.ir.core_module_parser import convert_source_to_east_self_hosted_impl",
             helper_text,
         )
-        self.assertIn("return _convert_source_to_east_self_hosted(source, filename)", helper_text)
+        self.assertIn("return convert_source_to_east_self_hosted_impl(source, filename)", helper_text)
 
 
 if __name__ == "__main__":

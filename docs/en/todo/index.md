@@ -34,3 +34,4 @@ Last updated: 2026-03-11
 1. [ ] [ID: P1-IR-CORE-IMPORT-SURFACE-01] Push `toolchain.ir.core` toward an external thin facade and shrink internal split-module dependence on it as an import hub.
    Context: [docs/ja/plans/p1-ir-core-import-surface-pruning.md](../../ja/plans/p1-ir-core-import-surface-pruning.md)
 - Progress memo: [ID: P1-IR-CORE-IMPORT-SURFACE-01-S1-02] facade exports are fixed as `CORE_PUBLIC_FACADE_EXPORTS` and `CORE_BRIDGE_COMPAT_EXPORTS`, and new `toolchain.ir.core` dependencies from `internal_split_module` are now forbidden by policy.
+- Progress memo: [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-01] representative lanes moved `core_entrypoints`, `core_string_semantics`, `core_expr_primary`, `core_expr_lowered`, and `core_expr_call_args` off the `toolchain.ir.core` import hub onto dedicated modules.

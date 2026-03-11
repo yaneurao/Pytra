@@ -34,3 +34,4 @@
 1. [ ] [ID: P1-IR-CORE-IMPORT-SURFACE-01] `toolchain.ir.core` を external thin facade に寄せ、internal split module の import hub 依存を縮小する。
    文脈: [docs/ja/plans/p1-ir-core-import-surface-pruning.md](../plans/p1-ir-core-import-surface-pruning.md)
 - 進捗メモ: [ID: P1-IR-CORE-IMPORT-SURFACE-01-S1-02] facade export は `CORE_PUBLIC_FACADE_EXPORTS` と `CORE_BRIDGE_COMPAT_EXPORTS` に固定し、`internal_split_module` の `toolchain.ir.core` 新規依存は禁止方針にした。
+- 進捗メモ: [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-01] representative lane として `core_entrypoints` / `core_string_semantics` / `core_expr_primary` / `core_expr_lowered` / `core_expr_call_args` の import hub 依存を dedicated module import へ移した。
