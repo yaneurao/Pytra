@@ -42,10 +42,11 @@
 - `git diff --check`
 
 分解:
-- [ ] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01-S1-01] active plan / TODO / decomposition target を live 化し、split boundary と verification lane を固定する。
-- [ ] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01-S2-01] package-root/path helper と relative import normalization helper を dedicated frontend module へ切り出し、focused test を追加する。
+- [x] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01-S1-01] active plan / TODO / decomposition target を live 化し、split boundary と verification lane を固定する。
+- [x] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01-S2-01] package-root/path helper と relative import normalization helper を dedicated frontend module へ切り出し、focused test を追加する。
 - [ ] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01-S2-02] EAST rewrite / import graph caller を split module 前提へ寄せ、source contract と selfhost regression を整える。
 - [ ] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01-S3-01] residual helper layout を source contract と docs に固定し、plan を close できる状態へ整える。
 
 決定ログ:
 - 2026-03-12: relative import support の contract close-out 後に、`transpile_cli.py` に残る normalization cluster を次の focused decomposition target として起票した。
+- 2026-03-12: `S2-01` では `relative_import_normalization.py` を dedicated module とし、`transpile_cli.py` 側は thin re-export に留める。focused common test で package-root inference、bare parent import、missing/root-escape、EAST metadata rewrite を固定する。
