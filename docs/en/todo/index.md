@@ -31,4 +31,5 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-There are currently no unfinished tasks.
+1. [ ] [ID: P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01] Realign diagnostics to the already-supported relative-import behavior. Context: [p0-relative-import-diagnostic-realign.md](../plans/p0-relative-import-diagnostic-realign.md)
+- `P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S1-01` 2026-03-12: Lock the contract split between supported relative imports and root-escape diagnostics.
