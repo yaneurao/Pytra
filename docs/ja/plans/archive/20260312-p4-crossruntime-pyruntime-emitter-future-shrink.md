@@ -31,7 +31,7 @@
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-01] C++ emitter の shared type_id thin seam を棚卸しし、backend-local へ押し戻せる caller と must-remain seam を分類する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-02] Rust / C# emitter の shared thin helper と C# bytearray compat seam を棚卸しし、future reduction order を固定した。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S3-01] representative smoke / source guard / inventory drift guard を future-shrink baseline に合わせて更新した。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S4-01] future emitter shrink の handoff 条件を次段 task に接続する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S4-01] future emitter shrink の handoff 条件を次段 task に接続した。
 
 ## Current Baseline
 
@@ -149,6 +149,30 @@
 - C# `bytearray` compat seam が list / bytes mutation へ再拡大しないこと。
 - これらが inventory tool で固定されたら、次段の header shrink / runtime externalization task へ handoff する。
 
+## Handoff Targets
+
+- `cpp_header_shrink`
+  - target plan:
+    - `docs/ja/plans/archive/20260312-p0-cpp-pyruntime-final-shrink.md`
+  - trigger bucket:
+    - `cpp_emitter_shared_type_id_residual`
+  - handoff condition:
+    - `future_reducible` subset が `py_runtime_value_type_id` のみのままで、representative/source guard drift が空であること。
+- `runtime_sot_followup`
+  - target plan:
+    - `docs/ja/plans/p2-runtime-sot-linked-program-integration.md`
+  - trigger bucket:
+    - `rs_emitter_shared_type_id_residual`
+  - handoff condition:
+    - shared `type_id` seam が `must_remain_until_runtime_task` のみで固定され、runtime/type-id ownership を runtime SoT 側へ送る条件が明確であること。
+- `cs_bytearray_localization`
+  - target plan:
+    - `docs/ja/plans/archive/20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md`
+  - trigger bucket:
+    - `crossruntime_mutation_helper_residual`
+  - handoff condition:
+    - C# `bytearray` compat seam が `py_append` / `py_pop` に閉じていて、list / bytes mutation へ再拡大していないこと。
+
 ## 決定ログ
 
 - 2026-03-12: archived `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01` / `...-RESIDUAL-REDUCTION-01` は current residual の整理までは完了しているため、この follow-up は「その後の future reduction」だけに責務を限定する。
@@ -156,3 +180,4 @@
 - 2026-03-12: `S2-01` では C++ shared type-id residual を `future_reducible=py_runtime_value_type_id only` と `must_remain_until_runtime_task=nominal ADT match / type-predicate seam` に分け、inventory tool でも同じ分類を guard するようにした。
 - 2026-03-12: `S2-02` では Rust/C# shared thin seam はすべて `must_remain_until_runtime_task`、C# `bytearray` compat seam (`py_append` / `py_pop`) は `future_reducible` に固定し、future reduction order の根拠を inventory tool に持たせた。
 - 2026-03-12: `S3-01` では future-shrink follow-up が実際に依存する representative smoke / source guard subset を `FUTURE_REPRESENTATIVE_LANE_MANIFEST` と `FUTURE_SOURCE_GUARD_PATHS` で固定し、classification だけでなく drift guard も future baseline 単位で監視するようにした。
+- 2026-03-12: `S4-01` では handoff 先を `cpp_header_shrink` / `runtime_sot_followup` / `cs_bytearray_localization` の 3 target に固定し、plan path と trigger bucket と handoff 条件を inventory tool 側でも source-of-truth として監視するようにした。

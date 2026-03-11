@@ -31,7 +31,7 @@ Acceptance criteria:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-01] Re-audit the C++ emitter shared type-id thin seam and classify reducible callers vs must-remain seam.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-02] Re-audit the Rust / C# shared thin helper seam and the C# bytearray compatibility seam, then lock the future reduction order.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S3-01] Refresh representative smoke / source guard / inventory drift guard for the future-shrink baseline.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S4-01] Connect the future emitter shrink handoff to the next header-shrink / runtime-SoT task.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S4-01] Connect the future emitter shrink handoff to the next header-shrink / runtime-SoT task.
 
 ## Current Baseline
 
@@ -149,6 +149,30 @@ Acceptance criteria:
 - The C# `bytearray` compatibility seam must not expand back to list / bytes mutation.
 - Once those remain fixed in the inventory tool, this task hands off to a later header-shrink / runtime-externalization task.
 
+## Handoff Targets
+
+- `cpp_header_shrink`
+  - target plan:
+    - `docs/ja/plans/archive/20260312-p0-cpp-pyruntime-final-shrink.md`
+  - trigger bucket:
+    - `cpp_emitter_shared_type_id_residual`
+  - handoff condition:
+    - the `future_reducible` subset stays limited to `py_runtime_value_type_id`, and representative/source-guard drift stays empty.
+- `runtime_sot_followup`
+  - target plan:
+    - `docs/ja/plans/p2-runtime-sot-linked-program-integration.md`
+  - trigger bucket:
+    - `rs_emitter_shared_type_id_residual`
+  - handoff condition:
+    - the shared `type_id` seam stays must-remain-only until runtime/type-id ownership moves into a runtime SoT task.
+- `cs_bytearray_localization`
+  - target plan:
+    - `docs/ja/plans/archive/20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md`
+  - trigger bucket:
+    - `crossruntime_mutation_helper_residual`
+  - handoff condition:
+    - the C# `bytearray` compatibility seam remains isolated to `py_append` / `py_pop` and does not expand back to list or bytes mutation.
+
 ## Decision Log
 
 - 2026-03-12: The archived `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01` / `...-RESIDUAL-REDUCTION-01` tasks already completed the current residual cleanup, so this follow-up is limited to future reduction only.
@@ -156,3 +180,4 @@ Acceptance criteria:
 - 2026-03-12: `S2-01` splits the C++ shared type-id residual into `future_reducible=py_runtime_value_type_id only` and `must_remain_until_runtime_task=nominal ADT match / type-predicate seam`, and the inventory tool now guards the same classification.
 - 2026-03-12: `S2-02` fixes Rust/C# shared thin seams as `must_remain_until_runtime_task` and classifies the C# `bytearray` compatibility seam (`py_append` / `py_pop`) as `future_reducible`, with the inventory tool guarding the same split.
 - 2026-03-12: `S3-01` fixes the representative smoke / source guard subset the future follow-up actually depends on via `FUTURE_REPRESENTATIVE_LANE_MANIFEST` and `FUTURE_SOURCE_GUARD_PATHS`, so drift is checked against the future baseline rather than only the full current inventory.
+- 2026-03-12: `S4-01` fixes the handoff targets as `cpp_header_shrink` / `runtime_sot_followup` / `cs_bytearray_localization`, and the inventory tool now guards the target plan path, trigger bucket, and handoff condition for each.

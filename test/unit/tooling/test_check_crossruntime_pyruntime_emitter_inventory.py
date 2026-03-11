@@ -227,7 +227,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         )
         self.assertEqual(
             inventory_mod.FUTURE_FOLLOWUP_PLAN_PATH,
-            "docs/ja/plans/p4-crossruntime-pyruntime-emitter-future-shrink.md",
+            "docs/ja/plans/archive/20260312-p4-crossruntime-pyruntime-emitter-future-shrink.md",
         )
         self.assertEqual(
             inventory_mod.FUTURE_FOLLOWUP_BASELINE_BUCKETS,
@@ -296,6 +296,29 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             },
         )
         self.assertEqual(inventory_mod._collect_future_representative_lane_issues(), [])
+
+    def test_future_handoff_targets_are_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.FUTURE_HANDOFF_TARGETS,
+            {
+                "cpp_header_shrink": {
+                    "plan_path": "docs/ja/plans/archive/20260312-p0-cpp-pyruntime-final-shrink.md",
+                    "trigger_bucket": "cpp_emitter_shared_type_id_residual",
+                    "handoff_when": "future_reducible subset stays limited to py_runtime_value_type_id and representative/source guard drift is empty",
+                },
+                "runtime_sot_followup": {
+                    "plan_path": "docs/ja/plans/p2-runtime-sot-linked-program-integration.md",
+                    "trigger_bucket": "rs_emitter_shared_type_id_residual",
+                    "handoff_when": "shared type-id seams remain must-remain-only until runtime/type-id ownership moves into a runtime SoT task",
+                },
+                "cs_bytearray_localization": {
+                    "plan_path": "docs/ja/plans/archive/20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md",
+                    "trigger_bucket": "crossruntime_mutation_helper_residual",
+                    "handoff_when": "cs bytearray compat seam stays isolated to py_append/py_pop and does not expand back to list or bytes mutation",
+                },
+            },
+        )
+        self.assertEqual(inventory_mod._collect_future_handoff_issues(), [])
 
         self.assertEqual(
             inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION,
