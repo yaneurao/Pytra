@@ -31,6 +31,4 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-1. [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01] Design a shared conformance suite that validates parse / lowering / emit / runtime parity from the same feature fixtures across multiple backends. Context: [p6-backend-conformance-suite.md](../plans/p6-backend-conformance-suite.md)
-   - Progress note: `S3-01` fixed `pytra.std.*` runtime parity through a manifest/export/checker seam for `json/pathlib/enum/argparse/math/re`.
 2. [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01] Define the feature × backend support matrix, rollout tiers, and review checklist needed to institutionalize backend parity in docs and tooling. Context: [p7-backend-parity-rollout-and-matrix.md](../plans/p7-backend-parity-rollout-and-matrix.md)

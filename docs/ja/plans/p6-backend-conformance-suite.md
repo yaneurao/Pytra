@@ -32,7 +32,7 @@
 - [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S2-01] parse / EAST / EAST3 lowering / emit / runtime parity の各 lane をどう共通 harness に結び付けるかを設計する。
 - [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S2-02] C++ / Rust / C# を first representative lane とする backend-selectable conformance runner の方針を決める。
 - [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S3-01] `pytra.std.*` representative module（例: `json`, `pathlib`, `enum`, `argparse`）の runtime parity strategy を固定する。
-- [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S4-01] conformance 結果の要約を support matrix / docs / tooling へ handoff するルールを定める。
+- [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S4-01] conformance 結果の要約を support matrix / docs / tooling へ handoff するルールを定める。
 
 ## S1-01 Feature-To-Fixture Seed
 
@@ -120,6 +120,26 @@
 - handoff rule:
   - `S4-01` の support matrix/docs/tooling handoff は stdlib runtime lane の representative module list と compare unit をこの manifest から読む。
 
+## S4-01 Conformance Summary Handoff
+
+- source of truth:
+  - summary handoff contract: [backend_conformance_summary_handoff.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_summary_handoff.py)
+  - CLI/export seam: [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/export_backend_conformance_summary_handoff_manifest.py)
+  - validation: [check_backend_conformance_summary_handoff.py](/workspace/Pytra/tools/check_backend_conformance_summary_handoff.py), [test_check_backend_conformance_summary_handoff.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_summary_handoff.py)
+- destination order:
+  - `support_matrix -> docs -> tooling`
+- required manifest rule:
+  - `feature_matrix_seed`: `backend_feature_contract_inventory.build_feature_contract_handoff_manifest`
+  - `conformance_seed`: `backend_conformance_inventory.build_backend_conformance_seed_manifest`
+  - `runner_seed`: `backend_conformance_runner_contract.build_backend_conformance_runner_manifest`
+  - `stdlib_runtime_seed`: `backend_conformance_runtime_parity_contract.build_backend_conformance_runtime_parity_manifest`
+- summary handoff rule:
+  - `support_matrix` は `feature_id/category/representative_fixture/backend_order/support_state_order` を handoff する。
+  - `docs` は `module_name/case_stem/compare_unit/representative_backends` を handoff する。
+  - `tooling` は `lane_order/lane_harness/fixture_lane_policy/backend_order/selectable_lanes` を handoff する。
+- downstream rule:
+  - handoff の downstream task / plan は `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` と `docs/ja/plans/p7-backend-parity-rollout-and-matrix.md` に固定する。
+
 ## 決定ログ
 
 - 2026-03-12: conformance suite は `P5` の feature contract の次段として扱い、基準未整備のまま先に matrix 化しないため `P6` に置く。
@@ -130,3 +150,4 @@
 - 2026-03-12: `S2-01` では `backend_conformance_inventory.build_backend_conformance_seed_manifest()` と `export_backend_conformance_seed_manifest.py` も追加し、runner seed の `lane_harness` / `fixture_lane_policy` を固定した。
 - 2026-03-12: `S2-02` では `backend_conformance_runner_contract.py` と `export_backend_conformance_runner_manifest.py` を追加し、representative backend order を `cpp -> rs -> cs`、backend-selectable lane を `emit/runtime`、per-backend smoke binding を runner manifest に固定した。
 - 2026-03-12: `S3-01` では `backend_conformance_runtime_parity_contract.py` と `export_backend_conformance_runtime_parity_manifest.py` を追加し、`pytra_std` runtime lane を `stdlib_module_runtime_case` として `json/pathlib/enum/argparse/math/re` へ固定した。
+- 2026-03-12: `S4-01` では `backend_conformance_summary_handoff.py` と `export_backend_conformance_summary_handoff_manifest.py` を追加し、support matrix/docs/tooling への downstream handoff を `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` 向けに固定した。
