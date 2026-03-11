@@ -31,12 +31,24 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
+### P0: relative import support
+
+Context: [docs/ja/plans/p0-relative-import-support.md](../plans/p0-relative-import-support.md)
+
+1. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01] Officially support `from .m import x` / `from ..pkg import y` in multi-file transpilation.
+2. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S1-01] Fix the syntax / diagnostics / root-escape policy for relative imports in plan and spec.
+3. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-01] Make the self-hosted parser accept relative `from-import` while preserving raw module text.
+4. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-02] Normalize relative modules to absolute `module_id`s during frontend module-map construction and rewrite EAST / import metadata.
+5. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-03] Update import-graph diagnostics to distinguish root escape from missing modules and fail closed.
+6. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S3-01] Add representative CLI / unit regressions for success, missing, duplicate, root escape, and wildcard cases.
+7. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S3-02] Sync the import wording in `spec-user.md`, `spec-import.md`, and tutorial docs.
+
 ### P4: `py_runtime.h` final thin compat removal
 
 Context: [docs/ja/plans/p4-crossruntime-pyruntime-final-thincompat-removal.md](../plans/p4-crossruntime-pyruntime-final-thincompat-removal.md)
 
 1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01] Remove the final two `py_runtime.h` thin compat helpers across runtimes.
-2. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S1-01] Classify the residuals into `cpp_header_final_thincompat_defs` / `cpp_generated_final_thincompat_blocker` / `rs_runtime_generic_alias_surface` / `cs_runtime_generic_alias_surface`, and add inventory/tests.
+2. [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S1-01] Classify the residuals into `cpp_header_final_thincompat_defs` / `cpp_generated_final_thincompat_blocker` / `rs_runtime_generic_alias_surface` / `cs_runtime_generic_alias_surface`, and add inventory/tests.
 3. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S1-02] Fix the target end state and bundle order in docs/source guards.
 4. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S2-01] Move checked-in generated/native C++ callers to thin helpers and empty `cpp_generated_final_thincompat_blocker`.
 5. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S2-02] Shrink the Rust/C# runtime alias surface to internal/private seams.

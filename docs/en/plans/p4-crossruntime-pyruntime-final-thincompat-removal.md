@@ -57,7 +57,7 @@ Checks:
 
 Breakdown:
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01] Remove the final `py_runtime.h` thin compat helpers across runtimes.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S1-01] Classify the residuals into `cpp_header_final_thincompat_defs` / `cpp_generated_final_thincompat_blocker` / `rs_runtime_generic_alias_surface` / `cs_runtime_generic_alias_surface`, and add inventory/tests.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S1-01] Classify the residuals into `cpp_header_final_thincompat_defs` / `cpp_generated_final_thincompat_blocker` / `rs_runtime_generic_alias_surface` / `cs_runtime_generic_alias_surface`, and add inventory/tests.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S1-02] Fix the target end state and bundle order in docs/source guards.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S2-01] Move checked-in generated/native C++ callers to thin helpers and empty `cpp_generated_final_thincompat_blocker`.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S2-02] Shrink the Rust/C# runtime alias surface to internal/private seams.
@@ -65,3 +65,4 @@ Breakdown:
 
 Decision log:
 - 2026-03-11: Created as the next low-priority follow-up after the TODO became empty. The emitter-side blockers are already much smaller, so the next step is to make the remaining generic helper definitions and checked-in callers removable.
+- 2026-03-11: Completed `S1-01` by adding `tools/check_crossruntime_pyruntime_final_thincompat_inventory.py` and a unit test, classifying the final `py_runtime.h` template definitions, the generated `std/json.cpp` blocker, and the Rust/C# runtime generic alias surface into explicit buckets.
