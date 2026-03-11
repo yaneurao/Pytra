@@ -34,18 +34,17 @@
 
 ## Latest News
 
+> **2026-03-11 | v0.13.0 Released**<br>
+> Version 0.13.0 was released. I wrote an NES (Famicom) emulator in Python + SDL3. [Super Mario Bros. 3 is running.](https://x.com/yaneuraou/status/2031612549658202538) It is very slow. I am currently improving Pytra so this can be transpiled to C++ with Pytra.
+
+> **2026-03-10 | v0.12.0 Released**<br>
+> Version 0.12.0 was released. I am currently in the middle of a large runtime reorganization.
+
 > **2026-03-09 | v0.11.0 Released**<br>
 > Version 0.11.0 was released. We are revisiting object boundaries, and the tutorial has been improved.
 
 > **2026-03-08 | v0.10.0 Released**<br>
 > Version 0.10.0 was released. `@template` is now available, and runtime support for each target language is currently being refined.
-
-> **2026-03-07 | v0.9.0 Released**<br>
-> Version 0.9.0 was released. The large-scale refactor is complete, and all target languages are usable again.<br>
-> `@extern` and `@abi` are now available, so transpiled code can now be called from other languages as well.
-
-> **2026-03-06 | v0.8.0 Released**<br>
-> Version 0.8.0 was released. The ABI boundary is being redefined, and a large-scale refactor is in progress. At the moment, backends other than the C++ transpiler are broken, so please use v0.7.0.
 
 - Past News: [docs/en/news/index.md](docs/en/news/index.md)
 

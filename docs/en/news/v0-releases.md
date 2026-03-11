@@ -1,9 +1,5 @@
 # v0 Release Series (Past News)
 
-## 2026-03-08 | v0.10.0 Released
-
-> Version 0.10.0 was released. `@template` is now available, and runtime support for each target language is currently being refined.
-
 ## 2026-03-07 | v0.9.0 Released
 
 > Version 0.9.0 was released. The large-scale refactor is complete, and all target languages are usable again. `@extern` and `@abi` are now available, so transpiled code can now be called from other languages as well.
