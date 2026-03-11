@@ -240,6 +240,49 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             ],
         )
 
+    def test_active_reduction_bundles_match_bucket_order(self) -> None:
+        self.assertEqual(
+            list(inventory_mod.ACTIVE_REDUCTION_BUNDLES.keys()),
+            inventory_mod.REDUCTION_ORDER,
+        )
+        self.assertEqual(
+            set(inventory_mod.ACTIVE_REDUCTION_BUNDLES.keys()),
+            set(inventory_mod.EXPECTED_BUCKETS.keys()),
+        )
+
+    def test_active_reduction_bundles_are_classified(self) -> None:
+        self.assertEqual(
+            inventory_mod.ACTIVE_REDUCTION_BUNDLES,
+            {
+                "crossruntime_mutation_helper_residual": {
+                    "stage": "S2-01",
+                    "goal": "minimize the C# bytes/bytearray must-remain seam",
+                    "status": "planned",
+                },
+                "cpp_emitter_object_bridge_residual": {
+                    "stage": "S2-02",
+                    "goal": "return removable callers to typed lanes",
+                    "status": "planned",
+                },
+                "rs_emitter_shared_type_id_residual": {
+                    "stage": "S3-01",
+                    "goal": "thin the Rust shared type-id seam",
+                    "status": "planned",
+                },
+                "cs_emitter_shared_type_id_residual": {
+                    "stage": "S3-01",
+                    "goal": "thin the C# shared type-id seam",
+                    "status": "planned",
+                },
+                "cpp_emitter_shared_type_id_residual": {
+                    "stage": "S3-02",
+                    "goal": "re-evaluate the final intentional C++ shared type-id contract",
+                    "status": "planned",
+                },
+            },
+        )
+        self.assertEqual(inventory_mod._collect_active_reduction_bundle_issues(), [])
+
     def test_cpp_typed_wrapper_symbols_match_object_bridge_contexts(self) -> None:
         self.assertEqual(
             inventory_mod.CPP_TYPED_WRAPPER_SYMBOLS,

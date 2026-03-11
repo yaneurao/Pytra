@@ -30,3 +30,6 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
+
+1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01] `py_runtime.h` 縮小前に C++ / Rust / C# emitter residual を bundle 単位で減らす。文脈: [p4-crossruntime-pyruntime-emitter-residual-reduction.md](../plans/p4-crossruntime-pyruntime-emitter-residual-reduction.md)
+- 進捗メモ: `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S1-01` 2026-03-12: current residual bucket / reduction order / active bundle metadata を live docs と inventory tool に固定した。

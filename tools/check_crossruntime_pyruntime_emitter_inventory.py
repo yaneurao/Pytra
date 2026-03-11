@@ -134,6 +134,34 @@ REDUCTION_ORDER = [
     "cpp_emitter_shared_type_id_residual",
 ]
 
+ACTIVE_REDUCTION_BUNDLES = {
+    "crossruntime_mutation_helper_residual": {
+        "stage": "S2-01",
+        "goal": "minimize the C# bytes/bytearray must-remain seam",
+        "status": "planned",
+    },
+    "cpp_emitter_object_bridge_residual": {
+        "stage": "S2-02",
+        "goal": "return removable callers to typed lanes",
+        "status": "planned",
+    },
+    "rs_emitter_shared_type_id_residual": {
+        "stage": "S3-01",
+        "goal": "thin the Rust shared type-id seam",
+        "status": "planned",
+    },
+    "cs_emitter_shared_type_id_residual": {
+        "stage": "S3-01",
+        "goal": "thin the C# shared type-id seam",
+        "status": "planned",
+    },
+    "cpp_emitter_shared_type_id_residual": {
+        "stage": "S3-02",
+        "goal": "re-evaluate the final intentional C++ shared type-id contract",
+        "status": "planned",
+    },
+}
+
 SOURCE_GUARD_REQUIRED_SUBSTRINGS = {
     "src/backends/rs/emitter/rs_emitter.py": {
         'return "py_runtime_value_type_id(&" + value_expr + ")"',
@@ -329,6 +357,28 @@ def _collect_representative_lane_issues() -> list[str]:
     return issues
 
 
+def _collect_active_reduction_bundle_issues() -> list[str]:
+    issues: list[str] = []
+    if set(ACTIVE_REDUCTION_BUNDLES.keys()) != set(EXPECTED_BUCKETS.keys()):
+        issues.append("active reduction bundle keys do not match expected buckets")
+        return issues
+    if list(ACTIVE_REDUCTION_BUNDLES.keys()) != REDUCTION_ORDER:
+        issues.append("active reduction bundle order does not match reduction order")
+    for bucket_name, payload in ACTIVE_REDUCTION_BUNDLES.items():
+        stage = str(payload.get("stage", ""))
+        goal = str(payload.get("goal", ""))
+        status = str(payload.get("status", ""))
+        if not stage.startswith("S"):
+            issues.append(f"active reduction bundle stage is malformed: {bucket_name}: {stage}")
+        if goal.strip() == "":
+            issues.append(f"active reduction bundle goal is empty: {bucket_name}")
+        if status != "planned":
+            issues.append(
+                f"active reduction bundle status must stay planned until bundle work starts: {bucket_name}: {status}"
+            )
+    return issues
+
+
 def _collect_inventory_issues() -> list[str]:
     observed = _collect_observed_pairs()
     expected = _collect_expected_pairs()
@@ -336,6 +386,7 @@ def _collect_inventory_issues() -> list[str]:
     issues.extend(_collect_cpp_typed_wrapper_reentry_issues())
     issues.extend(_collect_source_guard_issues())
     issues.extend(_collect_representative_lane_issues())
+    issues.extend(_collect_active_reduction_bundle_issues())
     if set(TARGET_END_STATE.keys()) != set(EXPECTED_BUCKETS.keys()):
         issues.append("target end state keys do not match expected buckets")
     if list(dict.fromkeys(REDUCTION_ORDER)) != REDUCTION_ORDER:
