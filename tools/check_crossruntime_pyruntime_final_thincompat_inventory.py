@@ -29,7 +29,6 @@ CPP_HEADER_RULES = {
 }
 
 CPP_GENERATED_RULES = {
-    ("py_isinstance", "src/runtime/cpp/generated/std/json.cpp"): re.compile(r"\bpy_isinstance\s*\("),
 }
 
 RS_ALIAS_RULES = {
@@ -79,9 +78,7 @@ EXPECTED_BUCKETS = {
         ("py_runtime_type_id", "src/runtime/cpp/native/core/py_runtime.h"),
         ("py_isinstance", "src/runtime/cpp/native/core/py_runtime.h"),
     },
-    "cpp_generated_final_thincompat_blocker": {
-        ("py_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
-    },
+    "cpp_generated_final_thincompat_blocker": set(),
     "rs_runtime_generic_alias_surface": {
         ("py_runtime_type_id", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
         ("py_runtime_type_id", "src/runtime/rs/pytra-core/built_in/py_runtime.rs"),
@@ -103,6 +100,20 @@ EXPECTED_BUCKETS = {
         ("py_isinstance", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"),
     },
 }
+
+TARGET_END_STATE = {
+    "cpp_generated_final_thincompat_blocker": "empty_before_header_removal",
+    "rs_runtime_generic_alias_surface": "internal_or_private_only_before_header_removal",
+    "cs_runtime_generic_alias_surface": "internal_or_private_only_before_header_removal",
+    "cpp_header_final_thincompat_defs": "remove_last_after_crossruntime_alignment",
+}
+
+REMOVAL_BUNDLE_ORDER = (
+    "cpp_generated_final_thincompat_blocker",
+    "rs_runtime_generic_alias_surface",
+    "cs_runtime_generic_alias_surface",
+    "cpp_header_final_thincompat_defs",
+)
 
 
 def _iter_target_files() -> list[Path]:
@@ -142,12 +153,40 @@ def _collect_bucket_overlaps() -> list[str]:
     return issues
 
 
+def _collect_bundle_order_issues() -> list[str]:
+    issues: list[str] = []
+    known = set(EXPECTED_BUCKETS)
+    if tuple(REMOVAL_BUNDLE_ORDER) != tuple(dict.fromkeys(REMOVAL_BUNDLE_ORDER)):
+        issues.append("removal bundle order contains duplicates")
+    for bucket in sorted(known - set(REMOVAL_BUNDLE_ORDER)):
+        issues.append(f"removal bundle order missing bucket: {bucket}")
+    for bucket in sorted(set(REMOVAL_BUNDLE_ORDER) - known):
+        issues.append(f"removal bundle order references unknown bucket: {bucket}")
+    if REMOVAL_BUNDLE_ORDER[-1] != "cpp_header_final_thincompat_defs":
+        issues.append("cpp_header_final_thincompat_defs must remain the last removal bundle")
+    if REMOVAL_BUNDLE_ORDER.index("cpp_generated_final_thincompat_blocker") > REMOVAL_BUNDLE_ORDER.index(
+        "cpp_header_final_thincompat_defs"
+    ):
+        issues.append("cpp generated blockers must be removed before header thincompat defs")
+    return issues
+
+
+def _collect_target_end_state_issues() -> list[str]:
+    issues: list[str] = []
+    known = set(EXPECTED_BUCKETS)
+    for bucket in sorted(known - set(TARGET_END_STATE)):
+        issues.append(f"target end state missing bucket: {bucket}")
+    for bucket in sorted(set(TARGET_END_STATE) - known):
+        issues.append(f"target end state references unknown bucket: {bucket}")
+    return issues
+
+
 def _collect_inventory_issues() -> list[str]:
     observed = _collect_observed_pairs()
-    expected = _collect_expected_pairs()
     issues = _collect_bucket_overlaps()
-    for symbol, rel in sorted(expected - observed):
-        issues.append(f"expected entry missing from final thincompat inventory: {symbol} @ {rel}")
+    issues.extend(_collect_bundle_order_issues())
+    issues.extend(_collect_target_end_state_issues())
+    expected = _collect_expected_pairs()
     for symbol, rel in sorted(observed - expected):
         issues.append(f"unclassified final thincompat residual: {symbol} @ {rel}")
     return issues
