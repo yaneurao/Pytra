@@ -203,6 +203,35 @@ def normalize_east_root_document(doc: dict[str, object]) -> dict[str, object]:
     return doc
 
 
+def _classify_import_user_error(
+    msg: str,
+    source_text: str,
+    input_path: Path,
+) -> tuple[str, str, list[str]] | None:
+    """import 系の既知診断を current CLI contract へ正規化する。"""
+    if "from-import wildcard is not supported" in msg:
+        label = first_import_detail_line(source_text, "wildcard")
+        return (
+            "input_invalid",
+            "Failed to resolve imports (missing/conflict/wildcard).",
+            [f"kind=unresolved_wildcard file={input_path} import={label}"],
+        )
+    if "relative import is not supported" in msg:
+        label = first_import_detail_line(source_text, "relative")
+        return (
+            "input_invalid",
+            "Unsupported import syntax.",
+            [f"kind=unsupported_import_form file={input_path} import={label}"],
+        )
+    if "duplicate import binding:" in msg:
+        return (
+            "input_invalid",
+            "Duplicate import binding.",
+            [f"kind=duplicate_binding file={input_path} import={msg}"],
+        )
+    return None
+
+
 def load_east_document(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
     input_txt = str(input_path)
@@ -252,26 +281,10 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
                         empty_details,
                     ) from ex
             raise ex
-        if "from-import wildcard is not supported" in msg:
-            label = first_import_detail_line(source_text, "wildcard")
-            raise make_user_error(
-                "input_invalid",
-                "Failed to resolve imports (missing/conflict/wildcard).",
-                [f"kind=unresolved_wildcard file={input_path} import={label}"],
-            ) from ex
-        if "relative import is not supported" in msg:
-            label = first_import_detail_line(source_text, "relative")
-            raise make_user_error(
-                "input_invalid",
-                "Unsupported import syntax.",
-                [f"kind=unsupported_import_form file={input_path} import={label}"],
-            ) from ex
-        if "duplicate import binding:" in msg:
-            raise make_user_error(
-                "input_invalid",
-                "Duplicate import binding.",
-                [f"kind=duplicate_binding file={input_path} import={msg}"],
-            ) from ex
+        import_err = _classify_import_user_error(msg, source_text, input_path)
+        if import_err is not None:
+            category, summary, details = import_err
+            raise make_user_error(category, summary, details) from ex
         category = "not_implemented"
         summary = "This syntax is not implemented yet."
         if msg == "":

@@ -40,10 +40,11 @@
 
 決定ログ:
 - 2026-03-11: TODO が空になったため、relative import / wildcard import 実装の次段として import diagnostics transport の構造化を `P1` 起票した。v1 は current CLI 契約維持を優先し、まず frontend の substring matching を helper 境界へ集約する。
+- 2026-03-11: `S2-01` として `load_east_document()` の import 例外分類を `_classify_import_user_error()` へ集約し、wildcard / relative / duplicate-binding の current CLI contract を focused unit test と 1 本の integration test で固定した。
 
 ## 分解
 
 - [x] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S1-01] current import diagnostics transport と staged end state を棚卸しし、plan/TODO に固定する。
-- [ ] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S2-01] `transpile_cli.load_east_document()` の import 例外分類を helper 1 箇所へ集約し、focused unit test を追加する。
+- [x] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S2-01] `transpile_cli.load_east_document()` の import 例外分類を helper 1 箇所へ集約し、focused unit test を追加する。
 - [ ] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S2-02] duplicate import binding を parser/import semantics 側から structured envelope として transport できる seam を追加する。
 - [ ] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S3-01] import diagnostics の remaining ad hoc 文字列依存を整理し、archive 可能な end state にまとめる。
