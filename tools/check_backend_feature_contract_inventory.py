@@ -39,6 +39,47 @@ def _collect_inventory_issues() -> list[str]:
     return issues
 
 
+def _collect_fixture_mapping_issues() -> list[str]:
+    issues: list[str] = []
+    inventory_by_id = {
+        entry["feature_id"]: entry for entry in inventory_mod.iter_representative_feature_inventory()
+    }
+    fixture_mapping = inventory_mod.iter_representative_fixture_mapping()
+    if {entry["feature_id"] for entry in fixture_mapping} != set(inventory_by_id.keys()):
+        issues.append("fixture mapping drifted from representative feature inventory")
+    for entry in fixture_mapping:
+        feature_id = entry["feature_id"]
+        inventory_entry = inventory_by_id.get(feature_id)
+        if inventory_entry is None:
+            continue
+        category = inventory_entry["category"]
+        expected_scope = inventory_mod.FIXTURE_SCOPE_BY_CATEGORY[category]
+        if entry["category"] != category:
+            issues.append(f"fixture mapping category drifted: {feature_id}")
+        if entry["representative_fixture"] != inventory_entry["representative_fixture"]:
+            issues.append(f"fixture mapping fixture drifted: {feature_id}")
+        if entry["fixture_scope"] != expected_scope:
+            issues.append(f"fixture mapping scope drifted: {feature_id}")
+        fixture_bucket = entry["fixture_bucket"]
+        if fixture_bucket not in inventory_mod.FIXTURE_BUCKET_ORDER:
+            issues.append(f"fixture mapping bucket is unknown: {feature_id}: {fixture_bucket}")
+            continue
+        prefix = inventory_mod.FIXTURE_BUCKET_PREFIXES[fixture_bucket]
+        if not entry["representative_fixture"].startswith(prefix):
+            issues.append(f"fixture mapping bucket prefix drifted: {feature_id}")
+        allowed_buckets = inventory_mod.FIXTURE_SCOPE_BUCKET_RULES[expected_scope]
+        if fixture_bucket not in allowed_buckets:
+            issues.append(f"fixture mapping bucket is outside allowed scope: {feature_id}")
+        expected_shared_ids = tuple(
+            other["feature_id"]
+            for other in inventory_mod.iter_representative_feature_inventory()
+            if other["representative_fixture"] == entry["representative_fixture"]
+        )
+        if entry["shared_fixture_feature_ids"] != expected_shared_ids:
+            issues.append(f"fixture mapping shared-feature set drifted: {feature_id}")
+    return issues
+
+
 def _collect_support_state_issues() -> list[str]:
     issues: list[str] = []
     if set(inventory_mod.SUPPORT_STATE_ORDER) != set(inventory_mod.SUPPORT_STATE_CRITERIA.keys()):
@@ -94,6 +135,9 @@ def _collect_handoff_issues() -> list[str]:
     expected_manifest_keys = {
         "inventory_version",
         "representative_features",
+        "fixture_scope_order",
+        "fixture_bucket_order",
+        "fixture_mapping",
         "conformance_handoff",
         "support_matrix_handoff",
         "support_state_order",
@@ -105,6 +149,10 @@ def _collect_handoff_issues() -> list[str]:
         issues.append("handoff manifest keys drifted from the fixed set")
     if manifest.get("inventory_version") != 1:
         issues.append("handoff manifest inventory_version must stay at 1")
+    if manifest.get("fixture_scope_order") != list(inventory_mod.FIXTURE_SCOPE_ORDER):
+        issues.append("handoff manifest fixture_scope_order drifted from the fixed taxonomy")
+    if manifest.get("fixture_bucket_order") != list(inventory_mod.FIXTURE_BUCKET_ORDER):
+        issues.append("handoff manifest fixture_bucket_order drifted from the fixed taxonomy")
     if set(inventory_mod.HANDOFF_TASK_IDS.keys()) != {"conformance_suite", "support_matrix"}:
         issues.append("handoff task ids drifted from the fixed key set")
     if set(inventory_mod.HANDOFF_PLAN_PATHS.keys()) != set(inventory_mod.HANDOFF_TASK_IDS.keys()):
@@ -121,6 +169,8 @@ def _collect_handoff_issues() -> list[str]:
         issues.append("conformance handoff inventory drifted from representative feature inventory")
     if {entry["feature_id"] for entry in support_matrix_handoff} != set(inventory_by_id.keys()):
         issues.append("support-matrix handoff inventory drifted from representative feature inventory")
+    if {entry["feature_id"] for entry in manifest["fixture_mapping"]} != set(inventory_by_id.keys()):
+        issues.append("handoff manifest fixture mapping drifted from representative feature inventory")
     if manifest["support_state_order"] != list(inventory_mod.SUPPORT_STATE_ORDER):
         issues.append("handoff manifest support_state_order drifted from the fixed taxonomy")
     if manifest["fail_closed_detail_categories"] != list(inventory_mod.FAIL_CLOSED_DETAIL_CATEGORIES):
@@ -161,6 +211,7 @@ def _collect_handoff_issues() -> list[str]:
 def main() -> int:
     issues = (
         _collect_inventory_issues()
+        + _collect_fixture_mapping_issues()
         + _collect_support_state_issues()
         + _collect_fail_closed_policy_issues()
         + _collect_acceptance_rule_issues()

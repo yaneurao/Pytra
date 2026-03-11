@@ -108,7 +108,8 @@ Acceptance criteria:
 ## S3-01 Representative Handoff
 
 - source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
-- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py)
+- export seam: [export_backend_feature_contract_manifest.py](/workspace/Pytra/tools/export_backend_feature_contract_manifest.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py), [test_export_backend_feature_contract_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_feature_contract_manifest.py)
 - P6 conformance handoff:
   - exported inventory: `iter_representative_conformance_handoff()`
   - downstream task: `P6-BACKEND-CONFORMANCE-SUITE-01`
@@ -122,6 +123,7 @@ Acceptance criteria:
 - docs/tooling handoff rule:
   - P6/P7 attach to the explicit handoff exports instead of re-interpreting `REPRESENTATIVE_FEATURE_INVENTORY` ad hoc.
   - P5 keeps ownership of fixture/category/state taxonomy, while later tasks focus on conformance results and support-matrix publication.
+  - Downstream CLI/export flows must use `build_feature_contract_handoff_manifest()` / `export_backend_feature_contract_manifest.py` instead of inventing another ad-hoc export format.
 
 ## Decision log
 
@@ -132,3 +134,4 @@ Acceptance criteria:
 - 2026-03-12: `S2-01` fixes unsupported backend diagnostics to `not_implemented` / `unsupported_by_design` / `preview_only` / `blocked`, and treats object/String/comment/empty-output fallback as forbidden silent fallback behavior.
 - 2026-03-12: `S2-02` fixes merge acceptance rules so a passing C++ lane does not count as feature completion unless non-C++ state and docs-mirror updates are also recorded.
 - 2026-03-12: `S3-01` adds explicit handoff exports for P6/P7 so conformance and matrix work can attach to a stable contract instead of re-deriving feature scope.
+- 2026-03-12: `S3-01` also fixed the CLI/export seam through `build_feature_contract_handoff_manifest()` and `export_backend_feature_contract_manifest.py`.

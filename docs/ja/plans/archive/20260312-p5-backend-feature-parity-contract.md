@@ -108,7 +108,8 @@
 ## S3-01 Representative Handoff
 
 - source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
-- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py)
+- export seam: [export_backend_feature_contract_manifest.py](/workspace/Pytra/tools/export_backend_feature_contract_manifest.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py), [test_export_backend_feature_contract_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_feature_contract_manifest.py)
 - P6 conformance handoff:
   - exported inventory: `iter_representative_conformance_handoff()`
   - downstream task: `P6-BACKEND-CONFORMANCE-SUITE-01`
@@ -122,6 +123,7 @@
 - docs / tooling handoff rule:
   - P6/P7 は `REPRESENTATIVE_FEATURE_INVENTORY` を再解釈せず、上記 handoff export を attach point として使う。
   - feature fixture / category / support-state taxonomy の正本は P5 の inventory module に残し、後段 task は結果集計や publish に専念する。
+  - CLI/export が必要な downstream は `build_feature_contract_handoff_manifest()` / `export_backend_feature_contract_manifest.py` を使い、別形式の ad-hoc export を増やさない。
 
 ## 決定ログ
 
@@ -132,3 +134,4 @@
 - 2026-03-12: `S2-01` では unsupported backend lane の diagnostic category を `not_implemented` / `unsupported_by_design` / `preview_only` / `blocked` に固定し、`object/String/comment/empty-output` fallback を parity contract 上の forbidden silent fallback とする。
 - 2026-03-12: `S2-02` では feature merge acceptance rule を固定し、C++ lane が通っても non-C++ state と docs mirror が揃うまでは feature-complete とみなさない。
 - 2026-03-12: `S3-01` では P6/P7 が直接 attach できる handoff export を inventory module に追加し、conformance/backends order と support-state order を P5 側で固定した。
+- 2026-03-12: `S3-01` では Python import だけでなく `build_feature_contract_handoff_manifest()` と `export_backend_feature_contract_manifest.py` を handoff seam に追加した。

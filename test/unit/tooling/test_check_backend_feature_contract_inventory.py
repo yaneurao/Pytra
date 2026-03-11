@@ -22,6 +22,9 @@ class CheckBackendFeatureContractInventoryTest(unittest.TestCase):
     def test_handoff_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_handoff_issues(), [])
 
+    def test_fixture_mapping_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_fixture_mapping_issues(), [])
+
     def test_categories_have_stable_order(self) -> None:
         self.assertEqual(inventory_mod.CATEGORY_ORDER, ("syntax", "builtin", "stdlib"))
 
@@ -32,6 +35,34 @@ class CheckBackendFeatureContractInventoryTest(unittest.TestCase):
                 "syntax": "syntax.<area>.<feature>",
                 "builtin": "builtin.<domain>.<feature>",
                 "stdlib": "stdlib.<module>.<feature>",
+            },
+        )
+
+    def test_fixture_scope_taxonomy_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.FIXTURE_SCOPE_ORDER,
+            ("syntax_case", "builtin_case", "stdlib_case"),
+        )
+        self.assertEqual(
+            inventory_mod.FIXTURE_SCOPE_BY_CATEGORY,
+            {
+                "syntax": "syntax_case",
+                "builtin": "builtin_case",
+                "stdlib": "stdlib_case",
+            },
+        )
+
+    def test_fixture_bucket_taxonomy_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.FIXTURE_BUCKET_ORDER,
+            ("core", "collections", "control", "oop", "strings", "signature", "typing", "stdlib"),
+        )
+        self.assertEqual(
+            inventory_mod.FIXTURE_SCOPE_BUCKET_RULES,
+            {
+                "syntax_case": ("core", "collections", "control", "oop"),
+                "builtin_case": ("core", "control", "oop", "signature", "strings", "typing"),
+                "stdlib_case": ("stdlib",),
             },
         )
 
@@ -120,12 +151,57 @@ class CheckBackendFeatureContractInventoryTest(unittest.TestCase):
             {
                 "inventory_version",
                 "representative_features",
+                "fixture_scope_order",
+                "fixture_bucket_order",
+                "fixture_mapping",
                 "conformance_handoff",
                 "support_matrix_handoff",
                 "support_state_order",
                 "fail_closed_detail_categories",
                 "handoff_task_ids",
                 "handoff_plan_paths",
+            },
+        )
+
+    def test_fixture_mapping_contract_is_fixed(self) -> None:
+        self.assertEqual(
+            {entry["feature_id"] for entry in inventory_mod.iter_representative_fixture_mapping()},
+            {entry["feature_id"] for entry in inventory_mod.iter_representative_feature_inventory()},
+        )
+        fixture_mapping_by_id = {
+            entry["feature_id"]: entry for entry in inventory_mod.iter_representative_fixture_mapping()
+        }
+        self.assertEqual(
+            fixture_mapping_by_id["syntax.control.for_range"],
+            {
+                "feature_id": "syntax.control.for_range",
+                "category": "syntax",
+                "representative_fixture": "test/fixtures/control/for_range.py",
+                "fixture_scope": "syntax_case",
+                "fixture_bucket": "control",
+                "shared_fixture_feature_ids": ("syntax.control.for_range", "builtin.iter.range"),
+            },
+        )
+        self.assertEqual(
+            fixture_mapping_by_id["builtin.iter.range"],
+            {
+                "feature_id": "builtin.iter.range",
+                "category": "builtin",
+                "representative_fixture": "test/fixtures/control/for_range.py",
+                "fixture_scope": "builtin_case",
+                "fixture_bucket": "control",
+                "shared_fixture_feature_ids": ("syntax.control.for_range", "builtin.iter.range"),
+            },
+        )
+        self.assertEqual(
+            fixture_mapping_by_id["stdlib.json.loads_dumps"],
+            {
+                "feature_id": "stdlib.json.loads_dumps",
+                "category": "stdlib",
+                "representative_fixture": "test/fixtures/stdlib/json_extended.py",
+                "fixture_scope": "stdlib_case",
+                "fixture_bucket": "stdlib",
+                "shared_fixture_feature_ids": ("stdlib.json.loads_dumps",),
             },
         )
 

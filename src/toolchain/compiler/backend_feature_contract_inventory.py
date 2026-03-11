@@ -21,6 +21,46 @@ CATEGORY_NAMING_RULES: Final[dict[str, str]] = {
     "stdlib": "stdlib.<module>.<feature>",
 }
 
+FIXTURE_SCOPE_ORDER: Final[tuple[str, ...]] = (
+    "syntax_case",
+    "builtin_case",
+    "stdlib_case",
+)
+
+FIXTURE_SCOPE_BY_CATEGORY: Final[dict[str, str]] = {
+    "syntax": "syntax_case",
+    "builtin": "builtin_case",
+    "stdlib": "stdlib_case",
+}
+
+FIXTURE_BUCKET_ORDER: Final[tuple[str, ...]] = (
+    "core",
+    "collections",
+    "control",
+    "oop",
+    "strings",
+    "signature",
+    "typing",
+    "stdlib",
+)
+
+FIXTURE_BUCKET_PREFIXES: Final[dict[str, str]] = {
+    "core": "test/fixtures/core/",
+    "collections": "test/fixtures/collections/",
+    "control": "test/fixtures/control/",
+    "oop": "test/fixtures/oop/",
+    "strings": "test/fixtures/strings/",
+    "signature": "test/fixtures/signature/",
+    "typing": "test/fixtures/typing/",
+    "stdlib": "test/fixtures/stdlib/",
+}
+
+FIXTURE_SCOPE_BUCKET_RULES: Final[dict[str, tuple[str, ...]]] = {
+    "syntax_case": ("core", "collections", "control", "oop"),
+    "builtin_case": ("core", "control", "oop", "signature", "strings", "typing"),
+    "stdlib_case": ("stdlib",),
+}
+
 SUPPORT_STATE_CRITERIA: Final[dict[str, str]] = {
     "supported": "Representative fixture and regression lane are expected to pass on the backend without preview-only caveats.",
     "fail_closed": "The backend does not claim feature support but must stop with an explicit unsupported/not-implemented diagnostic instead of silently degrading.",
@@ -69,6 +109,15 @@ class FeatureInventoryEntry(TypedDict):
     title: str
     representative_fixture: str
     rationale: str
+
+
+class FeatureFixtureMappingEntry(TypedDict):
+    feature_id: str
+    category: str
+    representative_fixture: str
+    fixture_scope: str
+    fixture_bucket: str
+    shared_fixture_feature_ids: tuple[str, ...]
 
 
 CONFORMANCE_LANE_ORDER: Final[tuple[str, ...]] = (
@@ -274,6 +323,41 @@ REPRESENTATIVE_SUPPORT_MATRIX_HANDOFF: Final[tuple[FeatureSupportMatrixHandoffEn
 )
 
 
+def _resolve_fixture_bucket(fixture_rel: str) -> str:
+    for bucket in FIXTURE_BUCKET_ORDER:
+        prefix = FIXTURE_BUCKET_PREFIXES[bucket]
+        if fixture_rel.startswith(prefix):
+            return bucket
+    raise ValueError(f"no fixture bucket matches {fixture_rel!r}")
+
+
+def _build_representative_fixture_mapping() -> tuple[FeatureFixtureMappingEntry, ...]:
+    fixture_to_feature_ids: dict[str, tuple[str, ...]] = {}
+    for fixture_rel in sorted({entry["representative_fixture"] for entry in REPRESENTATIVE_FEATURE_INVENTORY}):
+        feature_ids = tuple(
+            entry["feature_id"]
+            for entry in REPRESENTATIVE_FEATURE_INVENTORY
+            if entry["representative_fixture"] == fixture_rel
+        )
+        fixture_to_feature_ids[fixture_rel] = feature_ids
+    return tuple(
+        {
+            "feature_id": entry["feature_id"],
+            "category": entry["category"],
+            "representative_fixture": entry["representative_fixture"],
+            "fixture_scope": FIXTURE_SCOPE_BY_CATEGORY[entry["category"]],
+            "fixture_bucket": _resolve_fixture_bucket(entry["representative_fixture"]),
+            "shared_fixture_feature_ids": fixture_to_feature_ids[entry["representative_fixture"]],
+        }
+        for entry in REPRESENTATIVE_FEATURE_INVENTORY
+    )
+
+
+REPRESENTATIVE_FIXTURE_MAPPING: Final[tuple[FeatureFixtureMappingEntry, ...]] = (
+    _build_representative_fixture_mapping()
+)
+
+
 def iter_representative_feature_inventory() -> tuple[FeatureInventoryEntry, ...]:
     return REPRESENTATIVE_FEATURE_INVENTORY
 
@@ -286,12 +370,52 @@ def iter_representative_support_matrix_handoff() -> tuple[FeatureSupportMatrixHa
     return REPRESENTATIVE_SUPPORT_MATRIX_HANDOFF
 
 
+def iter_representative_fixture_mapping() -> tuple[FeatureFixtureMappingEntry, ...]:
+    return REPRESENTATIVE_FIXTURE_MAPPING
+
+
 def build_feature_contract_handoff_manifest() -> dict[str, object]:
+    fixture_mapping = [
+        {
+            "feature_id": entry["feature_id"],
+            "category": entry["category"],
+            "representative_fixture": entry["representative_fixture"],
+            "fixture_scope": entry["fixture_scope"],
+            "fixture_bucket": entry["fixture_bucket"],
+            "shared_fixture_feature_ids": list(entry["shared_fixture_feature_ids"]),
+        }
+        for entry in iter_representative_fixture_mapping()
+    ]
+    conformance_handoff = [
+        {
+            "feature_id": entry["feature_id"],
+            "category": entry["category"],
+            "representative_fixture": entry["representative_fixture"],
+            "required_lanes": list(entry["required_lanes"]),
+            "representative_backends": list(entry["representative_backends"]),
+            "downstream_task": entry["downstream_task"],
+        }
+        for entry in iter_representative_conformance_handoff()
+    ]
+    support_matrix_handoff = [
+        {
+            "feature_id": entry["feature_id"],
+            "category": entry["category"],
+            "representative_fixture": entry["representative_fixture"],
+            "backend_order": list(entry["backend_order"]),
+            "support_state_order": list(entry["support_state_order"]),
+            "downstream_task": entry["downstream_task"],
+        }
+        for entry in iter_representative_support_matrix_handoff()
+    ]
     return {
         "inventory_version": 1,
         "representative_features": list(iter_representative_feature_inventory()),
-        "conformance_handoff": list(iter_representative_conformance_handoff()),
-        "support_matrix_handoff": list(iter_representative_support_matrix_handoff()),
+        "fixture_scope_order": list(FIXTURE_SCOPE_ORDER),
+        "fixture_bucket_order": list(FIXTURE_BUCKET_ORDER),
+        "fixture_mapping": fixture_mapping,
+        "conformance_handoff": conformance_handoff,
+        "support_matrix_handoff": support_matrix_handoff,
         "support_state_order": list(SUPPORT_STATE_ORDER),
         "fail_closed_detail_categories": list(FAIL_CLOSED_DETAIL_CATEGORIES),
         "handoff_task_ids": dict(HANDOFF_TASK_IDS),

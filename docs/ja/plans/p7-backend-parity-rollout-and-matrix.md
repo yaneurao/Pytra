@@ -9,6 +9,7 @@
 
 背景:
 - `P5` で contract、`P6` で conformance basis が整っても、日常運用に落とし込まないと C++ 優遇は再発する。
+- `P5` の `support_matrix_handoff` と `support_state_order` を seed にしないと、matrix 側で別 vocabulary を持ち込みやすい。
 - 現在の support 情報は backend 別ページや個別 note に散っており、feature 横断での比較が弱い。
 - merge/review 時に parity をチェックする手順が制度化されていないため、「C++ は通るが他 backend は未整理」という変更が入りやすい。
 - したがって最後に、matrix・rollout 順・受け入れ条件・docs の定常運用を固定する必要がある。
@@ -37,3 +38,4 @@
 
 - 2026-03-12: parity の制度運用は contract と conformance の後でなければ空文化しやすいため `P7` に置く。
 - 2026-03-12: backend parity は「全 backend を同時に実装する」ではなく、「support state を可視化し、未対応は fail-closed に保つ」方針で進める。
+- 2026-03-12: `P7` は `backend_feature_contract_inventory.build_feature_contract_handoff_manifest()["support_matrix_handoff"]` と `support_state_order` を matrix row/state seed として使う。

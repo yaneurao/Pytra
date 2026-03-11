@@ -9,6 +9,7 @@ Purpose:
 
 Background:
 - Even with `P5` contract work and `P6` conformance groundwork, C++-first drift will return unless the workflow itself changes.
+- If `P7` does not consume the `support_matrix_handoff` and `support_state_order` seed from `P5`, the matrix drifts into a separate feature/state vocabulary.
 - Current support information is spread across backend-specific pages and notes, so feature-level cross-backend comparison is weak.
 - There is not yet a formal parity check in review/merge flow, so it is easy to land changes where C++ works and other backends remain undefined.
 - The final step is therefore to fix the matrix, rollout order, acceptance conditions, and documentation handoff as ongoing project policy.
@@ -37,3 +38,4 @@ Acceptance criteria:
 
 - 2026-03-12: The operationalization of parity is placed at `P7` because it should follow the contract and conformance layers instead of pretending to define them.
 - 2026-03-12: Backend parity means “make support states visible and keep unsupported lanes fail-closed,” not “implement every backend simultaneously.”
+- 2026-03-12: `P7` consumes `backend_feature_contract_inventory.build_feature_contract_handoff_manifest()["support_matrix_handoff"]` and `support_state_order` as the canonical matrix seed.
