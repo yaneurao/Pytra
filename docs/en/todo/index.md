@@ -32,5 +32,6 @@ Last updated: 2026-03-12
 ## Unfinished Tasks
 
 1. [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01] Fix a shared feature contract, backend support-state taxonomy, and fail-closed policy for syntax / builtins / `pytra.std.*` so C++ alone no longer defines completion. Context: [p5-backend-feature-parity-contract.md](../plans/p5-backend-feature-parity-contract.md)
+   Progress memo: `S1-01` fixes the representative feature inventory source of truth in `backend_feature_contract_inventory.py` and freezes the category set at `syntax` / `builtin` / `stdlib`.
 2. [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01] Design a shared conformance suite that validates parse / lowering / emit / runtime parity from the same feature fixtures across multiple backends. Context: [p6-backend-conformance-suite.md](../plans/p6-backend-conformance-suite.md)
 3. [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01] Define the feature × backend support matrix, rollout tiers, and review checklist needed to institutionalize backend parity in docs and tooling. Context: [p7-backend-parity-rollout-and-matrix.md](../plans/p7-backend-parity-rollout-and-matrix.md)

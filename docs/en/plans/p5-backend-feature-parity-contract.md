@@ -28,13 +28,44 @@ Acceptance criteria:
 
 ## Child tasks
 
-- [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S1-01] Inventory representative syntax / builtin / `pytra.std.*` features by feature ID and fix the category and naming rules.
+- [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S1-01] Inventory representative syntax / builtin / `pytra.std.*` features by feature ID and fix the category and naming rules.
 - [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S1-02] Fix backend support-state categories (`supported` / `fail_closed` / `not_started` / `experimental`) and the conditions for each.
 - [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-01] Define fail-closed policy and diagnostic categories for unsupported backend lanes and forbid silent fallback.
 - [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-02] Define the acceptance rule for new features so the project does not treat “works in C++ only” as completion.
 - [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S3-01] Prepare the representative inventory document/tooling handoff so later conformance-suite and support-matrix work can attach cleanly.
 
+## S1-01 Representative Inventory
+
+- source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py)
+- category rule:
+  - `syntax`: `syntax.<area>.<feature>`
+  - `builtin`: `builtin.<domain>.<feature>`
+  - `stdlib`: `stdlib.<module>.<feature>`
+- The representative inventory is not an exhaustive catalog; it is the fixed representative feature set that later conformance and support-matrix work will attach to.
+- `syntax` representative:
+  - `syntax.assign.tuple_destructure`
+  - `syntax.expr.lambda`
+  - `syntax.expr.list_comprehension`
+  - `syntax.control.for_range`
+  - `syntax.control.try_raise`
+  - `syntax.oop.virtual_dispatch`
+- `builtin` representative:
+  - `builtin.iter.range`
+  - `builtin.iter.enumerate`
+  - `builtin.iter.zip`
+  - `builtin.type.isinstance`
+  - `builtin.bit.invert_and_mask`
+- `stdlib` representative:
+  - `stdlib.json.loads_dumps`
+  - `stdlib.pathlib.path_ops`
+  - `stdlib.enum.enum_and_intflag`
+  - `stdlib.argparse.parse_args`
+  - `stdlib.math.imported_symbols`
+  - `stdlib.re.sub`
+
 ## Decision log
 
 - 2026-03-12: Backend parity matters, but it should not block the near-term `P0-P4` `py_runtime.h` shrink work, so it is tracked as `P5`.
 - 2026-03-12: The parity source of truth is the feature contract / EAST3 contract / `pytra.std.*` contract, not the C++ implementation.
+- 2026-03-12: `S1-01` fixes the representative inventory source of truth in [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py) and freezes the category set at `syntax` / `builtin` / `stdlib`.
