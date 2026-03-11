@@ -36,9 +36,9 @@
 文脈: [docs/ja/plans/p1-east23-lowering-decomposition.md](../plans/p1-east23-lowering-decomposition.md)
 
 1. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01] `east2_to_east3_lowering.py` を cluster 単位で分割し、main file を orchestration 中心に整理する。
-2. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-01] `type_summary` / `type_id_predicate` / `nominal_adt_meta` / `call_metadata` / `stmt_orchestration` の split boundary を固定する。
-3. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-02] 進捗メモを bundle 単位へ圧縮する運用を固定する。
-4. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-01] `type summary` / `nominal decl summary` / `json receiver contract` cluster を dedicated module へ分割する。
+2. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-01] `type_summary` / `type_id_predicate` / `nominal_adt_meta` / `call_metadata` / `stmt_orchestration` の split boundary を固定する。
+3. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-02] 進捗メモを bundle 単位へ圧縮する運用を固定する。
+4. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-01] `type summary` / `nominal decl summary` / `json receiver contract` cluster を dedicated module へ分割する。
 5. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] `type_id predicate` / `isinstance` / `issubclass` lowering cluster を dedicated module へ分割する。
 6. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-03] `nominal ADT ctor/projection/match metadata` cluster を dedicated module へ分割する。
 7. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S3-01] source-contract と representative regression を split 後の layout へ追従させる。
