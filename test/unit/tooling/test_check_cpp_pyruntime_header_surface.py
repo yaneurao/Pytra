@@ -36,6 +36,33 @@ class CheckCppPyRuntimeHeaderSurfaceTest(unittest.TestCase):
         snippets = surface_mod.EXPECTED_BUCKETS["shared_type_id_compat"]
         self.assertEqual(snippets, set())
 
+    def test_handoff_issues_are_empty(self) -> None:
+        self.assertEqual(surface_mod._collect_handoff_issues(), [])
+
+    def test_handoff_bucket_partition_is_stable(self) -> None:
+        self.assertEqual(
+            surface_mod.HANDOFF_BUCKETS,
+            {
+                "removable_after_emitter_shrink": {
+                    "typed_collection_compat",
+                    "shared_type_id_compat",
+                },
+                "followup_residual_caller_owned": {
+                    "object_bridge_mutation",
+                },
+            },
+        )
+
+    def test_followup_residual_caller_handoff_is_documented(self) -> None:
+        self.assertEqual(
+            surface_mod.FOLLOWUP_TASK_ID,
+            "P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01",
+        )
+        self.assertEqual(
+            surface_mod.FOLLOWUP_PLAN_PATH,
+            "docs/ja/plans/p4-crossruntime-pyruntime-residual-caller-shrink.md",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

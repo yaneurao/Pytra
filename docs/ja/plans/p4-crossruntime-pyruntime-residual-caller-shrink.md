@@ -33,7 +33,14 @@
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-03] Rust/C# runtime builtins の shared seam 依存を inventory 化し、cross-runtime residual contract の最終形を固定する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S3-01] residual caller inventory tool / source guard / smoke を整備し、`py_runtime.h` shrink handoff 条件を次段 task へ接続する。
 
+## Emitter Handoff Snapshot
+
+- 前段 [20260312-p4-crossruntime-pyruntime-emitter-shrink.md](./archive/20260312-p4-crossruntime-pyruntime-emitter-shrink.md) で emitter 起因の `typed_collection_compat` と `shared_type_id_compat` は空になった。
+- この task が引き取る header residual bucket は `object_bridge_mutation` のみで、header surface 正本は [check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/check_cpp_pyruntime_header_surface.py) にある。
+- したがって本 task の inventory は `object_bridge_mutation` を維持している non-emitter caller に集中し、emitter 再流入の有無は前段 task の inventory tool が引き続き監視する。
+
 ## 決定ログ
 
 - 2026-03-12: emitter 側整理だけでは `py_runtime.h` の residual surface を十分に削れないため、native/generated/runtime builtins を対象にした caller 観点の P4 を追加した。
 - 2026-03-12: この task は header 削除そのものではなく residual caller contract の棚卸しと thin seam 化が目的なので、header shrink 本体より前段の `P4` に置く。
+- 2026-03-12: emitter shrink task からの handoff は `typed_collection_compat = empty`, `shared_type_id_compat = empty`, `object_bridge_mutation = residual caller owned` で固定し、本 task は header surface 上の最後の non-emitter blocker として `object_bridge_mutation` caller inventory を引き取る。
