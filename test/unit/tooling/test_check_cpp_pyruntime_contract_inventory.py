@@ -33,11 +33,9 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
             shared,
         )
 
-    def test_typed_lane_removable_covers_cpp_emitter_mutation_helpers(self) -> None:
-        typed = inventory_mod.EXPECTED_BUCKETS["typed_lane_removable"]
-        self.assertIn(("py_append", "src/backends/cpp/emitter/call.py"), typed)
-        self.assertIn(("py_set_at", "src/backends/cpp/emitter/stmt.py"), typed)
-        self.assertIn(("py_pop", "src/backends/cpp/emitter/cpp_emitter.py"), typed)
+    def test_typed_lane_removable_bucket_can_reach_zero_after_upstreaming(self) -> None:
+        self.assertEqual(inventory_mod.EXPECTED_BUCKETS["typed_lane_removable"], set())
+        self.assertIn("typed_lane_removable", inventory_mod.EMPTY_BUCKETS_ALLOWED)
 
     def test_object_bridge_required_bucket_stays_generated_runtime_only(self) -> None:
         object_bridge = inventory_mod.EXPECTED_BUCKETS["object_bridge_required"]

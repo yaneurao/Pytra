@@ -936,6 +936,42 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(node), "xs.append(make_object(n))")
 
+    def test_render_expr_pyobj_runtime_list_append_uses_low_level_bridge(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.cpp_list_model = "pyobj"
+        node = {
+            "kind": "ListAppend",
+            "owner": {"kind": "Name", "id": "xs", "resolved_type": "Any"},
+            "value": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+            "resolved_type": "None",
+        }
+        self.assertEqual(
+            emitter.render_expr(node),
+            'py_list_append_mut(obj_to_list_ref_or_raise(xs, "py_append"), make_object(n))',
+        )
+
+    def test_emit_assign_pyobj_runtime_list_store_uses_low_level_bridge(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.cpp_list_model = "pyobj"
+        stmt = {
+            "kind": "Assign",
+            "targets": [
+                {
+                    "kind": "Subscript",
+                    "value": {"kind": "Name", "id": "xs", "resolved_type": "Any"},
+                    "slice": {"kind": "Name", "id": "i", "resolved_type": "int64"},
+                    "ctx": "Store",
+                    "resolved_type": "unknown",
+                }
+            ],
+            "value": {"kind": "Name", "id": "v", "resolved_type": "int64"},
+        }
+        emitter.emit_stmt(stmt)
+        self.assertIn(
+            'py_list_set_at_mut(obj_to_list_ref_or_raise(xs, "py_set_at"), i, make_object(v));',
+            "\n".join(emitter.lines),
+        )
+
     def test_render_expr_dispatch_routes_collection_literal_handlers(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         emitter._render_expr_kind_list = lambda _expr, _expr_d: "LIST_HANDLER"  # type: ignore[method-assign]

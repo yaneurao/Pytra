@@ -11,6 +11,10 @@ from toolchain.compiler.transpile_cli import (
 class CppCallEmitter:
     """Runtime-call / import / cast-related helpers split out from CppEmitter."""
 
+    def _render_pyobj_runtime_list_bridge_ref(self, owner_expr: str, ctx: str) -> str:
+        """Render the low-level object-list bridge used by pyobj runtime list fallbacks."""
+        return f'obj_to_list_ref_or_raise({owner_expr}, "{ctx}")'
+
     def _render_json_decode_call(self, expr_d: dict[str, Any]) -> str:
         lowered_kind = self.any_dict_get_str(expr_d, "lowered_kind", "")
         if lowered_kind != "JsonDecodeCall":
@@ -565,7 +569,8 @@ class CppCallEmitter:
                     a0 = self.render_expr(self._build_box_expr_node(arg0_node))
                 else:
                     a0 = f"make_object({a0})"
-            return f"py_append({owner_expr}, {a0})"
+            list_ref_expr = self._render_pyobj_runtime_list_bridge_ref(owner_expr, "py_append")
+            return f"py_list_append_mut({list_ref_expr}, {a0})"
         return None
 
     def _is_super_call_expr(self, node: Any) -> bool:

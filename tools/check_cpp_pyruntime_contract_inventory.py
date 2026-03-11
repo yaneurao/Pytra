@@ -29,16 +29,7 @@ EXCLUDED_PATHS = {
 }
 
 EXPECTED_BUCKETS = {
-    "typed_lane_removable": {
-        ("py_append", "src/backends/cpp/emitter/call.py"),
-        ("py_append", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_extend", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_pop", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_clear", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_reverse", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_sort", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_set_at", "src/backends/cpp/emitter/stmt.py"),
-    },
+    "typed_lane_removable": set(),
     "object_bridge_required": {
         ("py_append", "src/runtime/cpp/generated/built_in/iter_ops.cpp"),
         ("py_append", "src/runtime/cpp/generated/std/json.cpp"),
@@ -75,6 +66,8 @@ EXPECTED_BUCKETS = {
         ("py_is_subtype", "src/runtime/rs/pytra-core/built_in/py_runtime.rs"),
     },
 }
+
+EMPTY_BUCKETS_ALLOWED = {"typed_lane_removable"}
 
 
 def _iter_target_files() -> list[Path]:
@@ -128,7 +121,7 @@ def _collect_inventory_issues() -> list[str]:
     for symbol, rel in sorted(observed - expected):
         issues.append(f"unclassified py_runtime contract caller: {symbol} @ {rel}")
     for bucket_name, entries in EXPECTED_BUCKETS.items():
-        if len(entries) == 0:
+        if len(entries) == 0 and bucket_name not in EMPTY_BUCKETS_ALLOWED:
             issues.append(f"bucket has no entries: {bucket_name}")
     return issues
 

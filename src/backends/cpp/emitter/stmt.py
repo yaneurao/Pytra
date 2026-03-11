@@ -587,7 +587,8 @@ class CppStatementEmitter:
                     idx_expr = f"py_to<int64>({idx_expr})"
                 value_expr = self.render_expr(stmt.get("value"))
                 boxed_value = self._box_expr_for_any(value_expr, stmt.get("value"))
-                self.emit(f"py_set_at({owner_expr}, {idx_expr}, {boxed_value});")
+                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref(owner_expr, "py_set_at")
+                self.emit(f"py_list_set_at_mut({list_ref_expr}, {idx_expr}, {boxed_value});")
                 return
         if self._node_kind_from_dict(target) == "Tuple":
             lhs_elems = self.any_dict_get_list(target, "elements")
