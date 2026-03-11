@@ -55,7 +55,7 @@ Pytra transpiles type-annotated Python code into multiple languages. The canonic
   - `from . import x`
   - `from .m import *`
   - Resolution is based on static module normalization against the importing file path and the entry root; runtime `__package__` is not consulted.
-  - A relative import that escapes above the entry root fails closed as `input_invalid(kind=unsupported_import_form)`.
+  - A relative import that escapes above the entry root fails closed as `input_invalid(kind=relative_import_escape)`.
   - If the normalized module does not exist, the diagnostic is `input_invalid(kind=missing_module)`.
   - Illegal Python syntax such as `import .m` is outside the supported surface.
 - In transpilation target code, direct imports of Python standard modules (`json`, `pathlib`, `sys`, `os`, `glob`, `argparse`, `re`, etc.) are prohibited.

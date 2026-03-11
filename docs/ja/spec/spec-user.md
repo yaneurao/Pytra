@@ -59,7 +59,7 @@ Pytra は、型注釈付き Python コードを複数言語へ変換するトラ
   - `from . import x`
   - `from .m import *`
   - 解決基準は importing file path と entry root に対する static な module 正規化であり、runtime の `__package__` は見ません。
-  - entry root より上へ出る relative import は `input_invalid(kind=unsupported_import_form)` で fail-closed です。
+  - entry root より上へ出る relative import は `input_invalid(kind=relative_import_escape)` で fail-closed です。
   - 正規化後 module が存在しない場合は `input_invalid(kind=missing_module)` です。
   - Python 非合法構文である `import .m` はサポート対象外です。
 - 文末セミコロン（`;`）はサポート対象外です（self_hosted parser では入力エラーとして扱います）。

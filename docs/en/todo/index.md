@@ -30,8 +30,3 @@ Last updated: 2026-03-12
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
-
-1. [ ] [ID: P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01] Realign diagnostics to the already-supported relative-import behavior. Context: [p0-relative-import-diagnostic-realign.md](../plans/p0-relative-import-diagnostic-realign.md)
-- `P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S1-01` 2026-03-12: Lock the contract split between supported relative imports and root-escape diagnostics.
-- `P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S2-01` 2026-03-12: Switch root-escape diagnostics to `relative_import_escape` and align frontend/import-graph/focused tests.
-- `P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S2-02` 2026-03-12: Make `relative_import_escape` canonical in the structured import envelope and leave the old wording only as a fallback.

@@ -30,8 +30,3 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-
-1. [ ] [ID: P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01] relative import 実装済み状態に診断 contract を揃える。文脈: [p0-relative-import-diagnostic-realign.md](../plans/p0-relative-import-diagnostic-realign.md)
-- `P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S1-01` 2026-03-12: supported relative import と root escape 診断の契約を切り分けて固定する。
-- `P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S2-01` 2026-03-12: root escape を `relative_import_escape` へ切り替え、frontend/import-graph/focused test を揃える。
-- `P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S2-02` 2026-03-12: structured import envelope も `relative_import_escape` を canonical に揃え、legacy wording は fallback に閉じる。

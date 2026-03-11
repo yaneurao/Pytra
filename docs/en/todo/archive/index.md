@@ -15,6 +15,8 @@ Last updated: 2026-03-12
 
 ## Completed Plan Archive
 
+- [2026-03-12 / P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01](../plans/archive/20260312-p0-relative-import-diagnostic-realign.md)
+
 - [2026-03-12 / P0-CPP-PYRUNTIME-FINAL-SHRINK-01](../plans/archive/20260312-p0-cpp-pyruntime-final-shrink.md)
 - [2026-03-12 / P7-BACKEND-PARITY-ROLLOUT-MATRIX-01](../plans/archive/20260312-p7-backend-parity-rollout-and-matrix.md)
 - [2026-03-12 / P6-BACKEND-CONFORMANCE-SUITE-01](../plans/archive/20260312-p6-backend-conformance-suite.md)
@@ -90,7 +92,7 @@ Last updated: 2026-03-12
 
 ## Date Links
 
-- [2026-03-12](20260312.md) (10 sections)
+- [2026-03-12](20260312.md) (11 sections)
 - [2026-03-11](20260311.md) (25 sections)
 - [2026-03-09](20260309.md) (2 sections)
 - [2026-03-08](20260308.md) (8 sections)

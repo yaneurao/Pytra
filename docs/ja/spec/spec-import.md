@@ -38,7 +38,7 @@
 - Python 非合法構文である `import .m` は受理しない。
 - parser は relative module text を raw のまま受理してよいが、frontend の module map 構築時に absolute `module_id` へ正規化しなければならない。
 - 正規化基準は importing file path と entry root から決まる static module layout であり、runtime の `__package__` / `__main__` は使わない。
-- root より上へ出る relative import は `input_invalid(kind=unsupported_import_form)` とし、detail には元の import 文字列を含める。
+- root より上へ出る relative import は `input_invalid(kind=relative_import_escape)` とし、detail には元の import 文字列を含める。
 - 正規化後 module が存在しない場合は absolute import と同じく `input_invalid(kind=missing_module)` とする。
 - relative import の `missing_symbol` / `duplicate_binding` / `unresolved_wildcard` は、正規化後 absolute module_id に対して既存 import contract のまま判定する。
 - frontend 後段では `ImportFrom.module` / `meta.import_bindings[].module_id` / `meta.import_symbols[*].module` / `meta.qualified_symbol_refs[*].module_id` を absolute module_id に揃える。
@@ -188,12 +188,12 @@ auto x = pytra_mod_foo__bar::add(1, 2);
 
 - import 関連の失敗は `input_invalid` に統一する。
 - detail 行に最低限次を含める。
-- `kind`: `missing_module | missing_symbol | duplicate_binding | reserved_conflict | unresolved_wildcard | unsupported_import_form`
+- `kind`: `missing_module | missing_symbol | duplicate_binding | reserved_conflict | unresolved_wildcard | relative_import_escape`
 - `file`: 入力ファイル
 - `import`: 元の import 文字列（再構築文字列で可）
 - 例:
 - `kind=missing_symbol file=app.py import=from foo import bar`
-- relative import の root escape は `kind=unsupported_import_form file=pkg/main.py import=from ...oops import f` のように報告する。
+- relative import の root escape は `kind=relative_import_escape file=pkg/main.py import=from ...oops import f` のように報告する。
 
 ### 8. 最小テストマトリクス（受け入れ条件）
 
@@ -203,7 +203,7 @@ auto x = pytra_mod_foo__bar::add(1, 2);
 - 同名 symbol が別モジュールに存在しても完全修飾で衝突しないこと
 - 異常系:
 - `from M import *`（受理。`__all__` 優先/公開名 fallback で展開し、解決不能は `kind=unresolved_wildcard` で fail-closed）
-- `from ...oops import x`（entry root escape は `kind=unsupported_import_form`）
+- `from ...oops import x`（entry root escape は `kind=relative_import_escape`）
 - 存在しないモジュール/シンボル
 - 同名 alias 重複
 - `--dump-deps` と通常変換で同じ依存解決結果になること
