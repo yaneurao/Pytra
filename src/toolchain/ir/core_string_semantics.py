@@ -5,6 +5,47 @@ from __future__ import annotations
 
 from typing import Any
 
+from toolchain.ir.core_parse_context import _SH_CLASS_BASE
+from toolchain.ir.core_parse_context import _SH_CLASS_METHOD_RETURNS
+from toolchain.ir.core_parse_context import _SH_FN_RETURNS
+
+
+def _sh_extract_adjacent_string_parts(
+    text: str,
+    line_no: int,
+    col_base: int,
+    name_types: dict[str, str],
+) -> list[tuple[str, int]] | None:
+    """トップレベルで `STR STR ...` のみで構成される式を、文字列トークン分割して返す。"""
+    from toolchain.ir.core import _ShExprParser
+
+    parser = _ShExprParser(
+        text,
+        line_no,
+        col_base,
+        dict(name_types),
+        _SH_FN_RETURNS,
+        _SH_CLASS_METHOD_RETURNS,
+        _SH_CLASS_BASE,
+    )
+    toks = parser._tokenize(text)
+    if len(toks) <= 1:
+        return None
+    if toks[-1].get("k") != "EOF":
+        return None
+    end = len(toks) - 1
+    start = 0
+    if end > 1 and toks[0].get("k") == "(" and toks[end - 1].get("k") == ")":
+        start = 1
+        end -= 1
+    inner = toks[start:end]
+    if len(inner) < 2:
+        return None
+    for tok in inner:
+        if tok.get("k") != "STR":
+            return None
+    return [(str(tok.get("v", "")), int(tok.get("s", 0)) + col_base) for tok in inner]
+
 
 def _sh_scan_string_token(
     text: str,

@@ -67,5 +67,6 @@ Last updated: 2026-03-11
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Consolidated the parse/import/runtime/template context cluster into `core_parse_context.py`, then moved the top-level `_SH_*` definitions in `core.py` to imports.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Added `core_parse_context.py` and moved the `_SH_FN_RETURNS/_SH_CLASS_METHOD_RETURNS/_SH_CLASS_BASE/_SH_TYPE_ALIASES/_sh_set_parse_context` cluster out of `core.py`.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Added `core_expr_parser_base.py` and moved the tokenize / token-cursor / span / parse expression-parser base cluster out of `core.py`.
+- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Moved the adjacent-string-literal helper into `core_string_semantics.py` and split the `if/elif/else tail` cluster into `core_stmt_if_semantics.py`.
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) Split `core.py` / `test_east_core.py` by responsibility so compiler-internal improvements can proceed in cluster-sized slices again.

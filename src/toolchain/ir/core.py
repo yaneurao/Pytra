@@ -175,8 +175,10 @@ from toolchain.ir.core_stmt_analysis import _sh_collect_yield_value_types
 from toolchain.ir.core_stmt_analysis import _sh_extract_leading_docstring
 from toolchain.ir.core_stmt_analysis import _sh_infer_return_type_for_untyped_def
 from toolchain.ir.core_stmt_analysis import _sh_make_generator_return_type
+from toolchain.ir.core_stmt_if_semantics import _sh_parse_if_tail
 from toolchain.ir.core_string_semantics import _sh_append_fstring_literal
 from toolchain.ir.core_string_semantics import _sh_decode_py_string_body
+from toolchain.ir.core_string_semantics import _sh_extract_adjacent_string_parts
 from toolchain.ir.core_stmt_text_semantics import _sh_bind_comp_target_types
 from toolchain.ir.core_stmt_text_semantics import _sh_collect_indented_block
 from toolchain.ir.core_stmt_text_semantics import _sh_find_top_char
@@ -229,124 +231,6 @@ INT_TYPES = {
     "uint64",
 }
 FLOAT_TYPES = {"float32", "float64"}
-
-
-def _sh_extract_adjacent_string_parts(
-    text: str,
-    line_no: int,
-    col_base: int,
-    name_types: dict[str, str],
-) -> list[tuple[str, int]] | None:
-    """トップレベルで `STR STR ...` のみで構成される式を、文字列トークン分割して返す。
-
-    タプルを構成する `("a", "b")` のようなケースは除外し、括弧付きでも
-    外側が1組の `()` で全体を包む形式に対応する。
-    """
-    parser = _ShExprParser(
-        text,
-        line_no,
-        col_base,
-        dict(name_types),
-        _SH_FN_RETURNS,
-        _SH_CLASS_METHOD_RETURNS,
-        _SH_CLASS_BASE,
-    )
-    toks = parser._tokenize(text)
-    if len(toks) <= 1:
-        return None
-    if toks[-1].get("k") != "EOF":
-        return None
-    end = len(toks) - 1
-    start = 0
-    if end > 1 and toks[0].get("k") == "(" and toks[end - 1].get("k") == ")":
-        start = 1
-        end -= 1
-    inner = toks[start:end]
-    if len(inner) == 0:
-        return None
-    for tok in inner:
-        if tok.get("k") != "STR":
-            return None
-    if len(inner) < 2:
-        return None
-    return [(str(tok.get("v", "")), int(tok.get("s", 0)) + col_base) for tok in inner]
-
-
-def _sh_parse_if_tail(
-    *,
-    start_idx: int,
-    parent_indent: int,
-    body_lines: list[tuple[int, str]],
-    name_types: dict[str, str],
-    scope_label: str,
-) -> tuple[list[dict[str, Any]], int]:
-    """if/elif/else 連鎖の後続ブロックを再帰的に解析する。"""
-    if start_idx >= len(body_lines):
-        return [], start_idx
-    idx = start_idx
-    while idx < len(body_lines):
-        t_no, t_ln = body_lines[idx]
-        t_indent = len(t_ln) - len(t_ln.lstrip(" "))
-        if t_indent != parent_indent:
-            return [], idx
-        t_s = _sh_strip_inline_comment(t_ln.strip())
-        _sh_raise_if_trailing_stmt_terminator(
-            t_s,
-            line_no=t_no,
-            line_text=t_ln,
-            make_east_build_error=_make_east_build_error,
-            make_span=_sh_span,
-        )
-        if t_s == "":
-            idx += 1
-            continue
-        break
-    if idx >= len(body_lines):
-        return [], idx
-    t_no, t_ln = body_lines[idx]
-    t_indent = len(t_ln) - len(t_ln.lstrip(" "))
-    t_s = _sh_strip_inline_comment(t_ln.strip())
-    if t_indent != parent_indent:
-        return [], idx
-    if t_s == "else:":
-        else_block, k2 = _sh_collect_indented_block(body_lines, idx + 1, parent_indent)
-        if len(else_block) == 0:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"else body is missing in '{scope_label}'",
-                source_span=_sh_span(t_no, 0, len(t_ln)),
-                hint="Add indented else-body.",
-            )
-        return _sh_parse_stmt_block(else_block, name_types=dict(name_types), scope_label=scope_label), k2
-    if t_s.startswith("elif ") and t_s.endswith(":"):
-        cond_txt2 = t_s[len("elif ") : -1].strip()
-        cond_col2 = t_ln.find(cond_txt2)
-        cond_expr2 = _sh_parse_expr_lowered(cond_txt2, ln_no=t_no, col=cond_col2, name_types=dict(name_types))
-        elif_block, k2 = _sh_collect_indented_block(body_lines, idx + 1, parent_indent)
-        if len(elif_block) == 0:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"elif body is missing in '{scope_label}'",
-                source_span=_sh_span(t_no, 0, len(t_ln)),
-                hint="Add indented elif-body.",
-            )
-        nested_orelse, k3 = _sh_parse_if_tail(
-            start_idx=k2,
-            parent_indent=parent_indent,
-            body_lines=body_lines,
-            name_types=dict(name_types),
-            scope_label=scope_label,
-        )
-        return [
-            _sh_make_if_stmt(
-                _sh_block_end_span(body_lines, t_no, t_ln.find("elif "), len(t_ln), k3),
-                cond_expr2,
-                _sh_parse_stmt_block(elif_block, name_types=dict(name_types), scope_label=scope_label),
-                orelse=nested_orelse,
-            )
-        ], k3
-    return [], idx
-
 
 class _ShExprParser(
     _ShExprParserBaseMixin,
@@ -3111,6 +2995,15 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 body_lines=body_lines,
                 name_types=dict(name_types),
                 scope_label=scope_label,
+                strip_inline_comment=_sh_strip_inline_comment,
+                raise_if_trailing_stmt_terminator=_sh_raise_if_trailing_stmt_terminator,
+                make_east_build_error=_make_east_build_error,
+                make_span=_sh_span,
+                collect_indented_block=_sh_collect_indented_block,
+                parse_expr_lowered=_sh_parse_expr_lowered,
+                parse_stmt_block=_sh_parse_stmt_block,
+                make_if_stmt=_sh_make_if_stmt,
+                block_end_span=_sh_block_end_span,
             )
             pending_blank_count = _sh_push_stmt_with_trivia(
                 stmts,
@@ -5098,6 +4991,15 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     body_lines=top_merged_lines,
                     name_types={},
                     scope_label="module",
+                    strip_inline_comment=_sh_strip_inline_comment,
+                    raise_if_trailing_stmt_terminator=_sh_raise_if_trailing_stmt_terminator,
+                    make_east_build_error=_make_east_build_error,
+                    make_span=_sh_span,
+                    collect_indented_block=_sh_collect_indented_block,
+                    parse_expr_lowered=_sh_parse_expr_lowered,
+                    parse_stmt_block=_sh_parse_stmt_block,
+                    make_if_stmt=_sh_make_if_stmt,
+                    block_end_span=_sh_block_end_span,
                 )
                 stmt_chunk = top_merged_lines[cur_idx:j_idx]
                 parsed_items = _sh_parse_stmt_block(stmt_chunk, name_types={}, scope_label="module")

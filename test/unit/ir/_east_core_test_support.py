@@ -27,6 +27,7 @@ CORE_IMPORT_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_im
 CORE_IMPORT_MODULE_BUILDERS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_import_module_builders.py"
 CORE_PARSE_CONTEXT_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_parse_context.py"
 CORE_STMT_ANALYSIS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_stmt_analysis.py"
+CORE_STMT_IF_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_stmt_if_semantics.py"
 CORE_STRING_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_string_semantics.py"
 CORE_STMT_TEXT_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_stmt_text_semantics.py"
 CORE_TEXT_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_text_semantics.py"

@@ -6,6 +6,7 @@ from __future__ import annotations
 from typing import Any
 
 from toolchain.ir.core_ast_builders import _sh_make_comp_generator
+from toolchain.ir.core_ast_builders import _sh_make_keyword_arg
 from toolchain.ir.core_ast_builders import _sh_make_list_comp_expr
 from toolchain.ir.core_builder_base import _sh_make_name_expr
 from toolchain.ir.core_builder_base import _sh_make_tuple_expr

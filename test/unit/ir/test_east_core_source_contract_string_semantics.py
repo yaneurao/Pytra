@@ -23,12 +23,15 @@ class EastCoreSourceContractStringSemanticsTest(unittest.TestCase):
 
         self.assertIn("from toolchain.ir.core_string_semantics import _sh_append_fstring_literal", core_text)
         self.assertIn("from toolchain.ir.core_string_semantics import _sh_decode_py_string_body", core_text)
+        self.assertIn("from toolchain.ir.core_string_semantics import _sh_extract_adjacent_string_parts", core_text)
         self.assertIn("from toolchain.ir.core_string_semantics import _sh_scan_string_token", parser_base_text)
 
+        self.assertIn("def _sh_extract_adjacent_string_parts(", helper_text)
         self.assertIn("def _sh_scan_string_token(", helper_text)
         self.assertIn("def _sh_decode_py_string_body(", helper_text)
         self.assertIn("def _sh_append_fstring_literal(", helper_text)
 
+        self.assertNotIn("def _sh_extract_adjacent_string_parts(", core_text)
         self.assertNotIn("def _sh_scan_string_token(", core_text)
         self.assertNotIn("def _sh_decode_py_string_body(", core_text)
         self.assertNotIn("def _sh_append_fstring_literal(", core_text)
@@ -47,6 +50,8 @@ class EastCoreSourceContractStringSemanticsTest(unittest.TestCase):
 
         self.assertIn("make_east_build_error: Any", helper_text)
         self.assertIn("make_span: Any", helper_text)
+        self.assertIn("from toolchain.ir.core import _ShExprParser", helper_text)
+        self.assertIn("parser = _ShExprParser(", helper_text)
         self.assertIn('lit = segment.replace("{{", "{").replace("}}", "}")', helper_text)
         self.assertIn("lit = _sh_decode_py_string_body(lit, raw_mode)", helper_text)
 
