@@ -25,7 +25,7 @@ PYTRA_TEST_COMPILE_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_COMPILE_TIMEOU
 PYTRA_TEST_RUN_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_RUN_TIMEOUT_SEC", "2"))
 PYTRA_TEST_TOOL_TIMEOUT_SEC = float(os.environ.get("PYTRA_TEST_TOOL_TIMEOUT_SEC", "120"))
 
-from src.toolchain.compiler.transpile_cli import append_unique_non_empty, assign_targets, check_guard_limit, collect_import_modules, collect_reserved_import_conflicts, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, load_east_document as load_east_document_helper, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, build_module_symbol_index as build_module_symbol_index_helper, build_module_east_map_from_analysis as build_module_east_map_from_analysis_helper, build_module_type_schema as build_module_type_schema_helper, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_parse_stage_guards, resolve_guard_limits, parse_guard_limit_or_raise, guard_profile_base_limits, parse_user_error, print_user_error as print_user_error_helper, path_key_for_graph, path_parent_text, python_module_exists_under, raise_guard_limit_exceeded, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name as resolve_module_name_helper, resolve_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, finalize_import_graph_analysis, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
+from src.toolchain.compiler.transpile_cli import append_unique_non_empty, assign_targets, check_guard_limit, collect_import_modules, collect_reserved_import_conflicts, collect_store_names_from_target, collect_symbols_from_stmt, collect_symbols_from_stmt_list, count_text_lines, dict_any_get, dict_any_get_str, dict_any_get_list, dict_any_get_dict, dict_any_get_dict_list, dict_any_get_str_list, dict_any_kind, dict_str_get, dump_codegen_options_text, dump_deps_text, extract_function_arg_types_from_python_source, extract_function_signatures_from_python_source, first_import_detail_line, format_graph_list_section, format_import_graph_report, graph_cycle_dfs, inject_after_includes_block, is_known_non_user_import, is_pytra_module_name, join_str_list, local_binding_name, load_east_document as load_east_document_helper, looks_like_runtime_function_name, make_user_error, meta_import_bindings, meta_qualified_symbol_refs, mkdirs_for_cli, module_analyze_metrics, module_id_from_east_for_graph, module_name_from_path_for_graph, module_parse_metrics, module_export_table, build_module_symbol_index as build_module_symbol_index_helper, build_module_east_map_from_analysis as build_module_east_map_from_analysis_helper, build_module_type_schema as build_module_type_schema_helper, module_rel_label, name_target_id, normalize_param_annotation, parse_py2cpp_argv, check_analyze_stage_guards, check_parse_stage_guards, resolve_guard_limits, parse_guard_limit_or_raise, guard_profile_base_limits, parse_user_error, print_user_error as print_user_error_helper, path_key_for_graph, path_parent_text, python_module_exists_under, raise_guard_limit_exceeded, rel_disp_for_graph, replace_first, resolve_codegen_options, resolve_module_name as resolve_module_name_helper, resolve_module_name_for_graph, resolve_relative_module_name_for_graph, resolve_user_module_path_for_graph, sanitize_module_label, select_guard_module_map, set_import_module_binding, set_import_symbol_binding, set_import_symbol_binding_and_module_set, sort_str_list_copy, collect_user_module_files_for_graph, finalize_import_graph_analysis, split_graph_issue_entry, split_infix_once, split_top_level_csv, split_top_level_union, split_type_args, split_ws_tokens, stmt_assigned_names, stmt_child_stmt_lists, stmt_list_parse_metrics, stmt_list_scope_depth, stmt_target_name, validate_from_import_symbols_or_raise, validate_import_graph_or_raise, write_text_file
 from src.backends.cpp.cli import (
     CppEmitter,
     _is_runtime_module_extern_only,
@@ -853,6 +853,27 @@ def sin(x: float) -> float:
                 resolve_module_name_for_graph("missing_mod", root, std_root, utils_root)["status"],
                 "missing",
             )
+
+    def test_resolve_relative_module_name_for_graph(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            pkg = root / "pkg"
+            sub = pkg / "sub"
+            pkg.mkdir(parents=True)
+            sub.mkdir(parents=True)
+            helper_py = pkg / "helper.py"
+            worker_py = sub / "worker.py"
+            helper_py.write_text("x: int = 1\n", encoding="utf-8")
+            worker_py.write_text("from ..helper import x\n", encoding="utf-8")
+            rel_ok = resolve_relative_module_name_for_graph("..helper", pkg, worker_py)
+            rel_missing = resolve_relative_module_name_for_graph(".missing", pkg, worker_py)
+            rel_escape = resolve_relative_module_name_for_graph("...oops", pkg, worker_py)
+        self.assertEqual(rel_ok["status"], "user")
+        self.assertEqual(rel_ok["module_id"], "helper")
+        self.assertTrue(str(rel_ok["path"]).endswith("helper.py"))
+        self.assertEqual(rel_missing["status"], "missing")
+        self.assertEqual(rel_missing["module_id"], "sub.missing")
+        self.assertEqual(rel_escape["status"], "relative")
 
     def test_graph_cycle_dfs_collects_cycle(self) -> None:
         graph_adj = {"a": ["b"], "b": ["a"]}
@@ -2223,8 +2244,43 @@ def f() -> int:
         self.assertIn("kind=import_cycle", proc.stderr)
         self.assertIn("main.py -> helper.py -> main.py", proc.stderr)
 
-    def test_cli_reports_input_invalid_for_relative_import(self) -> None:
+    def test_cli_accepts_relative_from_import_for_sibling_module(self) -> None:
         src_main = """from .helper import f
+
+def main() -> None:
+    print(f())
+"""
+        src_helper = """def f() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            out_dir = root / "out"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            proc = subprocess.run(
+                [
+                    "python3",
+                    "src/py2x.py",
+                    "--target",
+                    "cpp",
+                    str(main_py),
+                    "--multi-file",
+                    "--output-dir",
+                    str(out_dir),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            main_cpp_txt = (out_dir / "src" / "main.cpp").read_text(encoding="utf-8")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("pytra_mod_helper::f()", main_cpp_txt)
+
+    def test_cli_reports_input_invalid_for_relative_import_root_escape(self) -> None:
+        src_main = """from ..helper import f
 
 def main() -> None:
     print(f())
@@ -2243,7 +2299,94 @@ def main() -> None:
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=unsupported_import_form", proc.stderr)
-        self.assertIn("import=from .helper import ...", proc.stderr)
+        self.assertIn("import=from ..helper import ...", proc.stderr)
+
+    def test_cli_reports_input_invalid_for_missing_relative_import_module(self) -> None:
+        src_main = """from .helper import f
+
+def main() -> None:
+    print(f())
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text(src_main, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("[input_invalid]", proc.stderr)
+        self.assertIn("kind=missing_module", proc.stderr)
+        self.assertIn("file=main.py", proc.stderr)
+        self.assertIn("import=helper", proc.stderr)
+
+    def test_cli_resolves_relative_from_import_star_in_multi_file_mode(self) -> None:
+        src_main = """from .helper import *
+
+def main() -> None:
+    print(f())
+"""
+        src_helper = """def f() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            out_dir = root / "out"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            proc = subprocess.run(
+                [
+                    "python3",
+                    "src/py2x.py", "--target", "cpp",
+                    str(main_py),
+                    "--multi-file",
+                    "--output-dir",
+                    str(out_dir),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            main_cpp = out_dir / "src" / "main.cpp"
+            main_cpp_txt = main_cpp.read_text(encoding="utf-8")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("f()", main_cpp_txt)
+
+    def test_cli_reports_input_invalid_for_duplicate_relative_import_binding(self) -> None:
+        src_main = """from .a import x
+from .b import x
+
+def main() -> None:
+    print(x)
+"""
+        src_a = """x: int = 1
+"""
+        src_b = """x: int = 2
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            a_py = root / "a.py"
+            b_py = root / "b.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text(src_main, encoding="utf-8")
+            a_py.write_text(src_a, encoding="utf-8")
+            b_py.write_text(src_b, encoding="utf-8")
+            proc = subprocess.run(
+                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("[input_invalid]", proc.stderr)
+        self.assertIn("kind=duplicate_binding", proc.stderr)
 
     def test_cli_resolves_from_import_star_in_multi_file_mode(self) -> None:
         src_main = """from helper import *
@@ -2546,6 +2689,43 @@ def main() -> None:
         self.assertIn(str(main_py), mp)
         east = mp[str(main_py)]
         self.assertEqual(dict_any_get_str(dict_any_get_dict(east, "meta"), "module_id"), "pkg.main")
+
+    def test_build_module_east_map_from_analysis_normalizes_relative_import_metadata(self) -> None:
+        src_main = """from .helper import f
+
+def run() -> int:
+    return f()
+"""
+        src_helper = """def f() -> int:
+    return 1
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            main_py = root / "main.py"
+            helper_py = root / "helper.py"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            analysis: dict[str, object] = {
+                "edges": ["main.py -> helper.py"],
+                "missing_modules": [],
+                "relative_imports": [],
+                "reserved_conflicts": [],
+                "cycles": [],
+                "module_id_map": {str(main_py): "main", str(helper_py): "helper"},
+                "user_module_files": [str(main_py), str(helper_py)],
+            }
+            module_east_raw = {
+                str(main_py): load_east(main_py),
+                str(helper_py): load_east(helper_py),
+            }
+            mp = build_module_east_map_from_analysis_helper(main_py, analysis, module_east_raw)
+        main_east = mp[str(main_py)]
+        import_from = dict_any_get_dict_list(main_east, "body")[0]
+        self.assertEqual(dict_any_get_str(import_from, "module"), "helper")
+        import_bindings = meta_import_bindings(main_east)
+        self.assertEqual(import_bindings[0]["module_id"], "helper")
+        import_symbols = dict_any_get_dict(dict_any_get_dict(main_east, "meta"), "import_symbols")
+        self.assertEqual(dict_any_get_str(dict_any_get_dict(import_symbols, "f"), "module"), "helper")
 
     def test_build_module_symbol_index_contains_defs_and_import_aliases(self) -> None:
         src_main = """import helper as hp
