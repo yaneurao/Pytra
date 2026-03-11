@@ -31,7 +31,7 @@ Acceptance criteria:
 - [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S1-01] Fix the mapping rule between feature IDs and fixture paths, and classify representative syntax / builtin / `pytra.std.*` cases.
 - [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S2-01] Design how parse / EAST / EAST3 lowering / emit / runtime parity lanes connect into a shared harness.
 - [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S2-02] Define a backend-selectable conformance runner, starting with representative lanes such as C++ / Rust / C#.
-- [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S3-01] Fix the runtime parity strategy for representative `pytra.std.*` modules such as `json`, `pathlib`, `enum`, and `argparse`.
+- [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S3-01] Fix the runtime parity strategy for representative `pytra.std.*` modules such as `json`, `pathlib`, `enum`, and `argparse`.
 - [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S4-01] Define how conformance summaries flow into support matrices, docs, and tooling.
 
 ## S1-01 Feature-To-Fixture Seed
@@ -98,6 +98,28 @@ Acceptance criteria:
 - handoff rule:
   - the runner manifest fixes backend order / selectable lanes / lane entrypoints / smoke bindings, and `S3-01` plus `S4-01` consume only this manifest for runner-facing policy
 
+## S3-01 Stdlib Runtime Parity Strategy
+
+- source of truth:
+  - runtime strategy contract: [backend_conformance_runtime_parity_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_runtime_parity_contract.py)
+  - CLI/export seam: [export_backend_conformance_runtime_parity_manifest.py](/workspace/Pytra/tools/export_backend_conformance_runtime_parity_manifest.py)
+  - validation: [check_backend_conformance_runtime_parity_contract.py](/workspace/Pytra/tools/check_backend_conformance_runtime_parity_contract.py), [test_check_backend_conformance_runtime_parity_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_runtime_parity_contract.py)
+- representative module order:
+  - `json`, `pathlib`, `enum`, `argparse`, `math`, `re`
+- runtime strategy rule:
+  - every `fixture_class=pytra_std` runtime lane stays on `stdlib_module_runtime_case`
+  - case root stays `fixture`, runner lane stays `runtime`, and the entrypoint stays `tools/runtime_parity_check.py`
+  - compare unit stays `normalized_stdout_exitcode_artifact_digest` and backend order stays `cpp -> rs -> cs`
+- fixture binding rule:
+  - `json`: `test/fixtures/stdlib/json_extended.py`
+  - `pathlib`: `test/fixtures/stdlib/pathlib_extended.py`
+  - `enum`: `test/fixtures/stdlib/enum_extended.py`
+  - `argparse`: `test/fixtures/stdlib/argparse_extended.py`
+  - `math`: `test/fixtures/stdlib/pytra_std_import_math.py`
+  - `re`: `test/fixtures/stdlib/re_extended.py`
+- handoff rule:
+  - `S4-01` reads the representative stdlib runtime modules and compare unit only from this manifest.
+
 ## Decision log
 
 - 2026-03-12: The conformance suite follows the `P5` feature contract, so it is placed at `P6` instead of trying to build a matrix before the contract exists.
@@ -107,3 +129,4 @@ Acceptance criteria:
 - 2026-03-12: `S2-01` fixes the shared harness contract in `backend_conformance_harness_contract.py`, with backend-agnostic `parse/east/east3_lowering` lanes and backend-selectable `emit/runtime` lanes.
 - 2026-03-12: `S2-01` also adds `backend_conformance_inventory.build_backend_conformance_seed_manifest()` and `export_backend_conformance_seed_manifest.py` so the runner seed `lane_harness` / `fixture_lane_policy` stays fixed.
 - 2026-03-12: `S2-02` adds `backend_conformance_runner_contract.py` and `export_backend_conformance_runner_manifest.py`, fixing the representative backend order to `cpp -> rs -> cs`, the backend-selectable lanes to `emit/runtime`, and the per-backend smoke bindings in one runner manifest.
+- 2026-03-12: `S3-01` adds `backend_conformance_runtime_parity_contract.py` and `export_backend_conformance_runtime_parity_manifest.py`, fixing the `pytra_std` runtime lane as `stdlib_module_runtime_case` across `json/pathlib/enum/argparse/math/re`.

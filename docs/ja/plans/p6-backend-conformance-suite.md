@@ -31,7 +31,7 @@
 - [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S1-01] feature ID と fixture path の対応付け規則を決め、syntax / builtins / `pytra.std.*` representative case を分類する。
 - [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S2-01] parse / EAST / EAST3 lowering / emit / runtime parity の各 lane をどう共通 harness に結び付けるかを設計する。
 - [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S2-02] C++ / Rust / C# を first representative lane とする backend-selectable conformance runner の方針を決める。
-- [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S3-01] `pytra.std.*` representative module（例: `json`, `pathlib`, `enum`, `argparse`）の runtime parity strategy を固定する。
+- [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S3-01] `pytra.std.*` representative module（例: `json`, `pathlib`, `enum`, `argparse`）の runtime parity strategy を固定する。
 - [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S4-01] conformance 結果の要約を support matrix / docs / tooling へ handoff するルールを定める。
 
 ## S1-01 Feature-To-Fixture Seed
@@ -98,6 +98,28 @@
 - handoff rule:
   - runner manifest は backend order / selectable lanes / lane entrypoints / smoke binding を固定し、`S3-01` の stdlib runtime parity strategy と `S4-01` の summary handoff はこの manifest だけを見る。
 
+## S3-01 Stdlib Runtime Parity Strategy
+
+- source of truth:
+  - runtime strategy contract: [backend_conformance_runtime_parity_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_runtime_parity_contract.py)
+  - CLI/export seam: [export_backend_conformance_runtime_parity_manifest.py](/workspace/Pytra/tools/export_backend_conformance_runtime_parity_manifest.py)
+  - validation: [check_backend_conformance_runtime_parity_contract.py](/workspace/Pytra/tools/check_backend_conformance_runtime_parity_contract.py), [test_check_backend_conformance_runtime_parity_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_runtime_parity_contract.py)
+- representative module order:
+  - `json`, `pathlib`, `enum`, `argparse`, `math`, `re`
+- runtime strategy rule:
+  - `fixture_class=pytra_std` の runtime lane はすべて `stdlib_module_runtime_case` に固定する。
+  - case root は `fixture`、runner lane は `runtime`、entrypoint は `tools/runtime_parity_check.py` に固定する。
+  - compare unit は `normalized_stdout_exitcode_artifact_digest` を使い、backend order は `cpp -> rs -> cs` を使う。
+- fixture binding rule:
+  - `json`: `test/fixtures/stdlib/json_extended.py`
+  - `pathlib`: `test/fixtures/stdlib/pathlib_extended.py`
+  - `enum`: `test/fixtures/stdlib/enum_extended.py`
+  - `argparse`: `test/fixtures/stdlib/argparse_extended.py`
+  - `math`: `test/fixtures/stdlib/pytra_std_import_math.py`
+  - `re`: `test/fixtures/stdlib/re_extended.py`
+- handoff rule:
+  - `S4-01` の support matrix/docs/tooling handoff は stdlib runtime lane の representative module list と compare unit をこの manifest から読む。
+
 ## 決定ログ
 
 - 2026-03-12: conformance suite は `P5` の feature contract の次段として扱い、基準未整備のまま先に matrix 化しないため `P6` に置く。
@@ -107,3 +129,4 @@
 - 2026-03-12: `S2-01` では `parse/east/east3_lowering` を backend 非依存 lane、`emit/runtime` を backend-selectable lane とする shared harness contract を `backend_conformance_harness_contract.py` に固定した。
 - 2026-03-12: `S2-01` では `backend_conformance_inventory.build_backend_conformance_seed_manifest()` と `export_backend_conformance_seed_manifest.py` も追加し、runner seed の `lane_harness` / `fixture_lane_policy` を固定した。
 - 2026-03-12: `S2-02` では `backend_conformance_runner_contract.py` と `export_backend_conformance_runner_manifest.py` を追加し、representative backend order を `cpp -> rs -> cs`、backend-selectable lane を `emit/runtime`、per-backend smoke binding を runner manifest に固定した。
+- 2026-03-12: `S3-01` では `backend_conformance_runtime_parity_contract.py` と `export_backend_conformance_runtime_parity_manifest.py` を追加し、`pytra_std` runtime lane を `stdlib_module_runtime_case` として `json/pathlib/enum/argparse/math/re` へ固定した。
