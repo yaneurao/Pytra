@@ -29,7 +29,7 @@
 ## 子タスク
 
 - [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S1-01] feature ID と fixture path の対応付け規則を決め、syntax / builtins / `pytra.std.*` representative case を分類する。
-- [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S2-01] parse / EAST / EAST3 lowering / emit / runtime parity の各 lane をどう共通 harness に結び付けるかを設計する。
+- [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S2-01] parse / EAST / EAST3 lowering / emit / runtime parity の各 lane をどう共通 harness に結び付けるかを設計する。
 - [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S2-02] C++ / Rust / C# を first representative lane とする backend-selectable conformance runner の方針を決める。
 - [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S3-01] `pytra.std.*` representative module（例: `json`, `pathlib`, `enum`, `argparse`）の runtime parity strategy を固定する。
 - [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S4-01] conformance 結果の要約を support matrix / docs / tooling へ handoff するルールを定める。
@@ -51,9 +51,33 @@
   - `stdlib.*` feature は必ず `test/fixtures/stdlib/*.py` を representative fixture に使う。
   - `syntax.*` と `builtin.*` は同一 fixture の共有を許すが、共有は manifest export で追跡する。
 
+## S2-01 Shared Harness Lane Contract
+
+- source of truth:
+  - lane contract: [backend_conformance_harness_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_harness_contract.py)
+  - validation: [check_backend_conformance_harness_contract.py](/workspace/Pytra/tools/check_backend_conformance_harness_contract.py), [test_check_backend_conformance_harness_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_harness_contract.py)
+- stage order:
+  - `frontend`: `parse`
+  - `ir`: `east`, `east3_lowering`
+  - `backend`: `emit`
+  - `runtime`: `runtime`
+- backend selection rule:
+  - `parse/east/east3_lowering` は backend 非依存 lane として固定する。
+  - `emit/runtime` は backend-selectable lane として固定し、representative backend order は `cpp -> rs -> cs` を seed にする。
+- result contract:
+  - `parse`: `parse_result` / `parser_success_or_frontend_diagnostic`
+  - `east`: `east_document` / `east_document_or_frontend_diagnostic`
+  - `east3_lowering`: `east3_document` / `east3_document_or_lowering_diagnostic`
+  - `emit`: `module_artifact` / `artifact_or_fail_closed_backend_diagnostic`
+  - `runtime`: `runtime_execution` / `stdout_stderr_exit_or_fail_closed_backend_diagnostic`
+- fixture binding rule:
+  - representative fixture class order は `syntax`, `builtin`, `pytra_std` で固定する。
+  - すべての lane は同じ representative fixture inventory を共有し、lane ごとに別 vocabulary を持ち込まない。
+
 ## 決定ログ
 
 - 2026-03-12: conformance suite は `P5` の feature contract の次段として扱い、基準未整備のまま先に matrix 化しないため `P6` に置く。
 - 2026-03-12: 既存 smoke test を即時に捨てるのではなく、representative lane から共通 harness を段階導入する。
 - 2026-03-12: `P6` は `backend_feature_contract_inventory.build_feature_contract_handoff_manifest()["conformance_handoff"]` を representative fixture/lane/backend-order の seed として使う。
 - 2026-03-12: `S1-01` では `fixture_mapping` / `fixture_scope_order` / `fixture_bucket_order` を manifest に追加し、feature-to-fixture 共有規則を `build_feature_contract_handoff_manifest()` と CLI export seam に固定した。
+- 2026-03-12: `S2-01` では `parse/east/east3_lowering` を backend 非依存 lane、`emit/runtime` を backend-selectable lane とする shared harness contract を `backend_conformance_harness_contract.py` に固定した。

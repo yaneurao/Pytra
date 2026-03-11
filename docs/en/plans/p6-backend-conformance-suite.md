@@ -29,7 +29,7 @@ Acceptance criteria:
 ## Child tasks
 
 - [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S1-01] Fix the mapping rule between feature IDs and fixture paths, and classify representative syntax / builtin / `pytra.std.*` cases.
-- [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S2-01] Design how parse / EAST / EAST3 lowering / emit / runtime parity lanes connect into a shared harness.
+- [x] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S2-01] Design how parse / EAST / EAST3 lowering / emit / runtime parity lanes connect into a shared harness.
 - [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S2-02] Define a backend-selectable conformance runner, starting with representative lanes such as C++ / Rust / C#.
 - [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S3-01] Fix the runtime parity strategy for representative `pytra.std.*` modules such as `json`, `pathlib`, `enum`, and `argparse`.
 - [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01-S4-01] Define how conformance summaries flow into support matrices, docs, and tooling.
@@ -51,9 +51,33 @@ Acceptance criteria:
   - `stdlib.*` features must use `test/fixtures/stdlib/*.py` as their representative fixture.
   - `syntax.*` and `builtin.*` may share a fixture, but the sharing must be tracked through the manifest export.
 
+## S2-01 Shared Harness Lane Contract
+
+- source of truth:
+  - lane contract: [backend_conformance_harness_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_harness_contract.py)
+  - validation: [check_backend_conformance_harness_contract.py](/workspace/Pytra/tools/check_backend_conformance_harness_contract.py), [test_check_backend_conformance_harness_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_harness_contract.py)
+- stage order:
+  - `frontend`: `parse`
+  - `ir`: `east`, `east3_lowering`
+  - `backend`: `emit`
+  - `runtime`: `runtime`
+- backend selection rule:
+  - `parse/east/east3_lowering` stay backend-agnostic lanes.
+  - `emit/runtime` stay backend-selectable lanes, seeded by the representative backend order `cpp -> rs -> cs`.
+- result contract:
+  - `parse`: `parse_result` / `parser_success_or_frontend_diagnostic`
+  - `east`: `east_document` / `east_document_or_frontend_diagnostic`
+  - `east3_lowering`: `east3_document` / `east3_document_or_lowering_diagnostic`
+  - `emit`: `module_artifact` / `artifact_or_fail_closed_backend_diagnostic`
+  - `runtime`: `runtime_execution` / `stdout_stderr_exit_or_fail_closed_backend_diagnostic`
+- fixture binding rule:
+  - representative fixture class order is fixed to `syntax`, `builtin`, `pytra_std`
+  - every lane shares the same representative fixture inventory rather than inventing lane-local vocabularies
+
 ## Decision log
 
 - 2026-03-12: The conformance suite follows the `P5` feature contract, so it is placed at `P6` instead of trying to build a matrix before the contract exists.
 - 2026-03-12: Existing smoke tests are not dropped immediately; shared conformance is introduced incrementally through representative lanes.
 - 2026-03-12: `P6` consumes `backend_feature_contract_inventory.build_feature_contract_handoff_manifest()["conformance_handoff"]` as the canonical representative fixture/lane/backend-order seed.
 - 2026-03-12: `S1-01` adds `fixture_mapping` / `fixture_scope_order` / `fixture_bucket_order` to the manifest and fixes feature-to-fixture sharing through `build_feature_contract_handoff_manifest()` plus the CLI export seam.
+- 2026-03-12: `S2-01` fixes the shared harness contract in `backend_conformance_harness_contract.py`, with backend-agnostic `parse/east/east3_lowering` lanes and backend-selectable `emit/runtime` lanes.
