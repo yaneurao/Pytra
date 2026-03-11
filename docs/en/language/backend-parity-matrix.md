@@ -32,3 +32,4 @@ This page is the canonical publish target for feature × backend support-state r
 - The current relative-import coverage baseline is published canonically through [relative_import_backend_coverage.py](/workspace/Pytra/src/toolchain/compiler/relative_import_backend_coverage.py) and [check_relative_import_backend_coverage.py](/workspace/Pytra/tools/check_relative_import_backend_coverage.py).
 - Today only `cpp` is `build_run_locked`; `rs/cs/go/java/js/kotlin/lua/nim/php/ruby/scala/swift/ts` remain `not_locked`.
 - This section is a verification-coverage handoff, not a support claim. Non-C++ lanes do not become supported until representative smoke is added and locked.
+- The next rollout handoff lives in [p2-relative-import-noncpp-rollout.md](../plans/p2-relative-import-noncpp-rollout.md): first wave is `rs/cs` on `transpile_smoke`, while every non-C++ lane keeps `backend_specific_fail_closed`.

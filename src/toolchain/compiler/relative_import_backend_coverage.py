@@ -193,3 +193,32 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
         "notes": "Do not widen support claims before first-wave backends have locked representative smoke.",
     },
 ]
+
+
+RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, str]] = {
+    "todo_id": "P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01",
+    "plan_path_ja": "docs/ja/plans/p2-relative-import-noncpp-rollout.md",
+    "plan_path_en": "docs/en/plans/p2-relative-import-noncpp-rollout.md",
+    "publish_target_ja": "docs/ja/language/backend-parity-matrix.md",
+    "publish_target_en": "docs/en/language/backend-parity-matrix.md",
+    "first_wave": "rs/cs",
+    "next_verification_lane": "transpile_smoke",
+    "fail_closed_lane": "backend_specific_fail_closed",
+}
+
+
+RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
+    "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
+    "coverage_checker": "tools/check_relative_import_backend_coverage.py",
+    "backend_parity_docs": (
+        "docs/ja/language/backend-parity-matrix.md",
+        "docs/en/language/backend-parity-matrix.md",
+    ),
+    "next_rollout_plan": (
+        "docs/ja/plans/p2-relative-import-noncpp-rollout.md",
+        "docs/en/plans/p2-relative-import-noncpp-rollout.md",
+    ),
+    "first_wave_backends": ("rs", "cs"),
+    "next_verification_lane": "transpile_smoke",
+    "fail_closed_lane": "backend_specific_fail_closed",
+}

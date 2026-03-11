@@ -37,9 +37,15 @@ Decision log:
 - 2026-03-12: After the current coverage baseline was closed, the next step was defined as a staged non-C++ rollout plan rather than an immediate implementation push.
 - 2026-03-12: The rollout order was fixed as `first wave=rs/cs`, `second wave=go/java/js/kotlin/scala/swift/nim/ts`, and `long-tail=lua/php/ruby`.
 - 2026-03-12: The first wave was fixed to `rs/cs` with `transpile_smoke` as the next verification lane, while every non-C++ backend keeps `backend_specific_fail_closed` until support claims widen.
+- 2026-03-12: Handoff links were added from both the coverage inventory and the backend parity docs so the next rollout path is canonical.
+
+Handoff references:
+- coverage inventory: [relative_import_backend_coverage.py](/workspace/Pytra/src/toolchain/compiler/relative_import_backend_coverage.py)
+- coverage checker: [check_relative_import_backend_coverage.py](/workspace/Pytra/tools/check_relative_import_backend_coverage.py)
+- backend parity docs: [backend-parity-matrix.md](../language/backend-parity-matrix.md)
 
 ## Breakdown
 
 - [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S1-01] Create the live plan / TODO and fix the first-wave / second-wave / long-tail rollout order.
 - [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-01] Fix the representative verification lane for first-wave backends across `transpile smoke` and `fail_closed`.
-- [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-02] Sync links from the current coverage inventory / backend-parity docs into the next rollout handoff.
+- [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-02] Sync links from the current coverage inventory / backend-parity docs into the next rollout handoff.

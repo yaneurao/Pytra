@@ -13,6 +13,7 @@ if str(SRC) not in sys.path:
 
 from toolchain.compiler.relative_import_backend_coverage import (
     RELATIVE_IMPORT_BACKEND_COVERAGE_V1,
+    RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1,
     RELATIVE_IMPORT_NONCPP_ROLLOUT_V1,
 )
 
@@ -33,6 +34,22 @@ EXPECTED_BACKENDS = (
     "swift",
     "ts",
 )
+
+EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
+    "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
+    "coverage_checker": "tools/check_relative_import_backend_coverage.py",
+    "backend_parity_docs": (
+        "docs/ja/language/backend-parity-matrix.md",
+        "docs/en/language/backend-parity-matrix.md",
+    ),
+    "next_rollout_plan": (
+        "docs/ja/plans/p2-relative-import-noncpp-rollout.md",
+        "docs/en/plans/p2-relative-import-noncpp-rollout.md",
+    ),
+    "first_wave_backends": ("rs", "cs"),
+    "next_verification_lane": "transpile_smoke",
+    "fail_closed_lane": "backend_specific_fail_closed",
+}
 
 
 def validate_relative_import_backend_coverage() -> None:
@@ -109,9 +126,17 @@ def validate_relative_import_noncpp_rollout() -> None:
             )
 
 
+def validate_relative_import_noncpp_rollout_handoff() -> None:
+    if RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1 != EXPECTED_NONCPP_ROLLOUT_HANDOFF:
+        raise SystemExit(
+            "relative import non-cpp rollout handoff drifted from the fixed inventory"
+        )
+
+
 def main() -> None:
     validate_relative_import_backend_coverage()
     validate_relative_import_noncpp_rollout()
+    validate_relative_import_noncpp_rollout_handoff()
     print("[OK] relative import backend coverage inventory passed")
 
 

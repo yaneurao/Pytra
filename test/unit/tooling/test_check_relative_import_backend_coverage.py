@@ -2,11 +2,14 @@ import unittest
 
 from toolchain.compiler.relative_import_backend_coverage import (
     RELATIVE_IMPORT_BACKEND_COVERAGE_V1,
+    RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1,
     RELATIVE_IMPORT_NONCPP_ROLLOUT_V1,
 )
 from tools.check_relative_import_backend_coverage import (
+    EXPECTED_NONCPP_ROLLOUT_HANDOFF,
     EXPECTED_BACKENDS,
     validate_relative_import_backend_coverage,
+    validate_relative_import_noncpp_rollout_handoff,
     validate_relative_import_noncpp_rollout,
 )
 
@@ -45,6 +48,15 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         self.assertEqual([row["backend"] for row in first_wave], ["rs", "cs"])
         self.assertTrue(
             all(row["next_verification_lane"] == "transpile_smoke" for row in first_wave)
+        )
+
+    def test_validator_accepts_noncpp_rollout_handoff(self) -> None:
+        validate_relative_import_noncpp_rollout_handoff()
+
+    def test_noncpp_rollout_handoff_is_fixed(self) -> None:
+        self.assertEqual(
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1,
+            EXPECTED_NONCPP_ROLLOUT_HANDOFF,
         )
 
 
