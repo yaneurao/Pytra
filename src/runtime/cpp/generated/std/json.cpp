@@ -344,7 +344,7 @@ namespace pytra::std::json {
             }
             while (true) {
                 this->_skip_ws();
-                py_append(out, this->_parse_value());
+                out.append(this->_parse_value());
                 this->_skip_ws();
                 if (this->i >= this->n)
                     throw ValueError("invalid json array: unexpected end");

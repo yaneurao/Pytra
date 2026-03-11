@@ -30,12 +30,7 @@ class CheckCppPyRuntimeHeaderSurfaceTest(unittest.TestCase):
 
     def test_typed_collection_compat_bucket_stays_small(self) -> None:
         snippets = surface_mod.EXPECTED_BUCKETS["typed_collection_compat"]
-        self.assertEqual(
-            snippets,
-            {
-                'static inline void py_append(list<T>& v, const U& item) {',
-            },
-        )
+        self.assertEqual(snippets, set())
 
     def test_shared_type_id_bucket_is_thin_compat_only(self) -> None:
         snippets = surface_mod.EXPECTED_BUCKETS["shared_type_id_compat"]

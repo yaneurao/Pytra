@@ -36,7 +36,7 @@
 
 end state:
 - `object_bridge_mutation`: `object&` を受ける mutation helper だけを残し、C++ object bridge seam だと明示されている。
-- `typed_collection_compat`: generated runtime local typed collection のために必要な最小 helper だけを残し、不要 overload は持たない。
+- `typed_collection_compat`: 原則空 bucket とし、generated runtime local typed collection のために不可避な helper だけを例外的に残す。
 - `shared_type_id_compat`: `py_is_subtype` / `py_issubclass` / `py_runtime_type_id` / `py_isinstance` の thin compatibility だけを残す。
 
 確認コマンド:
@@ -53,7 +53,7 @@ end state:
 分解:
 - [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S1-01] `py_runtime.h` の残存 helper を `object_bridge_mutation` / `typed_collection_compat` / `shared_type_id_compat` に棚卸しし、inventory/tooling を追加する。
 - [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S1-02] `py_runtime.h` の target end state と bundle 単位の削減順を docs/source guard に固定する。
-- [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-01] `typed_collection_compat` のうち不要な list/dict wrapper を bundle 単位で削減する。
+- [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-01] `typed_collection_compat` のうち不要な list/dict wrapper を bundle 単位で削減する。
 - [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-02] `shared_type_id_compat` の thin wrapper を source guard 前提でさらに縮める。
 - [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S3-01] representative runtime test / docs / archive を更新して閉じる。
 
@@ -62,3 +62,4 @@ end state:
 - 2026-03-11: `S1-01` として `py_runtime.h` の残存 helper を `object_bridge_mutation` / `typed_collection_compat` / `shared_type_id_compat` に棚卸しし、drift guard を追加した。
 - 2026-03-11: `S1-02` として `test_cpp_runtime_iterable.py` に header surface source guard を追加し、削減順を `typed_collection_compat` の bundle 削減から始める方針に固定した。
 - 2026-03-11: `S2-01` の第1束として source-of-truth で未使用だった `py_set_at(dict<K, V>& ...)` を header / inventory / source guard から削除した。残る `typed_collection_compat` は `py_append(list<T>& ...)` のみ。
+- 2026-03-11: `S2-01` の第2束として C++ emitter の local concrete list 判定を value lane へ戻し、generated `json.cpp` の local array append を direct `.append(...)` に再同期したうえで `py_append(list<T>& ...)` を header / inventory / source guard から削除した。object helper である `iter_ops.cpp` は `py_list_append_mut(obj_to_list_ref_or_raise(...))` に留め、`typed_collection_compat` bucket は空になった。

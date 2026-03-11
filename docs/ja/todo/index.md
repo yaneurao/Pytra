@@ -32,4 +32,4 @@
 ## 未完了タスク
 
 1. [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01] `py_runtime.h` の残存 surface を object bridge / typed compat / shared `type_id` contract ごとに実縮小し、header を thin compatibility seam に寄せる。文脈: [docs/ja/plans/p1-cpp-pyruntime-header-shrink.md](../plans/p1-cpp-pyruntime-header-shrink.md)
-   進捗メモ: `S2-01` の第1束として dead な `py_set_at(dict<K, V>& ...)` を落とし、`typed_collection_compat` を `py_append(list<T>& ...)` だけに縮めた。次の bundle は残る typed list append wrapper の削減。
+   進捗メモ: `S2-01` を完了し、C++ emitter で local concrete list を value lane へ戻したうえで `py_append(list<T>& ...)` を削除した。次は `S2-02` の shared `type_id` thin wrapper 縮退。

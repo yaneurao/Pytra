@@ -343,6 +343,8 @@ class CppStatementEmitter:
             if decl_type_norm == "":
                 decl_type_norm = self.normalize_type_name(self.any_to_str(self.declared_var_types.get(target_name_raw)))
             emitted_type_norm = self.normalize_type_name(t)
+            if emitted_type_norm.startswith("list<") and len(self.scope_stack) >= 2:
+                self.current_function_value_list_locals.add(target_name_raw)
             reassigned_names = set(getattr(self, "current_function_reassigned_names", set()))
             if (
                 emitted_type_norm.startswith("rc<")
@@ -735,6 +737,8 @@ class CppStatementEmitter:
                 dtype = self._cpp_type_text(picked)
             self.declare_in_current_scope(texpr)
             self.declared_var_types[texpr] = logical_picked if runtime_alias_target else picked
+            if dtype.startswith("list<") and self.is_plain_name_expr(target_obj) and len(self.scope_stack) >= 2:
+                self.current_function_value_list_locals.add(texpr)
             rval = self._render_assign_value_with_subscript_index_hoist(value)
             rval = self._rewrite_nullopt_default_for_typed_target(rval, picked)
             rval_trim = self._trim_ws(rval)
@@ -2071,6 +2075,7 @@ class CppStatementEmitter:
         params: list[str] = []
         fn_scope: set[str] = set()
         arg_names: list[str] = []
+        value_list_params: set[str] = set()
         typed_list_str_params: set[str] = set()
         ref_first_param_names: set[str] = set()
         raw_order = self.any_dict_get_list(stmt, "arg_order")
@@ -2119,6 +2124,8 @@ class CppStatementEmitter:
                     if by_ref and usage == "mutable"
                     else (f"const {ct}& {emitted_n}" if by_ref else f"{ct} {emitted_n}")
                 )
+                if ct.startswith("list<"):
+                    value_list_params.add(n)
                 if n in arg_defaults:
                     default_txt = self._render_param_default_expr(arg_defaults.get(n), t)
                     if default_txt != "":
@@ -2164,6 +2171,8 @@ class CppStatementEmitter:
         prev_fn_non_escape = self.current_function_non_escape_summary
         prev_stack_list_locals = self.current_function_stack_list_locals
         prev_runtime_list_alias_names = self.current_function_pyobj_runtime_list_alias_names
+        prev_value_list_params = getattr(self, "current_function_value_list_params", set())
+        prev_value_list_locals = getattr(self, "current_function_value_list_locals", set())
         prev_typed_list_str_params = getattr(self, "current_function_typed_list_str_params", set())
         prev_typed_list_str_locals = getattr(self, "current_function_typed_list_str_locals", set())
         prev_reassigned_names = getattr(self, "current_function_reassigned_names", set())
@@ -2174,6 +2183,8 @@ class CppStatementEmitter:
         self.current_function_non_escape_summary = dict(fn_non_escape_summary)
         self.current_function_stack_list_locals = set(stack_list_locals)
         self.current_function_pyobj_runtime_list_alias_names = set(runtime_list_alias_names) | set(ref_first_param_names)
+        self.current_function_value_list_params = set(value_list_params)
+        self.current_function_value_list_locals = set()
         self.current_function_typed_list_str_params = set(typed_list_str_params)
         self.current_function_typed_list_str_locals = set()
         self.current_function_reassigned_names = set(reassigned_names)
@@ -2207,6 +2218,8 @@ class CppStatementEmitter:
         self.current_function_non_escape_summary = prev_fn_non_escape
         self.current_function_stack_list_locals = prev_stack_list_locals
         self.current_function_pyobj_runtime_list_alias_names = set(prev_runtime_list_alias_names)
+        self.current_function_value_list_params = set(prev_value_list_params)
+        self.current_function_value_list_locals = set(prev_value_list_locals)
         self.current_function_typed_list_str_params = set(prev_typed_list_str_params)
         self.current_function_typed_list_str_locals = set(prev_typed_list_str_locals)
         self.current_function_reassigned_names = set(prev_reassigned_names)

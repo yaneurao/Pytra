@@ -22,9 +22,7 @@ EXPECTED_BUCKETS = {
         'static inline void py_reverse(object& v) {',
         'static inline void py_sort(object& v) {',
     },
-    "typed_collection_compat": {
-        'static inline void py_append(list<T>& v, const U& item) {',
-    },
+    "typed_collection_compat": set(),
     "shared_type_id_compat": {
         'static inline bool py_is_subtype(uint32 actual_type_id, uint32 expected_type_id) {',
         'static inline bool py_issubclass(uint32 actual_type_id, uint32 expected_type_id) {',

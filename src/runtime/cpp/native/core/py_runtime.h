@@ -920,13 +920,8 @@ static inline object py_at(const object& v, int64 idx) {
 }
 
 // P0-contract-shrink label: object_bridge_compat surface only.
-// Compatibility seam for generated-runtime local lists and object-bridge callers.
-// Typed lanes must use py_list_*_mut directly.
-template <class T, class U>
-static inline void py_append(list<T>& v, const U& item) {
-    py_list_append_mut(v, item);
-}
-
+// Compatibility seam for object-bridge mutation only.
+// Typed lanes must use direct list mutation or py_list_*_mut directly.
 template <class U>
 static inline void py_append(object& v, const U& item) {
     py_list_append_mut(obj_to_list_ref_or_raise(v, "py_append"), item);
