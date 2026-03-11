@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from toolchain.frontends.type_expr import sync_type_expr_mirrors
-from toolchain.ir.core import EastBuildError, convert_path, convert_source_to_east_with_backend
+from toolchain.ir.core_entrypoints import EastBuildError, convert_path, convert_source_to_east_with_backend
 from toolchain.json_adapters import export_json_object_dict
 from toolchain.json_adapters import load_json_object_doc
 from toolchain.json_adapters import unwrap_east_root_json_doc

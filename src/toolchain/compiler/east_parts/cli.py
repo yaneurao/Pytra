@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pytra.std import argparse
 
-from toolchain.ir.core import EastBuildError, convert_path
+from toolchain.ir.core_entrypoints import EastBuildError, convert_path
 from .east2_to_human_repr import _dump_json, render_east_to_human_repr
 from pytra.std.pathlib import Path
 from pytra.std import sys

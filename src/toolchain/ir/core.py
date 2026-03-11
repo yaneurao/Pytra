@@ -8,7 +8,6 @@ from pytra.std import json
 from pytra.std import re
 from dataclasses import dataclass
 from typing import Any
-from pytra.std.pathlib import Path
 from pytra.std import sys
 from toolchain.frontends.signature_registry import is_stdlib_path_type
 from toolchain.frontends.signature_registry import lookup_stdlib_attribute_type
@@ -32,6 +31,11 @@ from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_template import validate_template_module
 from toolchain.frontends.runtime_symbol_index import lookup_runtime_call_adapter_kind
 from toolchain.frontends.type_expr import sync_type_expr_mirrors
+from toolchain.ir.core_entrypoints import EastBuildError
+from toolchain.ir.core_entrypoints import _make_east_build_error
+from toolchain.ir.core_entrypoints import convert_path
+from toolchain.ir.core_entrypoints import convert_source_to_east
+from toolchain.ir.core_entrypoints import convert_source_to_east_with_backend
 from toolchain.ir.core_ast_builders import _sh_block_end_span
 from toolchain.ir.core_ast_builders import _sh_make_arg_node
 from toolchain.ir.core_ast_builders import _sh_make_attribute_expr
@@ -101,6 +105,7 @@ from toolchain.ir.core_import_semantics import _sh_is_host_only_alias
 from toolchain.ir.core_import_semantics import _sh_make_import_resolution_binding
 from toolchain.ir.core_import_semantics import _sh_register_import_module
 from toolchain.ir.core_import_semantics import _sh_register_import_symbol
+from toolchain.ir.core_expr_parser_base import _ShExprParserBaseMixin
 from toolchain.ir.core_runtime_call_semantics import _sh_annotate_anyall_call_expr
 from toolchain.ir.core_runtime_call_semantics import _sh_annotate_collection_ctor_call_expr
 from toolchain.ir.core_runtime_call_semantics import _sh_annotate_enumerate_call_expr
@@ -159,7 +164,6 @@ from toolchain.ir.core_stmt_analysis import _sh_infer_return_type_for_untyped_de
 from toolchain.ir.core_stmt_analysis import _sh_make_generator_return_type
 from toolchain.ir.core_string_semantics import _sh_append_fstring_literal
 from toolchain.ir.core_string_semantics import _sh_decode_py_string_body
-from toolchain.ir.core_string_semantics import _sh_scan_string_token
 from toolchain.ir.core_stmt_text_semantics import _sh_bind_comp_target_types
 from toolchain.ir.core_stmt_text_semantics import _sh_collect_indented_block
 from toolchain.ir.core_stmt_text_semantics import _sh_find_top_char
@@ -212,7 +216,6 @@ INT_TYPES = {
     "uint64",
 }
 FLOAT_TYPES = {"float32", "float64"}
-_SH_STR_PREFIX_CHARS = {"r", "R", "b", "B", "u", "U", "f", "F"}
 
 # `_sh_parse_expr_lowered` が参照する self-hosted 解析コンテキスト。
 _SH_FN_RETURNS: dict[str, str] = {}
@@ -252,46 +255,6 @@ def _sh_set_parse_context(
         _SH_TYPE_ALIASES.update(_sh_default_type_aliases())
     else:
         _SH_TYPE_ALIASES.update(type_aliases)
-
-
-class EastBuildError(Exception):
-    kind: str
-    message: str
-    source_span: dict[str, Any]
-    hint: str
-
-    def __init__(
-        self,
-        kind: str,
-        message: str,
-        source_span: dict[str, Any],
-        hint: str,
-    ) -> None:
-        self.kind = kind
-        self.message = message
-        self.source_span = dict(source_span)
-        self.hint = hint
-
-    def to_payload(self) -> dict[str, Any]:
-        """例外情報を EAST エラー応答用 dict に整形する。"""
-        out: dict[str, Any] = {}
-        out["kind"] = self.kind
-        out["message"] = self.message
-        out["source_span"] = self.source_span
-        out["hint"] = self.hint
-        return out
-
-
-def _make_east_build_error(kind: str, message: str, source_span: dict[str, Any], hint: str) -> RuntimeError:
-    """self-hosted 生成で投げる例外を std::exception 互換（RuntimeError）に統一する。"""
-    src_line = int(source_span.get("lineno", 0))
-    src_col = int(source_span.get("col", 0))
-    return RuntimeError(f"{kind}: {message} at {src_line}:{src_col} hint={hint}")
-
-
-def convert_source_to_east(source: str, filename: str) -> dict[str, Any]:
-    """後方互換用の入口。self-hosted パーサで EAST を生成する。"""
-    return convert_source_to_east_self_hosted(source, filename)
 
 
 def _sh_extract_adjacent_string_parts(
@@ -412,6 +375,7 @@ def _sh_parse_if_tail(
 
 
 class _ShExprParser(
+    _ShExprParserBaseMixin,
     _ShExprPrecedenceParserMixin,
     _ShExprCallArgParserMixin,
     _ShExprCallSuffixParserMixin,
@@ -450,154 +414,6 @@ class _ShExprParser(
         self.tokens: list[dict[str, Any]] = self._tokenize(text)
         self.pos = 0
 
-    def _tokenize(self, text: str) -> list[dict[str, Any]]:
-        """式テキストを self-hosted 用トークン列へ変換する。"""
-        out: list[dict[str, Any]] = []
-        skip = 0
-        text_len = len(text)
-        for i, ch in enumerate(text):
-            if skip > 0:
-                skip -= 1
-                continue
-            if ch.isspace():
-                continue
-            # string literal prefixes: r"...", f"...", b"...", u"...", rf"...", fr"...", ...
-            pref_len = 0
-            if i + 1 < text_len:
-                p1 = text[i]
-                if p1 in _SH_STR_PREFIX_CHARS and text[i + 1] in {"'", '"'}:
-                    pref_len = 1
-                elif i + 2 < text_len:
-                    p2 = text[i : i + 2]
-                    if all(c in _SH_STR_PREFIX_CHARS for c in p2) and text[i + 2] in {"'", '"'}:
-                        pref_len = 2
-            if pref_len > 0:
-                end = _sh_scan_string_token(
-                    text,
-                    i,
-                    i + pref_len,
-                    self.line_no,
-                    self.col_base,
-                    make_east_build_error=_make_east_build_error,
-                    make_span=_sh_span,
-                )
-                out.append(_sh_make_expr_token("STR", text[i:end], i, end))
-                skip = end - i - 1
-                continue
-            if ch.isdigit():
-                if ch == "0" and i + 2 < text_len and text[i + 1] in {"x", "X"}:
-                    j = i + 2
-                    while j < text_len and (text[j].isdigit() or text[j].lower() in {"a", "b", "c", "d", "e", "f"}):
-                        j += 1
-                    if j > i + 2:
-                        out.append(_sh_make_expr_token("INT", text[i:j], i, j))
-                        skip = j - i - 1
-                        continue
-                j = i + 1
-                while j < text_len and text[j].isdigit():
-                    j += 1
-                has_float = False
-                if j < text_len and text[j] == ".":
-                    k = j + 1
-                    while k < text_len and text[k].isdigit():
-                        k += 1
-                    if k > j + 1:
-                        j = k
-                        has_float = True
-                if j < text_len and text[j] in {"e", "E"}:
-                    k = j + 1
-                    if k < text_len and text[k] in {"+", "-"}:
-                        k += 1
-                    d0 = k
-                    while k < text_len and text[k].isdigit():
-                        k += 1
-                    if k > d0:
-                        j = k
-                        has_float = True
-                if has_float:
-                    out.append(_sh_make_expr_token("FLOAT", text[i:j], i, j))
-                    skip = j - i - 1
-                    continue
-                out.append(_sh_make_expr_token("INT", text[i:j], i, j))
-                skip = j - i - 1
-                continue
-            if ch.isalpha() or ch == "_":
-                j = i + 1
-                while j < text_len and (text[j].isalnum() or text[j] == "_"):
-                    j += 1
-                out.append(_sh_make_expr_token("NAME", text[i:j], i, j))
-                skip = j - i - 1
-                continue
-            if i + 2 < text_len and text[i : i + 3] in {"'''", '"""'}:
-                end = _sh_scan_string_token(
-                    text,
-                    i,
-                    i,
-                    self.line_no,
-                    self.col_base,
-                    make_east_build_error=_make_east_build_error,
-                    make_span=_sh_span,
-                )
-                out.append(_sh_make_expr_token("STR", text[i:end], i, end))
-                skip = end - i - 1
-                continue
-            if ch in {"'", '"'}:
-                end = _sh_scan_string_token(
-                    text,
-                    i,
-                    i,
-                    self.line_no,
-                    self.col_base,
-                    make_east_build_error=_make_east_build_error,
-                    make_span=_sh_span,
-                )
-                out.append(_sh_make_expr_token("STR", text[i:end], i, end))
-                skip = end - i - 1
-                continue
-            if i + 1 < text_len and text[i : i + 2] in {"<=", ">=", "==", "!=", "//", "<<", ">>", "**"}:
-                out.append(_sh_make_expr_token(text[i : i + 2], text[i : i + 2], i, i + 2))
-                skip = 1
-                continue
-            if ch in {"<", ">"}:
-                out.append(_sh_make_expr_token(ch, ch, i, i + 1))
-                continue
-            if ch in {"+", "-", "*", "/", "%", "&", "|", "^", "(", ")", ",", ".", "[", "]", ":", "=", "{", "}"}:
-                out.append(_sh_make_expr_token(ch, ch, i, i + 1))
-                continue
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"unsupported token '{ch}' in self_hosted parser",
-                source_span=_sh_span(self.line_no, self.col_base + i, self.col_base + i + 1),
-                hint="Extend tokenizer for this syntax.",
-            )
-        out.append(_sh_make_expr_token("EOF", "", len(text), len(text)))
-        return out
-
-    def _cur(self) -> dict[str, Any]:
-        """現在トークンを返す。"""
-        return self.tokens[self.pos]
-
-    def _eat(self, kind: str | None = None) -> dict[str, Any]:
-        """現在トークンを消費して返す。kind 指定時は一致を検証する。"""
-        tok = self._cur()
-        if kind is not None and tok["k"] != kind:
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message=f"expected token {kind}, got {tok['k']}",
-                source_span=_sh_span(self.line_no, self.col_base + tok["s"], self.col_base + tok["e"]),
-                hint="Fix expression syntax for self_hosted parser.",
-            )
-        self.pos += 1
-        return tok
-
-    def _node_span(self, s: int, e: int) -> dict[str, int]:
-        """式内相対位置をファイル基準の source_span へ変換する。"""
-        return _sh_span(self.line_no, self.col_base + s, self.col_base + e)
-
-    def _src_slice(self, s: int, e: int) -> str:
-        """元ソースから該当区間の repr 用文字列を取り出す。"""
-        return self.src[s:e].strip()
-
     def _raise_expr_build_error(
         self,
         *,
@@ -608,12 +424,6 @@ class _ShExprParser(
     ) -> RuntimeError:
         """expression mixin から共通の build error を生成する。"""
         return _make_east_build_error(kind=kind, message=message, source_span=source_span, hint=hint)
-
-    def parse(self) -> dict[str, Any]:
-        """式を最後まで解析し、EAST 式ノードを返す。"""
-        node = self._parse_ifexp()
-        self._eat("EOF")
-        return node
 
     def _callable_return_type(self, t: str) -> str:
         """`callable[...]` 型文字列から戻り型だけを抽出する。"""
@@ -5501,21 +5311,3 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     )
     sync_type_expr_mirrors(out)
     return validate_template_module(validate_runtime_abi_module(out))
-
-
-def convert_source_to_east_with_backend(source: str, filename: str, parser_backend: str = "self_hosted") -> dict[str, Any]:
-    """指定バックエンドでソースを EAST へ変換する統一入口。"""
-    if parser_backend != "self_hosted":
-        raise _make_east_build_error(
-            kind="unsupported_syntax",
-            message=f"unknown parser backend: {parser_backend}",
-            source_span={},
-            hint="Use parser_backend=self_hosted.",
-        )
-    return convert_source_to_east_self_hosted(source, filename)
-
-
-def convert_path(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, Any]:
-    """Python ファイルを読み込み、EAST ドキュメントへ変換する。"""
-    source = input_path.read_text(encoding="utf-8")
-    return convert_source_to_east_with_backend(source, str(input_path), parser_backend=parser_backend)
