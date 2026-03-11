@@ -152,6 +152,14 @@ SOURCE_GUARD_FORBIDDEN_SUBSTRINGS = {
     },
 }
 
+GENERATED_CPP_MUST_REMAIN = {
+    ("py_runtime_object_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
+    ("py_append", "src/runtime/cpp/generated/built_in/iter_ops.cpp"),
+    ("py_runtime_object_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"),
+}
+
+GENERATED_CPP_REDELEGATABLE = set()
+
 
 def _iter_target_files() -> list[Path]:
     return [ROOT / rel for rel in sorted(PATH_SYMBOLS)]
@@ -202,6 +210,20 @@ def _collect_category_issues() -> list[str]:
     return issues
 
 
+def _collect_generated_cpp_policy_issues() -> list[str]:
+    issues: list[str] = []
+    generated_pairs = (
+        EXPECTED_BUCKETS["generated_cpp_object_bridge_residual"]
+        | EXPECTED_BUCKETS["generated_cpp_shared_type_id_residual"]
+    )
+    if GENERATED_CPP_MUST_REMAIN | GENERATED_CPP_REDELEGATABLE != generated_pairs:
+        issues.append("generated cpp policy buckets do not cover the same pairs as generated cpp residual buckets")
+    overlap = GENERATED_CPP_MUST_REMAIN & GENERATED_CPP_REDELEGATABLE
+    if overlap:
+        issues.append(f"generated cpp policy buckets overlap: {sorted(overlap)}")
+    return issues
+
+
 def _collect_source_guard_issues() -> list[str]:
     issues: list[str] = []
     for rel, required in sorted(SOURCE_GUARD_REQUIRED_SUBSTRINGS.items()):
@@ -222,6 +244,7 @@ def _collect_inventory_issues() -> list[str]:
     expected = _collect_expected_pairs()
     issues = _collect_bucket_overlaps()
     issues.extend(_collect_category_issues())
+    issues.extend(_collect_generated_cpp_policy_issues())
     for pair in sorted(expected - observed):
         issues.append(f"expected residual pair missing: {pair}")
     for pair in sorted(observed - expected):

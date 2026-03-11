@@ -29,7 +29,7 @@ Acceptance criteria:
 
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S1-01] Inventory residual `py_runtime` callers in native compiler wrappers, generated C++ runtime code, and Rust/C# runtime builtins, then classify them into `object_bridge_compat` and `shared_type_id_contract`.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-01] Move native compiler-wrapper `type_id` / object-bridge callers toward thin helper seams and define representative regressions.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-02] Re-classify residual callers in the generated C++ runtime and separate callers that must remain from callers that can be re-delegated before header shrink.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-02] Re-classify residual callers in the generated C++ runtime and separate callers that must remain from callers that can be re-delegated before header shrink.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-03] Inventory Rust/C# runtime builtin dependencies on the shared seams and define the final cross-runtime residual contract shape.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S3-01] Add residual-caller inventory tooling, source guards, and smoke coverage, then connect the final residual seam to the later header-shrink handoff.
 
@@ -75,6 +75,14 @@ Inventory source of truth:
 - [check_crossruntime_pyruntime_residual_caller_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_residual_caller_inventory.py)
 - [test_check_crossruntime_pyruntime_residual_caller_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_crossruntime_pyruntime_residual_caller_inventory.py)
 
+Generated C++ runtime policy (S2-02):
+- `must remain`
+  - `py_runtime_object_isinstance` @ `src/runtime/cpp/generated/std/json.cpp`
+  - `py_append` @ `src/runtime/cpp/generated/built_in/iter_ops.cpp`
+  - `py_runtime_object_type_id` @ `src/runtime/cpp/generated/built_in/type_id.cpp`
+- `re-delegatable before header shrink`
+  - none
+
 ## Decision log
 
 - 2026-03-12: Emitter-side cleanup alone is not enough to reduce the remaining `py_runtime.h` surface, so a separate `P4` was added for native/generated/runtime-builtin callers.
@@ -82,3 +90,4 @@ Inventory source of truth:
 - 2026-03-12: The emitter-shrink handoff is fixed as `typed_collection_compat = empty`, `shared_type_id_compat = empty`, and `object_bridge_mutation = residual caller owned`, so this task now owns the last non-emitter header blocker.
 - 2026-03-12: `S1-01` freezes the residual callers into six buckets (`native_wrapper_object_bridge_residual`, `generated_cpp_object_bridge_residual`, `generated_cpp_shared_type_id_residual`, `cs_runtime_utils_object_bridge_residual`, `rs_runtime_builtin_shared_type_id_residual`, `cs_runtime_builtin_shared_type_id_residual`) and limits the category split to `object_bridge_compat` and `shared_type_id_contract`.
 - 2026-03-12: The first `S2-01` bundle centralizes direct `py_runtime_object_isinstance` checks in the native compiler wrappers behind a file-local `_object_is_runtime_type(...)` helper so the wrapper body itself no longer re-enters raw type checks at multiple sites.
+- 2026-03-12: `S2-02` separates the generated C++ residual callers into must-remain and re-delegatable buckets, and currently freezes `json.cpp` / `iter_ops.cpp` / `type_id.cpp` as must-remain with no re-delegatable generated callers left.

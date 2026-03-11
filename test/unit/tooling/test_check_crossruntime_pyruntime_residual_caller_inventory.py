@@ -28,6 +28,9 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
     def test_source_guard_issues_are_empty(self) -> None:
         self.assertEqual(inventory_mod._collect_source_guard_issues(), [])
 
+    def test_generated_cpp_policy_issues_are_empty(self) -> None:
+        self.assertEqual(inventory_mod._collect_generated_cpp_policy_issues(), [])
+
     def test_object_bridge_category_buckets_are_stable(self) -> None:
         self.assertEqual(
             inventory_mod.CATEGORY_BUCKETS["object_bridge_compat"],
@@ -72,6 +75,15 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
                 ("py_runtime_object_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"),
             },
         )
+        self.assertEqual(
+            inventory_mod.GENERATED_CPP_MUST_REMAIN,
+            {
+                ("py_runtime_object_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
+                ("py_append", "src/runtime/cpp/generated/built_in/iter_ops.cpp"),
+                ("py_runtime_object_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"),
+            },
+        )
+        self.assertEqual(inventory_mod.GENERATED_CPP_REDELEGATABLE, set())
 
     def test_cs_runtime_utils_object_bridge_bucket_is_stable(self) -> None:
         self.assertEqual(

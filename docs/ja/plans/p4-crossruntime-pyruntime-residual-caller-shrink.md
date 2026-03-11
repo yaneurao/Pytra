@@ -29,7 +29,7 @@
 
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S1-01] native compiler wrapper、generated C++ runtime、Rust/C# runtime builtins の `py_runtime` residual caller inventory を取り、`object_bridge_compat` と `shared_type_id_contract` に分類する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-01] native compiler wrapper の `type_id` / object bridge caller を thin helper seam 前提へ寄せ、representative regression を整理する。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-02] generated C++ runtime の residual caller を再分類し、header shrink 前提で残す caller と再委譲できる caller を切り分ける。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-02] generated C++ runtime の residual caller を再分類し、header shrink 前提で残す caller と再委譲できる caller を切り分ける。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-03] Rust/C# runtime builtins の shared seam 依存を inventory 化し、cross-runtime residual contract の最終形を固定する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S3-01] residual caller inventory tool / source guard / smoke を整備し、`py_runtime.h` shrink handoff 条件を次段 task へ接続する。
 
@@ -75,6 +75,14 @@ inventory 正本:
 - [check_crossruntime_pyruntime_residual_caller_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_residual_caller_inventory.py)
 - [test_check_crossruntime_pyruntime_residual_caller_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_crossruntime_pyruntime_residual_caller_inventory.py)
 
+generated C++ runtime policy（S2-02）:
+- `must remain`
+  - `py_runtime_object_isinstance` @ `src/runtime/cpp/generated/std/json.cpp`
+  - `py_append` @ `src/runtime/cpp/generated/built_in/iter_ops.cpp`
+  - `py_runtime_object_type_id` @ `src/runtime/cpp/generated/built_in/type_id.cpp`
+- `re-delegatable before header shrink`
+  - なし
+
 ## 決定ログ
 
 - 2026-03-12: emitter 側整理だけでは `py_runtime.h` の residual surface を十分に削れないため、native/generated/runtime builtins を対象にした caller 観点の P4 を追加した。
@@ -82,3 +90,4 @@ inventory 正本:
 - 2026-03-12: emitter shrink task からの handoff は `typed_collection_compat = empty`, `shared_type_id_compat = empty`, `object_bridge_mutation = residual caller owned` で固定し、本 task は header surface 上の最後の non-emitter blocker として `object_bridge_mutation` caller inventory を引き取る。
 - 2026-03-12: `S1-01` は residual caller を 6 bucket (`native_wrapper_object_bridge_residual`, `generated_cpp_object_bridge_residual`, `generated_cpp_shared_type_id_residual`, `cs_runtime_utils_object_bridge_residual`, `rs_runtime_builtin_shared_type_id_residual`, `cs_runtime_builtin_shared_type_id_residual`) に固定し、category を `object_bridge_compat` と `shared_type_id_contract` の 2 本に限定した。
 - 2026-03-12: `S2-01` の first bundle では native compiler wrapper の direct `py_runtime_object_isinstance` を file-local `_object_is_runtime_type(...)` helper へ集約し、wrapper 本体の raw type-check re-entry を 1 callsite/translation-unit に固定した。
+- 2026-03-12: `S2-02` では generated C++ residual caller を must-remain と re-delegatable に分け、現時点の `json.cpp` / `iter_ops.cpp` / `type_id.cpp` residual はすべて must-remain として inventory tool に固定した。
