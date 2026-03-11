@@ -310,7 +310,7 @@ def _legacy_import_user_error_payload(
             file_value=input_path,
             import_detail=label,
         )
-    if "relative import is not supported" in msg:
+    if _is_legacy_relative_import_escape_message(msg):
         label = first_import_detail_line(source_text, "relative")
         return _make_relative_import_escape_payload(file_value=input_path, import_detail=label)
     if "duplicate import binding:" in msg:
@@ -321,6 +321,11 @@ def _legacy_import_user_error_payload(
             import_detail=msg,
         )
     return None
+
+
+def _is_legacy_relative_import_escape_message(msg: str) -> bool:
+    """旧 relative import root escape wording の後方互換検出。"""
+    return "relative import is not supported" in msg
 
 
 def _make_self_hosted_syntax_detail(

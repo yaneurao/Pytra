@@ -94,7 +94,7 @@ Rust に変換したいなら `--target` だけ変えます。
 - `math` / `random` / `timeit` / `enum` などの実行時利用は `pytra.std.*` 対応 shim に正規化して扱います。
 - `import` できるのは `src/pytra/` 配下にあるモジュール（`pytra.std.*`, `pytra.utils.*`, `pytra.compiler.*`）と、ユーザーが作成した自作 `.py` モジュールです。
 - 自作モジュール import は multi-file 変換で対応しています。`from helper import f` に加えて `from .helper import f` / `from ..pkg import y` / `from .helper import *` も static に正規化します。
-- entry root より上へ出る relative import は `input_invalid(kind=unsupported_import_form)` で fail-closed です。
+- entry root より上へ出る relative import は `input_invalid(kind=relative_import_escape)` で fail-closed です。
 - サポート済みモジュール一覧と API は [モジュール一覧](../spec/spec-pylib-modules.md) を参照してください。
 - 変換オプションの方針と候補は [オプション仕様](../spec/spec-options.md) を参照してください。
 - 補助スクリプト（`tools/`）の用途一覧は [ツール一覧](../spec/spec-tools.md) を参照してください。
