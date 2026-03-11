@@ -27,13 +27,46 @@ Acceptance criteria:
 
 ## Child tasks
 
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-01] Inventory the `py_runtime` dependencies in the C++ / Rust / C# emitters and classify them into typed lanes, object bridge, and shared type_id seams.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-01] Inventory the `py_runtime` dependencies in the C++ / Rust / C# emitters and classify them into typed lanes, object bridge, and shared type_id seams.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-01] Re-audit the C++ emitter to separate object-bridge-only helpers from already-upstreamed typed lanes and define header-shrink regressions.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-02] Fix the plan for Rust / C# mutation and `isinstance` / `issubclass` lowering so they target thin seams instead of the current shared contract directly.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S3-01] Define representative inventory, smoke, and source-guard lanes so post-shrink contract re-entry fails closed.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S4-01] Connect the removable `py_runtime.h` surface and the final residual seam to the follow-up shrink task.
 
+## Current Residual Inventory (2026-03-12)
+
+- `cpp_emitter_object_bridge_residual`
+  - `py_runtime_object_type_id` @ `src/backends/cpp/emitter/cpp_emitter.py`
+  - `py_runtime_object_isinstance` @ `src/backends/cpp/emitter/runtime_expr.py`
+  - `py_runtime_object_isinstance` @ `src/backends/cpp/emitter/stmt.py`
+  - `py_append/extend/pop/clear/reverse/sort/set_at` @ `src/backends/cpp/emitter/call.py`
+- `cpp_emitter_shared_type_id_residual`
+  - `py_runtime_type_id_is_subtype`
+  - `py_runtime_type_id_issubclass`
+  - both under `src/backends/cpp/emitter/runtime_expr.py`
+- `rs_emitter_shared_type_id_residual`
+  - `py_runtime_value_type_id`
+  - `py_runtime_value_isinstance`
+  - `py_runtime_type_id_is_subtype`
+  - `py_runtime_type_id_issubclass`
+  - all under `src/backends/rs/emitter/rs_emitter.py`
+- `cs_emitter_shared_type_id_residual`
+  - `py_runtime_value_type_id`
+  - `py_runtime_value_isinstance`
+  - `py_runtime_type_id_is_subtype`
+  - `py_runtime_type_id_issubclass`
+  - all under `src/backends/cs/emitter/cs_emitter.py`
+- `crossruntime_mutation_helper_residual`
+  - `py_append`
+  - `py_pop`
+  - both under `src/backends/cs/emitter/cs_emitter.py`
+
+Representative guards:
+- inventory source of truth: [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_emitter_inventory.py)
+- unit guard: [test_check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py)
+
 ## Decision log
 
 - 2026-03-12: This task is a prerequisite for later `py_runtime.h` shrink, but it should not block current higher-priority parser/compiler work, so it is tracked as `P4`.
 - 2026-03-12: The order is inventory and emitter-contract realignment first, then header shrink handoff, not header deletion first.
+- 2026-03-12: `S1-01` is now closed by adopting the existing inventory tool as the source of truth for this follow-up task and freezing the current residuals into five buckets (`cpp_emitter_object_bridge_residual`, `cpp_emitter_shared_type_id_residual`, `rs_emitter_shared_type_id_residual`, `cs_emitter_shared_type_id_residual`, `crossruntime_mutation_helper_residual`).
