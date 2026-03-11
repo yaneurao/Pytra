@@ -3,12 +3,12 @@
 最終更新: 2026-03-11
 
 関連 TODO:
-- `docs/ja/todo/index.md` の `ID: P1-EAST23-LOWERING-DECOMPOSITION-01`
+- `ID: P1-EAST23-LOWERING-DECOMPOSITION-01` は 2026-03-11 に archive へ移管した。
 
 背景:
 - `toolchain.ir.core` と expr/parser facade の分割は進み、`core.py` 側の巨大 monolith はほぼ解消した。
-- 一方で `src/toolchain/ir/east2_to_east3_lowering.py` は 1800 行超のままで、`type summary` / `nominal ADT metadata` / `type_id predicate lowering` / `call metadata` / `statement lowering` が 1 file に同居している。
-- この状態では nominal ADT や type-expr lane の調整で review 範囲が広くなり、どの helper 群が同じ責務かも見えにくい。
+- 一方で `src/toolchain/ir/east2_to_east3_lowering.py` は 1800 行超のままで、`type summary` / `nominal ADT metadata` / `type_id predicate lowering` / `call metadata` / `statement lowering` が 1 file に同居していた。
+- この状態では nominal ADT や type-expr lane の調整で review 範囲が広くなり、どの helper 群が同じ責務かも見えにくかった。
 
 目的:
 - `east2_to_east3_lowering.py` を cluster 単位で dedicated module へ分割し、main file は orchestration と representative lowering に寄せる。
@@ -49,7 +49,7 @@
 - [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] `type_id predicate` / `isinstance` / `issubclass` lowering cluster を dedicated module へ分割する。
 - [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-03] `nominal ADT ctor/projection/match metadata` cluster を dedicated module へ分割する。
 - [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S3-01] source-contract と representative regression を split 後の module layout へ追従させる。
-- [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S4-01] docs / TODO / archive を更新し、完了後は archive へ移す。
+- [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S4-01] docs / TODO / archive を更新し、完了 task を archive へ移す。
 
 決定ログ:
 - 2026-03-11: 初版作成。`core.py` / expr facade 分割の次に残る大型 monolith として `east2_to_east3_lowering.py` を対象に選んだ。
@@ -59,3 +59,4 @@
 - 2026-03-11: `S2-02` の second bundle として `type_id predicate` / `isinstance` / `issubclass` lowering を `east2_to_east3_type_id_predicate.py` へ移した。main file 側は `_lower_type_id_call_expr(...)` の import と dispatch 呼び出しに縮め、source-contract には split module の dedicated assert を追加した。
 - 2026-03-11: `S2-03` の third bundle として `nominal ADT ctor/projection/match metadata` を `east2_to_east3_nominal_adt_meta.py` へ移した。main file 側は decoration orchestration を残し、dead だった duplicate `_decorate_nominal_adt_match_stmt` 定義もこの split で解消した。
 - 2026-03-11: `S3-01` として split source-contract に `projection` / `variant pattern` import assert を追加し、representative nominal ADT / type-id regression を `test_east2_to_east3_split_regressions.py` と `_east23_lowering_test_support.py` へ寄せた。broad regression は `test_east2_to_east3_lowering.py` に残しつつ、split-specific layout 固定は dedicated suite に集約した。
+- 2026-03-11: `S4-01` として source-contract / representative regression / selfhost build / version gate を再実行し、first-wave split を archive へ移した。残 cluster は second-wave task `P1-EAST23-LOWERING-ORCHESTRATION-01` で継続する。
