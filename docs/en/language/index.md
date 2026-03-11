@@ -8,5 +8,6 @@ This is the entry point for per-target-language specifications.
 
 - Shared language features:
   - Canonical nominal ADT v1 surface and staged rollout: [nominal ADT v1 Guide](./nominal-adt-v1.md)
+  - Feature × backend support-state publication and rollout handoff: [Backend Parity Matrix](./backend-parity-matrix.md)
 - C++:
   - Support status (with test evidence): [py2cpp Support Matrix](./cpp/spec-support.md)

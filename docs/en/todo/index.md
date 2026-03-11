@@ -32,4 +32,4 @@ Last updated: 2026-03-12
 ## Unfinished Tasks
 
 1. [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01] Define the feature × backend support matrix, rollout tiers, and review checklist needed to institutionalize backend parity in docs and tooling. Context: [p7-backend-parity-rollout-and-matrix.md](../plans/p7-backend-parity-rollout-and-matrix.md)
-   - Progress memo: `S1-01` fixes the support-matrix row seed to P5, the summary seed to P6, and the publish path to `docs/ja|en/language/backend-parity-matrix.md` plus the tooling manifest export, and `S2-01/S2-02` fix the rollout tier and parity review / fail-closed contract.
+   - Progress memo: `S1-01/S2-01/S2-02/S3-01` fix the matrix seed, rollout tiers, parity review, and docs/release/tooling handoff as contract/check/export plus docs-entrypoint source of truth.

@@ -9,6 +9,7 @@
 - ランタイム配置と include 規約を確認する: [ランタイム仕様](spec/spec-runtime.md)
 - 実装済み項目・未実装項目・対応予定なしを確認する: [実装状況メモ](plans/pytra-wip.md)
 - nominal ADT v1 の canonical surface と staged rollout を確認する: [nominal ADT v1 ガイド](language/nominal-adt-v1.md)
+- feature × backend の support state と rollout handoff を確認する: [Backend Parity Matrix](language/backend-parity-matrix.md)
 - `py2cpp` の機能対応（テスト根拠）を確認する: [py2cpp サポートマトリクス](language/cpp/spec-support.md)
 - サンプル一覧と概要を確認する: [サンプルコード案内](../../sample/readme-ja.md)
 - 仕様・制約・構成・運用ルールを確認する: [仕様書トップ](spec/index.md)

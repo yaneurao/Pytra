@@ -31,7 +31,7 @@ Acceptance criteria:
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S1-01] Decide the source of truth and publication path for the feature × backend support matrix.
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-01] Fix rollout tiers and ordering from representative backends to secondary and long-tail backends.
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-02] Define the parity review checklist and fail-closed requirement for new feature merges.
-- [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S3-01] Define how the support matrix flows into docs, release notes, and tooling.
+- [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S3-01] Define how the support matrix flows into docs, release notes, and tooling.
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S4-01] Fix the archive / operations rules for maintaining rollout policy and the support matrix.
 
 ## Decision log
@@ -98,3 +98,22 @@ Acceptance criteria:
   - phase rules stay aligned to `backend_feature_contract_inventory.FAIL_CLOSED_PHASE_RULES` for `parse_and_ir / emit_and_runtime / preview_rollout`.
 
 - 2026-03-12: `S2-02` fixes the parity review checklist order and adds a contract that unsupported lanes must remain `fail_closed/not_started/experimental` with silent fallbacks forbidden.
+
+## S3-01 Docs / Release Note / Tooling Handoff
+
+- source of truth:
+  - handoff contract: [backend_parity_handoff_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_handoff_contract.py)
+  - validation: [check_backend_parity_handoff_contract.py](/workspace/Pytra/tools/check_backend_parity_handoff_contract.py), [test_check_backend_parity_handoff_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_handoff_contract.py)
+  - export seam: [export_backend_parity_handoff_manifest.py](/workspace/Pytra/tools/export_backend_parity_handoff_manifest.py), [test_export_backend_parity_handoff_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_parity_handoff_manifest.py)
+- docs handoff rule:
+  - matrix publish target is `docs/ja|en/language/backend-parity-matrix.md`
+  - docs entrypoints are `docs/ja|en/index.md` and `docs/ja|en/language/index.md`
+  - docs are treated as publish targets for tooling manifests, not as an independently edited support-claim source
+- release note rule:
+  - release-note targets are `docs/ja/README.md`, `README.md`, `docs/ja/news/index.md`, and `docs/en/news/index.md`
+  - release notes may summarize parity movement, but they link back to the matrix page instead of duplicating per-backend support tables
+- tooling rule:
+  - tooling publish targets are `export_backend_parity_matrix_manifest.py`, `export_backend_conformance_summary_handoff_manifest.py`, `export_backend_parity_review_manifest.py`, and `export_backend_parity_handoff_manifest.py`
+  - the handoff manifest reuses the same matrix / conformance summary / review checklist / rollout-tier vocabulary
+
+- 2026-03-12: `S3-01` fixes docs / release note / tooling handoff in `backend_parity_handoff_contract.py` and adds the matrix page plus docs entrypoints as canonical publish targets.

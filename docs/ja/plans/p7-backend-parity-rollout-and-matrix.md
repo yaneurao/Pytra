@@ -31,7 +31,7 @@
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S1-01] feature × backend support matrix の source of truth と publish 先を決める。
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-01] representative backend → secondary backend → long-tail backend の rollout tier と優先順を固定する。
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-02] 新 feature merge 時の parity review checklist と fail-closed requirement を定義する。
-- [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S3-01] support matrix を docs / release note / tooling に handoff する手順を決める。
+- [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S3-01] support matrix を docs / release note / tooling に handoff する手順を決める。
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S4-01] rollout policy と matrix maintenance の archive / operations rule を整える。
 
 ## 決定ログ
@@ -98,3 +98,22 @@
   - phase rule は `parse_and_ir / emit_and_runtime / preview_rollout` を `backend_feature_contract_inventory.FAIL_CLOSED_PHASE_RULES` と一致させる。
 
 - 2026-03-12: `S2-02` では parity review checklist を fixed order 化し、unsupported lane は `fail_closed/not_started/experimental` のいずれかで silent fallback を禁止する contract を追加した。
+
+## S3-01 Docs / Release Note / Tooling Handoff
+
+- source of truth:
+  - handoff contract: [backend_parity_handoff_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_handoff_contract.py)
+  - validation: [check_backend_parity_handoff_contract.py](/workspace/Pytra/tools/check_backend_parity_handoff_contract.py), [test_check_backend_parity_handoff_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_handoff_contract.py)
+  - export seam: [export_backend_parity_handoff_manifest.py](/workspace/Pytra/tools/export_backend_parity_handoff_manifest.py), [test_export_backend_parity_handoff_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_parity_handoff_manifest.py)
+- docs handoff rule:
+  - matrix publish target は `docs/ja|en/language/backend-parity-matrix.md`
+  - docs entrypoint は `docs/ja|en/index.md` と `docs/ja|en/language/index.md`
+  - docs 側は support claim の正本ではなく、tooling manifest への publish target として扱う
+- release note rule:
+  - release note target は `docs/ja/README.md`, `README.md`, `docs/ja/news/index.md`, `docs/en/news/index.md`
+  - release note は parity change の要約と matrix page へのリンクだけを持ち、backend ごとの support table を複製しない
+- tooling rule:
+  - tooling publish target は `export_backend_parity_matrix_manifest.py`, `export_backend_conformance_summary_handoff_manifest.py`, `export_backend_parity_review_manifest.py`, `export_backend_parity_handoff_manifest.py`
+  - handoff manifest は matrix / conformance summary / review checklist / rollout tier の vocabulary をそのまま使う
+
+- 2026-03-12: `S3-01` では docs / release note / tooling handoff を `backend_parity_handoff_contract.py` に固定し、matrix page と docs entrypoint を publish target に追加した。

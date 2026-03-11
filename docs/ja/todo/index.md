@@ -32,4 +32,4 @@
 ## 未完了タスク
 
 1. [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01] feature × backend support matrix、rollout tier、review checklist を定義し、backend parity を docs / tooling / 運用へ定着させる。文脈: [p7-backend-parity-rollout-and-matrix.md](../plans/p7-backend-parity-rollout-and-matrix.md)
-   - 進捗メモ: `S1-01` で support matrix の row seed を P5、summary seed を P6、publish path を `docs/ja|en/language/backend-parity-matrix.md` と tooling manifest export に固定し、`S2-01/S2-02` で rollout tier と parity review / fail-closed contract を固定した。
+   - 進捗メモ: `S1-01/S2-01/S2-02/S3-01` で matrix seed・rollout tier・parity review・docs/release/tooling handoff の正本を contract/check/export と docs entrypoint に固定した。
