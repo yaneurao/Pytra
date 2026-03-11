@@ -31,4 +31,4 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-- There are currently no unfinished tasks.
+1. [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01] Inventory the live/backlog/stale-complete plans still left under `plans/` and re-establish the archive handoff workflow. Context: [p4-plan-archive-hygiene.md](../plans/p4-plan-archive-hygiene.md)

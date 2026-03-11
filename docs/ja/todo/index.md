@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-- 現在、未完了タスクはありません。
+1. [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01] `plans/` 直下に残った live/backlog/stale-complete plan を棚卸しし、archive handoff の運用を再整備する。文脈: [p4-plan-archive-hygiene.md](../plans/p4-plan-archive-hygiene.md)
