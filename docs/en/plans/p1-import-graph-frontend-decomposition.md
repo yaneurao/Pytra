@@ -1,0 +1,52 @@
+# P1: Import Graph Frontend Decomposition
+
+Last updated: 2026-03-12
+
+Related TODO:
+- `ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01` in `docs/ja/todo/index.md`
+
+Background:
+- The relative-import normalization cluster has already been split into dedicated modules, but the import-graph build/analyze/report helpers are still concentrated inside [transpile_cli.py](/workspace/Pytra/src/toolchain/frontends/transpile_cli.py) and [east1_build.py](/workspace/Pytra/src/toolchain/frontends/east1_build.py).
+- Module queues, module-id fallback, graph issue/report formatting, and analysis assembly still live too close to frontend entrypoints.
+- The representative selfhost / CLI / import-graph regressions already exist, so the next step is to move this cluster into dedicated modules without redesigning the algorithm.
+
+Goal:
+- Split the import-graph build/analyze/report cluster into dedicated frontend module(s).
+- Shrink `transpile_cli.py` and `east1_build.py` back to orchestration entrypoints.
+- Add focused tooling/source contracts so later import-graph fixes stay localized.
+
+In scope:
+- Splitting import-graph path / queue / module-id helpers
+- Splitting import-graph analysis / report helpers
+- Retargeting frontend entrypoints to the split modules
+- Preserving focused tooling/source contracts and existing regressions
+
+Out of scope:
+- Redesigning the import-graph algorithm
+- Adding new relative-import features
+- Changing wildcard / duplicate-binding diagnostic contracts
+- Adding runtime import
+
+Acceptance criteria:
+- A representative import-graph helper cluster no longer lives directly inside `transpile_cli.py` / `east1_build.py`, but in dedicated frontend module(s).
+- Focused tooling/source contracts lock the post-split helper ownership.
+- Existing import-graph / CLI / selfhost regressions pass.
+- `python3 tools/build_selfhost.py` passes.
+
+Verification commands:
+- `python3 tools/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_import_graph_issue_structure.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_py2x_cli.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_relative_import_normalization_source_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_prepare_selfhost_source.py'`
+- `python3 tools/build_selfhost.py`
+- `git diff --check`
+
+Breakdown:
+- [x] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S1-01] Make the live plan/TODO active and lock the split target cluster plus verification lane.
+- [ ] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S2-01] Split path / queue / module-id helpers into dedicated modules and retarget the entrypoint callers.
+- [ ] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S2-02] Split analysis / report helpers into dedicated modules and add focused tooling/source contracts.
+- [ ] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S3-01] Freeze the residual helper layout in docs/source contracts and close the archive-ready end state.
+
+Decision log:
+- 2026-03-12: After closing the relative-import normalization decomposition and the legacy diagnostic cleanup, the remaining import-graph build/analyze/report cluster became the next focused decomposition target. This task is limited to frontend-module split work and explicitly excludes algorithm redesign.

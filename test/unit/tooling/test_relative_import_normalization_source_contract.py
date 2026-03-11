@@ -120,3 +120,9 @@ class RelativeImportNormalizationSourceContractTest(unittest.TestCase):
         self.assertNotIn("def _module_name_from_path_for_graph(", src)
         self.assertNotIn("def _path_key_for_graph(", src)
         self.assertNotIn("def _path_parent_text(", src)
+
+    def test_transpile_cli_does_not_keep_legacy_relative_import_fallback(self) -> None:
+        src = (ROOT / "src" / "toolchain" / "frontends" / "transpile_cli.py").read_text(encoding="utf-8")
+        self.assertNotIn("relative import is not supported", src)
+        self.assertNotIn("unsupported_import_form", src)
+        self.assertIn('kind="relative_import_escape"', src)

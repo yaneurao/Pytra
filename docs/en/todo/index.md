@@ -31,5 +31,5 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-1. [ ] [ID: P1-RELATIVE-IMPORT-LEGACY-DIAGNOSTIC-CLEANUP-01] Remove the legacy `unsupported_import_form` fallback from the live relative-import diagnostic contract and converge on the current `relative_import_escape` surface.
-   Context: [docs/ja/plans/p1-relative-import-legacy-diagnostic-cleanup.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-legacy-diagnostic-cleanup.md)
+1. [ ] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01] Split the import-graph build/analyze/report cluster out of `transpile_cli.py` / `east1_build.py` into dedicated frontend modules, then lock focused tests and source contracts around it.
+   Context: [docs/ja/plans/p1-import-graph-frontend-decomposition.md](/workspace/Pytra/docs/ja/plans/p1-import-graph-frontend-decomposition.md)

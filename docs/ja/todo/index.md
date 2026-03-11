@@ -31,5 +31,5 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P1-RELATIVE-IMPORT-LEGACY-DIAGNOSTIC-CLEANUP-01] relative import の live 診断 contract から legacy `unsupported_import_form` fallback を外し、current `relative_import_escape` surface に一本化する。
-   文脈: [docs/ja/plans/p1-relative-import-legacy-diagnostic-cleanup.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-legacy-diagnostic-cleanup.md)
+1. [ ] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01] import graph build/analyze/report cluster を `transpile_cli.py` / `east1_build.py` から dedicated frontend module へ分離し、focused test と source contract を整える。
+   文脈: [docs/ja/plans/p1-import-graph-frontend-decomposition.md](/workspace/Pytra/docs/ja/plans/p1-import-graph-frontend-decomposition.md)
