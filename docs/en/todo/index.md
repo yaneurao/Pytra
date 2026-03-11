@@ -30,3 +30,5 @@ Last updated: 2026-03-11
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+
+1. [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01] Shrink the remaining `py_runtime.h` surface from the perspective of `object bridge` and shared `type_id` contracts. Context: [docs/en/plans/p0-cpp-pyruntime-contract-shrink.md](../plans/p0-cpp-pyruntime-contract-shrink.md)

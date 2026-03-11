@@ -30,3 +30,5 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
+
+1. [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01] `py_runtime.h` の残存 surface を `object bridge / type_id shared contract` 観点で縮小する。文脈: [docs/ja/plans/p0-cpp-pyruntime-contract-shrink.md](../plans/p0-cpp-pyruntime-contract-shrink.md)
