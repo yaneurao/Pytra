@@ -208,6 +208,25 @@ def _sh_make_call_expr(
     return node
 
 
+def _sh_make_starred_expr(
+    source_span: dict[str, Any],
+    value: dict[str, Any],
+    *,
+    resolved_type: str = "",
+    repr_text: str = "",
+) -> dict[str, Any]:
+    """`Starred` 式 node を構築する。"""
+    value_type = resolved_type if resolved_type != "" else str(value.get("resolved_type", "unknown"))
+    node = _sh_make_value_expr(
+        "Starred",
+        source_span,
+        resolved_type=value_type,
+        repr_text=repr_text,
+    )
+    node["value"] = value
+    return node
+
+
 def _sh_make_keyword_arg(arg: str, value: dict[str, Any]) -> dict[str, Any]:
     """Call.keyword carrier を構築する。"""
     return {

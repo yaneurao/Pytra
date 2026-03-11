@@ -1623,6 +1623,84 @@ class East2ToEast3LoweringTest(East23LoweringNominalAdtFixtureMixin, unittest.Te
         iter_plan = body[0].get("iter_plan", {})
         self.assertEqual(iter_plan.get("dispatch_mode"), "type_id")
 
+    def test_lower_fixed_tuple_starred_call_arg_to_positional_subscripts(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "int64",
+                        "func": {
+                            "kind": "Name",
+                            "id": "mix_rgb",
+                            "resolved_type": "Callable[[int64,int64,int64],int64]",
+                        },
+                        "args": [
+                            {
+                                "kind": "Starred",
+                                "resolved_type": "tuple[int64,int64,int64]",
+                                "value": {
+                                    "kind": "Name",
+                                    "id": "rgb",
+                                    "resolved_type": "tuple[int64,int64,int64]",
+                                },
+                            }
+                        ],
+                        "keywords": [],
+                    },
+                }
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        call = out.get("body", [])[0].get("value", {})
+        args = call.get("args", [])
+        self.assertEqual(len(args), 3)
+        for idx, arg in enumerate(args):
+            self.assertEqual(arg.get("kind"), "Subscript")
+            self.assertEqual(arg.get("value", {}).get("kind"), "Name")
+            self.assertEqual(arg.get("value", {}).get("id"), "rgb")
+            self.assertEqual(arg.get("slice", {}).get("kind"), "Constant")
+            self.assertEqual(arg.get("slice", {}).get("value"), idx)
+            self.assertEqual(arg.get("resolved_type"), "int64")
+
+    def test_lower_starred_call_rejects_non_tuple_receiver(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "int64",
+                        "func": {
+                            "kind": "Name",
+                            "id": "mix_rgb",
+                            "resolved_type": "Callable[[int64,int64,int64],int64]",
+                        },
+                        "args": [
+                            {
+                                "kind": "Starred",
+                                "resolved_type": "list[int64]",
+                                "value": {
+                                    "kind": "Name",
+                                    "id": "rgb",
+                                    "resolved_type": "list[int64]",
+                                },
+                            }
+                        ],
+                        "keywords": [],
+                    },
+                }
+            ],
+        }
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "starred_call_contract_violation: call starred unpack requires fixed tuple receiver TypeExpr",
+        ):
+            lower_east2_to_east3(east2)
+
     def test_load_east3_document_helper_accepts_dispatch_override(self) -> None:
         payload = {
             "kind": "Module",

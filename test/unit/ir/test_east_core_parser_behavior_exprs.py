@@ -131,6 +131,30 @@ def main(x: int, y: int) -> int:
         self.assertEqual(operand.get("kind"), "Name")
         self.assertEqual(operand.get("id"), "y")
 
+    def test_starred_call_tuple_arg_is_parsed_as_starred_expr(self) -> None:
+        src = """
+def mix_rgb(r: int, g: int, b: int) -> int:
+    return (r << 16) | (g << 8) | b
+
+def main(rgb: tuple[int, int, int]) -> int:
+    return mix_rgb(*rgb)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        calls = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "Call"]
+        self.assertGreaterEqual(len(calls), 1)
+        starred_args = [
+            arg
+            for call in calls
+            for arg in call.get("args", [])
+            if isinstance(arg, dict) and arg.get("kind") == "Starred"
+        ]
+        self.assertEqual(len(starred_args), 1)
+        starred = starred_args[0]
+        self.assertEqual(starred.get("resolved_type"), "tuple[int64,int64,int64]")
+        value = starred.get("value", {})
+        self.assertEqual(value.get("kind"), "Name")
+        self.assertEqual(value.get("id"), "rgb")
+
     def test_parser_accepts_bom_line_continuation_and_pow(self) -> None:
         src = """\ufefffrom pytra.std import math
 

@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import copy
 from typing import Any
 
 from toolchain.ir.east2_to_east3_call_metadata import _decorate_call_metadata
 from toolchain.ir.east2_to_east3_dispatch_orchestration import _lower_node_dispatch
+from toolchain.ir.east2_to_east3_stmt_lowering import _const_int_node
+from toolchain.ir.east2_to_east3_stmt_lowering import _tuple_element_types
 from toolchain.ir.east2_to_east3_type_id_predicate import _lower_type_id_call_expr
 from toolchain.ir.east2_to_east3_type_summary import _collect_nominal_adt_decl_summary_table
 from toolchain.ir.east2_to_east3_type_summary import _expr_type_name
@@ -123,10 +126,66 @@ def _make_boundary_expr(
     return out
 
 
+def _make_tuple_starred_index_expr(tuple_expr: dict[str, Any], index: int, elem_type: str, source_expr: Any) -> dict[str, Any]:
+    idx_node = _const_int_node(index)
+    tuple_node = copy.deepcopy(tuple_expr)
+    out: dict[str, Any] = {
+        "kind": "Subscript",
+        "value": tuple_node,
+        "slice": idx_node,
+        "resolved_type": elem_type,
+        "borrow_kind": "value",
+        "casts": [],
+    }
+    span = _node_source_span(source_expr)
+    if isinstance(span, dict):
+        out["source_span"] = span
+    repr_base = _node_repr(tuple_expr)
+    if repr_base != "":
+        out["repr"] = f"{repr_base}[{index}]"
+    _set_type_expr_summary(out, _type_expr_summary_from_payload(None, elem_type))
+    return out
+
+
+def _expand_starred_call_args(call: dict[str, Any]) -> dict[str, Any]:
+    args_obj = call.get("args")
+    args: list[Any] = args_obj if isinstance(args_obj, list) else []
+    expanded_args: list[Any] = []
+    changed = False
+    for arg in args:
+        if not isinstance(arg, dict) or arg.get("kind") != "Starred":
+            expanded_args.append(arg)
+            continue
+        changed = True
+        value_obj = arg.get("value")
+        value = value_obj if isinstance(value_obj, dict) else None
+        if value is None:
+            raise RuntimeError("starred_call_contract_violation: call starred unpack requires expression value")
+        if value.get("kind") != "Name":
+            raise RuntimeError(
+                "starred_call_contract_violation: representative v1 supports only named tuple starred call receivers"
+            )
+        tuple_types = _tuple_element_types(_expr_type_name(value))
+        if len(tuple_types) == 0:
+            raise RuntimeError(
+                "starred_call_contract_violation: call starred unpack requires fixed tuple receiver TypeExpr"
+            )
+        if any(_normalize_type_name(t) in {"", "unknown"} or _is_any_like_type(t) for t in tuple_types):
+            raise RuntimeError(
+                "starred_call_contract_violation: call starred unpack requires non-dynamic fixed tuple receiver TypeExpr"
+            )
+        for idx, elem_type in enumerate(tuple_types):
+            expanded_args.append(_make_tuple_starred_index_expr(value, idx, elem_type, arg))
+    if changed:
+        call["args"] = expanded_args
+    return call
+
+
 def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, Any]:
     out: dict[str, Any] = {}
     for key in call:
         out[key] = _lower_node(call[key], dispatch_mode=dispatch_mode)
+    out = _expand_starred_call_args(out)
 
     out = _lower_type_id_call_expr(
         out,
