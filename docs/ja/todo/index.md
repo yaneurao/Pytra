@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-現在、未完了タスクはありません。
+1. [ ] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01] import diagnostics の brittle な文字列分類を helper / structured envelope に移す。文脈: `docs/ja/plans/p1-import-diagnostic-structure.md`
