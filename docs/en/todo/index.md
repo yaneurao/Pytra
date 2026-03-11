@@ -31,4 +31,5 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-There are currently no unfinished tasks.
+1. [ ] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01] Split the relative-import normalization cluster still living in `transpile_cli.py`, and add focused tests plus source contracts.
+   Context: [docs/ja/plans/p1-relative-import-normalization-decomposition.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-normalization-decomposition.md)
