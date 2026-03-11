@@ -31,4 +31,13 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-There are currently no unfinished tasks.
+### P1: Align the current relative-import contract across entrypoints, docs, and smoke
+
+Context: [docs/ja/plans/p1-relative-import-closeout.md](../../ja/plans/p1-relative-import-closeout.md)
+
+1. [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01] Align the current relative-import contract across entrypoints, docs, and smoke.
+2. [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S1-01] Fix the current relative-import contract and stale surfaces in the plan / TODO.
+3. [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S2-01] Add representative relative-import regressions for the `py2x.py` entrypoint.
+4. [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S2-02] Sync the C++ support matrix rows for relative and wildcard import to the current contract.
+5. [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S3-01] Re-run targeted regressions and close the task with docs / archive updates.
+- Progress memo: relative import itself is already implemented, so this follow-up targets `py2x.py` representative regressions and stale “unsupported” support-matrix rows.
