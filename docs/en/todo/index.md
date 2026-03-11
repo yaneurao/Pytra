@@ -30,3 +30,6 @@ Last updated: 2026-03-11
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+
+1. [ ] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01] Relative import project-layout hardening. Context: `docs/en/plans/p0-relative-import-project-layout-hardening.md`
+   Progress memo: A nested-package representative smoke for `.cpu.runner -> ..util.bits` is now locked; the remaining work is closing out `from . import module` and root-escape diagnostics.

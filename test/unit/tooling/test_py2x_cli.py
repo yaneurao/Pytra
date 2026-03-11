@@ -113,6 +113,50 @@ class Py2xCliTest(unittest.TestCase):
             out_text = out_cpp.read_text(encoding="utf-8")
             self.assertIn("py_print(two());", out_text)
 
+    def test_py2x_accepts_nested_project_style_relative_import_chain(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pkg = root / "pkg"
+            nes = pkg / "nes"
+            cpu = nes / "cpu"
+            util = nes / "util"
+            cpu.mkdir(parents=True)
+            util.mkdir(parents=True)
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            (nes / "__init__.py").write_text("", encoding="utf-8")
+            (cpu / "__init__.py").write_text("", encoding="utf-8")
+            (util / "__init__.py").write_text("", encoding="utf-8")
+
+            main_py = nes / "main.py"
+            runner_py = cpu / "runner.py"
+            bits_py = util / "bits.py"
+            out_cpp = root / "out.cpp"
+
+            main_py.write_text("from .cpu.runner import run\nprint(run())\n", encoding="utf-8")
+            runner_py.write_text(
+                "from ..util.bits import low_nibble\n"
+                "def run() -> int:\n"
+                "    return low_nibble(63)\n",
+                encoding="utf-8",
+            )
+            bits_py.write_text(
+                "def low_nibble(v: int) -> int:\n"
+                "    return v & 15\n",
+                encoding="utf-8",
+            )
+
+            proc = subprocess.run(
+                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertTrue(out_cpp.exists())
+            out_text = out_cpp.read_text(encoding="utf-8")
+            self.assertIn("py_print(run());", out_text)
+
     def test_py2x_rejects_relative_import_root_escape(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -462,7 +506,7 @@ class Py2xCliTest(unittest.TestCase):
                                             "kind": "Module",
                                             "east_stage": 3,
                                             "schema_version": 1,
-                                            "meta": {"module_id": "pkg.main"},
+                                            "meta": {"dispatch_mode": "native", "module_id": "pkg.main"},
                                             "body": [],
                                         },
                                     ),
