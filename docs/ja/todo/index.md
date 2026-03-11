@@ -32,4 +32,5 @@
 ## 未完了タスク
 
 1. [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01] 同じ feature fixture を backend 横断で検証する parse / lowering / emit / runtime parity の共通 conformance suite を設計する。文脈: [p6-backend-conformance-suite.md](../plans/p6-backend-conformance-suite.md)
+   - 進捗メモ: `S2-02` で backend-selectable runner seed（`cpp -> rs -> cs`, `emit/runtime`）を manifest/export/checker まで固定した。
 2. [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01] feature × backend support matrix、rollout tier、review checklist を定義し、backend parity を docs / tooling / 運用へ定着させる。文脈: [p7-backend-parity-rollout-and-matrix.md](../plans/p7-backend-parity-rollout-and-matrix.md)
