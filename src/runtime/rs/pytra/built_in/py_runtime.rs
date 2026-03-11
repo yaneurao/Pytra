@@ -764,11 +764,15 @@ impl PyRuntimeTypeId for PyAny {
     }
 }
 
-pub fn py_runtime_type_id<T: PyRuntimeTypeId>(value: &T) -> i64 {
+pub fn py_runtime_value_type_id<T: PyRuntimeTypeId>(value: &T) -> i64 {
     value.py_runtime_type_id()
 }
 
-pub fn py_is_subtype(actual_type_id: i64, expected_type_id: i64) -> bool {
+pub fn py_runtime_type_id<T: PyRuntimeTypeId>(value: &T) -> i64 {
+    py_runtime_value_type_id(value)
+}
+
+pub fn py_runtime_type_id_is_subtype(actual_type_id: i64, expected_type_id: i64) -> bool {
     let actual = match py_type_info(actual_type_id) {
         Some(info) => info,
         None => return false,
@@ -780,12 +784,24 @@ pub fn py_is_subtype(actual_type_id: i64, expected_type_id: i64) -> bool {
     expected.min <= actual.order && actual.order <= expected.max
 }
 
+pub fn py_is_subtype(actual_type_id: i64, expected_type_id: i64) -> bool {
+    py_runtime_type_id_is_subtype(actual_type_id, expected_type_id)
+}
+
+pub fn py_runtime_type_id_issubclass(actual_type_id: i64, expected_type_id: i64) -> bool {
+    py_runtime_type_id_is_subtype(actual_type_id, expected_type_id)
+}
+
 pub fn py_issubclass(actual_type_id: i64, expected_type_id: i64) -> bool {
-    py_is_subtype(actual_type_id, expected_type_id)
+    py_runtime_type_id_issubclass(actual_type_id, expected_type_id)
+}
+
+pub fn py_runtime_value_isinstance<T: PyRuntimeTypeId>(value: &T, expected_type_id: i64) -> bool {
+    py_runtime_type_id_is_subtype(py_runtime_value_type_id(value), expected_type_id)
 }
 
 pub fn py_isinstance<T: PyRuntimeTypeId>(value: &T, expected_type_id: i64) -> bool {
-    py_is_subtype(py_runtime_type_id(value), expected_type_id)
+    py_runtime_value_isinstance(value, expected_type_id)
 }
 
 pub trait PySlice {

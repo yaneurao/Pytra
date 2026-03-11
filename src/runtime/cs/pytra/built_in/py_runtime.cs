@@ -344,7 +344,7 @@ namespace Pytra.CsModule
             return false;
         }
 
-        public static long py_runtime_type_id(object value)
+        public static long py_runtime_value_type_id(object value)
         {
             EnsureBuiltinTypeTable();
             if (value == null)
@@ -397,7 +397,12 @@ namespace Pytra.CsModule
             return PYTRA_TID_OBJECT;
         }
 
-        public static bool py_is_subtype(long actualTypeId, long expectedTypeId)
+        public static long py_runtime_type_id(object value)
+        {
+            return py_runtime_value_type_id(value);
+        }
+
+        public static bool py_runtime_type_id_is_subtype(long actualTypeId, long expectedTypeId)
         {
             EnsureBuiltinTypeTable();
             long actualOrder;
@@ -418,14 +423,29 @@ namespace Pytra.CsModule
             return expectedMin <= actualOrder && actualOrder <= expectedMax;
         }
 
+        public static bool py_is_subtype(long actualTypeId, long expectedTypeId)
+        {
+            return py_runtime_type_id_is_subtype(actualTypeId, expectedTypeId);
+        }
+
+        public static bool py_runtime_type_id_issubclass(long actualTypeId, long expectedTypeId)
+        {
+            return py_runtime_type_id_is_subtype(actualTypeId, expectedTypeId);
+        }
+
         public static bool py_issubclass(long actualTypeId, long expectedTypeId)
         {
-            return py_is_subtype(actualTypeId, expectedTypeId);
+            return py_runtime_type_id_issubclass(actualTypeId, expectedTypeId);
+        }
+
+        public static bool py_runtime_value_isinstance(object value, long expectedTypeId)
+        {
+            return py_runtime_type_id_is_subtype(py_runtime_value_type_id(value), expectedTypeId);
         }
 
         public static bool py_isinstance(object value, long expectedTypeId)
         {
-            return py_is_subtype(py_runtime_type_id(value), expectedTypeId);
+            return py_runtime_value_isinstance(value, expectedTypeId);
         }
 
         private static int NormalizeSliceIndex(long index, int length)

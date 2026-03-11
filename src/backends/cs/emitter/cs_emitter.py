@@ -2444,19 +2444,19 @@ class CSharpEmitter(CodeEmitter):
 
     def _render_runtime_type_id_expr(self, value_expr: str) -> str:
         """Render the shared `py_runtime_type_id` contract in C#."""
-        return "Pytra.CsModule.py_runtime.py_runtime_type_id(" + value_expr + ")"
+        return "Pytra.CsModule.py_runtime.py_runtime_value_type_id(" + value_expr + ")"
 
     def _render_runtime_isinstance_expr(self, value_expr: str, expected_type_id: str) -> str:
         """Render the shared `py_isinstance` contract in C#."""
-        return "Pytra.CsModule.py_runtime.py_isinstance(" + value_expr + ", " + expected_type_id + ")"
+        return "Pytra.CsModule.py_runtime.py_runtime_value_isinstance(" + value_expr + ", " + expected_type_id + ")"
 
     def _render_runtime_is_subtype_expr(self, actual_type_id: str, expected_type_id: str) -> str:
         """Render the shared `py_is_subtype` contract in C#."""
-        return "Pytra.CsModule.py_runtime.py_is_subtype(" + actual_type_id + ", " + expected_type_id + ")"
+        return "Pytra.CsModule.py_runtime.py_runtime_type_id_is_subtype(" + actual_type_id + ", " + expected_type_id + ")"
 
     def _render_runtime_issubclass_expr(self, actual_type_id: str, expected_type_id: str) -> str:
         """Render the shared `py_issubclass` contract in C#."""
-        return "Pytra.CsModule.py_runtime.py_issubclass(" + actual_type_id + ", " + expected_type_id + ")"
+        return "Pytra.CsModule.py_runtime.py_runtime_type_id_issubclass(" + actual_type_id + ", " + expected_type_id + ")"
 
     def _render_isinstance_call(self, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """`isinstance(...)` 呼び出しを C# へ lower する。"""
