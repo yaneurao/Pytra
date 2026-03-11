@@ -32,4 +32,4 @@
 ## 未完了タスク
 
 1. [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01] `py_runtime.h` の残存 surface を object bridge / typed compat / shared `type_id` contract ごとに実縮小し、header を thin compatibility seam に寄せる。文脈: [docs/ja/plans/p1-cpp-pyruntime-header-shrink.md](../plans/p1-cpp-pyruntime-header-shrink.md)
-   進捗メモ: `S1-01` で header residual surface を `object_bridge_mutation` / `typed_collection_compat` / `shared_type_id_compat` に bucket 化する inventory と drift guard を追加した。
+   進捗メモ: `S1-02` で header residual surface の bucket 境界を inventory + source guard に固定し、次の削減順を `typed_collection_compat -> shared_type_id_compat` に確定した。

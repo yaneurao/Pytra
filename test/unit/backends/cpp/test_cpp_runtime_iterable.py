@@ -637,6 +637,21 @@ int main() {
             "return py_runtime_type_id_is_subtype(py_runtime_type_id(value), expected_type_id);",
             runtime_header,
         )
+        self.assertIn("static inline void py_append(list<T>& v, const U& item)", runtime_header)
+        self.assertIn("static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item)", runtime_header)
+        self.assertIn("static inline void py_append(object& v, const U& item)", runtime_header)
+        self.assertIn("static inline void py_set_at(object& v, I idx, const U& item)", runtime_header)
+        self.assertIn("static inline void py_extend(object& v, const list<object>& items)", runtime_header)
+        self.assertIn("static inline void py_extend(object& v, const object& items)", runtime_header)
+        self.assertIn("static inline object py_pop(object& v)", runtime_header)
+        self.assertIn("static inline object py_pop(object& v, int64 idx)", runtime_header)
+        self.assertIn("static inline void py_clear(object& v)", runtime_header)
+        self.assertIn("static inline void py_reverse(object& v)", runtime_header)
+        self.assertIn("static inline void py_sort(object& v)", runtime_header)
+        self.assertNotIn("static inline void py_extend(list<object>& v", runtime_header)
+        self.assertNotIn("static inline void py_clear(list<object>& v", runtime_header)
+        self.assertNotIn("static inline void py_reverse(list<object>& v", runtime_header)
+        self.assertNotIn("static inline void py_sort(list<object>& v", runtime_header)
         self.assertFalse((ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.cpp").exists())
         self.assertFalse((ROOT / "src/runtime/cpp/generated/built_in/zip_ops.cpp").exists())
 

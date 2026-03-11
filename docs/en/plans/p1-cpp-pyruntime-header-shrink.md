@@ -52,7 +52,7 @@ Verification commands:
 
 Breakdown:
 - [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S1-01] Inventory the remaining `py_runtime.h` helpers into `object_bridge_mutation`, `typed_collection_compat`, and `shared_type_id_compat`, and add tooling.
-- [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S1-02] Lock the target end state and bundle-sized removal order in docs/source guards.
+- [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S1-02] Lock the target end state and bundle-sized removal order in docs/source guards.
 - [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-01] Remove unnecessary list/dict wrappers from `typed_collection_compat` in bundle-sized slices.
 - [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-02] Further narrow the thin `shared_type_id_compat` wrappers under source-guard coverage.
 - [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S3-01] Refresh representative runtime tests, docs, and archive the task.
@@ -60,3 +60,4 @@ Breakdown:
 Decision log:
 - 2026-03-11: Opened as the follow-up after `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01`. The next step is not more emitter work, but actually shrinking the residual surface inside `py_runtime.h`.
 - 2026-03-11: As `S1-01`, we inventoried the remaining helpers into `object_bridge_mutation`, `typed_collection_compat`, and `shared_type_id_compat`, then added a drift guard.
+- 2026-03-11: As `S1-02`, we added header-surface source guards in `test_cpp_runtime_iterable.py` and fixed the removal order so the next shrink starts from `typed_collection_compat`.
