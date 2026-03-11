@@ -32,15 +32,23 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
             ("py_isinstance", "src/runtime/cpp/native/compiler/backend_registry_static.cpp"),
             shared,
         )
+        self.assertIn(
+            ("py_runtime_object_isinstance", "src/runtime/cpp/native/compiler/transpile_cli.cpp"),
+            shared,
+        )
+        self.assertIn(
+            ("py_runtime_object_isinstance", "src/runtime/cpp/native/compiler/backend_registry_static.cpp"),
+            shared,
+        )
 
     def test_typed_lane_removable_bucket_can_reach_zero_after_upstreaming(self) -> None:
         self.assertEqual(inventory_mod.EXPECTED_BUCKETS["typed_lane_removable"], set())
         self.assertIn("typed_lane_removable", inventory_mod.EMPTY_BUCKETS_ALLOWED)
 
-    def test_object_bridge_required_bucket_stays_generated_runtime_only(self) -> None:
+    def test_object_bridge_required_bucket_can_reach_zero_after_upstreaming(self) -> None:
         object_bridge = inventory_mod.EXPECTED_BUCKETS["object_bridge_required"]
-        self.assertTrue(all(path.startswith("src/runtime/cpp/generated/") for _, path in object_bridge))
-        self.assertEqual({symbol for symbol, _ in object_bridge}, {"py_append", "py_isinstance"})
+        self.assertEqual(object_bridge, set())
+        self.assertIn("object_bridge_required", inventory_mod.EMPTY_BUCKETS_ALLOWED)
 
     def test_shared_runtime_contract_bucket_is_type_id_and_cross_runtime_only(self) -> None:
         shared = inventory_mod.EXPECTED_BUCKETS["shared_runtime_contract"]
@@ -52,7 +60,12 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
         }
         self.assertTrue(
             all(
-                symbol in {"py_runtime_type_id", "py_isinstance"}
+                symbol
+                in {
+                    "py_runtime_object_isinstance",
+                    "py_runtime_type_id_is_subtype",
+                    "py_runtime_type_id_issubclass",
+                }
                 for symbol, _ in cpp_runtime_entries
             )
         )
@@ -66,13 +79,20 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
         }
         self.assertIn(("py_append", "src/runtime/cs/pytra/utils/gif.cs"), cross_runtime_mutations)
         self.assertIn(("py_append", "src/runtime/cs/pytra/utils/png.cs"), cross_runtime_mutations)
-        self.assertIn(("py_issubclass", "src/backends/rs/emitter/rs_emitter.py"), shared)
-        self.assertIn(("py_issubclass", "src/backends/cs/emitter/cs_emitter.py"), shared)
+        self.assertIn(
+            ("py_runtime_type_id_issubclass", "src/backends/rs/emitter/rs_emitter.py"),
+            shared,
+        )
+        self.assertIn(
+            ("py_runtime_type_id_issubclass", "src/backends/cs/emitter/cs_emitter.py"),
+            shared,
+        )
 
     def test_shared_runtime_contract_excludes_generated_type_id_cpp(self) -> None:
         shared = inventory_mod.EXPECTED_BUCKETS["shared_runtime_contract"]
         self.assertNotIn(("py_runtime_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"), shared)
         self.assertNotIn(("py_isinstance", "src/runtime/cpp/generated/built_in/type_id.cpp"), shared)
+        self.assertIn(("py_runtime_object_isinstance", "src/runtime/cpp/generated/std/json.cpp"), shared)
 
 
 if __name__ == "__main__":
