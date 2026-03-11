@@ -3,7 +3,7 @@
 最終更新: 2026-03-12
 
 関連 TODO:
-- `docs/ja/todo/index.md` の `ID: P0-RELATIVE-IMPORT-BARE-PARENT-01`
+- `docs/ja/todo/archive/20260312.md` の `ID: P0-RELATIVE-IMPORT-BARE-PARENT-01`
 
 背景:
 - relative `from-import` 本体はすでに実装済みで、`from .helper import f`、`from ..pkg import y`、`from . import helper` は representative test がある。
@@ -42,9 +42,12 @@
 - `git diff --check`
 
 分解:
-- [ ] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01-S1-01] `from .. import helper` を current supported contract として plan/spec に固定する。
-- [ ] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01-S2-01] CLI / import graph の representative regression を追加して package-parent bare import success を固定する。
-- [ ] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01-S2-02] C++ multi-file smoke と support matrix / tutorial の記述を current contract に同期する。
+- [x] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01-S1-01] `from .. import helper` を current supported contract として plan/spec に固定する。
+- [x] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01-S2-01] CLI / import graph の representative regression を追加して package-parent bare import success を固定する。
+- [x] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01-S2-02] C++ multi-file smoke と support matrix / tutorial の記述を current contract に同期する。
 
 決定ログ:
 - 2026-03-12: TODO 空き後の新規 P0 として起票。probe では `pkg/sub/main.py -> from .. import helper` はすでに成功したため、新規実装ではなく representative contract の close-out として扱う。
+- 2026-03-12: `S1-01` として spec / tutorial / support matrix の accepted-form list に `from .. import helper` を追加し、current support が未対応に見えないようにした。
+- 2026-03-12: `S2-01` として `test_py2x_cli.py` と `test_import_graph_issue_structure.py` に `pkg/sub/main.py -> from .. import helper` success regression を追加し、package-parent bare import が CLI / import graph の両方で representative に固定された。
+- 2026-03-12: `S2-02` として `test_py2cpp_features.py` に C++ multi-file regression を追加し、`from .. import helper` lane が generated `main.cpp` で `helper.f()` を使う current codegen path として固定した。

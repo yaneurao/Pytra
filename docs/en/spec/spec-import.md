@@ -32,6 +32,7 @@ Read `docs/en/spec/spec-runtime.md` first.
 - Stage 1 accepts only the following relative forms:
   - `from .m import x`
   - `from ..pkg import y`
+  - `from .. import helper`
   - `from . import x`
   - `from .m import *`
 - Illegal Python syntax such as `import .m` is never accepted.
@@ -95,7 +96,7 @@ Should namespace-like prefixes be attached to symbol names?
   - `from M import S`
   - `from M import S as A`
 - In phase 1, accept `from M import *` as wildcard binding and expand it with `__all__` priority / public-name fallback.
-- In phase 1, also accept relative `from-import` (`from .m import x`, `from ..pkg import y`, `from . import x`, `from .m import *`) and normalize it into an absolute `module_id` in the frontend.
+- In phase 1, also accept relative `from-import` (`from .m import x`, `from ..pkg import y`, `from .. import helper`, `from . import x`, `from .m import *`) and normalize it into an absolute `module_id` in the frontend.
 
 ### 1. Fix Input Data Structure for Dependency Analysis Phase
 
@@ -188,7 +189,7 @@ auto x = pytra_mod_foo__bar::add(1, 2);
 
 - Positive cases:
   - `import M` / `import M as A` / `from M import S` / `from M import S as A`
-  - `from .m import x` / `from ..pkg import y` / `from . import x`
+  - `from .m import x` / `from ..pkg import y` / `from .. import helper` / `from . import x`
   - no collision at call site due to full qualification even when same-name symbols exist across modules
 - Negative cases:
   - `from M import *` (accepted; unresolved/static-undecidable wildcard must fail as `kind=unresolved_wildcard`)

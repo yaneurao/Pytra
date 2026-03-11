@@ -132,7 +132,7 @@ python3 tools/runtime_parity_check.py \
 - Allowed imports are:
   - Modules under `src/pytra/` (`pytra.std.*`, `pytra.utils.*`, `pytra.compiler.*`)
   - User-authored `.py` modules
-- User module imports are supported in multi-file transpilation. Besides absolute imports, relative `from-import` forms such as `from .helper import f`, `from ..pkg import y`, and `from .helper import *` are normalized statically.
+- User module imports are supported in multi-file transpilation. Besides absolute imports, relative `from-import` forms such as `from .helper import f`, `from ..pkg import y`, `from .. import helper`, and `from .helper import *` are normalized statically.
 - Relative imports that escape above the entry root fail closed as `input_invalid(kind=relative_import_escape)`.
 - See [Module Index](./spec/spec-pylib-modules.md) for supported modules and APIs.
 - See [Option Specification](./spec/spec-options.md) for option policy and candidates.

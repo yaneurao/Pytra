@@ -56,6 +56,7 @@ Pytra は、型注釈付き Python コードを複数言語へ変換するトラ
 - relative `from-import` の canonical surface v1 は次を正本とします。
   - `from .m import x`
   - `from ..pkg import y`
+  - `from .. import helper`
   - `from . import x`
   - `from .m import *`
   - 解決基準は importing file path と entry root に対する static な module 正規化であり、runtime の `__package__` は見ません。

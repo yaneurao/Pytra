@@ -31,5 +31,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01] `from .. import helper` の current support を representative regression と spec/doc contract に固定する。
-   文脈: [docs/ja/plans/p0-relative-import-bare-parent-hardening.md](/workspace/Pytra/docs/ja/plans/p0-relative-import-bare-parent-hardening.md)
+現在、未完了タスクはありません。

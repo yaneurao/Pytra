@@ -3,7 +3,7 @@
 Last updated: 2026-03-12
 
 Related TODO:
-- `ID: P0-RELATIVE-IMPORT-BARE-PARENT-01` in `docs/ja/todo/index.md`
+- `ID: P0-RELATIVE-IMPORT-BARE-PARENT-01` in `docs/ja/todo/archive/20260312.md`
 
 Background:
 - Relative `from-import` support already exists, and representative tests already cover `from .helper import f`, `from ..pkg import y`, and `from . import helper`.
@@ -42,9 +42,12 @@ Verification commands:
 - `git diff --check`
 
 Breakdown:
-- [ ] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01-S1-01] Fix the current supported contract for `from .. import helper` in the plan/spec.
-- [ ] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01-S2-01] Add CLI / import-graph representative regressions that lock package-parent bare import success.
-- [ ] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01-S2-02] Sync C++ multi-file smoke and support-matrix/tutorial wording with the current contract.
+- [x] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01-S1-01] Fix the current supported contract for `from .. import helper` in the plan/spec.
+- [x] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01-S2-01] Add CLI / import-graph representative regressions that lock package-parent bare import success.
+- [x] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01-S2-02] Sync C++ multi-file smoke and support-matrix/tutorial wording with the current contract.
 
 Decision log:
 - 2026-03-12: Created as a new P0 after the TODO list became empty. A probe showed that `pkg/sub/main.py -> from .. import helper` already succeeds, so this is treated as a contract close-out task rather than a new implementation task.
+- 2026-03-12: `S1-01` added `from .. import helper` to the accepted-form lists in the spec, tutorial, and support matrix so the current support no longer looks unsupported.
+- 2026-03-12: `S2-01` added representative success regressions to `test_py2x_cli.py` and `test_import_graph_issue_structure.py`, fixing package-parent bare import support at both the CLI and import-graph layers.
+- 2026-03-12: `S2-02` added a C++ multi-file regression to `test_py2cpp_features.py`, locking the current generated `main.cpp` call path for `from .. import helper` as `helper.f()`.

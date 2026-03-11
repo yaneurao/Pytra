@@ -15,6 +15,7 @@ Last updated: 2026-03-12
 
 ## Completed Plan Archive
 
+- [2026-03-12 / P0-RELATIVE-IMPORT-BARE-PARENT-01](../plans/archive/20260312-p0-relative-import-bare-parent-hardening.md)
 - [2026-03-12 / P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01](../plans/archive/20260312-p4-crossruntime-pyruntime-emitter-future-shrink.md)
 - [2026-03-12 / P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01](../plans/archive/20260312-p4-crossruntime-pyruntime-emitter-residual-reduction.md)
 - [2026-03-12 / P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01](../plans/archive/20260312-p0-relative-import-diagnostic-realign.md)

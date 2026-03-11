@@ -162,6 +162,20 @@ class ImportGraphIssueStructureTest(unittest.TestCase):
 
         self.assertEqual(transpile_cli.collect_import_modules(east_doc), [".helper"])
 
+    def test_collect_import_modules_expands_parent_dot_only_from_import_module_candidates(self) -> None:
+        east_doc: dict[str, object] = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "ImportFrom",
+                    "module": "..",
+                    "names": [{"name": "helper"}],
+                }
+            ],
+        }
+
+        self.assertEqual(transpile_cli.collect_import_modules(east_doc), ["..helper"])
+
     def test_collect_import_requests_preserves_from_import_symbol_shape(self) -> None:
         east_doc: dict[str, object] = {
             "kind": "Module",
@@ -215,6 +229,30 @@ class ImportGraphIssueStructureTest(unittest.TestCase):
         module_id_map = module_id_map_obj if isinstance(module_id_map_obj, dict) else {}
         self.assertEqual(module_id_map.get(str(main_py)), "main")
         self.assertEqual(module_id_map.get(str(helper_py)), "helper")
+
+    def test_analyze_import_graph_accepts_parent_dot_only_from_import_via_request_carrier(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pkg = root / "pkg"
+            sub = pkg / "sub"
+            sub.mkdir(parents=True)
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            (sub / "__init__.py").write_text("", encoding="utf-8")
+            main_py = sub / "main.py"
+            helper_py = pkg / "helper.py"
+            main_py.write_text("from .. import helper\nprint(helper.f())\n", encoding="utf-8")
+            helper_py.write_text("def f() -> int:\n    return 11\n", encoding="utf-8")
+
+            analysis = transpile_cli.analyze_import_graph(
+                main_py,
+                Path("src/pytra/std"),
+                Path("src/pytra/utils"),
+                transpile_cli.load_east_document,
+            )
+
+        self.assertEqual([], analysis.get("missing_modules"))
+        self.assertEqual([], analysis.get("relative_imports"))
+        self.assertIn("sub/main.py -> helper.py", analysis.get("edges", []))
 
     def test_validate_from_import_symbols_accepts_reexported_symbol_binding(self) -> None:
         root = ROOT / "tmp-reexport-root"

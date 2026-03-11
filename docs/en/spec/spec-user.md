@@ -52,6 +52,7 @@ Pytra transpiles type-annotated Python code into multiple languages. The canonic
 - The canonical v1 surface for relative `from-import` is fixed as follows.
   - `from .m import x`
   - `from ..pkg import y`
+  - `from .. import helper`
   - `from . import x`
   - `from .m import *`
   - Resolution is based on static module normalization against the importing file path and the entry root; runtime `__package__` is not consulted.

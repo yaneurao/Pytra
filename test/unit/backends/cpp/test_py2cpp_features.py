@@ -2292,6 +2292,46 @@ def main() -> None:
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn("pytra_mod_helper::f()", main_cpp_txt)
 
+    def test_cli_accepts_relative_from_import_for_parent_package_submodule(self) -> None:
+        src_main = """from .. import helper
+
+def main() -> None:
+    print(helper.f())
+"""
+        src_helper = """def f() -> int:
+    return 11
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            pkg = root / "pkg"
+            sub = pkg / "sub"
+            sub.mkdir(parents=True)
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            (sub / "__init__.py").write_text("", encoding="utf-8")
+            main_py = sub / "main.py"
+            helper_py = pkg / "helper.py"
+            out_dir = root / "out"
+            main_py.write_text(src_main, encoding="utf-8")
+            helper_py.write_text(src_helper, encoding="utf-8")
+            proc = subprocess.run(
+                [
+                    "python3",
+                    "src/py2x.py",
+                    "--target",
+                    "cpp",
+                    str(main_py),
+                    "--multi-file",
+                    "--output-dir",
+                    str(out_dir),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            main_cpp_txt = (out_dir / "src" / "main.cpp").read_text(encoding="utf-8")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("helper.f()", main_cpp_txt)
+
     def test_cli_reports_input_invalid_for_relative_import_root_escape(self) -> None:
         src_main = """from ..helper import f
 
