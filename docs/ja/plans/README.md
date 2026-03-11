@@ -6,11 +6,10 @@
 
 - `plans/` 直下の canonical entrypoint は raw のファイル一覧ではなく、この `README.md` とする。
 - `active` は `docs/ja/todo/index.md` の未完了タスクから直接参照されている live plan に限る。
-- `backlog` は live の `p*-*.md` で、TODO 未登録かつ archive に同名 plan がまだ無いものとする。
-- `stale-complete` は live の `p*-*.md` で、TODO 未登録かつ archive に同名 plan が既にあるものとする。これは `plans/` 直下へ残さず archive へ移す。
+- `backlog` は live の `p*-*.md` で、TODO 未登録かつ、未完了 backlog か live status/report sink として残してよいものとする。
+- `stale-complete` は live の `p*-*.md` で、TODO 未登録、checklist 完了、かつ live status/report sink でもないものとする。これは `plans/` 直下へ残さず archive へ移す。
 
 2026-03-12 時点の active live plan:
-- `p4-plan-archive-hygiene.md`
 - `p4-crossruntime-pyruntime-emitter-shrink.md`
 - `p4-crossruntime-pyruntime-residual-caller-shrink.md`
 - `p5-backend-feature-parity-contract.md`
@@ -36,6 +35,15 @@
 - `YYYYMMDD` は移動日（または完了確定日）を使う。
 - `docs/ja/todo/archive/index.md` に、完了 plan へのリンクを 1 行追加する。
 - 詳細な完了文脈は該当日の `docs/ja/todo/archive/YYYYMMDD.md` 側に記録する。
+
+## Archive Handoff Checklist
+
+- 親 task と子 task を `docs/ja/todo/index.md` 上で全て `[x]` にしたら、live plan を `docs/ja/plans/archive/YYYYMMDD-<slug>.md` へ移動する。
+- `docs/ja/todo/index.md` から完了 task を削除し、`docs/ja/todo/archive/YYYYMMDD.md` に完了 section を追加する。
+- `docs/ja/todo/archive/index.md` に archive plan へのリンクを追加する。
+- `docs/en/` mirror の plan / TODO / archive も同じ handoff を反映する。
+- `plans/README.md` の active live plan 一覧から完了 plan を外し、backlog / stale-complete の分類基準が崩れていないことを確認する。
+- handoff 後に `python3 tools/check_todo_priority.py` と `git diff --check` を実行する。
 
 ## 推奨テンプレート
 

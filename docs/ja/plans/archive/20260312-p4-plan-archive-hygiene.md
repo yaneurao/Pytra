@@ -58,7 +58,7 @@ representative backlog / live-status:
 - [x] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S1-01] live plan inventory を棚卸しし、`active` / `backlog` / `stale-complete` の分類基準と representative 件数を記録する。
 - [x] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S2-01] representative な stale-complete live plan を archive へ移し、TODO/archive index のリンク整合を回復する。
 - [x] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S3-01] backlog plan の置き場所または表記ルールを決め、`plans/` 直下の意味を active-first に揃える。
-- [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S4-01] archive handoff 手順を README / 運用文書へ反映し、以後の完了 plan 滞留を防ぐ。
+- [x] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S4-01] archive handoff 手順を README / 運用文書へ反映し、以後の完了 plan 滞留を防ぐ。
 
 ## 決定ログ
 
@@ -68,3 +68,4 @@ representative backlog / live-status:
 - 2026-03-12: corrected criteria では `stale-complete` を `TODO 未登録 + checklist 完了 + live status/report sink ではない` と再定義し、tracked live inventory を `active=6 / stale-complete=129 / backlog=11` に修正した。
 - 2026-03-12: `S2-01` では representative stale-complete handoff として `p0-backends-common-foundation.md`, `p1-ruby-benchmark-readme-fix.md`, `p1-go-sample01-quality-uplift.md`, `p1-test-unit-layout-and-pruning.md` を archive へ移し、先行で archive 済みの selfhost status 2 件を含めて live inventory を `140` 件まで縮めた。
 - 2026-03-12: `plans/README.md` を live `plans/` の canonical entrypoint に固定し、active 6 件の列挙と backlog/stale-complete の分類規則を README 側へ明記した。新規 backlog draft は `関連 TODO: なし（backlog draft / TODO 未登録）` を許容する。
+- 2026-03-12: `S4-01` で `plans/README.md` と archive 運用文書に archive handoff checklist を追加し、corrected criteria に基づく分類を README に同期した。これにより、本 task 自身も同じ handoff 手順で archive へ移せる状態になった。

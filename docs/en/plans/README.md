@@ -10,11 +10,10 @@ This folder stores long-term plans, design drafts, and investigation notes.
 
 - The canonical entrypoint for live `plans/` is this `README.md`, not the raw file listing.
 - `active` means only live plans referenced directly by unfinished tasks in `docs/ja/todo/index.md`.
-- `backlog` means live `p*-*.md` files that are not registered in TODO yet and do not already have an archive twin.
-- `stale-complete` means live `p*-*.md` files that are no longer referenced by TODO and already have an archive twin. These should be moved out of live `plans/`.
+- `backlog` means live `p*-*.md` files that are not registered in TODO yet and are either still unfinished backlog drafts or intentional live status/report sinks.
+- `stale-complete` means live `p*-*.md` files that are no longer referenced by TODO, have every checklist item complete, and are not live status/report sinks. These should be moved out of live `plans/`.
 
 Active live plans as of 2026-03-12:
-- `p4-plan-archive-hygiene.md`
 - `p4-crossruntime-pyruntime-emitter-shrink.md`
 - `p4-crossruntime-pyruntime-residual-caller-shrink.md`
 - `p5-backend-feature-parity-contract.md`
@@ -32,6 +31,15 @@ Active live plans as of 2026-03-12:
 - For priority-override instructions, use `docs/ja/plans/instruction-template.md`.
 - If a draft remains under live `plans/` before it is promoted into TODO, treat it as backlog through this README instead of the raw file listing.
 - New backlog drafts may write `Related TODO: none (backlog draft / not yet promoted)` and should replace that line with the real TODO ID once promoted.
+
+## Completion Handoff Checklist
+
+- Once the parent TODO task and all child tasks are marked `[x]` in `docs/ja/todo/index.md`, move the live plan to `docs/ja/plans/archive/YYYYMMDD-<slug>.md`.
+- Remove the completed task from `docs/ja/todo/index.md` and add a completion section to `docs/ja/todo/archive/YYYYMMDD.md`.
+- Add the archived plan link to `docs/ja/todo/archive/index.md`.
+- Mirror the same plan / TODO / archive handoff under `docs/en/`.
+- Remove the completed plan from the active live plan list in `plans/README.md` and verify that the backlog / stale-complete classification still holds.
+- Run `python3 tools/check_todo_priority.py` and `git diff --check` after the handoff.
 
 ## Recommended Template
 

@@ -58,7 +58,7 @@ Representative backlog / live-status:
 - [x] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S1-01] Inventory live plans and record the classification rules plus representative counts for `active`, `backlog`, and `stale-complete`.
 - [x] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S2-01] Move representative stale-complete live plans into the archive and repair TODO/archive index links.
 - [x] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S3-01] Decide the placement or labeling rules for backlog plans so the top-level `plans/` directory becomes active-first again.
-- [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S4-01] Reflect the archive handoff workflow in README / operations docs and prevent future completed-plan drift.
+- [x] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S4-01] Reflect the archive handoff workflow in README / operations docs and prevent future completed-plan drift.
 
 ## Decision log
 
@@ -68,3 +68,4 @@ Representative backlog / live-status:
 - 2026-03-12: Under the corrected criteria, `stale-complete` means `not in TODO + checklist complete + not a live status/report sink`, which changes the tracked live inventory to `active=6 / stale-complete=129 / backlog=11`.
 - 2026-03-12: `S2-01` archived the representative stale-complete set (`p0-backends-common-foundation.md`, `p1-ruby-benchmark-readme-fix.md`, `p1-go-sample01-quality-uplift.md`, `p1-test-unit-layout-and-pruning.md`) in addition to the two earlier selfhost status files, reducing the live inventory to `140`.
 - 2026-03-12: `plans/README.md` is now the canonical entrypoint for live `plans/`, listing the 6 active plans explicitly and documenting the backlog/stale-complete rules there. New backlog drafts may use `Related TODO: none (backlog draft / not yet promoted)`.
+- 2026-03-12: `S4-01` added an archive handoff checklist to `plans/README.md` and the archive-operation docs, and synchronized the corrected classification rules into the README. That makes this hygiene task itself eligible for the same archive handoff path.
