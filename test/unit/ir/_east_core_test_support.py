@@ -13,6 +13,8 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 CORE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core.py"
+CORE_AST_BUILDERS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_ast_builders.py"
+CORE_BUILDER_BASE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_builder_base.py"
 CORE_CALL_ARG_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_args.py"
 CORE_CALL_SUFFIX_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_suffix.py"
 CORE_CLASS_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_class_semantics.py"
@@ -28,6 +30,7 @@ CORE_TYPE_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_type
 CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_runtime_call_semantics.py"
 CORE_RUNTIME_DECL_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_runtime_decl_semantics.py"
 CORE_SIGNATURE_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_signature_semantics.py"
+CORE_STMT_BUILDERS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_stmt_builders.py"
 CORE_CALL_ANNOTATION_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_annotation.py"
 CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH = (
     ROOT / "src" / "toolchain" / "ir" / "core_expr_attr_subscript_annotation.py"

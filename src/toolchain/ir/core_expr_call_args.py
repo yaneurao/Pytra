@@ -5,6 +5,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from toolchain.ir.core_ast_builders import _sh_make_comp_generator
+from toolchain.ir.core_ast_builders import _sh_make_list_comp_expr
+from toolchain.ir.core_builder_base import _sh_make_name_expr
+from toolchain.ir.core_builder_base import _sh_make_tuple_expr
+from toolchain.ir.core_stmt_text_semantics import _sh_split_top_commas
+
 
 class _ShExprCallArgParserMixin:
     def _consume_call_arg_loop_comma_token(self) -> dict[str, Any]:
@@ -239,3 +245,146 @@ class _ShExprCallArgParserMixin:
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """call argument list の空-state result return を helper へ寄せる。"""
         return args, keywords
+
+    def _dict_stmt_list(self, raw: Any) -> list[dict[str, Any]]:
+        """動的値から `list[dict]` を安全に取り出す。"""
+        out: list[dict[str, Any]] = []
+        if not isinstance(raw, list):
+            return out
+        for item in raw:
+            if isinstance(item, dict):
+                out.append(item)
+        return out
+
+    def _node_kind_from_dict(self, node_dict: dict[str, Any]) -> str:
+        """dict 化されたノードから kind を安全に文字列取得する。"""
+        if not isinstance(node_dict, dict):
+            return ""
+        kind = node_dict.get("kind")
+        if isinstance(kind, str):
+            return kind.strip()
+        if kind is None:
+            return ""
+        txt = str(kind).strip()
+        return txt if txt != "" else ""
+
+    def _iter_item_type(self, iter_expr: dict[str, Any] | None) -> str:
+        """for 反復対象の要素型を推論する。"""
+        if not isinstance(iter_expr, dict):
+            return "unknown"
+        t = str(iter_expr.get("resolved_type", "unknown"))
+        if t.startswith("List[") and t.endswith("]"):
+            t = "list[" + t[5:-1] + "]"
+        if t.startswith("Set[") and t.endswith("]"):
+            t = "set[" + t[4:-1] + "]"
+        if t.startswith("Dict[") and t.endswith("]"):
+            t = "dict[" + t[5:-1] + "]"
+        if t == "range":
+            return "int64"
+        if t.startswith("list[") and t.endswith("]"):
+            inner = t[5:-1].strip()
+            return inner if inner != "" else "unknown"
+        if t.startswith("set[") and t.endswith("]"):
+            inner = t[4:-1].strip()
+            return inner if inner != "" else "unknown"
+        if t == "bytearray" or t == "bytes":
+            return "uint8"
+        if t == "str":
+            return "str"
+        return "unknown"
+
+    def _parse_name_comp_target(self) -> dict[str, Any] | None:
+        """内包表現ターゲットの `NAME` / `NAME, ...` 分岐を helper へ寄せる。"""
+        if self._cur()["k"] != "NAME":
+            return None
+        first = self._eat("NAME")
+        first_name = str(first["v"])
+        first_t = self.name_types.get(first_name, "unknown")
+        first_node = _sh_make_name_expr(
+            self._node_span(first["s"], first["e"]),
+            first_name,
+            resolved_type=first_t,
+        )
+        if self._cur()["k"] != ",":
+            return first_node
+        elems: list[dict[str, Any]] = [first_node]
+        last_e = first["e"]
+        while self._cur()["k"] == ",":
+            self._eat(",")
+            if self._cur()["k"] != "NAME":
+                break
+            nm_tok = self._eat("NAME")
+            nm = str(nm_tok["v"])
+            t = self.name_types.get(nm, "unknown")
+            elems.append(_sh_make_name_expr(self._node_span(nm_tok["s"], nm_tok["e"]), nm, resolved_type=t))
+            last_e = nm_tok["e"]
+        return _sh_make_tuple_expr(
+            self._node_span(first["s"], last_e),
+            elems,
+            repr_text=self._src_slice(first["s"], last_e),
+        )
+
+    def _parse_tuple_comp_target(self) -> dict[str, Any] | None:
+        """内包表現ターゲットの `(` tuple 分岐を helper へ寄せる。"""
+        if self._cur()["k"] != "(":
+            return None
+        l = self._eat("(")
+        elems: list[dict[str, Any]] = []
+        elems.append(self._parse_comp_target())
+        while self._cur()["k"] == ",":
+            self._eat(",")
+            if self._cur()["k"] == ")":
+                break
+            elems.append(self._parse_comp_target())
+        r = self._eat(")")
+        return _sh_make_tuple_expr(
+            self._node_span(l["s"], r["e"]),
+            elems,
+            resolved_type="tuple[unknown]",
+            repr_text=self._src_slice(l["s"], r["e"]),
+        )
+
+    def _collect_and_bind_comp_target_types(
+        self,
+        target_expr: dict[str, Any],
+        value_type: str,
+        snapshots: dict[str, str],
+    ) -> None:
+        """内包ターゲットの各 Name へ一時的に型を設定する。"""
+        kind = self._node_kind_from_dict(target_expr)
+        if kind == "Name":
+            nm = str(target_expr.get("id", "")).strip()
+            if nm == "":
+                return
+            if nm not in snapshots:
+                snapshots[nm] = str(self.name_types.get(nm, ""))
+            target_expr["resolved_type"] = value_type
+            self.name_types[nm] = value_type
+            return
+
+        if kind != "Tuple":
+            return
+
+        target_elements = self._dict_stmt_list(target_expr.get("elements"))
+        elem_types: list[str] = []
+        if isinstance(value_type, str) and value_type.startswith("tuple[") and value_type.endswith("]"):
+            inner = value_type[6:-1].strip()
+            if inner != "":
+                elem_types = [p.strip() for p in _sh_split_top_commas(inner)]
+        for idx, elem in enumerate(target_elements):
+            if not isinstance(elem, dict):
+                continue
+            et = value_type
+            if idx < len(elem_types):
+                et0 = elem_types[idx]
+                if et0 != "":
+                    et = et0
+            self._collect_and_bind_comp_target_types(elem, et, snapshots)
+
+    def _restore_comp_target_types(self, snapshots: dict[str, str]) -> None:
+        """内包ターゲット一時型束縛を復元する。"""
+        for nm, old_t in snapshots.items():
+            if old_t == "":
+                self.name_types.pop(nm, None)
+            else:
+                self.name_types[nm] = old_t

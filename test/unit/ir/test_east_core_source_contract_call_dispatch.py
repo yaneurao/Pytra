@@ -408,6 +408,13 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
 
         self.assertIn("class _ShExprCallArgParserMixin:", text)
+        self.assertIn("def _dict_stmt_list(", text)
+        self.assertIn("def _node_kind_from_dict(", text)
+        self.assertIn("def _iter_item_type(", text)
+        self.assertIn("def _parse_name_comp_target(", text)
+        self.assertIn("def _parse_tuple_comp_target(", text)
+        self.assertIn("def _collect_and_bind_comp_target_types(", text)
+        self.assertIn("def _restore_comp_target_types(", text)
         self.assertIn("def _parse_call_args(", text)
         self.assertIn("def _consume_call_arg_entries(", text)
         self.assertIn("def _consume_call_arg_entries_loop(", text)
@@ -434,6 +441,13 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertNotIn("def _consume_call_arg_entries(", core_text)
         self.assertNotIn("def _consume_call_arg_entries_loop(", core_text)
         self.assertNotIn("def _consume_call_arg_loop_entry(", core_text)
+        self.assertNotIn("def _dict_stmt_list(", core_text)
+        self.assertNotIn("def _node_kind_from_dict(", core_text)
+        self.assertNotIn("def _iter_item_type(", core_text)
+        self.assertNotIn("def _parse_name_comp_target(", core_text)
+        self.assertNotIn("def _parse_tuple_comp_target(", core_text)
+        self.assertNotIn("def _collect_and_bind_comp_target_types(", core_text)
+        self.assertNotIn("def _restore_comp_target_types(", core_text)
 
     def test_core_source_routes_call_suffix_through_parser_helper(self) -> None:
         text = CORE_CALL_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")

@@ -13,6 +13,8 @@ if str(TEST_DIR) not in sys.path:
 
 from _east_core_test_support import CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH
+from _east_core_test_support import CORE_AST_BUILDERS_SOURCE_PATH
+from _east_core_test_support import CORE_BUILDER_BASE_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
@@ -21,12 +23,13 @@ from _east_core_test_support import CORE_SOURCE_PATH
 class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
     def test_core_source_uses_builder_helpers_for_lowered_residual_call_dict_tuple_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        builder_text = CORE_AST_BUILDERS_SOURCE_PATH.read_text(encoding="utf-8")
         lowered_text = text.split("def _sh_parse_expr_lowered", 1)[1].split(
             "def _sh_parse_stmt_block_mutable",
             1,
         )[0]
 
-        self.assertIn("def _sh_make_builtin_listcomp_call_expr(", text)
+        self.assertIn("def _sh_make_builtin_listcomp_call_expr(", builder_text)
         self.assertIn("_sh_make_builtin_listcomp_call_expr(", lowered_text)
         self.assertIn("return _sh_make_dict_expr(", lowered_text)
         self.assertIn("return _sh_make_tuple_expr(", lowered_text)
@@ -37,22 +40,23 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
 
     def test_core_source_uses_builder_helpers_for_lowered_any_all_and_simple_listcomp_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        builder_text = CORE_AST_BUILDERS_SOURCE_PATH.read_text(encoding="utf-8")
         lowered_text = text.split("def _sh_parse_expr_lowered", 1)[1].split(
             "def _sh_parse_stmt_block_mutable",
             1,
         )[0]
 
-        self.assertIn("def _sh_make_builtin_listcomp_call_expr(", text)
+        self.assertIn("def _sh_make_builtin_listcomp_call_expr(", builder_text)
         self.assertIn("_sh_make_builtin_listcomp_call_expr(", lowered_text)
-        self.assertIn("payload = _sh_make_call_expr(", text)
-        self.assertIn('_sh_make_name_expr(', text)
-        self.assertIn("def _sh_make_simple_name_list_comp_expr(", text)
+        self.assertIn("payload = _sh_make_call_expr(", builder_text)
+        self.assertIn('_sh_make_name_expr(', builder_text)
+        self.assertIn("def _sh_make_simple_name_list_comp_expr(", builder_text)
         self.assertIn("_sh_make_simple_name_list_comp_expr(", lowered_text)
-        self.assertIn("def _sh_make_simple_name_comp_generator(", text)
-        self.assertIn("_sh_make_simple_name_comp_generator(", text)
-        self.assertIn("elt_node = _sh_make_name_expr(", text)
+        self.assertIn("def _sh_make_simple_name_comp_generator(", builder_text)
+        self.assertIn("_sh_make_simple_name_comp_generator(", builder_text)
+        self.assertIn("elt_node = _sh_make_name_expr(", builder_text)
         self.assertNotIn("target_node = _sh_make_name_expr(", text)
-        self.assertIn('resolved_type=f"list[{elem_type}]"', text)
+        self.assertIn('resolved_type=f"list[{elem_type}]"', builder_text)
         self.assertNotIn('return dict<str, object>{{"kind", make_object("Call")}', lowered_text)
         self.assertNotIn('dict<str, object>{{"kind", make_object("Name")}', lowered_text)
 
@@ -890,6 +894,8 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
 
     def test_core_source_known_inline_kind_residual_set_is_helper_only(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        builder_base_text = CORE_BUILDER_BASE_SOURCE_PATH.read_text(encoding="utf-8")
+        ast_builder_text = CORE_AST_BUILDERS_SOURCE_PATH.read_text(encoding="utf-8")
         raw_kinds = re.findall(r'\{"kind": "([^"]+)"', text)
         inline_kinds = {kind for kind in raw_kinds if kind != "" and kind[0].isupper()}
         trivia_kinds = {kind for kind in raw_kinds if kind != "" and kind[0].islower()}
@@ -897,10 +903,10 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             re.findall(r'(?:return|node:\s*dict\[str, Any\]\s*=)\s*\{\s*"kind":\s*"([^"]+)"', text, re.S)
         )
 
-        self.assertIn('node = _sh_make_stmt_node("Expr", source_span)', text)
-        self.assertIn('return _sh_make_node("Slice", lower=lower, upper=upper, step=step)', text)
-        self.assertIn('return _sh_make_node("blank", count=count)', text)
-        self.assertIn('return _sh_make_node("comment", text=text)', text)
+        self.assertIn('node = _sh_make_stmt_node("Expr", source_span)', builder_base_text)
+        self.assertIn('return _sh_make_node("Slice", lower=lower, upper=upper, step=step)', ast_builder_text)
+        self.assertIn('return _sh_make_node("blank", count=count)', builder_base_text)
+        self.assertIn('return _sh_make_node("comment", text=text)', builder_base_text)
         self.assertNotIn('return {"kind": "Expr", "source_span": source_span, "value": value}', text)
         self.assertNotIn('return {"kind": "Slice", "lower": lower, "upper": upper, "step": step}', text)
         self.assertNotIn('return {"kind": "blank", "count": count}', text)
