@@ -46,10 +46,12 @@
 分解:
 - [x] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S1-01] residual importer を棚卸しし、`src_compiler` / `representative_tests` / `compat_only` に分類する。
 - [x] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S1-02] `toolchain.ir.core` は external compatibility facade、internal compiler / representative regression は `core_entrypoints` を使う方針を固定する。
-- [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S2-01] `transpile_cli` と representative test/backend importer を `core_entrypoints` へ寄せる。
-- [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S2-02] facade 依存の再流入を source-contract で fail-fast にする。
+- [x] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S2-01] `transpile_cli` と representative test/backend importer を `core_entrypoints` へ寄せる。
+- [x] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S2-02] facade 依存の再流入を source-contract で fail-fast にする。
 - [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S3-01] representative regression と version gate を通して安定化し、完了後は archive へ移す。
 
 決定ログ:
 - 2026-03-11: 初版作成。現時点の residual importer は `src/toolchain/frontends/transpile_cli.py`、`test/unit/common/test_self_hosted_signature.py`、backend smoke 11 本、`test/unit/backends/cpp/test_east3_cpp_bridge.py`、`test/unit/ir/test_east2_to_east3_lowering.py` である。
 - 2026-03-11: `toolchain.ir.core` は public compatibility facade として維持するが、internal compiler と representative regression lane は canonical に `toolchain.ir.core_entrypoints` を使う。`core.py` への依存は external user compatibility のみを想定し、internal source-contract からは再流入を禁止する。
+- 2026-03-11: `S2-01` として `src/toolchain/frontends/transpile_cli.py`、`test_self_hosted_signature.py`、backend smoke 11 本、`test_east3_cpp_bridge.py`、`test_east2_to_east3_lowering.py` の import を `toolchain.ir.core_entrypoints` へ寄せた。
+- 2026-03-11: `S2-02` として `test_east_core_source_contract_import_surface.py` を更新し、`src` 側の `toolchain.ir.core` importer は 0 件、representative test/backend lane の facade importer も 0 件で固定した。
