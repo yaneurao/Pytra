@@ -66,3 +66,4 @@
 - 2026-03-12: archived `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01` で fixed した inventory / representative smoke / reduction order を live `P4` として復帰し、次の shrink bundle を TODO から読める状態に戻した。
 - 2026-03-12: `S1-01` では current residual bucket, reduction order, active bundle metadata を inventory tool と unit test に固定し、bundle status は開始前まで `planned` に揃える。
 - 2026-03-12: `S2-01` では C# mutation residual を `bytearray` 専用に縮め、`bytes.pop()/append()` は emitter fail-closed にした。残す helper は `bytearray` の `py_append/py_pop` と index/slice compat helper だけとする。
+- 2026-03-12: `S2-02` を開始し、C++ object bridge residual のうち `call.py` に残っていた wrapper-name label (`\"py_append\"` など) を plain operation label (`\"append\"` など) へ切り替えた。bucket は actual object helper caller だけを数える。

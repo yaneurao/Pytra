@@ -9,13 +9,13 @@ from toolchain.compiler.transpile_cli import (
 
 
 _PYOBJ_RUNTIME_LIST_BRIDGE_CONTEXTS = {
-    "append": "py_append",
-    "extend": "py_extend",
-    "pop": "py_pop",
-    "clear": "py_clear",
-    "reverse": "py_reverse",
-    "sort": "py_sort",
-    "set_at": "py_set_at",
+    "append": "append",
+    "extend": "extend",
+    "pop": "pop",
+    "clear": "clear",
+    "reverse": "reverse",
+    "sort": "sort",
+    "set_at": "set_at",
 }
 
 

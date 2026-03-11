@@ -31,7 +31,6 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         self.assertEqual(
             {path for _, path in bucket},
             {
-                "src/backends/cpp/emitter/call.py",
                 "src/backends/cpp/emitter/cpp_emitter.py",
                 "src/backends/cpp/emitter/runtime_expr.py",
                 "src/backends/cpp/emitter/stmt.py",
@@ -50,13 +49,6 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             {
                 "py_runtime_object_type_id",
                 "py_runtime_object_isinstance",
-                "py_append",
-                "py_extend",
-                "py_pop",
-                "py_clear",
-                "py_reverse",
-                "py_sort",
-                "py_set_at",
             },
         )
 
@@ -114,18 +106,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         )
 
     def test_cpp_object_bridge_wrappers_stay_in_call_py_only(self) -> None:
-        self.assertEqual(
-            inventory_mod._collect_cpp_object_bridge_wrapper_pairs(),
-            {
-                ("py_append", "src/backends/cpp/emitter/call.py"),
-                ("py_extend", "src/backends/cpp/emitter/call.py"),
-                ("py_pop", "src/backends/cpp/emitter/call.py"),
-                ("py_clear", "src/backends/cpp/emitter/call.py"),
-                ("py_reverse", "src/backends/cpp/emitter/call.py"),
-                ("py_sort", "src/backends/cpp/emitter/call.py"),
-                ("py_set_at", "src/backends/cpp/emitter/call.py"),
-            },
-        )
+        self.assertEqual(inventory_mod._collect_cpp_object_bridge_wrapper_pairs(), set())
 
     def test_cpp_typed_lane_symbols_do_not_overlap_object_bridge_wrappers(self) -> None:
         typed_pairs = inventory_mod._collect_cpp_typed_lane_direct_pairs()
@@ -263,8 +244,8 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
                 },
                 "cpp_emitter_object_bridge_residual": {
                     "stage": "S2-02",
-                    "goal": "return removable callers to typed lanes",
-                    "status": "planned",
+                    "goal": "return removable callers to typed lanes and drop wrapper-name labels",
+                    "status": "active",
                 },
                 "rs_emitter_shared_type_id_residual": {
                     "stage": "S3-01",

@@ -66,3 +66,4 @@ Acceptance criteria:
 - 2026-03-12: Restore the archived `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01` inventory, representative smoke lanes, and reduction order as a live `P4` task so the next shrink bundle is visible from TODO again.
 - 2026-03-12: `S1-01` freezes the current residual buckets, reduction order, and active bundle metadata in the inventory tool and unit test, and keeps every bundle status at `planned` until active work begins.
 - 2026-03-12: `S2-01` shrinks the C# mutation residual down to the `bytearray` seam only and makes `bytes.pop()/append()` fail closed in the emitter. The remaining helpers are the bytearray `py_append/py_pop` lane and the index/slice compatibility helpers.
+- 2026-03-12: Started `S2-02` by switching the C++ object-bridge labels in `call.py` from wrapper names like `\"py_append\"` to plain operation labels like `\"append\"`, so the residual bucket only counts actual object-helper callers.

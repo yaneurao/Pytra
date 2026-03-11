@@ -88,13 +88,6 @@ EXPECTED_BUCKETS = {
         ("py_runtime_object_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
         ("py_runtime_object_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
         ("py_runtime_object_isinstance", "src/backends/cpp/emitter/stmt.py"),
-        ("py_append", "src/backends/cpp/emitter/call.py"),
-        ("py_extend", "src/backends/cpp/emitter/call.py"),
-        ("py_pop", "src/backends/cpp/emitter/call.py"),
-        ("py_clear", "src/backends/cpp/emitter/call.py"),
-        ("py_reverse", "src/backends/cpp/emitter/call.py"),
-        ("py_sort", "src/backends/cpp/emitter/call.py"),
-        ("py_set_at", "src/backends/cpp/emitter/call.py"),
     },
     "cpp_emitter_shared_type_id_residual": {
         ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
@@ -142,8 +135,8 @@ ACTIVE_REDUCTION_BUNDLES = {
     },
     "cpp_emitter_object_bridge_residual": {
         "stage": "S2-02",
-        "goal": "return removable callers to typed lanes",
-        "status": "planned",
+        "goal": "return removable callers to typed lanes and drop wrapper-name labels",
+        "status": "active",
     },
     "rs_emitter_shared_type_id_residual": {
         "stage": "S3-01",
@@ -374,7 +367,7 @@ def _collect_active_reduction_bundle_issues() -> list[str]:
             issues.append(f"active reduction bundle stage is malformed: {bucket_name}: {stage}")
         if goal.strip() == "":
             issues.append(f"active reduction bundle goal is empty: {bucket_name}")
-        if status not in {"planned", "completed"}:
+        if status not in {"planned", "active", "completed"}:
             issues.append(
                 f"active reduction bundle status is invalid: {bucket_name}: {status}"
             )
