@@ -30,7 +30,7 @@
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S1-01] native compiler wrapper、generated C++ runtime、Rust/C# runtime builtins の `py_runtime` residual caller inventory を取り、`object_bridge_compat` と `shared_type_id_contract` に分類する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-01] native compiler wrapper の `type_id` / object bridge caller を thin helper seam 前提へ寄せ、representative regression を整理する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-02] generated C++ runtime の residual caller を再分類し、header shrink 前提で残す caller と再委譲できる caller を切り分ける。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-03] Rust/C# runtime builtins の shared seam 依存を inventory 化し、cross-runtime residual contract の最終形を固定する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-03] Rust/C# runtime builtins の shared seam 依存を inventory 化し、cross-runtime residual contract の最終形を固定する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S3-01] residual caller inventory tool / source guard / smoke を整備し、`py_runtime.h` shrink handoff 条件を次段 task へ接続する。
 
 ## Emitter Handoff Snapshot
@@ -83,6 +83,20 @@ generated C++ runtime policy（S2-02）:
 - `re-delegatable before header shrink`
   - なし
 
+Rust/C# runtime builtin policy（S2-03）:
+- `must remain`
+  - `py_runtime_value_type_id`
+  - `py_runtime_value_isinstance`
+  - `py_runtime_type_id_is_subtype`
+  - `py_runtime_type_id_issubclass`
+  - 対象: `src/runtime/{rs,cs}/pytra/built_in/py_runtime.*`
+  - 対象: `src/runtime/{rs,cs}/pytra-core/built_in/py_runtime.*`
+- `re-delegatable before header shrink`
+  - なし
+- source guard
+  - Rust/C# runtime builtin では上記 4 helper が public の thin seam として存在すること
+  - `py_runtime_type_id` / `py_isinstance` / `py_is_subtype` / `py_issubclass` は public surface へ再流入しないこと
+
 ## 決定ログ
 
 - 2026-03-12: emitter 側整理だけでは `py_runtime.h` の residual surface を十分に削れないため、native/generated/runtime builtins を対象にした caller 観点の P4 を追加した。
@@ -91,3 +105,4 @@ generated C++ runtime policy（S2-02）:
 - 2026-03-12: `S1-01` は residual caller を 6 bucket (`native_wrapper_object_bridge_residual`, `generated_cpp_object_bridge_residual`, `generated_cpp_shared_type_id_residual`, `cs_runtime_utils_object_bridge_residual`, `rs_runtime_builtin_shared_type_id_residual`, `cs_runtime_builtin_shared_type_id_residual`) に固定し、category を `object_bridge_compat` と `shared_type_id_contract` の 2 本に限定した。
 - 2026-03-12: `S2-01` の first bundle では native compiler wrapper の direct `py_runtime_object_isinstance` を file-local `_object_is_runtime_type(...)` helper へ集約し、wrapper 本体の raw type-check re-entry を 1 callsite/translation-unit に固定した。
 - 2026-03-12: `S2-02` では generated C++ residual caller を must-remain と re-delegatable に分け、現時点の `json.cpp` / `iter_ops.cpp` / `type_id.cpp` residual はすべて must-remain として inventory tool に固定した。
+- 2026-03-12: `S2-03` では Rust/C# runtime builtin residual を must-remain / re-delegatable に分け、両 runtime tree の public residual contract は `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` の 4 helper だけに固定した。

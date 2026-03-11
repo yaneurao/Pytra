@@ -31,6 +31,9 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
     def test_generated_cpp_policy_issues_are_empty(self) -> None:
         self.assertEqual(inventory_mod._collect_generated_cpp_policy_issues(), [])
 
+    def test_runtime_builtin_policy_issues_are_empty(self) -> None:
+        self.assertEqual(inventory_mod._collect_runtime_builtin_policy_issues(), [])
+
     def test_object_bridge_category_buckets_are_stable(self) -> None:
         self.assertEqual(
             inventory_mod.CATEGORY_BUCKETS["object_bridge_compat"],
@@ -111,6 +114,10 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
                 "src/runtime/cs/pytra-core/built_in/py_runtime.cs",
             },
         )
+        self.assertEqual(inventory_mod.RS_RUNTIME_BUILTIN_MUST_REMAIN, rs_bucket)
+        self.assertEqual(inventory_mod.RS_RUNTIME_BUILTIN_REDELEGATABLE, set())
+        self.assertEqual(inventory_mod.CS_RUNTIME_BUILTIN_MUST_REMAIN, cs_bucket)
+        self.assertEqual(inventory_mod.CS_RUNTIME_BUILTIN_REDELEGATABLE, set())
 
     def test_target_end_state_keys_match_bucket_names(self) -> None:
         self.assertEqual(

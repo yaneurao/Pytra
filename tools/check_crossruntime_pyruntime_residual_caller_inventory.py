@@ -139,6 +139,30 @@ SOURCE_GUARD_REQUIRED_SUBSTRINGS = {
     "src/runtime/cpp/generated/built_in/iter_ops.cpp": {
         "py_append(out, make_object(",
     },
+    "src/runtime/rs/pytra/built_in/py_runtime.rs": {
+        "pub fn py_runtime_value_type_id",
+        "pub fn py_runtime_type_id_is_subtype",
+        "pub fn py_runtime_type_id_issubclass",
+        "pub fn py_runtime_value_isinstance",
+    },
+    "src/runtime/rs/pytra-core/built_in/py_runtime.rs": {
+        "pub fn py_runtime_value_type_id",
+        "pub fn py_runtime_type_id_is_subtype",
+        "pub fn py_runtime_type_id_issubclass",
+        "pub fn py_runtime_value_isinstance",
+    },
+    "src/runtime/cs/pytra/built_in/py_runtime.cs": {
+        "public static long py_runtime_value_type_id",
+        "public static bool py_runtime_type_id_is_subtype",
+        "public static bool py_runtime_type_id_issubclass",
+        "public static bool py_runtime_value_isinstance",
+    },
+    "src/runtime/cs/pytra-core/built_in/py_runtime.cs": {
+        "public static long py_runtime_value_type_id",
+        "public static bool py_runtime_type_id_is_subtype",
+        "public static bool py_runtime_type_id_issubclass",
+        "public static bool py_runtime_value_isinstance",
+    },
 }
 
 SOURCE_GUARD_FORBIDDEN_SUBSTRINGS = {
@@ -150,6 +174,30 @@ SOURCE_GUARD_FORBIDDEN_SUBSTRINGS = {
         "py_runtime_type_id(",
         "py_isinstance(",
     },
+    "src/runtime/rs/pytra/built_in/py_runtime.rs": {
+        "pub fn py_runtime_type_id<",
+        "pub fn py_isinstance<",
+        "pub fn py_is_subtype(",
+        "pub fn py_issubclass(",
+    },
+    "src/runtime/rs/pytra-core/built_in/py_runtime.rs": {
+        "pub fn py_runtime_type_id<",
+        "pub fn py_isinstance<",
+        "pub fn py_is_subtype(",
+        "pub fn py_issubclass(",
+    },
+    "src/runtime/cs/pytra/built_in/py_runtime.cs": {
+        "public static long py_runtime_type_id(",
+        "public static bool py_isinstance(",
+        "public static bool py_is_subtype(",
+        "public static bool py_issubclass(",
+    },
+    "src/runtime/cs/pytra-core/built_in/py_runtime.cs": {
+        "public static long py_runtime_type_id(",
+        "public static bool py_isinstance(",
+        "public static bool py_is_subtype(",
+        "public static bool py_issubclass(",
+    },
 }
 
 GENERATED_CPP_MUST_REMAIN = {
@@ -159,6 +207,32 @@ GENERATED_CPP_MUST_REMAIN = {
 }
 
 GENERATED_CPP_REDELEGATABLE = set()
+
+RS_RUNTIME_BUILTIN_MUST_REMAIN = {
+    ("py_runtime_type_id_is_subtype", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
+    ("py_runtime_type_id_issubclass", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
+    ("py_runtime_value_type_id", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
+    ("py_runtime_value_isinstance", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
+    ("py_runtime_type_id_is_subtype", "src/runtime/rs/pytra-core/built_in/py_runtime.rs"),
+    ("py_runtime_type_id_issubclass", "src/runtime/rs/pytra-core/built_in/py_runtime.rs"),
+    ("py_runtime_value_type_id", "src/runtime/rs/pytra-core/built_in/py_runtime.rs"),
+    ("py_runtime_value_isinstance", "src/runtime/rs/pytra-core/built_in/py_runtime.rs"),
+}
+
+RS_RUNTIME_BUILTIN_REDELEGATABLE = set()
+
+CS_RUNTIME_BUILTIN_MUST_REMAIN = {
+    ("py_runtime_type_id_is_subtype", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
+    ("py_runtime_type_id_issubclass", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
+    ("py_runtime_value_type_id", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
+    ("py_runtime_value_isinstance", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
+    ("py_runtime_type_id_is_subtype", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"),
+    ("py_runtime_type_id_issubclass", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"),
+    ("py_runtime_value_type_id", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"),
+    ("py_runtime_value_isinstance", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"),
+}
+
+CS_RUNTIME_BUILTIN_REDELEGATABLE = set()
 
 
 def _iter_target_files() -> list[Path]:
@@ -224,6 +298,23 @@ def _collect_generated_cpp_policy_issues() -> list[str]:
     return issues
 
 
+def _collect_runtime_builtin_policy_issues() -> list[str]:
+    issues: list[str] = []
+    rs_pairs = EXPECTED_BUCKETS["rs_runtime_builtin_shared_type_id_residual"]
+    cs_pairs = EXPECTED_BUCKETS["cs_runtime_builtin_shared_type_id_residual"]
+    if RS_RUNTIME_BUILTIN_MUST_REMAIN | RS_RUNTIME_BUILTIN_REDELEGATABLE != rs_pairs:
+        issues.append("rs runtime builtin policy buckets do not cover the same pairs as rs runtime builtin residual bucket")
+    if CS_RUNTIME_BUILTIN_MUST_REMAIN | CS_RUNTIME_BUILTIN_REDELEGATABLE != cs_pairs:
+        issues.append("cs runtime builtin policy buckets do not cover the same pairs as cs runtime builtin residual bucket")
+    rs_overlap = RS_RUNTIME_BUILTIN_MUST_REMAIN & RS_RUNTIME_BUILTIN_REDELEGATABLE
+    if rs_overlap:
+        issues.append(f"rs runtime builtin policy buckets overlap: {sorted(rs_overlap)}")
+    cs_overlap = CS_RUNTIME_BUILTIN_MUST_REMAIN & CS_RUNTIME_BUILTIN_REDELEGATABLE
+    if cs_overlap:
+        issues.append(f"cs runtime builtin policy buckets overlap: {sorted(cs_overlap)}")
+    return issues
+
+
 def _collect_source_guard_issues() -> list[str]:
     issues: list[str] = []
     for rel, required in sorted(SOURCE_GUARD_REQUIRED_SUBSTRINGS.items()):
@@ -245,6 +336,7 @@ def _collect_inventory_issues() -> list[str]:
     issues = _collect_bucket_overlaps()
     issues.extend(_collect_category_issues())
     issues.extend(_collect_generated_cpp_policy_issues())
+    issues.extend(_collect_runtime_builtin_policy_issues())
     for pair in sorted(expected - observed):
         issues.append(f"expected residual pair missing: {pair}")
     for pair in sorted(observed - expected):

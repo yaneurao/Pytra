@@ -30,7 +30,7 @@ Acceptance criteria:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S1-01] Inventory residual `py_runtime` callers in native compiler wrappers, generated C++ runtime code, and Rust/C# runtime builtins, then classify them into `object_bridge_compat` and `shared_type_id_contract`.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-01] Move native compiler-wrapper `type_id` / object-bridge callers toward thin helper seams and define representative regressions.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-02] Re-classify residual callers in the generated C++ runtime and separate callers that must remain from callers that can be re-delegated before header shrink.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-03] Inventory Rust/C# runtime builtin dependencies on the shared seams and define the final cross-runtime residual contract shape.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-03] Inventory Rust/C# runtime builtin dependencies on the shared seams and define the final cross-runtime residual contract shape.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S3-01] Add residual-caller inventory tooling, source guards, and smoke coverage, then connect the final residual seam to the later header-shrink handoff.
 
 ## Emitter Handoff Snapshot
@@ -83,6 +83,20 @@ Generated C++ runtime policy (S2-02):
 - `re-delegatable before header shrink`
   - none
 
+Rust/C# runtime builtin policy (S2-03):
+- `must remain`
+  - `py_runtime_value_type_id`
+  - `py_runtime_value_isinstance`
+  - `py_runtime_type_id_is_subtype`
+  - `py_runtime_type_id_issubclass`
+  - targets: `src/runtime/{rs,cs}/pytra/built_in/py_runtime.*`
+  - targets: `src/runtime/{rs,cs}/pytra-core/built_in/py_runtime.*`
+- `re-delegatable before header shrink`
+  - none
+- source guard
+  - the four helpers above must stay as the public thin seam in the Rust/C# runtime builtins
+  - `py_runtime_type_id` / `py_isinstance` / `py_is_subtype` / `py_issubclass` must not re-enter the public surface
+
 ## Decision log
 
 - 2026-03-12: Emitter-side cleanup alone is not enough to reduce the remaining `py_runtime.h` surface, so a separate `P4` was added for native/generated/runtime-builtin callers.
@@ -91,3 +105,4 @@ Generated C++ runtime policy (S2-02):
 - 2026-03-12: `S1-01` freezes the residual callers into six buckets (`native_wrapper_object_bridge_residual`, `generated_cpp_object_bridge_residual`, `generated_cpp_shared_type_id_residual`, `cs_runtime_utils_object_bridge_residual`, `rs_runtime_builtin_shared_type_id_residual`, `cs_runtime_builtin_shared_type_id_residual`) and limits the category split to `object_bridge_compat` and `shared_type_id_contract`.
 - 2026-03-12: The first `S2-01` bundle centralizes direct `py_runtime_object_isinstance` checks in the native compiler wrappers behind a file-local `_object_is_runtime_type(...)` helper so the wrapper body itself no longer re-enters raw type checks at multiple sites.
 - 2026-03-12: `S2-02` separates the generated C++ residual callers into must-remain and re-delegatable buckets, and currently freezes `json.cpp` / `iter_ops.cpp` / `type_id.cpp` as must-remain with no re-delegatable generated callers left.
+- 2026-03-12: `S2-03` separates the Rust/C# runtime builtin residuals into must-remain and re-delegatable buckets, and fixes the public residual contract in both runtime trees to the four thin helpers `py_runtime_value_type_id`, `py_runtime_value_isinstance`, `py_runtime_type_id_is_subtype`, and `py_runtime_type_id_issubclass`.
