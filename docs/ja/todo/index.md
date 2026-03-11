@@ -32,3 +32,4 @@
 ## 未完了タスク
 
 1. [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01] `py_runtime.h` の残存 surface を `object bridge / type_id shared contract` 観点で縮小する。文脈: [docs/ja/plans/p0-cpp-pyruntime-contract-shrink.md](../plans/p0-cpp-pyruntime-contract-shrink.md)
+   進捗メモ: `S1-02` で end state を `typed=container overload / compat=object overload / type_id=py_tid_* delegate` に固定した。
