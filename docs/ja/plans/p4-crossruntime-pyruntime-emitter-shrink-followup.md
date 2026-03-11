@@ -67,7 +67,7 @@ bundle 順:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-02] mutation / `type_id` / object bridge の end state と削減順を docs/source guard に固定する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-01] C++ emitter の residual helper 依存を thin/object-bridge seam に寄せる。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-02] Rust emitter の residual helper 依存を shared contract へ揃える。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-03] C# emitter の residual helper 依存を shared contract へ揃える。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-03] C# emitter の residual helper 依存を shared contract へ揃える。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S3-01] representative smoke / docs / archive を更新し、header shrink follow-up を閉じる。
 
 決定ログ:
@@ -76,3 +76,4 @@ bundle 順:
 - 2026-03-11: `S1-02` として inventory tool に `TARGET_END_STATE` と `REDUCTION_ORDER` を追加し、削減順を `crossruntime_mutation_helper_residual -> cpp_emitter_object_bridge_residual -> rs_emitter_shared_type_id_residual -> cs_emitter_shared_type_id_residual -> cpp_emitter_shared_type_id_residual` に固定した。`cpp_emitter_shared_type_id_residual` はこの follow-up では最後まで intentional contract として残し、header shrink 側で別途扱う。
 - 2026-03-11: `S2-01` として C++ emitter の `call.py` に残っていた `py_append/extend/pop/clear/reverse/sort/set_at` を mutation helper residual ではなく object-list bridge context として inventory へ再分類した。これで `crossruntime_mutation_helper_residual` は C# bytes/bytearray lane のみとなり、C++ 側の residual は `cpp_emitter_object_bridge_residual` / `cpp_emitter_shared_type_id_residual` の 2 bucket に整理された。
 - 2026-03-11: `S2-02` として Rust emitter の runtime prelude から generic alias `py_runtime_type_id` / `py_is_subtype` / `py_issubclass` / `py_isinstance` 定義を削除し、shared contract を `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` のみへ固定した。representative smoke でも generic alias 再流入を禁止した。
+- 2026-03-11: `S2-03` として C# emitter の shared helper surface 名を `py_runtime_value_*` / `py_runtime_type_id_*` に統一し、type-predicate smoke で legacy alias `py_runtime_type_id` / `py_is_subtype` / `py_issubclass` / `py_isinstance` が再流入しないことを固定した。

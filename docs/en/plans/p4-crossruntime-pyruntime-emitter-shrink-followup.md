@@ -67,7 +67,7 @@ Breakdown:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-02] Fix the end state and removal order for mutation / `type_id` / object-bridge helpers in docs/source guards.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-01] Move remaining C++ emitter helper dependencies onto thin/object-bridge seams.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-02] Align remaining Rust emitter helper dependencies to the shared contract.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-03] Align remaining C# emitter helper dependencies to the shared contract.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-03] Align remaining C# emitter helper dependencies to the shared contract.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S3-01] Refresh representative smoke/docs/archive and close the follow-up.
 
 Decision log:
@@ -76,3 +76,4 @@ Decision log:
 - 2026-03-11: Completed `S1-02` by adding `TARGET_END_STATE` and `REDUCTION_ORDER` to the inventory tooling and fixing the bucket order as `crossruntime_mutation_helper_residual -> cpp_emitter_object_bridge_residual -> rs_emitter_shared_type_id_residual -> cs_emitter_shared_type_id_residual -> cpp_emitter_shared_type_id_residual`. The C++ shared `type_id` residual is intentionally left as the final contract for the later header-shrink stage rather than being forced empty in this follow-up.
 - 2026-03-11: Completed `S2-01` by reclassifying the remaining C++ `py_append/extend/pop/clear/reverse/sort/set_at` symbols in `call.py` as object-list bridge context labels rather than crossruntime mutation-helper residuals. The C++ emitter is now reduced to two residual buckets: `cpp_emitter_object_bridge_residual` and `cpp_emitter_shared_type_id_residual`, while `crossruntime_mutation_helper_residual` is C#-only.
 - 2026-03-11: Completed `S2-02` by removing the generic alias `py_runtime_type_id` / `py_is_subtype` / `py_issubclass` / `py_isinstance` definitions from the Rust runtime prelude and fixing the shared contract on `py_runtime_value_type_id`, `py_runtime_value_isinstance`, `py_runtime_type_id_is_subtype`, and `py_runtime_type_id_issubclass` only. Representative smoke now also forbids the generic aliases from reappearing.
+- 2026-03-11: Completed `S2-03` by standardizing the C# emitter shared-helper surface names onto `py_runtime_value_*` / `py_runtime_type_id_*` and locking representative type-predicate smoke so the legacy aliases `py_runtime_type_id` / `py_is_subtype` / `py_issubclass` / `py_isinstance` cannot re-enter.

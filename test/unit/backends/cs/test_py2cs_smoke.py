@@ -391,6 +391,23 @@ class Child(Base):
         self.assertNotIn("System.Collections.Generic.List<long> a = xs;", cs)
         self.assertNotIn("System.Collections.Generic.Dictionary<string, long> b = ys;", cs)
 
+    def test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "bytearray_mutation.py"
+            src.write_text(
+                "def f(xs: list[int], buf: bytearray) -> int:\n"
+                "    xs.append(1)\n"
+                "    buf.append(2)\n"
+                "    return buf.pop() + len(xs)\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+        self.assertIn("xs.Add(1);", cs)
+        self.assertNotIn("Pytra.CsModule.py_runtime.py_append(xs", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_append(buf, 2);", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_pop(buf)", cs)
+
     def test_try_with_multiple_except_handlers_is_emitted(self) -> None:
         east = {
             "kind": "Module",
@@ -640,6 +657,10 @@ class Child(Base):
         self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(x, Base.PYTRA_TYPE_ID);", cs)
         self.assertIn("Pytra.CsModule.py_runtime.py_runtime_type_id_is_subtype(Pytra.CsModule.py_runtime.PYTRA_TID_BOOL, Pytra.CsModule.py_runtime.PYTRA_TID_INT);", cs)
         self.assertIn("Pytra.CsModule.py_runtime.py_runtime_type_id_issubclass(Child.PYTRA_TYPE_ID, Base.PYTRA_TYPE_ID);", cs)
+        self.assertNotIn("Pytra.CsModule.py_runtime.py_runtime_type_id(", cs)
+        self.assertNotIn("Pytra.CsModule.py_runtime.py_is_subtype(", cs)
+        self.assertNotIn("Pytra.CsModule.py_runtime.py_issubclass(", cs)
+        self.assertNotIn("Pytra.CsModule.py_runtime.py_isinstance(", cs)
 
     def test_box_unbox_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {

@@ -2443,20 +2443,38 @@ class CSharpEmitter(CodeEmitter):
         return ""
 
     def _render_runtime_type_id_expr(self, value_expr: str) -> str:
-        """Render the shared `py_runtime_type_id` contract in C#."""
+        """Render the shared `py_runtime_value_type_id` contract in C#."""
         return "Pytra.CsModule.py_runtime.py_runtime_value_type_id(" + value_expr + ")"
 
     def _render_runtime_isinstance_expr(self, value_expr: str, expected_type_id: str) -> str:
-        """Render the shared `py_isinstance` contract in C#."""
+        """Render the shared `py_runtime_value_isinstance` contract in C#."""
         return "Pytra.CsModule.py_runtime.py_runtime_value_isinstance(" + value_expr + ", " + expected_type_id + ")"
 
     def _render_runtime_is_subtype_expr(self, actual_type_id: str, expected_type_id: str) -> str:
-        """Render the shared `py_is_subtype` contract in C#."""
+        """Render the shared `py_runtime_type_id_is_subtype` contract in C#."""
         return "Pytra.CsModule.py_runtime.py_runtime_type_id_is_subtype(" + actual_type_id + ", " + expected_type_id + ")"
 
     def _render_runtime_issubclass_expr(self, actual_type_id: str, expected_type_id: str) -> str:
-        """Render the shared `py_issubclass` contract in C#."""
+        """Render the shared `py_runtime_type_id_issubclass` contract in C#."""
         return "Pytra.CsModule.py_runtime.py_runtime_type_id_issubclass(" + actual_type_id + ", " + expected_type_id + ")"
+
+    def _render_bytes_mutation_call(
+        self,
+        owner_type: str,
+        owner_expr: str,
+        attr_raw: str,
+        rendered_args: list[str],
+    ) -> str:
+        """Render the intentional bytes/bytearray residual mutation helper lane."""
+        if owner_type not in {"bytes", "bytearray"}:
+            return ""
+        if attr_raw == "append" and len(rendered_args) == 1:
+            return "Pytra.CsModule.py_runtime.py_append(" + owner_expr + ", " + rendered_args[0] + ")"
+        if attr_raw == "pop" and len(rendered_args) == 0:
+            return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ")"
+        if attr_raw == "pop" and len(rendered_args) >= 1:
+            return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ", " + rendered_args[0] + ")"
+        return ""
 
     def _render_isinstance_call(self, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """`isinstance(...)` 呼び出しを C# へ lower する。"""
@@ -2723,19 +2741,17 @@ class CSharpEmitter(CodeEmitter):
             if attr_raw == "rfind" and len(rendered_args) >= 2:
                 return str_owner + ".LastIndexOf(" + rendered_args[0] + ", System.Convert.ToInt32(" + rendered_args[1] + "))"
 
-        if owner_type.startswith("list[") or owner_type in {"bytes", "bytearray"}:
+        bytes_mutation = self._render_bytes_mutation_call(owner_type, owner_expr, attr_raw, rendered_args)
+        if bytes_mutation != "":
+            return bytes_mutation
+
+        if owner_type.startswith("list["):
             if attr_raw == "append" and len(rendered_args) == 1:
-                if owner_type in {"bytes", "bytearray"}:
-                    return "Pytra.CsModule.py_runtime.py_append(" + owner_expr + ", " + rendered_args[0] + ")"
                 return owner_expr + ".Add(" + rendered_args[0] + ")"
             if attr_raw == "extend" and len(rendered_args) == 1:
                 return owner_expr + ".AddRange(" + rendered_args[0] + ")"
             if attr_raw == "clear" and len(rendered_args) == 0:
                 return owner_expr + ".Clear()"
-            if attr_raw == "pop" and len(rendered_args) == 0:
-                return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ")"
-            if attr_raw == "pop" and len(rendered_args) >= 1:
-                return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ", " + rendered_args[0] + ")"
 
         if owner_type.startswith("set["):
             if attr_raw == "add" and len(rendered_args) == 1:
