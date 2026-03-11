@@ -31,5 +31,4 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-1. [ ] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01] Split the import-graph build/analyze/report cluster out of `transpile_cli.py` / `east1_build.py` into dedicated frontend modules, then lock focused tests and source contracts around it.
-   Context: [docs/ja/plans/p1-import-graph-frontend-decomposition.md](/workspace/Pytra/docs/ja/plans/p1-import-graph-frontend-decomposition.md)
+There are currently no unfinished tasks.

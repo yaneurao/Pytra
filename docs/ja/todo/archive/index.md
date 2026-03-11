@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-12 / P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01](../plans/archive/20260312-p1-import-graph-frontend-decomposition.md)
 - [2026-03-12 / P1-RELATIVE-IMPORT-LEGACY-DIAGNOSTIC-CLEANUP-01](../plans/archive/20260312-p1-relative-import-legacy-diagnostic-cleanup.md)
 - [2026-03-12 / P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01](../plans/archive/20260312-p1-relative-import-normalization-decomposition.md)
 - [2026-03-12 / P0-RELATIVE-IMPORT-BARE-PARENT-01](../plans/archive/20260312-p0-relative-import-bare-parent-hardening.md)
@@ -145,7 +146,7 @@
 
 ## 日付別リンク
 
-- [2026-03-12](20260312.md)（15 セクション）
+- [2026-03-12](20260312.md)（16 セクション）
 - [2026-03-11](20260311.md)（25 セクション）
 - [2026-03-09](20260309.md)（29 セクション）
 - [2026-03-08](20260308.md)（31 セクション）

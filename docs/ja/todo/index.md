@@ -31,5 +31,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01] import graph build/analyze/report cluster を `transpile_cli.py` / `east1_build.py` から dedicated frontend module へ分離し、focused test と source contract を整える。
-   文脈: [docs/ja/plans/p1-import-graph-frontend-decomposition.md](/workspace/Pytra/docs/ja/plans/p1-import-graph-frontend-decomposition.md)
+現在、未完了タスクはありません。

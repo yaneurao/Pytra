@@ -138,6 +138,53 @@ class ImportGraphFrontendDecompositionSourceContractTest(unittest.TestCase):
                 src,
             )
 
+    def test_transpile_cli_retains_import_graph_bridge_entrypoints(self) -> None:
+        src = (ROOT / "src" / "toolchain" / "frontends" / "transpile_cli.py").read_text(encoding="utf-8")
+        for name in [
+            "analyze_import_graph_via_east1_build",
+            "build_module_east_map_via_east1_build",
+            "analyze_import_graph",
+            "build_module_east_map",
+        ]:
+            self.assertIn(f"def {name}(", src)
+        self.assertIn("class ImportGraphHelpers:", src)
+        self.assertIn(
+            "analyze_import_graph = staticmethod(analyze_import_graph_via_east1_build)",
+            src,
+        )
+        self.assertIn(
+            "build_module_east_map = staticmethod(build_module_east_map_via_east1_build)",
+            src,
+        )
+
+    def test_east1_build_retains_import_graph_implementation_entrypoints(self) -> None:
+        src = (ROOT / "src" / "toolchain" / "frontends" / "east1_build.py").read_text(encoding="utf-8")
+        for name in [
+            "build_east1_document",
+            "_analyze_import_graph_impl",
+            "analyze_import_graph",
+            "build_module_east_map",
+            "build_module_symbol_index",
+            "build_module_type_schema",
+        ]:
+            self.assertIn(f"def {name}(", src)
+
+    def test_prepare_selfhost_source_reads_split_import_graph_modules(self) -> None:
+        src = (ROOT / "tools" / "prepare_selfhost_source.py").read_text(encoding="utf-8")
+        self.assertIn('SRC_IMPORT_GRAPH_ANALYSIS_HELPERS = ROOT / "src" / "toolchain" / "frontends" / "import_graph_analysis_helpers.py"', src)
+        self.assertIn(
+            'SRC_IMPORT_GRAPH_FRONTEND_HELPERS = ROOT / "src" / "toolchain" / "frontends" / "import_graph_frontend_helpers.py"',
+            src,
+        )
+        self.assertIn(
+            'import_graph_analysis_text = SRC_IMPORT_GRAPH_ANALYSIS_HELPERS.read_text(encoding="utf-8")',
+            src,
+        )
+        self.assertIn(
+            'import_graph_helper_text = SRC_IMPORT_GRAPH_FRONTEND_HELPERS.read_text(encoding="utf-8")',
+            src,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
