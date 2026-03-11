@@ -26,7 +26,7 @@
 ## 子タスク
 
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S1-01] live plan / TODO / inventory tool に current residual bucket, reduction order, active bundle metadata を戻す。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-01] `crossruntime_mutation_helper_residual` を減らし、C# bytes/bytearray must-remain seam だけへ縮める。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-01] `crossruntime_mutation_helper_residual` を減らし、C# bytearray must-remain seam だけへ縮める。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-02] `cpp_emitter_object_bridge_residual` を減らし、removable caller を typed lane へ戻す。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S3-01] Rust / C# shared type_id residual を thin seam 前提で削減する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S3-02] final C++ shared type_id residual を再監査し、intentional contract だけにする。
@@ -34,7 +34,7 @@
 ## Current Residual Buckets
 
 - `crossruntime_mutation_helper_residual`
-  - goal: C# bytes/bytearray must-remain seam だけに絞る
+  - goal: C# bytearray must-remain seam だけに絞る
 - `cpp_emitter_object_bridge_residual`
   - goal: removable caller を typed lane に戻し、object bridge wrapper を minimal seam に縮める
 - `rs_emitter_shared_type_id_residual`
@@ -65,3 +65,4 @@
 
 - 2026-03-12: archived `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01` で fixed した inventory / representative smoke / reduction order を live `P4` として復帰し、次の shrink bundle を TODO から読める状態に戻した。
 - 2026-03-12: `S1-01` では current residual bucket, reduction order, active bundle metadata を inventory tool と unit test に固定し、bundle status は開始前まで `planned` に揃える。
+- 2026-03-12: `S2-01` では C# mutation residual を `bytearray` 専用に縮め、`bytes.pop()/append()` は emitter fail-closed にした。残す helper は `bytearray` の `py_append/py_pop` と index/slice compat helper だけとする。

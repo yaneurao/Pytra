@@ -123,7 +123,7 @@ TARGET_END_STATE = {
     "cpp_emitter_shared_type_id_residual": "thin_shared_type_id_only_last_intentional_cpp_contract",
     "rs_emitter_shared_type_id_residual": "thin_shared_type_id_only_no_generic_alias_reentry",
     "cs_emitter_shared_type_id_residual": "thin_shared_type_id_only_no_generic_alias_reentry",
-    "crossruntime_mutation_helper_residual": "cs_bytes_bytearray_only",
+    "crossruntime_mutation_helper_residual": "cs_bytearray_only",
 }
 
 REDUCTION_ORDER = [
@@ -137,8 +137,8 @@ REDUCTION_ORDER = [
 ACTIVE_REDUCTION_BUNDLES = {
     "crossruntime_mutation_helper_residual": {
         "stage": "S2-01",
-        "goal": "minimize the C# bytes/bytearray must-remain seam",
-        "status": "planned",
+        "goal": "minimize the C# bytearray must-remain seam",
+        "status": "completed",
     },
     "cpp_emitter_object_bridge_residual": {
         "stage": "S2-02",
@@ -175,6 +175,8 @@ SOURCE_GUARD_REQUIRED_SUBSTRINGS = {
         'return "Pytra.CsModule.py_runtime.py_runtime_type_id_is_subtype(" + actual_type_id + ", " + expected_type_id + ")"',
         'return "Pytra.CsModule.py_runtime.py_runtime_type_id_issubclass(" + actual_type_id + ", " + expected_type_id + ")"',
         "def _render_bytes_mutation_call(",
+        'if owner_type == "bytes" and attr_raw in {"append", "pop"}:',
+        'raise RuntimeError("csharp emitter: bytes mutation helpers are unsupported; use bytearray")',
         'return "Pytra.CsModule.py_runtime.py_append(" + owner_expr + ", " + rendered_args[0] + ")"',
         'return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ")"',
         'return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ", " + rendered_args[0] + ")"',
@@ -372,9 +374,9 @@ def _collect_active_reduction_bundle_issues() -> list[str]:
             issues.append(f"active reduction bundle stage is malformed: {bucket_name}: {stage}")
         if goal.strip() == "":
             issues.append(f"active reduction bundle goal is empty: {bucket_name}")
-        if status != "planned":
+        if status not in {"planned", "completed"}:
             issues.append(
-                f"active reduction bundle status must stay planned until bundle work starts: {bucket_name}: {status}"
+                f"active reduction bundle status is invalid: {bucket_name}: {status}"
             )
     return issues
 

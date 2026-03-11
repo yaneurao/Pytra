@@ -26,7 +26,7 @@ Acceptance criteria:
 ## Child tasks
 
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S1-01] Restore the current residual buckets, reduction order, and active bundle metadata into the live plan / TODO / inventory tool.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-01] Reduce `crossruntime_mutation_helper_residual` until only the must-remain C# bytes/bytearray seam is left.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-01] Reduce `crossruntime_mutation_helper_residual` until only the must-remain C# bytearray seam is left.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-02] Reduce `cpp_emitter_object_bridge_residual` and move removable callers back into typed lanes.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S3-01] Reduce the Rust / C# shared type_id residuals around thin seams.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S3-02] Re-audit the final C++ shared type_id residual until only the intentional contract remains.
@@ -34,7 +34,7 @@ Acceptance criteria:
 ## Current residual buckets
 
 - `crossruntime_mutation_helper_residual`
-  - goal: shrink it to the C# bytes/bytearray must-remain seam only
+  - goal: shrink it to the C# bytearray must-remain seam only
 - `cpp_emitter_object_bridge_residual`
   - goal: return removable callers to typed lanes and leave only the minimal object-bridge wrapper seam
 - `rs_emitter_shared_type_id_residual`
@@ -65,3 +65,4 @@ Acceptance criteria:
 
 - 2026-03-12: Restore the archived `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01` inventory, representative smoke lanes, and reduction order as a live `P4` task so the next shrink bundle is visible from TODO again.
 - 2026-03-12: `S1-01` freezes the current residual buckets, reduction order, and active bundle metadata in the inventory tool and unit test, and keeps every bundle status at `planned` until active work begins.
+- 2026-03-12: `S2-01` shrinks the C# mutation residual down to the `bytearray` seam only and makes `bytes.pop()/append()` fail closed in the emitter. The remaining helpers are the bytearray `py_append/py_pop` lane and the index/slice compatibility helpers.

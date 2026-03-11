@@ -2465,8 +2465,10 @@ class CSharpEmitter(CodeEmitter):
         attr_raw: str,
         rendered_args: list[str],
     ) -> str:
-        """Render the intentional bytes/bytearray residual mutation helper lane."""
-        if owner_type not in {"bytes", "bytearray"}:
+        """Render the intentional bytearray-only residual mutation helper lane."""
+        if owner_type == "bytes" and attr_raw in {"append", "pop"}:
+            raise RuntimeError("csharp emitter: bytes mutation helpers are unsupported; use bytearray")
+        if owner_type != "bytearray":
             return ""
         if attr_raw == "append" and len(rendered_args) == 1:
             return "Pytra.CsModule.py_runtime.py_append(" + owner_expr + ", " + rendered_args[0] + ")"

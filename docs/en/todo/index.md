@@ -32,4 +32,4 @@ Last updated: 2026-03-12
 ## Unfinished Tasks
 
 1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01] Reduce the C++ / Rust / C# emitter residuals bundle by bundle before the next `py_runtime.h` shrink. Context: [p4-crossruntime-pyruntime-emitter-residual-reduction.md](../plans/p4-crossruntime-pyruntime-emitter-residual-reduction.md)
-- Progress memo: `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S1-01` 2026-03-12: locked the current residual buckets, reduction order, and active bundle metadata into the live docs and inventory tool.
+- Progress memo: `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-01` 2026-03-12: shrank the C# mutation residual to a bytearray-only seam and locked bytes mutation as fail-closed.

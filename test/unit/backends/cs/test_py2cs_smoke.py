@@ -420,6 +420,20 @@ class Child(Base):
         self.assertIn("Pytra.CsModule.py_runtime.py_append(buf, 2);", cs)
         self.assertIn("Pytra.CsModule.py_runtime.py_pop(buf)", cs)
 
+    def test_bytes_mutation_fail_closed_instead_of_using_runtime_helpers(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "bytes_mutation.py"
+            src.write_text(
+                "def f(buf: bytes) -> int:\n"
+                "    buf.pop()\n"
+                "    return 0\n",
+                encoding="utf-8",
+            )
+            east = load_east(src, parser_backend="self_hosted")
+            with self.assertRaises(RuntimeError) as cm:
+                transpile_to_csharp(east)
+        self.assertIn("bytes mutation helpers are unsupported", str(cm.exception))
+
     def test_bytearray_index_and_slice_compat_helpers_stay_explicit(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             src = Path(td) / "bytearray_index_slice.py"

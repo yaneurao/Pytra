@@ -221,6 +221,8 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         self.assertTrue(
             {
                 "def _render_bytes_mutation_call(",
+                'if owner_type == "bytes" and attr_raw in {"append", "pop"}:',
+                'raise RuntimeError("csharp emitter: bytes mutation helpers are unsupported; use bytearray")',
                 'return "Pytra.CsModule.py_runtime.py_append(" + owner_expr + ", " + rendered_args[0] + ")"',
                 'return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ")"',
                 'return "Pytra.CsModule.py_runtime.py_slice(" + owner + ", " + lower_expr + ", " + upper_expr + ")"',
@@ -256,8 +258,8 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             {
                 "crossruntime_mutation_helper_residual": {
                     "stage": "S2-01",
-                    "goal": "minimize the C# bytes/bytearray must-remain seam",
-                    "status": "planned",
+                    "goal": "minimize the C# bytearray must-remain seam",
+                    "status": "completed",
                 },
                 "cpp_emitter_object_bridge_residual": {
                     "stage": "S2-02",
