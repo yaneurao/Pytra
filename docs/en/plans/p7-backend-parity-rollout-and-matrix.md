@@ -30,7 +30,7 @@ Acceptance criteria:
 
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S1-01] Decide the source of truth and publication path for the feature × backend support matrix.
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-01] Fix rollout tiers and ordering from representative backends to secondary and long-tail backends.
-- [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-02] Define the parity review checklist and fail-closed requirement for new feature merges.
+- [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-02] Define the parity review checklist and fail-closed requirement for new feature merges.
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S3-01] Define how the support matrix flows into docs, release notes, and tooling.
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S4-01] Fix the archive / operations rules for maintaining rollout policy and the support matrix.
 
@@ -82,3 +82,19 @@ Acceptance criteria:
   - downstream task / plan stay fixed to `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` and `docs/ja/plans/p7-backend-parity-rollout-and-matrix.md`
 
 - 2026-03-12: `S2-01` fixes the rollout tiers to `representative -> secondary -> long_tail` and locks the concatenated order against the support matrix backend order via contract/tooling.
+
+## S2-02 Parity Review Checklist And Fail-Closed Requirement
+
+- source of truth:
+  - review checklist contract: [backend_parity_review_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_review_contract.py)
+  - validation: [check_backend_parity_review_contract.py](/workspace/Pytra/tools/check_backend_parity_review_contract.py), [test_check_backend_parity_review_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_review_contract.py)
+  - export seam: [export_backend_parity_review_manifest.py](/workspace/Pytra/tools/export_backend_parity_review_manifest.py), [test_export_backend_parity_review_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_parity_review_manifest.py)
+- checklist rule:
+  - review checklist order is fixed to `feature_inventory -> matrix_state_recorded -> representative_tier_recorded -> later_tier_state_recorded -> unsupported_lanes_fail_closed -> docs_mirror`.
+  - `feature_inventory` and `unsupported_lanes_fail_closed` reuse `backend_feature_contract_inventory.NEW_FEATURE_ACCEPTANCE_RULES`.
+  - `representative_tier_recorded` and `later_tier_state_recorded` reuse the tier order from `backend_parity_rollout_tier_contract`.
+- fail-closed rule:
+  - any lane that is not `supported` must stay in `fail_closed / not_started / experimental`, and silent fallback labels `object_fallback / string_fallback / comment_stub_fallback / empty_output_fallback` remain forbidden.
+  - phase rules stay aligned to `backend_feature_contract_inventory.FAIL_CLOSED_PHASE_RULES` for `parse_and_ir / emit_and_runtime / preview_rollout`.
+
+- 2026-03-12: `S2-02` fixes the parity review checklist order and adds a contract that unsupported lanes must remain `fail_closed/not_started/experimental` with silent fallbacks forbidden.

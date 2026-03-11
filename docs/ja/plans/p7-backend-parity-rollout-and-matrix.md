@@ -30,7 +30,7 @@
 
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S1-01] feature × backend support matrix の source of truth と publish 先を決める。
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-01] representative backend → secondary backend → long-tail backend の rollout tier と優先順を固定する。
-- [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-02] 新 feature merge 時の parity review checklist と fail-closed requirement を定義する。
+- [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-02] 新 feature merge 時の parity review checklist と fail-closed requirement を定義する。
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S3-01] support matrix を docs / release note / tooling に handoff する手順を決める。
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S4-01] rollout policy と matrix maintenance の archive / operations rule を整える。
 
@@ -82,3 +82,19 @@
   - downstream task / plan は `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` と `docs/ja/plans/p7-backend-parity-rollout-and-matrix.md` に固定する。
 
 - 2026-03-12: `S2-01` では rollout tier を `representative -> secondary -> long_tail` に固定し、連結順が support matrix backend order と一致することを contract/tooling で固定した。
+
+## S2-02 Parity Review Checklist And Fail-Closed Requirement
+
+- source of truth:
+  - review checklist contract: [backend_parity_review_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_review_contract.py)
+  - validation: [check_backend_parity_review_contract.py](/workspace/Pytra/tools/check_backend_parity_review_contract.py), [test_check_backend_parity_review_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_review_contract.py)
+  - export seam: [export_backend_parity_review_manifest.py](/workspace/Pytra/tools/export_backend_parity_review_manifest.py), [test_export_backend_parity_review_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_parity_review_manifest.py)
+- checklist rule:
+  - review checklist order は `feature_inventory -> matrix_state_recorded -> representative_tier_recorded -> later_tier_state_recorded -> unsupported_lanes_fail_closed -> docs_mirror` に固定する。
+  - `feature_inventory` と `unsupported_lanes_fail_closed` は `backend_feature_contract_inventory.NEW_FEATURE_ACCEPTANCE_RULES` を seed にする。
+  - `representative_tier_recorded` と `later_tier_state_recorded` は `backend_parity_rollout_tier_contract` の tier 順を seed にする。
+- fail-closed rule:
+  - `supported` 以外の lane は `fail_closed / not_started / experimental` のいずれかに固定し、silent fallback label は `object_fallback / string_fallback / comment_stub_fallback / empty_output_fallback` を禁止する。
+  - phase rule は `parse_and_ir / emit_and_runtime / preview_rollout` を `backend_feature_contract_inventory.FAIL_CLOSED_PHASE_RULES` と一致させる。
+
+- 2026-03-12: `S2-02` では parity review checklist を fixed order 化し、unsupported lane は `fail_closed/not_started/experimental` のいずれかで silent fallback を禁止する contract を追加した。
