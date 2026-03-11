@@ -2,6 +2,21 @@
 
 このフォルダは、長期計画・設計ドラフト・調査メモの置き場です。
 
+## live plan の見方
+
+- `plans/` 直下の canonical entrypoint は raw のファイル一覧ではなく、この `README.md` とする。
+- `active` は `docs/ja/todo/index.md` の未完了タスクから直接参照されている live plan に限る。
+- `backlog` は live の `p*-*.md` で、TODO 未登録かつ archive に同名 plan がまだ無いものとする。
+- `stale-complete` は live の `p*-*.md` で、TODO 未登録かつ archive に同名 plan が既にあるものとする。これは `plans/` 直下へ残さず archive へ移す。
+
+2026-03-12 時点の active live plan:
+- `p4-plan-archive-hygiene.md`
+- `p4-crossruntime-pyruntime-emitter-shrink.md`
+- `p4-crossruntime-pyruntime-residual-caller-shrink.md`
+- `p5-backend-feature-parity-contract.md`
+- `p6-backend-conformance-suite.md`
+- `p7-backend-parity-rollout-and-matrix.md`
+
 ## ルール
 
 - 記載内容は日本語で書く。
@@ -11,6 +26,8 @@
 - `todo` 側には、タスク ID と対応 plan ファイルパスを必ず併記する。
 - readiness report のような補助レポートを `plans/` に置く場合も、対応する plan から必ずリンクする。
 - 優先度上書きの指示形式は `docs/ja/plans/instruction-template.md` を使う。
+- TODO 未登録の draft を live `plans/` に置く場合は backlog とみなし、raw のファイル一覧ではなくこの README の分類基準で扱う。
+- 新しい backlog draft は `関連 TODO:` に `なし（backlog draft / TODO 未登録）` を明記してよい。TODO へ昇格した時点で対応 ID に差し替える。
 
 ## 完了時の運用（必須）
 

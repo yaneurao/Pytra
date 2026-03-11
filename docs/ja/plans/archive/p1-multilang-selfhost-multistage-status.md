@@ -1,6 +1,6 @@
 # P1-MQ-05 Multistage Selfhost Status
 
-計測日: 2026-02-27
+計測日: 2026-03-11
 
 実行コマンド:
 
@@ -10,14 +10,14 @@ python3 tools/check_multilang_selfhost_multistage.py
 
 | lang | stage1 (self-transpile) | stage2 (self->self) | stage3 (sample) | category | note |
 |---|---|---|---|---|---|
-| rs | fail | skip | skip | stage1_transpile_fail | RuntimeError: unsupported_syntax: unsupported from-import clause: ( add_common_transpile_args at 9:0 hint=Use `from module import name` or `... as alias`. |
-| cs | pass | fail | skip | compile_fail | /tmp/tmpbvym4lb4/cs_stage1.cs(18,19): error CS0246: The type or namespace name `Path' could not be found. Are you missing `System.IO' using directive? |
-| js | pass | fail | skip | stage1_dependency_transpile_fail | js multistage emit failed at hooks/js/emitter/js_emitter.py: RuntimeError: unsupported_syntax: object receiver attribute/method access is forbidden by language constraints at 90:39 hint=Cast or assign to a concrete type before attribute/method access. |
-| ts | pass | blocked | blocked | preview_only | generated transpiler is preview-only |
-| go | pass | skip | skip | runner_not_defined | multistage runner is not defined |
-| java | pass | skip | skip | runner_not_defined | multistage runner is not defined |
-| swift | pass | skip | skip | runner_not_defined | multistage runner is not defined |
-| kotlin | pass | skip | skip | runner_not_defined | multistage runner is not defined |
+| rs | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| cs | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| js | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| ts | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| go | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| java | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| swift | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| kotlin | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
 
 カテゴリ定義:
 - `preview_only`: stage1 は可能だが生成 transpiler が preview 出力。
@@ -28,3 +28,4 @@ python3 tools/check_multilang_selfhost_multistage.py
 - `stage2_compile_fail`: stage2 生成 transpiler のビルド失敗。
 - `sample_transpile_fail`: stage2 生成 transpiler で `sample/py/01` 変換に失敗。
 - `stage1_transpile_fail`: stage1 自己変換自体が失敗。
+- `unsupported_by_design`: 現在の multistage runner 対象外で expected failure として扱う。

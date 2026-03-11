@@ -1,8 +1,8 @@
 # P1-MQ-05 Multistage Selfhost Status
 
-計測日: 2026-02-24
+Measurement date: 2026-03-11
 
-実行コマンド:
+Command:
 
 ```bash
 python3 tools/check_multilang_selfhost_multistage.py
@@ -10,21 +10,22 @@ python3 tools/check_multilang_selfhost_multistage.py
 
 | lang | stage1 (self-transpile) | stage2 (self->self) | stage3 (sample) | category | note |
 |---|---|---|---|---|---|
-| rs | fail | skip | skip | stage1_transpile_fail | RuntimeError: unsupported_syntax: unsupported from-import clause: ( add_common_transpile_args at 9:0 hint=Use `from module import name` or `... as alias`. |
-| cs | pass | blocked | blocked | toolchain_missing | mcs/mono not found |
-| js | pass | fail | skip | stage1_dependency_transpile_fail | js multistage emit failed at hooks/js/emitter/js_emitter.py: RuntimeError: unsupported_syntax: object receiver attribute/method access is forbidden by language constraints at 73:39 hint=Cast or assign to a concrete type before attribute/method access. |
-| ts | pass | blocked | blocked | preview_only | generated transpiler is preview-only |
-| go | pass | blocked | blocked | preview_only | generated transpiler is preview-only |
-| java | pass | blocked | blocked | preview_only | generated transpiler is preview-only |
-| swift | pass | blocked | blocked | preview_only | generated transpiler is preview-only |
-| kotlin | pass | blocked | blocked | preview_only | generated transpiler is preview-only |
+| rs | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| cs | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| js | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| ts | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| go | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| java | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| swift | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| kotlin | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
 
-カテゴリ定義:
-- `preview_only`: stage1 は可能だが生成 transpiler が preview 出力。
-- `toolchain_missing`: stage2 実行に必要な実行系/コンパイラが無い。
-- `compile_fail`: stage1 生成 transpiler のビルド失敗。
-- `stage1_dependency_transpile_fail`: stage2 実行準備（依存 transpile）で失敗。
-- `self_retranspile_fail`: 生成 transpiler で自己再変換（stage2）に失敗。
-- `stage2_compile_fail`: stage2 生成 transpiler のビルド失敗。
-- `sample_transpile_fail`: stage2 生成 transpiler で `sample/py/01` 変換に失敗。
-- `stage1_transpile_fail`: stage1 自己変換自体が失敗。
+Category definitions:
+- `preview_only`: stage1 is possible, but the generated transpiler is preview output.
+- `toolchain_missing`: runtime/compiler required for stage2 execution is unavailable.
+- `compile_fail`: build failure of the stage1-generated transpiler.
+- `stage1_dependency_transpile_fail`: failure during stage2 preparation (dependency transpile).
+- `self_retranspile_fail`: self-retranspile (stage2) failed using the generated transpiler.
+- `stage2_compile_fail`: build failure of the stage2-generated transpiler.
+- `sample_transpile_fail`: stage2-generated transpiler failed to transpile `sample/py/01`.
+- `stage1_transpile_fail`: stage1 self-transpile itself failed.
+- `unsupported_by_design`: the current multistage runner intentionally treats this lane as an expected failure.

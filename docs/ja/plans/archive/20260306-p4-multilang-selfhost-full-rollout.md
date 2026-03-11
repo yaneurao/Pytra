@@ -40,7 +40,7 @@
 - 2026-03-02: ユーザー要望により、selfhost 対象言語へ `ruby/lua/scala` を追加し、P4 の監視スコープを `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala` へ拡張した。
 - 2026-03-05: ユーザー要望により、selfhost 対象言語へ `php/nim` を追加し、P4 の監視スコープを `cpp/rs/cs/js/ts/go/java/swift/kotlin/ruby/lua/scala/php/nim` へ拡張した。併せて「言語別の特例実装を増やさず、共通経路準拠で selfhost を達成する」方針を再確認した。
 - 2026-03-06: ユーザー指示により、この plan は「現状の ABI / runtime 責務境界が固まる前に進めても意味がない」ため、未完了 TODO から外して archive へ退避した。完了扱いではなく、ABI 仕様確立後に再評価する。
-- 2026-02-27: [ID: `P4-MULTILANG-SH-01-S1-01`] `python3 tools/check_multilang_selfhost_suite.py` を再実行し、`docs/ja/plans/p1-multilang-selfhost-status.md` / `docs/ja/plans/p1-multilang-selfhost-multistage-status.md` を更新した。未達カテゴリを言語別に固定し、blocking chain を確定した。
+- 2026-02-27: [ID: `P4-MULTILANG-SH-01-S1-01`] `python3 tools/check_multilang_selfhost_suite.py` を再実行し、`docs/ja/plans/archive/p1-multilang-selfhost-status.md` / `docs/ja/plans/archive/p1-multilang-selfhost-multistage-status.md` を更新した。未達カテゴリを言語別に固定し、blocking chain を確定した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S1-02`] `runner_not_defined` 対象（go/java/swift/kotlin）の multistage runner 契約を定義し、`check_multilang_selfhost_multistage.py` へ段階実装する API 形を確定した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-01`] `src/py2rs.py` の括弧付き `from-import` を selfhost parser 互換の単一行 import へ修正し、`python3 tools/check_multilang_selfhost_stage1.py` / `python3 tools/check_multilang_selfhost_multistage.py` で `rs stage1=pass` を確認した。`rs` の先頭失敗は `stage1_transpile_fail` から `compile_fail`（stage2 build）へ遷移した。
 - 2026-02-27: [ID: `P4-MULTILANG-SH-01-S2-02-S1`] C# emitter の selfhost compile 阻害を一段解消（`Path` alias/constructor, `str.endswith|startswith` 変換, 関数定義の定数デフォルト引数出力）。`check_multilang_selfhost_*` 再実行で `cs` の先頭失敗が `Path` 未解決から `sys` 未解決へ遷移し、次ブロッカーを特定した。

@@ -169,10 +169,10 @@
 
 `P1-MQ-04-S1` 実装結果（stage1 selfhost 棚卸し）:
 
-- 対象: `tools/check_multilang_selfhost_stage1.py`, `docs/ja/plans/p1-multilang-selfhost-status.md`
+- 対象: `tools/check_multilang_selfhost_stage1.py`, `docs/ja/plans/archive/p1-multilang-selfhost-status.md`
 - 変更点:
   1. 非 C++ 各言語の `py2<lang>.py` 自己変換（stage1）を一括実行し、生成物モード（native/preview）と stage2 実行可否を収集するスクリプトを追加した。
-  2. 初回ステータスを `docs/ja/plans/p1-multilang-selfhost-status.md` に固定した。
+  2. 初回ステータスを `docs/ja/plans/archive/p1-multilang-selfhost-status.md` に固定した。
 - 初回結果サマリ:
   - `rs`: stage1 fail（self-hosted parser が `from ... import (... )` 構文を拒否）
   - `js`: stage1 pass / stage2 fail（生成 `py2js.js` 実行時に `src/hooks/js/emitter/js_emitter.js` が解決できない）
@@ -181,7 +181,7 @@
 
 `P1-MQ-04-S2` 実装結果（non-preview stage2 経路整備）:
 
-- 対象: `tools/check_multilang_selfhost_stage1.py`, `docs/ja/plans/p1-multilang-selfhost-status.md`
+- 対象: `tools/check_multilang_selfhost_stage1.py`, `docs/ja/plans/archive/p1-multilang-selfhost-status.md`
 - 変更点:
   1. `rs/cs/js` を stage2 対象言語として明示し、言語別 runner（`rustc`/`mcs+mono`/`node`）を自動選択する経路を追加した。
   2. `js` は依存 `.js` 不在を避けるため、`src/py2js.py` 生成物の相対 import を再帰走査し、依存 `.py` を一時 `src/` ツリーへ順次変換してから stage2 実行するようにした。
@@ -195,7 +195,7 @@
 
 `P1-MQ-05` 実装結果（多段 selfhost 可否と失敗要因分類）:
 
-- 対象: `tools/check_multilang_selfhost_multistage.py`, `docs/ja/plans/p1-multilang-selfhost-multistage-status.md`
+- 対象: `tools/check_multilang_selfhost_multistage.py`, `docs/ja/plans/archive/p1-multilang-selfhost-multistage-status.md`
 - 変更点:
   1. 非 C++ 各言語で `stage1 -> stage2(self->self) -> stage3(sample)` を同一手順で試行する多段 selfhost チェックを追加した。
   2. 失敗要因を `stage1_transpile_fail` / `toolchain_missing` / `compile_fail` / `self_retranspile_fail` / `stage2_compile_fail` / `sample_transpile_fail` / `preview_only` に分類し、レポートへ固定した。
@@ -243,10 +243,10 @@
 - 2026-02-24: ID: P1-MQ-02-S3-S3 として Swift/Kotlin preview 出力をシグネチャ要約へ縮退し、`sample/swift` / `sample/kotlin` の `paren`/`cast`/`imports`/`unused_import_est` を削減した。
 - 2026-02-24: ID: P1-MQ-02-S4 として多言語サンプル再生成と再計測を完了し、`docs/ja/plans/p1-multilang-output-quality-baseline.md` に改善結果を固定した。
 - 2026-02-24: ID: P1-MQ-03 として品質回帰チェック（`tools/check_multilang_quality_regression.py`）を追加し、`tools/run_local_ci.py` に組み込んだ。
-- 2026-02-24: ID: P1-MQ-04-S1 として stage1 selfhost 棚卸しスクリプト（`tools/check_multilang_selfhost_stage1.py`）を追加し、言語別ステータスを `docs/ja/plans/p1-multilang-selfhost-status.md` に固定した。
+- 2026-02-24: ID: P1-MQ-04-S1 として stage1 selfhost 棚卸しスクリプト（`tools/check_multilang_selfhost_stage1.py`）を追加し、言語別ステータスを `docs/ja/plans/archive/p1-multilang-selfhost-status.md` に固定した。
 - 2026-02-24: ID: P1-MQ-04-S2 の事前調査として JS emitter に `Slice` 出力（`out[:-3]` -> `.slice(...)`）を追加して stage2 の `SyntaxError` は解消したが、次段で `src/hooks/js/emitter/js_emitter.js` 不在（Python hooks 依存）により実行が継続失敗することを確認した。
-- 2026-02-24: ID: P1-MQ-04-S2 として non-preview 言語（`rs/cs/js`）の stage2 runner を自動化し、`docs/ja/plans/p1-multilang-selfhost-status.md` に `blocked/fail` 理由を固定した。
-- 2026-02-24: ID: P1-MQ-05 として多段 selfhost チェック（`tools/check_multilang_selfhost_multistage.py`）を追加し、`docs/ja/plans/p1-multilang-selfhost-multistage-status.md` に失敗カテゴリを固定した。
+- 2026-02-24: ID: P1-MQ-04-S2 として non-preview 言語（`rs/cs/js`）の stage2 runner を自動化し、`docs/ja/plans/archive/p1-multilang-selfhost-status.md` に `blocked/fail` 理由を固定した。
+- 2026-02-24: ID: P1-MQ-05 として多段 selfhost チェック（`tools/check_multilang_selfhost_multistage.py`）を追加し、`docs/ja/plans/archive/p1-multilang-selfhost-multistage-status.md` に失敗カテゴリを固定した。
 - 2026-02-24: ID: P1-MQ-06 として統合 selfhost スイート（`tools/check_multilang_selfhost_suite.py`）を追加し、`tools/run_local_ci.py` へ組み込んだ。
 - 2026-02-24: ID: P1-MQ-07 として `check_sample_regen_clean.py` を追加し、`run_local_ci.py` で再生成後の sample 差分ゼロを検証する運用を固定した。
 - 2026-02-24: `sample/go`, `sample/kotlin`, `sample/swift` が preview 要約出力のままであることを確認。`P1-MQ-02-S3-S2/S3` の完了条件が不足していたため、`P1-MQ-10`（preview 脱却）を再オープンした。

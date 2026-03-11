@@ -27,25 +27,28 @@ Acceptance criteria:
 
 - Count only tracked `p*-*.md` files directly under `docs/ja/plans/`; ignore untracked plan drafts.
 - `active`: a live plan that is directly referenced by an unfinished task in `docs/ja/todo/index.md`.
-- `stale-complete`: a live plan that is no longer referenced by TODO and already has an archive twin with the same basename under `docs/ja/plans/archive/`.
-- `backlog`: a live plan that is no longer referenced by TODO and has no archive twin yet.
+- `stale-complete`: a live plan that is no longer referenced by TODO, has every checklist item marked `[x]`, and is not used as a live status/report sink or tool default output path.
+- `backlog`: a live plan that is no longer referenced by TODO and is either unfinished backlog or an intentionally live status/report plan.
 
-Tracked inventory as of 2026-03-12:
-- live `p*-*.md`: 146
-- active: 6
-- stale-complete: 2
-- backlog: 138
+Tracked inventory as of 2026-03-12 (corrected criteria):
+- before handoff, live `p*-*.md`: 146
+- `active=6 / stale-complete=129 / backlog=11`
+- after `S2-01` moved six representative stale-complete plans into archive, `live=140 / active=6 / stale-complete=123 / backlog=11`
 
 Representative active:
 - `p4-plan-archive-hygiene.md`
 - `p4-crossruntime-pyruntime-emitter-shrink.md`
 - `p4-crossruntime-pyruntime-residual-caller-shrink.md`
 
-Representative stale-complete:
+Representative stale-complete (archived in `S2-01`):
 - `p1-multilang-selfhost-status.md`
 - `p1-multilang-selfhost-multistage-status.md`
+- `p0-backends-common-foundation.md`
+- `p1-ruby-benchmark-readme-fix.md`
+- `p1-go-sample01-quality-uplift.md`
+- `p1-test-unit-layout-and-pruning.md`
 
-Representative backlog:
+Representative backlog / live-status:
 - `p0-cpp-backend-dir-realign.md`
 - `p1-pytra-cli-rs-target.md`
 - `p2-wildcard-import-support.md`
@@ -53,12 +56,15 @@ Representative backlog:
 ## Child tasks
 
 - [x] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S1-01] Inventory live plans and record the classification rules plus representative counts for `active`, `backlog`, and `stale-complete`.
-- [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S2-01] Move representative stale-complete live plans into the archive and repair TODO/archive index links.
-- [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S3-01] Decide the placement or labeling rules for backlog plans so the top-level `plans/` directory becomes active-first again.
+- [x] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S2-01] Move representative stale-complete live plans into the archive and repair TODO/archive index links.
+- [x] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S3-01] Decide the placement or labeling rules for backlog plans so the top-level `plans/` directory becomes active-first again.
 - [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01-S4-01] Reflect the archive handoff workflow in README / operations docs and prevent future completed-plan drift.
 
 ## Decision log
 
 - 2026-03-11: This task is important for docs hygiene but not urgent enough to block current compiler/runtime work, so it is tracked as `P4`.
 - 2026-03-11: Start with explicit classification rules and representative stale-complete handoff, instead of trying to archive every remaining live plan in one pass.
-- 2026-03-12: The tracked live-plan inventory is now fixed at `active=6 / stale-complete=2 / backlog=138`, with `p1-multilang-selfhost-status.md` and `p1-multilang-selfhost-multistage-status.md` chosen as the representative stale-complete cases.
+- 2026-03-12: The first inventory used `archive twin exists` as a stale-complete signal, which misclassified the selfhost status files as representative stale-complete cases.
+- 2026-03-12: Under the corrected criteria, `stale-complete` means `not in TODO + checklist complete + not a live status/report sink`, which changes the tracked live inventory to `active=6 / stale-complete=129 / backlog=11`.
+- 2026-03-12: `S2-01` archived the representative stale-complete set (`p0-backends-common-foundation.md`, `p1-ruby-benchmark-readme-fix.md`, `p1-go-sample01-quality-uplift.md`, `p1-test-unit-layout-and-pruning.md`) in addition to the two earlier selfhost status files, reducing the live inventory to `140`.
+- 2026-03-12: `plans/README.md` is now the canonical entrypoint for live `plans/`, listing the 6 active plans explicitly and documenting the backlog/stale-complete rules there. New backlog drafts may use `Related TODO: none (backlog draft / not yet promoted)`.

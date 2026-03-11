@@ -96,8 +96,8 @@ shared source:
 - multilang `multistage`: 同 8 target がすべて `stage1_transpile_fail`
 
 関連 status:
-- [P1-MQ-04 Stage1 Status](./p1-multilang-selfhost-status.md)
-- [P1-MQ-05 Multistage Selfhost Status](./p1-multilang-selfhost-multistage-status.md)
+- [P1-MQ-04 Stage1 Status](./archive/p1-multilang-selfhost-status.md)
+- [P1-MQ-05 Multistage Selfhost Status](./archive/p1-multilang-selfhost-multistage-status.md)
 
 ## Routine Check Order
 

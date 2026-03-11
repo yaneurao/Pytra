@@ -96,8 +96,8 @@ Shared sources:
 - multilang `multistage`: the same 8 targets are all currently `stage1_transpile_fail`
 
 Related status reports:
-- [P1-MQ-04 Stage1 Status](./p1-multilang-selfhost-status.md)
-- [P1-MQ-05 Multistage Selfhost Status](./p1-multilang-selfhost-multistage-status.md)
+- [P1-MQ-04 Stage1 Status](./archive/p1-multilang-selfhost-status.md)
+- [P1-MQ-05 Multistage Selfhost Status](./archive/p1-multilang-selfhost-multistage-status.md)
 
 ## Routine Check Order
 
