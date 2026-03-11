@@ -919,14 +919,11 @@ static inline object py_at(const object& v, int64 idx) {
     return py_list_at_ref(obj_to_list_ref_or_raise(v, "py_at"), idx);
 }
 
+// Compatibility seam for generated-runtime local lists and object-bridge callers.
+// Typed lanes must use py_list_*_mut directly.
 template <class T, class U>
 static inline void py_append(list<T>& v, const U& item) {
     py_list_append_mut(v, item);
-}
-
-template <class T, class U>
-static inline void py_append(rc<list<T>>& v, const U& item) {
-    py_list_append_mut(rc_list_ref(v), item);
 }
 
 template <class U>
@@ -1034,11 +1031,6 @@ static inline const V& py_at(const dict<K, V>& d, const Q& key) {
     return it->second;
 }
 
-template <class T, class I, class U>
-static inline void py_set_at(rc<list<T>>& v, I idx, const U& item) {
-    py_list_set_at_mut(rc_list_ref(v), idx, item);
-}
-
 template <class I, class U>
 static inline void py_set_at(object& v, I idx, const U& item) {
     py_list_set_at_mut(obj_to_list_ref_or_raise(v, "py_set_at"), idx, item);
@@ -1104,21 +1096,6 @@ static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item) {
     }();
 }
 
-template <class T>
-static inline void py_extend(rc<list<T>>& v, const list<T>& items) {
-    py_list_extend_mut(rc_list_ref(v), items);
-}
-
-template <class T>
-static inline void py_extend(rc<list<T>>& v, const rc<list<T>>& items) {
-    py_list_extend_mut(rc_list_ref(v), rc_list_ref(items));
-}
-
-template <class T, class U, ::std::enable_if_t<!::std::is_same_v<U, list<T>> && !::std::is_same_v<U, rc<list<T>>>, int> = 0>
-static inline void py_extend(rc<list<T>>& v, const U& items) {
-    py_list_extend_mut(rc_list_ref(v), items);
-}
-
 static inline void py_extend(object& v, const list<object>& items) {
     py_list_extend_mut(obj_to_list_ref_or_raise(v, "py_extend"), items);
 }
@@ -1129,45 +1106,20 @@ static inline void py_extend(object& v, const object& items) {
         obj_to_list_ref_or_raise(items, "py_extend"));
 }
 
-template <class T>
-static inline T py_pop(rc<list<T>>& v) {
-    return py_list_pop_mut(rc_list_ref(v));
-}
-
 static inline object py_pop(object& v) {
     return py_list_pop_mut(obj_to_list_ref_or_raise(v, "py_pop"));
-}
-
-template <class T>
-static inline T py_pop(rc<list<T>>& v, int64 idx) {
-    return py_list_pop_mut(rc_list_ref(v), idx);
 }
 
 static inline object py_pop(object& v, int64 idx) {
     return py_list_pop_mut(obj_to_list_ref_or_raise(v, "py_pop"), idx);
 }
 
-template <class T>
-static inline void py_clear(rc<list<T>>& v) {
-    py_list_clear_mut(rc_list_ref(v));
-}
-
 static inline void py_clear(object& v) {
     py_list_clear_mut(obj_to_list_ref_or_raise(v, "py_clear"));
 }
 
-template <class T>
-static inline void py_reverse(rc<list<T>>& v) {
-    py_list_reverse_mut(rc_list_ref(v));
-}
-
 static inline void py_reverse(object& v) {
     py_list_reverse_mut(obj_to_list_ref_or_raise(v, "py_reverse"));
-}
-
-template <class T>
-static inline void py_sort(rc<list<T>>& v) {
-    py_list_sort_mut(rc_list_ref(v));
 }
 
 static inline void py_sort(object& v) {

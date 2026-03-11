@@ -32,4 +32,4 @@ Last updated: 2026-03-11
 ## Unfinished Tasks
 
 1. [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01] Shrink the remaining `py_runtime.h` surface from the perspective of `object bridge` and shared `type_id` contracts. Context: [docs/en/plans/p0-cpp-pyruntime-contract-shrink.md](../plans/p0-cpp-pyruntime-contract-shrink.md)
-   Progress note: `S2-01` removed mutation wrappers from user-emitted C++ and reduced the residual callers to generated runtime and the shared `type_id` contract.
+   Progress note: `S2-02` narrowed mutation wrappers down to object-bridge overloads only and fixed `py_list_*_mut` as the canonical typed lane surface.

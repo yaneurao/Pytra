@@ -32,4 +32,4 @@
 ## 未完了タスク
 
 1. [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01] `py_runtime.h` の残存 surface を `object bridge / type_id shared contract` 観点で縮小する。文脈: [docs/ja/plans/p0-cpp-pyruntime-contract-shrink.md](../plans/p0-cpp-pyruntime-contract-shrink.md)
-   進捗メモ: `S2-01` で user-emitted C++ から mutation wrapper を外し、残 caller を generated runtime と shared `type_id` contract へ縮めた。
+   進捗メモ: `S2-02` で mutation wrapper を object bridge overload のみに縮め、typed lane 正本を `py_list_*_mut` へ固定した。
