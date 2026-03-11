@@ -43,6 +43,13 @@ EXPECTED_BUCKETS = {
         ("py_runtime_object_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
         ("py_runtime_object_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
         ("py_runtime_object_isinstance", "src/backends/cpp/emitter/stmt.py"),
+        ("py_append", "src/backends/cpp/emitter/call.py"),
+        ("py_extend", "src/backends/cpp/emitter/call.py"),
+        ("py_pop", "src/backends/cpp/emitter/call.py"),
+        ("py_clear", "src/backends/cpp/emitter/call.py"),
+        ("py_reverse", "src/backends/cpp/emitter/call.py"),
+        ("py_sort", "src/backends/cpp/emitter/call.py"),
+        ("py_set_at", "src/backends/cpp/emitter/call.py"),
     },
     "cpp_emitter_shared_type_id_residual": {
         ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
@@ -61,13 +68,6 @@ EXPECTED_BUCKETS = {
         ("py_runtime_type_id_issubclass", "src/backends/cs/emitter/cs_emitter.py"),
     },
     "crossruntime_mutation_helper_residual": {
-        ("py_append", "src/backends/cpp/emitter/call.py"),
-        ("py_extend", "src/backends/cpp/emitter/call.py"),
-        ("py_pop", "src/backends/cpp/emitter/call.py"),
-        ("py_clear", "src/backends/cpp/emitter/call.py"),
-        ("py_reverse", "src/backends/cpp/emitter/call.py"),
-        ("py_sort", "src/backends/cpp/emitter/call.py"),
-        ("py_set_at", "src/backends/cpp/emitter/call.py"),
         ("py_append", "src/backends/cs/emitter/cs_emitter.py"),
         ("py_pop", "src/backends/cs/emitter/cs_emitter.py"),
     },
@@ -78,7 +78,7 @@ TARGET_END_STATE = {
     "cpp_emitter_shared_type_id_residual": "thin_shared_type_id_only_last_intentional_cpp_contract",
     "rs_emitter_shared_type_id_residual": "thin_shared_type_id_only_no_generic_alias_reentry",
     "cs_emitter_shared_type_id_residual": "thin_shared_type_id_only_no_generic_alias_reentry",
-    "crossruntime_mutation_helper_residual": "cpp_object_bridge_and_cs_bytes_bytearray_only",
+    "crossruntime_mutation_helper_residual": "cs_bytes_bytearray_only",
 }
 
 REDUCTION_ORDER = [

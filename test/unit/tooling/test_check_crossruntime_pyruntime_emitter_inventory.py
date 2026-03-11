@@ -28,6 +28,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         self.assertEqual(
             {path for _, path in bucket},
             {
+                "src/backends/cpp/emitter/call.py",
                 "src/backends/cpp/emitter/cpp_emitter.py",
                 "src/backends/cpp/emitter/runtime_expr.py",
                 "src/backends/cpp/emitter/stmt.py",
@@ -35,7 +36,17 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         )
         self.assertEqual(
             {symbol for symbol, _ in bucket},
-            {"py_runtime_object_type_id", "py_runtime_object_isinstance"},
+            {
+                "py_runtime_object_type_id",
+                "py_runtime_object_isinstance",
+                "py_append",
+                "py_extend",
+                "py_pop",
+                "py_clear",
+                "py_reverse",
+                "py_sort",
+                "py_set_at",
+            },
         )
 
     def test_cpp_shared_type_id_bucket_is_cpp_only(self) -> None:
@@ -74,17 +85,8 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
 
     def test_crossruntime_mutation_bucket_covers_cpp_and_cs_only(self) -> None:
         bucket = inventory_mod.EXPECTED_BUCKETS["crossruntime_mutation_helper_residual"]
-        self.assertEqual(
-            {path for _, path in bucket},
-            {
-                "src/backends/cpp/emitter/call.py",
-                "src/backends/cs/emitter/cs_emitter.py",
-            },
-        )
-        self.assertEqual(
-            {symbol for symbol, _ in bucket},
-            {"py_append", "py_extend", "py_pop", "py_clear", "py_reverse", "py_sort", "py_set_at"},
-        )
+        self.assertEqual({path for _, path in bucket}, {"src/backends/cs/emitter/cs_emitter.py"})
+        self.assertEqual({symbol for symbol, _ in bucket}, {"py_append", "py_pop"})
 
     def test_target_end_state_keys_match_bucket_names(self) -> None:
         self.assertEqual(

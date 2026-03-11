@@ -65,7 +65,7 @@ bundle 順:
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01] `py_runtime.h` をさらに縮められるよう、C++/Rust/C# emitter 側の residual helper 依存を整理する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-01] C++/Rust/C# emitter の residual `py_runtime` helper 使用を bucket 化し、inventory/test を追加する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-02] mutation / `type_id` / object bridge の end state と削減順を docs/source guard に固定する。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-01] C++ emitter の residual helper 依存を thin/object-bridge seam に寄せる。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-01] C++ emitter の residual helper 依存を thin/object-bridge seam に寄せる。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-02] Rust emitter の residual helper 依存を shared contract へ揃える。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-03] C# emitter の residual helper 依存を shared contract へ揃える。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S3-01] representative smoke / docs / archive を更新し、header shrink follow-up を閉じる。
@@ -74,3 +74,4 @@ bundle 順:
 - 2026-03-11: `P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01` 完了後の follow-up として起票した。header 側の generic thin compat は除去済みなので、次の shrink は caller-side residual 契約を整理しないと進まない。
 - 2026-03-11: `S1-01` として `tools/check_crossruntime_pyruntime_emitter_inventory.py` を thin helper 名ベースへ更新し、residual を `cpp_emitter_object_bridge_residual` / `cpp_emitter_shared_type_id_residual` / `rs_emitter_shared_type_id_residual` / `cs_emitter_shared_type_id_residual` / `crossruntime_mutation_helper_residual` に bucket 化した。C++ は `py_runtime_object_*` と `py_runtime_type_id_*`、Rust/C# は `py_runtime_value_*` / `py_runtime_type_id_*`、mutation helper は C++ object-bridge fallback と C# bytes/bytearray lane だけを許容する。
 - 2026-03-11: `S1-02` として inventory tool に `TARGET_END_STATE` と `REDUCTION_ORDER` を追加し、削減順を `crossruntime_mutation_helper_residual -> cpp_emitter_object_bridge_residual -> rs_emitter_shared_type_id_residual -> cs_emitter_shared_type_id_residual -> cpp_emitter_shared_type_id_residual` に固定した。`cpp_emitter_shared_type_id_residual` はこの follow-up では最後まで intentional contract として残し、header shrink 側で別途扱う。
+- 2026-03-11: `S2-01` として C++ emitter の `call.py` に残っていた `py_append/extend/pop/clear/reverse/sort/set_at` を mutation helper residual ではなく object-list bridge context として inventory へ再分類した。これで `crossruntime_mutation_helper_residual` は C# bytes/bytearray lane のみとなり、C++ 側の residual は `cpp_emitter_object_bridge_residual` / `cpp_emitter_shared_type_id_residual` の 2 bucket に整理された。
