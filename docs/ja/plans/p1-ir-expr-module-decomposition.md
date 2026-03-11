@@ -46,8 +46,8 @@
 - `git diff --check`
 
 分解:
-- [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-01] `core_expr_call_annotation.py` / `core_expr_attr_subscript_suffix.py` の残 cluster を棚卸しし、split boundary を `attr_suffix` / `subscript_suffix` / `named_call` / `attr_call` / `callee_call` / `shared_state` で固定する。
-- [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-02] TODO / plan の進捗メモを bundle 単位へ圧縮する運用をこの task に固定する。
+- [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-01] `core_expr_call_annotation.py` / `core_expr_attr_subscript_suffix.py` の残 cluster を棚卸しし、split boundary を `attr_suffix` / `subscript_suffix` / `named_call` / `attr_call` / `callee_call` / `shared_state` で固定する。
+- [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-02] TODO / plan の進捗メモを bundle 単位へ圧縮する運用をこの task に固定する。
 - [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S2-01] `attr suffix` / `subscript suffix` cluster を別 module へ分割し、`core_expr_shell.py` の import を追従させる。
 - [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S2-02] `named-call` / `attr-call` / `callee-call` annotation cluster を bundle 単位で別 module へ分割する。
 - [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S3-01] source-contract test を split 後の module 構成へ追従させ、representative regression を通す。
@@ -55,3 +55,6 @@
 
 決定ログ:
 - 2026-03-11: 初版作成。着手時点の主要大型 file は `core_expr_call_annotation.py` と `core_expr_attr_subscript_suffix.py` で、`core.py` はすでに thin facade になっているため、次の分割対象は expr split module 自体と判断した。
+- 2026-03-11: `core_expr_attr_subscript_suffix.py` は `attr_suffix` / `subscript_suffix` / `shared_postfix_orchestration` に分ける。shared 側に残すのは `_resolve_postfix_span_repr` と postfix dispatch だけに絞る。
+- 2026-03-11: `core_expr_call_annotation.py` は `named_call` / `attr_call` / `callee_call` / `shared_state_orchestration` に分ける。shared 側は `call payload` 構築、generic return inference、optional payload coalesce、lookup facade を持つ。
+- 2026-03-11: この task の進捗メモは bundle 単位の 1 行要約だけを TODO に残し、helper 単位の列挙は plan の決定ログか commit message に限定する。

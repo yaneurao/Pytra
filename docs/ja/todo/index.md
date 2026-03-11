@@ -36,4 +36,6 @@
 文脈: [docs/ja/plans/p1-ir-expr-module-decomposition.md](../plans/p1-ir-expr-module-decomposition.md)
 
 1. [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01] `toolchain/ir` の大型 expr split module を cluster 単位で分割し、`attr/subscript/call` の責務境界を明確にする。
-2. [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-01] `core_expr_call_annotation.py` / `core_expr_attr_subscript_suffix.py` の残 cluster を棚卸しし、split boundary を固定する。
+2. [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-01] `core_expr_attr_subscript_suffix.py` は `attr_suffix` / `subscript_suffix` / `shared_postfix_orchestration`、`core_expr_call_annotation.py` は `named_call` / `attr_call` / `callee_call` / `shared_state_orchestration` に分ける方針を固定した。
+3. [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-02] この task の進捗メモは bundle 単位の 1 行要約に圧縮し、helper 単位の列挙は plan 側へ寄せる運用に固定した。
+4. [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S2-01] `attr suffix` / `subscript suffix` cluster を dedicated module へ分割し、postfix dispatch は thin facade に縮める。
