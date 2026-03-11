@@ -31,4 +31,4 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-- None.
+1. [ ] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01] Stabilize package-style relative-import root inference. Context: `docs/en/plans/p0-relative-import-package-root-01.md`

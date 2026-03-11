@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-- なし
+1. [ ] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01] package-style relative import の root 推定を安定化する。文脈: `docs/ja/plans/p0-relative-import-package-root-01.md`
