@@ -32,4 +32,4 @@ Last updated: 2026-03-11
 ## Unfinished Tasks
 
 1. [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01] Shrink the remaining `py_runtime.h` surface by explicitly separating object-bridge, typed-compat, and shared `type_id` contract lanes until the header becomes a thin compatibility seam. Context: [docs/en/plans/p1-cpp-pyruntime-header-shrink.md](../plans/p1-cpp-pyruntime-header-shrink.md)
-   Progress note: `S2-01` is complete. The C++ emitter now routes local concrete lists through the value lane, and `py_append(list<T>& ...)` has been removed. Next is `S2-02`, shrinking the shared `type_id` thin wrappers.
+   Progress note: `S2-01` is complete. The C++ emitter now routes local concrete lists through the value lane, and `py_append(list<T>& ...)` has been removed. In the first `S2-02` bundle, the C++ lane moved to `py_runtime_object_type_id` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass`, and three header aliases were removed. Next is to recheck the remaining thin-wrapper bucket with source guards and representative smoke tests.

@@ -261,7 +261,7 @@ class CppRuntimeExprEmitter:
             return "false"
         if self._prefer_internal_py_tid_subtype_calls():
             return f"py_tid_is_subtype({actual_type_id_expr}, {expected_type_id_expr})"
-        return f"py_is_subtype({actual_type_id_expr}, {expected_type_id_expr})"
+        return f"py_runtime_type_id_is_subtype({actual_type_id_expr}, {expected_type_id_expr})"
 
     def _render_expr_kind_is_subclass(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
@@ -271,7 +271,7 @@ class CppRuntimeExprEmitter:
             return "false"
         if self._prefer_internal_py_tid_subtype_calls():
             return f"py_tid_issubclass({actual_type_id_expr}, {expected_type_id_expr})"
-        return f"py_issubclass({actual_type_id_expr}, {expected_type_id_expr})"
+        return f"py_runtime_type_id_issubclass({actual_type_id_expr}, {expected_type_id_expr})"
 
     def _render_expr_kind_is_instance(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr

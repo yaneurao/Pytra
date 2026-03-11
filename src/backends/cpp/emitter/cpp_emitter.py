@@ -3787,7 +3787,7 @@ class CppEmitter(
     def _render_expr_kind_obj_type_id(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
         value_expr = self.render_expr(expr_d.get("value"))
-        return f"py_runtime_type_id({value_expr})"
+        return f"py_runtime_object_type_id({value_expr})"
 
     def _render_expr_kind_subscript(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr_d
