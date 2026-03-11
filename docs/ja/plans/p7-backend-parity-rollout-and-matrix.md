@@ -29,7 +29,7 @@
 ## 子タスク
 
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S1-01] feature × backend support matrix の source of truth と publish 先を決める。
-- [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-01] representative backend → secondary backend → long-tail backend の rollout tier と優先順を固定する。
+- [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-01] representative backend → secondary backend → long-tail backend の rollout tier と優先順を固定する。
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-02] 新 feature merge 時の parity review checklist と fail-closed requirement を定義する。
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S3-01] support matrix を docs / release note / tooling に handoff する手順を決める。
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S4-01] rollout policy と matrix maintenance の archive / operations rule を整える。
@@ -64,3 +64,21 @@
   - downstream task / plan は `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` と `docs/ja/plans/p7-backend-parity-rollout-and-matrix.md` に固定する。
 
 - 2026-03-12: `S1-01` では `backend_parity_matrix_contract.py` を正本にし、row/state seed を `backend_feature_contract_inventory.iter_representative_support_matrix_handoff()`、summary seed を `backend_conformance_summary_handoff_contract.build_backend_conformance_summary_handoff_manifest()` に固定した。
+
+## S2-01 Rollout Tier And Ordering
+
+- source of truth:
+  - rollout tier contract: [backend_parity_rollout_tier_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_rollout_tier_contract.py)
+  - validation: [check_backend_parity_rollout_tier_contract.py](/workspace/Pytra/tools/check_backend_parity_rollout_tier_contract.py), [test_check_backend_parity_rollout_tier_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_rollout_tier_contract.py)
+  - export seam: [export_backend_parity_rollout_tier_manifest.py](/workspace/Pytra/tools/export_backend_parity_rollout_tier_manifest.py), [test_export_backend_parity_rollout_tier_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_parity_rollout_tier_manifest.py)
+- tier rule:
+  - `representative`: `cpp -> rs -> cs`
+  - `secondary`: `go -> java -> kt -> scala -> swift -> nim`
+  - `long_tail`: `js -> ts -> lua -> rb -> php`
+- ordering rule:
+  - tier を連結した backend 順は `backend_feature_contract_inventory.SUPPORT_MATRIX_BACKEND_ORDER` と一致させる。
+  - tier 間の backend 重複は禁止する。
+- downstream rule:
+  - downstream task / plan は `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` と `docs/ja/plans/p7-backend-parity-rollout-and-matrix.md` に固定する。
+
+- 2026-03-12: `S2-01` では rollout tier を `representative -> secondary -> long_tail` に固定し、連結順が support matrix backend order と一致することを contract/tooling で固定した。

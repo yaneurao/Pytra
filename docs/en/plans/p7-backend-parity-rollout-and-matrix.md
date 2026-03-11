@@ -29,7 +29,7 @@ Acceptance criteria:
 ## Child tasks
 
 - [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S1-01] Decide the source of truth and publication path for the feature × backend support matrix.
-- [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-01] Fix rollout tiers and ordering from representative backends to secondary and long-tail backends.
+- [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-01] Fix rollout tiers and ordering from representative backends to secondary and long-tail backends.
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-02] Define the parity review checklist and fail-closed requirement for new feature merges.
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S3-01] Define how the support matrix flows into docs, release notes, and tooling.
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S4-01] Fix the archive / operations rules for maintaining rollout policy and the support matrix.
@@ -64,3 +64,21 @@ Acceptance criteria:
   - downstream task / plan stay fixed to `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` and `docs/ja/plans/p7-backend-parity-rollout-and-matrix.md`.
 
 - 2026-03-12: `S1-01` fixes `backend_parity_matrix_contract.py` as the canonical matrix contract, with row/state seed from `backend_feature_contract_inventory.iter_representative_support_matrix_handoff()` and summary seed from `backend_conformance_summary_handoff_contract.build_backend_conformance_summary_handoff_manifest()`.
+
+## S2-01 Rollout Tier And Ordering
+
+- source of truth:
+  - rollout tier contract: [backend_parity_rollout_tier_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_rollout_tier_contract.py)
+  - validation: [check_backend_parity_rollout_tier_contract.py](/workspace/Pytra/tools/check_backend_parity_rollout_tier_contract.py), [test_check_backend_parity_rollout_tier_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_rollout_tier_contract.py)
+  - export seam: [export_backend_parity_rollout_tier_manifest.py](/workspace/Pytra/tools/export_backend_parity_rollout_tier_manifest.py), [test_export_backend_parity_rollout_tier_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_parity_rollout_tier_manifest.py)
+- tier rule:
+  - `representative`: `cpp -> rs -> cs`
+  - `secondary`: `go -> java -> kt -> scala -> swift -> nim`
+  - `long_tail`: `js -> ts -> lua -> rb -> php`
+- ordering rule:
+  - the concatenated tier order must match `backend_feature_contract_inventory.SUPPORT_MATRIX_BACKEND_ORDER`
+  - backends must not overlap across tiers
+- downstream rule:
+  - downstream task / plan stay fixed to `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` and `docs/ja/plans/p7-backend-parity-rollout-and-matrix.md`
+
+- 2026-03-12: `S2-01` fixes the rollout tiers to `representative -> secondary -> long_tail` and locks the concatenated order against the support matrix backend order via contract/tooling.
