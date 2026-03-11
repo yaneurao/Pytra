@@ -356,6 +356,7 @@ def sync_type_expr_mirrors(doc: object, *, path: str = "$") -> object:
         _sync_type_expr_pair(doc, "annotation_type_expr", "annotation", path)
         _sync_type_expr_pair(doc, "decl_type_expr", "decl_type", path)
         _sync_type_expr_pair(doc, "return_type_expr", "return_type", path)
+        _sync_type_expr_pair(doc, "vararg_type_expr", "vararg_type", path)
         _sync_arg_type_expr_mirrors(doc, path)
         for key, value in list(doc.items()):
             if isinstance(key, str):

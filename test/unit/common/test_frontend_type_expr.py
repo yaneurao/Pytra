@@ -44,6 +44,7 @@ class FrontendTypeExprTest(unittest.TestCase):
                     "arg_type_exprs": {
                         "x": parse_type_expr_text("int | bool"),
                     },
+                    "vararg_type_expr": parse_type_expr_text("Path"),
                     "return_type_expr": parse_type_expr_text("JsonValue | None"),
                     "body": [
                         {
@@ -66,11 +67,29 @@ class FrontendTypeExprTest(unittest.TestCase):
         self.assertIs(out, doc)
         fn = doc["body"][0]
         self.assertEqual(fn["arg_types"]["x"], "int64|bool")
+        self.assertEqual(fn["vararg_type"], "Path")
         self.assertEqual(fn["return_type"], "JsonValue | None")
         ann = fn["body"][0]
         self.assertEqual(ann["target"]["resolved_type"], "list[int64|bool]")
         self.assertEqual(ann["annotation"], "list[int64|bool]")
         self.assertEqual(ann["decl_type"], "list[int64|bool]")
+
+    def test_sync_type_expr_mirrors_rejects_vararg_mismatch(self) -> None:
+        doc = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "FunctionDef",
+                    "name": "f",
+                    "vararg_type": "object",
+                    "vararg_type_expr": parse_type_expr_text("Path"),
+                    "body": [],
+                }
+            ],
+        }
+
+        with self.assertRaisesRegex(RuntimeError, r"\$\.body\[0\]\.vararg_type mismatch"):
+            sync_type_expr_mirrors(doc)
 
     def test_sync_type_expr_mirrors_rejects_mismatch(self) -> None:
         doc = {

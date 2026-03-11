@@ -866,10 +866,27 @@ def extract_function_signatures_from_python_source(src_path: Path) -> dict[str, 
             arg_types: list[str] = []
             arg_defaults: list[str] = []
             arg_type_exprs: list[dict[str, object]] = []
+            vararg_name = ""
+            vararg_type = ""
+            vararg_type_expr: dict[str, object] | None = None
             parts = split_top_level_csv(params)
             for part in parts:
                 prm = part.strip()
-                if prm == "" or prm.startswith("*"):
+                if prm == "" or prm == "*" or prm.startswith("**"):
+                    continue
+                if prm.startswith("*"):
+                    prm = prm[1:].strip()
+                    if prm == "":
+                        continue
+                    colon = prm.find(":")
+                    if colon < 0:
+                        continue
+                    vararg_name = prm[:colon].strip()
+                    if vararg_name == "":
+                        continue
+                    ann = prm[colon + 1 :]
+                    vararg_type_expr = parse_type_expr_text(ann)
+                    vararg_type = normalize_param_annotation(ann)
                     continue
                 default_txt = ""
                 eq_top = prm.find("=")
@@ -908,6 +925,11 @@ def extract_function_signatures_from_python_source(src_path: Path) -> dict[str, 
                 "return_type": return_type,
                 "return_type_expr": return_type_expr,
             }
+            if vararg_name != "":
+                sig_map[name]["vararg_name"] = vararg_name
+                sig_map[name]["vararg_type"] = vararg_type
+                if vararg_type_expr is not None:
+                    sig_map[name]["vararg_type_expr"] = vararg_type_expr
     return sig_map
 
 
@@ -1174,6 +1196,9 @@ def collect_symbols_from_stmt(stmt: dict[str, object]) -> set[str]:
                 arg_txt = dict_any_get_str({"_": arg_any}, "_")
                 if arg_txt != "":
                     symbols.add(arg_txt)
+        vararg_name = dict_any_get_str(stmt, "vararg_name")
+        if vararg_name != "":
+            symbols.add(vararg_name)
     elif kind == "ClassDef":
         cls_name = dict_any_get_str(stmt, "name")
         if cls_name != "":

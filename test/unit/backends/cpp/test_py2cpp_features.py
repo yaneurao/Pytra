@@ -1126,9 +1126,10 @@ def sin(x: float) -> float:
                     "kind": "FunctionDef",
                     "name": "f",
                     "arg_order": ["x", "y", 1],
+                    "vararg_name": "rest",
                 },
             ),
-            {"f", "x", "y"},
+            {"f", "x", "y", "rest"},
         )
         self.assertEqual(
             collect_symbols_from_stmt(
@@ -1229,7 +1230,10 @@ def sin(x: float) -> float:
                 "    x: list[int],\n"
                 "    y,\n"
                 "):\n"
-                "    return x\n",
+                "    return x\n"
+                "\n"
+                "def h(target: Path, *rest: Path) -> None:\n"
+                "    return None\n",
                 encoding="utf-8",
             )
             sigs = extract_function_signatures_from_python_source(src)
@@ -1255,6 +1259,11 @@ def sin(x: float) -> float:
                     {"kind": "DynamicType", "name": "unknown"},
                 ],
             )
+            self.assertEqual(sigs["h"]["arg_names"], ["target"])
+            self.assertEqual(sigs["h"]["arg_types"], ["Path"])
+            self.assertEqual(sigs["h"]["vararg_name"], "rest")
+            self.assertEqual(sigs["h"]["vararg_type"], "Path")
+            self.assertEqual(sigs["h"]["vararg_type_expr"], {"kind": "NamedType", "name": "Path"})
 
     def test_extract_function_arg_types_from_python_source(self) -> None:
         with tempfile.TemporaryDirectory() as td:

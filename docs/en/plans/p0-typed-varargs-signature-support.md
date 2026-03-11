@@ -59,10 +59,11 @@ Decision log:
 
 - [x] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S1-01] Fix the current reject contract and representative fixture in docs/tests and lock the typed `*args` v1 scope.
 - [x] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S2-01] Add `vararg_*` fields to the self-hosted signature parser / AST builder / stmt/module parser and carry them onto `FunctionDef`.
-- [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S2-02] Propagate the new `vararg_*` fields through the frontend mirror / auxiliary schema and lock selfhost regression.
+- [x] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S2-02] Propagate the new `vararg_*` fields through the frontend mirror / auxiliary schema and lock selfhost regression.
 - [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S3-01] Add variadic positional packing to the C++ emitter function definition / known call lane and pass the representative fixture.
 - [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S3-02] Update non-C++ backend contract guards and docs to close v1.
 
 - 2026-03-11: Added the representative blocker fixture `ng_typed_varargs_representative.py` and locked the current typed `*args` rejection in unit tests.
 - 2026-03-11: Store typed `*args: T` on `FunctionDef.vararg_name/vararg_type/vararg_type_expr`, while exposing the local binding inside the body as `list[T]`.
 - 2026-03-11: Flipped the representative fixture to `ok_typed_varargs_representative.py` and moved the reject contract back to untyped `ng_varargs.py`.
+- 2026-03-11: Keep `vararg_*` as dedicated fields in the frontend mirror and host signature extractor as well, instead of mixing the variadic parameter into `arg_order` or `arg_types`.
