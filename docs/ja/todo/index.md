@@ -32,4 +32,4 @@
 ## 未完了タスク
 
 1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01] C++/Rust/C# emitter に残る `py_runtime` residual contract を揃え、`object bridge residual` と `shared type_id contract` の境界を固定する。文脈: [docs/ja/plans/p4-crossruntime-pyruntime-emitter-align.md](../plans/p4-crossruntime-pyruntime-emitter-align.md)
-   進捗メモ: `S2-01` で C++ object-bridge helper 名を `call.py` の canonical map に集約した。次は Rust/C# の shared `type_id` / predicate lowering を揃える。
+   進捗メモ: `S2-02` で Rust/C# の shared `type_id` / predicate lowering を helper seam に集約した。次は representative smoke / docs / archive を更新する。

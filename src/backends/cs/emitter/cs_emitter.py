@@ -2439,8 +2439,24 @@ class CSharpEmitter(CodeEmitter):
         """`isinstance(x, T)` の `T` を C# runtime API 判定式へ変換する。"""
         expected_type_id = self._type_id_expr_for_name(type_name)
         if expected_type_id != "":
-            return "Pytra.CsModule.py_runtime.py_isinstance(" + value_expr + ", " + expected_type_id + ")"
+            return self._render_runtime_isinstance_expr(value_expr, expected_type_id)
         return ""
+
+    def _render_runtime_type_id_expr(self, value_expr: str) -> str:
+        """Render the shared `py_runtime_type_id` contract in C#."""
+        return "Pytra.CsModule.py_runtime.py_runtime_type_id(" + value_expr + ")"
+
+    def _render_runtime_isinstance_expr(self, value_expr: str, expected_type_id: str) -> str:
+        """Render the shared `py_isinstance` contract in C#."""
+        return "Pytra.CsModule.py_runtime.py_isinstance(" + value_expr + ", " + expected_type_id + ")"
+
+    def _render_runtime_is_subtype_expr(self, actual_type_id: str, expected_type_id: str) -> str:
+        """Render the shared `py_is_subtype` contract in C#."""
+        return "Pytra.CsModule.py_runtime.py_is_subtype(" + actual_type_id + ", " + expected_type_id + ")"
+
+    def _render_runtime_issubclass_expr(self, actual_type_id: str, expected_type_id: str) -> str:
+        """Render the shared `py_issubclass` contract in C#."""
+        return "Pytra.CsModule.py_runtime.py_issubclass(" + actual_type_id + ", " + expected_type_id + ")"
 
     def _render_isinstance_call(self, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """`isinstance(...)` 呼び出しを C# へ lower する。"""
@@ -3037,21 +3053,21 @@ class CSharpEmitter(CodeEmitter):
 
         if kind == "ObjTypeId":
             value = self.render_expr(expr_d.get("value"))
-            return "Pytra.CsModule.py_runtime.py_runtime_type_id(" + value + ")"
+            return self._render_runtime_type_id_expr(value)
 
         if kind == "IsInstance":
             value = self.render_expr(expr_d.get("value"))
             expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
-            return "Pytra.CsModule.py_runtime.py_isinstance(" + value + ", " + expected + ")"
+            return self._render_runtime_isinstance_expr(value, expected)
 
         if kind == "IsSubtype":
             actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
             expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
-            return "Pytra.CsModule.py_runtime.py_is_subtype(" + actual + ", " + expected + ")"
+            return self._render_runtime_is_subtype_expr(actual, expected)
         if kind == "IsSubclass":
             actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
             expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
-            return "Pytra.CsModule.py_runtime.py_issubclass(" + actual + ", " + expected + ")"
+            return self._render_runtime_issubclass_expr(actual, expected)
 
         if kind == "Box":
             return self.render_expr(expr_d.get("value"))

@@ -3576,8 +3576,27 @@ class RustEmitter(CodeEmitter):
         actual = self.normalize_type_name(self.get_expr_type(value_node))
         if self._is_any_type(actual):
             self.uses_pyany = True
+        return self._render_runtime_isinstance_expr(value_expr, expected_tid)
+
+    def _render_runtime_type_id_expr(self, value_expr: str) -> str:
+        """Render the shared `py_runtime_type_id` contract in Rust."""
         self.uses_isinstance_runtime = True
-        return "({ py_register_generated_type_info(); py_isinstance(&" + value_expr + ", " + expected_tid + ") })"
+        return "py_runtime_type_id(&" + value_expr + ")"
+
+    def _render_runtime_isinstance_expr(self, value_expr: str, expected_type_id: str) -> str:
+        """Render the shared `py_isinstance` contract in Rust."""
+        self.uses_isinstance_runtime = True
+        return "({ py_register_generated_type_info(); py_isinstance(&" + value_expr + ", " + expected_type_id + ") })"
+
+    def _render_runtime_is_subtype_expr(self, actual_type_id: str, expected_type_id: str) -> str:
+        """Render the shared `py_is_subtype` contract in Rust."""
+        self.uses_isinstance_runtime = True
+        return "({ py_register_generated_type_info(); py_is_subtype(" + actual_type_id + ", " + expected_type_id + ") })"
+
+    def _render_runtime_issubclass_expr(self, actual_type_id: str, expected_type_id: str) -> str:
+        """Render the shared `py_issubclass` contract in Rust."""
+        self.uses_isinstance_runtime = True
+        return "({ py_register_generated_type_info(); py_issubclass(" + actual_type_id + ", " + expected_type_id + ") })"
 
     def _render_isinstance_call(self, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """`isinstance(...)` 呼び出しを Rust へ lower する。"""
@@ -4326,23 +4345,19 @@ class RustEmitter(CodeEmitter):
             return "next(" + iter_expr + ")"
         if kind == "ObjTypeId":
             value = self.render_expr(expr_d.get("value"))
-            self.uses_isinstance_runtime = True
-            return "py_runtime_type_id(&" + value + ")"
+            return self._render_runtime_type_id_expr(value)
         if kind == "IsInstance":
             value = self.render_expr(expr_d.get("value"))
             expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
-            self.uses_isinstance_runtime = True
-            return "({ py_register_generated_type_info(); py_isinstance(&" + value + ", " + expected + ") })"
+            return self._render_runtime_isinstance_expr(value, expected)
         if kind == "IsSubtype":
             actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
             expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
-            self.uses_isinstance_runtime = True
-            return "({ py_register_generated_type_info(); py_is_subtype(" + actual + ", " + expected + ") })"
+            return self._render_runtime_is_subtype_expr(actual, expected)
         if kind == "IsSubclass":
             actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
             expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
-            self.uses_isinstance_runtime = True
-            return "({ py_register_generated_type_info(); py_issubclass(" + actual + ", " + expected + ") })"
+            return self._render_runtime_issubclass_expr(actual, expected)
         if kind == "Box":
             self.uses_pyany = True
             return self._render_as_pyany(expr_d.get("value"))
