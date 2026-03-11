@@ -39,9 +39,9 @@ Last updated: 2026-03-12
 
 Context: [p2-relative-import-backend-coverage.md](../plans/p2-relative-import-backend-coverage.md)
 
-1. [ ] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01] Lock the current relative-import verification coverage by backend and prepare the baseline for later non-C++ rollout work.
+1. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01] Locked the current relative-import verification coverage by backend and prepared the baseline for later non-C++ rollout work.
 2. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S1-01] Locked the live plan / TODO and the representative backend coverage taxonomy.
 3. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-01] Added the backend coverage inventory, checker, and unit tests.
-4. [ ] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-02] Sync docs / support-matrix handoff wording to the current coverage baseline.
+4. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-02] Synced docs / support-matrix handoff wording to the current coverage baseline.
 
-- Progress note: The current relative-import coverage is now fixed as `cpp=build_run_locked` while non-C++ backends remain `not_locked`, through an inventory and checker.
+- Progress note: The current relative-import coverage is now fixed as `cpp=build_run_locked` while non-C++ backends remain `not_locked`, through an inventory, checker, and backend-parity handoff note.

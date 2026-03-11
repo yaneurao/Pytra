@@ -37,9 +37,10 @@ Verification commands:
 
 Decision log:
 - 2026-03-12: After the immediate C++ multi-file runtime blocker was resolved, the next step was defined as locking current backend coverage first rather than jumping directly into a non-C++ rollout.
+- 2026-03-12: The support-matrix handoff was fixed as verification coverage only, not as a widened support claim: `cpp=build_run_locked`, non-C++ backends remain `not_locked`.
 
 ## Breakdown
 
 - [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S1-01] Lock the live plan / TODO and the representative backend coverage taxonomy.
 - [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-01] Add the backend coverage inventory, checker, and unit tests.
-- [ ] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-02] Sync docs / support-matrix handoff wording to the current coverage baseline.
+- [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-02] Synced docs / support-matrix handoff wording to the current coverage baseline.

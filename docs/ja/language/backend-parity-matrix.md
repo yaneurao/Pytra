@@ -26,3 +26,9 @@
 - conformance summary manifest: [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/export_backend_conformance_summary_handoff_manifest.py)
 - parity review manifest: [export_backend_parity_review_manifest.py](/workspace/Pytra/tools/export_backend_parity_review_manifest.py)
 - handoff manifest: [export_backend_parity_handoff_manifest.py](/workspace/Pytra/tools/export_backend_parity_handoff_manifest.py)
+
+## Current Relative-Import Coverage
+
+- relative import の current coverage baseline は [relative_import_backend_coverage.py](/workspace/Pytra/src/toolchain/compiler/relative_import_backend_coverage.py) と [check_relative_import_backend_coverage.py](/workspace/Pytra/tools/check_relative_import_backend_coverage.py) を正本にする。
+- 現時点で `build_run_locked` なのは `cpp` だけで、`rs/cs/go/java/js/kotlin/lua/nim/php/ruby/scala/swift/ts` は `not_locked` として扱う。
+- この欄は support claim ではなく verification coverage の handoff であり、non-C++ lane は representative smoke が入るまで supported 扱いにしない。

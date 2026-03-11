@@ -37,9 +37,10 @@
 
 決定ログ:
 - 2026-03-12: relative import の immediate blocker は C++ multi-file runtime smoke で解消したので、次段は non-C++ rollout そのものではなく current coverage inventory を先に固定する。
+- 2026-03-12: support matrix 側では relative import を support claim としては拡大せず、`cpp=build_run_locked` / `non-C++=not_locked` の verification coverage handoff として公開する。
 
 ## 分解
 
 - [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S1-01] live plan / TODO と representative backend coverage taxonomy を固定する。
 - [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-01] backend coverage inventory / checker / unit test を追加する。
-- [ ] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-02] docs / support-matrix handoff wording を current coverage baseline に同期する。
+- [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-02] docs / support-matrix handoff wording を current coverage baseline に同期した。

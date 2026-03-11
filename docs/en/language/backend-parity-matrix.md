@@ -26,3 +26,9 @@ This page is the canonical publish target for feature × backend support-state r
 - conformance summary manifest: [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/export_backend_conformance_summary_handoff_manifest.py)
 - parity review manifest: [export_backend_parity_review_manifest.py](/workspace/Pytra/tools/export_backend_parity_review_manifest.py)
 - handoff manifest: [export_backend_parity_handoff_manifest.py](/workspace/Pytra/tools/export_backend_parity_handoff_manifest.py)
+
+## Current Relative-Import Coverage
+
+- The current relative-import coverage baseline is published canonically through [relative_import_backend_coverage.py](/workspace/Pytra/src/toolchain/compiler/relative_import_backend_coverage.py) and [check_relative_import_backend_coverage.py](/workspace/Pytra/tools/check_relative_import_backend_coverage.py).
+- Today only `cpp` is `build_run_locked`; `rs/cs/go/java/js/kotlin/lua/nim/php/ruby/scala/swift/ts` remain `not_locked`.
+- This section is a verification-coverage handoff, not a support claim. Non-C++ lanes do not become supported until representative smoke is added and locked.
