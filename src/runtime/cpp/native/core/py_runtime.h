@@ -919,6 +919,7 @@ static inline object py_at(const object& v, int64 idx) {
     return py_list_at_ref(obj_to_list_ref_or_raise(v, "py_at"), idx);
 }
 
+// P0-contract-shrink label: object_bridge_compat surface only.
 // Compatibility seam for generated-runtime local lists and object-bridge callers.
 // Typed lanes must use py_list_*_mut directly.
 template <class T, class U>
@@ -1230,6 +1231,7 @@ static inline bool py_is_int(const object& v) { return py_obj_cast<PyIntObj>(v) 
 static inline bool py_is_float(const object& v) { return py_obj_cast<PyFloatObj>(v) != nullptr; }
 static inline bool py_is_bool(const object& v) { return py_obj_cast<PyBoolObj>(v) != nullptr; }
 
+// P0-contract-shrink label: shared_type_id_contract seam.
 // type_id 判定ロジックは generated built_in 層（py_tid_*）を正本とする。
 #include "runtime/cpp/generated/built_in/type_id.h"
 

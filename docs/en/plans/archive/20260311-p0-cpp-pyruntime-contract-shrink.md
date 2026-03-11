@@ -65,8 +65,8 @@ Breakdown:
 - [x] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S2-01] Push the remaining `py_append/extend/pop/clear/reverse/sort/set_at` dependencies out of the typed C++ emitter lane in bundle-sized changes.
 - [x] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S2-02] Narrow mutation helpers in `py_runtime.h` to object-bridge / compatibility overloads only, and lock residual callers with labels.
 - [x] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S3-01] Reassign shared ownership for `py_runtime_type_id/py_isinstance/py_is_subtype`, and retarget native compiler wrappers and generated `type_id` built-ins to thin helper seams.
-- [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S3-02] Align Rust/C#/C++ residual `type_id` callers to the shared contract and catch unclassified reintroduction with smoke/contract tests.
-- [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S4-01] Update labels, source guards, and docs for the remaining `py_runtime.h` surface and leave the task ready for archive.
+- [x] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S3-02] Align Rust/C#/C++ residual `type_id` callers to the shared contract and catch unclassified reintroduction with smoke/contract tests.
+- [x] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S4-01] Update labels, source guards, and docs for the remaining `py_runtime.h` surface and leave the task ready for archive.
 
 Decision log:
 - 2026-03-11: After transitive-include cleanup and typed-dict / typed-mutation upstreaming, the remaining `py_runtime.h` shrink work was reduced to two pillars: mutation helpers and the shared `type_id` contract.
@@ -78,3 +78,5 @@ Decision log:
 - 2026-03-11: As `S2-02`, removed the `rc<list<T>>` mutation wrappers from `py_runtime.h`, leaving `py_append` only for generated-runtime local-list compatibility plus the object-bridge seam, and leaving `py_extend/pop/clear/reverse/sort/set_at` only as the object-bridge seam. Typed lanes now canonically call `py_list_*_mut` directly, and the source guards lock that end state.
 - 2026-03-11: As `S3-01`, split the thin type-id seam into `py_runtime_object_type_id`, `py_runtime_object_isinstance`, `py_runtime_type_id_is_subtype`, and `py_runtime_type_id_issubclass`, then retargeted generated `type_id.cpp` and the native compiler wrappers to that seam instead of the generic wrappers. The inventory now excludes those generated/native callers from the old-wrapper residual set.
 - 2026-03-11: As a representative `S3-02` bundle, we included `py_issubclass` in the residual shared-contract inventory and aligned Rust/C# `IsSubclass` lowering from `py_is_subtype` to `py_issubclass`. The C++ emitter keeps `py_issubclass` as the canonical lowering, and cross-runtime drift is now locked by inventory plus backend smoke tests.
+- 2026-03-11: As `S4-01`, we added `object_bridge_compat` / `shared_type_id_contract` label comments directly in `py_runtime.h`, and extended `test_cpp_runtime_iterable.py` plus the docs to lock those labels as part of the remaining-surface contract. This leaves P0 ready for archive.
+- 2026-03-11: We close `S3-02` as complete. Shared-contract residual callers, including `py_issubclass`, are now aligned across C++/Rust/C#, and inventory plus smoke/source guards cover reintroduction.

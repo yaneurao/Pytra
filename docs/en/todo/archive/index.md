@@ -21,6 +21,7 @@ Last updated: 2026-03-11
 - [2026-03-11 / P1-IR-CORE-DECOMPOSITION-01](../plans/archive/20260311-p1-ir-core-decomposition.md)
 - [2026-03-11 / P1-IR-EXPR-MODULE-DECOMPOSITION-01](../plans/archive/20260311-p1-ir-expr-module-decomposition.md)
 - [2026-03-11 / P1-IR-CORE-IMPORT-SURFACE-01](../plans/archive/20260311-p1-ir-core-import-surface-pruning.md)
+- [2026-03-11 / P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01](../plans/archive/20260311-p0-cpp-pyruntime-contract-shrink.md)
 - [2026-03-11 / P2-EAST-CORE-MODULARIZATION-01](../plans/archive/20260311-p2-east-core-modularization.md)
 - [2026-03-11 / P5-NOMINAL-ADT-ROLLOUT-01](../plans/archive/20260311-p5-nominal-adt-language-rollout.md)
 - [2026-03-11 / P4-BACKEND-REGISTRY-SELFHOST-PARITY-01](../plans/archive/20260311-p4-backend-registry-selfhost-parity-hardening.md)
@@ -58,7 +59,7 @@ Last updated: 2026-03-11
 
 ## Date Links
 
-- [2026-03-11](20260311.md) (10 sections)
+- [2026-03-11](20260311.md) (11 sections)
 - [2026-03-09](20260309.md) (2 sections)
 - [2026-03-08](20260308.md) (8 sections)
 - [2026-03-07](20260307.md) (6 sections)

@@ -31,5 +31,4 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-1. [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01] Shrink the remaining `py_runtime.h` surface from the perspective of `object bridge` and shared `type_id` contracts. Context: [docs/en/plans/p0-cpp-pyruntime-contract-shrink.md](../plans/p0-cpp-pyruntime-contract-shrink.md)
-   Progress note: `S3-02` aligned residual `issubclass` callers into the shared-contract bucket and locked Rust/C#/C++ emitter drift with smoke tests and inventory guards.
+_There are no unfinished tasks._
