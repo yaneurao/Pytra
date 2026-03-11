@@ -1191,6 +1191,8 @@ class NimNativeEmitter:
                 operand = self._render_truthy_expr(expr.get("operand"))
                 return f"(not {operand})"
             operand = self._render_expr(expr.get("operand"))
+            if op == "Invert":
+                return f"(not {operand})"
             if op == "USub": return f"(-{operand})"
             return operand
         elif kind == "BinOp":

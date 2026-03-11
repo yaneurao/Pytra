@@ -72,6 +72,12 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
+    def test_bitwise_invert_basic_uses_php_invert_operator(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        php = transpile_to_php_native(east)
+        self.assertIn("~$y", php)
+
     def test_transpile_for_range_fixture_contains_static_for(self) -> None:
         fixture = find_fixture_case("for_range")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -79,6 +85,12 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertIn("function sum_range_29($n)", php)
         self.assertIn("for ($i = 0; $i < $n; $i += 1)", php)
         self.assertIn("$total += $i;", php)
+
+    def test_bitwise_invert_fixture_uses_php_bitwise_not(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        php = transpile_to_php_native(east)
+        self.assertIn("~$y", php)
 
     def test_transpile_downcount_range_fixture_uses_descending_condition(self) -> None:
         fixture = find_fixture_case("range_downcount_len_minus1")

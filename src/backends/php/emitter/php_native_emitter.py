@@ -636,6 +636,8 @@ def _render_expr(expr: Any) -> str:
             return "(-" + operand + ")"
         if op == "UAdd":
             return "(+" + operand + ")"
+        if op == "Invert":
+            return "(~" + operand + ")"
         if op == "Not":
             return "(!" + operand + ")"
         return operand

@@ -4292,6 +4292,8 @@ class RustEmitter(CodeEmitter):
             simple_right = right_kind in {"Name", "Constant", "Call", "Attribute", "Subscript"}
             if op == "USub":
                 return "-" + right if simple_right else "-(" + right + ")"
+            if op == "Invert":
+                return "!" + right if simple_right else "!(" + right + ")"
             if op == "Not":
                 return "!" + right if simple_right else "!(" + right + ")"
             return right

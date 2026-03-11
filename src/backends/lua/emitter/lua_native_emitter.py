@@ -1364,6 +1364,8 @@ class LuaNativeEmitter:
                 return "(-" + operand + ")"
             if op == "UAdd":
                 return "(+" + operand + ")"
+            if op == "Invert":
+                return "(~" + operand + ")"
             if op == "Not":
                 return "(not " + operand + ")"
             return operand

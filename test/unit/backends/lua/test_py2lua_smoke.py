@@ -67,6 +67,12 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
+    def test_bitwise_invert_basic_uses_lua_invert_operator(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        lua = transpile_to_lua_native(east)
+        self.assertIn("~y", lua)
+
     def test_transpile_if_else_fixture_contains_lua_if(self) -> None:
         fixture = find_fixture_case("if_else")
         east = load_east(fixture, parser_backend="self_hosted")
@@ -75,6 +81,12 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("if (n < 0) then", lua)
         self.assertIn("return (-n)", lua)
         self.assertIn("else", lua)
+
+    def test_bitwise_invert_fixture_uses_lua_bitwise_not(self) -> None:
+        fixture = find_fixture_case("bitwise_invert_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        lua = transpile_to_lua_native(east)
+        self.assertIn("~y", lua)
 
     def test_module_leading_comments_are_emitted(self) -> None:
         with tempfile.TemporaryDirectory() as td:
