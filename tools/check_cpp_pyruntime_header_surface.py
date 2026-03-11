@@ -13,14 +13,6 @@ HEADER = ROOT / "src/runtime/cpp/native/core/py_runtime.h"
 EXPECTED_BUCKETS = {
     "object_bridge_mutation": {
         'static inline void py_append(object& v, const U& item) {',
-        'static inline void py_set_at(object& v, I idx, const U& item) {',
-        'static inline void py_extend(object& v, const list<object>& items) {',
-        'static inline void py_extend(object& v, const object& items) {',
-        'static inline object py_pop(object& v) {',
-        'static inline object py_pop(object& v, int64 idx) {',
-        'static inline void py_clear(object& v) {',
-        'static inline void py_reverse(object& v) {',
-        'static inline void py_sort(object& v) {',
     },
     "typed_collection_compat": set(),
     "shared_type_id_compat": set(),

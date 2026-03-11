@@ -33,3 +33,4 @@ Last updated: 2026-03-12
 
 1. [ ] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01] Restore `py_runtime.h` final shrink as an active handoff and push object-bridge / type-id seams into callers so the header can shrink further. Context: [p0-cpp-pyruntime-final-shrink.md](../plans/p0-cpp-pyruntime-final-shrink.md)
 - `P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S1-01` locked the active handoff / target end state / bundle order in `check_cpp_pyruntime_header_surface.py` and its unit test, replacing the archived residual-caller handoff with the live task.
+- `P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01` removed eight dead object-mutation wrappers from `py_runtime.h`, shrinking the residual bucket down to `py_append(object&)` only.

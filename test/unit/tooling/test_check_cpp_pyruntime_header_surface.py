@@ -26,7 +26,7 @@ class CheckCppPyRuntimeHeaderSurfaceTest(unittest.TestCase):
         snippets = surface_mod.EXPECTED_BUCKETS["object_bridge_mutation"]
         self.assertTrue(all("object& v" in snippet for snippet in snippets))
         self.assertIn('static inline void py_append(object& v, const U& item) {', snippets)
-        self.assertIn('static inline object py_pop(object& v) {', snippets)
+        self.assertEqual(len(snippets), 1)
 
     def test_typed_collection_compat_bucket_stays_small(self) -> None:
         snippets = surface_mod.EXPECTED_BUCKETS["typed_collection_compat"]
