@@ -1295,7 +1295,7 @@ def module_export_table(
     module_east_map: dict[str, dict[str, object]],
     root: Path,
 ) -> dict[str, set[str]]:
-    """ユーザーモジュールの公開シンボル表（関数/クラス/代入名）を構築する。"""
+    """ユーザーモジュールの公開シンボル表を構築する。"""
     out: dict[str, set[str]] = {}
     for mod_key, east in module_east_map.items():
         mod_path = Path(mod_key)
@@ -1313,6 +1313,22 @@ def module_export_table(
             elif kind == "Assign" or kind == "AnnAssign":
                 for name_txt in stmt_assigned_names(st):
                     exports.add(name_txt)
+            elif kind == "Import":
+                for ent in dict_any_get_dict_list(st, "names"):
+                    name_txt = dict_any_get_str(ent, "name")
+                    asname_txt = dict_any_get_str(ent, "asname")
+                    local_name = local_binding_name(name_txt, asname_txt)
+                    if local_name != "":
+                        exports.add(local_name)
+            elif kind == "ImportFrom":
+                for ent in dict_any_get_dict_list(st, "names"):
+                    sym_name = dict_any_get_str(ent, "name")
+                    if sym_name == "*" or sym_name == "":
+                        continue
+                    asname_txt = dict_any_get_str(ent, "asname")
+                    local_name = local_binding_name(sym_name, asname_txt)
+                    if local_name != "":
+                        exports.add(local_name)
         out[mod_name] = exports
     return out
 

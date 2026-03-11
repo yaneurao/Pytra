@@ -104,6 +104,31 @@ class East1BuildTest(unittest.TestCase):
         self.assertEqual(module_id_map.get(str(main_py)), "main")
         self.assertEqual(module_id_map.get(str(helper_py)), "helper")
 
+    def test_build_module_east_map_accepts_reexported_symbol_import(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            compat_py = root / "pytra_compat.py"
+            main_py = root / "main.py"
+            compat_py.write_text("from pytra.std.pathlib import Path\n", encoding="utf-8")
+            main_py.write_text(
+                "from pytra_compat import Path\n\n"
+                "def main() -> None:\n"
+                "    print(Path('rom.nes'))\n",
+                encoding="utf-8",
+            )
+
+            module_map = build_module_east_map(main_py)
+
+        self.assertIn(str(main_py), module_map)
+        self.assertIn(str(compat_py), module_map)
+        main_meta = module_map[str(main_py)].get("meta", {})
+        self.assertIsInstance(main_meta, dict)
+        import_symbols = main_meta.get("import_symbols", {})
+        self.assertEqual(
+            import_symbols,
+            {"Path": {"module": "pytra_compat", "name": "Path"}},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

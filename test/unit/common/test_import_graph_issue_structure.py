@@ -216,6 +216,69 @@ class ImportGraphIssueStructureTest(unittest.TestCase):
         self.assertEqual(module_id_map.get(str(main_py)), "main")
         self.assertEqual(module_id_map.get(str(helper_py)), "helper")
 
+    def test_validate_from_import_symbols_accepts_reexported_symbol_binding(self) -> None:
+        root = ROOT / "tmp-reexport-root"
+        compat_py = root / "pytra_compat.py"
+        main_py = root / "main.py"
+        module_map: dict[str, dict[str, object]] = {
+            str(compat_py): {
+                "kind": "Module",
+                "east_stage": 3,
+                "schema_version": 1,
+                "meta": {
+                    "module_id": "pytra_compat",
+                    "dispatch_mode": "native",
+                    "import_bindings": [
+                        {
+                            "module_id": "pytra.std.pathlib",
+                            "export_name": "Path",
+                            "local_name": "Path",
+                            "binding_kind": "symbol",
+                        }
+                    ],
+                },
+                "body": [
+                    {
+                        "kind": "ImportFrom",
+                        "module": "pytra.std.pathlib",
+                        "names": [{"name": "Path"}],
+                    }
+                ],
+            },
+            str(main_py): {
+                "kind": "Module",
+                "east_stage": 3,
+                "schema_version": 1,
+                "meta": {
+                    "module_id": "main",
+                    "dispatch_mode": "native",
+                    "import_bindings": [
+                        {
+                            "module_id": "pytra_compat",
+                            "export_name": "Path",
+                            "local_name": "Path",
+                            "binding_kind": "symbol",
+                        }
+                    ],
+                },
+                "body": [
+                    {
+                        "kind": "ImportFrom",
+                        "module": "pytra_compat",
+                        "names": [{"name": "Path"}],
+                    }
+                ],
+            },
+        }
+
+        transpile_cli.validate_from_import_symbols_or_raise(module_map, root)
+
+        meta = module_map[str(main_py)]["meta"]
+        self.assertEqual(
+            meta["import_symbols"],
+            {"Path": {"module": "pytra_compat", "name": "Path"}},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
