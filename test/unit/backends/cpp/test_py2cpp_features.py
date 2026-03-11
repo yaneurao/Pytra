@@ -2731,6 +2731,50 @@ def run() -> int:
         import_symbols = dict_any_get_dict(dict_any_get_dict(main_east, "meta"), "import_symbols")
         self.assertEqual(dict_any_get_str(dict_any_get_dict(import_symbols, "f"), "module"), "helper")
 
+    def test_build_module_east_map_from_analysis_normalizes_parent_relative_import_metadata(self) -> None:
+        src_main = """from ..util import two
+
+def run() -> int:
+    return two()
+"""
+        src_util = """def two() -> int:
+    return 2
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            pkg = root / "pkg"
+            sub = pkg / "sub"
+            sub.mkdir(parents=True, exist_ok=True)
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            (sub / "__init__.py").write_text("", encoding="utf-8")
+            main_py = sub / "main.py"
+            util_py = pkg / "util.py"
+            main_py.write_text(src_main, encoding="utf-8")
+            util_py.write_text(src_util, encoding="utf-8")
+
+            analysis = _analyze_import_graph(main_py)
+            self.assertEqual([], analysis.get("relative_imports"))
+            self.assertEqual([], analysis.get("missing_modules"))
+            self.assertIn("sub/main.py -> util.py", analysis.get("edges", []))
+            module_id_map_obj = analysis.get("module_id_map")
+            module_id_map = module_id_map_obj if isinstance(module_id_map_obj, dict) else {}
+            self.assertEqual(module_id_map.get(str(main_py)), "sub.main")
+            self.assertEqual(module_id_map.get(str(util_py)), "util")
+
+            module_east_raw = {
+                str(main_py): load_east(main_py),
+                str(util_py): load_east(util_py),
+            }
+            mp = build_module_east_map_from_analysis_helper(main_py, analysis, module_east_raw)
+
+        main_east = mp[str(main_py)]
+        import_from = dict_any_get_dict_list(main_east, "body")[0]
+        self.assertEqual(dict_any_get_str(import_from, "module"), "util")
+        import_bindings = meta_import_bindings(main_east)
+        self.assertEqual(import_bindings[0]["module_id"], "util")
+        import_symbols = dict_any_get_dict(dict_any_get_dict(main_east, "meta"), "import_symbols")
+        self.assertEqual(dict_any_get_str(dict_any_get_dict(import_symbols, "two"), "module"), "util")
+
     def test_build_module_symbol_index_contains_defs_and_import_aliases(self) -> None:
         src_main = """import helper as hp
 from helper import C as HC

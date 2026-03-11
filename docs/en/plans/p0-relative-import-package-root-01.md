@@ -43,10 +43,11 @@ Verification commands:
 Decision log:
 - 2026-03-11: Opened this task after the TODO became empty. A local probe showed that sibling relative imports already work, while `pkg2/sub/main.py -> from ..util import two` still fails with `unsupported_import_form`. v1 only targets package-root inference from an `__init__.py` chain.
 - 2026-03-11: Locked the representative gap. `pkg/main.py -> from .helper import f` succeeds, but `pkg/sub/main.py -> from ..util import two` still fails with `unsupported_import_form` because the current root is treated as `entry_path.parent`.
+- 2026-03-11: Added `resolve_import_graph_entry_root()` and rewrote `pkg/sub/main.py -> from ..util import two` against the inferred package root `pkg`, while keeping root escape fail-closed as `unsupported_import_form`.
 
 ## Breakdown
 
 - [x] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01-S1-01] Lock the current root-inference gap and representative package layout in the plan/TODO.
-- [ ] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01-S2-01] Add the package-root inference helper and switch `rewrite_relative_imports_in_module_east_map()` / `analyze_import_graph()` to it.
-- [ ] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01-S2-02] Add representative CLI / metadata regressions for parent relative-import success and root-escape failure.
+- [x] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01-S2-01] Add the package-root inference helper and switch `rewrite_relative_imports_in_module_east_map()` / `analyze_import_graph()` to it.
+- [x] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01-S2-02] Add representative CLI / metadata regressions for parent relative-import success and root-escape failure.
 - [ ] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01-S3-01] Refresh docs / archive and close the task.

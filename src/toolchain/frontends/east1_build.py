@@ -17,6 +17,7 @@ from toolchain.frontends.transpile_cli import module_name_from_path_for_graph
 from toolchain.frontends.transpile_cli import path_key_for_graph
 from toolchain.frontends.transpile_cli import path_parent_text
 from toolchain.frontends.transpile_cli import rel_disp_for_graph
+from toolchain.frontends.transpile_cli import resolve_import_graph_entry_root
 from toolchain.frontends.transpile_cli import resolve_relative_module_name_for_graph
 from toolchain.frontends.transpile_cli import resolve_module_name_for_graph
 from pytra.std.pathlib import Path
@@ -47,7 +48,7 @@ def _analyze_import_graph_impl(
     parser_backend: str = "self_hosted",
 ) -> dict[str, object]:
     """ユーザーモジュール依存を解析し、衝突/未解決/循環を返す。"""
-    root = Path(path_parent_text(entry_path))
+    root = resolve_import_graph_entry_root(entry_path)
     queue: list[Path] = [entry_path]
     queued: set[str] = {path_key_for_graph(entry_path)}
     visited: set[str] = set()

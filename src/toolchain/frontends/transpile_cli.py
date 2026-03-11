@@ -2139,6 +2139,21 @@ def _path_is_under_root_for_graph(path: Path, root: Path) -> bool:
     return path_txt.startswith(root_prefix)
 
 
+def resolve_import_graph_entry_root(entry_path: Path) -> Path:
+    """entry file から `__init__.py` chain に基づく package root を推定する。"""
+    cur_dir = Path(path_parent_text(entry_path))
+    while (cur_dir / "__init__.py").exists():
+        parent_txt = path_parent_text(cur_dir)
+        cur_txt = path_key_for_graph(cur_dir)
+        if parent_txt == cur_txt:
+            break
+        parent_dir = Path(parent_txt if parent_txt != "" else ".")
+        if not (parent_dir / "__init__.py").exists():
+            break
+        cur_dir = parent_dir
+    return cur_dir
+
+
 def resolve_relative_module_anchor_dir(raw_name: str, entry_root: Path, importer_path: Path) -> dict[str, str]:
     """relative import の anchor dir を entry root 基準で解決する。"""
     level = relative_module_level(raw_name)
@@ -2313,7 +2328,7 @@ def rewrite_relative_imports_in_module_east_map(
     module_east_map: dict[str, dict[str, object]],
 ) -> dict[str, dict[str, object]]:
     """module EAST map 全体へ relative import 正規化を反映する。"""
-    entry_root = Path(path_parent_text(entry_path))
+    entry_root = resolve_import_graph_entry_root(entry_path)
     for mod_key, east_doc in module_east_map.items():
         rewrite_relative_imports_in_east_doc(
             east_doc,
@@ -2807,7 +2822,7 @@ def analyze_import_graph(
     load_east_fn: object,
 ) -> dict[str, object]:
     """ユーザーモジュール依存を解析し、衝突/未解決/循環を返す。"""
-    root = Path(path_parent_text(entry_path))
+    root = resolve_import_graph_entry_root(entry_path)
     queue: list[Path] = [entry_path]
     queued: set[str] = {path_key_for_graph(entry_path)}
     visited: set[str] = set()

@@ -87,6 +87,32 @@ class Py2xCliTest(unittest.TestCase):
             out_text = out_cpp.read_text(encoding="utf-8")
             self.assertIn("py_print(f());", out_text)
 
+    def test_py2x_accepts_relative_import_for_parent_package_module(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pkg = root / "pkg"
+            sub = pkg / "sub"
+            sub.mkdir(parents=True)
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            (sub / "__init__.py").write_text("", encoding="utf-8")
+            main_py = sub / "main.py"
+            util_py = pkg / "util.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text("from ..util import two\nprint(two())\n", encoding="utf-8")
+            util_py.write_text("def two() -> int:\n    return 2\n", encoding="utf-8")
+
+            proc = subprocess.run(
+                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertTrue(out_cpp.exists())
+            out_text = out_cpp.read_text(encoding="utf-8")
+            self.assertIn("py_print(two());", out_text)
+
     def test_py2x_rejects_relative_import_root_escape(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

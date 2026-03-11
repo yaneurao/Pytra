@@ -43,10 +43,11 @@
 決定ログ:
 - 2026-03-11: TODO 空き後の次タスクとして起票。probe では sibling relative import は通る一方、`pkg2/sub/main.py -> from ..util import two` は `unsupported_import_form` で落ちた。v1 は `__init__.py` chain に基づく package root 推定だけを対象にする。
 - 2026-03-11: representative gap を固定した。`pkg/main.py -> from .helper import f` は通るが、`pkg/sub/main.py -> from ..util import two` は `entry_path.parent` を root とみなすため `unsupported_import_form` で落ちる。
+- 2026-03-11: `resolve_import_graph_entry_root()` を追加し、`pkg/sub/main.py -> from ..util import two` を package root `pkg` 基準で `util` へ rewrite するようにした。package root escape は引き続き `unsupported_import_form` を維持する。
 
 ## 分解
 
 - [x] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01-S1-01] current root 推定 gap と representative package layout を plan/TODO に固定する。
-- [ ] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01-S2-01] package root 推定 helper を追加し、`rewrite_relative_imports_in_module_east_map()` / `analyze_import_graph()` を helper 経由へ切り替える。
-- [ ] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01-S2-02] parent relative import success / root escape failure の CLI / metadata regression を追加する。
+- [x] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01-S2-01] package root 推定 helper を追加し、`rewrite_relative_imports_in_module_east_map()` / `analyze_import_graph()` を helper 経由へ切り替える。
+- [x] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01-S2-02] parent relative import success / root escape failure の CLI / metadata regression を追加する。
 - [ ] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01-S3-01] docs / archive を更新して閉じる。
