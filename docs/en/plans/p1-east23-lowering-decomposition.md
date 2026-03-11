@@ -55,3 +55,4 @@ Decision log:
 - 2026-03-11: Initial version. After `core.py` and expr facade decomposition, `east2_to_east3_lowering.py` is the next clear large monolith.
 - 2026-03-11: The first wave targets three clusters first: `type summary`, `nominal ADT metadata`, and `type_id predicate lowering`. Assignment/call/statement orchestration remains in the main file for now.
 - 2026-03-11: Progress notes for this task stay bundle-level; detailed helper names belong in the plan decision log or commit messages.
+- 2026-03-11: The first `S2-01` bundle moved `type summary`, `nominal decl summary`, and `json receiver contract` helpers into `east2_to_east3_type_summary.py`. The main file now uses `_swap_nominal_adt_decl_summary_table()` for lifecycle management, and a dedicated `test_east2_to_east3_source_contract.py` locks the split surface.

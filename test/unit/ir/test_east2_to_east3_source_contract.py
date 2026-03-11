@@ -1,0 +1,53 @@
+"""Source-contract regressions for EAST2 -> EAST3 lowering split modules."""
+
+from __future__ import annotations
+
+import sys
+import unittest
+from pathlib import Path
+
+TEST_DIR = Path(__file__).resolve().parent
+if str(TEST_DIR) not in sys.path:
+    sys.path.insert(0, str(TEST_DIR))
+
+from _east_core_test_support import EAST23_LOWERING_SOURCE_PATH
+from _east_core_test_support import EAST23_TYPE_SUMMARY_SOURCE_PATH
+
+
+class East2ToEast3SourceContractTest(unittest.TestCase):
+    def test_main_lowering_imports_type_summary_cluster(self) -> None:
+        text = EAST23_LOWERING_SOURCE_PATH.read_text(encoding="utf-8")
+        self.assertIn("from toolchain.ir.east2_to_east3_type_summary import _JSON_DECODE_META_KEY", text)
+        self.assertIn("from toolchain.ir.east2_to_east3_type_summary import _swap_nominal_adt_decl_summary_table", text)
+        self.assertIn(
+            "prev_nominal_adt_decl_table = _swap_nominal_adt_decl_summary_table(",
+            text,
+        )
+        for helper_name in (
+            "_type_expr_summary_from_payload",
+            "_type_expr_summary_from_node",
+            "_collect_nominal_adt_decl_summary_table",
+            "_collect_nominal_adt_family_variants",
+            "_expr_type_summary",
+            "_json_nominal_type_name",
+            "_structured_type_expr_summary_from_node",
+            "_representative_json_contract_metadata",
+        ):
+            self.assertNotIn(f"def {helper_name}(", text)
+
+    def test_type_summary_module_owns_split_helpers(self) -> None:
+        text = EAST23_TYPE_SUMMARY_SOURCE_PATH.read_text(encoding="utf-8")
+        for helper_name in (
+            "_swap_nominal_adt_decl_summary_table",
+            "_type_expr_summary_from_payload",
+            "_collect_nominal_adt_decl_summary_table",
+            "_collect_nominal_adt_family_variants",
+            "_expr_type_summary",
+            "_json_nominal_type_name",
+            "_representative_json_contract_metadata",
+        ):
+            self.assertIn(f"def {helper_name}(", text)
+
+
+if __name__ == "__main__":
+    unittest.main()

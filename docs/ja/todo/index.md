@@ -43,3 +43,4 @@
 6. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-03] `nominal ADT ctor/projection/match metadata` cluster を dedicated module へ分割する。
 7. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S3-01] source-contract と representative regression を split 後の layout へ追従させる。
 8. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S4-01] docs / TODO / archive を更新して閉じる。
+- 進捗メモ: [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-01] `type summary` / `nominal decl summary` / `json receiver contract` を `east2_to_east3_type_summary.py` へ切り出し、main file は import と orchestration へ後退した。

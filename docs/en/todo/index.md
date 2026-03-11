@@ -43,3 +43,4 @@ Context: [docs/ja/plans/p1-east23-lowering-decomposition.md](../ja/plans/p1-east
 6. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-03] Split the `nominal ADT ctor/projection/match metadata` cluster into a dedicated module.
 7. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S3-01] Update source-contract tests and representative regressions to the split layout.
 8. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S4-01] Update docs / TODO / archive and close the task.
+- Progress note: [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-01] The `type summary`, `nominal decl summary`, and `json receiver contract` cluster moved to `east2_to_east3_type_summary.py`, and the main file now stays focused on imports and orchestration.

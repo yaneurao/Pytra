@@ -55,3 +55,4 @@
 - 2026-03-11: 初版作成。`core.py` / expr facade 分割の次に残る大型 monolith として `east2_to_east3_lowering.py` を対象に選んだ。
 - 2026-03-11: first wave は `type summary` / `nominal ADT metadata` / `type_id predicate lowering` の 3 cluster を優先し、assignment/call/stmt orchestration は main file 側に残す。
 - 2026-03-11: この task の進捗メモは bundle 単位の 1 行要約に留め、細かい helper 名は plan の決定ログか commit message に記録する。
+- 2026-03-11: `S2-01` の first bundle として `type summary` / `nominal decl summary` / `json receiver contract` を `east2_to_east3_type_summary.py` へ移した。main file 側は `_swap_nominal_adt_decl_summary_table()` を介して table lifecycle を管理し、source-contract には dedicated `test_east2_to_east3_source_contract.py` を追加した。
