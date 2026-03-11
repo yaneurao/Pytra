@@ -93,7 +93,7 @@ class ImportGraphIssueStructureTest(unittest.TestCase):
         self.assertTrue(isinstance(details, list))
         joined = "\n".join(str(v) for v in details) if isinstance(details, list) else ""
         self.assertIn("kind=missing_module file=main.py import=pkg.helper", joined)
-        self.assertIn("kind=unsupported_import_form file=main.py import=from .helper import ...", joined)
+        self.assertIn("kind=relative_import_escape file=main.py import=from .helper import ...", joined)
 
     def test_validate_from_import_symbols_accepts_package_submodule_binding(self) -> None:
         root = ROOT / "tmp-relative-root"

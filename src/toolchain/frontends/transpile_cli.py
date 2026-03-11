@@ -245,6 +245,20 @@ def _make_import_user_error_payload(
     )
 
 
+def _make_relative_import_escape_payload(
+    *,
+    file_value: Path | str,
+    import_detail: str,
+) -> tuple[str, str, list[str]]:
+    """relative import root escape 用の current CLI contract payload を返す。"""
+    return _make_import_user_error_payload(
+        summary="Relative import escapes package root.",
+        kind="relative_import_escape",
+        file_value=file_value,
+        import_detail=import_detail,
+    )
+
+
 def _structured_import_user_error_payload(
     err_code: str,
     parsed_message: str,
@@ -267,12 +281,7 @@ def _structured_import_user_error_payload(
         )
     if err_code == "unsupported_import_form":
         label = import_label if import_label != "" else first_import_detail_line(source_text, "relative")
-        return _make_import_user_error_payload(
-            summary="Unsupported import syntax.",
-            kind="unsupported_import_form",
-            file_value=input_path,
-            import_detail=label,
-        )
+        return _make_relative_import_escape_payload(file_value=input_path, import_detail=label)
     if err_code == "unresolved_wildcard":
         label = import_label if import_label != "" else first_import_detail_line(source_text, "wildcard")
         return _make_import_user_error_payload(
@@ -300,12 +309,7 @@ def _legacy_import_user_error_payload(
         )
     if "relative import is not supported" in msg:
         label = first_import_detail_line(source_text, "relative")
-        return _make_import_user_error_payload(
-            summary="Unsupported import syntax.",
-            kind="unsupported_import_form",
-            file_value=input_path,
-            import_detail=label,
-        )
+        return _make_relative_import_escape_payload(file_value=input_path, import_detail=label)
     if "duplicate import binding:" in msg:
         return _make_import_user_error_payload(
             summary="Duplicate import binding.",
@@ -2632,13 +2636,15 @@ def dump_deps_graph_text(
 def validate_import_graph_or_raise(analysis: dict[str, object]) -> None:
     """依存解析の重大問題を `input_invalid` として報告する。"""
     details: list[str] = []
+    has_relative_import_escape = False
     for v in dict_any_get_str_list(analysis, "reserved_conflicts"):
         if v != "":
             details.append(make_import_diagnostic_detail("reserved_conflict", v, "pytra"))
     for entry in dict_any_get_graph_issue_entries(analysis, "relative_imports", "relative_import_entries"):
         file_part = dict_str_get(entry, "file")
         mod_part = dict_str_get(entry, "module")
-        details.append(make_import_diagnostic_detail("unsupported_import_form", file_part, "from " + mod_part + " import ..."))
+        has_relative_import_escape = True
+        details.append(make_import_diagnostic_detail("relative_import_escape", file_part, "from " + mod_part + " import ..."))
     for entry in dict_any_get_graph_issue_entries(analysis, "missing_modules", "missing_module_entries"):
         file_part = dict_str_get(entry, "file")
         mod_part = dict_str_get(entry, "module")
@@ -2647,9 +2653,12 @@ def validate_import_graph_or_raise(analysis: dict[str, object]) -> None:
         if v != "":
             details.append(make_import_diagnostic_detail("import_cycle", "(graph)", v))
     if len(details) > 0:
+        summary = "Failed to resolve imports (missing/conflict/cycle)."
+        if has_relative_import_escape:
+            summary = "Failed to resolve imports (missing/conflict/cycle/relative)."
         raise make_user_error(
             "input_invalid",
-            "Failed to resolve imports (missing/conflict/cycle).",
+            summary,
             details,
         )
 

@@ -959,7 +959,7 @@ def sin(x: float) -> float:
         self.assertTrue(isinstance(details, list))
         joined = "\n".join([str(v) for v in details]) if isinstance(details, list) else ""
         self.assertIn("kind=reserved_conflict", joined)
-        self.assertIn("kind=unsupported_import_form", joined)
+        self.assertIn("kind=relative_import_escape", joined)
         self.assertIn("kind=missing_module", joined)
         self.assertIn("kind=import_cycle", joined)
 
@@ -2311,7 +2311,7 @@ def main() -> None:
             )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
-        self.assertIn("kind=unsupported_import_form", proc.stderr)
+        self.assertIn("kind=relative_import_escape", proc.stderr)
         self.assertIn("import=from ..helper import ...", proc.stderr)
 
     def test_cli_reports_input_invalid_for_missing_relative_import_module(self) -> None:

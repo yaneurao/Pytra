@@ -201,7 +201,7 @@ class Py2xCliTest(unittest.TestCase):
 
             self.assertNotEqual(proc.returncode, 0)
             self.assertFalse(out_cpp.exists())
-            self.assertIn("kind=unsupported_import_form", proc.stderr)
+            self.assertIn("kind=relative_import_escape", proc.stderr)
             self.assertIn("import=from ..helper import ...", proc.stderr)
 
     def test_rejects_stage2_before_backend_pipeline(self) -> None:

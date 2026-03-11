@@ -59,8 +59,8 @@ class ImportDiagnosticsTest(unittest.TestCase):
             err,
             (
                 "input_invalid",
-                "Unsupported import syntax.",
-                ["kind=unsupported_import_form file=pkg/main.py import=from ..helper import f"],
+                "Relative import escapes package root.",
+                ["kind=relative_import_escape file=pkg/main.py import=from ..helper import f"],
             ),
         )
 
@@ -107,8 +107,8 @@ class ImportDiagnosticsTest(unittest.TestCase):
             err,
             (
                 "input_invalid",
-                "Unsupported import syntax.",
-                ["kind=unsupported_import_form file=pkg/main.py import=from ..helper import f"],
+                "Relative import escapes package root.",
+                ["kind=relative_import_escape file=pkg/main.py import=from ..helper import f"],
             ),
         )
 
