@@ -47,6 +47,9 @@ Decision log:
 ## Breakdown
 
 - [ ] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01-S1-01] Lock the target contract and representative scope for aliased relative imports in the plan / TODO.
-- [ ] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01-S2-01] Lock module-alias and symbol-alias metadata carriers with focused import-graph / normalization tests.
-- [ ] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01-S2-02] Lock current support for aliased relative imports in `py2x.py` and C++ multi-file smoke tests.
+- [x] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01-S2-01] Lock module-alias and symbol-alias metadata carriers with focused import-graph / normalization tests.
+- [x] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01-S2-02] Lock current support for aliased relative imports in `py2x.py` and C++ multi-file smoke tests.
 - [ ] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01-S3-01] Sync representative alias cases into `spec-import` and the C++ support matrix.
+
+- 2026-03-12: Verified that the current implementation already accepts `from .. import helper as h` and `from ..helper import f as g`, then added import-graph, CLI, and C++ multi-file build/run regressions to close `S2-01` and `S2-02`.
+- 2026-03-12: Updated `validate_from_import_symbols_or_raise()` to normalize relative `module_id` values against the importer's `__init__.py` chain as well, so focused import-graph cases that still carry raw relative module ids also converge to absolute module ids for aliased symbol bindings.

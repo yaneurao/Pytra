@@ -1665,10 +1665,13 @@ def validate_from_import_symbols_or_raise(
     for mod_key, east in module_east_map.items():
         east_doc: dict[str, object] = east
         file_disp = rel_disp_for_graph(root, Path(mod_key))
+        importer_root = resolve_import_graph_entry_root(Path(mod_key))
         body = dict_any_get_dict_list(east_doc, "body")
         for st in body:
             if dict_any_kind(st) == "ImportFrom":
                 imported_mod = dict_any_get_str(st, "module")
+                if imported_mod.startswith("."):
+                    imported_mod = normalize_relative_module_id(imported_mod, importer_root, Path(mod_key))
                 names = dict_any_get_dict_list(st, "names")
                 if imported_mod in exports:
                     for ent in names:
@@ -1689,6 +1692,12 @@ def validate_from_import_symbols_or_raise(
         resolved_import_bindings: list[dict[str, str]] = []
         for ent in import_bindings:
             resolved_ent = dict(ent)
+            if resolved_ent["module_id"].startswith("."):
+                resolved_ent["module_id"] = normalize_relative_module_id(
+                    resolved_ent["module_id"],
+                    importer_root,
+                    Path(mod_key),
+                )
             if (
                 resolved_ent["binding_kind"] == "symbol"
                 and resolved_ent["export_name"] != ""
@@ -1730,6 +1739,8 @@ def validate_from_import_symbols_or_raise(
                 if local_name in import_modules:
                     continue
                 module_id = ref["module_id"]
+                if module_id.startswith("."):
+                    module_id = normalize_relative_module_id(module_id, importer_root, Path(mod_key))
                 symbol = ref["symbol"]
                 bind_import_symbol_or_duplicate(
                     import_symbols,

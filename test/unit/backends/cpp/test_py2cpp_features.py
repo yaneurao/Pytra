@@ -3824,6 +3824,112 @@ if __name__ == "__main__":
             self.assertEqual(rn.returncode, 0, msg=rn.stderr)
             self.assertIn("11", rn.stdout)
 
+    def test_cli_multi_file_bare_parent_relative_import_module_alias_build_and_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            pkg = root / "pkg"
+            sub = pkg / "sub"
+            sub.mkdir(parents=True)
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            (sub / "__init__.py").write_text("", encoding="utf-8")
+
+            main_py = sub / "main.py"
+            helper_py = pkg / "helper.py"
+            out_dir = root / "out"
+            exe = out_dir / "app.out"
+
+            main_py.write_text(
+                "from .. import helper as h\n"
+                "\n"
+                "def main() -> None:\n"
+                "    print(h.f())\n"
+                "\n"
+                "if __name__ == \"__main__\":\n"
+                "    main()\n",
+                encoding="utf-8",
+            )
+            helper_py.write_text(
+                "def f() -> int:\n"
+                "    return 13\n",
+                encoding="utf-8",
+            )
+
+            tr = self._run_subprocess_with_timeout(
+                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="transpile bare parent relative module alias multi-file sample",
+            )
+            self.assertEqual(tr.returncode, 0, msg=tr.stderr)
+            bd = self._run_subprocess_with_timeout(
+                ["python3", "tools/build_multi_cpp.py", str(out_dir / "manifest.json"), "-o", str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="build bare parent relative module alias multi-file sample",
+            )
+            self.assertEqual(bd.returncode, 0, msg=bd.stderr)
+            rn = self._run_subprocess_with_timeout(
+                [str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run bare parent relative module alias multi-file sample",
+            )
+            self.assertEqual(rn.returncode, 0, msg=rn.stderr)
+            self.assertIn("13", rn.stdout)
+
+    def test_cli_multi_file_parent_relative_symbol_alias_build_and_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            pkg = root / "pkg"
+            sub = pkg / "sub"
+            sub.mkdir(parents=True)
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            (sub / "__init__.py").write_text("", encoding="utf-8")
+
+            main_py = sub / "main.py"
+            helper_py = pkg / "helper.py"
+            out_dir = root / "out"
+            exe = out_dir / "app.out"
+
+            main_py.write_text(
+                "from ..helper import f as g\n"
+                "\n"
+                "def main() -> None:\n"
+                "    print(g())\n"
+                "\n"
+                "if __name__ == \"__main__\":\n"
+                "    main()\n",
+                encoding="utf-8",
+            )
+            helper_py.write_text(
+                "def f() -> int:\n"
+                "    return 17\n",
+                encoding="utf-8",
+            )
+
+            tr = self._run_subprocess_with_timeout(
+                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="transpile parent relative symbol alias multi-file sample",
+            )
+            self.assertEqual(tr.returncode, 0, msg=tr.stderr)
+            bd = self._run_subprocess_with_timeout(
+                ["python3", "tools/build_multi_cpp.py", str(out_dir / "manifest.json"), "-o", str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="build parent relative symbol alias multi-file sample",
+            )
+            self.assertEqual(bd.returncode, 0, msg=bd.stderr)
+            rn = self._run_subprocess_with_timeout(
+                [str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run parent relative symbol alias multi-file sample",
+            )
+            self.assertEqual(rn.returncode, 0, msg=rn.stderr)
+            self.assertIn("17", rn.stdout)
+
     def test_cli_multi_file_object_iter_helper_artifact_build_and_run(self) -> None:
         src_main = """def main() -> None:
     xs: object = [1, 2, 3]
