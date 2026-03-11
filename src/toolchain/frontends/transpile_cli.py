@@ -9,14 +9,26 @@ from toolchain.ir.east2 import normalize_east1_to_east2_document as normalize_ea
 from toolchain.ir.east3 import load_east3_document as load_east3_document_stage
 from toolchain.compiler.typed_boundary import CompilerRootDocument
 from toolchain.compiler.typed_boundary import coerce_compiler_root_document
+from toolchain.frontends.import_graph_frontend_helpers import collect_import_from_request_modules
+from toolchain.frontends.import_graph_frontend_helpers import collect_import_modules
+from toolchain.frontends.import_graph_frontend_helpers import collect_import_request_modules
+from toolchain.frontends.import_graph_frontend_helpers import collect_import_requests
+from toolchain.frontends.import_graph_frontend_helpers import collect_reserved_import_conflicts
+from toolchain.frontends.import_graph_frontend_helpers import collect_user_module_files_for_graph
 from toolchain.frontends.import_graph_path_helpers import module_name_from_path_for_graph
 from toolchain.frontends.import_graph_path_helpers import path_key_for_graph
 from toolchain.frontends.import_graph_path_helpers import path_parent_text
+from toolchain.frontends.import_graph_frontend_helpers import is_pytra_module_name
+from toolchain.frontends.import_graph_frontend_helpers import module_id_from_east_for_graph
+from toolchain.frontends.import_graph_frontend_helpers import module_rel_label
+from toolchain.frontends.import_graph_frontend_helpers import rel_disp_for_graph
+from toolchain.frontends.import_graph_frontend_helpers import resolve_user_module_path_for_graph
+from toolchain.frontends.import_graph_frontend_helpers import sanitize_module_label
+from toolchain.frontends.import_graph_frontend_helpers import sort_str_list_copy
 from toolchain.frontends.known_modules import is_known_module_name
 from toolchain.frontends.relative_import_normalization import normalize_relative_module_id
 from toolchain.frontends.relative_import_normalization import relative_module_id_from_anchor
 from toolchain.frontends.relative_import_normalization import relative_module_level
-from toolchain.frontends.relative_import_normalization import relative_module_tail
 from toolchain.frontends.relative_import_normalization import resolve_import_graph_entry_root
 from toolchain.frontends.relative_import_normalization import resolve_relative_module_anchor_dir
 from toolchain.frontends.relative_import_normalization import resolve_relative_module_name_for_graph
@@ -2031,76 +2043,6 @@ def looks_like_runtime_function_name(name: str) -> bool:
     return False
 
 
-def is_pytra_module_name(module_name: str) -> bool:
-    """`pytra` 配下モジュール名かを判定する。"""
-    return module_name == "pytra" or module_name.startswith("pytra.")
-
-
-def rel_disp_for_graph(base_path: Path, p: Path) -> str:
-    """表示用に `base_path` からの相対パス文字列を返す。"""
-    base_txt = str(base_path)
-    p_txt = str(p)
-    base_prefix = base_txt if base_txt.endswith("/") else base_txt + "/"
-    if p_txt.startswith(base_prefix):
-        return p_txt[len(base_prefix) :]
-    if p_txt == base_txt:
-        return "."
-    return p_txt
-
-
-def sanitize_module_label(text: str) -> str:
-    """モジュール識別子向けに英数字/`_` のみ残す。"""
-    out_chars: list[str] = []
-    for ch in text:
-        ok = ch == "_" or ch.isalpha() or ch.isdigit()
-        if ok:
-            out_chars.append(ch)
-        else:
-            out_chars.append("_")
-    out = "".join(out_chars)
-    out = out if out != "" else "module"
-    if (
-        out.find("0") == 0
-        or out.find("1") == 0
-        or out.find("2") == 0
-        or out.find("3") == 0
-        or out.find("4") == 0
-        or out.find("5") == 0
-        or out.find("6") == 0
-        or out.find("7") == 0
-        or out.find("8") == 0
-        or out.find("9") == 0
-    ):
-        out = "_" + out
-    return out
-
-
-def module_rel_label(root: Path, module_path: Path) -> str:
-    """`root` からの相対パスを multi-file 用モジュールラベルへ変換する。"""
-    root_txt = str(root)
-    path_txt = str(module_path)
-    if root_txt != "" and not root_txt.endswith("/"):
-        root_txt += "/"
-    rel = path_txt
-    if root_txt != "" and path_txt.startswith(root_txt):
-        rel = path_txt[len(root_txt) :]
-    if rel.endswith(".py"):
-        rel = rel[:-3]
-    rel = rel.replace("/", "__")
-    return sanitize_module_label(rel)
-
-
-def module_id_from_east_for_graph(root: Path, module_path: Path, east_doc: dict[str, Any]) -> str:
-    """import graph 用の EAST module_id 抽出。"""
-    module_id = ""
-    meta_any = east_doc.get("meta")
-    if isinstance(meta_any, dict):
-        module_id_any = meta_any.get("module_id")
-        if isinstance(module_id_any, str):
-            module_id = module_id_any
-    return module_id if module_id != "" else module_name_from_path_for_graph(root, module_path)
-
-
 def meta_import_bindings(east_module: dict[str, object]) -> list[dict[str, str]]:
     """EAST `meta.import_bindings` を正規化して返す（無い場合は空）。"""
     out: list[dict[str, str]] = []
@@ -2211,66 +2153,6 @@ def graph_cycle_dfs(
                     cycles.append(cycle_txt)
     stack.pop()
     color[key] = 2
-
-
-def resolve_user_module_path_for_graph(module_name: str, search_root: Path) -> Path:
-    """import graph 用のユーザーモジュール解決（未解決は空 Path）。"""
-    if module_name.startswith("pytra.") or module_name == "pytra":
-        return Path("")
-    rel = module_name.replace(".", "/")
-    parts = module_name.split(".")
-    leaf = parts[len(parts) - 1] if len(parts) > 0 else ""
-    cur_dir = str(search_root)
-    cur_dir = cur_dir if cur_dir != "" else "."
-    seen_dirs: set[str] = set()
-    best_path = ""
-    best_rank = -1
-    best_distance = 1000000000
-    distance = 0
-    while cur_dir not in seen_dirs:
-        seen_dirs.add(cur_dir)
-        prefix = cur_dir
-        if prefix != "" and not prefix.endswith("/"):
-            prefix += "/"
-        cand_init = prefix + rel + "/__init__.py"
-        cand_named = prefix + rel + "/" + leaf + ".py" if leaf != "" else ""
-        cand_flat = prefix + rel + ".py"
-        candidates: list[tuple[str, int]] = []
-        candidates.append((cand_init, 3))
-        if cand_named != "":
-            candidates.append((cand_named, 2))
-        candidates.append((cand_flat, 1))
-        for path_txt, rank in candidates:
-            if Path(path_txt).exists():
-                if rank > best_rank or (rank == best_rank and distance < best_distance):
-                    best_path = path_txt
-                    best_rank = rank
-                    best_distance = distance
-        parent_dir = path_parent_text(Path(cur_dir))
-        if parent_dir == cur_dir:
-            break
-        cur_dir = parent_dir if parent_dir != "" else "."
-        distance += 1
-    if best_path != "":
-        return Path(best_path)
-    return Path("")
-
-
-def collect_reserved_import_conflicts(root: Path) -> list[str]:
-    """予約名 `pytra` と衝突するユーザーファイルを収集する。"""
-    out: list[str] = []
-    pytra_file = root / "pytra.py"
-    pytra_pkg_init = root / "pytra" / "__init__.py"
-    canonical_pytra_pkg = (
-        (root / "pytra" / "std").exists()
-        and (root / "pytra" / "utils").exists()
-        and (root / "pytra" / "built_in").exists()
-    )
-    if pytra_file.exists():
-        out.append(str(pytra_file))
-    if pytra_pkg_init.exists() and not canonical_pytra_pkg:
-        out.append(str(pytra_pkg_init))
-    return out
 
 
 def format_graph_list_section(section_text: str, label: str, items: list[str]) -> str:
@@ -2403,104 +2285,6 @@ def validate_import_graph_or_raise(analysis: dict[str, object]) -> None:
             summary,
             details,
         )
-
-
-def collect_import_requests(east_module: dict[str, object]) -> list[dict[str, str]]:
-    """EAST module から structured import request を抽出する。"""
-    out: list[dict[str, str]] = []
-    seen: set[str] = set()
-    body_any = east_module.get("body")
-    if not isinstance(body_any, list):
-        return out
-    for stmt_any in body_any:
-        if not isinstance(stmt_any, dict):
-            continue
-        kind = ""
-        kind_any = stmt_any.get("kind")
-        if isinstance(kind_any, str):
-            kind = kind_any
-        if kind == "Import":
-            names_any = stmt_any.get("names")
-            if not isinstance(names_any, list):
-                continue
-            for ent_any in names_any:
-                if not isinstance(ent_any, dict):
-                    continue
-                module_name = dict_any_get_str(ent_any, "name")
-                if module_name == "":
-                    continue
-                req = {"kind": "import_module", "module": module_name, "symbol": ""}
-                key = req["kind"] + "|" + req["module"] + "|" + req["symbol"]
-                if key not in seen:
-                    seen.add(key)
-                    out.append(req)
-        elif kind == "ImportFrom":
-            module_name = dict_any_get_str(stmt_any, "module")
-            if module_name == "":
-                continue
-            names = dict_any_get_dict_list(stmt_any, "names")
-            if len(names) == 0:
-                req = {"kind": "from_module", "module": module_name, "symbol": ""}
-                key = req["kind"] + "|" + req["module"] + "|" + req["symbol"]
-                if key not in seen:
-                    seen.add(key)
-                    out.append(req)
-                continue
-            for ent in names:
-                symbol = dict_any_get_str(ent, "name")
-                if symbol == "":
-                    continue
-                req = {"kind": "from_module", "module": module_name, "symbol": symbol}
-                key = req["kind"] + "|" + req["module"] + "|" + req["symbol"]
-                if key not in seen:
-                    seen.add(key)
-                    out.append(req)
-    return out
-
-
-def collect_import_modules(east_module: dict[str, object]) -> list[str]:
-    """EAST module から import graph 互換の module dependency 候補を抽出する。"""
-    out: list[str] = []
-    seen: set[str] = set()
-    for req in collect_import_requests(east_module):
-        for mod_name in collect_import_request_modules(req):
-            append_unique_non_empty(out, seen, mod_name)
-    return out
-
-
-def collect_import_request_modules(req: dict[str, str]) -> list[str]:
-    """structured import request から import graph の module candidate を返す。"""
-    kind = dict_str_get(req, "kind")
-    module_name = dict_str_get(req, "module")
-    symbol = dict_str_get(req, "symbol")
-    if kind == "import_module":
-        if module_name == "":
-            return []
-        return [module_name]
-    if kind == "from_module":
-        return collect_import_from_request_modules(module_name, symbol)
-    return []
-
-
-def collect_import_from_request_modules(module_name: str, symbol: str) -> list[str]:
-    """`ImportFrom` request から import graph が辿る module candidate を返す。"""
-    if module_name == "":
-        return []
-    # `from . import helper` / `from .. import helper` は package-local submodule import
-    # として `.helper` / `..helper` を graph で辿れるようにする。
-    if module_name.startswith(".") and relative_module_tail(module_name) == "":
-        if symbol != "" and symbol != "*":
-            out = [module_name + symbol]
-            return out
-    if symbol == "*":
-        return [module_name]
-    if symbol == "":
-        return [module_name]
-    if module_name.startswith(".") and relative_module_tail(module_name) == "":
-        out = [module_name + symbol]
-        if len(out) > 0:
-            return out
-    return [module_name]
 
 
 def is_known_non_user_import(
@@ -2715,53 +2499,6 @@ def dump_codegen_options_text(
     out += f"  str-index-mode: {str_index_mode}\n"
     out += f"  str-slice-mode: {str_slice_mode}\n"
     out += f"  opt-level: {opt_level}\n"
-    return out
-
-
-def sort_str_list_copy(items: list[str]) -> list[str]:
-    """`list[str]` を昇順へ整列したコピーを返す（selfhost-safe 実装）。"""
-    out: list[str] = []
-    for item in items:
-        out.append(item)
-    for i in range(1, len(out)):
-        key = out[i]
-        insert_at = i
-        for j in range(i - 1, -1, -1):
-            greater = False
-            left = out[j]
-            limit = len(left) if len(left) < len(key) else len(key)
-            decided = False
-            for pos in range(limit):
-                lcode = ord(left[pos : pos + 1])
-                rcode = ord(key[pos : pos + 1])
-                if lcode > rcode:
-                    greater = True
-                    decided = True
-                    break
-                if lcode < rcode:
-                    decided = True
-                    break
-            if not decided and len(left) > len(key):
-                greater = True
-            if greater:
-                out[j + 1] = out[j]
-                insert_at = j
-            else:
-                break
-        out[insert_at] = key
-    return out
-
-
-def collect_user_module_files_for_graph(visited_order: list[str], key_to_path: dict[str, Path]) -> list[str]:
-    """import graph 解析済みキー列と path map からソート済みファイル一覧を返す。"""
-    out: list[str] = []
-    visited_keys: list[str] = []
-    for visited_key in visited_order:
-        visited_keys.append(visited_key)
-    visited_keys = sort_str_list_copy(visited_keys)
-    for key in visited_keys:
-        if key in key_to_path:
-            out.append(str(key_to_path[key]))
     return out
 
 

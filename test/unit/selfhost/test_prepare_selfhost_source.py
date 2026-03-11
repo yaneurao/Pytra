@@ -317,6 +317,12 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("def dump_deps_text(east_module: dict[str, object]) -> str:", support_blocks)
         self.assertIn("def format_import_graph_report(analysis: dict[str, object]) -> str:", support_blocks)
         self.assertIn("def dump_deps_graph_text(", support_blocks)
+        self.assertIn("def collect_import_requests(east_module: dict[str, object]) -> list[dict[str, str]]:", support_blocks)
+        self.assertIn("def collect_import_request_modules(req: dict[str, str]) -> list[str]:", support_blocks)
+        self.assertIn(
+            "def collect_import_from_request_modules(module_name: str, symbol: str) -> list[str]:",
+            support_blocks,
+        )
         self.assertIn("def collect_import_modules(east_module: dict[str, object]) -> list[str]:", support_blocks)
         self.assertIn("def is_known_non_user_import(", support_blocks)
         self.assertIn("def resolve_module_name_for_graph(", support_blocks)

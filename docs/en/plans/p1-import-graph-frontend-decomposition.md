@@ -44,9 +44,10 @@ Verification commands:
 
 Breakdown:
 - [x] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S1-01] Make the live plan/TODO active and lock the split target cluster plus verification lane.
-- [ ] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S2-01] Split path / queue / module-id helpers into dedicated modules and retarget the entrypoint callers.
+- [x] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S2-01] Split path / queue / module-id helpers into dedicated modules and retarget the entrypoint callers.
 - [ ] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S2-02] Split analysis / report helpers into dedicated modules and add focused tooling/source contracts.
 - [ ] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S3-01] Freeze the residual helper layout in docs/source contracts and close the archive-ready end state.
 
 Decision log:
 - 2026-03-12: After closing the relative-import normalization decomposition and the legacy diagnostic cleanup, the remaining import-graph build/analyze/report cluster became the next focused decomposition target. This task is limited to frontend-module split work and explicitly excludes algorithm redesign.
+- 2026-03-12: Moved `is_pytra_module_name`, module-id fallback, user-module path resolve, structured import-request helpers, and graph file sorting into `import_graph_frontend_helpers.py`, then retargeted `transpile_cli.py` and `east1_build.py` to import that split module. Selfhost support extraction now reads the new helper module too, so `S2-01` is considered complete.

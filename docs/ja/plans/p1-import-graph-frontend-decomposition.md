@@ -44,9 +44,11 @@
 
 分解:
 - [x] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S1-01] live plan/TODO を起票し、split 対象 cluster と verification lane を固定する。
-- [ ] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S2-01] path / queue / module-id helper を dedicated module へ切り出し、entrypoint caller を寄せ替える。
+- [x] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S2-01] path / queue / module-id helper を dedicated module へ切り出し、entrypoint caller を寄せ替える。
 - [ ] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S2-02] analysis / report helper を dedicated module へ切り出し、focused tooling/source contract を追加する。
 - [ ] [ID: P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01-S3-01] residual helper layout を docs/source contract に固定し、archive-ready end state を閉じる。
 
 決定ログ:
 - 2026-03-12: relative import normalization decomposition と legacy diagnostic cleanup を閉じた後の次 task として、残存する import graph build/analyze/report cluster を focused decomposition target に選んだ。algorithm redesign ではなく frontend module split に限定する。
+- 2026-03-12: `S2-01` の first bundle として `import_graph_frontend_helpers.py` を追加し、path/module-id/request helper（`rel_disp_for_graph`, `module_id_from_east_for_graph`, `collect_import_requests`, `collect_import_request_modules`, `collect_import_modules`, `collect_reserved_import_conflicts`, `sort_str_list_copy` など）を `transpile_cli.py` から移した。selfhost support block も新 module から抽出する形に更新した。
+- 2026-03-12: `is_pytra_module_name`、module-id fallback、user module path resolve、structured import request helper、graph file sort helper を `import_graph_frontend_helpers.py` へ切り出し、`transpile_cli.py` / `east1_build.py` は split module import へ寄せた。selfhost support extraction も新 module 読み込みへ同期したので `S2-01` を完了扱いにした。

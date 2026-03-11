@@ -15,6 +15,7 @@ SRC_PY2CPP = ROOT / "src" / "backends" / "cpp" / "cli.py"
 SRC_BASE = ROOT / "src" / "backends" / "common" / "emitter" / "code_emitter.py"
 DST_SELFHOST = ROOT / "selfhost" / "py2cpp.py"
 SRC_TRANSPILE_CLI = ROOT / "src" / "toolchain" / "frontends" / "transpile_cli.py"
+SRC_IMPORT_GRAPH_FRONTEND_HELPERS = ROOT / "src" / "toolchain" / "frontends" / "import_graph_frontend_helpers.py"
 SRC_IMPORT_GRAPH_PATH_HELPERS = ROOT / "src" / "toolchain" / "frontends" / "import_graph_path_helpers.py"
 SRC_RELATIVE_IMPORT_NORMALIZATION = ROOT / "src" / "toolchain" / "frontends" / "relative_import_normalization.py"
 SRC_TYPE_EXPR = ROOT / "src" / "toolchain" / "frontends" / "type_expr.py"
@@ -157,6 +158,7 @@ def _extract_type_expr_support_blocks() -> str:
 
 def _extract_support_blocks() -> str:
     cli_text = SRC_TRANSPILE_CLI.read_text(encoding="utf-8")
+    import_graph_helper_text = SRC_IMPORT_GRAPH_FRONTEND_HELPERS.read_text(encoding="utf-8")
     path_helper_text = SRC_IMPORT_GRAPH_PATH_HELPERS.read_text(encoding="utf-8")
     relative_import_text = SRC_RELATIVE_IMPORT_NORMALIZATION.read_text(encoding="utf-8")
     names = [
@@ -179,8 +181,6 @@ def _extract_support_blocks() -> str:
         "normalize_param_annotation",
         "extract_function_signatures_from_python_source",
         "extract_function_arg_types_from_python_source",
-        "sort_str_list_copy",
-        "collect_user_module_files_for_graph",
         "finalize_import_graph_analysis",
         "count_text_lines",
         "dict_any_get",
@@ -210,10 +210,6 @@ def _extract_support_blocks() -> str:
         "normalize_east_root_document",
         "normalize_east1_to_east2_document",
         "load_east_document",
-        "is_pytra_module_name",
-        "module_id_from_east_for_graph",
-        "sanitize_module_label",
-        "module_rel_label",
         "module_export_table",
         "_const_string_value",
         "_literal_string_sequence",
@@ -225,9 +221,7 @@ def _extract_support_blocks() -> str:
         "meta_import_bindings",
         "meta_qualified_symbol_refs",
         "dump_deps_text",
-        "rel_disp_for_graph",
         "python_module_exists_under",
-        "collect_reserved_import_conflicts",
         "module_parse_metrics",
         "module_analyze_metrics",
         "select_guard_module_map",
@@ -237,11 +231,9 @@ def _extract_support_blocks() -> str:
         "build_module_symbol_index",
         "analyze_import_graph",
         "build_module_east_map",
-        "resolve_user_module_path_for_graph",
         "format_graph_list_section",
         "format_import_graph_report",
         "dump_deps_graph_text",
-        "collect_import_modules",
         "is_known_non_user_import",
         "resolve_module_name_for_graph",
         "resolve_module_name",
@@ -263,6 +255,22 @@ def _extract_support_blocks() -> str:
     parts: list[str] = [_extract_type_expr_support_blocks()]
     for name in ["path_parent_text", "path_key_for_graph", "module_name_from_path_for_graph"]:
         parts.append(_extract_top_level_block(path_helper_text, name, "def"))
+    for name in [
+        "sort_str_list_copy",
+        "collect_user_module_files_for_graph",
+        "is_pytra_module_name",
+        "rel_disp_for_graph",
+        "sanitize_module_label",
+        "module_rel_label",
+        "module_id_from_east_for_graph",
+        "resolve_user_module_path_for_graph",
+        "collect_reserved_import_conflicts",
+        "collect_import_requests",
+        "collect_import_from_request_modules",
+        "collect_import_request_modules",
+        "collect_import_modules",
+    ]:
+        parts.append(_extract_top_level_block(import_graph_helper_text, name, "def"))
     for name in [
         "relative_module_level",
         "relative_module_tail",

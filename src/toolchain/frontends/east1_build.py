@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from toolchain.ir.east1 import normalize_east1_root_document
+from toolchain.frontends.import_graph_frontend_helpers import collect_import_request_modules
+from toolchain.frontends.import_graph_frontend_helpers import collect_import_requests
+from toolchain.frontends.import_graph_frontend_helpers import collect_reserved_import_conflicts
+from toolchain.frontends.import_graph_frontend_helpers import rel_disp_for_graph
 from toolchain.frontends.import_graph_path_helpers import module_name_from_path_for_graph
 from toolchain.frontends.import_graph_path_helpers import path_key_for_graph
 from toolchain.frontends.import_graph_path_helpers import path_parent_text
@@ -13,13 +17,9 @@ from toolchain.frontends.transpile_cli import append_unique_graph_issue_entry
 from toolchain.frontends.transpile_cli import build_module_east_map_from_analysis as build_module_east_map_from_analysis_core
 from toolchain.frontends.transpile_cli import build_module_symbol_index as build_module_symbol_index_core
 from toolchain.frontends.transpile_cli import build_module_type_schema as build_module_type_schema_core
-from toolchain.frontends.transpile_cli import collect_import_requests
-from toolchain.frontends.transpile_cli import collect_import_request_modules
-from toolchain.frontends.transpile_cli import collect_reserved_import_conflicts
 from toolchain.frontends.transpile_cli import dict_any_get_str
 from toolchain.frontends.transpile_cli import finalize_import_graph_analysis
 from toolchain.frontends.transpile_cli import load_east_document as load_east_document_core
-from toolchain.frontends.transpile_cli import rel_disp_for_graph
 from toolchain.frontends.transpile_cli import resolve_module_name_for_graph
 from pytra.std.pathlib import Path
 from typing import Any
