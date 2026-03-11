@@ -32,7 +32,7 @@ Acceptance criteria:
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S1-02] Fix backend support-state categories (`supported` / `fail_closed` / `not_started` / `experimental`) and the conditions for each.
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-01] Define fail-closed policy and diagnostic categories for unsupported backend lanes and forbid silent fallback.
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-02] Define the acceptance rule for new features so the project does not treat “works in C++ only” as completion.
-- [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S3-01] Prepare the representative inventory document/tooling handoff so later conformance-suite and support-matrix work can attach cleanly.
+- [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S3-01] Prepare the representative inventory document/tooling handoff so later conformance-suite and support-matrix work can attach cleanly.
 
 ## S1-01 Representative Inventory
 
@@ -105,6 +105,24 @@ Acceptance criteria:
   - `unsupported_lanes_fail_closed`: any lane not marked `supported` must be `fail_closed`, `not_started`, or `experimental`, without silent fallback.
   - `docs_mirror_required`: parity-contract updates must update the `docs/en` mirror in the same change.
 
+## S3-01 Representative Handoff
+
+- source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py)
+- P6 conformance handoff:
+  - exported inventory: `iter_representative_conformance_handoff()`
+  - downstream task: `P6-BACKEND-CONFORMANCE-SUITE-01`
+  - fixed representative backends: `cpp`, `rs`, `cs`
+  - fixed lane order: `parse`, `east`, `east3_lowering`, `emit`, `runtime`
+- P7 support-matrix handoff:
+  - exported inventory: `iter_representative_support_matrix_handoff()`
+  - downstream task: `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01`
+  - fixed backend order: `cpp`, `rs`, `cs`, `go`, `java`, `kt`, `scala`, `swift`, `nim`, `js`, `ts`, `lua`, `rb`, `php`
+  - fixed support-state order: `supported`, `fail_closed`, `not_started`, `experimental`
+- docs/tooling handoff rule:
+  - P6/P7 attach to the explicit handoff exports instead of re-interpreting `REPRESENTATIVE_FEATURE_INVENTORY` ad hoc.
+  - P5 keeps ownership of fixture/category/state taxonomy, while later tasks focus on conformance results and support-matrix publication.
+
 ## Decision log
 
 - 2026-03-12: Backend parity matters, but it should not block the near-term `P0-P4` `py_runtime.h` shrink work, so it is tracked as `P5`.
@@ -113,3 +131,4 @@ Acceptance criteria:
 - 2026-03-12: `S1-02` fixes the backend support-state taxonomy at `supported` / `fail_closed` / `not_started` / `experimental`, and `fail_closed` is treated as an explicit parity-summary state rather than an implicit note.
 - 2026-03-12: `S2-01` fixes unsupported backend diagnostics to `not_implemented` / `unsupported_by_design` / `preview_only` / `blocked`, and treats object/String/comment/empty-output fallback as forbidden silent fallback behavior.
 - 2026-03-12: `S2-02` fixes merge acceptance rules so a passing C++ lane does not count as feature completion unless non-C++ state and docs-mirror updates are also recorded.
+- 2026-03-12: `S3-01` adds explicit handoff exports for P6/P7 so conformance and matrix work can attach to a stable contract instead of re-deriving feature scope.
