@@ -131,6 +131,22 @@ def main(x: int, y: int) -> int:
         self.assertEqual(operand.get("kind"), "Name")
         self.assertEqual(operand.get("id"), "y")
 
+    def test_string_literal_decodes_backspace_and_formfeed(self) -> None:
+        src = """
+def main() -> tuple[str, str]:
+    a: str = "\\b"
+    b: str = "\\f"
+    return a, b
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        values = [
+            node.get("value")
+            for node in _walk(east)
+            if isinstance(node, dict) and node.get("kind") == "Constant" and node.get("resolved_type") == "str"
+        ]
+        self.assertIn("\b", values)
+        self.assertIn("\f", values)
+
     def test_starred_call_tuple_arg_is_parsed_as_starred_expr(self) -> None:
         src = """
 def mix_rgb(r: int, g: int, b: int) -> int:

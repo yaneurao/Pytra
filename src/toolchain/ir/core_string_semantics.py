@@ -109,6 +109,14 @@ def _sh_decode_py_string_body(text: str, raw_mode: bool) -> str:
             out.append("\r")
             i += 2
             continue
+        if esc == "b":
+            out.append("\b")
+            i += 2
+            continue
+        if esc == "f":
+            out.append("\f")
+            i += 2
+            continue
         if esc == "\\":
             out.append("\\")
             i += 2
