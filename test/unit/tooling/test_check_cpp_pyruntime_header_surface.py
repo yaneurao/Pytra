@@ -56,11 +56,38 @@ class CheckCppPyRuntimeHeaderSurfaceTest(unittest.TestCase):
     def test_followup_residual_caller_handoff_is_documented(self) -> None:
         self.assertEqual(
             surface_mod.FOLLOWUP_TASK_ID,
-            "P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01",
+            "P0-CPP-PYRUNTIME-FINAL-SHRINK-01",
         )
         self.assertEqual(
             surface_mod.FOLLOWUP_PLAN_PATH,
-            "docs/ja/plans/archive/20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md",
+            "docs/ja/plans/p0-cpp-pyruntime-final-shrink.md",
+        )
+
+    def test_bundle_order_is_locked_to_active_final_shrink(self) -> None:
+        self.assertEqual(
+            surface_mod.BUNDLE_ORDER,
+            (
+                "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S1-01",
+                "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01",
+                "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02",
+                "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S3-01",
+            ),
+        )
+
+    def test_target_end_state_is_locked(self) -> None:
+        self.assertEqual(
+            surface_mod.TARGET_END_STATE,
+            {
+                "object_bridge_mutation": "remove or reduce to the minimum object-only seam",
+                "typed_collection_compat": "must stay empty",
+                "shared_type_id_compat": "must stay empty",
+                "shared_type_id_thin_helpers": {
+                    "py_runtime_type_id_is_subtype",
+                    "py_runtime_type_id_issubclass",
+                    "py_runtime_object_type_id",
+                    "py_runtime_object_isinstance",
+                },
+            },
         )
 
 
