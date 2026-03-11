@@ -11,6 +11,7 @@ if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
 from _east_core_test_support import CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH
+from _east_core_test_support import CORE_CALLEE_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ARG_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_SHELL_SOURCE_PATH
@@ -59,21 +60,30 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        callee_text = CORE_CALLEE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("class _ShExprCallAnnotationMixin:", annotation_text)
-        self.assertIn("def _apply_named_callee_call_annotation(", annotation_text)
-        self.assertIn("def _apply_callee_call_annotation(", annotation_text)
-        self.assertIn("def _resolve_callee_call_annotation_kind(", annotation_text)
-        self.assertIn("def _resolve_callee_call_annotation_state(", annotation_text)
-        self.assertIn("def _annotate_callee_call_expr(", annotation_text)
+        self.assertIn(
+            "class _ShExprCallAnnotationMixin(_ShExprCalleeCallAnnotationMixin):",
+            annotation_text,
+        )
+        self.assertIn("class _ShExprCalleeCallAnnotationMixin:", callee_text)
+        self.assertIn("def _apply_named_callee_call_annotation(", callee_text)
+        self.assertIn("def _apply_callee_call_annotation(", callee_text)
+        self.assertIn("def _resolve_callee_call_annotation_kind(", callee_text)
+        self.assertIn("def _resolve_callee_call_annotation_state(", callee_text)
+        self.assertIn("def _annotate_callee_call_expr(", callee_text)
         self.assertIn("def _resolve_call_expr_annotation_state(", annotation_text)
         self.assertIn("def _annotate_call_expr(", annotation_text)
-        self.assertIn("return self._annotate_named_call_expr(", annotation_text)
-        self.assertIn("return self._apply_named_callee_call_annotation(", annotation_text)
-        self.assertIn("return self._apply_attr_callee_call_annotation(", annotation_text)
+        self.assertIn("return self._annotate_named_call_expr(", callee_text)
+        self.assertIn("return self._apply_named_callee_call_annotation(", callee_text)
+        self.assertIn("return self._apply_attr_callee_call_annotation(", callee_text)
         self.assertIn("return self._apply_call_expr_annotation(", annotation_text)
         self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", shell_text)
         self.assertIn("_ShExprCallAnnotationMixin", shell_text)
+        self.assertIn(
+            "from toolchain.ir.core_expr_callee_call_annotation import _ShExprCalleeCallAnnotationMixin",
+            annotation_text,
+        )
         self.assertIn("def _resolve_named_call_dispatch(", annotation_text)
         self.assertIn("def _annotate_named_call_expr(", annotation_text)
         self.assertIn("def _annotate_builtin_named_call_expr(", annotation_text)
@@ -322,8 +332,8 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
 
     def test_core_source_routes_attr_call_returns_through_shared_helper(self) -> None:
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
-        helper_text = annotation_text.split("def _infer_attr_call_return_type", 1)[1].split(
+        callee_text = CORE_CALLEE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        helper_text = callee_text.split("def _infer_attr_call_return_type", 1)[1].split(
             "def _infer_call_expr_return_type",
             1,
         )[0]
@@ -345,6 +355,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        callee_text = CORE_CALLEE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         resolution_text = CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         named_decl_text = resolution_text.split("def _resolve_named_call_declared_return_type", 1)[1].split(
             "def _resolve_named_call_return_state",
@@ -358,7 +369,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _lookup_attr_expr_metadata",
             1,
         )[0]
-        helper_text = annotation_text.split("def _infer_call_expr_return_type", 1)[1].split(
+        helper_text = callee_text.split("def _infer_call_expr_return_type", 1)[1].split(
             "def _apply_named_callee_call_annotation",
             1,
         )[0]
@@ -399,6 +410,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("call_ret, fn_name = self._resolve_call_expr_annotation_state(", call_helper_text)
         self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
         self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", shell_text)
+        self.assertIn("class _ShExprCalleeCallAnnotationMixin:", callee_text)
         self.assertNotIn("_sh_infer_known_name_call_return_type(", helper_text)
         self.assertNotIn("stdlib_imported_ret = (", postfix_text)
         self.assertNotIn("call_ret = self.fn_return_types[fn_name]", postfix_text)

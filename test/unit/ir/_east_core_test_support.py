@@ -16,6 +16,9 @@ CORE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core.py"
 CORE_AST_BUILDERS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_ast_builders.py"
 CORE_BUILDER_BASE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_builder_base.py"
 CORE_CALL_ARG_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_args.py"
+CORE_CALLEE_CALL_ANNOTATION_SOURCE_PATH = (
+    ROOT / "src" / "toolchain" / "ir" / "core_expr_callee_call_annotation.py"
+)
 CORE_EXPR_SHELL_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_shell.py"
 CORE_EXPR_PARSER_BASE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_parser_base.py"
 CORE_EXPR_LOWERED_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_lowered.py"

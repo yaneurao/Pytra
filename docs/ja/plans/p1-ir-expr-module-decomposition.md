@@ -59,3 +59,4 @@
 - 2026-03-11: `core_expr_call_annotation.py` は `named_call` / `attr_call` / `callee_call` / `shared_state_orchestration` に分ける。shared 側は `call payload` 構築、generic return inference、optional payload coalesce、lookup facade を持つ。
 - 2026-03-11: この task の進捗メモは bundle 単位の 1 行要約だけを TODO に残し、helper 単位の列挙は plan の決定ログか commit message に限定する。
 - 2026-03-11: `S2-01` で `core_expr_attr_suffix.py` / `core_expr_subscript_suffix.py` を追加し、`core_expr_attr_subscript_suffix.py` は `_ShExprPostfixSuffixParserMixin` と backward-compatible facade だけを持つ構成へ縮めた。`core_expr_shell.py` は split 後 mixin を個別 import する。
+- 2026-03-11: `S2-02` の最初の bundle として `callee-call` cluster を `core_expr_callee_call_annotation.py` へ分離した。`core_expr_call_annotation.py` は facade と shared call-state helper を持ち、callee-specific return inference / dispatch は dedicated mixin 側へ寄せる。
