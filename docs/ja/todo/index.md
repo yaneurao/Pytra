@@ -63,5 +63,6 @@
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_signature_semantics.py` を追加し、typed binding / augassign / def-sig helper cluster を `core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_builder_base.py` / `core_ast_builders.py` / `core_stmt_builders.py` を追加し、node/value/trivia primitive・expression builder・statement builder cluster を `core.py` から切り出して builder source-contract を split module 前提へ更新した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_expr_precedence.py` を追加し、`lambda/ifexp/or..unary` の precedence parser cluster を `core.py` から切り出した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_entrypoints.py` を追加し、user-facing convert / error helper cluster を `core.py` から切り出した。
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。
