@@ -47,10 +47,11 @@
 決定ログ:
 - 2026-03-12: relative import 実装そのものではなく、stale diagnostics を是正する task として `P0` 起票した。priority は user blocker 性を考慮して `P0` に置く。
 - 2026-03-12: `S2-01` では carrier 名 (`relative_import_entries`) は触らず、まず user-facing diagnostic kind を `relative_import_escape` へ切り替える。内部 field rename は後続 slice へ送る。
+- 2026-03-12: `S2-02` では structured import envelope の canonical code/message も `relative_import_escape` に揃える。legacy `unsupported_import_form: relative import is not supported` は fallback 互換だけ残す。
 
 ## 分解
 
 - [x] [ID: P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S1-01] current stale diagnostics / desired contract / representative failing surfaces を plan と TODO に固定する。
-- [ ] [ID: P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S2-01] relative import root escape を専用 diagnostic kind へ切り替え、frontend helper / import graph validation / focused test を揃える。
+- [x] [ID: P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S2-01] relative import root escape を専用 diagnostic kind へ切り替え、frontend helper / import graph validation / focused test を揃える。
 - [ ] [ID: P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S2-02] CLI / backend smoke / import graph structure test を current contract へ追従させる。
 - [ ] [ID: P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S3-01] residual stale wording を掃除し、archive 可能な end state を plan に固定する。

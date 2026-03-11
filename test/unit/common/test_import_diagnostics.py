@@ -91,10 +91,10 @@ class ImportDiagnosticsTest(unittest.TestCase):
     def test_classify_structured_relative_import_error(self) -> None:
         err_text = str(
             core_entrypoints._make_import_build_error(
-                "unsupported_import_form",
-                "relative import is not supported",
+                "relative_import_escape",
+                "relative import escapes package root",
                 {"lineno": 1, "col": 0},
-                "Use absolute imports.",
+                "Move the importing module under the same package root or rewrite the import.",
                 import_label="from ..helper import f",
             )
         )

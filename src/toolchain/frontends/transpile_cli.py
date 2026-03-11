@@ -279,6 +279,9 @@ def _structured_import_user_error_payload(
             file_value=input_path,
             import_detail=import_detail,
         )
+    if err_code == "relative_import_escape":
+        label = import_label if import_label != "" else first_import_detail_line(source_text, "relative")
+        return _make_relative_import_escape_payload(file_value=input_path, import_detail=label)
     if err_code == "unsupported_import_form":
         label = import_label if import_label != "" else first_import_detail_line(source_text, "relative")
         return _make_relative_import_escape_payload(file_value=input_path, import_detail=label)

@@ -47,10 +47,11 @@ Checks:
 Decision log:
 - 2026-03-12: Opened this as a `P0` task focused on stale diagnostics, not on new relative-import functionality. The priority is `P0` because this is currently blocking user experiments.
 - 2026-03-12: In `S2-01`, keep the internal carrier name (`relative_import_entries`) unchanged and switch only the user-facing diagnostic kind to `relative_import_escape` first. Internal field renames stay for later slices.
+- 2026-03-12: In `S2-02`, also realign the structured import envelope so that the canonical code/message becomes `relative_import_escape`. The old `unsupported_import_form: relative import is not supported` string remains only as a legacy fallback.
 
 ## Breakdown
 
 - [x] [ID: P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S1-01] Lock the current stale diagnostics, desired contract, and representative failing surfaces into the plan and TODO.
-- [ ] [ID: P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S2-01] Switch relative-import root escape to a dedicated diagnostic kind and align the frontend helper, import-graph validation, and focused tests.
+- [x] [ID: P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S2-01] Switch relative-import root escape to a dedicated diagnostic kind and align the frontend helper, import-graph validation, and focused tests.
 - [ ] [ID: P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S2-02] Update CLI / backend smoke / import-graph structure tests to the current contract.
 - [ ] [ID: P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01-S3-01] Clean up the remaining stale wording and lock the archive-ready end state in the plan.
