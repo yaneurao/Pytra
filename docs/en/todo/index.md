@@ -36,3 +36,4 @@ Last updated: 2026-03-12
 - `P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01` removed eight dead object-mutation wrappers from `py_runtime.h`, shrinking the residual bucket down to `py_append(object&)` only.
 - `P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01` upstreamed `py_enumerate_object` to `py_list_append_mut(...)`, so `py_append(object&)` now remains only as a header residual seam.
 - `P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02` synced the thin `type_id` residual inventory to the current helper names (`py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_object_isinstance` / `py_runtime_type_id_is_*`) and locked native/generated/C#/Rust callers into one shared bucket.
+- `P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02` added a legacy generic-alias signature guard to `check_cpp_pyruntime_header_surface.py`, so `py_runtime_type_id/py_isinstance/py_is_subtype/py_issubclass` cannot silently return to the header.

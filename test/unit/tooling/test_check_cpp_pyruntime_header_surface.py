@@ -90,6 +90,25 @@ class CheckCppPyRuntimeHeaderSurfaceTest(unittest.TestCase):
             },
         )
 
+    def test_header_rejects_legacy_generic_alias_signatures(self) -> None:
+        self.assertEqual(
+            surface_mod.LEGACY_ALIAS_SIGNATURES,
+            {
+                "static inline uint32 py_runtime_type_id(",
+                "static inline bool py_isinstance(",
+                "static inline bool py_is_subtype(",
+                "static inline bool py_issubclass(",
+            },
+        )
+        self.assertEqual(
+            [
+                issue
+                for issue in surface_mod._collect_handoff_issues()
+                if issue.startswith("legacy generic alias returned to py_runtime.h:")
+            ],
+            [],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
