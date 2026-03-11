@@ -14,6 +14,9 @@ class CheckBackendConformanceInventoryTest(unittest.TestCase):
     def test_manifest_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_manifest_issues(), [])
 
+    def test_lane_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_lane_issues(), [])
+
     def test_fixture_class_order_is_fixed(self) -> None:
         self.assertEqual(
             inventory_mod.CONFORMANCE_FIXTURE_CLASS_ORDER,
@@ -49,6 +52,86 @@ class CheckBackendConformanceInventoryTest(unittest.TestCase):
                 ),
                 "pytra_std": ("test/fixtures/stdlib/",),
             },
+        )
+
+    def test_lane_order_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.CONFORMANCE_LANE_ORDER,
+            ("parse", "east", "east3_lowering", "emit", "runtime"),
+        )
+
+    def test_lane_harness_contract_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.iter_conformance_lane_harness(),
+            (
+                {
+                    "lane": "parse",
+                    "harness_kind": "frontend_parse_diagnostic",
+                    "producer_entrypoint": "toolchain.ir.core_entrypoints.convert_source_to_east_with_backend",
+                    "compare_unit": "success_or_structured_error",
+                },
+                {
+                    "lane": "east",
+                    "harness_kind": "east_document_compare",
+                    "producer_entrypoint": "toolchain.ir.core_entrypoints.convert_source_to_east_with_backend",
+                    "compare_unit": "normalized_east_document",
+                },
+                {
+                    "lane": "east3_lowering",
+                    "harness_kind": "east3_document_compare",
+                    "producer_entrypoint": "toolchain.ir.east3.lower_east2_to_east3_document",
+                    "compare_unit": "normalized_east3_document",
+                },
+                {
+                    "lane": "emit",
+                    "harness_kind": "backend_emit_compare",
+                    "producer_entrypoint": "toolchain.compiler.backend_registry.emit_source_typed",
+                    "compare_unit": "normalized_source_or_fail_closed_diagnostic",
+                },
+                {
+                    "lane": "runtime",
+                    "harness_kind": "runtime_parity_compare",
+                    "producer_entrypoint": "tools.runtime_parity_check.main",
+                    "compare_unit": "normalized_stdout_exitcode_artifact_digest",
+                },
+            ),
+        )
+
+    def test_fixture_lane_policy_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.iter_conformance_fixture_lane_policy(),
+            (
+                {
+                    "fixture_class": "syntax",
+                    "lane_policy": {
+                        "parse": "required",
+                        "east": "required",
+                        "east3_lowering": "required",
+                        "emit": "required",
+                        "runtime": "case_runtime",
+                    },
+                },
+                {
+                    "fixture_class": "builtin",
+                    "lane_policy": {
+                        "parse": "required",
+                        "east": "required",
+                        "east3_lowering": "required",
+                        "emit": "required",
+                        "runtime": "case_runtime",
+                    },
+                },
+                {
+                    "fixture_class": "pytra_std",
+                    "lane_policy": {
+                        "parse": "required",
+                        "east": "required",
+                        "east3_lowering": "required",
+                        "emit": "required",
+                        "runtime": "module_runtime_strategy",
+                    },
+                },
+            ),
         )
 
     def test_representative_conformance_feature_ids_match_p5_handoff(self) -> None:
@@ -93,6 +176,9 @@ class CheckBackendConformanceInventoryTest(unittest.TestCase):
                 "fixture_class_order",
                 "fixture_class_category_map",
                 "fixture_allowed_prefixes",
+                "lane_order",
+                "lane_harness",
+                "fixture_lane_policy",
                 "representative_conformance_fixtures",
             },
         )

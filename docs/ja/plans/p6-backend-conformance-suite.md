@@ -55,6 +55,8 @@
 
 - source of truth:
   - lane contract: [backend_conformance_harness_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_harness_contract.py)
+  - runner seed manifest: [backend_conformance_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_inventory.py)
+  - CLI/export seam: [export_backend_conformance_seed_manifest.py](/workspace/Pytra/tools/export_backend_conformance_seed_manifest.py)
   - validation: [check_backend_conformance_harness_contract.py](/workspace/Pytra/tools/check_backend_conformance_harness_contract.py), [test_check_backend_conformance_harness_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_harness_contract.py)
 - stage order:
   - `frontend`: `parse`
@@ -73,6 +75,7 @@
 - fixture binding rule:
   - representative fixture class order は `syntax`, `builtin`, `pytra_std` で固定する。
   - すべての lane は同じ representative fixture inventory を共有し、lane ごとに別 vocabulary を持ち込まない。
+  - runner seed manifest は `lane_harness` と `fixture_lane_policy` を含み、`S2-02` runner はそこから CLI / compare-unit / runtime strategy を読む。
 
 ## 決定ログ
 
@@ -81,3 +84,4 @@
 - 2026-03-12: `P6` は `backend_feature_contract_inventory.build_feature_contract_handoff_manifest()["conformance_handoff"]` を representative fixture/lane/backend-order の seed として使う。
 - 2026-03-12: `S1-01` では `fixture_mapping` / `fixture_scope_order` / `fixture_bucket_order` を manifest に追加し、feature-to-fixture 共有規則を `build_feature_contract_handoff_manifest()` と CLI export seam に固定した。
 - 2026-03-12: `S2-01` では `parse/east/east3_lowering` を backend 非依存 lane、`emit/runtime` を backend-selectable lane とする shared harness contract を `backend_conformance_harness_contract.py` に固定した。
+- 2026-03-12: `S2-01` では `backend_conformance_inventory.build_backend_conformance_seed_manifest()` と `export_backend_conformance_seed_manifest.py` も追加し、runner seed の `lane_harness` / `fixture_lane_policy` を固定した。

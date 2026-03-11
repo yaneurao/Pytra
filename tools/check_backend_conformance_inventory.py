@@ -72,6 +72,9 @@ def _collect_manifest_issues() -> list[str]:
         "fixture_class_order",
         "fixture_class_category_map",
         "fixture_allowed_prefixes",
+        "lane_order",
+        "lane_harness",
+        "fixture_lane_policy",
         "representative_conformance_fixtures",
     }:
         issues.append("conformance seed manifest keys drifted from the fixed set")
@@ -89,6 +92,26 @@ def _collect_manifest_issues() -> list[str]:
         for fixture_class, prefixes in inventory_mod.CONFORMANCE_FIXTURE_ALLOWED_PREFIXES.items()
     }:
         issues.append("fixture allowed prefixes drifted from the fixed set")
+    if manifest["lane_order"] != list(inventory_mod.CONFORMANCE_LANE_ORDER):
+        issues.append("lane order drifted from the fixed set")
+    if manifest["lane_harness"] != [
+        {
+            "lane": entry["lane"],
+            "harness_kind": entry["harness_kind"],
+            "producer_entrypoint": entry["producer_entrypoint"],
+            "compare_unit": entry["compare_unit"],
+        }
+        for entry in inventory_mod.iter_conformance_lane_harness()
+    ]:
+        issues.append("lane harness drifted from the fixed set")
+    if manifest["fixture_lane_policy"] != [
+        {
+            "fixture_class": entry["fixture_class"],
+            "lane_policy": dict(entry["lane_policy"]),
+        }
+        for entry in inventory_mod.iter_conformance_fixture_lane_policy()
+    ]:
+        issues.append("fixture lane policy drifted from the fixed set")
     if {
         entry["feature_id"] for entry in manifest["representative_conformance_fixtures"]
     } != {
@@ -98,8 +121,47 @@ def _collect_manifest_issues() -> list[str]:
     return issues
 
 
+def _collect_lane_issues() -> list[str]:
+    issues: list[str] = []
+    if inventory_mod.CONFORMANCE_LANE_ORDER != feature_contract_mod.CONFORMANCE_LANE_ORDER:
+        issues.append("conformance lane order drifted from the feature-contract handoff")
+    harness_by_lane = {entry["lane"]: entry for entry in inventory_mod.iter_conformance_lane_harness()}
+    if set(harness_by_lane.keys()) != set(inventory_mod.CONFORMANCE_LANE_ORDER):
+        issues.append("lane harness drifted from the fixed lane order")
+    for lane in inventory_mod.CONFORMANCE_LANE_ORDER:
+        entry = harness_by_lane.get(lane)
+        if entry is None:
+            continue
+        if entry["harness_kind"].strip() == "":
+            issues.append(f"lane harness kind is empty: {lane}")
+        if entry["producer_entrypoint"].strip() == "":
+            issues.append(f"lane producer entrypoint is empty: {lane}")
+        if entry["compare_unit"].strip() == "":
+            issues.append(f"lane compare unit is empty: {lane}")
+    fixture_policy_by_class = {
+        entry["fixture_class"]: entry["lane_policy"] for entry in inventory_mod.iter_conformance_fixture_lane_policy()
+    }
+    if set(fixture_policy_by_class.keys()) != set(inventory_mod.CONFORMANCE_FIXTURE_CLASS_ORDER):
+        issues.append("fixture lane policy drifted from the fixed fixture classes")
+    for fixture_class in inventory_mod.CONFORMANCE_FIXTURE_CLASS_ORDER:
+        lane_policy = fixture_policy_by_class.get(fixture_class)
+        if lane_policy is None:
+            continue
+        if set(lane_policy.keys()) != set(inventory_mod.CONFORMANCE_LANE_ORDER):
+            issues.append(f"fixture lane policy keys drifted: {fixture_class}")
+            continue
+        if fixture_class == "pytra_std" and lane_policy["runtime"] != "module_runtime_strategy":
+            issues.append("pytra_std runtime lane policy must stay on module_runtime_strategy until S3-01")
+        if fixture_class != "pytra_std" and lane_policy["runtime"] != "case_runtime":
+            issues.append(f"non-stdlib runtime lane policy drifted: {fixture_class}")
+        for lane, policy in sorted(lane_policy.items()):
+            if policy.strip() == "":
+                issues.append(f"fixture lane policy is empty: {fixture_class}:{lane}")
+    return issues
+
+
 def main() -> int:
-    issues = _collect_inventory_issues() + _collect_manifest_issues()
+    issues = _collect_inventory_issues() + _collect_lane_issues() + _collect_manifest_issues()
     if issues:
         for issue in issues:
             print("[FAIL]", issue)

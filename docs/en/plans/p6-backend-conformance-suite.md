@@ -55,6 +55,8 @@ Acceptance criteria:
 
 - source of truth:
   - lane contract: [backend_conformance_harness_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_harness_contract.py)
+  - runner seed manifest: [backend_conformance_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_inventory.py)
+  - CLI/export seam: [export_backend_conformance_seed_manifest.py](/workspace/Pytra/tools/export_backend_conformance_seed_manifest.py)
   - validation: [check_backend_conformance_harness_contract.py](/workspace/Pytra/tools/check_backend_conformance_harness_contract.py), [test_check_backend_conformance_harness_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_harness_contract.py)
 - stage order:
   - `frontend`: `parse`
@@ -73,6 +75,7 @@ Acceptance criteria:
 - fixture binding rule:
   - representative fixture class order is fixed to `syntax`, `builtin`, `pytra_std`
   - every lane shares the same representative fixture inventory rather than inventing lane-local vocabularies
+  - the runner seed manifest includes `lane_harness` and `fixture_lane_policy`, so `S2-02` can read CLI / compare-unit / runtime strategy from a fixed source
 
 ## Decision log
 
@@ -81,3 +84,4 @@ Acceptance criteria:
 - 2026-03-12: `P6` consumes `backend_feature_contract_inventory.build_feature_contract_handoff_manifest()["conformance_handoff"]` as the canonical representative fixture/lane/backend-order seed.
 - 2026-03-12: `S1-01` adds `fixture_mapping` / `fixture_scope_order` / `fixture_bucket_order` to the manifest and fixes feature-to-fixture sharing through `build_feature_contract_handoff_manifest()` plus the CLI export seam.
 - 2026-03-12: `S2-01` fixes the shared harness contract in `backend_conformance_harness_contract.py`, with backend-agnostic `parse/east/east3_lowering` lanes and backend-selectable `emit/runtime` lanes.
+- 2026-03-12: `S2-01` also adds `backend_conformance_inventory.build_backend_conformance_seed_manifest()` and `export_backend_conformance_seed_manifest.py` so the runner seed `lane_harness` / `fixture_lane_policy` stays fixed.
