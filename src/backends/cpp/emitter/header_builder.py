@@ -71,7 +71,12 @@ def _header_mark_mutated_param_from_target(tgt: Any, params: set[str], out: set[
                 _header_mark_mutated_param_from_target(elem, params, out)
 
 
-def _header_collect_mutated_params_from_stmt(stmt: dict[str, Any], params: set[str], out: set[str]) -> None:
+def _header_collect_mutated_params_from_stmt(
+    stmt: dict[str, Any],
+    params: set[str],
+    out: set[str],
+    function_mutated_param_positions: dict[str, set[int]] | None = None,
+) -> None:
     kind = _header_node_kind_from_dict(stmt)
     if kind in {"Assign", "AnnAssign", "AugAssign"}:
         _header_mark_mutated_param_from_target(stmt.get("target"), params, out)
@@ -115,35 +120,50 @@ def _header_collect_mutated_params_from_stmt(stmt: dict[str, Any], params: set[s
                             "close",
                         }:
                             out.add(nm)
+            elif isinstance(fn, dict) and _header_node_kind_from_dict(fn) == "Name":
+                fn_name = fn.get("id")
+                if isinstance(fn_name, str) and function_mutated_param_positions is not None:
+                    mutated_positions = function_mutated_param_positions.get(fn_name, set())
+                    if isinstance(mutated_positions, set) and len(mutated_positions) > 0:
+                        raw_args = call.get("args")
+                        if isinstance(raw_args, list):
+                            for idx, arg in enumerate(raw_args):
+                                if idx in mutated_positions:
+                                    _header_mark_mutated_param_from_target(arg, params, out)
     if kind == "If":
         for s in _header_dict_stmt_list(stmt.get("body")):
-            _header_collect_mutated_params_from_stmt(s, params, out)
+            _header_collect_mutated_params_from_stmt(s, params, out, function_mutated_param_positions)
         for s in _header_dict_stmt_list(stmt.get("orelse")):
-            _header_collect_mutated_params_from_stmt(s, params, out)
+            _header_collect_mutated_params_from_stmt(s, params, out, function_mutated_param_positions)
         return
-    if kind in {"While", "For"}:
+    if kind in {"While", "For", "ForCore"}:
         for s in _header_dict_stmt_list(stmt.get("body")):
-            _header_collect_mutated_params_from_stmt(s, params, out)
+            _header_collect_mutated_params_from_stmt(s, params, out, function_mutated_param_positions)
         for s in _header_dict_stmt_list(stmt.get("orelse")):
-            _header_collect_mutated_params_from_stmt(s, params, out)
+            _header_collect_mutated_params_from_stmt(s, params, out, function_mutated_param_positions)
         return
     if kind == "Try":
         for s in _header_dict_stmt_list(stmt.get("body")):
-            _header_collect_mutated_params_from_stmt(s, params, out)
+            _header_collect_mutated_params_from_stmt(s, params, out, function_mutated_param_positions)
         for h in _header_dict_stmt_list(stmt.get("handlers")):
             for s in _header_dict_stmt_list(h.get("body")):
-                _header_collect_mutated_params_from_stmt(s, params, out)
+                _header_collect_mutated_params_from_stmt(s, params, out, function_mutated_param_positions)
         for s in _header_dict_stmt_list(stmt.get("orelse")):
-            _header_collect_mutated_params_from_stmt(s, params, out)
+            _header_collect_mutated_params_from_stmt(s, params, out, function_mutated_param_positions)
         for s in _header_dict_stmt_list(stmt.get("finalbody")):
-            _header_collect_mutated_params_from_stmt(s, params, out)
+            _header_collect_mutated_params_from_stmt(s, params, out, function_mutated_param_positions)
 
 
-def _header_collect_mutated_params(body_stmts: list[dict[str, Any]], arg_names: list[str]) -> set[str]:
+def _header_collect_mutated_params(
+    body_stmts: list[dict[str, Any]],
+    arg_names: list[str],
+    *,
+    function_mutated_param_positions: dict[str, set[int]] | None = None,
+) -> set[str]:
     params = set(arg_names)
     out: set[str] = set()
     for st in body_stmts:
-        _header_collect_mutated_params_from_stmt(st, params, out)
+        _header_collect_mutated_params_from_stmt(st, params, out, function_mutated_param_positions)
     return out
 
 
@@ -240,6 +260,34 @@ def build_cpp_header_from_east(
         "float64",
     }
 
+    function_mutated_param_positions: dict[str, set[int]] = {}
+    for st in body:
+        if dict_any_get_str(st, "kind") != "FunctionDef":
+            continue
+        name = dict_any_get_str(st, "name")
+        if name == "":
+            continue
+        arg_types = dict_any_get_dict(st, "arg_types")
+        arg_order = dict_any_get_list(st, "arg_order")
+        body_stmts = _header_dict_stmt_list(st.get("body"))
+        arg_names: list[str] = []
+        for raw_name in arg_order:
+            if isinstance(raw_name, str) and raw_name != "" and raw_name in arg_types:
+                arg_names.append(raw_name)
+        vararg_name = dict_any_get_str(st, "vararg_name", "")
+        vararg_type = dict_any_get_str(st, "vararg_type", "")
+        arg_names_for_mutated = list(arg_names)
+        if vararg_name != "" and vararg_type != "":
+            arg_names_for_mutated.append(vararg_name)
+        mutated_params = _header_collect_mutated_params(
+            body_stmts,
+            arg_names_for_mutated,
+            function_mutated_param_positions=function_mutated_param_positions,
+        )
+        function_mutated_param_positions[name] = {
+            idx for idx, arg_name in enumerate(arg_names_for_mutated) if arg_name in mutated_params
+        }
+
     for st in body:
         kind = dict_any_get_str(st, "kind")
         if kind == "ClassDef":
@@ -269,7 +317,16 @@ def build_cpp_header_from_east(
                 for raw_name in arg_order:
                     if isinstance(raw_name, str) and raw_name != "" and raw_name in arg_types:
                         arg_names.append(raw_name)
-                mutated_params = _header_collect_mutated_params(body_stmts, arg_names)
+                vararg_name = dict_any_get_str(st, "vararg_name", "")
+                vararg_type = dict_any_get_str(st, "vararg_type", "")
+                arg_names_for_mutated = list(arg_names)
+                if vararg_name != "" and vararg_type != "":
+                    arg_names_for_mutated.append(vararg_name)
+                mutated_params = _header_collect_mutated_params(
+                    body_stmts,
+                    arg_names_for_mutated,
+                    function_mutated_param_positions=function_mutated_param_positions,
+                )
                 parts: list[str] = []
                 for an in arg_order:
                     if not isinstance(an, str):
@@ -304,6 +361,27 @@ def build_cpp_header_from_east(
                             )
                             if default_txt != "":
                                 param_txt += " = " + default_txt
+                    parts.append(param_txt)
+                if vararg_name != "" and vararg_type != "":
+                    list_t = "list[" + vararg_type + "]"
+                    at_cpp = _header_cpp_signature_type_from_east(
+                        list_t,
+                        ref_classes,
+                        class_names,
+                        runtime_abi_mode="default",
+                        pyobj_ref_lists=pyobj_ref_lists,
+                    )
+                    used_types.add(at_cpp)
+                    emitted_vararg = _header_safe_identifier(vararg_name)
+                    usage = dict_any_get_str(arg_usage, vararg_name, "readonly")
+                    if usage != "mutable" and vararg_name in mutated_params:
+                        usage = "mutable"
+                    if at_cpp in by_value_types:
+                        param_txt = at_cpp + " " + emitted_vararg
+                    elif usage == "mutable":
+                        param_txt = at_cpp + " " + emitted_vararg if at_cpp == "object" else at_cpp + "& " + emitted_vararg
+                    else:
+                        param_txt = "const " + at_cpp + "& " + emitted_vararg
                     parts.append(param_txt)
                 sep = ", "
                 fn_lines.append(ret_cpp + " " + name + "(" + sep.join(parts) + ");")

@@ -374,10 +374,44 @@ class CppTypeBridgeEmitter:
                 out.append(arg_txt)
         return out
 
+    def _pack_known_function_varargs(self, fn_name: str, args: list[str], arg_nodes: list[Any]) -> list[str]:
+        """typed `*args` を trailing list parameter へ pack する。"""
+        vararg_list_t = self.normalize_type_name(self.any_to_str(self.function_vararg_list_types.get(fn_name, "")))
+        if vararg_list_t == "":
+            return args
+        fixed_sig = self.function_arg_types.get(fn_name, [])
+        fixed_args = self._coerce_args_by_signature(
+            args[: len(fixed_sig)],
+            arg_nodes[: len(fixed_sig)],
+            fixed_sig,
+            arg_abi_modes=self.function_arg_abi_modes.get(fn_name, []),
+            list_targets_are_value=fn_name in self.extern_function_names,
+        )
+        vararg_inner = self.type_generic_args(vararg_list_t, "list")
+        vararg_elem_t = self.normalize_type_name(vararg_inner[0]) if len(vararg_inner) == 1 else ""
+        packed_items: list[str] = []
+        packed_nodes: list[Any] = []
+        for idx, arg_txt in enumerate(args[len(fixed_sig) :]):
+            node = arg_nodes[len(fixed_sig) + idx] if len(fixed_sig) + idx < len(arg_nodes) else {}
+            packed_nodes.append(node)
+            if vararg_elem_t != "":
+                packed_items.append(self._coerce_call_arg(arg_txt, node, vararg_elem_t))
+            else:
+                packed_items.append(arg_txt)
+        packed_node: dict[str, Any] = {
+            "kind": "List",
+            "elements": packed_nodes,
+            "resolved_type": vararg_list_t,
+        }
+        packed_expr = self.render_expr(packed_node)
+        return fixed_args + [self._coerce_call_arg(packed_expr, packed_node, vararg_list_t)]
+
     def _coerce_args_for_known_function(self, fn_name: str, args: list[str], arg_nodes: list[Any]) -> list[str]:
         """既知関数呼び出しに対して引数型を合わせる。"""
-        if fn_name not in self.function_arg_types:
+        if fn_name not in self.function_arg_types and fn_name not in self.function_vararg_list_types:
             return args
+        if fn_name in self.function_vararg_list_types:
+            return self._pack_known_function_varargs(fn_name, args, arg_nodes)
         return self._coerce_args_by_signature(
             args,
             arg_nodes,

@@ -251,6 +251,8 @@ class CppEmitter(
         self.module_namespace_map = module_namespace_map
         self.function_arg_types: dict[str, list[str]] = {}
         self.function_arg_abi_modes: dict[str, list[str]] = {}
+        self.function_vararg_list_types: dict[str, str] = {}
+        self.function_mutated_param_positions: dict[str, set[int]] = {}
         self.function_return_types: dict[str, str] = {}
         self.function_return_abi_modes: dict[str, str] = {}
         self.extern_function_names: set[str] = set()
@@ -1275,16 +1277,30 @@ class CppEmitter(
                     fn_name = self.rename_if_reserved(fn_name, self.reserved_words, self.rename_prefix, self.renamed_symbols)
                     arg_types = self.any_to_dict_or_empty(stmt.get("arg_types"))
                     arg_order = self.any_dict_get_list(stmt, "arg_order")
+                    body_stmts = self._dict_stmt_list(stmt.get("body"))
                     ordered: list[str] = []
                     abi_modes: list[str] = []
+                    arg_names_for_mutation: list[str] = []
                     for raw_n in arg_order:
                         if isinstance(raw_n, str):
                             n = str(raw_n)
                             if n in arg_types:
+                                arg_names_for_mutation.append(n)
                                 ordered.append(self.any_to_str(arg_types.get(n)))
                                 abi_modes.append(self._function_runtime_abi_arg_mode(stmt, n))
                     self.function_arg_types[fn_name] = ordered
                     self.function_arg_abi_modes[fn_name] = abi_modes
+                    mutated_positions: set[int] = set()
+                    vararg_type = self.normalize_type_name(self.any_dict_get_str(stmt, "vararg_type", ""))
+                    vararg_name = self.any_dict_get_str(stmt, "vararg_name", "")
+                    if vararg_name != "" and vararg_type != "":
+                        arg_names_for_mutation.append(vararg_name)
+                        self.function_vararg_list_types[fn_name] = f"list[{vararg_type}]"
+                    mutated_params = self._collect_mutated_params(body_stmts, arg_names_for_mutation)
+                    for idx, arg_name in enumerate(arg_names_for_mutation):
+                        if arg_name in mutated_params:
+                            mutated_positions.add(idx)
+                    self.function_mutated_param_positions[fn_name] = mutated_positions
                     self.function_return_types[fn_name] = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
                     self.function_return_abi_modes[fn_name] = self._function_runtime_abi_ret_mode(stmt)
                     decorators = self.any_to_list(stmt.get("decorators"))
@@ -2150,20 +2166,33 @@ class CppEmitter(
         body_stmts = self._dict_stmt_list(stmt.get("body"))
         params: list[str] = []
         arg_names: list[str] = []
+        arg_names_for_mutation: list[str] = []
         ref_first_param_names: set[str] = set()
         raw_order = self.any_dict_get_list(stmt, "arg_order")
         for raw_n in raw_order:
             if isinstance(raw_n, str) and raw_n != "" and raw_n in arg_types:
                 arg_names.append(str(raw_n))
+        arg_names_for_mutation.extend(arg_names)
+        vararg_name = self.any_dict_get_str(stmt, "vararg_name", "")
+        vararg_type = self.normalize_type_name(self.any_dict_get_str(stmt, "vararg_type", ""))
+        vararg_type_expr = stmt.get("vararg_type_expr")
+        vararg_list_t = f"list[{vararg_type}]" if vararg_name != "" and vararg_type != "" else ""
+        if vararg_name != "" and vararg_list_t != "":
+            arg_names_for_mutation.append(vararg_name)
         arg_type_ordered: list[str] = []
         for n in arg_names:
             t = self.normalize_type_name(self.any_to_str(arg_types.get(n)))
             t = t if t != "" else "unknown"
             arg_type_ordered.append(t)
-        mutated_params = self._collect_mutated_params(body_stmts, arg_names)
+        mutated_params = self._collect_mutated_params(body_stmts, arg_names_for_mutation)
         is_recursive_local_fn = self._stmt_list_contains_call_name(body_stmts, emitted_name)
         # ローカル関数呼び出しの coercion に使うため、現在スコープ中は登録を維持する。
         self.function_arg_types[emitted_name] = arg_type_ordered
+        if vararg_list_t != "":
+            self.function_vararg_list_types[emitted_name] = vararg_list_t
+        self.function_mutated_param_positions[emitted_name] = {
+            idx for idx, arg_name in enumerate(arg_names_for_mutation) if arg_name in mutated_params
+        }
         self.function_return_types[emitted_name] = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
         fn_scope: set[str] = set()
         fn_sig_params: list[str] = []
@@ -2197,6 +2226,32 @@ class CppEmitter(
                     param_txt += f" = {default_txt}"
             params.append(param_txt)
             fn_scope.add(n)
+        if vararg_name != "" and vararg_list_t != "":
+            ct = self.cpp_signature_type(vararg_list_t)
+            if self._is_pyobj_ref_first_list_type(vararg_list_t):
+                ref_first_param_names.add(vararg_name)
+            emitted_vararg = self.rename_if_reserved(
+                vararg_name,
+                self.reserved_words,
+                self.rename_prefix,
+                self.renamed_symbols,
+            )
+            by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
+            usage = self.any_to_str(arg_usage.get(vararg_name))
+            usage = usage if usage != "" else "readonly"
+            if usage != "mutable" and vararg_name in mutated_params:
+                usage = "mutable"
+            if by_ref and usage == "mutable":
+                param_txt = f"{ct} {emitted_vararg}" if ct == "object" else f"{ct}& {emitted_vararg}"
+                fn_sig_params.append(ct if ct == "object" else f"{ct}&")
+            elif by_ref:
+                param_txt = f"const {ct}& {emitted_vararg}"
+                fn_sig_params.append(f"const {ct}&")
+            else:
+                param_txt = f"{ct} {emitted_vararg}"
+                fn_sig_params.append(ct)
+            params.append(param_txt)
+            fn_scope.add(vararg_name)
         params_txt = ", ".join(params)
         if is_recursive_local_fn:
             fn_sig = ", ".join(fn_sig_params)
@@ -2219,6 +2274,8 @@ class CppEmitter(
             at = self.any_to_str(arg_types.get(an))
             if at != "":
                 self.declared_var_types[an] = self.normalize_type_name(at)
+        if vararg_name != "" and vararg_list_t != "":
+            self.declared_var_types[vararg_name] = vararg_list_t
         self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
         self.current_function_return_abi_mode = "default"
         docstring = self.any_to_str(stmt.get("docstring"))

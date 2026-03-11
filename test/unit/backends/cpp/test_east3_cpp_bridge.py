@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.backends.cpp.cli import CppEmitter, load_east
+from src.backends.cpp.cli import CppEmitter, build_cpp_header_from_east, load_east
 from src.backends.cpp.cli import transpile_to_cpp
 from src.toolchain.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
 from src.toolchain.compiler.transpile_cli import collect_symbols_from_stmt, parse_py2cpp_argv
@@ -185,6 +185,32 @@ def _const_i(v: int) -> dict[str, object]:
 
 
 class East3CppBridgeTest(unittest.TestCase):
+    def test_transpile_typed_varargs_signature_packs_extra_args(self) -> None:
+        fixture = ROOT / "test" / "fixtures" / "signature" / "ok_typed_varargs_representative.py"
+        east = load_east(fixture)
+        cpp = transpile_to_cpp(east, emit_main=False, cpp_list_model="pyobj")
+        with tempfile.TemporaryDirectory() as td:
+            header = build_cpp_header_from_east(east, fixture, Path(td) / "typed_varargs.h", cpp_list_model="pyobj")
+
+        self.assertIn(
+            "void merge_controller_states(ControllerState& target, const rc<list<ControllerState>>& states) {",
+            cpp,
+        )
+        self.assertIn("for (ControllerState state : rc_list_ref(states)) {", cpp)
+        self.assertIn(
+            "merge_controller_states(target, rc_list_from_value(list<ControllerState>{lhs, rhs}));",
+            cpp,
+        )
+        self.assertIn("return target.pressed;", cpp)
+        self.assertIn(
+            "void merge_controller_states(ControllerState& target, const rc<list<ControllerState>>& states);",
+            header,
+        )
+        self.assertIn(
+            "bool apply_controller_states(ControllerState& target, const ControllerState& lhs, const ControllerState& rhs);",
+            header,
+        )
+
     def test_transpile_representative_nominal_adt_projection_uses_variant_cast(self) -> None:
         cpp = transpile_to_cpp(_representative_nominal_adt_east3(), emit_main=False)
         self.assertIn("::rc_new<Just>(1)", cpp)

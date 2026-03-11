@@ -269,6 +269,14 @@ class CppAnalysisEmitter:
                         }
                         if nm in params and attr in mutating_attrs:
                             out.add(nm)
+                elif self._node_kind_from_dict(fn) == "Name":
+                    fn_name = self.any_to_str(fn.get("id"))
+                    mutated_positions = getattr(self, "function_mutated_param_positions", {}).get(fn_name, set())
+                    if isinstance(mutated_positions, set) and len(mutated_positions) > 0:
+                        call_args = self.any_to_list(call.get("args"))
+                        for idx, arg in enumerate(call_args):
+                            if idx in mutated_positions:
+                                self._mark_mutated_param_from_target(arg, params, out)
 
         if kind == "If":
             for s in self._dict_stmt_list(stmt.get("body")):
@@ -276,7 +284,7 @@ class CppAnalysisEmitter:
             for s in self._dict_stmt_list(stmt.get("orelse")):
                 self._collect_mutated_params_from_stmt(s, params, out)
             return
-        if kind == "While" or kind == "For":
+        if kind in {"While", "For", "ForCore"}:
             for s in self._dict_stmt_list(stmt.get("body")):
                 self._collect_mutated_params_from_stmt(s, params, out)
             for s in self._dict_stmt_list(stmt.get("orelse")):

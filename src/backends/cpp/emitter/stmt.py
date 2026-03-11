@@ -2087,6 +2087,7 @@ class CppStatementEmitter:
         params: list[str] = []
         fn_scope: set[str] = set()
         arg_names: list[str] = []
+        arg_names_for_mutation: list[str] = []
         value_list_params: set[str] = set()
         typed_list_str_params: set[str] = set()
         ref_first_param_names: set[str] = set()
@@ -2096,7 +2097,14 @@ class CppStatementEmitter:
                 n = str(raw_n)
                 if n in arg_types:
                     arg_names.append(n)
-        mutated_params = self._collect_mutated_params(body_stmts, arg_names)
+        arg_names_for_mutation.extend(arg_names)
+        vararg_name = self.any_dict_get_str(stmt, "vararg_name", "")
+        vararg_type = self.normalize_type_name(self.any_dict_get_str(stmt, "vararg_type", ""))
+        vararg_type_expr = stmt.get("vararg_type_expr")
+        vararg_list_t = f"list[{vararg_type}]" if vararg_name != "" and vararg_type != "" else ""
+        if vararg_name != "" and vararg_list_t != "":
+            arg_names_for_mutation.append(vararg_name)
+        mutated_params = self._collect_mutated_params(body_stmts, arg_names_for_mutation)
         fallback_arg_abi_modes = self.function_arg_abi_modes.get(
             emitted_name,
             self.function_arg_abi_modes.get(str(name), []),
@@ -2145,6 +2153,30 @@ class CppStatementEmitter:
                         param_txt += f" = {default_txt}"
                 params.append(param_txt)
                 fn_scope.add(n)
+        if vararg_name != "" and vararg_list_t != "":
+            ct = self.cpp_signature_type(vararg_list_t)
+            if self._is_pyobj_ref_first_list_type(vararg_list_t):
+                ref_first_param_names.add(vararg_name)
+            if ct.startswith("list<"):
+                value_list_params.add(vararg_name)
+            emitted_vararg = self.rename_if_reserved(
+                vararg_name,
+                self.reserved_words,
+                self.rename_prefix,
+                self.renamed_symbols,
+            )
+            usage = self.any_to_str(arg_usage.get(vararg_name))
+            usage = usage if usage != "" else "readonly"
+            if usage != "mutable" and vararg_name in mutated_params:
+                usage = "mutable"
+            by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
+            param_txt = (
+                (f"{ct} {emitted_vararg}" if ct == "object" else f"{ct}& {emitted_vararg}")
+                if by_ref and usage == "mutable"
+                else (f"const {ct}& {emitted_vararg}" if by_ref else f"{ct} {emitted_vararg}")
+            )
+            params.append(param_txt)
+            fn_scope.add(vararg_name)
         if in_class and name == "__init__" and self.current_class_name is not None:
             param_sep = ", "
             params_txt = param_sep.join(params)
@@ -2205,6 +2237,8 @@ class CppStatementEmitter:
                 at = self.any_to_str(arg_types.get(an))
                 if at != "":
                     self.declared_var_types[an] = self.normalize_type_name(at)
+        if vararg_name != "" and vararg_list_t != "":
+            self.declared_var_types[vararg_name] = vararg_list_t
         self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
         self.current_function_return_abi_mode = ret_abi_mode
         self.current_function_is_generator = is_generator
