@@ -134,6 +134,85 @@ REDUCTION_ORDER = [
     "cpp_emitter_shared_type_id_residual",
 ]
 
+SOURCE_GUARD_REQUIRED_SUBSTRINGS = {
+    "src/backends/rs/emitter/rs_emitter.py": {
+        'return "py_runtime_value_type_id(&" + value_expr + ")"',
+        'return "({ py_register_generated_type_info(); py_runtime_value_isinstance(&" + value_expr + ", " + expected_type_id + ") })"',
+        'return "({ py_register_generated_type_info(); py_runtime_type_id_is_subtype(" + actual_type_id + ", " + expected_type_id + ") })"',
+        'return "({ py_register_generated_type_info(); py_runtime_type_id_issubclass(" + actual_type_id + ", " + expected_type_id + ") })"',
+    },
+    "src/backends/cs/emitter/cs_emitter.py": {
+        'return "Pytra.CsModule.py_runtime.py_runtime_value_type_id(" + value_expr + ")"',
+        'return "Pytra.CsModule.py_runtime.py_runtime_value_isinstance(" + value_expr + ", " + expected_type_id + ")"',
+        'return "Pytra.CsModule.py_runtime.py_runtime_type_id_is_subtype(" + actual_type_id + ", " + expected_type_id + ")"',
+        'return "Pytra.CsModule.py_runtime.py_runtime_type_id_issubclass(" + actual_type_id + ", " + expected_type_id + ")"',
+        "def _render_bytes_mutation_call(",
+        'return "Pytra.CsModule.py_runtime.py_append(" + owner_expr + ", " + rendered_args[0] + ")"',
+        'return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ")"',
+        'return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ", " + rendered_args[0] + ")"',
+        'return "Pytra.CsModule.py_runtime.py_slice(" + owner + ", " + lower_expr + ", " + upper_expr + ")"',
+        'return "Pytra.CsModule.py_runtime.py_get(" + owner + ", " + idx + ")"',
+        'self.emit("Pytra.CsModule.py_runtime.py_set(" + owner + ", " + idx + ", " + sub_value + ");")',
+    },
+}
+
+SOURCE_GUARD_FORBIDDEN_SUBSTRINGS = {
+    "src/backends/rs/emitter/rs_emitter.py": {
+        "fn py_runtime_type_id(actual_type_id:",
+        "fn py_is_subtype(",
+        "fn py_issubclass(",
+        "fn py_isinstance<",
+    },
+    "src/backends/cs/emitter/cs_emitter.py": {
+        "Pytra.CsModule.py_runtime.py_runtime_type_id(",
+        "Pytra.CsModule.py_runtime.py_is_subtype(",
+        "Pytra.CsModule.py_runtime.py_issubclass(",
+        "Pytra.CsModule.py_runtime.py_isinstance(",
+    },
+}
+
+REPRESENTATIVE_LANE_MANIFEST = {
+    "cpp_emitter_object_bridge_residual": {
+        "smoke_file": "test/unit/backends/cpp/test_east3_cpp_bridge.py",
+        "smoke_tests": {
+            "test_render_expr_pyobj_runtime_list_append_uses_low_level_bridge",
+            "test_emit_assign_pyobj_runtime_list_store_uses_low_level_bridge",
+            "test_transpile_typed_list_append_stays_out_of_object_bridge",
+            "test_transpile_typed_list_store_stays_out_of_object_bridge",
+        },
+        "source_guard_paths": set(),
+    },
+    "cpp_emitter_shared_type_id_residual": {
+        "smoke_file": "test/unit/backends/cpp/test_east3_cpp_bridge.py",
+        "smoke_tests": {
+            "test_render_expr_supports_east3_obj_boundary_nodes",
+        },
+        "source_guard_paths": set(),
+    },
+    "rs_emitter_shared_type_id_residual": {
+        "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",
+        "smoke_tests": {
+            "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
+        },
+        "source_guard_paths": {"src/backends/rs/emitter/rs_emitter.py"},
+    },
+    "cs_emitter_shared_type_id_residual": {
+        "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+        "smoke_tests": {
+            "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
+        },
+        "source_guard_paths": {"src/backends/cs/emitter/cs_emitter.py"},
+    },
+    "crossruntime_mutation_helper_residual": {
+        "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+        "smoke_tests": {
+            "test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not",
+            "test_bytearray_index_and_slice_compat_helpers_stay_explicit",
+        },
+        "source_guard_paths": {"src/backends/cs/emitter/cs_emitter.py"},
+    },
+}
+
 
 def _iter_target_files() -> list[Path]:
     return [ROOT / rel for rel in sorted(TRACKED_PATHS)]
@@ -210,11 +289,53 @@ def _collect_cpp_typed_wrapper_reentry_issues() -> list[str]:
     return issues
 
 
+def _collect_source_guard_issues() -> list[str]:
+    issues: list[str] = []
+    if set(SOURCE_GUARD_REQUIRED_SUBSTRINGS.keys()) != set(SOURCE_GUARD_FORBIDDEN_SUBSTRINGS.keys()):
+        issues.append("source guard path keys do not match between required and forbidden sets")
+        return issues
+    for rel in sorted(SOURCE_GUARD_REQUIRED_SUBSTRINGS.keys()):
+        text = (ROOT / rel).read_text(encoding="utf-8", errors="ignore")
+        for pattern in sorted(SOURCE_GUARD_REQUIRED_SUBSTRINGS[rel]):
+            if pattern not in text:
+                issues.append(f"source guard required pattern missing: {rel}: {pattern}")
+        for pattern in sorted(SOURCE_GUARD_FORBIDDEN_SUBSTRINGS[rel]):
+            if pattern in text:
+                issues.append(f"source guard forbidden pattern re-entered: {rel}: {pattern}")
+    return issues
+
+
+def _collect_representative_lane_issues() -> list[str]:
+    issues: list[str] = []
+    if set(REPRESENTATIVE_LANE_MANIFEST.keys()) != set(EXPECTED_BUCKETS.keys()):
+        issues.append("representative lane manifest keys do not match expected buckets")
+        return issues
+    for bucket_name in sorted(REPRESENTATIVE_LANE_MANIFEST.keys()):
+        lane = REPRESENTATIVE_LANE_MANIFEST[bucket_name]
+        smoke_file = lane["smoke_file"]
+        smoke_tests = set(lane["smoke_tests"])
+        source_guard_paths = set(lane["source_guard_paths"])
+        smoke_text = (ROOT / smoke_file).read_text(encoding="utf-8", errors="ignore")
+        for test_name in sorted(smoke_tests):
+            if f"def {test_name}(" not in smoke_text:
+                issues.append(
+                    f"representative smoke missing: {bucket_name}: {smoke_file}: {test_name}"
+                )
+        for rel in sorted(source_guard_paths):
+            if rel not in SOURCE_GUARD_REQUIRED_SUBSTRINGS:
+                issues.append(
+                    f"representative source guard path missing from guard inventory: {bucket_name}: {rel}"
+                )
+    return issues
+
+
 def _collect_inventory_issues() -> list[str]:
     observed = _collect_observed_pairs()
     expected = _collect_expected_pairs()
     issues = _collect_bucket_overlaps()
     issues.extend(_collect_cpp_typed_wrapper_reentry_issues())
+    issues.extend(_collect_source_guard_issues())
+    issues.extend(_collect_representative_lane_issues())
     if set(TARGET_END_STATE.keys()) != set(EXPECTED_BUCKETS.keys()):
         issues.append("target end state keys do not match expected buckets")
     if list(dict.fromkeys(REDUCTION_ORDER)) != REDUCTION_ORDER:
