@@ -54,8 +54,8 @@ Breakdown:
 - [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S1-01] Inventory the remaining `py_runtime.h` helpers into `object_bridge_mutation`, `typed_collection_compat`, and `shared_type_id_compat`, and add tooling.
 - [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S1-02] Lock the target end state and bundle-sized removal order in docs/source guards.
 - [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-01] Remove unnecessary list/dict wrappers from `typed_collection_compat` in bundle-sized slices.
-- [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-02] Further narrow the thin `shared_type_id_compat` wrappers under source-guard coverage.
-- [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S3-01] Refresh representative runtime tests, docs, and archive the task.
+- [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-02] Further narrow the thin `shared_type_id_compat` wrappers under source-guard coverage.
+- [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S3-01] Refresh representative runtime tests, docs, and archive the task.
 
 Decision log:
 - 2026-03-11: Opened as the follow-up after `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01`. The next step is not more emitter work, but actually shrinking the residual surface inside `py_runtime.h`.
@@ -64,3 +64,5 @@ Decision log:
 - 2026-03-11: As the first `S2-01` bundle, we removed the unused `py_set_at(dict<K, V>& ...)` wrapper from the header, inventory, and source guards. The remaining `typed_collection_compat` lane is now only `py_append(list<T>& ...)`.
 - 2026-03-11: As the second `S2-01` bundle, we restored local concrete lists in the C++ emitter to the value lane and resynced the local array append in generated `json.cpp` to direct `.append(...)`, then removed `py_append(list<T>& ...)` from the header, inventory, and source guards. The object helper `iter_ops.cpp` stays on `py_list_append_mut(obj_to_list_ref_or_raise(...))`, and the `typed_collection_compat` bucket is now empty.
 - 2026-03-11: As the first `S2-02` bundle, we retargeted the C++ emitter and runtime regressions to `py_runtime_object_type_id` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass`, then removed the `py_is_subtype` / `py_issubclass` / `py_runtime_type_id(const object&)` aliases from the header. The remaining `shared_type_id_compat` bucket is now only template `py_runtime_type_id` and `py_isinstance`.
+- 2026-03-11: We closed `S2-02` by fixing the remaining `shared_type_id_compat` surface at exactly two helpers: template `py_runtime_type_id` and `py_isinstance`. Any further removal now depends on cross-runtime emitter/generated follow-up rather than header-only cleanup.
+- 2026-03-11: As `S3-01`, we refreshed representative runtime tests, header-surface tooling, docs, and archive state, then closed the task.
