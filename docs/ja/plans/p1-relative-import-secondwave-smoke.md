@@ -42,11 +42,12 @@
 - 2026-03-12: second-wave の最初の representative backend は `js/ts` に固定する。実際に `parent_module_alias` / `parent_symbol_alias` が単体 transpile できることを確認済みで、single-output smoke を lock しやすい。
 - 2026-03-12: second-wave smoke contract は `relative_import_secondwave_smoke_contract.py` / checker / tooling test を正本とし、`S1-01` はその live contract の formal close として扱う。
 - 2026-03-12: `py2js` smoke は shared helper 経由で second-wave contract に追従させ、scenario ごとの expected needle を共通化する。
+- 2026-03-12: `py2ts` smoke も同じ shared helper へ揃え、`js/ts` の representative transpile smoke shape を一致させる。
 
 ## 分解
 
 - [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01] `js/ts` の relative import representative transpile smoke を lock し、coverage inventory / docs handoff を次 baseline に更新する。
 - [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S1-01] live plan / TODO と `js/ts` second-wave smoke contract を固定する。
 - [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-01] `py2js` smoke に representative relative import transpile case を追加する。
-- [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-02] `py2ts` smoke に representative relative import transpile case を追加する。
+- [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-02] `py2ts` smoke に representative relative import transpile case を追加する。
 - [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S3-01] coverage inventory / backend parity docs / handoff metadata を `js/ts` baseline へ同期して close-ready にする。

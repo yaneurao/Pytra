@@ -38,9 +38,9 @@ Context: [docs/ja/plans/p1-relative-import-secondwave-smoke.md](../ja/plans/p1-r
 1. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01] Lock representative relative-import transpile smoke for `js/ts` and update the coverage inventory / docs handoff to the next baseline.
 2. [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S1-01] Created the live plan / TODO and locked the `js/ts` second-wave smoke contract.
 3. [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-01] Added representative relative-import transpile cases to the `py2js` smoke suite.
-4. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-02] Add representative relative-import transpile cases to the `py2ts` smoke suite.
+4. [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-02] Added representative relative-import transpile cases to the `py2ts` smoke suite.
 5. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S3-01] Sync the coverage inventory / backend-parity docs / handoff metadata to the `js/ts` baseline and leave the task close-ready.
-- Progress memo: `js` now has contract-driven representative transpile smoke locked; what remains is the `ts` smoke lane and the final `js/ts` coverage-baseline sync.
+- Progress memo: `js/ts` now have contract-driven representative transpile smoke locked; what remains is the `js/ts` coverage-baseline and handoff sync.
 
 ### P1: relative-import second-wave rollout planning
 
