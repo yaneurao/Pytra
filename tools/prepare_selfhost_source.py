@@ -15,6 +15,7 @@ SRC_PY2CPP = ROOT / "src" / "backends" / "cpp" / "cli.py"
 SRC_BASE = ROOT / "src" / "backends" / "common" / "emitter" / "code_emitter.py"
 DST_SELFHOST = ROOT / "selfhost" / "py2cpp.py"
 SRC_TRANSPILE_CLI = ROOT / "src" / "toolchain" / "frontends" / "transpile_cli.py"
+SRC_IMPORT_GRAPH_ANALYSIS_HELPERS = ROOT / "src" / "toolchain" / "frontends" / "import_graph_analysis_helpers.py"
 SRC_IMPORT_GRAPH_FRONTEND_HELPERS = ROOT / "src" / "toolchain" / "frontends" / "import_graph_frontend_helpers.py"
 SRC_IMPORT_GRAPH_PATH_HELPERS = ROOT / "src" / "toolchain" / "frontends" / "import_graph_path_helpers.py"
 SRC_RELATIVE_IMPORT_NORMALIZATION = ROOT / "src" / "toolchain" / "frontends" / "relative_import_normalization.py"
@@ -158,6 +159,7 @@ def _extract_type_expr_support_blocks() -> str:
 
 def _extract_support_blocks() -> str:
     cli_text = SRC_TRANSPILE_CLI.read_text(encoding="utf-8")
+    import_graph_analysis_text = SRC_IMPORT_GRAPH_ANALYSIS_HELPERS.read_text(encoding="utf-8")
     import_graph_helper_text = SRC_IMPORT_GRAPH_FRONTEND_HELPERS.read_text(encoding="utf-8")
     path_helper_text = SRC_IMPORT_GRAPH_PATH_HELPERS.read_text(encoding="utf-8")
     relative_import_text = SRC_RELATIVE_IMPORT_NORMALIZATION.read_text(encoding="utf-8")
@@ -168,10 +170,8 @@ def _extract_support_blocks() -> str:
         "inject_after_includes_block",
         "split_infix_once",
         "local_binding_name",
-        "split_graph_issue_entry",
         "split_top_level_csv",
         "split_top_level_union",
-        "graph_cycle_dfs",
         "split_type_args",
         "split_ws_tokens",
         "append_unique_non_empty",
@@ -181,7 +181,6 @@ def _extract_support_blocks() -> str:
         "normalize_param_annotation",
         "extract_function_signatures_from_python_source",
         "extract_function_arg_types_from_python_source",
-        "finalize_import_graph_analysis",
         "count_text_lines",
         "dict_any_get",
         "dict_any_get_str",
@@ -231,14 +230,8 @@ def _extract_support_blocks() -> str:
         "build_module_symbol_index",
         "analyze_import_graph",
         "build_module_east_map",
-        "format_graph_list_section",
-        "format_import_graph_report",
         "dump_deps_graph_text",
-        "is_known_non_user_import",
-        "resolve_module_name_for_graph",
-        "resolve_module_name",
         "validate_from_import_symbols_or_raise",
-        "validate_import_graph_or_raise",
         "build_module_east_map_from_analysis",
         "write_text_file",
         "empty_parse_dict",
@@ -255,6 +248,24 @@ def _extract_support_blocks() -> str:
     parts: list[str] = [_extract_type_expr_support_blocks()]
     for name in ["path_parent_text", "path_key_for_graph", "module_name_from_path_for_graph"]:
         parts.append(_extract_top_level_block(path_helper_text, name, "def"))
+    for name in [
+        "split_graph_issue_entry",
+        "make_graph_issue_entry",
+        "normalize_graph_issue_entry",
+        "format_graph_issue_entry",
+        "append_unique_graph_issue_entry",
+        "dict_any_get_graph_issue_entries",
+        "graph_issue_entries_to_text_list",
+        "graph_cycle_dfs",
+        "format_graph_list_section",
+        "format_import_graph_report",
+        "validate_import_graph_or_raise",
+        "finalize_import_graph_analysis",
+        "is_known_non_user_import",
+        "resolve_module_name_for_graph",
+        "resolve_module_name",
+    ]:
+        parts.append(_extract_top_level_block(import_graph_analysis_text, name, "def"))
     for name in [
         "sort_str_list_copy",
         "collect_user_module_files_for_graph",

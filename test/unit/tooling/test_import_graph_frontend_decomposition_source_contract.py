@@ -12,6 +12,33 @@ if str(ROOT / "src") not in sys.path:
 
 
 class ImportGraphFrontendDecompositionSourceContractTest(unittest.TestCase):
+    def test_split_module_owns_import_graph_analysis_helpers(self) -> None:
+        src = (
+            ROOT
+            / "src"
+            / "toolchain"
+            / "frontends"
+            / "import_graph_analysis_helpers.py"
+        ).read_text(encoding="utf-8")
+        for name in [
+            "split_graph_issue_entry",
+            "make_graph_issue_entry",
+            "normalize_graph_issue_entry",
+            "format_graph_issue_entry",
+            "append_unique_graph_issue_entry",
+            "dict_any_get_graph_issue_entries",
+            "graph_issue_entries_to_text_list",
+            "graph_cycle_dfs",
+            "format_graph_list_section",
+            "format_import_graph_report",
+            "validate_import_graph_or_raise",
+            "finalize_import_graph_analysis",
+            "is_known_non_user_import",
+            "resolve_module_name_for_graph",
+            "resolve_module_name",
+        ]:
+            self.assertIn(f"def {name}(", src)
+
     def test_split_module_owns_import_graph_frontend_helpers(self) -> None:
         src = (
             ROOT
@@ -40,6 +67,27 @@ class ImportGraphFrontendDecompositionSourceContractTest(unittest.TestCase):
     def test_transpile_cli_reexports_split_import_graph_frontend_helpers(self) -> None:
         src = (ROOT / "src" / "toolchain" / "frontends" / "transpile_cli.py").read_text(encoding="utf-8")
         for name in [
+            "split_graph_issue_entry",
+            "make_graph_issue_entry",
+            "normalize_graph_issue_entry",
+            "format_graph_issue_entry",
+            "append_unique_graph_issue_entry",
+            "dict_any_get_graph_issue_entries",
+            "graph_issue_entries_to_text_list",
+            "graph_cycle_dfs",
+            "format_graph_list_section",
+            "format_import_graph_report",
+            "finalize_import_graph_analysis",
+            "is_known_non_user_import",
+            "resolve_module_name_for_graph",
+            "resolve_module_name",
+        ]:
+            self.assertIn(
+                f"from toolchain.frontends.import_graph_analysis_helpers import {name}",
+                src,
+            )
+            self.assertNotIn(f"def {name}(", src)
+        for name in [
             "is_pytra_module_name",
             "rel_disp_for_graph",
             "sanitize_module_label",
@@ -62,6 +110,19 @@ class ImportGraphFrontendDecompositionSourceContractTest(unittest.TestCase):
 
     def test_east1_build_uses_split_import_graph_frontend_helpers(self) -> None:
         src = (ROOT / "src" / "toolchain" / "frontends" / "east1_build.py").read_text(encoding="utf-8")
+        for name in [
+            "append_unique_graph_issue_entry",
+            "finalize_import_graph_analysis",
+            "resolve_module_name_for_graph",
+        ]:
+            self.assertIn(
+                f"from toolchain.frontends.import_graph_analysis_helpers import {name}",
+                src,
+            )
+            self.assertNotIn(
+                f"from toolchain.frontends.transpile_cli import {name}",
+                src,
+            )
         for name in [
             "collect_import_requests",
             "collect_import_request_modules",
