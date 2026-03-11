@@ -60,7 +60,7 @@ Breakdown:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-02] Lock the end state for `object bridge residual`, `shared type_id contract`, and `cross-runtime bridge residual` in docs.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-01] Clean up representative C++ object-bridge mutation-helper residuals.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-02] Align Rust/C# `type_id` and type-predicate lowering to the shared contract.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S3-01] Refresh representative smoke tests, docs, and archive the task.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S3-01] Refresh representative smoke tests, docs, and archive the task.
 
 Decision log:
 - 2026-03-11: Opened as the post-`P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01` follow-up. This P4 is about making the cross-runtime emitter contract explicit and aligned, not about directly shrinking `py_runtime.h` again.
@@ -68,3 +68,4 @@ Decision log:
 - 2026-03-11: As `S1-02`, we fixed the end state of those three buckets in the docs. C++ object fallback stays isolated in `cpp_object_bridge_residual`, cross-language type-predicate / type-id helpers stay in `shared_type_id_contract`, and the remaining C# list bridge stays isolated in `crossruntime_object_bridge_residual`.
 - 2026-03-11: As `S2-01`, we centralized the C++ emitter object-bridge helper names into `CppCallEmitter`'s canonical map, so the residual `py_append/extend/pop/clear/reverse/sort/set_at` symbols remain in `call.py` only. The inventory guard was updated to lock that end state.
 - 2026-03-11: As `S2-02`, we centralized Rust/C# `py_runtime_type_id` / `py_isinstance` / `py_is_subtype` / `py_issubclass` lowering behind per-emitter helper seams, so representative `isinstance(...)` lowering and EAST3 `ObjTypeId/IsInstance/IsSubtype/IsSubclass` lowering now share the same contract entrypoints.
+- 2026-03-11: As `S3-01`, we re-ran the crossruntime inventory, the representative C++ bridge lane, Rust/C# `type_predicate` smoke, and selfhost build, then synchronized docs and archive to the representative end state.

@@ -60,7 +60,7 @@ residual bucket の end state:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-02] `object bridge residual` / `shared type_id contract` / `cross-runtime bridge residual` の end state を docs に固定する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-01] C++ emitter の residual object-bridge mutation helper 呼び出しを representative lane で整理する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-02] Rust/C# emitter の `type_id` / type predicate lowering を shared contract 前提に揃える。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S3-01] representative smoke / docs / archive を更新して閉じる。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S3-01] representative smoke / docs / archive を更新して閉じる。
 
 決定ログ:
 - 2026-03-11: `P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01` 完了後の follow-up として起票した。`py_runtime.h` 自体の削減ではなく、cross-runtime emitter が要求する residual contract の可視化と整列をこの P4 の責務にする。
@@ -68,3 +68,4 @@ residual bucket の end state:
 - 2026-03-11: `S1-02` として 3 bucket の end state を docs に固定した。C++ object fallback は `cpp_object_bridge_residual` へ、cross-language type predicate / type id helper は `shared_type_id_contract` へ、C# の list bridge 残存は `crossruntime_object_bridge_residual` へ隔離する。
 - 2026-03-11: `S2-01` として C++ emitter の object-bridge helper 名を `CppCallEmitter` の canonical map に集約し、`py_append/extend/pop/clear/reverse/sort/set_at` の residual symbol は `call.py` 1 箇所にだけ残る状態へ寄せた。inventory guard もこの end state に更新した。
 - 2026-03-11: `S2-02` として Rust/C# emitter の `py_runtime_type_id` / `py_isinstance` / `py_is_subtype` / `py_issubclass` lowering を per-emitter helper seam に集約し、代表的な `isinstance(...)` lane と EAST3 `ObjTypeId/IsInstance/IsSubtype/IsSubclass` lane が同じ shared contract を使う形に揃えた。
+- 2026-03-11: `S3-01` として crossruntime inventory、representative C++ bridge、Rust/C# `type_predicate` smoke、selfhost build を再実行し、docs と archive を representative end state に同期した。

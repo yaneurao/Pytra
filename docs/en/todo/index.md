@@ -31,5 +31,4 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01] Align the residual `py_runtime` contract across the C++/Rust/C# emitters and lock the boundary between `object bridge residual` and the shared `type_id` contract. Context: [docs/en/plans/p4-crossruntime-pyruntime-emitter-align.md](../plans/p4-crossruntime-pyruntime-emitter-align.md)
-   Progress note: `S2-02` centralized Rust/C# shared `type_id` / predicate lowering behind helper seams. Next is refreshing representative smoke tests, docs, and archive.
+There are currently no unfinished tasks.
