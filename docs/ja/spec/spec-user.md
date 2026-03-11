@@ -52,7 +52,16 @@ Pytra は、型注釈付き Python コードを複数言語へ変換するトラ
   - 同じ variant を複数回書くこと、または coverage が閉じた後ろに branch を置くことは error です。
   - `match` expression、guard pattern、nested pattern は v1 の受理対象に含めません。
 - `import` / `from ... import ...` をサポートします。
-- `from ... import *`（ワイルドカード import）をサポートします（相対 import は未対応）。
+- `from ... import *`（ワイルドカード import）をサポートします。
+- relative `from-import` の canonical surface v1 は次を正本とします。
+  - `from .m import x`
+  - `from ..pkg import y`
+  - `from . import x`
+  - `from .m import *`
+  - 解決基準は importing file path と entry root に対する static な module 正規化であり、runtime の `__package__` は見ません。
+  - entry root より上へ出る relative import は `input_invalid(kind=unsupported_import_form)` で fail-closed です。
+  - 正規化後 module が存在しない場合は `input_invalid(kind=missing_module)` です。
+  - Python 非合法構文である `import .m` はサポート対象外です。
 - 文末セミコロン（`;`）はサポート対象外です（self_hosted parser では入力エラーとして扱います）。
 - `# type:ignore` はコメントとして扱い、構文/意味解釈には使いません。
 - トランスパイル対象コードでは、Python 標準モジュールの直接 import は原則非推奨です。

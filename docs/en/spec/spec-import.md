@@ -26,6 +26,22 @@ Read `docs/en/spec/spec-runtime.md` first.
 - `@dataclass` / `@dataclass(...)` / `@dataclasses.dataclass(...)` are handled as dataclass-class markers in EAST.
 - Decorator arguments are accepted only in keyword-bool form (`name=True/False`).
 
+## Relative `from-import` Handling (Stage 1 static normalization)
+
+- This section fixes the target contract for relative imports. Implementation rollout is staged, but syntax / diagnostics / root-escape policy are defined here as the source of truth.
+- Stage 1 accepts only the following relative forms:
+  - `from .m import x`
+  - `from ..pkg import y`
+  - `from . import x`
+  - `from .m import *`
+- Illegal Python syntax such as `import .m` is never accepted.
+- The parser may keep the relative module text raw, but frontend module-map construction must normalize it into an absolute `module_id` before validation and backend handoff.
+- Normalization is based on the importing file path and the entry-root module layout; runtime `__package__` / `__main__` are not used.
+- If the relative import escapes above the entry root, it fails as `input_invalid(kind=unsupported_import_form)` and the detail line must include the original import text.
+- If normalization succeeds but the target module does not exist, it fails as `input_invalid(kind=missing_module)`, the same as absolute imports.
+- `missing_symbol`, `duplicate_binding`, and `unresolved_wildcard` for relative imports are evaluated against the normalized absolute `module_id`, using the existing absolute-import contract.
+- After frontend normalization, `ImportFrom.module`, `meta.import_bindings[].module_id`, `meta.import_symbols[*].module`, and `meta.qualified_symbol_refs[*].module_id` must all be absolute module IDs.
+
 This document defines how syntax like the following is converted in `py2cpp.py`.
 
 ```python
@@ -79,7 +95,7 @@ Should namespace-like prefixes be attached to symbol names?
   - `from M import S`
   - `from M import S as A`
 - In phase 1, accept `from M import *` as wildcard binding and expand it with `__all__` priority / public-name fallback.
-- In phase 1, keep relative import (`from .m import x`) unsupported as `input_invalid`.
+- In phase 1, also accept relative `from-import` (`from .m import x`, `from ..pkg import y`, `from . import x`, `from .m import *`) and normalize it into an absolute `module_id` in the frontend.
 
 ### 1. Fix Input Data Structure for Dependency Analysis Phase
 
@@ -166,15 +182,17 @@ auto x = pytra_mod_foo__bar::add(1, 2);
   - `import`: original import string (reconstructed string is acceptable)
 - Example:
   - `kind=missing_symbol file=app.py import=from foo import bar`
+- Root-escape relative imports are reported in the same format, for example `kind=unsupported_import_form file=pkg/main.py import=from ...oops import f`.
 
 ### 8. Minimal Test Matrix (Acceptance Criteria)
 
 - Positive cases:
   - `import M` / `import M as A` / `from M import S` / `from M import S as A`
+  - `from .m import x` / `from ..pkg import y` / `from . import x`
   - no collision at call site due to full qualification even when same-name symbols exist across modules
 - Negative cases:
   - `from M import *` (accepted; unresolved/static-undecidable wildcard must fail as `kind=unresolved_wildcard`)
-  - `from .m import x` (phase 1: `input_invalid`)
+  - `from ...oops import x` (entry-root escape must fail as `kind=unsupported_import_form`)
   - non-existing module/symbol
   - duplicate same-name alias
   - dependency resolution result is identical between `--dump-deps` and normal conversion

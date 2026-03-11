@@ -36,7 +36,7 @@ Last updated: 2026-03-11
 Context: [docs/ja/plans/p0-relative-import-support.md](../plans/p0-relative-import-support.md)
 
 1. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01] Officially support `from .m import x` / `from ..pkg import y` in multi-file transpilation.
-2. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S1-01] Fix the syntax / diagnostics / root-escape policy for relative imports in plan and spec.
+2. [x] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S1-01] Fix the syntax / diagnostics / root-escape policy for relative imports in plan and spec.
 3. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-01] Make the self-hosted parser accept relative `from-import` while preserving raw module text.
 4. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-02] Normalize relative modules to absolute `module_id`s during frontend module-map construction and rewrite EAST / import metadata.
 5. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-03] Update import-graph diagnostics to distinguish root escape from missing modules and fail closed.

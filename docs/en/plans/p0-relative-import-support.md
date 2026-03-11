@@ -51,7 +51,7 @@ Checks:
 - `git diff --check`
 
 Breakdown:
-- [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S1-01] Fix the syntax / diagnostics / root-escape policy for relative imports in plan and spec.
+- [x] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S1-01] Fix the syntax / diagnostics / root-escape policy for relative imports in plan and spec.
 - [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-01] Make the self-hosted parser accept relative `from-import` while preserving raw module text.
 - [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-02] Normalize relative modules to absolute `module_id`s during frontend module-map construction and rewrite EAST / import metadata.
 - [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-03] Update import-graph diagnostics to distinguish root escape from missing modules and fail closed.
@@ -60,3 +60,4 @@ Breakdown:
 
 Decision log:
 - 2026-03-11: Raised relative import support to `P0`. The first compatibility target is deterministic static normalization under the entry-root module layout, not full Python runtime package semantics.
+- 2026-03-11: Completed `S1-01` by fixing the syntax / diagnostics / root-escape policy. Stage 1 canonical surface is `from .m import x` / `from ..pkg import y` / `from . import x` / `from .m import *`; `import .m` stays out of scope; root escape reports `kind=unsupported_import_form`; a missing normalized module reports `kind=missing_module`.
