@@ -28,7 +28,7 @@
 ## 子タスク
 
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-01] C++ / Rust / C# emitter の `py_runtime` 依存 inventory を取り、typed lane / object bridge / shared type_id seam に分類する。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-01] C++ emitter で object bridge 専用に残す helper と upstream 済み typed lane を再棚卸しし、header shrink 前提の regression を整理する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-01] C++ emitter で object bridge 専用に残す helper と upstream 済み typed lane を再棚卸しし、header shrink 前提の regression を整理する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-02] Rust / C# emitter の `isinstance` / `issubclass` / mutation lowering を thin seam 前提へ揃える方針を確定する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S3-01] cross-runtime inventory tool / smoke / source guard の representative lane を決め、header shrink 後の再流入を fail-closed にする。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S4-01] `py_runtime.h` から落とせる surface と、final residual seam の handoff 条件を次段 task へ接続する。
@@ -65,8 +65,21 @@
 - inventory 正本: [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_emitter_inventory.py)
 - unit guard: [test_check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py)
 
+## C++ Re-Audit Snapshot（S2-01）
+
+- upstream 済み typed lane:
+  - `cpp_emitter.py` の list mutation は `py_list_append_mut` / `py_list_extend_mut` / `py_list_pop_mut` / `py_list_clear_mut` / `py_list_reverse_mut` / `py_list_sort_mut` に直接 lower される。
+  - `stmt.py` の list subscript assignment は `py_list_set_at_mut` に直接 lower される。
+- object bridge 専用 residual:
+  - `call.py` の `py_append` / `py_extend` / `py_pop` / `py_clear` / `py_reverse` / `py_sort` / `py_set_at` は wrapper 名の inventory としてのみ残し、object bridge の文脈名に限定する。
+- representative regression:
+  - tooling guard で `py_list_*_mut` が typed lane (`cpp_emitter.py` / `stmt.py`) に存在することを固定する。
+  - tooling guard で wrapper 名が `call.py` 以外へ漏れないことを固定する。
+
 ## 決定ログ
 
 - 2026-03-12: この task は `py_runtime.h` 縮小の前提整理だが、直近で優先すべき parser / compiler task を止める性質ではないため `P4` とする。
 - 2026-03-12: 先に header を削るのではなく、C++ / Rust / C# emitter の lowering 契約を inventory 化してから shrink handoff へ進む。
 - 2026-03-12: `S1-01` は既存 inventory tool を follow-up task の正本として採用し、現時点の residual を 5 bucket (`cpp_emitter_object_bridge_residual`, `cpp_emitter_shared_type_id_residual`, `rs_emitter_shared_type_id_residual`, `cs_emitter_shared_type_id_residual`, `crossruntime_mutation_helper_residual`) へ固定して完了扱いにした。
+- 2026-03-12: `S2-01` の first bundle として、C++ emitter では wrapper 再流入禁止を `cpp_emitter.py` / `runtime_expr.py` / `stmt.py` に限定して tool guard 化し、representative regression は `typed list append/set_at -> py_list_*_mut(rc_list_ref(...))` と `pyobj Any list -> obj_to_list_ref_or_raise(..., "py_append" | "py_set_at")` の対で固定した。
+- 2026-03-12: `S2-01` では C++ emitter の typed lane direct helper (`py_list_*_mut`) と object bridge wrapper (`py_append` 系) を別 inventory として固定し、wrapper 名が `call.py` 以外へ漏れたら fail-closed にした。

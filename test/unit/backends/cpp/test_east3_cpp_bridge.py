@@ -976,6 +976,22 @@ class East3CppBridgeTest(unittest.TestCase):
             'py_list_append_mut(obj_to_list_ref_or_raise(xs, "py_append"), make_object(n))',
         )
 
+    def test_transpile_typed_list_append_stays_out_of_object_bridge(self) -> None:
+        src = """def f(xs: list[int], n: int) -> None:
+    xs.append(n)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "typed_list_append_bridge_guard.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertIn("py_list_append_mut(rc_list_ref(xs), n);", cpp)
+        self.assertNotIn("obj_to_list_ref_or_raise", cpp)
+        self.assertNotIn("py_append(", cpp)
+
     def test_emit_assign_pyobj_runtime_list_store_uses_low_level_bridge(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         emitter.cpp_list_model = "pyobj"
@@ -997,6 +1013,22 @@ class East3CppBridgeTest(unittest.TestCase):
             'py_list_set_at_mut(obj_to_list_ref_or_raise(xs, "py_set_at"), i, make_object(v));',
             "\n".join(emitter.lines),
         )
+
+    def test_transpile_typed_list_store_stays_out_of_object_bridge(self) -> None:
+        src = """def f(xs: list[int], i: int, v: int) -> None:
+    xs[i] = v
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "typed_list_store_bridge_guard.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            em = CppEmitter(east, {}, emit_main=False)
+            em.cpp_list_model = "pyobj"
+            cpp = em.transpile()
+
+        self.assertNotIn("obj_to_list_ref_or_raise", cpp)
+        self.assertNotIn("py_set_at(", cpp)
+        self.assertIn("py_at(xs, py_to<int64>(i)) = v;", cpp)
 
     def test_render_expr_dispatch_routes_collection_literal_handlers(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})

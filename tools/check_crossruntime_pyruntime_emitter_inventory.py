@@ -29,6 +29,26 @@ SYMBOL_PATTERNS = {
     }
 }
 
+CPP_TYPED_LANE_DIRECT_MUTATION_SYMBOLS = {
+    "py_list_append_mut",
+    "py_list_extend_mut",
+    "py_list_pop_mut",
+    "py_list_clear_mut",
+    "py_list_reverse_mut",
+    "py_list_sort_mut",
+    "py_list_set_at_mut",
+}
+
+CPP_OBJECT_BRIDGE_WRAPPER_SYMBOLS = {
+    "py_append",
+    "py_extend",
+    "py_pop",
+    "py_clear",
+    "py_reverse",
+    "py_sort",
+    "py_set_at",
+}
+
 TRACKED_PATHS = {
     "src/backends/cpp/emitter/call.py",
     "src/backends/cpp/emitter/cpp_emitter.py",
@@ -36,6 +56,31 @@ TRACKED_PATHS = {
     "src/backends/cpp/emitter/stmt.py",
     "src/backends/rs/emitter/rs_emitter.py",
     "src/backends/cs/emitter/cs_emitter.py",
+}
+
+CPP_TYPED_WRAPPER_SYMBOLS = {
+    "py_append",
+    "py_extend",
+    "py_pop",
+    "py_clear",
+    "py_reverse",
+    "py_sort",
+    "py_set_at",
+}
+
+CPP_TYPED_WRAPPER_FORBIDDEN_PATHS = {
+    "src/backends/cpp/emitter/cpp_emitter.py",
+    "src/backends/cpp/emitter/runtime_expr.py",
+    "src/backends/cpp/emitter/stmt.py",
+}
+
+CPP_TYPED_LANE_DIRECT_PATHS = {
+    "src/backends/cpp/emitter/cpp_emitter.py",
+    "src/backends/cpp/emitter/stmt.py",
+}
+
+CPP_OBJECT_BRIDGE_ONLY_PATHS = {
+    "src/backends/cpp/emitter/call.py",
 }
 
 EXPECTED_BUCKETS = {
@@ -94,6 +139,24 @@ def _iter_target_files() -> list[Path]:
     return [ROOT / rel for rel in sorted(TRACKED_PATHS)]
 
 
+def _collect_symbol_pairs(
+    symbols: set[str],
+    paths: set[str],
+) -> set[tuple[str, str]]:
+    out: set[tuple[str, str]] = set()
+    patterns = {
+        symbol: re.compile(rf"\b{re.escape(symbol)}\b")
+        for symbol in sorted(symbols)
+    }
+    for rel in sorted(paths):
+        path = ROOT / rel
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        for symbol, pattern in patterns.items():
+            if pattern.search(text) is not None:
+                out.add((symbol, rel))
+    return out
+
+
 def _collect_observed_pairs() -> set[tuple[str, str]]:
     observed: set[tuple[str, str]] = set()
     for path in _iter_target_files():
@@ -112,6 +175,14 @@ def _collect_expected_pairs() -> set[tuple[str, str]]:
     return out
 
 
+def _collect_cpp_typed_lane_direct_pairs() -> set[tuple[str, str]]:
+    return _collect_symbol_pairs(CPP_TYPED_LANE_DIRECT_MUTATION_SYMBOLS, CPP_TYPED_LANE_DIRECT_PATHS)
+
+
+def _collect_cpp_object_bridge_wrapper_pairs() -> set[tuple[str, str]]:
+    return _collect_symbol_pairs(CPP_OBJECT_BRIDGE_WRAPPER_SYMBOLS, CPP_OBJECT_BRIDGE_ONLY_PATHS)
+
+
 def _collect_bucket_overlaps() -> list[str]:
     issues: list[str] = []
     bucket_names = list(EXPECTED_BUCKETS.keys())
@@ -126,10 +197,24 @@ def _collect_bucket_overlaps() -> list[str]:
     return issues
 
 
+def _collect_cpp_typed_wrapper_reentry_issues() -> list[str]:
+    issues: list[str] = []
+    for rel in sorted(CPP_TYPED_WRAPPER_FORBIDDEN_PATHS):
+        path = ROOT / rel
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        for symbol in sorted(CPP_TYPED_WRAPPER_SYMBOLS):
+            if SYMBOL_PATTERNS[symbol].search(text) is not None:
+                issues.append(
+                    f"cpp typed-lane wrapper reentry: {symbol} must not appear in {rel}"
+                )
+    return issues
+
+
 def _collect_inventory_issues() -> list[str]:
     observed = _collect_observed_pairs()
     expected = _collect_expected_pairs()
     issues = _collect_bucket_overlaps()
+    issues.extend(_collect_cpp_typed_wrapper_reentry_issues())
     if set(TARGET_END_STATE.keys()) != set(EXPECTED_BUCKETS.keys()):
         issues.append("target end state keys do not match expected buckets")
     if list(dict.fromkeys(REDUCTION_ORDER)) != REDUCTION_ORDER:
