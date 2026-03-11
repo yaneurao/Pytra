@@ -33,3 +33,4 @@
 
 1. [ ] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01] `py_runtime.h` の final residual surface を active handoff に戻し、object bridge/type_id seam を caller 側へ寄せて header をさらに縮める。文脈: [p0-cpp-pyruntime-final-shrink.md](../plans/p0-cpp-pyruntime-final-shrink.md)
 - `P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S1-01` active plan / target end state / bundle order を `check_cpp_pyruntime_header_surface.py` とその unit test に固定し、archived residual-caller handoff を live task へ差し替えた。
+- `P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01` C++ tracked source で未使用の object mutation wrapper 8 本を `py_runtime.h` から削除し、残 bucket を `py_append(object&)` のみへ縮めた。

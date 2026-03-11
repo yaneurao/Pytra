@@ -78,3 +78,4 @@ Decision log:
 - 2026-03-12: TODO became empty, so the final `py_runtime.h` shrink was promoted as a new top-priority `P0`.
 - 2026-03-12: This task is an active follow-up after the archived residual-caller cleanup. The first bundle is intentionally limited to restoring the active handoff, inventory, and bundle-order contract.
 - 2026-03-12: `S1-01` switched `check_cpp_pyruntime_header_surface.py` from the archived `P4` handoff to this active `P0`, and locked the target end state plus bundle order in tooling/tests.
+- 2026-03-12: The first `S2-01` bundle removed the eight dead object-mutation wrappers for `py_set_at/py_extend/py_pop/py_clear/py_reverse/py_sort` from the header. The only remaining object-bridge mutation seam is `py_append(object&)`, which is still owned by generated C++ runtime callers.

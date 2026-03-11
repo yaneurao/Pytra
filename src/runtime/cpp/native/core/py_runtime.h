@@ -1027,41 +1027,6 @@ static inline const V& py_at(const dict<K, V>& d, const Q& key) {
     return it->second;
 }
 
-template <class I, class U>
-static inline void py_set_at(object& v, I idx, const U& item) {
-    py_list_set_at_mut(obj_to_list_ref_or_raise(v, "py_set_at"), idx, item);
-}
-
-static inline void py_extend(object& v, const list<object>& items) {
-    py_list_extend_mut(obj_to_list_ref_or_raise(v, "py_extend"), items);
-}
-
-static inline void py_extend(object& v, const object& items) {
-    py_list_extend_mut(
-        obj_to_list_ref_or_raise(v, "py_extend"),
-        obj_to_list_ref_or_raise(items, "py_extend"));
-}
-
-static inline object py_pop(object& v) {
-    return py_list_pop_mut(obj_to_list_ref_or_raise(v, "py_pop"));
-}
-
-static inline object py_pop(object& v, int64 idx) {
-    return py_list_pop_mut(obj_to_list_ref_or_raise(v, "py_pop"), idx);
-}
-
-static inline void py_clear(object& v) {
-    py_list_clear_mut(obj_to_list_ref_or_raise(v, "py_clear"));
-}
-
-static inline void py_reverse(object& v) {
-    py_list_reverse_mut(obj_to_list_ref_or_raise(v, "py_reverse"));
-}
-
-static inline void py_sort(object& v) {
-    py_list_sort_mut(obj_to_list_ref_or_raise(v, "py_sort"));
-}
-
 template <class T>
 static inline int64 py_index(const list<T>& v, const T& item) {
     return v.index(item);
