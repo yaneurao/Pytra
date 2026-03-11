@@ -8,10 +8,24 @@ from typing import Final, TypedDict
 
 CATEGORY_ORDER: Final[tuple[str, ...]] = ("syntax", "builtin", "stdlib")
 
+SUPPORT_STATE_ORDER: Final[tuple[str, ...]] = (
+    "supported",
+    "fail_closed",
+    "not_started",
+    "experimental",
+)
+
 CATEGORY_NAMING_RULES: Final[dict[str, str]] = {
     "syntax": "syntax.<area>.<feature>",
     "builtin": "builtin.<domain>.<feature>",
     "stdlib": "stdlib.<module>.<feature>",
+}
+
+SUPPORT_STATE_CRITERIA: Final[dict[str, str]] = {
+    "supported": "Representative fixture and regression lane are expected to pass on the backend without preview-only caveats.",
+    "fail_closed": "The backend does not claim feature support but must stop with an explicit unsupported/not-implemented diagnostic instead of silently degrading.",
+    "not_started": "No representative implementation or fail-closed lane has been committed yet; the feature may not be claimed in parity summaries.",
+    "experimental": "A preview-only or opt-in lane exists, but the feature is not yet treated as stable support in parity summaries.",
 }
 
 CATEGORY_ID_PATTERNS: Final[dict[str, re.Pattern[str]]] = {

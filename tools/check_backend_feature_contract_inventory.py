@@ -38,8 +38,19 @@ def _collect_inventory_issues() -> list[str]:
     return issues
 
 
+def _collect_support_state_issues() -> list[str]:
+    issues: list[str] = []
+    if set(inventory_mod.SUPPORT_STATE_ORDER) != set(inventory_mod.SUPPORT_STATE_CRITERIA.keys()):
+        issues.append("support-state order and criteria keys do not match")
+    for state in inventory_mod.SUPPORT_STATE_ORDER:
+        text = inventory_mod.SUPPORT_STATE_CRITERIA.get(state, "").strip()
+        if text == "":
+            issues.append(f"support-state criterion is empty: {state}")
+    return issues
+
+
 def main() -> int:
-    issues = _collect_inventory_issues()
+    issues = _collect_inventory_issues() + _collect_support_state_issues()
     if issues:
         for issue in issues:
             print("[FAIL]", issue)
