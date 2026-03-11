@@ -56,12 +56,14 @@
 分解:
 - [x] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S1-01] relative import の syntax / diagnostics / root escape policy を spec と plan に固定する。
 - [x] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-01] self-hosted parser が relative `from-import` を受理し、raw module text と `ImportFrom.level` を保持できるようにする。
-- [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-02] frontend の module map 構築で relative module を absolute module_id へ正規化し、EAST / import meta 全体へ反映する。
-- [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-03] import graph 診断を relative import 正式対応の contract に更新し、root escape と missing module を区別して fail-closed にする。
-- [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S3-01] representative CLI / unit 回帰（正常系・missing・duplicate・root escape・wildcard）を追加する。
-- [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S3-02] `spec-user.md` / `spec-import.md` / tutorial の import 記述を更新する。
+- [x] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-02] frontend の module map 構築で relative module を absolute module_id へ正規化し、EAST / import meta 全体へ反映する。
+- [x] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-03] import graph 診断を relative import 正式対応の contract に更新し、root escape と missing module を区別して fail-closed にする。
+- [x] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S3-01] representative CLI / unit 回帰（正常系・missing・duplicate・root escape・wildcard）を追加する。
+- [x] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S3-02] `spec-user.md` / `spec-import.md` / tutorial の import 記述を更新する。
 
 決定ログ:
 - 2026-03-11: ユーザー要望により relative import を `P0` へ昇格した。最初の互換目標は Python runtime 完全互換ではなく、entry root 配下の deterministic static normalize とする。
 - 2026-03-11: `S1-01` として syntax / diagnostics / root escape policy を固定した。Stage 1 canonical surface は `from .m import x` / `from ..pkg import y` / `from . import x` / `from .m import *` とし、`import .m` は非対象、root escape は `kind=unsupported_import_form`、正規化後 missing module は `kind=missing_module` とする。
 - 2026-03-11: `S2-01` として self-hosted parser の `from-import` head parser を共通 helper 化し、`from .helper import f` と `from . import f` を raw module text のまま受理するようにした。frontend 正規化前の EAST / import metadata では `module=".helper"` / `"."` を保持し、`ImportFrom.level` のみ parser 段階で付与する。
+- 2026-03-11: `S2-02/S2-03` として import graph が relative `from-import` を importer path + entry root から absolute `module_id` へ正規化し、module EAST map 生成時に `ImportFrom.module` / `meta.import_bindings` / `meta.import_symbols` / `meta.qualified_symbol_refs` / `meta.import_resolution` 全体を rewrite するようにした。root escape は `unsupported_import_form`、正規化後 missing は `missing_module` に分類する。
+- 2026-03-11: `S3-01/S3-02` として sibling success、relative wildcard success、missing relative module、duplicate relative binding、root escape の representative regression を追加し、tutorial の import 制約文言を current contract に同期した。

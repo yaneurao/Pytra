@@ -41,6 +41,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 補足:
 - C++ の速度比較は `-O3 -ffast-math -flto` を使用します。
 - Python 側で import できるのは `src/pytra/` にあるモジュールと、ユーザー自作 `.py` モジュールです（例: `from pytra.utils import png`, `from pytra.utils.gif import save_gif`, `from pytra.utils.assertions import py_assert_eq`）。
+- ユーザーモジュール import は absolute / relative の `from-import` を受理します（例: `from helper import f`, `from .helper import f`, `from ..pkg import y`, `from .helper import *`）。
 - `pytra` モジュールに対応するターゲット言語ランタイムを `src/runtime/cpp/` 側に用意します。GC は `base/gc` を使います。
 - `src/runtime/cpp/` は責務ごとに `core/`, `generated/`, `native/`, `pytra/` に分かれます。
 - 生成物は `src/runtime/cpp/generated/`、C++ 固有 companion は `src/runtime/cpp/native/`、public include shim は `src/runtime/cpp/pytra/` に置きます。low-level core include 面は当面 `src/runtime/cpp/core/` を使います。
@@ -56,6 +57,7 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 - import 依存を可視化したい場合は `python src/py2x.py --target cpp INPUT.py --dump-deps` を使います（`modules/symbols` と `graph` を出力）。
 - `pytra` 名前空間は予約済みです。入力ファイルと同じディレクトリに `pytra.py` / `pytra/__init__.py` を置くことはできません。
 - ユーザーモジュール import で未解決・循環参照がある場合、`[input_invalid]` で早期エラーにします。
+- relative import が entry root より上へ出る場合も `kind=unsupported_import_form` で早期エラーにします。
 - 添字境界チェックは `--bounds-check-mode {always,debug,off}` で切替できます（既定は `off`）。
 - 除算仕様は `--floor-div-mode {native,python}` と `--mod-mode {native,python}` で切替できます（既定は `native`）。
 - 整数ビット幅は `--int-width {32,64,bigint}` で指定できます（`bigint` は未実装）。
