@@ -1,0 +1,108 @@
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from src.toolchain.compiler import backend_conformance_summary_handoff as conformance_summary_mod
+from src.toolchain.compiler import backend_feature_contract_inventory as feature_contract_mod
+from src.toolchain.compiler import backend_parity_matrix_contract as contract_mod
+
+
+def _collect_contract_issues() -> list[str]:
+    issues: list[str] = []
+    if contract_mod.PARITY_MATRIX_BACKEND_ORDER != feature_contract_mod.SUPPORT_MATRIX_BACKEND_ORDER:
+        issues.append("backend order drifted away from feature contract support matrix order")
+    if contract_mod.PARITY_MATRIX_SUPPORT_STATE_ORDER != feature_contract_mod.SUPPORT_STATE_ORDER:
+        issues.append("support state order drifted away from feature contract")
+    if contract_mod.PARITY_MATRIX_SOURCE_DESTINATION != "support_matrix":
+        issues.append("matrix source destination must stay fixed to support_matrix")
+    support_matrix_summary_entry = next(
+        entry
+        for entry in conformance_summary_mod.iter_representative_conformance_summary_handoff()
+        if entry["destination"] == "support_matrix"
+    )
+    if contract_mod.PARITY_MATRIX_SUMMARY_SOURCE != support_matrix_summary_entry["source_manifest"]:
+        issues.append("matrix summary source drifted away from conformance summary handoff")
+    if contract_mod.PARITY_MATRIX_SUMMARY_KEYS != support_matrix_summary_entry["summary_keys"]:
+        issues.append("matrix summary keys drifted away from conformance summary handoff")
+    if contract_mod.PARITY_MATRIX_DOWNSTREAM_TASK != feature_contract_mod.HANDOFF_TASK_IDS["support_matrix"]:
+        issues.append("matrix downstream task drifted away from feature contract handoff")
+    if contract_mod.PARITY_MATRIX_DOWNSTREAM_PLAN != feature_contract_mod.HANDOFF_PLAN_PATHS["support_matrix"]:
+        issues.append("matrix downstream plan drifted away from feature contract handoff")
+    if set(contract_mod.PARITY_MATRIX_PUBLISH_PATHS.keys()) != {"docs_ja", "docs_en", "tool_manifest"}:
+        issues.append("matrix publish paths must stay fixed to docs_ja/docs_en/tool_manifest")
+    feature_ids = {entry["feature_id"] for entry in feature_contract_mod.iter_representative_support_matrix_handoff()}
+    matrix_ids = {entry["feature_id"] for entry in contract_mod.iter_representative_parity_matrix_rows()}
+    if matrix_ids != feature_ids:
+        issues.append("matrix rows must cover exactly the representative support-matrix handoff inventory")
+    for entry in contract_mod.iter_representative_parity_matrix_rows():
+        if entry["backend_order"] != contract_mod.PARITY_MATRIX_BACKEND_ORDER:
+            issues.append(f"{entry['feature_id']}: backend order drifted")
+        if entry["support_state_order"] != contract_mod.PARITY_MATRIX_SUPPORT_STATE_ORDER:
+            issues.append(f"{entry['feature_id']}: support state order drifted")
+        if entry["summary_source"] != contract_mod.PARITY_MATRIX_SUMMARY_SOURCE:
+            issues.append(f"{entry['feature_id']}: summary source drifted")
+        if entry["summary_keys"] != contract_mod.PARITY_MATRIX_SUMMARY_KEYS:
+            issues.append(f"{entry['feature_id']}: summary keys drifted")
+        if entry["downstream_task"] != contract_mod.PARITY_MATRIX_DOWNSTREAM_TASK:
+            issues.append(f"{entry['feature_id']}: downstream task drifted")
+        if entry["downstream_plan"] != contract_mod.PARITY_MATRIX_DOWNSTREAM_PLAN:
+            issues.append(f"{entry['feature_id']}: downstream plan drifted")
+    return issues
+
+
+def _collect_manifest_issues() -> list[str]:
+    issues: list[str] = []
+    manifest = contract_mod.build_backend_parity_matrix_manifest()
+    if set(manifest.keys()) != {
+        "inventory_version",
+        "source_manifests",
+        "source_destination",
+        "backend_order",
+        "support_state_order",
+        "publish_paths",
+        "summary_source",
+        "summary_keys",
+        "row_keys",
+        "matrix_rows",
+    }:
+        issues.append("manifest keys drifted")
+    if manifest["source_manifests"] != contract_mod.PARITY_MATRIX_SOURCE_MANIFESTS:
+        issues.append("manifest source_manifests drifted")
+    if manifest["source_destination"] != contract_mod.PARITY_MATRIX_SOURCE_DESTINATION:
+        issues.append("manifest source_destination drifted")
+    if manifest["backend_order"] != list(contract_mod.PARITY_MATRIX_BACKEND_ORDER):
+        issues.append("manifest backend_order drifted")
+    if manifest["support_state_order"] != list(contract_mod.PARITY_MATRIX_SUPPORT_STATE_ORDER):
+        issues.append("manifest support_state_order drifted")
+    if manifest["publish_paths"] != contract_mod.PARITY_MATRIX_PUBLISH_PATHS:
+        issues.append("manifest publish_paths drifted")
+    if manifest["summary_source"] != contract_mod.PARITY_MATRIX_SUMMARY_SOURCE:
+        issues.append("manifest summary_source drifted")
+    if manifest["summary_keys"] != list(contract_mod.PARITY_MATRIX_SUMMARY_KEYS):
+        issues.append("manifest summary_keys drifted")
+    if manifest["row_keys"] != list(contract_mod.PARITY_MATRIX_ROW_KEYS):
+        issues.append("manifest row_keys drifted")
+    if len(manifest["matrix_rows"]) != len(contract_mod.iter_representative_parity_matrix_rows()):
+        issues.append("manifest matrix_rows length drifted")
+    return issues
+
+
+def main() -> int:
+    issues = _collect_contract_issues()
+    issues.extend(_collect_manifest_issues())
+    if issues:
+        print("[NG] backend parity matrix contract drift detected")
+        for issue in issues:
+            print(f" - {issue}")
+        return 1
+    print("[OK] backend parity matrix contract is fixed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

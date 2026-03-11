@@ -28,7 +28,7 @@
 
 ## 子タスク
 
-- [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S1-01] feature × backend support matrix の source of truth と publish 先を決める。
+- [x] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S1-01] feature × backend support matrix の source of truth と publish 先を決める。
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-01] representative backend → secondary backend → long-tail backend の rollout tier と優先順を固定する。
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S2-02] 新 feature merge 時の parity review checklist と fail-closed requirement を定義する。
 - [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01-S3-01] support matrix を docs / release note / tooling に handoff する手順を決める。
@@ -39,3 +39,25 @@
 - 2026-03-12: parity の制度運用は contract と conformance の後でなければ空文化しやすいため `P7` に置く。
 - 2026-03-12: backend parity は「全 backend を同時に実装する」ではなく、「support state を可視化し、未対応は fail-closed に保つ」方針で進める。
 - 2026-03-12: `P7` は `backend_feature_contract_inventory.build_feature_contract_handoff_manifest()["support_matrix_handoff"]` と `support_state_order` を matrix row/state seed として使う。
+
+## S1-01 Matrix Source Of Truth And Publish Path
+
+- source of truth:
+  - matrix contract: [backend_parity_matrix_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_matrix_contract.py)
+  - CLI/export seam: [export_backend_parity_matrix_manifest.py](/workspace/Pytra/tools/export_backend_parity_matrix_manifest.py)
+  - validation: [check_backend_parity_matrix_contract.py](/workspace/Pytra/tools/check_backend_parity_matrix_contract.py), [test_check_backend_parity_matrix_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_matrix_contract.py)
+- source manifest rule:
+  - `feature_contract_seed`: `backend_feature_contract_inventory.build_feature_contract_handoff_manifest`
+  - `conformance_summary_seed`: `backend_conformance_summary_handoff.build_backend_conformance_summary_handoff_manifest`
+  - matrix の canonical destination は `support_matrix` に固定する。
+- row/source rule:
+  - row seed は `iter_representative_support_matrix_handoff()` を使い、`feature_id/category/representative_fixture/backend_order/support_state_order` をそのまま row key にする。
+  - summary seed は P6 の `support_matrix` handoff (`feature_contract_handoff.support_matrix_handoff`) をそのまま使い、matrix 側で別 vocabulary を持ち込まない。
+- publish path rule:
+  - 日本語 docs publish path は `docs/ja/language/backend-parity-matrix.md`
+  - 英語 docs publish path は `docs/en/language/backend-parity-matrix.md`
+  - tooling publish seam は `tools/export_backend_parity_matrix_manifest.py`
+- downstream rule:
+  - downstream task / plan は `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` と `docs/ja/plans/p7-backend-parity-rollout-and-matrix.md` に固定する。
+
+- 2026-03-12: `S1-01` では `backend_parity_matrix_contract.py` を追加し、support matrix の row seed は P5、summary seed は P6、publish path は `docs/ja|en/language/backend-parity-matrix.md` と tooling manifest export に固定した。
