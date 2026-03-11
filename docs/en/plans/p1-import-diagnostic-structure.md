@@ -40,10 +40,11 @@ Verification commands:
 
 Decision log:
 - 2026-03-11: After the TODO became empty, opened `P1` for structured import diagnostics as the next step after relative-import / wildcard-import support. v1 keeps the current CLI contract and first centralizes frontend substring matching behind a helper seam.
+- 2026-03-11: Completed `S2-01` by routing import exception classification in `load_east_document()` through `_classify_import_user_error()` and locking the wildcard / relative / duplicate-binding CLI contract with focused unit coverage plus one integration test.
 
 ## Breakdown
 
 - [x] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S1-01] Inventory the current import-diagnostic transport and lock the staged end state in the plan/TODO.
-- [ ] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S2-01] Centralize import exception classification in `transpile_cli.load_east_document()` behind one helper and add focused unit tests.
+- [x] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S2-01] Centralize import exception classification in `transpile_cli.load_east_document()` behind one helper and add focused unit tests.
 - [ ] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S2-02] Add a seam so duplicate import bindings can be transported from parser/import semantics as a structured envelope.
 - [ ] [ID: P1-IMPORT-DIAGNOSTIC-STRUCTURE-01-S3-01] Clean up the remaining ad hoc string dependencies in import diagnostics and reach an archivable end state.
