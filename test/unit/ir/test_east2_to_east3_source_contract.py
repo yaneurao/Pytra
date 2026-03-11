@@ -11,6 +11,7 @@ if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
 from _east_core_test_support import EAST23_LOWERING_SOURCE_PATH
+from _east_core_test_support import EAST23_NOMINAL_ADT_META_SOURCE_PATH
 from _east_core_test_support import EAST23_TYPE_ID_PREDICATE_SOURCE_PATH
 from _east_core_test_support import EAST23_TYPE_SUMMARY_SOURCE_PATH
 
@@ -21,6 +22,14 @@ class East2ToEast3SourceContractTest(unittest.TestCase):
         self.assertIn("from toolchain.ir.east2_to_east3_type_summary import _JSON_DECODE_META_KEY", text)
         self.assertIn("from toolchain.ir.east2_to_east3_type_summary import _swap_nominal_adt_decl_summary_table", text)
         self.assertIn("from toolchain.ir.east2_to_east3_type_id_predicate import _lower_type_id_call_expr", text)
+        self.assertIn(
+            "from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_ctor_call",
+            text,
+        )
+        self.assertIn(
+            "from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_match_stmt",
+            text,
+        )
         self.assertIn(
             "prev_nominal_adt_decl_table = _swap_nominal_adt_decl_summary_table(",
             text,
@@ -37,6 +46,10 @@ class East2ToEast3SourceContractTest(unittest.TestCase):
             "_make_type_predicate_expr",
             "_collect_expected_type_id_specs",
             "_lower_type_id_call_expr",
+            "_decorate_nominal_adt_ctor_call",
+            "_decorate_nominal_adt_projection_attr",
+            "_decorate_nominal_adt_variant_pattern",
+            "_decorate_nominal_adt_match_stmt",
         ):
             self.assertNotIn(f"def {helper_name}(", text)
 
@@ -63,6 +76,17 @@ class East2ToEast3SourceContractTest(unittest.TestCase):
             "_lower_isinstance_call_expr",
             "_lower_issubclass_call_expr",
             "_lower_type_id_call_expr",
+        ):
+            self.assertIn(f"def {helper_name}(", text)
+
+    def test_nominal_adt_meta_module_owns_split_helpers(self) -> None:
+        text = EAST23_NOMINAL_ADT_META_SOURCE_PATH.read_text(encoding="utf-8")
+        for helper_name in (
+            "_decorate_nominal_adt_ctor_call",
+            "_decorate_nominal_adt_projection_attr",
+            "_decorate_nominal_adt_variant_pattern",
+            "_decorate_nominal_adt_match_stmt",
+            "_build_nominal_adt_match_analysis",
         ):
             self.assertIn(f"def {helper_name}(", text)
 

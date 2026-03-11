@@ -599,6 +599,53 @@ def f(x: Maybe) -> int:
         self.assertEqual(runtime_plan.get("kind"), "RuntimeIterForPlan")
         self.assertEqual(runtime_plan.get("dispatch_mode"), "type_id")
 
+    def test_load_east3_document_preserves_nominal_adt_match_metadata(self) -> None:
+        payload = self._representative_nominal_adt_match_east2()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "east.json"
+            p.write_text(json.dumps(payload), encoding="utf-8")
+            out = load_east3_document(p)
+        fn = out.get("body", [])[3]
+        match_stmt = fn.get("body", [])[0]
+        self.assertEqual(match_stmt.get("lowered_kind"), "NominalAdtMatch")
+        self.assertEqual(match_stmt.get("nominal_adt_match_v1", {}).get("family_name"), "Maybe")
+        first_pattern = match_stmt.get("cases", [])[0].get("pattern", {})
+        self.assertEqual(first_pattern.get("lowered_kind"), "NominalAdtVariantPattern")
+        self.assertEqual(first_pattern.get("nominal_adt_pattern_v1", {}).get("variant_name"), "Just")
+        first_bind = first_pattern.get("subpatterns", [])[0]
+        self.assertEqual(first_bind.get("lowered_kind"), "NominalAdtPatternBind")
+        self.assertEqual(first_bind.get("nominal_adt_pattern_bind_v1", {}).get("field_name"), "value")
+
+    def test_load_east3_document_lowers_type_id_predicate_via_split_helper(self) -> None:
+        payload = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "bool",
+                        "func": {"kind": "Name", "id": "isinstance"},
+                        "args": [
+                            {"kind": "Name", "id": "value", "resolved_type": "Child"},
+                            {"kind": "Name", "id": "Base", "resolved_type": "unknown"},
+                        ],
+                        "keywords": [],
+                    },
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = Path(tmpdir) / "east.json"
+            p.write_text(json.dumps(payload), encoding="utf-8")
+            out = load_east3_document(p, object_dispatch_mode="type_id")
+        value = out.get("body", [])[0].get("value", {})
+        self.assertEqual(value.get("kind"), "IsInstance")
+        self.assertEqual(value.get("value", {}).get("id"), "value")
+        self.assertEqual(value.get("value", {}).get("resolved_type"), "Child")
+        self.assertEqual(value.get("expected_type_id", {}).get("id"), "Base")
+
     def test_load_east3_document_validates_lowered_doc_before_optimizer(self) -> None:
         bad_east3 = {
             "kind": "Module",

@@ -31,17 +31,16 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-### P1: Decompose `east2_to_east3_lowering.py` by cluster
+### P1: Split the remaining main-file clusters in `east2_to_east3_lowering.py` in a second wave
 
-Context: [docs/ja/plans/p1-east23-lowering-decomposition.md](../ja/plans/p1-east23-lowering-decomposition.md)
+Context: [docs/en/plans/p1-east23-lowering-orchestration-split.md](../plans/p1-east23-lowering-orchestration-split.md)
 
-1. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01] Decompose `east2_to_east3_lowering.py` by cluster and reduce the main file to orchestration-centered logic.
-2. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-01] Lock split boundaries for `type_summary`, `type_id_predicate`, `nominal_adt_meta`, `call_metadata`, and `stmt_orchestration`.
-3. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-02] Fix bundle-level progress-note rules for this task.
-4. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-01] Split the `type summary`, `nominal decl summary`, and `json receiver contract` cluster into a dedicated module.
-5. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] Split the `type_id predicate`, `isinstance`, and `issubclass` lowering cluster into a dedicated module.
-6. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-03] Split the `nominal ADT ctor/projection/match metadata` cluster into a dedicated module.
-7. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S3-01] Update source-contract tests and representative regressions to the split layout.
-8. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S4-01] Update docs / TODO / archive and close the task.
-- Progress note: [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-01] The `type summary`, `nominal decl summary`, and `json receiver contract` cluster moved to `east2_to_east3_type_summary.py`, and the main file now stays focused on imports and orchestration.
-- Progress note: [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] The `type_id predicate`, `isinstance`, and `issubclass` lowering cluster moved to `east2_to_east3_type_id_predicate.py`, and the main file now delegates through a split dispatch helper.
+1. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01] Split the remaining `call metadata`, `statement lowering`, and node-dispatch orchestration clusters out of `east2_to_east3_lowering.py` in a second wave and push the main file closer to a facade.
+2. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-01] Inventory the remaining clusters as `call_metadata`, `stmt_lowering`, `node_dispatch`, and `boundary_helpers`, then lock the split order.
+3. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-02] Compress progress notes to bundle-level summaries and fix the target end state as `orchestration + lifecycle`.
+4. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-01] Split the `call metadata` / `json decode fastpath` cluster into a dedicated module.
+5. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-02] Split the representative `assignment/for` statement-lowering cluster into a dedicated module.
+6. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-03] Split the `match/attribute/forcore` lowering and node-dispatch orchestration into dedicated modules.
+7. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S3-01] Update source-contract tests and representative regressions to the second-wave layout.
+8. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S4-01] Update docs / TODO / archive and close the task.
+- Progress note: [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-01] After the first wave, the remaining main-file clusters were reduced to `call metadata`, `assignment+loop lowering`, `match+attribute+forcore lowering`, and `node walk + lifecycle helpers`.

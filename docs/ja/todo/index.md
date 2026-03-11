@@ -31,17 +31,16 @@
 
 ## 未完了タスク
 
-### P1: `east2_to_east3_lowering.py` を cluster 単位で分割する
+### P1: `east2_to_east3_lowering.py` の main file 残 cluster を second wave で分割する
 
-文脈: [docs/ja/plans/p1-east23-lowering-decomposition.md](../plans/p1-east23-lowering-decomposition.md)
+文脈: [docs/ja/plans/p1-east23-lowering-orchestration-split.md](../plans/p1-east23-lowering-orchestration-split.md)
 
-1. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01] `east2_to_east3_lowering.py` を cluster 単位で分割し、main file を orchestration 中心に整理する。
-2. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-01] `type_summary` / `type_id_predicate` / `nominal_adt_meta` / `call_metadata` / `stmt_orchestration` の split boundary を固定する。
-3. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-02] 進捗メモを bundle 単位へ圧縮する運用を固定する。
-4. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-01] `type summary` / `nominal decl summary` / `json receiver contract` cluster を dedicated module へ分割する。
-5. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] `type_id predicate` / `isinstance` / `issubclass` lowering cluster を dedicated module へ分割する。
-6. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-03] `nominal ADT ctor/projection/match metadata` cluster を dedicated module へ分割する。
-7. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S3-01] source-contract と representative regression を split 後の layout へ追従させる。
-8. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S4-01] docs / TODO / archive を更新して閉じる。
-- 進捗メモ: [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-01] `type summary` / `nominal decl summary` / `json receiver contract` を `east2_to_east3_type_summary.py` へ切り出し、main file は import と orchestration へ後退した。
-- 進捗メモ: [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] `type_id predicate` / `isinstance` / `issubclass` lowering を `east2_to_east3_type_id_predicate.py` へ切り出し、main file は dispatch 呼び出しへ後退した。
+1. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01] `east2_to_east3_lowering.py` に残る `call metadata` / `statement lowering` / node dispatch orchestration を second wave で分割し、main file を façade に近づける。
+2. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-01] 残 cluster を `call_metadata` / `stmt_lowering` / `node_dispatch` / `boundary_helpers` に棚卸しし、split 順を固定する。
+3. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-02] 進捗メモを bundle 単位に圧縮し、main file の end state を `orchestration + lifecycle` に固定する。
+4. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-01] `call metadata` / `json decode fastpath` cluster を dedicated module へ分割する。
+5. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-02] `assignment/for` 系の representative statement lowering cluster を dedicated module へ分割する。
+6. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-03] `match/attribute/forcore` と node dispatch orchestration を dedicated module へ分割する。
+7. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S3-01] source-contract と representative regression を second-wave layout へ追従させる。
+8. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S4-01] docs / TODO / archive を更新して閉じる。
+- 進捗メモ: [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-01] first wave 完了後の main file 残 cluster は `call metadata` / `assignment+loop lowering` / `match+attribute+forcore lowering` / `node walk + lifecycle helper` に整理した。
