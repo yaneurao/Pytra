@@ -46,7 +46,7 @@ Breakdown:
 - [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-01] Inventory helpers in `east2_to_east3_lowering.py` and lock split boundaries for `type_summary`, `type_id_predicate`, `nominal_adt_meta`, `call_metadata`, and `stmt_orchestration`.
 - [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-02] Fix bundle-level progress-note rules for this task and avoid helper-by-helper progress logs.
 - [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-01] Split the `type summary`, `nominal decl summary`, and `json receiver contract` cluster into a dedicated module.
-- [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] Split the `type_id predicate`, `isinstance`, and `issubclass` lowering cluster into a dedicated module.
+- [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] Split the `type_id predicate`, `isinstance`, and `issubclass` lowering cluster into a dedicated module.
 - [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-03] Split the `nominal ADT ctor/projection/match metadata` cluster into a dedicated module.
 - [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S3-01] Update source-contract tests and representative regressions to the split module layout.
 - [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S4-01] Update docs / TODO / archive and move the task to archive when complete.
@@ -56,3 +56,4 @@ Decision log:
 - 2026-03-11: The first wave targets three clusters first: `type summary`, `nominal ADT metadata`, and `type_id predicate lowering`. Assignment/call/statement orchestration remains in the main file for now.
 - 2026-03-11: Progress notes for this task stay bundle-level; detailed helper names belong in the plan decision log or commit messages.
 - 2026-03-11: The first `S2-01` bundle moved `type summary`, `nominal decl summary`, and `json receiver contract` helpers into `east2_to_east3_type_summary.py`. The main file now uses `_swap_nominal_adt_decl_summary_table()` for lifecycle management, and a dedicated `test_east2_to_east3_source_contract.py` locks the split surface.
+- 2026-03-11: The second `S2-02` bundle moved `type_id predicate`, `isinstance`, and `issubclass` lowering into `east2_to_east3_type_id_predicate.py`. The main file now shrinks to an imported `_lower_type_id_call_expr(...)` dispatch, and the source-contract suite asserts the split module directly.

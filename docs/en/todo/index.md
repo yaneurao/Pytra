@@ -39,8 +39,9 @@ Context: [docs/ja/plans/p1-east23-lowering-decomposition.md](../ja/plans/p1-east
 2. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-01] Lock split boundaries for `type_summary`, `type_id_predicate`, `nominal_adt_meta`, `call_metadata`, and `stmt_orchestration`.
 3. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-02] Fix bundle-level progress-note rules for this task.
 4. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-01] Split the `type summary`, `nominal decl summary`, and `json receiver contract` cluster into a dedicated module.
-5. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] Split the `type_id predicate`, `isinstance`, and `issubclass` lowering cluster into a dedicated module.
+5. [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] Split the `type_id predicate`, `isinstance`, and `issubclass` lowering cluster into a dedicated module.
 6. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-03] Split the `nominal ADT ctor/projection/match metadata` cluster into a dedicated module.
 7. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S3-01] Update source-contract tests and representative regressions to the split layout.
 8. [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S4-01] Update docs / TODO / archive and close the task.
 - Progress note: [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-01] The `type summary`, `nominal decl summary`, and `json receiver contract` cluster moved to `east2_to_east3_type_summary.py`, and the main file now stays focused on imports and orchestration.
+- Progress note: [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] The `type_id predicate`, `isinstance`, and `issubclass` lowering cluster moved to `east2_to_east3_type_id_predicate.py`, and the main file now delegates through a split dispatch helper.

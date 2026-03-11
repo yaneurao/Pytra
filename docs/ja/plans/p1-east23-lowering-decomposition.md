@@ -46,7 +46,7 @@
 - [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-01] `east2_to_east3_lowering.py` の helper を `type_summary` / `type_id_predicate` / `nominal_adt_meta` / `call_metadata` / `stmt_orchestration` に棚卸しし、split boundary を固定する。
 - [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S1-02] TODO / plan の進捗メモは bundle 単位に圧縮し、helper 単位の列挙を避ける運用を固定する。
 - [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-01] `type summary` / `nominal decl summary` / `json receiver contract` cluster を dedicated module へ分割する。
-- [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] `type_id predicate` / `isinstance` / `issubclass` lowering cluster を dedicated module へ分割する。
+- [x] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-02] `type_id predicate` / `isinstance` / `issubclass` lowering cluster を dedicated module へ分割する。
 - [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S2-03] `nominal ADT ctor/projection/match metadata` cluster を dedicated module へ分割する。
 - [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S3-01] source-contract と representative regression を split 後の module layout へ追従させる。
 - [ ] [ID: P1-EAST23-LOWERING-DECOMPOSITION-01-S4-01] docs / TODO / archive を更新し、完了後は archive へ移す。
@@ -56,3 +56,4 @@
 - 2026-03-11: first wave は `type summary` / `nominal ADT metadata` / `type_id predicate lowering` の 3 cluster を優先し、assignment/call/stmt orchestration は main file 側に残す。
 - 2026-03-11: この task の進捗メモは bundle 単位の 1 行要約に留め、細かい helper 名は plan の決定ログか commit message に記録する。
 - 2026-03-11: `S2-01` の first bundle として `type summary` / `nominal decl summary` / `json receiver contract` を `east2_to_east3_type_summary.py` へ移した。main file 側は `_swap_nominal_adt_decl_summary_table()` を介して table lifecycle を管理し、source-contract には dedicated `test_east2_to_east3_source_contract.py` を追加した。
+- 2026-03-11: `S2-02` の second bundle として `type_id predicate` / `isinstance` / `issubclass` lowering を `east2_to_east3_type_id_predicate.py` へ移した。main file 側は `_lower_type_id_call_expr(...)` の import と dispatch 呼び出しに縮め、source-contract には split module の dedicated assert を追加した。

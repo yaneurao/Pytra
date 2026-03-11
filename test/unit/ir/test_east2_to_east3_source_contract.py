@@ -11,6 +11,7 @@ if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
 from _east_core_test_support import EAST23_LOWERING_SOURCE_PATH
+from _east_core_test_support import EAST23_TYPE_ID_PREDICATE_SOURCE_PATH
 from _east_core_test_support import EAST23_TYPE_SUMMARY_SOURCE_PATH
 
 
@@ -19,6 +20,7 @@ class East2ToEast3SourceContractTest(unittest.TestCase):
         text = EAST23_LOWERING_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertIn("from toolchain.ir.east2_to_east3_type_summary import _JSON_DECODE_META_KEY", text)
         self.assertIn("from toolchain.ir.east2_to_east3_type_summary import _swap_nominal_adt_decl_summary_table", text)
+        self.assertIn("from toolchain.ir.east2_to_east3_type_id_predicate import _lower_type_id_call_expr", text)
         self.assertIn(
             "prev_nominal_adt_decl_table = _swap_nominal_adt_decl_summary_table(",
             text,
@@ -32,6 +34,9 @@ class East2ToEast3SourceContractTest(unittest.TestCase):
             "_json_nominal_type_name",
             "_structured_type_expr_summary_from_node",
             "_representative_json_contract_metadata",
+            "_make_type_predicate_expr",
+            "_collect_expected_type_id_specs",
+            "_lower_type_id_call_expr",
         ):
             self.assertNotIn(f"def {helper_name}(", text)
 
@@ -45,6 +50,19 @@ class East2ToEast3SourceContractTest(unittest.TestCase):
             "_expr_type_summary",
             "_json_nominal_type_name",
             "_representative_json_contract_metadata",
+        ):
+            self.assertIn(f"def {helper_name}(", text)
+
+    def test_type_id_predicate_module_owns_split_helpers(self) -> None:
+        text = EAST23_TYPE_ID_PREDICATE_SOURCE_PATH.read_text(encoding="utf-8")
+        for helper_name in (
+            "_make_type_predicate_expr",
+            "_build_nominal_adt_type_test_meta",
+            "_attach_nominal_adt_type_test_meta",
+            "_collect_expected_type_id_specs",
+            "_lower_isinstance_call_expr",
+            "_lower_issubclass_call_expr",
+            "_lower_type_id_call_expr",
         ):
             self.assertIn(f"def {helper_name}(", text)
 
