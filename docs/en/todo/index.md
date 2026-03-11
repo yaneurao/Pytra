@@ -32,3 +32,4 @@ Last updated: 2026-03-11
 ## Unfinished Tasks
 
 1. [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01] Shrink the remaining `py_runtime.h` surface from the perspective of `object bridge` and shared `type_id` contracts. Context: [docs/en/plans/p0-cpp-pyruntime-contract-shrink.md](../plans/p0-cpp-pyruntime-contract-shrink.md)
+   Progress note: `S1-02` fixed the end state as `typed=container overload / compat=object overload / type_id=py_tid_* delegate`.
