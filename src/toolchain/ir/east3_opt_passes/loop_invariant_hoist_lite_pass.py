@@ -141,7 +141,7 @@ def _is_invariant_expr(expr: Any, *, loop_var: str, mutated_names: set[str]) -> 
         return ident not in mutated_names
     if kind == "UnaryOp":
         op = expr.get("op")
-        if op not in {"UAdd", "USub"}:
+        if op not in {"UAdd", "USub", "Invert"}:
             return False
         return _is_invariant_expr(expr.get("operand"), loop_var=loop_var, mutated_names=mutated_names)
     if kind == "BinOp":
@@ -239,4 +239,3 @@ class LoopInvariantHoistLitePass(East3OptimizerPass):
         _ = context
         change_count = self._visit(east3_doc)
         return PassResult(changed=change_count > 0, change_count=change_count)
-

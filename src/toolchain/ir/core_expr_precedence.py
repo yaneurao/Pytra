@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from toolchain.ir.core_numeric_types import INT_TYPES
 from toolchain.ir.core_ast_builders import _sh_make_arg_node
 from toolchain.ir.core_ast_builders import _sh_make_boolop_expr
 from toolchain.ir.core_ast_builders import _sh_make_compare_expr
@@ -295,18 +296,30 @@ class _ShExprPrecedenceParserMixin:
         return node
 
     def _parse_unary(self) -> dict[str, Any]:
-        """単項演算（`+` / `-`）を解析する。"""
-        if self._cur()["k"] in {"+", "-"}:
+        """単項演算（`+` / `-` / `~`）を解析する。"""
+        if self._cur()["k"] in {"+", "-", "~"}:
             tok = self._eat()
             operand = self._parse_unary()
             s = tok["s"]
             e = int(operand["source_span"]["end_col"]) - self.col_base
-            out_t = str(operand.get("resolved_type", "unknown"))
+            operand_t = str(operand.get("resolved_type", "unknown"))
+            out_t = operand_t
+            op_name = "USub" if tok["k"] == "-" else "UAdd"
+            if tok["k"] == "~":
+                op_name = "Invert"
+                if operand_t in INT_TYPES or operand_t == "bool":
+                    out_t = "int64"
+                else:
+                    invert_ret = self._lookup_method_return(operand_t, "__invert__")
+                    if invert_ret != "unknown":
+                        out_t = invert_ret
+                    elif operand_t in {"", "unknown"}:
+                        out_t = "unknown"
             return _sh_make_unaryop_expr(
                 self._node_span(s, e),
-                "USub" if tok["k"] == "-" else "UAdd",
+                op_name,
                 operand,
-                resolved_type=out_t if out_t in {"int64", "float64"} else "unknown",
+                resolved_type=out_t if tok["k"] == "~" else (out_t if out_t in {"int64", "float64"} else "unknown"),
                 repr_text=self._src_slice(s, e),
             )
         return self._parse_power()

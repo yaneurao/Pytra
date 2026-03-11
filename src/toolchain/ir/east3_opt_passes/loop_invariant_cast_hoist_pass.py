@@ -168,7 +168,7 @@ def _is_invariant_expr(expr: Any, *, loop_vars: set[str], mutated_names: set[str
         return ident not in mutated_names
     if kind == "UnaryOp":
         op = expr.get("op")
-        if op not in {"UAdd", "USub"}:
+        if op not in {"UAdd", "USub", "Invert"}:
             return False
         return _is_invariant_expr(expr.get("operand"), loop_vars=loop_vars, mutated_names=mutated_names)
     if kind == "BinOp":

@@ -3959,6 +3959,12 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_bitwise_invert_basic_runtime(self) -> None:
+        out = self._compile_and_run_fixture("bitwise_invert_basic")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
     def test_math_extended_runtime(self) -> None:
         out = self._compile_and_run_fixture("math_extended")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]

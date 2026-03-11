@@ -138,7 +138,7 @@ class _ShExprParserBaseMixin:
             if ch in {"<", ">"}:
                 out.append(_sh_make_expr_token(ch, ch, i, i + 1))
                 continue
-            if ch in {"+", "-", "*", "/", "%", "&", "|", "^", "(", ")", ",", ".", "[", "]", ":", "=", "{", "}"}:
+            if ch in {"+", "-", "~", "*", "/", "%", "&", "|", "^", "(", ")", ",", ".", "[", "]", ":", "=", "{", "}"}:
                 out.append(_sh_make_expr_token(ch, ch, i, i + 1))
                 continue
             raise self._raise_expr_build_error(

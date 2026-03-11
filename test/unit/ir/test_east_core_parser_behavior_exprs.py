@@ -116,6 +116,21 @@ def main() -> int:
         self.assertIn(255, constants)
         self.assertIn(16, constants)
 
+    def test_bitwise_invert_is_parsed_as_unaryop(self) -> None:
+        src = """
+def main(x: int, y: int) -> int:
+    return x & ~y
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        unary_nodes = [n for n in _walk(east) if isinstance(n, dict) and n.get("kind") == "UnaryOp"]
+        self.assertEqual(len(unary_nodes), 1)
+        unary = unary_nodes[0]
+        self.assertEqual(unary.get("op"), "Invert")
+        self.assertEqual(unary.get("resolved_type"), "int64")
+        operand = unary.get("operand", {})
+        self.assertEqual(operand.get("kind"), "Name")
+        self.assertEqual(operand.get("id"), "y")
+
     def test_parser_accepts_bom_line_continuation_and_pow(self) -> None:
         src = """\ufefffrom pytra.std import math
 
