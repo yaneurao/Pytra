@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -62,6 +63,52 @@ class Py2xCliTest(unittest.TestCase):
             with self.assertRaises(SystemExit) as cm:
                 _ = py2x_mod.main()
         self.assertEqual(cm.exception.code, 2)
+
+    def test_py2x_accepts_relative_import_for_sibling_module(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pkg = root / "pkg"
+            pkg.mkdir()
+            main_py = pkg / "main.py"
+            helper_py = pkg / "helper.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text("from .helper import f\nprint(f())\n", encoding="utf-8")
+            helper_py.write_text("def f() -> int:\n    return 7\n", encoding="utf-8")
+
+            proc = subprocess.run(
+                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertTrue(out_cpp.exists())
+            out_text = out_cpp.read_text(encoding="utf-8")
+            self.assertIn("py_print(f());", out_text)
+
+    def test_py2x_rejects_relative_import_root_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pkg = root / "pkg"
+            pkg.mkdir()
+            main_py = pkg / "main.py"
+            helper_py = root / "helper.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text("from ..helper import f\nprint(f())\n", encoding="utf-8")
+            helper_py.write_text("def f() -> int:\n    return 7\n", encoding="utf-8")
+
+            proc = subprocess.run(
+                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertFalse(out_cpp.exists())
+            self.assertIn("kind=unsupported_import_form", proc.stderr)
+            self.assertIn("import=from ..helper import ...", proc.stderr)
 
     def test_rejects_stage2_before_backend_pipeline(self) -> None:
         fixture = ROOT / "test" / "fixtures" / "core" / "add.py"

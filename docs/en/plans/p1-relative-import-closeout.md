@@ -40,10 +40,11 @@ Checks:
 - `git diff --check`
 
 Breakdown:
-- [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S1-01] Fix the current relative-import contract and stale surfaces in the plan / TODO.
-- [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S2-01] Add representative relative-import regressions for the `py2x.py` entrypoint.
+- [x] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S1-01] Fix the current relative-import contract and stale surfaces in the plan / TODO.
+- [x] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S2-01] Add representative relative-import regressions for the `py2x.py` entrypoint.
 - [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S2-02] Sync the C++ support matrix rows for relative and wildcard import to the current contract.
 - [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S3-01] Re-run targeted regressions and close the task with docs / archive updates.
 
 Decision log:
 - 2026-03-11: The active TODO was empty, so this follow-up was opened. Relative import itself is already implemented, so this task focuses on entrypoint regressions and stale docs rather than new parser work.
+- 2026-03-11: Added representative `py2x.py --target cpp` regressions for sibling relative-import success and root-escape fail-closed (`kind=unsupported_import_form`) in `test_py2x_cli.py`.

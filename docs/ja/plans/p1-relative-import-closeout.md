@@ -40,10 +40,11 @@
 - `git diff --check`
 
 分解:
-- [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S1-01] relative import の current contract と stale surface を plan / TODO に固定する。
-- [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S2-01] `py2x.py` entrypoint の relative import representative regression を追加する。
+- [x] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S1-01] relative import の current contract と stale surface を plan / TODO に固定する。
+- [x] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S2-01] `py2x.py` entrypoint の relative import representative regression を追加する。
 - [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S2-02] C++ support matrix の relative import / wildcard import 記述を current contract に同期する。
 - [ ] [ID: P1-RELATIVE-IMPORT-CLOSEOUT-01-S3-01] targeted regression / docs / archive を更新して閉じる。
 
 決定ログ:
 - 2026-03-11: active TODO が空のため follow-up を起票した。relative import 本体は既に実装済みなので、追加実装ではなく entrypoint regression と stale docs の close-out を先に片付ける。
+- 2026-03-11: `py2x.py --target cpp` の representative regression として、sibling relative import success と root-escape fail-closed (`kind=unsupported_import_form`) を `test_py2x_cli.py` に追加した。
