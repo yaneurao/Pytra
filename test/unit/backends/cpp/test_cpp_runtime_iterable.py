@@ -635,6 +635,8 @@ int main() {
             "return py_runtime_type_id_is_subtype(py_runtime_type_id(value), expected_type_id);",
             runtime_header,
         )
+        self.assertNotIn("static inline bool py_is_subtype(uint32 actual_type_id, uint32 expected_type_id)", runtime_header)
+        self.assertNotIn("static inline bool py_issubclass(uint32 actual_type_id, uint32 expected_type_id)", runtime_header)
         self.assertNotIn("static inline void py_append(list<T>& v, const U& item)", runtime_header)
         self.assertNotIn("static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item)", runtime_header)
         self.assertIn("static inline void py_append(object& v, const U& item)", runtime_header)

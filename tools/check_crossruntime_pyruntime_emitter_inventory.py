@@ -52,8 +52,6 @@ EXPECTED_BUCKETS = {
         ("py_is_subtype", "src/backends/cpp/emitter/cpp_emitter.py"),
         ("py_issubclass", "src/backends/cpp/emitter/cpp_emitter.py"),
         ("py_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
-        ("py_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
-        ("py_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
         ("py_isinstance", "src/backends/cpp/emitter/stmt.py"),
         ("py_runtime_type_id", "src/backends/rs/emitter/rs_emitter.py"),
         ("py_isinstance", "src/backends/rs/emitter/rs_emitter.py"),
