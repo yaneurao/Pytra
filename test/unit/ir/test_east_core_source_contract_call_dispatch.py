@@ -32,7 +32,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _resolve_named_call_dispatch",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('return {\n            "builtin_semantic_tag": "",', helper_text)
         self.assertIn('lookup_builtin_semantic_tag(fn_name)', helper_text)
@@ -142,7 +142,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _resolve_runtime_named_call_dispatch",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("if len(args) != 1:", truthy_helper_text)
         self.assertIn('arg0_t = str(arg0.get("resolved_type", "unknown"))', truthy_helper_text)
@@ -235,7 +235,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _owner_expr_resolved_type",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))', resolve_text)
         self.assertIn('stdlib_symbol_runtime_call = str(call_dispatch.get("stdlib_symbol_runtime_call", ""))', resolve_text)
@@ -282,7 +282,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _sh_infer_enumerate_item_type",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('if fn_name == "print":', helper_text)
         self.assertIn('if stdlib_imported_ret != "":', helper_text)
@@ -306,7 +306,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _apply_builtin_named_call_dispatch",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("if len(args) < 1:", helper_text)
         self.assertIn("arg0 = args[0]", helper_text)
@@ -323,7 +323,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _infer_call_expr_return_type",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("owner_t = self._owner_expr_resolved_type(owner)", helper_text)
         self.assertIn('if owner_t == "PyFile" and attr in {"close", "write"}:', helper_text)
@@ -373,7 +373,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _apply_named_call_dispatch",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('kind = str(callee.get("kind", ""))', helper_text)
         self.assertIn("_sh_infer_known_name_call_return_type(", named_state_text)

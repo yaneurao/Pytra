@@ -17,6 +17,7 @@ CORE_AST_BUILDERS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_ast_bu
 CORE_BUILDER_BASE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_builder_base.py"
 CORE_CALL_ARG_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_args.py"
 CORE_EXPR_PARSER_BASE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_parser_base.py"
+CORE_EXPR_PRIMARY_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_primary.py"
 CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_resolution_semantics.py"
 CORE_ENTRYPOINTS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_entrypoints.py"
 CORE_EXPR_PRECEDENCE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_precedence.py"

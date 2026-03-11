@@ -37,7 +37,7 @@ class EastCoreSourceContractCallMetadataTest(unittest.TestCase):
             "def _resolve_attr_expr_annotation",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('lookup_owner_method_semantic_tag(owner_type, attr)', helper_text)
         self.assertIn('lookup_stdlib_method_runtime_call(owner_type, attr)', helper_text)
@@ -61,7 +61,7 @@ class EastCoreSourceContractCallMetadataTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('payload["iterable_trait"] = "yes" if iter_element_type != "unknown" else "unknown"', helper_text)
@@ -84,7 +84,7 @@ class EastCoreSourceContractCallMetadataTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("lookup_stdlib_function_runtime_binding(fn_name)", helper_text)
         self.assertIn("lookup_stdlib_function_return_type(fn_name)", helper_text)
@@ -106,7 +106,7 @@ class EastCoreSourceContractCallMetadataTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("lookup_stdlib_imported_symbol_runtime_binding(fn_name, import_symbols)", helper_text)
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
@@ -128,7 +128,7 @@ class EastCoreSourceContractCallMetadataTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("binding = import_symbols.get(fn_name)", helper_text)
         self.assertIn("lookup_runtime_binding_semantic_tag(mod_id, runtime_symbol)", helper_text)
@@ -158,7 +158,7 @@ class EastCoreSourceContractCallMetadataTest(unittest.TestCase):
             "def _resolve_attr_expr_annotation",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("def _sh_lookup_noncpp_attr_runtime_call(", runtime_text)
         self.assertIn("if owner_name in import_modules:", helper_text)
@@ -191,7 +191,7 @@ class EastCoreSourceContractCallMetadataTest(unittest.TestCase):
             "def _resolve_attr_expr_annotation",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("_sh_lookup_noncpp_attr_runtime_call(", helper_text)
         self.assertIn("import_modules=import_modules", helper_text)
@@ -243,7 +243,7 @@ class EastCoreSourceContractCallMetadataTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('runtime_call = "static_cast"', helper_text)
         self.assertIn('if fn_name == "int" and arg_count == 2:', helper_text)
@@ -270,7 +270,7 @@ class EastCoreSourceContractCallMetadataTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('runtime_call="py_min" if fn_name == "min" else "py_max"', helper_text)

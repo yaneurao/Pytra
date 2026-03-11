@@ -71,5 +71,6 @@ Last updated: 2026-03-11
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Split the `_ShExprParser` resolution helper cluster into `core_expr_resolution_semantics.py`, turning call/attr type resolution and dynamic guards into a dedicated mixin.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Split the `call annotation` cluster into `core_expr_call_annotation.py`, leaving `core.py` with call/attr/subscript suffix orchestration and mixin wiring only.
 - Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Moved the generator-arg / comprehension-target parser cluster into `core_expr_call_args.py`, removing `_parse_comp_target` / `_parse_call_arg_expr` from `core.py`.
+- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Added `core_expr_primary.py`, then moved the `_make_bin` / `_parse_primary` cluster out of `core.py` and updated the primary source-contract tests to the split-module layout.
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) Split `core.py` / `test_east_core.py` by responsibility so compiler-internal improvements can proceed in cluster-sized slices again.

@@ -14,6 +14,7 @@ from _east_core_test_support import CORE_AST_BUILDERS_SOURCE_PATH
 from _east_core_test_support import CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_BUILDER_BASE_SOURCE_PATH
 from _east_core_test_support import CORE_CLASS_SEMANTICS_SOURCE_PATH
+from _east_core_test_support import CORE_EXPR_PRIMARY_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_PRECEDENCE_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
 
@@ -109,6 +110,7 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         attr_annotation_text = CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         ast_text = CORE_AST_BUILDERS_SOURCE_PATH.read_text(encoding="utf-8")
+        primary_text = CORE_EXPR_PRIMARY_SOURCE_PATH.read_text(encoding="utf-8")
         precedence_text = CORE_EXPR_PRECEDENCE_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn("out = _sh_make_module_root(", text)
@@ -118,8 +120,8 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
         self.assertIn("payload = _sh_make_call_expr(", ast_text)
         self.assertIn("_sh_make_subscript_expr(", attr_annotation_text)
         self.assertIn("return _sh_make_lambda_expr(", precedence_text)
-        self.assertIn("_sh_make_formatted_value_node(", text)
-        self.assertIn("return _sh_make_joined_str_expr(", text)
+        self.assertIn("_sh_make_formatted_value_node(", primary_text)
+        self.assertIn("return _sh_make_joined_str_expr(", primary_text)
         self.assertIn("_sh_make_expr_stmt(expr_stmt, _sh_stmt_span(", text)
         self.assertIn("_sh_make_simple_name_list_comp_expr(", text)
         self.assertIn("_sh_make_builtin_listcomp_call_expr(", text)

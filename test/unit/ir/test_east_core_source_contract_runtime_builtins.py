@@ -28,7 +28,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('runtime_call = fn_name + "_ctor"', helper_text)
         self.assertIn('if fn_name == "bytes":', helper_text)
@@ -60,7 +60,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('runtime_call="py_any" if fn_name == "any" else "py_all"', helper_text)
@@ -82,7 +82,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('runtime_call="py_ord" if fn_name == "ord" else "py_chr"', helper_text)
@@ -105,7 +105,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('runtime_call = "py_iter_or_raise"', helper_text)
         self.assertIn('if fn_name == "next":', helper_text)
@@ -135,7 +135,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('builtin_name="open"', helper_text)
@@ -158,7 +158,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('builtin_name=fn_name', helper_text)
@@ -181,7 +181,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _subscript_result_type",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('lowered_kind="TypePredicateCall"', helper_text)
@@ -203,7 +203,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _subscript_result_type",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('runtime_call = "py_to_string"', helper_text)
         self.assertIn('if fn_name == "print":', helper_text)
