@@ -397,7 +397,7 @@ namespace Pytra.CsModule
             return PYTRA_TID_OBJECT;
         }
 
-        public static long py_runtime_type_id(object value)
+        private static long py_runtime_type_id(object value)
         {
             return py_runtime_value_type_id(value);
         }
@@ -423,7 +423,7 @@ namespace Pytra.CsModule
             return expectedMin <= actualOrder && actualOrder <= expectedMax;
         }
 
-        public static bool py_is_subtype(long actualTypeId, long expectedTypeId)
+        private static bool py_is_subtype(long actualTypeId, long expectedTypeId)
         {
             return py_runtime_type_id_is_subtype(actualTypeId, expectedTypeId);
         }
@@ -433,7 +433,7 @@ namespace Pytra.CsModule
             return py_runtime_type_id_is_subtype(actualTypeId, expectedTypeId);
         }
 
-        public static bool py_issubclass(long actualTypeId, long expectedTypeId)
+        private static bool py_issubclass(long actualTypeId, long expectedTypeId)
         {
             return py_runtime_type_id_issubclass(actualTypeId, expectedTypeId);
         }
@@ -443,7 +443,7 @@ namespace Pytra.CsModule
             return py_runtime_type_id_is_subtype(py_runtime_value_type_id(value), expectedTypeId);
         }
 
-        public static bool py_isinstance(object value, long expectedTypeId)
+        private static bool py_isinstance(object value, long expectedTypeId)
         {
             return py_runtime_value_isinstance(value, expectedTypeId);
         }
