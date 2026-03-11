@@ -4,7 +4,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-11
+最終更新: 2026-03-12
 
 ## 運用方針
 
@@ -14,6 +14,8 @@
 - `docs/` 側は `docs/ja/` を正として翻訳を同期します。
 
 ## 完了 plan アーカイブ
+
+- [2026-03-12 / P0-TYPED-VARARGS-SIGNATURE-01](../plans/archive/20260312-p0-typed-varargs-signature-support.md)
 
 - [2026-03-11 / P1-IMPORT-GRAPH-REQUEST-CARRIERS-01](../plans/archive/20260311-p1-import-graph-request-carriers.md)
 
@@ -123,6 +125,7 @@
 
 ## 日付別リンク
 
+- [2026-03-12](20260312.md)（1 セクション）
 - [2026-03-11](20260311.md)（25 セクション）
 - [2026-03-09](20260309.md)（29 セクション）
 - [2026-03-08](20260308.md)（31 セクション）

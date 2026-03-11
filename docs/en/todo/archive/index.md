@@ -4,7 +4,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-11
+Last updated: 2026-03-12
 
 ## Operation Policy
 
@@ -14,6 +14,8 @@ Last updated: 2026-03-11
 - On the `docs/` side, `docs/ja/` remains the source of truth and translations are synchronized from it.
 
 ## Completed Plan Archive
+
+- [2026-03-12 / P0-TYPED-VARARGS-SIGNATURE-01](../plans/archive/20260312-p0-typed-varargs-signature-support.md)
 
 - [2026-03-11 / P1-IMPORT-GRAPH-REQUEST-CARRIERS-01](../plans/archive/20260311-p1-import-graph-request-carriers.md)
 
@@ -75,6 +77,7 @@ Last updated: 2026-03-11
 
 ## Date Links
 
+- [2026-03-12](20260312.md) (1 section)
 - [2026-03-11](20260311.md) (25 sections)
 - [2026-03-09](20260309.md) (2 sections)
 - [2026-03-08](20260308.md) (8 sections)
