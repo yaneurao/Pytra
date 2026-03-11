@@ -17,7 +17,7 @@ from src.backends.cpp.cli import transpile_to_cpp
 from src.toolchain.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
 from src.toolchain.compiler.transpile_cli import collect_symbols_from_stmt, parse_py2cpp_argv
 from src.toolchain.frontends.type_expr import parse_type_expr_text
-from src.toolchain.ir.core import convert_source_to_east_with_backend
+from src.toolchain.ir.core_entrypoints import convert_source_to_east_with_backend
 
 
 def _nominal_adt_class(

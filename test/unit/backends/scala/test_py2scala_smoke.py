@@ -21,7 +21,7 @@ if str(ROOT / "src") not in sys.path:
 
 from backends.scala.emitter import load_scala_profile, transpile_to_scala, transpile_to_scala_native
 from toolchain.compiler.transpile_cli import load_east3_document
-from src.toolchain.ir.core import convert_path
+from src.toolchain.ir.core_entrypoints import convert_path
 
 
 def load_east(

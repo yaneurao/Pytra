@@ -22,7 +22,7 @@ if str(ROOT / "src") not in sys.path:
 from backends.java.emitter import load_java_profile, transpile_to_java
 from toolchain.compiler.transpile_cli import load_east3_document
 from backends.java.emitter.java_native_emitter import _render_expr, transpile_to_java_native
-from src.toolchain.ir.core import convert_path
+from src.toolchain.ir.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 

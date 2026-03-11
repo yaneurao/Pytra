@@ -13,6 +13,7 @@ from toolchain.ir.core_ast_builders import _sh_make_dict_comp_expr
 from toolchain.ir.core_ast_builders import _sh_make_dict_expr
 from toolchain.ir.core_ast_builders import _sh_make_formatted_value_node
 from toolchain.ir.core_ast_builders import _sh_make_joined_str_expr
+from toolchain.ir.core_ast_builders import _sh_make_comp_generator
 from toolchain.ir.core_ast_builders import _sh_make_list_comp_expr
 from toolchain.ir.core_ast_builders import _sh_make_list_expr
 from toolchain.ir.core_ast_builders import _sh_make_range_expr

@@ -16,10 +16,22 @@ from _east_core_test_support import ROOT
 
 IR_SOURCE_DIR = ROOT / "src" / "toolchain" / "ir"
 APPROVED_SOURCE_IMPORTERS = {
-    ROOT / "src" / "toolchain" / "frontends" / "transpile_cli.py": {
-        "convert_path",
-        "convert_source_to_east_with_backend",
-    },
+}
+REPRESENTATIVE_TEST_IMPORTERS = {
+    ROOT / "test" / "unit" / "common" / "test_self_hosted_signature.py",
+    ROOT / "test" / "unit" / "backends" / "cpp" / "test_east3_cpp_bridge.py",
+    ROOT / "test" / "unit" / "backends" / "cs" / "test_py2cs_smoke.py",
+    ROOT / "test" / "unit" / "backends" / "go" / "test_py2go_smoke.py",
+    ROOT / "test" / "unit" / "backends" / "java" / "test_py2java_smoke.py",
+    ROOT / "test" / "unit" / "backends" / "js" / "test_py2js_smoke.py",
+    ROOT / "test" / "unit" / "backends" / "kotlin" / "test_py2kotlin_smoke.py",
+    ROOT / "test" / "unit" / "backends" / "lua" / "test_py2lua_smoke.py",
+    ROOT / "test" / "unit" / "backends" / "rb" / "test_py2rb_smoke.py",
+    ROOT / "test" / "unit" / "backends" / "rs" / "test_py2rs_smoke.py",
+    ROOT / "test" / "unit" / "backends" / "scala" / "test_py2scala_smoke.py",
+    ROOT / "test" / "unit" / "backends" / "swift" / "test_py2swift_smoke.py",
+    ROOT / "test" / "unit" / "backends" / "ts" / "test_py2ts_smoke.py",
+    ROOT / "test" / "unit" / "ir" / "test_east2_to_east3_lowering.py",
 }
 
 
@@ -56,6 +68,14 @@ class EastCoreSourceContractImportSurfaceTest(unittest.TestCase):
                 actual[str(path.relative_to(ROOT))] = names
         expected = {str(path.relative_to(ROOT)): names for path, names in APPROVED_SOURCE_IMPORTERS.items()}
         self.assertEqual(actual, expected)
+
+    def test_representative_tests_and_backend_smokes_do_not_import_core_facade(self) -> None:
+        actual = {
+            str(path.relative_to(ROOT)): _core_import_names(path)
+            for path in sorted(REPRESENTATIVE_TEST_IMPORTERS)
+            if _core_import_names(path)
+        }
+        self.assertEqual(actual, {})
 
 
 if __name__ == "__main__":
