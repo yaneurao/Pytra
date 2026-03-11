@@ -252,12 +252,12 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
                 "rs_emitter_shared_type_id_residual": {
                     "stage": "S3-01",
                     "goal": "thin the Rust shared type-id seam",
-                    "status": "planned",
+                    "status": "completed",
                 },
                 "cs_emitter_shared_type_id_residual": {
                     "stage": "S3-01",
                     "goal": "thin the C# shared type-id seam",
-                    "status": "planned",
+                    "status": "completed",
                 },
                 "cpp_emitter_shared_type_id_residual": {
                     "stage": "S3-02",

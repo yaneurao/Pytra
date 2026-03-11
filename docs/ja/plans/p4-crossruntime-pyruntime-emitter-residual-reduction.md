@@ -28,7 +28,7 @@
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S1-01] live plan / TODO / inventory tool に current residual bucket, reduction order, active bundle metadata を戻す。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-01] `crossruntime_mutation_helper_residual` を減らし、C# bytearray must-remain seam だけへ縮める。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-02] `cpp_emitter_object_bridge_residual` を減らし、removable caller を typed lane へ戻す。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S3-01] Rust / C# shared type_id residual を thin seam 前提で削減する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S3-01] Rust / C# shared type_id residual を thin seam 前提で削減する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S3-02] final C++ shared type_id residual を再監査し、intentional contract だけにする。
 
 ## Current Residual Buckets
@@ -68,3 +68,4 @@
 - 2026-03-12: `S2-01` では C# mutation residual を `bytearray` 専用に縮め、`bytes.pop()/append()` は emitter fail-closed にした。残す helper は `bytearray` の `py_append/py_pop` と index/slice compat helper だけとする。
 - 2026-03-12: `S2-02` を開始し、C++ object bridge residual のうち `call.py` に残っていた wrapper-name label (`\"py_append\"` など) を plain operation label (`\"append\"` など) へ切り替えた。bucket は actual object helper caller だけを数える。
 - 2026-03-12: `S2-02` を完了し、C++ emitter の `py_runtime_object_type_id` / `py_runtime_object_isinstance` caller を `py_runtime_value_type_id` / `py_runtime_value_isinstance` へ寄せた。`cpp_emitter_object_bridge_residual` は empty bucket を end state とする。
+- 2026-03-12: `S3-01` は追加コード変更なしで閉じた。Rust/C# emitter と inventory/source guard はすでに thin shared type-id seam (`py_runtime_value_*`, `py_runtime_type_id_is_*`) に揃っており、remaining work は final C++ shared type-id residual の再監査だけになった。

@@ -32,4 +32,4 @@
 ## 未完了タスク
 
 1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01] `py_runtime.h` 縮小前に C++ / Rust / C# emitter residual を bundle 単位で減らす。文脈: [p4-crossruntime-pyruntime-emitter-residual-reduction.md](../plans/p4-crossruntime-pyruntime-emitter-residual-reduction.md)
-- 進捗メモ: `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-02` 2026-03-12: C++ emitter の object-helper caller を `py_runtime_value_*` thin helper へ寄せ、wrapper-name residual bucket を empty にした。
+- 進捗メモ: `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S3-02` 2026-03-12: Rust/C# shared type-id residual は thin seam end state を確認し、final C++ shared type-id residual の再監査だけを残した。
