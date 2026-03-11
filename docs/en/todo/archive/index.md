@@ -20,6 +20,7 @@ Last updated: 2026-03-12
 - [2026-03-12 / P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01](../plans/archive/20260312-p1-relative-import-normalization-decomposition.md)
 - [2026-03-12 / P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01](../plans/archive/20260312-p1-relative-import-multifile-runtime-hardening.md)
 - [2026-03-12 / P1-RELATIVE-IMPORT-ALIAS-HARDENING-01](../plans/archive/20260312-p1-relative-import-alias-hardening.md)
+- [2026-03-12 / P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01](../plans/archive/20260312-p1-relative-import-firstwave-smoke.md)
 - [2026-03-12 / P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01](../plans/archive/20260312-p2-relative-import-backend-coverage.md)
 - [2026-03-12 / P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01](../plans/archive/20260312-p2-relative-import-noncpp-rollout.md)
 - [2026-03-12 / P0-RELATIVE-IMPORT-BARE-PARENT-01](../plans/archive/20260312-p0-relative-import-bare-parent-hardening.md)
@@ -102,7 +103,7 @@ Last updated: 2026-03-12
 
 ## Date Links
 
-- [2026-03-12](20260312.md) (17 sections)
+- [2026-03-12](20260312.md) (18 sections)
 - [2026-03-11](20260311.md) (25 sections)
 - [2026-03-09](20260309.md) (2 sections)
 - [2026-03-08](20260308.md) (8 sections)
