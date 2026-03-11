@@ -30,15 +30,3 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-
-### P1: relative import first-wave transpile smoke
-
-文脈: [p1-relative-import-firstwave-smoke.md](../plans/p1-relative-import-firstwave-smoke.md)
-
-1. [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01] relative import の first wave (`rs/cs`) に対する representative transpile smoke scenario を固定し、non-C++ 実装 bundle の前提 contract を整えた。
-2. [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S1-01] live plan / TODO と representative first-wave smoke contract を固定した。
-3. [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-01] Rust backend に representative relative import transpile smoke を追加した。
-4. [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-02] C# backend に representative relative import transpile smoke を追加した。
-5. [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S3-01] backend parity docs / support wording を first-wave current state に同期した。
-
-- 進捗メモ: `rs/cs` は `parent_module_alias` / `parent_symbol_alias` の transpile smoke を共有し、coverage inventory も `transpile_smoke_locked` に同期した。
