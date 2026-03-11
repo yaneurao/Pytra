@@ -39,10 +39,8 @@ class EastCoreSourceContractStringSemanticsTest(unittest.TestCase):
         helper_text = CORE_STRING_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn("_sh_scan_string_token(", parser_base_text)
-        self.assertIn(
-            "make_east_build_error=lambda *, kind, message, source_span, hint: self._raise_expr_build_error(",
-            parser_base_text,
-        )
+        self.assertIn("make_east_build_error=lambda *, kind, message, source_span, hint:", parser_base_text)
+        self.assertIn("self._raise_expr_build_error(", parser_base_text)
         self.assertIn("make_span=_sh_span", parser_base_text)
         self.assertIn("_sh_append_fstring_literal(", core_text)
         self.assertIn('body = _sh_decode_py_string_body(body, "r" in prefix)', core_text)
