@@ -25,6 +25,9 @@
   - 参照: [spec-user.md](../spec/spec-user.md)
 - 対応していない構文を使っている
   - 参照: [spec-user.md](../spec/spec-user.md)
+- `getattr(...)` / `setattr(...)` を使っている
+  - 文字列名による動的属性参照・更新は intentionally unsupported です。
+  - 具体型の `x.field`、`dict` / JSON オブジェクト、`@extern` の専用 seam を検討してください。
 - C++ の細かいサポート状況を確認したい
   - 参照: [py2cpp サポートマトリクス](../language/cpp/spec-support.md)
 - import / runtime module の対応範囲を確認したい

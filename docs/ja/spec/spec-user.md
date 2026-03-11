@@ -74,6 +74,10 @@ Pytra は、型注釈付き Python コードを複数言語へ変換するトラ
 - `object` 型（`Any` 由来を含む）に対する属性アクセス・メソッド呼び出しは禁止です。
   - 例: `x: object` に対して `x.foo()` / `x.bar` は不可。
   - 必要な場合は、明示的に型を確定させた変数へ代入してからアクセスしてください。
+- `getattr(...)` / `setattr(...)` は user language surface に含めません。
+  - 文字列名による汎用の動的属性参照・更新は、仕様として unsupported by design です。
+  - これは `object` / `Any` 経由の open object model を各 backend に持ち込まないための制約で、現時点で一般サポートする予定はありません。
+  - 必要な場合は、具体型に対する通常の `x.field` アクセス、`dict` / JSON オブジェクト、または `@extern` / ambient binding の専用 seam を使ってください。
 - C++ 向けには、コメントによるパススルーを利用できます。
   - `# Pytra::cpp ...` / `# Pytra::pass ...` を文の直前に置くと、生成 C++ へその行をそのまま挿入します。
   - 複数行は `# Pytra::cpp begin` ... `# Pytra::cpp end`（または `pass`）で指定できます。

@@ -29,6 +29,9 @@ Failure messages from `src/py2x.py --target cpp` are shown in the following cate
   - See: [spec-user.md](../spec/spec-user.md)
 - Using syntax that is not supported
   - See: [spec-user.md](../spec/spec-user.md)
+- Trying to use `getattr(...)` / `setattr(...)`
+  - Dynamic attribute lookup/update by string name is intentionally unsupported.
+  - Prefer concrete `x.field` access, `dict` / JSON objects, or dedicated `@extern` seams.
 - Want to check detailed C++ support status
   - See: [py2cpp Support Matrix](../language/cpp/spec-support.md)
 - Want to confirm import / runtime-module coverage

@@ -66,6 +66,10 @@ Pytra transpiles type-annotated Python code into multiple languages. The canonic
 - Attribute access/method calls on `object` type (including `Any`-derived routes) are prohibited.
   - Example: for `x: object`, `x.foo()` / `x.bar` is not allowed.
   - If required, explicitly assign to a variable with a concrete type first, then access.
+- `getattr(...)` / `setattr(...)` are not part of the user-language surface.
+  - Generic dynamic attribute lookup/update by string name is unsupported by design.
+  - This restriction exists so Pytra does not have to carry an open `object` / `Any` object model into every backend, and there is currently no plan to add general support.
+  - If needed, use ordinary `x.field` access on a concrete type, `dict` / JSON objects, or dedicated seams such as `@extern` / ambient bindings.
 - For C++, comment-based passthrough is available.
   - Place `# Pytra::cpp ...` / `# Pytra::pass ...` immediately before a statement to inject that line directly into generated C++.
   - For multi-line blocks, use `# Pytra::cpp begin` ... `# Pytra::cpp end` (or `pass`).
