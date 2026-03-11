@@ -20,16 +20,18 @@ def _sh_append_import_binding(
     source_file: str,
     source_line: int,
     make_east_build_error: Callable[..., Exception],
+    make_import_build_error: Callable[..., Exception],
     make_span: Callable[..., dict[str, int]],
     make_import_binding: Callable[..., dict[str, Any]],
 ) -> None:
     """import 情報の正本 `ImportBinding` を追加する。"""
     if local_name in import_binding_names:
-        raise make_east_build_error(
-            kind="unsupported_syntax",
+        raise make_import_build_error(
+            code="duplicate_binding",
             message=f"duplicate import binding: {local_name}",
             source_span=make_span(source_line, 0, 0),
             hint="Rename alias to avoid duplicate imported names.",
+            local_name=local_name,
         )
     import_binding_names.add(local_name)
     import_bindings.append(

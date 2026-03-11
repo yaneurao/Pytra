@@ -35,11 +35,58 @@ class EastBuildError(Exception):
         return out
 
 
+_IMPORT_BUILD_ERROR_TAG = "__PYTRA_IMPORT_BUILD_ERROR__|"
+
+
 def _make_east_build_error(kind: str, message: str, source_span: dict[str, Any], hint: str) -> RuntimeError:
     """self-hosted 生成で投げる例外を std::exception 互換（RuntimeError）に統一する。"""
     src_line = int(source_span.get("lineno", 0))
     src_col = int(source_span.get("col", 0))
     return RuntimeError(f"{kind}: {message} at {src_line}:{src_col} hint={hint}")
+
+
+def _make_import_build_error(
+    code: str,
+    message: str,
+    source_span: dict[str, Any],
+    hint: str,
+    *,
+    local_name: str = "",
+) -> RuntimeError:
+    """import 系 parser 診断を frontend 向けの structured envelope へ包む。"""
+    payload = _IMPORT_BUILD_ERROR_TAG + code + "|" + message
+    if local_name != "":
+        payload += "\nlocal_name=" + local_name
+    src_line = int(source_span.get("lineno", 0))
+    src_col = int(source_span.get("col", 0))
+    if src_line > 0:
+        payload += "\nlineno=" + str(src_line)
+    if src_col > 0:
+        payload += "\ncol=" + str(src_col)
+    if hint != "":
+        payload += "\nhint=" + hint
+    return RuntimeError(payload)
+
+
+def parse_import_build_error(err_text: str) -> tuple[str, str, dict[str, str]] | None:
+    """structured import build error envelope を復元する。"""
+    if not err_text.startswith(_IMPORT_BUILD_ERROR_TAG):
+        return None
+    lines = err_text.splitlines()
+    head = lines[0]
+    parts = head.split("|", 2)
+    if len(parts) != 3:
+        return None
+    code = parts[1]
+    message = parts[2]
+    fields: dict[str, str] = {}
+    for line in lines[1:]:
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        if key != "":
+            fields[key] = value
+    return code, message, fields
 
 
 def convert_source_to_east(source: str, filename: str) -> dict[str, Any]:

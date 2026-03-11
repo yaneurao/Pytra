@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from toolchain.ir.core_entrypoints import convert_path, convert_source_to_east_with_backend
+from toolchain.ir.core_entrypoints import parse_import_build_error
 from toolchain.ir.east1 import load_east1_document as load_east1_document_stage
 from toolchain.ir.east2 import normalize_east1_to_east2_document as normalize_east1_to_east2_document_stage
 from toolchain.ir.east3 import load_east3_document as load_east3_document_stage
@@ -209,6 +210,19 @@ def _classify_import_user_error(
     input_path: Path,
 ) -> tuple[str, str, list[str]] | None:
     """import 系の既知診断を current CLI contract へ正規化する。"""
+    parsed_import_err = parse_import_build_error(msg)
+    if parsed_import_err is not None:
+        err_code, parsed_message, fields = parsed_import_err
+        if err_code == "duplicate_binding":
+            local_name = fields.get("local_name", "").strip()
+            import_detail = parsed_message
+            if local_name != "":
+                import_detail = "duplicate import binding: " + local_name
+            return (
+                "input_invalid",
+                "Duplicate import binding.",
+                [f"kind=duplicate_binding file={input_path} import={import_detail}"],
+            )
     if "from-import wildcard is not supported" in msg:
         label = first_import_detail_line(source_text, "wildcard")
         return (
