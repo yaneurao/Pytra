@@ -42,10 +42,10 @@
 分解:
 - [x] [ID: P2-EAST-CORE-MODULARIZATION-01-S1-01] `core.py` / `test_east_core.py` の残 cluster を棚卸しし、split 境界を `suffix parser` / `annotation` / `builder` / `source guard` で固定する。
 - [x] [ID: P2-EAST-CORE-MODULARIZATION-01-S2-01] `attr/subscript annotation` cluster を dedicated mixin module へ抽出し、`core.py` から state/build-dispatch 群を後退させる。
-- [ ] [ID: P2-EAST-CORE-MODULARIZATION-01-S2-02] `call/attr/subscript` suffix parser の残 cluster を dedicated module へ寄せ、`core.py` の postfix parser を orchestration 中心へ縮める。
-- [ ] [ID: P2-EAST-CORE-MODULARIZATION-01-S3-01] `test_east_core.py` の source guard を機能別 test module へ分割し、`core.py` split と 1 対 1 で追える構成にする。
-- [ ] [ID: P2-EAST-CORE-MODULARIZATION-01-S3-02] TODO/plan の進捗メモを圧縮し、細粒度履歴は `決定ログ` のみへ寄せる。
-- [ ] [ID: P2-EAST-CORE-MODULARIZATION-01-S4-01] representative regression を再実行して非退行を確認し、完了タスクを archive へ移す。
+- [x] [ID: P2-EAST-CORE-MODULARIZATION-01-S2-02] `call/attr/subscript` suffix parser の残 cluster を dedicated module へ寄せ、`core.py` の postfix parser を orchestration 中心へ縮める。
+- [x] [ID: P2-EAST-CORE-MODULARIZATION-01-S3-01] `test_east_core.py` の source guard を機能別 test module へ分割し、`core.py` split と 1 対 1 で追える構成にする。
+- [x] [ID: P2-EAST-CORE-MODULARIZATION-01-S3-02] TODO/plan の進捗メモを圧縮し、細粒度履歴は `決定ログ` のみへ寄せる。
+- [x] [ID: P2-EAST-CORE-MODULARIZATION-01-S4-01] representative regression を再実行して非退行を確認し、完了タスクを archive へ移す。
 
 ## S1-01 棚卸し
 
@@ -75,3 +75,4 @@
 - 2026-03-11: ユーザー指摘により、`core.py` を helper 1 個ずつではなく cluster 単位で分割する方針へ切り替えた。進捗メモも TODO から減らし、本計画へ集約する。
 - 2026-03-11: `S1-01` として `core.py` / `test_east_core.py` の残 cluster を棚卸しし、最初の split 対象を `attr/subscript annotation` に固定した。
 - 2026-03-11: `S2-01` として `attr/subscript annotation` cluster を `core_expr_attr_subscript_annotation.py` へ抽出した。`core.py` には build 本体と top-level `_sh_*` 依存の強い orchestration を残し、state/build-dispatch helper だけを後退させる境界で切っている。
+- 2026-03-11: `P1-IR-CORE-DECOMPOSITION-01` の完了時点で `core.py=214 lines` / `test_east_core.py=44 lines` まで縮小し、`call/attr/subscript` suffix parser、call/attr/subscript annotation、source-contract split、進捗メモ圧縮、representative IR/selfhost regression が本 plan の acceptance criteria を満たした。重複管理を避けるため、本 task は P1 end state により fulfilled として archive へ移す。

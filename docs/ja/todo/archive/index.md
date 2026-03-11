@@ -16,6 +16,7 @@
 ## 完了 plan アーカイブ
 
 - [2026-03-11 / P1-IR-CORE-DECOMPOSITION-01](../plans/archive/20260311-p1-ir-core-decomposition.md)
+- [2026-03-11 / P2-EAST-CORE-MODULARIZATION-01](../plans/archive/20260311-p2-east-core-modularization.md)
 - [2026-03-11 / P5-NOMINAL-ADT-ROLLOUT-01](../plans/archive/20260311-p5-nominal-adt-language-rollout.md)
 - [2026-03-11 / P4-BACKEND-REGISTRY-SELFHOST-PARITY-01](../plans/archive/20260311-p4-backend-registry-selfhost-parity-hardening.md)
 - [2026-03-11 / P3-COMPILER-CONTRACT-HARDENING-01](../plans/archive/20260311-p3-compiler-contract-hardening.md)
@@ -100,7 +101,7 @@
 
 ## 日付別リンク
 
-- [2026-03-11](20260311.md)（5 セクション）
+- [2026-03-11](20260311.md)（6 セクション）
 - [2026-03-09](20260309.md)（29 セクション）
 - [2026-03-08](20260308.md)（31 セクション）
 - [2026-03-07](20260307.md)（6 セクション）
