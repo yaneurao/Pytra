@@ -39,10 +39,12 @@
 
 決定ログ:
 - 2026-03-12: relative import 自体は既に supported なので、新機能追加ではなく Pytra-NES 型 project layout の multi-file runtime smoke hardening を `P1` として起票した。
+- 2026-03-12: representative runtime smoke は `from .cpu.runner import run` + `from ..util.bits import low_nibble` と `from .. import helper` の 2 系統を C++ multi-file build/run まで固定する方針にした。
+- 2026-03-12: `from .. import helper` は validation 時に plain symbol binding ではなく module alias binding へ正規化し、multi-file C++ では namespace-qualified module call として扱う契約に揃えた。
 
 ## 分解
 
 - [x] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S1-01] current gap を plan / TODO に固定し、nested package runtime smoke の代表ケースを決める。
-- [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S2-01] nested package relative import chain の multi-file C++ build/run regression を追加する。
-- [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S2-02] bare parent relative import の multi-file C++ build/run regression を追加する。
-- [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S3-01] docs / plan / TODO と focused regression を current contract に同期して task を閉じる。
+- [x] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S2-01] nested package relative import chain の multi-file C++ build/run regression を追加した。
+- [x] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S2-02] bare parent relative import の multi-file C++ build/run regression を追加した。
+- [x] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S3-01] docs / plan / TODO と focused regression を current contract に同期して task を閉じた。

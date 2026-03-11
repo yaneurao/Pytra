@@ -39,10 +39,12 @@ Verification commands:
 
 Decision log:
 - 2026-03-12: Since relative imports are already supported, filed this as a `P1` runtime smoke hardening task for Pytra-NES-style project layouts rather than as a new language-feature task.
+- 2026-03-12: Chose two representative runtime smoke lanes to lock through C++ multi-file build/run: `from .cpu.runner import run` + `from ..util.bits import low_nibble`, and `from .. import helper`.
+- 2026-03-12: Normalized `from .. import helper` into a module-alias binding during validation so multi-file C++ consistently treats it as a namespace-qualified module call rather than as a plain symbol binding.
 
 ## Breakdown
 
 - [x] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S1-01] Lock the current gap in plan / TODO and choose representative nested-package runtime smoke cases.
-- [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S2-01] Add a multi-file C++ build/run regression for a nested-package relative import chain.
-- [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S2-02] Add a multi-file C++ build/run regression for a bare parent relative import.
-- [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S3-01] Sync docs / plan / TODO and focused regressions to the current contract, then close the task.
+- [x] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S2-01] Added a multi-file C++ build/run regression for a nested-package relative import chain.
+- [x] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S2-02] Added a multi-file C++ build/run regression for a bare parent relative import.
+- [x] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S3-01] Synced docs / plan / TODO and focused regressions to the current contract, then closed the task.

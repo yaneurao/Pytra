@@ -254,6 +254,70 @@ class ImportGraphIssueStructureTest(unittest.TestCase):
         self.assertEqual([], analysis.get("relative_imports"))
         self.assertIn("sub/main.py -> helper.py", analysis.get("edges", []))
 
+    def test_validate_from_import_symbols_accepts_parent_dot_only_module_binding(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pkg = root / "pkg"
+            sub = pkg / "sub"
+            sub.mkdir(parents=True)
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            (sub / "__init__.py").write_text("", encoding="utf-8")
+            main_py = sub / "main.py"
+            helper_py = pkg / "helper.py"
+            main_py.write_text("from .. import helper\nprint(helper.f())\n", encoding="utf-8")
+            helper_py.write_text("def f() -> int:\n    return 11\n", encoding="utf-8")
+
+            module_map: dict[str, dict[str, object]] = {
+                str(main_py): {
+                    "kind": "Module",
+                    "east_stage": 3,
+                    "schema_version": 1,
+                    "meta": {
+                        "module_id": "sub.main",
+                        "dispatch_mode": "native",
+                        "import_bindings": [
+                            {
+                                "module_id": "..",
+                                "export_name": "helper",
+                                "local_name": "helper",
+                                "binding_kind": "symbol",
+                            }
+                        ],
+                        "qualified_symbol_refs": [
+                            {
+                                "module_id": "..",
+                                "symbol": "helper",
+                                "local_name": "helper",
+                            }
+                        ],
+                    },
+                    "body": [
+                        {
+                            "kind": "ImportFrom",
+                            "module": "..",
+                            "names": [{"name": "helper"}],
+                        }
+                    ],
+                },
+                str(helper_py): {
+                    "kind": "Module",
+                    "east_stage": 3,
+                    "schema_version": 1,
+                    "meta": {"module_id": "helper", "dispatch_mode": "native", "import_bindings": []},
+                    "body": [{"kind": "FunctionDef", "name": "f", "body": []}],
+                },
+            }
+
+            transpile_cli.validate_from_import_symbols_or_raise(module_map, sub)
+
+            meta = module_map[str(main_py)]["meta"]
+            self.assertEqual(meta["import_modules"], {"helper": "helper"})
+            self.assertEqual(meta["import_symbols"], {})
+            bindings = meta["import_bindings"]
+            self.assertEqual(len(bindings), 1)
+            self.assertEqual(bindings[0]["binding_kind"], "module")
+            self.assertEqual(bindings[0]["module_id"], "helper")
+
     def test_validate_from_import_symbols_accepts_reexported_symbol_binding(self) -> None:
         root = ROOT / "tmp-reexport-root"
         compat_py = root / "pytra_compat.py"

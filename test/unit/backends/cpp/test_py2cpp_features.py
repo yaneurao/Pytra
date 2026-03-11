@@ -2290,7 +2290,8 @@ def main() -> None:
             )
             main_cpp_txt = (out_dir / "src" / "main.cpp").read_text(encoding="utf-8")
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertIn("pytra_mod_helper::f()", main_cpp_txt)
+        self.assertNotIn("helper.f()", main_cpp_txt)
+        self.assertIn("::f()", main_cpp_txt)
 
     def test_cli_accepts_relative_from_import_for_parent_package_submodule(self) -> None:
         src_main = """from .. import helper
@@ -2330,7 +2331,8 @@ def main() -> None:
             )
             main_cpp_txt = (out_dir / "src" / "main.cpp").read_text(encoding="utf-8")
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertIn("helper.f()", main_cpp_txt)
+        self.assertNotIn("helper.f()", main_cpp_txt)
+        self.assertIn("::f()", main_cpp_txt)
 
     def test_cli_reports_input_invalid_for_relative_import_root_escape(self) -> None:
         src_main = """from ..helper import f
@@ -3702,6 +3704,125 @@ if __name__ == "__main__":
             )
             self.assertEqual(rn.returncode, 0, msg=rn.stderr)
             self.assertIn("1", rn.stdout)
+
+    def test_cli_multi_file_nested_relative_import_chain_build_and_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            pkg = root / "pkg"
+            nes = pkg / "nes"
+            cpu = nes / "cpu"
+            util = nes / "util"
+            cpu.mkdir(parents=True)
+            util.mkdir(parents=True)
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            (nes / "__init__.py").write_text("", encoding="utf-8")
+            (cpu / "__init__.py").write_text("", encoding="utf-8")
+            (util / "__init__.py").write_text("", encoding="utf-8")
+
+            main_py = nes / "main.py"
+            runner_py = cpu / "runner.py"
+            bits_py = util / "bits.py"
+            out_dir = root / "out"
+            exe = out_dir / "app.out"
+
+            main_py.write_text(
+                "from .cpu.runner import run\n"
+                "\n"
+                "def main() -> None:\n"
+                "    print(run())\n"
+                "\n"
+                "if __name__ == \"__main__\":\n"
+                "    main()\n",
+                encoding="utf-8",
+            )
+            runner_py.write_text(
+                "from ..util.bits import low_nibble\n"
+                "\n"
+                "def run() -> int:\n"
+                "    return low_nibble(63)\n",
+                encoding="utf-8",
+            )
+            bits_py.write_text(
+                "def low_nibble(v: int) -> int:\n"
+                "    return v & 15\n",
+                encoding="utf-8",
+            )
+
+            tr = self._run_subprocess_with_timeout(
+                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="transpile nested relative multi-file sample",
+            )
+            self.assertEqual(tr.returncode, 0, msg=tr.stderr)
+            bd = self._run_subprocess_with_timeout(
+                ["python3", "tools/build_multi_cpp.py", str(out_dir / "manifest.json"), "-o", str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="build nested relative multi-file sample",
+            )
+            self.assertEqual(bd.returncode, 0, msg=bd.stderr)
+            rn = self._run_subprocess_with_timeout(
+                [str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run nested relative multi-file sample",
+            )
+            self.assertEqual(rn.returncode, 0, msg=rn.stderr)
+            self.assertIn("15", rn.stdout)
+
+    def test_cli_multi_file_bare_parent_relative_import_build_and_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            pkg = root / "pkg"
+            sub = pkg / "sub"
+            sub.mkdir(parents=True)
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            (sub / "__init__.py").write_text("", encoding="utf-8")
+
+            main_py = sub / "main.py"
+            helper_py = pkg / "helper.py"
+            out_dir = root / "out"
+            exe = out_dir / "app.out"
+
+            main_py.write_text(
+                "from .. import helper\n"
+                "\n"
+                "def main() -> None:\n"
+                "    print(helper.f())\n"
+                "\n"
+                "if __name__ == \"__main__\":\n"
+                "    main()\n",
+                encoding="utf-8",
+            )
+            helper_py.write_text(
+                "def f() -> int:\n"
+                "    return 11\n",
+                encoding="utf-8",
+            )
+
+            tr = self._run_subprocess_with_timeout(
+                ["python3", "src/py2x.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="transpile bare parent relative multi-file sample",
+            )
+            self.assertEqual(tr.returncode, 0, msg=tr.stderr)
+            bd = self._run_subprocess_with_timeout(
+                ["python3", "tools/build_multi_cpp.py", str(out_dir / "manifest.json"), "-o", str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="build bare parent relative multi-file sample",
+            )
+            self.assertEqual(bd.returncode, 0, msg=bd.stderr)
+            rn = self._run_subprocess_with_timeout(
+                [str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run bare parent relative multi-file sample",
+            )
+            self.assertEqual(rn.returncode, 0, msg=rn.stderr)
+            self.assertIn("11", rn.stdout)
 
     def test_cli_multi_file_object_iter_helper_artifact_build_and_run(self) -> None:
         src_main = """def main() -> None:

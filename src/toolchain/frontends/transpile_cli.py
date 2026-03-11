@@ -1623,10 +1623,18 @@ def resolve_from_import_submodule_binding(
     module_by_id: dict[str, tuple[str, dict[str, object]]],
     imported_mod: str,
     symbol: str,
+    importer_path: Path | None = None,
 ) -> str:
     """`from pkg import mod` を package submodule import として解決できるなら module_id を返す。"""
     if imported_mod == "" or symbol == "":
         return ""
+    if imported_mod.startswith(".") and importer_path is not None:
+        entry_root = resolve_import_graph_entry_root(importer_path)
+        if relative_module_level(imported_mod) > 0 and imported_mod.rstrip(".") == "":
+            candidate = normalize_relative_module_id(imported_mod + symbol, entry_root, importer_path)
+            if candidate in module_by_id:
+                return candidate
+        imported_mod = normalize_relative_module_id(imported_mod, entry_root, importer_path)
     if imported_mod not in module_by_id:
         return ""
     mod_key, _mod_east = module_by_id[imported_mod]
@@ -1667,7 +1675,7 @@ def validate_from_import_symbols_or_raise(
                         sym = dict_any_get_str(ent, "name")
                         if sym == "*" or sym == "":
                             continue
-                        if resolve_from_import_submodule_binding(module_by_id, imported_mod, sym) != "":
+                        if resolve_from_import_submodule_binding(module_by_id, imported_mod, sym, Path(mod_key)) != "":
                             continue
                         if sym not in exports[imported_mod]:
                             append_import_validation_detail(
@@ -1689,6 +1697,7 @@ def validate_from_import_symbols_or_raise(
                     module_by_id,
                     resolved_ent["module_id"],
                     resolved_ent["export_name"],
+                    Path(mod_key),
                 )
                 if submodule_id != "":
                     resolved_ent["binding_kind"] = "module"
@@ -1718,6 +1727,8 @@ def validate_from_import_symbols_or_raise(
         if len(qualified_symbol_refs) > 0:
             for ref in qualified_symbol_refs:
                 local_name = ref["local_name"]
+                if local_name in import_modules:
+                    continue
                 module_id = ref["module_id"]
                 symbol = ref["symbol"]
                 bind_import_symbol_or_duplicate(
