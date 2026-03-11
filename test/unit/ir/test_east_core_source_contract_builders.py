@@ -86,6 +86,8 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
         self.assertIn("def _sh_make_nominal_adt_v1_meta(", class_text)
         self.assertNotIn("def _sh_make_decl_meta(", core_text)
         self.assertNotIn("def _sh_make_nominal_adt_v1_meta(", core_text)
+        self.assertIn("vararg_name: str = \"\"", ast_text)
+        self.assertIn("vararg_type_expr: dict[str, Any] | None = None", ast_text)
 
     def test_split_builder_modules_route_through_shared_envelopes(self) -> None:
         base_text = CORE_BUILDER_BASE_SOURCE_PATH.read_text(encoding="utf-8")

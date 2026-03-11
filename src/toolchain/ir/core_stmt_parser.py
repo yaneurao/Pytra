@@ -158,6 +158,10 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             arg_order: list[str] = list(sig["arg_order"])
             arg_defaults_raw_obj: Any = sig.get("arg_defaults")
             arg_defaults_raw: dict[str, Any] = arg_defaults_raw_obj if isinstance(arg_defaults_raw_obj, dict) else {}
+            vararg_name = str(sig.get("vararg_name", ""))
+            vararg_type = str(sig.get("vararg_type", ""))
+            vararg_type_expr_obj: Any = sig.get("vararg_type_expr")
+            vararg_type_expr = vararg_type_expr_obj if isinstance(vararg_type_expr_obj, dict) else None
             fn_block: list[tuple[int, str]] = []
             j = i + 1
             if inline_fn_stmt != "":
@@ -174,6 +178,8 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             fn_scope_types: dict[str, str] = dict(name_types)
             for arg_name, arg_ty in arg_types.items():
                 fn_scope_types[arg_name] = arg_ty
+            if vararg_name != "":
+                fn_scope_types[vararg_name] = f"list[{vararg_type if vararg_type != '' else 'unknown'}]"
             fn_stmts = _sh_parse_stmt_block(fn_block, name_types=fn_scope_types, scope_label=f"{scope_label}.{fn_name}")
             docstring, fn_stmts = _sh_extract_leading_docstring(fn_stmts)
             fn_ret = _sh_infer_return_type_for_untyped_def(fn_ret, fn_stmts)
@@ -226,6 +232,9 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     docstring=docstring,
                     is_generator=is_generator,
                     yield_value_type=yield_value_type,
+                    vararg_name=vararg_name,
+                    vararg_type=vararg_type,
+                    vararg_type_expr=vararg_type_expr,
                 ),
             )
             skip = j - i - 1

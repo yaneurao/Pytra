@@ -364,6 +364,10 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
             arg_order: list[str] = list(sig["arg_order"])
             arg_defaults_raw_obj: Any = sig.get("arg_defaults")
             arg_defaults_raw: dict[str, Any] = arg_defaults_raw_obj if isinstance(arg_defaults_raw_obj, dict) else {}
+            vararg_name = str(sig.get("vararg_name", ""))
+            vararg_type = str(sig.get("vararg_type", ""))
+            vararg_type_expr_obj: Any = sig.get("vararg_type_expr")
+            vararg_type_expr = vararg_type_expr_obj if isinstance(vararg_type_expr_obj, dict) else None
             block: list[tuple[int, str]] = []
             j = sig_end_line + 1
             if inline_fn_stmt != "":
@@ -379,7 +383,10 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                         source_span=_sh_span(i, 0, len(sig_line)),
                         hint="Add return or assignment statements in function body.",
                     )
-            stmts = _sh_parse_stmt_block(block, name_types=dict(arg_types), scope_label=fn_name)
+            fn_scope_types: dict[str, str] = dict(arg_types)
+            if vararg_name != "":
+                fn_scope_types[vararg_name] = f"list[{vararg_type if vararg_type != '' else 'unknown'}]"
+            stmts = _sh_parse_stmt_block(block, name_types=fn_scope_types, scope_label=fn_name)
             docstring, stmts = _sh_extract_leading_docstring(stmts)
             fn_ret = _sh_infer_return_type_for_untyped_def(fn_ret, stmts)
             yield_types = _sh_collect_yield_value_types(stmts)
@@ -406,7 +413,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                             default_txt,
                             ln_no=i,
                             col=default_col,
-                            name_types=dict(arg_types),
+                            name_types=fn_scope_types,
                         )
             fn_decorators = list(pending_top_level_decorators)
             pending_top_level_decorators = []
@@ -458,6 +465,9 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                 docstring=docstring,
                 is_generator=is_generator,
                 yield_value_type=yield_value_type,
+                vararg_name=vararg_name,
+                vararg_type=vararg_type,
+                vararg_type_expr=vararg_type_expr,
             )
             if runtime_abi_meta is not None or template_meta is not None:
                 item["meta"] = _sh_make_decl_meta(
@@ -964,6 +974,10 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                         marg_order: list[str] = list(sig["arg_order"])
                         marg_defaults_raw_obj: Any = sig.get("arg_defaults")
                         marg_defaults_raw: dict[str, Any] = marg_defaults_raw_obj if isinstance(marg_defaults_raw_obj, dict) else {}
+                        mvararg_name = str(sig.get("vararg_name", ""))
+                        mvararg_type = str(sig.get("vararg_type", ""))
+                        mvararg_type_expr_obj: Any = sig.get("vararg_type_expr")
+                        mvararg_type_expr = mvararg_type_expr_obj if isinstance(mvararg_type_expr_obj, dict) else None
                         mret = str(sig["ret"])
                         method_block: list[tuple[int, str]] = []
                         m = k + 1
@@ -1001,6 +1015,8 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                                     hint="Add method statements.",
                                 )
                         local_types: dict[str, str] = dict(marg_types)
+                        if mvararg_name != "":
+                            local_types[mvararg_name] = f"list[{mvararg_type if mvararg_type != '' else 'unknown'}]"
                         field_names: list[str] = list(field_types.keys())
                         for fnm in field_names:
                             fty: str = field_types[fnm]
@@ -1106,6 +1122,9 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                                 docstring=docstring,
                                 is_generator=is_generator,
                                 yield_value_type=yield_value_type,
+                                vararg_name=mvararg_name,
+                                vararg_type=mvararg_type,
+                                vararg_type_expr=mvararg_type_expr,
                             )
                         )
                         pending_method_decorators = []

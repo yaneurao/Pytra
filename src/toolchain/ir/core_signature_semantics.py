@@ -131,6 +131,9 @@ def _sh_parse_def_sig(
     arg_type_exprs: dict[str, dict[str, Any]] = {}
     arg_order: list[str] = []
     arg_defaults: dict[str, str] = {}
+    vararg_name = ""
+    vararg_type = ""
+    vararg_type_expr: dict[str, Any] | None = None
     if args_raw.strip() != "":
         for p_txt, _off in _sh_split_args_with_offsets(args_raw):
             p = p_txt.strip()
@@ -153,12 +156,34 @@ def _sh_parse_def_sig(
                     hint="Use explicit parameters instead of **kwargs.",
                 )
             if p.startswith("*"):
-                raise make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"self_hosted parser cannot parse variadic args parameter: {p_txt}",
-                    source_span=make_span(ln_no, 0, len(ln_norm)),
-                    hint="Use explicit parameters instead of *args.",
-                )
+                if vararg_name != "":
+                    raise make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"self_hosted parser cannot parse duplicate variadic args parameter: {p_txt}",
+                        source_span=make_span(ln_no, 0, len(ln_norm)),
+                        hint="Use at most one typed *args parameter.",
+                    )
+                parsed_vararg = _sh_parse_typed_binding(p[1:].strip(), allow_dotted_name=False)
+                if parsed_vararg is None:
+                    raise make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"self_hosted parser cannot parse variadic args parameter: {p_txt}",
+                        source_span=make_span(ln_no, 0, len(ln_norm)),
+                        hint="Use `*name: Type` for typed variadic positional parameters.",
+                    )
+                vn, vt, vdef = parsed_vararg
+                if vdef != "":
+                    raise make_east_build_error(
+                        kind="unsupported_syntax",
+                        message=f"self_hosted parser cannot parse default value on variadic args parameter: {p_txt}",
+                        source_span=make_span(ln_no, 0, len(ln_norm)),
+                        hint="Remove the default from `*args` and initialize inside the function body instead.",
+                    )
+                vararg_expr = _sh_ann_to_type_expr(vt, type_aliases=type_aliases)
+                vararg_name = vn
+                vararg_type = _sh_type_expr_to_type_name(vararg_expr)
+                vararg_type_expr = vararg_expr
+                continue
             if in_class != "" and p == "self":
                 arg_types["self"] = in_class
                 arg_type_exprs["self"] = _sh_ann_to_type_expr(in_class, type_aliases=type_aliases)
@@ -235,4 +260,7 @@ def _sh_parse_def_sig(
         ret_expr,
         arg_order,
         arg_defaults,
+        vararg_name=vararg_name,
+        vararg_type=vararg_type,
+        vararg_type_expr=vararg_type_expr,
     )

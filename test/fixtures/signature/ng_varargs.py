@@ -1,6 +1,6 @@
-# self_hosted parser signature test: variadic args `*args` is rejected.
+# self_hosted parser signature test: untyped variadic args `*args` is rejected.
 
-def count_all(*args: int) -> int:
+def count_all(*args) -> int:
     return 0
 
 if __name__ == "__main__":

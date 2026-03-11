@@ -678,9 +678,13 @@ def _sh_make_def_sig_info(
     return_type_expr: dict[str, Any],
     arg_order: list[str],
     arg_defaults: dict[str, str],
+    *,
+    vararg_name: str = "",
+    vararg_type: str = "",
+    vararg_type_expr: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`_sh_parse_def_sig()` の戻り carrier を構築する。"""
-    return {
+    out = {
         "name": name,
         "ret": return_type,
         "arg_types": arg_types,
@@ -689,6 +693,13 @@ def _sh_make_def_sig_info(
         "arg_order": arg_order,
         "arg_defaults": arg_defaults,
     }
+    if vararg_name != "":
+        out["vararg_name"] = vararg_name
+    if vararg_type != "":
+        out["vararg_type"] = vararg_type
+    if vararg_type_expr is not None:
+        out["vararg_type_expr"] = vararg_type_expr
+    return out
 
 
 def _sh_block_end_span(

@@ -58,9 +58,11 @@
 ## 分解
 
 - [x] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S1-01] current reject contract と representative fixture を固定し、typed `*args` v1 scope を docs/test に落とす。
-- [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S2-01] self-hosted signature parser / AST builder / EAST carrier に `vararg_*` field を追加する。
-- [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S2-02] stmt/module parser と frontend mirror を `vararg_*` field に追従させ、selfhost regression を通す。
+- [x] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S2-01] self-hosted signature parser / AST builder / stmt/module parser に `vararg_*` field を追加し、`FunctionDef` carrier へ通す。
+- [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S2-02] frontend mirror / auxiliary schema へ `vararg_*` field を追従させ、selfhost regression を固める。
 - [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S3-01] C++ emitter の function definition / known call lane に variadic positional packing を追加し、representative fixture を通す。
 - [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S3-02] non-C++ backend contract guard と docs を更新して v1 を閉じる。
 
 - 2026-03-11: representative blocker fixture `ng_typed_varargs_representative.py` を追加し、typed `*args` が現状 reject であることを unit test で固定した。
+- 2026-03-11: `typed *args: T` は `FunctionDef.vararg_name/vararg_type/vararg_type_expr` に保持し、body scope では `list[T]` として公開する方針にした。
+- 2026-03-11: representative fixture は `ok_typed_varargs_representative.py` へ反転し、untyped `*args` reject は `ng_varargs.py` に戻した。

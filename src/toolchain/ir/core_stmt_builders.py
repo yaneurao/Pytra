@@ -307,6 +307,9 @@ def _sh_make_function_def_stmt(
     meta: dict[str, Any] | None = None,
     is_generator: bool = False,
     yield_value_type: str = "unknown",
+    vararg_name: str = "",
+    vararg_type: str = "",
+    vararg_type_expr: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`FunctionDef` 文 node を構築する。"""
     node = _sh_make_stmt_node("FunctionDef", source_span)
@@ -323,6 +326,12 @@ def _sh_make_function_def_stmt(
     node["body"] = body
     node["is_generator"] = 1 if is_generator else 0
     node["yield_value_type"] = yield_value_type
+    if vararg_name != "":
+        node["vararg_name"] = vararg_name
+    if vararg_type != "":
+        node["vararg_type"] = vararg_type
+    if vararg_type_expr is not None:
+        node["vararg_type_expr"] = vararg_type_expr
     if arg_type_exprs is not None:
         node["arg_type_exprs"] = arg_type_exprs
     if return_type_expr is not None:

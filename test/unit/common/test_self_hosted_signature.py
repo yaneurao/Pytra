@@ -81,14 +81,23 @@ class SelfHostedSignatureTest(unittest.TestCase):
         err = payload.get("error", {})
         self.assertEqual(err.get("kind"), "unsupported_syntax")
 
-    def test_reject_typed_varargs_representative(self) -> None:
-        rc, payload = self._run_east(SIG_DIR / "ng_typed_varargs_representative.py")
-        self.assertNotEqual(rc, 0)
-        self.assertEqual(payload.get("ok"), False)
-        err = payload.get("error", {})
-        self.assertEqual(err.get("kind"), "unsupported_syntax")
-        self.assertIn("variadic args parameter", str(err.get("message", "")))
-        self.assertIn("Use explicit parameters instead of *args.", str(err.get("hint", "")))
+    def test_accept_typed_varargs_representative(self) -> None:
+        rc, payload = self._run_east(SIG_DIR / "ok_typed_varargs_representative.py")
+        self.assertEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), True)
+        east = payload.get("east", {})
+        body = east.get("body", [])
+        fn = None
+        for stmt in body:
+            if isinstance(stmt, dict) and stmt.get("kind") == "FunctionDef" and stmt.get("name") == "merge_controller_states":
+                fn = stmt
+                break
+        self.assertIsNotNone(fn)
+        self.assertEqual(fn.get("arg_order"), ["target"])
+        self.assertEqual(fn.get("arg_types", {}).get("target"), "ControllerState")
+        self.assertEqual(fn.get("vararg_name"), "states")
+        self.assertEqual(fn.get("vararg_type"), "ControllerState")
+        self.assertEqual(fn.get("vararg_type_expr"), {"kind": "NamedType", "name": "ControllerState"})
 
     def test_reject_kwargs(self) -> None:
         rc, payload = self._run_east(SIG_DIR / "ng_kwargs.py")

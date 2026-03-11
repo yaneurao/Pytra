@@ -82,6 +82,28 @@ def f(p: "Path", xs: "list[int]") -> "Path":
         )
         self.assertEqual(fn.get("return_type_expr"), {"kind": "NamedType", "name": "Path"})
 
+    def test_typed_varargs_signature_uses_dedicated_vararg_fields(self) -> None:
+        src = """
+class ControllerState:
+    pressed: bool
+
+def merge_controller_states(target: ControllerState, *states: ControllerState) -> None:
+    for state in states:
+        target.pressed = target.pressed or state.pressed
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        fn = next(
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "merge_controller_states"
+        )
+        self.assertEqual(fn.get("arg_order"), ["target"])
+        self.assertEqual(fn.get("arg_types", {}).get("target"), "ControllerState")
+        self.assertNotIn("states", fn.get("arg_types", {}))
+        self.assertEqual(fn.get("vararg_name"), "states")
+        self.assertEqual(fn.get("vararg_type"), "ControllerState")
+        self.assertEqual(fn.get("vararg_type_expr"), {"kind": "NamedType", "name": "ControllerState"})
+
     def test_type_expr_is_emitted_for_union_optional_and_nested_generic_annotations(self) -> None:
         src = """
 from pytra.std.json import JsonValue
