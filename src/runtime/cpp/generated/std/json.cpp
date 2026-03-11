@@ -379,9 +379,9 @@ namespace pytra::std::json {
                     } else if (esc == "/") {
                         py_list_append_mut(rc_list_ref(out_chars), "/");
                     } else if (esc == "b") {
-                        py_list_append_mut(rc_list_ref(out_chars), "\b");
+                        py_list_append_mut(rc_list_ref(out_chars), "b");
                     } else if (esc == "f") {
-                        py_list_append_mut(rc_list_ref(out_chars), "\f");
+                        py_list_append_mut(rc_list_ref(out_chars), "f");
                     } else if (esc == "n") {
                         py_list_append_mut(rc_list_ref(out_chars), "\n");
                     } else if (esc == "r") {
@@ -497,9 +497,9 @@ namespace pytra::std::json {
                 py_list_append_mut(rc_list_ref(out), "\\\"");
             } else if (ch == "\\") {
                 py_list_append_mut(rc_list_ref(out), "\\\\");
-            } else if (ch == "\b") {
+            } else if (ch == "b") {
                 py_list_append_mut(rc_list_ref(out), "\\b");
-            } else if (ch == "\f") {
+            } else if (ch == "f") {
                 py_list_append_mut(rc_list_ref(out), "\\f");
             } else if (ch == "\n") {
                 py_list_append_mut(rc_list_ref(out), "\\n");
