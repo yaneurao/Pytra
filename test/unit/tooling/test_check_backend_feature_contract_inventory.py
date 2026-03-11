@@ -10,6 +10,9 @@ class CheckBackendFeatureContractInventoryTest(unittest.TestCase):
     def test_inventory_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_inventory_issues(), [])
 
+    def test_support_state_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_support_state_issues(), [])
+
     def test_categories_have_stable_order(self) -> None:
         self.assertEqual(inventory_mod.CATEGORY_ORDER, ("syntax", "builtin", "stdlib"))
 
@@ -21,6 +24,16 @@ class CheckBackendFeatureContractInventoryTest(unittest.TestCase):
                 "builtin": "builtin.<domain>.<feature>",
                 "stdlib": "stdlib.<module>.<feature>",
             },
+        )
+
+    def test_support_state_taxonomy_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.SUPPORT_STATE_ORDER,
+            ("supported", "fail_closed", "not_started", "experimental"),
+        )
+        self.assertEqual(
+            set(inventory_mod.SUPPORT_STATE_ORDER),
+            set(inventory_mod.SUPPORT_STATE_CRITERIA.keys()),
         )
 
     def test_representative_inventory_contains_all_categories(self) -> None:

@@ -32,6 +32,6 @@
 ## 未完了タスク
 
 1. [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01] syntax / builtins / `pytra.std.*` の共通 feature contract、backend support state、fail-closed policy を固定し、C++ 単独で completion 判定しない運用へ移行する。文脈: [p5-backend-feature-parity-contract.md](../plans/p5-backend-feature-parity-contract.md)
-   進捗メモ: `S1-01` で representative feature inventory 正本を `backend_feature_contract_inventory.py` に固定し、category を `syntax` / `builtin` / `stdlib` の 3 系統へ揃えた。
+   進捗メモ: `S1-01/S1-02` で representative feature inventory 正本と support-state taxonomy 正本を `backend_feature_contract_inventory.py` に固定し、category は `syntax` / `builtin` / `stdlib`、state は `supported` / `fail_closed` / `not_started` / `experimental` に揃えた。
 2. [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01] 同じ feature fixture を backend 横断で検証する parse / lowering / emit / runtime parity の共通 conformance suite を設計する。文脈: [p6-backend-conformance-suite.md](../plans/p6-backend-conformance-suite.md)
 3. [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01] feature × backend support matrix、rollout tier、review checklist を定義し、backend parity を docs / tooling / 運用へ定着させる。文脈: [p7-backend-parity-rollout-and-matrix.md](../plans/p7-backend-parity-rollout-and-matrix.md)
