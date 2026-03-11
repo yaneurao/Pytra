@@ -13,6 +13,7 @@ if str(TEST_DIR) not in sys.path:
 from _east_core_test_support import CORE_PARSE_CONTEXT_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
+from _east_core_test_support import CORE_MODULE_PARSER_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
 
 
@@ -52,19 +53,19 @@ class EastCoreSourceContractParseContextTest(unittest.TestCase):
             self.assertNotIn(marker, core_text)
 
     def test_core_source_keeps_parse_context_usage_after_split(self) -> None:
-        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        module_text = CORE_MODULE_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
         resolution_text = CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         call_annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn("import_modules=_SH_IMPORT_MODULES", resolution_text)
         self.assertIn("import_symbols=_SH_IMPORT_SYMBOLS", resolution_text)
         self.assertIn("import_symbols=_SH_IMPORT_SYMBOLS", call_annotation_text)
-        self.assertIn("runtime_abi_arg_modes=_SH_RUNTIME_ABI_ARG_MODES", core_text)
-        self.assertIn("runtime_abi_mode_aliases=_SH_RUNTIME_ABI_MODE_ALIASES", core_text)
-        self.assertIn("runtime_abi_ret_modes=_SH_RUNTIME_ABI_RET_MODES", core_text)
-        self.assertIn("template_scope=_SH_TEMPLATE_SCOPE", core_text)
-        self.assertIn("template_instantiation_mode=_SH_TEMPLATE_INSTANTIATION_MODE", core_text)
-        self.assertIn("_sh_set_parse_context(fn_returns, class_method_return_types, class_base, type_aliases)", core_text)
+        self.assertIn("runtime_abi_arg_modes=_SH_RUNTIME_ABI_ARG_MODES", module_text)
+        self.assertIn("runtime_abi_mode_aliases=_SH_RUNTIME_ABI_MODE_ALIASES", module_text)
+        self.assertIn("runtime_abi_ret_modes=_SH_RUNTIME_ABI_RET_MODES", module_text)
+        self.assertIn("template_scope=_SH_TEMPLATE_SCOPE", module_text)
+        self.assertIn("template_instantiation_mode=_SH_TEMPLATE_INSTANTIATION_MODE", module_text)
+        self.assertIn("_sh_set_parse_context(fn_returns, class_method_return_types, class_base, type_aliases)", module_text)
 
 
 if __name__ == "__main__":

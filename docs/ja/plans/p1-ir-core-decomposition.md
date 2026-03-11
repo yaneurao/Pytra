@@ -48,7 +48,7 @@
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] `test_east_core.py` の先頭 source-contract builder cluster を shared support module と専用 test file へ切り出す。
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] 残る source-contract guard を cluster ごとの `test_east_core_source_contract_*.py` へ分割する。
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] parser behavior / diagnostics / nominal ADT representative tests を別 test file へ分割する。
-- [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core.py` 側の残 cluster を bundle 単位で専用 module へ寄せる。
+- [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core.py` 側の残 cluster を bundle 単位で専用 module へ寄せる。
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] representative IR/selfhost regression を通し、分割後の運用メモを圧縮して安定化する。
 
 決定ログ:
@@ -96,3 +96,7 @@
 - 2026-03-11: generator-arg / comprehension-target parser cluster を `core_expr_call_args.py` へ移し、`core.py` から `_parse_comp_target` / `_parse_call_arg_expr` を除去した。source-contract は `call_dispatch` / `expr_suffix` test を `def _make_bin` 境界へ揃えて固定する。
 - 2026-03-11: `core_expr_primary.py` を追加し、`_make_bin` / `_parse_primary` cluster を `core.py` から移した。`core.py` 側は thin wrapper だけを残し、source-contract は dedicated primary test で split module 前提に固定する。
 - 2026-03-11: `core_expr_primary.py` の `_parse_primary` を mixin 化し、`core.py` から primary wrapper を除去した。postfix source-contract も `def _make_bin` 境界へ統一して、primary split を wrapper-import 依存から 1 段進めた。
+- 2026-03-11: `core_expr_lowered.py` を追加し、`_sh_parse_expr_lowered` cluster を `core.py` から移した。`core.py` 側は thin wrapper のみを残し、expr-suffix source-contract は lowered cluster の split module を正本として検証する。
+- 2026-03-11: `S3-01` は完了とする。`core.py` は 214 行・`_sh_parse_stmt_block_mutable` / `_sh_parse_stmt_block` / `convert_source_to_east_self_hosted` の 3 wrapper だけを持つ thin façade まで縮小した。
+- 2026-03-11: `S4-01` を開始し、`test_east_core_source_contract_core_surface.py` で thin façade 契約と representative IR/selfhost regression を固定する。
+- 2026-03-11: `_ShExprParser` / `_sh_parse_expr` / `_sh_parse_expr_lowered` を `core_expr_shell.py` へ寄せ、`expr_suffix` / `call_dispatch` / `call_metadata` / `runtime_builtins` の source-contract を `core.py` façade と parser shell に分離した。

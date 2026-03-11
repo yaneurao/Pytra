@@ -11,14 +11,14 @@ if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
 from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
+from _east_core_test_support import CORE_EXPR_SHELL_SOURCE_PATH
 from _east_core_test_support import CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH
-from _east_core_test_support import CORE_SOURCE_PATH
 
 
 class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
     def test_core_source_routes_collection_ctor_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_collection_ctor_call_expr", 1)[1].split(
             "def _sh_annotate_anyall_call_expr",
@@ -28,7 +28,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('runtime_call = fn_name + "_ctor"', helper_text)
         self.assertIn('if fn_name == "bytes":', helper_text)
@@ -50,7 +50,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
 
     def test_core_source_routes_anyall_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_anyall_call_expr", 1)[1].split(
             "def _sh_annotate_ordchr_call_expr",
@@ -60,7 +60,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('runtime_call="py_any" if fn_name == "any" else "py_all"', helper_text)
@@ -72,7 +72,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
 
     def test_core_source_routes_ordchr_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_ordchr_call_expr", 1)[1].split(
             "def _sh_annotate_iterator_builtin_call_expr",
@@ -82,7 +82,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('runtime_call="py_ord" if fn_name == "ord" else "py_chr"', helper_text)
@@ -95,7 +95,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
 
     def test_core_source_routes_iterator_builtin_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_iterator_builtin_call_expr", 1)[1].split(
             "def _sh_annotate_open_call_expr",
@@ -105,7 +105,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('runtime_call = "py_iter_or_raise"', helper_text)
         self.assertIn('if fn_name == "next":', helper_text)
@@ -125,7 +125,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
 
     def test_core_source_routes_open_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_open_call_expr", 1)[1].split(
             "def _sh_annotate_exception_ctor_call_expr",
@@ -135,7 +135,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('builtin_name="open"', helper_text)
@@ -148,7 +148,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
 
     def test_core_source_routes_exception_ctor_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_exception_ctor_call_expr", 1)[1].split(
             "def _sh_annotate_type_predicate_call_expr",
@@ -158,7 +158,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _annotate_builtin_named_call_expr",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('builtin_name=fn_name', helper_text)
@@ -171,7 +171,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
 
     def test_core_source_routes_type_predicate_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_type_predicate_call_expr", 1)[1].split(
             "def _sh_annotate_fixed_runtime_builtin_call_expr",
@@ -181,7 +181,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _subscript_result_type",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('_sh_annotate_runtime_call_expr(', helper_text)
         self.assertIn('lowered_kind="TypePredicateCall"', helper_text)
@@ -193,7 +193,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
 
     def test_core_source_routes_fixed_runtime_builtin_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_fixed_runtime_builtin_call_expr", 1)[1].split(
             "def _sh_lookup_named_call_dispatch",
@@ -203,7 +203,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
             "def _subscript_result_type",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('runtime_call = "py_to_string"', helper_text)
         self.assertIn('if fn_name == "print":', helper_text)

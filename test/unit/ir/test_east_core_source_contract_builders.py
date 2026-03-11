@@ -14,9 +14,12 @@ from _east_core_test_support import CORE_AST_BUILDERS_SOURCE_PATH
 from _east_core_test_support import CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_BUILDER_BASE_SOURCE_PATH
 from _east_core_test_support import CORE_CLASS_SEMANTICS_SOURCE_PATH
+from _east_core_test_support import CORE_EXPR_LOWERED_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_PRIMARY_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_PRECEDENCE_SOURCE_PATH
+from _east_core_test_support import CORE_MODULE_PARSER_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
+from _east_core_test_support import CORE_STMT_PARSER_SOURCE_PATH
 
 
 class EastCoreSourceContractBuildersTest(unittest.TestCase):
@@ -108,42 +111,58 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
 
     def test_core_source_uses_split_builder_helpers_at_call_sites(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        module_parser_text = CORE_MODULE_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
+        stmt_parser_text = CORE_STMT_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
+        lowered_text = CORE_EXPR_LOWERED_SOURCE_PATH.read_text(encoding="utf-8")
         attr_annotation_text = CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         ast_text = CORE_AST_BUILDERS_SOURCE_PATH.read_text(encoding="utf-8")
         primary_text = CORE_EXPR_PRIMARY_SOURCE_PATH.read_text(encoding="utf-8")
         precedence_text = CORE_EXPR_PRECEDENCE_SOURCE_PATH.read_text(encoding="utf-8")
+        surface_text = "\n".join(
+            (
+                module_parser_text,
+                stmt_parser_text,
+                attr_annotation_text,
+                primary_text,
+                precedence_text,
+                lowered_text,
+            )
+        )
 
-        self.assertIn("out = _sh_make_module_root(", text)
-        self.assertIn("item = _sh_make_function_def_stmt(", text)
-        self.assertIn("cls_item = _sh_make_class_def_stmt(", text)
+        self.assertIn("out = _sh_make_module_root(", module_parser_text)
+        self.assertIn("item = _sh_make_function_def_stmt(", module_parser_text)
+        self.assertIn("cls_item = _sh_make_class_def_stmt(", module_parser_text)
         self.assertIn("node = _sh_make_attribute_expr(", attr_annotation_text)
         self.assertIn("payload = _sh_make_call_expr(", ast_text)
         self.assertIn("_sh_make_subscript_expr(", attr_annotation_text)
         self.assertIn("return _sh_make_lambda_expr(", precedence_text)
         self.assertIn("_sh_make_formatted_value_node(", primary_text)
         self.assertIn("return _sh_make_joined_str_expr(", primary_text)
-        self.assertIn("_sh_make_expr_stmt(expr_stmt, _sh_stmt_span(", text)
-        self.assertIn("_sh_make_simple_name_list_comp_expr(", text)
-        self.assertIn("_sh_make_builtin_listcomp_call_expr(", text)
-        self.assertNotIn('node = {"kind": "Attribute"', text)
-        self.assertNotIn('payload = {"kind": "Call"', text)
-        self.assertNotIn('return {"kind": "Lambda"', text)
-        self.assertNotIn('values.append({"kind": "FormattedValue"', text)
-        self.assertNotIn('return {"kind": "JoinedStr"', text)
-        self.assertNotIn('return {"kind": "Constant"', text)
-        self.assertNotIn('return {"kind": "ListComp"', text)
-        self.assertNotIn('return {"kind": "DictComp"', text)
+        self.assertIn("_sh_make_expr_stmt(expr_stmt, _sh_stmt_span(", stmt_parser_text)
+        self.assertIn("_sh_make_simple_name_list_comp_expr(", lowered_text)
+        self.assertIn("_sh_make_builtin_listcomp_call_expr(", lowered_text)
+        self.assertNotIn('node = {"kind": "Attribute"', surface_text)
+        self.assertNotIn('payload = {"kind": "Call"', surface_text)
+        self.assertNotIn('return {"kind": "Lambda"', surface_text)
+        self.assertNotIn('values.append({"kind": "FormattedValue"', surface_text)
+        self.assertNotIn('return {"kind": "JoinedStr"', surface_text)
+        self.assertNotIn('return {"kind": "Constant"', surface_text)
+        self.assertNotIn('return {"kind": "ListComp"', surface_text)
+        self.assertNotIn('return {"kind": "DictComp"', surface_text)
         self.assertNotIn(
             'pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "Expr"',
-            text,
+            surface_text,
         )
 
     def test_core_source_keeps_import_and_extern_clusters_on_split_helpers(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         class_text = CORE_CLASS_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
+        module_parser_text = CORE_MODULE_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("class_meta = _sh_collect_nominal_adt_class_metadata(", text)
+        self.assertIn("from toolchain.ir.core_class_semantics import _sh_collect_nominal_adt_class_metadata", text)
+        self.assertIn("class_meta = _sh_collect_nominal_adt_class_metadata(", module_parser_text)
         self.assertIn("def _sh_collect_nominal_adt_class_metadata(", class_text)
+        self.assertNotIn("class_meta = _sh_collect_nominal_adt_class_metadata(", text)
         self.assertNotIn("def _sh_collect_nominal_adt_class_metadata(", text)
         self.assertNotIn('_SH_IMPORT_SYMBOLS[local] = {"module": module, "name": export}', text)
         self.assertNotIn('pre_import_symbol_bindings[alias_name] = {', text)

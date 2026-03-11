@@ -48,7 +48,7 @@ Validation commands:
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] Extract the leading source-contract builder cluster from `test_east_core.py` into a shared support module plus a dedicated test file.
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] Split the remaining source-contract guards into cluster-specific `test_east_core_source_contract_*.py` files.
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Split parser behavior, diagnostics, and representative nominal-ADT tests into dedicated test files.
-- [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Continue moving remaining `core.py` clusters into dedicated modules in bundle-sized slices.
+- [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Continue moving remaining `core.py` clusters into dedicated modules in bundle-sized slices.
 - [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] Run representative IR/selfhost regressions and stabilize the split with compressed progress notes.
 
 Decision log:
@@ -96,3 +96,7 @@ Decision log:
 - 2026-03-11: Moved the generator-arg / comprehension-target parser cluster into `core_expr_call_args.py`, removing `_parse_comp_target` / `_parse_call_arg_expr` from `core.py`. Source-contract coverage now uses the `def _make_bin` boundary in the call-dispatch / expr-suffix tests.
 - 2026-03-11: Added `core_expr_primary.py`, then moved the `_make_bin` / `_parse_primary` cluster out of `core.py`. `core.py` now keeps only thin wrappers for that lane, and a dedicated primary source-contract test locks the split-module layout.
 - 2026-03-11: Promoted `_parse_primary` in `core_expr_primary.py` to a mixin and removed the primary wrapper from `core.py`. The postfix source-contract boundary is now normalized on `def _make_bin`, so the primary split no longer depends on a wrapper import path.
+- 2026-03-11: Added `core_expr_lowered.py`, moved the `_sh_parse_expr_lowered` cluster out of `core.py`, left only a thin wrapper in `core.py`, and updated the expr-suffix source-contract to treat the split module as the source of truth.
+- 2026-03-11: `S3-01` is complete. `core.py` is now down to 214 lines and keeps only the three thin wrappers `_sh_parse_stmt_block_mutable`, `_sh_parse_stmt_block`, and `convert_source_to_east_self_hosted`.
+- 2026-03-11: Start `S4-01` by adding `test_east_core_source_contract_core_surface.py` so the thin-facade contract and representative IR/selfhost regressions stay locked.
+- 2026-03-11: Moved `_ShExprParser` / `_sh_parse_expr` / `_sh_parse_expr_lowered` into `core_expr_shell.py` and split the `expr_suffix` / `call_dispatch` / `call_metadata` / `runtime_builtins` source-contracts between the `core.py` facade and the parser shell.

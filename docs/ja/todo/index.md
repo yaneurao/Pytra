@@ -37,41 +37,11 @@
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S1-02] TODO には cluster 単位の一行進捗のみを残し、詳細ログは plan の `決定ログ` へ集約する運用に固定した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] shared support module と `test_east_core_source_contract_builders.py` を追加し、builder source-contract guard 10 本を `test_east_core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] source-contract guard 51 本を `test_east_core_source_contract_*.py` 5 file と既存 builders/expr-suffix file へ切り出し、`test_east_core.py` を parser behavior / representative regression 中心へ整理した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_decorators.py` を追加し、extern / abi / template の representative parser behavior 10 本を `test_east_core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_types.py` を追加し、decode-first / type-expr / typing future import の representative parser behavior 10 本を `test_east_core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] decorator/abi/template の負例 7 本と object receiver diagnostics 3 本を `test_east_core_parser_behavior_decorators.py` / `test_east_core_parser_behavior_diagnostics.py` へ切り出し、`test_east_core.py` 先頭の重複 test と stray assert を除去した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_exprs.py` を追加し、comprehension / lambda / fstring / yield / basic parser acceptance の representative 10 本を `test_east_core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_classes.py` を追加し、class storage hint / dataclass / nominal ADT / enum の representative parser behavior 7 本を `test_east_core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_runtime.py` を追加し、runtime annotation / builtin call / pathlib / json / iter lowering の representative parser behavior 12 本を `test_east_core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] `test_east_core_parser_behavior_statements.py` を追加し、identifier/import ambiguity・`super()`・bare `return`・arg usage・trailing semicolon の representative parser behavior 6 本を `test_east_core.py` から切り出し、main file を residual source-contract 3 本まで縮小した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_class_semantics.py` を追加し、decl meta / nominal ADT metadata / dataclass value-safe cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `attr/subscript annotation` cluster を `core_expr_attr_subscript_annotation.py` へ寄せ、`test_east_core_source_contract_expr_suffix.py` を split 後の所在へ追従させた。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_decorator_semantics.py` を追加し、`@sealed/@dataclass/@abi/@template` の pure helper cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_extern_semantics.py` を追加し、ambient extern metadata helper cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_runtime_decl_semantics.py` を追加し、runtime ABI literal/mode/args-map helper cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_runtime_decl_semantics.py` へ runtime ABI/template decorator collector cluster も寄せ、`core.py` 側は function parse orchestration のみを残した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] runtime ABI/template の function collector と class/method/top-level misuse guard cluster を `core_runtime_decl_semantics.py` へ寄せ、`core.py` の残りを declaration orchestration に縮めた。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_string_semantics.py` を追加し、string/f-string scan/decode/literal helper cluster を `core.py` から分離した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_text_semantics.py` を追加し、identifier/import alias/dataclass option の text helper cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_string_semantics.py` を追加し、string/fstring scan・decode・literal append cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_stmt_text_semantics.py` を追加し、assign/comment/except/class-header の statement/header text helper cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_stmt_text_semantics.py` を logical-line merge / top-level split / comp-target bind / indented-block collect まで拡張し、stmt-text helper の重複定義を `core.py` から除去した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_stmt_analysis.py` を追加し、docstring / return / yield / reassigned-name / arg-usage の statement analysis cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_type_semantics.py` を追加し、type alias / annotation text / `typing` alias helper cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_import_semantics.py` を追加し、import binding normalize/register helper cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_import_module_builders.py` を追加し、import/module builder cluster と代表 call site を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_signature_semantics.py` を追加し、typed binding / augassign / def-sig helper cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_builder_base.py` / `core_ast_builders.py` / `core_stmt_builders.py` を追加し、node/value/trivia primitive・expression builder・statement builder cluster を `core.py` から切り出して builder source-contract を split module 前提へ更新した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_expr_precedence.py` を追加し、`lambda/ifexp/or..unary` の precedence parser cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_entrypoints.py` を追加し、user-facing convert / error helper cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_parse_context.py` に parse/import/runtime/template context cluster を集約し、`core.py` の top-level `_SH_*` 定義を import 側へ寄せた。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_parse_context.py` を追加し、`_SH_FN_RETURNS/_SH_CLASS_METHOD_RETURNS/_SH_CLASS_BASE/_SH_TYPE_ALIASES/_sh_set_parse_context` cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_expr_parser_base.py` を追加し、tokenize / token-cursor / span / parse の expr parser base cluster を `core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_string_semantics.py` へ adjacent string literal helper を移し、`if/elif/else tail` cluster を `core_stmt_if_semantics.py` へ切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `_ShExprParser` の resolution helper cluster を `core_expr_resolution_semantics.py` へ切り出し、call/attr の型解決と dynamic guard を mixin 化した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `call annotation` cluster を `core_expr_call_annotation.py` へ切り出し、`core.py` 側は call/attr/subscript suffix の orchestration と mixin wiring のみを残す形へ縮めた。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] generator-arg / comprehension-target parser cluster を `core_expr_call_args.py` へ寄せ、`core.py` から `_parse_comp_target` / `_parse_call_arg_expr` を除去した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_expr_primary.py` を追加し、`_make_bin` / `_parse_primary` cluster を `core.py` から切り出して primary source-contract を split module 前提へ更新した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_expr_primary.py` の `_parse_primary` を mixin 化し、`core.py` から primary wrapper を除去して postfix source-contract の境界を `def _make_bin` 基準へ統一した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] parser behavior は decorators / diagnostics / types / exprs / classes / runtime / statements の専用 test file 群へ分割し、`test_east_core.py` は residual regression 中心へ縮小した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] declaration / decorator / extern / string / text / stmt-analysis / type / import / signature / builder / entrypoint / parse-context cluster を専用 module へ切り出した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] expr parser は parser-base / precedence / primary / lowered / resolution / call-args / call-annotation / attr-subscript-annotation / stmt-parser / module-parser cluster へ分割した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core.py` は split module import と 3 wrapper（`_sh_parse_stmt_block_mutable` / `_sh_parse_stmt_block` / `convert_source_to_east_self_hosted`）だけを残す façade まで縮小した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] `test_east_core_source_contract_core_surface.py` を追加し、`core.py` の thin façade 契約と representative IR/selfhost regression を固定した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] `_ShExprParser` / `_sh_parse_expr*` を `core_expr_shell.py` へ寄せ、source-contract を façade と parser shell の二層へ整理した。
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。

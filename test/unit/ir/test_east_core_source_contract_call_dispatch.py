@@ -13,6 +13,7 @@ if str(TEST_DIR) not in sys.path:
 from _east_core_test_support import CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ARG_SOURCE_PATH
+from _east_core_test_support import CORE_EXPR_SHELL_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_SUFFIX_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH
 from _east_core_test_support import CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH
@@ -22,7 +23,7 @@ from _east_core_test_support import CORE_SOURCE_PATH
 class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
     def test_core_source_routes_named_call_lookup_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_lookup_named_call_dispatch", 1)[1].split(
             "def _sh_infer_known_name_call_return_type",
@@ -32,7 +33,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _resolve_named_call_dispatch",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('return {\n            "builtin_semantic_tag": "",', helper_text)
         self.assertIn('lookup_builtin_semantic_tag(fn_name)', helper_text)
@@ -56,6 +57,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
 
     def test_core_source_routes_named_call_annotations_through_parser_helper(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn("class _ShExprCallAnnotationMixin:", annotation_text)
@@ -70,8 +72,8 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("return self._apply_named_callee_call_annotation(", annotation_text)
         self.assertIn("return self._apply_attr_callee_call_annotation(", annotation_text)
         self.assertIn("return self._apply_call_expr_annotation(", annotation_text)
-        self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", core_text)
-        self.assertIn("_ShExprCallAnnotationMixin", core_text)
+        self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", shell_text)
+        self.assertIn("_ShExprCallAnnotationMixin", shell_text)
         self.assertIn("def _resolve_named_call_dispatch(", annotation_text)
         self.assertIn("def _annotate_named_call_expr(", annotation_text)
         self.assertIn("def _annotate_builtin_named_call_expr(", annotation_text)
@@ -85,6 +87,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
     def test_core_source_routes_builtin_named_call_annotations_through_parser_helper(self) -> None:
         text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         named_call_text = annotation_text.split("def _annotate_named_call_expr", 1)[1].split(
             "def _should_use_truthy_runtime_for_bool_ctor",
@@ -142,7 +145,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _resolve_runtime_named_call_dispatch",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("if len(args) != 1:", truthy_helper_text)
         self.assertIn('arg0_t = str(arg0.get("resolved_type", "unknown"))', truthy_helper_text)
@@ -194,6 +197,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
     def test_core_source_routes_runtime_named_call_annotations_through_parser_helper(self) -> None:
         text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         named_call_text = annotation_text.split("def _annotate_named_call_expr", 1)[1].split(
             "def _should_use_truthy_runtime_for_bool_ctor",
@@ -235,7 +239,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _owner_expr_resolved_type",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))', resolve_text)
         self.assertIn('stdlib_symbol_runtime_call = str(call_dispatch.get("stdlib_symbol_runtime_call", ""))', resolve_text)
@@ -277,12 +281,12 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
 
     def test_core_source_routes_known_name_call_returns_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_infer_known_name_call_return_type", 1)[1].split(
             "def _sh_infer_enumerate_item_type",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('if fn_name == "print":', helper_text)
         self.assertIn('if stdlib_imported_ret != "":', helper_text)
@@ -299,14 +303,14 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
     def test_core_source_routes_enumerate_item_type_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
-        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertEqual(runtime_text.count("def _sh_infer_enumerate_item_type"), 1)
         helper_text = runtime_text.split("def _sh_infer_enumerate_item_type", 1)[1]
         state_text = text.split("def _resolve_builtin_named_call_annotation_state", 1)[1].split(
             "def _apply_builtin_named_call_dispatch",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("if len(args) < 1:", helper_text)
         self.assertIn("arg0 = args[0]", helper_text)
@@ -317,13 +321,13 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertNotIn('elem_t = self._iter_item_type(args[0])', postfix_text)
 
     def test_core_source_routes_attr_call_returns_through_shared_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = annotation_text.split("def _infer_attr_call_return_type", 1)[1].split(
             "def _infer_call_expr_return_type",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("owner_t = self._owner_expr_resolved_type(owner)", helper_text)
         self.assertIn('if owner_t == "PyFile" and attr in {"close", "write"}:', helper_text)
@@ -339,6 +343,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
     def test_core_source_routes_call_expr_returns_through_shared_helper(self) -> None:
         text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         resolution_text = CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         named_decl_text = resolution_text.split("def _resolve_named_call_declared_return_type", 1)[1].split(
@@ -373,7 +378,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _apply_named_call_dispatch",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('kind = str(callee.get("kind", ""))', helper_text)
         self.assertIn("_sh_infer_known_name_call_return_type(", named_state_text)
@@ -393,7 +398,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("return self._annotate_callee_call_expr(", apply_text)
         self.assertIn("call_ret, fn_name = self._resolve_call_expr_annotation_state(", call_helper_text)
         self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
-        self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", CORE_SOURCE_PATH.read_text(encoding="utf-8"))
+        self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", shell_text)
         self.assertNotIn("_sh_infer_known_name_call_return_type(", helper_text)
         self.assertNotIn("stdlib_imported_ret = (", postfix_text)
         self.assertNotIn("call_ret = self.fn_return_types[fn_name]", postfix_text)
@@ -410,7 +415,8 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
     def test_core_source_routes_call_arg_parsing_through_parser_helper(self) -> None:
         text = CORE_CALL_ARG_SOURCE_PATH.read_text(encoding="utf-8")
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("class _ShExprCallArgParserMixin:", text)
         self.assertIn("def _dict_stmt_list(", text)
@@ -437,16 +443,13 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("return self._consume_call_arg_entries(", text)
         self.assertIn("arg_entry, keyword_entry = self._resolve_call_arg_loop_entry_state()", text)
         self.assertIn("return self._apply_call_arg_loop_entry_state(", text)
-        self.assertIn("from toolchain.ir.core_expr_call_args import _ShExprCallArgParserMixin", core_text)
-        self.assertIn("from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin", core_text)
+        self.assertIn("from toolchain.ir.core_expr_call_args import _ShExprCallArgParserMixin", shell_text)
+        self.assertIn("from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin", shell_text)
         self.assertIn(
             "from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprAttrSubscriptSuffixParserMixin",
-            core_text,
+            shell_text,
         )
-        self.assertIn(
-            "class _ShExprParser(",
-            core_text,
-        )
+        self.assertIn("class _ShExprParser(", shell_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertNotIn("def _parse_call_args(", core_text)
         self.assertNotIn("def _consume_call_arg_entries(", core_text)
@@ -471,11 +474,12 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         text = CORE_CALL_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
         suffix_text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         postfix_suffix_apply_text = suffix_text.split("def _apply_postfix_suffix_kind", 1)[1].split(
             "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("def _resolve_call_suffix_state(", text)
         self.assertIn("def _resolve_call_suffix_token_state(", text)
@@ -488,15 +492,12 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("self._consume_call_suffix_open_token()", text)
         self.assertIn("return self._apply_call_suffix_open_token_state()", text)
         self.assertIn("return self._annotate_call_expr(", text)
-        self.assertIn("from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin", core_text)
+        self.assertIn("from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin", shell_text)
         self.assertIn(
             "from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprAttrSubscriptSuffixParserMixin",
-            core_text,
+            shell_text,
         )
-        self.assertIn(
-            "class _ShExprParser(",
-            core_text,
-        )
+        self.assertIn("class _ShExprParser(", shell_text)
         self.assertIn('if tok_kind == "(":', postfix_suffix_apply_text)
         self.assertIn("return self._parse_call_suffix(callee=owner_expr)", postfix_suffix_apply_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
@@ -506,12 +507,12 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
 
     def test_core_source_routes_postfix_suffix_dispatch_through_parser_helper(self) -> None:
         text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
-        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = text.split("def _apply_postfix_suffix_kind", 1)[1].split(
             "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('if tok_kind == ".":', helper_text)
         self.assertIn('if tok_kind == "(":', helper_text)

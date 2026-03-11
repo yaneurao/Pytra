@@ -16,20 +16,34 @@ from _east_core_test_support import CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH
 from _east_core_test_support import CORE_AST_BUILDERS_SOURCE_PATH
 from _east_core_test_support import CORE_BUILDER_BASE_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
+from _east_core_test_support import CORE_EXPR_LOWERED_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH
+from _east_core_test_support import CORE_EXPR_SHELL_SOURCE_PATH
 from _east_core_test_support import CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
 
 
+def _postfix_text() -> str:
+    shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
+    return shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+
+
 class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
     def test_core_source_uses_builder_helpers_for_lowered_residual_call_dict_tuple_clusters(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
+        lowered_text = CORE_EXPR_LOWERED_SOURCE_PATH.read_text(encoding="utf-8")
         builder_text = CORE_AST_BUILDERS_SOURCE_PATH.read_text(encoding="utf-8")
-        lowered_text = text.split("def _sh_parse_expr_lowered", 1)[1].split(
-            "def _sh_parse_stmt_block_mutable",
-            1,
-        )[0]
 
+        self.assertIn(
+            "from toolchain.ir.core_expr_shell import _sh_parse_expr_lowered",
+            core_text,
+        )
+        self.assertIn(
+            "from toolchain.ir.core_expr_lowered import _sh_parse_expr_lowered_impl",
+            shell_text,
+        )
+        self.assertIn("return _sh_parse_expr_lowered_impl(", shell_text)
         self.assertIn("def _sh_make_builtin_listcomp_call_expr(", builder_text)
         self.assertIn("_sh_make_builtin_listcomp_call_expr(", lowered_text)
         self.assertIn("return _sh_make_dict_expr(", lowered_text)
@@ -40,12 +54,9 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn('return {"kind": "Tuple"', lowered_text)
 
     def test_core_source_uses_builder_helpers_for_lowered_any_all_and_simple_listcomp_clusters(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        lowered_text = CORE_EXPR_LOWERED_SOURCE_PATH.read_text(encoding="utf-8")
         builder_text = CORE_AST_BUILDERS_SOURCE_PATH.read_text(encoding="utf-8")
-        lowered_text = text.split("def _sh_parse_expr_lowered", 1)[1].split(
-            "def _sh_parse_stmt_block_mutable",
-            1,
-        )[0]
 
         self.assertIn("def _sh_make_builtin_listcomp_call_expr(", builder_text)
         self.assertIn("_sh_make_builtin_listcomp_call_expr(", lowered_text)
@@ -56,7 +67,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertIn("def _sh_make_simple_name_comp_generator(", builder_text)
         self.assertIn("_sh_make_simple_name_comp_generator(", builder_text)
         self.assertIn("elt_node = _sh_make_name_expr(", builder_text)
-        self.assertNotIn("target_node = _sh_make_name_expr(", text)
+        self.assertNotIn("target_node = _sh_make_name_expr(", core_text)
         self.assertIn('resolved_type=f"list[{elem_type}]"', builder_text)
         self.assertNotIn('return dict<str, object>{{"kind", make_object("Call")}', lowered_text)
         self.assertNotIn('dict<str, object>{{"kind", make_object("Name")}', lowered_text)
@@ -86,7 +97,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _resolve_attr_expr_annotation",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = _postfix_text()
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
@@ -123,7 +134,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _resolve_attr_expr_annotation",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = _postfix_text()
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('_sh_annotate_resolved_runtime_expr(', noncpp_apply_text)
@@ -156,7 +167,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _resolve_attr_expr_annotation",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = _postfix_text()
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
@@ -192,7 +203,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _resolve_attr_expr_annotation",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = _postfix_text()
 
         self.assertIn('std_attr_t = lookup_stdlib_attribute_type(owner_type, attr_name)', helper_text)
         self.assertIn('runtime_call = lookup_stdlib_method_runtime_call(owner_type, attr_name)', helper_text)
@@ -213,7 +224,8 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn('_sh_lookup_noncpp_attr_runtime_call(owner_expr, attr_name)', postfix_text)
 
     def test_core_source_routes_attr_annotations_through_parser_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         attr_annotation_text = CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         suffix_text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
@@ -273,7 +285,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = _postfix_text()
 
         self.assertIn('resolved_type = str(attr_meta.get("resolved_type", "unknown"))', resolve_text)
         self.assertIn('attr_runtime_call = str(attr_meta.get("runtime_call", ""))', resolve_text)
@@ -295,7 +307,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn("return (\n            owner_t,", state_text)
         self.assertIn(
             "from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin",
-            text,
+            shell_text,
         )
         self.assertIn("node = _sh_make_attribute_expr(", build_text)
         self.assertIn("return node", build_text)
@@ -316,16 +328,16 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn("owner_t = self._resolve_attr_expr_owner_state(", helper_text)
         self.assertNotIn("self._resolve_attr_expr_metadata(", helper_text)
         self.assertNotIn("_sh_make_attribute_expr(", helper_text)
-        self.assertNotIn("def _resolve_attr_expr_annotation(", text)
-        self.assertNotIn("def _resolve_attr_expr_metadata(", text)
-        self.assertNotIn("def _resolve_attr_expr_annotation_state(", text)
-        self.assertNotIn("def _build_attr_expr_payload(", text)
-        self.assertNotIn("def _apply_runtime_attr_expr_annotation(", text)
-        self.assertNotIn("def _apply_runtime_call_attr_expr_annotation(", text)
-        self.assertNotIn("def _apply_runtime_semantic_attr_expr_annotation(", text)
-        self.assertNotIn("def _apply_noncpp_attr_expr_annotation(", text)
-        self.assertNotIn("def _apply_attr_expr_annotation(", text)
-        self.assertNotIn("def _annotate_attr_expr(", text)
+        self.assertNotIn("def _resolve_attr_expr_annotation(", core_text)
+        self.assertNotIn("def _resolve_attr_expr_metadata(", core_text)
+        self.assertNotIn("def _resolve_attr_expr_annotation_state(", core_text)
+        self.assertNotIn("def _build_attr_expr_payload(", core_text)
+        self.assertNotIn("def _apply_runtime_attr_expr_annotation(", core_text)
+        self.assertNotIn("def _apply_runtime_call_attr_expr_annotation(", core_text)
+        self.assertNotIn("def _apply_runtime_semantic_attr_expr_annotation(", core_text)
+        self.assertNotIn("def _apply_noncpp_attr_expr_annotation(", core_text)
+        self.assertNotIn("def _apply_attr_expr_annotation(", core_text)
+        self.assertNotIn("def _annotate_attr_expr(", core_text)
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', apply_text)
         self.assertNotIn('_sh_annotate_resolved_runtime_expr(', apply_text)
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', helper_text)
@@ -344,11 +356,12 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
     def test_core_source_routes_attr_suffix_through_parser_helper(self) -> None:
         text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         postfix_suffix_apply_text = text.split("def _apply_postfix_suffix_kind", 1)[1].split(
             "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = _postfix_text()
 
         self.assertIn("class _ShExprAttrSubscriptSuffixParserMixin:", text)
         self.assertIn("def _parse_attr_suffix(", text)
@@ -361,12 +374,9 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertIn("return self._resolve_postfix_span_repr(", text)
         self.assertIn(
             "from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprAttrSubscriptSuffixParserMixin",
-            core_text,
+            shell_text,
         )
-        self.assertIn(
-            "class _ShExprParser(",
-            core_text,
-        )
+        self.assertIn("class _ShExprParser(", shell_text)
         self.assertIn("return self._parse_attr_suffix(owner_expr=owner_expr)", postfix_suffix_apply_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertNotIn("def _parse_attr_suffix(", core_text)
@@ -375,7 +385,8 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn("def _resolve_attr_suffix_span_repr(", core_text)
 
     def test_core_source_routes_subscript_annotations_through_parser_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         attr_annotation_text = CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         suffix_text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
@@ -427,7 +438,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = _postfix_text()
 
         self.assertIn('owner_t = str(owner_expr.get("resolved_type", "unknown"))', owner_type_text)
         self.assertIn('owner_t = self.name_types.get(str(owner_expr.get("id", "")), owner_t)', owner_type_text)
@@ -456,7 +467,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertIn(
             "from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin",
-            text,
+            shell_text,
         )
         self.assertNotIn("_sh_make_slice_node(lower, upper)", helper_text)
         self.assertNotIn("_sh_make_subscript_expr(", helper_text)
@@ -466,15 +477,15 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn('if build_kind == "slice":', helper_text)
         self.assertNotIn("return self._build_slice_subscript_expr(", apply_text)
         self.assertNotIn("return self._build_index_subscript_expr(", apply_text)
-        self.assertNotIn("def _resolve_subscript_expr_annotation_state(", text)
-        self.assertNotIn("def _resolve_subscript_expr_build_kind(", text)
-        self.assertNotIn("def _resolve_subscript_expr_apply_state(", text)
-        self.assertNotIn("def _build_slice_subscript_expr(", text)
-        self.assertNotIn("def _build_index_subscript_expr(", text)
-        self.assertNotIn("def _apply_slice_subscript_expr_build(", text)
-        self.assertNotIn("def _apply_index_subscript_expr_build(", text)
-        self.assertNotIn("def _apply_subscript_expr_build(", text)
-        self.assertNotIn("def _annotate_subscript_expr(", text)
+        self.assertNotIn("def _resolve_subscript_expr_annotation_state(", core_text)
+        self.assertNotIn("def _resolve_subscript_expr_build_kind(", core_text)
+        self.assertNotIn("def _resolve_subscript_expr_apply_state(", core_text)
+        self.assertNotIn("def _build_slice_subscript_expr(", core_text)
+        self.assertNotIn("def _build_index_subscript_expr(", core_text)
+        self.assertNotIn("def _apply_slice_subscript_expr_build(", core_text)
+        self.assertNotIn("def _apply_index_subscript_expr_build(", core_text)
+        self.assertNotIn("def _apply_subscript_expr_build(", core_text)
+        self.assertNotIn("def _annotate_subscript_expr(", core_text)
         self.assertNotIn("node = _sh_make_subscript_expr(", postfix_text)
         self.assertNotIn("_sh_make_slice_node(", postfix_text)
         self.assertNotIn("out_t = self._subscript_result_type(", postfix_text)
@@ -720,7 +731,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
+        postfix_text = _postfix_text()
 
         self.assertIn("upper, rtok = self._resolve_subscript_slice_tail_state()", slice_tail_text)
         self.assertIn(

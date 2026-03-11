@@ -11,6 +11,9 @@ if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
 from _east_core_test_support import CORE_SOURCE_PATH
+from _east_core_test_support import CORE_EXPR_LOWERED_SOURCE_PATH
+from _east_core_test_support import CORE_MODULE_PARSER_SOURCE_PATH
+from _east_core_test_support import CORE_STMT_PARSER_SOURCE_PATH
 from _east_core_test_support import CORE_STMT_TEXT_SEMANTICS_SOURCE_PATH
 
 
@@ -83,20 +86,23 @@ class EastCoreSourceContractStmtTextSemanticsTest(unittest.TestCase):
         self.assertNotIn("def _sh_parse_class_header(", core_text)
 
     def test_core_source_routes_stmt_text_parsing_through_helper_module(self) -> None:
-        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        lowered_text = CORE_EXPR_LOWERED_SOURCE_PATH.read_text(encoding="utf-8")
+        module_text = CORE_MODULE_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
+        stmt_text = CORE_STMT_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
+        surface_text = module_text + "\n" + stmt_text + "\n" + lowered_text
 
-        self.assertIn("make_east_build_error=_make_east_build_error", core_text)
-        self.assertIn("make_span=_sh_span", core_text)
-        self.assertIn("_sh_merge_logical_lines(", core_text)
-        self.assertIn("_sh_collect_indented_block(", core_text)
-        self.assertIn("_sh_bind_comp_target_types(dict(name_types), target_node, iter_node)", core_text)
-        self.assertIn("_sh_split_def_header_and_inline_stmt(", core_text)
-        self.assertIn("split_top_commas=_sh_split_top_commas", core_text)
-        self.assertIn("_sh_parse_except_clause(h_s)", core_text)
-        self.assertIn("_sh_split_top_level_from(expr_txt)", core_text)
-        self.assertIn("_sh_split_top_level_in(for_head)", core_text)
-        self.assertIn("_sh_split_top_level_colon(for_full)", core_text)
-        self.assertIn("_sh_split_top_level_assign(s)", core_text)
+        self.assertIn("make_east_build_error=_make_east_build_error", surface_text)
+        self.assertIn("make_span=_sh_span", surface_text)
+        self.assertIn("_sh_merge_logical_lines(", surface_text)
+        self.assertIn("_sh_collect_indented_block(", surface_text)
+        self.assertIn("_sh_bind_comp_target_types(dict(name_types), target_node, iter_node)", surface_text)
+        self.assertIn("_sh_split_def_header_and_inline_stmt(", surface_text)
+        self.assertIn("split_top_commas=_sh_split_top_commas", surface_text)
+        self.assertIn("_sh_parse_except_clause(h_s)", surface_text)
+        self.assertIn("_sh_split_top_level_from(expr_txt)", surface_text)
+        self.assertIn("_sh_split_top_level_in(for_head)", surface_text)
+        self.assertIn("_sh_split_top_level_colon(for_full)", surface_text)
+        self.assertIn("_sh_split_top_level_assign(s)", surface_text)
 
 
 if __name__ == "__main__":

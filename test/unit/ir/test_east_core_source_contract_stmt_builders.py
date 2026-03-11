@@ -11,7 +11,9 @@ if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
 from _east_core_test_support import CORE_BUILDER_BASE_SOURCE_PATH
+from _east_core_test_support import CORE_MODULE_PARSER_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
+from _east_core_test_support import CORE_STMT_PARSER_SOURCE_PATH
 from _east_core_test_support import CORE_STMT_BUILDERS_SOURCE_PATH
 
 
@@ -43,58 +45,60 @@ class EastCoreSourceContractStmtBuildersTest(unittest.TestCase):
             self.assertNotIn(marker, core_text)
 
     def test_core_source_uses_stmt_builder_helpers_for_statement_clusters(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        self.assertIn("assign_stmt = _sh_make_assign_stmt(", text)
-        self.assertIn("try_stmt = _sh_make_try_stmt(", text)
+        module_text = CORE_MODULE_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
+        stmt_text = CORE_STMT_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
+        surface_text = module_text + "\n" + stmt_text
+        self.assertIn("assign_stmt = _sh_make_assign_stmt(", stmt_text)
+        self.assertIn("try_stmt = _sh_make_try_stmt(", stmt_text)
         self.assertIn(
             "pending_blank_count = _sh_push_stmt_with_trivia(\n"
             "                stmts,\n"
             "                pending_leading_trivia,\n"
             "                pending_blank_count,\n"
             "                _sh_make_while_stmt(",
-            text,
+            stmt_text,
         )
-        self.assertIn("_sh_make_except_handler(", text)
+        self.assertIn("_sh_make_except_handler(", stmt_text)
         self.assertIn(
             "pending_blank_count = _sh_push_stmt_with_trivia(\n"
             "                stmts,\n"
             "                pending_leading_trivia,\n"
             "                pending_blank_count,\n"
             "                _sh_make_try_stmt(",
-            text,
+            stmt_text,
         )
-        self.assertIn("_sh_make_raise_stmt(", text)
-        self.assertIn("pass_stmt = _sh_make_pass_stmt(", text)
-        self.assertIn("_sh_make_return_stmt(", text)
-        self.assertIn("_sh_make_augassign_stmt(", text)
-        self.assertIn("_sh_make_swap_stmt(", text)
-        self.assertNotIn('assign_stmt = {"kind": "Assign"', text)
-        self.assertNotIn('try_stmt = {"kind": "Try"', text)
+        self.assertIn("_sh_make_raise_stmt(", stmt_text)
+        self.assertIn("pass_stmt = _sh_make_pass_stmt(", stmt_text)
+        self.assertIn("_sh_make_return_stmt(", stmt_text)
+        self.assertIn("_sh_make_augassign_stmt(", stmt_text)
+        self.assertIn("_sh_make_swap_stmt(", stmt_text)
+        self.assertNotIn('assign_stmt = {"kind": "Assign"', surface_text)
+        self.assertNotIn('try_stmt = {"kind": "Try"', surface_text)
         self.assertNotIn(
             'pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "While"',
-            text,
+            surface_text,
         )
-        self.assertNotIn('handlers.append({"kind": "ExceptHandler"', text)
+        self.assertNotIn('handlers.append({"kind": "ExceptHandler"', surface_text)
         self.assertNotIn(
             'pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "Try"',
-            text,
+            surface_text,
         )
         self.assertNotIn(
             'pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "Raise"',
-            text,
+            surface_text,
         )
-        self.assertNotIn('pass_stmt = {"kind": "Pass"', text)
+        self.assertNotIn('pass_stmt = {"kind": "Pass"', surface_text)
         self.assertNotIn(
             'pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "Return"',
-            text,
+            surface_text,
         )
         self.assertNotIn(
             'pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "AugAssign"',
-            text,
+            surface_text,
         )
         self.assertNotIn(
             'pending_blank_count = _sh_push_stmt_with_trivia(stmts, pending_leading_trivia, pending_blank_count, {"kind": "Swap"',
-            text,
+            surface_text,
         )
 
     def test_stmt_builder_module_routes_statement_envelopes_through_shared_helper(self) -> None:
@@ -121,12 +125,18 @@ class EastCoreSourceContractStmtBuildersTest(unittest.TestCase):
 
     def test_core_source_uses_stmt_builder_helpers_for_tuple_destructuring_clusters(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        stmt_parser_text = CORE_STMT_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
         stmt_text = CORE_STMT_BUILDERS_SOURCE_PATH.read_text(encoding="utf-8")
-        stmt_block_text = core_text.split("def _sh_parse_stmt_block_mutable", 1)[1].split(
-            "def _sh_build_module_root",
+        stmt_block_text = stmt_parser_text.split("def _sh_parse_stmt_block_mutable", 1)[1].split(
+            "def _sh_parse_stmt_block(",
             1,
         )[0]
 
+        self.assertIn(
+            "from toolchain.ir.core_stmt_parser import _sh_parse_stmt_block_mutable as _sh_parse_stmt_block_mutable_impl",
+            core_text,
+        )
+        self.assertIn("return _sh_parse_stmt_block_mutable_impl(", core_text)
         self.assertIn("def _sh_make_tuple_destructure_assign_stmt(", stmt_text)
         self.assertIn("_sh_make_tuple_destructure_assign_stmt(", stmt_block_text)
         self.assertIn('resolved_type=name_types.get(n1, "unknown")', stmt_block_text)

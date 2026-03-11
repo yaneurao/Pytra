@@ -11,18 +11,21 @@ if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
 from _east_core_test_support import CORE_EXPR_PARSER_BASE_SOURCE_PATH
+from _east_core_test_support import CORE_EXPR_SHELL_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
 
 
 class EastCoreSourceContractExprParserBaseTest(unittest.TestCase):
     def test_core_source_routes_expr_parser_base_through_split_mixin(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         base_text = CORE_EXPR_PARSER_BASE_SOURCE_PATH.read_text(encoding="utf-8")
-        class_text = core_text.split("class _ShExprParser(", 1)[1].split("def _callable_return_type", 1)[0]
+        class_text = shell_text.split("class _ShExprParser(", 1)[1].split("def _sh_parse_expr", 1)[0]
 
         self.assertIn("class _ShExprParserBaseMixin:", base_text)
-        self.assertIn("from toolchain.ir.core_expr_parser_base import _ShExprParserBaseMixin", core_text)
-        self.assertIn("_ShExprParserBaseMixin,", core_text)
+        self.assertIn("from toolchain.ir.core_expr_shell import _ShExprParser", core_text)
+        self.assertIn("from toolchain.ir.core_expr_parser_base import _ShExprParserBaseMixin", shell_text)
+        self.assertIn("_ShExprParserBaseMixin,", shell_text)
 
         for marker in (
             "def _tokenize(",
