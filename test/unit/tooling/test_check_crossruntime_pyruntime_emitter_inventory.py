@@ -139,6 +139,95 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             set(inventory_mod.EXPECTED_BUCKETS.keys()),
         )
 
+    def test_representative_lane_manifest_keys_match_bucket_names(self) -> None:
+        self.assertEqual(
+            set(inventory_mod.REPRESENTATIVE_LANE_MANIFEST.keys()),
+            set(inventory_mod.EXPECTED_BUCKETS.keys()),
+        )
+
+    def test_representative_lane_issues_are_empty(self) -> None:
+        self.assertEqual(inventory_mod._collect_representative_lane_issues(), [])
+
+    def test_representative_lane_manifest_stays_bucket_specific(self) -> None:
+        self.assertEqual(
+            inventory_mod.REPRESENTATIVE_LANE_MANIFEST["cpp_emitter_object_bridge_residual"],
+            {
+                "smoke_file": "test/unit/backends/cpp/test_east3_cpp_bridge.py",
+                "smoke_tests": {
+                    "test_render_expr_pyobj_runtime_list_append_uses_low_level_bridge",
+                    "test_emit_assign_pyobj_runtime_list_store_uses_low_level_bridge",
+                    "test_transpile_typed_list_append_stays_out_of_object_bridge",
+                    "test_transpile_typed_list_store_stays_out_of_object_bridge",
+                },
+                "source_guard_paths": set(),
+            },
+        )
+        self.assertEqual(
+            inventory_mod.REPRESENTATIVE_LANE_MANIFEST["cpp_emitter_shared_type_id_residual"],
+            {
+                "smoke_file": "test/unit/backends/cpp/test_east3_cpp_bridge.py",
+                "smoke_tests": {"test_render_expr_supports_east3_obj_boundary_nodes"},
+                "source_guard_paths": set(),
+            },
+        )
+        self.assertEqual(
+            inventory_mod.REPRESENTATIVE_LANE_MANIFEST["rs_emitter_shared_type_id_residual"],
+            {
+                "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",
+                "smoke_tests": {"test_type_predicate_nodes_are_lowered_without_legacy_bridge"},
+                "source_guard_paths": {"src/backends/rs/emitter/rs_emitter.py"},
+            },
+        )
+        self.assertEqual(
+            inventory_mod.REPRESENTATIVE_LANE_MANIFEST["cs_emitter_shared_type_id_residual"],
+            {
+                "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+                "smoke_tests": {"test_type_predicate_nodes_are_lowered_without_legacy_bridge"},
+                "source_guard_paths": {"src/backends/cs/emitter/cs_emitter.py"},
+            },
+        )
+        self.assertEqual(
+            inventory_mod.REPRESENTATIVE_LANE_MANIFEST["crossruntime_mutation_helper_residual"],
+            {
+                "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+                "smoke_tests": {
+                    "test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not",
+                    "test_bytearray_index_and_slice_compat_helpers_stay_explicit",
+                },
+                "source_guard_paths": {"src/backends/cs/emitter/cs_emitter.py"},
+            },
+        )
+
+    def test_source_guard_path_keys_match(self) -> None:
+        self.assertEqual(
+            set(inventory_mod.SOURCE_GUARD_REQUIRED_SUBSTRINGS.keys()),
+            {
+                "src/backends/rs/emitter/rs_emitter.py",
+                "src/backends/cs/emitter/cs_emitter.py",
+            },
+        )
+        self.assertEqual(
+            set(inventory_mod.SOURCE_GUARD_REQUIRED_SUBSTRINGS.keys()),
+            set(inventory_mod.SOURCE_GUARD_FORBIDDEN_SUBSTRINGS.keys()),
+        )
+
+    def test_source_guard_issues_are_empty(self) -> None:
+        self.assertEqual(inventory_mod._collect_source_guard_issues(), [])
+
+    def test_source_guard_covers_cs_bytes_residual_lane(self) -> None:
+        required = inventory_mod.SOURCE_GUARD_REQUIRED_SUBSTRINGS[
+            "src/backends/cs/emitter/cs_emitter.py"
+        ]
+        self.assertTrue(
+            {
+                "def _render_bytes_mutation_call(",
+                'return "Pytra.CsModule.py_runtime.py_append(" + owner_expr + ", " + rendered_args[0] + ")"',
+                'return "Pytra.CsModule.py_runtime.py_pop(" + owner_expr + ")"',
+                'return "Pytra.CsModule.py_runtime.py_slice(" + owner + ", " + lower_expr + ", " + upper_expr + ")"',
+                'return "Pytra.CsModule.py_runtime.py_get(" + owner + ", " + idx + ")"',
+            }.issubset(required)
+        )
+
     def test_reduction_order_is_stable_and_complete(self) -> None:
         self.assertEqual(
             inventory_mod.REDUCTION_ORDER,

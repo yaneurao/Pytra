@@ -30,7 +30,7 @@
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-01] C++ / Rust / C# emitter の `py_runtime` 依存 inventory を取り、typed lane / object bridge / shared type_id seam に分類する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-01] C++ emitter で object bridge 専用に残す helper と upstream 済み typed lane を再棚卸しし、header shrink 前提の regression を整理する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-02] Rust / C# emitter の `isinstance` / `issubclass` / mutation lowering を thin seam 前提へ揃える方針を確定する。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S3-01] cross-runtime inventory tool / smoke / source guard の representative lane を決め、header shrink 後の再流入を fail-closed にする。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S3-01] cross-runtime inventory tool / smoke / source guard の representative lane を決め、header shrink 後の再流入を fail-closed にする。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S4-01] `py_runtime.h` から落とせる surface と、final residual seam の handoff 条件を次段 task へ接続する。
 
 ## 現在の residual inventory（2026-03-12）
@@ -64,6 +64,12 @@
 代表 guard:
 - inventory 正本: [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_emitter_inventory.py)
 - unit guard: [test_check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py)
+- representative smoke:
+  - C++: [test_east3_cpp_bridge.py](/workspace/Pytra/test/unit/backends/cpp/test_east3_cpp_bridge.py)
+  - Rust: [test_py2rs_smoke.py](/workspace/Pytra/test/unit/backends/rs/test_py2rs_smoke.py)
+  - C#: [test_py2cs_smoke.py](/workspace/Pytra/test/unit/backends/cs/test_py2cs_smoke.py)
+- source guard:
+  - Rust/C# thin seam と C# bytes/bytearray residual lane は inventory tool の source guard pattern で固定する。
 
 ## C++ Re-Audit Snapshot（S2-01）
 
@@ -84,3 +90,4 @@
 - 2026-03-12: `S2-01` の first bundle として、C++ emitter では wrapper 再流入禁止を `cpp_emitter.py` / `runtime_expr.py` / `stmt.py` に限定して tool guard 化し、representative regression は `typed list append/set_at -> py_list_*_mut(rc_list_ref(...))` と `pyobj Any list -> obj_to_list_ref_or_raise(..., "py_append" | "py_set_at")` の対で固定した。
 - 2026-03-12: `S2-01` では C++ emitter の typed lane direct helper (`py_list_*_mut`) と object bridge wrapper (`py_append` 系) を別 inventory として固定し、wrapper 名が `call.py` 以外へ漏れたら fail-closed にした。
 - 2026-03-12: `S2-02` は Rust を `py_runtime_value_*` / `py_runtime_type_id_*` thin seam only として維持し、C# は同じ thin seamに加えて bytes/bytearray の `py_append/py_pop/py_get/py_slice/py_set` compat residual のみを intentional seam として固定した。
+- 2026-03-12: `S3-01` は inventory tool に Rust/C# thin seam と C# bytes/bytearray residual の source guard pattern を追加し、representative smoke を `test_east3_cpp_bridge.py` / `test_py2rs_smoke.py` / `test_py2cs_smoke.py` へ固定して完了扱いにした。
