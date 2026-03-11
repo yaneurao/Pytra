@@ -331,6 +331,24 @@ def _make_self_hosted_syntax_detail(
     return location + ": " + message
 
 
+def _rewrite_self_hosted_syntax_message_for_user(
+    message: str,
+    hint: str,
+) -> tuple[str, str]:
+    """self-hosted parser diagnostics を user-facing wording へ整形する。"""
+    text = message.replace("self_hosted parser", "Pytra parser").replace("self-hosted parser", "Pytra parser")
+    if text.startswith("Pytra parser cannot parse expression token: "):
+        token = text[len("Pytra parser cannot parse expression token: ") :].strip()
+        text = "Pytra parser does not support this expression syntax yet: " + token
+    if text.startswith("unsupported token '") and text.endswith("' in Pytra parser"):
+        token = text[len("unsupported token ") :].strip()
+        text = "Pytra parser does not support this token yet: " + token
+    new_hint = hint
+    if new_hint == "Fix Python syntax errors before EAST conversion.":
+        new_hint = "Rewrite this code using syntax currently supported by the Pytra parser."
+    return text, new_hint
+
+
 def _parse_self_hosted_syntax_error_message(
     msg: str,
 ) -> tuple[str, int | None, int | None, str] | None:
@@ -369,6 +387,7 @@ def _classify_self_hosted_syntax_user_error(
     if parsed is None:
         return None
     message, line, col, hint = parsed
+    message, hint = _rewrite_self_hosted_syntax_message_for_user(message, hint)
     details = [_make_self_hosted_syntax_detail(input_path, message, line, col)]
     if hint != "":
         details.append("hint: " + hint)

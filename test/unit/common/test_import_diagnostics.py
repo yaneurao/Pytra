@@ -28,8 +28,8 @@ class ImportDiagnosticsTest(unittest.TestCase):
                 "user_syntax_error",
                 "Python syntax error.",
                 [
-                    "pkg/main.py:7:18: self_hosted parser cannot parse expression token: *",
-                    "hint: Fix Python syntax errors before EAST conversion.",
+                    "pkg/main.py:7:18: Pytra parser does not support this expression syntax yet: *",
+                    "hint: Rewrite this code using syntax currently supported by the Pytra parser.",
                 ],
             ),
         )
@@ -205,8 +205,8 @@ class ImportDiagnosticsTest(unittest.TestCase):
         self.assertEqual(
             parsed["details"],
             [
-                f"{main_py}:1:0: self_hosted parser cannot parse expression token: *",
-                "hint: Fix Python syntax errors before EAST conversion.",
+                f"{main_py}:1:0: Pytra parser does not support this expression syntax yet: *",
+                "hint: Rewrite this code using syntax currently supported by the Pytra parser.",
             ],
         )
 
