@@ -21,6 +21,7 @@
 - [2026-03-12 / P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01](../plans/archive/20260312-p1-relative-import-multifile-runtime-hardening.md)
 - [2026-03-12 / P1-RELATIVE-IMPORT-ALIAS-HARDENING-01](../plans/archive/20260312-p1-relative-import-alias-hardening.md)
 - [2026-03-12 / P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01](../plans/archive/20260312-p2-relative-import-backend-coverage.md)
+- [2026-03-12 / P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01](../plans/archive/20260312-p2-relative-import-noncpp-rollout.md)
 - [2026-03-12 / P0-RELATIVE-IMPORT-BARE-PARENT-01](../plans/archive/20260312-p0-relative-import-bare-parent-hardening.md)
 - [2026-03-12 / P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01](../plans/archive/20260312-p4-crossruntime-pyruntime-emitter-future-shrink.md)
 - [2026-03-12 / P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01](../plans/archive/20260312-p4-crossruntime-pyruntime-emitter-residual-reduction.md)
@@ -149,7 +150,7 @@
 
 ## 日付別リンク
 
-- [2026-03-12](20260312.md)（16 セクション）
+- [2026-03-12](20260312.md)（17 セクション）
 - [2026-03-11](20260311.md)（25 セクション）
 - [2026-03-09](20260309.md)（29 セクション）
 - [2026-03-08](20260308.md)（31 セクション）

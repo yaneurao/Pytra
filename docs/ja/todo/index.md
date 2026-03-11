@@ -31,13 +31,4 @@
 
 ## 未完了タスク
 
-### P2: relative import non-C++ rollout staging
-
-文脈: [p2-relative-import-noncpp-rollout.md](../plans/p2-relative-import-noncpp-rollout.md)
-
-1. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01] relative import の non-C++ rollout 順と representative verification lane を staged plan として固定する。
-2. [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S1-01] live plan / TODO を起票し、first wave / second wave / long-tail の rollout order を固定した。
-3. [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-01] first wave backend の representative verification lane を `transpile smoke` / `fail-closed` に分けて固定した。
-4. [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-02] current coverage inventory / backend parity docs から next rollout handoff へのリンクを同期した。
-
-- 進捗メモ: non-C++ relative import rollout は `rs/cs` を first wave に固定し、coverage inventory / backend parity docs / active plan の handoff link を `transpile smoke + backend_specific_fail_closed` 前提で同期した。
+現在、未完了タスクはありません。

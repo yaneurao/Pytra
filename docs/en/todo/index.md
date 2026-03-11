@@ -31,13 +31,4 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-### P2: Relative-import non-C++ rollout staging
-
-Context: [p2-relative-import-noncpp-rollout.md](../plans/p2-relative-import-noncpp-rollout.md)
-
-1. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01] Fix the non-C++ rollout order and representative verification lanes for relative imports as a staged plan.
-2. [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S1-01] Created the live plan / TODO and fixed the first-wave / second-wave / long-tail rollout order.
-3. [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-01] Fixed the representative verification lane for first-wave backends across `transpile smoke` and `fail_closed`.
-4. [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-02] Synced links from the current coverage inventory / backend-parity docs into the next rollout handoff.
-
-- Progress note: The non-C++ relative-import rollout now fixes `rs/cs` as the first wave and keeps the coverage inventory, backend-parity docs, and active plan aligned around the `transpile_smoke + backend_specific_fail_closed` handoff.
+There are currently no unfinished tasks.
