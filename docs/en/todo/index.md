@@ -33,3 +33,4 @@ Last updated: 2026-03-11
 
 1. [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01] Support typed `*args` signatures from the self-hosted parser through the representative C++ lane, including extra positional argument packing for known user-function calls. Context: [p0-typed-varargs-signature-support.md](../plans/p0-typed-varargs-signature-support.md)
 2. [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01] Inventory the live/backlog/stale-complete plans still left under `plans/` and re-establish the archive handoff workflow. Context: [p4-plan-archive-hygiene.md](../plans/p4-plan-archive-hygiene.md)
+3. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01] Inventory the C++ / Rust / C# emitter dependencies that still block further `py_runtime.h` shrink, and realign the typed-lane, object-bridge, and shared type_id seams. Context: [p4-crossruntime-pyruntime-emitter-shrink.md](../plans/p4-crossruntime-pyruntime-emitter-shrink.md)

@@ -33,3 +33,4 @@
 
 1. [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01] typed `*args` signature を self-hosted parser から representative C++ lane まで通し、known user-function call の extra positional arg packing を追加する。文脈: [p0-typed-varargs-signature-support.md](../plans/p0-typed-varargs-signature-support.md)
 2. [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01] `plans/` 直下に残った live/backlog/stale-complete plan を棚卸しし、archive handoff の運用を再整備する。文脈: [p4-plan-archive-hygiene.md](../plans/p4-plan-archive-hygiene.md)
+3. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01] `py_runtime.h` をさらに縮める前提として、C++ / Rust / C# emitter の `py_runtime` 依存を inventory 化し、typed lane・object bridge・shared type_id seam の契約を整理する。文脈: [p4-crossruntime-pyruntime-emitter-shrink.md](../plans/p4-crossruntime-pyruntime-emitter-shrink.md)
