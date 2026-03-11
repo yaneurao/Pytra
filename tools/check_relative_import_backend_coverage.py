@@ -36,6 +36,7 @@ EXPECTED_BACKENDS = (
 )
 
 EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
+    "todo_id": "P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01",
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
     "backend_parity_docs": (
@@ -131,6 +132,28 @@ def validate_relative_import_noncpp_rollout_handoff() -> None:
         raise SystemExit(
             "relative import non-cpp rollout handoff drifted from the fixed inventory"
         )
+    plan_paths = RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["next_rollout_plan"]
+    for doc_path in RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["backend_parity_docs"]:
+        doc_text = (ROOT / doc_path).read_text(encoding="utf-8")
+        for plan_path in plan_paths:
+            plan_name = Path(plan_path).name
+            if plan_name not in doc_text:
+                raise SystemExit(
+                    f"relative import backend parity docs must link the next rollout plan: {doc_path} missing {plan_name}"
+                )
+        if (
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["next_verification_lane"]
+            not in doc_text
+        ):
+            raise SystemExit(
+                "relative import backend parity docs must mention the next verification lane: "
+                f"{doc_path}"
+            )
+        if RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["fail_closed_lane"] not in doc_text:
+            raise SystemExit(
+                "relative import backend parity docs must mention the fail-closed lane: "
+                f"{doc_path}"
+            )
 
 
 def main() -> None:
