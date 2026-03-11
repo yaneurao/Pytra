@@ -55,7 +55,7 @@ Breakdown:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S1-02] Lock the end state and bundle-sized removal order in docs/source guards.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S2-01] Move the C++ emitter `py_isinstance` blocker lanes onto explicit helpers and shrink `cpp_header_thincompat_blocker`.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S2-02] Align Rust/C# shared `type_id` API residuals to the intended naming/bridge end state and document the remaining non-blockers.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S3-01] Refresh representative smoke/tests/docs and archive the task.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S3-01] Refresh representative smoke/tests/docs and archive the task.
 
 Decision log:
 - 2026-03-11: Opened immediately after archiving `P1-CPP-PYRUNTIME-HEADER-SHRINK-01`, once the C++ header was down to object-bridge helpers plus the final thin `py_runtime_type_id` / `py_isinstance` compatibility surface.
@@ -63,3 +63,4 @@ Decision log:
 - 2026-03-11: As `S1-02`, fixed the end state as “`cpp_header_thincompat_blocker` should become an empty bucket, while Rust/C# remain isolated in `crossruntime_shared_type_id_api` until the naming/bridge follow-up.”
 - 2026-03-11: As `S2-01`, retargeted the two generic C++ `py_isinstance` sites in `runtime_expr.py` and `stmt.py` onto `py_runtime_object_isinstance`, leaving `cpp_header_thincompat_blocker` empty.
 - 2026-03-11: As `S2-02`, aligned the Rust/C# renderer surface to `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass`, and switched the inventory from raw file-wide regex matching to render-surface helper classification. The old generic names remain only as internal runtime aliases and are treated as non-blockers.
+- 2026-03-11: As `S3-01`, re-ran the representative inventory/tooling and C++/Rust/C# smoke lanes, then moved the thincompat follow-up docs into archive so the active TODO can close cleanly.
