@@ -54,9 +54,6 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
         self.assertIn("def _sh_make_lambda_expr(", text)
         self.assertIn("def _sh_make_formatted_value_node(", text)
         self.assertIn("def _sh_make_joined_str_expr(", text)
-        self.assertIn("def _sh_make_import_alias(", text)
-        self.assertIn("def _sh_make_import_stmt(", text)
-        self.assertIn("def _sh_make_import_from_stmt(", text)
         self.assertIn("def _sh_make_if_stmt(", text)
         self.assertIn("def _sh_make_while_stmt(", text)
         self.assertIn("def _sh_make_except_handler(", text)
@@ -66,16 +63,10 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
         self.assertIn("def _sh_make_function_def_stmt(", text)
         self.assertIn("def _sh_make_class_def_stmt(", text)
         self.assertIn("def _sh_make_def_sig_info(", text)
-        self.assertIn("def _sh_make_module_source_span(", text)
-        self.assertIn("def _sh_make_import_resolution_meta(", text)
-        self.assertIn("def _sh_make_import_resolution_binding(", text)
-        self.assertIn("def _sh_make_module_meta(", text)
         self.assertIn("def _sh_make_decl_meta(", class_semantics_text)
         self.assertIn("def _sh_make_nominal_adt_v1_meta(", class_semantics_text)
         self.assertNotIn("def _sh_make_decl_meta(", text)
         self.assertNotIn("def _sh_make_nominal_adt_v1_meta(", text)
-        self.assertIn("def _sh_import_binding_fields(", text)
-        self.assertIn("def _sh_make_import_resolution_binding(", text)
         self.assertIn("def _sh_make_assign_stmt(", text)
         self.assertIn("def _sh_make_ann_assign_stmt(", text)
         self.assertIn("def _sh_make_raise_stmt(", text)
@@ -84,19 +75,12 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
         self.assertIn("def _sh_make_yield_stmt(", text)
         self.assertIn("def _sh_make_augassign_stmt(", text)
         self.assertIn("def _sh_make_swap_stmt(", text)
-        self.assertIn("def _sh_make_import_alias(", text)
-        self.assertIn("def _sh_make_import_binding(", text)
-        self.assertIn("def _sh_make_import_symbol_binding(", text)
-        self.assertIn("def _sh_make_qualified_symbol_ref(", text)
-        self.assertIn("def _sh_make_import_stmt(", text)
-        self.assertIn("def _sh_make_import_from_stmt(", text)
         self.assertIn("def _sh_make_if_stmt(", text)
         self.assertIn("def _sh_make_while_stmt(", text)
         self.assertIn("def _sh_make_except_handler(", text)
         self.assertIn("def _sh_make_try_stmt(", text)
         self.assertIn("def _sh_make_for_stmt(", text)
         self.assertIn("def _sh_make_for_range_stmt(", text)
-        self.assertIn("def _sh_make_module_root(", text)
         self.assertIn("out = _sh_make_module_root(", text)
         self.assertNotIn('out["kind"] = "Module"', text)
         self.assertNotIn('_SH_IMPORT_SYMBOLS[local] = {"module": module, "name": export}', text)
@@ -175,13 +159,6 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
     def test_core_source_uses_builder_helpers_for_decl_and_import_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         class_semantics_text = CORE_CLASS_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        self.assertIn("aliases.append(_sh_make_import_alias(", text)
-        self.assertIn("body_items.append(_sh_make_import_stmt(_sh_span(i, 0, len(ln)), aliases))", text)
-        self.assertIn(
-            "body_items.append(\n"
-            "                    _sh_make_import_from_stmt(",
-            text,
-        )
         self.assertIn("item = _sh_make_function_def_stmt(", text)
         self.assertIn("_sh_block_end_span(block, i, 0, len(ln), len(block))", text)
         self.assertIn(
@@ -197,8 +174,6 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
         self.assertIn("def _sh_collect_nominal_adt_class_metadata(", class_semantics_text)
         self.assertIn("class_meta = _sh_collect_nominal_adt_class_metadata(", text)
         self.assertNotIn("def _sh_collect_nominal_adt_class_metadata(", text)
-        self.assertNotIn('body_items.append({"kind": "Import"', text)
-        self.assertNotIn('body_items.append({"kind": "ImportFrom"', text)
         self.assertNotIn('item = {"kind": "FunctionDef"', text)
         self.assertNotIn('class_body.append({"kind": "FunctionDef"', text)
         self.assertNotIn('cls_item = {"kind": "ClassDef"', text)
@@ -297,7 +272,6 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
         except_text = text.split("def _sh_make_except_handler", 1)[1].split("def _sh_make_try_stmt", 1)[0]
         try_text = text.split("def _sh_make_try_stmt", 1)[1].split("def _sh_make_for_stmt", 1)[0]
         fn_text = text.split("def _sh_make_function_def_stmt", 1)[1].split("def _sh_make_class_def_stmt", 1)[0]
-        module_text = text.split("def _sh_make_module_root", 1)[1].split("def _sh_ann_to_type", 1)[0]
 
         self.assertIn('node = _sh_make_kind_carrier(kind)', node_helper_text)
         self.assertIn("node.update(fields)", node_helper_text)
@@ -309,14 +283,11 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
         self.assertIn('return _sh_make_node("ExceptHandler", type=type_expr, name=name, body=body)', except_text)
         self.assertIn('node = _sh_make_stmt_node("Try", source_span)', try_text)
         self.assertIn('node = _sh_make_stmt_node("FunctionDef", source_span)', fn_text)
-        self.assertIn('return _sh_make_node(', module_text)
-        self.assertIn('"Module"', module_text)
         self.assertNotIn('{"kind": "Expr"', expr_text)
         self.assertNotIn('{"kind": "Assign"', assign_text)
         self.assertNotIn('"kind": "ExceptHandler"', except_text)
         self.assertNotIn('{"kind": "Try"', try_text)
         self.assertNotIn('{"kind": "FunctionDef"', fn_text)
-        self.assertNotIn('"kind": "Module"', module_text)
 
     def test_core_source_uses_builder_helpers_for_residual_stmt_name_tuple_clusters(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")

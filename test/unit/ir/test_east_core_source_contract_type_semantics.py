@@ -25,9 +25,6 @@ class EastCoreSourceContractTypeSemanticsTest(unittest.TestCase):
         self.assertIn("from toolchain.ir.core_type_semantics import _sh_register_type_alias", core_text)
         self.assertIn("from toolchain.ir.core_type_semantics import _sh_ann_to_type", core_text)
         self.assertIn("from toolchain.ir.core_type_semantics import _sh_ann_to_type_expr", core_text)
-        self.assertIn("from toolchain.ir.core_type_semantics import _sh_type_expr_to_type_name", core_text)
-        self.assertIn("from toolchain.ir.core_type_semantics import _sh_split_args_with_offsets", core_text)
-
         self.assertIn("def _sh_default_type_aliases(", helper_text)
         self.assertIn("def _sh_is_type_expr_text(", helper_text)
         self.assertIn("def _sh_typing_alias_to_type_name(", helper_text)
@@ -50,7 +47,6 @@ class EastCoreSourceContractTypeSemanticsTest(unittest.TestCase):
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn("_SH_TYPE_ALIASES.update(_sh_default_type_aliases())", core_text)
-        self.assertIn("for p_txt, _off in _sh_split_args_with_offsets(args_raw):", core_text)
         self.assertIn("target = _sh_typing_alias_to_type_name(sym_txt)", core_text)
         self.assertIn("_sh_register_type_alias(type_aliases, pre_left, pre_right)", core_text)
         self.assertIn("ann = _sh_ann_to_type(ann_txt, type_aliases=_SH_TYPE_ALIASES)", core_text)

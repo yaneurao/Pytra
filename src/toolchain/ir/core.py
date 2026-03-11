@@ -31,7 +31,6 @@ from toolchain.frontends.frontend_semantics import lookup_stdlib_symbol_semantic
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_template import validate_template_module
 from toolchain.frontends.runtime_symbol_index import lookup_runtime_call_adapter_kind
-from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 from toolchain.frontends.type_expr import sync_type_expr_mirrors
 from toolchain.ir.core_class_semantics import _sh_collect_nominal_adt_class_metadata
 from toolchain.ir.core_class_semantics import _sh_is_value_safe_dataclass_candidate
@@ -43,6 +42,22 @@ from toolchain.ir.core_decorator_semantics import _sh_is_sealed_decorator
 from toolchain.ir.core_decorator_semantics import _sh_is_template_decorator
 from toolchain.ir.core_decorator_semantics import _sh_parse_decorator_head_and_args
 from toolchain.ir.core_extern_semantics import _sh_collect_extern_var_metadata
+from toolchain.ir.core_import_module_builders import _sh_make_import_alias
+from toolchain.ir.core_import_module_builders import _sh_make_import_binding
+from toolchain.ir.core_import_module_builders import _sh_make_import_from_stmt
+from toolchain.ir.core_import_module_builders import _sh_make_import_resolution_meta
+from toolchain.ir.core_import_module_builders import _sh_make_import_stmt
+from toolchain.ir.core_import_module_builders import _sh_make_import_symbol_binding
+from toolchain.ir.core_import_module_builders import _sh_make_module_meta
+from toolchain.ir.core_import_module_builders import _sh_make_module_root
+from toolchain.ir.core_import_module_builders import _sh_make_module_source_span
+from toolchain.ir.core_import_module_builders import _sh_make_qualified_symbol_ref
+from toolchain.ir.core_import_semantics import _sh_append_import_binding
+from toolchain.ir.core_import_semantics import _sh_import_binding_fields
+from toolchain.ir.core_import_semantics import _sh_is_host_only_alias
+from toolchain.ir.core_import_semantics import _sh_make_import_resolution_binding
+from toolchain.ir.core_import_semantics import _sh_register_import_module
+from toolchain.ir.core_import_semantics import _sh_register_import_symbol
 from toolchain.ir.core_runtime_call_semantics import _sh_annotate_anyall_call_expr
 from toolchain.ir.core_runtime_call_semantics import _sh_annotate_collection_ctor_call_expr
 from toolchain.ir.core_runtime_call_semantics import _sh_annotate_enumerate_call_expr
@@ -70,6 +85,9 @@ from toolchain.ir.core_runtime_decl_semantics import _sh_collect_function_runtim
 from toolchain.ir.core_runtime_decl_semantics import _sh_reject_runtime_decl_class_decorators
 from toolchain.ir.core_runtime_decl_semantics import _sh_reject_runtime_decl_method_decorator
 from toolchain.ir.core_runtime_decl_semantics import _sh_reject_runtime_decl_nonfunction_decorators
+from toolchain.ir.core_signature_semantics import _sh_parse_augassign
+from toolchain.ir.core_signature_semantics import _sh_parse_def_sig
+from toolchain.ir.core_signature_semantics import _sh_parse_typed_binding
 from toolchain.ir.core_stmt_analysis import _sh_build_arg_usage_map
 from toolchain.ir.core_stmt_analysis import _sh_collect_reassigned_names
 from toolchain.ir.core_stmt_analysis import _sh_collect_return_value_types
@@ -112,8 +130,6 @@ from toolchain.ir.core_type_semantics import _sh_ann_to_type_expr
 from toolchain.ir.core_type_semantics import _sh_default_type_aliases
 from toolchain.ir.core_type_semantics import _sh_is_type_expr_text
 from toolchain.ir.core_type_semantics import _sh_register_type_alias
-from toolchain.ir.core_type_semantics import _sh_split_args_with_offsets
-from toolchain.ir.core_type_semantics import _sh_type_expr_to_type_name
 from toolchain.ir.core_type_semantics import _sh_typing_alias_to_type_name
 from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin
 from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin
@@ -1126,76 +1142,6 @@ def _sh_make_swap_stmt(
     return node
 
 
-def _sh_make_import_alias(name: str, asname: str | None = None) -> dict[str, str | None]:
-    """import alias item を構築する。"""
-    return {
-        "name": name,
-        "asname": asname,
-    }
-
-
-def _sh_make_import_binding(
-    *,
-    module_id: str,
-    export_name: str,
-    local_name: str,
-    binding_kind: str,
-    source_file: str,
-    source_line: int,
-) -> dict[str, Any]:
-    """import metadata carrier を構築する。"""
-    return {
-        "module_id": module_id,
-        "export_name": export_name,
-        "local_name": local_name,
-        "binding_kind": binding_kind,
-        "source_file": source_file,
-        "source_line": source_line,
-    }
-
-
-def _sh_make_import_symbol_binding(module: str, name: str) -> dict[str, str]:
-    """import symbol metadata carrier を構築する。"""
-    return {
-        "module": module,
-        "name": name,
-    }
-
-
-def _sh_make_qualified_symbol_ref(module_id: str, symbol: str, local_name: str) -> dict[str, str]:
-    """qualified symbol reference carrier を構築する。"""
-    return {
-        "module_id": module_id,
-        "symbol": symbol,
-        "local_name": local_name,
-    }
-
-
-def _sh_make_import_stmt(
-    source_span: dict[str, Any],
-    names: list[dict[str, str | None]],
-) -> dict[str, Any]:
-    """`Import` 文 node を構築する。"""
-    node = _sh_make_stmt_node("Import", source_span)
-    node["names"] = names
-    return node
-
-
-def _sh_make_import_from_stmt(
-    source_span: dict[str, Any],
-    module: str,
-    names: list[dict[str, str | None]],
-    *,
-    level: int = 0,
-) -> dict[str, Any]:
-    """`ImportFrom` 文 node を構築する。"""
-    node = _sh_make_stmt_node("ImportFrom", source_span)
-    node["module"] = module
-    node["names"] = names
-    node["level"] = level
-    return node
-
-
 def _sh_make_if_stmt(
     source_span: dict[str, Any],
     test: dict[str, Any],
@@ -1418,307 +1364,6 @@ def _sh_make_def_sig_info(
     }
 
 
-def _sh_make_module_source_span() -> dict[str, Any]:
-    """Module root 用の空 source_span carrier を構築する。"""
-    return {
-        "lineno": None,
-        "col": None,
-        "end_lineno": None,
-        "end_col": None,
-    }
-
-
-def _sh_make_import_resolution_meta(
-    bindings: list[dict[str, Any]],
-    qualified_refs: list[dict[str, str]],
-) -> dict[str, Any]:
-    """module meta.import_resolution carrier を構築する。"""
-    return {
-        "schema_version": 1,
-        "bindings": bindings,
-        "qualified_refs": qualified_refs,
-    }
-
-
-def _sh_make_module_meta(
-    *,
-    import_resolution: dict[str, Any],
-    import_bindings: list[dict[str, Any]],
-    qualified_symbol_refs: list[dict[str, str]],
-    import_module_bindings: dict[str, str],
-    import_symbol_bindings: dict[str, dict[str, str]],
-) -> dict[str, Any]:
-    """Module root の meta carrier を構築する。"""
-    return {
-        "parser_backend": "self_hosted",
-        "import_resolution": import_resolution,
-        "import_bindings": import_bindings,
-        "qualified_symbol_refs": qualified_symbol_refs,
-        "import_modules": import_module_bindings,
-        "import_symbols": import_symbol_bindings,
-    }
-
-
-def _sh_make_module_root(
-    *,
-    filename: str,
-    body_items: list[dict[str, Any]],
-    main_stmts: list[dict[str, Any]],
-    renamed_symbols: dict[str, str],
-    import_resolution_bindings: list[dict[str, Any]],
-    qualified_symbol_refs: list[dict[str, str]],
-    import_bindings: list[dict[str, Any]],
-    import_module_bindings: dict[str, str],
-    import_symbol_bindings: dict[str, dict[str, str]],
-) -> dict[str, Any]:
-    """Module root を構築する。"""
-    source_span = _sh_make_module_source_span()
-    import_resolution = _sh_make_import_resolution_meta(import_resolution_bindings, qualified_symbol_refs)
-    meta = _sh_make_module_meta(
-        import_resolution=import_resolution,
-        import_bindings=import_bindings,
-        qualified_symbol_refs=qualified_symbol_refs,
-        import_module_bindings=import_module_bindings,
-        import_symbol_bindings=import_symbol_bindings,
-    )
-    return _sh_make_node(
-        "Module",
-        source_path=filename,
-        source_span=source_span,
-        body=body_items,
-        main_guard_body=main_stmts,
-        renamed_symbols=renamed_symbols,
-        meta=meta,
-    )
-
-
-def _sh_parse_typed_binding(text: str, *, allow_dotted_name: bool = False) -> tuple[str, str, str] | None:
-    """`name: Type` / `name: Type = expr` を手書きパースし、(name, type, default) を返す。"""
-    raw = text.strip()
-    if raw == "":
-        return None
-    colon = raw.find(":")
-    if colon <= 0:
-        return None
-    name_txt = raw[:colon].strip()
-    ann_txt = raw[colon + 1 :].strip()
-    if ann_txt == "":
-        return None
-    if allow_dotted_name:
-        name_parts = name_txt.split(".")
-        if len(name_parts) == 0:
-            return None
-        norm_parts: list[str] = []
-        for seg in name_parts:
-            seg_norm = seg.strip()
-            if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", seg_norm) is None:
-                return None
-            norm_parts.append(seg_norm)
-        name_txt = ".".join(norm_parts)
-    else:
-        if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", name_txt) is None:
-            return None
-    default_txt = ""
-    split_ann = _sh_split_top_level_assign(ann_txt)
-    if split_ann is not None:
-        ann_lhs, ann_rhs = split_ann
-        ann_txt = ann_lhs.strip()
-        default_txt = ann_rhs.strip()
-    if ann_txt == "":
-        return None
-    return name_txt, ann_txt, default_txt
-
-def _sh_parse_augassign(text: str) -> tuple[str, str, str] | None:
-    """`target <op>= expr` をトップレベルで分解して返す。"""
-    raw = text.strip()
-    if raw == "":
-        return None
-    ops = ["<<=", ">>=", "//=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^="]
-    depth = 0
-    in_str: str | None = None
-    esc = False
-    for i, ch in enumerate(raw):
-        if in_str is not None:
-            if esc:
-                esc = False
-            elif ch == "\\":
-                esc = True
-            elif ch == in_str:
-                in_str = None
-            continue
-        if ch in {"'", '"'}:
-            in_str = ch
-            continue
-        if ch in {"(", "[", "{"}:
-            depth += 1
-            continue
-        if ch in {")", "]", "}"}:
-            depth -= 1
-            continue
-        if depth == 0:
-            for op in ops:
-                if raw[i : i + len(op)] == op:
-                    left = raw[:i].strip()
-                    right = raw[i + len(op) :].strip()
-                    if left == "" or right == "":
-                        return None
-                    # allow Name / Attribute / Subscript lvalues, e.g. "a[i] += 1"
-                    if left.count("=") > 0:
-                        return None
-                    return left, op, right
-    return None
-
-
-def _sh_parse_def_sig(
-    ln_no: int,
-    ln: str,
-    *,
-    in_class: str = "",
-) -> dict[str, Any] | None:
-    """`def ...` 行から関数名・引数型・戻り型を抽出する。"""
-    aliases = _SH_TYPE_ALIASES
-    ln_norm: str = re.sub(r"\s+", " ", ln.strip())
-    if not ln_norm.startswith("def ") or not ln_norm.endswith(":"):
-        return None
-    head = ln_norm[4:-1].strip()
-    lp = head.find("(")
-    rp = head.rfind(")")
-    if lp <= 0 or rp < lp:
-        return None
-    fn_name = ""
-    args_raw: str = ""
-    ret_group: str = ""
-    fn_name = head[:lp].strip()
-    if re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", fn_name) is None:
-        return None
-    args_raw = head[lp + 1 : rp]
-    tail = head[rp + 1 :].strip()
-    if tail == "":
-        ret_group = ""
-    elif tail.startswith("->"):
-        ret_group = tail[2:].strip()
-        if ret_group == "":
-            raise _make_east_build_error(
-                kind="unsupported_syntax",
-                message="self_hosted parser cannot parse return annotation in function signature",
-                source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                hint="Use `def name(args) -> Type:` style signature.",
-            )
-    else:
-        return None
-    arg_types: dict[str, str] = {}
-    arg_type_exprs: dict[str, dict[str, Any]] = {}
-    arg_order: list[str] = []
-    arg_defaults: dict[str, str] = {}
-    if args_raw.strip() != "":
-        # Supported:
-        # - name: Type
-        # - name: Type = default
-        # - "*" keyword-only marker
-        # Not supported:
-        # - "/" positional-only marker
-        for p_txt, _off in _sh_split_args_with_offsets(args_raw):
-            p: str = p_txt.strip()
-            if p == "":
-                continue
-            if p == "*":
-                continue
-            if p == "/":
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message="self_hosted parser cannot parse positional-only marker '/' in parameter list",
-                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                    hint="Remove '/' from signature for now.",
-                )
-            if p.startswith("**"):
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"self_hosted parser cannot parse variadic kwargs parameter: {p_txt}",
-                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                    hint="Use explicit parameters instead of **kwargs.",
-                )
-            if p.startswith("*"):
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"self_hosted parser cannot parse variadic args parameter: {p_txt}",
-                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                    hint="Use explicit parameters instead of *args.",
-                )
-            if in_class != "" and p == "self":
-                arg_types["self"] = in_class
-                arg_type_exprs["self"] = _sh_ann_to_type_expr(in_class, type_aliases=aliases)
-                arg_order.append("self")
-                continue
-            if ":" not in p:
-                p_name = p
-                p_default = ""
-                p_assign = _sh_split_top_level_assign(p)
-                if p_assign is not None:
-                    p_name = p_assign[0].strip()
-                    p_default = p_assign[1].strip()
-                if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", p_name):
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message=f"self_hosted parser cannot parse parameter name: {p_txt}",
-                        source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                        hint="Use valid identifier for parameter name.",
-                    )
-                if in_class != "" and p_name == "self":
-                    arg_types["self"] = in_class
-                    arg_type_exprs["self"] = _sh_ann_to_type_expr(in_class, type_aliases=aliases)
-                    arg_order.append("self")
-                    if p_default != "":
-                        arg_defaults["self"] = p_default
-                    continue
-                arg_types[p_name] = "unknown"
-                arg_type_exprs[p_name] = _sh_ann_to_type_expr("unknown", type_aliases=aliases)
-                arg_order.append(p_name)
-                if p_default != "":
-                    arg_defaults[p_name] = p_default
-                continue
-            parsed_param = _sh_parse_typed_binding(p, allow_dotted_name=False)
-            if parsed_param is None:
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"self_hosted parser cannot parse parameter: {p_txt}",
-                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                    hint="Use `name: Type` style parameters.",
-                )
-            pn, pt, pdef = parsed_param
-            if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", pn):
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"self_hosted parser cannot parse parameter name: {pn}",
-                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                    hint="Use valid identifier for parameter name.",
-                )
-            if pt == "":
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"self_hosted parser cannot parse parameter type: {p_txt}",
-                    source_span=_sh_span(ln_no, 0, len(ln_norm)),
-                    hint="Use `name: Type` style parameters.",
-                )
-            arg_expr = _sh_ann_to_type_expr(pt, type_aliases=aliases)
-            arg_types[pn] = _sh_type_expr_to_type_name(arg_expr)
-            arg_type_exprs[pn] = arg_expr
-            arg_order.append(pn)
-            if pdef != "":
-                default_txt = pdef.strip()
-                if default_txt != "":
-                    arg_defaults[pn] = default_txt
-    ret_expr = _sh_ann_to_type_expr(ret_group.strip(), type_aliases=aliases) if ret_group != "" else _sh_ann_to_type_expr("None", type_aliases=aliases)
-    return _sh_make_def_sig_info(
-        fn_name,
-        _sh_type_expr_to_type_name(ret_expr),
-        arg_types,
-        arg_type_exprs,
-        ret_expr,
-        arg_order,
-        arg_defaults,
-    )
-
-
 def _sh_extract_adjacent_string_parts(
     text: str,
     line_no: int,
@@ -1882,114 +1527,6 @@ def _sh_parse_if_tail(
             )
         ], k3
     return [], idx
-
-
-def _sh_append_import_binding(
-    *,
-    import_bindings: list[dict[str, Any]],
-    import_binding_names: set[str],
-    module_id: str,
-    export_name: str,
-    local_name: str,
-    binding_kind: str,
-    source_file: str,
-    source_line: int,
-) -> None:
-    """import 情報の正本 `ImportBinding` を追加する。"""
-    if local_name in import_binding_names:
-        raise _make_east_build_error(
-            kind="unsupported_syntax",
-            message=f"duplicate import binding: {local_name}",
-            source_span=_sh_span(source_line, 0, 0),
-            hint="Rename alias to avoid duplicate imported names.",
-        )
-    import_binding_names.add(local_name)
-    import_bindings.append(
-        _sh_make_import_binding(
-            module_id=module_id,
-            export_name=export_name,
-            local_name=local_name,
-            binding_kind=binding_kind,
-            source_file=source_file,
-            source_line=source_line,
-        )
-    )
-
-
-def _sh_import_binding_fields(binding: dict[str, Any]) -> tuple[str, str, str, str, str, int]:
-    """import binding raw dict から共通 field を取り出す。"""
-    module_id_obj = binding.get("module_id")
-    export_name_obj = binding.get("export_name")
-    local_name_obj = binding.get("local_name")
-    binding_kind_obj = binding.get("binding_kind")
-    source_file_obj = binding.get("source_file")
-    source_line_obj = binding.get("source_line")
-    module_id = module_id_obj if isinstance(module_id_obj, str) else ""
-    export_name = export_name_obj if isinstance(export_name_obj, str) else ""
-    local_name = local_name_obj if isinstance(local_name_obj, str) else ""
-    binding_kind = binding_kind_obj if isinstance(binding_kind_obj, str) else ""
-    source_file = source_file_obj if isinstance(source_file_obj, str) else ""
-    source_line = source_line_obj if isinstance(source_line_obj, int) else 0
-    return module_id, export_name, local_name, binding_kind, source_file, source_line
-
-
-def _sh_make_import_resolution_binding(binding: dict[str, Any]) -> dict[str, Any]:
-    module_id, export_name, local_name, binding_kind, source_file, source_line = _sh_import_binding_fields(binding)
-    out = _sh_make_import_binding(
-        module_id=module_id,
-        export_name=export_name,
-        local_name=local_name,
-        binding_kind=binding_kind,
-        source_file=source_file,
-        source_line=source_line,
-    )
-    resolution = resolve_import_binding_doc(
-        module_id,
-        export_name,
-        binding_kind,
-    )
-    for key in (
-        "source_module_id",
-        "source_export_name",
-        "source_binding_kind",
-        "runtime_module_id",
-        "runtime_group",
-        "resolved_binding_kind",
-        "runtime_symbol",
-        "runtime_symbol_kind",
-        "runtime_symbol_dispatch",
-        "runtime_semantic_tag",
-        "runtime_call_adapter_kind",
-    ):
-        value = resolution.get(key)
-        if isinstance(value, str) and value != "":
-            out[key] = value
-    return out
-
-
-def _sh_is_host_only_alias(local_name: str) -> bool:
-    """`__name` 形式の host-only import alias か判定する。"""
-    local = local_name.strip()
-    return local.startswith("__") and local != ""
-
-
-def _sh_register_import_symbol(local_name: str, module_id: str, export_name: str) -> None:
-    """from-import で導入されたシンボル解決情報を式パーサ共有コンテキストへ反映する。"""
-    local = local_name.strip()
-    module = module_id.strip()
-    export = export_name.strip()
-    if local == "" or module == "" or export == "":
-        return
-    _SH_IMPORT_SYMBOLS[local] = _sh_make_import_symbol_binding(module, export)
-
-
-def _sh_register_import_module(local_name: str, module_id: str) -> None:
-    """import で導入されたモジュール別名を式パーサ共有コンテキストへ反映する。"""
-    local = local_name.strip()
-    module = module_id.strip()
-    if local == "" or module == "":
-        return
-    _SH_IMPORT_MODULES[local] = module
 
 
 class _ShExprParser(
@@ -5226,7 +4763,14 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
             continue
 
         sig_line, inline_fn_stmt = _sh_split_def_header_and_inline_stmt(s)
-        sig = _sh_parse_def_sig(ln_no, sig_line)
+        sig = _sh_parse_def_sig(
+            ln_no,
+            sig_line,
+            type_aliases=_SH_TYPE_ALIASES,
+            make_east_build_error=_make_east_build_error,
+            make_span=_sh_span,
+            make_def_sig_info=_sh_make_def_sig_info,
+        )
         if sig is not None:
             fn_name = str(sig["name"])
             fn_ret = str(sig["ret"])
@@ -5597,10 +5141,10 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 if mod_name == "dataclasses":
                     # `dataclasses` は decorator 解決専用モジュールとして扱い、EAST 依存には積まない。
                     bind_name_dc = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
-                    _sh_register_import_module(bind_name_dc, mod_name)
+                    _sh_register_import_module(_SH_IMPORT_MODULES, bind_name_dc, mod_name)
                     continue
                 bind_name = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
-                _sh_register_import_module(bind_name, mod_name)
+                _sh_register_import_module(_SH_IMPORT_MODULES, bind_name, mod_name)
                 if _sh_is_host_only_alias(bind_name):
                     continue
                 aliases.append(_sh_make_import_alias(mod_name, as_name_txt if as_name_txt != "" else None))
@@ -5610,6 +5154,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     pending_leading_trivia,
                     pending_blank_count,
                     _sh_make_import_stmt(
+                        _sh_make_stmt_node,
                         _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
                         aliases,
                     ),
@@ -5649,7 +5194,13 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                             continue
                         sym_name, as_name_txt = parsed_alias
                         bind_name_dc = as_name_txt if as_name_txt != "" else sym_name
-                        _sh_register_import_symbol(bind_name_dc, mod_name, sym_name)
+                        _sh_register_import_symbol(
+                            _SH_IMPORT_SYMBOLS,
+                            bind_name_dc,
+                            mod_name,
+                            sym_name,
+                            make_import_symbol_binding=_sh_make_import_symbol_binding,
+                        )
                 continue
             if mod_name == "__future__":
                 if names_txt == "*":
@@ -5696,6 +5247,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     pending_leading_trivia,
                     pending_blank_count,
                     _sh_make_import_from_stmt(
+                        _sh_make_stmt_node,
                         _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
                         mod_name,
                         [_sh_make_import_alias("*")],
@@ -5726,7 +5278,13 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     )
                 sym_name, as_name_txt = parsed_alias
                 bind_name = as_name_txt if as_name_txt != "" else sym_name
-                _sh_register_import_symbol(bind_name, mod_name, sym_name)
+                _sh_register_import_symbol(
+                    _SH_IMPORT_SYMBOLS,
+                    bind_name,
+                    mod_name,
+                    sym_name,
+                    make_import_symbol_binding=_sh_make_import_symbol_binding,
+                )
                 if _sh_is_host_only_alias(bind_name):
                     continue
                 aliases.append(_sh_make_import_alias(sym_name, as_name_txt if as_name_txt != "" else None))
@@ -5736,6 +5294,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                     pending_leading_trivia,
                     pending_blank_count,
                     _sh_make_import_from_stmt(
+                        _sh_make_stmt_node,
                         _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
                         mod_name,
                         aliases,
@@ -6271,13 +5830,28 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
             continue
         if cur_cls is None:
             sig_line_scan, _inline_scan = _sh_split_def_header_and_inline_stmt(s)
-            sig = _sh_parse_def_sig(ln_no, sig_line_scan)
+            sig = _sh_parse_def_sig(
+                ln_no,
+                sig_line_scan,
+                type_aliases=_SH_TYPE_ALIASES,
+                make_east_build_error=_make_east_build_error,
+                make_span=_sh_span,
+                make_def_sig_info=_sh_make_def_sig_info,
+            )
             if sig is not None:
                 fn_returns[str(sig["name"])] = str(sig["ret"])
             continue
         cur_cls_name: str = cur_cls
         sig_line_scan, _inline_scan = _sh_split_def_header_and_inline_stmt(s)
-        sig = _sh_parse_def_sig(ln_no, sig_line_scan, in_class=cur_cls_name)
+        sig = _sh_parse_def_sig(
+            ln_no,
+            sig_line_scan,
+            in_class=cur_cls_name,
+            type_aliases=_SH_TYPE_ALIASES,
+            make_east_build_error=_make_east_build_error,
+            make_span=_sh_span,
+            make_def_sig_info=_sh_make_def_sig_info,
+        )
         if sig is not None:
             methods: dict[str, str] = class_method_return_types[cur_cls_name]
             methods[str(sig["name"])] = str(sig["ret"])
@@ -6384,7 +5958,14 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         sig_line_full: str = s
         sig_line, inline_fn_stmt = _sh_split_def_header_and_inline_stmt(sig_line_full)
         sig_end_line = logical_end
-        sig = _sh_parse_def_sig(i, sig_line)
+        sig = _sh_parse_def_sig(
+            i,
+            sig_line,
+            type_aliases=_SH_TYPE_ALIASES,
+            make_east_build_error=_make_east_build_error,
+            make_span=_sh_span,
+            make_def_sig_info=_sh_make_def_sig_info,
+        )
         if sig is not None:
             fn_name = str(sig["name"])
             fn_ret = str(sig["ret"])
@@ -6537,10 +6118,10 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     # `dataclasses` は decorator 解決専用モジュールとして扱う（no-op import）。
                     bind_name_dc = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
                     import_module_bindings[bind_name_dc] = mod_name
-                    _sh_register_import_module(bind_name_dc, mod_name)
+                    _sh_register_import_module(_SH_IMPORT_MODULES, bind_name_dc, mod_name)
                     continue
                 bind_name = as_name_txt if as_name_txt != "" else mod_name.split(".")[0]
-                _sh_register_import_module(bind_name, mod_name)
+                _sh_register_import_module(_SH_IMPORT_MODULES, bind_name, mod_name)
                 if _sh_is_host_only_alias(bind_name):
                     continue
                 _sh_append_import_binding(
@@ -6552,10 +6133,13 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     binding_kind="module",
                     source_file=filename,
                     source_line=i,
+                    make_east_build_error=_make_east_build_error,
+                    make_span=_sh_span,
+                    make_import_binding=_sh_make_import_binding,
                 )
                 aliases.append(_sh_make_import_alias(mod_name, as_name_txt if as_name_txt != "" else None))
             if len(aliases) > 0:
-                body_items.append(_sh_make_import_stmt(_sh_span(i, 0, len(ln)), aliases))
+                body_items.append(_sh_make_import_stmt(_sh_make_stmt_node, _sh_span(i, 0, len(ln)), aliases))
             i = logical_end + 1
             continue
         if s.startswith("from "):
@@ -6625,7 +6209,13 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         mod_name,
                         sym_name,
                     )
-                    _sh_register_import_symbol(bind_name_dc, mod_name, sym_name)
+                    _sh_register_import_symbol(
+                        _SH_IMPORT_SYMBOLS,
+                        bind_name_dc,
+                        mod_name,
+                        sym_name,
+                        make_import_symbol_binding=_sh_make_import_symbol_binding,
+                    )
                 i = logical_end + 1
                 continue
             if mod_name == "__future__":
@@ -6679,9 +6269,13 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                     binding_kind="wildcard",
                     source_file=filename,
                     source_line=i,
+                    make_east_build_error=_make_east_build_error,
+                    make_span=_sh_span,
+                    make_import_binding=_sh_make_import_binding,
                 )
                 body_items.append(
                     _sh_make_import_from_stmt(
+                        _sh_make_stmt_node,
                         _sh_span(i, 0, len(ln)),
                         mod_name,
                         [_sh_make_import_alias("*")],
@@ -6714,7 +6308,13 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                 sym_name, as_name_txt = parsed_alias
                 bind_name = as_name_txt if as_name_txt != "" else sym_name
                 if _sh_is_host_only_alias(bind_name):
-                    _sh_register_import_symbol(bind_name, mod_name, sym_name)
+                    _sh_register_import_symbol(
+                        _SH_IMPORT_SYMBOLS,
+                        bind_name,
+                        mod_name,
+                        sym_name,
+                        make_import_symbol_binding=_sh_make_import_symbol_binding,
+                    )
                     continue
                 # `Enum/IntEnum/IntFlag` は class 定義の lowering で吸収されるため、
                 # 依存ヘッダ解決用の ImportBinding には積まない。
@@ -6728,16 +6328,26 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                         binding_kind="symbol",
                         source_file=filename,
                         source_line=i,
+                        make_east_build_error=_make_east_build_error,
+                        make_span=_sh_span,
+                        make_import_binding=_sh_make_import_binding,
                     )
                     import_symbol_bindings[bind_name] = _sh_make_import_symbol_binding(
                         mod_name,
                         sym_name,
                     )
-                    _sh_register_import_symbol(bind_name, mod_name, sym_name)
+                    _sh_register_import_symbol(
+                        _SH_IMPORT_SYMBOLS,
+                        bind_name,
+                        mod_name,
+                        sym_name,
+                        make_import_symbol_binding=_sh_make_import_symbol_binding,
+                    )
                 aliases.append(_sh_make_import_alias(sym_name, as_name_txt if as_name_txt != "" else None))
             if len(aliases) > 0:
                 body_items.append(
                     _sh_make_import_from_stmt(
+                        _sh_make_stmt_node,
                         _sh_span(i, 0, len(ln)),
                         mod_name,
                         aliases,
@@ -6958,7 +6568,15 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
                             k += 1
                             continue
                     sig_line, inline_method_stmt = _sh_split_def_header_and_inline_stmt(s2)
-                    sig = _sh_parse_def_sig(ln_no, sig_line, in_class=cls_name)
+                    sig = _sh_parse_def_sig(
+                        ln_no,
+                        sig_line,
+                        in_class=cls_name,
+                        type_aliases=_SH_TYPE_ALIASES,
+                        make_east_build_error=_make_east_build_error,
+                        make_span=_sh_span,
+                        make_def_sig_info=_sh_make_def_sig_info,
+                    )
                     if sig is not None:
                         mname = str(sig["name"])
                         marg_types: dict[str, str] = dict(sig["arg_types"])
@@ -7400,7 +7018,9 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
     qualified_symbol_refs: list[dict[str, str]] = []
     import_resolution_bindings: list[dict[str, Any]] = []
     for binding in import_bindings:
-        import_resolution_bindings.append(_sh_make_import_resolution_binding(binding))
+        import_resolution_bindings.append(
+            _sh_make_import_resolution_binding(binding, make_import_binding=_sh_make_import_binding)
+        )
         module_id, export_name, local_name, binding_kind, _source_file, _source_line = _sh_import_binding_fields(binding)
         if module_id == "" or local_name == "":
             continue
@@ -7421,6 +7041,7 @@ def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, 
         import_bindings=import_bindings,
         import_module_bindings=import_module_bindings,
         import_symbol_bindings=import_symbol_bindings,
+        make_node=_sh_make_node,
     )
     sync_type_expr_mirrors(out)
     return validate_template_module(validate_runtime_abi_module(out))
