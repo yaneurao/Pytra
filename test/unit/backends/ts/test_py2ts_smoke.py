@@ -18,12 +18,18 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "test" / "unit" / "backends") not in sys.path:
+    sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
 from backends.ts.emitter.ts_emitter import load_ts_profile, transpile_to_typescript
 from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core_entrypoints import convert_path
 from backends.ts.emitter import ts_emitter as ts_emitter_mod
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
+from relative_import_secondwave_smoke_support import (
+    relative_import_secondwave_expected_needles,
+    transpile_relative_import_project,
+)
 
 
 def load_east(
@@ -86,6 +92,13 @@ class Py2TsSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         ts = transpile_to_typescript(east)
         self.assertIn("~y", ts)
+
+    def test_cli_relative_import_secondwave_scenarios_transpile_for_typescript(self) -> None:
+        for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
+            with self.subTest(scenario_id=scenario_id):
+                ts = transpile_relative_import_project(ROOT, scenario_id, "ts")
+                for needle in relative_import_secondwave_expected_needles(scenario_id):
+                    self.assertIn(needle, ts)
 
     def test_stdlib_imports_use_pytra_runtime_shim_paths(self) -> None:
         fixture = find_fixture_case("import_time_from")
