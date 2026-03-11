@@ -316,6 +316,65 @@ def _legacy_import_user_error_payload(
     return None
 
 
+def _make_self_hosted_syntax_detail(
+    input_path: Path,
+    message: str,
+    line: int | None,
+    col: int | None,
+) -> str:
+    """self-hosted parser syntax error を file:line:col 付き detail に整形する。"""
+    location = str(input_path)
+    if line is not None:
+        location += ":" + str(line)
+        if col is not None:
+            location += ":" + str(col)
+    return location + ": " + message
+
+
+def _parse_self_hosted_syntax_error_message(
+    msg: str,
+) -> tuple[str, int | None, int | None, str] | None:
+    """self-hosted parser の syntax message から detail/hint/location を復元する。"""
+    if not _looks_like_self_hosted_parser_syntax_error(msg):
+        return None
+    text = msg.strip()
+    prefix = "unsupported_syntax: "
+    if text.startswith(prefix):
+        text = text[len(prefix) :]
+    hint = ""
+    if " hint=" in text:
+        text, hint = text.split(" hint=", 1)
+        hint = hint.strip()
+    line: int | None = None
+    col: int | None = None
+    if " at " in text:
+        body, pos_text = text.rsplit(" at ", 1)
+        if ":" in pos_text:
+            line_text, col_text = pos_text.split(":", 1)
+            if line_text.isdigit():
+                line = int(line_text)
+            if col_text.isdigit():
+                col = int(col_text)
+            if line is not None and col is not None:
+                text = body
+    return text.strip(), line, col, hint
+
+
+def _classify_self_hosted_syntax_user_error(
+    msg: str,
+    input_path: Path,
+) -> tuple[str, str, list[str]] | None:
+    """self-hosted parser syntax error を current CLI contract へ正規化する。"""
+    parsed = _parse_self_hosted_syntax_error_message(msg)
+    if parsed is None:
+        return None
+    message, line, col, hint = parsed
+    details = [_make_self_hosted_syntax_detail(input_path, message, line, col)]
+    if hint != "":
+        details.append("hint: " + hint)
+    return ("user_syntax_error", "Python syntax error.", details)
+
+
 def load_east_document(input_path: Path, parser_backend: str = "self_hosted") -> dict[str, object]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
     input_txt = str(input_path)
@@ -369,6 +428,10 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
         if import_err is not None:
             category, summary, details = import_err
             raise make_user_error(category, summary, details) from ex
+        syntax_err = _classify_self_hosted_syntax_user_error(msg, input_path)
+        if syntax_err is not None:
+            category, summary, details = syntax_err
+            raise make_user_error(category, summary, details) from ex
         category = "not_implemented"
         summary = "This syntax is not implemented yet."
         if msg == "":
@@ -398,7 +461,16 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
 
 def _looks_like_self_hosted_parser_syntax_error(msg: str) -> bool:
     """self-hosted parser の token 不整合は user syntax error として扱う。"""
-    return msg.startswith("unsupported_syntax: expected token ")
+    if not msg.startswith("unsupported_syntax: "):
+        return False
+    if " at " not in msg:
+        return False
+    return (
+        "expected token " in msg
+        or "self_hosted parser cannot parse " in msg
+        or "unexpected token" in msg
+        or "invalid syntax" in msg
+    )
 
 
 def normalize_east1_to_east2_document(east_doc: dict[str, object]) -> dict[str, object]:

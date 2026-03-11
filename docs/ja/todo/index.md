@@ -30,5 +30,3 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-
-1. [ ] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01] self-hosted parser syntax error に file:line:col を必ず付ける。文脈: `docs/ja/plans/p0-selfhost-syntax-diagnostic-filepath.md`

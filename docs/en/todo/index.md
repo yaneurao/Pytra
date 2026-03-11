@@ -30,5 +30,3 @@ Last updated: 2026-03-11
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
-
-1. [ ] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01] Always attach file:line:col to self-hosted parser syntax errors. Context: `docs/en/plans/p0-selfhost-syntax-diagnostic-filepath.md`

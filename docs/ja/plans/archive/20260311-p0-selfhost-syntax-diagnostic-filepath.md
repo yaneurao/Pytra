@@ -40,9 +40,10 @@
 
 決定ログ:
 - 2026-03-11: v1 は self-hosted parser の syntax lane に限定し、detail line へ `file=... at line:col` を必ず残す。import diagnostics との統合再設計は非対象とする。
+- 2026-03-11: `load_east_document()` は import diagnostics を先に判定し、その後で token mismatch 系 (`expected token ...` / `cannot parse expression token: ...`) だけを `path:line:col: message` へ正規化する helper で包み直す。`unsupported_syntax` 全体のカテゴリ変更は行わない。
 
 ## 分解
 
-- [ ] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01-S1-01] current syntax error gap と representative message contract を plan/TODO に固定する。
-- [ ] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01-S2-01] self-hosted syntax error helper を追加し、`load_east_document()` の分類経路を file-aware に揃える。
-- [ ] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01-S3-01] representative unit/CLI regression と docs を更新して閉じる。
+- [x] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01-S1-01] current syntax error gap と representative message contract を plan/TODO に固定する。
+- [x] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01-S2-01] self-hosted syntax error helper を追加し、`load_east_document()` の分類経路を file-aware に揃える。
+- [x] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01-S3-01] representative unit/CLI regression と docs を更新して閉じる。

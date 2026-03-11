@@ -3499,6 +3499,22 @@ if __name__ == "__main__":
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("[user_syntax_error]", proc.stderr)
 
+    def test_cli_reports_self_hosted_syntax_error_with_filepath(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            bad_py = Path(tmpdir) / "bad.py"
+            bad_py.write_text("*value\n", encoding="utf-8")
+            out_cpp = Path(tmpdir) / "bad.cpp"
+            proc = subprocess.run(
+                ["python3", "src/py2x.py", "--target", "cpp", str(bad_py), "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("[user_syntax_error]", proc.stderr)
+            self.assertIn(str(bad_py), proc.stderr)
+            self.assertIn("self_hosted parser cannot parse expression token: *", proc.stderr)
+
     def test_cli_rejects_east_stage_2(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             src_py = Path(tmpdir) / "ok.py"

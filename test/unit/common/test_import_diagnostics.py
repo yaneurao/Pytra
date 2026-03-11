@@ -17,6 +17,23 @@ import src.toolchain.ir.core_entrypoints as core_entrypoints
 
 
 class ImportDiagnosticsTest(unittest.TestCase):
+    def test_classify_self_hosted_syntax_error_includes_filepath(self) -> None:
+        err = transpile_cli._classify_self_hosted_syntax_user_error(
+            "unsupported_syntax: self_hosted parser cannot parse expression token: * at 7:18 hint=Fix Python syntax errors before EAST conversion.",
+            Path("pkg/main.py"),
+        )
+        self.assertEqual(
+            err,
+            (
+                "user_syntax_error",
+                "Python syntax error.",
+                [
+                    "pkg/main.py:7:18: self_hosted parser cannot parse expression token: *",
+                    "hint: Fix Python syntax errors before EAST conversion.",
+                ],
+            ),
+        )
+
     def test_classify_wildcard_import_error(self) -> None:
         err = transpile_cli._classify_import_user_error(
             "unsupported_syntax: from-import wildcard is not supported",
@@ -166,6 +183,31 @@ class ImportDiagnosticsTest(unittest.TestCase):
         self.assertEqual(
             parsed["details"],
             [f"kind=duplicate_binding file={main_py} import=duplicate import binding: value"],
+        )
+
+    def test_load_east_document_routes_self_hosted_syntax_through_helper(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            main_py = Path(td) / "main.py"
+            main_py.write_text("*value\n", encoding="utf-8")
+            with patch.object(
+                transpile_cli,
+                "convert_path",
+                side_effect=RuntimeError(
+                    "unsupported_syntax: self_hosted parser cannot parse expression token: * at 1:0 hint=Fix Python syntax errors before EAST conversion."
+                ),
+            ):
+                with self.assertRaises(RuntimeError) as cm:
+                    transpile_cli.load_east_document(main_py)
+
+        parsed = transpile_cli.parse_user_error(str(cm.exception))
+        self.assertEqual(parsed["category"], "user_syntax_error")
+        self.assertEqual(parsed["summary"], "Python syntax error.")
+        self.assertEqual(
+            parsed["details"],
+            [
+                f"{main_py}:1:0: self_hosted parser cannot parse expression token: *",
+                "hint: Fix Python syntax errors before EAST conversion.",
+            ],
         )
 
 

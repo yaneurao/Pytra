@@ -40,9 +40,10 @@ Verification commands:
 
 Decision log:
 - 2026-03-11: v1 is limited to the self-hosted syntax lane and guarantees `file=... at line:col` in the detail line. Import-diagnostics redesign stays out of scope.
+- 2026-03-11: `load_east_document()` now keeps import diagnostics ahead of syntax wrapping, then normalizes only token-mismatch errors (`expected token ...` / `cannot parse expression token: ...`) through a `path:line:col: message` helper. It does not reclassify every `unsupported_syntax` case.
 
 ## Breakdown
 
-- [ ] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01-S1-01] Lock the current syntax-error gap and representative message contract in the plan/TODO.
-- [ ] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01-S2-01] Add a self-hosted syntax-error helper and make `load_east_document()` file-aware for that lane.
-- [ ] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01-S3-01] Refresh representative unit/CLI regressions and docs, then close the task.
+- [x] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01-S1-01] Lock the current syntax-error gap and representative message contract in the plan/TODO.
+- [x] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01-S2-01] Add a self-hosted syntax-error helper and make `load_east_document()` file-aware for that lane.
+- [x] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01-S3-01] Refresh representative unit/CLI regressions and docs, then close the task.
