@@ -52,19 +52,31 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
 
     def test_shared_runtime_contract_bucket_is_type_id_and_cross_runtime_only(self) -> None:
         shared = inventory_mod.EXPECTED_BUCKETS["shared_runtime_contract"]
-        cpp_runtime_entries = {
+        cpp_emitter_entries = {
             entry
             for entry in shared
-            if entry[1].startswith("src/runtime/cpp/")
-            or entry[1].startswith("src/backends/cpp/")
+            if entry[1].startswith("src/backends/cpp/")
+        }
+        self.assertTrue(
+            all(
+                symbol
+                in {
+                    "py_runtime_value_type_id",
+                    "py_runtime_value_isinstance",
+                    "py_runtime_type_id_is_subtype",
+                    "py_runtime_type_id_issubclass",
+                }
+                for symbol, _ in cpp_emitter_entries
+            )
+        )
+        cpp_runtime_entries = {
+            entry for entry in shared if entry[1].startswith("src/runtime/cpp/")
         }
         self.assertTrue(
             all(
                 symbol
                 in {
                     "py_runtime_object_isinstance",
-                    "py_runtime_type_id_is_subtype",
-                    "py_runtime_type_id_issubclass",
                 }
                 for symbol, _ in cpp_runtime_entries
             )

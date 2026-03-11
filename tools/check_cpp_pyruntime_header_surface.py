@@ -36,6 +36,8 @@ TARGET_END_STATE = {
     "typed_collection_compat": "must stay empty",
     "shared_type_id_compat": "must stay empty",
     "shared_type_id_thin_helpers": {
+        "py_runtime_value_type_id",
+        "py_runtime_value_isinstance",
         "py_runtime_type_id_is_subtype",
         "py_runtime_type_id_issubclass",
         "py_runtime_object_type_id",
@@ -129,6 +131,8 @@ def _collect_handoff_issues() -> list[str]:
         issues.append("bundle order drifted from the active final-shrink contract")
     thin_helper_names = TARGET_END_STATE["shared_type_id_thin_helpers"]
     if not isinstance(thin_helper_names, set) or thin_helper_names != {
+        "py_runtime_value_type_id",
+        "py_runtime_value_isinstance",
         "py_runtime_type_id_is_subtype",
         "py_runtime_type_id_issubclass",
         "py_runtime_object_type_id",

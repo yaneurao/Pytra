@@ -27,7 +27,7 @@ Acceptance criteria:
 
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S1-01] Restore the current residual buckets, reduction order, and active bundle metadata into the live plan / TODO / inventory tool.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-01] Reduce `crossruntime_mutation_helper_residual` until only the must-remain C# bytearray seam is left.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-02] Reduce `cpp_emitter_object_bridge_residual` and move removable callers back into typed lanes.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-02] Reduce `cpp_emitter_object_bridge_residual` and move removable callers back into typed lanes.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S3-01] Reduce the Rust / C# shared type_id residuals around thin seams.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S3-02] Re-audit the final C++ shared type_id residual until only the intentional contract remains.
 
@@ -67,3 +67,4 @@ Acceptance criteria:
 - 2026-03-12: `S1-01` freezes the current residual buckets, reduction order, and active bundle metadata in the inventory tool and unit test, and keeps every bundle status at `planned` until active work begins.
 - 2026-03-12: `S2-01` shrinks the C# mutation residual down to the `bytearray` seam only and makes `bytes.pop()/append()` fail closed in the emitter. The remaining helpers are the bytearray `py_append/py_pop` lane and the index/slice compatibility helpers.
 - 2026-03-12: Started `S2-02` by switching the C++ object-bridge labels in `call.py` from wrapper names like `\"py_append\"` to plain operation labels like `\"append\"`, so the residual bucket only counts actual object-helper callers.
+- 2026-03-12: Completed `S2-02` by retargeting the remaining C++ `py_runtime_object_type_id` / `py_runtime_object_isinstance` callers to `py_runtime_value_type_id` / `py_runtime_value_isinstance`. `cpp_emitter_object_bridge_residual` now uses an empty bucket as its end state.

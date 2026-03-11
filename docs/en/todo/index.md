@@ -32,4 +32,4 @@ Last updated: 2026-03-12
 ## Unfinished Tasks
 
 1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01] Reduce the C++ / Rust / C# emitter residuals bundle by bundle before the next `py_runtime.h` shrink. Context: [p4-crossruntime-pyruntime-emitter-residual-reduction.md](../plans/p4-crossruntime-pyruntime-emitter-residual-reduction.md)
-- Progress memo: `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-02` 2026-03-12: removed wrapper-name labels from the C++ object-bridge residual and narrowed the bucket to actual object-helper callers.
+- Progress memo: `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-02` 2026-03-12: retargeted the remaining C++ object-helper callers to `py_runtime_value_*` thin helpers and reduced the wrapper-name residual bucket to empty.

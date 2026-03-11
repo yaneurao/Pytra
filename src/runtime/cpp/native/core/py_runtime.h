@@ -1229,6 +1229,16 @@ static inline bool py_runtime_object_isinstance(const object& value, uint32 expe
     return py_tid_isinstance(value, static_cast<int64>(expected_type_id));
 }
 
+template <class T>
+static inline uint32 py_runtime_value_type_id(const T& value) {
+    return py_runtime_object_type_id(make_object(value));
+}
+
+template <class T>
+static inline bool py_runtime_value_isinstance(const T& value, uint32 expected_type_id) {
+    return py_runtime_object_isinstance(make_object(value), expected_type_id);
+}
+
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
 static inline auto operator-(const rc<T>& v) -> decltype(v->__neg__()) {
     return v->__neg__();

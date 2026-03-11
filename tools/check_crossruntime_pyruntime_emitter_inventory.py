@@ -84,12 +84,11 @@ CPP_OBJECT_BRIDGE_ONLY_PATHS = {
 }
 
 EXPECTED_BUCKETS = {
-    "cpp_emitter_object_bridge_residual": {
-        ("py_runtime_object_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_runtime_object_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
-        ("py_runtime_object_isinstance", "src/backends/cpp/emitter/stmt.py"),
-    },
+    "cpp_emitter_object_bridge_residual": set(),
     "cpp_emitter_shared_type_id_residual": {
+        ("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
+        ("py_runtime_value_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
+        ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
         ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
         ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
     },
@@ -135,8 +134,8 @@ ACTIVE_REDUCTION_BUNDLES = {
     },
     "cpp_emitter_object_bridge_residual": {
         "stage": "S2-02",
-        "goal": "return removable callers to typed lanes and drop wrapper-name labels",
-        "status": "active",
+        "goal": "return removable callers to typed lanes and leave no wrapper-name residuals",
+        "status": "completed",
     },
     "rs_emitter_shared_type_id_residual": {
         "stage": "S3-01",
@@ -209,6 +208,7 @@ REPRESENTATIVE_LANE_MANIFEST = {
         "smoke_file": "test/unit/backends/cpp/test_east3_cpp_bridge.py",
         "smoke_tests": {
             "test_render_expr_supports_east3_obj_boundary_nodes",
+            "test_transpile_representative_nominal_adt_match_emits_if_else_chain",
         },
         "source_guard_paths": set(),
     },

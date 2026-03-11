@@ -82,6 +82,8 @@ class CheckCppPyRuntimeHeaderSurfaceTest(unittest.TestCase):
                 "typed_collection_compat": "must stay empty",
                 "shared_type_id_compat": "must stay empty",
                 "shared_type_id_thin_helpers": {
+                    "py_runtime_value_type_id",
+                    "py_runtime_value_isinstance",
                     "py_runtime_type_id_is_subtype",
                     "py_runtime_type_id_issubclass",
                     "py_runtime_object_type_id",

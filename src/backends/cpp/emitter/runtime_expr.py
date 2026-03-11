@@ -280,11 +280,4 @@ class CppRuntimeExprEmitter:
         expected_type_id_expr = self._render_type_id_operand_expr(expr_d.get("expected_type_id"))
         if expected_type_id_expr == "":
             return "false"
-        value_type = ""
-        if isinstance(value_node, dict):
-            value_type = self.normalize_type_name(str(value_node.get("resolved_type", "")))
-        if value_type == "":
-            value_type = self.normalize_type_name(self.get_expr_type(value_node))
-        if value_type == "object":
-            return f"py_runtime_object_isinstance({value_expr}, {expected_type_id_expr})"
-        return f"py_runtime_object_isinstance(make_object({value_expr}), {expected_type_id_expr})"
+        return f"py_runtime_value_isinstance({value_expr}, {expected_type_id_expr})"

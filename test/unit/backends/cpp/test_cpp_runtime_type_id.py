@@ -56,10 +56,10 @@ int main() {
     assert(py_runtime_type_id_is_subtype(PYTRA_TID_BOOL, PYTRA_TID_INT));
     assert(py_runtime_type_id_is_subtype(PYTRA_TID_BOOL, PYTRA_TID_OBJECT));
     assert(py_runtime_type_id_is_subtype(PYTRA_TID_BOOL, PYTRA_TID_INT));
-    assert(py_runtime_object_isinstance(make_object(true), PYTRA_TID_INT));
-    assert(py_runtime_object_isinstance(make_object(true), PYTRA_TID_OBJECT));
-    assert(py_runtime_object_isinstance(make_object(int64(3)), PYTRA_TID_INT));
-    assert(py_runtime_object_isinstance(make_object(str("x")), PYTRA_TID_STR));
+    assert(py_runtime_value_isinstance(true, PYTRA_TID_INT));
+    assert(py_runtime_value_isinstance(true, PYTRA_TID_OBJECT));
+    assert(py_runtime_value_isinstance(int64(3), PYTRA_TID_INT));
+    assert(py_runtime_value_isinstance(str("x"), PYTRA_TID_STR));
 
     uint32 base_tid = py_register_class_type(PYTRA_TID_OBJECT);
     uint32 child_tid = py_register_class_type(base_tid);
@@ -69,7 +69,7 @@ int main() {
 
     object base_obj = object_new<BaseObj>(base_tid);
     object child_obj = object_new<ChildObj>(child_tid);
-    assert(py_runtime_object_type_id(child_obj) == child_tid);
+    assert(py_runtime_value_type_id(child_obj) == child_tid);
     assert(py_runtime_object_isinstance(child_obj, base_tid));
     assert(py_runtime_object_isinstance(base_obj, base_tid));
     assert(py_runtime_object_isinstance(child_obj, child_tid));
@@ -78,7 +78,7 @@ int main() {
     assert(!py_runtime_object_isinstance(base_obj, child_tid));
 
     set<str> names = set<str>{"a", "b"};
-    assert(py_runtime_object_isinstance(make_object(names), PYTRA_TID_SET));
+    assert(py_runtime_value_isinstance(names, PYTRA_TID_SET));
     object names_obj = make_object(names);
     assert(py_runtime_object_isinstance(names_obj, PYTRA_TID_SET));
 

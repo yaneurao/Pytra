@@ -34,10 +34,11 @@ EXPECTED_BUCKETS = {
     "typed_lane_removable": set(),
     "object_bridge_required": set(),
     "shared_runtime_contract": {
-        ("py_runtime_object_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
+        ("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
+        ("py_runtime_value_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
         ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
         ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
-        ("py_runtime_object_isinstance", "src/backends/cpp/emitter/stmt.py"),
+        ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
         ("py_append", "src/backends/cs/emitter/cs_emitter.py"),
         ("py_pop", "src/backends/cs/emitter/cs_emitter.py"),
         ("py_runtime_value_type_id", "src/backends/cs/emitter/cs_emitter.py"),
