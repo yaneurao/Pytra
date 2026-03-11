@@ -1264,31 +1264,6 @@ static inline bool py_runtime_object_isinstance(const object& value, uint32 expe
     return py_tid_isinstance(value, static_cast<int64>(expected_type_id));
 }
 
-template <class T>
-static inline uint32 py_runtime_type_id(const T& v) {
-    if (py_is_none(v)) return PYTRA_TID_NONE;
-    if (py_is_bool(v)) return PYTRA_TID_BOOL;
-    if (py_is_int(v)) return PYTRA_TID_INT;
-    if (py_is_float(v)) return PYTRA_TID_FLOAT;
-    if (py_is_str(v)) return PYTRA_TID_STR;
-    if (py_is_list(v)) return PYTRA_TID_LIST;
-    if (py_is_dict(v)) return PYTRA_TID_DICT;
-    if (py_is_set(v)) return PYTRA_TID_SET;
-    if constexpr (::std::is_same_v<T, object>) {
-        return py_runtime_object_type_id(v);
-    }
-    return PYTRA_TID_OBJECT;
-}
-
-template <class T>
-static inline bool py_isinstance(const T& value, uint32 expected_type_id) {
-    if constexpr (::std::is_same_v<T, object>) {
-        return py_runtime_object_isinstance(value, expected_type_id);
-    }
-    py_sync_generated_user_type_registry();
-    return py_runtime_type_id_is_subtype(py_runtime_type_id(value), expected_type_id);
-}
-
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
 static inline auto operator-(const rc<T>& v) -> decltype(v->__neg__()) {
     return v->__neg__();

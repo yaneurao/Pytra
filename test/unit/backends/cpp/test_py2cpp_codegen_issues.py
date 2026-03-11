@@ -1239,7 +1239,7 @@ def f(x: object) -> None:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("return py_isinstance(x, PYTRA_TID_INT);", cpp)
+        self.assertIn("return py_runtime_object_isinstance(x, PYTRA_TID_INT);", cpp)
         self.assertNotIn("return py_is_int(x);", cpp)
 
     def test_any_boundary_builtin_names_route_to_obj_core_runtime_api(self) -> None:
@@ -1281,7 +1281,7 @@ def f_next(it: object) -> object:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("return py_isinstance(x, PYTRA_TID_SET);", cpp)
+        self.assertIn("return py_runtime_object_isinstance(x, PYTRA_TID_SET);", cpp)
         self.assertNotIn("return isinstance(", cpp)
 
     def test_isinstance_tuple_lowers_to_or_of_type_id_checks(self) -> None:
@@ -1302,11 +1302,11 @@ def f(x: object) -> bool:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("py_isinstance(x, PYTRA_TID_INT)", cpp)
-        self.assertIn("py_isinstance(x, Base::PYTRA_TYPE_ID)", cpp)
-        self.assertIn("py_isinstance(x, Child::PYTRA_TYPE_ID)", cpp)
-        self.assertIn("py_isinstance(x, PYTRA_TID_DICT)", cpp)
-        self.assertIn("py_isinstance(x, PYTRA_TID_OBJECT)", cpp)
+        self.assertIn("py_runtime_object_isinstance(x, PYTRA_TID_INT)", cpp)
+        self.assertIn("py_runtime_object_isinstance(x, Base::PYTRA_TYPE_ID)", cpp)
+        self.assertIn("py_runtime_object_isinstance(x, Child::PYTRA_TYPE_ID)", cpp)
+        self.assertIn("py_runtime_object_isinstance(x, PYTRA_TID_DICT)", cpp)
+        self.assertIn("py_runtime_object_isinstance(x, PYTRA_TID_OBJECT)", cpp)
         self.assertNotIn("return isinstance(", cpp)
 
     def test_gc_class_emits_type_id_and_isinstance_uses_runtime_api(self) -> None:
@@ -1331,7 +1331,10 @@ def f(x: object) -> bool:
         self.assertNotIn("this->set_type_id(PYTRA_TYPE_ID);", cpp)
         self.assertIn("PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);", cpp)
         self.assertIn("PYTRA_DECLARE_CLASS_TYPE(Base::PYTRA_TYPE_ID);", cpp)
-        self.assertIn("return (py_isinstance(x, Base::PYTRA_TYPE_ID)) || (py_isinstance(x, Child::PYTRA_TYPE_ID));", cpp)
+        self.assertIn(
+            "return (py_runtime_object_isinstance(x, Base::PYTRA_TYPE_ID)) || (py_runtime_object_isinstance(x, Child::PYTRA_TYPE_ID));",
+            cpp,
+        )
         self.assertNotIn("virtual bool py_isinstance_of(uint32 expected_type_id) const override {", cpp)
         self.assertNotIn("if (expected_type_id == PYTRA_TID_OBJECT) return true;", cpp)
         self.assertNotIn("if (Base::py_isinstance_of(expected_type_id)) return true;", cpp)
@@ -1370,7 +1373,7 @@ def check(x: object) -> bool:
         self.assertIn("return ::rc_new<Just>(v);", cpp)
         self.assertIn("int64 proj(const rc<Just>& x) {", cpp)
         self.assertIn('return obj_to_rc_or_raise<Just>(make_object(x), "Just.value")->value;', cpp)
-        self.assertIn("return py_isinstance(x, Just::PYTRA_TYPE_ID);", cpp)
+        self.assertIn("return py_runtime_object_isinstance(x, Just::PYTRA_TYPE_ID);", cpp)
 
     def test_inheritance_methods_are_emitted_as_virtual_with_override(self) -> None:
         src = """class Base:\n    def inc(self, x: int) -> int:\n        return x + 1\n\nclass Child(Base):\n    def inc(self, x: int) -> int:\n        return x + 2\n\n    def base_only(self, x: int) -> int:\n        return x\n"""
@@ -1474,11 +1477,11 @@ def check(x: object) -> bool:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("py_isinstance(x, Base::PYTRA_TYPE_ID)", cpp)
-        self.assertIn("py_isinstance(x, Child::PYTRA_TYPE_ID)", cpp)
-        self.assertIn("py_isinstance(x, PYTRA_TID_INT)", cpp)
-        self.assertIn("py_isinstance(x, PYTRA_TID_STR)", cpp)
-        self.assertIn("py_isinstance(x, PYTRA_TID_OBJECT)", cpp)
+        self.assertIn("py_runtime_object_isinstance(x, Base::PYTRA_TYPE_ID)", cpp)
+        self.assertIn("py_runtime_object_isinstance(x, Child::PYTRA_TYPE_ID)", cpp)
+        self.assertIn("py_runtime_object_isinstance(x, PYTRA_TID_INT)", cpp)
+        self.assertIn("py_runtime_object_isinstance(x, PYTRA_TID_STR)", cpp)
+        self.assertIn("py_runtime_object_isinstance(x, PYTRA_TID_OBJECT)", cpp)
         self.assertIn("return (", cpp)
         self.assertIn(" || ", cpp)
         self.assertNotIn("return isinstance(", cpp)

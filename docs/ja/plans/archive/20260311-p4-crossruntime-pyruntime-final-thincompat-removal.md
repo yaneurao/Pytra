@@ -65,12 +65,12 @@ bundle 順:
 - `git diff --check`
 
 分解:
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01] `py_runtime.h` の final thin compat 2 本を cross-runtime で撤去する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01] `py_runtime.h` の final thin compat 2 本を cross-runtime で撤去する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S1-01] final thin compat residual を `cpp_header_final_thincompat_defs` / `cpp_generated_final_thincompat_blocker` / `rs_runtime_generic_alias_surface` / `cs_runtime_generic_alias_surface` に棚卸しし、inventory/test を追加する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S1-02] target end state と bundle 単位の削減順を docs/source guard に固定する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S2-01] checked-in C++ generated/native caller を thin helper (`py_runtime_object_isinstance` など) へ寄せ、`cpp_generated_final_thincompat_blocker` を空にする。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S2-02] Rust/C# runtime alias surface を internal/private seam へ縮め、generic alias の public 増殖を止める。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S3-01] `py_runtime.h` から template `py_runtime_type_id` / `py_isinstance` を削除し、representative regression / docs / archive を更新する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S3-01] `py_runtime.h` から template `py_runtime_type_id` / `py_isinstance` を削除し、representative regression / docs / archive を更新する。
 
 決定ログ:
 - 2026-03-11: TODO が空になったため、新しい低優先度 follow-up として起票した。直前までに emitter-side blocker 自体はかなり整理済みなので、次段階は「generic helper 定義と checked-in caller を消せる状態にする」ことを目的にする。
@@ -78,3 +78,4 @@ bundle 順:
 - 2026-03-11: `S1-02` として bundle 順を `cpp generated blocker -> Rust alias surface -> C# alias surface -> header defs` に固定した。inventory/tooling には `empty_before_header_removal` / `internal_or_private_only_before_header_removal` / `remove_last_after_crossruntime_alignment` の target end state も埋め込み、header removal を必ず最後にする contract を source guard 化した。inventory は exact residual 固定ではなく「許可 bucket の部分集合」を見るため、後続 bundle が先に residual を減らしても未分類再流入だけを落とせる。
 - 2026-03-11: `S2-01` として checked-in C++ blocker だった `src/runtime/cpp/generated/std/json.cpp` を `py_runtime_object_isinstance` へ寄せ、JSON escape の `\b` / `\f` regressions も同時に修正した。inventory の `cpp_generated_final_thincompat_blocker` は空 bucket に更新した。
 - 2026-03-11: `S2-02` として Rust/C# runtime mirror の `py_runtime_type_id` / `py_is_subtype` / `py_issubclass` / `py_isinstance` alias を public から internal/private seam へ落とした。inventory は alias 自体の存在を bucket として保ちつつ、public 再流入だけを `target end state` violation として落とす。
+- 2026-03-11: `S3-01` として `py_runtime.h` から template `py_runtime_type_id` / `py_isinstance` を削除し、C++ runtime/codegen/header-surface regression を thin helper (`py_runtime_object_isinstance`) 前提へ更新した。`shared_type_id_compat` bucket は空になり、header 側の final thin compat residual を archive 可能な状態にした。

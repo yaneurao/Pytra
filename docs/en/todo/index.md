@@ -31,13 +31,14 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-### P4: `py_runtime.h` final thin compat removal
+### P4: emitter-side `py_runtime.h` shrink follow-up
 
-Context: [docs/ja/plans/p4-crossruntime-pyruntime-final-thincompat-removal.md](../plans/p4-crossruntime-pyruntime-final-thincompat-removal.md)
+Context: [docs/ja/plans/p4-crossruntime-pyruntime-emitter-shrink-followup.md](../plans/p4-crossruntime-pyruntime-emitter-shrink-followup.md)
 
-1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01] Remove the final two `py_runtime.h` thin compat helpers across runtimes.
-2. [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S1-01] Classify the residuals into `cpp_header_final_thincompat_defs` / `cpp_generated_final_thincompat_blocker` / `rs_runtime_generic_alias_surface` / `cs_runtime_generic_alias_surface`, and add inventory/tests.
-3. [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S1-02] Fix the target end state and bundle order in docs/source guards.
-4. [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S2-01] Move checked-in generated/native C++ callers to thin helpers and empty `cpp_generated_final_thincompat_blocker`.
-5. [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S2-02] Shrink the Rust/C# runtime alias surface to internal/private seams.
-6. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S3-01] Remove template `py_runtime_type_id` / `py_isinstance` from `py_runtime.h` and refresh representative regressions/docs/archive.
+1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01] Align the remaining emitter-side helper dependencies across C++/Rust/C# so `py_runtime.h` can shrink further.
+2. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-01] Bucket residual emitter-side `py_runtime` helper usage across C++/Rust/C# and add inventory/tests.
+3. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S1-02] Fix the end state and removal order for mutation / `type_id` / object-bridge helpers in docs/source guards.
+4. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-01] Move remaining C++ emitter helper dependencies onto thin/object-bridge seams.
+5. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-02] Align remaining Rust emitter helper dependencies to the shared contract.
+6. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S2-03] Align remaining C# emitter helper dependencies to the shared contract.
+7. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01-S3-01] Refresh representative smoke/docs/archive and close the follow-up.

@@ -34,13 +34,7 @@ class CheckCppPyRuntimeHeaderSurfaceTest(unittest.TestCase):
 
     def test_shared_type_id_bucket_is_thin_compat_only(self) -> None:
         snippets = surface_mod.EXPECTED_BUCKETS["shared_type_id_compat"]
-        self.assertEqual(
-            snippets,
-            {
-                'static inline uint32 py_runtime_type_id(const T& v) {',
-                'static inline bool py_isinstance(const T& value, uint32 expected_type_id) {',
-            },
-        )
+        self.assertEqual(snippets, set())
 
 
 if __name__ == "__main__":

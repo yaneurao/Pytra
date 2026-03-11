@@ -23,10 +23,7 @@ EXPECTED_BUCKETS = {
         'static inline void py_sort(object& v) {',
     },
     "typed_collection_compat": set(),
-    "shared_type_id_compat": {
-        'static inline uint32 py_runtime_type_id(const T& v) {',
-        'static inline bool py_isinstance(const T& value, uint32 expected_type_id) {',
-    },
+    "shared_type_id_compat": set(),
 }
 
 

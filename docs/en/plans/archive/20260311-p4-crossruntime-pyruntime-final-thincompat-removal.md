@@ -62,12 +62,12 @@ Checks:
 - `git diff --check`
 
 Breakdown:
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01] Remove the final `py_runtime.h` thin compat helpers across runtimes.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01] Remove the final `py_runtime.h` thin compat helpers across runtimes.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S1-01] Classify the residuals into `cpp_header_final_thincompat_defs` / `cpp_generated_final_thincompat_blocker` / `rs_runtime_generic_alias_surface` / `cs_runtime_generic_alias_surface`, and add inventory/tests.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S1-02] Fix the target end state and bundle order in docs/source guards.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S2-01] Move checked-in generated/native C++ callers to thin helpers and empty `cpp_generated_final_thincompat_blocker`.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S2-02] Shrink the Rust/C# runtime alias surface to internal/private seams.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S3-01] Remove template `py_runtime_type_id` / `py_isinstance` from `py_runtime.h` and refresh representative regressions/docs/archive.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01-S3-01] Remove template `py_runtime_type_id` / `py_isinstance` from `py_runtime.h` and refresh representative regressions/docs/archive.
 
 Decision log:
 - 2026-03-11: Created as the next low-priority follow-up after the TODO became empty. The emitter-side blockers are already much smaller, so the next step is to make the remaining generic helper definitions and checked-in callers removable.
@@ -75,3 +75,4 @@ Decision log:
 - 2026-03-11: Completed `S1-02` by locking the bundle order as `cpp generated blocker -> Rust alias surface -> C# alias surface -> header defs`. The inventory/tooling now also embeds the target end-state contract: `empty_before_header_removal`, `internal_or_private_only_before_header_removal`, and `remove_last_after_crossruntime_alignment`. The inventory is an allowlist subset check rather than an exact residual snapshot, so later bundles may shrink residuals early without masking unclassified re-entry.
 - 2026-03-11: Completed `S2-01` by moving the checked-in C++ blocker in `src/runtime/cpp/generated/std/json.cpp` to `py_runtime_object_isinstance` and fixing the accidental `\b` / `\f` escape regressions at the same time. The `cpp_generated_final_thincompat_blocker` inventory bucket is now intentionally empty.
 - 2026-03-11: Completed `S2-02` by downgrading the Rust/C# runtime mirror aliases (`py_runtime_type_id` / `py_is_subtype` / `py_issubclass` / `py_isinstance`) from public surface to internal/private seams. The inventory keeps those aliases classified as residuals, but `target end state` now fails closed on any public re-entry.
+- 2026-03-11: Completed `S3-01` by removing template `py_runtime_type_id` / `py_isinstance` from `py_runtime.h` and moving the representative C++ runtime/codegen/header-surface regressions onto the thin helper surface (`py_runtime_object_isinstance`). The `shared_type_id_compat` bucket is now intentionally empty, so the final header thin-compat task can be archived.
