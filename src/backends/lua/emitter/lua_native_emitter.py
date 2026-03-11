@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from backends.common.emitter.code_emitter import reject_backend_typed_vararg_signatures
+
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id, resolve_import_binding_doc
 
 
@@ -1756,4 +1758,5 @@ class LuaNativeEmitter:
 
 def transpile_to_lua_native(east_doc: dict[str, Any]) -> str:
     """EAST3 ドキュメントを Lua native ソースへ変換する。"""
+    reject_backend_typed_vararg_signatures(east_doc, backend_name="Lua backend")
     return LuaNativeEmitter(east_doc).transpile()

@@ -61,7 +61,7 @@
 - [x] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S2-01] self-hosted signature parser / AST builder / stmt/module parser に `vararg_*` field を追加し、`FunctionDef` carrier へ通す。
 - [x] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S2-02] frontend mirror / auxiliary schema へ `vararg_*` field を追従させ、selfhost regression を固める。
 - [x] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S3-01] C++ emitter の function definition / known call lane に variadic positional packing を追加し、representative fixture を通す。
-- [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S3-02] non-C++ backend contract guard と docs を更新して v1 を閉じる。
+- [x] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S3-02] non-C++ backend contract guard と docs を更新して v1 を閉じる。
 
 - 2026-03-11: representative blocker fixture `ng_typed_varargs_representative.py` を追加し、typed `*args` が現状 reject であることを unit test で固定した。
 - 2026-03-11: `typed *args: T` は `FunctionDef.vararg_name/vararg_type/vararg_type_expr` に保持し、body scope では `list[T]` として公開する方針にした。
@@ -69,3 +69,4 @@
 - 2026-03-11: frontend mirror と host signature extractor でも `vararg_*` を dedicated field として保持し、`arg_order` / `arg_types` に variadic parameter を混ぜない方針を固定した。
 - 2026-03-11: C++ v1 では `*rest: T` を trailing `list[T]` parameter として署名化し、known user-function call の extra positional arg は synthetic `List` node を call-arg bridge に通して `rc_list_from_value(...)` まで coercion する。
 - 2026-03-11: representative lane では top-level known function の mutable parameter position を prescan して、caller 側の `ControllerState&` などの mutability も interprocedural に反映する。
+- 2026-03-11: non-C++ backend は shared `reject_backend_typed_vararg_signatures()` を transpile entrypoint に通し、typed `*args` を `unsupported_syntax` で fail-closed に統一する。

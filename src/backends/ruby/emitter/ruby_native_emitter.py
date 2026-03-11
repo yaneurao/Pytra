@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from backends.common.emitter.code_emitter import reject_backend_typed_vararg_signatures
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
 
@@ -1586,6 +1587,7 @@ def transpile_to_ruby_native(east_doc: dict[str, Any]) -> str:
     body_any = east_doc.get("body")
     if not isinstance(body_any, list):
         raise RuntimeError("ruby native emitter: Module.body must be list")
+    reject_backend_typed_vararg_signatures(east_doc, backend_name="Ruby backend")
     main_guard_any = east_doc.get("main_guard_body")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []
 

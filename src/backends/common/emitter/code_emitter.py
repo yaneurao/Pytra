@@ -94,6 +94,61 @@ def reject_backend_general_union_type_exprs(doc: object, *, backend_name: str) -
     )
 
 
+def _format_typed_vararg_signature_lane(node: dict[str, Any]) -> str:
+    name_any = node.get("name")
+    name = name_any if isinstance(name_any, str) and name_any.strip() != "" else "<anonymous>"
+    vararg_name_any = node.get("vararg_name")
+    vararg_name = vararg_name_any if isinstance(vararg_name_any, str) and vararg_name_any.strip() != "" else "args"
+    vararg_type_any = node.get("vararg_type")
+    vararg_type = vararg_type_any if isinstance(vararg_type_any, str) else ""
+    if vararg_type.strip() == "":
+        type_expr = node.get("vararg_type_expr")
+        if _is_type_expr_payload(type_expr):
+            vararg_type = type_expr_to_string(type_expr)
+    if vararg_type.strip() == "":
+        return "FunctionDef " + name + "(*" + vararg_name + ")"
+    return "FunctionDef " + name + "(*" + vararg_name + ": " + vararg_type + ")"
+
+
+def _collect_typed_vararg_signature_issues(doc: object, *, path: str, out: list[dict[str, str]]) -> None:
+    if isinstance(doc, dict):
+        kind_any = doc.get("kind")
+        kind = kind_any if isinstance(kind_any, str) else ""
+        if kind == "FunctionDef":
+            vararg_name_any = doc.get("vararg_name")
+            vararg_name = vararg_name_any if isinstance(vararg_name_any, str) else ""
+            if vararg_name.strip() != "":
+                out.append({"path": path, "lane": _format_typed_vararg_signature_lane(doc)})
+        for key, value in doc.items():
+            if isinstance(key, str):
+                _collect_typed_vararg_signature_issues(value, path=path + "." + key, out=out)
+        return
+    if isinstance(doc, list):
+        for idx, item in enumerate(doc):
+            _collect_typed_vararg_signature_issues(item, path=path + "[" + str(idx) + "]", out=out)
+
+
+def reject_backend_typed_vararg_signatures(doc: object, *, backend_name: str) -> None:
+    """Reject representative typed `*args` signature lanes for backends that have not implemented them yet."""
+    issues: list[dict[str, str]] = []
+    _collect_typed_vararg_signature_issues(doc, path="$", out=issues)
+    if len(issues) == 0:
+        return
+    first = issues[0]
+    lane = first.get("lane", "FunctionDef <anonymous>(*args)")
+    path = first.get("path", "$")
+    details: list[str] = [path + ": " + lane]
+    details.append("unsupported typed varargs lane: " + lane)
+    if len(issues) > 1:
+        details.append("additional typed *args signatures: " + str(len(issues) - 1))
+    details.append("Representative typed *args signature rollout is implemented only in the C++ backend right now.")
+    raise make_user_error(
+        "unsupported_syntax",
+        backend_name + " does not support typed *args signatures yet",
+        details,
+    )
+
+
 class EmitterHooks:
     """CodeEmitter へ注入する hook 関数を保持する薄いコンテナ。"""
 

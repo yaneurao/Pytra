@@ -54,6 +54,31 @@ def _general_union_module() -> dict[str, object]:
     }
 
 
+def _typed_varargs_signature_module() -> dict[str, object]:
+    return {
+        "kind": "Module",
+        "east_stage": 3,
+        "body": [
+            {
+                "kind": "FunctionDef",
+                "name": "merge_values",
+                "arg_order": ["target"],
+                "args": [{"arg": "target"}],
+                "arg_types": {"target": "int64"},
+                "arg_type_exprs": {"target": parse_type_expr_text("int")},
+                "vararg_name": "values",
+                "vararg_type": "int64",
+                "vararg_type_expr": parse_type_expr_text("int"),
+                "return_type": "int64",
+                "return_type_expr": parse_type_expr_text("int"),
+                "body": [{"kind": "Return", "value": _const_i(0)}],
+            }
+        ],
+        "main_guard_body": [],
+        "meta": {},
+    }
+
+
 def _nominal_adt_class(
     name: str,
     *,
@@ -221,6 +246,35 @@ class NonCppEast3ContractGuardTest(unittest.TestCase):
                 ) as cm:
                     transpile(copy.deepcopy(east))
                 self.assertIn("unsupported general-union lane: int64|bool", str(cm.exception))
+
+    def test_all_noncpp_backends_fail_closed_on_typed_varargs_signature(self) -> None:
+        east = _typed_varargs_signature_module()
+        backends = [
+            ("Rust backend", transpile_to_rust),
+            ("C# backend", transpile_to_csharp),
+            ("Go backend", transpile_to_go),
+            ("Java backend", transpile_to_java),
+            ("Kotlin backend", transpile_to_kotlin),
+            ("Scala backend", transpile_to_scala),
+            ("Swift backend", transpile_to_swift),
+            ("Nim backend", transpile_to_nim),
+            ("PHP backend", transpile_to_php),
+            ("Ruby backend", transpile_to_ruby),
+            ("Lua backend", transpile_to_lua),
+            ("JS backend", transpile_to_js),
+            ("TS backend", transpile_to_typescript),
+        ]
+        for backend_name, transpile in backends:
+            with self.subTest(backend=backend_name):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "unsupported_syntax\\|" + re.escape(backend_name) + " does not support typed \\*args signatures yet",
+                ) as cm:
+                    transpile(copy.deepcopy(east))
+                self.assertIn(
+                    "unsupported typed varargs lane: FunctionDef merge_values(*values: int64)",
+                    str(cm.exception),
+                )
 
     def test_native_noncpp_backends_fail_closed_on_nominal_adt_match_stmt(self) -> None:
         east = _representative_nominal_adt_match_module()
