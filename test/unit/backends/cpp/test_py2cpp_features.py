@@ -3522,7 +3522,7 @@ if __name__ == "__main__":
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("[user_syntax_error]", proc.stderr)
             self.assertIn(str(bad_py), proc.stderr)
-            self.assertIn("self_hosted parser cannot parse expression token: *", proc.stderr)
+            self.assertIn("Pytra parser does not support this expression syntax yet: *", proc.stderr)
 
     def test_cli_rejects_east_stage_2(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
