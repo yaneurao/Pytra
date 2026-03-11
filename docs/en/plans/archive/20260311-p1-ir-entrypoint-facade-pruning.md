@@ -48,10 +48,11 @@ Breakdown:
 - [x] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S1-02] Fix the policy that `toolchain.ir.core` remains an external compatibility facade while internal compiler and representative regression lanes use `core_entrypoints`.
 - [x] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S2-01] Move `transpile_cli` and representative test/backend importers onto `core_entrypoints`.
 - [x] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S2-02] Fail fast on facade reentry with a source-contract guard.
-- [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S3-01] Run representative regressions and version gates, then archive the task.
+- [x] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S3-01] Run representative regressions and version gates, then archive the task.
 
 Decision log:
 - 2026-03-11: Initial draft. The current residual importers are `src/toolchain/frontends/transpile_cli.py`, `test/unit/common/test_self_hosted_signature.py`, 11 backend smoke tests, `test/unit/backends/cpp/test_east3_cpp_bridge.py`, and `test/unit/ir/test_east2_to_east3_lowering.py`.
 - 2026-03-11: `toolchain.ir.core` stays as a public compatibility facade, but internal compiler code and representative regression lanes must canonically use `toolchain.ir.core_entrypoints`. Dependence on `core.py` is treated as external-user compatibility only and is forbidden again by internal source-contract tests.
 - 2026-03-11: `S2-01` moved `src/toolchain/frontends/transpile_cli.py`, `test_self_hosted_signature.py`, 11 backend smoke tests, `test_east3_cpp_bridge.py`, and `test_east2_to_east3_lowering.py` onto `toolchain.ir.core_entrypoints`.
 - 2026-03-11: `S2-02` updated `test_east_core_source_contract_import_surface.py` so source-side `toolchain.ir.core` importers are fixed at zero and the representative test/backend lanes also fail fast if they regress to the facade.
+- 2026-03-11: `S3-01` re-ran the representative regressions (`test_east_core*.py`, `test_prepare_selfhost_source.py`, `test_self_hosted_signature.py`, `test_east3_cpp_bridge.py`, `test_east2_to_east3_lowering.py`), version gates, and selfhost build, then archived the task.

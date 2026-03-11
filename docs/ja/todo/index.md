@@ -31,10 +31,4 @@
 
 ## 未完了タスク
 
-### P1: `toolchain.ir.core` facade importer を剥がす
-
-文脈: [docs/ja/plans/p1-ir-entrypoint-facade-pruning.md](../plans/p1-ir-entrypoint-facade-pruning.md)
-
-1. [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01] `toolchain.ir.core` を external compatibility facade に限定し、internal compiler / representative regression lane を `core_entrypoints` へ寄せる。
-2. [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S3-01] representative regression と version gate を通し、archive へ移す。
-- 進捗メモ: [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S3-01] `transpile_cli` と representative test/backend importer は `core_entrypoints` へ移し、source-contract で `src importer=0` / `representative test importer=0` を固定した。
+現在、未完了タスクはありません。

@@ -31,10 +31,4 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-### P1: Prune `toolchain.ir.core` facade importers
-
-Context: [docs/ja/plans/p1-ir-entrypoint-facade-pruning.md](../ja/plans/p1-ir-entrypoint-facade-pruning.md)
-
-1. [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01] Restrict `toolchain.ir.core` to an external compatibility facade and move internal compiler / representative regression lanes onto `core_entrypoints`.
-2. [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S3-01] Run representative regressions and version gates, then archive the task.
-- Progress memo: [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S3-01] `transpile_cli` and the representative test/backend importers now use `core_entrypoints`, and the source-contract locks `src importer=0` / `representative test importer=0`.
+There are currently no open tasks.
