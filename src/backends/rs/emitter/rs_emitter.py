@@ -1081,13 +1081,19 @@ class RustEmitter(CodeEmitter):
             self.indent -= 1
             self.emit("}")
         self.emit("")
-        self.emit("fn py_runtime_type_id<T: PyRuntimeTypeId>(value: &T) -> i64 {")
+        self.emit("fn py_runtime_value_type_id<T: PyRuntimeTypeId>(value: &T) -> i64 {")
         self.indent += 1
         self.emit("value.py_runtime_type_id()")
         self.indent -= 1
         self.emit("}")
         self.emit("")
-        self.emit("fn py_is_subtype(actual_type_id: i64, expected_type_id: i64) -> bool {")
+        self.emit("fn py_runtime_type_id(actual_type_id: &impl PyRuntimeTypeId) -> i64 {")
+        self.indent += 1
+        self.emit("py_runtime_value_type_id(actual_type_id)")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("fn py_runtime_type_id_is_subtype(actual_type_id: i64, expected_type_id: i64) -> bool {")
         self.indent += 1
         self.emit("let actual = match py_type_info(actual_type_id) {")
         self.indent += 1
@@ -1105,15 +1111,33 @@ class RustEmitter(CodeEmitter):
         self.indent -= 1
         self.emit("}")
         self.emit("")
+        self.emit("fn py_is_subtype(actual_type_id: i64, expected_type_id: i64) -> bool {")
+        self.indent += 1
+        self.emit("py_runtime_type_id_is_subtype(actual_type_id, expected_type_id)")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("fn py_runtime_type_id_issubclass(actual_type_id: i64, expected_type_id: i64) -> bool {")
+        self.indent += 1
+        self.emit("py_runtime_type_id_is_subtype(actual_type_id, expected_type_id)")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
         self.emit("fn py_issubclass(actual_type_id: i64, expected_type_id: i64) -> bool {")
         self.indent += 1
-        self.emit("py_is_subtype(actual_type_id, expected_type_id)")
+        self.emit("py_runtime_type_id_issubclass(actual_type_id, expected_type_id)")
+        self.indent -= 1
+        self.emit("}")
+        self.emit("")
+        self.emit("fn py_runtime_value_isinstance<T: PyRuntimeTypeId>(value: &T, expected_type_id: i64) -> bool {")
+        self.indent += 1
+        self.emit("py_runtime_type_id_is_subtype(py_runtime_value_type_id(value), expected_type_id)")
         self.indent -= 1
         self.emit("}")
         self.emit("")
         self.emit("fn py_isinstance<T: PyRuntimeTypeId>(value: &T, expected_type_id: i64) -> bool {")
         self.indent += 1
-        self.emit("py_is_subtype(py_runtime_type_id(value), expected_type_id)")
+        self.emit("py_runtime_value_isinstance(value, expected_type_id)")
         self.indent -= 1
         self.emit("}")
 
@@ -3581,22 +3605,22 @@ class RustEmitter(CodeEmitter):
     def _render_runtime_type_id_expr(self, value_expr: str) -> str:
         """Render the shared `py_runtime_type_id` contract in Rust."""
         self.uses_isinstance_runtime = True
-        return "py_runtime_type_id(&" + value_expr + ")"
+        return "py_runtime_value_type_id(&" + value_expr + ")"
 
     def _render_runtime_isinstance_expr(self, value_expr: str, expected_type_id: str) -> str:
         """Render the shared `py_isinstance` contract in Rust."""
         self.uses_isinstance_runtime = True
-        return "({ py_register_generated_type_info(); py_isinstance(&" + value_expr + ", " + expected_type_id + ") })"
+        return "({ py_register_generated_type_info(); py_runtime_value_isinstance(&" + value_expr + ", " + expected_type_id + ") })"
 
     def _render_runtime_is_subtype_expr(self, actual_type_id: str, expected_type_id: str) -> str:
         """Render the shared `py_is_subtype` contract in Rust."""
         self.uses_isinstance_runtime = True
-        return "({ py_register_generated_type_info(); py_is_subtype(" + actual_type_id + ", " + expected_type_id + ") })"
+        return "({ py_register_generated_type_info(); py_runtime_type_id_is_subtype(" + actual_type_id + ", " + expected_type_id + ") })"
 
     def _render_runtime_issubclass_expr(self, actual_type_id: str, expected_type_id: str) -> str:
         """Render the shared `py_issubclass` contract in Rust."""
         self.uses_isinstance_runtime = True
-        return "({ py_register_generated_type_info(); py_issubclass(" + actual_type_id + ", " + expected_type_id + ") })"
+        return "({ py_register_generated_type_info(); py_runtime_type_id_issubclass(" + actual_type_id + ", " + expected_type_id + ") })"
 
     def _render_isinstance_call(self, rendered_args: list[str], arg_nodes: list[Any]) -> str:
         """`isinstance(...)` 呼び出しを Rust へ lower する。"""

@@ -584,7 +584,7 @@ class Child(Base):
         self.assertIn("Pytra.CsModule.py_runtime.py_bool(x);", cs)
         self.assertIn(".Count();", cs)
         self.assertIn("System.Convert.ToString(x);", cs)
-        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_type_id(x);", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_type_id(x);", cs)
         self.assertIn("iter(x);", cs)
         self.assertIn("next(iter(x));", cs)
 
@@ -636,10 +636,10 @@ class Child(Base):
             "meta": {},
         }
         cs = transpile_to_csharp(east)
-        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_INT);", cs)
-        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Base.PYTRA_TYPE_ID);", cs)
-        self.assertIn("Pytra.CsModule.py_runtime.py_is_subtype(Pytra.CsModule.py_runtime.PYTRA_TID_BOOL, Pytra.CsModule.py_runtime.PYTRA_TID_INT);", cs)
-        self.assertIn("Pytra.CsModule.py_runtime.py_issubclass(Child.PYTRA_TYPE_ID, Base.PYTRA_TYPE_ID);", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_INT);", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(x, Base.PYTRA_TYPE_ID);", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_type_id_is_subtype(Pytra.CsModule.py_runtime.PYTRA_TID_BOOL, Pytra.CsModule.py_runtime.PYTRA_TID_INT);", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_type_id_issubclass(Child.PYTRA_TYPE_ID, Base.PYTRA_TYPE_ID);", cs)
 
     def test_box_unbox_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {
@@ -683,8 +683,8 @@ class Child(Base):
             east = load_east(case, parser_backend="self_hosted")
             cs = transpile_to_csharp(east)
 
-        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_INT)", cs)
-        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_STR)", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_INT)", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_STR)", cs)
         self.assertNotIn("return isinstance(", cs)
 
     def test_isinstance_user_class_lowers_to_is_operator(self) -> None:
@@ -703,7 +703,7 @@ def f(x: object) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             cs = transpile_to_csharp(east)
 
-        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Base.PYTRA_TYPE_ID)", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(x, Base.PYTRA_TYPE_ID)", cs)
         self.assertNotIn("return isinstance(", cs)
 
     def test_isinstance_object_lowers_to_object_is_check(self) -> None:
@@ -716,7 +716,7 @@ def f(x: object) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             cs = transpile_to_csharp(east)
 
-        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_OBJECT)", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_OBJECT)", cs)
         self.assertNotIn("return isinstance(", cs)
 
     def test_isinstance_tuple_lowers_to_or_of_is_checks(self) -> None:
@@ -732,10 +732,10 @@ def f(x: object) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             cs = transpile_to_csharp(east)
 
-        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_INT)", cs)
-        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Base.PYTRA_TYPE_ID)", cs)
-        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_DICT)", cs)
-        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_OBJECT)", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_INT)", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(x, Base.PYTRA_TYPE_ID)", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_DICT)", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_OBJECT)", cs)
         self.assertNotIn("return isinstance(", cs)
 
     def test_isinstance_set_lowers_to_iset_check(self) -> None:
@@ -748,7 +748,7 @@ def f(x: object) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             cs = transpile_to_csharp(east)
 
-        self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_SET)", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_SET)", cs)
         self.assertNotIn("return isinstance(", cs)
 
     def test_path_alias_constructor_and_parent_are_lowered(self) -> None:

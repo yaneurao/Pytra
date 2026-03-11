@@ -39,7 +39,7 @@
 
 end state:
 - `cpp_header_thincompat_blocker`: C++ emitter で `py_runtime.h` の final thin compat removal を直接ブロックしている generic helper 呼び出しだけを保持する。初期状態では `runtime_expr.py` / `stmt.py` の `py_isinstance` 2 箇所。
-- `crossruntime_shared_type_id_api`: Rust/C# emitter が共有している `py_runtime_type_id` / `py_isinstance` / `py_is_subtype` / `py_issubclass` API residual を保持する。これは即時削除対象ではなく、header shrink 後の naming/bridge follow-up 対象。
+- `crossruntime_shared_type_id_api`: Rust/C# emitter では generic 名を直接 emit せず、`py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` の thin helper naming に揃える。generic `py_runtime_type_id` / `py_isinstance` / `py_is_subtype` / `py_issubclass` は runtime 内部 alias としてのみ残ってよい。
 
 確認コマンド:
 - `python3 tools/check_todo_priority.py`
@@ -54,7 +54,7 @@ end state:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S1-01] final thin compat blocker を `cpp_header_thincompat_blocker` / `crossruntime_shared_type_id_api` に棚卸しし、inventory / test を追加する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S1-02] end state と bundle 単位の削減順を docs / source guard に固定する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S2-01] C++ emitter の `py_isinstance` blocker lane を explicit helper へ寄せ、`cpp_header_thincompat_blocker` を縮める。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S2-02] Rust/C# emitter の shared `type_id` API residual を naming / bridge end state に揃え、残る non-blocker を docs へ固定する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S2-02] Rust/C# emitter の shared `type_id` API residual を naming / bridge end state に揃え、残る non-blocker を docs へ固定する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01-S3-01] representative smoke / docs / archive を更新して閉じる。
 
 決定ログ:
@@ -62,3 +62,4 @@ end state:
 - 2026-03-11: `S1-01` として `tools/check_crossruntime_pyruntime_thincompat_inventory.py` と unit test を追加し、C++ emitter の `py_isinstance` blocker 2 箇所と Rust/C# emitter の shared `type_id` API residual を bucket 化した。
 - 2026-03-11: `S1-02` として end state を「`cpp_header_thincompat_blocker` は空 bucket が目標、Rust/C# 側は `crossruntime_shared_type_id_api` へ隔離したまま naming/bridge follow-up を待つ」に固定した。
 - 2026-03-11: `S2-01` として C++ emitter の `runtime_expr.py` / `stmt.py` に残っていた generic `py_isinstance` 2 箇所を `py_runtime_object_isinstance` へ寄せ、`cpp_header_thincompat_blocker` bucket を空にした。
+- 2026-03-11: `S2-02` として Rust/C# emitter の render surface を `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` に揃え、inventory は raw file-wide regex ではなく renderer end-state helper 専用の classifier に切り替えた。runtime 内部の generic 名は alias として残し、non-blocker として扱う。

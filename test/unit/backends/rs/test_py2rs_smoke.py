@@ -420,7 +420,7 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn("py_any_to_bool(&x);", rust)
         self.assertIn("PyAny::Str(s) => s.len() as i64", rust)
         self.assertIn("py_any_to_string(&x);", rust)
-        self.assertIn("py_runtime_type_id(&x);", rust)
+        self.assertIn("py_runtime_value_type_id(&x);", rust)
         self.assertIn("iter(x);", rust)
         self.assertIn("next(iter(x));", rust)
 
@@ -472,10 +472,10 @@ class Py2RsSmokeTest(unittest.TestCase):
             "meta": {},
         }
         rust = transpile_to_rust(east)
-        self.assertIn("py_register_generated_type_info(); py_isinstance(&x, PYTRA_TID_INT)", rust)
-        self.assertIn("py_register_generated_type_info(); py_isinstance(&x, Base::PYTRA_TYPE_ID)", rust)
-        self.assertIn("py_register_generated_type_info(); py_is_subtype(PYTRA_TID_BOOL, PYTRA_TID_INT)", rust)
-        self.assertIn("py_register_generated_type_info(); py_issubclass(Child::PYTRA_TYPE_ID, Base::PYTRA_TYPE_ID)", rust)
+        self.assertIn("py_register_generated_type_info(); py_runtime_value_isinstance(&x, PYTRA_TID_INT)", rust)
+        self.assertIn("py_register_generated_type_info(); py_runtime_value_isinstance(&x, Base::PYTRA_TYPE_ID)", rust)
+        self.assertIn("py_register_generated_type_info(); py_runtime_type_id_is_subtype(PYTRA_TID_BOOL, PYTRA_TID_INT)", rust)
+        self.assertIn("py_register_generated_type_info(); py_runtime_type_id_issubclass(Child::PYTRA_TYPE_ID, Base::PYTRA_TYPE_ID)", rust)
 
     def test_box_unbox_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {
@@ -615,8 +615,8 @@ def is_dict(x: Any) -> bool:
             rust = transpile_to_rust(east)
 
         self.assertNotIn("return isinstance(", rust)
-        self.assertIn("py_isinstance(&x, PYTRA_TID_INT)", rust)
-        self.assertIn("py_isinstance(&x, PYTRA_TID_DICT)", rust)
+        self.assertIn("py_runtime_value_isinstance(&x, PYTRA_TID_INT)", rust)
+        self.assertIn("py_runtime_value_isinstance(&x, PYTRA_TID_DICT)", rust)
         self.assertIn("fn py_register_generated_type_info() {", rust)
 
     def test_isinstance_lowering_for_static_builtin_type(self) -> None:
@@ -634,8 +634,8 @@ def is_float(x: int) -> bool:
             rust = transpile_to_rust(east)
 
         self.assertNotIn("return isinstance(", rust)
-        self.assertIn("py_register_generated_type_info(); py_isinstance(&x, PYTRA_TID_INT)", rust)
-        self.assertIn("py_register_generated_type_info(); py_isinstance(&x, PYTRA_TID_FLOAT)", rust)
+        self.assertIn("py_register_generated_type_info(); py_runtime_value_isinstance(&x, PYTRA_TID_INT)", rust)
+        self.assertIn("py_register_generated_type_info(); py_runtime_value_isinstance(&x, PYTRA_TID_FLOAT)", rust)
 
     def test_isinstance_lowering_for_class_inheritance(self) -> None:
         src = """
@@ -664,8 +664,8 @@ def is_child(x: A) -> bool:
         self.assertIn("const PYTRA_TYPE_ID: i64 = 1001;", rust)
         self.assertIn("impl PyRuntimeTypeId for A {", rust)
         self.assertIn("impl PyRuntimeTypeId for B {", rust)
-        self.assertIn("py_register_generated_type_info(); py_isinstance(&x, A::PYTRA_TYPE_ID)", rust)
-        self.assertIn("py_register_generated_type_info(); py_isinstance(&x, B::PYTRA_TYPE_ID)", rust)
+        self.assertIn("py_register_generated_type_info(); py_runtime_value_isinstance(&x, A::PYTRA_TYPE_ID)", rust)
+        self.assertIn("py_register_generated_type_info(); py_runtime_value_isinstance(&x, B::PYTRA_TYPE_ID)", rust)
         self.assertIn("py_register_type_info(1000, 9, 9, 10);", rust)
         self.assertIn("py_register_type_info(1001, 10, 10, 10);", rust)
 
@@ -688,7 +688,7 @@ def is_a(x: B) -> bool:
             east = load_east(case, parser_backend="self_hosted")
             rust = transpile_to_rust(east)
 
-        self.assertIn("py_register_generated_type_info(); py_isinstance(&x, A::PYTRA_TYPE_ID)", rust)
+        self.assertIn("py_register_generated_type_info(); py_runtime_value_isinstance(&x, A::PYTRA_TYPE_ID)", rust)
         self.assertIn("py_register_type_info(1000, 9, 9, 9);", rust)
         self.assertIn("py_register_type_info(1001, 10, 10, 10);", rust)
 
@@ -709,7 +709,7 @@ def from_any(x: Any) -> bool:
             rust = transpile_to_rust(east)
 
         self.assertNotIn("return isinstance(", rust)
-        self.assertIn("py_register_generated_type_info(); py_isinstance(&x, PYTRA_TID_OBJECT)", rust)
+        self.assertIn("py_register_generated_type_info(); py_runtime_value_isinstance(&x, PYTRA_TID_OBJECT)", rust)
 
     def test_isinstance_tuple_lowering_for_any_uses_or_of_type_id_checks(self) -> None:
         src = """
@@ -725,8 +725,8 @@ def f(x: Any) -> bool:
             rust = transpile_to_rust(east)
 
         self.assertNotIn("return isinstance(", rust)
-        self.assertIn("py_isinstance(&x, PYTRA_TID_INT)", rust)
-        self.assertIn("py_isinstance(&x, PYTRA_TID_DICT)", rust)
+        self.assertIn("py_runtime_value_isinstance(&x, PYTRA_TID_INT)", rust)
+        self.assertIn("py_runtime_value_isinstance(&x, PYTRA_TID_DICT)", rust)
         self.assertIn("||", rust)
 
     def test_isinstance_set_lowering_for_any_uses_type_id_runtime_api(self) -> None:
@@ -743,7 +743,7 @@ def f(x: Any) -> bool:
             rust = transpile_to_rust(east)
 
         self.assertNotIn("return isinstance(", rust)
-        self.assertIn("py_isinstance(&x, PYTRA_TID_SET)", rust)
+        self.assertIn("py_runtime_value_isinstance(&x, PYTRA_TID_SET)", rust)
 
     def test_transpile_rejects_general_union_type_expr_in_annassign(self) -> None:
         east = {

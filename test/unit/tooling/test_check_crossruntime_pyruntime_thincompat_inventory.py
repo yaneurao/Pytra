@@ -30,7 +30,15 @@ class CheckCrossRuntimePyRuntimeThinCompatInventoryTest(unittest.TestCase):
         bucket = inventory_mod.EXPECTED_BUCKETS["crossruntime_shared_type_id_api"]
         self.assertTrue(all(path.startswith("src/backends/rs/") or path.startswith("src/backends/cs/") for _, path in bucket))
         self.assertTrue(
-            all(symbol in {"py_runtime_type_id", "py_isinstance", "py_is_subtype", "py_issubclass"} for symbol, _ in bucket)
+            all(
+                symbol in {
+                    "py_runtime_value_type_id",
+                    "py_runtime_value_isinstance",
+                    "py_runtime_type_id_is_subtype",
+                    "py_runtime_type_id_issubclass",
+                }
+                for symbol, _ in bucket
+            )
         )
 
 
