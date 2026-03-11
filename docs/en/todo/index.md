@@ -31,17 +31,4 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-1. [ ] [ID: P1-IR-CORE-DECOMPOSITION-01] Decompose `core.py` and `test_east_core.py` in cluster-sized slices so source-contract guards and parser behavior no longer share one file.
-   Context: [docs/ja/plans/p1-ir-core-decomposition.md](../../ja/plans/p1-ir-core-decomposition.md)
-- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S1-01] Using `core.py=10081 lines` and `test_east_core.py=3912 lines` as the baseline, the split boundaries and bundle-sized work units for source-contract, parser behavior, and suffix/call clusters were fixed.
-- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S1-02] TODO now keeps only one-line cluster summaries, while detailed verification and rationale live in the plan decision log.
-- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] Added a shared support module and `test_east_core_source_contract_builders.py`, then moved 10 builder source-contract guards out of `test_east_core.py`.
-- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] Moved 51 source-contract guards into five `test_east_core_source_contract_*.py` files plus the existing builders/expr-suffix files, leaving `test_east_core.py` focused on parser behavior and representative regressions.
-- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Parser behavior now lives in dedicated decorators / diagnostics / types / exprs / classes / runtime / statements files, leaving `test_east_core.py` as a residual regression shell.
-- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Moved declaration / decorator / extern / string / text / stmt-analysis / type / import / signature / builder / entrypoint / parse-context clusters into dedicated modules.
-- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Split expression parsing into parser-base / precedence / primary / lowered / resolution / call-args / call-annotation / attr-subscript-annotation / stmt-parser / module-parser clusters.
-- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core.py` now acts as a thin facade with only split-module imports plus the three wrappers `_sh_parse_stmt_block_mutable`, `_sh_parse_stmt_block`, and `convert_source_to_east_self_hosted`.
-- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] Added `test_east_core_source_contract_core_surface.py` to lock the thin-facade contract and representative IR/selfhost regressions.
-- Progress memo: [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] Moved `_ShExprParser` / `_sh_parse_expr*` into `core_expr_shell.py` and locked the facade/parser-shell split in source-contract tests.
-
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) Split `core.py` / `test_east_core.py` by responsibility so compiler-internal improvements can proceed in cluster-sized slices again.

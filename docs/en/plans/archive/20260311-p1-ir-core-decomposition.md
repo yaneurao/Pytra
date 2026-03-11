@@ -49,7 +49,7 @@ Validation commands:
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] Split the remaining source-contract guards into cluster-specific `test_east_core_source_contract_*.py` files.
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] Split parser behavior, diagnostics, and representative nominal-ADT tests into dedicated test files.
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] Continue moving remaining `core.py` clusters into dedicated modules in bundle-sized slices.
-- [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] Run representative IR/selfhost regressions and stabilize the split with compressed progress notes.
+- [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] Run representative IR/selfhost regressions and stabilize the split with compressed progress notes.
 
 Decision log:
 - 2026-03-11: Created this task using `core.py=10081 lines` and `test_east_core.py=3912 lines` as the baseline. The first slice will extract the leading source-contract builder cluster from `test_east_core.py` into a shared support module and a dedicated test file.
@@ -100,3 +100,4 @@ Decision log:
 - 2026-03-11: `S3-01` is complete. `core.py` is now down to 214 lines and keeps only the three thin wrappers `_sh_parse_stmt_block_mutable`, `_sh_parse_stmt_block`, and `convert_source_to_east_self_hosted`.
 - 2026-03-11: Start `S4-01` by adding `test_east_core_source_contract_core_surface.py` so the thin-facade contract and representative IR/selfhost regressions stay locked.
 - 2026-03-11: Moved `_ShExprParser` / `_sh_parse_expr` / `_sh_parse_expr_lowered` into `core_expr_shell.py` and split the `expr_suffix` / `call_dispatch` / `call_metadata` / `runtime_builtins` source-contracts between the `core.py` facade and the parser shell.
+- 2026-03-11: Ran `test_east_core_source_contract_core_surface.py`, the full `test_east_core*.py` suite, `test_prepare_selfhost_source.py`, and `build_selfhost.py`, then fixed the thin-facade end state at `core.py=214 lines` / `test_east_core.py=44 lines` with representative regressions. `S4-01` is complete and this plan moves to archive.

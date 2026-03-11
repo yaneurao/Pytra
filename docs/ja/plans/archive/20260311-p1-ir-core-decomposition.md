@@ -49,7 +49,7 @@
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] 残る source-contract guard を cluster ごとの `test_east_core_source_contract_*.py` へ分割する。
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] parser behavior / diagnostics / nominal ADT representative tests を別 test file へ分割する。
 - [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core.py` 側の残 cluster を bundle 単位で専用 module へ寄せる。
-- [ ] [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] representative IR/selfhost regression を通し、分割後の運用メモを圧縮して安定化する。
+- [x] [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] representative IR/selfhost regression を通し、分割後の運用メモを圧縮して安定化する。
 
 決定ログ:
 - 2026-03-11: `core.py=10081 lines`, `test_east_core.py=3912 lines` を基準に、本タスクを起票した。最初の slice は `test_east_core.py` の先頭 source-contract builder cluster を shared support module と専用 test file に切り出す方針とする。
@@ -100,3 +100,4 @@
 - 2026-03-11: `S3-01` は完了とする。`core.py` は 214 行・`_sh_parse_stmt_block_mutable` / `_sh_parse_stmt_block` / `convert_source_to_east_self_hosted` の 3 wrapper だけを持つ thin façade まで縮小した。
 - 2026-03-11: `S4-01` を開始し、`test_east_core_source_contract_core_surface.py` で thin façade 契約と representative IR/selfhost regression を固定する。
 - 2026-03-11: `_ShExprParser` / `_sh_parse_expr` / `_sh_parse_expr_lowered` を `core_expr_shell.py` へ寄せ、`expr_suffix` / `call_dispatch` / `call_metadata` / `runtime_builtins` の source-contract を `core.py` façade と parser shell に分離した。
+- 2026-03-11: `test_east_core_source_contract_core_surface.py`、`test_east_core*.py` 全件、`test_prepare_selfhost_source.py`、`build_selfhost.py` を通し、`core.py=214 lines` / `test_east_core.py=44 lines` の thin façade end state を representative regression 付きで固定した。`S4-01` を完了とし、この plan を archive へ移す。

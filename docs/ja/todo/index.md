@@ -31,17 +31,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P1-IR-CORE-DECOMPOSITION-01] `core.py` / `test_east_core.py` を cluster 単位で分割し、source-contract と parser behavior の責務境界を整理する。
-   文脈: [docs/ja/plans/p1-ir-core-decomposition.md](../plans/p1-ir-core-decomposition.md)
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S1-01] `core.py=10081 lines`、`test_east_core.py=3912 lines` を基準に、source-contract / parser behavior / suffix-call cluster の split boundary と bundle 粒度を固定した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S1-02] TODO には cluster 単位の一行進捗のみを残し、詳細ログは plan の `決定ログ` へ集約する運用に固定した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-01] shared support module と `test_east_core_source_contract_builders.py` を追加し、builder source-contract guard 10 本を `test_east_core.py` から切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-02] source-contract guard 51 本を `test_east_core_source_contract_*.py` 5 file と既存 builders/expr-suffix file へ切り出し、`test_east_core.py` を parser behavior / representative regression 中心へ整理した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S2-03] parser behavior は decorators / diagnostics / types / exprs / classes / runtime / statements の専用 test file 群へ分割し、`test_east_core.py` は residual regression 中心へ縮小した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] declaration / decorator / extern / string / text / stmt-analysis / type / import / signature / builder / entrypoint / parse-context cluster を専用 module へ切り出した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] expr parser は parser-base / precedence / primary / lowered / resolution / call-args / call-annotation / attr-subscript-annotation / stmt-parser / module-parser cluster へ分割した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core.py` は split module import と 3 wrapper（`_sh_parse_stmt_block_mutable` / `_sh_parse_stmt_block` / `convert_source_to_east_self_hosted`）だけを残す façade まで縮小した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] `test_east_core_source_contract_core_surface.py` を追加し、`core.py` の thin façade 契約と representative IR/selfhost regression を固定した。
-- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S4-01] `_ShExprParser` / `_sh_parse_expr*` を `core_expr_shell.py` へ寄せ、source-contract を façade と parser shell の二層へ整理した。
-
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。
