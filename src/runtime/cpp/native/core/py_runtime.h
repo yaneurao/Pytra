@@ -1298,17 +1298,17 @@ static inline uint32 py_register_class_type(uint32 base_type_id = PYTRA_TID_OBJE
         return PYTRA_TYPE_ID;                                                                            \
 }
 
-static inline bool py_is_subtype(uint32 actual_type_id, uint32 expected_type_id) {
+static inline bool py_runtime_type_id_is_subtype(uint32 actual_type_id, uint32 expected_type_id) {
     py_sync_generated_user_type_registry();
     return py_tid_is_subtype(static_cast<int64>(actual_type_id), static_cast<int64>(expected_type_id));
 }
 
-static inline bool py_issubclass(uint32 actual_type_id, uint32 expected_type_id) {
+static inline bool py_runtime_type_id_issubclass(uint32 actual_type_id, uint32 expected_type_id) {
     py_sync_generated_user_type_registry();
     return py_tid_issubclass(static_cast<int64>(actual_type_id), static_cast<int64>(expected_type_id));
 }
 
-static inline uint32 py_runtime_type_id(const object& v) {
+static inline uint32 py_runtime_object_type_id(const object& v) {
     if (!v) {
         return PYTRA_TID_NONE;
     }
@@ -1317,6 +1317,26 @@ static inline uint32 py_runtime_type_id(const object& v) {
         return PYTRA_TID_OBJECT;
     }
     return out;
+}
+
+static inline bool py_runtime_object_isinstance(const object& value, uint32 expected_type_id) {
+    if (!value) {
+        return expected_type_id == PYTRA_TID_NONE;
+    }
+    py_sync_generated_user_type_registry();
+    return py_tid_isinstance(value, static_cast<int64>(expected_type_id));
+}
+
+static inline bool py_is_subtype(uint32 actual_type_id, uint32 expected_type_id) {
+    return py_runtime_type_id_is_subtype(actual_type_id, expected_type_id);
+}
+
+static inline bool py_issubclass(uint32 actual_type_id, uint32 expected_type_id) {
+    return py_runtime_type_id_issubclass(actual_type_id, expected_type_id);
+}
+
+static inline uint32 py_runtime_type_id(const object& v) {
+    return py_runtime_object_type_id(v);
 }
 
 template <class T>
@@ -1338,14 +1358,10 @@ static inline uint32 py_runtime_type_id(const T& v) {
 template <class T>
 static inline bool py_isinstance(const T& value, uint32 expected_type_id) {
     if constexpr (::std::is_same_v<T, object>) {
-        if (!value) {
-            return expected_type_id == PYTRA_TID_NONE;
-        }
-        py_sync_generated_user_type_registry();
-        return py_tid_isinstance(value, static_cast<int64>(expected_type_id));
+        return py_runtime_object_isinstance(value, expected_type_id);
     }
     py_sync_generated_user_type_registry();
-    return py_tid_is_subtype(static_cast<int64>(py_runtime_type_id(value)), static_cast<int64>(expected_type_id));
+    return py_runtime_type_id_is_subtype(py_runtime_type_id(value), expected_type_id);
 }
 
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>

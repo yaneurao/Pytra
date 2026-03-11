@@ -122,7 +122,7 @@ pytra::compiler::transpile_cli::CompilerRootDocument _load_json_root_document(
 
 str _dict_get_str(const dict<str, object>& src, const str& key, const str& default_value = "") {
     auto it = src.find(key);
-    if (it == src.end() || !py_isinstance(it->second, PYTRA_TID_STR)) {
+    if (it == src.end() || !py_runtime_object_isinstance(it->second, PYTRA_TID_STR)) {
         return default_value;
     }
     return py_to_string(it->second);
@@ -130,7 +130,7 @@ str _dict_get_str(const dict<str, object>& src, const str& key, const str& defau
 
 int64 _dict_get_int(const dict<str, object>& src, const str& key, int64 default_value = 0) {
     auto it = src.find(key);
-    if (it == src.end() || !py_isinstance(it->second, PYTRA_TID_INT)) {
+    if (it == src.end() || !py_runtime_object_isinstance(it->second, PYTRA_TID_INT)) {
         return default_value;
     }
     // P2-object-bridge: legacy_migration_adapter
@@ -157,7 +157,7 @@ dict<str, object> export_compiler_root_document(const CompilerRootDocument& doc)
     );
     dict<str, object> meta_dict = {};
     auto meta_it = out.find("meta");
-    if (meta_it != out.end() && py_isinstance(meta_it->second, PYTRA_TID_DICT)) {
+    if (meta_it != out.end() && py_runtime_object_isinstance(meta_it->second, PYTRA_TID_DICT)) {
         // P2-object-bridge: legacy_migration_adapter
         meta_dict = obj_to_dict(meta_it->second);
     }
@@ -176,7 +176,7 @@ CompilerRootDocument coerce_compiler_root_document(
 ) {
     dict<str, object> meta_dict = {};
     auto meta_it = raw_doc.find("meta");
-    if (meta_it != raw_doc.end() && py_isinstance(meta_it->second, PYTRA_TID_DICT)) {
+    if (meta_it != raw_doc.end() && py_runtime_object_isinstance(meta_it->second, PYTRA_TID_DICT)) {
         // P2-object-bridge: legacy_migration_adapter
         meta_dict = obj_to_dict(meta_it->second);
     }

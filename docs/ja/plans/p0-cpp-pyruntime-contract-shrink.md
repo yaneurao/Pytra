@@ -64,7 +64,7 @@
 - [x] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S1-02] `py_runtime.h` の target end state を固定し、`mutation helper` と `type_id` の削減順を docs / source guard へ反映する。
 - [x] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S2-01] C++ emitter の typed lane から残っている `py_append/extend/pop/clear/reverse/sort/set_at` 依存を bundle 単位で upstream へ押し戻す。
 - [x] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S2-02] `py_runtime.h` の mutation helper を object bridge / compatibility 専用 overload へ縮め、残存 caller を label 付きで固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S3-01] `py_runtime_type_id/py_isinstance/py_is_subtype` の shared ownership を整理し、native compiler wrapper / generated `type_id` built-in の参照先を thin helper seam に寄せる。
+- [x] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S3-01] `py_runtime_type_id/py_isinstance/py_is_subtype` の shared ownership を整理し、native compiler wrapper / generated `type_id` built-in の参照先を thin helper seam に寄せる。
 - [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S3-02] Rust/C#/C++ runtime/emitter の residual `type_id` caller を shared contract 前提へ揃え、未分類の再流入を smoke/contract test で落とす。
 - [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S4-01] `py_runtime.h` 残存 surface の label check / source guard / docs を更新し、archive 可能な状態にする。
 
@@ -76,3 +76,4 @@
 - 2026-03-11: `S1-02` として `test_cpp_runtime_iterable.py` と `test_check_cpp_pyruntime_contract_inventory.py` を拡張し、mutation helper の end state を `typed=container overload / compat=object overload`、`type_id` の end state を `py_tid_*` delegate + generated `type_id.h` include に固定した。
 - 2026-03-11: `S2-01` として C++ emitter / stmt から `py_append/extend/pop/clear/reverse/sort/set_at` wrapper 呼び出しを हटし、user-emitted C++ は `py_list_*_mut(obj_to_list_ref_or_raise(...))` へ直接 lower する形に寄せた。これで `typed_lane_removable` bucket は空になり、残 caller は generated runtime と shared `type_id` contract のみになった。
 - 2026-03-11: `S2-02` として `py_runtime.h` から `rc<list<T>>` mutation wrapper を削除し、`py_append` は generated runtime local list compat と object bridge seam のみ、`py_extend/pop/clear/reverse/sort/set_at` は object bridge seam のみ残す形に縮退させた。typed lane は `py_list_*_mut` 直接呼びを正本とし、source guard でもこの end state を固定した。
+- 2026-03-11: `S3-01` として `py_runtime_type_id/py_isinstance/py_is_subtype` の thin helper seam を `py_runtime_object_type_id` / `py_runtime_object_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` に切り出し、generated `type_id.cpp` と native compiler wrapper は generic wrapper ではなくこの seam を参照する形へ寄せた。inventory では old wrapper の residual から generated/native caller を外した。

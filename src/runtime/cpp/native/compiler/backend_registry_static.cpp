@@ -100,7 +100,7 @@ str _strip_known_suffix(const str& path_txt) {
 
 str _dict_get_str(const dict<str, object>& src, const str& key, const str& default_value = "") {
     auto it = src.find(key);
-    if (it == src.end() || !py_isinstance(it->second, PYTRA_TID_STR)) {
+    if (it == src.end() || !py_runtime_object_isinstance(it->second, PYTRA_TID_STR)) {
         return default_value;
     }
     return py_to_string(it->second);
