@@ -98,9 +98,13 @@ str _strip_known_suffix(const str& path_txt) {
     return path_txt;
 }
 
+bool _object_is_runtime_type(const object& value, uint32 expected_type_id) {
+    return py_runtime_object_isinstance(value, expected_type_id);
+}
+
 str _dict_get_str(const dict<str, object>& src, const str& key, const str& default_value = "") {
     auto it = src.find(key);
-    if (it == src.end() || !py_runtime_object_isinstance(it->second, PYTRA_TID_STR)) {
+    if (it == src.end() || !_object_is_runtime_type(it->second, PYTRA_TID_STR)) {
         return default_value;
     }
     return py_to_string(it->second);

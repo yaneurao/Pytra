@@ -314,6 +314,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             '_dict_get_str(meta_dict, "parser_backend")',
             native_transpile,
         )
+        self.assertIn("bool _object_is_runtime_type(const object& value, uint32 expected_type_id)", native_transpile)
+        self.assertEqual(native_transpile.count("py_runtime_object_isinstance("), 1)
         self.assertIn("return export_compiler_root_document(\n        load_east3_document_typed(", native_transpile)
         self.assertNotIn("CompilerRootDocument::to_legacy_dict()", native_transpile)
 
@@ -327,6 +329,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             for line in native_registry.splitlines()
             if "make_object(" in line
         ]
+        self.assertIn("bool _object_is_runtime_type(const object& value, uint32 expected_type_id)", native_registry)
+        self.assertEqual(native_registry.count("py_runtime_object_isinstance("), 1)
 
         self.assertEqual(
             transpile_make_object_lines,
