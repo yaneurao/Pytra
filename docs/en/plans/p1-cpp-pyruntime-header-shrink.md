@@ -1,0 +1,62 @@
+# P1: Shrink the remaining `py_runtime.h` surface for real
+
+Last updated: 2026-03-11
+
+Related TODO:
+- `ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01` in `docs/en/todo/index.md`
+
+Background:
+- `P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01` already cleaned up most typed-lane mutation wrappers and generic `type_id` ownership.
+- `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01` aligned the residual emitter-side contract across C++/Rust/C# and made drift fail fast.
+- That leaves `src/runtime/cpp/native/core/py_runtime.h` in a state where the remaining helpers can now be split into “must remain compatibility seam” vs “still removable wrappers”.
+
+Goal:
+- Classify the remaining `py_runtime.h` helpers into `object bridge mutation`, `typed collection compatibility`, and `shared type_id compatibility`, then lock the removal order.
+- Prepare source/tooling/smoke so the next shrink steps can remove overloads in bundle-sized slices.
+
+Scope:
+- `src/runtime/cpp/native/core/py_runtime.h`
+- `tools/check_cpp_pyruntime_header_surface.py`
+- `test/unit/tooling/test_check_cpp_pyruntime_header_surface.py`
+- As needed, `tools/check_cpp_pyruntime_contract_inventory.py`
+- As needed, `test/unit/backends/cpp/test_cpp_runtime_iterable.py`
+- As needed, `test/unit/backends/cpp/test_cpp_runtime_type_id.py`
+
+Out of scope:
+- Reducing line count by physically splitting `py_runtime.h` alone
+- Full redesign of the Rust/C#/C++ runtimes
+- Changing the `Any/object` boundary
+- Reworking the cross-runtime emitter contract itself
+
+Acceptance criteria:
+- The remaining `py_runtime.h` helpers are inventory-classified by category and unclassified reintroduction fails fast.
+- The boundaries between `object bridge mutation`, `typed collection compatibility`, and `shared type_id compatibility` are locked in docs/tests/source.
+- Representative C++ runtime tests pass.
+- At least one bundle of residual wrappers is removed from the header.
+
+End state:
+- `object_bridge_mutation`: only mutation helpers that take `object&` remain, explicitly marked as the C++ object-bridge seam.
+- `typed_collection_compat`: only the minimal helpers still required by generated-runtime local typed collections remain.
+- `shared_type_id_compat`: only thin compatibility helpers for `py_is_subtype` / `py_issubclass` / `py_runtime_type_id` / `py_isinstance` remain.
+
+Verification commands:
+- `python3 tools/check_todo_priority.py`
+- `python3 tools/check_cpp_pyruntime_header_surface.py`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_cpp_pyruntime_header_surface.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_type_id.py'`
+- `python3 tools/build_selfhost.py`
+- `python3 tools/check_transpiler_version_gate.py`
+- `python3 tools/run_regen_on_version_bump.py --dry-run`
+- `git diff --check`
+
+Breakdown:
+- [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S1-01] Inventory the remaining `py_runtime.h` helpers into `object_bridge_mutation`, `typed_collection_compat`, and `shared_type_id_compat`, and add tooling.
+- [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S1-02] Lock the target end state and bundle-sized removal order in docs/source guards.
+- [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-01] Remove unnecessary list/dict wrappers from `typed_collection_compat` in bundle-sized slices.
+- [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-02] Further narrow the thin `shared_type_id_compat` wrappers under source-guard coverage.
+- [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S3-01] Refresh representative runtime tests, docs, and archive the task.
+
+Decision log:
+- 2026-03-11: Opened as the follow-up after `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01`. The next step is not more emitter work, but actually shrinking the residual surface inside `py_runtime.h`.
+- 2026-03-11: As `S1-01`, we inventoried the remaining helpers into `object_bridge_mutation`, `typed_collection_compat`, and `shared_type_id_compat`, then added a drift guard.
