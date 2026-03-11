@@ -80,3 +80,4 @@ bundle order:
 - 2026-03-12: この task は archived residual-caller shrink を前提にしつつ、active な header surface guard を現在の goal に繋ぎ直す follow-up とする。最初の束では active handoff と bundle order の固定だけに絞る。
 - 2026-03-12: `S1-01` として `check_cpp_pyruntime_header_surface.py` の handoff を archived `P4` から active `P0` へ切り替え、target end state と bundle order を tooling/test で fail-closed に固定した。
 - 2026-03-12: `S2-01` の first bundle として、C++ tracked source で未使用だった `py_set_at/py_extend/py_pop/py_clear/py_reverse/py_sort` の object wrapper 8 本を header から削除した。残る object-bridge mutation seam は generated C++ runtime が still caller の `py_append(object&)` だけとする。
+- 2026-03-12: `S2-01` の second bundle として、`src/runtime/cpp/generated/built_in/iter_ops.cpp` の `py_enumerate_object` を `py_list_append_mut(obj_to_list_ref_or_raise(...))` へ upstream 化した。tracked C++ source では `py_append(object&)` の direct caller を持たない状態になった。

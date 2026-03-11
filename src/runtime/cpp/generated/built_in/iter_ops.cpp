@@ -25,7 +25,9 @@ object py_enumerate_object(const object& values, int64 start) {
     int64 i = 0;
     int64 n = py_len(values);
     while (i < n) {
-        py_append(out, make_object(list<object>{make_object(start + i), make_object(py_at(values, py_to<int64>(i)))}));
+        py_list_append_mut(
+            obj_to_list_ref_or_raise(out, "py_append"),
+            make_object(list<object>{make_object(start + i), make_object(py_at(values, py_to<int64>(i)))}));
         i++;
     }
     return make_object(out);
