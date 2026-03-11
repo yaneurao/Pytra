@@ -64,5 +64,6 @@ from toolchain.ir.core_stmt_text_semantics import _sh_split_top_level_from
 from toolchain.ir.core_stmt_text_semantics import _sh_split_top_level_in
 from toolchain.ir.core_stmt_text_semantics import _sh_strip_inline_comment
 from toolchain.ir.core_text_semantics import _sh_parse_import_alias
+from toolchain.ir.core_text_semantics import _sh_parse_import_from_clause
 from toolchain.ir.core_type_semantics import _sh_ann_to_type
 from toolchain.ir.core_type_semantics import _sh_ann_to_type_expr

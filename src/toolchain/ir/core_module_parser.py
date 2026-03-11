@@ -75,6 +75,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
         _sh_parse_expr_lowered,
         _sh_parse_if_tail,
         _sh_parse_import_alias,
+        _sh_parse_import_from_clause,
         _sh_parse_stmt_block,
         _sh_parse_typed_binding,
         _sh_raise_if_trailing_stmt_terminator,
@@ -529,22 +530,9 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                 body_items.append(_sh_make_import_stmt(_sh_make_stmt_node, _sh_span(i, 0, len(ln)), aliases))
             i = logical_end + 1
             continue
-        if s.startswith("from "):
-            marker = " import "
-            pos = s.find(marker)
-            if pos >= 0:
-                mod_txt = s[5:pos].strip()
-                if mod_txt.startswith("."):
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message="relative import is not supported",
-                        source_span=_sh_span(i, 0, len(ln)),
-                        hint="Use absolute import form: `from module import name`.",
-                    )
-        m_import_from: re.Match | None = re.match(r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$", s, flags=re.S)
-        if m_import_from is not None:
-            mod_name = re.strip_group(m_import_from, 1)
-            names_txt = re.strip_group(m_import_from, 2)
+        import_from_clause = _sh_parse_import_from_clause(s)
+        if import_from_clause is not None:
+            mod_name, names_txt, mod_level = import_from_clause
             if mod_name == "typing":
                 # `typing` の from-import は型別名解決にだけ使い、依存/AST には残さない。
                 raw_parts_typing: list[str] = []
@@ -666,6 +654,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                         _sh_span(i, 0, len(ln)),
                         mod_name,
                         [_sh_make_import_alias("*")],
+                        level=mod_level,
                     )
                 )
                 i = logical_end + 1
@@ -738,6 +727,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                         _sh_span(i, 0, len(ln)),
                         mod_name,
                         aliases,
+                        level=mod_level,
                     )
                 )
             i = logical_end + 1

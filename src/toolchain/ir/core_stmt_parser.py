@@ -59,6 +59,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
         _sh_parse_expr_lowered,
         _sh_parse_if_tail,
         _sh_parse_import_alias,
+        _sh_parse_import_from_clause,
         _sh_parse_typed_binding,
         _sh_push_stmt_with_trivia,
         _sh_raise_if_trailing_stmt_terminator,
@@ -547,22 +548,9 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                 )
             continue
 
-        if s.startswith("from "):
-            marker = " import "
-            pos = s.find(marker)
-            if pos >= 0:
-                mod_txt = s[5:pos].strip()
-                if mod_txt.startswith("."):
-                    raise _make_east_build_error(
-                        kind="unsupported_syntax",
-                        message="relative import is not supported",
-                        source_span=_sh_span(ln_no, 0, len(ln_txt)),
-                        hint="Use absolute import form: `from module import name`.",
-                    )
-        m_import_from: re.Match | None = re.match(r"^from\s+([A-Za-z_][A-Za-z0-9_\.]*)\s+import\s+(.+)$", s, flags=re.S)
-        if m_import_from is not None:
-            mod_name = re.strip_group(m_import_from, 1)
-            names_txt = re.strip_group(m_import_from, 2)
+        import_from_clause = _sh_parse_import_from_clause(s)
+        if import_from_clause is not None:
+            mod_name, names_txt, mod_level = import_from_clause
             if mod_name == "typing":
                 # `from typing import ...` は注釈解決専用で、EAST には出力しない。
                 continue
@@ -637,6 +625,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                         _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
                         mod_name,
                         [_sh_make_import_alias("*")],
+                        level=mod_level,
                     ),
                 )
                 continue
@@ -684,6 +673,7 @@ def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_type
                         _sh_stmt_span(merged_line_end, ln_no, 0, len(ln_txt)),
                         mod_name,
                         aliases,
+                        level=mod_level,
                     ),
                 )
             continue

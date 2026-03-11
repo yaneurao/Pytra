@@ -37,7 +37,7 @@
 
 1. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01] `from .m import x` / `from ..pkg import y` を multi-file 変換で正式対応する。
 2. [x] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S1-01] relative import の syntax / diagnostics / root escape policy を spec と plan に固定する。
-3. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-01] self-hosted parser が relative `from-import` を受理し、raw module text を保持できるようにする。
+3. [x] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-01] self-hosted parser が relative `from-import` を受理し、raw module text と `ImportFrom.level` を保持できるようにする。
 4. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-02] frontend の module map 構築で relative module を absolute module_id へ正規化し、EAST / import meta 全体へ反映する。
 5. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-03] import graph 診断を relative import 正式対応の contract に更新し、root escape と missing module を区別して fail-closed にする。
 6. [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S3-01] representative CLI / unit 回帰（正常系・missing・duplicate・root escape・wildcard）を追加する。

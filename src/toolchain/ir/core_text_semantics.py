@@ -111,6 +111,32 @@ def _sh_parse_import_alias(text: str, *, allow_dotted_name: bool) -> tuple[str, 
     return name_txt, alias_txt
 
 
+def _sh_parse_import_from_clause(text: str) -> tuple[str, str, int] | None:
+    """`from module import names` を手書きパースして raw module text と level を返す。"""
+    raw = text.strip()
+    if not raw.startswith("from "):
+        return None
+    marker = " import "
+    pos = raw.find(marker)
+    if pos < 0:
+        return None
+    module_txt = raw[len("from ") : pos].strip()
+    names_txt = raw[pos + len(marker) :].strip()
+    if module_txt == "" or names_txt == "":
+        return None
+    level = 0
+    while level < len(module_txt) and module_txt[level] == ".":
+        level += 1
+    if level == 0:
+        if not _sh_is_dotted_identifier(module_txt):
+            return None
+    else:
+        base_txt = module_txt[level:]
+        if base_txt != "" and not _sh_is_dotted_identifier(base_txt):
+            return None
+    return module_txt, names_txt, level
+
+
 def _sh_parse_dataclass_decorator_options(
     args_txt: str,
     *,

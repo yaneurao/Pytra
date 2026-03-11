@@ -357,6 +357,59 @@ def main() -> None:
         import_bindings = east.get("meta", {}).get("import_bindings", [])
         self.assertEqual(import_bindings, [])
 
+    def test_relative_from_import_preserves_raw_module_text(self) -> None:
+        src = """
+from .helper import f
+
+def main() -> None:
+    f()
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        import_from_nodes = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "ImportFrom"
+        ]
+        self.assertEqual(len(import_from_nodes), 1)
+        self.assertEqual(import_from_nodes[0].get("module"), ".helper")
+        self.assertEqual(import_from_nodes[0].get("level"), 1)
+
+        meta = east.get("meta", {})
+        import_bindings = meta.get("import_bindings", [])
+        self.assertIsInstance(import_bindings, list)
+        self.assertEqual(len(import_bindings), 1)
+        self.assertEqual(import_bindings[0].get("module_id"), ".helper")
+        self.assertEqual(import_bindings[0].get("export_name"), "f")
+        self.assertEqual(import_bindings[0].get("local_name"), "f")
+
+        import_symbols = meta.get("import_symbols", {})
+        self.assertIsInstance(import_symbols, dict)
+        self.assertEqual(import_symbols.get("f"), {"module": ".helper", "name": "f"})
+
+    def test_relative_from_import_without_module_preserves_dot_root(self) -> None:
+        src = """
+from . import f
+
+def main() -> None:
+    f()
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        import_from_nodes = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "ImportFrom"
+        ]
+        self.assertEqual(len(import_from_nodes), 1)
+        self.assertEqual(import_from_nodes[0].get("module"), ".")
+        self.assertEqual(import_from_nodes[0].get("level"), 1)
+
+        meta = east.get("meta", {})
+        import_bindings = meta.get("import_bindings", [])
+        self.assertIsInstance(import_bindings, list)
+        self.assertEqual(len(import_bindings), 1)
+        self.assertEqual(import_bindings[0].get("module_id"), ".")
+        self.assertEqual(import_bindings[0].get("export_name"), "f")
+
     def test_future_non_annotations_is_rejected(self) -> None:
         src = """
 from __future__ import generator_stop

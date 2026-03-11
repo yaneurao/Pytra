@@ -2243,7 +2243,7 @@ def main() -> None:
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=unsupported_import_form", proc.stderr)
-        self.assertIn("import=from .helper import f", proc.stderr)
+        self.assertIn("import=from .helper import ...", proc.stderr)
 
     def test_cli_resolves_from_import_star_in_multi_file_mode(self) -> None:
         src_main = """from helper import *
