@@ -538,7 +538,8 @@ migration note:
 - `meta.import_modules` / `meta.import_symbols` は互換用途として残し、正本から導出します。
 - `import module as alias` は `alias.attr(...)` を `module.attr(...)` として解決します。
 - `from module import *` は `binding_kind=wildcard` として保持し、変換を継続します。
-- 相対 import（`from .mod import x`）は現状未対応です。検出時は `input_invalid` として終了します。
+- relative `from-import`（`from .mod import x`, `from ..pkg import y`, `from . import x`, `from .mod import *`）は importing file path と entry root に対する static normalize を正本とします。
+- root escape は `input_invalid(kind=unsupported_import_form)`、正規化後 missing module は `input_invalid(kind=missing_module)` として扱います。
 - `pytra` 名前空間は予約です。入力ルート配下の `pytra.py` / `pytra/__init__.py` は衝突として `input_invalid` を返します。
 - ユーザーモジュール探索は「入力ファイルの親ディレクトリ基準」で行います（`foo.bar` -> `foo/bar.py` または `foo/bar/__init__.py`）。
 - 未解決ユーザーモジュール import と循環 import は `input_invalid` で早期エラーにします。

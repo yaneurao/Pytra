@@ -54,7 +54,7 @@
 - `git diff --check`
 
 分解:
-- [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S1-01] relative import の syntax / diagnostics / root escape policy を spec と plan に固定する。
+- [x] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S1-01] relative import の syntax / diagnostics / root escape policy を spec と plan に固定する。
 - [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-01] self-hosted parser が relative `from-import` を受理し、raw module text を保持できるようにする。
 - [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-02] frontend の module map 構築で relative module を absolute module_id へ正規化し、EAST / import meta 全体へ反映する。
 - [ ] [ID: P0-RELATIVE-IMPORT-SUPPORT-01-S2-03] import graph 診断を relative import 正式対応の contract に更新し、root escape と missing module を区別して fail-closed にする。
@@ -63,3 +63,4 @@
 
 決定ログ:
 - 2026-03-11: ユーザー要望により relative import を `P0` へ昇格した。最初の互換目標は Python runtime 完全互換ではなく、entry root 配下の deterministic static normalize とする。
+- 2026-03-11: `S1-01` として syntax / diagnostics / root escape policy を固定した。Stage 1 canonical surface は `from .m import x` / `from ..pkg import y` / `from . import x` / `from .m import *` とし、`import .m` は非対象、root escape は `kind=unsupported_import_form`、正規化後 missing module は `kind=missing_module` とする。

@@ -532,7 +532,8 @@ Notes:
 - `meta.import_modules` and `meta.import_symbols` remain only for compatibility and are derived from canonical metadata.
 - `import module as alias` resolves `alias.attr(...)` as `module.attr(...)`.
 - `from module import *` is kept as `binding_kind=wildcard` and conversion continues.
-- Relative imports (`from .mod import x`) are currently unsupported and must fail with `input_invalid`.
+- Relative `from-import` (`from .mod import x`, `from ..pkg import y`, `from . import x`, `from .mod import *`) uses static normalization against the importing file path and the entry root.
+- Root escape fails as `input_invalid(kind=unsupported_import_form)`, while a missing normalized module fails as `input_invalid(kind=missing_module)`.
 - The `pytra` namespace is reserved. `pytra.py` and `pytra/__init__.py` under the input root are rejected as conflicts with `input_invalid`.
 - User modules are searched relative to the parent directory of the input file (`foo.bar` -> `foo/bar.py` or `foo/bar/__init__.py`).
 - Unresolved user-module imports and circular imports fail early with `input_invalid`.

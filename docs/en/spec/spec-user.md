@@ -48,7 +48,16 @@ Pytra transpiles type-annotated Python code into multiple languages. The canonic
   - Repeating the same variant or placing more branches after coverage is already closed is an error.
   - `match` expressions, guard patterns, and nested patterns are not part of the v1 accepted surface.
 - Supports `import` / `from ... import ...`.
-- `from ... import *` (wildcard import) is supported (relative import is still unsupported).
+- Supports `from ... import *` (wildcard import).
+- The canonical v1 surface for relative `from-import` is fixed as follows.
+  - `from .m import x`
+  - `from ..pkg import y`
+  - `from . import x`
+  - `from .m import *`
+  - Resolution is based on static module normalization against the importing file path and the entry root; runtime `__package__` is not consulted.
+  - A relative import that escapes above the entry root fails closed as `input_invalid(kind=unsupported_import_form)`.
+  - If the normalized module does not exist, the diagnostic is `input_invalid(kind=missing_module)`.
+  - Illegal Python syntax such as `import .m` is outside the supported surface.
 - In transpilation target code, direct imports of Python standard modules (`json`, `pathlib`, `sys`, `os`, `glob`, `argparse`, `re`, etc.) are prohibited.
 - Exception: `typing` imports (`import typing`, `from typing import ...`) are allowed as annotation-only no-op imports and are removed from runtime/dependency import resolution.
 - Exception: `dataclasses` imports (`import dataclasses`, `from dataclasses import ...`) are allowed as decorator-resolution no-op imports and are removed from runtime/dependency import resolution.
