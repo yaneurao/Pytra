@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-12 / P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01](../plans/archive/20260312-p4-crossruntime-pyruntime-emitter-residual-reduction.md)
 - [2026-03-12 / P0-RELATIVE-IMPORT-DIAGNOSTIC-REALIGN-01](../plans/archive/20260312-p0-relative-import-diagnostic-realign.md)
 
 - [2026-03-12 / P0-CPP-PYRUNTIME-FINAL-SHRINK-01](../plans/archive/20260312-p0-cpp-pyruntime-final-shrink.md)
@@ -140,7 +141,7 @@
 
 ## 日付別リンク
 
-- [2026-03-12](20260312.md)（11 セクション）
+- [2026-03-12](20260312.md)（12 セクション）
 - [2026-03-11](20260311.md)（25 セクション）
 - [2026-03-09](20260309.md)（29 セクション）
 - [2026-03-08](20260308.md)（31 セクション）
