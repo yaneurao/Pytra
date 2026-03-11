@@ -13,6 +13,7 @@ if str(TEST_DIR) not in sys.path:
 from _east_core_test_support import CORE_AST_BUILDERS_SOURCE_PATH
 from _east_core_test_support import CORE_BUILDER_BASE_SOURCE_PATH
 from _east_core_test_support import CORE_CLASS_SEMANTICS_SOURCE_PATH
+from _east_core_test_support import CORE_EXPR_PRECEDENCE_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
 
 
@@ -106,6 +107,7 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
     def test_core_source_uses_split_builder_helpers_at_call_sites(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         ast_text = CORE_AST_BUILDERS_SOURCE_PATH.read_text(encoding="utf-8")
+        precedence_text = CORE_EXPR_PRECEDENCE_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn("out = _sh_make_module_root(", text)
         self.assertIn("item = _sh_make_function_def_stmt(", text)
@@ -113,7 +115,7 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
         self.assertIn("node = _sh_make_attribute_expr(", text)
         self.assertIn("payload = _sh_make_call_expr(", ast_text)
         self.assertIn("_sh_make_subscript_expr(", text)
-        self.assertIn("return _sh_make_lambda_expr(", text)
+        self.assertIn("return _sh_make_lambda_expr(", precedence_text)
         self.assertIn("_sh_make_formatted_value_node(", text)
         self.assertIn("return _sh_make_joined_str_expr(", text)
         self.assertIn("_sh_make_expr_stmt(expr_stmt, _sh_stmt_span(", text)
