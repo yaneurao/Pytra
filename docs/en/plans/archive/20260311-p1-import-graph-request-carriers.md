@@ -3,7 +3,7 @@
 Last updated: 2026-03-11
 
 Related TODO:
-- `docs/en/todo/index.md` entry `ID: P1-IMPORT-GRAPH-REQUEST-CARRIERS-01`
+- `docs/en/todo/archive/20260311.md` entry `ID: P1-IMPORT-GRAPH-REQUEST-CARRIERS-01`
 
 Background:
 - The current import graph still assumes the string list returned by `collect_import_modules()`, so the difference between `Import` and `ImportFrom`, the imported `symbol`, and dot-only relative-import submodule candidates are discarded too early.
@@ -40,10 +40,12 @@ Verification commands:
 
 Decision log:
 - 2026-03-11: While fixing `from . import helper`, it became clear that the import graph still only saw a flattened module string. The follow-up will therefore introduce a structured request helper first instead of attempting a full graph rewrite immediately.
+- 2026-03-11: `S2-02` switched both `analyze_import_graph()` and `east1_build._analyze_import_graph_impl()` to a carrier-first loop over `collect_import_requests()` + `collect_import_request_modules()`, and locked representative `from . import helper` graph regressions in both lanes.
+- 2026-03-11: Once the graph lane and the `east1_build` mirror both used the request carrier directly, the remaining work was only docs / archive closeout, so the task was archived.
 
 ## Breakdown
 
 - [x] [ID: P1-IMPORT-GRAPH-REQUEST-CARRIERS-01-S1-01] Lock the current string-flatten gap and the staged end state in plan/TODO.
 - [x] [ID: P1-IMPORT-GRAPH-REQUEST-CARRIERS-01-S2-01] Add `collect_import_requests()` plus focused regressions and demote `collect_import_modules()` to a compatibility helper.
-- [ ] [ID: P1-IMPORT-GRAPH-REQUEST-CARRIERS-01-S2-02] Move representative import-graph / east1_build lanes to carrier-first behavior.
-- [ ] [ID: P1-IMPORT-GRAPH-REQUEST-CARRIERS-01-S3-01] Refresh docs / archive and close the task.
+- [x] [ID: P1-IMPORT-GRAPH-REQUEST-CARRIERS-01-S2-02] Move representative import-graph / east1_build lanes to carrier-first behavior.
+- [x] [ID: P1-IMPORT-GRAPH-REQUEST-CARRIERS-01-S3-01] Refresh docs / archive and close the task.

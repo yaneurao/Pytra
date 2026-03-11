@@ -15,6 +15,8 @@ Last updated: 2026-03-11
 
 ## Completed Plan Archive
 
+- [2026-03-11 / P1-IMPORT-GRAPH-REQUEST-CARRIERS-01](../plans/archive/20260311-p1-import-graph-request-carriers.md)
+
 - [2026-03-11 / P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01](../plans/archive/20260311-p0-relative-import-project-layout-hardening.md)
 
 - [2026-03-11 / P0-STARRED-CALL-TUPLE-UNPACK-01](../plans/archive/20260311-p0-starred-call-tuple-unpack-support.md)
@@ -73,7 +75,7 @@ Last updated: 2026-03-11
 
 ## Date Links
 
-- [2026-03-11](20260311.md) (24 sections)
+- [2026-03-11](20260311.md) (25 sections)
 - [2026-03-09](20260309.md) (2 sections)
 - [2026-03-08](20260308.md) (8 sections)
 - [2026-03-07](20260307.md) (6 sections)

@@ -31,5 +31,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P1-IMPORT-GRAPH-REQUEST-CARRIERS-01] import graph の request carrier を構造化する。文脈: `docs/ja/plans/p1-import-graph-request-carriers.md`
-   進捗メモ: string flatten gap は固定済みで、`collect_import_requests()` を導入して `collect_import_modules()` を compatibility helper に寄せた。残りは graph 本体の carrier-first 化。
+- 現在、未完了タスクはありません。
