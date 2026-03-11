@@ -35,5 +35,5 @@
 2. [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S1-01] current residual baseline と future bundle order を live plan / TODO / inventory tool に固定した。
 3. [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-01] C++ emitter の shared type_id thin seam を棚卸しし、`py_runtime_value_type_id` と nominal ADT / type-predicate seam を future_reducible / must-remain に分類した。
 4. [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-02] Rust / C# shared thin seam を must-remain、C# bytearray compat seam を future-reducible に固定した。
-5. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S3-01] representative smoke / source guard / inventory drift guard を future-shrink baseline に合わせて更新する。
+5. [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S3-01] representative smoke / source guard / inventory drift guard を future-shrink baseline に合わせて更新した。
 6. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S4-01] future emitter shrink の handoff 条件を次段 task に接続する。

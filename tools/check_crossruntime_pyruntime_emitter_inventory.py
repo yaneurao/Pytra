@@ -285,6 +285,17 @@ FUTURE_REDUCTION_ORDER = [
     "crossruntime_mutation_helper_residual",
 ]
 
+FUTURE_REPRESENTATIVE_LANE_MANIFEST = {
+    bucket_name: REPRESENTATIVE_LANE_MANIFEST[bucket_name]
+    for bucket_name in FUTURE_FOLLOWUP_BASELINE_BUCKETS
+}
+
+FUTURE_SOURCE_GUARD_PATHS = {
+    path
+    for lane in FUTURE_REPRESENTATIVE_LANE_MANIFEST.values()
+    for path in lane["source_guard_paths"]
+}
+
 FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION = {
     "future_reducible": {
         ("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
@@ -439,6 +450,44 @@ def _collect_representative_lane_issues() -> list[str]:
     return issues
 
 
+def _collect_future_representative_lane_issues() -> list[str]:
+    issues: list[str] = []
+    if set(FUTURE_REPRESENTATIVE_LANE_MANIFEST.keys()) != set(FUTURE_FOLLOWUP_BASELINE_BUCKETS):
+        issues.append("future representative lane manifest keys do not match follow-up baseline buckets")
+        return issues
+    for bucket_name in FUTURE_FOLLOWUP_BASELINE_BUCKETS:
+        if FUTURE_REPRESENTATIVE_LANE_MANIFEST[bucket_name] != REPRESENTATIVE_LANE_MANIFEST[bucket_name]:
+            issues.append(
+                "future representative lane manifest drifted from current representative lane manifest: "
+                f"{bucket_name}"
+            )
+    expected_source_guard_paths = {
+        path
+        for bucket_name in FUTURE_FOLLOWUP_BASELINE_BUCKETS
+        for path in REPRESENTATIVE_LANE_MANIFEST[bucket_name]["source_guard_paths"]
+    }
+    if FUTURE_SOURCE_GUARD_PATHS != expected_source_guard_paths:
+        issues.append("future representative source guard path set drifted")
+    for bucket_name, lane in FUTURE_REPRESENTATIVE_LANE_MANIFEST.items():
+        smoke_file = lane["smoke_file"]
+        smoke_tests = set(lane["smoke_tests"])
+        source_guard_paths = set(lane["source_guard_paths"])
+        smoke_text = (ROOT / smoke_file).read_text(encoding="utf-8", errors="ignore")
+        for test_name in sorted(smoke_tests):
+            if f"def {test_name}(" not in smoke_text:
+                issues.append(
+                    "future representative smoke missing: "
+                    f"{bucket_name}: {smoke_file}: {test_name}"
+                )
+        for rel in sorted(source_guard_paths):
+            if rel not in SOURCE_GUARD_REQUIRED_SUBSTRINGS:
+                issues.append(
+                    "future representative source guard path missing from guard inventory: "
+                    f"{bucket_name}: {rel}"
+                )
+    return issues
+
+
 def _collect_active_reduction_bundle_issues() -> list[str]:
     issues: list[str] = []
     if set(ACTIVE_REDUCTION_BUNDLES.keys()) != set(EXPECTED_BUCKETS.keys()):
@@ -481,6 +530,7 @@ def _collect_future_followup_issues() -> list[str]:
         issues.append("future reduction order drifted")
     if set(FUTURE_FOLLOWUP_BASELINE_BUCKETS) - set(EXPECTED_BUCKETS.keys()):
         issues.append("future follow-up baseline references unknown emitter residual buckets")
+    issues.extend(_collect_future_representative_lane_issues())
     issues.extend(_collect_cpp_future_shared_type_id_classification_issues())
     issues.extend(
         _collect_future_bucket_classification_issues(

@@ -248,6 +248,55 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             ],
         )
         self.assertEqual(inventory_mod._collect_future_followup_issues(), [])
+
+    def test_future_representative_lane_manifest_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.FUTURE_REPRESENTATIVE_LANE_MANIFEST,
+            {
+                "cpp_emitter_shared_type_id_residual": {
+                    "smoke_file": "test/unit/backends/cpp/test_east3_cpp_bridge.py",
+                    "smoke_tests": {
+                        "test_render_expr_supports_east3_obj_boundary_nodes",
+                        "test_transpile_representative_nominal_adt_match_emits_if_else_chain",
+                    },
+                    "source_guard_paths": {
+                        "src/backends/cpp/emitter/cpp_emitter.py",
+                        "src/backends/cpp/emitter/runtime_expr.py",
+                        "src/backends/cpp/emitter/stmt.py",
+                    },
+                },
+                "rs_emitter_shared_type_id_residual": {
+                    "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",
+                    "smoke_tests": {"test_type_predicate_nodes_are_lowered_without_legacy_bridge"},
+                    "source_guard_paths": {"src/backends/rs/emitter/rs_emitter.py"},
+                },
+                "cs_emitter_shared_type_id_residual": {
+                    "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+                    "smoke_tests": {"test_type_predicate_nodes_are_lowered_without_legacy_bridge"},
+                    "source_guard_paths": {"src/backends/cs/emitter/cs_emitter.py"},
+                },
+                "crossruntime_mutation_helper_residual": {
+                    "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+                    "smoke_tests": {
+                        "test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not",
+                        "test_bytearray_index_and_slice_compat_helpers_stay_explicit",
+                    },
+                    "source_guard_paths": {"src/backends/cs/emitter/cs_emitter.py"},
+                },
+            },
+        )
+        self.assertEqual(
+            inventory_mod.FUTURE_SOURCE_GUARD_PATHS,
+            {
+                "src/backends/cpp/emitter/cpp_emitter.py",
+                "src/backends/cpp/emitter/runtime_expr.py",
+                "src/backends/cpp/emitter/stmt.py",
+                "src/backends/rs/emitter/rs_emitter.py",
+                "src/backends/cs/emitter/cs_emitter.py",
+            },
+        )
+        self.assertEqual(inventory_mod._collect_future_representative_lane_issues(), [])
+
         self.assertEqual(
             inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION,
             {

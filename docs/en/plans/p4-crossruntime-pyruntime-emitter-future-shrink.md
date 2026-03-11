@@ -30,7 +30,7 @@ Acceptance criteria:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S1-01] Lock the future-shrink follow-up baseline and bundle order into the live plan / TODO / inventory tool.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-01] Re-audit the C++ emitter shared type-id thin seam and classify reducible callers vs must-remain seam.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-02] Re-audit the Rust / C# shared thin helper seam and the C# bytearray compatibility seam, then lock the future reduction order.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S3-01] Refresh representative smoke / source guard / inventory drift guard for the future-shrink baseline.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S3-01] Refresh representative smoke / source guard / inventory drift guard for the future-shrink baseline.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S4-01] Connect the future emitter shrink handoff to the next header-shrink / runtime-SoT task.
 
 ## Current Baseline
@@ -59,6 +59,39 @@ Acceptance criteria:
     - `src/backends/cs/emitter/cs_emitter.py`
   - current interpretation:
     - `bytearray` compatibility seam only
+
+## Future Representative Guard Baseline
+
+- `cpp_emitter_shared_type_id_residual`
+  - smoke: `test/unit/backends/cpp/test_east3_cpp_bridge.py`
+  - representative tests:
+    - `test_render_expr_supports_east3_obj_boundary_nodes`
+    - `test_transpile_representative_nominal_adt_match_emits_if_else_chain`
+  - source guard paths:
+    - `src/backends/cpp/emitter/cpp_emitter.py`
+    - `src/backends/cpp/emitter/runtime_expr.py`
+    - `src/backends/cpp/emitter/stmt.py`
+- `rs_emitter_shared_type_id_residual`
+  - smoke: `test/unit/backends/rs/test_py2rs_smoke.py`
+  - representative tests:
+    - `test_type_predicate_nodes_are_lowered_without_legacy_bridge`
+  - source guard path:
+    - `src/backends/rs/emitter/rs_emitter.py`
+- `cs_emitter_shared_type_id_residual`
+  - smoke: `test/unit/backends/cs/test_py2cs_smoke.py`
+  - representative tests:
+    - `test_type_predicate_nodes_are_lowered_without_legacy_bridge`
+  - source guard path:
+    - `src/backends/cs/emitter/cs_emitter.py`
+- `crossruntime_mutation_helper_residual`
+  - smoke: `test/unit/backends/cs/test_py2cs_smoke.py`
+  - representative tests:
+    - `test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not`
+    - `test_bytearray_index_and_slice_compat_helpers_stay_explicit`
+  - source guard path:
+    - `src/backends/cs/emitter/cs_emitter.py`
+- inventory drift guard:
+  - the future representative subset is fixed by `FUTURE_REPRESENTATIVE_LANE_MANIFEST` and `FUTURE_SOURCE_GUARD_PATHS` in `check_crossruntime_pyruntime_emitter_inventory.py`.
 
 ## Future Reduction Order
 
@@ -122,3 +155,4 @@ Acceptance criteria:
 - 2026-03-12: `S1-01` fixes the current residual inventory as the baseline and sets the future reduction order to `C++ shared type_id -> Rust shared type_id -> C# shared type_id -> C# bytearray compat`.
 - 2026-03-12: `S2-01` splits the C++ shared type-id residual into `future_reducible=py_runtime_value_type_id only` and `must_remain_until_runtime_task=nominal ADT match / type-predicate seam`, and the inventory tool now guards the same classification.
 - 2026-03-12: `S2-02` fixes Rust/C# shared thin seams as `must_remain_until_runtime_task` and classifies the C# `bytearray` compatibility seam (`py_append` / `py_pop`) as `future_reducible`, with the inventory tool guarding the same split.
+- 2026-03-12: `S3-01` fixes the representative smoke / source guard subset the future follow-up actually depends on via `FUTURE_REPRESENTATIVE_LANE_MANIFEST` and `FUTURE_SOURCE_GUARD_PATHS`, so drift is checked against the future baseline rather than only the full current inventory.

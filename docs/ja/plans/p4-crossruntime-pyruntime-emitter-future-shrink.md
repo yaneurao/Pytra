@@ -30,7 +30,7 @@
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S1-01] live plan / TODO / inventory tool に future-shrink follow-up の baseline と bundle order を固定する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-01] C++ emitter の shared type_id thin seam を棚卸しし、backend-local へ押し戻せる caller と must-remain seam を分類する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-02] Rust / C# emitter の shared thin helper と C# bytearray compat seam を棚卸しし、future reduction order を固定した。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S3-01] representative smoke / source guard / inventory drift guard を future-shrink baseline に合わせて更新する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S3-01] representative smoke / source guard / inventory drift guard を future-shrink baseline に合わせて更新した。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S4-01] future emitter shrink の handoff 条件を次段 task に接続する。
 
 ## Current Baseline
@@ -59,6 +59,39 @@
     - `src/backends/cs/emitter/cs_emitter.py`
   - current interpretation:
     - `bytearray` compat seam only
+
+## Future Representative Guard Baseline
+
+- `cpp_emitter_shared_type_id_residual`
+  - smoke: `test/unit/backends/cpp/test_east3_cpp_bridge.py`
+  - representative tests:
+    - `test_render_expr_supports_east3_obj_boundary_nodes`
+    - `test_transpile_representative_nominal_adt_match_emits_if_else_chain`
+  - source guard paths:
+    - `src/backends/cpp/emitter/cpp_emitter.py`
+    - `src/backends/cpp/emitter/runtime_expr.py`
+    - `src/backends/cpp/emitter/stmt.py`
+- `rs_emitter_shared_type_id_residual`
+  - smoke: `test/unit/backends/rs/test_py2rs_smoke.py`
+  - representative tests:
+    - `test_type_predicate_nodes_are_lowered_without_legacy_bridge`
+  - source guard path:
+    - `src/backends/rs/emitter/rs_emitter.py`
+- `cs_emitter_shared_type_id_residual`
+  - smoke: `test/unit/backends/cs/test_py2cs_smoke.py`
+  - representative tests:
+    - `test_type_predicate_nodes_are_lowered_without_legacy_bridge`
+  - source guard path:
+    - `src/backends/cs/emitter/cs_emitter.py`
+- `crossruntime_mutation_helper_residual`
+  - smoke: `test/unit/backends/cs/test_py2cs_smoke.py`
+  - representative tests:
+    - `test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not`
+    - `test_bytearray_index_and_slice_compat_helpers_stay_explicit`
+  - source guard path:
+    - `src/backends/cs/emitter/cs_emitter.py`
+- inventory drift guard:
+  - future representative subset は `check_crossruntime_pyruntime_emitter_inventory.py` の `FUTURE_REPRESENTATIVE_LANE_MANIFEST` と `FUTURE_SOURCE_GUARD_PATHS` で固定する。
 
 ## Future Reduction Order
 
@@ -122,3 +155,4 @@
 - 2026-03-12: `S1-01` では current residual inventory を baseline として固定し、future reduction order を `C++ shared type_id -> Rust shared type_id -> C# shared type_id -> C# bytearray compat` に置いた。
 - 2026-03-12: `S2-01` では C++ shared type-id residual を `future_reducible=py_runtime_value_type_id only` と `must_remain_until_runtime_task=nominal ADT match / type-predicate seam` に分け、inventory tool でも同じ分類を guard するようにした。
 - 2026-03-12: `S2-02` では Rust/C# shared thin seam はすべて `must_remain_until_runtime_task`、C# `bytearray` compat seam (`py_append` / `py_pop`) は `future_reducible` に固定し、future reduction order の根拠を inventory tool に持たせた。
+- 2026-03-12: `S3-01` では future-shrink follow-up が実際に依存する representative smoke / source guard subset を `FUTURE_REPRESENTATIVE_LANE_MANIFEST` と `FUTURE_SOURCE_GUARD_PATHS` で固定し、classification だけでなく drift guard も future baseline 単位で監視するようにした。
