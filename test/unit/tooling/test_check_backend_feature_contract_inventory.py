@@ -13,6 +13,9 @@ class CheckBackendFeatureContractInventoryTest(unittest.TestCase):
     def test_support_state_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_support_state_issues(), [])
 
+    def test_fail_closed_policy_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_fail_closed_policy_issues(), [])
+
     def test_categories_have_stable_order(self) -> None:
         self.assertEqual(inventory_mod.CATEGORY_ORDER, ("syntax", "builtin", "stdlib"))
 
@@ -34,6 +37,25 @@ class CheckBackendFeatureContractInventoryTest(unittest.TestCase):
         self.assertEqual(
             set(inventory_mod.SUPPORT_STATE_ORDER),
             set(inventory_mod.SUPPORT_STATE_CRITERIA.keys()),
+        )
+
+    def test_fail_closed_taxonomy_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.FAIL_CLOSED_DETAIL_CATEGORIES,
+            ("not_implemented", "unsupported_by_design", "preview_only", "blocked"),
+        )
+        self.assertEqual(
+            set(inventory_mod.FAIL_CLOSED_PHASE_RULES.keys()),
+            {"parse_and_ir", "emit_and_runtime", "preview_rollout"},
+        )
+        self.assertEqual(
+            inventory_mod.FORBIDDEN_SILENT_FALLBACK_LABELS,
+            (
+                "object_fallback",
+                "string_fallback",
+                "comment_stub_fallback",
+                "empty_output_fallback",
+            ),
         )
 
     def test_representative_inventory_contains_all_categories(self) -> None:

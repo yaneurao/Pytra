@@ -30,7 +30,7 @@
 
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S1-01] syntax / builtins / `pytra.std.*` の representative feature を feature ID 単位で棚卸しし、inventory の category と naming rule を固定する。
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S1-02] backend support state（`supported` / `fail_closed` / `not_started` / `experimental`）と、その判定条件を decision log に固定する。
-- [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-01] backend 未対応 feature の fail-closed policy と diagnostic category を整理し、silent fallback 禁止 rule を明文化する。
+- [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-01] backend 未対応 feature の fail-closed policy と diagnostic category を整理し、silent fallback 禁止 rule を明文化する。
 - [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-02] 新 feature 導入時の acceptance rule を決め、`C++ だけ通れば完了` としない運用を定義する。
 - [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S3-01] representative inventory document / tooling / docs handoff を整え、後段 conformance suite と support matrix へ接続する。
 
@@ -74,9 +74,29 @@
   - `not_started`: representative 実装も fail-closed lane もまだ無く、parity summary で support を主張しない。
   - `experimental`: preview-only / opt-in lane はあるが、stable support としては扱わない。
 
+## S2-01 Fail-closed Policy
+
+- source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
+- diagnostics vocabulary anchor: [backend_registry_diagnostics.py](/workspace/Pytra/src/toolchain/compiler/backend_registry_diagnostics.py)
+- accepted fail-closed detail categories:
+  - `not_implemented`
+  - `unsupported_by_design`
+  - `preview_only`
+  - `blocked`
+- forbidden silent fallback labels:
+  - `object_fallback`
+  - `string_fallback`
+  - `comment_stub_fallback`
+  - `empty_output_fallback`
+- phase rules:
+  - `parse_and_ir`: unsupported syntax / frontend lane は emit 前に停止する。
+  - `emit_and_runtime`: unsupported backend lane は known-block diagnostic で止まり、汎用 object/String/comment 出力へ落とさない。
+  - `preview_rollout`: preview-only lane は `experimental` から昇格するまで `supported` 扱いしない。
+
 ## 決定ログ
 
 - 2026-03-12: backend parity は重要だが、直近の `py_runtime.h` shrink 系 `P0-P4` を止めるべきではないため `P5` に置く。
 - 2026-03-12: parity の正本は C++ 実装ではなく feature contract / EAST3 contract / `pytra.std.*` 契約とする。
 - 2026-03-12: `S1-01` の representative inventory 正本は [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py) に置き、category は `syntax` / `builtin` / `stdlib` の 3 系統に固定する。
 - 2026-03-12: `S1-02` では backend support state を `supported` / `fail_closed` / `not_started` / `experimental` の 4 つへ固定し、`fail_closed` を parity summary 上の正式 state として扱う。
+- 2026-03-12: `S2-01` では unsupported backend lane の diagnostic category を `not_implemented` / `unsupported_by_design` / `preview_only` / `blocked` に固定し、`object/String/comment/empty-output` fallback を parity contract 上の forbidden silent fallback とする。

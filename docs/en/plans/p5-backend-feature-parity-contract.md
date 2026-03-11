@@ -30,7 +30,7 @@ Acceptance criteria:
 
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S1-01] Inventory representative syntax / builtin / `pytra.std.*` features by feature ID and fix the category and naming rules.
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S1-02] Fix backend support-state categories (`supported` / `fail_closed` / `not_started` / `experimental`) and the conditions for each.
-- [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-01] Define fail-closed policy and diagnostic categories for unsupported backend lanes and forbid silent fallback.
+- [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-01] Define fail-closed policy and diagnostic categories for unsupported backend lanes and forbid silent fallback.
 - [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-02] Define the acceptance rule for new features so the project does not treat “works in C++ only” as completion.
 - [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S3-01] Prepare the representative inventory document/tooling handoff so later conformance-suite and support-matrix work can attach cleanly.
 
@@ -74,9 +74,29 @@ Acceptance criteria:
   - `not_started`: there is neither a representative implementation nor a fail-closed lane yet, so parity summaries must not claim support.
   - `experimental`: a preview-only or opt-in lane exists, but it is not yet counted as stable support.
 
+## S2-01 Fail-closed Policy
+
+- source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
+- diagnostics vocabulary anchor: [backend_registry_diagnostics.py](/workspace/Pytra/src/toolchain/compiler/backend_registry_diagnostics.py)
+- accepted fail-closed detail categories:
+  - `not_implemented`
+  - `unsupported_by_design`
+  - `preview_only`
+  - `blocked`
+- forbidden silent fallback labels:
+  - `object_fallback`
+  - `string_fallback`
+  - `comment_stub_fallback`
+  - `empty_output_fallback`
+- phase rules:
+  - `parse_and_ir`: unsupported syntax / frontend lanes stop before emit.
+  - `emit_and_runtime`: unsupported backend lanes stop with known-block diagnostics instead of degrading into object/String/comment fallback output.
+  - `preview_rollout`: preview-only lanes remain `experimental` until explicitly promoted.
+
 ## Decision log
 
 - 2026-03-12: Backend parity matters, but it should not block the near-term `P0-P4` `py_runtime.h` shrink work, so it is tracked as `P5`.
 - 2026-03-12: The parity source of truth is the feature contract / EAST3 contract / `pytra.std.*` contract, not the C++ implementation.
 - 2026-03-12: `S1-01` fixes the representative inventory source of truth in [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py) and freezes the category set at `syntax` / `builtin` / `stdlib`.
 - 2026-03-12: `S1-02` fixes the backend support-state taxonomy at `supported` / `fail_closed` / `not_started` / `experimental`, and `fail_closed` is treated as an explicit parity-summary state rather than an implicit note.
+- 2026-03-12: `S2-01` fixes unsupported backend diagnostics to `not_implemented` / `unsupported_by_design` / `preview_only` / `blocked`, and treats object/String/comment/empty-output fallback as forbidden silent fallback behavior.
