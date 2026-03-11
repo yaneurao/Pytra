@@ -31,4 +31,5 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-There are currently no unfinished tasks.
+1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01] Prepare further `py_runtime.h` shrink by classifying the C++/Rust/C# emitter-side blockers and shared API residuals around the final two thin compatibility helpers. Context: [docs/en/plans/p4-crossruntime-pyruntime-thincompat-followup.md](../plans/p4-crossruntime-pyruntime-thincompat-followup.md)
+   Progress note: `S1-01` inventory now captures the two C++ `py_isinstance` blockers and the Rust/C# shared `type_id` API residuals. Next is to lock the end state and removal order in docs/source guards.
