@@ -69,5 +69,6 @@
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_expr_parser_base.py` を追加し、tokenize / token-cursor / span / parse の expr parser base cluster を `core.py` から切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_string_semantics.py` へ adjacent string literal helper を移し、`if/elif/else tail` cluster を `core_stmt_if_semantics.py` へ切り出した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `_ShExprParser` の resolution helper cluster を `core_expr_resolution_semantics.py` へ切り出し、call/attr の型解決と dynamic guard を mixin 化した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `call annotation` cluster を `core_expr_call_annotation.py` へ切り出し、`core.py` 側は call/attr/subscript suffix の orchestration と mixin wiring のみを残す形へ縮めた。
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。

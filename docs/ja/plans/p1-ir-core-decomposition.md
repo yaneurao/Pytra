@@ -92,3 +92,4 @@
 - 2026-03-11: `core_expr_parser_base.py` を追加し、`_tokenize` / `_cur` / `_eat` / `_node_span` / `_src_slice` / `parse` を `core.py` から移した。string token scan は `core_string_semantics.py` を直接参照し、source-contract は dedicated parser-base test へ分離した。
 - 2026-03-11: `core_string_semantics.py` へ `_sh_extract_adjacent_string_parts` を移し、`core_stmt_if_semantics.py` を追加して `if/elif/else tail` cluster を `core.py` から切り出した。どちらも dedicated source-contract test で split 後の所在と callback wiring を固定する。
 - 2026-03-11: `_ShExprParser` 内の resolution helper cluster（callable return / method return / named-call return / attr metadata / union split / dynamic guard）を `core_expr_resolution_semantics.py` へ移し、call/attr の型解決 lane を mixin として分離した。
+- 2026-03-11: `call annotation` cluster（named/attr/callee call annotation、runtime/builtin dispatch、call payload build）を `core_expr_call_annotation.py` へ移し、`core.py` 側は call/attr/subscript suffix の orchestration と mixin wiring のみを残す形へ縮めた。

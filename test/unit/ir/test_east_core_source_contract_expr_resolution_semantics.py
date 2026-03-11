@@ -11,6 +11,7 @@ if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
 from _east_core_test_support import CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH
+from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
 
 
@@ -45,13 +46,14 @@ class EastCoreSourceContractExprResolutionSemanticsTest(unittest.TestCase):
     def test_core_source_routes_resolution_helpers_through_split_mixin(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
+        call_annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn("_ShExprResolutionSemanticsMixin,", core_text)
         self.assertIn("class _ShExprParser(", core_text)
         self.assertIn("self._resolve_named_call_return_state(", helper_text)
         self.assertIn("def _lookup_attr_expr_metadata(", helper_text)
         self.assertIn("self._split_union_types(", helper_text)
-        self.assertIn("self._guard_dynamic_helper_args(", core_text)
+        self.assertIn("self._guard_dynamic_helper_args(", call_annotation_text)
 
 
 if __name__ == "__main__":

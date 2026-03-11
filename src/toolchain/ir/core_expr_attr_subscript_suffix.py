@@ -7,6 +7,17 @@ from typing import Any
 
 
 class _ShExprAttrSubscriptSuffixParserMixin:
+    def _resolve_postfix_span_repr(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        end_tok: dict[str, Any],
+    ) -> tuple[dict[str, int], str]:
+        """postfix suffix 共通の source_span / repr 計算を helper へ寄せる。"""
+        s = int(owner_expr["source_span"]["col"]) - self.col_base
+        e = end_tok["e"]
+        return self._node_span(s, e), self._src_slice(s, e)
+
     def _parse_attr_suffix(self, *, owner_expr: dict[str, Any]) -> dict[str, Any]:
         """Attribute suffix の token 消費を parser helper へ寄せる。"""
         attr_name, source_span, repr_text = self._resolve_attr_suffix_state(
