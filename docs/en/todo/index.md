@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-11
+Last updated: 2026-03-12
 
 ## Context Operation Rules
 
@@ -34,6 +34,7 @@ Last updated: 2026-03-11
 1. [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01] Support typed `*args` signatures from the self-hosted parser through the representative C++ lane, including extra positional argument packing for known user-function calls. Context: [p0-typed-varargs-signature-support.md](../plans/p0-typed-varargs-signature-support.md)
 2. [ ] [ID: P4-PLAN-ARCHIVE-HYGIENE-01] Inventory the live/backlog/stale-complete plans still left under `plans/` and re-establish the archive handoff workflow. Context: [p4-plan-archive-hygiene.md](../plans/p4-plan-archive-hygiene.md)
 3. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01] Inventory the C++ / Rust / C# emitter dependencies that still block further `py_runtime.h` shrink, and realign the typed-lane, object-bridge, and shared type_id seams. Context: [p4-crossruntime-pyruntime-emitter-shrink.md](../plans/p4-crossruntime-pyruntime-emitter-shrink.md)
-4. [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01] Fix a shared feature contract, backend support-state taxonomy, and fail-closed policy for syntax / builtins / `pytra.std.*` so C++ alone no longer defines completion. Context: [p5-backend-feature-parity-contract.md](../plans/p5-backend-feature-parity-contract.md)
-5. [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01] Design a shared conformance suite that validates parse / lowering / emit / runtime parity from the same feature fixtures across multiple backends. Context: [p6-backend-conformance-suite.md](../plans/p6-backend-conformance-suite.md)
-6. [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01] Define the feature × backend support matrix, rollout tiers, and review checklist needed to institutionalize backend parity in docs and tooling. Context: [p7-backend-parity-rollout-and-matrix.md](../plans/p7-backend-parity-rollout-and-matrix.md)
+4. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01] Inventory the remaining `py_runtime` callers in native compiler wrappers, generated C++ runtime code, and Rust/C# runtime builtins, then realign the residual object-bridge and shared type_id seams that still block further `py_runtime.h` shrink. Context: [p4-crossruntime-pyruntime-residual-caller-shrink.md](../plans/p4-crossruntime-pyruntime-residual-caller-shrink.md)
+5. [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01] Fix a shared feature contract, backend support-state taxonomy, and fail-closed policy for syntax / builtins / `pytra.std.*` so C++ alone no longer defines completion. Context: [p5-backend-feature-parity-contract.md](../plans/p5-backend-feature-parity-contract.md)
+6. [ ] [ID: P6-BACKEND-CONFORMANCE-SUITE-01] Design a shared conformance suite that validates parse / lowering / emit / runtime parity from the same feature fixtures across multiple backends. Context: [p6-backend-conformance-suite.md](../plans/p6-backend-conformance-suite.md)
+7. [ ] [ID: P7-BACKEND-PARITY-ROLLOUT-MATRIX-01] Define the feature × backend support matrix, rollout tiers, and review checklist needed to institutionalize backend parity in docs and tooling. Context: [p7-backend-parity-rollout-and-matrix.md](../plans/p7-backend-parity-rollout-and-matrix.md)
