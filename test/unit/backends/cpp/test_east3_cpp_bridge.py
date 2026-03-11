@@ -973,7 +973,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(
             emitter.render_expr(node),
-            'py_list_append_mut(obj_to_list_ref_or_raise(xs, "py_append"), make_object(n))',
+            'py_list_append_mut(obj_to_list_ref_or_raise(xs, "append"), make_object(n))',
         )
 
     def test_transpile_typed_list_append_stays_out_of_object_bridge(self) -> None:
@@ -1010,7 +1010,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         emitter.emit_stmt(stmt)
         self.assertIn(
-            'py_list_set_at_mut(obj_to_list_ref_or_raise(xs, "py_set_at"), i, make_object(v));',
+            'py_list_set_at_mut(obj_to_list_ref_or_raise(xs, "set_at"), i, make_object(v));',
             "\n".join(emitter.lines),
         )
 
