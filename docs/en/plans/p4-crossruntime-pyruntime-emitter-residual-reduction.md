@@ -29,7 +29,7 @@ Acceptance criteria:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-01] Reduce `crossruntime_mutation_helper_residual` until only the must-remain C# bytearray seam is left.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S2-02] Reduce `cpp_emitter_object_bridge_residual` and move removable callers back into typed lanes.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S3-01] Reduce the Rust / C# shared type_id residuals around thin seams.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S3-02] Re-audit the final C++ shared type_id residual until only the intentional contract remains.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-RESIDUAL-REDUCTION-01-S3-02] Re-audit the final C++ shared type_id residual until only the intentional contract remains.
 
 ## Current residual buckets
 
@@ -69,3 +69,4 @@ Acceptance criteria:
 - 2026-03-12: Started `S2-02` by switching the C++ object-bridge labels in `call.py` from wrapper names like `\"py_append\"` to plain operation labels like `\"append\"`, so the residual bucket only counts actual object-helper callers.
 - 2026-03-12: Completed `S2-02` by retargeting the remaining C++ `py_runtime_object_type_id` / `py_runtime_object_isinstance` callers to `py_runtime_value_type_id` / `py_runtime_value_isinstance`. `cpp_emitter_object_bridge_residual` now uses an empty bucket as its end state.
 - 2026-03-12: Closed `S3-01` without further code changes. The Rust/C# emitters and inventory/source guards already sit at the thin shared type-id seam (`py_runtime_value_*`, `py_runtime_type_id_is_*`), so the remaining work is the final C++ shared type-id re-audit only.
+- 2026-03-12: `S3-02` fixed the final C++ shared type-id residual to the exact five thin-helper pairs (`py_runtime_value_type_id`, `py_runtime_value_isinstance`, `py_runtime_type_id_is_subtype`, `py_runtime_type_id_issubclass`) and put the three C++ emitter files under the same source-guard inventory as Rust/C#. Old `py_runtime_object_*` and generic alias names are now forbidden from re-entering the C++ emitter.

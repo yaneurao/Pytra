@@ -150,11 +150,22 @@ ACTIVE_REDUCTION_BUNDLES = {
     "cpp_emitter_shared_type_id_residual": {
         "stage": "S3-02",
         "goal": "re-evaluate the final intentional C++ shared type-id contract",
-        "status": "planned",
+        "status": "completed",
     },
 }
 
 SOURCE_GUARD_REQUIRED_SUBSTRINGS = {
+    "src/backends/cpp/emitter/cpp_emitter.py": {
+        'return f"py_runtime_value_type_id({value_expr})"',
+    },
+    "src/backends/cpp/emitter/runtime_expr.py": {
+        'return f"py_runtime_type_id_is_subtype({actual_type_id_expr}, {expected_type_id_expr})"',
+        'return f"py_runtime_type_id_issubclass({actual_type_id_expr}, {expected_type_id_expr})"',
+        'return f"py_runtime_value_isinstance({value_expr}, {expected_type_id_expr})"',
+    },
+    "src/backends/cpp/emitter/stmt.py": {
+        'cond_txt = f"py_runtime_value_isinstance({subject_tmp}, {variant_name}::PYTRA_TYPE_ID)"',
+    },
     "src/backends/rs/emitter/rs_emitter.py": {
         'return "py_runtime_value_type_id(&" + value_expr + ")"',
         'return "({ py_register_generated_type_info(); py_runtime_value_isinstance(&" + value_expr + ", " + expected_type_id + ") })"',
@@ -179,6 +190,23 @@ SOURCE_GUARD_REQUIRED_SUBSTRINGS = {
 }
 
 SOURCE_GUARD_FORBIDDEN_SUBSTRINGS = {
+    "src/backends/cpp/emitter/cpp_emitter.py": {
+        "py_runtime_object_type_id(",
+        "py_runtime_object_isinstance(",
+        "py_runtime_type_id(",
+    },
+    "src/backends/cpp/emitter/runtime_expr.py": {
+        "py_runtime_object_type_id(",
+        "py_runtime_object_isinstance(",
+        "py_runtime_type_id(",
+        "py_isinstance(",
+        "py_is_subtype(",
+        "py_issubclass(",
+    },
+    "src/backends/cpp/emitter/stmt.py": {
+        "py_runtime_object_isinstance(",
+        "py_isinstance(",
+    },
     "src/backends/rs/emitter/rs_emitter.py": {
         "fn py_runtime_type_id(actual_type_id:",
         "fn py_is_subtype(",
@@ -210,7 +238,11 @@ REPRESENTATIVE_LANE_MANIFEST = {
             "test_render_expr_supports_east3_obj_boundary_nodes",
             "test_transpile_representative_nominal_adt_match_emits_if_else_chain",
         },
-        "source_guard_paths": set(),
+        "source_guard_paths": {
+            "src/backends/cpp/emitter/cpp_emitter.py",
+            "src/backends/cpp/emitter/runtime_expr.py",
+            "src/backends/cpp/emitter/stmt.py",
+        },
     },
     "rs_emitter_shared_type_id_residual": {
         "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",

@@ -150,7 +150,11 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
                     "test_render_expr_supports_east3_obj_boundary_nodes",
                     "test_transpile_representative_nominal_adt_match_emits_if_else_chain",
                 },
-                "source_guard_paths": set(),
+                "source_guard_paths": {
+                    "src/backends/cpp/emitter/cpp_emitter.py",
+                    "src/backends/cpp/emitter/runtime_expr.py",
+                    "src/backends/cpp/emitter/stmt.py",
+                },
             },
         )
         self.assertEqual(
@@ -185,6 +189,9 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         self.assertEqual(
             set(inventory_mod.SOURCE_GUARD_REQUIRED_SUBSTRINGS.keys()),
             {
+                "src/backends/cpp/emitter/cpp_emitter.py",
+                "src/backends/cpp/emitter/runtime_expr.py",
+                "src/backends/cpp/emitter/stmt.py",
                 "src/backends/rs/emitter/rs_emitter.py",
                 "src/backends/cs/emitter/cs_emitter.py",
             },
@@ -262,7 +269,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
                 "cpp_emitter_shared_type_id_residual": {
                     "stage": "S3-02",
                     "goal": "re-evaluate the final intentional C++ shared type-id contract",
-                    "status": "planned",
+                    "status": "completed",
                 },
             },
         )
