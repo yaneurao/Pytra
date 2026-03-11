@@ -38,6 +38,11 @@ Acceptance criteria:
 - Rust/C# type predicate and runtime-type-id lanes use the canonical helper names.
 - Representative smoke and contract tests pass.
 
+Residual-bucket end state:
+- `cpp_object_bridge_residual`: reserve this bucket for the C++ emitter's object fallback only, and do not allow anything outside `py_append/extend/pop/clear/reverse/sort/set_at`.
+- `shared_type_id_contract`: allow only `py_runtime_type_id`, `py_isinstance`, `py_is_subtype`, and `py_issubclass`, and treat those helper names as canonical across the C++/Rust/C# emitters.
+- `crossruntime_object_bridge_residual`: isolate non-C++ emitter mutation helpers that still need object-bridge behavior; for now this bucket allows only C# `py_append` / `py_pop`.
+
 Verification commands:
 - `python3 tools/check_todo_priority.py`
 - `python3 tools/check_crossruntime_pyruntime_emitter_inventory.py`
@@ -52,7 +57,7 @@ Verification commands:
 
 Breakdown:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-01] Bucket residual `py_runtime` symbols across the C++/Rust/C# emitters and add an inventory drift guard.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-02] Lock the end state for `object bridge residual`, `shared type_id contract`, and `cross-runtime bridge residual` in docs.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-02] Lock the end state for `object bridge residual`, `shared type_id contract`, and `cross-runtime bridge residual` in docs.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-01] Clean up representative C++ object-bridge mutation-helper residuals.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-02] Align Rust/C# `type_id` and type-predicate lowering to the shared contract.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S3-01] Refresh representative smoke tests, docs, and archive the task.
@@ -60,3 +65,4 @@ Breakdown:
 Decision log:
 - 2026-03-11: Opened as the post-`P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01` follow-up. This P4 is about making the cross-runtime emitter contract explicit and aligned, not about directly shrinking `py_runtime.h` again.
 - 2026-03-11: As `S1-01`, we added `tools/check_crossruntime_pyruntime_emitter_inventory.py` and its unit test, then bucketed emitter-side residual `py_runtime` symbols into `cpp_object_bridge_residual`, `shared_type_id_contract`, and `crossruntime_object_bridge_residual`.
+- 2026-03-11: As `S1-02`, we fixed the end state of those three buckets in the docs. C++ object fallback stays isolated in `cpp_object_bridge_residual`, cross-language type-predicate / type-id helpers stay in `shared_type_id_contract`, and the remaining C# list bridge stays isolated in `crossruntime_object_bridge_residual`.

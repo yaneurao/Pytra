@@ -38,6 +38,11 @@
 - Rust/C# emitter の type predicate / runtime type id lane は canonical helper 名に揃う。
 - representative smoke / contract test が通る。
 
+residual bucket の end state:
+- `cpp_object_bridge_residual`: C++ emitter の object fallback だけが使える bucket とし、`py_append/extend/pop/clear/reverse/sort/set_at` 以外は入れない。
+- `shared_type_id_contract`: `py_runtime_type_id`, `py_isinstance`, `py_is_subtype`, `py_issubclass` だけを許容し、C++/Rust/C# emitter すべてがこの helper 名で揃う状態を正本にする。
+- `crossruntime_object_bridge_residual`: C++ 以外の emitter に残る object bridge mutation helper を隔離する bucket とし、現時点では C# の `py_append` / `py_pop` だけを許容する。
+
 確認コマンド:
 - `python3 tools/check_todo_priority.py`
 - `python3 tools/check_crossruntime_pyruntime_emitter_inventory.py`
@@ -52,7 +57,7 @@
 
 分解:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-01] C++/Rust/C# emitter の residual `py_runtime` symbol を bucket 化し、inventory と drift guard を追加する。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-02] `object bridge residual` / `shared type_id contract` / `cross-runtime bridge residual` の end state を docs に固定する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-02] `object bridge residual` / `shared type_id contract` / `cross-runtime bridge residual` の end state を docs に固定する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-01] C++ emitter の residual object-bridge mutation helper 呼び出しを representative lane で整理する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-02] Rust/C# emitter の `type_id` / type predicate lowering を shared contract 前提に揃える。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S3-01] representative smoke / docs / archive を更新して閉じる。
@@ -60,3 +65,4 @@
 決定ログ:
 - 2026-03-11: `P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01` 完了後の follow-up として起票した。`py_runtime.h` 自体の削減ではなく、cross-runtime emitter が要求する residual contract の可視化と整列をこの P4 の責務にする。
 - 2026-03-11: `S1-01` として `tools/check_crossruntime_pyruntime_emitter_inventory.py` と unit test を追加し、emitters の residual `py_runtime` symbol を `cpp_object_bridge_residual` / `shared_type_id_contract` / `crossruntime_object_bridge_residual` に bucket 化した。
+- 2026-03-11: `S1-02` として 3 bucket の end state を docs に固定した。C++ object fallback は `cpp_object_bridge_residual` へ、cross-language type predicate / type id helper は `shared_type_id_contract` へ、C# の list bridge 残存は `crossruntime_object_bridge_residual` へ隔離する。
