@@ -28,6 +28,26 @@ SUPPORT_STATE_CRITERIA: Final[dict[str, str]] = {
     "experimental": "A preview-only or opt-in lane exists, but the feature is not yet treated as stable support in parity summaries.",
 }
 
+FAIL_CLOSED_DETAIL_CATEGORIES: Final[tuple[str, ...]] = (
+    "not_implemented",
+    "unsupported_by_design",
+    "preview_only",
+    "blocked",
+)
+
+FAIL_CLOSED_PHASE_RULES: Final[dict[str, str]] = {
+    "parse_and_ir": "Unsupported syntax / frontend lanes must stop before emit instead of coercing the source into an alternate construct.",
+    "emit_and_runtime": "Unsupported backend lanes must emit a known-block diagnostic instead of degrading into object/String/comment fallback output.",
+    "preview_rollout": "Preview-only lanes must stay in support_state=experimental and may not be reported as supported.",
+}
+
+FORBIDDEN_SILENT_FALLBACK_LABELS: Final[tuple[str, ...]] = (
+    "object_fallback",
+    "string_fallback",
+    "comment_stub_fallback",
+    "empty_output_fallback",
+)
+
 CATEGORY_ID_PATTERNS: Final[dict[str, re.Pattern[str]]] = {
     category: re.compile("^" + rule.replace(".", r"\.").replace("<", "(?P<").replace(">", ">[a-z0-9_]+)") + "$")
     for category, rule in CATEGORY_NAMING_RULES.items()

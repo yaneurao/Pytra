@@ -9,6 +9,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.toolchain.compiler import backend_feature_contract_inventory as inventory_mod
+from src.toolchain.compiler import backend_registry_diagnostics as diag_mod
 
 
 def _collect_inventory_issues() -> list[str]:
@@ -49,8 +50,33 @@ def _collect_support_state_issues() -> list[str]:
     return issues
 
 
+def _collect_fail_closed_policy_issues() -> list[str]:
+    issues: list[str] = []
+    if not set(inventory_mod.FAIL_CLOSED_DETAIL_CATEGORIES).issubset(diag_mod.KNOWN_BLOCK_DETAIL_CATEGORIES):
+        issues.append("fail-closed detail categories are not a subset of known_block detail categories")
+    if "toolchain_missing" in inventory_mod.FAIL_CLOSED_DETAIL_CATEGORIES:
+        issues.append("toolchain_missing must not be classified as a fail-closed feature detail")
+    if set(inventory_mod.FAIL_CLOSED_PHASE_RULES.keys()) != {"parse_and_ir", "emit_and_runtime", "preview_rollout"}:
+        issues.append("fail-closed phase rules do not match the fixed phase set")
+    for phase, text in sorted(inventory_mod.FAIL_CLOSED_PHASE_RULES.items()):
+        if text.strip() == "":
+            issues.append(f"fail-closed phase rule is empty: {phase}")
+    if set(inventory_mod.FORBIDDEN_SILENT_FALLBACK_LABELS) != {
+        "object_fallback",
+        "string_fallback",
+        "comment_stub_fallback",
+        "empty_output_fallback",
+    }:
+        issues.append("forbidden silent fallback labels drifted from the fixed set")
+    return issues
+
+
 def main() -> int:
-    issues = _collect_inventory_issues() + _collect_support_state_issues()
+    issues = (
+        _collect_inventory_issues()
+        + _collect_support_state_issues()
+        + _collect_fail_closed_policy_issues()
+    )
     if issues:
         for issue in issues:
             print("[FAIL]", issue)
