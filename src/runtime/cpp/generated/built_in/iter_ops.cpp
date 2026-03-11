@@ -14,7 +14,7 @@ object py_reversed_object(const object& values) {
     object out = make_object(list<object>{});
     int64 i = py_len(values) - 1;
     while (i >= 0) {
-        py_append(out, make_object(py_at(values, py_to<int64>(i))));
+        py_list_append_mut(obj_to_list_ref_or_raise(out, "py_append"), make_object(py_at(values, py_to<int64>(i))));
         i--;
     }
     return make_object(out);

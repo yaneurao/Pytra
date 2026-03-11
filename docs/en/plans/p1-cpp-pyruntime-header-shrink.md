@@ -36,7 +36,7 @@ Acceptance criteria:
 
 End state:
 - `object_bridge_mutation`: only mutation helpers that take `object&` remain, explicitly marked as the C++ object-bridge seam.
-- `typed_collection_compat`: only the minimal helpers still required by generated-runtime local typed collections remain.
+- `typed_collection_compat`: this should normally be an empty bucket; only unavoidable generated-runtime local typed-collection helpers may remain as exceptions.
 - `shared_type_id_compat`: only thin compatibility helpers for `py_is_subtype` / `py_issubclass` / `py_runtime_type_id` / `py_isinstance` remain.
 
 Verification commands:
@@ -53,7 +53,7 @@ Verification commands:
 Breakdown:
 - [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S1-01] Inventory the remaining `py_runtime.h` helpers into `object_bridge_mutation`, `typed_collection_compat`, and `shared_type_id_compat`, and add tooling.
 - [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S1-02] Lock the target end state and bundle-sized removal order in docs/source guards.
-- [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-01] Remove unnecessary list/dict wrappers from `typed_collection_compat` in bundle-sized slices.
+- [x] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-01] Remove unnecessary list/dict wrappers from `typed_collection_compat` in bundle-sized slices.
 - [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S2-02] Further narrow the thin `shared_type_id_compat` wrappers under source-guard coverage.
 - [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01-S3-01] Refresh representative runtime tests, docs, and archive the task.
 
@@ -62,3 +62,4 @@ Decision log:
 - 2026-03-11: As `S1-01`, we inventoried the remaining helpers into `object_bridge_mutation`, `typed_collection_compat`, and `shared_type_id_compat`, then added a drift guard.
 - 2026-03-11: As `S1-02`, we added header-surface source guards in `test_cpp_runtime_iterable.py` and fixed the removal order so the next shrink starts from `typed_collection_compat`.
 - 2026-03-11: As the first `S2-01` bundle, we removed the unused `py_set_at(dict<K, V>& ...)` wrapper from the header, inventory, and source guards. The remaining `typed_collection_compat` lane is now only `py_append(list<T>& ...)`.
+- 2026-03-11: As the second `S2-01` bundle, we restored local concrete lists in the C++ emitter to the value lane and resynced the local array append in generated `json.cpp` to direct `.append(...)`, then removed `py_append(list<T>& ...)` from the header, inventory, and source guards. The object helper `iter_ops.cpp` stays on `py_list_append_mut(obj_to_list_ref_or_raise(...))`, and the `typed_collection_compat` bucket is now empty.

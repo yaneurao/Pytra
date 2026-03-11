@@ -264,6 +264,8 @@ class CppEmitter(
         self.current_function_non_escape_summary: dict[str, Any] = {}
         self.current_function_stack_list_locals: set[str] = set()
         self.current_function_pyobj_runtime_list_alias_names: set[str] = set()
+        self.current_function_value_list_params: set[str] = set()
+        self.current_function_value_list_locals: set[str] = set()
         self.current_function_typed_list_str_params: set[str] = set()
         self.current_function_typed_list_str_locals: set[str] = set()
         self.current_function_reassigned_names: set[str] = set()
@@ -517,6 +519,22 @@ class CppEmitter(
             return False
         return name in self.current_function_pyobj_runtime_list_alias_names
 
+    def _is_named_value_list_name(self, name: str) -> bool:
+        """現在関数で concrete value list として出力される識別子か判定する。"""
+        if name == "":
+            return False
+        if name in self.current_function_value_list_params:
+            return True
+        return name in self.current_function_value_list_locals
+
+    def _expr_is_named_value_list(self, expr_node: Any) -> bool:
+        """Name 式が value-model の concrete list local/param か判定する。"""
+        node = self.any_to_dict_or_empty(expr_node)
+        if self._node_kind_from_dict(node) != "Name":
+            return False
+        expr_name = self.any_dict_get_str(node, "id", "")
+        return self._is_named_value_list_name(expr_name)
+
     def _unwrap_pyobj_list_source_expr(self, expr_node: Any) -> dict[str, Any]:
         """list source 判定時に無視してよい wrapper を剥がす。"""
         node = self.any_to_dict_or_empty(expr_node)
@@ -735,6 +753,8 @@ class CppEmitter(
             if self._is_typed_list_str_name(expr_name):
                 return False
             if self._is_pyobj_runtime_list_alias_name(expr_name):
+                return False
+            if self._expr_is_named_value_list(node):
                 return False
         expr_t = self.normalize_type_name(self.get_expr_type(node))
         if expr_t in {"", "unknown"}:
