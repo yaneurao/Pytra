@@ -27,7 +27,7 @@
 
 ## 子タスク
 
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S1-01] native compiler wrapper、generated C++ runtime、Rust/C# runtime builtins の `py_runtime` residual caller inventory を取り、`object_bridge_compat` と `shared_type_id_contract` に分類する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S1-01] native compiler wrapper、generated C++ runtime、Rust/C# runtime builtins の `py_runtime` residual caller inventory を取り、`object_bridge_compat` と `shared_type_id_contract` に分類する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-01] native compiler wrapper の `type_id` / object bridge caller を thin helper seam 前提へ寄せ、representative regression を整理する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-02] generated C++ runtime の residual caller を再分類し、header shrink 前提で残す caller と再委譲できる caller を切り分ける。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-03] Rust/C# runtime builtins の shared seam 依存を inventory 化し、cross-runtime residual contract の最終形を固定する。
@@ -39,8 +39,45 @@
 - この task が引き取る header residual bucket は `object_bridge_mutation` のみで、header surface 正本は [check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/check_cpp_pyruntime_header_surface.py) にある。
 - したがって本 task の inventory は `object_bridge_mutation` を維持している non-emitter caller に集中し、emitter 再流入の有無は前段 task の inventory tool が引き続き監視する。
 
+## 現在の residual caller inventory（S1-01）
+
+- `native_wrapper_object_bridge_residual`
+  - `py_runtime_object_isinstance` @ `src/runtime/cpp/native/compiler/transpile_cli.cpp`
+  - `py_runtime_object_isinstance` @ `src/runtime/cpp/native/compiler/backend_registry_static.cpp`
+- `generated_cpp_object_bridge_residual`
+  - `py_runtime_object_isinstance` @ `src/runtime/cpp/generated/std/json.cpp`
+  - `py_append` @ `src/runtime/cpp/generated/built_in/iter_ops.cpp`
+- `generated_cpp_shared_type_id_residual`
+  - `py_runtime_object_type_id` @ `src/runtime/cpp/generated/built_in/type_id.cpp`
+- `cs_runtime_utils_object_bridge_residual`
+  - `py_append` @ `src/runtime/cs/pytra/utils/png.cs`
+  - `py_append` @ `src/runtime/cs/pytra/utils/gif.cs`
+- `rs_runtime_builtin_shared_type_id_residual`
+  - `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass`
+  - `src/runtime/rs/pytra/built_in/py_runtime.rs`
+  - `src/runtime/rs/pytra-core/built_in/py_runtime.rs`
+- `cs_runtime_builtin_shared_type_id_residual`
+  - `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass`
+  - `src/runtime/cs/pytra/built_in/py_runtime.cs`
+  - `src/runtime/cs/pytra-core/built_in/py_runtime.cs`
+
+分類:
+- `object_bridge_compat`
+  - `native_wrapper_object_bridge_residual`
+  - `generated_cpp_object_bridge_residual`
+  - `cs_runtime_utils_object_bridge_residual`
+- `shared_type_id_contract`
+  - `generated_cpp_shared_type_id_residual`
+  - `rs_runtime_builtin_shared_type_id_residual`
+  - `cs_runtime_builtin_shared_type_id_residual`
+
+inventory 正本:
+- [check_crossruntime_pyruntime_residual_caller_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_residual_caller_inventory.py)
+- [test_check_crossruntime_pyruntime_residual_caller_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_crossruntime_pyruntime_residual_caller_inventory.py)
+
 ## 決定ログ
 
 - 2026-03-12: emitter 側整理だけでは `py_runtime.h` の residual surface を十分に削れないため、native/generated/runtime builtins を対象にした caller 観点の P4 を追加した。
 - 2026-03-12: この task は header 削除そのものではなく residual caller contract の棚卸しと thin seam 化が目的なので、header shrink 本体より前段の `P4` に置く。
 - 2026-03-12: emitter shrink task からの handoff は `typed_collection_compat = empty`, `shared_type_id_compat = empty`, `object_bridge_mutation = residual caller owned` で固定し、本 task は header surface 上の最後の non-emitter blocker として `object_bridge_mutation` caller inventory を引き取る。
+- 2026-03-12: `S1-01` は residual caller を 6 bucket (`native_wrapper_object_bridge_residual`, `generated_cpp_object_bridge_residual`, `generated_cpp_shared_type_id_residual`, `cs_runtime_utils_object_bridge_residual`, `rs_runtime_builtin_shared_type_id_residual`, `cs_runtime_builtin_shared_type_id_residual`) に固定し、category を `object_bridge_compat` と `shared_type_id_contract` の 2 本に限定した。

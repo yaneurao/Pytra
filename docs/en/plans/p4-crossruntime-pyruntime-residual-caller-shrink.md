@@ -27,7 +27,7 @@ Acceptance criteria:
 
 ## Child tasks
 
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S1-01] Inventory residual `py_runtime` callers in native compiler wrappers, generated C++ runtime code, and Rust/C# runtime builtins, then classify them into `object_bridge_compat` and `shared_type_id_contract`.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S1-01] Inventory residual `py_runtime` callers in native compiler wrappers, generated C++ runtime code, and Rust/C# runtime builtins, then classify them into `object_bridge_compat` and `shared_type_id_contract`.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-01] Move native compiler-wrapper `type_id` / object-bridge callers toward thin helper seams and define representative regressions.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-02] Re-classify residual callers in the generated C++ runtime and separate callers that must remain from callers that can be re-delegated before header shrink.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01-S2-03] Inventory Rust/C# runtime builtin dependencies on the shared seams and define the final cross-runtime residual contract shape.
@@ -39,8 +39,45 @@ Acceptance criteria:
 - The only header residual bucket handed to this task is `object_bridge_mutation`, and the header surface source of truth remains [check_cpp_pyruntime_header_surface.py](/workspace/Pytra/tools/check_cpp_pyruntime_header_surface.py).
 - This task therefore focuses on non-emitter callers that still keep `object_bridge_mutation` alive, while the preceding emitter inventory tool keeps watching for emitter-side re-entry.
 
+## Current residual caller inventory (S1-01)
+
+- `native_wrapper_object_bridge_residual`
+  - `py_runtime_object_isinstance` @ `src/runtime/cpp/native/compiler/transpile_cli.cpp`
+  - `py_runtime_object_isinstance` @ `src/runtime/cpp/native/compiler/backend_registry_static.cpp`
+- `generated_cpp_object_bridge_residual`
+  - `py_runtime_object_isinstance` @ `src/runtime/cpp/generated/std/json.cpp`
+  - `py_append` @ `src/runtime/cpp/generated/built_in/iter_ops.cpp`
+- `generated_cpp_shared_type_id_residual`
+  - `py_runtime_object_type_id` @ `src/runtime/cpp/generated/built_in/type_id.cpp`
+- `cs_runtime_utils_object_bridge_residual`
+  - `py_append` @ `src/runtime/cs/pytra/utils/png.cs`
+  - `py_append` @ `src/runtime/cs/pytra/utils/gif.cs`
+- `rs_runtime_builtin_shared_type_id_residual`
+  - `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass`
+  - `src/runtime/rs/pytra/built_in/py_runtime.rs`
+  - `src/runtime/rs/pytra-core/built_in/py_runtime.rs`
+- `cs_runtime_builtin_shared_type_id_residual`
+  - `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass`
+  - `src/runtime/cs/pytra/built_in/py_runtime.cs`
+  - `src/runtime/cs/pytra-core/built_in/py_runtime.cs`
+
+Classification:
+- `object_bridge_compat`
+  - `native_wrapper_object_bridge_residual`
+  - `generated_cpp_object_bridge_residual`
+  - `cs_runtime_utils_object_bridge_residual`
+- `shared_type_id_contract`
+  - `generated_cpp_shared_type_id_residual`
+  - `rs_runtime_builtin_shared_type_id_residual`
+  - `cs_runtime_builtin_shared_type_id_residual`
+
+Inventory source of truth:
+- [check_crossruntime_pyruntime_residual_caller_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_residual_caller_inventory.py)
+- [test_check_crossruntime_pyruntime_residual_caller_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_crossruntime_pyruntime_residual_caller_inventory.py)
+
 ## Decision log
 
 - 2026-03-12: Emitter-side cleanup alone is not enough to reduce the remaining `py_runtime.h` surface, so a separate `P4` was added for native/generated/runtime-builtin callers.
 - 2026-03-12: This task is a residual caller inventory and thin-seam cleanup step, not the final header deletion step, so it remains a `P4`.
 - 2026-03-12: The emitter-shrink handoff is fixed as `typed_collection_compat = empty`, `shared_type_id_compat = empty`, and `object_bridge_mutation = residual caller owned`, so this task now owns the last non-emitter header blocker.
+- 2026-03-12: `S1-01` freezes the residual callers into six buckets (`native_wrapper_object_bridge_residual`, `generated_cpp_object_bridge_residual`, `generated_cpp_shared_type_id_residual`, `cs_runtime_utils_object_bridge_residual`, `rs_runtime_builtin_shared_type_id_residual`, `cs_runtime_builtin_shared_type_id_residual`) and limits the category split to `object_bridge_compat` and `shared_type_id_contract`.
