@@ -31,4 +31,5 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-There are currently no unfinished tasks.
+1. [ ] [ID: P0-RELATIVE-IMPORT-BARE-PARENT-01] Lock the current `from .. import helper` support into representative regressions and the spec/doc contract.
+   Context: [docs/ja/plans/p0-relative-import-bare-parent-hardening.md](/workspace/Pytra/docs/ja/plans/p0-relative-import-bare-parent-hardening.md)
