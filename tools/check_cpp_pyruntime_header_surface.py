@@ -29,7 +29,7 @@ HANDOFF_BUCKETS = {
 }
 
 FOLLOWUP_TASK_ID = "P0-CPP-PYRUNTIME-FINAL-SHRINK-01"
-FOLLOWUP_PLAN_PATH = "docs/ja/plans/p0-cpp-pyruntime-final-shrink.md"
+FOLLOWUP_PLAN_PATH = "docs/ja/plans/archive/20260312-p0-cpp-pyruntime-final-shrink.md"
 
 TARGET_END_STATE = {
     "object_bridge_mutation": "remove or reduce to the minimum object-only seam",

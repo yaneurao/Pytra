@@ -31,9 +31,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01] `py_runtime.h` の final residual surface を active handoff に戻し、object bridge/type_id seam を caller 側へ寄せて header をさらに縮める。文脈: [p0-cpp-pyruntime-final-shrink.md](../plans/p0-cpp-pyruntime-final-shrink.md)
-- `P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S1-01` active plan / target end state / bundle order を `check_cpp_pyruntime_header_surface.py` とその unit test に固定し、archived residual-caller handoff を live task へ差し替えた。
-- `P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01` C++ tracked source で未使用の object mutation wrapper 8 本を `py_runtime.h` から削除し、残 bucket を `py_append(object&)` のみへ縮めた。
-- `P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01` tracked C++ caller の `py_enumerate_object` も `py_list_append_mut(...)` へ upstream 化し、`py_append(object&)` は header residual seam のみになった。
-- `P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02` thin `type_id` residual inventory を current helper 名 (`py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_object_isinstance` / `py_runtime_type_id_is_*`) に同期し、native/generated/C#/Rust caller を 1 つの shared bucket で固定した。
-- `P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02` `check_cpp_pyruntime_header_surface.py` に legacy generic alias signature guard を追加し、`py_runtime_type_id/py_isinstance/py_is_subtype/py_issubclass` が header に戻る drift を fail-closed にした。
+現時点で未完了タスクはありません。
