@@ -72,5 +72,6 @@
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `call annotation` cluster を `core_expr_call_annotation.py` へ切り出し、`core.py` 側は call/attr/subscript suffix の orchestration と mixin wiring のみを残す形へ縮めた。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] generator-arg / comprehension-target parser cluster を `core_expr_call_args.py` へ寄せ、`core.py` から `_parse_comp_target` / `_parse_call_arg_expr` を除去した。
 - 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_expr_primary.py` を追加し、`_make_bin` / `_parse_primary` cluster を `core.py` から切り出して primary source-contract を split module 前提へ更新した。
+- 進捗メモ: [ID: P1-IR-CORE-DECOMPOSITION-01-S3-01] `core_expr_primary.py` の `_parse_primary` を mixin 化し、`core.py` から primary wrapper を除去して postfix source-contract の境界を `def _make_bin` 基準へ統一した。
 
 1. [ ] [ID: P2-EAST-CORE-MODULARIZATION-01] [p2-east-core-modularization.md](../plans/p2-east-core-modularization.md) `core.py` / `test_east_core.py` を機能単位で分割し、cluster 単位で compiler 内部改良を進められる状態へ戻す。
