@@ -38,11 +38,12 @@
 
 決定ログ:
 - 2026-03-12: TODO 空き後の次段として、archived `P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01` の first wave を actual smoke lock task として live 化した。
+- 2026-03-12: `rs/cs` first-wave smoke は canonical scenario `parent_module_alias` と `parent_symbol_alias` をそのまま transpile し、coverage inventory を `transpile_smoke_locked` へ上げるが full support claim には使わない。
 
 ## 分解
 
-- [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01] `rs/cs` の relative import representative transpile smoke を lock し、coverage inventory / docs handoff を新 baseline に更新する。
-- [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S1-01] live plan / TODO を起票し、`rs/cs=transpile_smoke_locked` baseline と verification lane を固定する。
-- [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-01] `py2rs/py2cs` smoke に representative relative import transpile case を追加する。
-- [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-02] coverage inventory / backend parity docs / handoff metadata を `rs/cs=transpile_smoke_locked` へ同期する。
-- [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S3-01] docs / tests / inventory を current baseline に揃えて close-ready にする。
+- [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01] `rs/cs` の relative import representative transpile smoke を lock し、coverage inventory / docs handoff を新 baseline に更新する。
+- [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S1-01] live plan / TODO を起票し、`rs/cs=transpile_smoke_locked` baseline と verification lane を固定する。
+- [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-01] `py2rs/py2cs` smoke に representative relative import transpile case を追加する。
+- [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-02] coverage inventory / backend parity docs / handoff metadata を `rs/cs=transpile_smoke_locked` へ同期する。
+- [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S3-01] docs / tests / inventory を current baseline に揃えて close-ready にする。

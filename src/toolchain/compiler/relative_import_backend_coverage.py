@@ -14,15 +14,15 @@ RELATIVE_IMPORT_BACKEND_COVERAGE_V1: Final[list[dict[str, str]]] = [
     },
     {
         "backend": "rs",
-        "contract_state": "not_locked",
-        "evidence_lane": "none",
-        "notes": "No representative relative-import backend smoke is locked yet.",
+        "contract_state": "transpile_smoke_locked",
+        "evidence_lane": "single_output_transpile",
+        "notes": "Representative relative-import transpile smoke is locked through the Rust backend smoke suite.",
     },
     {
         "backend": "cs",
-        "contract_state": "not_locked",
-        "evidence_lane": "none",
-        "notes": "No representative relative-import backend smoke is locked yet.",
+        "contract_state": "transpile_smoke_locked",
+        "evidence_lane": "single_output_transpile",
+        "notes": "Representative relative-import transpile smoke is locked through the C# backend smoke suite.",
     },
     {
         "backend": "go",
@@ -196,7 +196,7 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
 
 
 RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
-    "todo_id": "P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01",
+    "todo_id": "P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01",
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
     "backend_parity_docs": (
@@ -204,10 +204,10 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
         "docs/en/language/backend-parity-matrix.md",
     ),
     "next_rollout_plan": (
-        "docs/ja/plans/p2-relative-import-noncpp-rollout.md",
-        "docs/en/plans/p2-relative-import-noncpp-rollout.md",
+        "docs/ja/plans/p1-relative-import-firstwave-smoke.md",
+        "docs/en/plans/p1-relative-import-firstwave-smoke.md",
     ),
     "first_wave_backends": ("rs", "cs"),
-    "next_verification_lane": "transpile_smoke",
+    "next_verification_lane": "second_wave_rollout_planning",
     "fail_closed_lane": "backend_specific_fail_closed",
 }

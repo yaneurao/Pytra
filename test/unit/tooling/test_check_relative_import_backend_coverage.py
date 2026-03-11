@@ -35,6 +35,14 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         ]
         self.assertEqual(locked, ["cpp"])
 
+    def test_rs_and_cs_are_first_wave_transpile_smoke_locked(self) -> None:
+        locked = [
+            row["backend"]
+            for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
+            if row["contract_state"] == "transpile_smoke_locked"
+        ]
+        self.assertEqual(locked, ["rs", "cs"])
+
     def test_validator_accepts_noncpp_rollout_inventory(self) -> None:
         validate_relative_import_noncpp_rollout()
 

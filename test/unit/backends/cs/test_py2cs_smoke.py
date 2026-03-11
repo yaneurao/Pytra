@@ -20,6 +20,9 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from backends.cs.emitter.cs_emitter import load_cs_profile, transpile_to_csharp
+from toolchain.compiler.relative_import_firstwave_smoke_contract import (
+    RELATIVE_IMPORT_FIRST_WAVE_SCENARIOS_V1,
+)
 from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core_entrypoints import convert_path
 from src.toolchain.frontends.type_expr import parse_type_expr_text
@@ -61,6 +64,45 @@ def find_fixture_case(stem: str) -> Path:
     return matches[0]
 
 
+def _relative_import_firstwave_scenarios() -> dict[str, dict[str, object]]:
+    return {
+        str(entry["scenario_id"]): entry
+        for entry in RELATIVE_IMPORT_FIRST_WAVE_SCENARIOS_V1
+    }
+
+
+def transpile_relative_import_project_to_csharp(scenario_id: str) -> str:
+    scenario = _relative_import_firstwave_scenarios()[scenario_id]
+    with tempfile.TemporaryDirectory() as td:
+        td_path = Path(td)
+        entry_path = td_path / str(scenario["entry_rel"])
+        helper_path = td_path / str(scenario["helper_rel"])
+        entry_path.parent.mkdir(parents=True, exist_ok=True)
+        helper_path.parent.mkdir(parents=True, exist_ok=True)
+        for pkg_dir in {helper_path.parent, entry_path.parent}:
+            current = pkg_dir
+            while current != td_path and current.is_relative_to(td_path):
+                init_py = current / "__init__.py"
+                if not init_py.exists():
+                    init_py.write_text("", encoding="utf-8")
+                current = current.parent
+        helper_path.write_text("def f() -> int:\n    return 7\n", encoding="utf-8")
+        entry_path.write_text(
+            f"{scenario['import_form']}\nprint({scenario['representative_expr']})\n",
+            encoding="utf-8",
+        )
+        out = td_path / "Program.cs"
+        proc = subprocess.run(
+            ["python3", str(ROOT / "src" / "py2x.py"), str(entry_path), "--target", "cs", "-o", str(out)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode != 0:
+            raise AssertionError(proc.stderr)
+        return out.read_text(encoding="utf-8")
+
+
 class Py2CsSmokeTest(unittest.TestCase):
     def test_load_cs_profile_contains_core_sections(self) -> None:
         profile = load_cs_profile()
@@ -87,6 +129,24 @@ class Py2CsSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         cs = transpile_to_csharp(east)
         self.assertIn("~y", cs)
+
+    def test_cli_relative_import_firstwave_scenarios_transpile_for_csharp(self) -> None:
+        expectations = {
+            "parent_module_alias": (
+                "using h = helper;",
+                "System.Console.WriteLine(h.f());",
+            ),
+            "parent_symbol_alias": (
+                "using g = helper.f;",
+                "System.Console.WriteLine(g());",
+            ),
+        }
+        for scenario_id, expected in expectations.items():
+            with self.subTest(scenario_id=scenario_id):
+                cs = transpile_relative_import_project_to_csharp(scenario_id)
+                self.assertIn("public static class Program", cs)
+                for needle in expected:
+                    self.assertIn(needle, cs)
 
     def test_sample_01_uses_float_division_for_typed_div(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"

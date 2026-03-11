@@ -38,11 +38,12 @@ Verification commands:
 
 Decision log:
 - 2026-03-12: After the TODO became empty, the next live task was defined as locking the archived non-C++ first wave into actual backend smoke plus coverage/docs handoff.
+- 2026-03-12: The `rs/cs` first-wave smoke stays on the canonical `parent_module_alias` / `parent_symbol_alias` scenarios, and the coverage inventory may move to `transpile_smoke_locked` without widening the lane into a full support claim.
 
 ## Breakdown
 
-- [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01] Lock representative relative-import transpile smoke for `rs/cs` and update the coverage inventory / docs handoff to the new baseline.
-- [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S1-01] Create the live plan / TODO and fix the `rs/cs=transpile_smoke_locked` baseline plus verification lane.
-- [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-01] Add representative relative-import transpile cases to the `py2rs/py2cs` smoke suites.
-- [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-02] Sync the coverage inventory / backend-parity docs / handoff metadata to `rs/cs=transpile_smoke_locked`.
-- [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S3-01] Align docs / tests / inventory to the current baseline and leave the task close-ready.
+- [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01] Lock representative relative-import transpile smoke for `rs/cs` and update the coverage inventory / docs handoff to the new baseline.
+- [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S1-01] Create the live plan / TODO and fix the `rs/cs=transpile_smoke_locked` baseline plus verification lane.
+- [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-01] Add representative relative-import transpile cases to the `py2rs/py2cs` smoke suites.
+- [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-02] Sync the coverage inventory / backend-parity docs / handoff metadata to `rs/cs=transpile_smoke_locked`.
+- [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S3-01] Align docs / tests / inventory to the current baseline and leave the task close-ready.
