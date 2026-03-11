@@ -16,6 +16,7 @@ Last updated: 2026-03-11
 ## Completed Plan Archive
 
 - [2026-03-11 / P0-RELATIVE-IMPORT-SUPPORT-01](../plans/archive/20260311-p0-relative-import-support.md)
+- [2026-03-11 / P1-RELATIVE-IMPORT-CLOSEOUT-01](../plans/archive/20260311-p1-relative-import-closeout.md)
 - [2026-03-11 / P4-CROSSRUNTIME-PYRUNTIME-THINCOMPAT-01](../plans/archive/20260311-p4-crossruntime-pyruntime-thincompat-followup.md)
 - [2026-03-11 / P4-CROSSRUNTIME-PYRUNTIME-FINAL-THINCOMPAT-REMOVAL-01](../plans/archive/20260311-p4-crossruntime-pyruntime-final-thincompat-removal.md)
 - [2026-03-11 / P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01](../plans/archive/20260311-p4-crossruntime-pyruntime-emitter-shrink-followup.md)
@@ -65,7 +66,7 @@ Last updated: 2026-03-11
 
 ## Date Links
 
-- [2026-03-11](20260311.md) (17 sections)
+- [2026-03-11](20260311.md) (18 sections)
 - [2026-03-09](20260309.md) (2 sections)
 - [2026-03-08](20260308.md) (8 sections)
 - [2026-03-07](20260307.md) (6 sections)
