@@ -476,6 +476,10 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn("py_register_generated_type_info(); py_runtime_value_isinstance(&x, Base::PYTRA_TYPE_ID)", rust)
         self.assertIn("py_register_generated_type_info(); py_runtime_type_id_is_subtype(PYTRA_TID_BOOL, PYTRA_TID_INT)", rust)
         self.assertIn("py_register_generated_type_info(); py_runtime_type_id_issubclass(Child::PYTRA_TYPE_ID, Base::PYTRA_TYPE_ID)", rust)
+        self.assertNotIn("fn py_runtime_type_id(actual_type_id:", rust)
+        self.assertNotIn("fn py_is_subtype(", rust)
+        self.assertNotIn("fn py_issubclass(", rust)
+        self.assertNotIn("fn py_isinstance<", rust)
 
     def test_box_unbox_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {
