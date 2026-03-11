@@ -161,6 +161,30 @@ class ImportGraphIssueStructureTest(unittest.TestCase):
 
         self.assertEqual(transpile_cli.collect_import_modules(east_doc), [".helper"])
 
+    def test_collect_import_requests_preserves_from_import_symbol_shape(self) -> None:
+        east_doc: dict[str, object] = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "ImportFrom",
+                    "module": ".",
+                    "names": [{"name": "helper"}],
+                },
+                {
+                    "kind": "Import",
+                    "names": [{"name": "pkg.util"}],
+                },
+            ],
+        }
+
+        self.assertEqual(
+            transpile_cli.collect_import_requests(east_doc),
+            [
+                {"kind": "from_module", "module": ".", "symbol": "helper"},
+                {"kind": "import_module", "module": "pkg.util", "symbol": ""},
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

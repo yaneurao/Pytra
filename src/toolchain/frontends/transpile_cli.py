@@ -2594,9 +2594,9 @@ def validate_import_graph_or_raise(analysis: dict[str, object]) -> None:
         )
 
 
-def collect_import_modules(east_module: dict[str, object]) -> list[str]:
-    """EAST module から import / from-import のモジュール名を抽出する。"""
-    out: list[str] = []
+def collect_import_requests(east_module: dict[str, object]) -> list[dict[str, str]]:
+    """EAST module から structured import request を抽出する。"""
+    out: list[dict[str, str]] = []
     seen: set[str] = set()
     body_any = east_module.get("body")
     if not isinstance(body_any, list):
@@ -2615,30 +2615,71 @@ def collect_import_modules(east_module: dict[str, object]) -> list[str]:
             for ent_any in names_any:
                 if not isinstance(ent_any, dict):
                     continue
-                name_any = ent_any.get("name")
-                if isinstance(name_any, str):
-                    append_unique_non_empty(out, seen, dict_any_get_str({"_": name_any}, "_"))
+                module_name = dict_any_get_str(ent_any, "name")
+                if module_name == "":
+                    continue
+                req = {"kind": "import_module", "module": module_name, "symbol": ""}
+                key = req["kind"] + "|" + req["module"] + "|" + req["symbol"]
+                if key not in seen:
+                    seen.add(key)
+                    out.append(req)
         elif kind == "ImportFrom":
-            for mod_name in collect_import_from_modules(stmt_any):
+            module_name = dict_any_get_str(stmt_any, "module")
+            if module_name == "":
+                continue
+            names = dict_any_get_dict_list(stmt_any, "names")
+            if len(names) == 0:
+                req = {"kind": "from_module", "module": module_name, "symbol": ""}
+                key = req["kind"] + "|" + req["module"] + "|" + req["symbol"]
+                if key not in seen:
+                    seen.add(key)
+                    out.append(req)
+                continue
+            for ent in names:
+                symbol = dict_any_get_str(ent, "name")
+                if symbol == "":
+                    continue
+                req = {"kind": "from_module", "module": module_name, "symbol": symbol}
+                key = req["kind"] + "|" + req["module"] + "|" + req["symbol"]
+                if key not in seen:
+                    seen.add(key)
+                    out.append(req)
+    return out
+
+
+def collect_import_modules(east_module: dict[str, object]) -> list[str]:
+    """EAST module から import graph 互換の module dependency 候補を抽出する。"""
+    out: list[str] = []
+    seen: set[str] = set()
+    for req in collect_import_requests(east_module):
+        kind = dict_str_get(req, "kind")
+        module_name = dict_str_get(req, "module")
+        symbol = dict_str_get(req, "symbol")
+        if kind == "import_module":
+            append_unique_non_empty(out, seen, module_name)
+            continue
+        if kind == "from_module":
+            for mod_name in collect_import_from_request_modules(module_name, symbol):
                 append_unique_non_empty(out, seen, mod_name)
     return out
 
 
-def collect_import_from_modules(stmt: dict[str, object]) -> list[str]:
-    """`ImportFrom` stmt から import graph が辿る module candidate を返す。"""
-    module_name = dict_any_get_str(stmt, "module")
+def collect_import_from_request_modules(module_name: str, symbol: str) -> list[str]:
+    """`ImportFrom` request から import graph が辿る module candidate を返す。"""
     if module_name == "":
         return []
     # `from . import helper` / `from .. import helper` は package-local submodule import
     # として `.helper` / `..helper` を graph で辿れるようにする。
     if module_name.startswith(".") and relative_module_tail(module_name) == "":
-        out: list[str] = []
-        seen: set[str] = set()
-        for ent in dict_any_get_dict_list(stmt, "names"):
-            sym_name = dict_any_get_str(ent, "name")
-            if sym_name == "" or sym_name == "*":
-                continue
-            append_unique_non_empty(out, seen, module_name + sym_name)
+        if symbol != "" and symbol != "*":
+            out = [module_name + symbol]
+            return out
+    if symbol == "*":
+        return [module_name]
+    if symbol == "":
+        return [module_name]
+    if module_name.startswith(".") and relative_module_tail(module_name) == "":
+        out = [module_name + symbol]
         if len(out) > 0:
             return out
     return [module_name]

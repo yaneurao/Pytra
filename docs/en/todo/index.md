@@ -31,4 +31,5 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-There are no unfinished tasks at this time.
+1. [ ] [ID: P1-IMPORT-GRAPH-REQUEST-CARRIERS-01] Structure import-graph request carriers. Context: `docs/en/plans/p1-import-graph-request-carriers.md`
+   Progress memo: The string-flatten gap is now locked, and `collect_import_requests()` plus a compatibility `collect_import_modules()` seam are in place. The remaining work is moving the graph itself to carrier-first behavior.
