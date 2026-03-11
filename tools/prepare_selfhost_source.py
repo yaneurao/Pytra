@@ -15,6 +15,8 @@ SRC_PY2CPP = ROOT / "src" / "backends" / "cpp" / "cli.py"
 SRC_BASE = ROOT / "src" / "backends" / "common" / "emitter" / "code_emitter.py"
 DST_SELFHOST = ROOT / "selfhost" / "py2cpp.py"
 SRC_TRANSPILE_CLI = ROOT / "src" / "toolchain" / "frontends" / "transpile_cli.py"
+SRC_IMPORT_GRAPH_PATH_HELPERS = ROOT / "src" / "toolchain" / "frontends" / "import_graph_path_helpers.py"
+SRC_RELATIVE_IMPORT_NORMALIZATION = ROOT / "src" / "toolchain" / "frontends" / "relative_import_normalization.py"
 SRC_TYPE_EXPR = ROOT / "src" / "toolchain" / "frontends" / "type_expr.py"
 
 
@@ -155,10 +157,11 @@ def _extract_type_expr_support_blocks() -> str:
 
 def _extract_support_blocks() -> str:
     cli_text = SRC_TRANSPILE_CLI.read_text(encoding="utf-8")
+    path_helper_text = SRC_IMPORT_GRAPH_PATH_HELPERS.read_text(encoding="utf-8")
+    relative_import_text = SRC_RELATIVE_IMPORT_NORMALIZATION.read_text(encoding="utf-8")
     names = [
         "join_str_list",
         "mkdirs_for_cli",
-        "path_parent_text",
         "replace_first",
         "inject_after_includes_block",
         "split_infix_once",
@@ -208,7 +211,6 @@ def _extract_support_blocks() -> str:
         "normalize_east1_to_east2_document",
         "load_east_document",
         "is_pytra_module_name",
-        "module_name_from_path_for_graph",
         "module_id_from_east_for_graph",
         "sanitize_module_label",
         "module_rel_label",
@@ -223,7 +225,6 @@ def _extract_support_blocks() -> str:
         "meta_import_bindings",
         "meta_qualified_symbol_refs",
         "dump_deps_text",
-        "path_key_for_graph",
         "rel_disp_for_graph",
         "python_module_exists_under",
         "collect_reserved_import_conflicts",
@@ -260,6 +261,19 @@ def _extract_support_blocks() -> str:
         "check_analyze_stage_guards",
     ]
     parts: list[str] = [_extract_type_expr_support_blocks()]
+    for name in ["path_parent_text", "path_key_for_graph", "module_name_from_path_for_graph"]:
+        parts.append(_extract_top_level_block(path_helper_text, name, "def"))
+    for name in [
+        "relative_module_level",
+        "relative_module_tail",
+        "_path_is_under_root_for_graph",
+        "resolve_import_graph_entry_root",
+        "resolve_relative_module_anchor_dir",
+        "relative_module_id_from_anchor",
+        "resolve_relative_module_name_for_graph",
+        "normalize_relative_module_id",
+    ]:
+        parts.append(_extract_top_level_block(relative_import_text, name, "def"))
     for name in names:
         parts.append(_extract_top_level_block(cli_text, name, "def"))
     parts.append(

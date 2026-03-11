@@ -9,6 +9,9 @@ from toolchain.ir.east2 import normalize_east1_to_east2_document as normalize_ea
 from toolchain.ir.east3 import load_east3_document as load_east3_document_stage
 from toolchain.compiler.typed_boundary import CompilerRootDocument
 from toolchain.compiler.typed_boundary import coerce_compiler_root_document
+from toolchain.frontends.import_graph_path_helpers import module_name_from_path_for_graph
+from toolchain.frontends.import_graph_path_helpers import path_key_for_graph
+from toolchain.frontends.import_graph_path_helpers import path_parent_text
 from toolchain.frontends.known_modules import is_known_module_name
 from toolchain.frontends.relative_import_normalization import normalize_relative_module_id
 from toolchain.frontends.relative_import_normalization import relative_module_id_from_anchor
@@ -291,9 +294,6 @@ def _structured_import_user_error_payload(
     if err_code == "relative_import_escape":
         label = import_label if import_label != "" else first_import_detail_line(source_text, "relative")
         return _make_relative_import_escape_payload(file_value=input_path, import_detail=label)
-    if err_code == "unsupported_import_form":
-        label = import_label if import_label != "" else first_import_detail_line(source_text, "relative")
-        return _make_relative_import_escape_payload(file_value=input_path, import_detail=label)
     if err_code == "unresolved_wildcard":
         label = import_label if import_label != "" else first_import_detail_line(source_text, "wildcard")
         return _make_import_user_error_payload(
@@ -319,9 +319,6 @@ def _legacy_import_user_error_payload(
             file_value=input_path,
             import_detail=label,
         )
-    if _is_legacy_relative_import_escape_message(msg):
-        label = first_import_detail_line(source_text, "relative")
-        return _make_relative_import_escape_payload(file_value=input_path, import_detail=label)
     if "duplicate import binding:" in msg:
         return _make_import_user_error_payload(
             summary="Duplicate import binding.",
@@ -330,11 +327,6 @@ def _legacy_import_user_error_payload(
             import_detail=msg,
         )
     return None
-
-
-def _is_legacy_relative_import_escape_message(msg: str) -> bool:
-    """旧 relative import root escape wording の後方互換検出。"""
-    return "relative import is not supported" in msg
 
 
 def _make_self_hosted_syntax_detail(
@@ -1034,20 +1026,6 @@ def split_top_level_union(text: str) -> list[str]:
     if tail != "":
         out.append(tail)
     return out
-
-
-def path_parent_text(path_obj: Path) -> str:
-    """Path から親ディレクトリ文字列を取得する。"""
-    path_txt: str = str(path_obj)
-    if path_txt == "":
-        return "."
-    last_sep = -1
-    for i, ch in enumerate(path_txt):
-        if ch == "/" or ch == "\\":
-            last_sep = i
-    if last_sep <= 0:
-        return "."
-    return path_txt[:last_sep]
 
 
 def python_module_exists_under(root_dir: Path, module_tail: str) -> bool:
@@ -2058,11 +2036,6 @@ def is_pytra_module_name(module_name: str) -> bool:
     return module_name == "pytra" or module_name.startswith("pytra.")
 
 
-def path_key_for_graph(p: Path) -> str:
-    """依存グラフ内部で使うパス文字列キーを返す。"""
-    return str(p)
-
-
 def rel_disp_for_graph(base_path: Path, p: Path) -> str:
     """表示用に `base_path` からの相対パス文字列を返す。"""
     base_txt = str(base_path)
@@ -2115,29 +2088,6 @@ def module_rel_label(root: Path, module_path: Path) -> str:
         rel = rel[:-3]
     rel = rel.replace("/", "__")
     return sanitize_module_label(rel)
-
-
-def module_name_from_path_for_graph(root: Path, module_path: Path) -> str:
-    """import graph 用の module_id フォールバック解決。"""
-    root_txt = str(root)
-    path_txt = str(module_path)
-    in_root = False
-    if root_txt != "" and not root_txt.endswith("/"):
-        root_txt += "/"
-    rel = path_txt
-    if root_txt != "" and path_txt.startswith(root_txt):
-        rel = path_txt[len(root_txt) :]
-        in_root = True
-    if rel.endswith(".py"):
-        rel = rel[:-3]
-    rel = rel.replace("/", ".")
-    if rel.endswith(".__init__"):
-        rel = rel[: -9]
-    if not in_root:
-        stem = module_path.stem
-        stem = module_path.parent.name if stem == "__init__" else stem
-        rel = stem
-    return rel
 
 
 def module_id_from_east_for_graph(root: Path, module_path: Path, east_doc: dict[str, Any]) -> str:

@@ -31,5 +31,5 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-1. [ ] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01] Split the relative-import normalization cluster still living in `transpile_cli.py`, and add focused tests plus source contracts.
-   Context: [docs/ja/plans/p1-relative-import-normalization-decomposition.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-normalization-decomposition.md)
+1. [ ] [ID: P1-RELATIVE-IMPORT-LEGACY-DIAGNOSTIC-CLEANUP-01] Remove the legacy `unsupported_import_form` fallback from the live relative-import diagnostic contract and converge on the current `relative_import_escape` surface.
+   Context: [docs/ja/plans/p1-relative-import-legacy-diagnostic-cleanup.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-legacy-diagnostic-cleanup.md)

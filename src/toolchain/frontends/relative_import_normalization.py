@@ -3,49 +3,9 @@
 from __future__ import annotations
 
 from pytra.std.pathlib import Path
-
-
-def _path_key_for_graph(path_obj: Path) -> str:
-    """Return the graph-internal string key for a path."""
-    return str(path_obj)
-
-
-def _path_parent_text(path_obj: Path) -> str:
-    """Return the parent directory text for a path."""
-    path_txt = str(path_obj)
-    if path_txt == "":
-        return "."
-    last_sep = -1
-    for i, ch in enumerate(path_txt):
-        if ch == "/" or ch == "\\":
-            last_sep = i
-    if last_sep <= 0:
-        return "."
-    return path_txt[:last_sep]
-
-
-def _module_name_from_path_for_graph(root: Path, module_path: Path) -> str:
-    """Resolve a fallback module id from a file path."""
-    root_txt = str(root)
-    path_txt = str(module_path)
-    in_root = False
-    if root_txt != "" and not root_txt.endswith("/"):
-        root_txt += "/"
-    rel = path_txt
-    if root_txt != "" and path_txt.startswith(root_txt):
-        rel = path_txt[len(root_txt) :]
-        in_root = True
-    if rel.endswith(".py"):
-        rel = rel[:-3]
-    rel = rel.replace("/", ".")
-    if rel.endswith(".__init__"):
-        rel = rel[:-9]
-    if not in_root:
-        stem = module_path.stem
-        stem = module_path.parent.name if stem == "__init__" else stem
-        rel = stem
-    return rel
-
+from toolchain.frontends.import_graph_path_helpers import module_name_from_path_for_graph as _module_name_from_path_for_graph
+from toolchain.frontends.import_graph_path_helpers import path_key_for_graph as _path_key_for_graph
+from toolchain.frontends.import_graph_path_helpers import path_parent_text as _path_parent_text
 
 def _dict_any_get_str(src: dict[str, object], key: str, default_value: str = "") -> str:
     """Return a string value from a generic dict."""

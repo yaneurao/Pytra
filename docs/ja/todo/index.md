@@ -31,5 +31,5 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01] `transpile_cli.py` に残る relative import 正規化 cluster を分離し、focused test と source contract を整える。
-   文脈: [docs/ja/plans/p1-relative-import-normalization-decomposition.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-normalization-decomposition.md)
+1. [ ] [ID: P1-RELATIVE-IMPORT-LEGACY-DIAGNOSTIC-CLEANUP-01] relative import の live 診断 contract から legacy `unsupported_import_form` fallback を外し、current `relative_import_escape` surface に一本化する。
+   文脈: [docs/ja/plans/p1-relative-import-legacy-diagnostic-cleanup.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-legacy-diagnostic-cleanup.md)

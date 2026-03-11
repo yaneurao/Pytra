@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from toolchain.ir.east1 import normalize_east1_root_document
+from toolchain.frontends.import_graph_path_helpers import module_name_from_path_for_graph
+from toolchain.frontends.import_graph_path_helpers import path_key_for_graph
+from toolchain.frontends.import_graph_path_helpers import path_parent_text
 from toolchain.frontends.relative_import_normalization import resolve_import_graph_entry_root
 from toolchain.frontends.relative_import_normalization import resolve_relative_module_name_for_graph
 from toolchain.frontends.transpile_cli import append_unique_non_empty
@@ -16,9 +19,6 @@ from toolchain.frontends.transpile_cli import collect_reserved_import_conflicts
 from toolchain.frontends.transpile_cli import dict_any_get_str
 from toolchain.frontends.transpile_cli import finalize_import_graph_analysis
 from toolchain.frontends.transpile_cli import load_east_document as load_east_document_core
-from toolchain.frontends.transpile_cli import module_name_from_path_for_graph
-from toolchain.frontends.transpile_cli import path_key_for_graph
-from toolchain.frontends.transpile_cli import path_parent_text
 from toolchain.frontends.transpile_cli import rel_disp_for_graph
 from toolchain.frontends.transpile_cli import resolve_module_name_for_graph
 from pytra.std.pathlib import Path

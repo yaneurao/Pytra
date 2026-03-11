@@ -49,20 +49,13 @@ class ImportDiagnosticsTest(unittest.TestCase):
             ),
         )
 
-    def test_classify_relative_import_error(self) -> None:
+    def test_classify_legacy_relative_import_error_returns_none(self) -> None:
         err = transpile_cli._classify_import_user_error(
             "unsupported_import_form: relative import is not supported",
             "from ..helper import f\n",
             Path("pkg/main.py"),
         )
-        self.assertEqual(
-            err,
-            (
-                "input_invalid",
-                "Relative import escapes package root.",
-                ["kind=relative_import_escape file=pkg/main.py import=from ..helper import f"],
-            ),
-        )
+        self.assertIsNone(err)
 
     def test_classify_structured_duplicate_binding_error(self) -> None:
         err_text = str(

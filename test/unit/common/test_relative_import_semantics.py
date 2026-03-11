@@ -5,6 +5,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from src.toolchain.frontends.import_graph_path_helpers import module_name_from_path_for_graph
+from src.toolchain.frontends.import_graph_path_helpers import path_key_for_graph
+from src.toolchain.frontends.import_graph_path_helpers import path_parent_text
+
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -15,6 +19,21 @@ import src.toolchain.frontends.relative_import_normalization as relative_import
 
 
 class RelativeImportSemanticsTest(unittest.TestCase):
+    def test_path_helpers_cover_parent_key_and_module_name(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pkg = root / "pkg"
+            pkg.mkdir(parents=True)
+            mod = pkg / "worker.py"
+            init_py = pkg / "__init__.py"
+            mod.write_text("x = 1\n", encoding="utf-8")
+            init_py.write_text("", encoding="utf-8")
+            self.assertEqual(str(pkg), path_parent_text(mod))
+            self.assertEqual(".", path_parent_text(Path("worker.py")))
+            self.assertEqual(str(mod), path_key_for_graph(mod))
+            self.assertEqual("pkg.worker", module_name_from_path_for_graph(root, mod))
+            self.assertEqual("pkg", module_name_from_path_for_graph(root, init_py))
+
     def test_resolve_import_graph_entry_root_uses_init_chain(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
