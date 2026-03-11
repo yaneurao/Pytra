@@ -31,4 +31,14 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-There are currently no unfinished tasks.
+### P1: Hardening multi-file runtime smoke for relative imports
+
+Context: [p1-relative-import-multifile-runtime-hardening.md](../plans/p1-relative-import-multifile-runtime-hardening.md)
+
+1. [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01] Lock the already-implemented relative import behavior using multi-file build/run smoke on a Pytra-NES-style nested package layout.
+2. [x] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S1-01] Fixed the current gap in plan / TODO and chose representative nested-package runtime smoke cases.
+3. [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S2-01] Add a multi-file C++ build/run regression for a nested-package relative import chain.
+4. [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S2-02] Add a multi-file C++ build/run regression for a bare parent relative import.
+5. [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S3-01] Sync docs / plan / TODO and focused regressions to the current contract, then close the task.
+
+- Progress note: Relative imports are already supported in the current source, so this task focuses on strengthening representative nested-package multi-file build/run smoke rather than adding a new language feature.

@@ -31,4 +31,14 @@
 
 ## 未完了タスク
 
-現在、未完了タスクはありません。
+### P1: relative import の multi-file runtime smoke hardening
+
+文脈: [p1-relative-import-multifile-runtime-hardening.md](../plans/p1-relative-import-multifile-runtime-hardening.md)
+
+1. [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01] relative import 実装済み状態を Pytra-NES 型 nested package layout の multi-file build/run smoke で固定する。
+2. [x] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S1-01] current gap を plan / TODO に固定し、nested package runtime smoke の代表ケースを決めた。
+3. [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S2-01] nested package relative import chain の multi-file C++ build/run regression を追加する。
+4. [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S2-02] bare parent relative import の multi-file C++ build/run regression を追加する。
+5. [ ] [ID: P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01-S3-01] docs / plan / TODO と focused regression を current contract に同期して task を閉じる。
+
+- 進捗メモ: relative import 自体は current source で supported なので、新機能追加ではなく nested package multi-file build/run representative smoke を補強する。
