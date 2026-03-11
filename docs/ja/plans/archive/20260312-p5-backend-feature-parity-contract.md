@@ -32,7 +32,7 @@
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S1-02] backend support state（`supported` / `fail_closed` / `not_started` / `experimental`）と、その判定条件を decision log に固定する。
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-01] backend 未対応 feature の fail-closed policy と diagnostic category を整理し、silent fallback 禁止 rule を明文化する。
 - [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S2-02] 新 feature 導入時の acceptance rule を決め、`C++ だけ通れば完了` としない運用を定義する。
-- [ ] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S3-01] representative inventory document / tooling / docs handoff を整え、後段 conformance suite と support matrix へ接続する。
+- [x] [ID: P5-BACKEND-FEATURE-PARITY-CONTRACT-01-S3-01] representative inventory document / tooling / docs handoff を整え、後段 conformance suite と support matrix へ接続する。
 
 ## S1-01 Representative Inventory
 
@@ -105,6 +105,24 @@
   - `unsupported_lanes_fail_closed`: `supported` 以外の lane は `fail_closed` / `not_started` / `experimental` のいずれかで、silent fallback を使わない。
   - `docs_mirror_required`: parity contract 更新時は `docs/en` mirror を同時更新する。
 
+## S3-01 Representative Handoff
+
+- source of truth: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py)
+- validation: [check_backend_feature_contract_inventory.py](/workspace/Pytra/tools/check_backend_feature_contract_inventory.py), [test_check_backend_feature_contract_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_backend_feature_contract_inventory.py)
+- P6 conformance handoff:
+  - exported inventory: `iter_representative_conformance_handoff()`
+  - downstream task: `P6-BACKEND-CONFORMANCE-SUITE-01`
+  - fixed representative backends: `cpp`, `rs`, `cs`
+  - fixed lane order: `parse`, `east`, `east3_lowering`, `emit`, `runtime`
+- P7 support-matrix handoff:
+  - exported inventory: `iter_representative_support_matrix_handoff()`
+  - downstream task: `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01`
+  - fixed backend order: `cpp`, `rs`, `cs`, `go`, `java`, `kt`, `scala`, `swift`, `nim`, `js`, `ts`, `lua`, `rb`, `php`
+  - fixed support-state order: `supported`, `fail_closed`, `not_started`, `experimental`
+- docs / tooling handoff rule:
+  - P6/P7 は `REPRESENTATIVE_FEATURE_INVENTORY` を再解釈せず、上記 handoff export を attach point として使う。
+  - feature fixture / category / support-state taxonomy の正本は P5 の inventory module に残し、後段 task は結果集計や publish に専念する。
+
 ## 決定ログ
 
 - 2026-03-12: backend parity は重要だが、直近の `py_runtime.h` shrink 系 `P0-P4` を止めるべきではないため `P5` に置く。
@@ -113,3 +131,4 @@
 - 2026-03-12: `S1-02` では backend support state を `supported` / `fail_closed` / `not_started` / `experimental` の 4 つへ固定し、`fail_closed` を parity summary 上の正式 state として扱う。
 - 2026-03-12: `S2-01` では unsupported backend lane の diagnostic category を `not_implemented` / `unsupported_by_design` / `preview_only` / `blocked` に固定し、`object/String/comment/empty-output` fallback を parity contract 上の forbidden silent fallback とする。
 - 2026-03-12: `S2-02` では feature merge acceptance rule を固定し、C++ lane が通っても non-C++ state と docs mirror が揃うまでは feature-complete とみなさない。
+- 2026-03-12: `S3-01` では P6/P7 が直接 attach できる handoff export を inventory module に追加し、conformance/backends order と support-state order を P5 側で固定した。

@@ -19,6 +19,9 @@ class CheckBackendFeatureContractInventoryTest(unittest.TestCase):
     def test_acceptance_rule_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_acceptance_rule_issues(), [])
 
+    def test_handoff_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_handoff_issues(), [])
+
     def test_categories_have_stable_order(self) -> None:
         self.assertEqual(inventory_mod.CATEGORY_ORDER, ("syntax", "builtin", "stdlib"))
 
@@ -71,6 +74,58 @@ class CheckBackendFeatureContractInventoryTest(unittest.TestCase):
                 "noncpp_state_required",
                 "unsupported_lanes_fail_closed",
                 "docs_mirror_required",
+            },
+        )
+
+    def test_handoff_targets_are_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.HANDOFF_TASK_IDS,
+            {
+                "conformance_suite": "P6-BACKEND-CONFORMANCE-SUITE-01",
+                "support_matrix": "P7-BACKEND-PARITY-ROLLOUT-MATRIX-01",
+            },
+        )
+        self.assertEqual(
+            inventory_mod.HANDOFF_PLAN_PATHS,
+            {
+                "conformance_suite": "docs/ja/plans/p6-backend-conformance-suite.md",
+                "support_matrix": "docs/ja/plans/p7-backend-parity-rollout-and-matrix.md",
+            },
+        )
+
+    def test_conformance_handoff_contract_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.CONFORMANCE_LANE_ORDER,
+            ("parse", "east", "east3_lowering", "emit", "runtime"),
+        )
+        self.assertEqual(inventory_mod.FIRST_CONFORMANCE_BACKEND_ORDER, ("cpp", "rs", "cs"))
+        self.assertEqual(
+            {entry["feature_id"] for entry in inventory_mod.iter_representative_conformance_handoff()},
+            {entry["feature_id"] for entry in inventory_mod.iter_representative_feature_inventory()},
+        )
+
+    def test_support_matrix_handoff_contract_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.SUPPORT_MATRIX_BACKEND_ORDER,
+            ("cpp", "rs", "cs", "go", "java", "kt", "scala", "swift", "nim", "js", "ts", "lua", "rb", "php"),
+        )
+        self.assertEqual(
+            {entry["feature_id"] for entry in inventory_mod.iter_representative_support_matrix_handoff()},
+            {entry["feature_id"] for entry in inventory_mod.iter_representative_feature_inventory()},
+        )
+
+    def test_handoff_manifest_contract_is_fixed(self) -> None:
+        self.assertEqual(
+            set(inventory_mod.build_feature_contract_handoff_manifest().keys()),
+            {
+                "inventory_version",
+                "representative_features",
+                "conformance_handoff",
+                "support_matrix_handoff",
+                "support_state_order",
+                "fail_closed_detail_categories",
+                "handoff_task_ids",
+                "handoff_plan_paths",
             },
         )
 

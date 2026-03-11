@@ -88,12 +88,83 @@ def _collect_acceptance_rule_issues() -> list[str]:
     return issues
 
 
+def _collect_handoff_issues() -> list[str]:
+    issues: list[str] = []
+    manifest = inventory_mod.build_feature_contract_handoff_manifest()
+    expected_manifest_keys = {
+        "inventory_version",
+        "representative_features",
+        "conformance_handoff",
+        "support_matrix_handoff",
+        "support_state_order",
+        "fail_closed_detail_categories",
+        "handoff_task_ids",
+        "handoff_plan_paths",
+    }
+    if set(manifest.keys()) != expected_manifest_keys:
+        issues.append("handoff manifest keys drifted from the fixed set")
+    if manifest.get("inventory_version") != 1:
+        issues.append("handoff manifest inventory_version must stay at 1")
+    if set(inventory_mod.HANDOFF_TASK_IDS.keys()) != {"conformance_suite", "support_matrix"}:
+        issues.append("handoff task ids drifted from the fixed key set")
+    if set(inventory_mod.HANDOFF_PLAN_PATHS.keys()) != set(inventory_mod.HANDOFF_TASK_IDS.keys()):
+        issues.append("handoff plan paths do not match the handoff task keys")
+    for handoff_key, plan_rel in sorted(inventory_mod.HANDOFF_PLAN_PATHS.items()):
+        if not (ROOT / plan_rel).exists():
+            issues.append(f"missing handoff plan path: {handoff_key}: {plan_rel}")
+    inventory_by_id = {
+        entry["feature_id"]: entry for entry in inventory_mod.iter_representative_feature_inventory()
+    }
+    conformance_handoff = inventory_mod.iter_representative_conformance_handoff()
+    support_matrix_handoff = inventory_mod.iter_representative_support_matrix_handoff()
+    if {entry["feature_id"] for entry in conformance_handoff} != set(inventory_by_id.keys()):
+        issues.append("conformance handoff inventory drifted from representative feature inventory")
+    if {entry["feature_id"] for entry in support_matrix_handoff} != set(inventory_by_id.keys()):
+        issues.append("support-matrix handoff inventory drifted from representative feature inventory")
+    if manifest["support_state_order"] != list(inventory_mod.SUPPORT_STATE_ORDER):
+        issues.append("handoff manifest support_state_order drifted from the fixed taxonomy")
+    if manifest["fail_closed_detail_categories"] != list(inventory_mod.FAIL_CLOSED_DETAIL_CATEGORIES):
+        issues.append("handoff manifest fail_closed_detail_categories drifted from the fixed taxonomy")
+    for entry in conformance_handoff:
+        feature_id = entry["feature_id"]
+        inventory_entry = inventory_by_id.get(feature_id)
+        if inventory_entry is None:
+            continue
+        if entry["category"] != inventory_entry["category"]:
+            issues.append(f"conformance handoff category drifted: {feature_id}")
+        if entry["representative_fixture"] != inventory_entry["representative_fixture"]:
+            issues.append(f"conformance handoff fixture drifted: {feature_id}")
+        if entry["required_lanes"] != inventory_mod.CONFORMANCE_LANE_ORDER:
+            issues.append(f"conformance handoff lanes drifted: {feature_id}")
+        if entry["representative_backends"] != inventory_mod.FIRST_CONFORMANCE_BACKEND_ORDER:
+            issues.append(f"conformance handoff backend order drifted: {feature_id}")
+        if entry["downstream_task"] != inventory_mod.HANDOFF_TASK_IDS["conformance_suite"]:
+            issues.append(f"conformance handoff task drifted: {feature_id}")
+    for entry in support_matrix_handoff:
+        feature_id = entry["feature_id"]
+        inventory_entry = inventory_by_id.get(feature_id)
+        if inventory_entry is None:
+            continue
+        if entry["category"] != inventory_entry["category"]:
+            issues.append(f"support-matrix handoff category drifted: {feature_id}")
+        if entry["representative_fixture"] != inventory_entry["representative_fixture"]:
+            issues.append(f"support-matrix handoff fixture drifted: {feature_id}")
+        if entry["backend_order"] != inventory_mod.SUPPORT_MATRIX_BACKEND_ORDER:
+            issues.append(f"support-matrix handoff backend order drifted: {feature_id}")
+        if entry["support_state_order"] != inventory_mod.SUPPORT_STATE_ORDER:
+            issues.append(f"support-matrix handoff support states drifted: {feature_id}")
+        if entry["downstream_task"] != inventory_mod.HANDOFF_TASK_IDS["support_matrix"]:
+            issues.append(f"support-matrix handoff task drifted: {feature_id}")
+    return issues
+
+
 def main() -> int:
     issues = (
         _collect_inventory_issues()
         + _collect_support_state_issues()
         + _collect_fail_closed_policy_issues()
         + _collect_acceptance_rule_issues()
+        + _collect_handoff_issues()
     )
     if issues:
         for issue in issues:

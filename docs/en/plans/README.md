@@ -15,7 +15,6 @@ This folder stores long-term plans, design drafts, and investigation notes.
 
 Active live plans as of 2026-03-12:
 - `p4-crossruntime-pyruntime-emitter-shrink.md`
-- `p5-backend-feature-parity-contract.md`
 - `p6-backend-conformance-suite.md`
 - `p7-backend-parity-rollout-and-matrix.md`
 

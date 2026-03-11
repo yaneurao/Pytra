@@ -71,6 +71,62 @@ class FeatureInventoryEntry(TypedDict):
     rationale: str
 
 
+CONFORMANCE_LANE_ORDER: Final[tuple[str, ...]] = (
+    "parse",
+    "east",
+    "east3_lowering",
+    "emit",
+    "runtime",
+)
+
+FIRST_CONFORMANCE_BACKEND_ORDER: Final[tuple[str, ...]] = ("cpp", "rs", "cs")
+
+SUPPORT_MATRIX_BACKEND_ORDER: Final[tuple[str, ...]] = (
+    "cpp",
+    "rs",
+    "cs",
+    "go",
+    "java",
+    "kt",
+    "scala",
+    "swift",
+    "nim",
+    "js",
+    "ts",
+    "lua",
+    "rb",
+    "php",
+)
+
+HANDOFF_TASK_IDS: Final[dict[str, str]] = {
+    "conformance_suite": "P6-BACKEND-CONFORMANCE-SUITE-01",
+    "support_matrix": "P7-BACKEND-PARITY-ROLLOUT-MATRIX-01",
+}
+
+HANDOFF_PLAN_PATHS: Final[dict[str, str]] = {
+    "conformance_suite": "docs/ja/plans/p6-backend-conformance-suite.md",
+    "support_matrix": "docs/ja/plans/p7-backend-parity-rollout-and-matrix.md",
+}
+
+
+class FeatureConformanceHandoffEntry(TypedDict):
+    feature_id: str
+    category: str
+    representative_fixture: str
+    required_lanes: tuple[str, ...]
+    representative_backends: tuple[str, ...]
+    downstream_task: str
+
+
+class FeatureSupportMatrixHandoffEntry(TypedDict):
+    feature_id: str
+    category: str
+    representative_fixture: str
+    backend_order: tuple[str, ...]
+    support_state_order: tuple[str, ...]
+    downstream_task: str
+
+
 REPRESENTATIVE_FEATURE_INVENTORY: Final[tuple[FeatureInventoryEntry, ...]] = (
     {
         "feature_id": "syntax.assign.tuple_destructure",
@@ -193,6 +249,51 @@ REPRESENTATIVE_FEATURE_INVENTORY: Final[tuple[FeatureInventoryEntry, ...]] = (
     },
 )
 
+REPRESENTATIVE_CONFORMANCE_HANDOFF: Final[tuple[FeatureConformanceHandoffEntry, ...]] = tuple(
+    {
+        "feature_id": entry["feature_id"],
+        "category": entry["category"],
+        "representative_fixture": entry["representative_fixture"],
+        "required_lanes": CONFORMANCE_LANE_ORDER,
+        "representative_backends": FIRST_CONFORMANCE_BACKEND_ORDER,
+        "downstream_task": HANDOFF_TASK_IDS["conformance_suite"],
+    }
+    for entry in REPRESENTATIVE_FEATURE_INVENTORY
+)
+
+REPRESENTATIVE_SUPPORT_MATRIX_HANDOFF: Final[tuple[FeatureSupportMatrixHandoffEntry, ...]] = tuple(
+    {
+        "feature_id": entry["feature_id"],
+        "category": entry["category"],
+        "representative_fixture": entry["representative_fixture"],
+        "backend_order": SUPPORT_MATRIX_BACKEND_ORDER,
+        "support_state_order": SUPPORT_STATE_ORDER,
+        "downstream_task": HANDOFF_TASK_IDS["support_matrix"],
+    }
+    for entry in REPRESENTATIVE_FEATURE_INVENTORY
+)
+
 
 def iter_representative_feature_inventory() -> tuple[FeatureInventoryEntry, ...]:
     return REPRESENTATIVE_FEATURE_INVENTORY
+
+
+def iter_representative_conformance_handoff() -> tuple[FeatureConformanceHandoffEntry, ...]:
+    return REPRESENTATIVE_CONFORMANCE_HANDOFF
+
+
+def iter_representative_support_matrix_handoff() -> tuple[FeatureSupportMatrixHandoffEntry, ...]:
+    return REPRESENTATIVE_SUPPORT_MATRIX_HANDOFF
+
+
+def build_feature_contract_handoff_manifest() -> dict[str, object]:
+    return {
+        "inventory_version": 1,
+        "representative_features": list(iter_representative_feature_inventory()),
+        "conformance_handoff": list(iter_representative_conformance_handoff()),
+        "support_matrix_handoff": list(iter_representative_support_matrix_handoff()),
+        "support_state_order": list(SUPPORT_STATE_ORDER),
+        "fail_closed_detail_categories": list(FAIL_CLOSED_DETAIL_CATEGORIES),
+        "handoff_task_ids": dict(HANDOFF_TASK_IDS),
+        "handoff_plan_paths": dict(HANDOFF_PLAN_PATHS),
+    }
