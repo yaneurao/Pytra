@@ -39,7 +39,7 @@ FLOAT_TYPES = {"float32", "float64"}
 
 def _reparse_expr_with_context(parser: Any, expr_text: str, *, col_base: int) -> dict[str, Any]:
     """Re-enter `_sh_parse_expr` using the current parser environment."""
-    from toolchain.ir.core import _sh_parse_expr
+    from toolchain.ir.core_expr_shell import _sh_parse_expr
 
     return _sh_parse_expr(
         expr_text,

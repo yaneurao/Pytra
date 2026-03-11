@@ -266,7 +266,7 @@ class _ShExprCallArgParserMixin:
 
     def _parse_call_arg_expr(self) -> dict[str, Any]:
         """呼び出し引数式を解析し、必要なら generator 引数へ lower する。"""
-        from toolchain.ir.core import _sh_parse_expr
+        from toolchain.ir.core_expr_shell import _sh_parse_expr
 
         first = self._parse_ifexp()
         if not (self._cur()["k"] == "NAME" and self._cur()["v"] == "for"):

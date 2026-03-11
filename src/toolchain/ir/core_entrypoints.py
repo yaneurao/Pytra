@@ -66,7 +66,7 @@ def convert_path(input_path: Path, parser_backend: str = "self_hosted") -> dict[
 
 
 def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, Any]:
-    """Lazy import wrapper to avoid cycles while `core.py` owns the parser implementation."""
-    from toolchain.ir.core import convert_source_to_east_self_hosted as _convert_source_to_east_self_hosted
+    """Lazy import wrapper to avoid cycles while the module parser owns the implementation."""
+    from toolchain.ir.core_module_parser import convert_source_to_east_self_hosted_impl
 
-    return _convert_source_to_east_self_hosted(source, filename)
+    return convert_source_to_east_self_hosted_impl(source, filename)

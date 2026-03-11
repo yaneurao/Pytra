@@ -52,7 +52,7 @@ class EastCoreSourceContractExprPrimaryTest(unittest.TestCase):
         self.assertIn("_sh_make_list_comp_expr(", primary_text)
         self.assertIn("_sh_make_dict_comp_expr(", primary_text)
         self.assertIn('message=f"self_hosted parser cannot parse expression token:', primary_text)
-        self.assertIn("from toolchain.ir.core import _sh_parse_expr", primary_text)
+        self.assertIn("from toolchain.ir.core_expr_shell import _sh_parse_expr", primary_text)
 
 
 if __name__ == "__main__":

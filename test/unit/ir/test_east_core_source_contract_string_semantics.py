@@ -52,7 +52,7 @@ class EastCoreSourceContractStringSemanticsTest(unittest.TestCase):
 
         self.assertIn("make_east_build_error: Any", helper_text)
         self.assertIn("make_span: Any", helper_text)
-        self.assertIn("from toolchain.ir.core import _ShExprParser", helper_text)
+        self.assertIn("from toolchain.ir.core_expr_shell import _ShExprParser", helper_text)
         self.assertIn("parser = _ShExprParser(", helper_text)
         self.assertIn('lit = segment.replace("{{", "{").replace("}}", "}")', helper_text)
         self.assertIn("lit = _sh_decode_py_string_body(lit, raw_mode)", helper_text)
