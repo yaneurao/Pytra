@@ -11,7 +11,6 @@
 
 2026-03-12 時点の active live plan:
 - `p4-crossruntime-pyruntime-emitter-shrink.md`
-- `p4-crossruntime-pyruntime-residual-caller-shrink.md`
 - `p5-backend-feature-parity-contract.md`
 - `p6-backend-conformance-suite.md`
 - `p7-backend-parity-rollout-and-matrix.md`

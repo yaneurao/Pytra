@@ -37,7 +37,7 @@ HANDOFF_BUCKETS = {
 }
 
 FOLLOWUP_TASK_ID = "P4-CROSSRUNTIME-PYRUNTIME-RESIDUAL-CALLER-SHRINK-01"
-FOLLOWUP_PLAN_PATH = "docs/ja/plans/p4-crossruntime-pyruntime-residual-caller-shrink.md"
+FOLLOWUP_PLAN_PATH = "docs/ja/plans/archive/20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md"
 
 
 def _header_text() -> str:

@@ -200,6 +200,28 @@ SOURCE_GUARD_FORBIDDEN_SUBSTRINGS = {
     },
 }
 
+SMOKE_LANE_REQUIRED_SUBSTRINGS = {
+    "test/unit/common/test_py2x_entrypoints_contract.py": {
+        'native_transpile.count("py_runtime_object_isinstance("), 1',
+        'native_registry.count("py_runtime_object_isinstance("), 1',
+    },
+    "test/unit/backends/cpp/test_cpp_runtime_iterable.py": {
+        "def test_runtime_iterable_protocol_helpers(self) -> None:",
+    },
+    "test/unit/backends/cpp/test_cpp_runtime_type_id.py": {
+        "def test_runtime_type_id_subtype_and_isinstance_contract(self) -> None:",
+    },
+    "test/unit/backends/rs/test_py2rs_smoke.py": {
+        "def test_type_predicate_nodes_are_lowered_without_legacy_bridge(self) -> None:",
+    },
+    "test/unit/backends/cs/test_py2cs_smoke.py": {
+        "def test_runtime_import_resolution_uses_canonical_runtime_helpers(self) -> None:",
+        "def test_type_predicate_nodes_are_lowered_without_legacy_bridge(self) -> None:",
+        "def test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not(self) -> None:",
+        "def test_bytearray_index_and_slice_compat_helpers_stay_explicit(self) -> None:",
+    },
+}
+
 GENERATED_CPP_MUST_REMAIN = {
     ("py_runtime_object_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
     ("py_append", "src/runtime/cpp/generated/built_in/iter_ops.cpp"),
@@ -217,6 +239,53 @@ REPRESENTATIVE_BUCKET_MANIFEST = {
         "source_guard_paths": {
             "src/runtime/cpp/native/compiler/transpile_cli.cpp",
             "src/runtime/cpp/native/compiler/backend_registry_static.cpp",
+        },
+    },
+    "generated_cpp_object_bridge_residual": {
+        "smoke_file": "test/unit/backends/cpp/test_cpp_runtime_iterable.py",
+        "smoke_tests": {
+            "test_runtime_list_overload_inventory",
+        },
+        "source_guard_paths": {
+            "src/runtime/cpp/generated/std/json.cpp",
+            "src/runtime/cpp/generated/built_in/iter_ops.cpp",
+        },
+    },
+    "generated_cpp_shared_type_id_residual": {
+        "smoke_file": "test/unit/backends/cpp/test_cpp_runtime_iterable.py",
+        "smoke_tests": {
+            "test_runtime_list_overload_inventory",
+        },
+        "source_guard_paths": {
+            "src/runtime/cpp/generated/built_in/type_id.cpp",
+        },
+    },
+    "cs_runtime_utils_object_bridge_residual": {
+        "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+        "smoke_tests": {
+            "test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not",
+            "test_bytearray_index_and_slice_compat_helpers_stay_explicit",
+        },
+        "source_guard_paths": set(),
+    },
+    "rs_runtime_builtin_shared_type_id_residual": {
+        "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",
+        "smoke_tests": {
+            "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
+        },
+        "source_guard_paths": {
+            "src/runtime/rs/pytra/built_in/py_runtime.rs",
+            "src/runtime/rs/pytra-core/built_in/py_runtime.rs",
+        },
+    },
+    "cs_runtime_builtin_shared_type_id_residual": {
+        "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+        "smoke_tests": {
+            "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
+        },
+        "source_guard_paths": {
+            "src/runtime/cs/pytra/built_in/py_runtime.cs",
+            "src/runtime/cs/pytra-core/built_in/py_runtime.cs",
         },
     },
 }
@@ -331,26 +400,25 @@ def _collect_runtime_builtin_policy_issues() -> list[str]:
 def _collect_representative_bucket_issues() -> list[str]:
     issues: list[str] = []
     manifest_keys = set(REPRESENTATIVE_BUCKET_MANIFEST.keys())
-    if manifest_keys != {"native_wrapper_object_bridge_residual"}:
-        issues.append(
-            "representative residual bucket manifest keys are not limited to native_wrapper_object_bridge_residual"
-        )
+    if manifest_keys != set(EXPECTED_BUCKETS.keys()):
+        issues.append("representative residual bucket manifest keys do not match expected buckets")
         return issues
-    lane = REPRESENTATIVE_BUCKET_MANIFEST["native_wrapper_object_bridge_residual"]
-    smoke_file = lane["smoke_file"]
-    smoke_tests = set(lane["smoke_tests"])
-    source_guard_paths = set(lane["source_guard_paths"])
-    smoke_text = (ROOT / smoke_file).read_text(encoding="utf-8", errors="ignore")
-    for test_name in sorted(smoke_tests):
-        if f"def {test_name}(" not in smoke_text:
+    for bucket_name in sorted(REPRESENTATIVE_BUCKET_MANIFEST.keys()):
+        lane = REPRESENTATIVE_BUCKET_MANIFEST[bucket_name]
+        smoke_file = lane["smoke_file"]
+        smoke_tests = set(lane["smoke_tests"])
+        source_guard_paths = set(lane["source_guard_paths"])
+        smoke_text = (ROOT / smoke_file).read_text(encoding="utf-8", errors="ignore")
+        for test_name in sorted(smoke_tests):
+            if f"def {test_name}(" not in smoke_text:
+                issues.append(
+                    f"representative smoke missing: {bucket_name}: {smoke_file}: {test_name}"
+                )
+        missing_paths = source_guard_paths - set(SOURCE_GUARD_REQUIRED_SUBSTRINGS.keys())
+        for rel in sorted(missing_paths):
             issues.append(
-                f"representative smoke missing: native_wrapper_object_bridge_residual: {smoke_file}: {test_name}"
+                f"representative source guard path missing from guard inventory: {bucket_name}: {rel}"
             )
-    missing_paths = source_guard_paths - set(SOURCE_GUARD_REQUIRED_SUBSTRINGS.keys())
-    for rel in sorted(missing_paths):
-        issues.append(
-            f"representative source guard path missing from guard inventory: native_wrapper_object_bridge_residual: {rel}"
-        )
     return issues
 
 
@@ -369,6 +437,16 @@ def _collect_source_guard_issues() -> list[str]:
     return issues
 
 
+def _collect_smoke_lane_issues() -> list[str]:
+    issues: list[str] = []
+    for rel, required in sorted(SMOKE_LANE_REQUIRED_SUBSTRINGS.items()):
+        text = (ROOT / rel).read_text(encoding="utf-8", errors="ignore")
+        for snippet in sorted(required):
+            if snippet not in text:
+                issues.append(f"smoke lane missing required snippet in {rel}: {snippet}")
+    return issues
+
+
 def _collect_inventory_issues() -> list[str]:
     observed = _collect_observed_pairs()
     expected = _collect_expected_pairs()
@@ -382,6 +460,7 @@ def _collect_inventory_issues() -> list[str]:
     for pair in sorted(observed - expected):
         issues.append(f"unexpected residual pair present: {pair}")
     issues.extend(_collect_source_guard_issues())
+    issues.extend(_collect_smoke_lane_issues())
     return issues
 
 
