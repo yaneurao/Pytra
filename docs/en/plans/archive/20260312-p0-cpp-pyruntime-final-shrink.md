@@ -69,10 +69,10 @@ Validation commands:
 - `git diff --check`
 
 Breakdown:
-- [ ] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S1-01] Lock the current residual inventory / target end state / bundle order in docs, tooling, and tests under the active plan.
-- [ ] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01] Upstream `object_bridge_mutation` callers in 5-10 item bundles and remove header wrappers bundle-by-bundle.
-- [ ] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02] Align native/generated/Rust/C# callers on the thin `type_id` helper seam and ensure generic aliases do not return to the header.
-- [ ] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S3-01] Refresh representative runtime tests, source guards, docs, and archive the task.
+- [x] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S1-01] Lock the current residual inventory / target end state / bundle order in docs, tooling, and tests under the active plan.
+- [x] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01] Upstream `object_bridge_mutation` callers in 5-10 item bundles and remove header wrappers bundle-by-bundle.
+- [x] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02] Align native/generated/Rust/C# callers on the thin `type_id` helper seam and ensure generic aliases do not return to the header.
+- [x] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S3-01] Refresh representative runtime tests, source guards, docs, and archive the task.
 
 Decision log:
 - 2026-03-12: TODO became empty, so the final `py_runtime.h` shrink was promoted as a new top-priority `P0`.
@@ -82,3 +82,4 @@ Decision log:
 - 2026-03-12: The second `S2-01` bundle upstreamed `py_enumerate_object` in `src/runtime/cpp/generated/built_in/iter_ops.cpp` to `py_list_append_mut(obj_to_list_ref_or_raise(...))`. Tracked C++ source no longer has a direct caller of `py_append(object&)`.
 - 2026-03-12: The first `S2-02` bundle synced `check_cpp_pyruntime_contract_inventory.py` to the current thin-helper names. The shared residual bucket is now locked on `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_object_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` across native/generated/C++ emitter/Rust/C# emitter+runtime callers, and the old generic alias names were removed from the inventory.
 - 2026-03-12: The second `S2-02` bundle added a legacy generic-alias signature guard to `check_cpp_pyruntime_header_surface.py`. If `static inline uint32 py_runtime_type_id(` / `static inline bool py_isinstance(` / `static inline bool py_is_subtype(` / `static inline bool py_issubclass(` ever return to `py_runtime.h`, the guard now fails closed.
+- 2026-03-12: `S3-01` aligned the representative runtime/tooling guards with the current end state. `object_bridge_mutation` is now reduced to `py_append(object&)`, while the shared thin helpers are locked to `py_runtime_value_* / py_runtime_object_* / py_runtime_type_id_is_*`, so the task can be archived.

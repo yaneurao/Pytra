@@ -70,10 +70,10 @@ bundle order:
 - `git diff --check`
 
 分解:
-- [ ] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S1-01] `py_runtime.h` の current residual inventory / target end state / bundle order を active plan 前提で docs/tooling/test に固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01] `object_bridge_mutation` caller を 5-10 個単位の bundle で upstream 化し、header wrapper を bundle 単位で削減する。
-- [ ] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02] native/generated/Rust/C# caller を thin `type_id` helper 前提に揃え、header に generic alias を戻さない形へ固定する。
-- [ ] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S3-01] representative runtime test / source guard / docs / archive を更新して task を閉じる。
+- [x] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S1-01] `py_runtime.h` の current residual inventory / target end state / bundle order を active plan 前提で docs/tooling/test に固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01] `object_bridge_mutation` caller を 5-10 個単位の bundle で upstream 化し、header wrapper を bundle 単位で削減する。
+- [x] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02] native/generated/Rust/C# caller を thin `type_id` helper 前提に揃え、header に generic alias を戻さない形へ固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S3-01] representative runtime test / source guard / docs / archive を更新して task を閉じる。
 
 決定ログ:
 - 2026-03-12: TODO が空になったため、以前から user 要望が強かった `py_runtime.h` の final shrink を新しい最上位 `P0` として起票した。
@@ -83,3 +83,4 @@ bundle order:
 - 2026-03-12: `S2-01` の second bundle として、`src/runtime/cpp/generated/built_in/iter_ops.cpp` の `py_enumerate_object` を `py_list_append_mut(obj_to_list_ref_or_raise(...))` へ upstream 化した。tracked C++ source では `py_append(object&)` の direct caller を持たない状態になった。
 - 2026-03-12: `S2-02` の first bundle として、`check_cpp_pyruntime_contract_inventory.py` を current thin helper 名へ同期した。shared residual bucket は `py_runtime_value_type_id` / `py_runtime_value_isinstance` / `py_runtime_object_isinstance` / `py_runtime_type_id_is_subtype` / `py_runtime_type_id_issubclass` を native/generated/C++ emitter/Rust/C# emitter+runtime 横断で固定し、generic alias 名は inventory から外した。
 - 2026-03-12: `S2-02` の second bundle として、`check_cpp_pyruntime_header_surface.py` に legacy generic alias signature guard を追加した。`static inline uint32 py_runtime_type_id(` / `static inline bool py_isinstance(` / `static inline bool py_is_subtype(` / `static inline bool py_issubclass(` が `py_runtime.h` に戻った時点で fail-closed にする。
+- 2026-03-12: `S3-01` として representative runtime/tooling guard、current thin helper inventory、legacy alias drift guard を current end state に揃えた。`object_bridge_mutation` は `py_append(object&)` のみ、shared thin helper は `py_runtime_value_* / py_runtime_object_* / py_runtime_type_id_is_*` に収束したため、task を archive へ移管する。

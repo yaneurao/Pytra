@@ -60,7 +60,7 @@ class CheckCppPyRuntimeHeaderSurfaceTest(unittest.TestCase):
         )
         self.assertEqual(
             surface_mod.FOLLOWUP_PLAN_PATH,
-            "docs/ja/plans/p0-cpp-pyruntime-final-shrink.md",
+            "docs/ja/plans/archive/20260312-p0-cpp-pyruntime-final-shrink.md",
         )
 
     def test_bundle_order_is_locked_to_active_final_shrink(self) -> None:
