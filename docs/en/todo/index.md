@@ -32,4 +32,4 @@ Last updated: 2026-03-11
 ## Unfinished Tasks
 
 1. [ ] [ID: P1-CPP-PYRUNTIME-HEADER-SHRINK-01] Shrink the remaining `py_runtime.h` surface by explicitly separating object-bridge, typed-compat, and shared `type_id` contract lanes until the header becomes a thin compatibility seam. Context: [docs/en/plans/p1-cpp-pyruntime-header-shrink.md](../plans/p1-cpp-pyruntime-header-shrink.md)
-   Progress note: `S1-02` locked the residual header buckets with inventory + source guards and fixed the next removal order as `typed_collection_compat -> shared_type_id_compat`.
+   Progress note: `S2-01` bundle 1 removed the dead `py_set_at(dict<K, V>& ...)` wrapper and shrank `typed_collection_compat` down to `py_append(list<T>& ...)` only. The next bundle removes the remaining typed list append wrapper.

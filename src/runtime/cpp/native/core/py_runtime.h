@@ -1037,66 +1037,6 @@ static inline void py_set_at(object& v, I idx, const U& item) {
     py_list_set_at_mut(obj_to_list_ref_or_raise(v, "py_set_at"), idx, item);
 }
 
-template <class K, class V, class Q, class U>
-static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item) {
-    const K k = [&]() -> K {
-        if constexpr (::std::is_same_v<Q, object>) {
-            if constexpr (::std::is_same_v<K, object>) {
-                return key;
-            } else if constexpr (
-                ::std::is_arithmetic_v<K>
-                || ::std::is_same_v<K, bool>
-                || ::std::is_same_v<K, str>) {
-                return py_to<K>(key);
-            } else {
-                return K(key);
-            }
-        } else if constexpr (::std::is_same_v<Q, const char*> || ::std::is_same_v<Q, char*>) {
-            if constexpr (::std::is_same_v<K, str>) {
-                return str(key);
-            } else if constexpr (::std::is_convertible_v<const char*, K>) {
-                return static_cast<K>(key);
-            } else {
-                return py_to<K>(make_object(str(key)));
-            }
-        } else if constexpr (::std::is_same_v<K, Q>) {
-            return key;
-        } else if constexpr (::std::is_convertible_v<Q, K>) {
-            return static_cast<K>(key);
-        } else {
-            return K(key);
-        }
-    }();
-    d[k] = [&]() -> V {
-        if constexpr (::std::is_same_v<U, object>) {
-            if constexpr (::std::is_same_v<V, object>) {
-                return item;
-            } else if constexpr (
-                ::std::is_arithmetic_v<V>
-                || ::std::is_same_v<V, bool>
-                || ::std::is_same_v<V, str>) {
-                return py_to<V>(item);
-            } else {
-                return V(item);
-            }
-        } else if constexpr (::std::is_same_v<U, const char*> || ::std::is_same_v<U, char*>) {
-            if constexpr (::std::is_same_v<V, str>) {
-                return str(item);
-            } else if constexpr (::std::is_convertible_v<const char*, V>) {
-                return static_cast<V>(item);
-            } else {
-                return py_to<V>(make_object(str(item)));
-            }
-        } else if constexpr (::std::is_same_v<V, U>) {
-            return item;
-        } else if constexpr (::std::is_convertible_v<U, V>) {
-            return static_cast<V>(item);
-        } else {
-            return V(item);
-        }
-    }();
-}
-
 static inline void py_extend(object& v, const list<object>& items) {
     py_list_extend_mut(obj_to_list_ref_or_raise(v, "py_extend"), items);
 }

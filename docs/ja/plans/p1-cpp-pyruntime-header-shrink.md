@@ -61,3 +61,4 @@ end state:
 - 2026-03-11: `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01` 完了後の follow-up として起票した。次段階は emitter 側ではなく `py_runtime.h` 本体の残存 surface を実際に削減する。
 - 2026-03-11: `S1-01` として `py_runtime.h` の残存 helper を `object_bridge_mutation` / `typed_collection_compat` / `shared_type_id_compat` に棚卸しし、drift guard を追加した。
 - 2026-03-11: `S1-02` として `test_cpp_runtime_iterable.py` に header surface source guard を追加し、削減順を `typed_collection_compat` の bundle 削減から始める方針に固定した。
+- 2026-03-11: `S2-01` の第1束として source-of-truth で未使用だった `py_set_at(dict<K, V>& ...)` を header / inventory / source guard から削除した。残る `typed_collection_compat` は `py_append(list<T>& ...)` のみ。

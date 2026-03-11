@@ -24,7 +24,6 @@ EXPECTED_BUCKETS = {
     },
     "typed_collection_compat": {
         'static inline void py_append(list<T>& v, const U& item) {',
-        'static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item) {',
     },
     "shared_type_id_compat": {
         'static inline bool py_is_subtype(uint32 actual_type_id, uint32 expected_type_id) {',

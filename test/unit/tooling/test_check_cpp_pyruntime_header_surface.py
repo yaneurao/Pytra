@@ -34,7 +34,6 @@ class CheckCppPyRuntimeHeaderSurfaceTest(unittest.TestCase):
             snippets,
             {
                 'static inline void py_append(list<T>& v, const U& item) {',
-                'static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item) {',
             },
         )
 

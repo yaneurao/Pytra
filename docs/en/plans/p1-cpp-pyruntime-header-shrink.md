@@ -61,3 +61,4 @@ Decision log:
 - 2026-03-11: Opened as the follow-up after `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01`. The next step is not more emitter work, but actually shrinking the residual surface inside `py_runtime.h`.
 - 2026-03-11: As `S1-01`, we inventoried the remaining helpers into `object_bridge_mutation`, `typed_collection_compat`, and `shared_type_id_compat`, then added a drift guard.
 - 2026-03-11: As `S1-02`, we added header-surface source guards in `test_cpp_runtime_iterable.py` and fixed the removal order so the next shrink starts from `typed_collection_compat`.
+- 2026-03-11: As the first `S2-01` bundle, we removed the unused `py_set_at(dict<K, V>& ...)` wrapper from the header, inventory, and source guards. The remaining `typed_collection_compat` lane is now only `py_append(list<T>& ...)`.

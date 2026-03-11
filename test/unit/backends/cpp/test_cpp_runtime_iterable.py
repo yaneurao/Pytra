@@ -638,7 +638,7 @@ int main() {
             runtime_header,
         )
         self.assertIn("static inline void py_append(list<T>& v, const U& item)", runtime_header)
-        self.assertIn("static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item)", runtime_header)
+        self.assertNotIn("static inline void py_set_at(dict<K, V>& d, const Q& key, const U& item)", runtime_header)
         self.assertIn("static inline void py_append(object& v, const U& item)", runtime_header)
         self.assertIn("static inline void py_set_at(object& v, I idx, const U& item)", runtime_header)
         self.assertIn("static inline void py_extend(object& v, const list<object>& items)", runtime_header)
