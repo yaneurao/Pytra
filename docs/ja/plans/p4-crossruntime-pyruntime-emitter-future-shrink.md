@@ -29,7 +29,7 @@
 
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S1-01] live plan / TODO / inventory tool に future-shrink follow-up の baseline と bundle order を固定する。
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-01] C++ emitter の shared type_id thin seam を棚卸しし、backend-local へ押し戻せる caller と must-remain seam を分類する。
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-02] Rust / C# emitter の shared thin helper と C# bytearray compat seam を棚卸しし、future reduction order を固定する。
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-02] Rust / C# emitter の shared thin helper と C# bytearray compat seam を棚卸しし、future reduction order を固定した。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S3-01] representative smoke / source guard / inventory drift guard を future-shrink baseline に合わせて更新する。
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S4-01] future emitter shrink の handoff 条件を次段 task に接続する。
 
@@ -81,6 +81,34 @@
   - 解釈:
     - representative nominal ADT match と type-predicate lowering の shared thin seam なので、runtime / type-id ownership task が先に動くまでは intentional residual として保持する。
 
+## Rust / C# Shared Type ID Classification
+
+- `future_reducible`
+  - none
+- `must_remain_until_runtime_task`
+  - Rust:
+    - `py_runtime_value_type_id`
+    - `py_runtime_value_isinstance`
+    - `py_runtime_type_id_is_subtype`
+    - `py_runtime_type_id_issubclass`
+  - C#:
+    - `py_runtime_value_type_id`
+    - `py_runtime_value_isinstance`
+    - `py_runtime_type_id_is_subtype`
+    - `py_runtime_type_id_issubclass`
+  - 解釈:
+    - どちらも shared thin helper 自体が runtime contract なので、backend local へ押し戻す前に runtime / type-id ownership task が必要になる。
+
+## C# Bytearray Compatibility Classification
+
+- `future_reducible`
+  - `py_append` in `src/backends/cs/emitter/cs_emitter.py`
+  - `py_pop` in `src/backends/cs/emitter/cs_emitter.py`
+  - 解釈:
+    - これは `bytearray` compat に閉じた emitter-side seam で、shared type-id contract と違って backend local helper へ押し戻せる。
+- `must_remain_until_runtime_task`
+  - none
+
 ## Handoff Condition
 
 - C++ emitter が thin helper 以外の generic / object-type-id alias を再流入させないこと。
@@ -93,3 +121,4 @@
 - 2026-03-12: archived `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01` / `...-RESIDUAL-REDUCTION-01` は current residual の整理までは完了しているため、この follow-up は「その後の future reduction」だけに責務を限定する。
 - 2026-03-12: `S1-01` では current residual inventory を baseline として固定し、future reduction order を `C++ shared type_id -> Rust shared type_id -> C# shared type_id -> C# bytearray compat` に置いた。
 - 2026-03-12: `S2-01` では C++ shared type-id residual を `future_reducible=py_runtime_value_type_id only` と `must_remain_until_runtime_task=nominal ADT match / type-predicate seam` に分け、inventory tool でも同じ分類を guard するようにした。
+- 2026-03-12: `S2-02` では Rust/C# shared thin seam はすべて `must_remain_until_runtime_task`、C# `bytearray` compat seam (`py_append` / `py_pop`) は `future_reducible` に固定し、future reduction order の根拠を inventory tool に持たせた。

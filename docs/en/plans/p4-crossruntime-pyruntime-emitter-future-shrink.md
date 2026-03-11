@@ -29,7 +29,7 @@ Acceptance criteria:
 
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S1-01] Lock the future-shrink follow-up baseline and bundle order into the live plan / TODO / inventory tool.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-01] Re-audit the C++ emitter shared type-id thin seam and classify reducible callers vs must-remain seam.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-02] Re-audit the Rust / C# shared thin helper seam and the C# bytearray compatibility seam, then lock the future reduction order.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-02] Re-audit the Rust / C# shared thin helper seam and the C# bytearray compatibility seam, then lock the future reduction order.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S3-01] Refresh representative smoke / source guard / inventory drift guard for the future-shrink baseline.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S4-01] Connect the future emitter shrink handoff to the next header-shrink / runtime-SoT task.
 
@@ -81,6 +81,34 @@ Acceptance criteria:
   - Interpretation:
     - these are the representative thin seam for nominal ADT match and type-predicate lowering, so they stay intentional residuals until the runtime / type-id ownership task moves first.
 
+## Rust / C# Shared Type ID Classification
+
+- `future_reducible`
+  - none
+- `must_remain_until_runtime_task`
+  - Rust:
+    - `py_runtime_value_type_id`
+    - `py_runtime_value_isinstance`
+    - `py_runtime_type_id_is_subtype`
+    - `py_runtime_type_id_issubclass`
+  - C#:
+    - `py_runtime_value_type_id`
+    - `py_runtime_value_isinstance`
+    - `py_runtime_type_id_is_subtype`
+    - `py_runtime_type_id_issubclass`
+  - Interpretation:
+    - In both backends the shared thin helper is itself the runtime contract, so a runtime / type-id ownership task must move first before the seam can move backend-local.
+
+## C# Bytearray Compatibility Classification
+
+- `future_reducible`
+  - `py_append` in `src/backends/cs/emitter/cs_emitter.py`
+  - `py_pop` in `src/backends/cs/emitter/cs_emitter.py`
+  - Interpretation:
+    - This seam is limited to `bytearray` compatibility and can eventually move back into backend-local helpers without changing the shared type-id contract.
+- `must_remain_until_runtime_task`
+  - none
+
 ## Handoff Condition
 
 - The C++ emitter must not reintroduce generic or object-type-id aliases beyond the current thin helper seam.
@@ -93,3 +121,4 @@ Acceptance criteria:
 - 2026-03-12: The archived `P4-CROSSRUNTIME-PYRUNTIME-EMITTER-SHRINK-01` / `...-RESIDUAL-REDUCTION-01` tasks already completed the current residual cleanup, so this follow-up is limited to future reduction only.
 - 2026-03-12: `S1-01` fixes the current residual inventory as the baseline and sets the future reduction order to `C++ shared type_id -> Rust shared type_id -> C# shared type_id -> C# bytearray compat`.
 - 2026-03-12: `S2-01` splits the C++ shared type-id residual into `future_reducible=py_runtime_value_type_id only` and `must_remain_until_runtime_task=nominal ADT match / type-predicate seam`, and the inventory tool now guards the same classification.
+- 2026-03-12: `S2-02` fixes Rust/C# shared thin seams as `must_remain_until_runtime_task` and classifies the C# `bytearray` compatibility seam (`py_append` / `py_pop`) as `future_reducible`, with the inventory tool guarding the same split.

@@ -308,6 +308,21 @@ FUTURE_CPP_SHARED_TYPE_ID_MUST_REMAIN_ONLY = {
     ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
 }
 
+FUTURE_RS_SHARED_TYPE_ID_CLASSIFICATION = {
+    "future_reducible": set(),
+    "must_remain_until_runtime_task": EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
+}
+
+FUTURE_CS_SHARED_TYPE_ID_CLASSIFICATION = {
+    "future_reducible": set(),
+    "must_remain_until_runtime_task": EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
+}
+
+FUTURE_CROSSRUNTIME_MUTATION_CLASSIFICATION = {
+    "future_reducible": EXPECTED_BUCKETS["crossruntime_mutation_helper_residual"],
+    "must_remain_until_runtime_task": set(),
+}
+
 
 def _iter_target_files() -> list[Path]:
     return [ROOT / rel for rel in sorted(TRACKED_PATHS)]
@@ -467,6 +482,36 @@ def _collect_future_followup_issues() -> list[str]:
     if set(FUTURE_FOLLOWUP_BASELINE_BUCKETS) - set(EXPECTED_BUCKETS.keys()):
         issues.append("future follow-up baseline references unknown emitter residual buckets")
     issues.extend(_collect_cpp_future_shared_type_id_classification_issues())
+    issues.extend(
+        _collect_future_bucket_classification_issues(
+            label="future rs shared type-id classification",
+            classification=FUTURE_RS_SHARED_TYPE_ID_CLASSIFICATION,
+            expected_future_reducible=set(),
+            expected_must_remain=EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
+            expected_bucket=EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
+            required_prefix="src/backends/rs/",
+        )
+    )
+    issues.extend(
+        _collect_future_bucket_classification_issues(
+            label="future cs shared type-id classification",
+            classification=FUTURE_CS_SHARED_TYPE_ID_CLASSIFICATION,
+            expected_future_reducible=set(),
+            expected_must_remain=EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
+            expected_bucket=EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
+            required_prefix="src/backends/cs/",
+        )
+    )
+    issues.extend(
+        _collect_future_bucket_classification_issues(
+            label="future crossruntime mutation classification",
+            classification=FUTURE_CROSSRUNTIME_MUTATION_CLASSIFICATION,
+            expected_future_reducible=EXPECTED_BUCKETS["crossruntime_mutation_helper_residual"],
+            expected_must_remain=set(),
+            expected_bucket=EXPECTED_BUCKETS["crossruntime_mutation_helper_residual"],
+            required_prefix="src/backends/cs/",
+        )
+    )
     return issues
 
 
@@ -499,6 +544,39 @@ def _collect_cpp_future_shared_type_id_classification_issues() -> list[str]:
                 "future cpp shared type-id classification contains non-cpp path: "
                 f"{symbol} @ {rel}"
             )
+    return issues
+
+
+def _collect_future_bucket_classification_issues(
+    *,
+    label: str,
+    classification: dict[str, set[tuple[str, str]]],
+    expected_future_reducible: set[tuple[str, str]],
+    expected_must_remain: set[tuple[str, str]],
+    expected_bucket: set[tuple[str, str]],
+    required_prefix: str,
+) -> list[str]:
+    issues: list[str] = []
+    if set(classification.keys()) != {
+        "future_reducible",
+        "must_remain_until_runtime_task",
+    }:
+        issues.append(f"{label} keys drifted")
+        return issues
+    future_reducible = classification["future_reducible"]
+    must_remain = classification["must_remain_until_runtime_task"]
+    overlaps = future_reducible & must_remain
+    for symbol, rel in sorted(overlaps):
+        issues.append(f"{label} overlap: {symbol} @ {rel}")
+    if (future_reducible | must_remain) != expected_bucket:
+        issues.append(f"{label} drifted from residual bucket")
+    if future_reducible != expected_future_reducible:
+        issues.append(f"{label} future-reducible set drifted")
+    if must_remain != expected_must_remain:
+        issues.append(f"{label} must-remain set drifted")
+    for symbol, rel in sorted(future_reducible | must_remain):
+        if not rel.startswith(required_prefix):
+            issues.append(f"{label} contains unexpected path: {symbol} @ {rel}")
     return issues
 
 

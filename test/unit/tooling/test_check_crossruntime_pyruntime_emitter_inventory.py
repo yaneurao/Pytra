@@ -275,6 +275,40 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
                 ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
             },
         )
+        self.assertEqual(
+            inventory_mod.FUTURE_RS_SHARED_TYPE_ID_CLASSIFICATION,
+            {
+                "future_reducible": set(),
+                "must_remain_until_runtime_task": {
+                    ("py_runtime_value_type_id", "src/backends/rs/emitter/rs_emitter.py"),
+                    ("py_runtime_value_isinstance", "src/backends/rs/emitter/rs_emitter.py"),
+                    ("py_runtime_type_id_is_subtype", "src/backends/rs/emitter/rs_emitter.py"),
+                    ("py_runtime_type_id_issubclass", "src/backends/rs/emitter/rs_emitter.py"),
+                },
+            },
+        )
+        self.assertEqual(
+            inventory_mod.FUTURE_CS_SHARED_TYPE_ID_CLASSIFICATION,
+            {
+                "future_reducible": set(),
+                "must_remain_until_runtime_task": {
+                    ("py_runtime_value_type_id", "src/backends/cs/emitter/cs_emitter.py"),
+                    ("py_runtime_value_isinstance", "src/backends/cs/emitter/cs_emitter.py"),
+                    ("py_runtime_type_id_is_subtype", "src/backends/cs/emitter/cs_emitter.py"),
+                    ("py_runtime_type_id_issubclass", "src/backends/cs/emitter/cs_emitter.py"),
+                },
+            },
+        )
+        self.assertEqual(
+            inventory_mod.FUTURE_CROSSRUNTIME_MUTATION_CLASSIFICATION,
+            {
+                "future_reducible": {
+                    ("py_append", "src/backends/cs/emitter/cs_emitter.py"),
+                    ("py_pop", "src/backends/cs/emitter/cs_emitter.py"),
+                },
+                "must_remain_until_runtime_task": set(),
+            },
+        )
 
     def test_cpp_future_shared_type_id_classification_is_fixed(self) -> None:
         self.assertEqual(
@@ -288,6 +322,41 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         self.assertEqual(
             inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION["must_remain_until_runtime_task"],
             inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_MUST_REMAIN_ONLY,
+        )
+
+    def test_non_cpp_future_classifications_are_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod._collect_future_bucket_classification_issues(
+                label="future rs shared type-id classification",
+                classification=inventory_mod.FUTURE_RS_SHARED_TYPE_ID_CLASSIFICATION,
+                expected_future_reducible=set(),
+                expected_must_remain=inventory_mod.EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
+                expected_bucket=inventory_mod.EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
+                required_prefix="src/backends/rs/",
+            ),
+            [],
+        )
+        self.assertEqual(
+            inventory_mod._collect_future_bucket_classification_issues(
+                label="future cs shared type-id classification",
+                classification=inventory_mod.FUTURE_CS_SHARED_TYPE_ID_CLASSIFICATION,
+                expected_future_reducible=set(),
+                expected_must_remain=inventory_mod.EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
+                expected_bucket=inventory_mod.EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
+                required_prefix="src/backends/cs/",
+            ),
+            [],
+        )
+        self.assertEqual(
+            inventory_mod._collect_future_bucket_classification_issues(
+                label="future crossruntime mutation classification",
+                classification=inventory_mod.FUTURE_CROSSRUNTIME_MUTATION_CLASSIFICATION,
+                expected_future_reducible=inventory_mod.EXPECTED_BUCKETS["crossruntime_mutation_helper_residual"],
+                expected_must_remain=set(),
+                expected_bucket=inventory_mod.EXPECTED_BUCKETS["crossruntime_mutation_helper_residual"],
+                required_prefix="src/backends/cs/",
+            ),
+            [],
         )
 
     def test_reduction_order_is_stable_and_complete(self) -> None:
