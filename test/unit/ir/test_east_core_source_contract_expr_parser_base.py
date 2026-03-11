@@ -43,6 +43,7 @@ class EastCoreSourceContractExprParserBaseTest(unittest.TestCase):
 
         self.assertIn("_sh_scan_string_token(", base_text)
         self.assertIn("_sh_make_expr_token(", base_text)
+        self.assertIn('"~"', base_text)
         self.assertIn("raise self._raise_expr_build_error(", base_text)
         self.assertIn("return self.tokens[self.pos]", base_text)
         self.assertIn('self._eat("EOF")', base_text)

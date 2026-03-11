@@ -1562,9 +1562,9 @@ class CppEmitter(
             return ""
         if kind == "UnaryOp":
             op = self.any_to_str(node.get("op"))
-            if op in {"USub", "UAdd"}:
+            if op in {"USub", "UAdd", "Invert"}:
                 operand_t = self.normalize_type_name(self._infer_numeric_expr_type(node.get("operand")))
-                if self._is_numeric_decl_type(operand_t):
+                if self._is_numeric_decl_type(operand_t) or op == "Invert":
                     return operand_t
             return ""
         if kind == "Call":
@@ -3154,6 +3154,16 @@ class CppEmitter(
             return f"-({operand})"
         if op == "UAdd":
             return f"+({operand})"
+        if op == "Invert":
+            operand_t0 = self.get_expr_type(operand_obj)
+            operand_t = operand_t0 if isinstance(operand_t0, str) else ""
+            operand_t_norm = self.normalize_type_name(operand_t)
+            if operand_t_norm not in {"", "unknown", "Any", "object"} and self._has_class_method(operand_t, "__invert__"):
+                owner = f"({operand})"
+                if operand_t_norm in self.ref_classes and not operand.strip().startswith("*"):
+                    return f"{owner}->__invert__()"
+                return f"{owner}.__invert__()"
+            return f"~({operand})"
         return operand
 
     def _render_compare_expr(self, expr: dict[str, Any]) -> str:

@@ -27,6 +27,8 @@ class EastCoreSourceContractExprPrecedenceTest(unittest.TestCase):
         self.assertIn("def _parse_ifexp(", precedence_text)
         self.assertIn("def _parse_compare(", precedence_text)
         self.assertIn("def _parse_unary(", precedence_text)
+        self.assertIn('"Invert"', precedence_text)
+        self.assertIn('{"+", "-", "~"}', precedence_text)
         self.assertIn("from toolchain.ir.core_expr_shell import _ShExprParser", core_text)
         self.assertIn("_ShExprPrecedenceParserMixin,", shell_text)
 
