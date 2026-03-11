@@ -11,6 +11,7 @@ if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
 from _east_core_test_support import CORE_PARSE_CONTEXT_SOURCE_PATH
+from _east_core_test_support import CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_MODULE_PARSER_SOURCE_PATH
@@ -56,10 +57,15 @@ class EastCoreSourceContractParseContextTest(unittest.TestCase):
         module_text = CORE_MODULE_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
         resolution_text = CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         call_annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        named_call_annotation_text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn("import_modules=_SH_IMPORT_MODULES", resolution_text)
         self.assertIn("import_symbols=_SH_IMPORT_SYMBOLS", resolution_text)
-        self.assertIn("import_symbols=_SH_IMPORT_SYMBOLS", call_annotation_text)
+        self.assertIn(
+            "from toolchain.ir.core_expr_named_call_annotation import _ShExprNamedCallAnnotationMixin",
+            call_annotation_text,
+        )
+        self.assertIn("import_symbols=_SH_IMPORT_SYMBOLS", named_call_annotation_text)
         self.assertIn("runtime_abi_arg_modes=_SH_RUNTIME_ABI_ARG_MODES", module_text)
         self.assertIn("runtime_abi_mode_aliases=_SH_RUNTIME_ABI_MODE_ALIASES", module_text)
         self.assertIn("runtime_abi_ret_modes=_SH_RUNTIME_ABI_RET_MODES", module_text)

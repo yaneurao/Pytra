@@ -27,6 +27,15 @@ CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" /
 CORE_ENTRYPOINTS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_entrypoints.py"
 CORE_EXPR_PRECEDENCE_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_precedence.py"
 CORE_CALL_SUFFIX_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_call_suffix.py"
+CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH = (
+    ROOT / "src" / "toolchain" / "ir" / "core_expr_named_call_annotation.py"
+)
+CORE_ATTR_CALL_ANNOTATION_SOURCE_PATH = (
+    ROOT / "src" / "toolchain" / "ir" / "core_expr_attr_call_annotation.py"
+)
+CORE_CALLEE_CALL_ANNOTATION_SOURCE_PATH = (
+    ROOT / "src" / "toolchain" / "ir" / "core_expr_callee_call_annotation.py"
+)
 CORE_ATTR_SUFFIX_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_attr_suffix.py"
 CORE_SUBSCRIPT_SUFFIX_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_subscript_suffix.py"
 CORE_CLASS_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_class_semantics.py"

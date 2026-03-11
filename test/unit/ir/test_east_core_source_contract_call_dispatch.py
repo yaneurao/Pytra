@@ -11,12 +11,14 @@ if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
 from _east_core_test_support import CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH
+from _east_core_test_support import CORE_ATTR_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_CALLEE_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ARG_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_SHELL_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_SUFFIX_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH
+from _east_core_test_support import CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
 
@@ -30,10 +32,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _sh_infer_known_name_call_return_type",
             1,
         )[0]
-        call_helper_text = annotation_text.split("def _annotate_call_expr", 1)[1].split(
-            "def _resolve_named_call_dispatch",
-            1,
-        )[0]
+        call_helper_text = annotation_text.split("def _annotate_call_expr", 1)[1]
         postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('return {\n            "builtin_semantic_tag": "",', helper_text)
@@ -60,10 +59,12 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        named_text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        attr_text = CORE_ATTR_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         callee_text = CORE_CALLEE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn(
-            "class _ShExprCallAnnotationMixin(_ShExprCalleeCallAnnotationMixin):",
+            "class _ShExprCallAnnotationMixin(\n    _ShExprNamedCallAnnotationMixin,\n    _ShExprAttrCallAnnotationMixin,\n    _ShExprCalleeCallAnnotationMixin,\n):",
             annotation_text,
         )
         self.assertIn("class _ShExprCalleeCallAnnotationMixin:", callee_text)
@@ -81,13 +82,23 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", shell_text)
         self.assertIn("_ShExprCallAnnotationMixin", shell_text)
         self.assertIn(
+            "from toolchain.ir.core_expr_named_call_annotation import _ShExprNamedCallAnnotationMixin",
+            annotation_text,
+        )
+        self.assertIn(
+            "from toolchain.ir.core_expr_attr_call_annotation import _ShExprAttrCallAnnotationMixin",
+            annotation_text,
+        )
+        self.assertIn(
             "from toolchain.ir.core_expr_callee_call_annotation import _ShExprCalleeCallAnnotationMixin",
             annotation_text,
         )
-        self.assertIn("def _resolve_named_call_dispatch(", annotation_text)
-        self.assertIn("def _annotate_named_call_expr(", annotation_text)
-        self.assertIn("def _annotate_builtin_named_call_expr(", annotation_text)
-        self.assertIn("def _annotate_runtime_named_call_expr(", annotation_text)
+        self.assertIn("class _ShExprNamedCallAnnotationMixin:", named_text)
+        self.assertIn("def _resolve_named_call_dispatch(", named_text)
+        self.assertIn("def _annotate_named_call_expr(", named_text)
+        self.assertIn("def _annotate_builtin_named_call_expr(", named_text)
+        self.assertIn("def _annotate_runtime_named_call_expr(", named_text)
+        self.assertIn("class _ShExprAttrCallAnnotationMixin:", attr_text)
         self.assertNotIn("def _apply_named_callee_call_annotation(", core_text)
         self.assertNotIn("def _apply_callee_call_annotation(", core_text)
         self.assertNotIn("def _resolve_callee_call_annotation_kind(", core_text)
@@ -95,10 +106,10 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertNotIn("def _annotate_call_expr(", core_text)
 
     def test_core_source_routes_builtin_named_call_annotations_through_parser_helper(self) -> None:
-        text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         named_call_text = annotation_text.split("def _annotate_named_call_expr", 1)[1].split(
             "def _should_use_truthy_runtime_for_bool_ctor",
             1,
@@ -205,10 +216,10 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertNotIn("elem_t = _sh_infer_enumerate_item_type(args)", postfix_text)
 
     def test_core_source_routes_runtime_named_call_annotations_through_parser_helper(self) -> None:
-        text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         named_call_text = annotation_text.split("def _annotate_named_call_expr", 1)[1].split(
             "def _should_use_truthy_runtime_for_bool_ctor",
             1,
@@ -312,7 +323,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
 
     def test_core_source_routes_enumerate_item_type_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertEqual(runtime_text.count("def _sh_infer_enumerate_item_type"), 1)
         helper_text = runtime_text.split("def _sh_infer_enumerate_item_type", 1)[1]
@@ -374,7 +385,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             1,
         )[0]
         build_text = text.split("def _build_call_expr_payload", 1)[1].split(
-            "def _apply_named_call_dispatch",
+            "def _apply_call_expr_annotation",
             1,
         )[0]
         state_text = annotation_text.split("def _resolve_call_expr_annotation_state", 1)[1].split(
@@ -385,10 +396,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _annotate_call_expr",
             1,
         )[0]
-        call_helper_text = annotation_text.split("def _annotate_call_expr", 1)[1].split(
-            "def _apply_named_call_dispatch",
-            1,
-        )[0]
+        call_helper_text = annotation_text.split("def _annotate_call_expr", 1)[1]
         postfix_text = shell_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('kind = str(callee.get("kind", ""))', helper_text)

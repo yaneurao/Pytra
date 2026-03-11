@@ -12,6 +12,7 @@ if str(TEST_DIR) not in sys.path:
 
 from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_SHELL_SOURCE_PATH
+from _east_core_test_support import CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH
 
 
@@ -19,7 +20,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
     def test_core_source_routes_collection_ctor_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_collection_ctor_call_expr", 1)[1].split(
             "def _sh_annotate_anyall_call_expr",
             1,
@@ -51,7 +52,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
     def test_core_source_routes_anyall_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_anyall_call_expr", 1)[1].split(
             "def _sh_annotate_ordchr_call_expr",
             1,
@@ -73,7 +74,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
     def test_core_source_routes_ordchr_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_ordchr_call_expr", 1)[1].split(
             "def _sh_annotate_iterator_builtin_call_expr",
             1,
@@ -96,7 +97,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
     def test_core_source_routes_iterator_builtin_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_iterator_builtin_call_expr", 1)[1].split(
             "def _sh_annotate_open_call_expr",
             1,
@@ -126,7 +127,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
     def test_core_source_routes_open_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_open_call_expr", 1)[1].split(
             "def _sh_annotate_exception_ctor_call_expr",
             1,
@@ -149,7 +150,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
     def test_core_source_routes_exception_ctor_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_exception_ctor_call_expr", 1)[1].split(
             "def _sh_annotate_type_predicate_call_expr",
             1,
@@ -172,7 +173,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
     def test_core_source_routes_type_predicate_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_type_predicate_call_expr", 1)[1].split(
             "def _sh_annotate_fixed_runtime_builtin_call_expr",
             1,
@@ -194,7 +195,7 @@ class EastCoreSourceContractRuntimeBuiltinsTest(unittest.TestCase):
     def test_core_source_routes_fixed_runtime_builtin_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_fixed_runtime_builtin_call_expr", 1)[1].split(
             "def _sh_lookup_named_call_dispatch",
             1,

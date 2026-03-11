@@ -13,6 +13,7 @@ if str(TEST_DIR) not in sys.path:
 
 from _east_core_test_support import CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH
+from _east_core_test_support import CORE_ATTR_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_ATTR_SUFFIX_SOURCE_PATH
 from _east_core_test_support import CORE_AST_BUILDERS_SOURCE_PATH
 from _east_core_test_support import CORE_BUILDER_BASE_SOURCE_PATH
@@ -20,6 +21,7 @@ from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_LOWERED_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH
 from _east_core_test_support import CORE_EXPR_SHELL_SOURCE_PATH
+from _east_core_test_support import CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
 from _east_core_test_support import CORE_SUBSCRIPT_SUFFIX_SOURCE_PATH
@@ -76,9 +78,10 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
 
     def test_core_source_routes_runtime_call_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        text = CORE_ATTR_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_NAMED_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        attr_annotation_text = CORE_ATTR_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_runtime_call_expr", 1)[1].split(
             "def _sh_annotate_resolved_runtime_expr",
             1,
@@ -95,8 +98,8 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _resolve_attr_expr_annotation",
             1,
         )[0]
-        attr_call_text = annotation_text.split("def _annotate_attr_call_expr", 1)[1].split(
-            "def _resolve_attr_expr_annotation",
+        attr_call_text = attr_annotation_text.split("def _annotate_attr_call_expr", 1)[1].split(
+            "def _resolve_attr_expr_owner_state",
             1,
         )[0]
         postfix_text = _postfix_text()
@@ -229,7 +232,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
     def test_core_source_routes_attr_annotations_through_parser_helper(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_ATTR_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         attr_annotation_text = CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         dispatch_text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
         owner_type_text = annotation_text.split("def _owner_expr_resolved_type", 1)[1].split(
@@ -395,7 +398,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
     def test_core_source_routes_subscript_annotations_through_parser_helper(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         shell_text = CORE_EXPR_SHELL_SOURCE_PATH.read_text(encoding="utf-8")
-        annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        annotation_text = CORE_ATTR_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         attr_annotation_text = CORE_ATTR_SUBSCRIPT_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         dispatch_text = CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH.read_text(encoding="utf-8")
         owner_type_text = annotation_text.split("def _owner_expr_resolved_type", 1)[1].split(

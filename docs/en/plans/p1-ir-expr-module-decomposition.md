@@ -49,8 +49,8 @@ Breakdown:
 - [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-01] Inventory the remaining clusters in `core_expr_call_annotation.py` and `core_expr_attr_subscript_suffix.py`, and lock split boundaries as `attr_suffix`, `subscript_suffix`, `named_call`, `attr_call`, `callee_call`, and `shared_state`.
 - [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-02] Fix the rule that TODO / plan progress notes stay compressed at bundle granularity for this task.
 - [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S2-01] Split the `attr suffix` / `subscript suffix` cluster into separate modules and update `core_expr_shell.py` imports.
-- [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S2-02] Split the `named-call` / `attr-call` / `callee-call` annotation cluster into dedicated modules in bundle-sized slices.
-- [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S3-01] Update source-contract tests to the post-split layout and pass representative regressions.
+- [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S2-02] Split the `named-call` / `attr-call` / `callee-call` annotation cluster into dedicated modules in bundle-sized slices.
+- [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S3-01] Update source-contract tests to the post-split layout and pass representative regressions.
 - [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S4-01] Update docs / TODO / archive and move the completed task to archive.
 
 Decision log:
@@ -60,3 +60,5 @@ Decision log:
 - 2026-03-11: Progress notes for this task stay at one-line bundle summaries in TODO; helper-level detail is kept in plan decision logs or commit messages only.
 - 2026-03-11: `S2-01` added `core_expr_attr_suffix.py` / `core_expr_subscript_suffix.py`, reduced `core_expr_attr_subscript_suffix.py` to `_ShExprPostfixSuffixParserMixin` plus a backward-compatible facade, and moved `core_expr_shell.py` to explicit split-mixin imports.
 - 2026-03-11: As the first `S2-02` bundle, the `callee-call` cluster moved into `core_expr_callee_call_annotation.py`. `core_expr_call_annotation.py` now keeps the facade plus shared call-state helpers, while callee-specific return inference and dispatch live in the dedicated mixin.
+- 2026-03-11: Treat `S2-02` as complete once `core_expr_named_call_annotation.py`, `core_expr_attr_call_annotation.py`, and `core_expr_callee_call_annotation.py` exist as the three dedicated bundles. `core_expr_call_annotation.py` is now down to `_build_call_expr_payload` plus the generic call-orchestration facade.
+- 2026-03-11: `S3-01` completed once `_east_core_test_support.py` and the `test_east_core_source_contract_*` suite were aligned to the split module layout and `test_east_core*.py`, `test_prepare_selfhost_source.py`, and `build_selfhost.py` passed together.
