@@ -60,7 +60,7 @@
 - `git diff --check`
 
 分解:
-- [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S1-01] 残る mutation helper / `type_id` caller を `typed_lane_removable` / `object_bridge_required` / `shared_runtime_contract` に棚卸しし、残存理由を固定する。
+- [x] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S1-01] 残る mutation helper / `type_id` caller を `typed_lane_removable` / `object_bridge_required` / `shared_runtime_contract` に棚卸しし、残存理由を固定する。
 - [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S1-02] `py_runtime.h` の target end state を固定し、`mutation helper` と `type_id` の削減順を docs / source guard へ反映する。
 - [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S2-01] C++ emitter の typed lane から残っている `py_append/extend/pop/clear/reverse/sort/set_at` 依存を bundle 単位で upstream へ押し戻す。
 - [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S2-02] `py_runtime.h` の mutation helper を object bridge / compatibility 専用 overload へ縮め、残存 caller を label 付きで固定する。
@@ -72,3 +72,4 @@
 - 2026-03-11: `py_runtime.h` は transitive include 整理と typed dict / typed mutation upstream 後の段階に入り、残タスクの本丸は `mutation helper` と `type_id` shared contract の 2 本柱と整理した。
 - 2026-03-11: このタスクでは header の物理分割を目的にせず、他言語 runtime 実装者の負担軽減につながる契約縮小のみを対象にする。
 - 2026-03-11: `S1` は実装前提の棚卸しと target end state 固定に限定し、helper 単位の小分けではなく bundle 単位で進める。
+- 2026-03-11: `S1-01` として `tools/check_cpp_pyruntime_contract_inventory.py` を追加し、残る `symbol × path` caller を `typed_lane_removable` / `object_bridge_required` / `shared_runtime_contract` の 3 bucket で固定した。native compiler wrapper と generated `json/type_id`、C++ emitter mutation lane の残存理由を未分類再流入なしで監視する。

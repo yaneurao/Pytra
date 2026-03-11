@@ -60,7 +60,7 @@ Verification commands:
 - `git diff --check`
 
 Breakdown:
-- [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S1-01] Inventory remaining mutation-helper and `type_id` callers into `typed_lane_removable`, `object_bridge_required`, and `shared_runtime_contract`, and lock why each group remains.
+- [x] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S1-01] Inventory remaining mutation-helper and `type_id` callers into `typed_lane_removable`, `object_bridge_required`, and `shared_runtime_contract`, and lock why each group remains.
 - [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S1-02] Lock the target end state for `py_runtime.h` and reflect the mutation-helper / `type_id` shrink order in docs and source guards.
 - [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S2-01] Push the remaining `py_append/extend/pop/clear/reverse/sort/set_at` dependencies out of the typed C++ emitter lane in bundle-sized changes.
 - [ ] [ID: P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01-S2-02] Narrow mutation helpers in `py_runtime.h` to object-bridge / compatibility overloads only, and lock residual callers with labels.
@@ -72,3 +72,4 @@ Decision log:
 - 2026-03-11: After transitive-include cleanup and typed-dict / typed-mutation upstreaming, the remaining `py_runtime.h` shrink work was reduced to two pillars: mutation helpers and the shared `type_id` contract.
 - 2026-03-11: This task intentionally excludes physical header splitting and focuses only on contract shrinkage that reduces burden for other-language runtime implementations.
 - 2026-03-11: `S1` is limited to inventory plus target-end-state locking before implementation, and work should proceed in bundle-sized slices rather than helper-by-helper micro-commits.
+- 2026-03-11: As `S1-01`, added `tools/check_cpp_pyruntime_contract_inventory.py` and locked the remaining `symbol × path` callers into three buckets: `typed_lane_removable`, `object_bridge_required`, and `shared_runtime_contract`. This now guards native compiler wrappers, generated `json/type_id`, and the C++ emitter mutation lane against unclassified reintroduction.
