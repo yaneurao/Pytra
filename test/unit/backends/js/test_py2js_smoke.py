@@ -18,15 +18,18 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "test" / "unit" / "backends") not in sys.path:
+    sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
 from backends.js.emitter.js_emitter import load_js_profile, transpile_to_js
-from toolchain.compiler.relative_import_secondwave_smoke_contract import (
-    RELATIVE_IMPORT_SECOND_WAVE_SCENARIOS_V1,
-)
 from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core_entrypoints import convert_path
 from backends.js.emitter.js_emitter import JsEmitter
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
+from relative_import_secondwave_smoke_support import (
+    relative_import_secondwave_expected_needles,
+    transpile_relative_import_project,
+)
 
 
 def load_east(
@@ -63,45 +66,6 @@ def find_fixture_case(stem: str) -> Path:
     return matches[0]
 
 
-def _relative_import_secondwave_scenarios() -> dict[str, dict[str, object]]:
-    return {
-        str(entry["scenario_id"]): entry
-        for entry in RELATIVE_IMPORT_SECOND_WAVE_SCENARIOS_V1
-    }
-
-
-def transpile_relative_import_project_to_js(scenario_id: str) -> str:
-    scenario = _relative_import_secondwave_scenarios()[scenario_id]
-    with tempfile.TemporaryDirectory() as td:
-        td_path = Path(td)
-        entry_path = td_path / str(scenario["entry_rel"])
-        helper_path = td_path / str(scenario["helper_rel"])
-        entry_path.parent.mkdir(parents=True, exist_ok=True)
-        helper_path.parent.mkdir(parents=True, exist_ok=True)
-        for pkg_dir in {helper_path.parent, entry_path.parent}:
-            current = pkg_dir
-            while current != td_path and current.is_relative_to(td_path):
-                init_py = current / "__init__.py"
-                if not init_py.exists():
-                    init_py.write_text("", encoding="utf-8")
-                current = current.parent
-        helper_path.write_text("def f() -> int:\n    return 7\n", encoding="utf-8")
-        entry_path.write_text(
-            f"{scenario['import_form']}\nprint({scenario['representative_expr']})\n",
-            encoding="utf-8",
-        )
-        out = td_path / "main.js"
-        proc = subprocess.run(
-            ["python3", str(ROOT / "src" / "py2x.py"), str(entry_path), "--target", "js", "-o", str(out)],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-        )
-        if proc.returncode != 0:
-            raise AssertionError(proc.stderr)
-        return out.read_text(encoding="utf-8")
-
-
 class Py2JsSmokeTest(unittest.TestCase):
     def test_load_js_profile_contains_core_sections(self) -> None:
         profile = load_js_profile()
@@ -130,20 +94,10 @@ class Py2JsSmokeTest(unittest.TestCase):
         self.assertIn("~y", js)
 
     def test_cli_relative_import_secondwave_scenarios_transpile_for_js(self) -> None:
-        expectations = {
-            "parent_module_alias": (
-                'import * as h from "./helper.js";',
-                "console.log(h.f());",
-            ),
-            "parent_symbol_alias": (
-                'import { f as g } from "./helper.js";',
-                "console.log(g());",
-            ),
-        }
-        for scenario_id, expected in expectations.items():
+        for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
             with self.subTest(scenario_id=scenario_id):
-                js = transpile_relative_import_project_to_js(scenario_id)
-                for needle in expected:
+                js = transpile_relative_import_project(ROOT, scenario_id, "js")
+                for needle in relative_import_secondwave_expected_needles(scenario_id):
                     self.assertIn(needle, js)
 
     def test_for_core_static_range_plan_is_emitted(self) -> None:

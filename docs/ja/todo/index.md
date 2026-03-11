@@ -37,10 +37,10 @@
 
 1. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01] `js/ts` の relative import representative transpile smoke を lock し、coverage inventory / docs handoff を次 baseline に更新する。
 2. [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S1-01] live plan / TODO と `js/ts` second-wave smoke contract を固定した。
-3. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-01] `py2js` smoke に representative relative import transpile case を追加する。
+3. [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-01] `py2js` smoke に representative relative import transpile case を追加した。
 4. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-02] `py2ts` smoke に representative relative import transpile case を追加する。
 5. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S3-01] coverage inventory / backend parity docs / handoff metadata を `js/ts` baseline へ同期して close-ready にする。
-- 進捗メモ: `js/ts` second-wave smoke contract / checker / handoff は live 化済みで、残りは backend smoke と coverage baseline の固定だけになった。
+- 進捗メモ: `js` は contract 駆動の representative transpile smoke を lock 済みで、残りは `ts` smoke と `js/ts` coverage baseline の同期だけになった。
 
 ### P1: relative import second-wave rollout planning
 
