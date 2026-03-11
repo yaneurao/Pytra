@@ -31,4 +31,9 @@
 
 ## 未完了タスク
 
-現在、未完了タスクはありません。
+### P1: 大型 expr split module を cluster 単位で分割する
+
+文脈: [docs/ja/plans/p1-ir-expr-module-decomposition.md](../plans/p1-ir-expr-module-decomposition.md)
+
+1. [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01] `toolchain/ir` の大型 expr split module を cluster 単位で分割し、`attr/subscript/call` の責務境界を明確にする。
+2. [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-01] `core_expr_call_annotation.py` / `core_expr_attr_subscript_suffix.py` の残 cluster を棚卸しし、split boundary を固定する。

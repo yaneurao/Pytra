@@ -31,4 +31,9 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-There are currently no open tasks.
+### P1: Decompose large expression split modules by cluster
+
+Context: [docs/en/plans/p1-ir-expr-module-decomposition.md](../plans/p1-ir-expr-module-decomposition.md)
+
+1. [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01] Decompose the large expression-side split modules under `toolchain/ir` by cluster and make the `attr/subscript/call` responsibility boundaries explicit.
+2. [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-01] Inventory the remaining clusters in `core_expr_call_annotation.py` and `core_expr_attr_subscript_suffix.py`, then lock the split boundaries.
