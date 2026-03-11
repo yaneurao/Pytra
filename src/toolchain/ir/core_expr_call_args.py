@@ -9,6 +9,7 @@ from toolchain.ir.core_entrypoints import _make_east_build_error
 from toolchain.ir.core_ast_builders import _sh_make_comp_generator
 from toolchain.ir.core_ast_builders import _sh_make_keyword_arg
 from toolchain.ir.core_ast_builders import _sh_make_list_comp_expr
+from toolchain.ir.core_ast_builders import _sh_make_starred_expr
 from toolchain.ir.core_builder_base import _sh_make_name_expr
 from toolchain.ir.core_builder_base import _sh_make_tuple_expr
 from toolchain.ir.core_stmt_text_semantics import _sh_split_top_commas
@@ -268,6 +269,8 @@ class _ShExprCallArgParserMixin:
         """呼び出し引数式を解析し、必要なら generator 引数へ lower する。"""
         from toolchain.ir.core_expr_shell import _sh_parse_expr
 
+        if self._resolve_call_arg_expr_is_starred():
+            return self._parse_starred_call_arg_expr()
         first = self._parse_ifexp()
         if not (self._cur()["k"] == "NAME" and self._cur()["v"] == "for"):
             return first
@@ -345,6 +348,24 @@ class _ShExprCallArgParserMixin:
             generators,
             repr_text=self._src_slice(s, e),
             lowered_kind="GeneratorArg",
+        )
+
+    def _resolve_call_arg_expr_is_starred(self) -> bool:
+        """call argument expr の starred 開始判定を helper へ寄せる。"""
+        return self._cur()["k"] == "*"
+
+    def _parse_starred_call_arg_expr(self) -> dict[str, Any]:
+        """call argument 位置の `*expr` を `Starred` として保持する。"""
+        star_tok = self._eat("*")
+        value_expr = self._parse_ifexp()
+        end_col = int(value_expr.get("source_span", {}).get("end_col", star_tok["e"]))
+        source_span = self._node_span(star_tok["s"], end_col - self.col_base)
+        repr_text = self._src_slice(star_tok["s"], end_col - self.col_base)
+        return _sh_make_starred_expr(
+            source_span,
+            value_expr,
+            resolved_type=str(value_expr.get("resolved_type", "unknown")),
+            repr_text=repr_text,
         )
 
     def _parse_call_arg_entry(

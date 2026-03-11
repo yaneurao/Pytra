@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-11 / P0-STARRED-CALL-TUPLE-UNPACK-01](../plans/archive/20260311-p0-starred-call-tuple-unpack-support.md)
 - [2026-03-11 / P1-IMPORT-GRAPH-ISSUE-STRUCTURE-01](../plans/archive/20260311-p1-import-graph-issue-structure.md)
 - [2026-03-11 / P0-RELATIVE-IMPORT-PACKAGE-ROOT-01](../plans/archive/20260311-p0-relative-import-package-root-01.md)
 - [2026-03-11 / P0-RELATIVE-IMPORT-SUPPORT-01](../plans/archive/20260311-p0-relative-import-support.md)
@@ -117,7 +118,7 @@
 
 ## 日付別リンク
 
-- [2026-03-11](20260311.md)（21 セクション）
+- [2026-03-11](20260311.md)（22 セクション）
 - [2026-03-09](20260309.md)（29 セクション）
 - [2026-03-08](20260308.md)（31 セクション）
 - [2026-03-07](20260307.md)（6 セクション）

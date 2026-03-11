@@ -46,10 +46,12 @@
 
 決定ログ:
 - 2026-03-11: v1 は `typed fixed tuple` の call unpack に限定する。parser は `Starred` node を保持し、backend special case ではなく EAST2->EAST3 lowering で positional arg 展開する。
+- 2026-03-11: representative smoke は `transpile success + raw "*receiver" leak 不在` を canonical contract にし、空ファイルを返す backend lane では source text 非空を必須にしない。
+- 2026-03-11: representative regression で露出した `_const_int_node` import 漏れを修正し、parser / lowering / all-target transpile / C++ runtime まで通した状態で archive へ移す。
 
 ## 分解
 
-- [ ] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S1-01] `Starred` の parser/AST contract、representative fixture、unsupported lane を plan/TODO に固定する。
-- [ ] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S2-01] self-hosted parser と AST builder に call-arg `Starred` support を追加し、parser behavior test を通す。
-- [ ] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S2-02] EAST2->EAST3 lowering で fixed tuple starred arg を positional arg 展開し、representative lowering regression を追加する。
-- [ ] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S3-01] representative fixture と all-target smoke / C++ runtime regression、docs を更新して閉じる。
+- [x] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S1-01] `Starred` の parser/AST contract、representative fixture、unsupported lane を plan/TODO に固定する。
+- [x] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S2-01] self-hosted parser と AST builder に call-arg `Starred` support を追加し、parser behavior test を通す。
+- [x] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S2-02] EAST2->EAST3 lowering で fixed tuple starred arg を positional arg 展開し、representative lowering regression を追加する。
+- [x] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S3-01] representative fixture と all-target smoke / C++ runtime regression、docs を更新して閉じる。

@@ -31,5 +31,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01] fixed tuple の starred call unpack を全言語で通す。文脈: `docs/ja/plans/p0-starred-call-tuple-unpack-support.md`
-2. [ ] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01] self-hosted parser syntax error に file:line:col を必ず付ける。文脈: `docs/ja/plans/p0-selfhost-syntax-diagnostic-filepath.md`
+1. [ ] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01] self-hosted parser syntax error に file:line:col を必ず付ける。文脈: `docs/ja/plans/p0-selfhost-syntax-diagnostic-filepath.md`

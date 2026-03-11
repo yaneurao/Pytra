@@ -46,10 +46,12 @@ Verification commands:
 
 Decision log:
 - 2026-03-11: v1 is intentionally limited to typed fixed-tuple call unpack. The parser preserves `Starred`, and EAST2->EAST3 lowering expands it into positional args instead of relying on backend-specific lowering.
+- 2026-03-11: The representative smoke contract is `transpile success + no raw "*receiver" leak`; backend lanes that intentionally emit an empty file are not required to include non-empty source text.
+- 2026-03-11: A representative regression exposed a missing `_const_int_node` import; the task was archived only after parser, lowering, all-target transpile, and C++ runtime regressions all passed again.
 
 ## Breakdown
 
-- [ ] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S1-01] Lock the parser/AST contract for `Starred`, the representative fixture, and the unsupported lanes in the plan/TODO.
-- [ ] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S2-01] Add self-hosted parser and AST-builder support for call-arg `Starred`, then pass parser-behavior regressions.
-- [ ] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S2-02] Expand fixed-tuple starred args into positional args during EAST2->EAST3 lowering and add representative lowering regressions.
-- [ ] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S3-01] Refresh the representative fixture, all-target smoke, C++ runtime regression, and docs, then close the task.
+- [x] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S1-01] Lock the parser/AST contract for `Starred`, the representative fixture, and the unsupported lanes in the plan/TODO.
+- [x] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S2-01] Add self-hosted parser and AST-builder support for call-arg `Starred`, then pass parser-behavior regressions.
+- [x] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S2-02] Expand fixed-tuple starred args into positional args during EAST2->EAST3 lowering and add representative lowering regressions.
+- [x] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01-S3-01] Refresh the representative fixture, all-target smoke, C++ runtime regression, and docs, then close the task.

@@ -31,5 +31,4 @@ Last updated: 2026-03-11
 
 ## Unfinished Tasks
 
-1. [ ] [ID: P0-STARRED-CALL-TUPLE-UNPACK-01] Support fixed-tuple starred call unpack across targets. Context: `docs/en/plans/p0-starred-call-tuple-unpack-support.md`
-2. [ ] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01] Always attach file:line:col to self-hosted parser syntax errors. Context: `docs/en/plans/p0-selfhost-syntax-diagnostic-filepath.md`
+1. [ ] [ID: P0-SELFHOST-SYNTAX-DIAGNOSTIC-FILEPATH-01] Always attach file:line:col to self-hosted parser syntax errors. Context: `docs/en/plans/p0-selfhost-syntax-diagnostic-filepath.md`
