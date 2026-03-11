@@ -446,7 +446,15 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("from toolchain.ir.core_expr_call_args import _ShExprCallArgParserMixin", shell_text)
         self.assertIn("from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin", shell_text)
         self.assertIn(
-            "from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprAttrSubscriptSuffixParserMixin",
+            "from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprPostfixSuffixParserMixin",
+            shell_text,
+        )
+        self.assertIn(
+            "from toolchain.ir.core_expr_attr_suffix import _ShExprAttrSuffixParserMixin",
+            shell_text,
+        )
+        self.assertIn(
+            "from toolchain.ir.core_expr_subscript_suffix import _ShExprSubscriptSuffixParserMixin",
             shell_text,
         )
         self.assertIn("class _ShExprParser(", shell_text)
@@ -494,7 +502,15 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("return self._annotate_call_expr(", text)
         self.assertIn("from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin", shell_text)
         self.assertIn(
-            "from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprAttrSubscriptSuffixParserMixin",
+            "from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprPostfixSuffixParserMixin",
+            shell_text,
+        )
+        self.assertIn(
+            "from toolchain.ir.core_expr_attr_suffix import _ShExprAttrSuffixParserMixin",
+            shell_text,
+        )
+        self.assertIn(
+            "from toolchain.ir.core_expr_subscript_suffix import _ShExprSubscriptSuffixParserMixin",
             shell_text,
         )
         self.assertIn("class _ShExprParser(", shell_text)
@@ -517,6 +533,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn('if tok_kind == ".":', helper_text)
         self.assertIn('if tok_kind == "(":', helper_text)
         self.assertIn('if tok_kind == "[":', helper_text)
+        self.assertIn("class _ShExprPostfixSuffixParserMixin:", text)
         self.assertIn("return None", helper_text)
         self.assertIn('tok_kind = str(self._cur()["k"])', text.split("def _parse_postfix_suffix", 1)[1].split("def _apply_postfix_suffix_kind", 1)[0])
         self.assertIn("return self._apply_postfix_suffix_kind(", text.split("def _parse_postfix_suffix", 1)[1].split("def _apply_postfix_suffix_kind", 1)[0])

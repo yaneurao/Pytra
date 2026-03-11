@@ -8,7 +8,8 @@ from typing import Any
 from toolchain.ir.core_builder_base import _sh_span
 from toolchain.ir.core_entrypoints import _make_east_build_error
 from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin
-from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprAttrSubscriptSuffixParserMixin
+from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprPostfixSuffixParserMixin
+from toolchain.ir.core_expr_attr_suffix import _ShExprAttrSuffixParserMixin
 from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin
 from toolchain.ir.core_expr_call_args import _ShExprCallArgParserMixin
 from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin
@@ -18,6 +19,7 @@ from toolchain.ir.core_expr_precedence import _ShExprPrecedenceParserMixin
 from toolchain.ir.core_expr_primary import _make_bin_impl
 from toolchain.ir.core_expr_primary import _ShExprPrimaryParserMixin
 from toolchain.ir.core_expr_resolution_semantics import _ShExprResolutionSemanticsMixin
+from toolchain.ir.core_expr_subscript_suffix import _ShExprSubscriptSuffixParserMixin
 
 
 class _ShExprParser(
@@ -27,7 +29,9 @@ class _ShExprParser(
     _ShExprResolutionSemanticsMixin,
     _ShExprCallArgParserMixin,
     _ShExprCallSuffixParserMixin,
-    _ShExprAttrSubscriptSuffixParserMixin,
+    _ShExprAttrSuffixParserMixin,
+    _ShExprSubscriptSuffixParserMixin,
+    _ShExprPostfixSuffixParserMixin,
     _ShExprAttrSubscriptAnnotationMixin,
     _ShExprCallAnnotationMixin,
 ):

@@ -48,7 +48,7 @@ Checks:
 Breakdown:
 - [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-01] Inventory the remaining clusters in `core_expr_call_annotation.py` and `core_expr_attr_subscript_suffix.py`, and lock split boundaries as `attr_suffix`, `subscript_suffix`, `named_call`, `attr_call`, `callee_call`, and `shared_state`.
 - [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S1-02] Fix the rule that TODO / plan progress notes stay compressed at bundle granularity for this task.
-- [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S2-01] Split the `attr suffix` / `subscript suffix` cluster into separate modules and update `core_expr_shell.py` imports.
+- [x] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S2-01] Split the `attr suffix` / `subscript suffix` cluster into separate modules and update `core_expr_shell.py` imports.
 - [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S2-02] Split the `named-call` / `attr-call` / `callee-call` annotation cluster into dedicated modules in bundle-sized slices.
 - [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S3-01] Update source-contract tests to the post-split layout and pass representative regressions.
 - [ ] [ID: P1-IR-EXPR-MODULE-DECOMPOSITION-01-S4-01] Update docs / TODO / archive and move the completed task to archive.
@@ -58,3 +58,4 @@ Decision log:
 - 2026-03-11: `core_expr_attr_subscript_suffix.py` will split into `attr_suffix` / `subscript_suffix` / `shared_postfix_orchestration`. The shared layer keeps only `_resolve_postfix_span_repr` and postfix dispatch.
 - 2026-03-11: `core_expr_call_annotation.py` will split into `named_call` / `attr_call` / `callee_call` / `shared_state_orchestration`. The shared layer keeps call payload building, generic return inference, optional payload coalescing, and lookup facades.
 - 2026-03-11: Progress notes for this task stay at one-line bundle summaries in TODO; helper-level detail is kept in plan decision logs or commit messages only.
+- 2026-03-11: `S2-01` added `core_expr_attr_suffix.py` / `core_expr_subscript_suffix.py`, reduced `core_expr_attr_subscript_suffix.py` to `_ShExprPostfixSuffixParserMixin` plus a backward-compatible facade, and moved `core_expr_shell.py` to explicit split-mixin imports.
