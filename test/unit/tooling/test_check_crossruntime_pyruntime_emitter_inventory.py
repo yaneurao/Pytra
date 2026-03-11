@@ -220,6 +220,35 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             }.issubset(required)
         )
 
+    def test_future_followup_baseline_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.FUTURE_FOLLOWUP_TASK_ID,
+            "P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01",
+        )
+        self.assertEqual(
+            inventory_mod.FUTURE_FOLLOWUP_PLAN_PATH,
+            "docs/ja/plans/p4-crossruntime-pyruntime-emitter-future-shrink.md",
+        )
+        self.assertEqual(
+            inventory_mod.FUTURE_FOLLOWUP_BASELINE_BUCKETS,
+            (
+                "cpp_emitter_shared_type_id_residual",
+                "rs_emitter_shared_type_id_residual",
+                "cs_emitter_shared_type_id_residual",
+                "crossruntime_mutation_helper_residual",
+            ),
+        )
+        self.assertEqual(
+            inventory_mod.FUTURE_REDUCTION_ORDER,
+            [
+                "cpp_emitter_shared_type_id_residual",
+                "rs_emitter_shared_type_id_residual",
+                "cs_emitter_shared_type_id_residual",
+                "crossruntime_mutation_helper_residual",
+            ],
+        )
+        self.assertEqual(inventory_mod._collect_future_followup_issues(), [])
+
     def test_reduction_order_is_stable_and_complete(self) -> None:
         self.assertEqual(
             inventory_mod.REDUCTION_ORDER,

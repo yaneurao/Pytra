@@ -268,6 +268,23 @@ REPRESENTATIVE_LANE_MANIFEST = {
     },
 }
 
+FUTURE_FOLLOWUP_TASK_ID = "P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01"
+FUTURE_FOLLOWUP_PLAN_PATH = "docs/ja/plans/p4-crossruntime-pyruntime-emitter-future-shrink.md"
+
+FUTURE_FOLLOWUP_BASELINE_BUCKETS = (
+    "cpp_emitter_shared_type_id_residual",
+    "rs_emitter_shared_type_id_residual",
+    "cs_emitter_shared_type_id_residual",
+    "crossruntime_mutation_helper_residual",
+)
+
+FUTURE_REDUCTION_ORDER = [
+    "cpp_emitter_shared_type_id_residual",
+    "rs_emitter_shared_type_id_residual",
+    "cs_emitter_shared_type_id_residual",
+    "crossruntime_mutation_helper_residual",
+]
+
 
 def _iter_target_files() -> list[Path]:
     return [ROOT / rel for rel in sorted(TRACKED_PATHS)]
@@ -406,6 +423,29 @@ def _collect_active_reduction_bundle_issues() -> list[str]:
     return issues
 
 
+def _collect_future_followup_issues() -> list[str]:
+    issues: list[str] = []
+    if not (ROOT / FUTURE_FOLLOWUP_PLAN_PATH).exists():
+        issues.append(f"future emitter shrink plan missing: {FUTURE_FOLLOWUP_PLAN_PATH}")
+    if FUTURE_FOLLOWUP_BASELINE_BUCKETS != (
+        "cpp_emitter_shared_type_id_residual",
+        "rs_emitter_shared_type_id_residual",
+        "cs_emitter_shared_type_id_residual",
+        "crossruntime_mutation_helper_residual",
+    ):
+        issues.append("future follow-up baseline bucket order drifted")
+    if FUTURE_REDUCTION_ORDER != [
+        "cpp_emitter_shared_type_id_residual",
+        "rs_emitter_shared_type_id_residual",
+        "cs_emitter_shared_type_id_residual",
+        "crossruntime_mutation_helper_residual",
+    ]:
+        issues.append("future reduction order drifted")
+    if set(FUTURE_FOLLOWUP_BASELINE_BUCKETS) - set(EXPECTED_BUCKETS.keys()):
+        issues.append("future follow-up baseline references unknown emitter residual buckets")
+    return issues
+
+
 def _collect_inventory_issues() -> list[str]:
     observed = _collect_observed_pairs()
     expected = _collect_expected_pairs()
@@ -414,6 +454,7 @@ def _collect_inventory_issues() -> list[str]:
     issues.extend(_collect_source_guard_issues())
     issues.extend(_collect_representative_lane_issues())
     issues.extend(_collect_active_reduction_bundle_issues())
+    issues.extend(_collect_future_followup_issues())
     if set(TARGET_END_STATE.keys()) != set(EXPECTED_BUCKETS.keys()):
         issues.append("target end state keys do not match expected buckets")
     if list(dict.fromkeys(REDUCTION_ORDER)) != REDUCTION_ORDER:

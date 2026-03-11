@@ -31,4 +31,9 @@
 
 ## 未完了タスク
 
-現時点で未完了タスクはありません。
+1. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01] `py_runtime.h` のさらなる縮小に備え、C++ / Rust / C# emitter に残る intentional seam の future follow-up を整理する。
+2. [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S1-01] current residual baseline と future bundle order を live plan / TODO / inventory tool に固定した。
+3. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-01] C++ emitter の shared type_id thin seam を棚卸しし、future reduction 対象と must-remain seam を分ける。
+4. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S2-02] Rust / C# shared thin seam と C# bytearray compat seam を棚卸しし、future reduction order を固定する。
+5. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S3-01] representative smoke / source guard / inventory drift guard を future-shrink baseline に合わせて更新する。
+6. [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01-S4-01] future emitter shrink の handoff 条件を次段 task に接続する。
