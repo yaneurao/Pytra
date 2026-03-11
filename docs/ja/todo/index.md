@@ -30,3 +30,14 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
+
+### P2: relative import backend coverage contract
+
+文脈: [p2-relative-import-backend-coverage.md](../plans/p2-relative-import-backend-coverage.md)
+
+1. [ ] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01] relative import の current verification coverage を backend 別に固定し、non-C++ rollout の baseline を整える。
+2. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S1-01] live plan / TODO と representative backend coverage taxonomy を固定した。
+3. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-01] backend coverage inventory / checker / unit test を追加した。
+4. [ ] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-02] docs / support-matrix handoff wording を current coverage baseline に同期する。
+
+- 進捗メモ: current relative import coverage は `cpp=build_run_locked`、non-C++ backend は `not_locked` として inventory / checker で固定した。
