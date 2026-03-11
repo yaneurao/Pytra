@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from toolchain.ir.east1 import normalize_east1_root_document
+from toolchain.frontends.relative_import_normalization import resolve_import_graph_entry_root
+from toolchain.frontends.relative_import_normalization import resolve_relative_module_name_for_graph
 from toolchain.frontends.transpile_cli import append_unique_non_empty
 from toolchain.frontends.transpile_cli import append_unique_graph_issue_entry
 from toolchain.frontends.transpile_cli import build_module_east_map_from_analysis as build_module_east_map_from_analysis_core
@@ -18,8 +20,6 @@ from toolchain.frontends.transpile_cli import module_name_from_path_for_graph
 from toolchain.frontends.transpile_cli import path_key_for_graph
 from toolchain.frontends.transpile_cli import path_parent_text
 from toolchain.frontends.transpile_cli import rel_disp_for_graph
-from toolchain.frontends.transpile_cli import resolve_import_graph_entry_root
-from toolchain.frontends.transpile_cli import resolve_relative_module_name_for_graph
 from toolchain.frontends.transpile_cli import resolve_module_name_for_graph
 from pytra.std.pathlib import Path
 from typing import Any

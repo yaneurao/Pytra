@@ -42,10 +42,11 @@ Verification commands:
 - `git diff --check`
 
 Breakdown:
-- [ ] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01-S1-01] Make the active plan / TODO live and fix the split boundary plus verification lane.
-- [ ] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01-S2-01] Split package-root/path helpers and relative import normalization helpers into dedicated frontend modules, and add focused tests.
+- [x] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01-S1-01] Make the active plan / TODO live and fix the split boundary plus verification lane.
+- [x] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01-S2-01] Split package-root/path helpers and relative import normalization helpers into dedicated frontend modules, and add focused tests.
 - [ ] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01-S2-02] Retarget EAST rewrite / import-graph callers to the split modules and align source contracts plus selfhost regressions.
 - [ ] [ID: P1-RELATIVE-IMPORT-NORMALIZATION-DECOMPOSITION-01-S3-01] Lock the residual helper layout in source contracts and docs so the plan can be cleanly closed.
 
 Decision log:
 - 2026-03-12: After closing out the relative import support contract, the remaining normalization cluster inside `transpile_cli.py` was promoted as the next focused decomposition target.
+- 2026-03-12: In `S2-01`, `relative_import_normalization.py` became the dedicated module while `transpile_cli.py` stayed as a thin re-export surface. Focused common tests lock package-root inference, bare-parent import, missing/root-escape, and EAST metadata rewrite.
