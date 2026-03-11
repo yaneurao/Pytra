@@ -16,6 +16,9 @@ class CheckBackendFeatureContractInventoryTest(unittest.TestCase):
     def test_fail_closed_policy_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_fail_closed_policy_issues(), [])
 
+    def test_acceptance_rule_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_acceptance_rule_issues(), [])
+
     def test_categories_have_stable_order(self) -> None:
         self.assertEqual(inventory_mod.CATEGORY_ORDER, ("syntax", "builtin", "stdlib"))
 
@@ -56,6 +59,19 @@ class CheckBackendFeatureContractInventoryTest(unittest.TestCase):
                 "comment_stub_fallback",
                 "empty_output_fallback",
             ),
+        )
+
+    def test_new_feature_acceptance_rules_are_fixed(self) -> None:
+        self.assertEqual(
+            set(inventory_mod.NEW_FEATURE_ACCEPTANCE_RULES.keys()),
+            {
+                "feature_id_required",
+                "inventory_or_followup_required",
+                "cxx_only_not_complete",
+                "noncpp_state_required",
+                "unsupported_lanes_fail_closed",
+                "docs_mirror_required",
+            },
         )
 
     def test_representative_inventory_contains_all_categories(self) -> None:
