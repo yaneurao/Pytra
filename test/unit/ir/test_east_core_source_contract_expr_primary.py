@@ -29,6 +29,8 @@ class EastCoreSourceContractExprPrimaryTest(unittest.TestCase):
         self.assertIn("from toolchain.ir.core_expr_shell import _ShExprParser", core_text)
         self.assertIn("from toolchain.ir.core_expr_primary import _make_bin_impl", shell_text)
         self.assertIn("from toolchain.ir.core_expr_primary import _ShExprPrimaryParserMixin", shell_text)
+        self.assertIn("from toolchain.ir.core_numeric_types import FLOAT_TYPES", primary_text)
+        self.assertIn("from toolchain.ir.core_numeric_types import INT_TYPES", primary_text)
 
     def test_core_wrappers_delegate_primary_cluster_to_split_module(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
@@ -53,6 +55,8 @@ class EastCoreSourceContractExprPrimaryTest(unittest.TestCase):
         self.assertIn("_sh_make_dict_comp_expr(", primary_text)
         self.assertIn('message=f"self_hosted parser cannot parse expression token:', primary_text)
         self.assertIn("from toolchain.ir.core_expr_shell import _sh_parse_expr", primary_text)
+        self.assertNotIn('INT_TYPES = {', primary_text)
+        self.assertNotIn('FLOAT_TYPES = {"float32", "float64"}', primary_text)
 
 
 if __name__ == "__main__":

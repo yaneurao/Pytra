@@ -47,10 +47,10 @@ Validation commands:
 Breakdown:
 - [x] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S1-01] Inventory `toolchain.ir.core` importers and classify them as `public_entrypoint`, `internal_split_module`, `tests_only`, or `bridge_compat`.
 - [x] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S1-02] Define the public surface that remains on `toolchain.ir.core` and the policy that forbids internal imports through it.
-- [ ] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-01] Move representative internal split-module lanes onto dedicated-module imports and reduce `core.py`-mediated dependencies.
-- [ ] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-02] Align tests and helper lanes to the public surface or dedicated modules as appropriate.
-- [ ] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S3-01] Add an import-surface guard for `toolchain.ir.core` so internal reintroduction fails fast.
-- [ ] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S4-01] Re-run representative regressions, confirm non-regression, and archive the task.
+- [x] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-01] Move representative internal split-module lanes onto dedicated-module imports and reduce `core.py`-mediated dependencies.
+- [x] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-02] Align tests and helper lanes to the public surface or dedicated modules as appropriate.
+- [x] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S3-01] Add an import-surface guard for `toolchain.ir.core` so internal reintroduction fails fast.
+- [x] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S4-01] Re-run representative regressions, confirm non-regression, and archive the task.
 
 Decision log:
 - 2026-03-11: After `P1-IR-CORE-DECOMPOSITION-01`, `core.py` still carried 157 `toolchain.ir.*` imports and retained several `from toolchain.ir.core import ...` internal users, so this task was opened.
@@ -60,3 +60,5 @@ Decision log:
 - 2026-03-11: As the first representative `S2-01` bundle, `core_entrypoints`, `core_string_semantics`, `core_expr_primary`, `core_expr_lowered`, and `core_expr_call_args` now import `core_module_parser` / `core_expr_shell` directly instead of routing through `toolchain.ir.core`.
 - 2026-03-11: In the helper / bridge slice of `S2-02`, `INT_TYPES/FLOAT_TYPES` were moved into `core_numeric_types.py`, and `east2_to_human_repr` plus `east_parts.__init__` stopped importing them from `toolchain.ir.core`.
 - 2026-03-11: `core_stmt_parser` and `core_module_parser` have a wider dependency set, so they now depend on new `core_stmt_parser_support` / `core_module_parser_support` modules rather than `toolchain.ir.core`. This removes direct `from toolchain.ir.core import (...)` usage under `src/toolchain/ir`; only tests, public entrypoints, and bridge-compat lanes remain.
+- 2026-03-11: Added `test_east_core_source_contract_import_surface.py` to fail fast if `toolchain.ir.core` is reintroduced under `src/toolchain/ir`, and to lock remaining source-side facade imports to the public surface used by `frontends/transpile_cli.py`.
+- 2026-03-11: Re-ran representative regressions (`test_east_core*.py`, `test_prepare_selfhost_source.py`, `tools/build_selfhost.py`, `check_transpiler_version_gate.py`, `run_regen_on_version_bump.py --dry-run`) and judged the thin-facade import surface stable enough to archive.

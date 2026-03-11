@@ -16,6 +16,7 @@ Last updated: 2026-03-11
 ## Completed Plan Archive
 
 - [2026-03-11 / P1-IR-CORE-DECOMPOSITION-01](../plans/archive/20260311-p1-ir-core-decomposition.md)
+- [2026-03-11 / P1-IR-CORE-IMPORT-SURFACE-01](../plans/archive/20260311-p1-ir-core-import-surface-pruning.md)
 - [2026-03-11 / P2-EAST-CORE-MODULARIZATION-01](../plans/archive/20260311-p2-east-core-modularization.md)
 - [2026-03-11 / P5-NOMINAL-ADT-ROLLOUT-01](../plans/archive/20260311-p5-nominal-adt-language-rollout.md)
 - [2026-03-11 / P4-BACKEND-REGISTRY-SELFHOST-PARITY-01](../plans/archive/20260311-p4-backend-registry-selfhost-parity-hardening.md)

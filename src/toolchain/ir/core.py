@@ -31,6 +31,8 @@ from toolchain.ir.core_entrypoints import _make_east_build_error
 from toolchain.ir.core_entrypoints import convert_path
 from toolchain.ir.core_entrypoints import convert_source_to_east
 from toolchain.ir.core_entrypoints import convert_source_to_east_with_backend
+from toolchain.ir.core_numeric_types import FLOAT_TYPES
+from toolchain.ir.core_numeric_types import INT_TYPES
 from toolchain.ir.core_ast_builders import _sh_block_end_span
 from toolchain.ir.core_ast_builders import _sh_make_arg_node
 from toolchain.ir.core_ast_builders import _sh_make_binop_expr
@@ -201,17 +203,6 @@ __all__ = [*CORE_PUBLIC_FACADE_EXPORTS, *CORE_BRIDGE_COMPAT_EXPORTS]
 
 # `BorrowKind` は実体のない型エイリアス用途のみなので、
 # selfhost 生成コードでは値として生成しない。
-INT_TYPES = {
-    "int8",
-    "uint8",
-    "int16",
-    "uint16",
-    "int32",
-    "uint32",
-    "int64",
-    "uint64",
-}
-FLOAT_TYPES = {"float32", "float64"}
 
 def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
     """インデントブロックを文単位で解析し、EAST 文リストを返す。"""

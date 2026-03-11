@@ -20,21 +20,11 @@ from toolchain.ir.core_ast_builders import _sh_make_set_expr
 from toolchain.ir.core_builder_base import _sh_make_name_expr
 from toolchain.ir.core_builder_base import _sh_make_tuple_expr
 from toolchain.ir.core_entrypoints import _make_east_build_error
+from toolchain.ir.core_numeric_types import FLOAT_TYPES
+from toolchain.ir.core_numeric_types import INT_TYPES
 from toolchain.ir.core_stmt_text_semantics import _sh_find_top_char
 from toolchain.ir.core_string_semantics import _sh_append_fstring_literal
 from toolchain.ir.core_string_semantics import _sh_decode_py_string_body
-
-INT_TYPES = {
-    "int8",
-    "uint8",
-    "int16",
-    "uint16",
-    "int32",
-    "uint32",
-    "int64",
-    "uint64",
-}
-FLOAT_TYPES = {"float32", "float64"}
 
 
 def _reparse_expr_with_context(parser: Any, expr_text: str, *, col_base: int) -> dict[str, Any]:

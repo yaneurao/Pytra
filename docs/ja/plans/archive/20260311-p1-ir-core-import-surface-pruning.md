@@ -47,10 +47,10 @@
 分解:
 - [x] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S1-01] `toolchain.ir.core` importers を棚卸しし、`public_entrypoint` / `internal_split_module` / `tests_only` / `bridge_compat` に分類する。
 - [x] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S1-02] `toolchain.ir.core` に残す public surface と internal import 禁止方針を決める。
-- [ ] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-01] internal split module の代表 lane を dedicated module import へ移し、`core.py` 経由依存を減らす。
-- [ ] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-02] tests / helper lane の import も public surface と dedicated module へ揃える。
-- [ ] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S3-01] `toolchain.ir.core` import surface guard を追加し、internal import の再流入を fail-fast にする。
-- [ ] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S4-01] representative regression を再実行して非退行を確認し、完了後は archive へ移す。
+- [x] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-01] internal split module の代表 lane を dedicated module import へ移し、`core.py` 経由依存を減らす。
+- [x] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S2-02] tests / helper lane の import も public surface と dedicated module へ揃える。
+- [x] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S3-01] `toolchain.ir.core` import surface guard を追加し、internal import の再流入を fail-fast にする。
+- [x] [ID: P1-IR-CORE-IMPORT-SURFACE-01-S4-01] representative regression を再実行して非退行を確認し、完了後は archive へ移す。
 
 決定ログ:
 - 2026-03-11: `P1-IR-CORE-DECOMPOSITION-01` 完了後も `core.py` は `toolchain.ir.*` import を 157 本抱え、internal split module からの `from toolchain.ir.core import ...` が残っているため、本 task を起票した。
@@ -60,3 +60,5 @@
 - 2026-03-11: `S2-01` の representative bundle として `core_entrypoints` / `core_string_semantics` / `core_expr_primary` / `core_expr_lowered` / `core_expr_call_args` は `core_module_parser` / `core_expr_shell` を直接 import する形へ移し、`toolchain.ir.core` 経由の hub 依存を 5 lane まとめて外した。
 - 2026-03-11: `S2-02` の helper / bridge lane では `INT_TYPES/FLOAT_TYPES` の正本を `core_numeric_types.py` に寄せ、`east2_to_human_repr` と `east_parts.__init__` の `toolchain.ir.core` import を dedicated module import へ移した。
 - 2026-03-11: `core_stmt_parser` / `core_module_parser` は依存束が広いため、個別 helper 直 import ではなく `core_stmt_parser_support` / `core_module_parser_support` を新設して移行した。これで `src/toolchain/ir` 直下の `from toolchain.ir.core import (...)` は解消し、残りは tests / public_entrypoint / bridge_compat lane に絞られた。
+- 2026-03-11: `test_east_core_source_contract_import_surface.py` を追加し、`src/toolchain/ir` 配下での `toolchain.ir.core` 再流入禁止と、`src` 側の facade importer を `frontends/transpile_cli.py` の `convert_path` / `convert_source_to_east_with_backend` に限定する guard を固定した。
+- 2026-03-11: representative regression として `test_east_core*.py`、`test_prepare_selfhost_source.py`、`tools/build_selfhost.py`、`check_transpiler_version_gate.py`、`run_regen_on_version_bump.py --dry-run` を再実行し、`toolchain.ir.core` の thin facade end state を archive 可能と判断した。
