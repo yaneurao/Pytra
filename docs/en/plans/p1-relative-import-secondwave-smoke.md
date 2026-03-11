@@ -42,11 +42,12 @@ Decision log:
 - 2026-03-12: `js/ts` were fixed as the first representative second-wave backends because both canonical scenarios already transpile successfully and can be locked with single-output smoke.
 - 2026-03-12: The second-wave smoke contract now lives in `relative_import_secondwave_smoke_contract.py` plus its checker and tooling test; `S1-01` is the formal close of that live contract.
 - 2026-03-12: The `py2js` smoke lane now follows the second-wave contract through a shared helper so both representative scenarios stay aligned with the same expected needles.
+- 2026-03-12: The `py2ts` smoke lane now uses the same shared helper as `py2js`, so both second-wave backends lock the same representative scenarios with the same expected needles.
 
 ## Breakdown
 
 - [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01] Lock representative relative-import transpile smoke for `js/ts` and update the coverage inventory / docs handoff to the next baseline.
 - [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S1-01] Create the live plan / TODO and lock the `js/ts` second-wave smoke contract.
 - [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-01] Add representative relative-import transpile cases to the `py2js` smoke suite.
-- [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-02] Add representative relative-import transpile cases to the `py2ts` smoke suite.
+- [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-02] Add representative relative-import transpile cases to the `py2ts` smoke suite.
 - [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S3-01] Sync the coverage inventory / backend-parity docs / handoff metadata to the `js/ts` baseline and leave the task close-ready.
