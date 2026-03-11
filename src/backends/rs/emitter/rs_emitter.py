@@ -4333,11 +4333,16 @@ class RustEmitter(CodeEmitter):
             expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
             self.uses_isinstance_runtime = True
             return "({ py_register_generated_type_info(); py_isinstance(&" + value + ", " + expected + ") })"
-        if kind == "IsSubtype" or kind == "IsSubclass":
+        if kind == "IsSubtype":
             actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
             expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
             self.uses_isinstance_runtime = True
             return "({ py_register_generated_type_info(); py_is_subtype(" + actual + ", " + expected + ") })"
+        if kind == "IsSubclass":
+            actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
+            expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
+            self.uses_isinstance_runtime = True
+            return "({ py_register_generated_type_info(); py_issubclass(" + actual + ", " + expected + ") })"
         if kind == "Box":
             self.uses_pyany = True
             return self._render_as_pyany(expr_d.get("value"))

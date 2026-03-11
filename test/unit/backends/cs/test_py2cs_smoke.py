@@ -639,7 +639,7 @@ class Child(Base):
         self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_INT);", cs)
         self.assertIn("Pytra.CsModule.py_runtime.py_isinstance(x, Base.PYTRA_TYPE_ID);", cs)
         self.assertIn("Pytra.CsModule.py_runtime.py_is_subtype(Pytra.CsModule.py_runtime.PYTRA_TID_BOOL, Pytra.CsModule.py_runtime.PYTRA_TID_INT);", cs)
-        self.assertIn("Pytra.CsModule.py_runtime.py_is_subtype(Child.PYTRA_TYPE_ID, Base.PYTRA_TYPE_ID);", cs)
+        self.assertIn("Pytra.CsModule.py_runtime.py_issubclass(Child.PYTRA_TYPE_ID, Base.PYTRA_TYPE_ID);", cs)
 
     def test_box_unbox_nodes_are_lowered_without_legacy_bridge(self) -> None:
         east = {

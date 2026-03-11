@@ -3044,10 +3044,14 @@ class CSharpEmitter(CodeEmitter):
             expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
             return "Pytra.CsModule.py_runtime.py_isinstance(" + value + ", " + expected + ")"
 
-        if kind == "IsSubtype" or kind == "IsSubclass":
+        if kind == "IsSubtype":
             actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
             expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
             return "Pytra.CsModule.py_runtime.py_is_subtype(" + actual + ", " + expected + ")"
+        if kind == "IsSubclass":
+            actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
+            expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
+            return "Pytra.CsModule.py_runtime.py_issubclass(" + actual + ", " + expected + ")"
 
         if kind == "Box":
             return self.render_expr(expr_d.get("value"))
