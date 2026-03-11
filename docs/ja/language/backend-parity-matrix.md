@@ -32,4 +32,4 @@
 - relative import の current coverage baseline は [relative_import_backend_coverage.py](/workspace/Pytra/src/toolchain/compiler/relative_import_backend_coverage.py) と [check_relative_import_backend_coverage.py](/workspace/Pytra/tools/check_relative_import_backend_coverage.py) を正本にする。
 - 現時点で `build_run_locked` なのは `cpp`、`transpile_smoke_locked` なのは `rs/cs` で、`go/java/js/kotlin/lua/nim/php/ruby/scala/swift/ts` は `not_locked` として扱う。
 - この欄は support claim ではなく verification coverage の handoff であり、non-C++ lane は representative smoke が lock されても full support 扱いにはしない。
-- next rollout handoff は [p1-relative-import-firstwave-smoke.md](../plans/p1-relative-import-firstwave-smoke.md) を参照し、`rs/cs` を `transpile_smoke_locked` baseline に固定したうえで、残りの non-C++ lane は `backend_specific_fail_closed` を維持しながら `second_wave_rollout_planning` へ進む。
+- next rollout handoff は [p1-relative-import-secondwave-planning.md](../plans/p1-relative-import-secondwave-planning.md) を参照し、`rs/cs` を `transpile_smoke_locked` baseline に固定したうえで、残りの non-C++ lane は `backend_specific_fail_closed` を維持しながら `second_wave_rollout_planning` へ進む。

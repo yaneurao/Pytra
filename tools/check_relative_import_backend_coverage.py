@@ -36,7 +36,7 @@ EXPECTED_BACKENDS = (
 )
 
 EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
-    "todo_id": "P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01",
+    "todo_id": "P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01",
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
     "backend_parity_docs": (
@@ -44,8 +44,8 @@ EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
         "docs/en/language/backend-parity-matrix.md",
     ),
     "next_rollout_plan": (
-        "docs/ja/plans/p1-relative-import-firstwave-smoke.md",
-        "docs/en/plans/p1-relative-import-firstwave-smoke.md",
+        "docs/ja/plans/p1-relative-import-secondwave-planning.md",
+        "docs/en/plans/p1-relative-import-secondwave-planning.md",
     ),
     "first_wave_backends": ("rs", "cs"),
     "next_verification_lane": "second_wave_rollout_planning",

@@ -30,3 +30,14 @@ Last updated: 2026-03-12
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+
+### P1: relative-import second-wave rollout planning
+
+Context: [p1-relative-import-secondwave-planning.md](../plans/p1-relative-import-secondwave-planning.md)
+
+1. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01] Lock the live contract, docs handoff, and verification lane for second-wave relative-import rollout.
+2. [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S1-01] Added the live plan / TODO plus the second-wave rollout contract, checker, and docs handoff.
+3. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S2-01] Break the second-wave backend rollout order into backend-group bundles for representative smoke / fail-closed rollout.
+4. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S3-01] Sync coverage docs / support wording / archive handoff to the current second-wave state and close the task.
+
+- Progress note: The second-wave backend set is now `go/java/js/kotlin/nim/scala/swift/ts`, the representative scenarios stay `parent_module_alias` / `parent_symbol_alias`, and the handoff now points to the live `p1-relative-import-secondwave-planning.md` plan.

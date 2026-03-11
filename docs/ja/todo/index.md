@@ -30,3 +30,14 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
+
+### P1: relative import second-wave rollout planning
+
+文脈: [p1-relative-import-secondwave-planning.md](../plans/p1-relative-import-secondwave-planning.md)
+
+1. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01] second-wave relative import rollout の live contract / docs handoff / verification lane を固定する。
+2. [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S1-01] live plan / TODO と second-wave rollout contract / checker / docs handoff を追加した。
+3. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S2-01] second-wave backend ごとの representative smoke / fail-closed 導入順を backend group 単位の bundle に落とす。
+4. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S3-01] coverage docs / support wording / archive handoff を second-wave current state に同期して task を閉じる。
+
+- 進捗メモ: second-wave backend 集合は `go/java/js/kotlin/nim/scala/swift/ts`、representative scenario は `parent_module_alias` / `parent_symbol_alias`、handoff は live plan `p1-relative-import-secondwave-planning.md` に同期した。
