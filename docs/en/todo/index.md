@@ -35,13 +35,13 @@ Last updated: 2026-03-12
    Context: [docs/ja/plans/p1-relative-import-alias-hardening.md](../../ja/plans/p1-relative-import-alias-hardening.md)
    Progress memo: Lock sibling / parent aliased relative `from-import` across import graph, CLI, C++ smoke, and support docs.
 
-### P2: Relative-import backend coverage contract
+### P2: Relative-import non-C++ rollout staging
 
-Context: [p2-relative-import-backend-coverage.md](../plans/p2-relative-import-backend-coverage.md)
+Context: [p2-relative-import-noncpp-rollout.md](../plans/p2-relative-import-noncpp-rollout.md)
 
-1. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01] Locked the current relative-import verification coverage by backend and prepared the baseline for later non-C++ rollout work.
-2. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S1-01] Locked the live plan / TODO and the representative backend coverage taxonomy.
-3. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-01] Added the backend coverage inventory, checker, and unit tests.
-4. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-02] Synced docs / support-matrix handoff wording to the current coverage baseline.
+1. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01] Fix the non-C++ rollout order and representative verification lanes for relative imports as a staged plan.
+2. [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S1-01] Created the live plan / TODO and fixed the first-wave / second-wave / long-tail rollout order.
+3. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-01] Fix the representative verification lane for first-wave backends across `transpile smoke` and `fail_closed`.
+4. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-02] Sync links from the current coverage inventory / backend-parity docs into the next rollout handoff.
 
-- Progress note: The current relative-import coverage is now fixed as `cpp=build_run_locked` while non-C++ backends remain `not_locked`, through an inventory, checker, and backend-parity handoff note.
+- Progress note: The non-C++ relative-import rollout is now staged as `first wave=rs/cs`, `second wave=go/java/js/kotlin/scala/swift/nim/ts`, and `long-tail=lua/php/ruby`.

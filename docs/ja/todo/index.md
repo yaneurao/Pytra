@@ -35,13 +35,13 @@
    文脈: [docs/ja/plans/p1-relative-import-alias-hardening.md](../plans/p1-relative-import-alias-hardening.md)
    進捗メモ: alias 付き sibling / parent relative `from-import` を import graph / CLI / C++ smoke / spec-support まで揃えて固定する。
 
-### P2: relative import backend coverage contract
+### P2: relative import non-C++ rollout staging
 
-文脈: [p2-relative-import-backend-coverage.md](../plans/p2-relative-import-backend-coverage.md)
+文脈: [p2-relative-import-noncpp-rollout.md](../plans/p2-relative-import-noncpp-rollout.md)
 
-1. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01] relative import の current verification coverage を backend 別に固定し、non-C++ rollout の baseline を整えた。
-2. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S1-01] live plan / TODO と representative backend coverage taxonomy を固定した。
-3. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-01] backend coverage inventory / checker / unit test を追加した。
-4. [x] [ID: P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01-S2-02] docs / support-matrix handoff wording を current coverage baseline に同期した。
+1. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01] relative import の non-C++ rollout 順と representative verification lane を staged plan として固定する。
+2. [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S1-01] live plan / TODO を起票し、first wave / second wave / long-tail の rollout order を固定した。
+3. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-01] first wave backend の representative verification lane を `transpile smoke` / `fail-closed` に分けて固定する。
+4. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-02] current coverage inventory / backend parity docs から next rollout handoff へのリンクを同期する。
 
-- 進捗メモ: current relative import coverage は `cpp=build_run_locked`、non-C++ backend は `not_locked` として inventory / checker / backend parity matrix に同期した。
+- 進捗メモ: non-C++ relative import rollout は `first wave=rs/cs`, `second wave=go/java/js/kotlin/scala/swift/nim/ts`, `long-tail=lua/php/ruby` の staged order で整理した。
