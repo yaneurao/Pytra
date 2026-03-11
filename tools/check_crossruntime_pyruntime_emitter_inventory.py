@@ -73,6 +73,22 @@ EXPECTED_BUCKETS = {
     },
 }
 
+TARGET_END_STATE = {
+    "cpp_emitter_object_bridge_residual": "object_bridge_only_no_typed_lane_reentry",
+    "cpp_emitter_shared_type_id_residual": "thin_shared_type_id_only_last_intentional_cpp_contract",
+    "rs_emitter_shared_type_id_residual": "thin_shared_type_id_only_no_generic_alias_reentry",
+    "cs_emitter_shared_type_id_residual": "thin_shared_type_id_only_no_generic_alias_reentry",
+    "crossruntime_mutation_helper_residual": "cpp_object_bridge_and_cs_bytes_bytearray_only",
+}
+
+REDUCTION_ORDER = [
+    "crossruntime_mutation_helper_residual",
+    "cpp_emitter_object_bridge_residual",
+    "rs_emitter_shared_type_id_residual",
+    "cs_emitter_shared_type_id_residual",
+    "cpp_emitter_shared_type_id_residual",
+]
+
 
 def _iter_target_files() -> list[Path]:
     return [ROOT / rel for rel in sorted(TRACKED_PATHS)]
@@ -114,6 +130,12 @@ def _collect_inventory_issues() -> list[str]:
     observed = _collect_observed_pairs()
     expected = _collect_expected_pairs()
     issues = _collect_bucket_overlaps()
+    if set(TARGET_END_STATE.keys()) != set(EXPECTED_BUCKETS.keys()):
+        issues.append("target end state keys do not match expected buckets")
+    if list(dict.fromkeys(REDUCTION_ORDER)) != REDUCTION_ORDER:
+        issues.append("reduction order contains duplicate bucket names")
+    if set(REDUCTION_ORDER) != set(EXPECTED_BUCKETS.keys()):
+        issues.append("reduction order does not cover the same buckets as the inventory")
     for symbol, rel in sorted(expected - observed):
         issues.append(f"expected entry missing from source inventory: {symbol} @ {rel}")
     for symbol, rel in sorted(observed - expected):

@@ -86,6 +86,24 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             {"py_append", "py_extend", "py_pop", "py_clear", "py_reverse", "py_sort", "py_set_at"},
         )
 
+    def test_target_end_state_keys_match_bucket_names(self) -> None:
+        self.assertEqual(
+            set(inventory_mod.TARGET_END_STATE.keys()),
+            set(inventory_mod.EXPECTED_BUCKETS.keys()),
+        )
+
+    def test_reduction_order_is_stable_and_complete(self) -> None:
+        self.assertEqual(
+            inventory_mod.REDUCTION_ORDER,
+            [
+                "crossruntime_mutation_helper_residual",
+                "cpp_emitter_object_bridge_residual",
+                "rs_emitter_shared_type_id_residual",
+                "cs_emitter_shared_type_id_residual",
+                "cpp_emitter_shared_type_id_residual",
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
