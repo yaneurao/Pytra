@@ -81,6 +81,15 @@ class SelfHostedSignatureTest(unittest.TestCase):
         err = payload.get("error", {})
         self.assertEqual(err.get("kind"), "unsupported_syntax")
 
+    def test_reject_typed_varargs_representative(self) -> None:
+        rc, payload = self._run_east(SIG_DIR / "ng_typed_varargs_representative.py")
+        self.assertNotEqual(rc, 0)
+        self.assertEqual(payload.get("ok"), False)
+        err = payload.get("error", {})
+        self.assertEqual(err.get("kind"), "unsupported_syntax")
+        self.assertIn("variadic args parameter", str(err.get("message", "")))
+        self.assertIn("Use explicit parameters instead of *args.", str(err.get("hint", "")))
+
     def test_reject_kwargs(self) -> None:
         rc, payload = self._run_east(SIG_DIR / "ng_kwargs.py")
         self.assertNotEqual(rc, 0)

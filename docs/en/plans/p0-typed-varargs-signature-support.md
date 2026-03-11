@@ -57,8 +57,10 @@ Decision log:
 
 ## Breakdown
 
-- [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S1-01] Fix the current reject contract and representative fixture in docs/tests and lock the typed `*args` v1 scope.
+- [x] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S1-01] Fix the current reject contract and representative fixture in docs/tests and lock the typed `*args` v1 scope.
 - [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S2-01] Add `vararg_*` fields to the self-hosted signature parser / AST builder / EAST carrier.
 - [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S2-02] Propagate the new `vararg_*` fields through the stmt/module parser and frontend mirror, and pass selfhost regression.
 - [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S3-01] Add variadic positional packing to the C++ emitter function definition / known call lane and pass the representative fixture.
 - [ ] [ID: P0-TYPED-VARARGS-SIGNATURE-01-S3-02] Update non-C++ backend contract guards and docs to close v1.
+
+- 2026-03-11: Added the representative blocker fixture `ng_typed_varargs_representative.py` and locked the current typed `*args` rejection in unit tests.
