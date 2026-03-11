@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -184,6 +185,36 @@ class ImportGraphIssueStructureTest(unittest.TestCase):
                 {"kind": "import_module", "module": "pkg.util", "symbol": ""},
             ],
         )
+
+    def test_collect_import_request_modules_expands_dot_only_from_import_module_candidates(self) -> None:
+        req = {"kind": "from_module", "module": ".", "symbol": "helper"}
+        self.assertEqual(transpile_cli.collect_import_request_modules(req), [".helper"])
+
+    def test_analyze_import_graph_accepts_dot_only_from_import_via_request_carrier(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pkg = root / "pkg"
+            pkg.mkdir()
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            main_py = pkg / "main.py"
+            helper_py = pkg / "helper.py"
+            main_py.write_text("from . import helper\nprint(helper.f())\n", encoding="utf-8")
+            helper_py.write_text("def f() -> int:\n    return 1\n", encoding="utf-8")
+
+            analysis = transpile_cli.analyze_import_graph(
+                main_py,
+                Path("src/pytra/std"),
+                Path("src/pytra/utils"),
+                transpile_cli.load_east_document,
+            )
+
+        self.assertEqual([], analysis.get("missing_modules"))
+        self.assertEqual([], analysis.get("relative_imports"))
+        self.assertIn("main.py -> helper.py", analysis.get("edges", []))
+        module_id_map_obj = analysis.get("module_id_map")
+        module_id_map = module_id_map_obj if isinstance(module_id_map_obj, dict) else {}
+        self.assertEqual(module_id_map.get(str(main_py)), "main")
+        self.assertEqual(module_id_map.get(str(helper_py)), "helper")
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ if str(ROOT / "src") not in sys.path:
 
 from src.toolchain.compiler.east_parts.east1_build import build_east1_document
 from src.toolchain.compiler.east_parts.east1_build import build_module_east_map
+from src.toolchain.frontends import east1_build as east1_build_impl
 from src.toolchain.compiler.transpile_cli import ImportGraphHelpers
 from src.toolchain.compiler.transpile_cli import load_east_document
 
@@ -81,6 +82,27 @@ class East1BuildTest(unittest.TestCase):
             )
             self.assertIn(str(main_py), module_map)
             self.assertIn(str(helper_py), module_map)
+
+    def test_east1_analyze_import_graph_accepts_dot_only_from_import_via_request_carrier(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pkg = root / "pkg"
+            pkg.mkdir()
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            main_py = pkg / "main.py"
+            helper_py = pkg / "helper.py"
+            main_py.write_text("from . import helper\nprint(helper.f())\n", encoding="utf-8")
+            helper_py.write_text("def f() -> int:\n    return 1\n", encoding="utf-8")
+
+            analysis = east1_build_impl.analyze_import_graph(main_py)
+
+        self.assertEqual([], analysis.get("missing_modules"))
+        self.assertEqual([], analysis.get("relative_imports"))
+        self.assertIn("main.py -> helper.py", analysis.get("edges", []))
+        module_id_map_obj = analysis.get("module_id_map")
+        module_id_map = module_id_map_obj if isinstance(module_id_map_obj, dict) else {}
+        self.assertEqual(module_id_map.get(str(main_py)), "main")
+        self.assertEqual(module_id_map.get(str(helper_py)), "helper")
 
 
 if __name__ == "__main__":

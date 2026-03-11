@@ -2652,16 +2652,23 @@ def collect_import_modules(east_module: dict[str, object]) -> list[str]:
     out: list[str] = []
     seen: set[str] = set()
     for req in collect_import_requests(east_module):
-        kind = dict_str_get(req, "kind")
-        module_name = dict_str_get(req, "module")
-        symbol = dict_str_get(req, "symbol")
-        if kind == "import_module":
-            append_unique_non_empty(out, seen, module_name)
-            continue
-        if kind == "from_module":
-            for mod_name in collect_import_from_request_modules(module_name, symbol):
-                append_unique_non_empty(out, seen, mod_name)
+        for mod_name in collect_import_request_modules(req):
+            append_unique_non_empty(out, seen, mod_name)
     return out
+
+
+def collect_import_request_modules(req: dict[str, str]) -> list[str]:
+    """structured import request から import graph の module candidate を返す。"""
+    kind = dict_str_get(req, "kind")
+    module_name = dict_str_get(req, "module")
+    symbol = dict_str_get(req, "symbol")
+    if kind == "import_module":
+        if module_name == "":
+            return []
+        return [module_name]
+    if kind == "from_module":
+        return collect_import_from_request_modules(module_name, symbol)
+    return []
 
 
 def collect_import_from_request_modules(module_name: str, symbol: str) -> list[str]:
@@ -3033,54 +3040,55 @@ def analyze_import_graph(
         except Exception:
             continue
 
-        mods = collect_import_modules(east_cur)
+        requests = collect_import_requests(east_cur)
         if cur_key not in graph_adj:
             empty_deps: list[str] = []
             graph_adj[cur_key] = empty_deps
             graph_keys.append(cur_key)
         cur_disp = key_to_disp[cur_key]
-        for mod in mods:
-            if mod.startswith("."):
-                resolved = resolve_relative_module_name_for_graph(mod, root, cur_path)
-            else:
-                search_root = Path(path_parent_text(cur_path))
-                resolved = resolve_module_name_for_graph(
-                    mod,
-                    search_root,
-                    runtime_std_source_root,
-                    runtime_utils_source_root,
-                )
-            status = dict_any_get_str(resolved, "status")
-            dep_txt = dict_any_get_str(resolved, "path")
-            resolved_mod_id = dict_any_get_str(resolved, "module_id")
-            if status == "relative":
-                append_unique_graph_issue_entry(relative_import_entries, relative_seen, cur_disp, mod)
-                continue
-            dep_disp = mod
-            if status == "user":
-                if dep_txt == "":
+        for req in requests:
+            for mod in collect_import_request_modules(req):
+                if mod.startswith("."):
+                    resolved = resolve_relative_module_name_for_graph(mod, root, cur_path)
+                else:
+                    search_root = Path(path_parent_text(cur_path))
+                    resolved = resolve_module_name_for_graph(
+                        mod,
+                        search_root,
+                        runtime_std_source_root,
+                        runtime_utils_source_root,
+                    )
+                status = dict_any_get_str(resolved, "status")
+                dep_txt = dict_any_get_str(resolved, "path")
+                resolved_mod_id = dict_any_get_str(resolved, "module_id")
+                if status == "relative":
+                    append_unique_graph_issue_entry(relative_import_entries, relative_seen, cur_disp, mod)
                     continue
-                dep_file = Path(dep_txt)
-                dep_key = path_key_for_graph(dep_file)
-                dep_disp = rel_disp_for_graph(root, dep_file)
-                module_id = resolved_mod_id if resolved_mod_id != "" else mod
-                if dep_key not in module_id_map or module_id_map[dep_key] == "":
-                    module_id_map[dep_key] = module_id
-                deps: list[str] = []
-                if cur_key in graph_adj:
-                    deps = graph_adj[cur_key]
-                deps.append(dep_key)
-                graph_adj[cur_key] = deps
-                key_to_path[dep_key] = dep_file
-                key_to_disp[dep_key] = dep_disp
-                if dep_key not in queued and dep_key not in visited:
-                    queued.add(dep_key)
-                    queue.append(dep_file)
-            elif status == "missing":
-                miss_mod = resolved_mod_id if resolved_mod_id != "" else mod
-                append_unique_graph_issue_entry(missing_module_entries, missing_seen, cur_disp, miss_mod)
-            edge = cur_disp + " -> " + dep_disp
-            append_unique_non_empty(edges, edge_seen, edge)
+                dep_disp = mod
+                if status == "user":
+                    if dep_txt == "":
+                        continue
+                    dep_file = Path(dep_txt)
+                    dep_key = path_key_for_graph(dep_file)
+                    dep_disp = rel_disp_for_graph(root, dep_file)
+                    module_id = resolved_mod_id if resolved_mod_id != "" else mod
+                    if dep_key not in module_id_map or module_id_map[dep_key] == "":
+                        module_id_map[dep_key] = module_id
+                    deps: list[str] = []
+                    if cur_key in graph_adj:
+                        deps = graph_adj[cur_key]
+                    deps.append(dep_key)
+                    graph_adj[cur_key] = deps
+                    key_to_path[dep_key] = dep_file
+                    key_to_disp[dep_key] = dep_disp
+                    if dep_key not in queued and dep_key not in visited:
+                        queued.add(dep_key)
+                        queue.append(dep_file)
+                elif status == "missing":
+                    miss_mod = resolved_mod_id if resolved_mod_id != "" else mod
+                    append_unique_graph_issue_entry(missing_module_entries, missing_seen, cur_disp, miss_mod)
+                edge = cur_disp + " -> " + dep_disp
+                append_unique_non_empty(edges, edge_seen, edge)
 
     return finalize_import_graph_analysis(
         graph_adj,
