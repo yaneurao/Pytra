@@ -36,9 +36,10 @@ Verification commands:
 Decision log:
 - 2026-03-12: After the current coverage baseline was closed, the next step was defined as a staged non-C++ rollout plan rather than an immediate implementation push.
 - 2026-03-12: The rollout order was fixed as `first wave=rs/cs`, `second wave=go/java/js/kotlin/scala/swift/nim/ts`, and `long-tail=lua/php/ruby`.
+- 2026-03-12: The first wave was fixed to `rs/cs` with `transpile_smoke` as the next verification lane, while every non-C++ backend keeps `backend_specific_fail_closed` until support claims widen.
 
 ## Breakdown
 
 - [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S1-01] Create the live plan / TODO and fix the first-wave / second-wave / long-tail rollout order.
-- [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-01] Fix the representative verification lane for first-wave backends across `transpile smoke` and `fail_closed`.
+- [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-01] Fix the representative verification lane for first-wave backends across `transpile smoke` and `fail_closed`.
 - [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-02] Sync links from the current coverage inventory / backend-parity docs into the next rollout handoff.

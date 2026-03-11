@@ -36,9 +36,10 @@
 決定ログ:
 - 2026-03-12: current coverage baseline を閉じたので、次段は non-C++ rollout 順と representative verification lane を staged plan として固定する。
 - 2026-03-12: rollout order は `first wave=rs/cs`, `second wave=go/java/js/kotlin/scala/swift/nim/ts`, `long-tail=lua/php/ruby` に固定した。
+- 2026-03-12: first wave は `rs/cs` の `transpile smoke` を次 lane とし、support claim を広げる前提として `backend_specific_fail_closed` を全 non-C++ backend に維持する方針を inventory/checker で固定した。
 
 ## 分解
 
 - [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S1-01] live plan / TODO を起票し、first wave / second wave / long-tail の rollout order を固定する。
-- [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-01] first wave backend の representative verification lane を `transpile smoke` / `fail-closed` に分けて固定する。
+- [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-01] first wave backend の representative verification lane を `transpile smoke` / `fail-closed` に分けて固定する。
 - [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-02] current coverage inventory / backend parity docs から next rollout handoff へのリンクを同期する。

@@ -37,7 +37,7 @@
 
 1. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01] relative import の non-C++ rollout 順と representative verification lane を staged plan として固定する。
 2. [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S1-01] live plan / TODO を起票し、first wave / second wave / long-tail の rollout order を固定した。
-3. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-01] first wave backend の representative verification lane を `transpile smoke` / `fail-closed` に分けて固定する。
+3. [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-01] first wave backend の representative verification lane を `transpile smoke` / `fail-closed` に分けて固定した。
 4. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-02] current coverage inventory / backend parity docs から next rollout handoff へのリンクを同期する。
 
-- 進捗メモ: non-C++ relative import rollout は `first wave=rs/cs`, `second wave=go/java/js/kotlin/scala/swift/nim/ts`, `long-tail=lua/php/ruby` の staged order で整理した。
+- 進捗メモ: non-C++ relative import rollout は `first wave=rs/cs` の `transpile smoke` を next lane にしつつ、全 non-C++ backend で `backend_specific_fail_closed` を維持する staged order として整理した。
