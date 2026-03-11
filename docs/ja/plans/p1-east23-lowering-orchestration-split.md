@@ -48,8 +48,8 @@
 - [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-02] 進捗メモは bundle 単位に圧縮し、main file の end state を `dispatch + lifecycle` 中心に固定する。
 - [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-01] `call metadata` / `json decode fastpath` cluster を dedicated module へ分割する。
 - [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-02] `Assign` / `For` / `ForRange` lowering cluster を dedicated module へ分割する。
-- [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-03] `Attribute` / `Match` / `ForCore` loweringと node dispatch orchestration を dedicated module へ分割する。
-- [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S3-01] source-contract と representative regression を second-wave split layout へ追従させる。
+- [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-03] `Attribute` / `Match` / `ForCore` loweringと node dispatch orchestration を dedicated module へ分割する。
+- [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S3-01] source-contract と representative regression を second-wave split layout へ追従させる。
 - [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S4-01] docs / TODO / archive を更新して閉じる。
 
 決定ログ:
@@ -58,3 +58,5 @@
 - 2026-03-11: 進捗メモは cluster/bundle 単位の 1 行に留め、helper 単位の履歴は決定ログか commit message にのみ残す。
 - 2026-03-11: `S2-01` として `_infer_json_semantic_tag` / `_build_json_decode_meta` / `_lower_representative_json_decode_call` / `_decorate_call_metadata` を `east2_to_east3_call_metadata.py` へ切り出した。source-contract には dedicated module ownership assert を追加し、split regression には representative `json.value.as_obj` lane を追加した。
 - 2026-03-11: `S2-02` として assign target planning と `_lower_assignment_like_stmt` / `_lower_for_stmt` / `_lower_forrange_stmt` / `_lower_forcore_stmt` を `east2_to_east3_stmt_lowering.py` へ切り出した。source-contract には stmt-module ownership assert を追加し、split regression には `Box + StaticRangeForPlan` の representative lane を追加した。
+- 2026-03-11: `S2-03` として `_lower_attribute_expr` / `_lower_variant_pattern` / `_lower_match_stmt` / `_lower_node_dispatch` を `east2_to_east3_dispatch_orchestration.py` へ切り出した。source-contract は dispatch module ownership を固定し、main file は lifecycle と call lowering に縮んだ。
+- 2026-03-11: `S3-01` として source-contract を dispatch module ownership 前提へ揃え、`test_east2_to_east3*.py` と `test_prepare_selfhost_source.py`、`build_selfhost.py` を通して second-wave split layout を representative regression で固定した。

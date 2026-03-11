@@ -12,6 +12,7 @@ if str(TEST_DIR) not in sys.path:
 
 from _east_core_test_support import EAST23_LOWERING_SOURCE_PATH
 from _east_core_test_support import EAST23_CALL_METADATA_SOURCE_PATH
+from _east_core_test_support import EAST23_DISPATCH_ORCHESTRATION_SOURCE_PATH
 from _east_core_test_support import EAST23_STMT_LOWERING_SOURCE_PATH
 from _east_core_test_support import EAST23_NOMINAL_ADT_META_SOURCE_PATH
 from _east_core_test_support import EAST23_TYPE_ID_PREDICATE_SOURCE_PATH
@@ -23,23 +24,8 @@ class East2ToEast3SourceContractTest(unittest.TestCase):
         text = EAST23_LOWERING_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertIn("from toolchain.ir.east2_to_east3_type_summary import _swap_nominal_adt_decl_summary_table", text)
         self.assertIn("from toolchain.ir.east2_to_east3_call_metadata import _decorate_call_metadata", text)
-        self.assertIn("from toolchain.ir.east2_to_east3_stmt_lowering import _lower_assignment_like_stmt", text)
-        self.assertIn("from toolchain.ir.east2_to_east3_stmt_lowering import _lower_for_stmt", text)
-        self.assertIn("from toolchain.ir.east2_to_east3_stmt_lowering import _lower_forrange_stmt", text)
-        self.assertIn("from toolchain.ir.east2_to_east3_stmt_lowering import _lower_forcore_stmt", text)
+        self.assertIn("from toolchain.ir.east2_to_east3_dispatch_orchestration import _lower_node_dispatch", text)
         self.assertIn("from toolchain.ir.east2_to_east3_type_id_predicate import _lower_type_id_call_expr", text)
-        self.assertIn(
-            "from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_match_stmt",
-            text,
-        )
-        self.assertIn(
-            "from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_projection_attr",
-            text,
-        )
-        self.assertIn(
-            "from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_variant_pattern",
-            text,
-        )
         self.assertIn(
             "prev_nominal_adt_decl_table = _swap_nominal_adt_decl_summary_table(",
             text,
@@ -68,9 +54,10 @@ class East2ToEast3SourceContractTest(unittest.TestCase):
             "_lower_for_stmt",
             "_lower_forrange_stmt",
             "_lower_forcore_stmt",
-            "_decorate_nominal_adt_projection_attr",
-            "_decorate_nominal_adt_variant_pattern",
-            "_decorate_nominal_adt_match_stmt",
+            "_lower_attribute_expr",
+            "_lower_variant_pattern",
+            "_lower_match_stmt",
+            "_lower_node_dispatch",
         ):
             self.assertNotIn(f"def {helper_name}(", text)
 
@@ -99,6 +86,17 @@ class East2ToEast3SourceContractTest(unittest.TestCase):
             "_lower_for_stmt",
             "_lower_forrange_stmt",
             "_lower_forcore_stmt",
+        ):
+            self.assertIn(f"def {helper_name}(", text)
+
+    def test_dispatch_orchestration_module_owns_split_helpers(self) -> None:
+        text = EAST23_DISPATCH_ORCHESTRATION_SOURCE_PATH.read_text(encoding="utf-8")
+        self.assertIn("from toolchain.ir.east2_to_east3_stmt_lowering import _lower_forcore_stmt", text)
+        for helper_name in (
+            "_lower_attribute_expr",
+            "_lower_variant_pattern",
+            "_lower_match_stmt",
+            "_lower_node_dispatch",
         ):
             self.assertIn(f"def {helper_name}(", text)
 

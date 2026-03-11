@@ -40,9 +40,11 @@
 3. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-02] 進捗メモは bundle 単位へ圧縮し、main file end state を `dispatch + lifecycle` 中心に固定する。
 4. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-01] `call metadata` / `json decode fastpath` cluster を dedicated module へ分割する。
 5. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-02] `Assign` / `For` / `ForRange` lowering cluster を dedicated module へ分割する。
-6. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-03] `Attribute` / `Match` / `ForCore` loweringと node dispatch orchestration を dedicated module へ分割する。
-7. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S3-01] source-contract と representative regression を second-wave split layout へ追従させる。
+6. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-03] `Attribute` / `Match` / `ForCore` loweringと node dispatch orchestration を dedicated module へ分割する。
+7. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S3-01] source-contract と representative regression を second-wave split layout へ追従させる。
 8. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S4-01] docs / TODO / archive を更新して閉じる。
 - 進捗メモ: [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-01] 残り 833 行の main file は `call metadata/json decode`, `stmt lowering`, `dispatch/orchestration` の 3 cluster に整理され、第二波 split の順を固定した。
 - 進捗メモ: [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-01] `call metadata/json decode fastpath` を `east2_to_east3_call_metadata.py` へ切り出し、main file は type-id/bridge fallback を含む call orchestration に後退した。
 - 進捗メモ: [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-02] `Assign/For/ForRange/ForCore` を `east2_to_east3_stmt_lowering.py` へ切り出し、main file は call/attribute/match と node dispatch を主責務に縮んだ。
+- 進捗メモ: [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-03] `Attribute/Match` lowering と node dispatch を `east2_to_east3_dispatch_orchestration.py` へ切り出し、main file は lifecycle と call lowering に縮んだ。
+- 進捗メモ: [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S3-01] source-contract は dispatch module ownership 前提に更新され、`test_east2_to_east3*.py` と selfhost regression で second-wave split layout を固定した。

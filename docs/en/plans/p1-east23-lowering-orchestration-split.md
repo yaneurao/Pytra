@@ -48,8 +48,8 @@ Breakdown:
 - [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-02] Keep progress notes bundle-level and fix the main-file end state as `dispatch + lifecycle`.
 - [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-01] Split the `call metadata` / `json decode fastpath` cluster into a dedicated module.
 - [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-02] Split the `Assign` / `For` / `ForRange` lowering cluster into a dedicated module.
-- [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-03] Split `Attribute` / `Match` / `ForCore` lowering plus node-dispatch orchestration into dedicated modules.
-- [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S3-01] Update source-contract tests and representative regressions to the second-wave split layout.
+- [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-03] Split `Attribute` / `Match` / `ForCore` lowering plus node-dispatch orchestration into dedicated modules.
+- [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S3-01] Update source-contract tests and representative regressions to the second-wave split layout.
 - [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S4-01] Update docs / TODO / archive and close the task.
 
 Decision log:
@@ -58,3 +58,5 @@ Decision log:
 - 2026-03-11: Progress notes remain bundle-level only; helper-level history stays in this decision log or in commit messages.
 - 2026-03-11: `S2-01` moved `_infer_json_semantic_tag`, `_build_json_decode_meta`, `_lower_representative_json_decode_call`, and `_decorate_call_metadata` into `east2_to_east3_call_metadata.py`. Source-contract coverage now asserts dedicated ownership, and split regressions gained a representative `json.value.as_obj` lane.
 - 2026-03-11: `S2-02` moved assign target planning plus `_lower_assignment_like_stmt`, `_lower_for_stmt`, `_lower_forrange_stmt`, and `_lower_forcore_stmt` into `east2_to_east3_stmt_lowering.py`. Source-contract coverage now asserts stmt-module ownership, and split regressions gained a representative `Box + StaticRangeForPlan` lane.
+- 2026-03-11: `S2-03` moved `_lower_attribute_expr`, `_lower_variant_pattern`, `_lower_match_stmt`, and `_lower_node_dispatch` into `east2_to_east3_dispatch_orchestration.py`. Source-contract coverage now asserts dispatch-module ownership, and the main file shrank to lifecycle plus call lowering.
+- 2026-03-11: `S3-01` aligned source-contract ownership with the dispatch module and locked the second-wave split layout with `test_east2_to_east3*.py`, `test_prepare_selfhost_source.py`, and `build_selfhost.py`.

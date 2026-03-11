@@ -5,26 +5,17 @@ from __future__ import annotations
 from typing import Any
 
 from toolchain.ir.east2_to_east3_call_metadata import _decorate_call_metadata
-from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_match_stmt
-from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_projection_attr
-from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_variant_pattern
-from toolchain.ir.east2_to_east3_stmt_lowering import _lower_assignment_like_stmt
-from toolchain.ir.east2_to_east3_stmt_lowering import _lower_for_stmt
-from toolchain.ir.east2_to_east3_stmt_lowering import _lower_forcore_stmt
-from toolchain.ir.east2_to_east3_stmt_lowering import _lower_forrange_stmt
+from toolchain.ir.east2_to_east3_dispatch_orchestration import _lower_node_dispatch
 from toolchain.ir.east2_to_east3_type_id_predicate import _lower_type_id_call_expr
-from toolchain.ir.east2_to_east3_type_summary import _bridge_lane_payload
 from toolchain.ir.east2_to_east3_type_summary import _collect_nominal_adt_decl_summary_table
 from toolchain.ir.east2_to_east3_type_summary import _expr_type_name
 from toolchain.ir.east2_to_east3_type_summary import _expr_type_summary
 from toolchain.ir.east2_to_east3_type_summary import _is_dynamic_like_summary
 from toolchain.ir.east2_to_east3_type_summary import _normalize_type_name
 from toolchain.ir.east2_to_east3_type_summary import _set_type_expr_summary
-from toolchain.ir.east2_to_east3_type_summary import _structured_type_expr_summary_from_node
 from toolchain.ir.east2_to_east3_type_summary import _swap_nominal_adt_decl_summary_table
 from toolchain.ir.east2_to_east3_type_summary import _type_expr_summary_from_node
 from toolchain.ir.east2_to_east3_type_summary import _type_expr_summary_from_payload
-from toolchain.ir.east2_to_east3_type_summary import _unknown_type_summary
 
 
 _LEGACY_COMPAT_BRIDGE_ENABLED = True
@@ -314,27 +305,6 @@ def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, A
     return out
 
 
-def _lower_attribute_expr(expr: dict[str, Any], *, dispatch_mode: str) -> dict[str, Any]:
-    out: dict[str, Any] = {}
-    for key in expr:
-        out[key] = _lower_node(expr[key], dispatch_mode=dispatch_mode)
-    return _decorate_nominal_adt_projection_attr(out)
-
-
-def _lower_variant_pattern(pattern: dict[str, Any], *, dispatch_mode: str) -> dict[str, Any]:
-    out: dict[str, Any] = {}
-    for key in pattern:
-        out[key] = _lower_node(pattern[key], dispatch_mode=dispatch_mode)
-    return _decorate_nominal_adt_variant_pattern(out)
-
-
-def _lower_match_stmt(stmt: dict[str, Any], *, dispatch_mode: str) -> dict[str, Any]:
-    out: dict[str, Any] = {}
-    for key in stmt:
-        out[key] = _lower_node(stmt[key], dispatch_mode=dispatch_mode)
-    return _decorate_nominal_adt_match_stmt(out)
-
-
 def _lower_node(node: Any, *, dispatch_mode: str) -> Any:
     if isinstance(node, list):
         out_list: list[Any] = []
@@ -342,41 +312,12 @@ def _lower_node(node: Any, *, dispatch_mode: str) -> Any:
             out_list.append(_lower_node(item, dispatch_mode=dispatch_mode))
         return out_list
     if isinstance(node, dict):
-        kind = node.get("kind")
-        if kind == "For":
-            return _lower_for_stmt(
-                node,
-                dispatch_mode=dispatch_mode,
-                lower_node=lambda value: _lower_node(value, dispatch_mode=dispatch_mode),
-            )
-        if kind == "ForRange":
-            return _lower_forrange_stmt(
-                node,
-                lower_node=lambda value: _lower_node(value, dispatch_mode=dispatch_mode),
-            )
-        if kind == "Assign" or kind == "AnnAssign" or kind == "AugAssign":
-            return _lower_assignment_like_stmt(
-                node,
-                lower_node=lambda value: _lower_node(value, dispatch_mode=dispatch_mode),
-            )
-        if kind == "Call":
-            return _lower_call_expr(node, dispatch_mode=dispatch_mode)
-        if kind == "Attribute":
-            return _lower_attribute_expr(node, dispatch_mode=dispatch_mode)
-        if kind == "VariantPattern":
-            return _lower_variant_pattern(node, dispatch_mode=dispatch_mode)
-        if kind == "Match":
-            return _lower_match_stmt(node, dispatch_mode=dispatch_mode)
-        if kind == "ForCore":
-            return _lower_forcore_stmt(
-                node,
-                dispatch_mode=dispatch_mode,
-                lower_node=lambda value: _lower_node(value, dispatch_mode=dispatch_mode),
-            )
-        out_dict: dict[str, Any] = {}
-        for key in node:
-            out_dict[key] = _lower_node(node[key], dispatch_mode=dispatch_mode)
-        return out_dict
+        return _lower_node_dispatch(
+            node,
+            dispatch_mode=dispatch_mode,
+            lower_node=lambda value: _lower_node(value, dispatch_mode=dispatch_mode),
+            lower_call_expr=lambda call: _lower_call_expr(call, dispatch_mode=dispatch_mode),
+        )
     return node
 
 
