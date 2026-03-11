@@ -35,10 +35,10 @@ Last updated: 2026-03-12
 
 Context: [p1-relative-import-firstwave-smoke.md](../plans/p1-relative-import-firstwave-smoke.md)
 
-1. [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01] Fix representative transpile-smoke scenarios for the relative-import first wave (`rs/cs`) so the non-C++ implementation bundles attach to one shared contract.
+1. [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01] Fixed representative transpile-smoke scenarios for the relative-import first wave (`rs/cs`) so the non-C++ implementation bundles attach to one shared contract.
 2. [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S1-01] Locked the live plan / TODO and the representative first-wave smoke contract.
-3. [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-01] Add representative relative-import transpile smoke for the Rust backend.
-4. [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-02] Add representative relative-import transpile smoke for the C# backend.
-5. [ ] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S3-01] Sync backend-parity docs / support wording to the current first-wave state.
+3. [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-01] Added representative relative-import transpile smoke for the Rust backend.
+4. [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S2-02] Added representative relative-import transpile smoke for the C# backend.
+5. [x] [ID: P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01-S3-01] Synced backend-parity docs / support wording to the current first-wave state.
 
-- Progress note: The first wave is now fixed as `rs/cs`, the representative scenarios are `parent_module_alias` and `parent_symbol_alias`, and the verification lane is `transpile_smoke`.
+- Progress note: `rs/cs` now share `parent_module_alias` / `parent_symbol_alias` transpile smoke, and the coverage inventory is synced as `transpile_smoke_locked`.

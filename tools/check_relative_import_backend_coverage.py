@@ -36,7 +36,7 @@ EXPECTED_BACKENDS = (
 )
 
 EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
-    "todo_id": "P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01",
+    "todo_id": "P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01",
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
     "backend_parity_docs": (
@@ -44,11 +44,11 @@ EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
         "docs/en/language/backend-parity-matrix.md",
     ),
     "next_rollout_plan": (
-        "docs/ja/plans/p2-relative-import-noncpp-rollout.md",
-        "docs/en/plans/p2-relative-import-noncpp-rollout.md",
+        "docs/ja/plans/p1-relative-import-firstwave-smoke.md",
+        "docs/en/plans/p1-relative-import-firstwave-smoke.md",
     ),
     "first_wave_backends": ("rs", "cs"),
-    "next_verification_lane": "transpile_smoke",
+    "next_verification_lane": "second_wave_rollout_planning",
     "fail_closed_lane": "backend_specific_fail_closed",
 }
 
@@ -71,8 +71,20 @@ def validate_relative_import_backend_coverage() -> None:
             "relative import backend coverage must keep cpp as the only "
             f"build_run_locked lane: got {locked}"
         )
+    first_wave_smoke = [
+        row["backend"]
+        for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
+        if row["contract_state"] == "transpile_smoke_locked"
+    ]
+    if first_wave_smoke != ["rs", "cs"]:
+        raise SystemExit(
+            "relative import backend coverage must keep rs/cs as the only "
+            f"transpile_smoke_locked lanes: got {first_wave_smoke}"
+        )
     for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1:
         if row["backend"] == "cpp":
+            continue
+        if row["backend"] in {"rs", "cs"}:
             continue
         if row["contract_state"] != "not_locked":
             raise SystemExit(
