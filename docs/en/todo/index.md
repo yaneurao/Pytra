@@ -31,6 +31,10 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
+1. [ ] [ID: P1-RELATIVE-IMPORT-ALIAS-HARDENING-01] Lock the current support for aliased relative imports with representative regressions and spec/doc contracts.
+   Context: [docs/ja/plans/p1-relative-import-alias-hardening.md](../../ja/plans/p1-relative-import-alias-hardening.md)
+   Progress memo: Lock sibling / parent aliased relative `from-import` across import graph, CLI, C++ smoke, and support docs.
+
 ### P2: Relative-import backend coverage contract
 
 Context: [p2-relative-import-backend-coverage.md](../plans/p2-relative-import-backend-coverage.md)
