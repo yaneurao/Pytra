@@ -68,6 +68,9 @@ class CheckCrossRuntimePyRuntimeFinalThinCompatInventoryTest(unittest.TestCase):
             else:
                 self.assertTrue(all(path.startswith("src/runtime/cs/") for _, path in bucket))
 
+    def test_rs_and_cs_aliases_are_no_longer_public(self) -> None:
+        self.assertEqual(inventory_mod._collect_target_end_state_issues(), [])
+
 
 if __name__ == "__main__":
     unittest.main()

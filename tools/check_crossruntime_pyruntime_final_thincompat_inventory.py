@@ -33,11 +33,49 @@ CPP_GENERATED_RULES = {
 
 RS_ALIAS_RULES = {
     ("py_runtime_type_id", "src/runtime/rs/pytra/built_in/py_runtime.rs"): re.compile(
-        r"pub fn py_runtime_type_id<"
+        r"(?:pub\s+)?fn py_runtime_type_id<"
     ),
     ("py_runtime_type_id", "src/runtime/rs/pytra-core/built_in/py_runtime.rs"): re.compile(
-        r"pub fn py_runtime_type_id<"
+        r"(?:pub\s+)?fn py_runtime_type_id<"
     ),
+    ("py_is_subtype", "src/runtime/rs/pytra/built_in/py_runtime.rs"): re.compile(r"(?:pub\s+)?fn py_is_subtype\("),
+    ("py_is_subtype", "src/runtime/rs/pytra-core/built_in/py_runtime.rs"): re.compile(r"(?:pub\s+)?fn py_is_subtype\("),
+    ("py_issubclass", "src/runtime/rs/pytra/built_in/py_runtime.rs"): re.compile(r"(?:pub\s+)?fn py_issubclass\("),
+    ("py_issubclass", "src/runtime/rs/pytra-core/built_in/py_runtime.rs"): re.compile(r"(?:pub\s+)?fn py_issubclass\("),
+    ("py_isinstance", "src/runtime/rs/pytra/built_in/py_runtime.rs"): re.compile(r"(?:pub\s+)?fn py_isinstance<"),
+    ("py_isinstance", "src/runtime/rs/pytra-core/built_in/py_runtime.rs"): re.compile(r"(?:pub\s+)?fn py_isinstance<"),
+}
+
+CS_ALIAS_RULES = {
+    ("py_runtime_type_id", "src/runtime/cs/pytra/built_in/py_runtime.cs"): re.compile(
+        r"(?:public|private|internal) static long py_runtime_type_id\("
+    ),
+    ("py_runtime_type_id", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"): re.compile(
+        r"(?:public|private|internal) static long py_runtime_type_id\("
+    ),
+    ("py_is_subtype", "src/runtime/cs/pytra/built_in/py_runtime.cs"): re.compile(
+        r"(?:public|private|internal) static bool py_is_subtype\("
+    ),
+    ("py_is_subtype", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"): re.compile(
+        r"(?:public|private|internal) static bool py_is_subtype\("
+    ),
+    ("py_issubclass", "src/runtime/cs/pytra/built_in/py_runtime.cs"): re.compile(
+        r"(?:public|private|internal) static bool py_issubclass\("
+    ),
+    ("py_issubclass", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"): re.compile(
+        r"(?:public|private|internal) static bool py_issubclass\("
+    ),
+    ("py_isinstance", "src/runtime/cs/pytra/built_in/py_runtime.cs"): re.compile(
+        r"(?:public|private|internal) static bool py_isinstance\("
+    ),
+    ("py_isinstance", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"): re.compile(
+        r"(?:public|private|internal) static bool py_isinstance\("
+    ),
+}
+
+RS_PUBLIC_ALIAS_RULES = {
+    ("py_runtime_type_id", "src/runtime/rs/pytra/built_in/py_runtime.rs"): re.compile(r"pub fn py_runtime_type_id<"),
+    ("py_runtime_type_id", "src/runtime/rs/pytra-core/built_in/py_runtime.rs"): re.compile(r"pub fn py_runtime_type_id<"),
     ("py_is_subtype", "src/runtime/rs/pytra/built_in/py_runtime.rs"): re.compile(r"pub fn py_is_subtype\("),
     ("py_is_subtype", "src/runtime/rs/pytra-core/built_in/py_runtime.rs"): re.compile(r"pub fn py_is_subtype\("),
     ("py_issubclass", "src/runtime/rs/pytra/built_in/py_runtime.rs"): re.compile(r"pub fn py_issubclass\("),
@@ -46,31 +84,15 @@ RS_ALIAS_RULES = {
     ("py_isinstance", "src/runtime/rs/pytra-core/built_in/py_runtime.rs"): re.compile(r"pub fn py_isinstance<"),
 }
 
-CS_ALIAS_RULES = {
-    ("py_runtime_type_id", "src/runtime/cs/pytra/built_in/py_runtime.cs"): re.compile(
-        r"public static long py_runtime_type_id\("
-    ),
-    ("py_runtime_type_id", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"): re.compile(
-        r"public static long py_runtime_type_id\("
-    ),
-    ("py_is_subtype", "src/runtime/cs/pytra/built_in/py_runtime.cs"): re.compile(
-        r"public static bool py_is_subtype\("
-    ),
-    ("py_is_subtype", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"): re.compile(
-        r"public static bool py_is_subtype\("
-    ),
-    ("py_issubclass", "src/runtime/cs/pytra/built_in/py_runtime.cs"): re.compile(
-        r"public static bool py_issubclass\("
-    ),
-    ("py_issubclass", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"): re.compile(
-        r"public static bool py_issubclass\("
-    ),
-    ("py_isinstance", "src/runtime/cs/pytra/built_in/py_runtime.cs"): re.compile(
-        r"public static bool py_isinstance\("
-    ),
-    ("py_isinstance", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"): re.compile(
-        r"public static bool py_isinstance\("
-    ),
+CS_PUBLIC_ALIAS_RULES = {
+    ("py_runtime_type_id", "src/runtime/cs/pytra/built_in/py_runtime.cs"): re.compile(r"public static long py_runtime_type_id\("),
+    ("py_runtime_type_id", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"): re.compile(r"public static long py_runtime_type_id\("),
+    ("py_is_subtype", "src/runtime/cs/pytra/built_in/py_runtime.cs"): re.compile(r"public static bool py_is_subtype\("),
+    ("py_is_subtype", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"): re.compile(r"public static bool py_is_subtype\("),
+    ("py_issubclass", "src/runtime/cs/pytra/built_in/py_runtime.cs"): re.compile(r"public static bool py_issubclass\("),
+    ("py_issubclass", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"): re.compile(r"public static bool py_issubclass\("),
+    ("py_isinstance", "src/runtime/cs/pytra/built_in/py_runtime.cs"): re.compile(r"public static bool py_isinstance\("),
+    ("py_isinstance", "src/runtime/cs/pytra-core/built_in/py_runtime.cs"): re.compile(r"public static bool py_isinstance\("),
 }
 
 EXPECTED_BUCKETS = {
@@ -178,6 +200,19 @@ def _collect_target_end_state_issues() -> list[str]:
         issues.append(f"target end state missing bucket: {bucket}")
     for bucket in sorted(set(TARGET_END_STATE) - known):
         issues.append(f"target end state references unknown bucket: {bucket}")
+    visibility_rule_groups = {
+        "rs_runtime_generic_alias_surface": RS_PUBLIC_ALIAS_RULES,
+        "cs_runtime_generic_alias_surface": CS_PUBLIC_ALIAS_RULES,
+    }
+    for bucket, rules in visibility_rule_groups.items():
+        if TARGET_END_STATE.get(bucket) != "internal_or_private_only_before_header_removal":
+            continue
+        for path in _iter_target_files():
+            rel = path.relative_to(ROOT).as_posix()
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            for (symbol, rule_path), pattern in rules.items():
+                if rel == rule_path and pattern.search(text) is not None:
+                    issues.append(f"public alias must be removed from {bucket}: {symbol} @ {rel}")
     return issues
 
 
