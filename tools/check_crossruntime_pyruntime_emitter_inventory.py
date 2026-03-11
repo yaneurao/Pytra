@@ -39,13 +39,12 @@ TRACKED_PATHS = {
 EXPECTED_BUCKETS = {
     "cpp_object_bridge_residual": {
         ("py_append", "src/backends/cpp/emitter/call.py"),
-        ("py_set_at", "src/backends/cpp/emitter/stmt.py"),
-        ("py_append", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_extend", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_pop", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_clear", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_reverse", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_sort", "src/backends/cpp/emitter/cpp_emitter.py"),
+        ("py_extend", "src/backends/cpp/emitter/call.py"),
+        ("py_pop", "src/backends/cpp/emitter/call.py"),
+        ("py_clear", "src/backends/cpp/emitter/call.py"),
+        ("py_reverse", "src/backends/cpp/emitter/call.py"),
+        ("py_sort", "src/backends/cpp/emitter/call.py"),
+        ("py_set_at", "src/backends/cpp/emitter/call.py"),
     },
     "shared_type_id_contract": {
         ("py_runtime_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),

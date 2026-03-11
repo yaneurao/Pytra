@@ -58,7 +58,7 @@ Verification commands:
 Breakdown:
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-01] Bucket residual `py_runtime` symbols across the C++/Rust/C# emitters and add an inventory drift guard.
 - [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S1-02] Lock the end state for `object bridge residual`, `shared type_id contract`, and `cross-runtime bridge residual` in docs.
-- [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-01] Clean up representative C++ object-bridge mutation-helper residuals.
+- [x] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-01] Clean up representative C++ object-bridge mutation-helper residuals.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S2-02] Align Rust/C# `type_id` and type-predicate lowering to the shared contract.
 - [ ] [ID: P4-CROSSRUNTIME-PYRUNTIME-EMITTER-ALIGN-01-S3-01] Refresh representative smoke tests, docs, and archive the task.
 
@@ -66,3 +66,4 @@ Decision log:
 - 2026-03-11: Opened as the post-`P0-CPP-PYRUNTIME-CONTRACT-SHRINK-01` follow-up. This P4 is about making the cross-runtime emitter contract explicit and aligned, not about directly shrinking `py_runtime.h` again.
 - 2026-03-11: As `S1-01`, we added `tools/check_crossruntime_pyruntime_emitter_inventory.py` and its unit test, then bucketed emitter-side residual `py_runtime` symbols into `cpp_object_bridge_residual`, `shared_type_id_contract`, and `crossruntime_object_bridge_residual`.
 - 2026-03-11: As `S1-02`, we fixed the end state of those three buckets in the docs. C++ object fallback stays isolated in `cpp_object_bridge_residual`, cross-language type-predicate / type-id helpers stay in `shared_type_id_contract`, and the remaining C# list bridge stays isolated in `crossruntime_object_bridge_residual`.
+- 2026-03-11: As `S2-01`, we centralized the C++ emitter object-bridge helper names into `CppCallEmitter`'s canonical map, so the residual `py_append/extend/pop/clear/reverse/sort/set_at` symbols remain in `call.py` only. The inventory guard was updated to lock that end state.

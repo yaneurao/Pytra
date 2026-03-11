@@ -3831,7 +3831,7 @@ class CppEmitter(
                 )
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 boxed_value = self._box_expr_for_any(value_expr, value_node)
-                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref(owner_expr, "py_append")
+                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref_for_op(owner_expr, "append")
                 return f"py_list_append_mut({list_ref_expr}, {boxed_value})"
             owner_t0 = self.get_expr_type(owner_node)
             owner_t = owner_t0 if isinstance(owner_t0, str) else ""
@@ -3859,11 +3859,12 @@ class CppEmitter(
                 )
             if self._uses_pyobj_runtime_list_expr(owner_node):
                 boxed_value = self._box_expr_for_any(value_expr, value_node)
-                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref(owner_expr, "py_extend")
+                extend_ctx = self._pyobj_runtime_list_bridge_context("extend")
+                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref(owner_expr, extend_ctx)
                 return (
                     f"py_list_extend_mut("
                     f"{list_ref_expr}, "
-                    f"obj_to_list_ref_or_raise({boxed_value}, \"py_extend\"))"
+                    f"obj_to_list_ref_or_raise({boxed_value}, \"{extend_ctx}\"))"
                 )
             return f"{owner_expr}.insert({owner_expr}.end(), {value_expr}.begin(), {value_expr}.end())"
         if kind == "SetAdd":
@@ -3911,7 +3912,7 @@ class CppEmitter(
                     f"}}())"
                 )
             if self._uses_pyobj_runtime_list_expr(owner_node):
-                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref(owner_expr, "py_pop")
+                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref_for_op(owner_expr, "pop")
                 if not has_index:
                     return f"py_list_pop_mut({list_ref_expr})"
                 index_node = expr_d.get("index")
@@ -3940,7 +3941,7 @@ class CppEmitter(
                     f"}}())"
                 )
             if self._uses_pyobj_runtime_list_expr(owner_node):
-                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref(owner_expr, "py_clear")
+                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref_for_op(owner_expr, "clear")
                 return f"py_list_clear_mut({list_ref_expr})"
             return f"{owner_expr}.clear()"
         if kind == "ListReverse":
@@ -3957,7 +3958,7 @@ class CppEmitter(
                     f"}}())"
                 )
             if self._uses_pyobj_runtime_list_expr(owner_node):
-                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref(owner_expr, "py_reverse")
+                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref_for_op(owner_expr, "reverse")
                 return f"py_list_reverse_mut({list_ref_expr})"
             return f"::std::reverse({owner_expr}.begin(), {owner_expr}.end())"
         if kind == "ListSort":
@@ -3974,7 +3975,7 @@ class CppEmitter(
                     f"}}())"
                 )
             if self._uses_pyobj_runtime_list_expr(owner_node):
-                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref(owner_expr, "py_sort")
+                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref_for_op(owner_expr, "sort")
                 return f"py_list_sort_mut({list_ref_expr})"
             return f"::std::sort({owner_expr}.begin(), {owner_expr}.end())"
         if kind == "SetErase":

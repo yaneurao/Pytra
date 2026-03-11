@@ -8,12 +8,37 @@ from toolchain.compiler.transpile_cli import (
 )
 
 
+_PYOBJ_RUNTIME_LIST_BRIDGE_CONTEXTS = {
+    "append": "py_append",
+    "extend": "py_extend",
+    "pop": "py_pop",
+    "clear": "py_clear",
+    "reverse": "py_reverse",
+    "sort": "py_sort",
+    "set_at": "py_set_at",
+}
+
+
 class CppCallEmitter:
     """Runtime-call / import / cast-related helpers split out from CppEmitter."""
 
     def _render_pyobj_runtime_list_bridge_ref(self, owner_expr: str, ctx: str) -> str:
         """Render the low-level object-list bridge used by pyobj runtime list fallbacks."""
         return f'obj_to_list_ref_or_raise({owner_expr}, "{ctx}")'
+
+    def _pyobj_runtime_list_bridge_context(self, op: str) -> str:
+        """Return the canonical object-list bridge helper label for the given operation."""
+        ctx = _PYOBJ_RUNTIME_LIST_BRIDGE_CONTEXTS.get(op, "")
+        if ctx == "":
+            raise ValueError("unsupported pyobj runtime list bridge op: " + op)
+        return ctx
+
+    def _render_pyobj_runtime_list_bridge_ref_for_op(self, owner_expr: str, op: str) -> str:
+        """Render the object-list bridge using the canonical per-operation helper label."""
+        return self._render_pyobj_runtime_list_bridge_ref(
+            owner_expr,
+            self._pyobj_runtime_list_bridge_context(op),
+        )
 
     def _render_json_decode_call(self, expr_d: dict[str, Any]) -> str:
         lowered_kind = self.any_dict_get_str(expr_d, "lowered_kind", "")
@@ -569,7 +594,7 @@ class CppCallEmitter:
                     a0 = self.render_expr(self._build_box_expr_node(arg0_node))
                 else:
                     a0 = f"make_object({a0})"
-            list_ref_expr = self._render_pyobj_runtime_list_bridge_ref(owner_expr, "py_append")
+            list_ref_expr = self._render_pyobj_runtime_list_bridge_ref_for_op(owner_expr, "append")
             return f"py_list_append_mut({list_ref_expr}, {a0})"
         return None
 

@@ -25,6 +25,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
     def test_cpp_object_bridge_bucket_is_cpp_only(self) -> None:
         bucket = inventory_mod.EXPECTED_BUCKETS["cpp_object_bridge_residual"]
         self.assertTrue(all(path.startswith("src/backends/cpp/") for _, path in bucket))
+        self.assertEqual({path for _, path in bucket}, {"src/backends/cpp/emitter/call.py"})
         self.assertEqual(
             {symbol for symbol, _ in bucket},
             {"py_append", "py_extend", "py_pop", "py_clear", "py_reverse", "py_sort", "py_set_at"},
