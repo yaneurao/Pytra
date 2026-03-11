@@ -50,6 +50,13 @@ BUNDLE_ORDER = (
     "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S3-01",
 )
 
+LEGACY_ALIAS_SIGNATURES = {
+    "static inline uint32 py_runtime_type_id(",
+    "static inline bool py_isinstance(",
+    "static inline bool py_is_subtype(",
+    "static inline bool py_issubclass(",
+}
+
 
 def _header_text() -> str:
     return HEADER.read_text(encoding="utf-8")
@@ -128,6 +135,10 @@ def _collect_handoff_issues() -> list[str]:
         "py_runtime_object_isinstance",
     }:
         issues.append("shared type-id thin-helper target end state drifted")
+    text = _header_text()
+    for signature in sorted(LEGACY_ALIAS_SIGNATURES):
+        if signature in text:
+            issues.append(f"legacy generic alias returned to py_runtime.h: {signature}")
     return issues
 
 
