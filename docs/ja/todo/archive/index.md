@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-11 / P1-EAST23-LOWERING-ORCHESTRATION-01](../plans/archive/20260311-p1-east23-lowering-orchestration-split.md)
 - [2026-03-11 / P1-EAST23-LOWERING-DECOMPOSITION-01](../plans/archive/20260311-p1-east23-lowering-decomposition.md)
 - [2026-03-11 / P1-IR-ENTRYPOINT-FACADE-PRUNING-01](../plans/archive/20260311-p1-ir-entrypoint-facade-pruning.md)
 - [2026-03-11 / P1-IR-CORE-DECOMPOSITION-01](../plans/archive/20260311-p1-ir-core-decomposition.md)
@@ -105,7 +106,7 @@
 
 ## 日付別リンク
 
-- [2026-03-11](20260311.md)（9 セクション）
+- [2026-03-11](20260311.md)（10 セクション）
 - [2026-03-09](20260309.md)（29 セクション）
 - [2026-03-08](20260308.md)（31 セクション）
 - [2026-03-07](20260307.md)（6 セクション）

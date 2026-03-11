@@ -30,21 +30,3 @@ Last updated: 2026-03-11
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
-
-### P1: Split the remaining `east2_to_east3_lowering.py` clusters in a second wave
-
-Context: [docs/en/plans/p1-east23-lowering-orchestration-split.md](../plans/p1-east23-lowering-orchestration-split.md)
-
-1. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01] Move the remaining `east2_to_east3_lowering.py` clusters into dedicated modules and reduce the main file to orchestration / dispatch logic.
-2. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-01] Inventory the remaining clusters as `call_metadata`, `stmt_lowering`, and `dispatch_orchestration`, then lock the split order.
-3. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-02] Keep progress notes at bundle level and fix the main-file end state as `dispatch + lifecycle`.
-4. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-01] Split the `call metadata` / `json decode fastpath` cluster into a dedicated module.
-5. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-02] Split the `Assign` / `For` / `ForRange` lowering cluster into a dedicated module.
-6. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-03] Split `Attribute` / `Match` / `ForCore` lowering plus node-dispatch orchestration into dedicated modules.
-7. [x] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S3-01] Update source-contract tests and representative regressions to the second-wave split layout.
-8. [ ] [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S4-01] Update docs / TODO / archive and close the task.
-- Progress note: [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S1-01] The remaining 833-line main file was reduced to three second-wave clusters: `call metadata/json decode`, `stmt lowering`, and `dispatch/orchestration`.
-- Progress note: [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-01] `call metadata/json decode fastpath` moved into `east2_to_east3_call_metadata.py`, and the main file retreated to call orchestration plus type-id/object-bridge fallback.
-- Progress note: [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-02] `Assign/For/ForRange/ForCore` moved into `east2_to_east3_stmt_lowering.py`, and the main file shrank to call/attribute/match plus node dispatch orchestration.
-- Progress note: [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S2-03] `Attribute/Match` lowering and node dispatch moved into `east2_to_east3_dispatch_orchestration.py`, and the main file shrank to lifecycle plus call lowering.
-- Progress note: [ID: P1-EAST23-LOWERING-ORCHESTRATION-01-S3-01] Source-contract ownership now points at the dispatch module, and `test_east2_to_east3*.py` plus selfhost regressions lock the second-wave split layout.
