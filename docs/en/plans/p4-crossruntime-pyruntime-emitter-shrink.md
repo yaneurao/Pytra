@@ -64,6 +64,8 @@ Acceptance criteria:
 Representative guards:
 - inventory source of truth: [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_emitter_inventory.py)
 - unit guard: [test_check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py)
+- representative manifest:
+  - freeze `smoke_file + smoke_tests + source_guard_paths` per residual bucket inside the inventory tool.
 - representative smoke:
   - C++: [test_east3_cpp_bridge.py](/workspace/Pytra/test/unit/backends/cpp/test_east3_cpp_bridge.py)
   - Rust: [test_py2rs_smoke.py](/workspace/Pytra/test/unit/backends/rs/test_py2rs_smoke.py)
@@ -91,3 +93,4 @@ Representative guards:
 - 2026-03-12: The first `S2-01` bundle locks C++ wrapper re-entry so `py_append` / `py_extend` / `py_pop` / `py_clear` / `py_reverse` / `py_sort` / `py_set_at` must not reappear in `cpp_emitter.py`, `runtime_expr.py`, or `stmt.py`, and fixes the representative split as `typed list append/set_at -> py_list_*_mut(rc_list_ref(...))` versus `pyobj Any list -> obj_to_list_ref_or_raise(..., "py_append" | "py_set_at")`.
 - 2026-03-12: `S2-02` is now fixed as `Rust = thin shared type_id seam only` and `C# = the same thin seam plus intentional bytes/bytearray compat residuals for py_append / py_pop / py_get / py_slice / py_set`.
 - 2026-03-12: `S3-01` is now closed by adding source-guard patterns for the Rust/C# thin seams and the C# bytes/bytearray residual lane to the inventory tool, and by fixing the representative smoke files as `test_east3_cpp_bridge.py`, `test_py2rs_smoke.py`, and `test_py2cs_smoke.py`.
+- 2026-03-12: The second `S3-01` bundle freezes a representative manifest (`smoke_file + smoke_tests + source_guard_paths`) per residual bucket so test-name drift for the C++ object bridge, C++ shared type_id, Rust thin seam, C# thin seam, and C# bytes compat residual now fails closed in the inventory tool.

@@ -64,6 +64,8 @@
 代表 guard:
 - inventory 正本: [check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/tools/check_crossruntime_pyruntime_emitter_inventory.py)
 - unit guard: [test_check_crossruntime_pyruntime_emitter_inventory.py](/workspace/Pytra/test/unit/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py)
+- representative manifest:
+  - bucket ごとに `smoke_file + smoke_tests + source_guard_paths` を inventory tool 内で固定する。
 - representative smoke:
   - C++: [test_east3_cpp_bridge.py](/workspace/Pytra/test/unit/backends/cpp/test_east3_cpp_bridge.py)
   - Rust: [test_py2rs_smoke.py](/workspace/Pytra/test/unit/backends/rs/test_py2rs_smoke.py)
@@ -91,3 +93,4 @@
 - 2026-03-12: `S2-01` では C++ emitter の typed lane direct helper (`py_list_*_mut`) と object bridge wrapper (`py_append` 系) を別 inventory として固定し、wrapper 名が `call.py` 以外へ漏れたら fail-closed にした。
 - 2026-03-12: `S2-02` は Rust を `py_runtime_value_*` / `py_runtime_type_id_*` thin seam only として維持し、C# は同じ thin seamに加えて bytes/bytearray の `py_append/py_pop/py_get/py_slice/py_set` compat residual のみを intentional seam として固定した。
 - 2026-03-12: `S3-01` は inventory tool に Rust/C# thin seam と C# bytes/bytearray residual の source guard pattern を追加し、representative smoke を `test_east3_cpp_bridge.py` / `test_py2rs_smoke.py` / `test_py2cs_smoke.py` へ固定して完了扱いにした。
+- 2026-03-12: `S3-01` の second bundle として bucket ごとの representative manifest (`smoke_file + smoke_tests + source_guard_paths`) を inventory tool に固定し、C++ object bridge / C++ shared type_id / Rust thin seam / C# thin seam / C# bytes compat residual の test 名 drift を fail-closed にした。
