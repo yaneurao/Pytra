@@ -13,6 +13,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from _east23_lowering_test_support import East23LoweringNominalAdtFixtureMixin
+from _east23_lowering_test_support import _const_i
 from src.toolchain.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
 from src.toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.frontends.type_expr import parse_type_expr_text
@@ -105,6 +106,78 @@ class East2ToEast3SplitRegressionTest(East23LoweringNominalAdtFixtureMixin, unit
         first_bind = first_pattern.get("subpatterns", [])[0]
         self.assertEqual(first_bind.get("lowered_kind"), "NominalAdtPatternBind")
         self.assertEqual(first_bind.get("nominal_adt_pattern_bind_v1", {}).get("field_name"), "value")
+
+    def test_lower_json_decode_call_uses_split_call_metadata_helper(self) -> None:
+        out = lower_east2_to_east3(
+            {
+                "kind": "Module",
+                "meta": {"dispatch_mode": "native"},
+                "body": [
+                    {
+                        "kind": "Expr",
+                        "value": {
+                            "kind": "Call",
+                            "resolved_type": "JsonObj | None",
+                            "type_expr": parse_type_expr_text("JsonObj | None"),
+                            "func": {
+                                "kind": "Attribute",
+                                "attr": "as_obj",
+                                "value": {
+                                    "kind": "Name",
+                                    "id": "payload",
+                                    "resolved_type": "JsonValue",
+                                    "type_expr": parse_type_expr_text("JsonValue"),
+                                },
+                            },
+                            "args": [],
+                            "keywords": [],
+                        },
+                    }
+                ],
+            }
+        )
+        value = out.get("body", [])[0].get("value", {})
+        self.assertEqual(value.get("lowered_kind"), "JsonDecodeCall")
+        self.assertEqual(value.get("semantic_tag"), "json.value.as_obj")
+        self.assertEqual(value.get("json_decode_v1", {}).get("decode_entry"), "json.value.as_obj")
+        self.assertEqual(value.get("json_decode_v1", {}).get("receiver_nominal_adt_name"), "JsonValue")
+
+    def test_lower_stmt_cluster_keeps_assign_bridge_and_forrange_plan(self) -> None:
+        out = lower_east2_to_east3(
+            {
+                "kind": "Module",
+                "meta": {"dispatch_mode": "native"},
+                "body": [
+                    {
+                        "kind": "AnnAssign",
+                        "target": {"kind": "Name", "id": "boxed", "resolved_type": "object"},
+                        "annotation": "object",
+                        "decl_type": "object",
+                        "value": {"kind": "Name", "id": "n", "resolved_type": "int64"},
+                        "declare": True,
+                    },
+                    {
+                        "kind": "ForRange",
+                        "target": {"kind": "Name", "id": "i"},
+                        "target_type": "int64",
+                        "start": _const_i(0),
+                        "stop": _const_i(4),
+                        "step": _const_i(1),
+                        "body": [],
+                        "orelse": [],
+                    },
+                ],
+            }
+        )
+        body = out.get("body", [])
+        assign_value = body[0].get("value", {})
+        self.assertEqual(assign_value.get("kind"), "Box")
+        self.assertEqual(assign_value.get("resolved_type"), "object")
+        for_stmt = body[1]
+        self.assertEqual(for_stmt.get("kind"), "ForCore")
+        self.assertEqual(for_stmt.get("iter_mode"), "static_fastpath")
+        self.assertEqual(for_stmt.get("iter_plan", {}).get("kind"), "StaticRangeForPlan")
+        self.assertEqual(for_stmt.get("target_plan", {}).get("kind"), "NameTarget")
 
     def test_lower_builtin_jsonvalue_and_user_nominal_adt_share_nominal_adt_category(self) -> None:
         user_out = lower_east2_to_east3(self.representative_nominal_adt_match_east2())
