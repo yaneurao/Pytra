@@ -30,3 +30,12 @@ Last updated: 2026-03-11
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+
+### P1: Prune `toolchain.ir.core` facade importers
+
+Context: [docs/ja/plans/p1-ir-entrypoint-facade-pruning.md](../ja/plans/p1-ir-entrypoint-facade-pruning.md)
+
+1. [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01] Restrict `toolchain.ir.core` to an external compatibility facade and move internal compiler / representative regression lanes onto `core_entrypoints`.
+2. [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S2-01] Move `transpile_cli` and representative test/backend importers onto `core_entrypoints`.
+3. [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S2-02] Fail fast on facade reentry with a source-contract guard.
+4. [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S3-01] Run representative regressions and version gates, then archive the task.

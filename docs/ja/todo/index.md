@@ -30,3 +30,12 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
+
+### P1: `toolchain.ir.core` facade importer を剥がす
+
+文脈: [docs/ja/plans/p1-ir-entrypoint-facade-pruning.md](../plans/p1-ir-entrypoint-facade-pruning.md)
+
+1. [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01] `toolchain.ir.core` を external compatibility facade に限定し、internal compiler / representative regression lane を `core_entrypoints` へ寄せる。
+2. [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S2-01] `transpile_cli` と representative test/backend importer を `core_entrypoints` へ寄せる。
+3. [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S2-02] facade 依存の再流入を source-contract で fail-fast にする。
+4. [ ] [ID: P1-IR-ENTRYPOINT-FACADE-PRUNING-01-S3-01] representative regression と version gate を通し、archive へ移す。
