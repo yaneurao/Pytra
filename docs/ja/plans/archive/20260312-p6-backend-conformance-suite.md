@@ -123,9 +123,9 @@
 ## S4-01 Conformance Summary Handoff
 
 - source of truth:
-  - summary handoff contract: [backend_conformance_summary_handoff.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_summary_handoff.py)
+  - summary handoff contract: [backend_conformance_summary_handoff_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_summary_handoff_contract.py)
   - CLI/export seam: [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/export_backend_conformance_summary_handoff_manifest.py)
-  - validation: [check_backend_conformance_summary_handoff.py](/workspace/Pytra/tools/check_backend_conformance_summary_handoff.py), [test_check_backend_conformance_summary_handoff.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_summary_handoff.py)
+  - validation: [check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/tools/check_backend_conformance_summary_handoff_contract.py), [test_check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_summary_handoff_contract.py), [test_export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_conformance_summary_handoff_manifest.py)
 - destination order:
   - `support_matrix -> docs -> tooling`
 - required manifest rule:
@@ -150,4 +150,4 @@
 - 2026-03-12: `S2-01` では `backend_conformance_inventory.build_backend_conformance_seed_manifest()` と `export_backend_conformance_seed_manifest.py` も追加し、runner seed の `lane_harness` / `fixture_lane_policy` を固定した。
 - 2026-03-12: `S2-02` では `backend_conformance_runner_contract.py` と `export_backend_conformance_runner_manifest.py` を追加し、representative backend order を `cpp -> rs -> cs`、backend-selectable lane を `emit/runtime`、per-backend smoke binding を runner manifest に固定した。
 - 2026-03-12: `S3-01` では `backend_conformance_runtime_parity_contract.py` と `export_backend_conformance_runtime_parity_manifest.py` を追加し、`pytra_std` runtime lane を `stdlib_module_runtime_case` として `json/pathlib/enum/argparse/math/re` へ固定した。
-- 2026-03-12: `S4-01` では `backend_conformance_summary_handoff.py` と `export_backend_conformance_summary_handoff_manifest.py` を追加し、support matrix/docs/tooling への downstream handoff を `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` 向けに固定した。
+- 2026-03-12: `S4-01` では `backend_conformance_summary_handoff_contract.py` と `export_backend_conformance_summary_handoff_manifest.py` を正本にし、support matrix/docs/tooling への downstream handoff を `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` 向けに固定した。

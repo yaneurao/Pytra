@@ -123,9 +123,9 @@ Acceptance criteria:
 ## S4-01 Conformance Summary Handoff
 
 - source of truth:
-  - summary handoff contract: [backend_conformance_summary_handoff.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_summary_handoff.py)
+  - summary handoff contract: [backend_conformance_summary_handoff_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_summary_handoff_contract.py)
   - CLI/export seam: [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/export_backend_conformance_summary_handoff_manifest.py)
-  - validation: [check_backend_conformance_summary_handoff.py](/workspace/Pytra/tools/check_backend_conformance_summary_handoff.py), [test_check_backend_conformance_summary_handoff.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_summary_handoff.py)
+  - validation: [check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/tools/check_backend_conformance_summary_handoff_contract.py), [test_check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_summary_handoff_contract.py), [test_export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_conformance_summary_handoff_manifest.py)
 - destination order:
   - `support_matrix -> docs -> tooling`
 - required manifest rule:
@@ -150,4 +150,4 @@ Acceptance criteria:
 - 2026-03-12: `S2-01` also adds `backend_conformance_inventory.build_backend_conformance_seed_manifest()` and `export_backend_conformance_seed_manifest.py` so the runner seed `lane_harness` / `fixture_lane_policy` stays fixed.
 - 2026-03-12: `S2-02` adds `backend_conformance_runner_contract.py` and `export_backend_conformance_runner_manifest.py`, fixing the representative backend order to `cpp -> rs -> cs`, the backend-selectable lanes to `emit/runtime`, and the per-backend smoke bindings in one runner manifest.
 - 2026-03-12: `S3-01` adds `backend_conformance_runtime_parity_contract.py` and `export_backend_conformance_runtime_parity_manifest.py`, fixing the `pytra_std` runtime lane as `stdlib_module_runtime_case` across `json/pathlib/enum/argparse/math/re`.
-- 2026-03-12: `S4-01` adds `backend_conformance_summary_handoff.py` and `export_backend_conformance_summary_handoff_manifest.py`, fixing the downstream summary handoff into `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` for support matrix/docs/tooling.
+- 2026-03-12: `S4-01` fixes `backend_conformance_summary_handoff_contract.py` and `export_backend_conformance_summary_handoff_manifest.py` as the canonical summary handoff pair into `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` for support matrix/docs/tooling.

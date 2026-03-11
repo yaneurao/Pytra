@@ -44,20 +44,23 @@
 
 - source of truth:
   - matrix contract: [backend_parity_matrix_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_matrix_contract.py)
-  - CLI/export seam: [export_backend_parity_matrix_manifest.py](/workspace/Pytra/tools/export_backend_parity_matrix_manifest.py)
-  - validation: [check_backend_parity_matrix_contract.py](/workspace/Pytra/tools/check_backend_parity_matrix_contract.py), [test_check_backend_parity_matrix_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_matrix_contract.py)
+  - row/state seed: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py) の `iter_representative_support_matrix_handoff()` / `SUPPORT_STATE_ORDER`
+  - conformance summary seed contract: [backend_conformance_summary_handoff_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_summary_handoff_contract.py)
+  - CLI/export seam: [export_backend_parity_matrix_manifest.py](/workspace/Pytra/tools/export_backend_parity_matrix_manifest.py), [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/export_backend_conformance_summary_handoff_manifest.py)
+  - validation: [check_backend_parity_matrix_contract.py](/workspace/Pytra/tools/check_backend_parity_matrix_contract.py), [test_check_backend_parity_matrix_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_matrix_contract.py), [check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/tools/check_backend_conformance_summary_handoff_contract.py), [test_check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_summary_handoff_contract.py), [test_export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_conformance_summary_handoff_manifest.py)
 - source manifest rule:
   - `feature_contract_seed`: `backend_feature_contract_inventory.build_feature_contract_handoff_manifest`
-  - `conformance_summary_seed`: `backend_conformance_summary_handoff.build_backend_conformance_summary_handoff_manifest`
+  - `conformance_summary_seed`: `backend_conformance_summary_handoff_contract.build_backend_conformance_summary_handoff_manifest`
   - matrix の canonical destination は `support_matrix` に固定する。
 - row/source rule:
   - row seed は `iter_representative_support_matrix_handoff()` を使い、`feature_id/category/representative_fixture/backend_order/support_state_order` をそのまま row key にする。
-  - summary seed は P6 の `support_matrix` handoff (`feature_contract_handoff.support_matrix_handoff`) をそのまま使い、matrix 側で別 vocabulary を持ち込まない。
+  - summary seed は P6 の representative conformance summary handoff を使い、matrix 側では `representative_summary_entries` の allowlist key だけを読む。
 - publish path rule:
   - 日本語 docs publish path は `docs/ja/language/backend-parity-matrix.md`
   - 英語 docs publish path は `docs/en/language/backend-parity-matrix.md`
   - tooling publish seam は `tools/export_backend_parity_matrix_manifest.py`
+  - conformance summary handoff の publish target order は `support_matrix -> docs -> tooling` に固定する。
 - downstream rule:
   - downstream task / plan は `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` と `docs/ja/plans/p7-backend-parity-rollout-and-matrix.md` に固定する。
 
-- 2026-03-12: `S1-01` では `backend_parity_matrix_contract.py` を追加し、support matrix の row seed は P5、summary seed は P6、publish path は `docs/ja|en/language/backend-parity-matrix.md` と tooling manifest export に固定した。
+- 2026-03-12: `S1-01` では `backend_parity_matrix_contract.py` を正本にし、row/state seed を `backend_feature_contract_inventory.iter_representative_support_matrix_handoff()`、summary seed を `backend_conformance_summary_handoff_contract.build_backend_conformance_summary_handoff_manifest()` に固定した。

@@ -153,7 +153,7 @@ HANDOFF_TASK_IDS: Final[dict[str, str]] = {
 }
 
 HANDOFF_PLAN_PATHS: Final[dict[str, str]] = {
-    "conformance_suite": "docs/ja/plans/p6-backend-conformance-suite.md",
+    "conformance_suite": "docs/ja/plans/archive/20260312-p6-backend-conformance-suite.md",
     "support_matrix": "docs/ja/plans/p7-backend-parity-rollout-and-matrix.md",
 }
 

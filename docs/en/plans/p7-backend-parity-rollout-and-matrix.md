@@ -44,20 +44,23 @@ Acceptance criteria:
 
 - source of truth:
   - matrix contract: [backend_parity_matrix_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_matrix_contract.py)
-  - CLI/export seam: [export_backend_parity_matrix_manifest.py](/workspace/Pytra/tools/export_backend_parity_matrix_manifest.py)
-  - validation: [check_backend_parity_matrix_contract.py](/workspace/Pytra/tools/check_backend_parity_matrix_contract.py), [test_check_backend_parity_matrix_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_matrix_contract.py)
+  - row/state seed: [backend_feature_contract_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_feature_contract_inventory.py) via `iter_representative_support_matrix_handoff()` and `SUPPORT_STATE_ORDER`
+  - conformance summary seed contract: [backend_conformance_summary_handoff_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_conformance_summary_handoff_contract.py)
+  - CLI/export seam: [export_backend_parity_matrix_manifest.py](/workspace/Pytra/tools/export_backend_parity_matrix_manifest.py), [export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/tools/export_backend_conformance_summary_handoff_manifest.py)
+  - validation: [check_backend_parity_matrix_contract.py](/workspace/Pytra/tools/check_backend_parity_matrix_contract.py), [test_check_backend_parity_matrix_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_parity_matrix_contract.py), [check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/tools/check_backend_conformance_summary_handoff_contract.py), [test_check_backend_conformance_summary_handoff_contract.py](/workspace/Pytra/test/unit/tooling/test_check_backend_conformance_summary_handoff_contract.py), [test_export_backend_conformance_summary_handoff_manifest.py](/workspace/Pytra/test/unit/tooling/test_export_backend_conformance_summary_handoff_manifest.py)
 - source manifest rule:
   - `feature_contract_seed`: `backend_feature_contract_inventory.build_feature_contract_handoff_manifest`
-  - `conformance_summary_seed`: `backend_conformance_summary_handoff.build_backend_conformance_summary_handoff_manifest`
+  - `conformance_summary_seed`: `backend_conformance_summary_handoff_contract.build_backend_conformance_summary_handoff_manifest`
   - the canonical matrix destination is fixed to `support_matrix`.
 - row/source rule:
   - row seed comes directly from `iter_representative_support_matrix_handoff()` and keeps `feature_id/category/representative_fixture/backend_order/support_state_order` as the row keys.
-  - summary seed is reused directly from the P6 `support_matrix` handoff (`feature_contract_handoff.support_matrix_handoff`), so the matrix does not invent a second vocabulary.
+  - summary seed is reused from the P6 representative conformance summary handoff, and the matrix only reads the allowlisted `representative_summary_entries` keys.
 - publish path rule:
   - Japanese docs publish path: `docs/ja/language/backend-parity-matrix.md`
   - English docs publish path: `docs/en/language/backend-parity-matrix.md`
   - tooling publish seam: `tools/export_backend_parity_matrix_manifest.py`
+  - the conformance summary handoff itself keeps the fixed publish target order `support_matrix -> docs -> tooling`
 - downstream rule:
   - downstream task / plan stay fixed to `P7-BACKEND-PARITY-ROLLOUT-MATRIX-01` and `docs/ja/plans/p7-backend-parity-rollout-and-matrix.md`.
 
-- 2026-03-12: `S1-01` adds `backend_parity_matrix_contract.py`, fixes the support-matrix row seed to P5, the summary seed to P6, and the publish path to `docs/ja|en/language/backend-parity-matrix.md` plus the tooling manifest export.
+- 2026-03-12: `S1-01` fixes `backend_parity_matrix_contract.py` as the canonical matrix contract, with row/state seed from `backend_feature_contract_inventory.iter_representative_support_matrix_handoff()` and summary seed from `backend_conformance_summary_handoff_contract.build_backend_conformance_summary_handoff_manifest()`.

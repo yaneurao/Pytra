@@ -119,7 +119,7 @@ class CheckBackendFeatureContractInventoryTest(unittest.TestCase):
         self.assertEqual(
             inventory_mod.HANDOFF_PLAN_PATHS,
             {
-                "conformance_suite": "docs/ja/plans/p6-backend-conformance-suite.md",
+                "conformance_suite": "docs/ja/plans/archive/20260312-p6-backend-conformance-suite.md",
                 "support_matrix": "docs/ja/plans/p7-backend-parity-rollout-and-matrix.md",
             },
         )

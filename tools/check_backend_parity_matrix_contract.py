@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.toolchain.compiler import backend_conformance_summary_handoff as conformance_summary_mod
+from src.toolchain.compiler import backend_conformance_summary_handoff_contract as conformance_summary_mod
 from src.toolchain.compiler import backend_feature_contract_inventory as feature_contract_mod
 from src.toolchain.compiler import backend_parity_matrix_contract as contract_mod
 
@@ -23,11 +23,24 @@ def _collect_contract_issues() -> list[str]:
     support_matrix_summary_entry = next(
         entry
         for entry in conformance_summary_mod.iter_representative_conformance_summary_handoff()
-        if entry["destination"] == "support_matrix"
+        if entry["summary_kind"] == conformance_summary_mod.CONFORMANCE_SUMMARY_KIND
     )
-    if contract_mod.PARITY_MATRIX_SUMMARY_SOURCE != support_matrix_summary_entry["source_manifest"]:
+    if contract_mod.PARITY_MATRIX_SUMMARY_SOURCE != "conformance_summary_handoff.representative_summary_entries":
         issues.append("matrix summary source drifted away from conformance summary handoff")
-    if contract_mod.PARITY_MATRIX_SUMMARY_KEYS != support_matrix_summary_entry["summary_keys"]:
+    if contract_mod.PARITY_MATRIX_SUMMARY_KEYS != (
+        "feature_id",
+        "category",
+        "fixture_class",
+        "representative_fixture",
+        "summary_kind",
+        "shared_lanes",
+        "backend_selectable_lanes",
+        "backend_order",
+        "runtime_lane_policy",
+        "runtime_summary_source",
+        "support_state_order",
+        "downstream_task",
+    ):
         issues.append("matrix summary keys drifted away from conformance summary handoff")
     if contract_mod.PARITY_MATRIX_DOWNSTREAM_TASK != feature_contract_mod.HANDOFF_TASK_IDS["support_matrix"]:
         issues.append("matrix downstream task drifted away from feature contract handoff")

@@ -18,7 +18,7 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             contract_mod.PARITY_MATRIX_SOURCE_MANIFESTS,
             {
                 "feature_contract_seed": "backend_feature_contract_inventory.build_feature_contract_handoff_manifest",
-                "conformance_summary_seed": "backend_conformance_summary_handoff.build_backend_conformance_summary_handoff_manifest",
+                "conformance_summary_seed": "backend_conformance_summary_handoff_contract.build_backend_conformance_summary_handoff_manifest",
             },
         )
         self.assertEqual(
@@ -42,15 +42,25 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
         )
 
     def test_summary_linkage_is_fixed(self) -> None:
-        self.assertEqual(contract_mod.PARITY_MATRIX_SUMMARY_SOURCE, "feature_contract_handoff.support_matrix_handoff")
+        self.assertEqual(
+            contract_mod.PARITY_MATRIX_SUMMARY_SOURCE,
+            "conformance_summary_handoff.representative_summary_entries",
+        )
         self.assertEqual(
             contract_mod.PARITY_MATRIX_SUMMARY_KEYS,
             (
                 "feature_id",
                 "category",
+                "fixture_class",
                 "representative_fixture",
+                "summary_kind",
+                "shared_lanes",
+                "backend_selectable_lanes",
                 "backend_order",
+                "runtime_lane_policy",
+                "runtime_summary_source",
                 "support_state_order",
+                "downstream_task",
             ),
         )
         self.assertEqual(contract_mod.PARITY_MATRIX_DOWNSTREAM_TASK, "P7-BACKEND-PARITY-ROLLOUT-MATRIX-01")

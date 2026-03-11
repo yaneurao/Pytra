@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import Final, TypedDict
 
-from src.toolchain.compiler import backend_conformance_summary_handoff as conformance_summary_mod
+from src.toolchain.compiler import backend_conformance_summary_handoff_contract as conformance_summary_mod
 from src.toolchain.compiler import backend_feature_contract_inventory as feature_contract_mod
 
 
 PARITY_MATRIX_SOURCE_MANIFESTS: Final[dict[str, str]] = {
     "feature_contract_seed": "backend_feature_contract_inventory.build_feature_contract_handoff_manifest",
-    "conformance_summary_seed": "backend_conformance_summary_handoff.build_backend_conformance_summary_handoff_manifest",
+    "conformance_summary_seed": "backend_conformance_summary_handoff_contract.build_backend_conformance_summary_handoff_manifest",
 }
 
 PARITY_MATRIX_PUBLISH_PATHS: Final[dict[str, str]] = {
@@ -31,11 +31,24 @@ PARITY_MATRIX_ROW_KEYS: Final[tuple[str, ...]] = (
 _SUPPORT_MATRIX_SUMMARY_ENTRY: Final = next(
     entry
     for entry in conformance_summary_mod.iter_representative_conformance_summary_handoff()
-    if entry["destination"] == PARITY_MATRIX_SOURCE_DESTINATION
+    if entry["summary_kind"] == conformance_summary_mod.CONFORMANCE_SUMMARY_KIND
 )
 
-PARITY_MATRIX_SUMMARY_SOURCE: Final[str] = _SUPPORT_MATRIX_SUMMARY_ENTRY["source_manifest"]
-PARITY_MATRIX_SUMMARY_KEYS: Final[tuple[str, ...]] = _SUPPORT_MATRIX_SUMMARY_ENTRY["summary_keys"]
+PARITY_MATRIX_SUMMARY_SOURCE: Final[str] = "conformance_summary_handoff.representative_summary_entries"
+PARITY_MATRIX_SUMMARY_KEYS: Final[tuple[str, ...]] = (
+    "feature_id",
+    "category",
+    "fixture_class",
+    "representative_fixture",
+    "summary_kind",
+    "shared_lanes",
+    "backend_selectable_lanes",
+    "backend_order",
+    "runtime_lane_policy",
+    "runtime_summary_source",
+    "support_state_order",
+    "downstream_task",
+)
 PARITY_MATRIX_DOWNSTREAM_TASK: Final[str] = feature_contract_mod.HANDOFF_TASK_IDS["support_matrix"]
 PARITY_MATRIX_DOWNSTREAM_PLAN: Final[str] = feature_contract_mod.HANDOFF_PLAN_PATHS["support_matrix"]
 
