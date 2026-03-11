@@ -269,7 +269,7 @@ REPRESENTATIVE_LANE_MANIFEST = {
 }
 
 FUTURE_FOLLOWUP_TASK_ID = "P4-CROSSRUNTIME-PYRUNTIME-EMITTER-FUTURE-SHRINK-01"
-FUTURE_FOLLOWUP_PLAN_PATH = "docs/ja/plans/p4-crossruntime-pyruntime-emitter-future-shrink.md"
+FUTURE_FOLLOWUP_PLAN_PATH = "docs/ja/plans/archive/20260312-p4-crossruntime-pyruntime-emitter-future-shrink.md"
 
 FUTURE_FOLLOWUP_BASELINE_BUCKETS = (
     "cpp_emitter_shared_type_id_residual",
@@ -294,6 +294,24 @@ FUTURE_SOURCE_GUARD_PATHS = {
     path
     for lane in FUTURE_REPRESENTATIVE_LANE_MANIFEST.values()
     for path in lane["source_guard_paths"]
+}
+
+FUTURE_HANDOFF_TARGETS = {
+    "cpp_header_shrink": {
+        "plan_path": "docs/ja/plans/archive/20260312-p0-cpp-pyruntime-final-shrink.md",
+        "trigger_bucket": "cpp_emitter_shared_type_id_residual",
+        "handoff_when": "future_reducible subset stays limited to py_runtime_value_type_id and representative/source guard drift is empty",
+    },
+    "runtime_sot_followup": {
+        "plan_path": "docs/ja/plans/p2-runtime-sot-linked-program-integration.md",
+        "trigger_bucket": "rs_emitter_shared_type_id_residual",
+        "handoff_when": "shared type-id seams remain must-remain-only until runtime/type-id ownership moves into a runtime SoT task",
+    },
+    "cs_bytearray_localization": {
+        "plan_path": "docs/ja/plans/archive/20260312-p4-crossruntime-pyruntime-residual-caller-shrink.md",
+        "trigger_bucket": "crossruntime_mutation_helper_residual",
+        "handoff_when": "cs bytearray compat seam stays isolated to py_append/py_pop and does not expand back to list or bytes mutation",
+    },
 }
 
 FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION = {
@@ -562,6 +580,7 @@ def _collect_future_followup_issues() -> list[str]:
             required_prefix="src/backends/cs/",
         )
     )
+    issues.extend(_collect_future_handoff_issues())
     return issues
 
 
@@ -627,6 +646,33 @@ def _collect_future_bucket_classification_issues(
     for symbol, rel in sorted(future_reducible | must_remain):
         if not rel.startswith(required_prefix):
             issues.append(f"{label} contains unexpected path: {symbol} @ {rel}")
+    return issues
+
+
+def _collect_future_handoff_issues() -> list[str]:
+    issues: list[str] = []
+    expected_keys = {
+        "cpp_header_shrink",
+        "runtime_sot_followup",
+        "cs_bytearray_localization",
+    }
+    if set(FUTURE_HANDOFF_TARGETS.keys()) != expected_keys:
+        issues.append("future handoff target keys drifted")
+        return issues
+    for handoff_name, payload in FUTURE_HANDOFF_TARGETS.items():
+        plan_path = str(payload.get("plan_path", ""))
+        trigger_bucket = str(payload.get("trigger_bucket", ""))
+        handoff_when = str(payload.get("handoff_when", "")).strip()
+        if plan_path == "":
+            issues.append(f"future handoff target plan path missing: {handoff_name}")
+        elif not (ROOT / plan_path).exists():
+            issues.append(f"future handoff target plan missing: {handoff_name}: {plan_path}")
+        if trigger_bucket not in FUTURE_FOLLOWUP_BASELINE_BUCKETS:
+            issues.append(
+                f"future handoff target references unknown baseline bucket: {handoff_name}: {trigger_bucket}"
+            )
+        if handoff_when == "":
+            issues.append(f"future handoff target condition is empty: {handoff_name}")
     return issues
 
 
