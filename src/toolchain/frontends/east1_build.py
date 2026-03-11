@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from toolchain.ir.east1 import normalize_east1_root_document
 from toolchain.frontends.transpile_cli import append_unique_non_empty
+from toolchain.frontends.transpile_cli import append_unique_graph_issue_entry
 from toolchain.frontends.transpile_cli import build_module_east_map_from_analysis as build_module_east_map_from_analysis_core
 from toolchain.frontends.transpile_cli import build_module_symbol_index as build_module_symbol_index_core
 from toolchain.frontends.transpile_cli import build_module_type_schema as build_module_type_schema_core
@@ -53,9 +54,9 @@ def _analyze_import_graph_impl(
     visited_order: list[str] = []
     edges: list[str] = []
     edge_seen: set[str] = set()
-    missing_modules: list[str] = []
+    missing_module_entries: list[dict[str, str]] = []
     missing_seen: set[str] = set()
-    relative_imports: list[str] = []
+    relative_import_entries: list[dict[str, str]] = []
     relative_seen: set[str] = set()
     graph_adj: dict[str, list[str]] = {}
     graph_keys: list[str] = []
@@ -108,8 +109,7 @@ def _analyze_import_graph_impl(
             dep_txt = dict_any_get_str(resolved, "path")
             resolved_mod_id = dict_any_get_str(resolved, "module_id")
             if status == "relative":
-                rel_item = cur_disp + ": " + mod
-                append_unique_non_empty(relative_imports, relative_seen, rel_item)
+                append_unique_graph_issue_entry(relative_import_entries, relative_seen, cur_disp, mod)
                 continue
             dep_disp = mod
             if status == "user":
@@ -133,8 +133,7 @@ def _analyze_import_graph_impl(
                     queue.append(dep_file)
             elif status == "missing":
                 miss_mod = resolved_mod_id if resolved_mod_id != "" else mod
-                miss = cur_disp + ": " + miss_mod
-                append_unique_non_empty(missing_modules, missing_seen, miss)
+                append_unique_graph_issue_entry(missing_module_entries, missing_seen, cur_disp, miss_mod)
             edge = cur_disp + " -> " + dep_disp
             append_unique_non_empty(edges, edge_seen, edge)
 
@@ -145,8 +144,8 @@ def _analyze_import_graph_impl(
         visited_order,
         key_to_path,
         edges,
-        missing_modules,
-        relative_imports,
+        missing_module_entries,
+        relative_import_entries,
         reserved_conflicts,
         module_id_map,
     )

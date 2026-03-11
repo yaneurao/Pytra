@@ -918,16 +918,20 @@ def sin(x: float) -> float:
         analysis: dict[str, object] = {
             "edges": ["a.py -> b.py"],
             "cycles": ["a.py -> b.py -> a.py"],
-            "missing_modules": ["a.py: missing_mod"],
-            "relative_imports": ["a.py: .rel"],
+            "missing_modules": ["stale.py: stale_mod"],
+            "missing_module_entries": [{"file": "a.py", "module": "missing_mod"}],
+            "relative_imports": ["stale.py: .stale"],
+            "relative_import_entries": [{"file": "a.py", "module": ".rel"}],
             "reserved_conflicts": ["a.py"],
         }
         txt = format_import_graph_report(analysis)
         self.assertIn("graph:\n", txt)
         self.assertIn("  - a.py -> b.py\n", txt)
         self.assertIn("cycles:\n", txt)
-        self.assertIn("missing:\n", txt)
-        self.assertIn("relative:\n", txt)
+        self.assertIn("missing:\n  - a.py: missing_mod\n", txt)
+        self.assertIn("relative:\n  - a.py: .rel\n", txt)
+        self.assertNotIn("stale.py: stale_mod", txt)
+        self.assertNotIn("stale.py: .stale", txt)
         self.assertIn("reserved:\n", txt)
 
     def test_validate_import_graph_or_raise(self) -> None:
@@ -944,8 +948,8 @@ def sin(x: float) -> float:
             validate_import_graph_or_raise(
                 {
                     "reserved_conflicts": ["a.py"],
-                    "relative_imports": ["b.py: .rel"],
-                    "missing_modules": ["c.py: pkg.missing"],
+                    "relative_import_entries": [{"file": "b.py", "module": ".rel"}],
+                    "missing_module_entries": [{"file": "c.py", "module": "pkg.missing"}],
                     "cycles": ["a.py -> b.py -> a.py"],
                 }
             )

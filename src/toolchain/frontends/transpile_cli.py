@@ -537,6 +537,90 @@ def split_graph_issue_entry(v_txt: str) -> tuple[str, str]:
     return v_txt, v_txt
 
 
+def make_graph_issue_entry(file_part: str, module_part: str) -> dict[str, str]:
+    """import graph issue の canonical carrier を返す。"""
+    entry: dict[str, str] = {}
+    entry["file"] = file_part
+    entry["module"] = module_part
+    return entry
+
+
+def normalize_graph_issue_entry(entry_any: object) -> dict[str, str]:
+    """graph issue carrier を `{file, module}` へ正規化する。"""
+    if isinstance(entry_any, dict):
+        file_part = dict_any_get_str(entry_any, "file")
+        module_part = dict_any_get_str(entry_any, "module")
+        if file_part != "" or module_part != "":
+            if file_part == "":
+                file_part = module_part
+            if module_part == "":
+                module_part = file_part
+            return make_graph_issue_entry(file_part, module_part)
+    if isinstance(entry_any, str):
+        file_part, module_part = split_graph_issue_entry(entry_any)
+        return make_graph_issue_entry(file_part, module_part)
+    return make_graph_issue_entry("", "")
+
+
+def format_graph_issue_entry(entry_any: object) -> str:
+    """graph issue carrier を legacy text へ戻す。"""
+    entry = normalize_graph_issue_entry(entry_any)
+    file_part = dict_str_get(entry, "file")
+    module_part = dict_str_get(entry, "module")
+    if file_part == "" and module_part == "":
+        return ""
+    if file_part == "" or file_part == module_part:
+        return module_part if module_part != "" else file_part
+    return file_part + ": " + module_part
+
+
+def append_unique_graph_issue_entry(
+    items: list[dict[str, str]],
+    seen: set[str],
+    file_part: str,
+    module_part: str,
+) -> None:
+    """graph issue carrier を legacy text dedupe 付きで追加する。"""
+    entry = make_graph_issue_entry(file_part, module_part)
+    text = format_graph_issue_entry(entry)
+    if text == "" or text in seen:
+        return
+    seen.add(text)
+    items.append(entry)
+
+
+def dict_any_get_graph_issue_entries(
+    src: dict[str, object],
+    legacy_key: str,
+    structured_key: str,
+) -> list[dict[str, str]]:
+    """analysis から graph issue carrier list を structured-first で返す。"""
+    items_any: object = []
+    if structured_key in src:
+        items_any = src[structured_key]
+    elif legacy_key in src:
+        items_any = src[legacy_key]
+    if not isinstance(items_any, list):
+        return []
+    out: list[dict[str, str]] = []
+    for item_any in items_any:
+        entry = normalize_graph_issue_entry(item_any)
+        text = format_graph_issue_entry(entry)
+        if text != "":
+            out.append(entry)
+    return out
+
+
+def graph_issue_entries_to_text_list(entries: list[dict[str, str]]) -> list[str]:
+    """structured graph issue carrier list を legacy text list へ戻す。"""
+    out: list[str] = []
+    for entry in entries:
+        text = format_graph_issue_entry(entry)
+        if text != "":
+            out.append(text)
+    return out
+
+
 def replace_first(text: str, old: str, replacement: str) -> str:
     """`text` 内の最初の `old` だけを `replacement` に置換する。"""
     pos = text.find(old)
@@ -2330,9 +2414,13 @@ def format_import_graph_report(analysis: dict[str, object]) -> str:
             out += "  - " + item + "\n"
     cycles = dict_any_get_str_list(analysis, "cycles")
     out = format_graph_list_section(out, "cycles", cycles)
-    missing = dict_any_get_str_list(analysis, "missing_modules")
+    missing = graph_issue_entries_to_text_list(
+        dict_any_get_graph_issue_entries(analysis, "missing_modules", "missing_module_entries")
+    )
     out = format_graph_list_section(out, "missing", missing)
-    relative = dict_any_get_str_list(analysis, "relative_imports")
+    relative = graph_issue_entries_to_text_list(
+        dict_any_get_graph_issue_entries(analysis, "relative_imports", "relative_import_entries")
+    )
     out = format_graph_list_section(out, "relative", relative)
     reserved = dict_any_get_str_list(analysis, "reserved_conflicts")
     out = format_graph_list_section(out, "reserved", reserved)
@@ -2361,15 +2449,13 @@ def validate_import_graph_or_raise(analysis: dict[str, object]) -> None:
     for v in dict_any_get_str_list(analysis, "reserved_conflicts"):
         if v != "":
             details.append(make_import_diagnostic_detail("reserved_conflict", v, "pytra"))
-    for v_txt in dict_any_get_str_list(analysis, "relative_imports"):
-        if v_txt == "":
-            continue
-        file_part, mod_part = split_graph_issue_entry(v_txt)
+    for entry in dict_any_get_graph_issue_entries(analysis, "relative_imports", "relative_import_entries"):
+        file_part = dict_str_get(entry, "file")
+        mod_part = dict_str_get(entry, "module")
         details.append(make_import_diagnostic_detail("unsupported_import_form", file_part, "from " + mod_part + " import ..."))
-    for v_txt in dict_any_get_str_list(analysis, "missing_modules"):
-        if v_txt == "":
-            continue
-        file_part, mod_part = split_graph_issue_entry(v_txt)
+    for entry in dict_any_get_graph_issue_entries(analysis, "missing_modules", "missing_module_entries"):
+        file_part = dict_str_get(entry, "file")
+        mod_part = dict_str_get(entry, "module")
         details.append(make_import_diagnostic_detail("missing_module", file_part, mod_part))
     for v in dict_any_get_str_list(analysis, "cycles"):
         if v != "":
@@ -2682,8 +2768,8 @@ def finalize_import_graph_analysis(
     visited_order: list[str],
     key_to_path: dict[str, Path],
     edges: list[str],
-    missing_modules: list[str],
-    relative_imports: list[str],
+    missing_module_entries: list[dict[str, str]],
+    relative_import_entries: list[dict[str, str]],
     reserved_conflicts: list[str],
     module_id_map: dict[str, str],
 ) -> dict[str, object]:
@@ -2703,8 +2789,10 @@ def finalize_import_graph_analysis(
     user_module_files = collect_user_module_files_for_graph(visited_order, key_to_path)
     return {
         "edges": edges,
-        "missing_modules": missing_modules,
-        "relative_imports": relative_imports,
+        "missing_modules": graph_issue_entries_to_text_list(missing_module_entries),
+        "missing_module_entries": missing_module_entries,
+        "relative_imports": graph_issue_entries_to_text_list(relative_import_entries),
+        "relative_import_entries": relative_import_entries,
         "reserved_conflicts": reserved_conflicts,
         "cycles": cycles,
         "module_id_map": module_id_map,
@@ -2726,9 +2814,9 @@ def analyze_import_graph(
     visited_order: list[str] = []
     edges: list[str] = []
     edge_seen: set[str] = set()
-    missing_modules: list[str] = []
+    missing_module_entries: list[dict[str, str]] = []
     missing_seen: set[str] = set()
-    relative_imports: list[str] = []
+    relative_import_entries: list[dict[str, str]] = []
     relative_seen: set[str] = set()
     graph_adj: dict[str, list[str]] = {}
     graph_keys: list[str] = []
@@ -2780,8 +2868,7 @@ def analyze_import_graph(
             dep_txt = dict_any_get_str(resolved, "path")
             resolved_mod_id = dict_any_get_str(resolved, "module_id")
             if status == "relative":
-                rel_item = cur_disp + ": " + mod
-                append_unique_non_empty(relative_imports, relative_seen, rel_item)
+                append_unique_graph_issue_entry(relative_import_entries, relative_seen, cur_disp, mod)
                 continue
             dep_disp = mod
             if status == "user":
@@ -2805,8 +2892,7 @@ def analyze_import_graph(
                     queue.append(dep_file)
             elif status == "missing":
                 miss_mod = resolved_mod_id if resolved_mod_id != "" else mod
-                miss = cur_disp + ": " + miss_mod
-                append_unique_non_empty(missing_modules, missing_seen, miss)
+                append_unique_graph_issue_entry(missing_module_entries, missing_seen, cur_disp, miss_mod)
             edge = cur_disp + " -> " + dep_disp
             append_unique_non_empty(edges, edge_seen, edge)
 
@@ -2817,8 +2903,8 @@ def analyze_import_graph(
         visited_order,
         key_to_path,
         edges,
-        missing_modules,
-        relative_imports,
+        missing_module_entries,
+        relative_import_entries,
         reserved_conflicts,
         module_id_map,
     )
