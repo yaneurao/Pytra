@@ -30,5 +30,3 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-
-1. [ ] [ID: P0-RELATIVE-IMPORT-PACKAGE-ROOT-01] package-style relative import の root 推定を安定化する。文脈: `docs/ja/plans/p0-relative-import-package-root-01.md`
