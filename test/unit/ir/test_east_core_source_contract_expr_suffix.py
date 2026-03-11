@@ -192,7 +192,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _resolve_attr_expr_annotation",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('std_attr_t = lookup_stdlib_attribute_type(owner_type, attr_name)', helper_text)
         self.assertIn('runtime_call = lookup_stdlib_method_runtime_call(owner_type, attr_name)', helper_text)
@@ -273,7 +273,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('resolved_type = str(attr_meta.get("resolved_type", "unknown"))', resolve_text)
         self.assertIn('attr_runtime_call = str(attr_meta.get("runtime_call", ""))', resolve_text)
@@ -348,7 +348,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("class _ShExprAttrSubscriptSuffixParserMixin:", text)
         self.assertIn("def _parse_attr_suffix(", text)
@@ -427,7 +427,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('owner_t = str(owner_expr.get("resolved_type", "unknown"))', owner_type_text)
         self.assertIn('owner_t = self.name_types.get(str(owner_expr.get("id", "")), owner_t)', owner_type_text)
@@ -720,7 +720,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("upper, rtok = self._resolve_subscript_slice_tail_state()", slice_tail_text)
         self.assertIn(

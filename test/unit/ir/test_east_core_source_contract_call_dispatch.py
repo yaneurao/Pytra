@@ -410,7 +410,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
     def test_core_source_routes_call_arg_parsing_through_parser_helper(self) -> None:
         text = CORE_CALL_ARG_SOURCE_PATH.read_text(encoding="utf-8")
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("class _ShExprCallArgParserMixin:", text)
         self.assertIn("def _dict_stmt_list(", text)
@@ -418,6 +418,8 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("def _iter_item_type(", text)
         self.assertIn("def _parse_name_comp_target(", text)
         self.assertIn("def _parse_tuple_comp_target(", text)
+        self.assertIn("def _parse_comp_target(", text)
+        self.assertIn("def _parse_call_arg_expr(", text)
         self.assertIn("def _collect_and_bind_comp_target_types(", text)
         self.assertIn("def _restore_comp_target_types(", text)
         self.assertIn("def _parse_call_args(", text)
@@ -460,6 +462,8 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertNotIn("def _iter_item_type(", core_text)
         self.assertNotIn("def _parse_name_comp_target(", core_text)
         self.assertNotIn("def _parse_tuple_comp_target(", core_text)
+        self.assertNotIn("def _parse_comp_target(", core_text)
+        self.assertNotIn("def _parse_call_arg_expr(", core_text)
         self.assertNotIn("def _collect_and_bind_comp_target_types(", core_text)
         self.assertNotIn("def _restore_comp_target_types(", core_text)
 
@@ -471,7 +475,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn("def _resolve_call_suffix_state(", text)
         self.assertIn("def _resolve_call_suffix_token_state(", text)
@@ -507,7 +511,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _parse_postfix_suffix",
             1,
         )[0]
-        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_comp_target", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _make_bin", 1)[0]
 
         self.assertIn('if tok_kind == ".":', helper_text)
         self.assertIn('if tok_kind == "(":', helper_text)
