@@ -37,7 +37,7 @@ Context: [p2-relative-import-noncpp-rollout.md](../plans/p2-relative-import-nonc
 
 1. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01] Fix the non-C++ rollout order and representative verification lanes for relative imports as a staged plan.
 2. [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S1-01] Created the live plan / TODO and fixed the first-wave / second-wave / long-tail rollout order.
-3. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-01] Fix the representative verification lane for first-wave backends across `transpile smoke` and `fail_closed`.
+3. [x] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-01] Fixed the representative verification lane for first-wave backends across `transpile smoke` and `fail_closed`.
 4. [ ] [ID: P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01-S2-02] Sync links from the current coverage inventory / backend-parity docs into the next rollout handoff.
 
-- Progress note: The non-C++ relative-import rollout is now staged as `first wave=rs/cs`, `second wave=go/java/js/kotlin/scala/swift/nim/ts`, and `long-tail=lua/php/ruby`.
+- Progress note: The non-C++ relative-import rollout now keeps `rs/cs` on `transpile_smoke` as the next lane while every non-C++ backend remains pinned to `backend_specific_fail_closed` until support claims widen.
