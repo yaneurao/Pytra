@@ -41,10 +41,11 @@ Verification commands:
 Decision log:
 - 2026-03-11: The active TODO became empty, so this follow-up was opened for residual relative-import hardening. The priority is not new semantics but lifting a Pytra-NES-style nested package layout into regression coverage.
 - 2026-03-11: The first representative smoke is `pkg/nes/main.py -> from .cpu.runner import run`, `pkg/nes/cpu/runner.py -> from ..util.bits import low_nibble`, locked as a successful `py2x.py --target cpp` entrypoint case.
+- 2026-03-11: `from . import helper` still failed because the import graph only treated `ImportFrom.module="."` as a dependency and never tried the package-local submodule candidate. Dot-only relative `ImportFrom` forms now flow `.helper` / `..helper` into the graph as package-local submodule candidates.
 
 ## Breakdown
 
 - [x] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01-S1-01] Lock the current support / residual gap in plan/TODO.
 - [x] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01-S2-01] Add a project-style nested-package relative import smoke under `py2x.py --target cpp`.
-- [ ] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01-S2-02] Align representative regressions for `from . import module` and root-escape diagnostics with the current contract.
-- [ ] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01-S3-01] Refresh docs / archive and close the task.
+- [x] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01-S2-02] Align representative regressions for `from . import module` and root-escape diagnostics with the current contract.
+- [x] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01-S3-01] Refresh docs / archive and close the task.

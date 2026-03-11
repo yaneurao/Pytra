@@ -41,10 +41,11 @@
 決定ログ:
 - 2026-03-11: active TODO が空になったため、relative import support の residual hardening を follow-up として起票した。新規実装よりも、Pytra-NES 型の nested package layout を regression へ上げることを優先する。
 - 2026-03-11: first representative smoke は `pkg/nes/main.py -> from .cpu.runner import run`, `pkg/nes/cpu/runner.py -> from ..util.bits import low_nibble` とし、entrypoint 成功を `py2x.py --target cpp` で固定した。
+- 2026-03-11: `from . import helper` は graph 解析が `ImportFrom.module="."` だけを dependency として見ていたため `unsupported_import_form` で落ちていた。dot-only relative `ImportFrom` は `.helper` / `..helper` の package-local submodule candidate として graph へ流す contract に更新した。
 
 ## 分解
 
 - [x] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01-S1-01] current support / residual gap を plan/TODO に固定する。
 - [x] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01-S2-01] nested package の project-style relative import smoke を `py2x.py --target cpp` regression に追加する。
-- [ ] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01-S2-02] `from . import module` と root-escape diagnostics の representative regression を current contract に揃える。
-- [ ] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01-S3-01] docs / archive を更新して閉じる。
+- [x] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01-S2-02] `from . import module` と root-escape diagnostics の representative regression を current contract に揃える。
+- [x] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01-S3-01] docs / archive を更新して閉じる。

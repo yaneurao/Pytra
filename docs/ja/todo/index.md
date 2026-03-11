@@ -31,5 +31,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P0-RELATIVE-IMPORT-PROJECT-LAYOUT-HARDENING-01] relative import の project layout hardening。文脈: `docs/ja/plans/p0-relative-import-project-layout-hardening.md`
-   進捗メモ: nested package で `.cpu.runner -> ..util.bits` を通す representative smoke を追加し、残りは `from . import module` と root-escape diagnostics の close-out に絞った。
+現時点の未完了タスクはありません。

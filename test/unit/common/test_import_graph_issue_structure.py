@@ -94,6 +94,73 @@ class ImportGraphIssueStructureTest(unittest.TestCase):
         self.assertIn("kind=missing_module file=main.py import=pkg.helper", joined)
         self.assertIn("kind=unsupported_import_form file=main.py import=from .helper import ...", joined)
 
+    def test_validate_from_import_symbols_accepts_package_submodule_binding(self) -> None:
+        root = ROOT / "tmp-relative-root"
+        module_map: dict[str, dict[str, object]] = {
+            str((root / "pkg" / "__init__.py")): {
+                "kind": "Module",
+                "east_stage": 3,
+                "schema_version": 1,
+                "meta": {"module_id": "pkg", "dispatch_mode": "native", "import_bindings": []},
+                "body": [],
+            },
+            str((root / "pkg" / "main.py")): {
+                "kind": "Module",
+                "east_stage": 3,
+                "schema_version": 1,
+                "meta": {
+                    "module_id": "pkg.main",
+                    "dispatch_mode": "native",
+                    "import_bindings": [
+                        {
+                            "module_id": "pkg",
+                            "export_name": "helper",
+                            "local_name": "helper",
+                            "binding_kind": "symbol",
+                        }
+                    ],
+                },
+                "body": [
+                    {
+                        "kind": "ImportFrom",
+                        "module": "pkg",
+                        "names": [{"name": "helper"}],
+                    }
+                ],
+            },
+            str((root / "pkg" / "helper.py")): {
+                "kind": "Module",
+                "east_stage": 3,
+                "schema_version": 1,
+                "meta": {"module_id": "pkg.helper", "dispatch_mode": "native", "import_bindings": []},
+                "body": [{"kind": "FunctionDef", "name": "f", "body": []}],
+            },
+        }
+
+        transpile_cli.validate_from_import_symbols_or_raise(module_map, root)
+
+        meta = module_map[str((root / "pkg" / "main.py"))]["meta"]
+        self.assertEqual(meta["import_modules"], {"helper": "pkg.helper"})
+        self.assertEqual(meta["import_symbols"], {})
+        bindings = meta["import_bindings"]
+        self.assertEqual(len(bindings), 1)
+        self.assertEqual(bindings[0]["binding_kind"], "module")
+        self.assertEqual(bindings[0]["module_id"], "pkg.helper")
+
+    def test_collect_import_modules_expands_dot_only_from_import_module_candidates(self) -> None:
+        east_doc: dict[str, object] = {
+            "kind": "Module",
+            "body": [
+                {
+                    "kind": "ImportFrom",
+                    "module": ".",
+                    "names": [{"name": "helper"}],
+                }
+            ],
+        }
+
+        self.assertEqual(transpile_cli.collect_import_modules(east_doc), [".helper"])
+
 
 if __name__ == "__main__":
     unittest.main()

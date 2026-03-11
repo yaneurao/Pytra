@@ -1625,6 +1625,25 @@ def bind_import_symbol_or_duplicate(
     set_import_symbol_binding(import_symbols, local_name, module_id, symbol)
 
 
+def resolve_from_import_submodule_binding(
+    module_by_id: dict[str, tuple[str, dict[str, object]]],
+    imported_mod: str,
+    symbol: str,
+) -> str:
+    """`from pkg import mod` を package submodule import として解決できるなら module_id を返す。"""
+    if imported_mod == "" or symbol == "":
+        return ""
+    if imported_mod not in module_by_id:
+        return ""
+    mod_key, _mod_east = module_by_id[imported_mod]
+    if Path(mod_key).name != "__init__.py":
+        return ""
+    candidate = imported_mod + "." + symbol
+    if candidate in module_by_id:
+        return candidate
+    return ""
+
+
 def validate_from_import_symbols_or_raise(
     module_east_map: dict[str, dict[str, object]],
     root: Path,
@@ -1654,6 +1673,8 @@ def validate_from_import_symbols_or_raise(
                         sym = dict_any_get_str(ent, "name")
                         if sym == "*" or sym == "":
                             continue
+                        if resolve_from_import_submodule_binding(module_by_id, imported_mod, sym) != "":
+                            continue
                         if sym not in exports[imported_mod]:
                             append_import_validation_detail(
                                 details,
@@ -1663,11 +1684,28 @@ def validate_from_import_symbols_or_raise(
 
         meta = dict_any_get_dict(east_doc, "meta")
         import_bindings = meta_import_bindings(east_doc)
+        resolved_import_bindings: list[dict[str, str]] = []
+        for ent in import_bindings:
+            resolved_ent = dict(ent)
+            if (
+                resolved_ent["binding_kind"] == "symbol"
+                and resolved_ent["export_name"] != ""
+            ):
+                submodule_id = resolve_from_import_submodule_binding(
+                    module_by_id,
+                    resolved_ent["module_id"],
+                    resolved_ent["export_name"],
+                )
+                if submodule_id != "":
+                    resolved_ent["binding_kind"] = "module"
+                    resolved_ent["module_id"] = submodule_id
+                    resolved_ent["export_name"] = ""
+            resolved_import_bindings.append(resolved_ent)
         qualified_symbol_refs = meta_qualified_symbol_refs(east_doc)
         import_modules: dict[str, str] = {}
         import_symbols: dict[str, dict[str, str]] = {}
 
-        for ent in import_bindings:
+        for ent in resolved_import_bindings:
             if ent["binding_kind"] != "module":
                 continue
             local_name = ent["local_name"]
@@ -1700,7 +1738,7 @@ def validate_from_import_symbols_or_raise(
                     detail_seen,
                 )
         else:
-            for ent in import_bindings:
+            for ent in resolved_import_bindings:
                 if ent["binding_kind"] != "symbol":
                     continue
                 module_id = ent["module_id"]
@@ -1720,7 +1758,7 @@ def validate_from_import_symbols_or_raise(
                     detail_seen,
                 )
 
-        for ent in import_bindings:
+        for ent in resolved_import_bindings:
             if ent["binding_kind"] != "wildcard":
                 continue
             imported_mod = ent["module_id"]
@@ -1766,12 +1804,13 @@ def validate_from_import_symbols_or_raise(
 
         import_resolution = dict_any_get_dict(meta, "import_resolution")
         import_resolution["schema_version"] = 1
-        import_resolution["bindings"] = import_bindings
+        import_resolution["bindings"] = resolved_import_bindings
         import_resolution["qualified_refs"] = resolved_refs
         meta["import_resolution"] = import_resolution
         meta["qualified_symbol_refs"] = resolved_refs
         meta["import_symbols"] = import_symbols
         meta["import_modules"] = import_modules
+        meta["import_bindings"] = resolved_import_bindings
         east_doc["meta"] = meta
         module_east_map[mod_key] = east_doc
 
@@ -2580,10 +2619,29 @@ def collect_import_modules(east_module: dict[str, object]) -> list[str]:
                 if isinstance(name_any, str):
                     append_unique_non_empty(out, seen, dict_any_get_str({"_": name_any}, "_"))
         elif kind == "ImportFrom":
-            module_any = stmt_any.get("module")
-            if isinstance(module_any, str):
-                append_unique_non_empty(out, seen, dict_any_get_str({"_": module_any}, "_"))
+            for mod_name in collect_import_from_modules(stmt_any):
+                append_unique_non_empty(out, seen, mod_name)
     return out
+
+
+def collect_import_from_modules(stmt: dict[str, object]) -> list[str]:
+    """`ImportFrom` stmt から import graph が辿る module candidate を返す。"""
+    module_name = dict_any_get_str(stmt, "module")
+    if module_name == "":
+        return []
+    # `from . import helper` / `from .. import helper` は package-local submodule import
+    # として `.helper` / `..helper` を graph で辿れるようにする。
+    if module_name.startswith(".") and relative_module_tail(module_name) == "":
+        out: list[str] = []
+        seen: set[str] = set()
+        for ent in dict_any_get_dict_list(stmt, "names"):
+            sym_name = dict_any_get_str(ent, "name")
+            if sym_name == "" or sym_name == "*":
+                continue
+            append_unique_non_empty(out, seen, module_name + sym_name)
+        if len(out) > 0:
+            return out
+    return [module_name]
 
 
 def is_known_non_user_import(
