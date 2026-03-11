@@ -63,7 +63,8 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
 
     def test_core_source_routes_runtime_call_metadata_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = runtime_text.split("def _sh_annotate_runtime_call_expr", 1)[1].split(
             "def _sh_annotate_resolved_runtime_expr",
@@ -85,7 +86,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _resolve_attr_expr_annotation",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
@@ -99,6 +100,8 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn('payload["builtin_name"] = "print"', postfix_text)
         self.assertNotIn('payload["runtime_call"] = "py_print"', postfix_text)
         self.assertNotIn('payload["runtime_call"] = "py_range"', postfix_text)
+        self.assertNotIn("def _apply_runtime_method_call_expr_annotation(", core_text)
+        self.assertNotIn("def _apply_attr_call_expr_annotation(", core_text)
 
     def test_core_source_routes_resolved_runtime_annotations_through_shared_helper(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
@@ -108,8 +111,8 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _sh_annotate_runtime_attr_expr",
             1,
         )[0]
-        noncpp_apply_text = core_text.split("def _apply_noncpp_attr_expr_annotation", 1)[1].split(
-            "def _build_slice_subscript_expr",
+        noncpp_apply_text = attr_annotation_text.split("def _apply_noncpp_attr_expr_annotation", 1)[1].split(
+            "def _resolve_subscript_expr_annotation_state",
             1,
         )[0]
         apply_text = attr_annotation_text.split("def _apply_attr_expr_annotation", 1)[1].split(
@@ -141,8 +144,8 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _sh_annotate_runtime_method_call_expr",
             1,
         )[0]
-        runtime_apply_text = core_text.split("def _apply_runtime_attr_expr_annotation", 1)[1].split(
-            "def _apply_noncpp_attr_expr_annotation",
+        runtime_apply_text = attr_annotation_text.split("def _apply_runtime_attr_expr_annotation", 1)[1].split(
+            "def _apply_runtime_call_attr_expr_annotation",
             1,
         )[0]
         apply_text = attr_annotation_text.split("def _apply_attr_expr_annotation", 1)[1].split(
@@ -157,7 +160,8 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
 
         self.assertIn('_set_runtime_binding_fields(payload, module_id, runtime_symbol)', helper_text)
         self.assertIn('payload["runtime_owner"] = runtime_owner', helper_text)
-        self.assertIn('_sh_annotate_runtime_attr_expr(', runtime_apply_text)
+        self.assertIn("if self._apply_runtime_call_attr_expr_annotation(", runtime_apply_text)
+        self.assertIn("self._apply_runtime_semantic_attr_expr_annotation(", runtime_apply_text)
         self.assertIn("self._apply_runtime_attr_expr_annotation(", apply_text)
         self.assertIn("return self._apply_attr_expr_annotation(", attr_expr_text)
         self.assertNotIn('node["lowered_kind"] = "BuiltinAttr"', postfix_text)
@@ -217,7 +221,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _resolve_attr_callee_attr_name",
             1,
         )[0]
-        owner_state_text = text.split("def _resolve_attr_expr_owner_state", 1)[1].split(
+        owner_state_text = annotation_text.split("def _resolve_attr_expr_owner_state", 1)[1].split(
             "def _resolve_attr_callee",
             1,
         )[0]
@@ -233,23 +237,23 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _resolve_subscript_expr_annotation_state",
             1,
         )[0]
-        build_text = text.split("def _build_attr_expr_payload", 1)[1].split(
+        build_text = attr_annotation_text.split("def _build_attr_expr_payload", 1)[1].split(
             "def _apply_runtime_attr_expr_annotation",
             1,
         )[0]
-        runtime_apply_text = text.split("def _apply_runtime_attr_expr_annotation", 1)[1].split(
+        runtime_apply_text = attr_annotation_text.split("def _apply_runtime_attr_expr_annotation", 1)[1].split(
             "def _apply_runtime_call_attr_expr_annotation",
             1,
         )[0]
-        runtime_call_apply_text = text.split("def _apply_runtime_call_attr_expr_annotation", 1)[1].split(
+        runtime_call_apply_text = attr_annotation_text.split("def _apply_runtime_call_attr_expr_annotation", 1)[1].split(
             "def _apply_runtime_semantic_attr_expr_annotation",
             1,
         )[0]
-        runtime_semantic_apply_text = text.split("def _apply_runtime_semantic_attr_expr_annotation", 1)[1].split(
+        runtime_semantic_apply_text = attr_annotation_text.split("def _apply_runtime_semantic_attr_expr_annotation", 1)[1].split(
             "def _apply_noncpp_attr_expr_annotation",
             1,
         )[0]
-        noncpp_apply_text = text.split("def _apply_noncpp_attr_expr_annotation", 1)[1].split(
+        noncpp_apply_text = attr_annotation_text.split("def _apply_noncpp_attr_expr_annotation", 1)[1].split(
             "def _apply_attr_expr_annotation",
             1,
         )[0]
@@ -315,6 +319,11 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn("def _resolve_attr_expr_annotation(", text)
         self.assertNotIn("def _resolve_attr_expr_metadata(", text)
         self.assertNotIn("def _resolve_attr_expr_annotation_state(", text)
+        self.assertNotIn("def _build_attr_expr_payload(", text)
+        self.assertNotIn("def _apply_runtime_attr_expr_annotation(", text)
+        self.assertNotIn("def _apply_runtime_call_attr_expr_annotation(", text)
+        self.assertNotIn("def _apply_runtime_semantic_attr_expr_annotation(", text)
+        self.assertNotIn("def _apply_noncpp_attr_expr_annotation(", text)
         self.assertNotIn("def _apply_attr_expr_annotation(", text)
         self.assertNotIn("def _annotate_attr_expr(", text)
         self.assertNotIn('_sh_annotate_runtime_attr_expr(', apply_text)
@@ -374,12 +383,12 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
             "def _resolve_attr_callee_attr_name",
             1,
         )[0]
-        slice_build_text = text.split("def _build_slice_subscript_expr", 1)[1].split(
+        slice_build_text = attr_annotation_text.split("def _build_slice_subscript_expr", 1)[1].split(
             "def _build_index_subscript_expr",
             1,
         )[0]
-        index_build_text = text.split("def _build_index_subscript_expr", 1)[1].split(
-            "def _annotate_subscript_expr",
+        index_build_text = attr_annotation_text.split("def _build_index_subscript_expr", 1)[1].split(
+            "def _resolve_subscript_expr_annotation_state",
             1,
         )[0]
         state_text = attr_annotation_text.split("def _resolve_subscript_expr_annotation_state", 1)[1].split(
@@ -460,6 +469,8 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertNotIn("def _resolve_subscript_expr_annotation_state(", text)
         self.assertNotIn("def _resolve_subscript_expr_build_kind(", text)
         self.assertNotIn("def _resolve_subscript_expr_apply_state(", text)
+        self.assertNotIn("def _build_slice_subscript_expr(", text)
+        self.assertNotIn("def _build_index_subscript_expr(", text)
         self.assertNotIn("def _apply_slice_subscript_expr_build(", text)
         self.assertNotIn("def _apply_index_subscript_expr_build(", text)
         self.assertNotIn("def _apply_subscript_expr_build(", text)

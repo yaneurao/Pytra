@@ -5,8 +5,109 @@ from __future__ import annotations
 
 from typing import Any
 
+from toolchain.ir.core_ast_builders import _sh_make_attribute_expr
+from toolchain.ir.core_ast_builders import _sh_make_slice_node
+from toolchain.ir.core_ast_builders import _sh_make_subscript_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_resolved_runtime_expr
+from toolchain.ir.core_runtime_call_semantics import _sh_annotate_runtime_attr_expr
+
 
 class _ShExprAttrSubscriptAnnotationMixin:
+    def _build_attr_expr_payload(
+        self,
+        *,
+        source_span: dict[str, int],
+        owner_expr: dict[str, Any],
+        attr_name: str,
+        resolved_type: str,
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """Attribute access node 組み立てを helper へ寄せる。"""
+        node = _sh_make_attribute_expr(
+            source_span,
+            owner_expr,
+            attr_name,
+            resolved_type=resolved_type,
+            repr_text=repr_text,
+        )
+        return node
+
+    def _apply_runtime_attr_expr_annotation(
+        self,
+        *,
+        node: dict[str, Any],
+        owner_expr: dict[str, Any],
+        attr_runtime_call: str,
+        attr_semantic_tag: str,
+        attr_module_id: str,
+        attr_runtime_symbol: str,
+    ) -> None:
+        """runtime attr annotation 適用を helper へ寄せる。"""
+        if self._apply_runtime_call_attr_expr_annotation(
+            node=node,
+            owner_expr=owner_expr,
+            attr_runtime_call=attr_runtime_call,
+            attr_semantic_tag=attr_semantic_tag,
+            attr_module_id=attr_module_id,
+            attr_runtime_symbol=attr_runtime_symbol,
+        ):
+            return
+        self._apply_runtime_semantic_attr_expr_annotation(
+            node=node,
+            attr_semantic_tag=attr_semantic_tag,
+        )
+
+    def _apply_runtime_call_attr_expr_annotation(
+        self,
+        *,
+        node: dict[str, Any],
+        owner_expr: dict[str, Any],
+        attr_runtime_call: str,
+        attr_semantic_tag: str,
+        attr_module_id: str,
+        attr_runtime_symbol: str,
+    ) -> bool:
+        """runtime-call attr annotation 適用を helper へ寄せる。"""
+        if attr_runtime_call == "":
+            return False
+        _sh_annotate_runtime_attr_expr(
+            node,
+            runtime_call=attr_runtime_call,
+            module_id=attr_module_id,
+            runtime_symbol=attr_runtime_symbol,
+            semantic_tag=attr_semantic_tag,
+            runtime_owner=owner_expr,
+        )
+        return True
+
+    def _apply_runtime_semantic_attr_expr_annotation(
+        self,
+        *,
+        node: dict[str, Any],
+        attr_semantic_tag: str,
+    ) -> None:
+        """semantic-tag fallback attr annotation 適用を helper へ寄せる。"""
+        if attr_semantic_tag != "":
+            node["semantic_tag"] = attr_semantic_tag
+
+    def _apply_noncpp_attr_expr_annotation(
+        self,
+        *,
+        node: dict[str, Any],
+        attr_name: str,
+        noncpp_module_attr_runtime_call: str,
+        noncpp_module_id: str,
+    ) -> None:
+        """non-C++ attr annotation 適用を helper へ寄せる。"""
+        if noncpp_module_attr_runtime_call != "":
+            _sh_annotate_resolved_runtime_expr(
+                node,
+                runtime_call=noncpp_module_attr_runtime_call,
+                runtime_source="module_attr",
+                module_id=noncpp_module_id,
+                runtime_symbol=attr_name,
+            )
+
     def _apply_attr_expr_annotation(
         self,
         *,
@@ -148,6 +249,46 @@ class _ShExprAttrSubscriptAnnotationMixin:
             attr_runtime_symbol,
             noncpp_module_attr_runtime_call,
             noncpp_module_id,
+        )
+
+    def _build_slice_subscript_expr(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        owner_t: str,
+        lower: dict[str, Any] | None,
+        upper: dict[str, Any] | None,
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """slice subscript node 組み立てを helper へ寄せる。"""
+        return _sh_make_subscript_expr(
+            source_span,
+            owner_expr,
+            _sh_make_slice_node(lower, upper),
+            resolved_type=owner_t,
+            repr_text=repr_text,
+            lowered_kind="SliceExpr",
+            lower=lower,
+            upper=upper,
+        )
+
+    def _build_index_subscript_expr(
+        self,
+        *,
+        owner_expr: dict[str, Any],
+        owner_t: str,
+        index_expr: dict[str, Any],
+        source_span: dict[str, int],
+        repr_text: str,
+    ) -> dict[str, Any]:
+        """index subscript node 組み立てを helper へ寄せる。"""
+        return _sh_make_subscript_expr(
+            source_span,
+            owner_expr,
+            index_expr,
+            resolved_type=self._subscript_result_type(owner_t),
+            repr_text=repr_text,
         )
 
     def _resolve_subscript_expr_annotation_state(

@@ -72,7 +72,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("return self._apply_call_expr_annotation(", annotation_text)
         self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", core_text)
         self.assertIn("_ShExprCallAnnotationMixin", core_text)
-        self.assertIn("def _resolve_named_call_dispatch(", core_text)
+        self.assertIn("def _resolve_named_call_dispatch(", annotation_text)
         self.assertIn("def _annotate_named_call_expr(", annotation_text)
         self.assertIn("def _annotate_builtin_named_call_expr(", annotation_text)
         self.assertIn("def _annotate_runtime_named_call_expr(", annotation_text)
@@ -83,7 +83,8 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertNotIn("def _annotate_call_expr(", core_text)
 
     def test_core_source_routes_builtin_named_call_annotations_through_parser_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         named_call_text = annotation_text.split("def _annotate_named_call_expr", 1)[1].split(
             "def _should_use_truthy_runtime_for_bool_ctor",
@@ -141,7 +142,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _resolve_runtime_named_call_dispatch",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn("if len(args) != 1:", truthy_helper_text)
         self.assertIn('arg0_t = str(arg0.get("resolved_type", "unknown"))', truthy_helper_text)
@@ -185,12 +186,14 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("return None", apply_text)
         self.assertIn("return self._apply_named_call_dispatch(", named_call_text)
         self.assertIn('if dispatch_kind == "builtin":', named_apply_text)
+        self.assertNotIn("def _apply_named_call_dispatch(", core_text)
         self.assertNotIn('if fn_name in {"print", "len", "range", "zip", "str"}:', postfix_text)
         self.assertNotIn('if fn_name == "bool" and len(args) == 1:', postfix_text)
         self.assertNotIn("elem_t = _sh_infer_enumerate_item_type(args)", postfix_text)
 
     def test_core_source_routes_runtime_named_call_annotations_through_parser_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         named_call_text = annotation_text.split("def _annotate_named_call_expr", 1)[1].split(
             "def _should_use_truthy_runtime_for_bool_ctor",
@@ -232,7 +235,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _owner_expr_resolved_type",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('stdlib_fn_runtime_call = str(call_dispatch.get("stdlib_fn_runtime_call", ""))', resolve_text)
         self.assertIn('stdlib_symbol_runtime_call = str(call_dispatch.get("stdlib_symbol_runtime_call", ""))', resolve_text)
@@ -266,6 +269,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("return None", apply_text)
         self.assertIn("return self._apply_named_call_dispatch(", named_call_text)
         self.assertIn('if dispatch_kind == "runtime":', named_apply_text)
+        self.assertNotIn("def _apply_runtime_named_call_dispatch(", core_text)
         self.assertNotIn('_sh_lookup_named_call_dispatch(fn_name)', postfix_text)
         self.assertNotIn('if dispatch_kind == "stdlib_function":', postfix_text)
         self.assertNotIn('if dispatch_kind == "stdlib_symbol":', postfix_text)
@@ -294,14 +298,15 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
 
     def test_core_source_routes_enumerate_item_type_through_shared_helper(self) -> None:
         runtime_text = CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertEqual(runtime_text.count("def _sh_infer_enumerate_item_type"), 1)
         helper_text = runtime_text.split("def _sh_infer_enumerate_item_type", 1)[1]
         state_text = text.split("def _resolve_builtin_named_call_annotation_state", 1)[1].split(
             "def _apply_builtin_named_call_dispatch",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn("if len(args) < 1:", helper_text)
         self.assertIn("arg0 = args[0]", helper_text)
@@ -332,7 +337,8 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertNotIn('if owner_t == "PyFile":', postfix_text)
 
     def test_core_source_routes_call_expr_returns_through_shared_helper(self) -> None:
-        text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
+        text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
+        core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
         resolution_text = CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         named_decl_text = resolution_text.split("def _resolve_named_call_declared_return_type", 1)[1].split(
@@ -367,7 +373,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
             "def _apply_named_call_dispatch",
             1,
         )[0]
-        postfix_text = text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
+        postfix_text = core_text.split("def _parse_postfix", 1)[1].split("def _parse_primary", 1)[0]
 
         self.assertIn('kind = str(callee.get("kind", ""))', helper_text)
         self.assertIn("_sh_infer_known_name_call_return_type(", named_state_text)
@@ -387,10 +393,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("return self._annotate_callee_call_expr(", apply_text)
         self.assertIn("call_ret, fn_name = self._resolve_call_expr_annotation_state(", call_helper_text)
         self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
-        self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", text)
-        self.assertNotIn("def _resolve_call_expr_annotation_state(", text)
-        self.assertNotIn("def _apply_call_expr_annotation(", text)
-        self.assertNotIn("def _annotate_call_expr(", text)
+        self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", CORE_SOURCE_PATH.read_text(encoding="utf-8"))
         self.assertNotIn("_sh_infer_known_name_call_return_type(", helper_text)
         self.assertNotIn("stdlib_imported_ret = (", postfix_text)
         self.assertNotIn("call_ret = self.fn_return_types[fn_name]", postfix_text)
