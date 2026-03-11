@@ -632,7 +632,7 @@ class East3CppBridgeTest(unittest.TestCase):
             emitter.render_expr(obj_next),
             '([&]() -> ::std::optional<object> { object __iter = v; if (!__iter) throw TypeError("NoneType is not an iterator"); return __iter->py_next_or_stop(); }())',
         )
-        self.assertEqual(emitter.render_expr(obj_type_id), "py_runtime_type_id(v)")
+        self.assertEqual(emitter.render_expr(obj_type_id), "py_runtime_object_type_id(v)")
         self.assertEqual(emitter.render_expr(box_expr), "make_object(1)")
         self.assertEqual(emitter.render_expr(unbox_expr), "py_to<int64>(v)")
         self.assertEqual(
@@ -645,11 +645,11 @@ class East3CppBridgeTest(unittest.TestCase):
         )
         self.assertEqual(
             emitter.render_expr(is_subclass),
-            "py_issubclass(1001, 1000)",
+            "py_runtime_type_id_issubclass(1001, 1000)",
         )
         self.assertEqual(
             emitter.render_expr(is_subtype),
-            "py_is_subtype(1001, 1000)",
+            "py_runtime_type_id_is_subtype(1001, 1000)",
         )
 
     def test_cpp_helper_lane_materializes_object_iter_helper_artifact(self) -> None:

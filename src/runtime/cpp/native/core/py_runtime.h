@@ -1264,18 +1264,6 @@ static inline bool py_runtime_object_isinstance(const object& value, uint32 expe
     return py_tid_isinstance(value, static_cast<int64>(expected_type_id));
 }
 
-static inline bool py_is_subtype(uint32 actual_type_id, uint32 expected_type_id) {
-    return py_runtime_type_id_is_subtype(actual_type_id, expected_type_id);
-}
-
-static inline bool py_issubclass(uint32 actual_type_id, uint32 expected_type_id) {
-    return py_runtime_type_id_issubclass(actual_type_id, expected_type_id);
-}
-
-static inline uint32 py_runtime_type_id(const object& v) {
-    return py_runtime_object_type_id(v);
-}
-
 template <class T>
 static inline uint32 py_runtime_type_id(const T& v) {
     if (py_is_none(v)) return PYTRA_TID_NONE;
@@ -1287,7 +1275,7 @@ static inline uint32 py_runtime_type_id(const T& v) {
     if (py_is_dict(v)) return PYTRA_TID_DICT;
     if (py_is_set(v)) return PYTRA_TID_SET;
     if constexpr (::std::is_same_v<T, object>) {
-        return py_runtime_type_id(static_cast<const object&>(v));
+        return py_runtime_object_type_id(v);
     }
     return PYTRA_TID_OBJECT;
 }

@@ -629,8 +629,6 @@ int main() {
         self.assertIn("static inline uint32 py_runtime_object_type_id(const object& v)", runtime_header)
         self.assertIn("static inline bool py_runtime_object_isinstance(const object& value, uint32 expected_type_id)", runtime_header)
         self.assertIn("py_tid_register_known_class_type(static_cast<int64>(tid), static_cast<int64>(it->second));", runtime_header)
-        self.assertIn("return py_runtime_type_id_is_subtype(actual_type_id, expected_type_id);", runtime_header)
-        self.assertIn("return py_runtime_type_id_issubclass(actual_type_id, expected_type_id);", runtime_header)
         self.assertIn("return py_runtime_object_isinstance(value, expected_type_id);", runtime_header)
         self.assertIn("return py_runtime_object_type_id(v);", runtime_header)
         self.assertIn(

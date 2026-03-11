@@ -53,8 +53,8 @@ public:
 };
 
 int main() {
-    assert(py_is_subtype(PYTRA_TID_BOOL, PYTRA_TID_INT));
-    assert(py_is_subtype(PYTRA_TID_BOOL, PYTRA_TID_OBJECT));
+    assert(py_runtime_type_id_is_subtype(PYTRA_TID_BOOL, PYTRA_TID_INT));
+    assert(py_runtime_type_id_is_subtype(PYTRA_TID_BOOL, PYTRA_TID_OBJECT));
     assert(py_runtime_type_id_is_subtype(PYTRA_TID_BOOL, PYTRA_TID_INT));
     assert(py_isinstance(true, PYTRA_TID_INT));
     assert(py_isinstance(true, PYTRA_TID_OBJECT));
@@ -64,8 +64,8 @@ int main() {
     uint32 base_tid = py_register_class_type(PYTRA_TID_OBJECT);
     uint32 child_tid = py_register_class_type(base_tid);
 
-    assert(py_is_subtype(child_tid, base_tid));
-    assert(py_issubclass(child_tid, base_tid));
+    assert(py_runtime_type_id_is_subtype(child_tid, base_tid));
+    assert(py_runtime_type_id_issubclass(child_tid, base_tid));
 
     object base_obj = object_new<BaseObj>(base_tid);
     object child_obj = object_new<ChildObj>(child_tid);

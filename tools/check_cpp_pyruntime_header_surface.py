@@ -24,9 +24,6 @@ EXPECTED_BUCKETS = {
     },
     "typed_collection_compat": set(),
     "shared_type_id_compat": {
-        'static inline bool py_is_subtype(uint32 actual_type_id, uint32 expected_type_id) {',
-        'static inline bool py_issubclass(uint32 actual_type_id, uint32 expected_type_id) {',
-        'static inline uint32 py_runtime_type_id(const object& v) {',
         'static inline uint32 py_runtime_type_id(const T& v) {',
         'static inline bool py_isinstance(const T& value, uint32 expected_type_id) {',
     },
