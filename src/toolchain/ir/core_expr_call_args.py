@@ -247,6 +247,309 @@ class _ShExprCallArgParserMixin:
         """call argument list の空-state result return を helper へ寄せる。"""
         return args, keywords
 
+    def _parse_call_arg_entry(
+        self,
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument 1件分の positional/keyword 分岐を parser helper へ寄せる。"""
+        save_pos, name_tok, is_keyword = self._resolve_call_arg_entry_state()
+        return self._apply_call_arg_entry_state(
+            save_pos=save_pos,
+            name_tok=name_tok,
+            is_keyword=is_keyword,
+        )
+
+    def _resolve_call_arg_entry_state(
+        self,
+    ) -> tuple[int | None, dict[str, Any] | None, bool]:
+        """call argument 1件分の token/state resolve を helper へ寄せる。"""
+        if not self._resolve_call_arg_entry_has_name():
+            return None, None, False
+        save_pos = self._resolve_call_arg_entry_save_pos()
+        name_tok = self._consume_call_arg_entry_name_token()
+        return save_pos, name_tok, self._resolve_call_arg_entry_kind()
+
+    def _resolve_call_arg_entry_has_name(self) -> bool:
+        """call argument entry の `NAME` 開始判定を helper へ寄せる。"""
+        return self._cur()["k"] == "NAME"
+
+    def _resolve_call_arg_entry_save_pos(self) -> int:
+        """call argument entry の save pos 取得を helper へ寄せる。"""
+        return self.pos
+
+    def _resolve_call_arg_entry_kind(self) -> bool:
+        """call argument 1件分の keyword 判定を helper へ寄せる。"""
+        return self._resolve_call_arg_entry_is_keyword()
+
+    def _resolve_call_arg_entry_is_keyword(self) -> bool:
+        """call argument entry の keyword kind 判定を helper へ寄せる。"""
+        return self._cur()["k"] == "="
+
+    def _consume_call_arg_entry_name_token(self) -> dict[str, Any]:
+        """call argument entry の `NAME` consume を helper へ寄せる。"""
+        return self._eat("NAME")
+
+    def _resolve_call_arg_entry_name_value(self, *, name_tok: dict[str, Any]) -> str:
+        """call argument entry の `NAME` value 取得を helper へ寄せる。"""
+        return str(name_tok["v"])
+
+    def _apply_call_arg_entry_state(
+        self,
+        *,
+        save_pos: int | None,
+        name_tok: dict[str, Any] | None,
+        is_keyword: bool,
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument 1件分の positional/keyword apply を helper へ寄せる。"""
+        if is_keyword and name_tok is not None:
+            return self._apply_keyword_call_arg_entry(
+                name_tok=name_tok,
+            )
+        return self._apply_positional_call_arg_entry(
+            save_pos=save_pos,
+        )
+
+    def _apply_keyword_call_arg_entry(
+        self,
+        *,
+        name_tok: dict[str, Any],
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument 1件分の keyword apply を helper へ寄せる。"""
+        kw_name, kw_val = self._resolve_keyword_call_arg_entry_state(name_tok=name_tok)
+        return self._apply_keyword_call_arg_build(
+            kw_name=kw_name,
+            kw_val=kw_val,
+        )
+
+    def _apply_keyword_call_arg_build(
+        self,
+        *,
+        kw_name: str,
+        kw_val: dict[str, Any],
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument keyword の node build を helper へ寄せる。"""
+        return None, _sh_make_keyword_arg(kw_name, kw_val)
+
+    def _resolve_keyword_call_arg_entry_state(
+        self,
+        *,
+        name_tok: dict[str, Any],
+    ) -> tuple[str, dict[str, Any]]:
+        """call argument keyword の name/value state resolve を helper へ寄せる。"""
+        self._consume_keyword_call_arg_equals_token()
+        kw_val = self._parse_ifexp()
+        kw_name = self._resolve_call_arg_entry_name_value(name_tok=name_tok)
+        return self._apply_keyword_call_arg_entry_state(
+            kw_name=kw_name,
+            kw_val=kw_val,
+        )
+
+    def _apply_keyword_call_arg_entry_state(
+        self,
+        *,
+        kw_name: str,
+        kw_val: dict[str, Any],
+    ) -> tuple[str, dict[str, Any]]:
+        """call argument keyword の state apply を helper へ寄せる。"""
+        return kw_name, kw_val
+
+    def _consume_keyword_call_arg_equals_token(self) -> dict[str, Any]:
+        """call argument keyword の `=` consume を helper へ寄せる。"""
+        return self._eat("=")
+
+    def _apply_positional_call_arg_entry(
+        self,
+        *,
+        save_pos: int | None,
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument 1件分の positional apply を helper へ寄せる。"""
+        self._apply_call_arg_entry_save_pos(save_pos=save_pos)
+        arg_expr = self._resolve_positional_call_arg_entry_state()
+        return self._apply_positional_call_arg_build_state(arg_expr=arg_expr)
+
+    def _resolve_positional_call_arg_entry_state(self) -> dict[str, Any]:
+        """call argument positional の value state resolve を helper へ寄せる。"""
+        return self._parse_call_arg_expr()
+
+    def _apply_positional_call_arg_build_state(
+        self,
+        *,
+        arg_expr: dict[str, Any],
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument positional の build state apply を helper へ寄せる。"""
+        return self._apply_positional_call_arg_build(arg_expr=arg_expr)
+
+    def _apply_positional_call_arg_build(
+        self,
+        *,
+        arg_expr: dict[str, Any],
+    ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """call argument positional の node build を helper へ寄せる。"""
+        return arg_expr, None
+
+    def _apply_call_arg_entry_save_pos(self, *, save_pos: int | None) -> None:
+        """call argument positional apply の save_pos 復帰を helper へ寄せる。"""
+        if save_pos is not None:
+            self.pos = save_pos
+
+    def _apply_call_arg_entry(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        arg_entry: dict[str, Any] | None,
+        keyword_entry: dict[str, Any] | None,
+    ) -> None:
+        """call argument loop の positional/keyword append を helper へ寄せる。"""
+        is_keyword_entry = self._resolve_call_arg_loop_entry_kind(keyword_entry=keyword_entry)
+        return self._apply_call_arg_loop_entry_kind(
+            args=args,
+            keywords=keywords,
+            arg_entry=arg_entry,
+            keyword_entry=keyword_entry,
+            is_keyword_entry=is_keyword_entry,
+        )
+
+    def _resolve_call_arg_loop_entry_kind(
+        self,
+        *,
+        keyword_entry: dict[str, Any] | None,
+    ) -> bool:
+        """call argument loop entry の dispatch kind を helper へ寄せる。"""
+        return keyword_entry is not None
+
+    def _apply_call_arg_loop_entry_kind(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        arg_entry: dict[str, Any] | None,
+        keyword_entry: dict[str, Any] | None,
+        is_keyword_entry: bool,
+    ) -> None:
+        """call argument loop entry の dispatch apply を helper へ寄せる。"""
+        has_keyword_entry = self._resolve_call_arg_loop_entry_apply_state(
+            is_keyword_entry=is_keyword_entry,
+            keyword_entry=keyword_entry,
+        )
+        return self._apply_call_arg_loop_entry_apply_state(
+            args=args,
+            keywords=keywords,
+            arg_entry=arg_entry,
+            keyword_entry=keyword_entry,
+            has_keyword_entry=has_keyword_entry,
+        )
+
+    def _resolve_call_arg_loop_entry_apply_state(
+        self,
+        *,
+        is_keyword_entry: bool,
+        keyword_entry: dict[str, Any] | None,
+    ) -> bool:
+        """call argument loop entry の keyword apply state を helper へ寄せる。"""
+        return is_keyword_entry and keyword_entry is not None
+
+    def _apply_call_arg_loop_entry_apply_state(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        keywords: list[dict[str, Any]],
+        arg_entry: dict[str, Any] | None,
+        keyword_entry: dict[str, Any] | None,
+        has_keyword_entry: bool,
+    ) -> None:
+        """call argument loop entry の keyword/positional apply を helper へ寄せる。"""
+        if has_keyword_entry and keyword_entry is not None:
+            return self._apply_keyword_call_arg_loop_entry(
+                keywords=keywords,
+                keyword_entry=keyword_entry,
+            )
+        return self._apply_positional_call_arg_loop_entry(
+            args=args,
+            arg_entry=arg_entry,
+        )
+
+    def _apply_keyword_call_arg_loop_entry(
+        self,
+        *,
+        keywords: list[dict[str, Any]],
+        keyword_entry: dict[str, Any],
+    ) -> None:
+        """call argument loop の keyword append を helper へ寄せる。"""
+        return self._apply_keyword_call_arg_loop_entry_build(
+            keywords=keywords,
+            keyword_entry=keyword_entry,
+        )
+
+    def _apply_keyword_call_arg_loop_entry_build(
+        self,
+        *,
+        keywords: list[dict[str, Any]],
+        keyword_entry: dict[str, Any],
+    ) -> None:
+        """call argument loop の keyword node append を helper へ寄せる。"""
+        keywords.append(keyword_entry)
+
+    def _apply_positional_call_arg_loop_entry(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        arg_entry: dict[str, Any] | None,
+    ) -> None:
+        """call argument loop の positional append を helper へ寄せる。"""
+        has_arg_entry = self._resolve_positional_call_arg_loop_entry_state(arg_entry=arg_entry)
+        return self._apply_positional_call_arg_loop_entry_state(
+            args=args,
+            arg_entry=arg_entry,
+            has_arg_entry=has_arg_entry,
+        )
+
+    def _resolve_positional_call_arg_loop_entry_state(
+        self,
+        *,
+        arg_entry: dict[str, Any] | None,
+    ) -> bool:
+        """call argument loop の positional append state を helper へ寄せる。"""
+        return arg_entry is not None
+
+    def _apply_positional_call_arg_loop_entry_state(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        arg_entry: dict[str, Any] | None,
+        has_arg_entry: bool,
+    ) -> None:
+        """call argument loop の positional append apply を helper へ寄せる。"""
+        if has_arg_entry and arg_entry is not None:
+            return self._apply_positional_call_arg_loop_entry_build(
+                args=args,
+                arg_entry=arg_entry,
+            )
+
+    def _apply_positional_call_arg_loop_entry_build(
+        self,
+        *,
+        args: list[dict[str, Any]],
+        arg_entry: dict[str, Any],
+    ) -> None:
+        """call argument loop の positional node append を helper へ寄せる。"""
+        args.append(arg_entry)
+
+    def _advance_call_arg_loop(self) -> bool:
+        """call argument loop の comma/terminator 制御を helper へ寄せる。"""
+        has_comma = self._resolve_call_arg_loop_state()
+        return self._apply_call_arg_loop_state(has_comma=has_comma)
+
+    def _resolve_call_arg_loop_state(self) -> bool:
+        """call argument loop の comma state resolve を helper へ寄せる。"""
+        return self._cur()["k"] == ","
+
+    def _apply_call_arg_loop_state(self, *, has_comma: bool) -> bool:
+        """call argument loop の comma/terminator apply を helper へ寄せる。"""
+        if not has_comma:
+            return False
+        self._consume_call_arg_loop_comma_token()
+        return self._apply_call_arg_loop_continue_state()
+
     def _dict_stmt_list(self, raw: Any) -> list[dict[str, Any]]:
         """動的値から `list[dict]` を安全に取り出す。"""
         out: list[dict[str, Any]] = []

@@ -14,6 +14,7 @@ from _east_core_test_support import CORE_ATTR_SUBSCRIPT_SUFFIX_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ANNOTATION_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_ARG_SOURCE_PATH
 from _east_core_test_support import CORE_CALL_SUFFIX_SOURCE_PATH
+from _east_core_test_support import CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH
 from _east_core_test_support import CORE_RUNTIME_CALL_SEMANTICS_SOURCE_PATH
 from _east_core_test_support import CORE_SOURCE_PATH
 
@@ -333,16 +334,17 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
     def test_core_source_routes_call_expr_returns_through_shared_helper(self) -> None:
         text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
-        named_decl_text = text.split("def _resolve_named_call_declared_return_type", 1)[1].split(
+        resolution_text = CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
+        named_decl_text = resolution_text.split("def _resolve_named_call_declared_return_type", 1)[1].split(
             "def _resolve_named_call_return_state",
             1,
         )[0]
-        named_state_text = text.split("def _resolve_named_call_return_state", 1)[1].split(
+        named_state_text = resolution_text.split("def _resolve_named_call_return_state", 1)[1].split(
             "def _infer_named_call_return_type",
             1,
         )[0]
-        named_helper_text = text.split("def _infer_named_call_return_type", 1)[1].split(
-            "def _infer_call_expr_return_type",
+        named_helper_text = resolution_text.split("def _infer_named_call_return_type", 1)[1].split(
+            "def _lookup_attr_expr_metadata",
             1,
         )[0]
         helper_text = annotation_text.split("def _infer_call_expr_return_type", 1)[1].split(
@@ -419,9 +421,13 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("def _consume_call_arg_entries(", text)
         self.assertIn("def _consume_call_arg_entries_loop(", text)
         self.assertIn("def _consume_call_arg_loop_entry(", text)
+        self.assertIn("def _parse_call_arg_entry(", text)
+        self.assertIn("def _resolve_call_arg_entry_state(", text)
+        self.assertIn("def _apply_call_arg_entry_state(", text)
+        self.assertIn("def _apply_call_arg_entry(", text)
+        self.assertIn("def _advance_call_arg_loop(", text)
         self.assertIn("def _resolve_call_args_empty_state(", text)
         self.assertIn("def _apply_call_arg_entries_result_state(", text)
-        self.assertIn("def _advance_call_arg_loop(", core_text)
         self.assertIn("if self._resolve_call_args_empty_state():", text)
         self.assertIn("return self._consume_call_arg_entries(", text)
         self.assertIn("arg_entry, keyword_entry = self._resolve_call_arg_loop_entry_state()", text)
@@ -441,6 +447,11 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertNotIn("def _consume_call_arg_entries(", core_text)
         self.assertNotIn("def _consume_call_arg_entries_loop(", core_text)
         self.assertNotIn("def _consume_call_arg_loop_entry(", core_text)
+        self.assertNotIn("def _parse_call_arg_entry(", core_text)
+        self.assertNotIn("def _resolve_call_arg_entry_state(", core_text)
+        self.assertNotIn("def _apply_call_arg_entry_state(", core_text)
+        self.assertNotIn("def _apply_call_arg_entry(", core_text)
+        self.assertNotIn("def _advance_call_arg_loop(", core_text)
         self.assertNotIn("def _dict_stmt_list(", core_text)
         self.assertNotIn("def _node_kind_from_dict(", core_text)
         self.assertNotIn("def _iter_item_type(", core_text)
