@@ -34,6 +34,9 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
     def test_runtime_builtin_policy_issues_are_empty(self) -> None:
         self.assertEqual(inventory_mod._collect_runtime_builtin_policy_issues(), [])
 
+    def test_representative_bucket_issues_are_empty(self) -> None:
+        self.assertEqual(inventory_mod._collect_representative_bucket_issues(), [])
+
     def test_object_bridge_category_buckets_are_stable(self) -> None:
         self.assertEqual(
             inventory_mod.CATEGORY_BUCKETS["object_bridge_compat"],
@@ -123,6 +126,23 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
         self.assertEqual(
             set(inventory_mod.TARGET_END_STATE.keys()),
             set(inventory_mod.EXPECTED_BUCKETS.keys()),
+        )
+
+    def test_representative_bucket_manifest_is_native_wrapper_only(self) -> None:
+        self.assertEqual(
+            inventory_mod.REPRESENTATIVE_BUCKET_MANIFEST,
+            {
+                "native_wrapper_object_bridge_residual": {
+                    "smoke_file": "test/unit/common/test_py2x_entrypoints_contract.py",
+                    "smoke_tests": {
+                        "test_native_cpp_typed_boundary_make_object_usage_stays_on_export_seams",
+                    },
+                    "source_guard_paths": {
+                        "src/runtime/cpp/native/compiler/transpile_cli.cpp",
+                        "src/runtime/cpp/native/compiler/backend_registry_static.cpp",
+                    },
+                }
+            },
         )
 
 

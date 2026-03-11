@@ -208,6 +208,19 @@ GENERATED_CPP_MUST_REMAIN = {
 
 GENERATED_CPP_REDELEGATABLE = set()
 
+REPRESENTATIVE_BUCKET_MANIFEST = {
+    "native_wrapper_object_bridge_residual": {
+        "smoke_file": "test/unit/common/test_py2x_entrypoints_contract.py",
+        "smoke_tests": {
+            "test_native_cpp_typed_boundary_make_object_usage_stays_on_export_seams",
+        },
+        "source_guard_paths": {
+            "src/runtime/cpp/native/compiler/transpile_cli.cpp",
+            "src/runtime/cpp/native/compiler/backend_registry_static.cpp",
+        },
+    },
+}
+
 RS_RUNTIME_BUILTIN_MUST_REMAIN = {
     ("py_runtime_type_id_is_subtype", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
     ("py_runtime_type_id_issubclass", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
@@ -315,6 +328,32 @@ def _collect_runtime_builtin_policy_issues() -> list[str]:
     return issues
 
 
+def _collect_representative_bucket_issues() -> list[str]:
+    issues: list[str] = []
+    manifest_keys = set(REPRESENTATIVE_BUCKET_MANIFEST.keys())
+    if manifest_keys != {"native_wrapper_object_bridge_residual"}:
+        issues.append(
+            "representative residual bucket manifest keys are not limited to native_wrapper_object_bridge_residual"
+        )
+        return issues
+    lane = REPRESENTATIVE_BUCKET_MANIFEST["native_wrapper_object_bridge_residual"]
+    smoke_file = lane["smoke_file"]
+    smoke_tests = set(lane["smoke_tests"])
+    source_guard_paths = set(lane["source_guard_paths"])
+    smoke_text = (ROOT / smoke_file).read_text(encoding="utf-8", errors="ignore")
+    for test_name in sorted(smoke_tests):
+        if f"def {test_name}(" not in smoke_text:
+            issues.append(
+                f"representative smoke missing: native_wrapper_object_bridge_residual: {smoke_file}: {test_name}"
+            )
+    missing_paths = source_guard_paths - set(SOURCE_GUARD_REQUIRED_SUBSTRINGS.keys())
+    for rel in sorted(missing_paths):
+        issues.append(
+            f"representative source guard path missing from guard inventory: native_wrapper_object_bridge_residual: {rel}"
+        )
+    return issues
+
+
 def _collect_source_guard_issues() -> list[str]:
     issues: list[str] = []
     for rel, required in sorted(SOURCE_GUARD_REQUIRED_SUBSTRINGS.items()):
@@ -337,6 +376,7 @@ def _collect_inventory_issues() -> list[str]:
     issues.extend(_collect_category_issues())
     issues.extend(_collect_generated_cpp_policy_issues())
     issues.extend(_collect_runtime_builtin_policy_issues())
+    issues.extend(_collect_representative_bucket_issues())
     for pair in sorted(expected - observed):
         issues.append(f"expected residual pair missing: {pair}")
     for pair in sorted(observed - expected):
