@@ -16,6 +16,7 @@ from toolchain.frontends.transpile_cli import module_name_from_path_for_graph
 from toolchain.frontends.transpile_cli import path_key_for_graph
 from toolchain.frontends.transpile_cli import path_parent_text
 from toolchain.frontends.transpile_cli import rel_disp_for_graph
+from toolchain.frontends.transpile_cli import resolve_relative_module_name_for_graph
 from toolchain.frontends.transpile_cli import resolve_module_name_for_graph
 from pytra.std.pathlib import Path
 from typing import Any
@@ -92,14 +93,17 @@ def _analyze_import_graph_impl(
             graph_adj[cur_key] = []
             graph_keys.append(cur_key)
         cur_disp = key_to_disp[cur_key]
-        search_root = Path(path_parent_text(cur_path))
         for mod in mods:
-            resolved = resolve_module_name_for_graph(
-                mod,
-                search_root,
-                runtime_std_source_root,
-                runtime_utils_source_root,
-            )
+            if mod.startswith("."):
+                resolved = resolve_relative_module_name_for_graph(mod, root, cur_path)
+            else:
+                search_root = Path(path_parent_text(cur_path))
+                resolved = resolve_module_name_for_graph(
+                    mod,
+                    search_root,
+                    runtime_std_source_root,
+                    runtime_utils_source_root,
+                )
             status = dict_any_get_str(resolved, "status")
             dep_txt = dict_any_get_str(resolved, "path")
             resolved_mod_id = dict_any_get_str(resolved, "module_id")
@@ -128,7 +132,8 @@ def _analyze_import_graph_impl(
                     queued.add(dep_key)
                     queue.append(dep_file)
             elif status == "missing":
-                miss = cur_disp + ": " + mod
+                miss_mod = resolved_mod_id if resolved_mod_id != "" else mod
+                miss = cur_disp + ": " + miss_mod
                 append_unique_non_empty(missing_modules, missing_seen, miss)
             edge = cur_disp + " -> " + dep_disp
             append_unique_non_empty(edges, edge_seen, edge)
