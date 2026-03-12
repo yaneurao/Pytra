@@ -18,11 +18,18 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "test" / "unit" / "backends") not in sys.path:
+    sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
 from backends.kotlin.emitter import load_kotlin_profile, transpile_to_kotlin, transpile_to_kotlin_native
 from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
+from relative_import_jvm_package_smoke_support import (
+    relative_import_jvm_package_expected_needles,
+    transpile_relative_import_jvm_package_expect_failure,
+    transpile_relative_import_jvm_package_project,
+)
 
 
 def load_east(
@@ -87,6 +94,23 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         kotlin = transpile_to_kotlin_native(east)
         self.assertIn(".inv()", kotlin)
+
+    def test_cli_relative_import_jvm_package_bundle_scenarios_transpile_for_kotlin(self) -> None:
+        for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
+            with self.subTest(scenario_id=scenario_id):
+                kotlin = transpile_relative_import_jvm_package_project(scenario_id, "kotlin")
+                positive, forbidden = relative_import_jvm_package_expected_needles("kotlin", scenario_id)
+                self.assertIn(positive, kotlin)
+                self.assertNotIn(forbidden, kotlin)
+
+    def test_cli_relative_import_jvm_package_bundle_fail_closed_for_wildcard_on_kotlin(self) -> None:
+        err = transpile_relative_import_jvm_package_expect_failure(
+            "kotlin",
+            "from ..helper import *",
+            "f()",
+        )
+        self.assertIn("unsupported relative import form: wildcard import", err)
+        self.assertIn("kotlin native emitter", err)
 
     def test_kotlin_native_emitter_lowers_override_and_super_method_dispatch(self) -> None:
         fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")

@@ -44,6 +44,39 @@ _CLASS_BASES: dict[str, str] = {}
 _CLASS_METHODS: dict[str, set[str]] = {}
 
 
+def _reject_unsupported_relative_import_forms(body_any: Any) -> None:
+    if not isinstance(body_any, list):
+        return
+    i = 0
+    while i < len(body_any):
+        stmt = body_any[i]
+        if not isinstance(stmt, dict):
+            i += 1
+            continue
+        kind = stmt.get("kind")
+        if kind != "Import" and kind != "ImportFrom":
+            i += 1
+            continue
+        module_any = stmt.get("module")
+        module_id = module_any if isinstance(module_any, str) else ""
+        level_any = stmt.get("level")
+        level = level_any if isinstance(level_any, int) else 0
+        if level <= 0 and not module_id.startswith("."):
+            i += 1
+            continue
+        names_any = stmt.get("names")
+        names = names_any if isinstance(names_any, list) else []
+        j = 0
+        while j < len(names):
+            ent = names[j]
+            if isinstance(ent, dict) and ent.get("name") == "*":
+                raise RuntimeError(
+                    "kotlin native emitter: unsupported relative import form: wildcard import"
+                )
+            j += 1
+        i += 1
+
+
 def _safe_ident(name: Any, fallback: str) -> str:
     if not isinstance(name, str) or name == "":
         return fallback
@@ -2493,6 +2526,7 @@ def transpile_to_kotlin_native(east_doc: dict[str, Any]) -> str:
     body_any = east_doc.get("body")
     if not isinstance(body_any, list):
         raise RuntimeError("kotlin native emitter: Module.body must be list")
+    _reject_unsupported_relative_import_forms(body_any)
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Kotlin backend")
     reject_backend_general_union_type_exprs(east_doc, backend_name="Kotlin backend")
     main_guard_any = east_doc.get("main_guard_body")

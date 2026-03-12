@@ -18,12 +18,19 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "test" / "unit" / "backends") not in sys.path:
+    sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
 from backends.java.emitter import load_java_profile, transpile_to_java
 from toolchain.compiler.transpile_cli import load_east3_document
 from backends.java.emitter.java_native_emitter import _render_expr, transpile_to_java_native
 from src.toolchain.ir.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
+from relative_import_jvm_package_smoke_support import (
+    relative_import_jvm_package_expected_needles,
+    transpile_relative_import_jvm_package_expect_failure,
+    transpile_relative_import_jvm_package_project,
+)
 
 
 def load_east(
@@ -91,6 +98,23 @@ class Py2JavaSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         java = transpile_to_java_native(east, class_name="Main")
         self.assertIn("~(y)", java)
+
+    def test_cli_relative_import_jvm_package_bundle_scenarios_transpile_for_java(self) -> None:
+        for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
+            with self.subTest(scenario_id=scenario_id):
+                java = transpile_relative_import_jvm_package_project(scenario_id, "java")
+                positive, forbidden = relative_import_jvm_package_expected_needles("java", scenario_id)
+                self.assertIn(positive, java)
+                self.assertNotIn(forbidden, java)
+
+    def test_cli_relative_import_jvm_package_bundle_fail_closed_for_wildcard_on_java(self) -> None:
+        err = transpile_relative_import_jvm_package_expect_failure(
+            "java",
+            "from ..helper import *",
+            "f()",
+        )
+        self.assertIn("unsupported relative import form: wildcard import", err)
+        self.assertIn("java native emitter", err)
 
     def test_java_native_emitter_lowers_super_method_call_without_super_constructor_syntax(self) -> None:
         fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")
