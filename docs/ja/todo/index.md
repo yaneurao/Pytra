@@ -30,3 +30,7 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
+
+1. [ ] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01] C++ multi-file build で relative import した module-level symbol が plain name のまま未解決になる residual を解消し、Pytra-NES 型の sibling import constants を build/run まで通す。
+   文脈: [p0-cpp-relative-import-linked-symbol-support.md](/workspace/Pytra/docs/ja/plans/p0-cpp-relative-import-linked-symbol-support.md)
+   - `P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01`: parenthesized relative import は parser で通るが、C++ multi-file linked build では imported constant/plain symbol が namespace-qualified されず compile error になる。まず representative constant import smoke を固定し、user module symbol の name render と forward declaration contract を揃える。
