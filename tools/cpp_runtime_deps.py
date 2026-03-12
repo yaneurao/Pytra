@@ -105,6 +105,10 @@ def _runtime_cpp_candidates_from_group_tail(group: str, tail: Path) -> list[Path
 def _runtime_cpp_candidates_from_generated_tail(group: str, tail: Path) -> list[Path]:
     if group == "core":
         return _runtime_cpp_candidates_from_generated_core_tail(tail)
+    if group == "compiler":
+        out: list[Path] = []
+        _append_unique_path(out, RUNTIME_ROOT / "native" / group / (tail.as_posix() + ".cpp"))
+        return out
     return _runtime_cpp_candidates_from_group_tail(group, tail)
 
 
@@ -139,6 +143,8 @@ def _runtime_cpp_candidates_from_generated_core_tail(tail: Path) -> list[Path]:
 def _runtime_cpp_candidates_from_native_core_tail(tail: Path) -> list[Path]:
     out: list[Path] = []
     base_tail = _core_tail_base(tail)
+    for rel_tail in (base_tail + ".cpp",):
+        _append_unique_path(out, RUNTIME_ROOT / "generated" / "core" / rel_tail)
     for rel_tail in (base_tail + ".cpp",):
         _append_unique_path(out, RUNTIME_ROOT / "native" / "core" / rel_tail)
     return out

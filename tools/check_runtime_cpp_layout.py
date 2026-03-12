@@ -3,13 +3,12 @@
 
 Rules:
 - Module runtime under `src/runtime/cpp/{built_in,std,utils}` is legacy-closed and must not contain `.h/.cpp`.
-- Compiler runtime under `src/runtime/cpp/{generated,native,pytra}/compiler` is the stage1 bootstrap lane.
+- Compiler runtime under `src/runtime/cpp/{generated,native}/compiler` is the stage1 bootstrap lane.
 - Module runtime under `src/runtime/cpp/generated/{built_in,std,utils,compiler}` must contain the auto-generated marker.
 - Module runtime under `src/runtime/cpp/native/{built_in,std,utils,compiler}` must NOT contain the auto-generated marker.
-- Public shim under `src/runtime/cpp/pytra/{built_in,std,utils,compiler}` must contain the auto-generated marker and stay header-only.
-- `src/runtime/cpp/core/**` is an export/sdk compatibility surface and must not contain implementation `.cpp`.
+- Legacy shim/compat trees under `src/runtime/cpp/pytra/**` and `src/runtime/cpp/core/**` must not exist.
 - Compiler-facing `generated/**` and `native/**` files may include `runtime/cpp/native/core/**` directly.
-- Future `src/runtime/cpp/generated/core/**` and `src/runtime/cpp/native/core/**` must obey generated/handwritten marker rules without reintroducing ownership mixing under `core/`.
+- `src/runtime/cpp/generated/core/**` and `src/runtime/cpp/native/core/**` must obey generated/handwritten marker rules.
 """
 
 from __future__ import annotations
@@ -141,42 +140,10 @@ def _check_handwritten_files(
             unexpected_marker.append(rel)
 
 
-def _check_public_shim_files(
-    files: list[Path],
-    missing_marker: list[str],
-    invalid_name: list[str],
-) -> None:
-    for p in files:
-        rel = str(p.relative_to(ROOT))
-        txt = p.read_text(encoding="utf-8", errors="ignore")
-        if p.suffix != ".h" or not _is_plain_cpp_name(p):
-            invalid_name.append(rel)
-        if MARKER not in txt:
-            missing_marker.append(rel)
-
-
-def _check_core_surface_files(
-    files: list[Path],
-    unexpected_marker: list[str],
-    invalid_name: list[str],
-    unexpected_core_impl_files: list[str],
-) -> None:
-    for p in files:
-        rel = str(p.relative_to(ROOT))
-        txt = p.read_text(encoding="utf-8", errors="ignore")
-        if not _matches_name_policy(p, "plain"):
-            invalid_name.append(rel)
-        if MARKER in txt:
-            unexpected_marker.append(rel)
-        if p.suffix == ".cpp":
-            unexpected_core_impl_files.append(rel)
-
-
 def _check_direct_native_core_includes(
     files: list[Path],
     direct_native_core_include_violations: list[str],
     *,
-    core_dir: Path,
     generated_dir: Path,
     native_dir: Path,
 ) -> None:
@@ -186,9 +153,8 @@ def _check_direct_native_core_includes(
         includes = DIRECT_NATIVE_CORE_INCLUDE_RE.findall(txt)
         if len(includes) == 0:
             continue
-        is_core_forwarder = p.parent == core_dir and p.suffix == ".h"
         is_compiler_lane = p.is_relative_to(generated_dir) or p.is_relative_to(native_dir)
-        if is_core_forwarder or is_compiler_lane:
+        if is_compiler_lane:
             continue
         for include_txt in includes:
             direct_native_core_include_violations.append(f"{rel} -> {include_txt}")
@@ -205,8 +171,6 @@ def main() -> int:
     std_dir = _runtime_cpp_path("std")
     utils_dir = _runtime_cpp_path("utils")
     py_runtime_header = _runtime_cpp_path("native", "core", "py_runtime.h")
-    if not py_runtime_header.exists():
-        py_runtime_header = _runtime_cpp_path("core", "py_runtime.h")
 
     builtin_files = _scan_targets(builtin_dir)
     core_files = _scan_targets(core_dir)
@@ -229,11 +193,8 @@ def main() -> int:
     native_core_files = [p for p in native_files if p.relative_to(native_dir).parts[0] == "core"]
     native_module_files = [p for p in native_files if p not in native_core_files]
 
-    if not core_files:
-        print(f"[FAIL] no C++ source/header files under: {core_dir.relative_to(ROOT)}")
-        return 1
-    if not generated_module_files and not native_module_files and not pytra_files:
-        print("[FAIL] no module runtime files found under generated/native/pytra layout")
+    if not generated_module_files and not native_module_files:
+        print("[FAIL] no module runtime files found under generated/native layout")
         return 1
 
     missing_marker: list[str] = []
@@ -247,11 +208,11 @@ def main() -> int:
             + unexpected_pytra_bucket_files
         )
     ]
-    unexpected_core_impl_files: list[str] = []
     banned_runtime_duplicates: list[str] = []
     direct_native_core_include_violations: list[str] = []
     missing_core_lane_dirs: list[str] = []
     unexpected_legacy_module_files = [str(p.relative_to(ROOT)) for p in legacy_module_files]
+    unexpected_legacy_shim_files = [str(p.relative_to(ROOT)) for p in (pytra_files + core_files)]
     runtime_tree_files = _scan_targets(_runtime_cpp_path())
 
     for path in (generated_core_dir, native_core_dir):
@@ -262,12 +223,6 @@ def main() -> int:
         generated_module_files, missing_marker, invalid_name, name_policy="plain"
     )
     _check_generated_files(generated_core_files, missing_marker, invalid_name, name_policy="plain")
-    _check_core_surface_files(
-        core_files,
-        unexpected_marker,
-        invalid_name,
-        unexpected_core_impl_files,
-    )
     _check_handwritten_files(
         native_module_files,
         unexpected_marker,
@@ -280,11 +235,9 @@ def main() -> int:
         invalid_name,
         name_policy="plain",
     )
-    _check_public_shim_files(pytra_files, missing_marker, invalid_name)
     _check_direct_native_core_includes(
         runtime_tree_files,
         direct_native_core_include_violations,
-        core_dir=core_dir,
         generated_dir=generated_dir,
         native_dir=native_dir,
     )
@@ -303,7 +256,7 @@ def main() -> int:
         or unexpected_marker
         or invalid_name
         or unexpected_bucket_files
-        or unexpected_core_impl_files
+        or unexpected_legacy_shim_files
         or banned_runtime_duplicates
         or direct_native_core_include_violations
         or missing_core_lane_dirs
@@ -325,6 +278,10 @@ def main() -> int:
             print("  legacy-closed module dirs still contain source/header files:")
             for item in unexpected_legacy_module_files:
                 print(f"    - {item}")
+        if unexpected_legacy_shim_files:
+            print("  legacy shim/compat trees must be absent:")
+            for item in unexpected_legacy_shim_files:
+                print(f"    - {item}")
         if missing_marker:
             print("  generated files missing marker:")
             for item in missing_marker:
@@ -337,10 +294,6 @@ def main() -> int:
             print("  ownership roots contain unsupported top-level buckets:")
             for item in unexpected_bucket_files:
                 print(f"    - {item}")
-        if unexpected_core_impl_files:
-            print("  core compatibility surface unexpectedly contains implementation sources:")
-            for item in unexpected_core_impl_files:
-                print(f"    - {item}")
         if invalid_name:
             print("  files violating runtime naming policy:")
             for item in invalid_name:
@@ -350,7 +303,7 @@ def main() -> int:
             for item in banned_runtime_duplicates:
                 print(f"    - {item}")
         if direct_native_core_include_violations:
-            print("  non-forwarder runtime files directly include native/core headers:")
+            print("  runtime files outside generated/native directly include native/core headers:")
             for item in direct_native_core_include_violations:
                 print(f"    - {item}")
         if missing_core_lane_dirs:
@@ -363,10 +316,9 @@ def main() -> int:
     print(f"  legacy-closed module files: {len(legacy_module_files)}")
     print(f"  generated module dir files with marker: {len(generated_module_files)}")
     print(f"  generated core dir files with marker: {len(generated_core_files)}")
-    print(f"  public shim files with marker: {len(pytra_files)}")
     print(f"  native module dir files without marker: {len(native_module_files)}")
     print(f"  native core dir files without marker: {len(native_core_files)}")
-    print(f"  core surface files without marker: {len(core_files)}")
+    print(f"  legacy shim/compat files remaining: {len(unexpected_legacy_shim_files)}")
     print(f"  legacy-closed std files: {len(std_files)}")
     return 0
 

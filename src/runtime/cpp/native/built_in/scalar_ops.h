@@ -2,7 +2,7 @@
 #define PYTRA_NATIVE_BUILT_IN_SCALAR_OPS_H
 
 #include "runtime/cpp/generated/built_in/scalar_ops.h"
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
 
 inline int64 py_to_int64_base(const str& v, int64 base) {
     int b = static_cast<int>(base);

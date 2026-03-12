@@ -901,10 +901,7 @@ def _extract_cpp_include_lines(cpp_text: str, output_path: Path) -> list[str]:
                 inc_path = line[q0 + 1 : q1].replace("\\", "/")
                 if inc_path.split("/")[-1] == own_name:
                     continue
-        if line in {
-            '#include "runtime/cpp/core/py_runtime.h"',
-            '#include "runtime/cpp/native/core/py_runtime.h"',
-        }:
+        if line == '#include "runtime/cpp/native/core/py_runtime.h"':
             continue
         if line in seen:
             continue
@@ -1354,15 +1351,9 @@ def _header_guard_from_path(path: str) -> str:
     """ヘッダパスから include guard を生成する。"""
     src = path.replace("\\", "/")
     prefix0 = "src/runtime/cpp/"
-    prefix1 = "src/runtime/cpp/core/"
     prefix00 = "runtime/cpp/"
-    prefix3 = "runtime/cpp/core/"
-    if src.startswith(prefix1):
-        src = src[len(prefix1) :]
-    elif src.startswith(prefix0):
+    if src.startswith(prefix0):
         src = src[len(prefix0) :]
-    elif src.startswith(prefix3):
-        src = src[len(prefix3) :]
     elif src.startswith(prefix00):
         src = src[len(prefix00) :]
     src = "PYTRA_" + src.upper()

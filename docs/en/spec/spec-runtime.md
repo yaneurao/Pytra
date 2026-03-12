@@ -38,16 +38,16 @@ Representative layouts:
   - `src/runtime/<lang>/built_in/`
   - `src/runtime/<lang>/std/`
   - `src/runtime/<lang>/utils/`
-- current C++ module-runtime layout:
-  - `src/runtime/cpp/core/`
-  - `src/runtime/cpp/generated/{built_in,std,utils}/`
-  - `src/runtime/cpp/native/{built_in,std,utils}/`
-  - `src/runtime/cpp/pytra/{built_in,std,utils}/`
+- current C++ runtime layout:
+  - `src/runtime/cpp/generated/{built_in,std,utils,compiler}/`
+  - `src/runtime/cpp/native/{built_in,std,utils,compiler}/`
+  - `src/runtime/cpp/generated/core/`
+  - `src/runtime/cpp/native/core/`
 
 Notes:
 
 - `built_in/std/utils` are responsibility buckets derived from SoT and must not be duplicated under `core/`.
-- In C++, those responsibility names are expressed through subdirectories under `generated/native/pytra`.
+- In C++, those responsibility names are expressed through subdirectories under `generated/native`.
 
 ## 0.6 Runtime File Naming Rules
 
@@ -67,8 +67,6 @@ Runtime ownership may be expressed in one of the following target-specific ways:
   - native:
     - `src/runtime/cpp/native/<group>/<name>.h`
     - `src/runtime/cpp/native/<group>/<name>.cpp`
-  - public shim:
-    - `src/runtime/cpp/pytra/<group>/<name>.h`
 
 Meaning:
 
@@ -76,22 +74,20 @@ Meaning:
   - generated source of truth for the C++ module runtime
 - `native/`
   - target-language-specific companion for the C++ module runtime
-- `pytra/`
-  - generated public include shim for the C++ module runtime
 
 Required rules:
 
 - Under `src/runtime/cpp/{built_in,std,utils}`, do not add new module-runtime `.h/.cpp`; suffix-based ownership there is legacy-closed.
 - Not-yet-migrated targets may keep `.gen/.ext`.
 - C++ `core` uses plain naming as canonical (`core/*.h`, `native/core/*.{h,cpp}`).
-- Ownership in the C++ module runtime is identified by directories (`generated/native/pytra`), not basename suffixes.
+- Ownership in the C++ module runtime is identified by directories (`generated/native`), not basename suffixes.
 
 Examples:
 
 - `src/runtime/cpp/generated/std/math.h`
 - `src/runtime/cpp/native/std/math.cpp`
-- `src/runtime/cpp/pytra/std/math.h`
-- `src/runtime/cpp/core/py_runtime.h`
+- `src/runtime/cpp/generated/std/math.h`
+- `src/runtime/cpp/native/core/py_runtime.h`
 
 ### 0.60 Current C++ Module Runtime Layout
 
@@ -138,7 +134,7 @@ Mandatory rules:
 - handwritten core goes only under `native/core/`
 - core-lane naming stays plain (`core/*.h`, `native/core/*.{h,cpp}`); do not reintroduce `.ext` on the core lane
 - do not introduce `pytra/core`
-- only `runtime/cpp/core/*.h` forwarders may include `runtime/cpp/native/core/...` directly; generated runtime, native companions, and backend output must include `runtime/cpp/core/...`
+- compiler output, generated runtime, native companions, and backend code include `runtime/cpp/native/core/...` directly
 
 Why `pytra/core` is not introduced:
 
@@ -154,7 +150,7 @@ Additional C++ rules:
 
 - public includes used by generated code are fixed to the `pytra/...` shim
 - resolution of `generated/` / `native/` real paths belongs to the runtime symbol index and build graph; emitters must not hardcode them
-- `--emit-runtime-cpp` writes generated artifacts to `src/runtime/cpp/generated/...` and public forwarders to `src/runtime/cpp/pytra/...`
+- `--emit-runtime-cpp` writes generated artifacts to `src/runtime/cpp/generated/...`
 - `runtime_symbol_index` / build graph must treat `pytra/...` as the primary public header and derive compile sources from `generated/native`
 - `check_runtime_cpp_layout.py` must validate both legacy-closed module dirs and the ownership boundary among `generated/native/pytra/core`
 - low-level core includes stay under `core/...`; do not introduce `pytra/core/...`
@@ -169,7 +165,7 @@ Additional C++ rules:
 
 `py_runtime` rules:
 
-- `src/runtime/cpp/core/py_runtime.h` is a stable include surface / aggregator, not the canonical home for high-level built_in semantics
+- `src/runtime/cpp/native/core/py_runtime.h` is the canonical low-level runtime header, not the canonical home for high-level built_in semantics
 - `src/runtime/cpp/native/core/py_runtime.h` may keep only `PyObj` / `object` / `rc<>` / type_id / low-level container primitives / dynamic iteration / process I/O / C++ stdlib/OS glue
 - helpers such as `str::split`, `splitlines`, `count`, and `join` must not remain permanently in `native/core/py_runtime.h`; they are candidates to move back into `generated/built_in` or SoT
 - `generated/core` is not a dumping lane for overflow from `py_runtime`; only low-level helpers that can stay pure should go there
@@ -182,12 +178,12 @@ When slimming `py_runtime`, route helpers as follows:
   - SoT: `src/pytra/built_in/*.py`
   - for pure built_in semantics that can be expressed in Python, such as `str::split` / `splitlines` / `count` / `join`
   - headers may include only stable core headers
-  - `.cpp` may include `runtime/cpp/core/py_runtime.h` and sibling generated headers, but must not include `native/core` directly
+  - `.cpp` may include `runtime/cpp/native/core/py_runtime.h` and sibling generated headers, but must not embed handwritten C++-only glue
   - mutable-container helpers that want value ABI at the helper boundary must use an explicit contract such as `@abi`
 - `generated/core`
   - limited to low-level helpers that can still be generated from pure Python
   - do not use it as a second home for `built_in/std/utils` module runtime
-  - the public include surface remains `runtime/cpp/core/*.h`
+  - there is no checked-in `runtime/cpp/core/*.h` surface; include paths must follow the `generated/core` or `native/core` ownership lanes
 - common rules
   - build graph and runtime symbol index derive compile sources from public headers
   - deciding to move a helper requires more than "it can be written in Python"; it must also preserve stable include surfaces and avoid new ownership/ABI glue

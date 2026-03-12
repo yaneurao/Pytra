@@ -3,7 +3,7 @@
 Last updated: 2026-03-13
 
 Related TODO:
-- `docs/ja/todo/index.md` `ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01`
+- Completed. See `docs/en/todo/archive/20260313.md` for `ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01`.
 
 Background:
 - The current C++ backend still uses the runtime symbol index `public_headers` as both the compiler include surface and the SDK/public surface, so generated code reaches the runtime through shim trees under `src/runtime/cpp/pytra/**` and `src/runtime/cpp/core/**`.
@@ -14,7 +14,7 @@ Background:
 Goals:
 - Switch the C++ compiler/emitter to include `src/runtime/cpp/{generated,native}/**` and `src/runtime/cpp/native/core/**` directly.
 - Split compiler-facing headers from SDK/public headers in `runtime_symbol_index`, so `public_headers` is reserved for export/package use while `compiler_headers` becomes the codegen/build source of truth.
-- Eventually remove `src/runtime/cpp/pytra/**` and `src/runtime/cpp/core/**` from the compiler path in the repo itself, and keep them only as export-time generated artifacts if they are still needed.
+- Remove `src/runtime/cpp/pytra/**` and `src/runtime/cpp/core/**` from the repo itself and converge both compiler and export paths onto the direct `generated/native` ownership lanes.
 
 Scope:
 - `src/toolchain/frontends/runtime_symbol_index.py`
@@ -42,10 +42,10 @@ Acceptance criteria:
 - `runtime_symbol_index` gains `compiler_headers`, and for the `cpp` target it resolves module runtime to `generated/**` or `native/**`, and core runtime to `native/core/**`.
 - The C++ emitter / runtime emit / multi-file prelude / helper artifact flow includes compiler headers instead of `pytra/**` or `core/**`.
 - Checked-in generated runtime files under `src/runtime/cpp/generated/**` stop using `pytra/**` and `runtime/cpp/core/**` as compiler-time include paths, and point directly at `generated/**` and `runtime/cpp/native/core/**`.
-- `public_headers` may remain as the SDK/public shim surface, but compiler path selection must not depend on it anymore.
-- `tools/check_runtime_cpp_layout.py` is updated to enforce the new contract: generated/native/compiler lanes may include `native/core` directly, while `pytra/core` are no longer the compiler ownership roots.
+- For C++, `public_headers` resolves to the same direct ownership headers as `compiler_headers`, with no checked-in shim surface remaining.
+- `tools/check_runtime_cpp_layout.py` enforces that `src/runtime/cpp/{pytra,core}` stays absent and that only generated/native/compiler lanes may include `native/core` directly.
 - By the end of the first wave, transpiled user code, checked-in generated runtime, and the build graph all work without depending on `pytra/**` or `core/**`.
-- By the end of the final wave, `src/runtime/cpp/pytra/**` and `src/runtime/cpp/core/**` can either move to export-time generated artifacts or be removed if unnecessary.
+- By the end of the final wave, `src/runtime/cpp/{pytra,core}` contains zero checked-in files and `--emit-runtime-cpp` no longer recreates them.
 
 Planned verification:
 - `python3 tools/check_todo_priority.py`
@@ -61,7 +61,7 @@ Execution policy:
 2. For module runtime, prefer `generated/<bucket>/<module>.h` as the compiler header, and only fall back to `native/<bucket>/<module>.h` when no generated header exists.
 3. For core runtime, treat `native/core/<module>.h` as canonical for the compiler. `core/<module>.h` may remain only as a compatibility/export lane.
 4. Reduce hard-coded `pytra/...` / `core/...` strings in helper include maps and runtime emit output. Resolve runtime module headers through the symbol index whenever possible.
-5. In the first wave, do not delete repo shims yet. The completion condition is that the compiler stops depending on them.
+5. In the first wave, remove compiler dependence on repo shims. In the final wave, delete the checked-in shim trees entirely.
 
 ## Target structure
 
@@ -71,17 +71,12 @@ Compiler/build-facing surface:
 - `src/runtime/cpp/native/{built_in,std,utils,compiler}/`
 - `src/runtime/cpp/native/core/`
 
-Optional SDK/export-facing surface:
-
-- `src/runtime/cpp/pytra/**`
-- `src/runtime/cpp/core/**`
-
 Roles:
 
 - `compiler_headers`
   - the internal source of truth included by generated C++ and checked-in generated runtime
 - `public_headers`
-  - a stable surface for SDK/export/package use if still needed
+  - for C++, the same direct ownership headers returned to compiler consumers
 - `compile_sources`
   - the concrete implementation files collected by the build graph
 
@@ -92,8 +87,8 @@ Roles:
 - [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S2-01] Switch the C++ emitter/runtime-path/helper include resolution to `compiler_headers`, so transpiled user code stops including `pytra/**` and `core/**`.
 - [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S2-02] Switch `emit-runtime-cpp`, the multi-file prelude, and helper artifacts to `runtime/cpp/native/core/**`, and regenerate the checked-in generated runtime files.
 - [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S3-01] Update `tools/cpp_runtime_deps.py` and the build-graph tests to the compiler-direct include contract, so compile sources are still recovered without shim dependence.
-- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S3-02] Update `tools/check_runtime_cpp_layout.py` and docs so `generated/native/compiler` lanes may include `native/core` directly, and `pytra/core` are treated as export/sdk lanes.
-- [ ] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S4-01] Decide whether an export-time SDK generator is still needed. If yes, move `pytra/**` and `core/**` forwarders to build/export-time generation; if not, delete them from the repo.
+- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S3-02] Update `tools/check_runtime_cpp_layout.py` and docs so `generated/native/compiler` lanes may include `native/core` directly, while `src/runtime/cpp/{pytra,core}` are treated as legacy residual trees only.
+- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S4-01] Decide no export-time SDK generator is needed and delete `src/runtime/cpp/{pytra,core}` from the repo.
 
 Decision log:
 - 2026-03-13: Per user direction, raised a new P0 to move the C++ compiler away from `pytra/**` / `core/**` shims and toward direct inclusion of the `generated/native` runtime artifacts.
@@ -103,3 +98,5 @@ Decision log:
 - 2026-03-13: The helper include maps no longer hard-code `pytra/built_in/*.h`. They resolve `pytra.built_in.*` module ids through the compiler-header path, so transpiled user code now includes `generated/built_in/*`, `generated/std/*`, and `generated/utils/*` directly.
 - 2026-03-13: `emit-runtime-cpp` was switched to direct `runtime/cpp/native/core/**` includes. When a matching `native/<bucket>/<module>.h` exists, `generated/<bucket>/<module>.h` now auto-injects that companion include, moving the old `generated + native` aggregation from the `pytra/**` shim layer into the compiler-facing header itself.
 - 2026-03-13: `src/toolchain/compiler/backend_registry_static.py` still fails `--emit-runtime-cpp` regeneration because of a known self-hosted-parser residual (`unterminated string literal`). In the first wave, the generated compiler shim stays in place, while the handwritten `native/compiler/backend_registry_static.{h,cpp}` includes were manually synchronized to `generated/std/{json,pathlib}.h` and `runtime/cpp/native/core/py_runtime.h`.
+- 2026-03-13: In the final wave, C++ `public_headers` was collapsed onto the same direct ownership headers as `compiler_headers`, `--emit-runtime-cpp` was changed to write back only `src/runtime/cpp/generated/**`, and the checked-in files under `src/runtime/cpp/{pytra,core}` were deleted. The layout guard now fails fast if those shim/compat trees reappear.
+- 2026-03-13: Native companion includes in generated headers now land just before `#endif`, so direct generated includes such as `iter_ops.h` do not hide generated declarations from their native companions.

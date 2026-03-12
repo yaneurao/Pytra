@@ -7,8 +7,6 @@
 #include "runtime/cpp/native/core/process_runtime.h"
 #include "runtime/cpp/native/core/scope_exit.h"
 
-#include "runtime/cpp/generated/compiler/typed_boundary.h"
-
 namespace pytra::compiler::transpile_cli {
 
     object normalize_east1_to_east2_document_stage;

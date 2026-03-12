@@ -8,10 +8,7 @@ from toolchain.frontends.runtime_symbol_index import lookup_target_module_primar
 from toolchain.frontends.runtime_symbol_index import runtime_module_exists
 
 
-RUNTIME_CPP_CORE_ROOT: Path = Path("src/runtime/cpp/core")
 RUNTIME_CPP_ROOT: Path = Path("src/runtime/cpp")
-# Legacy name kept as alias while callers are being updated.
-RUNTIME_CPP_COMPAT_ROOT: Path = RUNTIME_CPP_CORE_ROOT
 TOOLCHAIN_COMPILER_PREFIX = "toolchain.compiler."
 TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
 
@@ -19,26 +16,6 @@ TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
 def module_tail_to_cpp_header_path(module_tail: str) -> str:
     """`a.b.c` を C++ runtime generated header 相対パスへ変換する。"""
     return runtime_output_rel_tail(module_tail.replace(".", "/")) + ".h"
-
-
-def module_tail_to_cpp_public_header_path(module_tail: str) -> str:
-    """runtime module tail を public include 用 `pytra/.../*.h` へ変換する。"""
-    rel = join_str_list("/", module_tail.split("/"))
-    if rel == "":
-        return ""
-    if rel.startswith("std/"):
-        return "pytra/std/" + rel[4:] + ".h"
-    if rel.startswith("built_in/"):
-        return "pytra/built_in/" + rel[9:] + ".h"
-    if rel.startswith("compiler/"):
-        return "pytra/compiler/" + rel[9:] + ".h"
-    if rel == "std":
-        return "pytra/std.h"
-    if rel == "built_in":
-        return "pytra/built_in.h"
-    if rel == "compiler":
-        return "pytra/compiler.h"
-    return "pytra/utils/" + rel + ".h"
 
 
 def join_runtime_path(base_dir: Path, rel_path: str) -> Path:

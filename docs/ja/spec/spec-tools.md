@@ -69,9 +69,9 @@
 - `tools/verify_image_runtime_parity.py`
   - 目的: 画像ランタイム（PNG/GIF）の Python 正本と C++ 側の一致を確認する。
 - `tools/check_runtime_std_sot_guard.py`
-  - 目的: `src/pytra/std/*.py` / `src/pytra/utils/*.py` を正本とする運用を検査し、`rs/cs` では `src/runtime/{rs,cs}/generated/**` を canonical generated lane として監査しつつ、legacy `pytra-gen` lane への手書き実装再流入（現行ガード対象: `json/assertions/re/typing`）を fail させる。あわせて C++ `std/utils` 全体の責務境界（`generated/native/pytra` ownership + required manual impl split）も検証する。
+  - 目的: `src/pytra/std/*.py` / `src/pytra/utils/*.py` を正本とする運用を検査し、`rs/cs` では `src/runtime/{rs,cs}/generated/**` を canonical generated lane として監査しつつ、legacy `pytra-gen` lane への手書き実装再流入（現行ガード対象: `json/assertions/re/typing`）を fail させる。あわせて C++ `std/utils` 全体の責務境界（`generated/native` ownership + required manual impl split）も検証する。
 - `tools/check_runtime_core_gen_markers.py`
-  - 目的: `rs/cs` では `src/runtime/<lang>/generated/**` を canonical generated lane として `source/generated-by` marker を強制し、legacy `pytra-gen/pytra-core` は未移行 backend 向けの scan target としてのみ扱う。加えて C++ では `src/runtime/cpp/generated/core/**` の marker 必須、`src/runtime/cpp/native/core/**` と `src/runtime/cpp/core/**` の marker 禁止も監査する（`tools/runtime_core_gen_markers_allowlist.txt` 基準）。
+  - 目的: `rs/cs` では `src/runtime/<lang>/generated/**` を canonical generated lane として `source/generated-by` marker を強制し、legacy `pytra-gen/pytra-core` は未移行 backend 向けの scan target としてのみ扱う。加えて C++ では `src/runtime/cpp/generated/core/**` の marker 必須、`src/runtime/cpp/native/core/**` の marker 禁止と legacy `src/runtime/cpp/core/**` 再出現時の marker 混入も監査する（`tools/runtime_core_gen_markers_allowlist.txt` 基準）。
   - 補足: C++ `generated/built_in` / `generated/std` / `generated/utils` も同じ marker 契約で監査し、`generated/core` を low-level pure helper lane として扱う前提を壊す増分を止める。
 - `tools/check_runtime_pytra_gen_naming.py`
   - 目的: canonical generated lane（`rs/cs` は `src/runtime/<lang>/generated/**`、未移行 backend は `pytra-gen/**`）の `std|utils` 配置と素通し命名（`<module>.py -> <module>.<ext>`）を検査し、`image_runtime.*` / `runtime/*.php` などの命名・配置違反増分を fail させる（`tools/runtime_pytra_gen_naming_allowlist.txt` 基準）。

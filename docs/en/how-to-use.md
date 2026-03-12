@@ -353,10 +353,10 @@ Notes:
 - Prepare target-language runtime implementations for imported `pytra` modules under `src/runtime/cpp/`.
 - GC uses `base/gc`.
 - `src/runtime/cpp/` is split by responsibility into `core/`, `generated/`, `native/`, and `pytra/`.
-- Generated artifacts live under `src/runtime/cpp/generated/`, C++-specific companions live under `src/runtime/cpp/native/`, and public include shims live under `src/runtime/cpp/pytra/`. The low-level core include surface remains under `src/runtime/cpp/core/`.
+- Generated artifacts live under `src/runtime/cpp/generated/`, and both C++-specific companions and the low-level core source of truth live under `src/runtime/cpp/native/`. There is no checked-in `pytra/core` shim tree anymore.
 - `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py -o ... --header-output ...` generates `*.cpp` and `*.h` together.
-- `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py --emit-runtime-cpp` writes generated artifacts to `src/runtime/cpp/generated/<tree>/...` and public shims to `src/runtime/cpp/pytra/<tree>/...` (`<tree>` = `built_in` / `std` / `utils`).
-- Example: `src/pytra/built_in/type_id.py` -> `src/runtime/cpp/generated/built_in/type_id.cpp` and `src/runtime/cpp/generated/built_in/type_id.h`, with the matching public shim at `src/runtime/cpp/pytra/built_in/type_id.h`.
+- `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py --emit-runtime-cpp` writes generated artifacts to `src/runtime/cpp/generated/<tree>/...` (`<tree>` = `built_in` / `std` / `utils`).
+- Example: `src/pytra/built_in/type_id.py` -> `src/runtime/cpp/generated/built_in/type_id.cpp` and `src/runtime/cpp/generated/built_in/type_id.h`.
 - Example: `src/pytra/std/math.py` is header-only, so it emits `src/runtime/cpp/generated/std/math.h`, while the native implementation stays in `src/runtime/cpp/native/std/math.cpp`.
 - `src/pytra/utils/png.py` and `src/pytra/utils/gif.py` are generated with the bridge style, with type-conversion wrappers around runtime public APIs.
 - `src/pytra/std/json.py` and `src/pytra/utils/assertions.py` also generate `.h/.cpp`.

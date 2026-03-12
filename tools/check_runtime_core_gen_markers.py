@@ -9,7 +9,9 @@ Policy:
 - Generated lanes must include both `source:` and `generated-by:` markers.
 - Handwritten lanes must not include generated markers.
 - `src/runtime/cpp/generated/core/**` files must include both markers, while
-  `src/runtime/cpp/native/core/**` and `src/runtime/cpp/core/**` must not.
+  `src/runtime/cpp/native/core/**` must not.
+- Legacy `src/runtime/cpp/core/**` compatibility files are not canonical and are checked
+  only if they reappear unexpectedly.
 """
 
 from __future__ import annotations

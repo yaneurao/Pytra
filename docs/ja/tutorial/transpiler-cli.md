@@ -44,10 +44,10 @@ g++ -std=c++20 -O3 -ffast-math -flto -I src -I src/runtime/cpp test/transpile/cp
 - ユーザーモジュール import は absolute / relative の `from-import` を受理します（例: `from helper import f`, `from .helper import f`, `from ..pkg import y`, `from .helper import *`）。
 - `pytra` モジュールに対応するターゲット言語ランタイムを `src/runtime/cpp/` 側に用意します。GC は `base/gc` を使います。
 - `src/runtime/cpp/` は責務ごとに `core/`, `generated/`, `native/`, `pytra/` に分かれます。
-- 生成物は `src/runtime/cpp/generated/`、C++ 固有 companion は `src/runtime/cpp/native/`、public include shim は `src/runtime/cpp/pytra/` に置きます。low-level core include 面は当面 `src/runtime/cpp/core/` を使います。
+- 生成物は `src/runtime/cpp/generated/`、C++ 固有 companion と low-level core 正本は `src/runtime/cpp/native/` に置きます。repo 常設の `pytra/core` shim は使いません。
 - `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py -o ... --header-output ...` で `*.cpp` / `*.h` を同時生成できます。
-- `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py --emit-runtime-cpp` を使うと、生成物は `src/runtime/cpp/generated/<tree>/...`、public shim は `src/runtime/cpp/pytra/<tree>/...` に出力します（`<tree>` は `built_in` / `std` / `utils`）。
-- 例: `src/pytra/built_in/type_id.py` -> `src/runtime/cpp/generated/built_in/type_id.cpp` と `src/runtime/cpp/generated/built_in/type_id.h`、対応する public shim は `src/runtime/cpp/pytra/built_in/type_id.h`。
+- `python src/py2x.py --target cpp src/pytra/<tree>/<mod>.py --emit-runtime-cpp` を使うと、生成物は `src/runtime/cpp/generated/<tree>/...` に出力します（`<tree>` は `built_in` / `std` / `utils`）。
+- 例: `src/pytra/built_in/type_id.py` -> `src/runtime/cpp/generated/built_in/type_id.cpp` と `src/runtime/cpp/generated/built_in/type_id.h`。
 - 例: `src/pytra/built_in/numeric_ops.py` / `src/pytra/built_in/zip_ops.py` のような template-only helper は header-only なので `src/runtime/cpp/generated/built_in/*.h` だけを生成し、`.cpp` は作りません。
 - 例: `src/pytra/std/math.py` は header-only なので `src/runtime/cpp/generated/std/math.h` を生成し、ネイティブ実体は `src/runtime/cpp/native/std/math.cpp` に置きます。
 - `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` は bridge 方式で生成され、`runtime` 側の公開 API に型変換ラッパが付きます。

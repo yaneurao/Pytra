@@ -239,8 +239,6 @@ def _is_generated_runtime(rel_path: str) -> bool:
         return True
     if rel_path.startswith("src/runtime/cs/generated/"):
         return True
-    if rel_path.startswith("src/runtime/cpp/pytra/"):
-        return True
     # C++ generated std/utils files.
     return rel_path in CPP_ROOT_GENERATED_RUNTIME_FILES
 

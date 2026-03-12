@@ -619,26 +619,24 @@ extern "C" void pytra_utils_png_write_png(const list<bytearray>& image) {
 
 The canonical runtime layout follows [`spec-runtime.md`](./spec-runtime.md).
 
-Key points assumed here for current C++ runtime:
+Key points assumed here for the current C++ runtime:
 
-- `runtime/cpp/core/`
-- `runtime/cpp/generated/{built_in,std,utils}/`
-- `runtime/cpp/native/{built_in,std,utils}/`
-- `runtime/cpp/pytra/{built_in,std,utils}/`
+- `runtime/cpp/generated/{built_in,std,utils,compiler}/`
+- `runtime/cpp/native/{built_in,std,utils,compiler}/`
+- `runtime/cpp/generated/core/`
+- `runtime/cpp/native/core/`
 
 Ownership rules:
 
 - declarations and thin wrappers generated from SoT go in `generated/`
 - minimal native implementations that glue to OS / SDK / the C++ standard library go in `native/`
-- public headers included by generated code go in `pytra/`
-- `core/` is the stable include surface for the low-level runtime and uses plain `runtime/cpp/core/*.h`
+- low-level core ownership is split between `generated/core` and `native/core`
 
 Notes:
 
 - C++ module-runtime ownership is distinguished by directories, not suffixes.
 - suffix-based module runtime under `src/runtime/cpp/{built_in,std,utils}` is legacy-closed and must not be reintroduced
-- `core` ownership is also split into `runtime/cpp/generated/core/` and `runtime/cpp/native/core/`; `runtime/cpp/core/*.h` is the compatibility include surface and `runtime/cpp/native/core/*.{h,cpp}` is the handwritten source of truth
-- `pytra/core` is not introduced; `pytra/` is reserved for generated public module-runtime shims
+- `core` ownership is split into `runtime/cpp/generated/core/` and `runtime/cpp/native/core/`, with no checked-in `runtime/cpp/core/*.h` compatibility surface
 - the ABI policy itself does not change
 
 ## 12. Example: `pytra.std.math`
@@ -649,14 +647,11 @@ Because `src/pytra/std/math.py` contains `@extern`, the C++ runtime is structure
   - `runtime/cpp/generated/std/math.h`
 - native implementation:
   - `runtime/cpp/native/std/math.cpp`
-- public shim:
-  - `runtime/cpp/pytra/std/math.h`
-
 Important:
 
 - `math` is header-only on the generated side, so `runtime/cpp/generated/std/math.cpp` is not emitted
 - `math.cpp` provides the native implementation for `math.h`
-- generated code includes `runtime/cpp/pytra/std/math.h`, while the build graph resolves the generated/native ownership
+- generated code includes `runtime/cpp/generated/std/math.h`, while the build graph resolves the generated/native ownership
 - manifest/build inputs follow the layout rules in `spec-runtime.md`
 
 In other words, even for modules containing `@extern`,

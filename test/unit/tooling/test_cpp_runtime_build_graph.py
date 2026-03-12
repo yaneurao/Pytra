@@ -23,15 +23,15 @@ from tools.cpp_runtime_deps import runtime_cpp_candidates_from_header
 
 
 class CppRuntimeBuildGraphTest(unittest.TestCase):
-    def _make_forwarder_project(self, workdir: Path) -> Path:
+    def _make_direct_header_project(self, workdir: Path) -> Path:
         src_dir = workdir / "src"
-        include_dir = workdir / "include" / "pytra" / "std"
+        include_dir = workdir / "include" / "generated" / "std"
         src_dir.mkdir(parents=True, exist_ok=True)
         include_dir.mkdir(parents=True, exist_ok=True)
         (src_dir / "main.cpp").write_text(
             '\n'.join(
                 [
-                    '#include "pytra/std/math.h"',
+                    '#include "generated/std/math.h"',
                     "",
                     "int main() {",
                     "    return pytra::std::math::sqrt(4.0) == 2.0 ? 0 : 1;",
@@ -45,7 +45,7 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
             '\n'.join(
                 [
                     "#pragma once",
-                    '#include "runtime/cpp/pytra/std/math.h"',
+                    '#include "runtime/cpp/generated/std/math.h"',
                     "",
                 ]
             ),
@@ -66,10 +66,10 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
         )
         return manifest
 
-    def test_build_multi_cpp_follows_forwarder_header_to_native_cpp(self) -> None:
+    def test_build_multi_cpp_follows_direct_runtime_header_to_native_cpp(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             workdir = Path(tmpdir)
-            manifest = self._make_forwarder_project(workdir)
+            manifest = self._make_direct_header_project(workdir)
             exe = workdir / "app.out"
             build = subprocess.run(
                 [sys.executable, str(BUILD_SCRIPT), str(manifest), "-o", str(exe)],
@@ -82,10 +82,10 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
             run = subprocess.run([str(exe)], capture_output=True, text=True, cwd=str(workdir))
             self.assertEqual(run.returncode, 0, run.stderr)
 
-    def test_makefile_includes_native_cpp_for_forwarder_header(self) -> None:
+    def test_makefile_includes_native_cpp_for_direct_runtime_header(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             workdir = Path(tmpdir)
-            manifest = self._make_forwarder_project(workdir)
+            manifest = self._make_direct_header_project(workdir)
             output_makefile = workdir / "Makefile"
             result = subprocess.run(
                 [sys.executable, str(MAKEFILE_SCRIPT), str(manifest), "-o", str(output_makefile)],
@@ -105,8 +105,8 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
         self.assertNotIn((ROOT / "src/runtime/cpp/std/math.gen.cpp").as_posix(), paths)
         self.assertNotIn((ROOT / "src/runtime/cpp/std/math.ext.cpp").as_posix(), paths)
 
-    def test_runtime_cpp_candidates_from_public_shim_do_not_reintroduce_legacy_module_paths(self) -> None:
-        header = ROOT / "src/runtime/cpp/pytra/std/time.h"
+    def test_runtime_cpp_candidates_from_generated_std_header_do_not_reintroduce_legacy_module_paths(self) -> None:
+        header = ROOT / "src/runtime/cpp/generated/std/time.h"
         paths = [path.as_posix() for path in runtime_cpp_candidates_from_header(header)]
         self.assertIn((ROOT / "src/runtime/cpp/native/std/time.cpp").as_posix(), paths)
         self.assertNotIn((ROOT / "src/runtime/cpp/std/time.gen.cpp").as_posix(), paths)
@@ -120,14 +120,25 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
             paths,
         )
 
-    def test_runtime_cpp_candidates_support_future_core_split_from_core_header(self) -> None:
+    def test_generated_compiler_header_prefers_native_cpp_only(self) -> None:
+        header = ROOT / "src/runtime/cpp/generated/compiler/transpile_cli.h"
+        paths = [path.as_posix() for path in runtime_cpp_candidates_from_header(header)]
+        self.assertIn(
+            (ROOT / "src/runtime/cpp/native/compiler/transpile_cli.cpp").as_posix(),
+            paths,
+        )
+        self.assertNotIn(
+            (ROOT / "src/runtime/cpp/generated/compiler/transpile_cli.cpp").as_posix(),
+            paths,
+        )
+
+    def test_runtime_cpp_candidates_support_native_core_header(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             runtime_root = root / "src/runtime/cpp"
-            (runtime_root / "core").mkdir(parents=True, exist_ok=True)
             (runtime_root / "generated/core").mkdir(parents=True, exist_ok=True)
             (runtime_root / "native/core").mkdir(parents=True, exist_ok=True)
-            header = runtime_root / "core/dict.h"
+            header = runtime_root / "native/core/dict.h"
             header.write_text("#pragma once\n", encoding="utf-8")
 
             with patch.object(deps_mod, "ROOT", root), patch.object(
@@ -139,9 +150,7 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
             ):
                 paths = [path.as_posix() for path in deps_mod.runtime_cpp_candidates_from_header(header)]
 
-        self.assertIn((runtime_root / "generated/core/dict.cpp").as_posix(), paths)
         self.assertIn((runtime_root / "native/core/dict.cpp").as_posix(), paths)
-        self.assertNotIn((runtime_root / "core/dict.cpp").as_posix(), paths)
 
     def test_runtime_cpp_candidates_support_future_core_split_from_generated_header(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -165,10 +174,9 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
         self.assertIn((runtime_root / "native/core/dict.cpp").as_posix(), paths)
 
     def test_runtime_cpp_candidates_for_real_core_header_follow_native_core_source(self) -> None:
-        header = ROOT / "src/runtime/cpp/core/gc.h"
+        header = ROOT / "src/runtime/cpp/native/core/gc.h"
         paths = [path.as_posix() for path in runtime_cpp_candidates_from_header(header)]
         self.assertIn((ROOT / "src/runtime/cpp/native/core/gc.cpp").as_posix(), paths)
-        self.assertNotIn((ROOT / "src/runtime/cpp/core/gc.cpp").as_posix(), paths)
 
     def test_collect_runtime_sources_from_real_json_module_follows_direct_built_in_headers(self) -> None:
         module_sources = [str(ROOT / "src/runtime/cpp/generated/std/json.cpp")]
@@ -177,7 +185,7 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
         self.assertIn("src/runtime/cpp/generated/built_in/sequence.cpp", runtime_sources)
         self.assertIn("src/runtime/cpp/generated/built_in/string_ops.cpp", runtime_sources)
 
-    def test_collect_runtime_sources_from_core_surface_no_longer_pulls_removed_built_in_companions(
+    def test_collect_runtime_sources_from_native_core_header_no_longer_pulls_removed_built_in_companions(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -186,7 +194,7 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
             src.write_text(
                 '\n'.join(
                     [
-                        '#include "runtime/cpp/core/py_runtime.h"',
+                        '#include "runtime/cpp/native/core/py_runtime.h"',
                         "",
                         "int main() {",
                         "    return 0;",

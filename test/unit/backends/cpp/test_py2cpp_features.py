@@ -148,7 +148,6 @@ def inc(x: int) -> int:
         src_py = ROOT / rel_src
         hdr_out = ROOT / "src/runtime/cpp/generated/std/__tmp_extern_header_only_test.h"
         cpp_out = ROOT / "src/runtime/cpp/generated/std/__tmp_extern_header_only_test.cpp"
-        public_hdr_out = ROOT / "src/runtime/cpp/pytra/std/__tmp_extern_header_only_test.h"
         src = """
 from pytra.std import extern
 
@@ -164,8 +163,6 @@ def sin(x: float) -> float:
                 hdr_out.unlink()
             if cpp_out.exists():
                 cpp_out.unlink()
-            if public_hdr_out.exists():
-                public_hdr_out.unlink()
             cp = self._run_subprocess_with_timeout(
                 [
                     "python3",
@@ -181,12 +178,6 @@ def sin(x: float) -> float:
             self.assertIn("skipped: header-only runtime module", cp.stdout)
             self.assertTrue(hdr_out.exists())
             self.assertFalse(cpp_out.exists())
-            self.assertTrue(public_hdr_out.exists())
-            public_hdr = public_hdr_out.read_text(encoding="utf-8")
-            self.assertIn(
-                '#include "runtime/cpp/generated/std/__tmp_extern_header_only_test.h"',
-                public_hdr,
-            )
         finally:
             if src_py.exists():
                 src_py.unlink()
@@ -194,14 +185,11 @@ def sin(x: float) -> float:
                 hdr_out.unlink()
             if cpp_out.exists():
                 cpp_out.unlink()
-            if public_hdr_out.exists():
-                public_hdr_out.unlink()
 
     def test_emit_runtime_cpp_keeps_template_module_header_only(self) -> None:
         rel_src = Path("src/pytra/built_in/numeric_ops.py")
         hdr_out = ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.h"
         cpp_out = ROOT / "src/runtime/cpp/generated/built_in/numeric_ops.cpp"
-        public_hdr_out = ROOT / "src/runtime/cpp/pytra/built_in/numeric_ops.h"
 
         cp = self._run_subprocess_with_timeout(
             [
@@ -220,7 +208,6 @@ def sin(x: float) -> float:
         self.assertIn("skipped: header-only runtime module (template definitions stay in header)", cp.stdout)
         self.assertTrue(hdr_out.exists())
         self.assertFalse(cpp_out.exists())
-        self.assertTrue(public_hdr_out.exists())
         hdr_txt = hdr_out.read_text(encoding="utf-8")
         self.assertIn("template <class T>", hdr_txt)
         self.assertIn("T sum(const list<T>& values) {", hdr_txt)
@@ -230,7 +217,6 @@ def sin(x: float) -> float:
         rel_src = Path("src/pytra/built_in/zip_ops.py")
         hdr_out = ROOT / "src/runtime/cpp/generated/built_in/zip_ops.h"
         cpp_out = ROOT / "src/runtime/cpp/generated/built_in/zip_ops.cpp"
-        public_hdr_out = ROOT / "src/runtime/cpp/pytra/built_in/zip_ops.h"
 
         cp = self._run_subprocess_with_timeout(
             [
@@ -249,7 +235,6 @@ def sin(x: float) -> float:
         self.assertIn("skipped: header-only runtime module (template definitions stay in header)", cp.stdout)
         self.assertTrue(hdr_out.exists())
         self.assertFalse(cpp_out.exists())
-        self.assertTrue(public_hdr_out.exists())
         hdr_txt = hdr_out.read_text(encoding="utf-8")
         self.assertIn("template <class A, class B>", hdr_txt)
         self.assertIn("list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {", hdr_txt)

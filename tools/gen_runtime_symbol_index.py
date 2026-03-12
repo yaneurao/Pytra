@@ -251,7 +251,6 @@ def _target_cpp_module_artifacts(group: str, tail: str) -> dict[str, Any] | None
     compile_sources: list[str] = []
     companions: list[str] = []
 
-    public_shim = runtime_root / "pytra" / group / (tail + ".h")
     generated_h_path = runtime_root / "generated" / group / (tail + ".h")
     generated_cpp_path = runtime_root / "generated" / group / (tail + ".cpp")
     native_h_path = runtime_root / "native" / group / (tail + ".h")
@@ -261,18 +260,11 @@ def _target_cpp_module_artifacts(group: str, tail: str) -> dict[str, Any] | None
     native_h = native_h_path if native_h_path.exists() else None
     native_cpp = native_cpp_path if native_cpp_path.exists() else None
 
-    if public_shim.exists():
-        public_headers.append(_path_to_rel_txt(public_shim))
-    else:
-        if generated_h is not None:
-            public_headers.append(_path_to_rel_txt(generated_h))
-        if native_h is not None:
-            public_headers.append(_path_to_rel_txt(native_h))
-
     if generated_h is not None:
         compiler_headers.append(_path_to_rel_txt(generated_h))
     elif native_h is not None:
         compiler_headers.append(_path_to_rel_txt(native_h))
+    public_headers = list(compiler_headers)
 
     if generated_cpp is not None:
         compile_sources.append(_path_to_rel_txt(generated_cpp))
@@ -315,11 +307,6 @@ def _target_cpp_core_artifacts(tail: str) -> dict[str, Any] | None:
     compile_sources: list[str] = []
     companions: list[str] = []
 
-    public_header_candidates = _pick_existing(
-        [
-            runtime_root / "core" / (tail + ".h"),
-        ]
-    )
     generated_header_candidates = _pick_existing(
         [
             runtime_root / "generated" / "core" / (tail + ".h"),
@@ -341,19 +328,6 @@ def _target_cpp_core_artifacts(tail: str) -> dict[str, Any] | None:
         ]
     )
 
-    if public_header_candidates:
-        public_headers.append(_path_to_rel_txt(public_header_candidates[0]))
-    elif generated_header_candidates:
-        first_generated_header = next(
-            (p for p in generated_header_candidates if p.suffix == ".h"), None
-        )
-        if first_generated_header is not None:
-            public_headers.append(_path_to_rel_txt(first_generated_header))
-    elif native_header_candidates:
-        first_native_header = next((p for p in native_header_candidates if p.suffix == ".h"), None)
-        if first_native_header is not None:
-            public_headers.append(_path_to_rel_txt(first_native_header))
-
     if native_header_candidates:
         first_native_header = next((p for p in native_header_candidates if p.suffix == ".h"), None)
         if first_native_header is not None:
@@ -364,8 +338,7 @@ def _target_cpp_core_artifacts(tail: str) -> dict[str, Any] | None:
         )
         if first_generated_header is not None:
             compiler_headers.append(_path_to_rel_txt(first_generated_header))
-    elif public_header_candidates:
-        compiler_headers.append(_path_to_rel_txt(public_header_candidates[0]))
+    public_headers = list(compiler_headers)
 
     def append_sources(paths: list[Path]) -> None:
         seen_sources = set(compile_sources)
@@ -396,22 +369,30 @@ def _target_cpp_core_artifacts(tail: str) -> dict[str, Any] | None:
 
 
 def _iter_target_core_module_ids(lang: str) -> list[str]:
-    base_dir = ROOT / "src" / "runtime" / lang / "core"
-    if not base_dir.exists():
-        return []
+    base_dirs: list[Path] = []
+    if lang == "cpp":
+        base_dirs = [
+            ROOT / "src" / "runtime" / lang / "generated" / "core",
+            ROOT / "src" / "runtime" / lang / "native" / "core",
+        ]
+    else:
+        base_dirs = [ROOT / "src" / "runtime" / lang / "core"]
     tails: set[str] = set()
     suffixes = (".h",)
-    for path in sorted(base_dir.rglob("*")):
-        if not path.is_file():
+    for base_dir in base_dirs:
+        if not base_dir.exists():
             continue
-        rel = path.relative_to(base_dir).as_posix()
-        tail = ""
-        for suffix in suffixes:
-            if rel.endswith(suffix):
-                tail = rel[: -len(suffix)]
-                break
-        if tail != "":
-            tails.add(tail)
+        for path in sorted(base_dir.rglob("*")):
+            if not path.is_file():
+                continue
+            rel = path.relative_to(base_dir).as_posix()
+            tail = ""
+            for suffix in suffixes:
+                if rel.endswith(suffix):
+                    tail = rel[: -len(suffix)]
+                    break
+            if tail != "":
+                tails.add(tail)
     out: list[str] = []
     for tail in sorted(tails):
         out.append("pytra.core." + tail.replace("/", "."))

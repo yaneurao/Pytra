@@ -3,7 +3,7 @@
 最終更新: 2026-03-13
 
 関連 TODO:
-- `docs/ja/todo/index.md` の `ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01`
+- 完了済み。`docs/ja/todo/archive/20260313.md` の `ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01`
 
 背景:
 - 現行の C++ backend は runtime symbol index の `public_headers` を compiler include 面と SDK/public 面で兼用しており、生成コードは `src/runtime/cpp/pytra/**` と `src/runtime/cpp/core/**` の shim を経由して runtime へ到達している。
@@ -14,7 +14,7 @@
 目的:
 - C++ compiler/emitter が `src/runtime/cpp/{generated,native}/**` と `src/runtime/cpp/native/core/**` を直接 include する構造へ切り替える。
 - `runtime_symbol_index` で compiler 向け include 面と SDK/public 面を分離し、`public_headers` は export/package 用、`compiler_headers` は codegen/build 用に固定する。
-- 最終的に `src/runtime/cpp/pytra/**` と `src/runtime/cpp/core/**` を repo 本体の compiler path から外し、必要なら export 時の生成物へ降ろす。
+- 最終的に `src/runtime/cpp/pytra/**` と `src/runtime/cpp/core/**` を repo 本体から削除し、compiler path も export path も `generated/native` ownership lane に一本化する。
 
 対象:
 - `src/toolchain/frontends/runtime_symbol_index.py`
@@ -42,10 +42,10 @@
 - runtime symbol index に `compiler_headers` が追加され、`cpp` target では module runtime に対して `generated/**` または `native/**`、core runtime に対して `native/core/**` が返る。
 - C++ emitter / runtime emit / multi-file prelude / helper artifact は `pytra/**` や `core/**` ではなく compiler header を include する。
 - checked-in generated runtime (`src/runtime/cpp/generated/**`) は `pytra/**` と `runtime/cpp/core/**` を compiler path として使わず、必要な runtime 依存を `generated/**` と `runtime/cpp/native/core/**` へ直接張る。
-- `public_headers` は従来どおり SDK/public shim 面として残せるが、compiler の経路決定には使われない。
-- `tools/check_runtime_cpp_layout.py` は「generated/native/compiler lane が native/core を直接 include してよいが、shim lane は compiler 正本ではない」という新 contract を監査する。
+- `public_headers` は C++ では `compiler_headers` と同じ direct header を返し、repo 常設 shim へは戻らない。
+- `tools/check_runtime_cpp_layout.py` は `src/runtime/cpp/{pytra,core}` が再出現していないこと、そして generated/native/compiler lane だけが `native/core` を直接 include できることを監査する。
 - first wave 完了時点で、transpiled user code / checked-in generated runtime / build graph が `pytra/**` と `core/**` に依存しなくても通る。
-- final wave 完了時点で、repo 本体の `src/runtime/cpp/pytra/**` と `src/runtime/cpp/core/**` は export-time generated artifact へ移せるか、不要なら削除できる。
+- final wave 完了時点で、repo 本体の `src/runtime/cpp/{pytra,core}` は 0 file となり、`--emit-runtime-cpp` もそれらを再生成しない。
 
 確認コマンド（予定）:
 - `python3 tools/check_todo_priority.py`
@@ -61,7 +61,7 @@
 2. module runtime の compiler header は `generated/<bucket>/<module>.h` を優先し、generated header がない module だけ `native/<bucket>/<module>.h` を使う。
 3. core runtime の compiler header は `native/core/<module>.h` を正本とし、`core/<module>.h` はあっても SDK/export 用の互換 lane としてしか扱わない。
 4. helper include map や runtime emit の include 行は hard-coded `pytra/...` / `core/...` 文字列を減らし、可能な限り runtime symbol index を経由して決める。
-5. repo に残る `pytra/**` と `core/**` は直ちに delete せず、first wave では compiler 依存を外すところまでを完了条件にする。
+5. first wave で compiler 依存を外し、final wave で repo 常設 shim を削除する。
 
 ## 目標構造
 
@@ -71,17 +71,12 @@ compiler/build が見る面:
 - `src/runtime/cpp/native/{built_in,std,utils,compiler}/`
 - `src/runtime/cpp/native/core/`
 
-optional SDK/export 面:
-
-- `src/runtime/cpp/pytra/**`
-- `src/runtime/cpp/core/**`
-
 役割:
 
 - `compiler_headers`
   - codegen された C++ と checked-in generated runtime が include する内部正本
 - `public_headers`
-  - SDK/export/package が必要なら提供する安定面
+  - C++ では compiler-facing direct header をそのまま返す
 - `compile_sources`
   - build graph が compile 対象として集める実装 file
 
@@ -92,8 +87,8 @@ optional SDK/export 面:
 - [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S2-01] C++ emitter/runtime-path/helper include 解決を `compiler_headers` 基準へ切り替え、transpiled user code が `pytra/**` / `core/**` を include しないようにする。
 - [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S2-02] `emit-runtime-cpp` 生成物・multi-file prelude・helper artifact の core include を `runtime/cpp/native/core/**` へ切り替え、checked-in generated runtime を再生成する。
 - [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S3-01] `tools/cpp_runtime_deps.py` と build graph test を compiler-direct include 契約へ同期し、shim 非依存で compile source を回収できるようにする。
-- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S3-02] `tools/check_runtime_cpp_layout.py` と docs を「generated/native/compiler lane は native/core を直接 include 可、`pytra/core` は export/sdk lane」として更新する。
-- [ ] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S4-01] export-time SDK generator の要否を決め、必要なら `pytra/**` / `core/**` forwarder を build/export 時生成へ移す。不必要なら repo から削除する。
+- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S3-02] `tools/check_runtime_cpp_layout.py` と docs を「generated/native/compiler lane は native/core を直接 include 可、`src/runtime/cpp/{pytra,core}` は legacy residual」として更新する。
+- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S4-01] export-time SDK generator は不要と判断し、`src/runtime/cpp/{pytra,core}` を repo から削除する。
 
 決定ログ:
 - 2026-03-13: ユーザー指示により、C++ compiler は `pytra/**` / `core/**` shim に依存せず、runtime packaging が `generated/native` 実体を直接 include できる構造へ寄せる方針を新規 P0 として起票した。
@@ -103,3 +98,5 @@ optional SDK/export 面:
 - 2026-03-13: helper include map の hard-coded `pytra/built_in/*.h` は廃止し、`pytra.built_in.*` module id から compiler header を引く方式へ寄せた。これにより transpiled user code は `generated/built_in/*` / `generated/std/*` / `generated/utils/*` を直接 include する。
 - 2026-03-13: `emit-runtime-cpp` は `runtime/cpp/native/core/**` を直接 include するように変更し、`generated/<bucket>/<module>.h` には対応する `native/<bucket>/<module>.h` が存在する場合だけ companion include を自動注入するようにした。これで旧 `pytra/**` shim が担っていた `generated + native` aggregation を compiler-facing header 側へ移し直した。
 - 2026-03-13: `src/toolchain/compiler/backend_registry_static.py` は self-hosted parser の既知 residual（`unterminated string literal`）で `--emit-runtime-cpp` 再生成に失敗したため、first wave では generated compiler shim を維持しつつ、hand-written `native/compiler/backend_registry_static.{h,cpp}` の include だけを `generated/std/{json,pathlib}.h` と `runtime/cpp/native/core/py_runtime.h` へ手同期した。
+- 2026-03-13: final wave として C++ の `public_headers` を `compiler_headers` と同じ direct ownership header へ揃え、`--emit-runtime-cpp` は `src/runtime/cpp/generated/**` のみを書き戻すよう変更した。`src/runtime/cpp/{pytra,core}` の checked-in file は削除し、layout guard は shim/compat tree 再導入を fail-fast 化した。
+- 2026-03-13: generated header の native companion include は `#endif` 直前へ注入するよう修正し、`iter_ops` など direct generated include で companion が generated 宣言を見失わないようにした。

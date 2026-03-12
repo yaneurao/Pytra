@@ -8,7 +8,7 @@
 #include <thread>
 #include <vector>
 
-#include "../src/runtime/cpp/pytra/built_in/gc.h"
+#include "../src/runtime/cpp/native/core/gc.h"
 
 namespace gc = pytra::gc;
 

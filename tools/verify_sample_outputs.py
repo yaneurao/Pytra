@@ -79,10 +79,14 @@ def runtime_cpp_sources() -> list[str]:
     out: list[str] = []
     seen: set[str] = set()
     for root in (
-        Path("src/runtime/cpp/core"),
-        Path("src/runtime/cpp/std"),
-        Path("src/runtime/cpp/utils"),
-        Path("src/runtime/cpp/built_in"),
+        Path("src/runtime/cpp/generated/built_in"),
+        Path("src/runtime/cpp/generated/std"),
+        Path("src/runtime/cpp/generated/utils"),
+        Path("src/runtime/cpp/generated/core"),
+        Path("src/runtime/cpp/native/built_in"),
+        Path("src/runtime/cpp/native/std"),
+        Path("src/runtime/cpp/native/utils"),
+        Path("src/runtime/cpp/native/core"),
     ):
         for p in sorted(root.rglob("*.cpp")):
             rel = p.as_posix()
