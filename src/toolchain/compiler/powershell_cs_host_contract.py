@@ -41,6 +41,38 @@ BUILD_DRIVER_FAIL_CLOSED_RULES = {
     "add_type_load": "Use only as the last fallback when neither `dotnet` nor `csc` is available. Fail closed for representative smoke/parity lanes, multi-file runtime bundling, or any flow that requires a persistent `build/Program.exe` artifact.",
 }
 
+REPRESENTATIVE_VERIFICATION_LANES = {
+    "existing_backend_smoke": "test/unit/backends/cs/test_py2cs_smoke.py",
+    "future_host_smoke": "test/unit/tooling/test_powershell_cs_host_profile.py",
+    "sample_parity_input": "sample/py/01_mandelbrot.py",
+    "future_sample_parity": "tools/check_powershell_cs_host_sample_parity.py",
+    "cli_entrypoint": "src/pytra-cli.py",
+    "cli_profile_inventory": "src/toolchain/compiler/pytra_cli_profiles.py",
+    "future_cli_profile_regression": "test/unit/tooling/test_pytra_cli_powershell_cs_host_profile.py",
+}
+
+CURRENT_PY2CS_SMOKE_BASELINE = {
+    "runner": "test/unit/backends/cs/test_py2cs_smoke.py",
+    "covers_backend_transpile": True,
+    "covers_generated_program_cs": True,
+    "covers_pwsh_launcher": False,
+    "covers_runtime_source_bundling": False,
+    "covers_build_driver_selection": False,
+    "covers_compiled_execution": False,
+    "covers_sample_parity": False,
+    "covers_cli_profile_selection": False,
+}
+
+HOST_PROFILE_DELTA_FROM_PY2CS_SMOKE = {
+    "transpile_only_scope": "Current `py2cs` smoke validates backend transpilation and generated `Program.cs`, not a PowerShell host run/build lane.",
+    "launcher_gap": "Current smoke does not validate `run.ps1` responsibility or argument forwarding.",
+    "runtime_layout_gap": "Current smoke does not validate `src/Program.cs` plus `runtime/*.cs` staging.",
+    "driver_selection_gap": "Current smoke does not validate `dotnet` / `csc` / `Add-Type` driver selection.",
+    "compiled_execution_gap": "Current smoke does not validate producing and executing the representative `build/Program.exe` artifact from PowerShell.",
+    "sample_parity_gap": "Current smoke does not validate representative sample parity through the PowerShell host profile.",
+    "cli_profile_gap": "Current smoke does not validate a dedicated `pwsh + cs` profile in `src/pytra-cli.py` and `src/toolchain/compiler/pytra_cli_profiles.py`.",
+}
+
 NON_GOALS = {
     "pure_powershell_backend": "Do not implement PowerShell as a pure target backend.",
     "csharp_backend_rewrite": "Do not rewrite the C# backend itself.",
@@ -97,6 +129,9 @@ def build_powershell_cs_host_contract_manifest() -> dict[str, object]:
             for key, values in BUILD_DRIVER_EXECUTABLE_REQUIREMENTS.items()
         },
         "build_driver_fail_closed_rules": dict(BUILD_DRIVER_FAIL_CLOSED_RULES),
+        "representative_verification_lanes": dict(REPRESENTATIVE_VERIFICATION_LANES),
+        "current_py2cs_smoke_baseline": dict(CURRENT_PY2CS_SMOKE_BASELINE),
+        "host_profile_delta_from_py2cs_smoke": dict(HOST_PROFILE_DELTA_FROM_PY2CS_SMOKE),
         "non_goals": dict(NON_GOALS),
         "output_layout": dict(REPRESENTATIVE_OUTPUT_LAYOUT),
         "entrypoint_contract": dict(REPRESENTATIVE_ENTRYPOINT_CONTRACT),

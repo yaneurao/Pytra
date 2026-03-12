@@ -64,6 +64,50 @@ class CheckPowershellCsHostContractTest(unittest.TestCase):
             },
         )
 
+    def test_verification_lanes_are_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.REPRESENTATIVE_VERIFICATION_LANES,
+            {
+                "existing_backend_smoke": "test/unit/backends/cs/test_py2cs_smoke.py",
+                "future_host_smoke": "test/unit/tooling/test_powershell_cs_host_profile.py",
+                "sample_parity_input": "sample/py/01_mandelbrot.py",
+                "future_sample_parity": "tools/check_powershell_cs_host_sample_parity.py",
+                "cli_entrypoint": "src/pytra-cli.py",
+                "cli_profile_inventory": "src/toolchain/compiler/pytra_cli_profiles.py",
+                "future_cli_profile_regression": "test/unit/tooling/test_pytra_cli_powershell_cs_host_profile.py",
+            },
+        )
+
+    def test_current_py2cs_smoke_baseline_is_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.CURRENT_PY2CS_SMOKE_BASELINE,
+            {
+                "runner": "test/unit/backends/cs/test_py2cs_smoke.py",
+                "covers_backend_transpile": True,
+                "covers_generated_program_cs": True,
+                "covers_pwsh_launcher": False,
+                "covers_runtime_source_bundling": False,
+                "covers_build_driver_selection": False,
+                "covers_compiled_execution": False,
+                "covers_sample_parity": False,
+                "covers_cli_profile_selection": False,
+            },
+        )
+
+    def test_host_profile_delta_keys_are_fixed(self) -> None:
+        self.assertEqual(
+            set(contract_mod.HOST_PROFILE_DELTA_FROM_PY2CS_SMOKE.keys()),
+            {
+                "transpile_only_scope",
+                "launcher_gap",
+                "runtime_layout_gap",
+                "driver_selection_gap",
+                "compiled_execution_gap",
+                "sample_parity_gap",
+                "cli_profile_gap",
+            },
+        )
+
     def test_non_goals_are_fixed(self) -> None:
         self.assertEqual(
             set(contract_mod.NON_GOALS.keys()),
@@ -132,6 +176,9 @@ class CheckPowershellCsHostContractTest(unittest.TestCase):
                 "build_driver_priority",
                 "build_driver_executable_requirements",
                 "build_driver_fail_closed_rules",
+                "representative_verification_lanes",
+                "current_py2cs_smoke_baseline",
+                "host_profile_delta_from_py2cs_smoke",
                 "non_goals",
                 "output_layout",
                 "entrypoint_contract",

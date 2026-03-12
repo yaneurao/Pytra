@@ -25,6 +25,14 @@ EXPECTED_JA_PLAN_PHRASES = (
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S1-01]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-01]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-02]",
+    "[x] [ID: P5-POWERSHELL-CS-HOST-01-S3-01]",
+    "`test/unit/backends/cs/test_py2cs_smoke.py`",
+    "`test/unit/tooling/test_powershell_cs_host_profile.py`",
+    "`tools/check_powershell_cs_host_sample_parity.py`",
+    "`test/unit/tooling/test_pytra_cli_powershell_cs_host_profile.py`",
+    "`sample/py/01_mandelbrot.py`",
+    "`src/pytra-cli.py`",
+    "`src/toolchain/compiler/pytra_cli_profiles.py`",
     "`run.ps1`",
     "`src/Program.cs`",
     "`runtime/`",
@@ -43,6 +51,14 @@ EXPECTED_EN_PLAN_PHRASES = (
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S1-01]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-01]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-02]",
+    "[x] [ID: P5-POWERSHELL-CS-HOST-01-S3-01]",
+    "`test/unit/backends/cs/test_py2cs_smoke.py`",
+    "`test/unit/tooling/test_powershell_cs_host_profile.py`",
+    "`tools/check_powershell_cs_host_sample_parity.py`",
+    "`test/unit/tooling/test_pytra_cli_powershell_cs_host_profile.py`",
+    "`sample/py/01_mandelbrot.py`",
+    "`src/pytra-cli.py`",
+    "`src/toolchain/compiler/pytra_cli_profiles.py`",
     "`run.ps1`",
     "`src/Program.cs`",
     "`runtime/`",
@@ -59,6 +75,7 @@ EXPECTED_JA_TODO_PHRASES = (
     "pure PowerShell backend は対象外",
     "`run.ps1` / `src/Program.cs` / `runtime/*.cs` / `build/Program.exe`",
     "`dotnet -> csc -> Add-Type`",
+    "`test_py2cs_smoke.py` / host smoke / sample parity / CLI profile",
 )
 
 EXPECTED_EN_TODO_PHRASES = (
@@ -68,6 +85,7 @@ EXPECTED_EN_TODO_PHRASES = (
     "pure PowerShell target backend stays out of scope",
     "`run.ps1` / `src/Program.cs` / `runtime/*.cs` / `build/Program.exe`",
     "`dotnet -> csc -> Add-Type`",
+    "`test_py2cs_smoke.py` / host smoke / sample parity / CLI profile",
 )
 
 
@@ -107,6 +125,38 @@ def _collect_contract_issues() -> list[str]:
         "add_type_load",
     }:
         issues.append("build driver fail-closed rule keys drifted")
+    if contract_mod.REPRESENTATIVE_VERIFICATION_LANES != {
+        "existing_backend_smoke": "test/unit/backends/cs/test_py2cs_smoke.py",
+        "future_host_smoke": "test/unit/tooling/test_powershell_cs_host_profile.py",
+        "sample_parity_input": "sample/py/01_mandelbrot.py",
+        "future_sample_parity": "tools/check_powershell_cs_host_sample_parity.py",
+        "cli_entrypoint": "src/pytra-cli.py",
+        "cli_profile_inventory": "src/toolchain/compiler/pytra_cli_profiles.py",
+        "future_cli_profile_regression": "test/unit/tooling/test_pytra_cli_powershell_cs_host_profile.py",
+    }:
+        issues.append("representative verification lanes drifted")
+    if contract_mod.CURRENT_PY2CS_SMOKE_BASELINE != {
+        "runner": "test/unit/backends/cs/test_py2cs_smoke.py",
+        "covers_backend_transpile": True,
+        "covers_generated_program_cs": True,
+        "covers_pwsh_launcher": False,
+        "covers_runtime_source_bundling": False,
+        "covers_build_driver_selection": False,
+        "covers_compiled_execution": False,
+        "covers_sample_parity": False,
+        "covers_cli_profile_selection": False,
+    }:
+        issues.append("current py2cs smoke baseline drifted")
+    if set(contract_mod.HOST_PROFILE_DELTA_FROM_PY2CS_SMOKE.keys()) != {
+        "transpile_only_scope",
+        "launcher_gap",
+        "runtime_layout_gap",
+        "driver_selection_gap",
+        "compiled_execution_gap",
+        "sample_parity_gap",
+        "cli_profile_gap",
+    }:
+        issues.append("host profile delta key set drifted")
     if set(contract_mod.NON_GOALS.keys()) != {
         "pure_powershell_backend",
         "csharp_backend_rewrite",
@@ -157,6 +207,9 @@ def _collect_contract_issues() -> list[str]:
         "build_driver_priority",
         "build_driver_executable_requirements",
         "build_driver_fail_closed_rules",
+        "representative_verification_lanes",
+        "current_py2cs_smoke_baseline",
+        "host_profile_delta_from_py2cs_smoke",
         "non_goals",
         "output_layout",
         "entrypoint_contract",
