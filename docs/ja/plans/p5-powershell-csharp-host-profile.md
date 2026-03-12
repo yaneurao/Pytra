@@ -26,9 +26,15 @@
 - smoke / parity / docs の representative regression 点が決まっている。
 - `docs/en/` mirror が日本語版と同じ計画内容に追従している。
 
+確認コマンド:
+- `python3 tools/check_powershell_cs_host_contract.py`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_powershell_cs_host_contract.py'`
+- `python3 tools/check_todo_priority.py`
+- `git diff --check`
+
 ## 子タスク
 
-- [ ] [ID: P5-POWERSHELL-CS-HOST-01-S1-01] `pwsh + cs backend` representative lane の前提（Windows / PowerShell 7 / `dotnet` or `csc`）と非対象を固定する。
+- [x] [ID: P5-POWERSHELL-CS-HOST-01-S1-01] `pwsh + cs backend` representative lane の前提（Windows / PowerShell 7 / `dotnet` or `csc`）と非対象を固定する。
 - [ ] [ID: P5-POWERSHELL-CS-HOST-01-S2-01] launcher `.ps1` の責務を定義し、generated `.cs` / runtime `.cs` / output layout / `Main` entrypoint 契約を決める。
 - [ ] [ID: P5-POWERSHELL-CS-HOST-01-S2-02] build driver の優先順（`dotnet`, `csc`, `Add-Type`）と fail-closed 条件を整理する。
 - [ ] [ID: P5-POWERSHELL-CS-HOST-01-S3-01] representative smoke / sample parity / CLI profile の導線を設計し、既存 `py2cs` smoke との差分を明示する。
@@ -38,3 +44,4 @@
 
 - 2026-03-12: `pure PowerShell backend` は bit 演算、bytes、class、module/runtime packaging の言語相性が悪くコストが高いため、この plan は `PowerShell host for C# backend` に限定する。
 - 2026-03-12: 優先度は低く、実験用 host profile の性格が強いため `P5` とする。
+- 2026-03-12: `S1-01` として `pwsh / Windows / PowerShell 7 / dotnet-or-csc required / Add-Type optional` を canonical baseline に固定し、docs drift は `check_powershell_cs_host_contract.py` で落とす。
