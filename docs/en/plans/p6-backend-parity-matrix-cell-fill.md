@@ -54,6 +54,7 @@ Decision log:
 - 2026-03-12: `S4-01` added the rollout-tier fill order (`representative -> secondary -> long_tail`) to the matrix manifest and fixed the same order in the docs pages.
 - 2026-03-12: `S4-02` promoted only the direct fixture-backed representative `rs/cs` cells from conservative seeds to `supported/transpile_smoke`, while secondary and long-tail lanes stay on placeholder seeds.
 - 2026-03-12: `S4-03` promoted the direct-evidence secondary-tier cells and only raised the `go/java/kt/scala/swift/nim` lanes that already have representative fixture-backed smoke to `supported/transpile_smoke`.
+- 2026-03-12: `S4-04` promoted only the long-tail `js/ts/lua/rb/php` cells that already have representative fixture-backed smoke, limiting the updates to `bitwise_invert_basic`, `inheritance_virtual_dispatch_multilang`, `for_range`, and `is_instance`.
 
 ## Breakdown
 
@@ -65,4 +66,4 @@ Decision log:
 - [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-01] Fix the rollout-tier fill order in the matrix manifest and docs.
 - [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-02] Replace conservative seeds with reviewed representative-tier (`cpp/rs/cs`) cell states.
 - [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-03] Promote direct-evidence secondary-tier (`go/java/kt/scala/swift/nim`) cells to reviewed states.
-- [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-04] Reflect reviewed / fail-closed long-tail (`js/ts/lua/rb/php`) cells in the matrix.
+- [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-04] Reflect reviewed / fail-closed long-tail (`js/ts/lua/rb/php`) cells in the matrix.
