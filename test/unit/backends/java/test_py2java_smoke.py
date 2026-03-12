@@ -127,6 +127,36 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn('return "loud-" + super.speak();', java)
         self.assertNotIn("super().speak()", java)
 
+    def test_secondary_bundle_representative_fixtures_transpile_for_java(self) -> None:
+        for stem in (
+            "tuple_assign",
+            "lambda_basic",
+            "comprehension",
+            "try_raise",
+            "enumerate_basic",
+            "ok_generator_tuple_target",
+            "is_instance",
+            "json_extended",
+            "pathlib_extended",
+            "enum_extended",
+            "argparse_extended",
+            "pytra_std_import_math",
+            "re_extended",
+        ):
+            with self.subTest(stem=stem):
+                fixture = find_fixture_case(stem)
+                east = load_east(fixture, parser_backend="self_hosted")
+                java = transpile_to_java_native(east, class_name="Main")
+                self.assertTrue(java.strip())
+
+    def test_tuple_assign_fixture_lowers_swap_via_temp_for_java(self) -> None:
+        fixture = find_fixture_case("tuple_assign")
+        east = load_east(fixture, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        self.assertRegex(java, r"long __swap_\d+ = x;")
+        self.assertIn("x = y;", java)
+        self.assertRegex(java, r"y = __swap_\d+;")
+
     def test_java_string_literal_escapes_control_characters(self) -> None:
         rendered = _java_string_literal("\\\"\r\n\t\b\f")
         self.assertEqual(rendered, '"\\\\\\\"\\r\\n\\t\\b\\f"')

@@ -1302,6 +1302,20 @@ def _target_name(target: Any) -> str:
     return "tmp"
 
 
+def _emit_swap(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
+    left = _target_name(stmt.get("left"))
+    right = _target_name(stmt.get("right"))
+    tmp = _fresh_tmp(ctx, "swap")
+    tmp_type = _infer_kotlin_type(stmt.get("left"), _type_map(ctx))
+    if tmp_type == "void":
+        tmp_type = "Any?"
+    return [
+        indent + "var " + tmp + ": " + tmp_type + " = " + left,
+        indent + left + " = " + right,
+        indent + right + " = " + tmp,
+    ]
+
+
 def _fresh_tmp(ctx: dict[str, Any], prefix: str) -> str:
     idx = ctx.get("tmp", 0)
     if not isinstance(idx, int):
@@ -1995,6 +2009,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if op == "Mod":
             return [indent + lhs + " %= " + rhs]
         return [indent + lhs + " += " + rhs]
+
+    if kind == "Swap":
+        return _emit_swap(stmt, indent=indent, ctx=ctx)
 
     if kind == "If":
         test_expr = _render_truthy_expr(stmt.get("test"))

@@ -93,26 +93,40 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             contract_mod.REVIEWED_REPRESENTATIVE_CELL_OVERRIDES,
             {
                 "syntax.assign.tuple_destructure": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "syntax.expr.lambda": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "syntax.expr.list_comprehension": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "syntax.control.for_range": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "nim": {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "syntax.control.try_raise": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
@@ -130,44 +144,70 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "builtin.iter.enumerate": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "builtin.iter.zip": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "builtin.iter.range": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "nim": {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.json.loads_dumps": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.pathlib.path_ops": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.enum.enum_and_intflag": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.argparse.parse_args": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.re.sub": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "builtin.type.isinstance": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -190,6 +230,9 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.math.imported_symbols": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
@@ -308,21 +351,22 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             "evidence_kind": "build_run_smoke",
         })
         self.assertEqual(
-            first_row["backend_cells"][1:3],
+            first_row["backend_cells"][1:],
             [
                 {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "js", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+                {"backend": "ts", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+                {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "swift", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+                {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "rb", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+                {"backend": "lua", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+                {"backend": "scala", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+                {"backend": "php", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+                {"backend": "nim", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
             ],
-        )
-        self.assertTrue(
-            all(
-                cell == {
-                    "backend": backend,
-                    "support_state": "not_started",
-                    "evidence_kind": "not_started_placeholder",
-                }
-                for backend, cell in zip(contract_mod.PARITY_MATRIX_BACKEND_ORDER[3:], first_row["backend_cells"][3:])
-            )
         )
         rows = {
             row["feature_id"]: row

@@ -138,6 +138,37 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertIn("var a AnimalLike = NewLoudDog()", go)
         self.assertIn('return __pytra_str(("loud-" + self.Dog.speak()))', go)
 
+    def test_secondary_bundle_representative_fixtures_transpile_for_go(self) -> None:
+        for stem in (
+            "tuple_assign",
+            "lambda_basic",
+            "comprehension",
+            "for_range",
+            "try_raise",
+            "enumerate_basic",
+            "ok_generator_tuple_target",
+            "is_instance",
+            "json_extended",
+            "pathlib_extended",
+            "enum_extended",
+            "argparse_extended",
+            "pytra_std_import_math",
+            "re_extended",
+        ):
+            with self.subTest(stem=stem):
+                fixture = find_fixture_case(stem)
+                east = load_east(fixture, parser_backend="self_hosted")
+                go = transpile_to_go_native(east)
+                self.assertTrue(go.strip())
+
+    def test_tuple_assign_fixture_lowers_swap_via_temp_for_go(self) -> None:
+        fixture = find_fixture_case("tuple_assign")
+        east = load_east(fixture, parser_backend="self_hosted")
+        go = transpile_to_go_native(east)
+        self.assertIn("var __swap_", go)
+        self.assertIn("x = y", go)
+        self.assertRegex(go, r"y = __swap_\d+")
+
     def test_go_native_emitter_routes_math_calls_via_runtime_helpers(self) -> None:
         sample = ROOT / "sample" / "py" / "06_julia_parameter_sweep.py"
         east = load_east(sample, parser_backend="self_hosted")
