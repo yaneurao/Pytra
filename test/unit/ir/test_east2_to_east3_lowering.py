@@ -1437,6 +1437,32 @@ class East2ToEast3LoweringTest(East23LoweringNominalAdtFixtureMixin, unittest.Te
         self.assertEqual(summary.get("category"), "dynamic_union")
         self.assertEqual(value.get("bridge_lane_v1", {}).get("target_category"), "dynamic_union")
 
+    def test_lower_call_reads_homogeneous_tuple_ellipsis_summary_as_distinct_category(self) -> None:
+        east2 = {
+            "kind": "Module",
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "value": {
+                        "kind": "Call",
+                        "resolved_type": "tuple[int64,...]",
+                        "type_expr": parse_type_expr_text("tuple[int, ...]"),
+                        "func": {"kind": "Name", "id": "build_table", "resolved_type": "unknown"},
+                        "args": [],
+                        "keywords": [],
+                    },
+                },
+            ],
+        }
+        out = lower_east2_to_east3(east2)
+        value = out.get("body", [])[0].get("value", {})
+        summary = value.get("type_expr_summary_v1", {})
+        self.assertEqual(summary.get("category"), "homogeneous_tuple")
+        self.assertEqual(summary.get("tuple_shape"), "homogeneous_ellipsis")
+        self.assertEqual(summary.get("item_mirror"), "int64")
+        self.assertEqual(summary.get("item_category"), "static")
+
     def test_lower_json_decode_calls_attach_nominal_metadata(self) -> None:
         json_value = {
             "kind": "Name",

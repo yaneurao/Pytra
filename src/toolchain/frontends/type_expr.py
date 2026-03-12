@@ -126,6 +126,22 @@ def _is_dynamic_expr(expr: dict[str, Any]) -> bool:
     return expr.get("kind") == "DynamicType"
 
 
+def _is_named_ellipsis_expr(expr: object) -> bool:
+    return isinstance(expr, dict) and expr.get("kind") == "NamedType" and expr.get("name") == "..."
+
+
+def _is_homogeneous_tuple_ellipsis_expr(expr: object) -> bool:
+    if not isinstance(expr, dict):
+        return False
+    if expr.get("kind") != "GenericType" or str(expr.get("base", "")).strip() != "tuple":
+        return False
+    tuple_shape = str(expr.get("tuple_shape", "")).strip()
+    if tuple_shape == "homogeneous_ellipsis":
+        return True
+    args_obj = expr.get("args")
+    return isinstance(args_obj, list) and len(args_obj) == 2 and _is_named_ellipsis_expr(args_obj[1])
+
+
 def _make_named_like(name: str) -> dict[str, Any]:
     if name in {"Any", "object", "unknown"}:
         return {"kind": "DynamicType", "name": name}
@@ -173,6 +189,8 @@ def _parse_type_expr_inner(raw_text: str, aliases: dict[str, str], seen_aliases:
             return {"kind": "OptionalType", "inner": args[0]}
         if head == "Union" and len(args) > 0:
             return _make_union_type_expr(args)
+        if head == "tuple" and len(args) == 2 and _is_named_ellipsis_expr(args[1]):
+            return {"kind": "GenericType", "base": head, "args": args, "tuple_shape": "homogeneous_ellipsis"}
         return {"kind": "GenericType", "base": head, "args": args}
     return _make_named_like(txt)
 
@@ -283,6 +301,19 @@ def summarize_type_expr(expr: object) -> dict[str, Any]:
             out["category"] = "dynamic_union"
         else:
             out["category"] = "general_union"
+        return out
+    if kind == "GenericType" and _is_homogeneous_tuple_ellipsis_expr(expr_obj):
+        out["category"] = "homogeneous_tuple"
+        out["tuple_shape"] = "homogeneous_ellipsis"
+        args_obj = expr_obj.get("args")
+        if isinstance(args_obj, list) and len(args_obj) >= 1 and isinstance(args_obj[0], dict):
+            item_summary = summarize_type_expr(args_obj[0])
+            item_mirror = str(item_summary.get("mirror", "unknown")).strip()
+            item_category = str(item_summary.get("category", "unknown")).strip()
+            if item_mirror != "" and item_mirror != "unknown":
+                out["item_mirror"] = item_mirror
+            if item_category != "" and item_category != "unknown":
+                out["item_category"] = item_category
         return out
     if kind in {"NamedType", "GenericType"}:
         out["category"] = "static"

@@ -16,7 +16,7 @@ from src.toolchain.compiler.east import convert_source_to_east_with_backend
 
 
 class EastCoreParserBehaviorTypesTest(unittest.TestCase):
-    def test_homogeneous_tuple_ellipsis_annotation_is_accepted_as_generic_tuple_typeexpr(self) -> None:
+    def test_homogeneous_tuple_ellipsis_annotation_is_accepted_as_distinct_tuple_shape_typeexpr(self) -> None:
         src = """
 LENGTH_TABLE: tuple[int, ...] = (10, 20, 30)
 
@@ -36,6 +36,7 @@ def head(xs: tuple[int, ...]) -> int:
             {
                 "kind": "GenericType",
                 "base": "tuple",
+                "tuple_shape": "homogeneous_ellipsis",
                 "args": [
                     {"kind": "NamedType", "name": "int64"},
                     {"kind": "NamedType", "name": "..."},
@@ -54,6 +55,7 @@ def head(xs: tuple[int, ...]) -> int:
             {
                 "kind": "GenericType",
                 "base": "tuple",
+                "tuple_shape": "homogeneous_ellipsis",
                 "args": [
                     {"kind": "NamedType", "name": "int64"},
                     {"kind": "NamedType", "name": "..."},
