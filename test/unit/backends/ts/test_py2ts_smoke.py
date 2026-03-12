@@ -106,6 +106,12 @@ class Py2TsSmokeTest(unittest.TestCase):
         ts = transpile_to_typescript(east)
         self.assertIn('from "./pytra/std/time.js"', ts)
 
+    def test_stdlib_json_import_uses_pytra_runtime_shim_path(self) -> None:
+        fixture = find_fixture_case("json_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        ts = transpile_to_typescript(east)
+        self.assertIn('from "./pytra/std/json.js"', ts)
+
     def test_ts_preview_ambient_global_extern_is_lowered_without_decl_or_import(self) -> None:
         src = """
 from pytra.std import extern
@@ -144,9 +150,12 @@ def main() -> None:
                 text=True,
             )
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            self.assertTrue((Path(td) / "pytra" / "std" / "json.js").exists())
             self.assertTrue((Path(td) / "pytra" / "std" / "time.js").exists())
             self.assertTrue((Path(td) / "pytra" / "std" / "pathlib.js").exists())
             self.assertTrue((Path(td) / "pytra" / "py_runtime.js").exists())
+            json_shim = (Path(td) / "pytra" / "std" / "json.js").read_text(encoding="utf-8")
+            self.assertIn("generated/std/json.js", json_shim)
             pathlib_shim = (Path(td) / "pytra" / "std" / "pathlib.js").read_text(encoding="utf-8")
             self.assertIn("generated/std/pathlib.js", pathlib_shim)
 

@@ -532,6 +532,12 @@ def main() -> None:
         js = transpile_to_js(east)
         self.assertIn('from "./pytra/std/time.js"', js)
 
+    def test_stdlib_json_import_uses_pytra_runtime_shim_path(self) -> None:
+        fixture = find_fixture_case("json_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        js = transpile_to_js(east)
+        self.assertIn('from "./pytra/std/json.js"', js)
+
     def test_cli_generates_pytra_runtime_shims(self) -> None:
         fixture = find_fixture_case("import_time_from")
         with tempfile.TemporaryDirectory() as td:
@@ -548,10 +554,13 @@ def main() -> None:
                 text=True,
             )
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            self.assertTrue((Path(td) / "pytra" / "std" / "json.js").exists())
             self.assertTrue((Path(td) / "pytra" / "std" / "time.js").exists())
             self.assertTrue((Path(td) / "pytra" / "std" / "pathlib.js").exists())
             self.assertTrue((Path(td) / "pytra" / "py_runtime.js").exists())
             self.assertTrue((Path(td) / "pytra" / "utils" / "assertions.js").exists())
+            json_shim = (Path(td) / "pytra" / "std" / "json.js").read_text(encoding="utf-8")
+            self.assertIn("generated/std/json.js", json_shim)
             pathlib_shim = (Path(td) / "pytra" / "std" / "pathlib.js").read_text(encoding="utf-8")
             self.assertIn("generated/std/pathlib.js", pathlib_shim)
 
@@ -562,10 +571,18 @@ def main() -> None:
                 "-e",
                 (
                     "const rt = require('./src/runtime/js/pytra/py_runtime.js');"
+                    "const math = require('./src/runtime/js/pytra/std/math.js');"
                     "const pathlib = require('./src/runtime/js/pytra/std/pathlib.js');"
+                    "const time = require('./src/runtime/js/pytra/std/time.js');"
+                    "const png = require('./src/runtime/js/pytra/utils/png.js');"
+                    "const gif = require('./src/runtime/js/pytra/utils/gif.js');"
                     "if (rt.pyBool([1]) !== true) throw new Error('pyBool');"
+                    "if (math.sqrt(9) !== 3) throw new Error('sqrt');"
                     "const p = pathlib.Path('tmp/a.txt');"
                     "if (String(p) !== 'tmp/a.txt') throw new Error('Path');"
+                    "if (!(time.perf_counter() > 0.0)) throw new Error('perf_counter');"
+                    "if (typeof png.write_rgb_png !== 'function') throw new Error('png');"
+                    "if (typeof gif.save_gif !== 'function') throw new Error('gif');"
                     "console.log('js-compat-ok');"
                 ),
             ],

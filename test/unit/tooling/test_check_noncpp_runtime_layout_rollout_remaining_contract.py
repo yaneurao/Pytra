@@ -312,7 +312,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["js"]["pytra_gen_files"],
-            ("std/math.js", "std/pathlib.js", "std/time.js", "utils/gif.js", "utils/png.js"),
+            ("std/json.js", "std/math.js", "std/pathlib.js", "std/time.js", "utils/gif.js", "utils/png.js"),
         )
         self.assertEqual(
             by_backend["php"]["pytra_gen_files"],
@@ -320,7 +320,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["ts"]["pytra_gen_files"],
-            ("std/math.ts", "std/pathlib.ts", "std/time.ts", "utils/gif.ts", "utils/png.ts"),
+            ("std/json.ts", "std/math.ts", "std/pathlib.ts", "std/time.ts", "utils/gif.ts", "utils/png.ts"),
         )
 
     def test_target_inventory_is_fixed(self) -> None:
@@ -342,6 +342,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             (
                 "pytra/README.md",
                 "pytra/py_runtime.js",
+                "pytra/std/json.js",
                 "pytra/std/math.js",
                 "pytra/std/pathlib.js",
                 "pytra/std/time.js",
@@ -352,6 +353,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         self.assertEqual(
             by_backend["ts"]["generated_files"],
             (
+                "generated/std/json.ts",
                 "generated/std/math.ts",
                 "generated/std/pathlib.ts",
                 "generated/std/time.ts",
@@ -427,7 +429,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "built_in/string_ops",
                 "built_in/type_id",
                 "built_in/zip_ops",
-                "std/json",
             ),
         )
         self.assertEqual(
@@ -474,7 +475,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                         "built_in/string_ops",
                         "built_in/type_id",
                         "built_in/zip_ops",
-                        "std/json",
                     ),
                     "native_compare_residual_modules": (),
                     "helper_shaped_compare_gap_modules": (),
@@ -492,7 +492,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                         "built_in/string_ops",
                         "built_in/type_id",
                         "built_in/zip_ops",
-                        "std/json",
                     ),
                     "native_compare_residual_modules": (),
                     "helper_shaped_compare_gap_modules": (),
@@ -575,6 +574,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "js": {
                     "backend": "js",
                     "materialized_compare_modules": (
+                        "std/json",
                         "std/math",
                         "std/pathlib",
                         "std/time",
@@ -586,6 +586,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "ts": {
                     "backend": "ts",
                     "materialized_compare_modules": (
+                        "std/json",
                         "std/math",
                         "std/pathlib",
                         "std/time",
@@ -710,6 +711,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "js",
                     "substrate_shim_modules": ("built_in/py_runtime",),
                     "generated_compare_shim_modules": (
+                        "std/json",
                         "std/math",
                         "std/pathlib",
                         "std/time",
@@ -721,6 +723,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "ts",
                     "substrate_shim_modules": ("built_in/py_runtime",),
                     "generated_compare_shim_modules": (
+                        "std/json",
                         "std/math",
                         "std/pathlib",
                         "std/time",
@@ -758,6 +761,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "js",
                     "substrate_shim_files": ("py_runtime.js",),
                     "generated_compare_shim_files": (
+                        "std/json.js",
                         "std/math.js",
                         "std/pathlib.js",
                         "std/time.js",
@@ -770,6 +774,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "ts",
                     "substrate_shim_files": ("py_runtime.ts",),
                     "generated_compare_shim_files": (
+                        "std/json.ts",
                         "std/math.ts",
                         "std/pathlib.ts",
                         "std/time.ts",

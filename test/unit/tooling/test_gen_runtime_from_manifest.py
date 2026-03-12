@@ -28,6 +28,8 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn(("std/math", "js", "src/runtime/js/generated/std/math.js"), pairs)
         self.assertIn(("std/math", "ts", "src/runtime/ts/generated/std/math.ts"), pairs)
         self.assertIn(("std/math", "php", "src/runtime/php/generated/std/math.php"), pairs)
+        self.assertIn(("std/json", "js", "src/runtime/js/generated/std/json.js"), pairs)
+        self.assertIn(("std/json", "ts", "src/runtime/ts/generated/std/json.ts"), pairs)
         self.assertIn(("std/time", "java", "src/runtime/java/generated/std/time.java"), pairs)
         self.assertIn(("std/time", "js", "src/runtime/js/generated/std/time.js"), pairs)
         self.assertIn(("std/time", "ts", "src/runtime/ts/generated/std/time.ts"), pairs)
@@ -236,6 +238,28 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn('Object.defineProperty(obj, "parent"', out)
         self.assertIn("module.exports = { Path, pathJoin };", out)
 
+    def test_rewrite_js_std_json_live_wrapper_exports_json_facade(self) -> None:
+        src = "\n".join(
+            [
+                "class JsonObj {",
+                "}",
+                "class JsonArr {",
+                "}",
+                "class JsonValue {",
+                "}",
+                "function loads(text) { return text; }",
+                "function loads_obj(text) { return text; }",
+                "function loads_arr(text) { return text; }",
+                "function dumps(obj) { return obj; }",
+            ]
+        )
+        out = gen_mod.rewrite_js_std_json_live_wrapper(src)
+        self.assertIn('require("../../native/built_in/py_runtime.js")', out)
+        self.assertIn("class JsonObj {", out)
+        self.assertIn("function loads(text) {", out)
+        self.assertIn("return JSON.parse(String(text));", out)
+        self.assertIn("module.exports = { JsonObj, JsonArr, JsonValue, loads, loads_obj, loads_arr, dumps };", out)
+
     def test_rewrite_ts_std_time_live_wrapper_exports_perf_counter(self) -> None:
         src = "\n".join(
             [
@@ -277,6 +301,28 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("export const Path: ((value?: unknown) => PathValue) & { cwd(): PathValue }", out)
         self.assertIn('Object.defineProperty(obj, "parent"', out)
         self.assertIn("export function pathJoin(base: unknown, child: unknown): PathValue {", out)
+
+    def test_rewrite_ts_std_json_live_wrapper_exports_json_facade(self) -> None:
+        src = "\n".join(
+            [
+                "class JsonObj {",
+                "}",
+                "class JsonArr {",
+                "}",
+                "class JsonValue {",
+                "}",
+                "function loads(text) { return text; }",
+                "function loads_obj(text) { return text; }",
+                "function loads_arr(text) { return text; }",
+                "function dumps(obj) { return obj; }",
+            ]
+        )
+        out = gen_mod.rewrite_ts_std_json_live_wrapper(src)
+        self.assertIn('from "../../native/built_in/py_runtime"', out)
+        self.assertIn("export class JsonObj {", out)
+        self.assertIn("export function loads(text: string): unknown {", out)
+        self.assertIn("return JSON.parse(String(text));", out)
+        self.assertIn("export function dumps(", out)
 
     def test_rewrite_php_std_time_live_wrapper_inlines_microtime(self) -> None:
         src = "\n".join(
@@ -433,7 +479,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         item_ids = gen_mod.resolve_item_ids("all", items)
         plan = gen_mod.build_generation_plan(items, targets, item_ids)
         checked, updated = gen_mod.generate(plan, check=True, dry_run=False)
-        self.assertEqual(checked, 19)
+        self.assertEqual(checked, 21)
         self.assertEqual(updated, 0)
 
 

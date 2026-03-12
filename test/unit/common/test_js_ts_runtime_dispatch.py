@@ -96,6 +96,38 @@ console.log("ok");
         self.assertIn("export function pyStr", src)
         self.assertIn("switch (typeId)", src)
 
+    def test_js_generated_json_runtime_round_trips_compare_lane(self) -> None:
+        script = r"""
+const assert = require("assert");
+const json = require(process.cwd() + "/src/runtime/js/generated/std/json.js");
+
+const doc = json.loads_obj('{"name":"hé","items":[1,true]}');
+assert.ok(doc instanceof json.JsonObj);
+assert.equal(doc.get_str("name"), "hé");
+
+const items = doc.get_arr("items");
+assert.ok(items instanceof json.JsonArr);
+assert.equal(items.get_int(0), 1);
+assert.equal(items.get_bool(1), true);
+
+const rendered = json.dumps({ greeting: "hé", items: [1, true] }, true, 2);
+assert.ok(rendered.includes("\\u00e9"));
+assert.ok(rendered.includes("\n  \"items\""));
+console.log("ok");
+"""
+        proc = self._run_node(script)
+        self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+        self.assertIn("ok", proc.stdout)
+
+    def test_ts_generated_json_runtime_source_exports_compare_lane_symbols(self) -> None:
+        src = (ROOT / "src" / "runtime" / "ts" / "generated" / "std" / "json.ts").read_text(encoding="utf-8")
+        self.assertIn('from "../../native/built_in/py_runtime"', src)
+        self.assertIn("export class JsonObj", src)
+        self.assertIn("export class JsonArr", src)
+        self.assertIn("export class JsonValue", src)
+        self.assertIn("export function loads(text: string): unknown", src)
+        self.assertIn("export function dumps(", src)
+
 
 if __name__ == "__main__":
     unittest.main()

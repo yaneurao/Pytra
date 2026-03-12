@@ -34,6 +34,9 @@ def write_js_runtime_shims(output_dir: Path) -> None:
             "exports.ceil = rt.ceil;\n"
             "exports.pow = rt.pow;\n"
         ),
+        "pytra/std/json.js": (
+            "module.exports = require(process.cwd() + '/src/runtime/js/generated/std/json.js');\n"
+        ),
         "pytra/std/pathlib.js": (
             "const rt = require(process.cwd() + '/src/runtime/js/generated/std/pathlib.js');\n"
             "exports.Path = rt.Path;\n"

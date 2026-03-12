@@ -351,6 +351,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "rationale": "JS keeps a root-level public shim for built_in py_runtime.",
             },
             {
+                "current_prefix": "src/runtime/js/pytra/std/json.js",
+                "target_prefix": "src/runtime/js/pytra/std/json.js",
+                "ownership": "compat",
+                "rationale": "JS public std shims already live in bucketed pytra/std paths after the Wave B path cutover.",
+            },
+            {
                 "current_prefix": "src/runtime/js/pytra/std/time.js",
                 "target_prefix": "src/runtime/js/pytra/std/time.js",
                 "ownership": "compat",
@@ -424,6 +430,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/ts/pytra/py_runtime.ts",
                 "ownership": "compat",
                 "rationale": "TS keeps a root-level public shim for built_in py_runtime.",
+            },
+            {
+                "current_prefix": "src/runtime/ts/pytra/std/json.ts",
+                "target_prefix": "src/runtime/ts/pytra/std/json.ts",
+                "ownership": "compat",
+                "rationale": "TS public std shims already live in bucketed pytra/std paths after the Wave B path cutover.",
             },
             {
                 "current_prefix": "src/runtime/ts/pytra/std/time.ts",
@@ -640,6 +652,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "std/time.js",
         ),
         "pytra_gen_files": (
+            "std/json.js",
             "std/math.js",
             "std/pathlib.js",
             "std/time.js",
@@ -649,6 +662,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
         "pytra_files": (
             "README.md",
             "py_runtime.js",
+            "std/json.js",
             "std/math.js",
             "std/pathlib.js",
             "std/time.js",
@@ -665,6 +679,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "std/time.ts",
         ),
         "pytra_gen_files": (
+            "std/json.ts",
             "std/math.ts",
             "std/pathlib.ts",
             "std/time.ts",
@@ -674,6 +689,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
         "pytra_files": (
             "README.md",
             "py_runtime.ts",
+            "std/json.ts",
             "std/math.ts",
             "std/pathlib.ts",
             "std/time.ts",
@@ -784,6 +800,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
     {
         "backend": "js",
         "generated_files": (
+            "generated/std/json.js",
             "generated/std/math.js",
             "generated/std/pathlib.js",
             "generated/std/time.js",
@@ -799,6 +816,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
         "compat_files": (
             "pytra/README.md",
             "pytra/py_runtime.js",
+            "pytra/std/json.js",
             "pytra/std/math.js",
             "pytra/std/pathlib.js",
             "pytra/std/time.js",
@@ -809,6 +827,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
     {
         "backend": "ts",
         "generated_files": (
+            "generated/std/json.ts",
             "generated/std/math.ts",
             "generated/std/pathlib.ts",
             "generated/std/time.ts",
@@ -824,6 +843,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
         "compat_files": (
             "pytra/README.md",
             "pytra/py_runtime.ts",
+            "pytra/std/json.ts",
             "pytra/std/math.ts",
             "pytra/std/pathlib.ts",
             "pytra/std/time.ts",
@@ -926,31 +946,33 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     },
     {
         "backend": "js",
-        "generated_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+        "generated_modules": ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
         "native_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
         "compat_modules": (
             "built_in/py_runtime",
+            "std/json",
             "std/math",
             "std/pathlib",
             "std/time",
             "utils/gif",
             "utils/png",
         ),
-        "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1 + ("std/json",),
+        "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
     },
     {
         "backend": "ts",
-        "generated_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+        "generated_modules": ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
         "native_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
         "compat_modules": (
             "built_in/py_runtime",
+            "std/json",
             "std/math",
             "std/pathlib",
             "std/time",
             "utils/gif",
             "utils/png",
         ),
-        "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1 + ("std/json",),
+        "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
     },
     {
         "backend": "lua",
@@ -980,17 +1002,13 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_BLOCKED_REASONS_V1: Final[
 ] = (
     {
         "backend": "js",
-        "missing_compare_lane_modules": (
-            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1 + ("std/json",)
-        ),
+        "missing_compare_lane_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
         "native_compare_residual_modules": (),
         "helper_shaped_compare_gap_modules": (),
     },
     {
         "backend": "ts",
-        "missing_compare_lane_modules": (
-            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1 + ("std/json",)
-        ),
+        "missing_compare_lane_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
         "native_compare_residual_modules": (),
         "helper_shaped_compare_gap_modules": (),
     },
@@ -1019,12 +1037,12 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_V1: Final[
 ] = (
     {
         "backend": "js",
-        "materialized_compare_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+        "materialized_compare_modules": ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
         "helper_artifact_modules": (),
     },
     {
         "backend": "ts",
-        "materialized_compare_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+        "materialized_compare_modules": ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
         "helper_artifact_modules": (),
     },
     {
@@ -1113,12 +1131,12 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_V1: Final[
     {
         "backend": "js",
         "substrate_shim_modules": ("built_in/py_runtime",),
-        "generated_compare_shim_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+        "generated_compare_shim_modules": ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
     },
     {
         "backend": "ts",
         "substrate_shim_modules": ("built_in/py_runtime",),
-        "generated_compare_shim_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+        "generated_compare_shim_modules": ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
     },
     {
         "backend": "lua",
@@ -1145,6 +1163,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_FILES_V1: Final[
         "backend": "js",
         "substrate_shim_files": ("py_runtime.js",),
         "generated_compare_shim_files": (
+            "std/json.js",
             "std/math.js",
             "std/pathlib.js",
             "std/time.js",
@@ -1157,6 +1176,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_FILES_V1: Final[
         "backend": "ts",
         "substrate_shim_files": ("py_runtime.ts",),
         "generated_compare_shim_files": (
+            "std/json.ts",
             "std/math.ts",
             "std/pathlib.ts",
             "std/time.ts",

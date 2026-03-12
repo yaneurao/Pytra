@@ -253,7 +253,11 @@
       "id": "std/json",
       "source": "src/pytra/std/json.py",
       "bucket": "std",
-      "targets": [{ "target": "java", "output": "src/runtime/java/generated/std/json.java" }]
+      "targets": [
+        { "target": "java", "output": "src/runtime/java/generated/std/json.java" },
+        { "target": "js", "output": "src/runtime/js/generated/std/json.js", "postprocess": "js_std_json_live_wrapper" },
+        { "target": "ts", "output": "src/runtime/ts/generated/std/json.ts", "postprocess": "ts_std_json_live_wrapper" }
+      ]
     },
     {
       "id": "std/pathlib",
