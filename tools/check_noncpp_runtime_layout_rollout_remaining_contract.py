@@ -259,6 +259,7 @@ def _collect_target_inventory_issues() -> list[str]:
 
 def _collect_module_bucket_issues() -> list[str]:
     issues: list[str] = []
+    compare_baseline = set(contract_mod.iter_remaining_noncpp_runtime_generated_compare_baseline())
     entries = contract_mod.iter_remaining_noncpp_runtime_module_buckets()
     bucket_order = tuple(entry["backend"] for entry in entries)
     if bucket_order != contract_mod.iter_remaining_noncpp_backend_order():
@@ -273,12 +274,13 @@ def _collect_module_bucket_issues() -> list[str]:
         if actual["compat"] != entry["compat_modules"]:
             issues.append(f"compat module bucket drifted: {backend}")
         blocked = set(entry["blocked_modules"])
+        if not blocked.issubset(compare_baseline):
+            issues.append(f"blocked compare module escaped baseline: {backend}")
         if blocked & set(entry["generated_modules"]):
             issues.append(f"blocked/generated overlap drifted: {backend}")
-        if blocked & set(entry["native_modules"]):
-            issues.append(f"blocked/native overlap drifted: {backend}")
-        if blocked & set(entry["compat_modules"]):
-            issues.append(f"blocked/compat overlap drifted: {backend}")
+        covered = set(entry["generated_modules"]).intersection(compare_baseline)
+        if covered.union(blocked) != compare_baseline:
+            issues.append(f"generated compare baseline coverage drifted: {backend}")
     return issues
 
 

@@ -19,6 +19,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_module_bucket_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_module_bucket_issues(), [])
 
+    def test_module_bucket_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_module_bucket_issues(), [])
+
     def test_backend_order_is_fixed(self) -> None:
         self.assertEqual(
             contract_mod.iter_remaining_noncpp_backend_order(),
@@ -62,6 +65,29 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_target_root_taxonomy_is_fixed(self) -> None:
         for entry in contract_mod.iter_remaining_noncpp_runtime_layout():
             self.assertEqual(entry["target_roots"], ("generated", "native", "pytra"))
+
+    def test_generated_compare_baseline_is_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.iter_remaining_noncpp_runtime_generated_compare_baseline(),
+            (
+                "built_in/contains",
+                "built_in/io_ops",
+                "built_in/iter_ops",
+                "built_in/numeric_ops",
+                "built_in/predicates",
+                "built_in/scalar_ops",
+                "built_in/sequence",
+                "built_in/string_ops",
+                "built_in/type_id",
+                "built_in/zip_ops",
+                "std/json",
+                "std/math",
+                "std/pathlib",
+                "std/time",
+                "utils/gif",
+                "utils/png",
+            ),
+        )
 
     def test_representative_lane_mappings_are_fixed(self) -> None:
         by_backend = {
@@ -164,7 +190,22 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "generated_modules": ("utils/gif", "utils/png"),
                 "native_modules": ("built_in/py_runtime",),
                 "compat_modules": ("built_in/py_runtime",),
-                "blocked_modules": ("std/json", "std/math", "std/pathlib", "std/time"),
+                "blocked_modules": (
+                    "built_in/contains",
+                    "built_in/io_ops",
+                    "built_in/iter_ops",
+                    "built_in/numeric_ops",
+                    "built_in/predicates",
+                    "built_in/scalar_ops",
+                    "built_in/sequence",
+                    "built_in/string_ops",
+                    "built_in/type_id",
+                    "built_in/zip_ops",
+                    "std/json",
+                    "std/math",
+                    "std/pathlib",
+                    "std/time",
+                ),
             },
         )
         self.assertEqual(
@@ -173,7 +214,22 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["js"]["blocked_modules"],
-            ("std/json",),
+            (
+                "built_in/contains",
+                "built_in/io_ops",
+                "built_in/iter_ops",
+                "built_in/numeric_ops",
+                "built_in/predicates",
+                "built_in/scalar_ops",
+                "built_in/sequence",
+                "built_in/string_ops",
+                "built_in/type_id",
+                "built_in/zip_ops",
+                "std/json",
+                "std/math",
+                "std/pathlib",
+                "std/time",
+            ),
         )
         self.assertEqual(
             by_backend["php"],
@@ -182,7 +238,22 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "generated_modules": ("utils/gif", "utils/png"),
                 "native_modules": ("built_in/py_runtime", "std/time"),
                 "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
-                "blocked_modules": ("std/json", "std/math", "std/pathlib"),
+                "blocked_modules": (
+                    "built_in/contains",
+                    "built_in/io_ops",
+                    "built_in/iter_ops",
+                    "built_in/numeric_ops",
+                    "built_in/predicates",
+                    "built_in/scalar_ops",
+                    "built_in/sequence",
+                    "built_in/string_ops",
+                    "built_in/type_id",
+                    "built_in/zip_ops",
+                    "std/json",
+                    "std/math",
+                    "std/pathlib",
+                    "std/time",
+                ),
             },
         )
 
