@@ -86,8 +86,6 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
         "kind": "copy_files",
         "files": [
             ("runtime/java/native/built_in/PyRuntime.java", "PyRuntime.java"),
-            ("runtime/java/native/std/time_impl.java", "_impl.java"),
-            ("runtime/java/native/std/math_impl.java", "_m.java"),
             ("runtime/java/generated/utils/png.java", "png.java"),
             ("runtime/java/generated/utils/gif.java", "gif.java"),
             ("runtime/java/generated/std/time.java", "time.java"),

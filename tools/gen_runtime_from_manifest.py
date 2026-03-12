@@ -263,6 +263,35 @@ def rewrite_cs_std_time_live_wrapper(cs_src: str) -> str:
     return text.replace("return __t.perf_counter();", "return time_native.perf_counter();")
 
 
+def rewrite_java_std_time_live_wrapper(java_src: str) -> str:
+    return java_src.replace(
+        "return __t.perf_counter();",
+        "return (double) System.nanoTime() / 1_000_000_000.0;",
+    )
+
+
+def rewrite_java_std_math_live_wrapper(java_src: str) -> str:
+    text = java_src
+    text = text.replace("public static double pi = extern(math.pi);", "public static double pi = Math.PI;")
+    text = text.replace("public static double e = extern(math.e);", "public static double e = Math.E;")
+    replacements = {
+        "return math.sqrt(x);": "return Math.sqrt(x);",
+        "return math.sin(x);": "return Math.sin(x);",
+        "return math.cos(x);": "return Math.cos(x);",
+        "return math.tan(x);": "return Math.tan(x);",
+        "return math.exp(x);": "return Math.exp(x);",
+        "return math.log(x);": "return Math.log(x);",
+        "return math.log10(x);": "return Math.log10(x);",
+        "return math.fabs(x);": "return Math.abs(x);",
+        "return math.floor(x);": "return Math.floor(x);",
+        "return math.ceil(x);": "return Math.ceil(x);",
+        "return math.pow(x, y);": "return Math.pow(x, y);",
+    }
+    for before, after in replacements.items():
+        text = text.replace(before, after)
+    return text
+
+
 def _strip_trailing_string_literal_expr(text: str) -> str:
     lines = text.splitlines()
     if len(lines) == 0:
@@ -440,6 +469,10 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_cs_program_to_helper(generated, item.helper_name)
     elif item.postprocess == "cs_std_time_live_wrapper":
         generated = rewrite_cs_std_time_live_wrapper(generated)
+    elif item.postprocess == "java_std_time_live_wrapper":
+        generated = rewrite_java_std_time_live_wrapper(generated)
+    elif item.postprocess == "java_std_math_live_wrapper":
+        generated = rewrite_java_std_math_live_wrapper(generated)
     elif item.postprocess == "js_program_to_cjs_module":
         generated = rewrite_js_program_to_cjs_module(generated)
     elif item.postprocess == "go_program_to_library":

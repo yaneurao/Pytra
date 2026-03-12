@@ -101,6 +101,35 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return time_native.perf_counter();", out)
         self.assertNotIn("return __t.perf_counter();", out)
 
+    def test_rewrite_java_std_time_live_wrapper_inlines_system_nanotime(self) -> None:
+        src = "\n".join(
+            [
+                "public final class time {",
+                "    public static double perf_counter() {",
+                "        return __t.perf_counter();",
+                "    }",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_java_std_time_live_wrapper(src)
+        self.assertIn("System.nanoTime()", out)
+        self.assertNotIn("__t.perf_counter()", out)
+
+    def test_rewrite_java_std_math_live_wrapper_inlines_java_math(self) -> None:
+        src = "\n".join(
+            [
+                "public final class math {",
+                "    public static double pi = extern(math.pi);",
+                "    public static double fabs(double x) { return math.fabs(x); }",
+                "    public static double pow(double x, double y) { return math.pow(x, y); }",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_java_std_math_live_wrapper(src)
+        self.assertIn("public static double pi = Math.PI;", out)
+        self.assertIn("return Math.abs(x);", out)
+        self.assertIn("return Math.pow(x, y);", out)
+        self.assertNotIn("extern(math.pi)", out)
     def test_run_py2x_raises_when_backend_emits_no_text_and_no_file(self) -> None:
         with (
             patch.object(gen_mod, "get_backend_spec", return_value={}),

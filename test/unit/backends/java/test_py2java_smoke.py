@@ -350,8 +350,6 @@ class Py2JavaSmokeTest(unittest.TestCase):
 
     def test_java_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "java" / "native" / "built_in" / "PyRuntime.java"
-        core_time_impl = ROOT / "src" / "runtime" / "java" / "native" / "std" / "time_impl.java"
-        core_math_impl = ROOT / "src" / "runtime" / "java" / "native" / "std" / "math_impl.java"
         png_helper = ROOT / "src" / "runtime" / "java" / "generated" / "utils" / "png.java"
         gif_helper = ROOT / "src" / "runtime" / "java" / "generated" / "utils" / "gif.java"
         std_time = ROOT / "src" / "runtime" / "java" / "generated" / "std" / "time.java"
@@ -360,8 +358,6 @@ class Py2JavaSmokeTest(unittest.TestCase):
         std_math = ROOT / "src" / "runtime" / "java" / "generated" / "std" / "math.java"
         legacy_path = ROOT / "src" / "java_module" / "PyRuntime.java"
         self.assertTrue(runtime_path.exists())
-        self.assertTrue(core_time_impl.exists())
-        self.assertTrue(core_math_impl.exists())
         self.assertTrue(png_helper.exists())
         self.assertTrue(gif_helper.exists())
         self.assertTrue(std_time.exists())
@@ -369,6 +365,8 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertTrue(std_pathlib.exists())
         self.assertTrue(std_math.exists())
         self.assertFalse(legacy_path.exists())
+        self.assertIn("System.nanoTime()", std_time.read_text(encoding="utf-8"))
+        self.assertIn("Math.PI", std_math.read_text(encoding="utf-8"))
 
     def test_java_native_emitter_has_no_direct_runtime_call_branches_for_json_png_gif(self) -> None:
         src_path = ROOT / "src" / "backends" / "java" / "emitter" / "java_native_emitter.py"
