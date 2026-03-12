@@ -80,6 +80,8 @@ _PHP_KEYWORDS = {
 }
 
 _CLASS_NAMES: set[str] = set()
+_RELATIVE_IMPORT_MODULE_ALIASES: dict[str, str] = {}
+_RELATIVE_IMPORT_SYMBOL_ALIASES: dict[str, str] = {}
 
 
 def _reject_unsupported_relative_import_forms(body_any: Any) -> None:
@@ -110,6 +112,8 @@ def _reject_unsupported_relative_import_forms(body_any: Any) -> None:
                     "php native emitter: unsupported relative import form: wildcard import"
                 )
             j += 1
+        if kind == "ImportFrom":
+            continue
         raise RuntimeError(
             "php native emitter: unsupported relative import form: relative import"
         )
@@ -139,6 +143,105 @@ def _safe_ident(name: Any, fallback: str) -> str:
 
 def _safe_var(name: Any, fallback: str) -> str:
     return "$" + _safe_ident(name, fallback)
+
+
+def _relative_import_module_path(module_id: str) -> str:
+    parts = [
+        _safe_ident(part, "module")
+        for part in module_id.lstrip(".").split(".")
+        if part != ""
+    ]
+    return "_".join(parts)
+
+
+def _collect_relative_import_module_aliases(body: list[Any]) -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    i = 0
+    while i < len(body):
+        stmt = body[i]
+        if not isinstance(stmt, dict) or stmt.get("kind") != "ImportFrom":
+            i += 1
+            continue
+        module_any = stmt.get("module")
+        module_id = module_any if isinstance(module_any, str) else ""
+        level_any = stmt.get("level")
+        level = level_any if isinstance(level_any, int) else 0
+        if level <= 0 and not module_id.startswith("."):
+            i += 1
+            continue
+        module_path = _relative_import_module_path(module_id)
+        if module_path != "":
+            i += 1
+            continue
+        names_any = stmt.get("names")
+        names = names_any if isinstance(names_any, list) else []
+        j = 0
+        while j < len(names):
+            ent = names[j]
+            if not isinstance(ent, dict):
+                j += 1
+                continue
+            name_any = ent.get("name")
+            name = name_any if isinstance(name_any, str) else ""
+            if name == "":
+                j += 1
+                continue
+            if name == "*":
+                raise RuntimeError(
+                    "php native emitter: unsupported relative import form: wildcard import"
+                )
+            asname_any = ent.get("asname")
+            local_name = asname_any if isinstance(asname_any, str) and asname_any != "" else name
+            aliases[_safe_ident(local_name, "value")] = _safe_ident(name, "module")
+            j += 1
+        i += 1
+    return aliases
+
+
+def _collect_relative_import_symbol_aliases(body: list[Any]) -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    i = 0
+    while i < len(body):
+        stmt = body[i]
+        if not isinstance(stmt, dict) or stmt.get("kind") != "ImportFrom":
+            i += 1
+            continue
+        module_any = stmt.get("module")
+        module_id = module_any if isinstance(module_any, str) else ""
+        level_any = stmt.get("level")
+        level = level_any if isinstance(level_any, int) else 0
+        if level <= 0 and not module_id.startswith("."):
+            i += 1
+            continue
+        module_path = _relative_import_module_path(module_id)
+        if module_path == "":
+            i += 1
+            continue
+        names_any = stmt.get("names")
+        names = names_any if isinstance(names_any, list) else []
+        j = 0
+        while j < len(names):
+            ent = names[j]
+            if not isinstance(ent, dict):
+                j += 1
+                continue
+            name_any = ent.get("name")
+            name = name_any if isinstance(name_any, str) else ""
+            if name == "":
+                j += 1
+                continue
+            if name == "*":
+                raise RuntimeError(
+                    "php native emitter: unsupported relative import form: wildcard import"
+                )
+            asname_any = ent.get("asname")
+            local_name = asname_any if isinstance(asname_any, str) and asname_any != "" else name
+            aliases[_safe_ident(local_name, "value")] = (
+                module_path + "_" + _safe_ident(name, "fn")
+            )
+            j += 1
+        i += 1
+    return aliases
 
 
 def _php_string_literal(text: str) -> str:
@@ -247,6 +350,10 @@ def _call_name(expr: dict[str, Any]) -> str:
         return ""
     name_any = func_any.get("id")
     if isinstance(name_any, str):
+        ident = _safe_ident(name_any, "fn")
+        mapped = _RELATIVE_IMPORT_SYMBOL_ALIASES.get(ident)
+        if isinstance(mapped, str) and mapped != "":
+            return mapped
         return name_any
     return ""
 
@@ -616,6 +723,16 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
         owner_any = func_any.get("value")
         attr_name = _safe_ident(func_any.get("attr"), "call")
+        if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+            owner_ident = _safe_ident(owner_any.get("id"), "value")
+            module_alias = _RELATIVE_IMPORT_MODULE_ALIASES.get(owner_ident, "")
+            if module_alias != "":
+                rendered_args: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_args.append(_render_expr(args[i]))
+                    i += 1
+                return module_alias + "_" + attr_name + "(" + ", ".join(rendered_args) + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Call" and _call_name(owner_any) == "super":
             rendered_super_args: list[str] = []
             i = 0
@@ -733,6 +850,12 @@ def _render_expr(expr: Any) -> str:
         return _render_call_expr(expr)
     if kind == "Attribute":
         value_any = expr.get("value")
+        if isinstance(value_any, dict) and value_any.get("kind") == "Name":
+            owner_ident = _safe_ident(value_any.get("id"), "value")
+            module_alias = _RELATIVE_IMPORT_MODULE_ALIASES.get(owner_ident, "")
+            if module_alias != "":
+                attr = _safe_ident(expr.get("attr"), "field")
+                return module_alias + "_" + attr
         attr = _safe_ident(expr.get("attr"), "field")
         semantic_tag_any = expr.get("semantic_tag")
         semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
@@ -1318,7 +1441,11 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
         lines.append("")
 
     global _CLASS_NAMES
+    global _RELATIVE_IMPORT_MODULE_ALIASES
+    global _RELATIVE_IMPORT_SYMBOL_ALIASES
     _CLASS_NAMES = set()
+    _RELATIVE_IMPORT_MODULE_ALIASES = _collect_relative_import_module_aliases(body_any)
+    _RELATIVE_IMPORT_SYMBOL_ALIASES = _collect_relative_import_symbol_aliases(body_any)
     functions: list[dict[str, Any]] = []
     classes: list[dict[str, Any]] = []
     i = 0

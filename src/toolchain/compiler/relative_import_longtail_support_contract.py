@@ -44,8 +44,8 @@ RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1: Final[list[dict[str, object]]] = [
     {
         "backend": "php",
         "scenario_ids": ("parent_module_alias", "parent_symbol_alias"),
-        "current_contract_state": "fail_closed_locked",
-        "current_evidence_lane": "backend_native_fail_closed",
+        "current_contract_state": "transpile_smoke_locked",
+        "current_evidence_lane": "native_emitter_function_body_transpile",
         "verification_lane": "longtail_relative_import_support_rollout",
         "focused_verification_lane": "php_relative_import_support_rollout_smoke",
         "fail_closed_lane": "backend_specific_fail_closed",
@@ -89,7 +89,7 @@ RELATIVE_IMPORT_LONGTAIL_SUPPORT_HANDOFF_V1: Final[dict[str, object]] = {
     "followup_bundle_id": "none",
     "followup_backends": (),
     "followup_verification_lane": "none",
-    "remaining_rollout_backends": ("php", "ruby"),
+    "remaining_rollout_backends": ("ruby",),
 }
 
 

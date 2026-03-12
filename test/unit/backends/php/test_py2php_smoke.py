@@ -24,9 +24,13 @@ if str(ROOT / "test" / "unit" / "backends") not in sys.path:
 from backends.php.emitter import load_php_profile, transpile_to_php, transpile_to_php_native
 from toolchain.compiler.transpile_cli import load_east3_document
 from relative_import_longtail_smoke_support import (
-    relative_import_longtail_scenarios,
+    transpile_relative_import_longtail_project,
     transpile_relative_import_longtail_expect_failure,
 )
+
+PHP_RELATIVE_IMPORT_REWRITE_MARKER = "helper_f()"
+PHP_RELATIVE_IMPORT_MODULE_ALIAS_FORBIDDEN = "$h->f()"
+PHP_RELATIVE_IMPORT_SYMBOL_ALIAS_FORBIDDEN = "g()"
 
 
 def load_east(
@@ -98,16 +102,15 @@ class Py2PhpSmokeTest(unittest.TestCase):
         php = transpile_to_php_native(east)
         self.assertIn("~$y", php)
 
-    def test_cli_relative_import_support_rollout_fail_closed_for_php(self) -> None:
-        for scenario_id, scenario in relative_import_longtail_scenarios().items():
+    def test_cli_relative_import_support_rollout_scenarios_transpile_for_php(self) -> None:
+        for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
             with self.subTest(scenario_id=scenario_id):
-                err = transpile_relative_import_longtail_expect_failure(
-                    "php",
-                    str(scenario["import_form"]),
-                    str(scenario["representative_expr"]),
-                )
-                self.assertIn("unsupported relative import form: relative import", err)
-                self.assertIn("php native emitter", err)
+                php = transpile_relative_import_longtail_project("php", scenario_id)
+                self.assertIn(PHP_RELATIVE_IMPORT_REWRITE_MARKER, php)
+                if scenario_id == "parent_module_alias":
+                    self.assertNotIn(PHP_RELATIVE_IMPORT_MODULE_ALIAS_FORBIDDEN, php)
+                else:
+                    self.assertNotIn(PHP_RELATIVE_IMPORT_SYMBOL_ALIAS_FORBIDDEN, php)
 
     def test_cli_relative_import_support_rollout_fail_closed_for_wildcard_on_php(self) -> None:
         err = transpile_relative_import_longtail_expect_failure(

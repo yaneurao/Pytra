@@ -35,7 +35,7 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         ]
         self.assertEqual(locked, ["cpp"])
 
-    def test_rs_cs_go_java_js_kotlin_lua_nim_scala_swift_ts_are_transpile_smoke_locked(self) -> None:
+    def test_rs_cs_go_java_js_kotlin_lua_nim_php_scala_swift_ts_are_transpile_smoke_locked(self) -> None:
         locked = [
             row["backend"]
             for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
@@ -43,16 +43,16 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         ]
         self.assertEqual(
             locked,
-            ["rs", "cs", "go", "java", "js", "kotlin", "lua", "nim", "scala", "swift", "ts"],
+            ["rs", "cs", "go", "java", "js", "kotlin", "lua", "nim", "php", "scala", "swift", "ts"],
         )
 
-    def test_php_ruby_are_fail_closed_locked(self) -> None:
+    def test_ruby_is_only_fail_closed_locked_backend(self) -> None:
         locked = [
             row["backend"]
             for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
             if row["contract_state"] == "fail_closed_locked"
         ]
-        self.assertEqual(locked, ["php", "ruby"])
+        self.assertEqual(locked, ["ruby"])
 
     def test_jvm_package_bundle_uses_package_project_transpile_evidence_lane(self) -> None:
         rows = [
@@ -84,15 +84,25 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         self.assertEqual(rows[0]["contract_state"], "transpile_smoke_locked")
         self.assertEqual(rows[0]["evidence_lane"], "native_emitter_function_body_transpile")
 
-    def test_php_ruby_use_backend_native_fail_closed_evidence_lane(self) -> None:
+    def test_lua_php_use_native_emitter_function_body_transpile_evidence_lane(self) -> None:
         rows = [
             row
             for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
-            if row["backend"] in {"php", "ruby"}
+            if row["backend"] in {"lua", "php"}
         ]
         self.assertEqual(len(rows), 2)
-        self.assertTrue(all(row["contract_state"] == "fail_closed_locked" for row in rows))
-        self.assertTrue(all(row["evidence_lane"] == "backend_native_fail_closed" for row in rows))
+        self.assertTrue(all(row["contract_state"] == "transpile_smoke_locked" for row in rows))
+        self.assertTrue(all(row["evidence_lane"] == "native_emitter_function_body_transpile" for row in rows))
+
+    def test_ruby_uses_backend_native_fail_closed_evidence_lane(self) -> None:
+        rows = [
+            row
+            for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
+            if row["backend"] == "ruby"
+        ]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["contract_state"], "fail_closed_locked")
+        self.assertEqual(rows[0]["evidence_lane"], "backend_native_fail_closed")
 
     def test_validator_accepts_noncpp_rollout_inventory(self) -> None:
         validate_relative_import_noncpp_rollout()
@@ -142,7 +152,7 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
             for row in RELATIVE_IMPORT_NONCPP_ROLLOUT_V1
             if row["next_verification_lane"] == "longtail_relative_import_support_rollout"
         ]
-        self.assertEqual(longtail, ["php", "ruby"])
+        self.assertEqual(longtail, ["ruby"])
         lua_rows = [
             row
             for row in RELATIVE_IMPORT_NONCPP_ROLLOUT_V1
@@ -150,6 +160,13 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         ]
         self.assertEqual(len(lua_rows), 1)
         self.assertEqual(lua_rows[0]["next_verification_lane"], "transpile_smoke_locked")
+        php_rows = [
+            row
+            for row in RELATIVE_IMPORT_NONCPP_ROLLOUT_V1
+            if row["backend"] == "php"
+        ]
+        self.assertEqual(len(php_rows), 1)
+        self.assertEqual(php_rows[0]["next_verification_lane"], "transpile_smoke_locked")
 
     def test_validator_accepts_noncpp_rollout_handoff(self) -> None:
         validate_relative_import_noncpp_rollout_handoff()
@@ -171,7 +188,7 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         )
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["next_rollout_bundle_backends"],
-            ("php", "ruby"),
+            ("ruby",),
         )
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["followup_rollout_bundle_backends"],
@@ -179,11 +196,11 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         )
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_smoke_locked_backends"],
-            ("lua",),
+            ("lua", "php"),
         )
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_fail_closed_locked_backends"],
-            ("php", "ruby"),
+            ("ruby",),
         )
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_contract_state"],

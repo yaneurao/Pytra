@@ -33,4 +33,4 @@ Last updated: 2026-03-12
 
 1. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01] Support the representative relative-import project for `lua/php/ruby` in a staged rollout and sync backend coverage, parity docs, and contracts to the current rollout state.
    Context: [p1-relative-import-longtail-support.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-longtail-support.md)
-   - `P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01`: Lua is already reflected as `transpile_smoke_locked`; the parenthesized `from ... import (...)` blocker is now fixed in the frontend; remaining work is the `php/ruby` fail-closed residual plus mixed-rollout docs / coverage sync.
+   - `P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01`: Lua/PHP are already reflected as `transpile_smoke_locked`; the parenthesized `from ... import (...)` blocker is now fixed in the frontend; remaining work is the `ruby` fail-closed residual plus final mixed-rollout docs / coverage sync.

@@ -56,13 +56,14 @@ EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
         "kotlin",
         "lua",
         "nim",
+        "php",
         "scala",
         "swift",
         "ts",
     ),
-    "next_rollout_backends": ("php", "ruby"),
-    "current_bundle_smoke_locked_backends": ("lua",),
-    "current_bundle_fail_closed_locked_backends": ("php", "ruby"),
+    "next_rollout_backends": ("ruby",),
+    "current_bundle_smoke_locked_backends": ("lua", "php"),
+    "current_bundle_fail_closed_locked_backends": ("ruby",),
     "current_bundle_contract_state": "mixed_rollout_locked",
     "current_bundle_evidence_lane": "mixed_backend_evidence",
     "second_wave_bundle_order": (
@@ -71,7 +72,7 @@ EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
         "jvm_package_bundle",
     ),
     "next_rollout_bundle": "longtail_relative_import_support_rollout",
-    "next_rollout_bundle_backends": ("php", "ruby"),
+    "next_rollout_bundle_backends": ("ruby",),
     "followup_rollout_bundle": "none",
     "followup_rollout_bundle_backends": (),
     "followup_verification_lane": "none",
@@ -103,9 +104,9 @@ def validate_relative_import_backend_coverage() -> None:
         for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
         if row["contract_state"] == "transpile_smoke_locked"
     ]
-    if transpile_smoke_locked != ["rs", "cs", "go", "java", "js", "kotlin", "lua", "nim", "scala", "swift", "ts"]:
+    if transpile_smoke_locked != ["rs", "cs", "go", "java", "js", "kotlin", "lua", "nim", "php", "scala", "swift", "ts"]:
         raise SystemExit(
-            "relative import backend coverage must keep rs/cs/go/java/js/kotlin/lua/nim/scala/swift/ts as the only "
+            "relative import backend coverage must keep rs/cs/go/java/js/kotlin/lua/nim/php/scala/swift/ts as the only "
             f"transpile_smoke_locked lanes: got {transpile_smoke_locked}"
         )
     fail_closed_locked = [
@@ -113,9 +114,9 @@ def validate_relative_import_backend_coverage() -> None:
         for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
         if row["contract_state"] == "fail_closed_locked"
     ]
-    if fail_closed_locked != ["php", "ruby"]:
+    if fail_closed_locked != ["ruby"]:
         raise SystemExit(
-            "relative import backend coverage must keep php/ruby as the only "
+            "relative import backend coverage must keep ruby as the only "
             f"fail_closed_locked lanes: got {fail_closed_locked}"
         )
     for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1:
@@ -124,17 +125,17 @@ def validate_relative_import_backend_coverage() -> None:
             continue
         if backend in {"rs", "cs", "go", "java", "js", "kotlin", "nim", "scala", "swift", "ts"}:
             continue
-        if backend == "lua":
+        if backend in {"lua", "php"}:
             if row["evidence_lane"] != "native_emitter_function_body_transpile":
                 raise SystemExit(
-                    "lua must stay locked on native_emitter_function_body_transpile evidence: "
+                    "lua/php must stay locked on native_emitter_function_body_transpile evidence: "
                     f"got {backend}={row['evidence_lane']}"
                 )
             continue
-        if backend in {"php", "ruby"}:
+        if backend == "ruby":
             if row["evidence_lane"] != "backend_native_fail_closed":
                 raise SystemExit(
-                    "php/ruby must stay locked on backend_native_fail_closed evidence: "
+                    "ruby must stay locked on backend_native_fail_closed evidence: "
                     f"got {backend}={row['evidence_lane']}"
                 )
             continue
@@ -228,10 +229,10 @@ def validate_relative_import_noncpp_rollout() -> None:
                     f"got {backend}={row['next_verification_lane']}"
                 )
             continue
-        if backend == "lua":
+        if backend in {"lua", "php"}:
             if row["next_verification_lane"] != "transpile_smoke_locked":
                 raise SystemExit(
-                    "lua must move to transpile_smoke_locked after the representative support bundle: "
+                    "lua/php must move to transpile_smoke_locked after the representative support bundle: "
                     f"got {backend}={row['next_verification_lane']}"
                 )
             continue
