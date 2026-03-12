@@ -22,6 +22,7 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             {
                 "feature_contract_seed": "backend_feature_contract_inventory.build_feature_contract_handoff_manifest",
                 "conformance_summary_seed": "backend_conformance_summary_handoff_contract.build_backend_conformance_summary_handoff_manifest",
+                "rollout_tier_seed": "backend_parity_rollout_tier_contract.build_backend_parity_rollout_tier_manifest",
             },
         )
         self.assertEqual(
@@ -111,6 +112,30 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 "sync_cpp_drilldown_docs",
             ),
         )
+        self.assertEqual(contract_mod.PARITY_MATRIX_ROLLOUT_TIER_ORDER, ("representative", "secondary", "long_tail"))
+        self.assertEqual(
+            contract_mod.PARITY_MATRIX_ROLLOUT_TIERS,
+            (
+                {
+                    "tier": "representative",
+                    "backend_order": ("cpp", "rs", "cs"),
+                    "downstream_task": contract_mod.PARITY_MATRIX_DOWNSTREAM_TASK,
+                    "downstream_plan": contract_mod.PARITY_MATRIX_DOWNSTREAM_PLAN,
+                },
+                {
+                    "tier": "secondary",
+                    "backend_order": ("go", "java", "kt", "scala", "swift", "nim"),
+                    "downstream_task": contract_mod.PARITY_MATRIX_DOWNSTREAM_TASK,
+                    "downstream_plan": contract_mod.PARITY_MATRIX_DOWNSTREAM_PLAN,
+                },
+                {
+                    "tier": "long_tail",
+                    "backend_order": ("js", "ts", "lua", "rb", "php"),
+                    "downstream_task": contract_mod.PARITY_MATRIX_DOWNSTREAM_TASK,
+                    "downstream_plan": contract_mod.PARITY_MATRIX_DOWNSTREAM_PLAN,
+                },
+            ),
+        )
 
     def test_summary_linkage_is_fixed(self) -> None:
         self.assertEqual(
@@ -154,6 +179,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 "cpp_drilldown_docs",
                 "doc_role_split",
                 "maintenance_order",
+                "rollout_tier_order",
+                "rollout_tiers",
                 "summary_source",
                 "summary_keys",
                 "row_keys",
@@ -219,6 +246,33 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             [
                 "update_matrix_contract_and_docs",
                 "sync_cpp_drilldown_docs",
+            ],
+        )
+        self.assertEqual(
+            contract_mod.build_backend_parity_matrix_manifest()["rollout_tier_order"],
+            ["representative", "secondary", "long_tail"],
+        )
+        self.assertEqual(
+            contract_mod.build_backend_parity_matrix_manifest()["rollout_tiers"],
+            [
+                {
+                    "tier": "representative",
+                    "backend_order": ["cpp", "rs", "cs"],
+                    "downstream_task": contract_mod.PARITY_MATRIX_DOWNSTREAM_TASK,
+                    "downstream_plan": contract_mod.PARITY_MATRIX_DOWNSTREAM_PLAN,
+                },
+                {
+                    "tier": "secondary",
+                    "backend_order": ["go", "java", "kt", "scala", "swift", "nim"],
+                    "downstream_task": contract_mod.PARITY_MATRIX_DOWNSTREAM_TASK,
+                    "downstream_plan": contract_mod.PARITY_MATRIX_DOWNSTREAM_PLAN,
+                },
+                {
+                    "tier": "long_tail",
+                    "backend_order": ["js", "ts", "lua", "rb", "php"],
+                    "downstream_task": contract_mod.PARITY_MATRIX_DOWNSTREAM_TASK,
+                    "downstream_plan": contract_mod.PARITY_MATRIX_DOWNSTREAM_PLAN,
+                },
             ],
         )
         self.assertIn("| feature_id | fixture | cpp | rs | cs |", contract_mod.build_backend_parity_matrix_markdown_table())

@@ -4,11 +4,13 @@ from typing import Final, TypedDict
 
 from src.toolchain.compiler import backend_conformance_summary_handoff_contract as conformance_summary_mod
 from src.toolchain.compiler import backend_feature_contract_inventory as feature_contract_mod
+from src.toolchain.compiler import backend_parity_rollout_tier_contract as rollout_tier_mod
 
 
 PARITY_MATRIX_SOURCE_MANIFESTS: Final[dict[str, str]] = {
     "feature_contract_seed": "backend_feature_contract_inventory.build_feature_contract_handoff_manifest",
     "conformance_summary_seed": "backend_conformance_summary_handoff_contract.build_backend_conformance_summary_handoff_manifest",
+    "rollout_tier_seed": "backend_parity_rollout_tier_contract.build_backend_parity_rollout_tier_manifest",
 }
 
 PARITY_MATRIX_PUBLISH_PATHS: Final[dict[str, str]] = {
@@ -89,6 +91,16 @@ PARITY_MATRIX_SUMMARY_KEYS: Final[tuple[str, ...]] = (
 )
 PARITY_MATRIX_DOWNSTREAM_TASK: Final[str] = feature_contract_mod.HANDOFF_TASK_IDS["support_matrix"]
 PARITY_MATRIX_DOWNSTREAM_PLAN: Final[str] = feature_contract_mod.HANDOFF_PLAN_PATHS["support_matrix"]
+PARITY_MATRIX_ROLLOUT_TIER_ORDER: Final[tuple[str, ...]] = rollout_tier_mod.ROLLOUT_TIER_ORDER
+PARITY_MATRIX_ROLLOUT_TIERS: Final[tuple[dict[str, object], ...]] = tuple(
+    {
+        "tier": entry["tier"],
+        "backend_order": tuple(entry["backend_order"]),
+        "downstream_task": entry["downstream_task"],
+        "downstream_plan": entry["downstream_plan"],
+    }
+    for entry in rollout_tier_mod.iter_representative_backend_parity_rollout_tiers()
+)
 PARITY_MATRIX_DOC_ROLE_SPLIT: Final[dict[str, str]] = {
     "canonical_matrix": "The cross-backend backend parity matrix is the canonical source for feature x backend support-state reporting.",
     "cpp_drilldown": "The py2cpp support matrix is a cpp-only drill-down that refines the cpp lane without redefining the cross-backend taxonomy.",
@@ -225,6 +237,16 @@ def build_backend_parity_matrix_manifest() -> dict[str, object]:
         "cpp_drilldown_docs": dict(PARITY_MATRIX_CPP_DRILLDOWN_DOCS),
         "doc_role_split": dict(PARITY_MATRIX_DOC_ROLE_SPLIT),
         "maintenance_order": list(PARITY_MATRIX_DOC_MAINTENANCE_ORDER),
+        "rollout_tier_order": list(PARITY_MATRIX_ROLLOUT_TIER_ORDER),
+        "rollout_tiers": [
+            {
+                "tier": entry["tier"],
+                "backend_order": list(entry["backend_order"]),
+                "downstream_task": entry["downstream_task"],
+                "downstream_plan": entry["downstream_plan"],
+            }
+            for entry in PARITY_MATRIX_ROLLOUT_TIERS
+        ],
         "summary_source": PARITY_MATRIX_SUMMARY_SOURCE,
         "summary_keys": list(PARITY_MATRIX_SUMMARY_KEYS),
         "row_keys": list(PARITY_MATRIX_ROW_KEYS),

@@ -11,6 +11,7 @@
 - このページを正本とし、C++ 専用の詳細表は drill-down として [./cpp/spec-support.md](./cpp/spec-support.md) に置きます。
 - C++ 詳細表は cpp lane だけを細かく補う補助資料で、cross-backend taxonomy 自体はこのページで定義します。
 - このページと tooling contract を先に更新し、その後で C++ の詳細表を同期します。
+- representative -> secondary -> long_tail の順で cell を埋めます。
 
 ## 現在の実装段階
 

@@ -51,6 +51,7 @@ Decision log:
 - 2026-03-12: `S2-02` added `backend_cells` seeds to representative rows and fixed the initial bundle as `cpp=supported/build_run_smoke` with the remaining backends on the conservative `not_started/not_started_placeholder` seed.
 - 2026-03-12: `S3-01` published the seeded 2D table in the docs page and fixed the table block through contract-generated markdown plus begin/end markers.
 - 2026-03-12: `S3-02` fixed the role split between the cross-backend matrix and the cpp-only support table, and locked the matrix-first maintenance order in docs/tooling contract form.
+- 2026-03-12: `S4-01` added the rollout-tier fill order (`representative -> secondary -> long_tail`) to the matrix manifest and fixed the same order in the docs pages.
 
 ## Breakdown
 
@@ -59,3 +60,5 @@ Decision log:
 - [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S2-02] Add backend cell seeds to representative feature rows so `support_state` / `evidence_kind` can be filled.
 - [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S3-01] Materialize the docs publish target as a 2D table and explicitly document the cross-backend matrix as canonical.
 - [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S3-02] Fix the role split with the C++ detailed table, drill-down links, and maintenance order in docs / tooling contracts.
+- [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-01] Fix the rollout-tier fill order in the matrix manifest and docs.
+- [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-02] Replace conservative seeds with reviewed representative-tier (`cpp/rs/cs`) cell states.
