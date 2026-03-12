@@ -2,7 +2,7 @@
 """Guard Java PyRuntime core boundary (phase-1).
 
 This check prevents re-introducing legacy helper wrappers that were removed
-from `pytra-core` and must not come back.
+from the canonical handwritten Java runtime lane and must not come back.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TARGET = ROOT / "src/runtime/java/pytra-core/built_in/PyRuntime.java"
+TARGET = ROOT / "src/runtime/java/native/built_in/PyRuntime.java"
 
 FORBIDDEN: dict[str, re.Pattern[str]] = {
     "core_utils_png.write_rgb_png": re.compile(r"\bstatic\s+[^\n;]*\bwrite_rgb_png\s*\("),
@@ -68,7 +68,7 @@ def main() -> int:
 
     if len(violations) > 0:
         print("[FAIL] Java PyRuntime boundary guard failed")
-        print("  forbidden symbols detected in pytra-core:")
+        print("  forbidden symbols detected in native Java runtime:")
         for item in violations:
             print("    - " + item)
         print("  fix: keep image helper entrypoints in canonical names only")

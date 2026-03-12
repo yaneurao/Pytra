@@ -21,7 +21,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn(("built_in/type_id", "rs", "src/runtime/rs/generated/built_in/type_id.rs"), pairs)
         self.assertIn(("built_in/type_id", "cs", "src/runtime/cs/generated/built_in/type_id.cs"), pairs)
         self.assertIn(("std/pathlib", "cs", "src/runtime/cs/generated/std/pathlib.cs"), pairs)
-        self.assertIn(("std/time", "java", "src/runtime/java/pytra-gen/std/time.java"), pairs)
+        self.assertIn(("std/time", "java", "src/runtime/java/generated/std/time.java"), pairs)
 
     def test_built_in_manifest_covers_rs_and_cs_for_all_sot_modules(self) -> None:
         items = gen_mod.load_manifest_items(ROOT / "tools" / "runtime_generation_manifest.json")

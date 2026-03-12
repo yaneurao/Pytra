@@ -42,6 +42,24 @@ def _collect_relative_files(base: Path) -> tuple[str, ...]:
     )
 
 
+def _inventory_root_by_key(backend: str) -> dict[str, str]:
+    layout_entry = next(
+        entry for entry in contract_mod.iter_remaining_noncpp_runtime_layout() if entry["backend"] == backend
+    )
+    current_roots = set(layout_entry["current_roots"])
+    if {"generated", "native", "pytra"}.issubset(current_roots):
+        return {
+            "pytra_core_files": "native",
+            "pytra_gen_files": "generated",
+            "pytra_files": "pytra",
+        }
+    return {
+        "pytra_core_files": "pytra-core",
+        "pytra_gen_files": "pytra-gen",
+        "pytra_files": "pytra",
+    }
+
+
 def _collect_contract_issues() -> list[str]:
     issues: list[str] = []
     entries = contract_mod.iter_remaining_noncpp_runtime_layout()
@@ -139,13 +157,14 @@ def _collect_current_inventory_issues() -> list[str]:
     for entry in inventory_entries:
         backend = entry["backend"]
         runtime_root = ROOT / "src" / "runtime" / backend
-        legacy_core = _collect_relative_files(runtime_root / "pytra-core")
-        legacy_gen = _collect_relative_files(runtime_root / "pytra-gen")
-        legacy_pytra = _collect_relative_files(runtime_root / "pytra")
+        root_by_key = _inventory_root_by_key(backend)
+        current_core = _collect_relative_files(runtime_root / root_by_key["pytra_core_files"])
+        current_gen = _collect_relative_files(runtime_root / root_by_key["pytra_gen_files"])
+        current_pytra = _collect_relative_files(runtime_root / root_by_key["pytra_files"])
         if (
-            legacy_core == entry["pytra_core_files"]
-            and legacy_gen == entry["pytra_gen_files"]
-            and legacy_pytra == entry["pytra_files"]
+            current_core == entry["pytra_core_files"]
+            and current_gen == entry["pytra_gen_files"]
+            and current_pytra == entry["pytra_files"]
         ):
             continue
 
@@ -169,11 +188,11 @@ def _collect_current_inventory_issues() -> list[str]:
         ):
             continue
 
-        if legacy_core != entry["pytra_core_files"]:
-            issues.append(f"pytra-core inventory drifted: {backend}")
-        if legacy_gen != entry["pytra_gen_files"]:
-            issues.append(f"pytra-gen inventory drifted: {backend}")
-        if legacy_pytra != entry["pytra_files"]:
+        if current_core != entry["pytra_core_files"]:
+            issues.append(f"{root_by_key['pytra_core_files']} inventory drifted: {backend}")
+        if current_gen != entry["pytra_gen_files"]:
+            issues.append(f"{root_by_key['pytra_gen_files']} inventory drifted: {backend}")
+        if current_pytra != entry["pytra_files"]:
             issues.append(f"pytra inventory drifted: {backend}")
     return issues
 
@@ -185,11 +204,7 @@ def _expand_target_inventory_for_backend(backend: str) -> dict[str, tuple[str, .
     inventory_entry = next(
         entry for entry in contract_mod.iter_remaining_noncpp_runtime_current_inventory() if entry["backend"] == backend
     )
-    lane_root_by_key = {
-        "pytra_core_files": "pytra-core",
-        "pytra_gen_files": "pytra-gen",
-        "pytra_files": "pytra",
-    }
+    lane_root_by_key = _inventory_root_by_key(backend)
     expanded: dict[str, list[str]] = {"generated": [], "native": [], "compat": []}
     lane_mappings = tuple(
         sorted(layout_entry["lane_mappings"], key=lambda lane: len(lane["current_prefix"]), reverse=True)
@@ -288,6 +303,29 @@ def _collect_target_inventory_issues() -> list[str]:
     return issues
 
 
+def _collect_wave_a_runtime_hook_issues() -> list[str]:
+    issues: list[str] = []
+    for entry in contract_mod.iter_remaining_noncpp_runtime_wave_a_hook_sources():
+        backend = entry["backend"]
+        descriptor = backend_registry_metadata.get_runtime_hook_descriptor(
+            _runtime_hook_key_for_backend(backend)
+        )
+        if descriptor.get("kind") != "copy_files":
+            issues.append(f"wave-a runtime hook kind drifted: {backend}")
+            continue
+        actual_sources: list[str] = []
+        files = descriptor.get("files")
+        if isinstance(files, list):
+            for item in files:
+                if isinstance(item, tuple) and len(item) == 2 and isinstance(item[0], str):
+                    actual_sources.append(item[0])
+                if isinstance(item, list) and len(item) == 2 and isinstance(item[0], str):
+                    actual_sources.append(item[0])
+        if tuple(actual_sources) != entry["runtime_hook_files"]:
+            issues.append(f"wave-a runtime hook files drifted: {backend}")
+    return issues
+
+
 def _collect_module_bucket_issues() -> list[str]:
     issues: list[str] = []
     compare_baseline = set(contract_mod.iter_remaining_noncpp_runtime_generated_compare_baseline())
@@ -317,6 +355,7 @@ def _collect_module_bucket_issues() -> list[str]:
 
 def main() -> int:
     issues = _collect_contract_issues()
+    issues.extend(_collect_wave_a_runtime_hook_issues())
     issues.extend(_collect_current_inventory_issues())
     issues.extend(_collect_target_inventory_issues())
     issues.extend(_collect_module_bucket_issues())

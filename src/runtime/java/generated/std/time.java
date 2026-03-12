@@ -6,11 +6,9 @@ public final class time {
     private time() {
     }
 
-    public static java.util.ArrayList<String> __all__ = new java.util.ArrayList<String>(java.util.Arrays.asList("perf_counter"));
-
 
     public static double perf_counter() {
-        return _impl.perf_counter();
+        return __t.perf_counter();
     }
 
     public static void main(String[] args) {

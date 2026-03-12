@@ -27,31 +27,31 @@ public final class pathlib {
         }
 
         public pathlib.Path __truediv__(String rhs) {
-            return new Path(os.path.join(this._value, rhs));
+            return new pathlib.Path(path.join(this._value, rhs));
         }
 
         public pathlib.Path parent() {
-            Object parent_txt = os.path.dirname(this._value);
+            Object parent_txt = path.dirname(this._value);
             if ((java.util.Objects.equals(parent_txt, ""))) {
                 parent_txt = ".";
             }
-            return new Path(parent_txt);
+            return new pathlib.Path(parent_txt);
         }
 
         public java.util.ArrayList<pathlib.Path> parents() {
             java.util.ArrayList<pathlib.Path> out = new java.util.ArrayList<pathlib.Path>();
-            String current = os.path.dirname(this._value);
+            String current = path.dirname(this._value);
             while (true) {
                 if ((java.util.Objects.equals(current, ""))) {
                     current = ".";
                 }
-                out.add(new Path(current));
-                String next_current = os.path.dirname(current);
+                out.add(new pathlib.Path(current));
+                String next_current = path.dirname(current);
                 if ((java.util.Objects.equals(next_current, ""))) {
                     next_current = ".";
                 }
                 if ((java.util.Objects.equals(next_current, current))) {
-                    _break;
+                    break;
                 }
                 current = next_current;
             }
@@ -59,29 +59,29 @@ public final class pathlib {
         }
 
         public String name() {
-            return os.path.basename(this._value);
+            return path.basename(this._value);
         }
 
         public String suffix() {
-            java.util.ArrayList<Object> __tuple_0 = ((java.util.ArrayList<Object>)(Object)(os.path.splitext(os.path.basename(this._value))));
+            java.util.ArrayList<Object> __tuple_0 = ((java.util.ArrayList<Object>)(Object)(path.splitext(path.basename(this._value))));
             Object __ = __tuple_0.get(0);
             Object ext = __tuple_0.get(1);
             return ext;
         }
 
         public String stem() {
-            java.util.ArrayList<Object> __tuple_0 = ((java.util.ArrayList<Object>)(Object)(os.path.splitext(os.path.basename(this._value))));
+            java.util.ArrayList<Object> __tuple_0 = ((java.util.ArrayList<Object>)(Object)(path.splitext(path.basename(this._value))));
             Object root = __tuple_0.get(0);
             Object __ = __tuple_0.get(1);
             return root;
         }
 
         public pathlib.Path resolve() {
-            return new Path(os.path.abspath(this._value));
+            return new pathlib.Path(path.abspath(this._value));
         }
 
         public boolean exists() {
-            return os.path.exists(this._value);
+            return path.exists(this._value);
         }
 
         public void mkdir(boolean parents, boolean exist_ok) {
@@ -89,7 +89,7 @@ public final class pathlib {
                 os.makedirs(this._value, exist_ok);
                 return;
             }
-            if ((exist_ok && os.path.exists(this._value))) {
+            if ((exist_ok && path.exists(this._value))) {
                 return;
             }
             os.mkdir(this._value);
@@ -110,18 +110,18 @@ public final class pathlib {
         }
 
         public java.util.ArrayList<pathlib.Path> glob(String pattern) {
-            java.util.ArrayList<String> paths = py_glob.glob(os.path.join(this._value, pattern));
+            java.util.ArrayList<String> paths = py_glob.glob(path.join(this._value, pattern));
             java.util.ArrayList<pathlib.Path> out = new java.util.ArrayList<pathlib.Path>();
             java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(paths));
             for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
                 String p = String.valueOf(__iter_0.get((int)(__iter_i_1)));
-                out.add(new Path(p));
+                out.add(new pathlib.Path(p));
             }
             return out;
         }
 
         public pathlib.Path cwd() {
-            return new Path(os.getcwd());
+            return new pathlib.Path(os.getcwd());
         }
     }
 

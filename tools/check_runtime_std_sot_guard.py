@@ -3,7 +3,8 @@
 
 Policy (current):
 - Canonical module logic must come from `src/pytra/std/*.py` or `src/pytra/utils/*.py`.
-- For `rs/cs`, canonical generated runtime lanes are `src/runtime/{rs,cs}/generated/**`.
+- For migrated non-C++ backends, canonical generated runtime lanes are
+  `src/runtime/<lang>/generated/**`.
 - Legacy `pytra-gen` lanes may still exist for backends that have not yet migrated to the
   `generated/native` vocabulary, but new handwritten guarded implementations must not
   re-enter those lanes.
@@ -235,9 +236,8 @@ def _is_generated_runtime(rel_path: str) -> bool:
     # Keep this strict and path-based.
     if "/pytra-gen/" in ("/" + rel_path):
         return True
-    if rel_path.startswith("src/runtime/rs/generated/"):
-        return True
-    if rel_path.startswith("src/runtime/cs/generated/"):
+    parts = rel_path.split("/")
+    if len(parts) >= 4 and parts[:2] == ["src", "runtime"] and parts[2] != "cpp" and parts[3] == "generated":
         return True
     # C++ generated std/utils files.
     return rel_path in CPP_ROOT_GENERATED_RUNTIME_FILES
@@ -341,7 +341,7 @@ def main() -> int:
 
     if violations or stale_allow:
         print("[FAIL] runtime std/utils source-of-truth guard failed")
-        print("  canonical generated lanes: src/runtime/{rs,cs}/generated/**")
+        print("  canonical generated lanes: src/runtime/<lang>/generated/**")
         print("  legacy generated lanes are allowed only for not-yet-migrated backends")
         if violations:
             print("  disallowed handwritten runtime implementation detected:")
@@ -359,7 +359,7 @@ def main() -> int:
     tracked = sum(len(v) for v in allow.values())
     print("[OK] runtime std/utils source-of-truth guard passed")
     print(f"  rules: {', '.join(sorted(RULES.keys()))}")
-    print("  canonical generated lanes: src/runtime/{rs,cs}/generated/**")
+    print("  canonical generated lanes: src/runtime/<lang>/generated/**")
     print(f"  allowlist entries used: {tracked}")
     return 0
 

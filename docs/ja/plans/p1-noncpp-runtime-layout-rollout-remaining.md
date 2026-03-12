@@ -109,7 +109,7 @@
 
 - [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S1-01] 残 backend の current tree (`pytra-core/pytra-gen/pytra`) と target tree (`generated/native/pytra`) の対応表を backend ごとに作る。
 - [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S1-02] backend ごとに `generated/{built_in,std,utils}` へ載せる module、`native/**` に残す substrate/residual、blocked module を inventory/allowlist に固定する。
-- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-01] Wave A (`go/java/kotlin/scala/swift/nim`) の path / hook / build / selfhost 定義を `generated/native` へ切り替える。
+- [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-01] Wave A (`go/java/kotlin/scala/swift/nim`) の path / hook / build / selfhost 定義を `generated/native` へ切り替える。
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-02] Wave A の `generated/{built_in,std,utils}` を SoT から再生成し、compare lane を実体化する。
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-03] Wave A の `native/**` residual を module 単位で縮退し、必要な allowlist/inventory を同期する。
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-01] Wave B (`js/ts/lua/ruby/php`) の path / shim / package export / selfhost 定義を `generated/native` へ切り替える。
@@ -126,4 +126,6 @@
 - 2026-03-13: `S1-02` の second bundle として、current inventory と lane mapping から導かれる target inventory (`generated/native/pytra`) baseline も contract に固定した。checker は ownership ごとの expected target path 集合まで監査する。
 - 2026-03-13: `S1-02` の third bundle として、target inventory から導かれる logical module bucket (`generated/native/compat`) と backend ごとの blocked module baseline も contract に固定した。compat は native/generated と重複可で、blocked は canonical compare baseline の未実体化分として扱う。
 - 2026-03-13: `S1-02` の final bundle として、canonical compare baseline coverage rule を contract に追加した。`blocked ⊆ compare baseline` を要求し、`generated ∩ compare baseline` と `blocked` の和集合が baseline 全体を被覆する (`generated ∪ blocked = baseline`) ことを checker で監査する。compat/native との overlap は residual shim lane を表すため許容する。
+- 2026-03-13: `S2-01` として Wave A (`go/java/kotlin/scala/swift/nim`) の runtime tree を `generated/native/pytra` へ実移行し、`backend_registry_metadata.py`、manifest 出力先、runtime boundary/naming/std guard、Wave A runtime hook source contract、Java/Kotlin/Swift smoke の path baseline を同期した。`check_noncpp_runtime_layout_rollout_remaining_contract.py`、`check_runtime_{core_gen_markers,pytra_gen_naming,std_sot_guard}.py`、`check_java_pyruntime_boundary.py`、tooling unit、Kotlin/Swift smoke は通過した。
+- 2026-03-13: `S2-01` の残差として、`gen_runtime_from_manifest.py --targets go,java,kotlin,scala,swift,nim` は `nim` の helper-shaped output (`png_helper.nim`) を temp output として解決できず停止し、`java/generated/std/json.java` は `--check` で再度 stale 判定になる。これらは path/hook 切替後の live regeneration 課題として `S2-02` へ持ち越す。
 - 2026-03-13: `S1-02` の final bundle では、Wave A backend の一部で `generated/native/pytra` が先行実体化している mixed current state も許容するよう checker を調整した。legacy `pytra-core/pytra-gen/pytra` inventory が一致しない場合でも、そこから導出される target inventory と actual `generated/native/pytra` tree が一致すれば contract 準拠とみなす。

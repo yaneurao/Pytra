@@ -10,11 +10,11 @@
 
 # Transitional debt while non-C++ runtimes are being migrated to SoT-generated std/json.
 json src/runtime/cs/native/std/json.cs
-json src/runtime/go/pytra/py_runtime.go
-json src/runtime/go/pytra-core/built_in/py_runtime.go
-json src/runtime/kotlin/pytra-core/built_in/py_runtime.kt
+json src/runtime/go/native/built_in/py_runtime.go
+json src/runtime/go/pytra/built_in/py_runtime.go
+json src/runtime/kotlin/native/built_in/py_runtime.kt
 json src/runtime/lua/pytra-core/built_in/py_runtime.lua
 json src/runtime/php/pytra-core/py_runtime.php
 json src/runtime/ruby/pytra-core/built_in/py_runtime.rb
-json src/runtime/scala/pytra-core/built_in/py_runtime.scala
-json src/runtime/swift/pytra-core/built_in/py_runtime.swift
+json src/runtime/scala/native/built_in/py_runtime.scala
+json src/runtime/swift/native/built_in/py_runtime.swift

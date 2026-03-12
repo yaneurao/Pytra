@@ -32,21 +32,21 @@
         },
         {
           "target": "go",
-          "output": "src/runtime/go/pytra-gen/utils/png.go",
+          "output": "src/runtime/go/generated/utils/png.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/pytra-gen/utils/png.java" },
-        { "target": "swift", "output": "src/runtime/swift/pytra-gen/utils/png_helper.swift" },
-        { "target": "kotlin", "output": "src/runtime/kotlin/pytra-gen/utils/png_helper.kt" },
+        { "target": "java", "output": "src/runtime/java/generated/utils/png.java" },
+        { "target": "swift", "output": "src/runtime/swift/generated/utils/png_helper.swift" },
+        { "target": "kotlin", "output": "src/runtime/kotlin/generated/utils/png_helper.kt" },
         { "target": "ruby", "output": "src/runtime/ruby/pytra-gen/utils/png_helper.rb" },
         { "target": "lua", "output": "src/runtime/lua/pytra-gen/utils/png_helper.lua" },
-        { "target": "scala", "output": "src/runtime/scala/pytra-gen/utils/png_helper.scala" },
+        { "target": "scala", "output": "src/runtime/scala/generated/utils/png_helper.scala" },
         {
           "target": "php",
           "output": "src/runtime/php/pytra-gen/runtime/png.php",
           "postprocess": "php_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/pytra-gen/utils/png_helper.nim" }
+        { "target": "nim", "output": "src/runtime/nim/generated/utils/png_helper.nim" }
       ]
     },
     {
@@ -79,21 +79,21 @@
         },
         {
           "target": "go",
-          "output": "src/runtime/go/pytra-gen/utils/gif.go",
+          "output": "src/runtime/go/generated/utils/gif.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/pytra-gen/utils/gif.java" },
-        { "target": "swift", "output": "src/runtime/swift/pytra-gen/utils/gif_helper.swift" },
-        { "target": "kotlin", "output": "src/runtime/kotlin/pytra-gen/utils/gif_helper.kt" },
+        { "target": "java", "output": "src/runtime/java/generated/utils/gif.java" },
+        { "target": "swift", "output": "src/runtime/swift/generated/utils/gif_helper.swift" },
+        { "target": "kotlin", "output": "src/runtime/kotlin/generated/utils/gif_helper.kt" },
         { "target": "ruby", "output": "src/runtime/ruby/pytra-gen/utils/gif_helper.rb" },
         { "target": "lua", "output": "src/runtime/lua/pytra-gen/utils/gif_helper.lua" },
-        { "target": "scala", "output": "src/runtime/scala/pytra-gen/utils/gif_helper.scala" },
+        { "target": "scala", "output": "src/runtime/scala/generated/utils/gif_helper.scala" },
         {
           "target": "php",
           "output": "src/runtime/php/pytra-gen/runtime/gif.php",
           "postprocess": "php_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/pytra-gen/utils/gif_helper.nim" }
+        { "target": "nim", "output": "src/runtime/nim/generated/utils/gif_helper.nim" }
       ]
     },
     {
@@ -243,14 +243,14 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/time.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/time.cs", "postprocess": "cs_std_time_live_wrapper" },
-        { "target": "java", "output": "src/runtime/java/pytra-gen/std/time.java" }
+        { "target": "java", "output": "src/runtime/java/generated/std/time.java" }
       ]
     },
     {
       "id": "std/json",
       "source": "src/pytra/std/json.py",
       "bucket": "std",
-      "targets": [{ "target": "java", "output": "src/runtime/java/pytra-gen/std/json.java" }]
+      "targets": [{ "target": "java", "output": "src/runtime/java/generated/std/json.java" }]
     },
     {
       "id": "std/pathlib",
@@ -259,7 +259,7 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/pathlib.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/pathlib.cs" },
-        { "target": "java", "output": "src/runtime/java/pytra-gen/std/pathlib.java" }
+        { "target": "java", "output": "src/runtime/java/generated/std/pathlib.java" }
       ]
     },
     {
@@ -269,7 +269,7 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/math.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/math.cs" },
-        { "target": "java", "output": "src/runtime/java/pytra-gen/std/math.java" }
+        { "target": "java", "output": "src/runtime/java/generated/std/math.java" }
       ]
     },
     {

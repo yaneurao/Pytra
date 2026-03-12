@@ -2,8 +2,9 @@
 """Guard runtime marker/layout policy for generated/native ownership boundaries.
 
 Policy:
-- For `rs/cs`, canonical generated lanes are `src/runtime/{rs,cs}/generated/**` and canonical
-  handwritten lanes are `src/runtime/{rs,cs}/native/**`.
+- For migrated non-C++ backends, canonical generated lanes are
+  `src/runtime/<lang>/generated/**` and canonical handwritten lanes are
+  `src/runtime/<lang>/native/**`.
 - Legacy `src/runtime/<lang>/pytra-gen/**` / `pytra-core/**` trees are still scanned for
   backends that have not yet rolled over to the `generated/native` layout.
 - Generated lanes must include both `source:` and `generated-by:` markers.
@@ -99,8 +100,10 @@ def _is_excluded_gen_file(path: Path) -> bool:
 
 def _iter_noncpp_generated_files() -> list[Path]:
     out = _iter_runtime_files("pytra-gen")
-    out.extend(_iter_tree_files(RUNTIME_ROOT / "rs" / "generated"))
-    out.extend(_iter_tree_files(RUNTIME_ROOT / "cs" / "generated"))
+    for backend_root in sorted(RUNTIME_ROOT.iterdir()):
+        if not backend_root.is_dir() or backend_root.name == "cpp":
+            continue
+        out.extend(_iter_tree_files(backend_root / "generated"))
     uniq: dict[str, Path] = {}
     for path in out:
         uniq[str(path)] = path
@@ -109,8 +112,10 @@ def _iter_noncpp_generated_files() -> list[Path]:
 
 def _iter_noncpp_native_files() -> list[Path]:
     out = _iter_runtime_files("pytra-core")
-    out.extend(_iter_tree_files(RUNTIME_ROOT / "rs" / "native"))
-    out.extend(_iter_tree_files(RUNTIME_ROOT / "cs" / "native"))
+    for backend_root in sorted(RUNTIME_ROOT.iterdir()):
+        if not backend_root.is_dir() or backend_root.name == "cpp":
+            continue
+        out.extend(_iter_tree_files(backend_root / "native"))
     uniq: dict[str, Path] = {}
     for path in out:
         uniq[str(path)] = path
