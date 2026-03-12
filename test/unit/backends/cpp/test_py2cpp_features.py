@@ -4753,6 +4753,20 @@ def main() -> None:
         self.assertIn("auto child = py_at(__itobj_", cpp)
         self.assertNotIn("object receiver method call", cpp)
 
+    def test_homogeneous_tuple_ellipsis_currently_emits_invalid_std_tuple_pack(self) -> None:
+        src = """LENGTH_TABLE: tuple[int, ...] = (10, 20, 30)
+
+def head(xs: tuple[int, ...]) -> int:
+    return xs[0]
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "tuple_ellipsis.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("::std::tuple<int64, ...> LENGTH_TABLE", cpp)
+        self.assertIn("const ::std::tuple<int64, ...>& xs", cpp)
+
     def test_microgpt_compat_min_syntax_check(self) -> None:
         self._transpile_and_syntax_check_fixture("microgpt_compat_min")
 

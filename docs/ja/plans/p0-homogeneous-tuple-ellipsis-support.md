@@ -46,10 +46,11 @@
 決定ログ:
 - 2026-03-12: `tuple[T, ...]` は fixed tuple と同じ lane では扱わず、v1 では `homogeneous immutable sequence` category として切り出す方針にした。理由は current C++ emit が invalid `::std::tuple<..., ...>` になるためである。
 - 2026-03-12: v1 は representative lane を先に固定し、未対応 backend / lane は fail-closed を優先する。全 backend で list と完全同一表現にするかは後段で再評価する。
+- 2026-03-12: current parser は `tuple[int, ...]` を reject せず、`GenericType(base=\"tuple\", args=[NamedType(\"int64\"), NamedType(\"...\")])` として受理している。この baseline と current C++ invalid emit `::std::tuple<int64, ...>` を regression で固定してから category 分離へ進む。
 
 ## 分解
 
-- [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S1-01] type parser / normalization / representative failure を plan と regression で固定する。
+- [x] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S1-01] type parser / normalization / representative failure を plan と regression で固定する。
 - [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S2-01] `tuple[T, ...]` を fixed tuple と別 category として EAST / type summary に載せる。
 - [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S2-02] C++ backend の invalid `::std::tuple<..., ...>` emission を止め、representative v1 lane を read-only immutable sequence として lower する。
 - [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S3-01] representative backend policy を整理し、未対応 lane / backend を fail-closed で固定する。

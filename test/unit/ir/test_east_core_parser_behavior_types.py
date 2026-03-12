@@ -16,6 +16,51 @@ from src.toolchain.compiler.east import convert_source_to_east_with_backend
 
 
 class EastCoreParserBehaviorTypesTest(unittest.TestCase):
+    def test_homogeneous_tuple_ellipsis_annotation_is_accepted_as_generic_tuple_typeexpr(self) -> None:
+        src = """
+LENGTH_TABLE: tuple[int, ...] = (10, 20, 30)
+
+def head(xs: tuple[int, ...]) -> int:
+    return xs[0]
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+
+        ann_assign = next(
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "AnnAssign" and n.get("target", {}).get("id") == "LENGTH_TABLE"
+        )
+        self.assertEqual(ann_assign.get("annotation"), "tuple[int64,...]")
+        self.assertEqual(
+            ann_assign.get("annotation_type_expr"),
+            {
+                "kind": "GenericType",
+                "base": "tuple",
+                "args": [
+                    {"kind": "NamedType", "name": "int64"},
+                    {"kind": "NamedType", "name": "..."},
+                ],
+            },
+        )
+
+        fn = next(
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "FunctionDef" and n.get("name") == "head"
+        )
+        self.assertEqual(fn.get("arg_types", {}).get("xs"), "tuple[int64,...]")
+        self.assertEqual(
+            fn.get("arg_type_exprs", {}).get("xs"),
+            {
+                "kind": "GenericType",
+                "base": "tuple",
+                "args": [
+                    {"kind": "NamedType", "name": "int64"},
+                    {"kind": "NamedType", "name": "..."},
+                ],
+            },
+        )
+
     def test_sum_on_json_object_is_rejected_by_decode_first_guard(self) -> None:
         src = """
 from pytra.std import json
