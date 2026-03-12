@@ -31,4 +31,6 @@
 
 ## 未完了タスク
 
-現時点で未完了タスクはありません。
+1. [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01] `tuple[T, ...]` を fixed tuple と別 category として受理し、representative backend で immutable sequence として扱えるようにする。
+   文脈: [p0-homogeneous-tuple-ellipsis-support.md](/workspace/Pytra/docs/ja/plans/p0-homogeneous-tuple-ellipsis-support.md)
+   - `P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01`: current C++ backend は `tuple[int, ...]` を `::std::tuple<int64, ...>` に誤 lower する。v1 では fixed tuple とは分離し、representative lane を immutable sequence として固定し、未対応 lane は fail-closed にする。

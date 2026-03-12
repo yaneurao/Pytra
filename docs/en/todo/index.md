@@ -31,4 +31,6 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-There are currently no unfinished tasks.
+1. [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01] Accept `tuple[T, ...]` as a category distinct from fixed tuples and make representative backends treat it as an immutable sequence.
+   Context: [p0-homogeneous-tuple-ellipsis-support.md](/workspace/Pytra/docs/en/plans/p0-homogeneous-tuple-ellipsis-support.md)
+   - `P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01`: the current C++ backend incorrectly lowers `tuple[int, ...]` to `::std::tuple<int64, ...>`. In v1 this will be separated from fixed tuples, representative lanes will be locked as immutable-sequence lowering, and unsupported lanes will remain fail-closed.
