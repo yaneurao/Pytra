@@ -40,10 +40,11 @@ Verification:
 Decision log:
 - 2026-03-12: This follow-up was opened as `P0` after the TODO list became empty. The target is the representative build/run contract for the alias lane, not a redesign of import semantics.
 - 2026-03-12: The representative smoke `from .controller import (BUTTON_A as BUTTON, Pad as ControllerPad)` builds and runs on the current C++ multi-file lane without code changes. The generated consumer resolves alias local names back to their imported origins instead of keeping the aliases in emitted C++.
+- 2026-03-12: At close-out, no additional emitter / writer / schema changes were needed for the alias lane. The task completed as a regression lock plus docs sync only.
 
 ## Breakdown
 
 - [x] [ID: P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01-S1-01] Lock the representative alias contract in the plan / TODO.
 - [x] [ID: P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01-S2-01] Add a representative C++ multi-file smoke for mixed-symbol sibling relative imports with aliases and validate the current lane.
 - [x] [ID: P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01-S2-02] Only if a residual is found, fix the emitter / writer / schema for the alias lane.
-- [ ] [ID: P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01-S3-01] Sync docs / TODO / regressions to the current contract and close the task.
+- [x] [ID: P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01-S3-01] Sync docs / TODO / regressions to the current contract and close the task.

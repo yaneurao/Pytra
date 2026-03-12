@@ -40,10 +40,11 @@
 決定ログ:
 - 2026-03-12: TODO が空になったため、relative import support の adjacent follow-up を `P0` で起票した。対象は alias lane の representative build/run contract 固定である。
 - 2026-03-12: representative smoke `from .controller import (BUTTON_A as BUTTON, Pad as ControllerPad)` は current C++ multi-file lane のままで build/run success した。alias local name は generated consumer に残らず imported origin へ正しく resolve される。
+- 2026-03-12: close-out 時点で alias lane に追加の emitter / writer / schema 修正は不要であり、task は regression lock と docs sync のみで完了とした。
 
 ## 分解
 
 - [x] [ID: P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01-S1-01] plan / TODO に representative alias contract を固定する。
 - [x] [ID: P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01-S2-01] alias 付き mixed symbol sibling relative import の representative C++ multi-file smoke を追加し、current lane を確認する。
 - [x] [ID: P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01-S2-02] alias lane で residual が見つかった場合のみ emitter / writer / schema を修正する。
-- [ ] [ID: P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01-S3-01] docs / TODO / regression を current contract に同期して task を閉じる。
+- [x] [ID: P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01-S3-01] docs / TODO / regression を current contract に同期して task を閉じる。

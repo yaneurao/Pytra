@@ -31,6 +31,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01] C++ multi-file build で sibling relative import の alias symbol contract を representative smoke で固定する。
-   文脈: [p0-cpp-relative-import-alias-symbol-contract.md](/workspace/Pytra/docs/ja/plans/p0-cpp-relative-import-alias-symbol-contract.md)
-   - `P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01`: alias 付き mixed symbol smoke を追加し、current C++ multi-file lane のままで build/run success することを確認した。残りは docs / TODO / regression の close-out 同期である。
+現時点で未完了タスクはありません。

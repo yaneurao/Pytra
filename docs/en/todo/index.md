@@ -31,6 +31,4 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-1. [ ] [ID: P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01] Lock the representative C++ multi-file contract for sibling relative-import alias symbols.
-   Context: [p0-cpp-relative-import-alias-symbol-contract.md](/workspace/Pytra/docs/en/plans/p0-cpp-relative-import-alias-symbol-contract.md)
-   - `P0-CPP-RELATIVE-IMPORT-ALIAS-SYMBOL-01`: the representative mixed-symbol alias smoke now builds and runs on the current C++ multi-file lane. Remaining: close-out sync for docs / TODO / regressions.
+There are currently no unfinished tasks.
