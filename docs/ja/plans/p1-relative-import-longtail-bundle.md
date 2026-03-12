@@ -47,10 +47,11 @@
 - 2026-03-12: long-tail bundle の active lane は `longtail_relative_import_rollout`、fail-closed lane は `backend_specific_fail_closed` に固定する。
 - 2026-03-12: second-wave bundle order は historical contract として残しつつ、next live rollout handoff は long-tail bundle に更新する。
 - 2026-03-12: `lua/php/ruby` では representative relative import project を backend-native emitter が明示的に reject する current contract を正規化し、wildcard import も `unsupported relative import form` として fail-closed に固定する。
+- 2026-03-12: coverage inventory / backend parity docs の current state は `contract_state=not_locked` を維持しつつ、representative evidence を `backend_native_fail_closed` lane で公開する。
 
 ## 分解
 
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01] `lua/php/ruby` long-tail bundle の live handoff と representative rollout contract を固定する。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S1-01] long-tail bundle の live plan / TODO / contract / checker / docs handoff を追加し、JVM bundle contract を archive semantics に切り替える。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-01] `lua/php/ruby` の representative transpile smoke / fail-closed regression を追加し、backend-native emitter の explicit reject を current contract として固定する。
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-02] backend parity docs / coverage inventory / handoff wording を long-tail current state に同期して close-ready にする。
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-02] backend parity docs / coverage inventory / handoff wording を `not_locked + backend_native_fail_closed` の current state に同期して close-ready にする。

@@ -66,6 +66,16 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
             all(row["evidence_lane"] == "native_emitter_function_body_transpile" for row in rows)
         )
 
+    def test_longtail_bundle_uses_backend_native_fail_closed_evidence_lane(self) -> None:
+        rows = [
+            row
+            for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
+            if row["backend"] in {"lua", "php", "ruby"}
+        ]
+        self.assertEqual(len(rows), 3)
+        self.assertTrue(all(row["contract_state"] == "not_locked" for row in rows))
+        self.assertTrue(all(row["evidence_lane"] == "backend_native_fail_closed" for row in rows))
+
     def test_validator_accepts_noncpp_rollout_inventory(self) -> None:
         validate_relative_import_noncpp_rollout()
 
@@ -148,7 +158,7 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         )
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_evidence_lane"],
-            "none",
+            "backend_native_fail_closed",
         )
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["followup_verification_lane"],

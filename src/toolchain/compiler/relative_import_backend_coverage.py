@@ -51,8 +51,8 @@ RELATIVE_IMPORT_BACKEND_COVERAGE_V1: Final[list[dict[str, str]]] = [
     {
         "backend": "lua",
         "contract_state": "not_locked",
-        "evidence_lane": "none",
-        "notes": "Long-tail rollout is now live, but representative relative-import smoke is not locked yet.",
+        "evidence_lane": "backend_native_fail_closed",
+        "notes": "Long-tail rollout is live and representative relative-import projects are locked as backend-native explicit rejection, but support is still not claimed.",
     },
     {
         "backend": "nim",
@@ -63,14 +63,14 @@ RELATIVE_IMPORT_BACKEND_COVERAGE_V1: Final[list[dict[str, str]]] = [
     {
         "backend": "php",
         "contract_state": "not_locked",
-        "evidence_lane": "none",
-        "notes": "Long-tail rollout is now live, but representative relative-import smoke is not locked yet.",
+        "evidence_lane": "backend_native_fail_closed",
+        "notes": "Long-tail rollout is live and representative relative-import projects are locked as backend-native explicit rejection, but support is still not claimed.",
     },
     {
         "backend": "ruby",
         "contract_state": "not_locked",
-        "evidence_lane": "none",
-        "notes": "Long-tail rollout is now live, but representative relative-import smoke is not locked yet.",
+        "evidence_lane": "backend_native_fail_closed",
+        "notes": "Long-tail rollout is live and representative relative-import projects are locked as backend-native explicit rejection, but support is still not claimed.",
     },
     {
         "backend": "scala",
@@ -221,7 +221,7 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
     ),
     "next_rollout_backends": ("lua", "php", "ruby"),
     "current_bundle_smoke_locked_backends": (),
-    "current_bundle_evidence_lane": "none",
+    "current_bundle_evidence_lane": "backend_native_fail_closed",
     "second_wave_bundle_order": (
         "locked_js_ts_smoke_bundle",
         "native_path_bundle",

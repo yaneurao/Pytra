@@ -35,7 +35,7 @@ Last updated: 2026-03-12
   Context: [docs/ja/plans/p1-relative-import-longtail-bundle.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-longtail-bundle.md)
   - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S1-01] Add the live long-tail plan / TODO / contract / checker / docs handoff and switch the JVM bundle contract to archive semantics.
   - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-01] Add representative transpile-smoke / fail-closed regressions for `lua/php/ruby` and lock the current backend-native rejection contract.
-  - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-02] Sync backend parity docs / coverage inventory / handoff wording to the long-tail current state and make the task close-ready.
+  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-02] Sync backend parity docs / coverage inventory / handoff wording to the current `not_locked + backend_native_fail_closed` state and make the task close-ready.
 
 ### P1: move the active live relative-import rollout to the long-tail bundle (`lua/php/ruby`) and lock the post-JVM handoff
 
@@ -44,5 +44,5 @@ Context: [docs/en/plans/p1-relative-import-longtail-bundle.md](/workspace/Pytra/
 1. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01] Fix the long-tail backends (`lua/php/ruby`) as the active live rollout bundle and align the post-JVM handoff to the representative contract.
 2. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S1-01] Add the live plan / TODO / contract / checker and switch the coverage / second-wave handoff / backend-parity docs to the long-tail bundle.
 3. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-01] Add representative fail-closed regressions for `lua/php/ruby` and lock the current non-support contract.
-4. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-02] Either widen representative transpile smoke or document the canonical fail-closed end state so the task becomes close-ready.
+4. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-02] Either widen representative transpile smoke or document the canonical fail-closed end state so the task becomes close-ready.
 5. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S3-01] Align docs / tests / handoff wording to the current long-tail state and close the task.

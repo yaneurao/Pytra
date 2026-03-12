@@ -61,7 +61,7 @@ EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
     ),
     "next_rollout_backends": ("lua", "php", "ruby"),
     "current_bundle_smoke_locked_backends": (),
-    "current_bundle_evidence_lane": "none",
+    "current_bundle_evidence_lane": "backend_native_fail_closed",
     "second_wave_bundle_order": (
         "locked_js_ts_smoke_bundle",
         "native_path_bundle",
@@ -114,6 +114,11 @@ def validate_relative_import_backend_coverage() -> None:
             raise SystemExit(
                 "non-cpp relative import backend coverage must remain "
                 f"not_locked until verified: got {row['backend']}={row['contract_state']}"
+            )
+        if row["evidence_lane"] != "backend_native_fail_closed":
+            raise SystemExit(
+                "long-tail relative import backends must expose backend_native_fail_closed as the current evidence lane: "
+                f"got {row['backend']}={row['evidence_lane']}"
             )
     native_path_rows = [
         row
