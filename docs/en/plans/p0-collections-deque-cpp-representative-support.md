@@ -7,7 +7,7 @@ Related TODO:
 
 Background:
 - Pytra-NES uses dataclass fields such as `timestamps: deque[float] = field(init=False, repr=False)` in real code.
-- The `field(...)` leak itself is already fixed, but the C++ emitter still outputs raw `deque[float64]`, so the representative C++ lane is not complete yet.
+- The `field(...)` leak itself was already fixed, but the baseline C++ emitter still produced raw `deque[float64]`.
 - The current user need is not full Python `collections.deque` compatibility; it is a representative C++ lane that unblocks Pytra-NES.
 
 Goal:
@@ -28,6 +28,7 @@ Out of scope:
 
 Acceptance criteria:
 - A representative C++ regression locks the raw `deque[T]` type-leak baseline.
+- `deque[T]` lowers to `::std::deque<T>` in the representative C++ lane and passes a focused compile smoke.
 - The ja/en plan and TODO mirrors record the Pytra-NES blocker and scope.
 - The follow-up bundles are split cleanly into `type lowering` and `zero-arg ctor/member lane`.
 
@@ -42,11 +43,12 @@ Decision log:
 - 2026-03-12: The static-metadata work for `dataclasses.field(...)` is already complete, so this task is restricted to `deque[T]` type lowering and representative runtime lanes rather than field semantics.
 - 2026-03-12: v1 only targets the representative C++ lane; non-C++ rollout is deferred.
 - 2026-03-12: The baseline is locked by `test_deque_annotation_current_baseline_still_leaks_raw_cpp_type`, which records the current representative failure where the C++ emitter still outputs raw `deque[float64]`.
+- 2026-03-12: `S2-01` keeps the runtime surface minimal by lowering directly to `::std::deque<T>` and adding only the required `<deque>` includes in `py_types.h` and the header builder.
 
 ## Breakdown
 
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01] Lock the representative C++ lane for `collections.deque[T]` and remove the Pytra-NES blocker.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S1-01] Lock the current baseline failure and representative scope in focused regressions / TODO / plan.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S2-01] Lock representative C++ type lowering for `deque[T]`.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S2-01] Lock representative C++ type lowering for `deque[T]`.
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S2-02] Align the zero-arg constructor / dataclass-field member lane with representative C++ emission.
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S3-01] Sync docs / regressions / support wording to the current contract and close the task.

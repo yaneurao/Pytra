@@ -32,4 +32,4 @@
 ## 未完了タスク
 
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01] `collections.deque[T]` の representative C++ lane を固定し、Pytra-NES blocker を外す（文脈: [p0-collections-deque-cpp-representative-support.md](../plans/p0-collections-deque-cpp-representative-support.md)）
-  - 2026-03-12: baseline failure は focused regression と plan に固定した。次は `deque[T]` の representative C++ type lowering。
+  - 2026-03-12: `deque[T]` の representative C++ type lowering を `::std::deque<T>` と compile smoke まで固定した。次は zero-arg ctor / dataclass field member lane。

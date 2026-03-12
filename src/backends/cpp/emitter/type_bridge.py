@@ -525,6 +525,16 @@ class CppTypeBridgeEmitter:
             if list_elem == "unknown":
                 return "list<object>"
             return f"list<{self._cpp_type_text(list_elem, pyobj_ref_lists=pyobj_ref_lists)}>"
+        deque_inner = self.type_generic_args(east_type, "deque")
+        if len(deque_inner) == 1:
+            deque_elem = deque_inner[0]
+            if deque_elem == "None":
+                return "::std::deque<object>"
+            if self.is_any_like_type(deque_elem):
+                return "::std::deque<object>"
+            if deque_elem == "unknown":
+                return "::std::deque<object>"
+            return f"::std::deque<{self._cpp_type_text(deque_elem, pyobj_ref_lists=pyobj_ref_lists)}>"
         set_inner = self.type_generic_args(east_type, "set")
         if len(set_inner) == 1:
             set_elem = set_inner[0]

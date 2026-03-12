@@ -4709,7 +4709,8 @@ class PadState:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn("deque[float64] timestamps;", cpp)
+        self.assertIn("::std::deque<float64> timestamps;", cpp)
+        self.assertNotIn("deque[float64] timestamps;", cpp)
         self.assertNotIn("field(false, false)", cpp)
 
     def test_dataclass_field_init_false_is_omitted_from_ctor_params(self) -> None:
@@ -4727,10 +4728,10 @@ class PadState:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
         self.assertIn("PadState(int64 frame)", cpp)
-        self.assertNotIn("PadState(int64 frame, deque[float64] timestamps", cpp)
+        self.assertNotIn("PadState(int64 frame, ::std::deque<float64> timestamps", cpp)
         self.assertIn(": frame(frame)", cpp)
 
-    def test_deque_annotation_current_baseline_still_leaks_raw_cpp_type(self) -> None:
+    def test_deque_annotation_lowers_to_std_deque_cpp_type(self) -> None:
         src = """from collections import deque
 
 class PadState:
@@ -4741,7 +4742,52 @@ class PadState:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn("deque[float64] timestamps;", cpp)
+        self.assertIn("::std::deque<float64> timestamps;", cpp)
+        self.assertNotIn("deque[float64] timestamps;", cpp)
+
+    def test_deque_annotation_builds_in_cpp_representative_lane(self) -> None:
+        src = """from collections import deque
+
+class PadState:
+    timestamps: deque[float]
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src_py = work / "deque_annotation_case.py"
+            out_cpp = work / "deque_annotation_case.cpp"
+            out_exe = work / "deque_annotation_case.out"
+            manifest = work / "manifest.json"
+            src_py.write_text(src, encoding="utf-8")
+            transpile(src_py, out_cpp)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "include_dir": str(work),
+                        "modules": [
+                            {
+                                "source": str(out_cpp),
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            comp = self._run_subprocess_with_timeout(
+                [
+                    "python3",
+                    "tools/build_multi_cpp.py",
+                    str(manifest),
+                    "-o",
+                    str(out_exe),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="compile deque representative lane",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
 
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
         src = """from dataclasses import dataclass, field

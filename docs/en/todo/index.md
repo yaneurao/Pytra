@@ -32,4 +32,4 @@ Last updated: 2026-03-12
 ## Unfinished Tasks
 
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01] Lock the representative C++ lane for `collections.deque[T]` and remove the Pytra-NES blocker (context: [p0-collections-deque-cpp-representative-support.md](../plans/p0-collections-deque-cpp-representative-support.md))
-  - 2026-03-12: The baseline failure is now locked in a focused regression and plan. Next is representative C++ type lowering for `deque[T]`.
+  - 2026-03-12: Representative C++ type lowering for `deque[T]` is now locked as `::std::deque<T>` with a compile smoke. Next is the zero-arg ctor / dataclass-field member lane.

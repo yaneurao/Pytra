@@ -44,6 +44,14 @@ class CppTypeTest(unittest.TestCase):
         self.assertEqual(em._cpp_type_text("list[str]"), "list<str>")
         self.assertEqual(em._cpp_type_text("list[Any]"), "object")
 
+    def test_deque_type_text_and_header_builder_lower_to_std_deque(self) -> None:
+        em = CppEmitter({"body": []}, {}, emit_main=False)
+        self.assertEqual(em._cpp_type_text("deque[float64]"), "::std::deque<float64>")
+        self.assertEqual(
+            _header_cpp_type_from_east("deque[float64]", set(), set()),
+            "::std::deque<float64>",
+        )
+
     def test_type_expr_path_rejects_general_union_fallback(self) -> None:
         em = CppEmitter({"body": []}, {}, emit_main=False)
         with self.assertRaisesRegex(

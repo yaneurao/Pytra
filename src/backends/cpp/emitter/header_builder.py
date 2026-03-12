@@ -420,6 +420,7 @@ def build_cpp_header_from_east(
     has_std_int = False
     has_std_string = False
     has_std_vector = False
+    has_std_deque = False
     has_std_tuple = False
     has_std_optional = False
     has_std_umap = False
@@ -433,6 +434,8 @@ def build_cpp_header_from_east(
             has_std_string = True
         if "::std::vector" in t:
             has_std_vector = True
+        if "::std::deque" in t:
+            has_std_deque = True
         if "::std::tuple" in t:
             has_std_tuple = True
         if "::std::optional" in t:
@@ -449,6 +452,8 @@ def build_cpp_header_from_east(
         includes.append("#include <string>")
     if has_std_vector:
         includes.append("#include <vector>")
+    if has_std_deque:
+        includes.append("#include <deque>")
     if has_std_tuple:
         includes.append("#include <tuple>")
     if has_std_optional:
@@ -1245,6 +1250,9 @@ def _header_cpp_type_from_east(
     if t.startswith("list[") and t.endswith("]"):
         inner = t[5:-1].strip()
         return "list<" + _header_cpp_type_from_east(inner, ref_classes, class_names) + ">"
+    if t.startswith("deque[") and t.endswith("]"):
+        inner = t[6:-1].strip()
+        return "::std::deque<" + _header_cpp_type_from_east(inner, ref_classes, class_names) + ">"
     if t.startswith("set[") and t.endswith("]"):
         inner = t[4:-1].strip()
         return "set<" + _header_cpp_type_from_east(inner, ref_classes, class_names) + ">"

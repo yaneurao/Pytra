@@ -7,7 +7,7 @@
 
 背景:
 - Pytra-NES では `timestamps: deque[float] = field(init=False, repr=False)` のような dataclass field が実際に使われている。
-- `field(...)` 自体の leak は既に解消済みだが、C++ emitter は `deque[float64]` を raw type のまま出してしまい、representative C++ lane がまだ成立していない。
+- `field(...)` 自体の leak は既に解消済みだったが、baseline では C++ emitter が `deque[float64]` を raw type のまま出していた。
 - Pytra の current user need は pure Python `collections.deque` の全面互換ではなく、Pytra-NES を進めるための representative C++ lane の固定である。
 
 目的:
@@ -28,6 +28,7 @@
 
 受け入れ基準:
 - representative C++ regression で `deque[T]` raw type leak の baseline が固定される。
+- `deque[T]` が representative C++ lane で `::std::deque<T>` に lower され、focused compile smoke が通る。
 - plan / TODO の ja/en ミラーに Pytra-NES blocker と scope が記録される。
 - 後続 bundle が `type lowering` と `zero-arg ctor/member lane` を順に進められる粒度になっている。
 
@@ -42,11 +43,12 @@
 - 2026-03-12: `dataclasses.field(...)` の静的 metadata 化は完了しているため、この task は `field` ではなく `deque[T]` type lowering / representative runtime lane に限定する。
 - 2026-03-12: v1 は C++ representative lane のみを対象にし、non-C++ backend rollout は後段へ回す。
 - 2026-03-12: baseline は `test_deque_annotation_current_baseline_still_leaks_raw_cpp_type` で固定し、current C++ emitter が `deque[float64]` を raw type のまま出していることを representative failure とする。
+- 2026-03-12: `S2-01` では runtime alias を増やさず、C++ type lowering は `::std::deque<T>` 直 lowering とし、`py_types.h` / header builder に `<deque>` include を足す最小 bundle で通す。
 
 ## 分解
 
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01] `collections.deque[T]` の representative C++ lane を固定し、Pytra-NES blocker を外す。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S1-01] current baseline failure と representative scope を focused regression / TODO / plan で固定する。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S2-01] `deque[T]` の C++ type lowering を representative lane で固定する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S2-01] `deque[T]` の C++ type lowering を representative lane で固定する。
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S2-02] zero-arg ctor / dataclass field member lane を representative C++ emission に揃える。
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S3-01] docs / regression / support wording を current contract に同期して閉じる。
