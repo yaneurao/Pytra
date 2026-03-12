@@ -180,6 +180,33 @@ class PadState:
         self.assertEqual(factory_expr.get("kind"), "Name")
         self.assertEqual(factory_expr.get("id"), "list")
 
+    def test_dataclass_field_class_default_factory_is_preserved_in_metadata(self) -> None:
+        src = """
+from dataclasses import dataclass, field
+
+@dataclass
+class Child:
+    value: int = 0
+
+@dataclass
+class Parent:
+    child: Child = field(default_factory=Child)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        classes = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "ClassDef" and n.get("name") in {"Child", "Parent"}
+        ]
+        self.assertEqual(len(classes), 2)
+        by_name = {str(c.get("name")): c for c in classes}
+        body = by_name["Parent"].get("body", [])
+        self.assertEqual(len(body), 1)
+        meta = body[0].get("meta", {}).get("dataclass_field_v1", {})
+        factory_expr = meta.get("default_factory_expr", {})
+        self.assertEqual(factory_expr.get("kind"), "Name")
+        self.assertEqual(factory_expr.get("id"), "Child")
+
     def test_dataclass_field_repr_and_compare_are_preserved_in_metadata(self) -> None:
         src = """
 from dataclasses import dataclass, field

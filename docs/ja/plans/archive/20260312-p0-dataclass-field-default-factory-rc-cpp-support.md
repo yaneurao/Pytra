@@ -44,9 +44,10 @@
 
 ## 分解
 
-- [ ] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01] `field(default_factory=...)` の rc field lane を representative C++ contract に揃え、Pytra-NES blocker を外す。
+- [x] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01] `field(default_factory=...)` の rc field lane を representative C++ contract に揃え、Pytra-NES blocker を外す。
 - [x] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01-S1-01] minimal sample baseline と current C++ failure を focused regression / TODO / plan に固定する。
 - [x] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01-S2-01] representative C++ rc field lane で `default_factory` を正しい ctor / member-init lowering に揃える。
-- [ ] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01-S3-01] docs / support wording / representative subset regression を current contract に同期して閉じる。
+- [x] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01-S3-01] docs / support wording / representative subset regression を current contract に同期して閉じる。
 
 - 2026-03-12: representative C++ lane では `field(default_factory=Child)` かつ field 型が `rc<...>` lane のとき、ctor default/member-init を `::rc_new<Child>()` に lower する current contract で固定した。
+- 2026-03-12: representative static dataclass subset は `default`、`default_factory=deque`、`default_factory=Child` on `rc<Child>` までを support docs と parser/C++ regression で固定し、arbitrary callable `default_factory` は対象外のまま残す。
