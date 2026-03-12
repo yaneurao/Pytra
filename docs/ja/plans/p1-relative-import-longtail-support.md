@@ -51,6 +51,7 @@
 - 2026-03-12: Lua bundle 完了後の current long-tail rollout state は `mixed_rollout_locked` とし、`lua` を smoke-locked backend、`php/ruby` を remaining fail-closed residual として inventory / parity docs に記録する。
 - 2026-03-12: Pytra-NES の最初の blocker だった括弧付き `from ... import (...)` は frontend 共通 blocker なので、PHP/Ruby rollout より先に parser で受ける。
 - 2026-03-12: PHP support は direct native-emitter rewrite (`helper_f()`) 方式で固定し、wildcard relative import だけ fail-closed に残す。
+- 2026-03-12: PHP bundle 完了後の current long-tail rollout state は `lua/php` を smoke-locked backend、`ruby` を remaining fail-closed residual として inventory / parity docs に記録する。
 
 ## 分解
 
