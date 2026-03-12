@@ -94,7 +94,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
         lua = transpile_to_lua_native(east)
         self.assertIn("~y", lua)
 
-    def test_cli_relative_import_longtail_bundle_fail_closed_for_lua(self) -> None:
+    def test_cli_relative_import_support_rollout_fail_closed_for_lua(self) -> None:
         for scenario_id, scenario in relative_import_longtail_scenarios().items():
             with self.subTest(scenario_id=scenario_id):
                 err = transpile_relative_import_longtail_expect_failure(
@@ -105,7 +105,7 @@ class Py2LuaSmokeTest(unittest.TestCase):
                 self.assertIn("unsupported relative import form: relative import", err)
                 self.assertIn("lua native emitter", err)
 
-    def test_cli_relative_import_longtail_bundle_fail_closed_for_wildcard_on_lua(self) -> None:
+    def test_cli_relative_import_support_rollout_fail_closed_for_wildcard_on_lua(self) -> None:
         err = transpile_relative_import_longtail_expect_failure(
             "lua",
             "from ..helper import *",

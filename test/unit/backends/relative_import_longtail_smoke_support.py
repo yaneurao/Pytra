@@ -6,8 +6,8 @@ from pathlib import Path
 from backends.lua.emitter import transpile_to_lua_native
 from backends.php.emitter import transpile_to_php_native
 from backends.ruby.emitter import transpile_to_ruby_native
-from toolchain.compiler.relative_import_longtail_bundle_contract import (
-    RELATIVE_IMPORT_LONGTAIL_BUNDLE_SCENARIOS_V1,
+from toolchain.compiler.relative_import_longtail_support_contract import (
+    RELATIVE_IMPORT_LONGTAIL_SUPPORT_SCENARIOS_V1,
 )
 from toolchain.compiler.transpile_cli import load_east3_document
 
@@ -15,7 +15,7 @@ from toolchain.compiler.transpile_cli import load_east3_document
 def relative_import_longtail_scenarios() -> dict[str, dict[str, object]]:
     return {
         str(entry["scenario_id"]): entry
-        for entry in RELATIVE_IMPORT_LONGTAIL_BUNDLE_SCENARIOS_V1
+        for entry in RELATIVE_IMPORT_LONGTAIL_SUPPORT_SCENARIOS_V1
     }
 
 

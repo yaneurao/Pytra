@@ -35,10 +35,13 @@ Verification commands:
 - `python3 tools/check_relative_import_secondwave_rollout_contract.py`
 - `python3 tools/check_relative_import_longtail_bundle_contract.py`
 - `python3 tools/check_relative_import_longtail_support_contract.py`
+- `python3 tools/check_relative_import_lua_support_contract.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_backend_coverage.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_secondwave_rollout_contract.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_longtail_bundle_contract.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_longtail_support_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_lua_support_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/lua -p 'test_py2lua_smoke.py' -k relative_import_support_rollout`
 - `python3 tools/check_todo_priority.py`
 - `git diff --check`
 
@@ -46,12 +49,13 @@ Decision log:
 - 2026-03-12: The archived long-tail bundle remains the `fail_closed_locked + backend_native_fail_closed` baseline, and only the active work moves into the support rollout.
 - 2026-03-12: The support rollout canonically uses `bundle_state=active_rollout`, `verification_lane=longtail_relative_import_support_rollout`, and `followup_bundle_id=none`.
 - 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01` is the closeout-first bundle that aligns the live plan / TODO / support contract / checker and the archive handoff together.
+- 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01` fixes the Lua-focused verification lane as `lua_relative_import_support_rollout_smoke`, while the current diagnostic family stays `backend_specific_fail_closed` and the current evidence lane stays `backend_native_fail_closed`.
 
 ## Breakdown
 
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01] Fix the active handoff and representative contract for the `lua/php/ruby` relative-import support rollout while keeping the archived fail-closed baseline.
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01] Archive the long-tail fail-closed bundle and add the live support rollout plan / TODO / contract / checker / handoff.
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01] Fix the representative support-rollout contract and focused verification lane for the Lua backend.
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01] Fix the representative support-rollout contract and focused verification lane for the Lua backend.
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02] Fix the representative support-rollout contract and focused verification lane for the PHP backend.
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03] Fix the representative support-rollout contract and focused verification lane for the Ruby backend.
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S3-01] Sync backend-parity docs / coverage inventory / active handoff wording to the current support-rollout state and close the task.
