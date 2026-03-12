@@ -111,7 +111,7 @@
 - [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S1-02] backend ごとに `generated/{built_in,std,utils}` へ載せる module、`native/**` に残す substrate/residual、blocked module を inventory/allowlist に固定する。
 - [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-01] Wave A (`go/java/kotlin/scala/swift/nim`) の path / hook / build / selfhost 定義を `generated/native` へ切り替える。
 - [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-02] Wave A の `generated/{built_in,std,utils}` を SoT から再生成し、compare lane を実体化する。
-- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-03] Wave A の `native/**` residual を module 単位で縮退し、必要な allowlist/inventory を同期する。
+- [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-03] Wave A の `native/**` residual を module 単位で縮退し、必要な allowlist/inventory を同期する。
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-01] Wave B (`js/ts/lua/ruby/php`) の path / shim / package export / selfhost 定義を `generated/native` へ切り替える。
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-02] Wave B の `generated/{built_in,std,utils}` を SoT から再生成し、compare lane を実体化する。
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-03] Wave B の `native/**` residual と `pytra/**` compatibility lane の責務を整理し、必要な allowlist/inventory を同期する。
@@ -134,3 +134,4 @@
 - 2026-03-13: `S2-02` の third bundle として、Nim native emitter に representative `Try/finally` lowering を追加し、`utils/gif_helper.nim` / `utils/png_helper.nim` を live regeneration lane へ戻した。`test_gen_runtime_from_manifest.py` は `f.write(...)` と `f.close()` の出力を監査し、`gen_runtime_from_manifest.py --targets go,java,kotlin,scala,swift,nim --check` は全通しになった。
 - 2026-03-13: `S2-03` の first bundle として、Wave A `native/**` residual を contract に追加し、`built_in/py_runtime` を `substrate`、Java の `native/std/{math_impl,time_impl}` は compare label 上では `std/{math,time}` に対応する `compare_residual` として固定した。checker は module bucket と突き合わせて category overlap / bucket escape を監査する。
 - 2026-03-13: `S2-03` の second bundle として、Wave A `native/**` residual の actual file inventory も contract に追加し、`go/java/kotlin/scala/swift/nim` を `built_in/py_runtime.*` only に固定した。checker は `src/runtime/<backend>/native/**` 実 tree と `substrate_files ∪ compare_residual_files` の完全一致を監査し、Java `native/std/{math_impl,time_impl}.java` は generated 側へ吸収して削除した。
+- 2026-03-13: `S2-03` の close-out として、Wave A backend の `native/**` residual は全 backend で `built_in/py_runtime.*` substrate のみになった。compare-residual は消滅し、contract/checker/docs をこの終状態へ同期できたため `S2-03` を完了扱いにした。
