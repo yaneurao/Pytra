@@ -87,6 +87,42 @@ class Py2xCliTest(unittest.TestCase):
             out_text = out_cpp.read_text(encoding="utf-8")
             self.assertIn("py_print(f());", out_text)
 
+    def test_py2x_accepts_parenthesized_relative_import_for_sibling_module(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            pkg = root / "pkg"
+            pkg.mkdir()
+            (pkg / "__init__.py").write_text("", encoding="utf-8")
+            main_py = pkg / "main.py"
+            controller_py = pkg / "controller.py"
+            out_cpp = root / "out.cpp"
+            main_py.write_text(
+                "from .controller import (\n"
+                "    BUTTON_A,\n"
+                "    BUTTON_B,\n"
+                ")\n"
+                "print(BUTTON_A | BUTTON_B)\n",
+                encoding="utf-8",
+            )
+            controller_py.write_text(
+                "BUTTON_A: int = 1\n"
+                "BUTTON_B: int = 2\n",
+                encoding="utf-8",
+            )
+
+            proc = subprocess.run(
+                ["python3", "src/py2x.py", str(main_py), "--target", "cpp", "-o", str(out_cpp)],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertTrue(out_cpp.exists())
+            out_text = out_cpp.read_text(encoding="utf-8")
+            self.assertIn("BUTTON_A", out_text)
+            self.assertIn("BUTTON_B", out_text)
+
     def test_py2x_accepts_relative_import_for_parent_package_module(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
