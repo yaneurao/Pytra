@@ -3,10 +3,8 @@ from __future__ import annotations
 from pytra.std import json
 from pytra.std.pathlib import Path
 from typing import Any
-from toolchain.compiler.east_parts.east1_build import East1BuildHelpers
 from toolchain.compiler.transpile_cli import (
     dict_any_get_dict,
-    dict_any_get_list,
     dict_any_get_str,
     inject_after_includes_block,
     join_str_list,
@@ -72,7 +70,6 @@ def write_multi_file_cpp(
                 module_key_by_name[mod_name] = mod_key
             module_doc_by_name[mod_name] = east0
 
-    type_schema = East1BuildHelpers.build_module_type_schema(module_east_map)
     rendered_modules: list[dict[str, Any]] = []
     seen_helper_module_ids: set[str] = set()
 
@@ -178,68 +175,8 @@ def write_multi_file_cpp(
             seen_dep_includes.add(include_line)
             dep_include_lines.append(include_line)
 
-        fwd_lines: list[str] = []
-        for mod_name in dep_modules:
-            target_ns = module_ns_map.get(mod_name, "")
-            if target_ns == "":
-                continue
-            target_key = module_key_by_name.get(mod_name, "")
-            if target_key == "":
-                continue
-            target_schema = dict_any_get_dict(type_schema, target_key)
-            funcs = dict_any_get_dict(target_schema, "functions")
-            globals_map = dict_any_get_dict(target_schema, "globals")
-            # `main` は他モジュールから呼ばれない前提。
-            fn_decls: list[str] = []
-            for fn_name_any, fn_sig_obj in funcs.items():
-                if not isinstance(fn_name_any, str):
-                    continue
-                if fn_name_any == "main":
-                    continue
-                fn_name = fn_name_any
-                sig = fn_sig_obj if isinstance(fn_sig_obj, dict) else {}
-                ret_t = dict_any_get_str(sig, "return_type", "None")
-                ret_cpp = "void" if ret_t == "None" else type_emitter._cpp_type_text(ret_t)
-                arg_types = dict_any_get_dict(sig, "arg_types")
-                arg_order = dict_any_get_list(sig, "arg_order")
-                parts: list[str] = []
-                for an in arg_order:
-                    if not isinstance(an, str):
-                        continue
-                    at = dict_any_get_str(arg_types, an, "object")
-                    at_cpp = type_emitter._cpp_type_text(at)
-                    parts.append(at_cpp + " " + an)
-                sep = ", "
-                fn_decls.append("    " + ret_cpp + " " + fn_name + "(" + sep.join(parts) + ");")
-            global_decls: list[str] = []
-            for global_name_any, global_obj in globals_map.items():
-                if not isinstance(global_name_any, str):
-                    continue
-                global_name = global_name_any
-                global_doc = global_obj if isinstance(global_obj, dict) else {}
-                global_t = dict_any_get_str(global_doc, "type", "object")
-                global_cpp_t = type_emitter._cpp_type_text(global_t)
-                emitted_global_name = type_emitter.rename_if_reserved(
-                    global_name,
-                    type_emitter.reserved_words,
-                    type_emitter.rename_prefix,
-                    type_emitter.renamed_symbols,
-                )
-                global_decls.append(f"    extern {global_cpp_t} {emitted_global_name};")
-            if len(fn_decls) > 0:
-                fwd_lines.append("namespace " + target_ns + " {")
-                fwd_lines.extend(fn_decls)
-                if len(global_decls) > 0:
-                    fwd_lines.extend(global_decls)
-                fwd_lines.append("}  // namespace " + target_ns)
-            elif len(global_decls) > 0:
-                fwd_lines.append("namespace " + target_ns + " {")
-                fwd_lines.extend(global_decls)
-                fwd_lines.append("}  // namespace " + target_ns)
         if len(dep_include_lines) > 0:
             cpp_txt = inject_after_includes_block(cpp_txt, join_str_list("\n", dep_include_lines))
-        if len(fwd_lines) > 0:
-            cpp_txt = inject_after_includes_block(cpp_txt, join_str_list("\n", fwd_lines))
         hdr_text = build_cpp_header_from_east(
             optimized_east,
             mod_path,

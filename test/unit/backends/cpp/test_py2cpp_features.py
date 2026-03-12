@@ -4176,6 +4176,76 @@ if __name__ == "__main__":
             self.assertEqual(rn.returncode, 0, msg=rn.stderr)
             self.assertIn("3", rn.stdout)
 
+    def test_cli_multi_file_sibling_relative_import_function_symbol_build_and_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            nes = root / "nes"
+            nes.mkdir(parents=True)
+            (nes / "__init__.py").write_text("", encoding="utf-8")
+
+            ppu_py = nes / "ppu.py"
+            controller_py = nes / "controller.py"
+            out_dir = root / "out"
+            exe = out_dir / "app.out"
+
+            ppu_py.write_text(
+                "from .controller import (\n"
+                "    BUTTON_A as BUTTON,\n"
+                "    make_pad as make_pad_fn,\n"
+                "    Pad as ControllerPad,\n"
+                ")\n"
+                "\n"
+                "def main() -> None:\n"
+                "    p: ControllerPad = make_pad_fn(BUTTON + 2)\n"
+                "    print(p.x)\n"
+                "\n"
+                "if __name__ == \"__main__\":\n"
+                "    main()\n",
+                encoding="utf-8",
+            )
+            controller_py.write_text(
+                "BUTTON_A: int = 1\n"
+                "\n"
+                "class Pad:\n"
+                "    def __init__(self, x: int):\n"
+                "        self.x = x\n"
+                "\n"
+                "def make_pad(x: int) -> Pad:\n"
+                "    return Pad(x)\n",
+                encoding="utf-8",
+            )
+
+            tr = self._run_subprocess_with_timeout(
+                ["python3", "src/py2x.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="transpile sibling relative import function symbol multi-file sample",
+            )
+            self.assertEqual(tr.returncode, 0, msg=tr.stderr)
+            generated_ppu = (out_dir / "src" / "ppu.cpp").read_text(encoding="utf-8")
+            self.assertIn('#include "controller.h"', generated_ppu)
+            self.assertIn("::BUTTON_A", generated_ppu)
+            self.assertIn("make_pad(", generated_ppu)
+            self.assertIn("rc<pytra_mod_controller::Pad>", generated_ppu)
+            self.assertNotIn("make_pad_fn(", generated_ppu)
+            self.assertNotIn("ControllerPad", generated_ppu)
+            self.assertNotIn("BUTTON + 2", generated_ppu)
+            bd = self._run_subprocess_with_timeout(
+                ["python3", "tools/build_multi_cpp.py", str(out_dir / "manifest.json"), "-o", str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="build sibling relative import function symbol multi-file sample",
+            )
+            self.assertEqual(bd.returncode, 0, msg=bd.stderr)
+            rn = self._run_subprocess_with_timeout(
+                [str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run sibling relative import function symbol multi-file sample",
+            )
+            self.assertEqual(rn.returncode, 0, msg=rn.stderr)
+            self.assertIn("3", rn.stdout)
+
     def test_cli_multi_file_object_iter_helper_artifact_build_and_run(self) -> None:
         src_main = """def main() -> None:
     xs: object = [1, 2, 3]
