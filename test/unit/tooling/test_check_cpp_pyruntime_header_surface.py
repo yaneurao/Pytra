@@ -56,21 +56,21 @@ class CheckCppPyRuntimeHeaderSurfaceTest(unittest.TestCase):
     def test_followup_residual_caller_handoff_is_documented(self) -> None:
         self.assertEqual(
             surface_mod.FOLLOWUP_TASK_ID,
-            "P0-CPP-PYRUNTIME-FINAL-SHRINK-01",
+            "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01",
         )
         self.assertEqual(
             surface_mod.FOLLOWUP_PLAN_PATH,
-            "docs/ja/plans/archive/20260312-p0-cpp-pyruntime-final-shrink.md",
+            "docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md",
         )
 
     def test_bundle_order_is_locked_to_active_final_shrink(self) -> None:
         self.assertEqual(
             surface_mod.BUNDLE_ORDER,
             (
-                "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S1-01",
-                "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01",
-                "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02",
-                "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S3-01",
+                "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S1-01",
+                "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-01",
+                "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02",
+                "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S3-01",
             ),
         )
 

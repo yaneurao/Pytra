@@ -46,10 +46,11 @@
 - 2026-03-12: `py_runtime.h` の immediate cleanup はほぼ終わっており、残りは header 単体ではなく cross-runtime 契約の整理が前提なので `P5` に置く。
 - 2026-03-12: 代表 residual は `py_append(object&)` と shared `type_id` thin seam で、typed compatibility bucket はすでに空という前提を baseline にする。
 - 2026-03-12: 将来の縮退順は `object bridge mutation seam` と `shared type_id seam` を分けて考え、C++ / Rust / C# emitter+runtime contract を bundle 単位で減らす方針にする。
+- 2026-03-12: `check_cpp_pyruntime_header_surface.py` と `check_crossruntime_pyruntime_emitter_inventory.py` の follow-up / handoff 参照は archived `P0/P4` ではなく active な `P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01` に揃え、この task 自体が current residual baseline を source-guard する正本とする。
 
 ## 分解
 
-- [ ] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S1-01] current header surface と cross-runtime residual caller の baseline を docs / tooling / inventory で固定する。
+- [x] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S1-01] current header surface と cross-runtime residual caller の baseline を docs / tooling / inventory で固定する。
 - [ ] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-01] object bridge mutation seam の caller ownership と backend-local へ押し戻せる lane を分類する。
 - [ ] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02] shared `type_id` thin seam の C++ / Rust / C# residual contract を分類し、must-remain と future-reducible を切り分ける。
 - [ ] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S3-01] final shrink handoff 条件、bundle order、representative regression を docs / tooling / archive へ同期する。

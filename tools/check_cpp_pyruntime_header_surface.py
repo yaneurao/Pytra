@@ -28,8 +28,8 @@ HANDOFF_BUCKETS = {
     },
 }
 
-FOLLOWUP_TASK_ID = "P0-CPP-PYRUNTIME-FINAL-SHRINK-01"
-FOLLOWUP_PLAN_PATH = "docs/ja/plans/archive/20260312-p0-cpp-pyruntime-final-shrink.md"
+FOLLOWUP_TASK_ID = "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01"
+FOLLOWUP_PLAN_PATH = "docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md"
 
 TARGET_END_STATE = {
     "object_bridge_mutation": "remove or reduce to the minimum object-only seam",
@@ -46,10 +46,10 @@ TARGET_END_STATE = {
 }
 
 BUNDLE_ORDER = (
-    "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S1-01",
-    "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01",
-    "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02",
-    "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S3-01",
+    "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S1-01",
+    "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-01",
+    "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02",
+    "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S3-01",
 )
 
 LEGACY_ALIAS_SIGNATURES = {
@@ -123,12 +123,12 @@ def _collect_handoff_issues() -> list[str]:
     if not (ROOT / FOLLOWUP_PLAN_PATH).exists():
         issues.append(f"follow-up plan missing: {FOLLOWUP_PLAN_PATH}")
     if BUNDLE_ORDER != (
-        "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S1-01",
-        "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-01",
-        "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S2-02",
-        "P0-CPP-PYRUNTIME-FINAL-SHRINK-01-S3-01",
+        "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S1-01",
+        "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-01",
+        "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02",
+        "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S3-01",
     ):
-        issues.append("bundle order drifted from the active final-shrink contract")
+        issues.append("bundle order drifted from the active residual-thin-seam shrink contract")
     thin_helper_names = TARGET_END_STATE["shared_type_id_thin_helpers"]
     if not isinstance(thin_helper_names, set) or thin_helper_names != {
         "py_runtime_value_type_id",
