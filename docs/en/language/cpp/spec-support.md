@@ -8,6 +8,10 @@ Last updated: 2026-03-11
 
 This document summarizes language-feature support status in `src/py2cpp.py` at a granularity verifiable through both implementation code and runtime tests.
 
+- The canonical cross-backend source is [backend-parity-matrix.md](../backend-parity-matrix.md).
+- This page is a cpp-only drill-down and does not redefine the cross-backend support taxonomy.
+- Update the canonical matrix first, then sync this C++ drill-down table.
+
 ## Status Definitions
 
 - `supported`: supported in current implementation, with green corresponding tests.

@@ -15,6 +15,10 @@ DOC_TARGETS = (
     ROOT / "docs/ja/language/backend-parity-matrix.md",
     ROOT / "docs/en/language/backend-parity-matrix.md",
 )
+CPP_DOC_TARGETS = (
+    ROOT / "docs/ja/language/cpp/spec-support.md",
+    ROOT / "docs/en/language/cpp/spec-support.md",
+)
 
 
 def _collect_contract_issues() -> list[str]:
@@ -87,6 +91,21 @@ def _collect_contract_issues() -> list[str]:
         issues.append("matrix downstream plan drifted away from feature contract handoff")
     if set(contract_mod.PARITY_MATRIX_PUBLISH_PATHS.keys()) != {"docs_ja", "docs_en", "tool_manifest"}:
         issues.append("matrix publish paths must stay fixed to docs_ja/docs_en/tool_manifest")
+    if contract_mod.PARITY_MATRIX_CPP_DRILLDOWN_DOCS != {
+        "docs_ja": "docs/ja/language/cpp/spec-support.md",
+        "docs_en": "docs/en/language/cpp/spec-support.md",
+    }:
+        issues.append("cpp drilldown docs map drifted")
+    if contract_mod.PARITY_MATRIX_DOC_ROLE_SPLIT != {
+        "canonical_matrix": "The cross-backend backend parity matrix is the canonical source for feature x backend support-state reporting.",
+        "cpp_drilldown": "The py2cpp support matrix is a cpp-only drill-down that refines the cpp lane without redefining the cross-backend taxonomy.",
+    }:
+        issues.append("doc role split drifted")
+    if contract_mod.PARITY_MATRIX_DOC_MAINTENANCE_ORDER != (
+        "update_matrix_contract_and_docs",
+        "sync_cpp_drilldown_docs",
+    ):
+        issues.append("doc maintenance order drifted")
     feature_ids = {entry["feature_id"] for entry in feature_contract_mod.iter_representative_support_matrix_handoff()}
     matrix_ids = {entry["feature_id"] for entry in contract_mod.iter_representative_parity_matrix_rows()}
     if matrix_ids != feature_ids:
@@ -130,6 +149,33 @@ def _collect_docs_issues() -> list[str]:
         rendered = rendered.split(contract_mod.PARITY_MATRIX_DOC_TABLE_END_MARKER, 1)[0].strip()
         if rendered != expected_table:
             issues.append(f"backend parity matrix table drifted in {path.relative_to(ROOT)}")
+        if "./cpp/spec-support.md" not in text:
+            issues.append(f"cpp drilldown link missing in {path.relative_to(ROOT)}")
+        if path.name == "backend-parity-matrix.md":
+            if path.parts[-3] == "ja":
+                if "このページを正本とし、C++ 専用の詳細表は drill-down" not in text:
+                    issues.append(f"canonical/drilldown note missing in {path.relative_to(ROOT)}")
+                if "このページと tooling contract を先に更新し、その後で C++ の詳細表を同期します。" not in text:
+                    issues.append(f"maintenance order note missing in {path.relative_to(ROOT)}")
+            else:
+                if "Treat this page as the canonical source, and keep the C++ table as a drill-down" not in text:
+                    issues.append(f"canonical/drilldown note missing in {path.relative_to(ROOT)}")
+                if "Update this page and the tooling contract first, then sync the C++ drill-down table." not in text:
+                    issues.append(f"maintenance order note missing in {path.relative_to(ROOT)}")
+    for path in CPP_DOC_TARGETS:
+        text = path.read_text(encoding="utf-8")
+        if "../backend-parity-matrix.md" not in text:
+            issues.append(f"backend parity matrix backlink missing in {path.relative_to(ROOT)}")
+        if path.parts[-4] == "ja":
+            if "cross-backend の正本は [backend-parity-matrix.md](../backend-parity-matrix.md)" not in text:
+                issues.append(f"cpp drilldown role note missing in {path.relative_to(ROOT)}")
+            if "まず canonical matrix を更新し、その後でこの C++ 詳細表を同期する" not in text:
+                issues.append(f"cpp drilldown maintenance order note missing in {path.relative_to(ROOT)}")
+        else:
+            if "The canonical cross-backend source is [backend-parity-matrix.md](../backend-parity-matrix.md)" not in text:
+                issues.append(f"cpp drilldown role note missing in {path.relative_to(ROOT)}")
+            if "Update the canonical matrix first, then sync this C++ drill-down table." not in text:
+                issues.append(f"cpp drilldown maintenance order note missing in {path.relative_to(ROOT)}")
     return issues
 
 
@@ -147,6 +193,9 @@ def _collect_manifest_issues() -> list[str]:
         "backend_order",
         "support_state_order",
         "publish_paths",
+        "cpp_drilldown_docs",
+        "doc_role_split",
+        "maintenance_order",
         "summary_source",
         "summary_keys",
         "row_keys",
@@ -182,6 +231,12 @@ def _collect_manifest_issues() -> list[str]:
         issues.append("manifest support_state_order drifted")
     if manifest["publish_paths"] != contract_mod.PARITY_MATRIX_PUBLISH_PATHS:
         issues.append("manifest publish_paths drifted")
+    if manifest["cpp_drilldown_docs"] != contract_mod.PARITY_MATRIX_CPP_DRILLDOWN_DOCS:
+        issues.append("manifest cpp_drilldown_docs drifted")
+    if manifest["doc_role_split"] != contract_mod.PARITY_MATRIX_DOC_ROLE_SPLIT:
+        issues.append("manifest doc_role_split drifted")
+    if manifest["maintenance_order"] != list(contract_mod.PARITY_MATRIX_DOC_MAINTENANCE_ORDER):
+        issues.append("manifest maintenance_order drifted")
     if manifest["summary_source"] != contract_mod.PARITY_MATRIX_SUMMARY_SOURCE:
         issues.append("manifest summary_source drifted")
     if manifest["summary_keys"] != list(contract_mod.PARITY_MATRIX_SUMMARY_KEYS):

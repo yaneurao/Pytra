@@ -6,6 +6,12 @@
 
 このページは、feature × backend の support state を公開する canonical publish target です。
 
+## Canonical Source と Drill-Down
+
+- このページを正本とし、C++ 専用の詳細表は drill-down として [./cpp/spec-support.md](./cpp/spec-support.md) に置きます。
+- C++ 詳細表は cpp lane だけを細かく補う補助資料で、cross-backend taxonomy 自体はこのページで定義します。
+- このページと tooling contract を先に更新し、その後で C++ の詳細表を同期します。
+
 ## 現在の実装段階
 
 - 現在の matrix は `cell_seed_manifest` 段階です。

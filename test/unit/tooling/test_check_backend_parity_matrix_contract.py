@@ -32,6 +32,13 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 "tool_manifest": "tools/export_backend_parity_matrix_manifest.py",
             },
         )
+        self.assertEqual(
+            contract_mod.PARITY_MATRIX_CPP_DRILLDOWN_DOCS,
+            {
+                "docs_ja": "docs/ja/language/cpp/spec-support.md",
+                "docs_en": "docs/en/language/cpp/spec-support.md",
+            },
+        )
         self.assertEqual(contract_mod.PARITY_MATRIX_SOURCE_DESTINATION, "support_matrix")
         self.assertEqual(contract_mod.PARITY_MATRIX_IMPLEMENTATION_PHASE, "cell_seed_manifest")
         self.assertEqual(contract_mod.PARITY_MATRIX_CELL_SCHEMA_STATUS, "seed_populated")
@@ -90,6 +97,20 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             contract_mod.PARITY_MATRIX_DOC_TABLE_HEADERS,
             ("feature_id", "fixture", *contract_mod.PARITY_MATRIX_BACKEND_ORDER),
         )
+        self.assertEqual(
+            contract_mod.PARITY_MATRIX_DOC_ROLE_SPLIT,
+            {
+                "canonical_matrix": "The cross-backend backend parity matrix is the canonical source for feature x backend support-state reporting.",
+                "cpp_drilldown": "The py2cpp support matrix is a cpp-only drill-down that refines the cpp lane without redefining the cross-backend taxonomy.",
+            },
+        )
+        self.assertEqual(
+            contract_mod.PARITY_MATRIX_DOC_MAINTENANCE_ORDER,
+            (
+                "update_matrix_contract_and_docs",
+                "sync_cpp_drilldown_docs",
+            ),
+        )
 
     def test_summary_linkage_is_fixed(self) -> None:
         self.assertEqual(
@@ -130,6 +151,9 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 "backend_order",
                 "support_state_order",
                 "publish_paths",
+                "cpp_drilldown_docs",
+                "doc_role_split",
+                "maintenance_order",
                 "summary_source",
                 "summary_keys",
                 "row_keys",
@@ -175,6 +199,27 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "experimental": ["preview_guard", "transpile_smoke", "build_run_smoke"],
                 },
             },
+        )
+        self.assertEqual(
+            contract_mod.build_backend_parity_matrix_manifest()["cpp_drilldown_docs"],
+            {
+                "docs_ja": "docs/ja/language/cpp/spec-support.md",
+                "docs_en": "docs/en/language/cpp/spec-support.md",
+            },
+        )
+        self.assertEqual(
+            contract_mod.build_backend_parity_matrix_manifest()["doc_role_split"],
+            {
+                "canonical_matrix": "The cross-backend backend parity matrix is the canonical source for feature x backend support-state reporting.",
+                "cpp_drilldown": "The py2cpp support matrix is a cpp-only drill-down that refines the cpp lane without redefining the cross-backend taxonomy.",
+            },
+        )
+        self.assertEqual(
+            contract_mod.build_backend_parity_matrix_manifest()["maintenance_order"],
+            [
+                "update_matrix_contract_and_docs",
+                "sync_cpp_drilldown_docs",
+            ],
         )
         self.assertIn("| feature_id | fixture | cpp | rs | cs |", contract_mod.build_backend_parity_matrix_markdown_table())
         self.assertIn(

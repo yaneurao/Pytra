@@ -6,6 +6,12 @@
 
 This page is the canonical publish target for feature × backend support-state reporting.
 
+## Canonical Source and Drill-Down
+
+- Treat this page as the canonical source, and keep the C++ table as a drill-down at [./cpp/spec-support.md](./cpp/spec-support.md).
+- The C++ support matrix only refines the cpp lane and does not redefine the cross-backend taxonomy.
+- Update this page and the tooling contract first, then sync the C++ drill-down table.
+
 ## Current Implementation Phase
 
 - The current matrix is at the `cell_seed_manifest` phase.

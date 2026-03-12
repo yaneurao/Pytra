@@ -9,6 +9,10 @@
 
 この文書は、`src/py2cpp.py` の言語機能サポート状況を「実装コード」と「実行テスト」の両方で確認できる粒度でまとめたものです。
 
+- cross-backend の正本は [backend-parity-matrix.md](../backend-parity-matrix.md) です。
+- このページは cpp lane だけを掘り下げる drill-down であり、support taxonomy 自体は再定義しません。
+- まず canonical matrix を更新し、その後でこの C++ 詳細表を同期する運用に固定します。
+
 ## ステータス定義
 
 - `supported`: 現行でサポート。対応テストが green。

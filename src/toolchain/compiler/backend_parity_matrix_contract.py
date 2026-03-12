@@ -16,6 +16,10 @@ PARITY_MATRIX_PUBLISH_PATHS: Final[dict[str, str]] = {
     "docs_en": "docs/en/language/backend-parity-matrix.md",
     "tool_manifest": "tools/export_backend_parity_matrix_manifest.py",
 }
+PARITY_MATRIX_CPP_DRILLDOWN_DOCS: Final[dict[str, str]] = {
+    "docs_ja": "docs/ja/language/cpp/spec-support.md",
+    "docs_en": "docs/en/language/cpp/spec-support.md",
+}
 
 PARITY_MATRIX_SOURCE_DESTINATION: Final[str] = "support_matrix"
 PARITY_MATRIX_BACKEND_ORDER: Final[tuple[str, ...]] = feature_contract_mod.SUPPORT_MATRIX_BACKEND_ORDER
@@ -85,6 +89,14 @@ PARITY_MATRIX_SUMMARY_KEYS: Final[tuple[str, ...]] = (
 )
 PARITY_MATRIX_DOWNSTREAM_TASK: Final[str] = feature_contract_mod.HANDOFF_TASK_IDS["support_matrix"]
 PARITY_MATRIX_DOWNSTREAM_PLAN: Final[str] = feature_contract_mod.HANDOFF_PLAN_PATHS["support_matrix"]
+PARITY_MATRIX_DOC_ROLE_SPLIT: Final[dict[str, str]] = {
+    "canonical_matrix": "The cross-backend backend parity matrix is the canonical source for feature x backend support-state reporting.",
+    "cpp_drilldown": "The py2cpp support matrix is a cpp-only drill-down that refines the cpp lane without redefining the cross-backend taxonomy.",
+}
+PARITY_MATRIX_DOC_MAINTENANCE_ORDER: Final[tuple[str, ...]] = (
+    "update_matrix_contract_and_docs",
+    "sync_cpp_drilldown_docs",
+)
 PARITY_MATRIX_DOC_TABLE_BEGIN_MARKER: Final[str] = "<!-- BEGIN BACKEND PARITY MATRIX TABLE -->"
 PARITY_MATRIX_DOC_TABLE_END_MARKER: Final[str] = "<!-- END BACKEND PARITY MATRIX TABLE -->"
 PARITY_MATRIX_DOC_TABLE_HEADERS: Final[tuple[str, ...]] = (
@@ -210,6 +222,9 @@ def build_backend_parity_matrix_manifest() -> dict[str, object]:
         "backend_order": list(PARITY_MATRIX_BACKEND_ORDER),
         "support_state_order": list(PARITY_MATRIX_SUPPORT_STATE_ORDER),
         "publish_paths": dict(PARITY_MATRIX_PUBLISH_PATHS),
+        "cpp_drilldown_docs": dict(PARITY_MATRIX_CPP_DRILLDOWN_DOCS),
+        "doc_role_split": dict(PARITY_MATRIX_DOC_ROLE_SPLIT),
+        "maintenance_order": list(PARITY_MATRIX_DOC_MAINTENANCE_ORDER),
         "summary_source": PARITY_MATRIX_SUMMARY_SOURCE,
         "summary_keys": list(PARITY_MATRIX_SUMMARY_KEYS),
         "row_keys": list(PARITY_MATRIX_ROW_KEYS),
