@@ -33,7 +33,7 @@
 
 1. [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01] `dataclasses.field(...)` を runtime call ではなく静的 dataclass metadata subset として扱い、representative lane を fail-closed contract 付きで固定する。
    文脈: [p1-dataclass-field-static-subset.md](/workspace/Pytra/docs/ja/plans/p1-dataclass-field-static-subset.md)
-   概要: Pytra-NES の `timestamps: deque[float] = field(init=False, repr=False)` のような representative case で、現状は `field(...)` が通常の式として backend へ漏れて壊れたコードを生成する。v1 では `default` / `default_factory` / `init` / `repr` / `compare` を静的 metadata subset として扱い、unsupported option は fail-closed にする。進捗: `S1-01` で parser/C++ baseline leak を regression と docs に固定済み。
+   概要: Pytra-NES の `timestamps: deque[float] = field(init=False, repr=False)` のような representative case で、現状は `field(...)` が通常の式として backend へ漏れて壊れたコードを生成する。v1 では `default` / `default_factory` / `init` / `repr` / `compare` を静的 metadata subset として扱い、unsupported option は fail-closed にする。進捗: `S2-01` で parser が representative `field(...)` call を `AnnAssign.meta.dataclass_field_v1` に吸収し、C++ への runtime leak を止めた。
 
 2. [ ] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01] `py_runtime.h` に残っている object-bridge mutation seam と shared `type_id` thin seam を cross-runtime 契約の整理後に最小化する。
    文脈: [p5-cpp-pyruntime-residual-thin-seam-shrink.md](/workspace/Pytra/docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md)

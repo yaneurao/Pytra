@@ -30,6 +30,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
         _sh_build_arg_usage_map,
         _sh_collect_extern_var_metadata,
         _sh_collect_function_runtime_decl_metadata,
+        _sh_collect_dataclass_field_metadata,
         _sh_collect_indented_block,
         _sh_collect_nominal_adt_class_metadata,
         _sh_collect_yield_value_types,
@@ -874,10 +875,23 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                         fty_expr = _sh_ann_to_type_expr(fty, type_aliases=_SH_TYPE_ALIASES)
                         field_types[fname] = fty
                         val_node: dict[str, Any] | None = None
+                        field_meta: dict[str, Any] | None = None
                         if fdefault != "":
                             fexpr_txt = fdefault.strip()
                             fexpr_col = ln_txt.find(fexpr_txt)
                             val_node = _sh_parse_expr_lowered(fexpr_txt, ln_no=ln_no, col=fexpr_col, name_types={})
+                            if pending_dataclass:
+                                field_meta = _sh_collect_dataclass_field_metadata(
+                                    val_node,
+                                    import_module_bindings=import_module_bindings,
+                                    import_symbol_bindings=import_symbol_bindings,
+                                    line_no=ln_no,
+                                    line_text=ln_txt,
+                                    make_east_build_error=_make_east_build_error,
+                                    make_span=_sh_span,
+                                )
+                                if field_meta is not None:
+                                    val_node = None
                         class_body.append(
                             _sh_make_ann_assign_stmt(
                                 _sh_span(ln_no, ln_txt.find(fname), len(ln_txt)),
@@ -893,6 +907,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                                 declare=True,
                                 decl_type=fty,
                                 decl_type_expr=fty_expr,
+                                meta=_sh_make_decl_meta(dataclass_field_v1=field_meta) if field_meta is not None else None,
                             )
                         )
                         k += 1

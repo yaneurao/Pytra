@@ -114,7 +114,7 @@ class B:
         self.assertEqual(opts_b.get("init"), False)
         self.assertEqual(opts_b.get("frozen"), True)
 
-    def test_dataclass_field_call_remains_plain_expr_in_current_baseline(self) -> None:
+    def test_dataclass_field_call_is_absorbed_into_static_metadata(self) -> None:
         src = """
 from dataclasses import dataclass, field
 from collections import deque
@@ -144,14 +144,41 @@ class PadState:
         self.assertTrue(bool(cls.get("dataclass")))
         ann = cls.get("body", [])[0]
         self.assertEqual(ann.get("kind"), "AnnAssign")
-        call = ann.get("value", {})
-        self.assertEqual(call.get("kind"), "Call")
-        func = call.get("func", {})
-        self.assertEqual(func.get("kind"), "Name")
-        self.assertEqual(func.get("id"), "field")
-        keywords = call.get("keywords", [])
-        self.assertEqual([kw.get("arg") for kw in keywords], ["init", "repr"])
-        self.assertEqual([kw.get("value", {}).get("value") for kw in keywords], [False, False])
+        self.assertIsNone(ann.get("value"))
+        meta = ann.get("meta", {}).get("dataclass_field_v1", {})
+        self.assertEqual(meta.get("schema_version"), 1)
+        self.assertEqual(meta.get("init"), False)
+        self.assertEqual(meta.get("repr_enabled"), False)
+        self.assertNotIn("default_expr", meta)
+        self.assertNotIn("default_factory_expr", meta)
+
+    def test_dataclass_field_default_and_factory_are_preserved_in_metadata(self) -> None:
+        src = """
+from dataclasses import dataclass, field
+
+@dataclass
+class PadState:
+    count: int = field(default=1, compare=False)
+    samples: list[int] = field(default_factory=list)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        classes = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "ClassDef" and n.get("name") == "PadState"
+        ]
+        self.assertEqual(len(classes), 1)
+        body = classes[0].get("body", [])
+        self.assertEqual(len(body), 2)
+        count_meta = body[0].get("meta", {}).get("dataclass_field_v1", {})
+        self.assertEqual(count_meta.get("compare"), False)
+        default_expr = count_meta.get("default_expr", {})
+        self.assertEqual(default_expr.get("kind"), "Constant")
+        self.assertEqual(default_expr.get("value"), 1)
+        samples_meta = body[1].get("meta", {}).get("dataclass_field_v1", {})
+        factory_expr = samples_meta.get("default_factory_expr", {})
+        self.assertEqual(factory_expr.get("kind"), "Name")
+        self.assertEqual(factory_expr.get("id"), "list")
 
     def test_nominal_adt_family_and_variants_are_parsed(self) -> None:
         src = """

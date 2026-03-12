@@ -67,6 +67,7 @@ def _sh_make_decl_meta(
     runtime_abi_v1: dict[str, Any] | None = None,
     template_v1: dict[str, Any] | None = None,
     extern_var_v1: dict[str, Any] | None = None,
+    dataclass_field_v1: dict[str, Any] | None = None,
     nominal_adt_v1: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """宣言 node の metadata carrier を構築する。"""
@@ -77,6 +78,8 @@ def _sh_make_decl_meta(
         meta["template_v1"] = template_v1
     if extern_var_v1 is not None:
         meta["extern_var_v1"] = extern_var_v1
+    if dataclass_field_v1 is not None:
+        meta["dataclass_field_v1"] = dataclass_field_v1
     if nominal_adt_v1 is not None:
         meta["nominal_adt_v1"] = nominal_adt_v1
     return meta

@@ -4696,7 +4696,7 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
-    def test_dataclass_field_call_current_baseline_leaks_into_cpp(self) -> None:
+    def test_dataclass_field_call_no_longer_leaks_into_cpp_runtime_expr(self) -> None:
         src = """from dataclasses import dataclass, field
 from collections import deque
 
@@ -4710,7 +4710,7 @@ class PadState:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
         self.assertIn("deque[float64] timestamps;", cpp)
-        self.assertIn("field(false, false)", cpp)
+        self.assertNotIn("field(false, false)", cpp)
 
     def test_enum_extended_runtime(self) -> None:
         out = self._compile_and_run_fixture("enum_extended")

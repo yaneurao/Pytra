@@ -18,6 +18,7 @@ from toolchain.ir.core_builder_base import _sh_span
 from toolchain.ir.core_class_semantics import _sh_collect_nominal_adt_class_metadata
 from toolchain.ir.core_class_semantics import _sh_is_value_safe_dataclass_candidate
 from toolchain.ir.core_class_semantics import _sh_make_decl_meta
+from toolchain.ir.core_dataclass_field_semantics import _sh_collect_dataclass_field_metadata
 from toolchain.ir.core_decorator_semantics import _sh_is_abi_decorator
 from toolchain.ir.core_decorator_semantics import _sh_is_dataclass_decorator
 from toolchain.ir.core_decorator_semantics import _sh_is_sealed_decorator
