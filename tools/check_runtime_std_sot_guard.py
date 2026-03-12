@@ -4,7 +4,7 @@
 Policy (phase-1):
 - Canonical module logic must come from `src/pytra/std/*.py` or `src/pytra/utils/*.py`.
 - Handwritten runtime implementations of guarded module symbols are prohibited outside
-  `src/runtime/*/pytra-gen/**`.
+  `src/runtime/*/pytra-gen/**` and `src/runtime/{rs,cs}/generated/**`.
 - Existing debt is tracked explicitly in `tools/runtime_std_sot_allowlist.txt`.
 
 Current guarded module set:
@@ -232,6 +232,10 @@ def _iter_runtime_files() -> list[Path]:
 def _is_generated_runtime(rel_path: str) -> bool:
     # Keep this strict and path-based.
     if "/pytra-gen/" in ("/" + rel_path):
+        return True
+    if rel_path.startswith("src/runtime/rs/generated/"):
+        return True
+    if rel_path.startswith("src/runtime/cs/generated/"):
         return True
     if rel_path.startswith("src/runtime/cpp/pytra/"):
         return True

@@ -31,6 +31,6 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01] Re-layout the non-C++ runtimes into a `generated/native` tree that can be compared against C++ at file level (context: [p0-noncpp-runtime-layout-alignment.md](../plans/p0-noncpp-runtime-layout-alignment.md)). Progress: `generated/` is reserved for SoT-emitted artifacts, `native/` is reserved for handwritten runtime code, the compare unit is fixed to `<lane>/<bucket>/<module>`, and the first wave is `rs/cs`.
+- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01] Re-layout the non-C++ runtimes into a `generated/native` tree that can be compared against C++ at file level (context: [p0-noncpp-runtime-layout-alignment.md](../plans/p0-noncpp-runtime-layout-alignment.md)). Progress: the first-wave `rs/cs` trees are already cut over to `native/generated` and `png/gif` have been regenerated there. The remaining work is std-lane generation for modules such as `json/pathlib` and the rollout to other backends.
 - [ ] [ID: P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01] Fill the remaining unsupported support-matrix cells for the secondary tier (`go/java/kt/scala/swift/nim`) as a live implementation rollout task (context: [p5-backend-parity-secondary-rollout.md](../plans/p5-backend-parity-secondary-rollout.md))
 - [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01] Fill the remaining unsupported support-matrix cells for the long-tail tier (`js/ts/lua/rb/php`) as a live implementation rollout task (context: [p6-backend-parity-longtail-rollout.md](../plans/p6-backend-parity-longtail-rollout.md))

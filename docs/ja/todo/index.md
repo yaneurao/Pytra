@@ -31,6 +31,6 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01] non-C++ runtime を C++ と file-level compare 可能な `generated/native` layout へ再配置する（文脈: [p0-noncpp-runtime-layout-alignment.md](../plans/p0-noncpp-runtime-layout-alignment.md)）。進捗: `generated/` は SoT 自動生成物のみ、`native/` は hand-written のみ、比較単位は `<lane>/<bucket>/<module>` に固定し、first wave は `rs/cs`
+- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01] non-C++ runtime を C++ と file-level compare 可能な `generated/native` layout へ再配置する（文脈: [p0-noncpp-runtime-layout-alignment.md](../plans/p0-noncpp-runtime-layout-alignment.md)）。進捗: first wave の `rs/cs` は `native/generated` へ切替済みで `png/gif` を再生成済み。残りは `json/pathlib` を含む std lane の generated 化と他 backend wave
 - [ ] [ID: P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01] backend parity の secondary tier (`go/java/kt/scala/swift/nim`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p5-backend-parity-secondary-rollout.md](../plans/p5-backend-parity-secondary-rollout.md)）
 - [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01] backend parity の long-tail tier (`js/ts/lua/rb/php`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p6-backend-parity-longtail-rollout.md](../plans/p6-backend-parity-longtail-rollout.md)）

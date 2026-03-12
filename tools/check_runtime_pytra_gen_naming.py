@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Guard pytra-gen passthrough naming policy for std/utils runtime modules.
+"""Guard generated-runtime passthrough naming policy for std/utils modules.
 
 Policy:
 - Canonical source of module basenames is `src/pytra/std/*.py` and `src/pytra/utils/*.py`.
 - Generated runtime files must live under:
-  - `src/runtime/<lang>/pytra-gen/std/<module>.<ext>`
-  - `src/runtime/<lang>/pytra-gen/utils/<module>.<ext>`
+  - `src/runtime/<lang>/pytra-gen/std|utils/<module>.<ext>`
+  - `src/runtime/{rs,cs}/generated/std|utils/<module>.<ext>`
 - `std` / `utils` 配下では module basename を素通しで使う（特別命名禁止）。
 """
 
@@ -78,9 +78,13 @@ def _iter_pytra_gen_files() -> list[Path]:
             continue
         if p.suffix.lower() not in TARGET_SUFFIXES:
             continue
-        if "/pytra-gen/" not in ("/" + str(p.relative_to(ROOT)).replace("\\", "/")):
+        rel = "/" + str(p.relative_to(ROOT)).replace("\\", "/")
+        if "/pytra-gen/" in rel:
+            out.append(p)
             continue
-        out.append(p)
+        if rel.startswith("/src/runtime/rs/generated/") or rel.startswith("/src/runtime/cs/generated/"):
+            out.append(p)
+            continue
     return out
 
 
@@ -96,14 +100,18 @@ def _collect_findings() -> list[Finding]:
     for path in _iter_pytra_gen_files():
         rel = _to_rel(path)
         parts = rel.split("/")
-        try:
-            i = parts.index("pytra-gen")
-        except ValueError:
+        lane = ""
+        if "pytra-gen" in parts:
+            lane = "pytra-gen"
+        elif "generated" in parts:
+            lane = "generated"
+        if lane == "":
             continue
+        i = parts.index(lane)
         if len(parts) <= i + 1:
             continue
         bucket = parts[i + 1]
-        # pytra-gen 直下の README などは監査対象外。
+        # generated lane 直下の README などは監査対象外。
         if bucket == "README.md":
             continue
         if bucket == "built_in":
@@ -124,7 +132,7 @@ def _collect_findings() -> list[Finding]:
                 Finding(
                     rel_path=rel,
                     reason="nested_path",
-                    detail=f"path under pytra-gen/{bucket} must be one-level file",
+                    detail=f"path under {lane}/{bucket} must be one-level file",
                 )
             )
             continue
@@ -168,7 +176,7 @@ def _write_allowlist(path: Path, keys: list[str]) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(
-        description="check pytra-gen std/utils passthrough naming policy"
+        description="check generated runtime std/utils passthrough naming policy"
     )
     ap.add_argument(
         "--write-allowlist",
@@ -193,7 +201,7 @@ def main() -> int:
     allowed = _read_allowlist(ALLOWLIST_PATH)
     if len(allowed) == 0:
         if len(keys) == 0:
-            print("[OK] runtime pytra-gen naming guard passed (no findings; allowlist empty)")
+            print("[OK] runtime generated naming guard passed (no findings; allowlist empty)")
             return 0
         print(f"[FAIL] allowlist missing or empty: {ALLOWLIST_PATH.relative_to(ROOT)}")
         print("run: python3 tools/check_runtime_pytra_gen_naming.py --write-allowlist")
@@ -203,7 +211,7 @@ def main() -> int:
     stale = sorted(key for key in allowed if key not in key_map)
 
     if len(added) > 0:
-        print("[FAIL] pytra-gen naming policy violations detected:")
+        print("[FAIL] generated runtime naming policy violations detected:")
         for key in added:
             item = key_map[key]
             print(f"  - {item.rel_path} [{item.reason}] {item.detail}")
@@ -211,7 +219,7 @@ def main() -> int:
         print("  python3 tools/check_runtime_pytra_gen_naming.py --write-allowlist")
         return 1
 
-    print("[OK] runtime pytra-gen naming guard passed")
+    print("[OK] runtime generated naming guard passed")
     print(f"  tracked baseline findings: {len(keys)}")
     if len(stale) > 0:
         print(f"  note: stale allowlist entries: {len(stale)} (cleanup recommended)")

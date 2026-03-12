@@ -170,13 +170,13 @@ def make_noncpp_build_plan(
             "-warn:0",
             f"-out:{exe_path}",
             str(output_path),
-            str(root / "src/runtime/cs/pytra-core/built_in/py_runtime.cs"),
-            str(root / "src/runtime/cs/pytra-core/built_in/time.cs"),
-            str(root / "src/runtime/cs/pytra-core/built_in/math.cs"),
-            str(root / "src/runtime/cs/pytra-gen/utils/png.cs"),
-            str(root / "src/runtime/cs/pytra-gen/utils/gif.cs"),
-            str(root / "src/runtime/cs/pytra-core/std/pathlib.cs"),
-            str(root / "src/runtime/cs/pytra-core/std/json.cs"),
+            str(root / "src/runtime/cs/native/built_in/py_runtime.cs"),
+            str(root / "src/runtime/cs/native/built_in/time.cs"),
+            str(root / "src/runtime/cs/native/built_in/math.cs"),
+            str(root / "src/runtime/cs/generated/utils/png.cs"),
+            str(root / "src/runtime/cs/generated/utils/gif.cs"),
+            str(root / "src/runtime/cs/native/std/pathlib.cs"),
+            str(root / "src/runtime/cs/native/std/json.cs"),
         ]
         run_cmd = ["mono", str(exe_path)] if run_after_build else None
         return NonCppBuildPlan(build_cmd=build_cmd, run_cmd=run_cmd)

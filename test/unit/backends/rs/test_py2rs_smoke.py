@@ -411,7 +411,7 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn('save_gif(&(("x.gif").to_string()), 1, 1, &(vec![]));', rust)
 
     def test_runtime_scaffold_exposes_pytra_std_time_and_math(self) -> None:
-        runtime_src = (ROOT / "src" / "runtime" / "rs" / "pytra-core" / "built_in" / "py_runtime.rs").read_text(
+        runtime_src = (ROOT / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs").read_text(
             encoding="utf-8"
         )
         self.assertIn("pub mod pytra {", runtime_src)

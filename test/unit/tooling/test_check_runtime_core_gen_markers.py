@@ -41,7 +41,7 @@ class CheckRuntimeCoreGenMarkersTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             _write(
-                root / "src" / "runtime" / "rs" / "pytra-core" / "built_in" / "py_runtime.rs",
+                root / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs",
                 "// source: src/pytra/utils/png.py\n",
             )
             with patch.object(marker_mod, "ROOT", root), patch.object(
@@ -95,10 +95,10 @@ class CheckRuntimeCoreGenMarkersTest(unittest.TestCase):
     def test_main_passes_when_findings_are_allowlisted(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
-            bad = root / "src" / "runtime" / "rs" / "pytra-core" / "built_in" / "py_runtime.rs"
+            bad = root / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs"
             _write(bad, "// source: src/pytra/utils/gif.py\n")
             allowlist_path = root / "tools" / "runtime_core_gen_markers_allowlist.txt"
-            key = "src/runtime/rs/pytra-core/built_in/py_runtime.rs:core_contains_generated_source_marker"
+            key = "src/runtime/rs/native/built_in/py_runtime.rs:core_contains_generated_source_marker"
             _write_allowlist(allowlist_path, [key])
             with patch.object(marker_mod, "ROOT", root), patch.object(
                 marker_mod, "RUNTIME_ROOT", root / "src" / "runtime"

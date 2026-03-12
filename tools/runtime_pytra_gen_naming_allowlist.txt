@@ -12,7 +12,7 @@ src/runtime/nim/pytra-gen/utils/image_runtime.nim:non_passthrough_name
 src/runtime/nim/pytra-gen/utils/png_helper.nim:non_passthrough_name
 src/runtime/php/pytra-gen/runtime/gif.php:invalid_bucket
 src/runtime/php/pytra-gen/runtime/png.php:invalid_bucket
-src/runtime/rs/pytra-gen/utils/image_runtime.rs:non_passthrough_name
+src/runtime/rs/generated/utils/image_runtime.rs:non_passthrough_name
 src/runtime/ruby/pytra-gen/utils/gif_helper.rb:non_passthrough_name
 src/runtime/ruby/pytra-gen/utils/image_runtime.rb:non_passthrough_name
 src/runtime/ruby/pytra-gen/utils/png_helper.rb:non_passthrough_name

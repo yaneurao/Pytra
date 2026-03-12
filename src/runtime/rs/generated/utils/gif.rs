@@ -6,6 +6,8 @@ mod py_runtime;
 pub use crate::py_runtime::{math, pytra, time};
 use crate::py_runtime::*;
 
+use crate::pytra::std::abi;
+
 fn _gif_append_list(mut dst: Vec<i64>, src: &[i64]) {
     let mut i = 0;
     let n = src.len() as i64;

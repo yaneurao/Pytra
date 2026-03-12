@@ -25,6 +25,24 @@ def _write_allowlist(path: Path, keys: list[str]) -> None:
 
 
 class CheckRuntimePytraGenNamingTest(unittest.TestCase):
+    def test_collect_detects_non_passthrough_name_in_generated_lane(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _write(root / "src" / "pytra" / "utils" / "png.py", "def write_rgb_png():\n    return None\n")
+            _write(
+                root / "src" / "runtime" / "rs" / "generated" / "utils" / "image_runtime.rs",
+                "pub fn py_write_rgb_png() {}\n",
+            )
+            with patch.object(naming_mod, "ROOT", root), patch.object(
+                naming_mod, "RUNTIME_ROOT", root / "src" / "runtime"
+            ), patch.object(
+                naming_mod, "PYTRA_STD_ROOT", root / "src" / "pytra" / "std"
+            ), patch.object(
+                naming_mod, "PYTRA_UTILS_ROOT", root / "src" / "pytra" / "utils"
+            ):
+                findings = naming_mod._collect_findings()
+        self.assertTrue(any(item.reason == "non_passthrough_name" for item in findings))
+
     def test_collect_detects_non_passthrough_name(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
