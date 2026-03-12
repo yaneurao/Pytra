@@ -13,6 +13,9 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
     def test_manifest_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_manifest_issues(), [])
 
+    def test_docs_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_docs_issues(), [])
+
     def test_matrix_constants_are_fixed(self) -> None:
         self.assertEqual(
             contract_mod.PARITY_MATRIX_SOURCE_MANIFESTS,
@@ -30,8 +33,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             },
         )
         self.assertEqual(contract_mod.PARITY_MATRIX_SOURCE_DESTINATION, "support_matrix")
-        self.assertEqual(contract_mod.PARITY_MATRIX_IMPLEMENTATION_PHASE, "row_seed_scaffold")
-        self.assertEqual(contract_mod.PARITY_MATRIX_CELL_SCHEMA_STATUS, "not_populated")
+        self.assertEqual(contract_mod.PARITY_MATRIX_IMPLEMENTATION_PHASE, "cell_seed_manifest")
+        self.assertEqual(contract_mod.PARITY_MATRIX_CELL_SCHEMA_STATUS, "seed_populated")
         self.assertEqual(contract_mod.PARITY_MATRIX_CELL_SCHEMA_VERSION, 1)
         self.assertEqual(contract_mod.PARITY_MATRIX_CELL_COLLECTION_KEY, "backend_cells")
         self.assertEqual(
@@ -65,9 +68,9 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
         self.assertEqual(
             contract_mod.PARITY_MATRIX_CELL_GAP_SUMMARY,
             {
-                "missing_per_backend_cells": "The current matrix exports representative row seeds only and does not yet publish per-backend cells.",
-                "missing_support_state_per_cell": "Each feature × backend cell still lacks an explicit support_state entry.",
-                "missing_evidence_kind_per_cell": "Each feature × backend cell still lacks an explicit evidence_kind entry.",
+                "seed_state_is_conservative": "Current backend cell seeds use conservative placeholder states outside cpp until reviewed backend-by-backend evidence is filled.",
+                "docs_table_is_seed_only": "The docs page now renders the seeded 2D support table, but the published cells are still placeholders outside the reviewed cpp lane.",
+                "cell_details_are_sparse": "Per-cell details/evidence_ref/diagnostic_kind remain sparse until follow-up row fill bundles land.",
             },
         )
         self.assertEqual(
@@ -78,7 +81,14 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 "representative_fixture",
                 "backend_order",
                 "support_state_order",
+                "backend_cells",
             ),
+        )
+        self.assertEqual(contract_mod.PARITY_MATRIX_DOC_TABLE_BEGIN_MARKER, "<!-- BEGIN BACKEND PARITY MATRIX TABLE -->")
+        self.assertEqual(contract_mod.PARITY_MATRIX_DOC_TABLE_END_MARKER, "<!-- END BACKEND PARITY MATRIX TABLE -->")
+        self.assertEqual(
+            contract_mod.PARITY_MATRIX_DOC_TABLE_HEADERS,
+            ("feature_id", "fixture", *contract_mod.PARITY_MATRIX_BACKEND_ORDER),
         )
 
     def test_summary_linkage_is_fixed(self) -> None:
@@ -126,6 +136,22 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 "matrix_rows",
             },
         )
+        first_row = contract_mod.build_backend_parity_matrix_manifest()["matrix_rows"][0]
+        self.assertEqual(first_row["backend_cells"][0], {
+            "backend": "cpp",
+            "support_state": "supported",
+            "evidence_kind": "build_run_smoke",
+        })
+        self.assertTrue(
+            all(
+                cell == {
+                    "backend": backend,
+                    "support_state": "not_started",
+                    "evidence_kind": "not_started_placeholder",
+                }
+                for backend, cell in zip(contract_mod.PARITY_MATRIX_BACKEND_ORDER[1:], first_row["backend_cells"][1:])
+            )
+        )
         self.assertEqual(
             contract_mod.build_backend_parity_matrix_manifest()["cell_schema"],
             {
@@ -149,6 +175,11 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "experimental": ["preview_guard", "transpile_smoke", "build_run_smoke"],
                 },
             },
+        )
+        self.assertIn("| feature_id | fixture | cpp | rs | cs |", contract_mod.build_backend_parity_matrix_markdown_table())
+        self.assertIn(
+            "| syntax.assign.tuple_destructure | test/fixtures/core/tuple_assign.py | supported / build_run_smoke |",
+            contract_mod.build_backend_parity_matrix_markdown_table(),
         )
 
 

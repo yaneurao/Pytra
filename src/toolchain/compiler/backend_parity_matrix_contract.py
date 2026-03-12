@@ -20,8 +20,8 @@ PARITY_MATRIX_PUBLISH_PATHS: Final[dict[str, str]] = {
 PARITY_MATRIX_SOURCE_DESTINATION: Final[str] = "support_matrix"
 PARITY_MATRIX_BACKEND_ORDER: Final[tuple[str, ...]] = feature_contract_mod.SUPPORT_MATRIX_BACKEND_ORDER
 PARITY_MATRIX_SUPPORT_STATE_ORDER: Final[tuple[str, ...]] = feature_contract_mod.SUPPORT_STATE_ORDER
-PARITY_MATRIX_IMPLEMENTATION_PHASE: Final[str] = "row_seed_scaffold"
-PARITY_MATRIX_CELL_SCHEMA_STATUS: Final[str] = "not_populated"
+PARITY_MATRIX_IMPLEMENTATION_PHASE: Final[str] = "cell_seed_manifest"
+PARITY_MATRIX_CELL_SCHEMA_STATUS: Final[str] = "seed_populated"
 PARITY_MATRIX_CELL_SCHEMA_VERSION: Final[int] = 1
 PARITY_MATRIX_CELL_COLLECTION_KEY: Final[str] = "backend_cells"
 PARITY_MATRIX_CELL_REQUIRED_KEYS: Final[tuple[str, ...]] = (
@@ -49,9 +49,9 @@ PARITY_MATRIX_ALLOWED_EVIDENCE_KINDS_BY_STATE: Final[dict[str, tuple[str, ...]]]
     "experimental": ("preview_guard", "transpile_smoke", "build_run_smoke"),
 }
 PARITY_MATRIX_CELL_GAP_SUMMARY: Final[dict[str, str]] = {
-    "missing_per_backend_cells": "The current matrix exports representative row seeds only and does not yet publish per-backend cells.",
-    "missing_support_state_per_cell": "Each feature × backend cell still lacks an explicit support_state entry.",
-    "missing_evidence_kind_per_cell": "Each feature × backend cell still lacks an explicit evidence_kind entry.",
+    "seed_state_is_conservative": "Current backend cell seeds use conservative placeholder states outside cpp until reviewed backend-by-backend evidence is filled.",
+    "docs_table_is_seed_only": "The docs page now renders the seeded 2D support table, but the published cells are still placeholders outside the reviewed cpp lane.",
+    "cell_details_are_sparse": "Per-cell details/evidence_ref/diagnostic_kind remain sparse until follow-up row fill bundles land.",
 }
 PARITY_MATRIX_ROW_KEYS: Final[tuple[str, ...]] = (
     "feature_id",
@@ -59,6 +59,7 @@ PARITY_MATRIX_ROW_KEYS: Final[tuple[str, ...]] = (
     "representative_fixture",
     "backend_order",
     "support_state_order",
+    "backend_cells",
 )
 
 _SUPPORT_MATRIX_SUMMARY_ENTRY: Final = next(
@@ -84,6 +85,13 @@ PARITY_MATRIX_SUMMARY_KEYS: Final[tuple[str, ...]] = (
 )
 PARITY_MATRIX_DOWNSTREAM_TASK: Final[str] = feature_contract_mod.HANDOFF_TASK_IDS["support_matrix"]
 PARITY_MATRIX_DOWNSTREAM_PLAN: Final[str] = feature_contract_mod.HANDOFF_PLAN_PATHS["support_matrix"]
+PARITY_MATRIX_DOC_TABLE_BEGIN_MARKER: Final[str] = "<!-- BEGIN BACKEND PARITY MATRIX TABLE -->"
+PARITY_MATRIX_DOC_TABLE_END_MARKER: Final[str] = "<!-- END BACKEND PARITY MATRIX TABLE -->"
+PARITY_MATRIX_DOC_TABLE_HEADERS: Final[tuple[str, ...]] = (
+    "feature_id",
+    "fixture",
+    *PARITY_MATRIX_BACKEND_ORDER,
+)
 
 
 class RepresentativeParityMatrixRow(TypedDict):
@@ -96,6 +104,7 @@ class RepresentativeParityMatrixRow(TypedDict):
     summary_keys: tuple[str, ...]
     downstream_task: str
     downstream_plan: str
+    backend_cells: tuple["BackendParityMatrixCellSeed", ...]
 
 
 class BackendParityMatrixCellSchema(TypedDict):
@@ -106,6 +115,26 @@ class BackendParityMatrixCellSchema(TypedDict):
     support_state_order: tuple[str, ...]
     evidence_kind_order: tuple[str, ...]
     allowed_evidence_kinds_by_state: dict[str, tuple[str, ...]]
+
+
+class BackendParityMatrixCellSeed(TypedDict):
+    backend: str
+    support_state: str
+    evidence_kind: str
+
+
+def _seed_backend_cell(backend: str) -> BackendParityMatrixCellSeed:
+    if backend == "cpp":
+        return {
+            "backend": backend,
+            "support_state": "supported",
+            "evidence_kind": "build_run_smoke",
+        }
+    return {
+        "backend": backend,
+        "support_state": "not_started",
+        "evidence_kind": "not_started_placeholder",
+    }
 
 
 REPRESENTATIVE_PARITY_MATRIX_ROWS: Final[tuple[RepresentativeParityMatrixRow, ...]] = tuple(
@@ -119,6 +148,7 @@ REPRESENTATIVE_PARITY_MATRIX_ROWS: Final[tuple[RepresentativeParityMatrixRow, ..
         "summary_keys": PARITY_MATRIX_SUMMARY_KEYS,
         "downstream_task": PARITY_MATRIX_DOWNSTREAM_TASK,
         "downstream_plan": PARITY_MATRIX_DOWNSTREAM_PLAN,
+        "backend_cells": tuple(_seed_backend_cell(backend) for backend in PARITY_MATRIX_BACKEND_ORDER),
     }
     for entry in feature_contract_mod.iter_representative_support_matrix_handoff()
 )
@@ -136,6 +166,25 @@ BACKEND_PARITY_MATRIX_CELL_SCHEMA: Final[BackendParityMatrixCellSchema] = {
 
 def iter_representative_parity_matrix_rows() -> tuple[RepresentativeParityMatrixRow, ...]:
     return REPRESENTATIVE_PARITY_MATRIX_ROWS
+
+
+def build_backend_parity_matrix_markdown_table() -> str:
+    lines = [
+        "| " + " | ".join(PARITY_MATRIX_DOC_TABLE_HEADERS) + " |",
+        "|" + "|".join("---" for _ in PARITY_MATRIX_DOC_TABLE_HEADERS) + "|",
+    ]
+    for entry in iter_representative_parity_matrix_rows():
+        cells_by_backend = {
+            cell["backend"]: f"{cell['support_state']} / {cell['evidence_kind']}"
+            for cell in entry["backend_cells"]
+        }
+        row_values = [
+            entry["feature_id"],
+            entry["representative_fixture"],
+            *[cells_by_backend[backend] for backend in PARITY_MATRIX_BACKEND_ORDER],
+        ]
+        lines.append("| " + " | ".join(row_values) + " |")
+    return "\n".join(lines)
 
 
 def build_backend_parity_matrix_manifest() -> dict[str, object]:
@@ -171,6 +220,14 @@ def build_backend_parity_matrix_manifest() -> dict[str, object]:
                 "representative_fixture": entry["representative_fixture"],
                 "backend_order": list(entry["backend_order"]),
                 "support_state_order": list(entry["support_state_order"]),
+                "backend_cells": [
+                    {
+                        "backend": cell["backend"],
+                        "support_state": cell["support_state"],
+                        "evidence_kind": cell["evidence_kind"],
+                    }
+                    for cell in entry["backend_cells"]
+                ],
                 "summary_source": entry["summary_source"],
                 "summary_keys": list(entry["summary_keys"]),
                 "downstream_task": entry["downstream_task"],

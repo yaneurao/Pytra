@@ -11,6 +11,11 @@ from src.toolchain.compiler import backend_conformance_summary_handoff_contract 
 from src.toolchain.compiler import backend_feature_contract_inventory as feature_contract_mod
 from src.toolchain.compiler import backend_parity_matrix_contract as contract_mod
 
+DOC_TARGETS = (
+    ROOT / "docs/ja/language/backend-parity-matrix.md",
+    ROOT / "docs/en/language/backend-parity-matrix.md",
+)
+
 
 def _collect_contract_issues() -> list[str]:
     issues: list[str] = []
@@ -20,10 +25,10 @@ def _collect_contract_issues() -> list[str]:
         issues.append("support state order drifted away from feature contract")
     if contract_mod.PARITY_MATRIX_SOURCE_DESTINATION != "support_matrix":
         issues.append("matrix source destination must stay fixed to support_matrix")
-    if contract_mod.PARITY_MATRIX_IMPLEMENTATION_PHASE != "row_seed_scaffold":
-        issues.append("matrix implementation phase drifted away from row_seed_scaffold baseline")
-    if contract_mod.PARITY_MATRIX_CELL_SCHEMA_STATUS != "not_populated":
-        issues.append("matrix cell schema status drifted away from not_populated baseline")
+    if contract_mod.PARITY_MATRIX_IMPLEMENTATION_PHASE != "cell_seed_manifest":
+        issues.append("matrix implementation phase drifted away from cell_seed_manifest baseline")
+    if contract_mod.PARITY_MATRIX_CELL_SCHEMA_STATUS != "seed_populated":
+        issues.append("matrix cell schema status drifted away from seed_populated baseline")
     if contract_mod.PARITY_MATRIX_CELL_SCHEMA_VERSION != 1:
         issues.append("matrix cell schema version drifted")
     if contract_mod.PARITY_MATRIX_CELL_COLLECTION_KEY != "backend_cells":
@@ -49,9 +54,9 @@ def _collect_contract_issues() -> list[str]:
     }:
         issues.append("matrix state/evidence compatibility drifted")
     if contract_mod.PARITY_MATRIX_CELL_GAP_SUMMARY != {
-        "missing_per_backend_cells": "The current matrix exports representative row seeds only and does not yet publish per-backend cells.",
-        "missing_support_state_per_cell": "Each feature × backend cell still lacks an explicit support_state entry.",
-        "missing_evidence_kind_per_cell": "Each feature × backend cell still lacks an explicit evidence_kind entry.",
+        "seed_state_is_conservative": "Current backend cell seeds use conservative placeholder states outside cpp until reviewed backend-by-backend evidence is filled.",
+        "docs_table_is_seed_only": "The docs page now renders the seeded 2D support table, but the published cells are still placeholders outside the reviewed cpp lane.",
+        "cell_details_are_sparse": "Per-cell details/evidence_ref/diagnostic_kind remain sparse until follow-up row fill bundles land.",
     }:
         issues.append("matrix cell gap summary drifted")
     support_matrix_summary_entry = next(
@@ -91,6 +96,14 @@ def _collect_contract_issues() -> list[str]:
             issues.append(f"{entry['feature_id']}: backend order drifted")
         if entry["support_state_order"] != contract_mod.PARITY_MATRIX_SUPPORT_STATE_ORDER:
             issues.append(f"{entry['feature_id']}: support state order drifted")
+        if tuple(cell["backend"] for cell in entry["backend_cells"]) != contract_mod.PARITY_MATRIX_BACKEND_ORDER:
+            issues.append(f"{entry['feature_id']}: backend cell order drifted")
+        for cell in entry["backend_cells"]:
+            allowed_kinds = contract_mod.PARITY_MATRIX_ALLOWED_EVIDENCE_KINDS_BY_STATE[cell["support_state"]]
+            if cell["evidence_kind"] not in allowed_kinds:
+                issues.append(
+                    f"{entry['feature_id']}:{cell['backend']}: evidence kind {cell['evidence_kind']} is not allowed for {cell['support_state']}"
+                )
         if entry["summary_source"] != contract_mod.PARITY_MATRIX_SUMMARY_SOURCE:
             issues.append(f"{entry['feature_id']}: summary source drifted")
         if entry["summary_keys"] != contract_mod.PARITY_MATRIX_SUMMARY_KEYS:
@@ -99,6 +112,24 @@ def _collect_contract_issues() -> list[str]:
             issues.append(f"{entry['feature_id']}: downstream task drifted")
         if entry["downstream_plan"] != contract_mod.PARITY_MATRIX_DOWNSTREAM_PLAN:
             issues.append(f"{entry['feature_id']}: downstream plan drifted")
+    return issues
+
+
+def _collect_docs_issues() -> list[str]:
+    issues: list[str] = []
+    expected_table = contract_mod.build_backend_parity_matrix_markdown_table()
+    for path in DOC_TARGETS:
+        text = path.read_text(encoding="utf-8")
+        if contract_mod.PARITY_MATRIX_DOC_TABLE_BEGIN_MARKER not in text:
+            issues.append(f"missing table begin marker in {path.relative_to(ROOT)}")
+            continue
+        if contract_mod.PARITY_MATRIX_DOC_TABLE_END_MARKER not in text:
+            issues.append(f"missing table end marker in {path.relative_to(ROOT)}")
+            continue
+        rendered = text.split(contract_mod.PARITY_MATRIX_DOC_TABLE_BEGIN_MARKER, 1)[1]
+        rendered = rendered.split(contract_mod.PARITY_MATRIX_DOC_TABLE_END_MARKER, 1)[0].strip()
+        if rendered != expected_table:
+            issues.append(f"backend parity matrix table drifted in {path.relative_to(ROOT)}")
     return issues
 
 
@@ -159,12 +190,16 @@ def _collect_manifest_issues() -> list[str]:
         issues.append("manifest row_keys drifted")
     if len(manifest["matrix_rows"]) != len(contract_mod.iter_representative_parity_matrix_rows()):
         issues.append("manifest matrix_rows length drifted")
+    for entry in manifest["matrix_rows"]:
+        if [cell["backend"] for cell in entry["backend_cells"]] != list(contract_mod.PARITY_MATRIX_BACKEND_ORDER):
+            issues.append(f"{entry['feature_id']}: manifest backend_cells order drifted")
     return issues
 
 
 def main() -> int:
     issues = _collect_contract_issues()
     issues.extend(_collect_manifest_issues())
+    issues.extend(_collect_docs_issues())
     if issues:
         print("[NG] backend parity matrix contract drift detected")
         for issue in issues:
