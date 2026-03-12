@@ -120,14 +120,14 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
         "rollout_wave": "second_wave",
         "next_verification_lane": "remaining_second_wave_rollout_planning",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "JS/TS representative smoke is locked; remaining second-wave rollout stays under planning until the next backend bundle is chosen.",
+        "notes": "JS/TS representative smoke is locked; the native_path_bundle is the next remaining second-wave rollout bundle.",
     },
     {
         "backend": "java",
         "rollout_wave": "second_wave",
         "next_verification_lane": "remaining_second_wave_rollout_planning",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "JS/TS representative smoke is locked; remaining second-wave rollout stays under planning until the next backend bundle is chosen.",
+        "notes": "JS/TS representative smoke is locked; the jvm_package_bundle stays as the follow-up remaining second-wave rollout bundle.",
     },
     {
         "backend": "js",
@@ -141,7 +141,7 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
         "rollout_wave": "second_wave",
         "next_verification_lane": "remaining_second_wave_rollout_planning",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "JS/TS representative smoke is locked; remaining second-wave rollout stays under planning until the next backend bundle is chosen.",
+        "notes": "JS/TS representative smoke is locked; the jvm_package_bundle stays as the follow-up remaining second-wave rollout bundle.",
     },
     {
         "backend": "lua",
@@ -155,7 +155,7 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
         "rollout_wave": "second_wave",
         "next_verification_lane": "remaining_second_wave_rollout_planning",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "JS/TS representative smoke is locked; remaining second-wave rollout stays under planning until the next backend bundle is chosen.",
+        "notes": "JS/TS representative smoke is locked; the native_path_bundle is the next remaining second-wave rollout bundle.",
     },
     {
         "backend": "php",
@@ -176,14 +176,14 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
         "rollout_wave": "second_wave",
         "next_verification_lane": "remaining_second_wave_rollout_planning",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "JS/TS representative smoke is locked; remaining second-wave rollout stays under planning until the next backend bundle is chosen.",
+        "notes": "JS/TS representative smoke is locked; the jvm_package_bundle stays as the follow-up remaining second-wave rollout bundle.",
     },
     {
         "backend": "swift",
         "rollout_wave": "second_wave",
         "next_verification_lane": "remaining_second_wave_rollout_planning",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "JS/TS representative smoke is locked; remaining second-wave rollout stays under planning until the next backend bundle is chosen.",
+        "notes": "JS/TS representative smoke is locked; the native_path_bundle is the next remaining second-wave rollout bundle.",
     },
     {
         "backend": "ts",
