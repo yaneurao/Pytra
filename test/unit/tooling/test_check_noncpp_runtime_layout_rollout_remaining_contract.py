@@ -28,6 +28,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_wave_b_generated_compare_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_b_generated_compare_issues(), [])
 
+    def test_wave_a_generated_compare_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_a_generated_compare_issues(), [])
+
     def test_wave_b_native_residual_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_b_native_residual_issues(), [])
 
@@ -246,6 +249,103 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "smoke_targets": ("built_in/contains.nim",),
                 },
             ),
+        )
+
+    def test_wave_a_generated_compare_end_state_is_fixed(self) -> None:
+        by_backend = {
+            entry["backend"]: entry
+            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_a_generated_compare()
+        }
+        self.assertEqual(
+            by_backend,
+            {
+                "go": {
+                    "backend": "go",
+                    "materialized_compare_modules": (
+                        "built_in/contains",
+                        "built_in/io_ops",
+                        "built_in/iter_ops",
+                        "built_in/numeric_ops",
+                        "built_in/scalar_ops",
+                        "built_in/zip_ops",
+                        "utils/gif",
+                        "utils/png",
+                    ),
+                    "helper_artifact_modules": (),
+                },
+                "java": {
+                    "backend": "java",
+                    "materialized_compare_modules": (
+                        "built_in/contains",
+                        "built_in/io_ops",
+                        "built_in/iter_ops",
+                        "built_in/numeric_ops",
+                        "built_in/scalar_ops",
+                        "built_in/zip_ops",
+                        "std/json",
+                        "std/math",
+                        "std/pathlib",
+                        "std/time",
+                        "utils/gif",
+                        "utils/png",
+                    ),
+                    "helper_artifact_modules": (),
+                },
+                "kotlin": {
+                    "backend": "kotlin",
+                    "materialized_compare_modules": (
+                        "built_in/contains",
+                        "built_in/iter_ops",
+                        "built_in/predicates",
+                        "built_in/sequence",
+                        "built_in/zip_ops",
+                    ),
+                    "helper_artifact_modules": (
+                        "utils/gif_helper",
+                        "utils/image_runtime",
+                        "utils/png_helper",
+                    ),
+                },
+                "scala": {
+                    "backend": "scala",
+                    "materialized_compare_modules": (
+                        "built_in/contains",
+                        "built_in/iter_ops",
+                        "built_in/predicates",
+                        "built_in/sequence",
+                        "built_in/zip_ops",
+                    ),
+                    "helper_artifact_modules": (
+                        "utils/gif_helper",
+                        "utils/image_runtime",
+                        "utils/png_helper",
+                    ),
+                },
+                "swift": {
+                    "backend": "swift",
+                    "materialized_compare_modules": (),
+                    "helper_artifact_modules": (
+                        "utils/gif_helper",
+                        "utils/image_runtime",
+                        "utils/png_helper",
+                    ),
+                },
+                "nim": {
+                    "backend": "nim",
+                    "materialized_compare_modules": (
+                        "built_in/contains",
+                        "built_in/iter_ops",
+                        "built_in/numeric_ops",
+                        "built_in/predicates",
+                        "built_in/zip_ops",
+                    ),
+                    "helper_artifact_modules": (
+                        "utils/gif_helper",
+                        "utils/image_runtime",
+                        "utils/png_helper",
+                    ),
+                },
+            },
         )
 
     def test_wave_a_native_residuals_are_fixed(self) -> None:
