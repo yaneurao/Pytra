@@ -33,7 +33,7 @@ Last updated: 2026-03-12
 
 1. [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01] Treat `dataclasses.field(...)` as a static dataclass metadata subset rather than a runtime call, with representative lanes locked by fail-closed contracts.
    Context: [p1-dataclass-field-static-subset.md](/workspace/Pytra/docs/en/plans/p1-dataclass-field-static-subset.md)
-   Summary: representative Pytra-NES cases such as `timestamps: deque[float] = field(init=False, repr=False)` currently leak `field(...)` as a normal expression into backend output and generate broken code. In v1, `default` / `default_factory` / `init` / `repr` / `compare` will be handled as a static metadata subset and unsupported options will fail closed.
+   Summary: representative Pytra-NES cases such as `timestamps: deque[float] = field(init=False, repr=False)` currently leak `field(...)` as a normal expression into backend output and generate broken code. In v1, `default` / `default_factory` / `init` / `repr` / `compare` will be handled as a static metadata subset and unsupported options will fail closed. Progress: `S1-01` now locks the parser/C++ baseline leak in regressions and docs.
 
 2. [ ] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01] Minimize the remaining object-bridge mutation seam and shared `type_id` thin seam in `py_runtime.h` after the cross-runtime contracts are fully classified.
    Context: [p5-cpp-pyruntime-residual-thin-seam-shrink.md](/workspace/Pytra/docs/en/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md)

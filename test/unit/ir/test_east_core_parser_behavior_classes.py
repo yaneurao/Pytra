@@ -114,6 +114,45 @@ class B:
         self.assertEqual(opts_b.get("init"), False)
         self.assertEqual(opts_b.get("frozen"), True)
 
+    def test_dataclass_field_call_remains_plain_expr_in_current_baseline(self) -> None:
+        src = """
+from dataclasses import dataclass, field
+from collections import deque
+
+@dataclass
+class PadState:
+    timestamps: deque[float] = field(init=False, repr=False)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+
+        import_nodes = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") in {"Import", "ImportFrom"}
+        ]
+        self.assertEqual(len(import_nodes), 1)
+        self.assertEqual(import_nodes[0].get("kind"), "ImportFrom")
+        self.assertEqual(import_nodes[0].get("module"), "collections")
+
+        classes = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "ClassDef" and n.get("name") == "PadState"
+        ]
+        self.assertEqual(len(classes), 1)
+        cls = classes[0]
+        self.assertTrue(bool(cls.get("dataclass")))
+        ann = cls.get("body", [])[0]
+        self.assertEqual(ann.get("kind"), "AnnAssign")
+        call = ann.get("value", {})
+        self.assertEqual(call.get("kind"), "Call")
+        func = call.get("func", {})
+        self.assertEqual(func.get("kind"), "Name")
+        self.assertEqual(func.get("id"), "field")
+        keywords = call.get("keywords", [])
+        self.assertEqual([kw.get("arg") for kw in keywords], ["init", "repr"])
+        self.assertEqual([kw.get("value", {}).get("value") for kw in keywords], [False, False])
+
     def test_nominal_adt_family_and_variants_are_parsed(self) -> None:
         src = """
 from dataclasses import dataclass

@@ -50,10 +50,11 @@ Decision log:
 - 2026-03-12: The v1 subset is limited to `default` / `default_factory` / `init` / `repr` / `compare`; everything else remains fail-closed.
 - 2026-03-12: `default_factory` will initially focus on representative zero-argument factories; full arbitrary-callable support is deferred.
 - 2026-03-12: Full backend support for `deque[T]` is a separate topic, so this task first locks the contract that `field(...)` itself must not leak as an expression.
+- 2026-03-12: The representative baseline `timestamps: deque[float] = field(init=False, repr=False)` was confirmed. The current parser still keeps `field(...)` as a plain `Call(Name("field"))`, and the C++ backend currently emits `deque[float64] timestamps;` plus `field(false, false)` as a broken constructor default.
 
 ## Breakdown
 
-- [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S1-01] Lock representative failures and scope with regressions and docs.
+- [x] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S1-01] Lock representative failures and scope with regressions and docs.
 - [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S2-01] Absorb `field(...)` into a static metadata carrier during frontend / lowering.
 - [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S2-02] Lock constructor / field-init contracts for `init` / `default` / `default_factory`.
 - [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S3-01] Lock metadata lanes for `repr` / `compare` and the fail-closed policy for unsupported options.

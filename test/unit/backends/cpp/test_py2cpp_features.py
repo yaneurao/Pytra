@@ -4696,6 +4696,22 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_dataclass_field_call_current_baseline_leaks_into_cpp(self) -> None:
+        src = """from dataclasses import dataclass, field
+from collections import deque
+
+@dataclass
+class PadState:
+    timestamps: deque[float] = field(init=False, repr=False)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "dataclass_field_case.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("deque[float64] timestamps;", cpp)
+        self.assertIn("field(false, false)", cpp)
+
     def test_enum_extended_runtime(self) -> None:
         out = self._compile_and_run_fixture("enum_extended")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]

@@ -50,10 +50,11 @@
 - 2026-03-12: v1 subset は `default` / `default_factory` / `init` / `repr` / `compare` に限定し、それ以外は fail-closed とする。
 - 2026-03-12: `default_factory` は first pass では representative zero-arg factory を中心に扱い、任意 callable の全面許可は後段に回す。
 - 2026-03-12: `deque[T]` の backend support 自体は別論点なので、この task では「`field(...)` が式として漏れないこと」を先に固定する。
+- 2026-03-12: `timestamps: deque[float] = field(init=False, repr=False)` の baseline を確認した。現状の parser は `field(...)` を plain `Call(Name("field"))` のまま保持し、C++ backend は `deque[float64] timestamps;` と `field(false, false)` をそのまま emit して壊れた constructor default を生成する。
 
 ## 分解
 
-- [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S1-01] representative failure と scope を regression / docs で固定する。
+- [x] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S1-01] representative failure と scope を regression / docs で固定する。
 - [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S2-01] frontend / lowering で `field(...)` を静的 metadata carrier へ吸収する。
 - [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S2-02] `init` / `default` / `default_factory` の constructor / field-init contract を固定する。
 - [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S3-01] `repr` / `compare` の metadata lane と unsupported option の fail-closed policy を固定する。
