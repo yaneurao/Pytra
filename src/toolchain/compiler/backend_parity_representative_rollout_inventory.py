@@ -80,13 +80,6 @@ REPRESENTATIVE_RESIDUAL_CELLS_V1: Final[tuple[RepresentativeResidualCell, ...]] 
     },
     {
         "backend": "rs",
-        "feature_id": "builtin.iter.enumerate",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/strings/enumerate_basic.py",
-    },
-    {
-        "backend": "rs",
         "feature_id": "builtin.iter.zip",
         "support_state": "not_started",
         "evidence_kind": "not_started_placeholder",
@@ -147,13 +140,6 @@ REPRESENTATIVE_RESIDUAL_CELLS_V1: Final[tuple[RepresentativeResidualCell, ...]] 
         "support_state": "not_started",
         "evidence_kind": "not_started_placeholder",
         "representative_fixture": "test/fixtures/control/for_range.py",
-    },
-    {
-        "backend": "cs",
-        "feature_id": "builtin.iter.enumerate",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/strings/enumerate_basic.py",
     },
     {
         "backend": "cs",
@@ -228,7 +214,6 @@ REPRESENTATIVE_ROLLOUT_BUNDLES_V1: Final[tuple[RepresentativeRolloutBundle, ...]
         "feature_ids": (
             "syntax.control.try_raise",
             "syntax.oop.virtual_dispatch",
-            "builtin.iter.enumerate",
             "builtin.iter.zip",
         ),
         "target_evidence": "transpile_smoke",
@@ -254,7 +239,6 @@ REPRESENTATIVE_ROLLOUT_BUNDLES_V1: Final[tuple[RepresentativeRolloutBundle, ...]
             "syntax.control.for_range",
             "syntax.control.try_raise",
             "builtin.iter.range",
-            "builtin.iter.enumerate",
             "builtin.iter.zip",
             "builtin.type.isinstance",
         ),

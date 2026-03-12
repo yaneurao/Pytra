@@ -177,6 +177,13 @@ class Py2RsSmokeTest(unittest.TestCase):
         rust = transpile_to_rust(east)
         self.assertIn("(vec![1, 2, 3, 4]).map(|i| i).collect::<Vec<_>>()", rust)
 
+    def test_enumerate_fixture_uses_rust_enumerate_paths(self) -> None:
+        fixture = find_fixture_case("enumerate_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn(".iter().copied().enumerate().map(|(i, v)| (i as i64, v))", rust)
+        self.assertIn("for (i, v) in enumerate((values).clone(), 1) {", rust)
+
     def test_load_east_from_json_wrapper_payload(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)
