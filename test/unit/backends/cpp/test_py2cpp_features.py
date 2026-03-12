@@ -4712,6 +4712,40 @@ class PadState:
         self.assertIn("deque[float64] timestamps;", cpp)
         self.assertNotIn("field(false, false)", cpp)
 
+    def test_dataclass_field_init_false_is_omitted_from_ctor_params(self) -> None:
+        src = """from dataclasses import dataclass, field
+from collections import deque
+
+@dataclass
+class PadState:
+    frame: int
+    timestamps: deque[float] = field(init=False, repr=False)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "dataclass_field_init_false.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("PadState(int64 frame)", cpp)
+        self.assertNotIn("PadState(int64 frame, deque[float64] timestamps", cpp)
+        self.assertIn(": frame(frame)", cpp)
+
+    def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
+        src = """from dataclasses import dataclass, field
+
+@dataclass
+class PadState:
+    count: int = field(default=1, compare=False)
+    samples: list[int] = field(default_factory=list)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "dataclass_field_defaults.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("PadState(int64 count = 1, list<int64> samples = list<int64>{})", cpp)
+        self.assertIn(": count(count), samples(samples)", cpp)
+
     def test_enum_extended_runtime(self) -> None:
         out = self._compile_and_run_fixture("enum_extended")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]

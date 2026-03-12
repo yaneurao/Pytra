@@ -17,6 +17,49 @@ class CppClassEmitter:
             base = self.class_base.get(base, "")
         return False
 
+    def _dataclass_field_v1_meta(self, stmt: dict[str, Any]) -> dict[str, Any]:
+        meta = self.any_to_dict_or_empty(stmt.get("meta"))
+        field_meta = self.any_to_dict_or_empty(meta.get("dataclass_field_v1"))
+        if self.any_dict_get_int(field_meta, "schema_version", 0) != 1:
+            return {}
+        return field_meta
+
+    def _dataclass_field_init_enabled(self, stmt: dict[str, Any]) -> bool:
+        field_meta = self._dataclass_field_v1_meta(stmt)
+        if "init" not in field_meta:
+            return True
+        return bool(field_meta.get("init"))
+
+    def _dataclass_field_default_expr_node(self, stmt: dict[str, Any]) -> dict[str, Any]:
+        field_meta = self._dataclass_field_v1_meta(stmt)
+        default_expr = self.any_to_dict_or_empty(field_meta.get("default_expr"))
+        if self._expr_node_has_payload(default_expr):
+            return default_expr
+        return self.any_to_dict_or_empty(stmt.get("value"))
+
+    def _dataclass_field_default_factory_expr_node(self, stmt: dict[str, Any]) -> dict[str, Any]:
+        field_meta = self._dataclass_field_v1_meta(stmt)
+        return self.any_to_dict_or_empty(field_meta.get("default_factory_expr"))
+
+    def _render_dataclass_field_default_factory(self, field_type: str, factory_expr: dict[str, Any]) -> str:
+        if not self._expr_node_has_payload(factory_expr):
+            return ""
+        kind = self._node_kind_from_dict(factory_expr)
+        if kind == "Call":
+            return self.render_expr(factory_expr)
+        if kind == "Name":
+            factory_name = self.any_dict_get_str(factory_expr, "id", "")
+            if factory_name in {"list", "dict", "set", "tuple", "str", "bytes", "bytearray", "deque"}:
+                return self.cpp_signature_type(field_type) + "{}"
+        if kind == "Attribute":
+            factory_name = self.any_dict_get_str(factory_expr, "attr", "")
+            if factory_name in {"list", "dict", "set", "tuple", "str", "bytes", "bytearray", "deque"}:
+                return self.cpp_signature_type(field_type) + "{}"
+        rendered = self.render_expr(factory_expr)
+        if rendered == "":
+            return ""
+        return rendered + "()"
+
     def emit_class(self, stmt: dict[str, Any]) -> None:
         """クラス定義ノードを C++ クラス/struct として出力する。"""
         name = self.any_dict_get_str(stmt, "name", "Class")
@@ -117,6 +160,8 @@ class CppClassEmitter:
         static_field_types: dict[str, str] = {}
         static_field_defaults: dict[str, str] = {}
         instance_field_defaults: dict[str, str] = {}
+        instance_field_default_factories: dict[str, str] = {}
+        dataclass_init_disabled_fields: set[str] = set()
         field_decl_order: list[str] = []
         static_field_order: list[str] = []
         consumed_assign_fields: set[str] = set()
@@ -134,10 +179,21 @@ class CppClassEmitter:
                             if not isinstance(cur_t, str) or cur_t == "" or cur_t == "unknown":
                                 self.current_class_fields[fname] = ann
                         if is_dataclass:
-                            if self._expr_node_has_payload(s.get("value")):
-                                instance_field_defaults[fname] = self.render_expr(s.get("value"))
+                            if not self._dataclass_field_init_enabled(s):
+                                dataclass_init_disabled_fields.add(fname)
+                            else:
+                                dataclass_init_disabled_fields.discard(fname)
+                            default_expr_node = self._dataclass_field_default_expr_node(s)
+                            if self._expr_node_has_payload(default_expr_node):
+                                instance_field_defaults[fname] = self.render_expr(default_expr_node)
                             else:
                                 instance_field_defaults.pop(fname, None)
+                            default_factory_expr_node = self._dataclass_field_default_factory_expr_node(s)
+                            default_factory_expr = self._render_dataclass_field_default_factory(ann, default_factory_expr_node)
+                            if default_factory_expr != "":
+                                instance_field_default_factories[fname] = default_factory_expr
+                            else:
+                                instance_field_default_factories.pop(fname, None)
                         else:
                             # クラス直下 `AnnAssign` は、値ありのみ static 扱い。
                             # 値なしはインスタンスフィールド宣言（型ヒント）として扱う。
@@ -229,16 +285,27 @@ class CppClassEmitter:
         if (len(instance_fields_ordered) > 0 or gc_managed) and not has_init:
             params: list[str] = []
             for fname, fty in instance_fields_ordered:
+                if fname in dataclass_init_disabled_fields:
+                    continue
                 emitted_fname = self.rename_if_reserved(fname, self.reserved_words, self.rename_prefix, self.renamed_symbols)
                 p = f"{self.cpp_signature_type(fty)} {emitted_fname}"
-                if fname in instance_field_defaults and instance_field_defaults[fname] != "":
-                    default_expr = instance_field_defaults[fname]
+                default_expr = instance_field_defaults.get(fname, "")
+                if default_expr == "":
+                    default_expr = instance_field_default_factories.get(fname, "")
+                if default_expr != "":
                     if not self._expr_is_none_marker(default_expr):
                         p += f" = {default_expr}"
                 params.append(p)
             init_items: list[str] = []
             for fname, _ in instance_fields_ordered:
                 emitted_fname = self.rename_if_reserved(fname, self.reserved_words, self.rename_prefix, self.renamed_symbols)
+                if fname in dataclass_init_disabled_fields:
+                    init_expr = instance_field_defaults.get(fname, "")
+                    if init_expr == "" or self._expr_is_none_marker(init_expr):
+                        init_expr = instance_field_default_factories.get(fname, "")
+                    if init_expr != "":
+                        init_items.append(f"{emitted_fname}({init_expr})")
+                    continue
                 init_items.append(f"{emitted_fname}({emitted_fname})")
             init_txt = join_str_list(", ", init_items)
             if init_txt != "":
