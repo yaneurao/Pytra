@@ -186,6 +186,9 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "syntax.assign.tuple_destructure": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -198,6 +201,9 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "syntax.expr.lambda": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -210,6 +216,9 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "syntax.expr.list_comprehension": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -222,6 +231,7 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "syntax.control.for_range": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -236,6 +246,9 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "syntax.control.try_raise": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -263,6 +276,9 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "builtin.iter.enumerate": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -275,6 +291,7 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "builtin.iter.zip": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -289,6 +306,7 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "builtin.iter.range": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -303,6 +321,9 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "stdlib.json.loads_dumps": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -315,6 +336,9 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "stdlib.pathlib.path_ops": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -327,6 +351,9 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "stdlib.enum.enum_and_intflag": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -339,6 +366,9 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "stdlib.argparse.parse_args": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -351,6 +381,9 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "stdlib.re.sub": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -393,6 +426,9 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     "stdlib.math.imported_symbols": {
         "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},

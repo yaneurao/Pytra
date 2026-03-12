@@ -90,6 +90,26 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertIn("$x = $y;", php)
         self.assertRegex(php, r"\$y = \$__pytra_swap_\d+;")
 
+    def test_longtail_bundle_representative_fixtures_transpile_for_php(self) -> None:
+        for stem in (
+            "tuple_assign",
+            "lambda_basic",
+            "comprehension",
+            "try_raise",
+            "enumerate_basic",
+            "json_extended",
+            "pathlib_extended",
+            "enum_extended",
+            "argparse_extended",
+            "pytra_std_import_math",
+            "re_extended",
+        ):
+            with self.subTest(stem=stem):
+                fixture = find_fixture_case(stem)
+                east = load_east(fixture, parser_backend="self_hosted")
+                php = transpile_to_php_native(east)
+                self.assertTrue(php.strip())
+
     def test_php_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "php" / "native" / "built_in" / "py_runtime.php"
         generated_contains_path = ROOT / "src" / "runtime" / "php" / "generated" / "built_in" / "contains.php"

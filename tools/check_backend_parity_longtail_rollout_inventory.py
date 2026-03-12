@@ -67,6 +67,19 @@ def _collect_bundle_issues() -> list[str]:
     if residual_pairs != bundled_pairs:
         issues.append("long-tail rollout bundles no longer cover the exact residual feature set")
     next_bundle_id = inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["next_bundle"]
+    if len(residual_pairs) == 0:
+        if next_bundle_id is not None:
+            issues.append("long-tail rollout next_bundle must become null once the lua/rb/php bundle closes")
+        if inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["completed_backends"] != inventory_mod.LONGTAIL_BACKEND_ORDER:
+            issues.append("long-tail rollout completed_backends must cover the full backend order once the residual set is empty")
+        if inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["next_backend"] is not None:
+            issues.append("long-tail rollout next_backend must become null once the residual set is empty")
+        if inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["remaining_backends"] != ():
+            issues.append("long-tail rollout remaining_backends must become empty once the residual set closes")
+        for bundle in bundles:
+            if any(bundle["feature_ids_by_backend"].values()):
+                issues.append("long-tail rollout bundles must stay empty handoff markers once the residual set is empty")
+        return issues
     bundle_by_id = {bundle["bundle_id"]: bundle for bundle in bundles}
     next_bundle = bundle_by_id.get(next_bundle_id)
     if next_bundle is None:

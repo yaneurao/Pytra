@@ -84,6 +84,9 @@ def _collect_contract_issues() -> list[str]:
         "syntax.assign.tuple_destructure": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -96,6 +99,9 @@ def _collect_contract_issues() -> list[str]:
         "syntax.expr.lambda": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -108,6 +114,9 @@ def _collect_contract_issues() -> list[str]:
         "syntax.expr.list_comprehension": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -120,6 +129,7 @@ def _collect_contract_issues() -> list[str]:
         "syntax.control.for_range": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -134,6 +144,9 @@ def _collect_contract_issues() -> list[str]:
         "syntax.control.try_raise": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -161,6 +174,9 @@ def _collect_contract_issues() -> list[str]:
         "builtin.iter.enumerate": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -173,6 +189,7 @@ def _collect_contract_issues() -> list[str]:
         "builtin.iter.zip": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -187,6 +204,7 @@ def _collect_contract_issues() -> list[str]:
         "builtin.iter.range": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -201,6 +219,9 @@ def _collect_contract_issues() -> list[str]:
         "stdlib.json.loads_dumps": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -213,6 +234,9 @@ def _collect_contract_issues() -> list[str]:
         "stdlib.pathlib.path_ops": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -225,6 +249,9 @@ def _collect_contract_issues() -> list[str]:
         "stdlib.enum.enum_and_intflag": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -237,6 +264,9 @@ def _collect_contract_issues() -> list[str]:
         "stdlib.argparse.parse_args": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -249,6 +279,9 @@ def _collect_contract_issues() -> list[str]:
         "stdlib.re.sub": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -291,6 +324,9 @@ def _collect_contract_issues() -> list[str]:
         "stdlib.math.imported_symbols": {
             "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
