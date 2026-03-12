@@ -555,6 +555,27 @@ def main() -> None:
             pathlib_shim = (Path(td) / "pytra" / "std" / "pathlib.js").read_text(encoding="utf-8")
             self.assertIn("generated/std/pathlib.js", pathlib_shim)
 
+    def test_js_repo_compat_lane_resolves_runtime_helpers(self) -> None:
+        proc = subprocess.run(
+            [
+                "node",
+                "-e",
+                (
+                    "const rt = require('./src/runtime/js/pytra/py_runtime.js');"
+                    "const pathlib = require('./src/runtime/js/pytra/std/pathlib.js');"
+                    "if (rt.pyBool([1]) !== true) throw new Error('pyBool');"
+                    "const p = pathlib.Path('tmp/a.txt');"
+                    "if (String(p) !== 'tmp/a.txt') throw new Error('Path');"
+                    "console.log('js-compat-ok');"
+                ),
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+        self.assertEqual(proc.stdout.strip(), "js-compat-ok")
+
     def test_pathlib_runtime_symbol_uses_factory_and_property_access(self) -> None:
         fixture = find_fixture_case("math_path_runtime_ir")
         east = load_east(fixture, parser_backend="self_hosted")
