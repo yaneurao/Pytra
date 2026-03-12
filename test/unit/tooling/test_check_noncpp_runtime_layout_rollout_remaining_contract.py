@@ -326,6 +326,15 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertIn(
             {
+                "current_prefix": "src/runtime/js/generated/built_in/",
+                "target_prefix": "src/runtime/js/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "JS live-generated built_in compare artifacts live in generated/built_in once the Wave B compare lanes are materialized.",
+            },
+            by_backend["js"],
+        )
+        self.assertIn(
+            {
                 "current_prefix": "src/runtime/js/generated/std/",
                 "target_prefix": "src/runtime/js/generated/std/",
                 "ownership": "generated",
@@ -335,10 +344,28 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertIn(
             {
+                "current_prefix": "src/runtime/ts/generated/built_in/",
+                "target_prefix": "src/runtime/ts/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "TS live-generated built_in compare artifacts live in generated/built_in once the Wave B compare lanes are materialized.",
+            },
+            by_backend["ts"],
+        )
+        self.assertIn(
+            {
                 "current_prefix": "src/runtime/php/generated/utils/",
                 "target_prefix": "src/runtime/php/generated/utils/",
                 "ownership": "generated",
                 "rationale": "PHP image helpers already live in generated/utils after the Wave B path cutover.",
+            },
+            by_backend["php"],
+        )
+        self.assertIn(
+            {
+                "current_prefix": "src/runtime/php/generated/built_in/",
+                "target_prefix": "src/runtime/php/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "PHP live-generated built_in compare artifacts live in generated/built_in once the Wave B compare lanes are materialized.",
             },
             by_backend["php"],
         )
@@ -368,15 +395,66 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["js"]["pytra_gen_files"],
-            ("std/json.js", "std/math.js", "std/pathlib.js", "std/time.js", "utils/gif.js", "utils/png.js"),
+            (
+                "built_in/contains.js",
+                "built_in/io_ops.js",
+                "built_in/iter_ops.js",
+                "built_in/numeric_ops.js",
+                "built_in/predicates.js",
+                "built_in/scalar_ops.js",
+                "built_in/sequence.js",
+                "built_in/string_ops.js",
+                "built_in/type_id.js",
+                "built_in/zip_ops.js",
+                "std/json.js",
+                "std/math.js",
+                "std/pathlib.js",
+                "std/time.js",
+                "utils/gif.js",
+                "utils/png.js",
+            ),
         )
         self.assertEqual(
             by_backend["php"]["pytra_gen_files"],
-            ("std/json.php", "std/math.php", "std/pathlib.php", "std/time.php", "utils/gif.php", "utils/png.php"),
+            (
+                "built_in/contains.php",
+                "built_in/io_ops.php",
+                "built_in/iter_ops.php",
+                "built_in/numeric_ops.php",
+                "built_in/predicates.php",
+                "built_in/scalar_ops.php",
+                "built_in/sequence.php",
+                "built_in/string_ops.php",
+                "built_in/type_id.php",
+                "built_in/zip_ops.php",
+                "std/json.php",
+                "std/math.php",
+                "std/pathlib.php",
+                "std/time.php",
+                "utils/gif.php",
+                "utils/png.php",
+            ),
         )
         self.assertEqual(
             by_backend["ts"]["pytra_gen_files"],
-            ("std/json.ts", "std/math.ts", "std/pathlib.ts", "std/time.ts", "utils/gif.ts", "utils/png.ts"),
+            (
+                "built_in/contains.ts",
+                "built_in/io_ops.ts",
+                "built_in/iter_ops.ts",
+                "built_in/numeric_ops.ts",
+                "built_in/predicates.ts",
+                "built_in/scalar_ops.ts",
+                "built_in/sequence.ts",
+                "built_in/string_ops.ts",
+                "built_in/type_id.ts",
+                "built_in/zip_ops.ts",
+                "std/json.ts",
+                "std/math.ts",
+                "std/pathlib.ts",
+                "std/time.ts",
+                "utils/gif.ts",
+                "utils/png.ts",
+            ),
         )
 
     def test_target_inventory_is_fixed(self) -> None:
@@ -409,6 +487,16 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         self.assertEqual(
             by_backend["ts"]["generated_files"],
             (
+                "generated/built_in/contains.ts",
+                "generated/built_in/io_ops.ts",
+                "generated/built_in/iter_ops.ts",
+                "generated/built_in/numeric_ops.ts",
+                "generated/built_in/predicates.ts",
+                "generated/built_in/scalar_ops.ts",
+                "generated/built_in/sequence.ts",
+                "generated/built_in/string_ops.ts",
+                "generated/built_in/type_id.ts",
+                "generated/built_in/zip_ops.ts",
                 "generated/std/json.ts",
                 "generated/std/math.ts",
                 "generated/std/pathlib.ts",
@@ -422,6 +510,16 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             {
                 "backend": "php",
                 "generated_files": (
+                    "generated/built_in/contains.php",
+                    "generated/built_in/io_ops.php",
+                    "generated/built_in/iter_ops.php",
+                    "generated/built_in/numeric_ops.php",
+                    "generated/built_in/predicates.php",
+                    "generated/built_in/scalar_ops.php",
+                    "generated/built_in/sequence.php",
+                    "generated/built_in/string_ops.php",
+                    "generated/built_in/type_id.php",
+                    "generated/built_in/zip_ops.php",
                     "generated/std/json.php",
                     "generated/std/math.php",
                     "generated/std/pathlib.php",
@@ -475,27 +573,13 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["js"]["blocked_modules"],
-            (
-                "built_in/contains",
-                "built_in/io_ops",
-                "built_in/iter_ops",
-                "built_in/numeric_ops",
-                "built_in/predicates",
-                "built_in/scalar_ops",
-                "built_in/sequence",
-                "built_in/string_ops",
-                "built_in/type_id",
-                "built_in/zip_ops",
-            ),
+            (),
         )
         self.assertEqual(
             by_backend["php"],
             {
                 "backend": "php",
-                "generated_modules": ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
-                "native_modules": ("built_in/py_runtime", "std/time"),
-                "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
-                "blocked_modules": (
+                "generated_modules": (
                     "built_in/contains",
                     "built_in/io_ops",
                     "built_in/iter_ops",
@@ -506,7 +590,16 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "built_in/string_ops",
                     "built_in/type_id",
                     "built_in/zip_ops",
+                    "std/json",
+                    "std/math",
+                    "std/pathlib",
+                    "std/time",
+                    "utils/gif",
+                    "utils/png",
                 ),
+                "native_modules": ("built_in/py_runtime", "std/time"),
+                "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
+                "blocked_modules": (),
             },
         )
 
@@ -520,35 +613,13 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             {
                 "js": {
                     "backend": "js",
-                    "missing_compare_lane_modules": (
-                        "built_in/contains",
-                        "built_in/io_ops",
-                        "built_in/iter_ops",
-                        "built_in/numeric_ops",
-                        "built_in/predicates",
-                        "built_in/scalar_ops",
-                        "built_in/sequence",
-                        "built_in/string_ops",
-                        "built_in/type_id",
-                        "built_in/zip_ops",
-                    ),
+                    "missing_compare_lane_modules": (),
                     "native_compare_residual_modules": (),
                     "helper_shaped_compare_gap_modules": (),
                 },
                 "ts": {
                     "backend": "ts",
-                    "missing_compare_lane_modules": (
-                        "built_in/contains",
-                        "built_in/io_ops",
-                        "built_in/iter_ops",
-                        "built_in/numeric_ops",
-                        "built_in/predicates",
-                        "built_in/scalar_ops",
-                        "built_in/sequence",
-                        "built_in/string_ops",
-                        "built_in/type_id",
-                        "built_in/zip_ops",
-                    ),
+                    "missing_compare_lane_modules": (),
                     "native_compare_residual_modules": (),
                     "helper_shaped_compare_gap_modules": (),
                 },
@@ -600,18 +671,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 },
                 "php": {
                     "backend": "php",
-                    "missing_compare_lane_modules": (
-                        "built_in/contains",
-                        "built_in/io_ops",
-                        "built_in/iter_ops",
-                        "built_in/numeric_ops",
-                        "built_in/predicates",
-                        "built_in/scalar_ops",
-                        "built_in/sequence",
-                        "built_in/string_ops",
-                        "built_in/type_id",
-                        "built_in/zip_ops",
-                    ),
+                    "missing_compare_lane_modules": (),
                     "native_compare_residual_modules": (),
                     "helper_shaped_compare_gap_modules": (),
                 },
@@ -629,6 +689,16 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "js": {
                     "backend": "js",
                     "materialized_compare_modules": (
+                        "built_in/contains",
+                        "built_in/io_ops",
+                        "built_in/iter_ops",
+                        "built_in/numeric_ops",
+                        "built_in/predicates",
+                        "built_in/scalar_ops",
+                        "built_in/sequence",
+                        "built_in/string_ops",
+                        "built_in/type_id",
+                        "built_in/zip_ops",
                         "std/json",
                         "std/math",
                         "std/pathlib",
@@ -641,6 +711,16 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "ts": {
                     "backend": "ts",
                     "materialized_compare_modules": (
+                        "built_in/contains",
+                        "built_in/io_ops",
+                        "built_in/iter_ops",
+                        "built_in/numeric_ops",
+                        "built_in/predicates",
+                        "built_in/scalar_ops",
+                        "built_in/sequence",
+                        "built_in/string_ops",
+                        "built_in/type_id",
+                        "built_in/zip_ops",
                         "std/json",
                         "std/math",
                         "std/pathlib",
@@ -671,6 +751,16 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "php": {
                     "backend": "php",
                     "materialized_compare_modules": (
+                        "built_in/contains",
+                        "built_in/io_ops",
+                        "built_in/iter_ops",
+                        "built_in/numeric_ops",
+                        "built_in/predicates",
+                        "built_in/scalar_ops",
+                        "built_in/sequence",
+                        "built_in/string_ops",
+                        "built_in/type_id",
+                        "built_in/zip_ops",
                         "std/json",
                         "std/math",
                         "std/pathlib",

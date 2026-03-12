@@ -203,6 +203,22 @@ def main() -> None:
             'export * from "../../generated/utils/gif";',
         )
 
+    def test_ts_generated_built_in_compare_lane_rehomes_native_runtime_import(self) -> None:
+        generated_contains = ROOT / "src" / "runtime" / "ts" / "generated" / "built_in" / "contains.ts"
+        generated_sequence = ROOT / "src" / "runtime" / "ts" / "generated" / "built_in" / "sequence.ts"
+        self.assertTrue(generated_contains.exists())
+        self.assertTrue(generated_sequence.exists())
+        contains_text = generated_contains.read_text(encoding="utf-8")
+        sequence_text = generated_sequence.read_text(encoding="utf-8")
+        self.assertIn('require("../../native/built_in/py_runtime.js")', contains_text)
+        self.assertIn(
+            "module.exports = {py_contains_dict_object, py_contains_list_object, py_contains_set_object, py_contains_str_object};",
+            contains_text,
+        )
+        self.assertIn("module.exports = {py_range, py_repeat};", sequence_text)
+        self.assertNotIn("./pytra/py_runtime.js", contains_text)
+        self.assertNotIn("./pytra/py_runtime.js", sequence_text)
+
     def test_pathlib_runtime_symbol_uses_factory_and_property_access(self) -> None:
         fixture = find_fixture_case("math_path_runtime_ir")
         east = load_east(fixture, parser_backend="self_hosted")

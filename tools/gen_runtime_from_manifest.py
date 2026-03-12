@@ -396,6 +396,19 @@ def rewrite_js_program_to_cjs_module(js_src: str) -> str:
     return body + "\n\n" + exports
 
 
+def rewrite_js_ts_built_in_cjs_module(js_src: str) -> str:
+    text = _strip_trailing_string_literal_expr(js_src)
+    text = re.sub(
+        r'^import\s+\{([^}]+)\}\s+from\s+"\.\/pytra\/py_runtime\.js";$',
+        lambda m: 'const {' + m.group(1).strip() + '} = require("../../native/built_in/py_runtime.js");',
+        text,
+        flags=re.MULTILINE,
+    )
+    if "./pytra/py_runtime.js" in text:
+        raise RuntimeError("generated JS/TS built_in module still points at pytra/py_runtime.js")
+    return rewrite_js_program_to_cjs_module(text)
+
+
 def rewrite_js_std_time_live_wrapper(js_src: str) -> str:
     text = _strip_trailing_string_literal_expr(js_src)
     text = text.replace(
@@ -2112,6 +2125,8 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_ts_std_json_live_wrapper(generated)
     elif item.postprocess == "js_program_to_cjs_module":
         generated = rewrite_js_program_to_cjs_module(generated)
+    elif item.postprocess == "js_ts_built_in_cjs_module":
+        generated = rewrite_js_ts_built_in_cjs_module(generated)
     elif item.postprocess == "go_program_to_library":
         generated = rewrite_go_program_to_library(generated)
     elif item.postprocess == "php_std_time_live_wrapper":

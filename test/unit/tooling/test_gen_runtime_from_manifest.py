@@ -21,6 +21,9 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn(("utils/png", "rs", "src/runtime/rs/generated/utils/png.rs"), pairs)
         self.assertIn(("built_in/type_id", "rs", "src/runtime/rs/generated/built_in/type_id.rs"), pairs)
         self.assertIn(("built_in/type_id", "cs", "src/runtime/cs/generated/built_in/type_id.cs"), pairs)
+        self.assertIn(("built_in/type_id", "js", "src/runtime/js/generated/built_in/type_id.js"), pairs)
+        self.assertIn(("built_in/type_id", "ts", "src/runtime/ts/generated/built_in/type_id.ts"), pairs)
+        self.assertIn(("built_in/type_id", "php", "src/runtime/php/generated/built_in/type_id.php"), pairs)
         self.assertIn(("std/pathlib", "cs", "src/runtime/cs/generated/std/pathlib.cs"), pairs)
         self.assertIn(("std/pathlib", "js", "src/runtime/js/generated/std/pathlib.js"), pairs)
         self.assertIn(("std/pathlib", "ts", "src/runtime/ts/generated/std/pathlib.ts"), pairs)
@@ -36,7 +39,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn(("std/time", "ts", "src/runtime/ts/generated/std/time.ts"), pairs)
         self.assertIn(("std/time", "php", "src/runtime/php/generated/std/time.php"), pairs)
 
-    def test_built_in_manifest_covers_rs_and_cs_for_all_sot_modules(self) -> None:
+    def test_built_in_manifest_covers_compare_targets_for_all_sot_modules(self) -> None:
         items = gen_mod.load_manifest_items(ROOT / "tools" / "runtime_generation_manifest.json")
         by_pair = {(item.item_id, item.target): item.output_rel for item in items}
         module_names = sorted(
@@ -68,6 +71,18 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
             self.assertEqual(
                 by_pair[(item_id, "cs")],
                 f"src/runtime/cs/generated/built_in/{module_name}.cs",
+            )
+            self.assertEqual(
+                by_pair[(item_id, "js")],
+                f"src/runtime/js/generated/built_in/{module_name}.js",
+            )
+            self.assertEqual(
+                by_pair[(item_id, "ts")],
+                f"src/runtime/ts/generated/built_in/{module_name}.ts",
+            )
+            self.assertEqual(
+                by_pair[(item_id, "php")],
+                f"src/runtime/php/generated/built_in/{module_name}.php",
             )
 
     def test_resolve_targets_all_contains_cpp_and_swift(self) -> None:
@@ -168,6 +183,22 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("module.exports = { pi, e, sin, cos, tan, sqrt, exp, log, log10, fabs, floor, ceil, pow };", out)
         self.assertNotIn("__m.", out)
         self.assertNotIn("extern(", out)
+
+    def test_rewrite_js_ts_built_in_cjs_module_rehomes_runtime_import(self) -> None:
+        src = "\n".join(
+            [
+                'import { pyStr, pyLen } from "./pytra/py_runtime.js";',
+                "",
+                "function py_contains_str_object(values, key) {",
+                "    return pyLen(values) > pyStr(key).length;",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_js_ts_built_in_cjs_module(src)
+        self.assertIn('require("../../native/built_in/py_runtime.js")', out)
+        self.assertIn("function py_contains_str_object(values, key) {", out)
+        self.assertIn("module.exports = {py_contains_str_object};", out)
+        self.assertNotIn("./pytra/py_runtime.js", out)
 
     def test_rewrite_ts_std_math_live_wrapper_exports_typed_symbols(self) -> None:
         src = "\n".join(
@@ -507,7 +538,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         item_ids = gen_mod.resolve_item_ids("all", items)
         plan = gen_mod.build_generation_plan(items, targets, item_ids)
         checked, updated = gen_mod.generate(plan, check=True, dry_run=False)
-        self.assertEqual(checked, 22)
+        self.assertEqual(checked, 52)
         self.assertEqual(updated, 0)
 
 

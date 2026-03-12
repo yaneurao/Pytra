@@ -107,7 +107,10 @@
           "output": "src/runtime/cs/generated/built_in/contains.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "contains_helper"
-        }
+        },
+        { "target": "js", "output": "src/runtime/js/generated/built_in/contains.js", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "ts", "output": "src/runtime/ts/generated/built_in/contains.ts", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "php", "output": "src/runtime/php/generated/built_in/contains.php", "postprocess": "php_program_to_library" }
       ]
     },
     {
@@ -121,7 +124,10 @@
           "output": "src/runtime/cs/generated/built_in/io_ops.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "io_ops_helper"
-        }
+        },
+        { "target": "js", "output": "src/runtime/js/generated/built_in/io_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "ts", "output": "src/runtime/ts/generated/built_in/io_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "php", "output": "src/runtime/php/generated/built_in/io_ops.php", "postprocess": "php_program_to_library" }
       ]
     },
     {
@@ -135,7 +141,10 @@
           "output": "src/runtime/cs/generated/built_in/iter_ops.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "iter_ops_helper"
-        }
+        },
+        { "target": "js", "output": "src/runtime/js/generated/built_in/iter_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "ts", "output": "src/runtime/ts/generated/built_in/iter_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "php", "output": "src/runtime/php/generated/built_in/iter_ops.php", "postprocess": "php_program_to_library" }
       ]
     },
     {
@@ -149,7 +158,10 @@
           "output": "src/runtime/cs/generated/built_in/numeric_ops.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "numeric_ops_helper"
-        }
+        },
+        { "target": "js", "output": "src/runtime/js/generated/built_in/numeric_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "ts", "output": "src/runtime/ts/generated/built_in/numeric_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "php", "output": "src/runtime/php/generated/built_in/numeric_ops.php", "postprocess": "php_program_to_library" }
       ]
     },
     {
@@ -163,7 +175,10 @@
           "output": "src/runtime/cs/generated/built_in/predicates.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "predicates_helper"
-        }
+        },
+        { "target": "js", "output": "src/runtime/js/generated/built_in/predicates.js", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "ts", "output": "src/runtime/ts/generated/built_in/predicates.ts", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "php", "output": "src/runtime/php/generated/built_in/predicates.php", "postprocess": "php_program_to_library" }
       ]
     },
     {
@@ -177,7 +192,10 @@
           "output": "src/runtime/cs/generated/built_in/scalar_ops.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "scalar_ops_helper"
-        }
+        },
+        { "target": "js", "output": "src/runtime/js/generated/built_in/scalar_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "ts", "output": "src/runtime/ts/generated/built_in/scalar_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "php", "output": "src/runtime/php/generated/built_in/scalar_ops.php", "postprocess": "php_program_to_library" }
       ]
     },
     {
@@ -191,7 +209,10 @@
           "output": "src/runtime/cs/generated/built_in/sequence.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "sequence_helper"
-        }
+        },
+        { "target": "js", "output": "src/runtime/js/generated/built_in/sequence.js", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "ts", "output": "src/runtime/ts/generated/built_in/sequence.ts", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "php", "output": "src/runtime/php/generated/built_in/sequence.php", "postprocess": "php_program_to_library" }
       ]
     },
     {
@@ -205,7 +226,10 @@
           "output": "src/runtime/cs/generated/built_in/string_ops.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "string_ops_helper"
-        }
+        },
+        { "target": "js", "output": "src/runtime/js/generated/built_in/string_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "ts", "output": "src/runtime/ts/generated/built_in/string_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "php", "output": "src/runtime/php/generated/built_in/string_ops.php", "postprocess": "php_program_to_library" }
       ]
     },
     {
@@ -219,7 +243,10 @@
           "output": "src/runtime/cs/generated/built_in/type_id.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "type_id_helper"
-        }
+        },
+        { "target": "js", "output": "src/runtime/js/generated/built_in/type_id.js", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "ts", "output": "src/runtime/ts/generated/built_in/type_id.ts", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "php", "output": "src/runtime/php/generated/built_in/type_id.php", "postprocess": "php_program_to_library" }
       ]
     },
     {
@@ -233,7 +260,10 @@
           "output": "src/runtime/cs/generated/built_in/zip_ops.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "zip_ops_helper"
-        }
+        },
+        { "target": "js", "output": "src/runtime/js/generated/built_in/zip_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "ts", "output": "src/runtime/ts/generated/built_in/zip_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
+        { "target": "php", "output": "src/runtime/php/generated/built_in/zip_ops.php", "postprocess": "php_program_to_library" }
       ]
     },
     {

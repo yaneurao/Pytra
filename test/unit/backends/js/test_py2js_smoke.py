@@ -595,6 +595,29 @@ def main() -> None:
         self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
         self.assertEqual(proc.stdout.strip(), "js-compat-ok")
 
+    def test_js_generated_built_in_compare_lane_resolves_native_runtime(self) -> None:
+        proc = subprocess.run(
+            [
+                "node",
+                "-e",
+                (
+                    "const contains = require('./src/runtime/js/generated/built_in/contains.js');"
+                    "const predicates = require('./src/runtime/js/generated/built_in/predicates.js');"
+                    "const sequence = require('./src/runtime/js/generated/built_in/sequence.js');"
+                    "if (contains.py_contains_str_object('abc', 'b') !== true) throw new Error('contains');"
+                    "if (predicates.py_any([0, 1]) !== true) throw new Error('predicates');"
+                    "const xs = sequence.py_range(1, 4, 1);"
+                    "if (!Array.isArray(xs) || xs.length !== 3 || xs[0] !== 1 || xs[2] !== 3) throw new Error('sequence');"
+                    "console.log('js-built-in-ok');"
+                ),
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+        self.assertEqual(proc.stdout.strip(), "js-built-in-ok")
+
     def test_pathlib_runtime_symbol_uses_factory_and_property_access(self) -> None:
         fixture = find_fixture_case("math_path_runtime_ir")
         east = load_east(fixture, parser_backend="self_hosted")
