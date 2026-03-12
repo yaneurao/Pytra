@@ -1296,6 +1296,15 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         op = stmt.get("op")
         symbol = _bin_op_symbol(op, left=stmt.get("target"), right=stmt.get("value"))
         return [indent + lhs + " " + symbol + "= " + _render_expr(stmt.get("value")) + ";"]
+    if kind == "Swap":
+        left = _target_lhs(stmt.get("left"))
+        right = _target_lhs(stmt.get("right"))
+        tmp = _next_tmp(ctx, "swap")
+        return [
+            indent + tmp + " = " + left + ";",
+            indent + left + " = " + right + ";",
+            indent + right + " = " + tmp + ";",
+        ]
     if kind == "If":
         test = _render_expr(stmt.get("test"))
         lines: list[str] = [indent + "if (" + test + ") {"]

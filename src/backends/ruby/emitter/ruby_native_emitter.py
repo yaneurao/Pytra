@@ -1454,6 +1454,19 @@ def _emit_stmt_list(stmts: list[Any], *, indent: str, ctx: dict[str, Any]) -> li
     return out
 
 
+def _emit_swap(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
+    if not isinstance(stmt, dict):
+        raise RuntimeError("ruby native emitter: unsupported Swap")
+    left = _render_expr(stmt.get("left"))
+    right = _render_expr(stmt.get("right"))
+    tmp = _fresh_tmp(ctx, "swap")
+    return [
+        indent + tmp + " = " + left,
+        indent + left + " = " + right,
+        indent + right + " = " + tmp,
+    ]
+
+
 def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if not isinstance(stmt, dict):
         raise RuntimeError("ruby native emitter: unsupported statement")
@@ -1548,6 +1561,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         op = stmt.get("op")
         symbol = _bin_op_symbol(op)
         return [indent + lhs + " " + symbol + "= " + rhs]
+
+    if kind == "Swap":
+        return _emit_swap(stmt, indent=indent, ctx=ctx)
 
     if kind == "If":
         test_expr = _strip_outer_parens(_render_condition_expr(stmt.get("test")))

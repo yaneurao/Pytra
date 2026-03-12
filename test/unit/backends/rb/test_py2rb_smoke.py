@@ -105,6 +105,14 @@ class Py2RbSmokeTest(unittest.TestCase):
         ruby = transpile_to_ruby_native(east)
         self.assertIn("~y", ruby)
 
+    def test_tuple_assign_fixture_lowers_swap_via_temp_for_ruby(self) -> None:
+        fixture = find_fixture_case("tuple_assign")
+        east = load_east(fixture, parser_backend="self_hosted")
+        ruby = transpile_to_ruby_native(east)
+        self.assertIn("__swap_", ruby)
+        self.assertIn("x = y", ruby)
+        self.assertRegex(ruby, r"y = __swap_\d+")
+
     def test_cli_relative_import_support_rollout_scenarios_transpile_for_ruby(self) -> None:
         for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
             with self.subTest(scenario_id=scenario_id):

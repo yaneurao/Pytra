@@ -1055,6 +1055,9 @@ class LuaNativeEmitter:
             value = self._render_expr(stmt.get("value"))
             self._emit_line(target + " = " + target + " " + _binop_symbol(op) + " " + value)
             return
+        if kind == "Swap":
+            self._emit_swap(stmt)
+            return
         if kind == "Expr":
             value_any = stmt.get("value")
             if isinstance(value_any, dict) and value_any.get("kind") == "Name":
@@ -1423,6 +1426,14 @@ class LuaNativeEmitter:
                         continue
                 self._emit_line(target_txt + " = " + tmp_name + "[" + str(i + 1) + "]")
             i += 1
+
+    def _emit_swap(self, stmt: dict[str, Any]) -> None:
+        left = self._render_target(stmt.get("left"))
+        right = self._render_target(stmt.get("right"))
+        tmp_name = self._next_tmp_name("__swap")
+        self._emit_line("local " + tmp_name + " = " + left)
+        self._emit_line(left + " = " + right)
+        self._emit_line(right + " = " + tmp_name)
 
     def _render_target(self, target_any: Any) -> str:
         if isinstance(target_any, dict) and target_any.get("kind") == "Name":
