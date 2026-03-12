@@ -10,6 +10,7 @@ from toolchain.compiler.relative_import_longtail_support_contract import (
 )
 from tools.check_relative_import_longtail_support_contract import (
     EXPECTED_BACKENDS,
+    EXPECTED_FOCUSED_VERIFICATION_LANES,
     EXPECTED_HANDOFF,
     EXPECTED_SCENARIOS,
     validate_relative_import_longtail_support_contract,
@@ -37,6 +38,13 @@ class RelativeImportLongtailSupportContractTest(unittest.TestCase):
                 and entry["current_evidence_lane"] == "backend_native_fail_closed"
                 for entry in RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1
             )
+        )
+        self.assertEqual(
+            tuple(
+                entry["focused_verification_lane"]
+                for entry in RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1
+            ),
+            EXPECTED_FOCUSED_VERIFICATION_LANES,
         )
 
     def test_handoff_is_fixed(self) -> None:
@@ -70,6 +78,7 @@ class RelativeImportLongtailSupportContractTest(unittest.TestCase):
                 "next_verification_lane": EXPECTED_HANDOFF["verification_lane"],
                 "current_bundle_contract_state": EXPECTED_HANDOFF["current_contract_state"],
                 "current_bundle_evidence_lane": EXPECTED_HANDOFF["current_evidence_lane"],
+                "focused_verification_lanes": EXPECTED_FOCUSED_VERIFICATION_LANES,
             },
         )
 

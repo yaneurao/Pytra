@@ -58,12 +58,13 @@
 - 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01` では Lua backend の focused verification lane を `lua_relative_import_support_rollout_smoke` とし、current diagnostic family は `backend_specific_fail_closed`、current evidence は `backend_native_fail_closed` のまま固定する。
 - 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02` では PHP backend の focused verification lane を `php_relative_import_support_rollout_smoke` とし、Lua と同じく backend-local contract/checker で smoke 名と diagnostic marker を固定する。
 - 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03` では Ruby backend の focused verification lane を `ruby_relative_import_support_rollout_smoke` とし、Lua/PHP と同じく backend-local contract/checker で smoke 名と diagnostic marker を固定する。
+- 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S3-01` では backend coverage / parity docs / active handoff wording に `lua/php/ruby` focused lane 名まで明記し、parent task を close する。
 
 ## 分解
 
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01] archived fail-closed baseline を維持したまま、`lua/php/ruby` relative import support rollout の active handoff と representative contract を固定する。
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01] archived fail-closed baseline を維持したまま、`lua/php/ruby` relative import support rollout の active handoff と representative contract を固定した。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01] archived long-tail fail-closed bundle を archive へ移し、support rollout の live plan / TODO / contract / checker / handoff を追加した。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01] Lua backend の representative support rollout contract と focused verification lane を固定する。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02] PHP backend の representative support rollout contract と focused verification lane を fixed inventory / checker / smoke で固定した。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03] Ruby backend の representative support rollout contract と focused verification lane を fixed inventory / checker / smoke で固定した。
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S3-01] backend parity docs / coverage inventory / active handoff wording を current support rollout state に同期して task を閉じる。
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S3-01] backend parity docs / coverage inventory / active handoff wording を current support rollout state に同期して task を閉じた。

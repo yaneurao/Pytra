@@ -37,6 +37,11 @@ EXPECTED_SCENARIOS = {
 }
 
 EXPECTED_BACKENDS = ("lua", "php", "ruby")
+EXPECTED_FOCUSED_VERIFICATION_LANES = (
+    "lua_relative_import_support_rollout_smoke",
+    "php_relative_import_support_rollout_smoke",
+    "ruby_relative_import_support_rollout_smoke",
+)
 
 EXPECTED_HANDOFF = {
     "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01",
@@ -115,6 +120,13 @@ def validate_relative_import_longtail_support_contract() -> None:
                 "long-tail support backend verification lane drifted: "
                 f"{entry['backend']}={entry['verification_lane']}"
             )
+        if entry["focused_verification_lane"] != EXPECTED_FOCUSED_VERIFICATION_LANES[
+            EXPECTED_BACKENDS.index(entry["backend"])
+        ]:
+            raise SystemExit(
+                "long-tail support backend focused verification lane drifted: "
+                f"{entry['backend']}={entry['focused_verification_lane']}"
+            )
         if entry["fail_closed_lane"] != "backend_specific_fail_closed":
             raise SystemExit(
                 "long-tail support fail-closed lane drifted: "
@@ -155,6 +167,7 @@ def validate_relative_import_longtail_support_contract() -> None:
         "next_verification_lane": EXPECTED_HANDOFF["verification_lane"],
         "current_bundle_contract_state": EXPECTED_HANDOFF["current_contract_state"],
         "current_bundle_evidence_lane": EXPECTED_HANDOFF["current_evidence_lane"],
+        "focused_verification_lanes": EXPECTED_FOCUSED_VERIFICATION_LANES,
     }:
         raise SystemExit(
             "relative import long-tail support handoff snapshot drifted from backend coverage"
@@ -169,6 +182,14 @@ def validate_relative_import_longtail_support_contract() -> None:
             raise SystemExit(
                 f"missing long-tail support archived prerequisite path: {rel_path}"
             )
+    for doc_path in RELATIVE_IMPORT_LONGTAIL_SUPPORT_HANDOFF_V1["backend_parity_docs"]:
+        doc_text = (ROOT / doc_path).read_text(encoding="utf-8")
+        for lane in EXPECTED_FOCUSED_VERIFICATION_LANES:
+            if lane not in doc_text:
+                raise SystemExit(
+                    "relative import long-tail support backend parity docs must mention the focused rollout lanes: "
+                    f"{doc_path} missing {lane}"
+                )
 
 
 def main() -> None:

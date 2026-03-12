@@ -281,6 +281,16 @@ def validate_relative_import_noncpp_rollout_handoff() -> None:
                 "relative import backend parity docs must mention the long-tail followup bundle: "
                 f"{doc_path}"
             )
+        for lane in (
+            "lua_relative_import_support_rollout_smoke",
+            "php_relative_import_support_rollout_smoke",
+            "ruby_relative_import_support_rollout_smoke",
+        ):
+            if lane not in doc_text:
+                raise SystemExit(
+                    "relative import backend parity docs must mention the backend-local long-tail focused lanes: "
+                    f"{doc_path} missing {lane}"
+                )
         for bundle_id in RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["second_wave_bundle_order"]:
             if bundle_id not in doc_text:
                 raise SystemExit(
