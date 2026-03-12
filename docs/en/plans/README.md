@@ -13,10 +13,8 @@ This folder stores long-term plans, design drafts, and investigation notes.
 - `backlog` means live `p*-*.md` files that are not registered in TODO yet and are either still unfinished backlog drafts or intentional live status/report sinks.
 - `stale-complete` means live `p*-*.md` files that are no longer referenced by TODO, have every checklist item complete, and are not live status/report sinks. These should be moved out of live `plans/`.
 
-Active live plans as of 2026-03-12:
-- `p4-crossruntime-pyruntime-emitter-shrink.md`
-- `p6-backend-conformance-suite.md`
-- `p7-backend-parity-rollout-and-matrix.md`
+Active live plans as of 2026-03-13:
+- none
 
 ## Rules
 

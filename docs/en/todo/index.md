@@ -31,4 +31,4 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 
-- [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01] Fill the remaining unsupported support-matrix cells for the long-tail tier (`js/ts/lua/rb/php`) as a live implementation rollout task (context: [p6-backend-parity-longtail-rollout.md](../plans/p6-backend-parity-longtail-rollout.md)). Progress: `S2-02` and `S3-01` closed the `lua/rb/php` bundle and the matrix/docs closeout, leaving only archive migration before the task can leave the active queue
+- There are currently no unfinished tasks. Add new tasks here once they are promoted.

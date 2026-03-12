@@ -15,6 +15,7 @@ Last updated: 2026-03-13
 
 ## Completed Plan Archive
 
+- [2026-03-13 / P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01](../plans/archive/20260313-p6-backend-parity-longtail-rollout.md)
 - [2026-03-13 / P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01](../plans/archive/20260313-p5-backend-parity-secondary-rollout.md)
 - [2026-03-13 / P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01](../plans/archive/20260313-p1-noncpp-runtime-layout-rollout-remaining.md)
 - [2026-03-13 / P0-CPP-RUNTIME-PACKAGING-DESHIM-01](../plans/archive/20260313-p0-cpp-runtime-packaging-deshim.md)
