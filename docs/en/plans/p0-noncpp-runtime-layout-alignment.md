@@ -1,4 +1,4 @@
-# P0: Align non-C++ runtimes to a C++-comparable `generated/native` layout
+# P0: Align the `rs/cs` runtimes to a C++-comparable `generated/native` layout
 
 Last updated: 2026-03-12
 
@@ -6,14 +6,15 @@ Related TODO:
 - `docs/ja/todo/index.md` `ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01`
 
 Background:
-- The current non-C++ runtimes still depend on `pytra-core/pytra-gen/pytra` naming, while C++ already has a clearer ownership split under `generated/native/core/pytra`.
+- The current `rs/cs` runtimes still depend on `pytra-core/pytra-gen/pytra` naming, while C++ already has a clearer ownership split under `generated/native/core/pytra`.
 - That makes tree-level comparison harder: for modules such as `json/pathlib/gif/png/...`, it is not obvious whether a backend is missing a generated artifact or still hiding handwritten logic in the core lane.
 - Per the user directive, anything placed under `generated/` must be emitted from the SoT (`src/pytra/**`). Moving handwritten files into `generated/` is invalid.
+- Per the later user directive, `rs/cs` stay in P0 and the remaining non-C++ backends move to a separate P1 rollout.
 
 Goal:
-- Make non-C++ backends use `generated/` and `native/` as formal runtime lanes so their trees can be compared against C++ at the file/module level.
+- Make `rs/cs` use `generated/` and `native/` as formal runtime lanes so their trees can be compared against C++ at the file/module level.
 - Keep `generated/` strictly SoT-generated and `native/` strictly handwritten.
-- Start with `rs/cs`, because they are the current work targets and the immediate blocker for layout convergence.
+- Materialize `generated/built_in/*` for `rs/cs` from `src/pytra/built_in/*.py`, not only `std/utils`.
 
 Scope:
 - `src/runtime/{rs,cs}/**`
@@ -25,13 +26,14 @@ Scope:
 
 Out of scope:
 - redesigning the C++ runtime itself
-- renaming every backend in one turn
+- rolling the remaining non-`rs/cs` backends
 - immediately deleting the `pytra/` public shim lane
 
 Acceptance criteria:
 - `src/runtime/{rs,cs}/generated/**` exists and contains only generated artifacts with `source:` and `generated-by:` markers.
 - `src/runtime/{rs,cs}/native/**` exists and does not contain `generated-by:` markers.
 - `tools/runtime_generation_manifest.json` emits `rs/cs` SoT artifacts into `generated/`.
+- `src/runtime/{rs,cs}/generated/built_in/*` exists for the `src/pytra/built_in/*.py` modules and can be compared to `cpp/generated/built_in/*` by `<lane>/<bucket>/<module>`.
 - `backend_registry_metadata.py`, `pytra_cli_profiles.py`, and selfhost checks reference the new `rs/cs` layout.
 - Runtime guards no longer treat `pytra-gen/pytra-core` as the canonical vocabulary; `generated/native` becomes the primary audited layout.
 - When runtime trees are compared by `<lane>/<bucket>/<module>`, missing vs. lingering runtime modules in `rs/cs` are obvious from the filesystem alone.
@@ -49,6 +51,7 @@ Execution policy:
 2. Introduce `native/` as the renamed handwritten lane for current `pytra-core`.
 3. Keep `pytra/` as a compatibility/public shim lane for now if needed, but do not treat it as the ownership source of truth.
 4. Compare runtime coverage by `<lane>/<bucket>/<module>` and ignore extension multiplicity (`.h/.cpp` vs `.rs/.cs`) as a secondary detail.
+5. Treat `generated/built_in/*` as the lane for `src/pytra/built_in/*.py`, while keeping substrate files such as `py_runtime.*` in `native/built_in/*`.
 
 ## Target Layout
 
@@ -120,8 +123,9 @@ This compare unit is the basis for making `missing generated artifact` and `hand
 - [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S2-03] Regenerate `rs/cs` `png/gif` into the new `generated/utils` lane and remove old-path dependencies.
 - [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-01] Decide module-by-module which `cs` std lanes (`json/pathlib/math/re/argparse/enum`) belong in `generated/std` and which stay in `native`.
 - [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-02] Migrate the `rs/cs` std lanes into `generated/std` and shrink handwritten logic in `native`.
-- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S4-01] Update runtime guards / allowlists / docs to the `generated/native` vocabulary.
-- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S4-02] Define the rollout waves for `go/java/kt/scala/swift/nim/js/ts/lua/rb/php`.
+- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S4-01] Generate `rs/cs` `generated/built_in/*` from `src/pytra/built_in/*.py` so the built-in compare lane is real.
+- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S4-02] Fix the `generated/built_in/*` vs `native/built_in/*` responsibility boundary and shrink built-in residuals in `py_runtime.*`.
+- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S5-01] Update runtime guards / allowlists / docs to the `generated/native` vocabulary.
 
 Decision log:
 - 2026-03-12: Per user direction, promoted the non-C++ runtime layout reset to P0 and fixed the rule that `generated/` may contain only SoT-emitted artifacts.
@@ -131,3 +135,4 @@ Decision log:
 - 2026-03-12: As the first probe for `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-01`, checked whether `json.py` / `pathlib.py` can already flow into `cs/rs` generated std lanes. `json.py` still stops on the `@abi` target restriction, while `pathlib.py` still lacks wired `os/os_path/glob` runtime import lanes, so the std-lane migration remains a follow-up wave.
 - 2026-03-12: As a compare-lane expansion under `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01`, added `rs/cs` `std/{time,math,os,os_path,glob,pathlib}` entries to `tools/runtime_generation_manifest.json` and generated `src/runtime/{rs,cs}/generated/std/*` from SoT. For now these files exist to make tree-level comparison concrete; build/runtime hooks still stay on the `native` lane.
 - 2026-03-12: Closed `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-01` by fixing the C# std lane ownership contract in `noncpp_runtime_layout_contract.py` / `check_noncpp_runtime_layout_contract.py`. The current decision is `json=native/std + generated blocked`, `pathlib=native/std canonical + generated compare artifact`, `math=native/built_in canonical + generated compare artifact`, and `re/argparse/enum=no runtime module`, guarded across the build profile, emitter alias lane, and C# smoke tests.
+- 2026-03-12: Re-scoped this P0 to `rs/cs` only and moved the remaining backend rollout into a separate P1 task. `generated/built_in/*` is part of the mandatory P0 end state, not an optional later extra.
