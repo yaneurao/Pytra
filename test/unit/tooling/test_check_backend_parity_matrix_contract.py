@@ -123,6 +123,10 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
+                "builtin.iter.enumerate": {
+                    "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                },
                 "builtin.iter.range": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},

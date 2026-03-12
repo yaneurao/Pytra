@@ -217,6 +217,13 @@ class Child(Base):
         self.assertIn("new System.Func<System.Collections.Generic.List<long>>", cs)
         self.assertIn("foreach (var i in new System.Collections.Generic.List<long> { 1, 2, 3, 4 })", cs)
 
+    def test_enumerate_fixture_uses_pytra_enumerate_helper(self) -> None:
+        fixture = find_fixture_case("enumerate_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("foreach (var __it_1 in Program.PytraEnumerate(values)) {", cs)
+        self.assertIn("foreach (var __it_3 in Program.PytraEnumerate(values, 1)) {", cs)
+
     def test_attribute_annassign_uses_type_hint_for_set_and_dict_literals(self) -> None:
         src = """class Holder:
     def __init__(self):
