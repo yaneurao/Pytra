@@ -13,10 +13,10 @@
           "postprocess": "cpp_program_to_namespace",
           "helper_name": "pytra::utils::png"
         },
-        { "target": "rs", "output": "src/runtime/rs/pytra-gen/utils/png.rs" },
+        { "target": "rs", "output": "src/runtime/rs/generated/utils/png.rs" },
         {
           "target": "cs",
-          "output": "src/runtime/cs/pytra-gen/utils/png.cs",
+          "output": "src/runtime/cs/generated/utils/png.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "png_helper"
         },
@@ -60,10 +60,10 @@
           "postprocess": "cpp_program_to_namespace",
           "helper_name": "pytra::utils::gif"
         },
-        { "target": "rs", "output": "src/runtime/rs/pytra-gen/utils/gif.rs" },
+        { "target": "rs", "output": "src/runtime/rs/generated/utils/gif.rs" },
         {
           "target": "cs",
-          "output": "src/runtime/cs/pytra-gen/utils/gif.cs",
+          "output": "src/runtime/cs/generated/utils/gif.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "gif_helper"
         },

@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TODO_PATH = ROOT / "docs" / "ja" / "todo" / "index.md"
 PLANS_DIR = ROOT / "docs" / "ja" / "plans"
 
-TASK_RE = re.compile(r"^\s*\d+\.\s+\[( |x)\]\s+\[ID:\s*([A-Za-z0-9-]+)\]")
+TASK_RE = re.compile(r"^\s*(?:\d+\.\s+|-\s+)\[( |x)\]\s+\[ID:\s*([A-Za-z0-9-]+)\]")
 TODO_PROGRESS_RE = re.compile(r"^\s*-\s*`(P[0-9]+-[A-Za-z0-9-]+)`")
 PLAN_ID_TOKEN_RE = re.compile(r"`(P[0-9]+-[A-Za-z0-9-]+)`")
 PLAN_PROGRESS_LINE_RE = re.compile(r"^\s*-\s*\d{4}-\d{2}-\d{2}:")

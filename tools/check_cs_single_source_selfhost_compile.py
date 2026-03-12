@@ -17,13 +17,13 @@ PREPARE = ROOT / "tools" / "prepare_selfhost_source_cs.py"
 PY2X = ROOT / "src" / "py2x.py"
 SELFHOST_PY2X_CS = ROOT / "selfhost" / "py2x_cs.py"
 RUNTIME_FILES = [
-    ROOT / "src" / "runtime" / "cs" / "pytra-core" / "built_in" / "py_runtime.cs",
-    ROOT / "src" / "runtime" / "cs" / "pytra-core" / "built_in" / "time.cs",
-    ROOT / "src" / "runtime" / "cs" / "pytra-core" / "built_in" / "math.cs",
-    ROOT / "src" / "runtime" / "cs" / "pytra-gen" / "utils" / "png.cs",
-    ROOT / "src" / "runtime" / "cs" / "pytra-gen" / "utils" / "gif.cs",
-    ROOT / "src" / "runtime" / "cs" / "pytra-core" / "std" / "pathlib.cs",
-    ROOT / "src" / "runtime" / "cs" / "pytra-core" / "std" / "json.cs",
+    ROOT / "src" / "runtime" / "cs" / "native" / "built_in" / "py_runtime.cs",
+    ROOT / "src" / "runtime" / "cs" / "native" / "built_in" / "time.cs",
+    ROOT / "src" / "runtime" / "cs" / "native" / "built_in" / "math.cs",
+    ROOT / "src" / "runtime" / "cs" / "generated" / "utils" / "png.cs",
+    ROOT / "src" / "runtime" / "cs" / "generated" / "utils" / "gif.cs",
+    ROOT / "src" / "runtime" / "cs" / "native" / "std" / "pathlib.cs",
+    ROOT / "src" / "runtime" / "cs" / "native" / "std" / "json.cs",
 ]
 
 

@@ -70,8 +70,8 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
     "rs": {
         "kind": "copy_files",
         "files": [
-            ("runtime/rs/pytra-core/built_in/py_runtime.rs", "py_runtime.rs"),
-            ("runtime/rs/pytra-gen/utils/image_runtime.rs", "image_runtime.rs"),
+            ("runtime/rs/native/built_in/py_runtime.rs", "py_runtime.rs"),
+            ("runtime/rs/generated/utils/image_runtime.rs", "image_runtime.rs"),
         ],
     },
     "go": {

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Guard runtime marker/layout policy for generated/core ownership boundaries.
+"""Guard runtime marker/layout policy for generated/native ownership boundaries.
 
 Policy:
-- `src/runtime/<lang>/pytra-gen/**` files must include both:
+- `src/runtime/<lang>/pytra-gen/**` and `src/runtime/{rs,cs}/generated/**` files must include both:
   - `source: ...`
   - `generated-by: ...`
-- `src/runtime/<lang>/pytra-core/**` files must not include generated markers.
+- `src/runtime/<lang>/pytra-core/**` and `src/runtime/{rs,cs}/native/**` files must not include generated markers.
 - `src/runtime/cpp/generated/core/**` files must include both:
   - `source: ...`
   - `generated-by: ...`
@@ -91,8 +91,28 @@ def _iter_tree_files(base: Path) -> list[Path]:
 
 
 def _is_excluded_gen_file(path: Path) -> bool:
-    # allow docs/readme under pytra-gen.
+    # allow docs/readme under generated lanes.
     return path.suffix.lower() in {".md", ".txt", ".json"}
+
+
+def _iter_noncpp_generated_files() -> list[Path]:
+    out = _iter_runtime_files("pytra-gen")
+    out.extend(_iter_tree_files(RUNTIME_ROOT / "rs" / "generated"))
+    out.extend(_iter_tree_files(RUNTIME_ROOT / "cs" / "generated"))
+    uniq: dict[str, Path] = {}
+    for path in out:
+        uniq[str(path)] = path
+    return [uniq[key] for key in sorted(uniq)]
+
+
+def _iter_noncpp_native_files() -> list[Path]:
+    out = _iter_runtime_files("pytra-core")
+    out.extend(_iter_tree_files(RUNTIME_ROOT / "rs" / "native"))
+    out.extend(_iter_tree_files(RUNTIME_ROOT / "cs" / "native"))
+    uniq: dict[str, Path] = {}
+    for path in out:
+        uniq[str(path)] = path
+    return [uniq[key] for key in sorted(uniq)]
 
 
 def _append_missing_generated_markers(
@@ -154,7 +174,7 @@ def _append_forbidden_generated_markers(
 def _collect_findings() -> list[Finding]:
     findings: list[Finding] = []
 
-    for p in _iter_runtime_files("pytra-gen"):
+    for p in _iter_noncpp_generated_files():
         if _is_excluded_gen_file(p):
             continue
         _append_missing_generated_markers(
@@ -164,13 +184,15 @@ def _collect_findings() -> list[Finding]:
             generated_by_reason="gen_missing_generated_by_marker",
         )
 
-    for p in _iter_runtime_files("pytra-core"):
+    for p in _iter_noncpp_native_files():
+        rel = str(p.relative_to(ROOT)).replace("\\", "/")
+        detail_prefix = "pytra-core" if "/pytra-core/" in ("/" + rel) else "native"
         _append_forbidden_generated_markers(
             findings,
             p,
             source_reason="core_contains_generated_source_marker",
             generated_by_reason="core_contains_generated_by_marker",
-            detail_prefix="pytra-core",
+            detail_prefix=detail_prefix,
             source_re=PYTRA_CORE_FORBIDDEN_RE,
         )
 
