@@ -239,7 +239,11 @@ def _default_return_expr(java_type: str) -> str:
 def _java_string_literal(text: str) -> str:
     out = text.replace("\\", "\\\\")
     out = out.replace('"', '\\"')
+    out = out.replace("\r", "\\r")
     out = out.replace("\n", "\\n")
+    out = out.replace("\t", "\\t")
+    out = out.replace("\b", "\\b")
+    out = out.replace("\f", "\\f")
     return '"' + out + '"'
 
 

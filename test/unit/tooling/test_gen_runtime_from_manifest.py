@@ -100,6 +100,11 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return time_native.perf_counter();", out)
         self.assertNotIn("return __t.perf_counter();", out)
 
+    def test_run_py2x_nim_png_helper_reuses_fail_soft_try_comment(self) -> None:
+        out = gen_mod.run_py2x("nim", "src/pytra/utils/png.py", "src/runtime/nim/generated/utils/png_helper.nim")
+        self.assertIn("proc write_rgb_png*", out)
+        self.assertIn("# unsupported stmt: Try", out)
+
 
 if __name__ == "__main__":
     unittest.main()

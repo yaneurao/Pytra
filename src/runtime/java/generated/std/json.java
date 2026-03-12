@@ -344,19 +344,19 @@ public final class json {
                                 out_chars.add("/");
                             } else {
                                 if ((java.util.Objects.equals(esc, "b"))) {
-                                    out_chars.add("");
+                                    out_chars.add("\b");
                                 } else {
                                     if ((java.util.Objects.equals(esc, "f"))) {
-                                        out_chars.add("");
+                                        out_chars.add("\f");
                                     } else {
                                         if ((java.util.Objects.equals(esc, "n"))) {
                                             out_chars.add("\n");
                                         } else {
                                             if ((java.util.Objects.equals(esc, "r"))) {
-                                                out_chars.add("");
+                                                out_chars.add("\r");
                                             } else {
                                                 if ((java.util.Objects.equals(esc, "t"))) {
-                                                    out_chars.add("	");
+                                                    out_chars.add("\t");
                                                 } else {
                                                     if ((java.util.Objects.equals(esc, "u"))) {
                                                         if (((this.i + 4L) > (this.n))) {
@@ -442,7 +442,7 @@ public final class json {
     }
 
     public static boolean _is_ws(String ch) {
-        return ((java.util.Objects.equals(ch, " ")) || (java.util.Objects.equals(ch, "	")) || (java.util.Objects.equals(ch, "")) || (java.util.Objects.equals(ch, "\n")));
+        return ((java.util.Objects.equals(ch, " ")) || (java.util.Objects.equals(ch, "\t")) || (java.util.Objects.equals(ch, "\r")) || (java.util.Objects.equals(ch, "\n")));
     }
 
     public static boolean _is_digit(String ch) {
@@ -577,19 +577,19 @@ public final class json {
                 if ((java.util.Objects.equals(ch, "\\"))) {
                     out.add("\\\\");
                 } else {
-                    if ((java.util.Objects.equals(ch, ""))) {
+                    if ((java.util.Objects.equals(ch, "\b"))) {
                         out.add("\\b");
                     } else {
-                        if ((java.util.Objects.equals(ch, ""))) {
+                        if ((java.util.Objects.equals(ch, "\f"))) {
                             out.add("\\f");
                         } else {
                             if ((java.util.Objects.equals(ch, "\n"))) {
                                 out.add("\\n");
                             } else {
-                                if ((java.util.Objects.equals(ch, ""))) {
+                                if ((java.util.Objects.equals(ch, "\r"))) {
                                     out.add("\\r");
                                 } else {
-                                    if ((java.util.Objects.equals(ch, "	"))) {
+                                    if ((java.util.Objects.equals(ch, "\t"))) {
                                         out.add("\\t");
                                     } else {
                                         if ((ensure_ascii && ((code) > (127L)))) {

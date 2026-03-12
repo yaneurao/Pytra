@@ -22,7 +22,13 @@ SRC_ROOT = ROOT / "src"
 if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
-from toolchain.compiler.backend_registry import emit_source, get_backend_spec, lower_ir, optimize_ir, resolve_layer_options
+from toolchain.compiler.backend_registry_static import (
+    emit_source,
+    get_backend_spec,
+    lower_ir,
+    optimize_ir,
+    resolve_layer_options,
+)
 from toolchain.frontends.python_frontend import load_east3_document
 
 
@@ -165,7 +171,14 @@ def run_py2x(target: str, source_rel: str, output_rel: str) -> str:
         out = Path(td) / out_name
         out_text = emit_source(spec, ir, out, emitter_options)
         if out_text == "":
-            return out.read_text(encoding="utf-8")
+            if out.exists():
+                return out.read_text(encoding="utf-8")
+            raise RuntimeError(
+                "runtime generation backend emitted no inline text and wrote no file: "
+                + target
+                + " -> "
+                + output_rel
+            )
         return out_text
 
 
