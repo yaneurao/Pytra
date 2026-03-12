@@ -112,7 +112,14 @@ class CppExpressionEmitter:
                     "casts": [],
                 }
             )
-        if t == "str" or t.startswith("list[") or t.startswith("dict[") or t.startswith("set[") or t.startswith("tuple["):
+        if (
+            t == "str"
+            or t == "bytes"
+            or t.startswith("list[")
+            or t.startswith("dict[")
+            or t.startswith("set[")
+            or t.startswith("tuple[")
+        ):
             return self.truthy_len_expr(body)
         return body
 

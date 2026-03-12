@@ -16,6 +16,7 @@
 ## 完了 plan アーカイブ
 
 - [2026-03-12 / P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01](../plans/archive/20260312-p0-collections-deque-cpp-representative-support.md)
+- [2026-03-12 / P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01](../plans/archive/20260312-p0-bytes-truthiness-cpp-representative-support.md)
 - [2026-03-12 / P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01](../plans/archive/20260312-p0-relative-import-paren-sibling-contract.md)
 - [2026-03-12 / P6-BACKEND-PARITY-MATRIX-CELL-FILL-01](../plans/archive/20260312-p6-backend-parity-matrix-cell-fill.md)
 - [2026-03-12 / P1-DATACLASS-FIELD-STATIC-SUBSET-01](../plans/archive/20260312-p1-dataclass-field-static-subset.md)

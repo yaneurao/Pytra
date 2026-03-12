@@ -41,10 +41,15 @@
 決定ログ:
 - 2026-03-12: Pytra-NES blocker は compile failure であり、runtime redesign ではなく representative C++ lowering で先に外す。
 - 2026-03-12: v1 は `bytes` に限定し、`bytearray` などの拡張は後段へ回す。
+- 2026-03-12: `IfExp` だけは `CppEmitter._render_ifexp_expr()` が `render_expr(test)` を使っていて `payload ? 1 : 0` を漏らしていたため、`render_cond(test)` へ切り替えて `x if payload else y` も `py_len(payload) != 0` を通る representative contract に揃えた。
+- 2026-03-12: C++ support docs の `bytes / bytearray` 行へ representative `bytes` truthiness support wording を追加し、この task を archive へ移した。
 
 ## 分解
 
-- [ ] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01] `bytes` truthiness の representative C++ lane を固定し、Pytra-NES blocker を外す。
-- [ ] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01-S1-01] minimal sample baseline と current C++ failure を focused regression / TODO / plan に固定する。
-- [ ] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01-S2-01] representative C++ lane で `bytes` truthiness を helper / `len` ベースに lower する。
-- [ ] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01-S3-01] docs / support wording / regression を current contract に同期して閉じる。
+- [x] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01] `bytes` truthiness の representative C++ lane を固定し、Pytra-NES blocker を外す。
+- [x] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01-S1-01] minimal sample baseline と current C++ failure を focused regression / TODO / plan に固定する。
+- [x] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01-S2-01] representative C++ lane で `bytes` truthiness を helper / `len` ベースに lower する。
+- [x] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01-S3-01] docs / support wording / regression を current contract に同期して閉じる。
+
+- 2026-03-12: `S1-01/S2-01` として representative fixture `test/fixtures/typing/bytes_truthiness.py` を追加し、`if payload` / `while payload` / conditional expression の regression を C++ runtime smoke で固定した。C++ emitter の `render_cond` は `bytes` を `py_len(...) != 0` へ lower するように更新した。
+- 2026-03-12: `S3-01` として `IfExp` も `render_cond(test)` 経由に統一し、support docs / TODO / archive handoff を current representative contract に同期して task 全体を完了扱いにした。

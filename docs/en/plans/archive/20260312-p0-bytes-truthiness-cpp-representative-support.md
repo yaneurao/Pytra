@@ -41,10 +41,15 @@ Verification commands:
 Decision log:
 - 2026-03-12: The Pytra-NES blocker is a compile failure, so we remove it first in representative C++ lowering rather than a larger runtime redesign.
 - 2026-03-12: v1 is limited to `bytes`; extensions such as `bytearray` are deferred.
+- 2026-03-12: `IfExp` was the remaining leak because `CppEmitter._render_ifexp_expr()` still used `render_expr(test)` and emitted `payload ? 1 : 0`; switching it to `render_cond(test)` aligned `x if payload else y` with the same representative `py_len(payload) != 0` contract.
+- 2026-03-12: Added representative `bytes` truthiness wording to the C++ support docs and moved this task to the archive.
 
 ## Breakdown
 
-- [ ] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01] Lock the representative C++ lane for `bytes` truthiness and remove the Pytra-NES blocker.
-- [ ] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01-S1-01] Lock the minimal-sample baseline and current C++ failure with focused regressions, TODO, and plan.
-- [ ] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01-S2-01] Lower `bytes` truthiness in the representative C++ lane through a helper or `len`-based path.
-- [ ] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01-S3-01] Sync docs, support wording, and regressions with the current contract and close the task.
+- [x] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01] Lock the representative C++ lane for `bytes` truthiness and remove the Pytra-NES blocker.
+- [x] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01-S1-01] Lock the minimal-sample baseline and current C++ failure with focused regressions, TODO, and plan.
+- [x] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01-S2-01] Lower `bytes` truthiness in the representative C++ lane through a helper or `len`-based path.
+- [x] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01-S3-01] Sync docs, support wording, and regressions with the current contract and close the task.
+
+- 2026-03-12: `S1-01/S2-01` added the representative fixture `test/fixtures/typing/bytes_truthiness.py` and locked `if payload`, `while payload`, and conditional-expression regressions through C++ runtime smoke. The C++ emitter now lowers `bytes` truthiness through `py_len(...) != 0`.
+- 2026-03-12: `S3-01` unified `IfExp` through `render_cond(test)` as well, then synced support docs, TODO, and archive handoff to the current representative contract and closed the task.

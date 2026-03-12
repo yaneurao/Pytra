@@ -39,7 +39,7 @@ This document summarizes language-feature support status in `src/py2cpp.py` at a
 | Nested comprehension (comprehension inside comprehension) | supported | Supported. | `test/unit/test_py2cpp_features.py:1295`, `test/fixtures/collections/comprehension_nested.py:6` |
 | `str` slice | supported | Supported. | `test/unit/test_py2cpp_features.py:1435`, `test/fixtures/strings/str_slice.py:1` |
 | for-each over string | supported | Supported. | `test/unit/test_py2cpp_features.py:1429`, `test/fixtures/strings/str_for_each.py:1` |
-| Basic `bytes` / `bytearray` operations | supported | Supported. | `test/unit/test_py2cpp_features.py:1241`, `test/unit/test_py2cpp_features.py:1247`, `test/fixtures/typing/bytes_basic.py:1`, `test/fixtures/typing/bytearray_basic.py:1` |
+| Basic `bytes` / `bytearray` operations | supported | Supported, including representative `bytes` truthiness (`if payload`, `while payload`, `x if payload else y`). The representative `bytearray` truthiness lane remains a separate follow-up task. | `test/unit/backends/cpp/test_py2cpp_features.py`, `test/unit/backends/cpp/test_east3_cpp_bridge.py`, `test/fixtures/typing/bytes_basic.py:1`, `test/fixtures/typing/bytes_truthiness.py:1`, `test/fixtures/typing/bytearray_basic.py:1` |
 
 ## import / Module Resolution
 

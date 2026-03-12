@@ -3102,7 +3102,7 @@ class CppEmitter(
         if self._is_isinstance_ctor_ifexp_pattern(test_node, body_node, orelse_node):
             if not self.is_boxed_object_expr(orelse):
                 orelse = f"make_object({orelse})"
-        test_expr = self.render_expr(test_node)
+        test_expr = self.render_cond(test_node)
         return self.render_ifexp_common(
             test_expr,
             body,
@@ -3916,6 +3916,11 @@ class CppEmitter(
             return "false"
         expr_t = self.normalize_type_name(self.get_expr_type(expr))
         if not self.is_any_like_type(expr_t):
+            if expr_t == "bytes":
+                body = self._strip_outer_parens(self.render_expr(expr))
+                if body == "":
+                    return "false"
+                return self.truthy_len_expr(body)
             typed_list_cond = self._render_typed_list_truthy_cond(expr)
             if typed_list_cond != "":
                 return typed_list_cond
