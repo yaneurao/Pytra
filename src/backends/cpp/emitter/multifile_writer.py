@@ -176,6 +176,7 @@ def write_multi_file_cpp(
                 continue
             target_schema = dict_any_get_dict(type_schema, target_key)
             funcs = dict_any_get_dict(target_schema, "functions")
+            globals_map = dict_any_get_dict(target_schema, "globals")
             # `main` は他モジュールから呼ばれない前提。
             fn_decls: list[str] = []
             for fn_name_any, fn_sig_obj in funcs.items():
@@ -198,9 +199,30 @@ def write_multi_file_cpp(
                     parts.append(at_cpp + " " + an)
                 sep = ", "
                 fn_decls.append("    " + ret_cpp + " " + fn_name + "(" + sep.join(parts) + ");")
+            global_decls: list[str] = []
+            for global_name_any, global_obj in globals_map.items():
+                if not isinstance(global_name_any, str):
+                    continue
+                global_name = global_name_any
+                global_doc = global_obj if isinstance(global_obj, dict) else {}
+                global_t = dict_any_get_str(global_doc, "type", "object")
+                global_cpp_t = type_emitter._cpp_type_text(global_t)
+                emitted_global_name = type_emitter.rename_if_reserved(
+                    global_name,
+                    type_emitter.reserved_words,
+                    type_emitter.rename_prefix,
+                    type_emitter.renamed_symbols,
+                )
+                global_decls.append(f"    extern {global_cpp_t} {emitted_global_name};")
             if len(fn_decls) > 0:
                 fwd_lines.append("namespace " + target_ns + " {")
                 fwd_lines.extend(fn_decls)
+                if len(global_decls) > 0:
+                    fwd_lines.extend(global_decls)
+                fwd_lines.append("}  // namespace " + target_ns)
+            elif len(global_decls) > 0:
+                fwd_lines.append("namespace " + target_ns + " {")
+                fwd_lines.extend(global_decls)
                 fwd_lines.append("}  // namespace " + target_ns)
         if len(fwd_lines) > 0:
             cpp_txt = inject_after_includes_block(cpp_txt, join_str_list("\n", fwd_lines))

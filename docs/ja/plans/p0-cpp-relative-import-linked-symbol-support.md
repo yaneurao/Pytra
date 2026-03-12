@@ -43,10 +43,12 @@
 決定ログ:
 - 2026-03-12: TODO が空だったため follow-up を `P0` で起票した。blocker は parser ではなく C++ multi-file linked build で、imported module-level constant が namespace-qualified されず compile error になる点にある。
 - 2026-03-12: v1 の対象は user module symbol のうち `module-level constant/global + function` に限定し、class/type import や cross-runtime import contract までは広げない。
+- 2026-03-12: representative smoke は `ppu.py -> from .controller import (BUTTON_A, BUTTON_B)` とし、`BUTTON_A | BUTTON_B` が generated `ppu.cpp` で `pytra_mod_controller::BUTTON_A | pytra_mod_controller::BUTTON_B` へ render される contract に固定した。
+- 2026-03-12: multi-file writer は imported user module の forward declaration に関数だけでなく module-level globals も含める。v1 は `build_module_type_schema()` へ `globals` schema を追加して同期する。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S1-01] current compile failure と representative smoke contract を plan / TODO / focused regression に固定する。
-- [ ] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S2-01] imported user-module symbol の `Name` render を namespace-qualified user symbol へ揃える。
-- [ ] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S2-02] multi-file writer に imported module-level symbol forward declaration を追加する。
+- [x] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S1-01] current compile failure と representative smoke contract を plan / TODO / focused regression に固定する。
+- [x] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S2-01] imported user-module symbol の `Name` render を namespace-qualified user symbol へ揃える。
+- [x] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S2-02] multi-file writer に imported module-level symbol forward declaration を追加する。
 - [ ] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S3-01] relative import function alias / module alias regression と docs を current contract に同期して閉じる。

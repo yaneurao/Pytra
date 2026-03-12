@@ -33,4 +33,4 @@
 
 1. [ ] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01] C++ multi-file build で relative import した module-level symbol が plain name のまま未解決になる residual を解消し、Pytra-NES 型の sibling import constants を build/run まで通す。
    文脈: [p0-cpp-relative-import-linked-symbol-support.md](/workspace/Pytra/docs/ja/plans/p0-cpp-relative-import-linked-symbol-support.md)
-   - `P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01`: parenthesized relative import は parser で通るが、C++ multi-file linked build では imported constant/plain symbol が namespace-qualified されず compile error になる。まず representative constant import smoke を固定し、user module symbol の name render と forward declaration contract を揃える。
+   - `P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01`: representative constant import smoke を追加し、C++ consumer module は imported user-module symbol を namespace-qualified に render し、forward declaration も module-level globals まで含める current contract に揃えた。残りは alias regression と closeout の同期だけ。

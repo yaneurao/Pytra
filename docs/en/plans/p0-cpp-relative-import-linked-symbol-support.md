@@ -43,10 +43,12 @@ Verification:
 Decision log:
 - 2026-03-12: The TODO list was effectively empty, so this follow-up was opened as `P0`. The blocker is not parsing; it is the C++ multi-file linked build where imported module-level constants are not namespace-qualified and fail to compile.
 - 2026-03-12: v1 is limited to user-module symbols in the `module-level constant/global + function` lane. It does not expand to imported classes/types or wider cross-runtime import contracts yet.
+- 2026-03-12: The representative smoke is `ppu.py -> from .controller import (BUTTON_A, BUTTON_B)`, and the contract is locked so generated `ppu.cpp` renders `BUTTON_A | BUTTON_B` as `pytra_mod_controller::BUTTON_A | pytra_mod_controller::BUTTON_B`.
+- 2026-03-12: The multi-file writer now includes imported user-module globals as well as functions in forward declarations. v1 carries this through a new `globals` section in `build_module_type_schema()`.
 
 ## Breakdown
 
-- [ ] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S1-01] Lock the current compile failure and representative smoke contract in the plan, TODO, and focused regression.
-- [ ] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S2-01] Rewrite imported user-module symbol `Name` rendering to namespace-qualified user symbols.
-- [ ] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S2-02] Add forward declarations for imported module-level symbols in the multi-file writer.
+- [x] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S1-01] Lock the current compile failure and representative smoke contract in the plan, TODO, and focused regression.
+- [x] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S2-01] Rewrite imported user-module symbol `Name` rendering to namespace-qualified user symbols.
+- [x] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S2-02] Add forward declarations for imported module-level symbols in the multi-file writer.
 - [ ] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S3-01] Sync relative-import function alias / module alias regressions and docs to the current contract and close the task.

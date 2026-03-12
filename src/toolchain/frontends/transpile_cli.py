@@ -1464,12 +1464,29 @@ def build_module_east_map_from_analysis(
 
 
 def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
-    """モジュール間共有用の最小型スキーマ（関数/クラス）を構築する。"""
+    """モジュール間共有用の最小型スキーマ（関数/クラス/トップレベル global）を構築する。"""
+
+    def _infer_module_global_schema_type(stmt: dict[str, Any]) -> str:
+        kind = dict_any_kind(stmt)
+        if kind == "AnnAssign":
+            ann_t = dict_any_get_str(stmt, "annotation")
+            if ann_t not in {"", "unknown"}:
+                return ann_t
+        for cand in [
+            dict_any_get_str(stmt, "decl_type"),
+            dict_any_get_str(dict_any_get_dict(stmt, "target"), "resolved_type"),
+            dict_any_get_str(dict_any_get_dict(stmt, "value"), "resolved_type"),
+        ]:
+            if cand not in {"", "unknown"}:
+                return cand
+        return "object"
+
     out: dict[str, dict[str, Any]] = {}
     for mod_path, east in module_east_map.items():
         body = dict_any_get_dict_list(east, "body")
         fn_schema: dict[str, dict[str, Any]] = {}
         cls_schema: dict[str, dict[str, Any]] = {}
+        global_schema: dict[str, dict[str, Any]] = {}
         for st in body:
             kind = dict_any_kind(st)
             if kind == "FunctionDef":
@@ -1491,9 +1508,20 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
                     cls_ent: dict[str, Any] = {}
                     cls_ent["field_types"] = fields
                     cls_schema[name_txt] = cls_ent
+            elif kind in {"Assign", "AnnAssign"}:
+                target = dict_any_get_dict(st, "target")
+                if dict_any_kind(target) != "Name":
+                    continue
+                name_txt = dict_any_get_str(target, "id")
+                if name_txt == "":
+                    continue
+                global_schema[name_txt] = {
+                    "type": _infer_module_global_schema_type(st),
+                }
         mod_ent: dict[str, Any] = {}
         mod_ent["functions"] = fn_schema
         mod_ent["classes"] = cls_schema
+        mod_ent["globals"] = global_schema
         out[mod_path] = mod_ent
     return out
 

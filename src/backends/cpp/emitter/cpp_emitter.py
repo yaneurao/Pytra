@@ -3502,6 +3502,20 @@ class CppEmitter(
 
     def _render_name_expr(self, expr_d: dict[str, Any]) -> str:
         """Name ノードを C++ 式へ変換する。"""
+        name_txt = dict_any_get_str(expr_d, "id")
+        if name_txt != "" and not self.is_declared(name_txt):
+            imported = self._resolve_imported_symbol(name_txt)
+            imported_module = dict_any_get_str(imported, "module")
+            imported_name = dict_any_get_str(imported, "name")
+            imported_ns = self.module_namespace_map.get(imported_module, "")
+            if imported_ns != "" and imported_name != "":
+                emitted_name = self.rename_if_reserved(
+                    imported_name,
+                    self.reserved_words,
+                    self.rename_prefix,
+                    self.renamed_symbols,
+                )
+                return f"{imported_ns}::{emitted_name}"
         return self.render_name_expr_common(
             expr_d,
             self.reserved_words,
