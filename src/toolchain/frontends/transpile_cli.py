@@ -1507,6 +1507,7 @@ def build_module_type_schema(module_east_map: dict[str, dict[str, Any]]) -> dict
                     fields = dict_any_get_dict(st, "field_types")
                     cls_ent: dict[str, Any] = {}
                     cls_ent["field_types"] = fields
+                    cls_ent["storage_hint"] = dict_any_get_str(st, "class_storage_hint", "ref")
                     cls_schema[name_txt] = cls_ent
             elif kind in {"Assign", "AnnAssign"}:
                 target = dict_any_get_dict(st, "target")
