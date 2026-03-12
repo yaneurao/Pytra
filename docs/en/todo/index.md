@@ -33,7 +33,7 @@ Last updated: 2026-03-12
 
 1. [ ] [ID: P5-POWERSHELL-CS-HOST-01] define a PowerShell host profile that builds and runs C# backend output from `pwsh` instead of adding a pure PowerShell backend.
    Context: [p5-powershell-csharp-host-profile.md](/workspace/Pytra/docs/en/plans/p5-powershell-csharp-host-profile.md)
-   Summary: this task fixes a representative `pwsh + py2cs` host profile, including generated `.cs` plus bundled runtime layout, build-driver priority across `dotnet` / `csc` / `Add-Type`, and explicit fail-closed conditions. A pure PowerShell target backend stays out of scope. Progress: `S1-01` adds the representative assumptions / non-goals baseline plus the contract checker, and `S2-01` fixes the `run.ps1` / `src/Program.cs` / `runtime/*.cs` / `build/Program.exe` contract.
+   Summary: this task fixes a representative `pwsh + py2cs` host profile, including generated `.cs` plus bundled runtime layout, build-driver priority across `dotnet` / `csc` / `Add-Type`, and explicit fail-closed conditions. A pure PowerShell target backend stays out of scope. Progress: `S1-01` adds the representative assumptions / non-goals baseline plus the contract checker, `S2-01` fixes the `run.ps1` / `src/Program.cs` / `runtime/*.cs` / `build/Program.exe` contract, and `S2-02` fixes the `dotnet -> csc -> Add-Type` priority with non-canonical fallback rules.
 
 2. [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01] turn the cross-backend parity matrix into a real `feature × backend` support-state table and make it the canonical source across all backends.
    Context: [p6-backend-parity-matrix-cell-fill.md](/workspace/Pytra/docs/en/plans/p6-backend-parity-matrix-cell-fill.md)

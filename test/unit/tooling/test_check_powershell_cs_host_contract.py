@@ -36,6 +36,34 @@ class CheckPowershellCsHostContractTest(unittest.TestCase):
         )
         self.assertEqual(contract_mod.OPTIONAL_HOST_MECHANISMS, ("Add-Type",))
 
+    def test_build_driver_priority_and_requirements_are_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.REPRESENTATIVE_BUILD_DRIVER_PRIORITY,
+            (
+                "dotnet_build",
+                "csc_compile",
+                "add_type_load",
+            ),
+        )
+        self.assertEqual(
+            contract_mod.BUILD_DRIVER_EXECUTABLE_REQUIREMENTS,
+            {
+                "dotnet_build": ("pwsh", "dotnet"),
+                "csc_compile": ("pwsh", "csc"),
+                "add_type_load": ("pwsh",),
+            },
+        )
+
+    def test_build_driver_fail_closed_rule_keys_are_fixed(self) -> None:
+        self.assertEqual(
+            set(contract_mod.BUILD_DRIVER_FAIL_CLOSED_RULES.keys()),
+            {
+                "dotnet_build",
+                "csc_compile",
+                "add_type_load",
+            },
+        )
+
     def test_non_goals_are_fixed(self) -> None:
         self.assertEqual(
             set(contract_mod.NON_GOALS.keys()),
@@ -101,6 +129,9 @@ class CheckPowershellCsHostContractTest(unittest.TestCase):
                 "assumptions",
                 "required_executable_groups",
                 "optional_host_mechanisms",
+                "build_driver_priority",
+                "build_driver_executable_requirements",
+                "build_driver_fail_closed_rules",
                 "non_goals",
                 "output_layout",
                 "entrypoint_contract",

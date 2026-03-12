@@ -23,6 +23,24 @@ REQUIRED_EXECUTABLE_GROUPS = {
 
 OPTIONAL_HOST_MECHANISMS = ("Add-Type",)
 
+REPRESENTATIVE_BUILD_DRIVER_PRIORITY = (
+    "dotnet_build",
+    "csc_compile",
+    "add_type_load",
+)
+
+BUILD_DRIVER_EXECUTABLE_REQUIREMENTS = {
+    "dotnet_build": ("pwsh", "dotnet"),
+    "csc_compile": ("pwsh", "csc"),
+    "add_type_load": ("pwsh",),
+}
+
+BUILD_DRIVER_FAIL_CLOSED_RULES = {
+    "dotnet_build": "Use first when `dotnet` is available. Fail closed if `src/Program.cs`, required `runtime/*.cs`, or the canonical `build/Program.exe` artifact cannot be produced.",
+    "csc_compile": "Use only when `dotnet` is unavailable and `csc` is available. Fail closed if direct compilation of generated plus runtime sources fails or `build/Program.exe` cannot be written.",
+    "add_type_load": "Use only as the last fallback when neither `dotnet` nor `csc` is available. Fail closed for representative smoke/parity lanes, multi-file runtime bundling, or any flow that requires a persistent `build/Program.exe` artifact.",
+}
+
 NON_GOALS = {
     "pure_powershell_backend": "Do not implement PowerShell as a pure target backend.",
     "csharp_backend_rewrite": "Do not rewrite the C# backend itself.",
@@ -73,6 +91,12 @@ def build_powershell_cs_host_contract_manifest() -> dict[str, object]:
             key: list(values) for key, values in REQUIRED_EXECUTABLE_GROUPS.items()
         },
         "optional_host_mechanisms": list(OPTIONAL_HOST_MECHANISMS),
+        "build_driver_priority": list(REPRESENTATIVE_BUILD_DRIVER_PRIORITY),
+        "build_driver_executable_requirements": {
+            key: list(values)
+            for key, values in BUILD_DRIVER_EXECUTABLE_REQUIREMENTS.items()
+        },
+        "build_driver_fail_closed_rules": dict(BUILD_DRIVER_FAIL_CLOSED_RULES),
         "non_goals": dict(NON_GOALS),
         "output_layout": dict(REPRESENTATIVE_OUTPUT_LAYOUT),
         "entrypoint_contract": dict(REPRESENTATIVE_ENTRYPOINT_CONTRACT),

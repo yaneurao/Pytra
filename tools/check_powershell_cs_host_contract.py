@@ -24,11 +24,14 @@ EXPECTED_JA_PLAN_PHRASES = (
     "非 Windows 環境での PowerShell host 動作保証。",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S1-01]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-01]",
+    "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-02]",
     "`run.ps1`",
     "`src/Program.cs`",
     "`runtime/`",
     "`build/Program.exe`",
     "`public static void Main(string[] args)`",
+    "`dotnet` -> `csc` -> `Add-Type`",
+    "最後段の non-canonical fallback",
 )
 
 EXPECTED_EN_PLAN_PHRASES = (
@@ -39,11 +42,14 @@ EXPECTED_EN_PLAN_PHRASES = (
     "Guaranteed PowerShell-host support on non-Windows environments.",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S1-01]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-01]",
+    "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-02]",
     "`run.ps1`",
     "`src/Program.cs`",
     "`runtime/`",
     "`build/Program.exe`",
     "`public static void Main(string[] args)`",
+    "`dotnet` -> `csc` -> `Add-Type`",
+    "last non-canonical fallback",
 )
 
 EXPECTED_JA_TODO_PHRASES = (
@@ -52,6 +58,7 @@ EXPECTED_JA_TODO_PHRASES = (
     "`dotnet` / `csc` / `Add-Type`",
     "pure PowerShell backend は対象外",
     "`run.ps1` / `src/Program.cs` / `runtime/*.cs` / `build/Program.exe`",
+    "`dotnet -> csc -> Add-Type`",
 )
 
 EXPECTED_EN_TODO_PHRASES = (
@@ -60,6 +67,7 @@ EXPECTED_EN_TODO_PHRASES = (
     "`dotnet` / `csc` / `Add-Type`",
     "pure PowerShell target backend stays out of scope",
     "`run.ps1` / `src/Program.cs` / `runtime/*.cs` / `build/Program.exe`",
+    "`dotnet -> csc -> Add-Type`",
 )
 
 
@@ -81,6 +89,24 @@ def _collect_contract_issues() -> list[str]:
         issues.append("required executable groups drifted")
     if contract_mod.OPTIONAL_HOST_MECHANISMS != ("Add-Type",):
         issues.append("optional host mechanisms drifted")
+    if contract_mod.REPRESENTATIVE_BUILD_DRIVER_PRIORITY != (
+        "dotnet_build",
+        "csc_compile",
+        "add_type_load",
+    ):
+        issues.append("build driver priority drifted")
+    if contract_mod.BUILD_DRIVER_EXECUTABLE_REQUIREMENTS != {
+        "dotnet_build": ("pwsh", "dotnet"),
+        "csc_compile": ("pwsh", "csc"),
+        "add_type_load": ("pwsh",),
+    }:
+        issues.append("build driver executable requirements drifted")
+    if set(contract_mod.BUILD_DRIVER_FAIL_CLOSED_RULES.keys()) != {
+        "dotnet_build",
+        "csc_compile",
+        "add_type_load",
+    }:
+        issues.append("build driver fail-closed rule keys drifted")
     if set(contract_mod.NON_GOALS.keys()) != {
         "pure_powershell_backend",
         "csharp_backend_rewrite",
@@ -128,6 +154,9 @@ def _collect_contract_issues() -> list[str]:
         "assumptions",
         "required_executable_groups",
         "optional_host_mechanisms",
+        "build_driver_priority",
+        "build_driver_executable_requirements",
+        "build_driver_fail_closed_rules",
         "non_goals",
         "output_layout",
         "entrypoint_contract",
