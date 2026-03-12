@@ -53,11 +53,12 @@
 - 2026-03-12: `timestamps: deque[float] = field(init=False, repr=False)` の baseline を確認した。初期状態では parser が `field(...)` を plain `Call(Name("field"))` のまま保持し、C++ backend は `deque[float64] timestamps;` と `field(false, false)` を emit していた。
 - 2026-03-12: `S2-01` として class-body `AnnAssign` parsing に `core_dataclass_field_semantics.py` を追加し、representative `field(...)` call は `AnnAssign.meta.dataclass_field_v1` へ吸収し、`value` は backend に流さない形へ変えた。`default` / `default_factory` / `init` / `repr` / `compare` は metadata に保持する。
 - 2026-03-12: `S2-02` として C++ dataclass auto-constructor が `meta.dataclass_field_v1` を参照するようにし、`init=False` field は ctor param から除外し、`default` / `default_factory` は representative lane で ctor default または member init として使うようにした。
+- 2026-03-12: `S3-01` として `repr` / `compare` metadata の representative regression と、unsupported option / duplicate option / `default` + `default_factory` 併用の fail-closed regression を固定した。C++ representative lane でも `field(...)` call や metadata key が leak しないことを確認した。
 
 ## 分解
 
 - [x] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S1-01] representative failure と scope を regression / docs で固定する。
 - [x] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S2-01] frontend / lowering で `field(...)` を静的 metadata carrier へ吸収する。
 - [x] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S2-02] `init` / `default` / `default_factory` の constructor / field-init contract を固定する。
-- [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S3-01] `repr` / `compare` の metadata lane と unsupported option の fail-closed policy を固定する。
+- [x] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S3-01] `repr` / `compare` の metadata lane と unsupported option の fail-closed policy を固定する。
 - [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S3-02] docs / TODO / regression / inventory を同期して task を閉じる。
