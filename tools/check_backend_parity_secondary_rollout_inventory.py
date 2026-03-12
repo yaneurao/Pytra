@@ -42,6 +42,8 @@ def _collect_inventory_issues() -> list[str]:
     }
     if observed_pairs != expected_pairs:
         issues.append("secondary rollout residual inventory drifted from the matrix seed")
+    if expected:
+        issues.append(f"secondary residual inventory must be empty once the scala/swift/nim bundle closes: got {len(expected)} residual cells")
     return issues
 
 
@@ -66,25 +68,12 @@ def _collect_bundle_issues() -> list[str]:
     }
     if residual_pairs != bundled_pairs:
         issues.append("secondary rollout bundles no longer cover the exact residual feature set")
-    next_bundle_id = inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["next_bundle"]
-    bundle_by_id = {bundle["bundle_id"]: bundle for bundle in bundles}
-    next_bundle = bundle_by_id.get(next_bundle_id)
-    if next_bundle is None:
-        issues.append("secondary rollout next_bundle must point at one of the fixed rollout bundles")
-        return issues
-    next_index = bundle_order.index(next_bundle_id)
-    completed_backends = tuple(
-        backend
-        for bundle in bundles[:next_index]
-        for backend in bundle["backend_order"]
-    )
-    if completed_backends != inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["completed_backends"]:
-        issues.append("secondary rollout completed_backends drifted from the completed bundle prefix")
-    for bundle in bundles[:next_index]:
-        if any(bundle["feature_ids_by_backend"].values()):
-            issues.append("secondary rollout bundles before next_bundle must stay empty handoff markers once completed")
-    if next_bundle["backend_order"][0] != inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["next_backend"]:
-        issues.append("secondary rollout next_backend must stay aligned with the active next_bundle")
+    if inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["next_backend"] is not None:
+        issues.append("secondary rollout next_backend must become null once the scala/swift/nim bundle closes")
+    if inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["completed_backends"] != inventory_mod.SECONDARY_BACKEND_ORDER:
+        issues.append("secondary rollout completed_backends must cover the full secondary backend order once the residual set is empty")
+    if inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["remaining_backends"] != ():
+        issues.append("secondary rollout remaining_backends must become empty once the residual set closes")
     return issues
 
 
@@ -97,8 +86,6 @@ def _collect_manifest_issues() -> list[str]:
         issues.append("secondary rollout manifest backend order drifted from the fixed inventory")
     if tuple(manifest.get("plan_paths", ())) != inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["plan_paths"]:
         issues.append("secondary rollout manifest plan paths drifted from the fixed inventory")
-    if manifest.get("next_bundle") != inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["next_bundle"]:
-        issues.append("secondary rollout manifest next_bundle drifted from the fixed inventory")
     return issues
 
 

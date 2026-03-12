@@ -133,6 +133,37 @@ class Py2NimSmokeTest(unittest.TestCase):
         self.assertIn("s = p.stem", nim)
         self.assertIn("x = math.sin(PI)", nim)
 
+    def test_secondary_bundle_representative_fixtures_transpile_for_nim(self) -> None:
+        for stem in (
+            "tuple_assign",
+            "lambda_basic",
+            "comprehension",
+            "try_raise",
+            "inheritance_virtual_dispatch_multilang",
+            "enumerate_basic",
+            "ok_generator_tuple_target",
+            "is_instance",
+            "json_extended",
+            "pathlib_extended",
+            "enum_extended",
+            "argparse_extended",
+            "pytra_std_import_math",
+            "re_extended",
+        ):
+            with self.subTest(stem=stem):
+                fixture = find_fixture_case(stem)
+                east = load_east(fixture, parser_backend="self_hosted")
+                nim = transpile_to_nim_native(east)
+                self.assertTrue(nim.strip())
+
+    def test_tuple_assign_fixture_lowers_swap_via_temp_for_nim(self) -> None:
+        fixture = find_fixture_case("tuple_assign")
+        east = load_east(fixture, parser_backend="self_hosted")
+        nim = transpile_to_nim_native(east)
+        self.assertIn("var __swap_", nim)
+        self.assertIn("x = y", nim)
+        self.assertRegex(nim, r"y = __swap_\d+")
+
     def test_nim_emitter_source_has_no_owner_math_special_case(self) -> None:
         src = (ROOT / "src" / "backends" / "nim" / "emitter" / "nim_native_emitter.py").read_text(encoding="utf-8")
         self.assertNotIn('owner == "math"', src)
