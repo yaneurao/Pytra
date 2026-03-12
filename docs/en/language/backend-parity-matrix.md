@@ -128,17 +128,17 @@ This page is the canonical publish target for feature × backend support-state r
         <th>cpp</th>
         <th>rs</th>
         <th>cs</th>
-        <th>go</th>
-        <th>java</th>
-        <th>kt</th>
-        <th>scala</th>
-        <th>swift</th>
-        <th>nim</th>
         <th>js</th>
         <th>ts</th>
-        <th>lua</th>
+        <th>go</th>
+        <th>java</th>
+        <th>swift</th>
+        <th>kt</th>
         <th>rb</th>
+        <th>lua</th>
+        <th>scala</th>
         <th>php</th>
+        <th>nim</th>
       </tr>
     </thead>
     <tbody>
@@ -203,15 +203,15 @@ This page is the canonical publish target for feature × backend support-state r
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
+        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
@@ -239,16 +239,16 @@ This page is the canonical publish target for feature × backend support-state r
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
+        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">builtin.iter.range</td>
@@ -257,15 +257,15 @@ This page is the canonical publish target for feature × backend support-state r
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
+        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
@@ -316,11 +316,11 @@ This page is the canonical publish target for feature × backend support-state r
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">builtin.bit.invert_and_mask</td>

@@ -23,8 +23,25 @@ CPP_DOC_TARGETS = (
 
 def _collect_contract_issues() -> list[str]:
     issues: list[str] = []
-    if contract_mod.PARITY_MATRIX_BACKEND_ORDER != feature_contract_mod.SUPPORT_MATRIX_BACKEND_ORDER:
-        issues.append("backend order drifted away from feature contract support matrix order")
+    if contract_mod.PARITY_MATRIX_BACKEND_ORDER != (
+        "cpp",
+        "rs",
+        "cs",
+        "js",
+        "ts",
+        "go",
+        "java",
+        "swift",
+        "kt",
+        "rb",
+        "lua",
+        "scala",
+        "php",
+        "nim",
+    ):
+        issues.append("backend parity matrix display order drifted away from the top-level benchmark order")
+    if set(contract_mod.PARITY_MATRIX_BACKEND_ORDER) != set(feature_contract_mod.SUPPORT_MATRIX_BACKEND_ORDER):
+        issues.append("backend parity matrix order no longer covers the same backend set as the feature contract support matrix")
     if contract_mod.PARITY_MATRIX_SUPPORT_STATE_ORDER != feature_contract_mod.SUPPORT_STATE_ORDER:
         issues.append("support state order drifted away from feature contract")
     if contract_mod.PARITY_MATRIX_SOURCE_DESTINATION != "support_matrix":
@@ -223,7 +240,7 @@ def _collect_contract_issues() -> list[str]:
 
 def _collect_docs_issues() -> list[str]:
     issues: list[str] = []
-    expected_table = contract_mod.build_backend_parity_matrix_markdown_table()
+    expected_table = contract_mod.build_backend_parity_matrix_html_table()
     for path in DOC_TARGETS:
         text = path.read_text(encoding="utf-8")
         if contract_mod.PARITY_MATRIX_DOC_TABLE_BEGIN_MARKER not in text:

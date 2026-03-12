@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from html import escape
 from typing import Final, TypedDict
 
 from src.toolchain.compiler import backend_conformance_summary_handoff_contract as conformance_summary_mod
@@ -24,7 +25,23 @@ PARITY_MATRIX_CPP_DRILLDOWN_DOCS: Final[dict[str, str]] = {
 }
 
 PARITY_MATRIX_SOURCE_DESTINATION: Final[str] = "support_matrix"
-PARITY_MATRIX_BACKEND_ORDER: Final[tuple[str, ...]] = feature_contract_mod.SUPPORT_MATRIX_BACKEND_ORDER
+PARITY_MATRIX_SUPPORT_INVENTORY_BACKEND_ORDER: Final[tuple[str, ...]] = feature_contract_mod.SUPPORT_MATRIX_BACKEND_ORDER
+PARITY_MATRIX_BACKEND_ORDER: Final[tuple[str, ...]] = (
+    "cpp",
+    "rs",
+    "cs",
+    "js",
+    "ts",
+    "go",
+    "java",
+    "swift",
+    "kt",
+    "rb",
+    "lua",
+    "scala",
+    "php",
+    "nim",
+)
 PARITY_MATRIX_SUPPORT_STATE_ORDER: Final[tuple[str, ...]] = feature_contract_mod.SUPPORT_STATE_ORDER
 PARITY_MATRIX_IMPLEMENTATION_PHASE: Final[str] = "cell_seed_manifest"
 PARITY_MATRIX_CELL_SCHEMA_STATUS: Final[str] = "seed_populated"
@@ -116,6 +133,24 @@ PARITY_MATRIX_DOC_TABLE_HEADERS: Final[tuple[str, ...]] = (
     "fixture",
     *PARITY_MATRIX_BACKEND_ORDER,
 )
+PARITY_MATRIX_DOC_CELL_CLASS_BY_STATE: Final[dict[str, str]] = {
+    "supported": "supported-transpile",
+    "fail_closed": "fail-closed",
+    "not_started": "not-started",
+    "experimental": "experimental",
+}
+PARITY_MATRIX_DOC_CELL_LABEL_BY_STATE: Final[dict[str, str]] = {
+    "supported": "TS",
+    "fail_closed": "FC",
+    "not_started": "NS",
+    "experimental": "EX",
+}
+PARITY_MATRIX_DOC_CELL_CLASS_BY_EVIDENCE: Final[dict[str, str]] = {
+    "build_run_smoke": "supported-build",
+}
+PARITY_MATRIX_DOC_CELL_LABEL_BY_EVIDENCE: Final[dict[str, str]] = {
+    "build_run_smoke": "BR",
+}
 
 
 class RepresentativeParityMatrixRow(TypedDict):
@@ -248,23 +283,58 @@ def iter_representative_parity_matrix_rows() -> tuple[RepresentativeParityMatrix
     return REPRESENTATIVE_PARITY_MATRIX_ROWS
 
 
-def build_backend_parity_matrix_markdown_table() -> str:
+def _render_backend_parity_matrix_doc_cell(cell: BackendParityMatrixCellSeed) -> str:
+    state = cell["support_state"]
+    evidence = cell["evidence_kind"]
+    css_class = PARITY_MATRIX_DOC_CELL_CLASS_BY_EVIDENCE.get(
+        evidence,
+        PARITY_MATRIX_DOC_CELL_CLASS_BY_STATE[state],
+    )
+    label = PARITY_MATRIX_DOC_CELL_LABEL_BY_EVIDENCE.get(
+        evidence,
+        PARITY_MATRIX_DOC_CELL_LABEL_BY_STATE[state],
+    )
+    title = escape(f"{state} / {evidence}")
+    return f'        <td class="cell {css_class}" title="{title}"><code>{label}</code></td>'
+
+
+def build_backend_parity_matrix_html_table() -> str:
     lines = [
-        "| " + " | ".join(PARITY_MATRIX_DOC_TABLE_HEADERS) + " |",
-        "|" + "|".join("---" for _ in PARITY_MATRIX_DOC_TABLE_HEADERS) + "|",
+        '<div class="backend-parity-grid-wrap">',
+        '  <table class="backend-parity-grid">',
+        '    <thead>',
+        '      <tr>',
+        *[f"        <th>{escape(header)}</th>" for header in PARITY_MATRIX_DOC_TABLE_HEADERS],
+        '      </tr>',
+        '    </thead>',
+        '    <tbody>',
     ]
     for entry in iter_representative_parity_matrix_rows():
-        cells_by_backend = {
-            cell["backend"]: f"{cell['support_state']} / {cell['evidence_kind']}"
-            for cell in entry["backend_cells"]
-        }
-        row_values = [
-            entry["feature_id"],
-            entry["representative_fixture"],
-            *[cells_by_backend[backend] for backend in PARITY_MATRIX_BACKEND_ORDER],
-        ]
-        lines.append("| " + " | ".join(row_values) + " |")
+        cells_by_backend = {cell["backend"]: cell for cell in entry["backend_cells"]}
+        lines.extend(
+            (
+                '      <tr>',
+                f'        <td class="feature">{escape(entry["feature_id"])}</td>',
+                f'        <td class="fixture">{escape(entry["representative_fixture"])}</td>',
+                *[
+                    _render_backend_parity_matrix_doc_cell(cells_by_backend[backend])
+                    for backend in PARITY_MATRIX_BACKEND_ORDER
+                ],
+                '      </tr>',
+            )
+        )
+    lines.extend(
+        (
+            '    </tbody>',
+            '  </table>',
+            '</div>',
+        )
+    )
     return "\n".join(lines)
+
+
+def build_backend_parity_matrix_markdown_table() -> str:
+    return build_backend_parity_matrix_html_table()
 
 
 def build_backend_parity_matrix_manifest() -> dict[str, object]:
