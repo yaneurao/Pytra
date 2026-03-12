@@ -26,25 +26,28 @@
 - `repr(Path)` や path normalization redesign
 
 受け入れ基準:
-- minimal sample `path_stringify.py` の current compile failure が focused regression で固定される。
+- minimal sample `path_stringify.py` の baseline drift が focused regression で固定される。
 - representative C++ lane で `str(Path(...))` が `Path` 専用 stringify lane へ lower され、compile smoke が通る。
 - generic `py_to_string(T)` fallback に `Path` が戻らないことが regression で固定される。
-- current support wording が plan / TODO に同期される。
+- current support wording が plan / TODO / C++ support docs に同期される。
 
 確認コマンド:
 - `python3 tools/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k path_stringify`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py' -k py_to_string`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py' -k path_stringify`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 
 決定ログ:
 - 2026-03-12: `Path(raw)` construction は current representative lane で compile しているため、本 task は `str(Path(...))` 専用 stringify path に絞る。
 - 2026-03-12: v1 は `Path` の representative stringify に限定し、user-defined class の generic `str()` policy は別 task とする。
+- 2026-03-12: baseline regression は `test/fixtures/stdlib/path_stringify.py` を representative sample とし、current C++ output が `return py_to_string(path);` を emit して `operator<<` compile failure に落ちる形で固定する。
+- 2026-03-12: representative C++ lane の v1 は `Path` だけ `path.__str__()` へ lower し、generic `py_to_string(T)` policy 自体は広げない。
+- 2026-03-12: representative contract は `return path.__str__();` と compile/run smoke を正とし、old compile-failure baseline は drift guard のみを残して閉じる。
 
 ## 分解
 
 - [ ] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01] `str(Path(...))` の representative C++ stringify lane を固定し、Pytra-NES blocker を外す。
-- [ ] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01-S1-01] minimal sample baseline と current compile failure を focused regression / TODO / plan に固定する。
-- [ ] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01-S2-01] representative C++ lane で `Path` 専用 stringify lowering を実装する。
-- [ ] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01-S3-01] docs / support wording / regression を current contract に同期して閉じる。
+- [x] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01-S1-01] minimal sample baseline と current compile failure を focused regression / TODO / plan に固定する。
+- [x] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01-S2-01] representative C++ lane で `Path` 専用 stringify lowering を実装する。
+- [x] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01-S3-01] docs / support wording / regression を current contract に同期して閉じる。

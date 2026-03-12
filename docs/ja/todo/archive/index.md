@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-12 / P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01](../plans/archive/20260312-p0-path-stringify-cpp-representative-support.md)
 - [2026-03-12 / P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01](../plans/archive/20260312-p0-dataclass-field-default-factory-rc-cpp-support.md)
 - [2026-03-12 / P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01](../plans/archive/20260312-p0-collections-deque-cpp-representative-support.md)
 - [2026-03-12 / P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01](../plans/archive/20260312-p0-bytes-truthiness-cpp-representative-support.md)

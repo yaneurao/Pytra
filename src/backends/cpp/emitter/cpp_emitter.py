@@ -3875,6 +3875,8 @@ class CppEmitter(
         value_t = self.normalize_type_name(self.get_expr_type(value_node))
         if value_t == "str":
             return value_expr
+        if self._is_path_like_type(value_t):
+            return f"{value_expr}.__str__()"
         return f"py_to_string({value_expr})"
 
     def _render_expr_kind_obj_iter_init(self, expr: Any, expr_d: dict[str, Any]) -> str:

@@ -35,6 +35,54 @@ class CppRuntimeIterableTest(unittest.TestCase):
             )
             raise AssertionError("unreachable")
 
+    def test_path_stringify_runtime_exposes_stringify_without_generic_py_to_string_fallback(self) -> None:
+        cpp_src = r'''
+#include "runtime/cpp/core/py_runtime.h"
+#include "pytra/std/pathlib.h"
+
+#include <cassert>
+#include <iostream>
+
+int main() {
+    pytra::std::pathlib::Path path("tmp/data.bin");
+    assert(path.__str__() == "tmp/data.bin");
+    std::cout << path.__str__() << std::endl;
+    return 0;
+}
+'''
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src = work / "path_stringify_runtime.cpp"
+            exe = work / "path_stringify_runtime.out"
+            src.write_text(cpp_src, encoding="utf-8")
+
+            comp = self._run(
+                [
+                    "g++",
+                    "-std=c++20",
+                    "-O2",
+                    "-Isrc",
+                    "-Isrc/runtime/cpp",
+                    str(src),
+                    "src/runtime/cpp/native/core/gc.cpp",
+                    "src/runtime/cpp/native/core/io.cpp",
+                    "src/runtime/cpp/generated/built_in/string_ops.cpp",
+                    "src/runtime/cpp/generated/std/pathlib.cpp",
+                    "src/runtime/cpp/native/std/glob.cpp",
+                    "src/runtime/cpp/native/std/os.cpp",
+                    "src/runtime/cpp/native/std/os_path.cpp",
+                    "-o",
+                    str(exe),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="compile path stringify runtime contract",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+            run = self._run([str(exe)], cwd=work, timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC, label="run path stringify runtime contract")
+            self.assertEqual(run.returncode, 0, msg=run.stderr)
+            self.assertIn("tmp/data.bin", run.stdout)
+
     def test_runtime_iterable_protocol_helpers(self) -> None:
         cpp_src = r'''
 #include "runtime/cpp/core/py_runtime.h"

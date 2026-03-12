@@ -4645,6 +4645,64 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_path_stringify_no_longer_falls_back_to_generic_py_to_string(self) -> None:
+        fixture = find_fixture_case("path_stringify")
+        east = load_east(fixture)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("return path.__str__();", cpp)
+        self.assertNotIn("return py_to_string(path);", cpp)
+
+    def test_path_stringify_compile_smoke(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src_py = find_fixture_case("path_stringify")
+            out_cpp = work / "path_stringify.cpp"
+            out_exe = work / "path_stringify.out"
+            manifest = work / "manifest.json"
+            transpile(src_py, out_cpp)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "include_dir": str(work),
+                        "modules": [
+                            {
+                                "source": str(out_cpp),
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            comp = self._run_subprocess_with_timeout(
+                [
+                    "python3",
+                    "tools/build_multi_cpp.py",
+                    str(manifest),
+                    "-o",
+                    str(out_exe),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="compile path stringify representative lane",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+
+    def test_path_stringify_runtime(self) -> None:
+        out = self._compile_and_run_fixture("path_stringify")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "tmp/data.bin")
+
+    def test_path_stringify_lowers_to_path_specific_lane(self) -> None:
+        fixture = find_fixture_case("path_stringify")
+        east = load_east(fixture)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("return path.__str__();", cpp)
+        self.assertNotIn("return py_to_string(path);", cpp)
+
     def test_os_glob_extended_runtime(self) -> None:
         out = self._compile_and_run_fixture("os_glob_extended")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]

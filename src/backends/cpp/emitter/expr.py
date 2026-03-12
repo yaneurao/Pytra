@@ -6,6 +6,11 @@ from typing import Any
 class CppExpressionEmitter:
     """Expression rendering helpers extracted from :class:`CppEmitter`."""
 
+    def _is_path_like_type(self, type_name: Any) -> bool:
+        t0 = type_name if isinstance(type_name, str) else ""
+        t = self.normalize_type_name(t0)
+        return t in {"Path", "pytra::std::pathlib::Path"}
+
     def apply_cast(self, rendered_expr: str, to_type: str) -> str:
         """EAST の cast 指示に従い C++ 側の明示キャストを適用する。"""
         to_type_text = to_type if isinstance(to_type, str) else ""
@@ -46,6 +51,8 @@ class CppExpressionEmitter:
         t = t0 if isinstance(t0, str) else ""
         if t == "str":
             return rendered
+        if self._is_path_like_type(t):
+            return f"{rendered}.__str__()"
         if t == "bool":
             return f"(({rendered}) ? ::std::string(\"True\") : ::std::string(\"False\"))"
         if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64"}:

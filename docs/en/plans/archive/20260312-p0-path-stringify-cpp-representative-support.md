@@ -26,25 +26,28 @@ Out of scope:
 - a redesign of `repr(Path)` or path normalization
 
 Acceptance criteria:
-- The current compile failure of the minimal sample `path_stringify.py` is locked with a focused regression.
+- Baseline drift of the minimal sample `path_stringify.py` is locked with focused regressions.
 - In the representative C++ lane, `str(Path(...))` lowers through a `Path`-specific stringify path and compile smoke passes.
 - Regressions lock that `Path` does not fall back to generic `py_to_string(T)`.
-- Current support wording is synced in the plan and TODO.
+- Current support wording is synced in the plan, TODO, and C++ support docs.
 
 Verification commands:
 - `python3 tools/check_todo_priority.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k path_stringify`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py' -k py_to_string`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py' -k path_stringify`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 
 Decision log:
 - 2026-03-12: Because `Path(raw)` construction already compiles in the current representative lane, this task is limited to the `str(Path(...))` stringify path.
 - 2026-03-12: v1 is limited to representative `Path` stringification; a generic `str()` policy for user-defined classes remains a separate task.
+- 2026-03-12: The baseline regression uses `test/fixtures/stdlib/path_stringify.py` as the representative sample and locks the current C++ output in the form that emits `return py_to_string(path);` and fails to compile on the `operator<<` path.
+- 2026-03-12: In the representative C++ lane, v1 lowers only `Path` through `path.__str__()` and does not broaden the generic `py_to_string(T)` policy itself.
+- 2026-03-12: The representative contract is now `return path.__str__();` with compile/run smoke; the old compile-failure baseline remains only as drift context.
 
 ## Breakdown
 
 - [ ] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01] Lock the representative C++ stringify lane for `str(Path(...))` and remove the Pytra-NES blocker.
-- [ ] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01-S1-01] Lock the minimal-sample baseline and current compile failure with focused regressions, TODO, and plan.
-- [ ] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01-S2-01] Implement `Path`-specific stringify lowering in the representative C++ lane.
-- [ ] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01-S3-01] Sync docs, support wording, and regressions with the current contract and close the task.
+- [x] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01-S1-01] Lock the minimal-sample baseline and current compile failure with focused regressions, TODO, and plan.
+- [x] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01-S2-01] Implement `Path`-specific stringify lowering in the representative C++ lane.
+- [x] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01-S3-01] Sync docs, support wording, and regressions with the current contract and close the task.
