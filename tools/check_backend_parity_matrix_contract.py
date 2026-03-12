@@ -106,6 +106,35 @@ def _collect_contract_issues() -> list[str]:
         "sync_cpp_drilldown_docs",
     ):
         issues.append("doc maintenance order drifted")
+    if contract_mod.PARITY_MATRIX_SOURCE_MANIFESTS != {
+        "feature_contract_seed": "backend_feature_contract_inventory.build_feature_contract_handoff_manifest",
+        "conformance_summary_seed": "backend_conformance_summary_handoff_contract.build_backend_conformance_summary_handoff_manifest",
+        "rollout_tier_seed": "backend_parity_rollout_tier_contract.build_backend_parity_rollout_tier_manifest",
+    }:
+        issues.append("matrix source manifests drifted")
+    if contract_mod.PARITY_MATRIX_ROLLOUT_TIER_ORDER != ("representative", "secondary", "long_tail"):
+        issues.append("matrix rollout tier order drifted")
+    if contract_mod.PARITY_MATRIX_ROLLOUT_TIERS != (
+        {
+            "tier": "representative",
+            "backend_order": ("cpp", "rs", "cs"),
+            "downstream_task": contract_mod.PARITY_MATRIX_DOWNSTREAM_TASK,
+            "downstream_plan": contract_mod.PARITY_MATRIX_DOWNSTREAM_PLAN,
+        },
+        {
+            "tier": "secondary",
+            "backend_order": ("go", "java", "kt", "scala", "swift", "nim"),
+            "downstream_task": contract_mod.PARITY_MATRIX_DOWNSTREAM_TASK,
+            "downstream_plan": contract_mod.PARITY_MATRIX_DOWNSTREAM_PLAN,
+        },
+        {
+            "tier": "long_tail",
+            "backend_order": ("js", "ts", "lua", "rb", "php"),
+            "downstream_task": contract_mod.PARITY_MATRIX_DOWNSTREAM_TASK,
+            "downstream_plan": contract_mod.PARITY_MATRIX_DOWNSTREAM_PLAN,
+        },
+    ):
+        issues.append("matrix rollout tiers drifted")
     feature_ids = {entry["feature_id"] for entry in feature_contract_mod.iter_representative_support_matrix_handoff()}
     matrix_ids = {entry["feature_id"] for entry in contract_mod.iter_representative_parity_matrix_rows()}
     if matrix_ids != feature_ids:
@@ -157,11 +186,15 @@ def _collect_docs_issues() -> list[str]:
                     issues.append(f"canonical/drilldown note missing in {path.relative_to(ROOT)}")
                 if "このページと tooling contract を先に更新し、その後で C++ の詳細表を同期します。" not in text:
                     issues.append(f"maintenance order note missing in {path.relative_to(ROOT)}")
+                if "representative -> secondary -> long_tail の順で cell を埋めます。" not in text:
+                    issues.append(f"rollout tier note missing in {path.relative_to(ROOT)}")
             else:
                 if "Treat this page as the canonical source, and keep the C++ table as a drill-down" not in text:
                     issues.append(f"canonical/drilldown note missing in {path.relative_to(ROOT)}")
                 if "Update this page and the tooling contract first, then sync the C++ drill-down table." not in text:
                     issues.append(f"maintenance order note missing in {path.relative_to(ROOT)}")
+                if "Cells are filled in representative -> secondary -> long_tail order." not in text:
+                    issues.append(f"rollout tier note missing in {path.relative_to(ROOT)}")
     for path in CPP_DOC_TARGETS:
         text = path.read_text(encoding="utf-8")
         if "../backend-parity-matrix.md" not in text:
@@ -196,6 +229,8 @@ def _collect_manifest_issues() -> list[str]:
         "cpp_drilldown_docs",
         "doc_role_split",
         "maintenance_order",
+        "rollout_tier_order",
+        "rollout_tiers",
         "summary_source",
         "summary_keys",
         "row_keys",
@@ -237,6 +272,18 @@ def _collect_manifest_issues() -> list[str]:
         issues.append("manifest doc_role_split drifted")
     if manifest["maintenance_order"] != list(contract_mod.PARITY_MATRIX_DOC_MAINTENANCE_ORDER):
         issues.append("manifest maintenance_order drifted")
+    if manifest["rollout_tier_order"] != list(contract_mod.PARITY_MATRIX_ROLLOUT_TIER_ORDER):
+        issues.append("manifest rollout_tier_order drifted")
+    if manifest["rollout_tiers"] != [
+        {
+            "tier": entry["tier"],
+            "backend_order": list(entry["backend_order"]),
+            "downstream_task": entry["downstream_task"],
+            "downstream_plan": entry["downstream_plan"],
+        }
+        for entry in contract_mod.PARITY_MATRIX_ROLLOUT_TIERS
+    ]:
+        issues.append("manifest rollout_tiers drifted")
     if manifest["summary_source"] != contract_mod.PARITY_MATRIX_SUMMARY_SOURCE:
         issues.append("manifest summary_source drifted")
     if manifest["summary_keys"] != list(contract_mod.PARITY_MATRIX_SUMMARY_KEYS):

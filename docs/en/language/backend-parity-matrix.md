@@ -11,6 +11,7 @@ This page is the canonical publish target for feature × backend support-state r
 - Treat this page as the canonical source, and keep the C++ table as a drill-down at [./cpp/spec-support.md](./cpp/spec-support.md).
 - The C++ support matrix only refines the cpp lane and does not redefine the cross-backend taxonomy.
 - Update this page and the tooling contract first, then sync the C++ drill-down table.
+- Cells are filled in representative -> secondary -> long_tail order.
 
 ## Current Implementation Phase
 
