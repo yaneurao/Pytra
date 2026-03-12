@@ -38,8 +38,8 @@ EXPECTED_SCENARIOS = {
 EXPECTED_BACKEND = {
     "backend": "ruby",
     "scenario_ids": ("parent_module_alias", "parent_symbol_alias"),
-    "current_contract_state": "fail_closed_locked",
-    "current_evidence_lane": "backend_native_fail_closed",
+    "current_contract_state": "transpile_smoke_locked",
+    "current_evidence_lane": "native_emitter_function_body_transpile",
     "verification_lane": "longtail_relative_import_support_rollout",
     "focused_verification_lane": "ruby_relative_import_support_rollout_smoke",
     "fail_closed_lane": "backend_specific_fail_closed",
@@ -48,11 +48,16 @@ EXPECTED_BACKEND = {
 EXPECTED_SMOKE = {
     "smoke_test_file": "test/unit/backends/rb/test_py2rb_smoke.py",
     "focused_tests": (
-        "test_cli_relative_import_support_rollout_fail_closed_for_ruby",
+        "test_cli_relative_import_support_rollout_scenarios_transpile_for_ruby",
         "test_cli_relative_import_support_rollout_fail_closed_for_wildcard_on_ruby",
     ),
+    "expected_rewrite_markers": ("helper_f()",),
+    "expected_emitter_markers": (
+        "_RELATIVE_IMPORT_MODULE_ALIASES",
+        "_RELATIVE_IMPORT_SYMBOL_ALIASES",
+        "module_path + \"_\" + _safe_ident(name, \"fn\")",
+    ),
     "expected_error_family": (
-        "unsupported relative import form: relative import",
         "unsupported relative import form: wildcard import",
     ),
     "expected_backend_marker": "ruby native emitter",
@@ -73,8 +78,8 @@ EXPECTED_HANDOFF = {
     "backend": "ruby",
     "verification_lane": "longtail_relative_import_support_rollout",
     "focused_verification_lane": "ruby_relative_import_support_rollout_smoke",
-    "current_contract_state": "fail_closed_locked",
-    "current_evidence_lane": "backend_native_fail_closed",
+    "current_contract_state": "transpile_smoke_locked",
+    "current_evidence_lane": "native_emitter_function_body_transpile",
     "fail_closed_lane": "backend_specific_fail_closed",
 }
 
@@ -123,14 +128,22 @@ def validate_relative_import_ruby_support_contract() -> None:
     for test_name in RELATIVE_IMPORT_RUBY_SUPPORT_SMOKE_V1["focused_tests"]:
         if f"def {test_name}(" not in smoke_src:
             raise SystemExit(f"missing ruby support focused smoke test: {test_name}")
+    for needle in RELATIVE_IMPORT_RUBY_SUPPORT_SMOKE_V1["expected_rewrite_markers"]:
+        if needle not in smoke_src:
+            raise SystemExit(f"missing ruby support smoke rewrite marker: {needle}")
     for needle in (
         *RELATIVE_IMPORT_RUBY_SUPPORT_SMOKE_V1["expected_error_family"],
         RELATIVE_IMPORT_RUBY_SUPPORT_SMOKE_V1["expected_backend_marker"],
     ):
         if needle not in smoke_src:
             raise SystemExit(f"missing ruby support smoke diagnostic marker: {needle}")
+    if "unsupported relative import form: relative import" in smoke_src:
+        raise SystemExit("ruby support smoke still references the old representative fail-closed path")
     emitter_path = ROOT / "src/backends/ruby/emitter/ruby_native_emitter.py"
     emitter_src = emitter_path.read_text(encoding="utf-8")
+    for needle in RELATIVE_IMPORT_RUBY_SUPPORT_SMOKE_V1["expected_emitter_markers"]:
+        if needle not in emitter_src:
+            raise SystemExit(f"missing ruby emitter rewrite marker: {needle}")
     for needle in (
         *RELATIVE_IMPORT_RUBY_SUPPORT_SMOKE_V1["expected_error_family"],
         RELATIVE_IMPORT_RUBY_SUPPORT_SMOKE_V1["expected_backend_marker"],

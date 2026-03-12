@@ -27,9 +27,13 @@ from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 from relative_import_longtail_smoke_support import (
-    relative_import_longtail_scenarios,
+    transpile_relative_import_longtail_project,
     transpile_relative_import_longtail_expect_failure,
 )
+
+RUBY_RELATIVE_IMPORT_REWRITE_MARKER = "helper_f()"
+RUBY_RELATIVE_IMPORT_MODULE_ALIAS_FORBIDDEN = "h.f()"
+RUBY_RELATIVE_IMPORT_SYMBOL_ALIAS_FORBIDDEN = "g()"
 
 
 def load_east(
@@ -101,16 +105,15 @@ class Py2RbSmokeTest(unittest.TestCase):
         ruby = transpile_to_ruby_native(east)
         self.assertIn("~y", ruby)
 
-    def test_cli_relative_import_support_rollout_fail_closed_for_ruby(self) -> None:
-        for scenario_id, scenario in relative_import_longtail_scenarios().items():
+    def test_cli_relative_import_support_rollout_scenarios_transpile_for_ruby(self) -> None:
+        for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
             with self.subTest(scenario_id=scenario_id):
-                err = transpile_relative_import_longtail_expect_failure(
-                    "ruby",
-                    str(scenario["import_form"]),
-                    str(scenario["representative_expr"]),
-                )
-                self.assertIn("unsupported relative import form: relative import", err)
-                self.assertIn("ruby native emitter", err)
+                ruby = transpile_relative_import_longtail_project("ruby", scenario_id)
+                self.assertIn(RUBY_RELATIVE_IMPORT_REWRITE_MARKER, ruby)
+                if scenario_id == "parent_module_alias":
+                    self.assertNotIn(RUBY_RELATIVE_IMPORT_MODULE_ALIAS_FORBIDDEN, ruby)
+                else:
+                    self.assertNotIn(RUBY_RELATIVE_IMPORT_SYMBOL_ALIAS_FORBIDDEN, ruby)
 
     def test_cli_relative_import_support_rollout_fail_closed_for_wildcard_on_ruby(self) -> None:
         err = transpile_relative_import_longtail_expect_failure(

@@ -60,17 +60,17 @@ EXPECTED_HANDOFF = {
         "docs/en/language/backend-parity-matrix.md",
     ),
     "bundle_id": "longtail_relative_import_support_rollout",
-    "bundle_state": "active_rollout",
+    "bundle_state": "locked_representative_smoke",
     "backends": ("lua", "php", "ruby"),
     "verification_lane": "longtail_relative_import_support_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
-    "current_contract_state": "mixed_rollout_locked",
-    "current_evidence_lane": "mixed_backend_evidence",
+    "current_contract_state": "transpile_smoke_locked",
+    "current_evidence_lane": "native_emitter_function_body_transpile",
     "prereq_bundle_id": "longtail_relative_import_rollout",
     "followup_bundle_id": "none",
     "followup_backends": (),
     "followup_verification_lane": "none",
-    "remaining_rollout_backends": ("ruby",),
+    "remaining_rollout_backends": (),
 }
 
 
@@ -106,28 +106,16 @@ def validate_relative_import_longtail_support_contract() -> None:
                 "relative import long-tail support scenario coverage drifted: "
                 f"{entry['backend']}={entry['scenario_ids']}"
             )
-        if entry["backend"] in {"lua", "php"}:
-            if entry["current_contract_state"] != "transpile_smoke_locked":
-                raise SystemExit(
-                    f"{entry['backend']} must move to transpile_smoke_locked in the active long-tail rollout: "
-                    f"{entry['current_contract_state']}"
-                )
-            if entry["current_evidence_lane"] != "native_emitter_function_body_transpile":
-                raise SystemExit(
-                    f"{entry['backend']} must use native_emitter_function_body_transpile as current evidence: "
-                    f"{entry['current_evidence_lane']}"
-                )
-        else:
-            if entry["current_contract_state"] != "fail_closed_locked":
-                raise SystemExit(
-                    "ruby must remain fail_closed_locked during the live rollout: "
-                    f"{entry['backend']}={entry['current_contract_state']}"
-                )
-            if entry["current_evidence_lane"] != "backend_native_fail_closed":
-                raise SystemExit(
-                    "ruby must keep backend_native_fail_closed as current evidence: "
-                    f"{entry['backend']}={entry['current_evidence_lane']}"
-                )
+        if entry["current_contract_state"] != "transpile_smoke_locked":
+            raise SystemExit(
+                f"{entry['backend']} must move to transpile_smoke_locked in the long-tail rollout: "
+                f"{entry['current_contract_state']}"
+            )
+        if entry["current_evidence_lane"] != "native_emitter_function_body_transpile":
+            raise SystemExit(
+                f"{entry['backend']} must use native_emitter_function_body_transpile as current evidence: "
+                f"{entry['current_evidence_lane']}"
+            )
         if entry["verification_lane"] != "longtail_relative_import_support_rollout":
             raise SystemExit(
                 "long-tail support backend verification lane drifted: "
@@ -155,28 +143,16 @@ def validate_relative_import_longtail_support_contract() -> None:
             "relative import long-tail support coverage rows drifted from backend order"
         )
     for row in coverage_rows:
-        if row["backend"] in {"lua", "php"}:
-            if row["contract_state"] != "transpile_smoke_locked":
-                raise SystemExit(
-                    f"{row['backend']} coverage row must move to transpile_smoke_locked: "
-                    f"{row['contract_state']}"
-                )
-            if row["evidence_lane"] != "native_emitter_function_body_transpile":
-                raise SystemExit(
-                    f"{row['backend']} coverage row must use native_emitter_function_body_transpile: "
-                    f"{row['evidence_lane']}"
-                )
-        else:
-            if row["contract_state"] != "fail_closed_locked":
-                raise SystemExit(
-                    "ruby coverage rows must stay fail_closed_locked: "
-                    f"{row['backend']}={row['contract_state']}"
-                )
-            if row["evidence_lane"] != "backend_native_fail_closed":
-                raise SystemExit(
-                    "ruby coverage rows must stay backend_native_fail_closed: "
-                    f"{row['backend']}={row['evidence_lane']}"
-                )
+        if row["contract_state"] != "transpile_smoke_locked":
+            raise SystemExit(
+                f"{row['backend']} coverage row must move to transpile_smoke_locked: "
+                f"{row['contract_state']}"
+            )
+        if row["evidence_lane"] != "native_emitter_function_body_transpile":
+            raise SystemExit(
+                f"{row['backend']} coverage row must use native_emitter_function_body_transpile: "
+                f"{row['evidence_lane']}"
+            )
     if relative_import_longtail_support_archive_snapshot() != {
         "prereq_bundle_id": EXPECTED_HANDOFF["prereq_bundle_id"],
         "prereq_current_contract_state": "fail_closed_locked",
@@ -189,11 +165,11 @@ def validate_relative_import_longtail_support_contract() -> None:
         )
     if relative_import_longtail_support_handoff_snapshot() != {
             "next_rollout_backends": EXPECTED_HANDOFF["remaining_rollout_backends"],
-            "next_verification_lane": EXPECTED_HANDOFF["verification_lane"],
+            "next_verification_lane": "none",
             "current_bundle_contract_state": EXPECTED_HANDOFF["current_contract_state"],
             "current_bundle_evidence_lane": EXPECTED_HANDOFF["current_evidence_lane"],
-            "current_bundle_smoke_locked_backends": ("lua", "php"),
-            "current_bundle_fail_closed_locked_backends": ("ruby",),
+            "current_bundle_smoke_locked_backends": ("lua", "php", "ruby"),
+            "current_bundle_fail_closed_locked_backends": (),
             "focused_verification_lanes": EXPECTED_FOCUSED_VERIFICATION_LANES,
     }:
         raise SystemExit(

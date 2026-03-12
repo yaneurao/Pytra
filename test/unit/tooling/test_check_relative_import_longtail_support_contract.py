@@ -50,8 +50,8 @@ class RelativeImportLongtailSupportContractTest(unittest.TestCase):
         )
         self.assertTrue(
             all(
-                entry["current_contract_state"] == "fail_closed_locked"
-                and entry["current_evidence_lane"] == "backend_native_fail_closed"
+                entry["current_contract_state"] == "transpile_smoke_locked"
+                and entry["current_evidence_lane"] == "native_emitter_function_body_transpile"
                 for entry in RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1[2:]
             )
         )
@@ -74,10 +74,10 @@ class RelativeImportLongtailSupportContractTest(unittest.TestCase):
         self.assertEqual(rows[1]["contract_state"], "transpile_smoke_locked")
         self.assertEqual(rows[1]["evidence_lane"], "native_emitter_function_body_transpile")
         self.assertTrue(
-            all(row["contract_state"] == "fail_closed_locked" for row in rows[2:])
+            all(row["contract_state"] == "transpile_smoke_locked" for row in rows[2:])
         )
         self.assertTrue(
-            all(row["evidence_lane"] == "backend_native_fail_closed" for row in rows[2:])
+            all(row["evidence_lane"] == "native_emitter_function_body_transpile" for row in rows[2:])
         )
 
     def test_archive_snapshot_matches_archived_bundle_handoff(self) -> None:
@@ -97,11 +97,11 @@ class RelativeImportLongtailSupportContractTest(unittest.TestCase):
             relative_import_longtail_support_handoff_snapshot(),
             {
                 "next_rollout_backends": EXPECTED_HANDOFF["remaining_rollout_backends"],
-                "next_verification_lane": EXPECTED_HANDOFF["verification_lane"],
+                "next_verification_lane": "none",
                 "current_bundle_contract_state": EXPECTED_HANDOFF["current_contract_state"],
                 "current_bundle_evidence_lane": EXPECTED_HANDOFF["current_evidence_lane"],
-                "current_bundle_smoke_locked_backends": ("lua", "php"),
-                "current_bundle_fail_closed_locked_backends": ("ruby",),
+                "current_bundle_smoke_locked_backends": ("lua", "php", "ruby"),
+                "current_bundle_fail_closed_locked_backends": (),
                 "focused_verification_lanes": EXPECTED_FOCUSED_VERIFICATION_LANES,
             },
         )

@@ -53,8 +53,8 @@ RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1: Final[list[dict[str, object]]] = [
     {
         "backend": "ruby",
         "scenario_ids": ("parent_module_alias", "parent_symbol_alias"),
-        "current_contract_state": "fail_closed_locked",
-        "current_evidence_lane": "backend_native_fail_closed",
+        "current_contract_state": "transpile_smoke_locked",
+        "current_evidence_lane": "native_emitter_function_body_transpile",
         "verification_lane": "longtail_relative_import_support_rollout",
         "focused_verification_lane": "ruby_relative_import_support_rollout_smoke",
         "fail_closed_lane": "backend_specific_fail_closed",
@@ -79,17 +79,17 @@ RELATIVE_IMPORT_LONGTAIL_SUPPORT_HANDOFF_V1: Final[dict[str, object]] = {
         "docs/en/language/backend-parity-matrix.md",
     ),
     "bundle_id": "longtail_relative_import_support_rollout",
-    "bundle_state": "active_rollout",
+    "bundle_state": "locked_representative_smoke",
     "backends": ("lua", "php", "ruby"),
     "verification_lane": "longtail_relative_import_support_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
-    "current_contract_state": "mixed_rollout_locked",
-    "current_evidence_lane": "mixed_backend_evidence",
+    "current_contract_state": "transpile_smoke_locked",
+    "current_evidence_lane": "native_emitter_function_body_transpile",
     "prereq_bundle_id": "longtail_relative_import_rollout",
     "followup_bundle_id": "none",
     "followup_backends": (),
     "followup_verification_lane": "none",
-    "remaining_rollout_backends": ("ruby",),
+    "remaining_rollout_backends": (),
 }
 
 

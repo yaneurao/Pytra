@@ -7,7 +7,7 @@ Related TODO:
 
 Background:
 - C++ already satisfies the relative-import baseline through multi-file build/run smoke.
-- `rs/cs/go/java/js/kotlin/nim/scala/swift/ts` already own a transpile-smoke baseline, and `lua` has now moved its representative alias-rewrite lane to `transpile_smoke_locked + native_emitter_function_body_transpile`. This bundle moves `php` onto the same representative smoke lane, leaving only `ruby` on the archived `fail_closed_locked + backend_native_fail_closed` long-tail baseline.
+- `rs/cs/go/java/js/kotlin/nim/scala/swift/ts` already own a transpile-smoke baseline, and the final bundle moves `lua/php/ruby` onto the representative alias-rewrite lane at `transpile_smoke_locked + native_emitter_function_body_transpile`.
 - The archived support-rollout plan fixed only the handoff and closed, so there is no live plan for the actual support implementation.
 - The Pytra-NES experiment needs package-structured Python to move through the transpiler, so the staged relative-import rollout should be pulled forward.
 
@@ -29,7 +29,7 @@ Out of scope:
 Acceptance criteria:
 - The PHP backend successfully transpiles the two representative scenarios and rewrites `h.f()` / `g()` into emitted `helper_f()` PHP.
 - The PHP backend still fail-closes `from ..helper import *` with `unsupported relative import form: wildcard import`.
-- The backend coverage inventory moves `php` to `transpile_smoke_locked + native_emitter_function_body_transpile` and keeps only `ruby` as the fail-closed residual.
+- Sync the backend coverage inventory, parity docs, and long-tail handoff wording to the final state where `lua/php/ruby` all own representative `transpile_smoke_locked` coverage.
 - The long-tail support contract, PHP support contract, and backend parity docs all record the current rollout state and the focused smoke lane correctly.
 
 Verification commands:
@@ -52,13 +52,14 @@ Decision log:
 - 2026-03-12: The first Pytra-NES blocker was parenthesized `from ... import (...)`, so land the frontend parser fix before the PHP/Ruby rollout bundles.
 - 2026-03-12: Lock PHP support with the direct native-emitter rewrite strategy (`helper_f()`), while leaving wildcard relative imports fail-closed.
 - 2026-03-12: After the PHP bundle lands, record the current long-tail rollout with `lua/php` as smoke-locked backends and `ruby` as the remaining fail-closed residual.
+- 2026-03-12: Lock Ruby support with the same direct native-emitter rewrite strategy (`helper_f()`), still leaving wildcard relative imports fail-closed. The final state is `bundle_state=locked_representative_smoke`, `current_contract_state=transpile_smoke_locked`, `current_evidence_lane=native_emitter_function_body_transpile`, and `remaining_rollout_backends=none`.
 
 ## Breakdown
 
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01] Advance the staged rollout for `lua/php/ruby` and sync the current relative-import support state into docs, tooling, and backend coverage.
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01] Advance the staged rollout for `lua/php/ruby` and sync the current relative-import support state into docs, tooling, and backend coverage.
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S1-01] Reopen the active plan, TODO, and support handoff for the live implementation work.
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S1-02] Let the frontend accept parenthesized `from ... import (...)` in relative-import projects.
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-01] Add relative-import alias rewriting to the Lua native emitter and switch the representative smoke and contracts to the success lane.
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-02] Extend the same representative scenarios to the PHP backend and update the contracts, smoke tests, and parity docs.
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-03] Extend the same representative scenarios to the Ruby backend and update the contracts, smoke tests, and parity docs.
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S3-01] Sync backend coverage, parity docs, and archived handoff wording to the final rollout state and close the task.
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-03] Extend the same representative scenarios to the Ruby backend and update the contracts, smoke tests, and parity docs.
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S3-01] Sync backend coverage, parity docs, and archived handoff wording to the final rollout state and close the task.

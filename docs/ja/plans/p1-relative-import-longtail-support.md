@@ -7,7 +7,7 @@
 
 背景:
 - C++ は multi-file build/run smoke で relative import baseline を既に満たしている。
-- `rs/cs/go/java/js/kotlin/nim/scala/swift/ts` は transpile smoke baseline を持ち、`lua` も representative alias rewrite lane を `transpile_smoke_locked + native_emitter_function_body_transpile` へ進めた。現 bundle では `php` も同じ representative smoke lane へ進め、残る archived long-tail residual は `ruby` だけに縮める。
+- `rs/cs/go/java/js/kotlin/nim/scala/swift/ts` は transpile smoke baseline を持ち、`lua/php/ruby` も representative alias rewrite lane を `transpile_smoke_locked + native_emitter_function_body_transpile` へ進める最終 bundle が残っている。
 - archived support rollout plan は handoff だけを固定して終了しており、実際の support 実装を進める live plan が無い。
 - Pytra-NES 実験では package 構成の Python を C++ へ流したいので、relative import support の staged rollout を前倒しする必要がある。
 
@@ -29,7 +29,7 @@
 受け入れ基準:
 - PHP backend は representative scenario 2 件を transpile 成功し、`h.f()` / `g()` が emitted PHP で `helper_f()` へ rewrite される。
 - PHP backend は `from ..helper import *` を引き続き `unsupported relative import form: wildcard import` で fail-closed にする。
-- backend coverage inventory は `php` を `transpile_smoke_locked + native_emitter_function_body_transpile` へ更新し、`ruby` だけを fail-closed residual として残す。
+- backend coverage inventory / parity docs / long-tail handoff wording を `lua/php/ruby` 全 backend が representative `transpile_smoke_locked` になった最終 state へ同期する。
 - long-tail support contract / PHP support contract / backend parity docs が current rollout state と focused smoke lane を正しく記録する。
 
 確認コマンド:
@@ -52,13 +52,14 @@
 - 2026-03-12: Pytra-NES の最初の blocker だった括弧付き `from ... import (...)` は frontend 共通 blocker なので、PHP/Ruby rollout より先に parser で受ける。
 - 2026-03-12: PHP support は direct native-emitter rewrite (`helper_f()`) 方式で固定し、wildcard relative import だけ fail-closed に残す。
 - 2026-03-12: PHP bundle 完了後の current long-tail rollout state は `lua/php` を smoke-locked backend、`ruby` を remaining fail-closed residual として inventory / parity docs に記録する。
+- 2026-03-12: Ruby support も `helper_f()` rewrite 方式で固定し、wildcard relative import だけ fail-closed に残す。final state は `bundle_state=locked_representative_smoke`、`current_contract_state=transpile_smoke_locked`、`current_evidence_lane=native_emitter_function_body_transpile`、`remaining_rollout_backends=none` とする。
 
 ## 分解
 
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01] `lua/php/ruby` staged rollout を進め、relative import support の current state を docs / tooling / backend coverage へ同期する。
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01] `lua/php/ruby` staged rollout を進め、relative import support の current state を docs / tooling / backend coverage へ同期する。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S1-01] active plan / TODO / support handoff を live 実装用に再起票する。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S1-02] frontend が括弧付き `from ... import (...)` を relative import project で受理できるようにする。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-01] Lua native emitter に relative import alias rewrite を入れ、representative smoke と contract を success lane に切り替える。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-02] PHP backend を同じ representative scenario へ広げ、contract / smoke / parity docs を更新する。
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-03] Ruby backend を同じ representative scenario へ広げ、contract / smoke / parity docs を更新する。
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S3-01] backend coverage / parity docs / archived handoff wording を final rollout state に同期して task を閉じる。
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-03] Ruby backend を同じ representative scenario へ広げ、contract / smoke / parity docs を更新する。
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S3-01] backend coverage / parity docs / archived handoff wording を final rollout state に同期して task を閉じる。
