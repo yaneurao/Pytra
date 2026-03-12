@@ -40,6 +40,8 @@
 - `python3 tools/check_cpp_pyruntime_header_surface.py`
 - `python3 tools/check_cpp_pyruntime_contract_inventory.py`
 - `python3 tools/check_crossruntime_pyruntime_emitter_inventory.py`
+- `python3 tools/check_cpp_pyruntime_residual_thin_seam_contract.py`
+- `python3 tools/check_cpp_pyruntime_residual_thin_seam_handoff_contract.py`
 - `git diff --check`
 
 決定ログ:
@@ -49,10 +51,11 @@
 - 2026-03-12: `check_cpp_pyruntime_header_surface.py` と `check_crossruntime_pyruntime_emitter_inventory.py` の follow-up / handoff 参照は archived `P0/P4` ではなく active な `P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01` に揃え、この task 自体が current residual baseline を source-guard する正本とする。
 - 2026-03-12: source-wide contract inventory では `py_append/py_pop` の C# bytearray compat と `gif/png` utility runtime だけを `object_bridge_required` へ分離し、shared runtime contract は `type_id` thin seam と native compiler `py_runtime_object_isinstance` のみを保持する。
 - 2026-03-12: shared `type_id` thin seam の分類は `check_crossruntime_pyruntime_emitter_inventory.py` の `P5-...-S2-02` guard で固定し、C++ では `py_runtime_value_type_id` だけを future-reducible、Rust/C# は全 residual caller を must-remain-until-runtime-task とする。
+- 2026-03-12: final handoff criteria は `check_cpp_pyruntime_residual_thin_seam_handoff_contract.py` に集約し、header surface / source-wide contract / crossruntime emitter inventory の 3 guard と bundle order を `P5` の archive 前提条件として固定する。
 
 ## 分解
 
 - [x] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S1-01] current header surface と cross-runtime residual caller の baseline を docs / tooling / inventory で固定する。
 - [x] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-01] object bridge mutation seam の caller ownership と backend-local へ押し戻せる lane を分類する。
 - [x] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02] shared `type_id` thin seam の C++ / Rust / C# residual contract を分類し、must-remain と future-reducible を切り分ける。
-- [ ] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S3-01] final shrink handoff 条件、bundle order、representative regression を docs / tooling / archive へ同期する。
+- [x] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S3-01] final shrink handoff 条件、bundle order、representative regression を docs / tooling / archive へ同期する。
