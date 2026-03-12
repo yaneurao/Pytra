@@ -66,34 +66,6 @@ def _iter_observed_representative_residual_cells() -> tuple[RepresentativeResidu
 REPRESENTATIVE_RESIDUAL_CELLS_V1: Final[tuple[RepresentativeResidualCell, ...]] = (
     {
         "backend": "cs",
-        "feature_id": "syntax.control.for_range",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/control/for_range.py",
-    },
-    {
-        "backend": "cs",
-        "feature_id": "syntax.control.try_raise",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/control/try_raise.py",
-    },
-    {
-        "backend": "cs",
-        "feature_id": "builtin.iter.range",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/control/for_range.py",
-    },
-    {
-        "backend": "cs",
-        "feature_id": "builtin.iter.zip",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/signature/ok_generator_tuple_target.py",
-    },
-    {
-        "backend": "cs",
         "feature_id": "stdlib.json.loads_dumps",
         "support_state": "not_started",
         "evidence_kind": "not_started_placeholder",
@@ -162,14 +134,9 @@ REPRESENTATIVE_ROLLOUT_BUNDLES_V1: Final[tuple[RepresentativeRolloutBundle, ...]
     {
         "bundle_id": "cs_syntax_iter_bundle",
         "backend": "cs",
-        "feature_ids": (
-            "syntax.control.for_range",
-            "syntax.control.try_raise",
-            "builtin.iter.range",
-            "builtin.iter.zip",
-        ),
+        "feature_ids": (),
         "target_evidence": "transpile_smoke",
-        "notes": "Cover the C# syntax and iterator rows together before moving to stdlib-heavy bundles.",
+        "notes": "The representative C# syntax and iterator rows are green; keep the empty bundle as a handoff marker while the stdlib bundle becomes current.",
     },
     {
         "bundle_id": "cs_stdlib_bundle",

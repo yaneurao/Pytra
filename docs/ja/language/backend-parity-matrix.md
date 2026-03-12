@@ -201,7 +201,7 @@
         <td class="fixture">test/fixtures/control/for_range.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
@@ -219,7 +219,7 @@
         <td class="fixture">test/fixtures/control/try_raise.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
@@ -255,7 +255,7 @@
         <td class="fixture">test/fixtures/control/for_range.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
@@ -291,7 +291,7 @@
         <td class="fixture">test/fixtures/signature/ok_generator_tuple_target.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>

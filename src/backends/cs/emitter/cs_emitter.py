@@ -1284,6 +1284,33 @@ class CSharpEmitter(CodeEmitter):
             return self._safe_name(raw)
         return "_"
 
+    def _render_comp_target_loop_state(self, target_node: dict[str, Any], iter_node: Any) -> tuple[str, list[str]]:
+        kind = self.any_dict_get_str(target_node, "kind", "")
+        if kind == "Name":
+            return self._render_comp_target(target_node), []
+        if kind != "Tuple":
+            return "_", []
+        elts = self.tuple_elements(target_node)
+        if len(elts) == 0:
+            return "_", []
+        tmp = self.next_tmp("__it")
+        bindings: list[str] = []
+        use_dict_items = self._iter_is_dict_items(iter_node) and len(elts) == 2
+        for idx, elt in enumerate(elts):
+            elt_d = self.any_to_dict_or_empty(elt)
+            if self.any_dict_get_str(elt_d, "kind", "") != "Name":
+                continue
+            raw = self.any_dict_get_str(elt_d, "id", "_")
+            if raw == "_" or raw == "":
+                continue
+            safe = self._safe_name(raw)
+            if use_dict_items:
+                access = ".Key" if idx == 0 else ".Value"
+            else:
+                access = ".Item" + str(idx + 1)
+            bindings.append("var " + safe + " = " + tmp + access + ";")
+        return tmp, bindings
+
     def _render_list_comp_expr(self, expr_d: dict[str, Any], forced_out_type: str = "") -> str:
         """ListComp を C# `List<T>` 構築式へ lower する。"""
         generators = self.any_to_list(expr_d.get("generators"))
@@ -1309,10 +1336,15 @@ class CSharpEmitter(CodeEmitter):
         depth = 0
         for gen in generators:
             gen_d = self.any_to_dict_or_empty(gen)
-            target_txt = self._render_comp_target(self.any_to_dict_or_empty(gen_d.get("target")))
-            iter_expr = self.render_expr(gen_d.get("iter"))
+            iter_node = gen_d.get("iter")
+            target_txt, bindings = self._render_comp_target_loop_state(
+                self.any_to_dict_or_empty(gen_d.get("target")),
+                iter_node,
+            )
+            iter_expr = self.render_expr(iter_node)
             parts.append("foreach (var " + target_txt + " in " + iter_expr + ") {")
             depth += 1
+            parts.extend(bindings)
             for cond_node in self.any_to_list(gen_d.get("ifs")):
                 parts.append("if (!(" + self.render_cond(cond_node) + ")) { continue; }")
 

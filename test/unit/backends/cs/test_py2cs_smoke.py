@@ -915,6 +915,36 @@ def f(x: object) -> bool:
         self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(", cs)
         self.assertNotIn("unsupported", cs)
 
+    def test_representative_for_range_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("for_range")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("for (i = 0; i < n; i += 1)", cs)
+        self.assertIn("total += i;", cs)
+        self.assertNotIn("unsupported", cs)
+
+    def test_representative_try_raise_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("try_raise")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn('throw new System.Exception("fail-19");', cs)
+        self.assertIn("catch (System.Exception ex)", cs)
+        self.assertNotIn("unsupported", cs)
+
+    def test_representative_zip_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("ok_generator_tuple_target")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("foreach (var __it_", cs)
+        self.assertIn("in zip(wo, x)", cs)
+        self.assertIn("var wi = __it_", cs)
+        self.assertIn(".Item1;", cs)
+        self.assertIn("var xi = __it_", cs)
+        self.assertIn(".Item2;", cs)
+        self.assertIn("__out_1.Add(wi * xi);", cs)
+        self.assertNotIn("foreach (var _ in zip(wo, x))", cs)
+        self.assertNotIn("unsupported", cs)
+
     def test_path_alias_constructor_and_parent_are_lowered(self) -> None:
         src = """from pytra.std.pathlib import Path
 

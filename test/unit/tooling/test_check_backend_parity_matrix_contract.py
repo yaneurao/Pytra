@@ -106,6 +106,7 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 },
                 "syntax.control.for_range": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "nim": {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -113,6 +114,7 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 },
                 "syntax.control.try_raise": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "syntax.oop.virtual_dispatch": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -133,11 +135,13 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 },
                 "builtin.iter.zip": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "builtin.iter.range": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "nim": {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -334,6 +338,10 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         )
         self.assertEqual(
+            cells["syntax.control.for_range"]["cs"],
+            {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        )
+        self.assertEqual(
             cells["syntax.control.for_range"]["java"],
             {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         )
@@ -354,8 +362,16 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         )
         self.assertEqual(
+            cells["syntax.control.try_raise"]["cs"],
+            {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        )
+        self.assertEqual(
             cells["builtin.iter.range"]["rs"],
             {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        )
+        self.assertEqual(
+            cells["builtin.iter.range"]["cs"],
+            {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         )
         self.assertEqual(
             cells["builtin.iter.range"]["java"],
@@ -374,9 +390,15 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         )
         self.assertEqual(
-            [cells["builtin.iter.zip"]["rs"], cells["builtin.iter.zip"]["lua"], cells["builtin.iter.zip"]["php"]],
+            [
+                cells["builtin.iter.zip"]["rs"],
+                cells["builtin.iter.zip"]["cs"],
+                cells["builtin.iter.zip"]["lua"],
+                cells["builtin.iter.zip"]["php"],
+            ],
             [
                 {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             ],
