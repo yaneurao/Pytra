@@ -111,6 +111,44 @@ def _sh_parse_import_alias(text: str, *, allow_dotted_name: bool) -> tuple[str, 
     return name_txt, alias_txt
 
 
+def _sh_normalize_import_from_names_text(text: str) -> str:
+    """`from module import (...)` の optional paren wrapper を剥がす。"""
+    raw = text.strip()
+    if len(raw) < 2 or raw[0] != "(" or raw[-1] != ")":
+        return raw
+    depth = 0
+    in_str: str | None = None
+    esc = False
+    close_idx = -1
+    for i, ch in enumerate(raw):
+        if in_str is not None:
+            if esc:
+                esc = False
+                continue
+            if ch == "\\":
+                esc = True
+                continue
+            if ch == in_str:
+                in_str = None
+            continue
+        if ch in {"'", '"'}:
+            in_str = ch
+            continue
+        if ch == "(":
+            depth += 1
+            continue
+        if ch == ")":
+            depth -= 1
+            if depth < 0:
+                return raw
+            if depth == 0:
+                close_idx = i
+                break
+    if depth != 0 or close_idx != len(raw) - 1:
+        return raw
+    return raw[1:-1].strip()
+
+
 def _sh_parse_import_from_clause(text: str) -> tuple[str, str, int] | None:
     """`from module import names` を手書きパースして raw module text と level を返す。"""
     raw = text.strip()
@@ -121,7 +159,7 @@ def _sh_parse_import_from_clause(text: str) -> tuple[str, str, int] | None:
     if pos < 0:
         return None
     module_txt = raw[len("from ") : pos].strip()
-    names_txt = raw[pos + len(marker) :].strip()
+    names_txt = _sh_normalize_import_from_names_text(raw[pos + len(marker) :])
     if module_txt == "" or names_txt == "":
         return None
     level = 0

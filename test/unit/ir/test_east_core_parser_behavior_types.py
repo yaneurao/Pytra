@@ -432,6 +432,39 @@ def main() -> None:
         self.assertEqual(import_bindings[0].get("module_id"), ".")
         self.assertEqual(import_bindings[0].get("export_name"), "f")
 
+    def test_relative_from_import_accepts_parenthesized_symbol_list(self) -> None:
+        src = """
+from .controller import (
+    BUTTON_A,
+    BUTTON_B,
+)
+
+def main() -> int:
+    return BUTTON_A | BUTTON_B
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        import_from_nodes = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "ImportFrom"
+        ]
+        self.assertEqual(len(import_from_nodes), 1)
+        self.assertEqual(import_from_nodes[0].get("module"), ".controller")
+        self.assertEqual(import_from_nodes[0].get("level"), 1)
+        aliases = import_from_nodes[0].get("names", [])
+        self.assertEqual(
+            [(alias.get("name"), alias.get("asname")) for alias in aliases],
+            [("BUTTON_A", None), ("BUTTON_B", None)],
+        )
+
+        meta = east.get("meta", {})
+        import_bindings = meta.get("import_bindings", [])
+        self.assertIsInstance(import_bindings, list)
+        self.assertEqual(
+            [(entry.get("module_id"), entry.get("export_name")) for entry in import_bindings],
+            [(".controller", "BUTTON_A"), (".controller", "BUTTON_B")],
+        )
+
     def test_future_non_annotations_is_rejected(self) -> None:
         src = """
 from __future__ import generator_stop

@@ -35,6 +35,8 @@ class EastCoreSourceContractTextSemanticsTest(unittest.TestCase):
         self.assertIn("def _sh_split_top_keyword(", helper_text)
         self.assertIn("def _sh_split_top_level_as(", helper_text)
         self.assertIn("def _sh_parse_import_alias(", helper_text)
+        self.assertIn("def _sh_normalize_import_from_names_text(", helper_text)
+        self.assertIn("def _sh_parse_import_from_clause(", helper_text)
         self.assertIn("def _sh_parse_dataclass_decorator_options(", helper_text)
 
         self.assertNotIn("def _sh_is_identifier(", core_text)
@@ -43,6 +45,8 @@ class EastCoreSourceContractTextSemanticsTest(unittest.TestCase):
         self.assertNotIn("def _sh_split_top_keyword(", core_text)
         self.assertNotIn("def _sh_split_top_level_as(", core_text)
         self.assertNotIn("def _sh_parse_import_alias(", core_text)
+        self.assertNotIn("def _sh_normalize_import_from_names_text(", core_text)
+        self.assertNotIn("def _sh_parse_import_from_clause(", core_text)
         self.assertNotIn("def _sh_parse_dataclass_decorator_options(", core_text)
 
     def test_core_source_routes_import_and_dataclass_text_parsing_through_helper_module(self) -> None:
@@ -52,6 +56,7 @@ class EastCoreSourceContractTextSemanticsTest(unittest.TestCase):
         self.assertIn("source = _sh_strip_utf8_bom(source)", module_parser_text)
         self.assertIn("_sh_parse_import_alias(part, allow_dotted_name=True)", module_parser_text)
         self.assertIn("_sh_parse_import_alias(part, allow_dotted_name=False)", module_parser_text)
+        self.assertIn("import_from_clause = _sh_parse_import_from_clause(s)", module_parser_text)
         self.assertIn("_sh_parse_dataclass_decorator_options(", module_parser_text)
         self.assertIn("split_top_commas=_sh_split_top_commas", module_parser_text)
         self.assertIn("split_top_level_assign=_sh_split_top_level_assign", module_parser_text)
@@ -60,6 +65,7 @@ class EastCoreSourceContractTextSemanticsTest(unittest.TestCase):
         self.assertIn("make_span=_sh_span", module_parser_text)
         self.assertIn("_sh_parse_import_alias(part, allow_dotted_name=True)", stmt_parser_text)
         self.assertIn("_sh_parse_import_alias(part, allow_dotted_name=False)", stmt_parser_text)
+        self.assertIn("import_from_clause = _sh_parse_import_from_clause(s)", stmt_parser_text)
 
 
 if __name__ == "__main__":

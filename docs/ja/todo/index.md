@@ -33,4 +33,4 @@
 
 1. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01] `lua/php/ruby` の representative relative import project を staged rollout で support し、backend coverage / parity docs / contract を current rollout state に同期する。
    文脈: [p1-relative-import-longtail-support.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-longtail-support.md)
-   - `P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01`: Lua は `transpile_smoke_locked` まで反映済み。残りは `php/ruby` fail-closed residual と mixed rollout docs / coverage sync。
+   - `P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01`: Lua は `transpile_smoke_locked` まで反映済み。括弧付き `from ... import (...)` blocker は frontend で解消済み。残りは `php/ruby` fail-closed residual と mixed rollout docs / coverage sync。

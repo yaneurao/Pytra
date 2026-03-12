@@ -49,11 +49,13 @@
 - 2026-03-12: first implementation bundle は Lua backend のみを対象にし、PHP/Ruby は contract 上 fail-closed residual として残す。
 - 2026-03-12: Lua support は Go/Nim/Swift と同じ relative-import alias rewrite 方式を使い、representative smoke は direct native-emitter transpile lane で固定する。
 - 2026-03-12: Lua bundle 完了後の current long-tail rollout state は `mixed_rollout_locked` とし、`lua` を smoke-locked backend、`php/ruby` を remaining fail-closed residual として inventory / parity docs に記録する。
+- 2026-03-12: Pytra-NES の最初の blocker だった括弧付き `from ... import (...)` は frontend 共通 blocker なので、PHP/Ruby rollout より先に parser で受ける。
 
 ## 分解
 
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01] `lua/php/ruby` staged rollout を進め、relative import support の current state を docs / tooling / backend coverage へ同期する。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S1-01] active plan / TODO / support handoff を live 実装用に再起票する。
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S1-02] frontend が括弧付き `from ... import (...)` を relative import project で受理できるようにする。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-01] Lua native emitter に relative import alias rewrite を入れ、representative smoke と contract を success lane に切り替える。
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-02] PHP backend を同じ representative scenario へ広げ、contract / smoke / parity docs を更新する。
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-03] Ruby backend を同じ representative scenario へ広げ、contract / smoke / parity docs を更新する。
