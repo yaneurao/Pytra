@@ -22,10 +22,10 @@ class CheckBackendParityRepresentativeRolloutInventoryTest(unittest.TestCase):
             [],
         )
 
-    def test_representative_residual_inventory_is_rs_and_cs_only(self) -> None:
+    def test_representative_residual_inventory_is_cs_only_after_rs_closes(self) -> None:
         self.assertEqual(
             {cell["backend"] for cell in inventory_mod.iter_representative_rollout_residual_cells()},
-            {"rs", "cs"},
+            {"cs"},
         )
 
     def test_bundle_order_and_next_backend_are_fixed(self) -> None:
@@ -39,7 +39,7 @@ class CheckBackendParityRepresentativeRolloutInventoryTest(unittest.TestCase):
                 "cs_stdlib_bundle",
             ),
         )
-        self.assertEqual(inventory_mod.REPRESENTATIVE_ROLLOUT_HANDOFF_V1["next_backend"], "rs")
+        self.assertEqual(inventory_mod.REPRESENTATIVE_ROLLOUT_HANDOFF_V1["next_backend"], "cs")
 
     def test_bundle_feature_pairs_cover_exact_residual_set(self) -> None:
         residual_pairs = {

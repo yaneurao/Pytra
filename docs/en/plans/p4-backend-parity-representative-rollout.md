@@ -55,7 +55,7 @@ Verification:
   - `rs_stdlib_bundle`
   - `cs_syntax_iter_bundle`
   - `cs_stdlib_bundle`
-- The current next backend is `rs`
+- The current next backend is `cs`
 
 ## Decision log
 
@@ -71,3 +71,4 @@ Verification:
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02-A4` added representative smoke for `inheritance_virtual_dispatch_multilang.py` to the `rs` backend and removed `syntax.oop.virtual_dispatch` from the Rust residual inventory.
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02-A5` added representative smoke for `try_raise.py` to the `rs` backend and removed `syntax.control.try_raise` from the Rust residual inventory. The Rust syntax/iterator residual now only contains `builtin.iter.zip`.
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02-A6` added representative smoke for `json_extended.py`, `pathlib_extended.py`, `enum_extended.py`, `argparse_extended.py`, and `re_extended.py` to the `rs` backend, promoting the remaining Rust stdlib residual rows to `transpile_smoke`. The Rust residual is now `builtin.iter.zip` only, so the live next backend stays `rs`.
+- 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02-A7` implemented the `zip` lane from `ok_generator_tuple_target.py` as a Rust iterator chain and added representative smoke for the `rs` backend. This removed `builtin.iter.zip` from the Rust residual inventory and advanced the live next backend to `cs`.

@@ -55,7 +55,7 @@
   - `rs_stdlib_bundle`
   - `cs_syntax_iter_bundle`
   - `cs_stdlib_bundle`
-- current next backend は `rs`
+- current next backend は `cs`
 
 ## 決定ログ
 
@@ -71,3 +71,4 @@
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02-A4` として `inheritance_virtual_dispatch_multilang.py` の representative smoke を `rs` backend に追加し、`syntax.oop.virtual_dispatch` を Rust residual inventory から除外した。
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02-A5` として `try_raise.py` の representative smoke を `rs` backend に追加し、`syntax.control.try_raise` を Rust residual inventory から除外した。Rust syntax/iter residual は `builtin.iter.zip` だけになった。
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02-A6` として `json_extended.py` / `pathlib_extended.py` / `enum_extended.py` / `argparse_extended.py` / `re_extended.py` の representative smoke を `rs` backend に追加し、Rust stdlib residual をすべて `transpile_smoke` へ引き上げた。Rust residual は `builtin.iter.zip` だけになり、live next backend は引き続き `rs` のまま固定する。
+- 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02-A7` として `ok_generator_tuple_target.py` の `zip` lane を Rust iterator chain へ実装し、representative smoke を `rs` backend に追加した。これで `builtin.iter.zip` を Rust residual inventory から除外し、representative live next backend を `cs` へ進めた。

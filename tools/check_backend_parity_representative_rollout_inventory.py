@@ -46,8 +46,8 @@ def _collect_inventory_issues() -> list[str]:
     if cpp_cells:
         issues.append(f"cpp representative residual inventory must stay empty: got {cpp_cells}")
     backends = {cell["backend"] for cell in expected}
-    if backends != {"rs", "cs"}:
-        issues.append(f"representative residual backends must stay rs/cs-only: got {sorted(backends)}")
+    if backends != {"cs"}:
+        issues.append(f"representative residual backends must stay on the cs-only handoff lane after rs closes: got {sorted(backends)}")
     return issues
 
 
@@ -70,8 +70,8 @@ def _collect_bundle_issues() -> list[str]:
     }
     if residual_pairs != bundled_pairs:
         issues.append("representative rollout bundles no longer cover the exact residual feature set")
-    if inventory_mod.REPRESENTATIVE_ROLLOUT_HANDOFF_V1["next_backend"] != "rs":
-        issues.append("representative rollout next_backend must stay rs while builtin.iter.zip remains in the Rust residual set")
+    if inventory_mod.REPRESENTATIVE_ROLLOUT_HANDOFF_V1["next_backend"] != "cs":
+        issues.append("representative rollout next_backend must advance to cs after the Rust residual set closes")
     return issues
 
 

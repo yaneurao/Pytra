@@ -132,6 +132,7 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "builtin.iter.zip": {
+                    "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
@@ -373,8 +374,9 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         )
         self.assertEqual(
-            [cells["builtin.iter.zip"]["lua"], cells["builtin.iter.zip"]["php"]],
+            [cells["builtin.iter.zip"]["rs"], cells["builtin.iter.zip"]["lua"], cells["builtin.iter.zip"]["php"]],
             [
+                {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             ],

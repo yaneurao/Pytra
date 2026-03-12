@@ -3792,6 +3792,75 @@ class RustEmitter(CodeEmitter):
             return "((" + start + ")..(" + stop + "))"
         return "((" + start + ")..(" + stop + ")).step_by(((" + step + ") as usize))"
 
+    def _iter_is_prelowered_iterator_call(self, iter_node: Any) -> bool:
+        """既に Rust iterator chain を返す builtin call を判定する。"""
+        iter_d = self.any_to_dict_or_empty(iter_node)
+        if self.any_dict_get_str(iter_d, "kind", "") != "Call":
+            return False
+        if self._resolved_runtime_call(iter_d) == "zip":
+            return True
+        if self.any_dict_get_str(iter_d, "builtin_name", "") == "zip":
+            return True
+        fn_d = self.any_to_dict_or_empty(iter_d.get("func"))
+        if self.any_dict_get_str(fn_d, "kind", "") != "Name":
+            return False
+        return self.any_dict_get_str(fn_d, "id", "") == "enumerate"
+
+    def _render_iter_source_expr(self, iter_node: Any, rendered_iter_expr: str = "") -> str:
+        """ListComp / sum で使う iterator source を Rust chain へ正規化する。"""
+        iter_d = self.any_to_dict_or_empty(iter_node)
+        if self.any_dict_get_str(iter_d, "kind", "") == "RangeExpr":
+            return self._render_range_expr(iter_d)
+        iter_expr = rendered_iter_expr if rendered_iter_expr != "" else self.render_expr(iter_node)
+        if self._iter_is_prelowered_iterator_call(iter_node):
+            return iter_expr
+
+        iter_type = self.normalize_type_name(self.get_expr_type(iter_node))
+        if iter_type == "" or iter_type == "unknown":
+            iter_type = self._dict_items_owner_type(iter_node)
+
+        iter_is_attr_view = False
+        if self.any_dict_get_str(iter_d, "kind", "") == "Call":
+            fn_d = self.any_to_dict_or_empty(iter_d.get("func"))
+            if self.any_dict_get_str(fn_d, "kind", "") == "Attribute":
+                attr_name = self.any_dict_get_str(fn_d, "attr", "")
+                iter_is_attr_view = attr_name == "items" or attr_name == "keys" or attr_name == "values"
+
+        if iter_is_attr_view:
+            return iter_expr
+        if iter_type == "str":
+            return iter_expr + ".chars()"
+        if iter_type.startswith("list["):
+            return self._render_list_iter_expr(iter_expr, iter_type, self._can_borrow_iter_node(iter_node))
+        if iter_type.startswith("set[") or iter_type.startswith("dict["):
+            return "((" + iter_expr + ").clone()).into_iter()"
+        if iter_type == "" or iter_type == "unknown":
+            if self.any_dict_get_str(iter_d, "kind", "") == "Name":
+                return "((" + iter_expr + ").clone()).into_iter()"
+            return "(" + iter_expr + ").into_iter()"
+        return "(" + iter_expr + ").into_iter()"
+
+    def _render_comp_target_pattern(self, target_node: dict[str, Any]) -> str:
+        """ListComp の closure parameter pattern を返す。"""
+        kind = self.any_dict_get_str(target_node, "kind", "")
+        if kind == "Name":
+            return self._safe_name(self.any_dict_get_str(target_node, "id", "_item"))
+        if kind != "Tuple":
+            return ""
+        elts = self.tuple_elements(target_node)
+        if len(elts) == 0:
+            return ""
+        parts: list[str] = []
+        for elt in elts:
+            elt_d = self.any_to_dict_or_empty(elt)
+            if self.any_dict_get_str(elt_d, "kind", "") == "Name":
+                parts.append(self._safe_name(self.any_dict_get_str(elt_d, "id", "_")))
+            else:
+                parts.append("_")
+        if len(parts) == 1:
+            return "(" + parts[0] + ",)"
+        return "(" + ", ".join(parts) + ")"
+
     def _render_list_comp(self, expr_d: dict[str, Any]) -> str:
         """最小限の ListComp（単一 generator）を Rust へ描画する。"""
         generators = self.any_to_list(expr_d.get("generators"))
@@ -3801,16 +3870,13 @@ class RustEmitter(CodeEmitter):
         if len(self.any_to_list(gen.get("ifs"))) > 0:
             return "vec![]"
         target_node = self.any_to_dict_or_empty(gen.get("target"))
-        target_kind = self.any_dict_get_str(target_node, "kind", "")
-        if target_kind != "Name":
+        target_pattern = self._render_comp_target_pattern(target_node)
+        if target_pattern == "":
             return "vec![]"
-        target_name = self._safe_name(self.any_dict_get_str(target_node, "id", "_item"))
         iter_node = self.any_to_dict_or_empty(gen.get("iter"))
-        iter_expr = self.render_expr(iter_node)
-        if self.any_dict_get_str(iter_node, "kind", "") == "RangeExpr":
-            iter_expr = self._render_range_expr(iter_node)
+        iter_expr = self._render_iter_source_expr(iter_node)
         elt_expr = self.render_expr(expr_d.get("elt"))
-        return "(" + iter_expr + ").map(|" + target_name + "| " + elt_expr + ").collect::<Vec<_>>()"
+        return "(" + iter_expr + ").map(|" + target_pattern + "| " + elt_expr + ").collect::<Vec<_>>()"
 
     def _render_binop(self, expr: dict[str, Any]) -> str:
         op = self.any_to_str(expr.get("op"))
@@ -3969,6 +4035,26 @@ class RustEmitter(CodeEmitter):
             return resolved_runtime_call
         return ""
 
+    def _render_zip_arg_iter_expr(self, arg_expr: str, arg_node: Any) -> str:
+        """zip(lhs, rhs) 用に各引数を Rust iterator source へ lower する。"""
+        arg_d = self.any_to_dict_or_empty(arg_node)
+        arg_t = self.normalize_type_name(self.get_expr_type(arg_node))
+        if arg_t == "str":
+            return "(" + arg_expr + ").chars()"
+        if arg_t.startswith("list["):
+            return self._render_list_iter_expr(arg_expr, arg_t, self._can_borrow_iter_node(arg_node))
+        if arg_t.startswith("set[") or arg_t.startswith("dict["):
+            return "((" + arg_expr + ").clone()).into_iter()"
+        if arg_t == "" or arg_t == "unknown":
+            if self.any_dict_get_str(arg_d, "kind", "") == "Name":
+                return "((" + arg_expr + ").clone()).into_iter()"
+            return "(" + arg_expr + ").into_iter()"
+        return "(" + arg_expr + ").into_iter()"
+
+    def _render_sum_call(self, arg_expr: str, arg_node: Any) -> str:
+        """sum(iterable) を Rust iterator の `.sum()` へ lower する。"""
+        return "(" + self._render_iter_source_expr(arg_node, arg_expr) + ").sum()"
+
     def _render_call(self, expr: dict[str, Any]) -> str:
         semantic_tag = self.any_dict_get_str(expr, "semantic_tag", "")
         runtime_call = self._resolved_runtime_call(expr)
@@ -4023,6 +4109,12 @@ class RustEmitter(CodeEmitter):
                 return f"{self._safe_name(fn_name_raw)}::new(" + ", ".join(ctor_args) + ")"
             if fn_name_raw == "isinstance":
                 return self._render_isinstance_call(rendered_args, arg_nodes)
+            if fn_name_raw == "sum" and len(merged_args) == 1:
+                return self._render_sum_call(merged_args[0], arg_nodes[0] if len(arg_nodes) > 0 else None)
+            if fn_name_raw == "zip" and len(merged_args) == 2:
+                left_iter = self._render_zip_arg_iter_expr(merged_args[0], arg_nodes[0] if len(arg_nodes) > 0 else None)
+                right_iter = self._render_zip_arg_iter_expr(merged_args[1], arg_nodes[1] if len(arg_nodes) > 1 else None)
+                return left_iter + ".zip(" + right_iter + ")"
             if fn_name_raw == "enumerate" and len(merged_args) == 1:
                 arg_node = arg_nodes[0] if len(arg_nodes) > 0 else None
                 arg_t = self.normalize_type_name(self.get_expr_type(arg_node))

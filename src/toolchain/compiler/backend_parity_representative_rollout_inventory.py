@@ -65,13 +65,6 @@ def _iter_observed_representative_residual_cells() -> tuple[RepresentativeResidu
 
 REPRESENTATIVE_RESIDUAL_CELLS_V1: Final[tuple[RepresentativeResidualCell, ...]] = (
     {
-        "backend": "rs",
-        "feature_id": "builtin.iter.zip",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/signature/ok_generator_tuple_target.py",
-    },
-    {
         "backend": "cs",
         "feature_id": "syntax.control.for_range",
         "support_state": "not_started",
@@ -155,9 +148,9 @@ REPRESENTATIVE_ROLLOUT_BUNDLES_V1: Final[tuple[RepresentativeRolloutBundle, ...]
     {
         "bundle_id": "rs_syntax_iter_bundle",
         "backend": "rs",
-        "feature_ids": ("builtin.iter.zip",),
+        "feature_ids": (),
         "target_evidence": "transpile_smoke",
-        "notes": "Rust representative syntax rows are green; keep the remaining iterator zip row isolated until direct evidence is locked.",
+        "notes": "Rust representative syntax and iterator rows are now fully green; keep the empty bundle as a handoff marker while cs becomes the next backend.",
     },
     {
         "bundle_id": "rs_stdlib_bundle",
@@ -206,9 +199,9 @@ REPRESENTATIVE_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
     ),
     "backend_order": REPRESENTATIVE_BACKEND_ORDER,
     "residual_states": REPRESENTATIVE_RESIDUAL_STATES,
-    "completed_backends": ("cpp",),
-    "next_backend": "rs",
-    "remaining_backends": ("rs", "cs"),
+    "completed_backends": ("cpp", "rs"),
+    "next_backend": "cs",
+    "remaining_backends": ("cs",),
     "bundle_order": tuple(bundle["bundle_id"] for bundle in REPRESENTATIVE_ROLLOUT_BUNDLES_V1),
     "target_evidence_lane": "transpile_smoke",
 }

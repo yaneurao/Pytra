@@ -121,6 +121,7 @@ def _collect_contract_issues() -> list[str]:
             "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         },
         "builtin.iter.zip": {
+            "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         },

@@ -223,6 +223,7 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
         "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
     },
     "builtin.iter.zip": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
     },
