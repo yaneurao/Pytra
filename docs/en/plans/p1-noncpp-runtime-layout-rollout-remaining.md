@@ -1,0 +1,121 @@
+# P1: Roll the remaining non-C++ backend runtimes onto a C++-comparable `generated/native` layout
+
+Last updated: 2026-03-12
+
+Related TODO:
+- `docs/ja/todo/index.md` `ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01`
+
+Background:
+- `rs/cs` have already been moved in P0 to `src/runtime/<lang>/{generated,native,pytra}`, but the remaining backends (`go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php`) still use the old `pytra-core/pytra-gen/pytra` naming.
+- That mismatch makes it hard to compare tree diffs and tell which `built_in/std/utils` modules are already emitted from SoT and which ones still survive as handwritten residuals.
+- Per the user directive, `generated/` may contain only artifacts emitted from the SoT (`src/pytra/**`). Renaming handwritten runtime files into that lane is invalid.
+- `rs/cs` are handled first in P0; the remaining backends are rolled out in P1 by wave.
+
+Goal:
+- Align every remaining backend runtime tree to the `generated/native` ownership model.
+- Materialize SoT-origin modules in `generated/{built_in,std,utils}` and leave only handwritten substrate/residual code under `native/**`.
+- Fix the compare unit to `<lane>/<bucket>/<module>` so C++, `rs/cs`, and the remaining backends can be compared consistently.
+
+Scope:
+- `src/runtime/{go,java,kotlin,scala,swift,nim,js,ts,lua,ruby,php}/**`
+- `tools/gen_runtime_from_manifest.py`
+- `tools/runtime_generation_manifest.json`
+- `src/toolchain/compiler/backend_registry_metadata.py`
+- backend-specific CLI/runtime shim/selfhost/build path definitions
+- runtime guards / allowlists / inventories / docs
+
+Out of scope:
+- further redesign of the `rs/cs` runtimes
+- redesigning the C++ runtime itself
+- backend parity cell implementation work itself
+- immediately deleting all non-SoT handwritten runtime code
+
+Acceptance criteria:
+- Every target backend has `src/runtime/<lang>/{generated,native,pytra}`.
+- Every file under `src/runtime/<lang>/generated/**` is a SoT-generated artifact with `source:` and `generated-by:` markers.
+- No file under `src/runtime/<lang>/native/**` contains a `generated-by:` marker; only handwritten runtime remains there.
+- `src/runtime/<lang>/generated/{built_in,std,utils}` contains the generatable modules from `src/pytra/{built_in,std,utils}` by `<lane>/<bucket>/<module>`.
+- Any module that cannot yet be generated is recorded with a reason in backend-specific inventories/allowlists so missing vs. residual modules remain comparable.
+- Backend hooks / build / shim / selfhost checks reference the new `generated/native` paths.
+- Runtime guards / inventories / docs audit `generated/native` rather than `pytra-core/pytra-gen` as the canonical vocabulary.
+
+Planned verification:
+- `python3 tools/check_todo_priority.py`
+- `python3 tools/check_runtime_core_gen_markers.py`
+- `python3 tools/check_runtime_pytra_gen_naming.py`
+- `python3 tools/check_runtime_std_sot_guard.py`
+- `python3 tools/check_crossruntime_pyruntime_residual_caller_inventory.py`
+- `python3 tools/check_crossruntime_pyruntime_final_thincompat_inventory.py`
+- `python3 tools/check_cpp_pyruntime_contract_inventory.py`
+- `python3 tools/check_multilang_selfhost_stage1.py`
+- `python3 tools/check_multilang_selfhost_multistage.py`
+
+Execution policy:
+1. Never place renamed handwritten files into `generated/`; only manifest/generator output from the SoT is allowed there.
+2. Use `native/` as the renamed destination for the current `pytra-core` lane and keep only substrate/residual handwritten runtime there.
+3. Keep `pytra/` as a compatibility/public shim lane when needed, but never treat it as the ownership source of truth.
+4. Compare coverage by `<lane>/<bucket>/<module>` and treat extension differences (`.go/.java/.kt/.scala/.swift/.nim/.js/.ts/.lua/.rb/.php`) as a secondary detail.
+5. Treat `generated/built_in/*` as the SoT lane for `src/pytra/built_in/*.py`, while substrate files such as `native/built_in/py_runtime.*` stay handwritten.
+
+## Rollout Waves
+
+### Wave A: static runtime family
+
+Targets:
+- `go`
+- `java`
+- `kotlin`
+- `scala`
+- `swift`
+- `nim`
+
+Focus:
+- Align the backends with more static compile-time/runtime packaging first.
+- Generalize the path updates across `backend_registry_metadata.py` and selfhost/build checks.
+
+### Wave B: script runtime family
+
+Targets:
+- `js`
+- `ts`
+- `lua`
+- `ruby`
+- `php`
+
+Focus:
+- Process loader/shim/package-export differences as one group.
+- Standardize the responsibility boundary between `pytra/**` compatibility shims and the `generated/native` lanes.
+
+## Backend-family Work Items
+
+### static runtime family
+
+- rename `pytra-core -> native`, `pytra-gen -> generated`
+- update manifest outputs and runtime hooks
+- materialize `generated/built_in/*`
+- materialize `generated/std/*` and `generated/utils/*`
+- inventory and shrink handwritten residuals left in `native/**`
+
+### script runtime family
+
+- rename `pytra-core -> native`, `pytra-gen -> generated`
+- update runtime shims, import/require paths, and package exports
+- materialize `generated/built_in/*`
+- materialize `generated/std/*` and `generated/utils/*`
+- separate `pytra/**` shim responsibility from `native/**` residual responsibility
+
+## Breakdown
+
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S1-01] Build per-backend mapping tables from the current `pytra-core/pytra-gen/pytra` trees to the target `generated/native/pytra` trees.
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S1-02] Fix, per backend, which modules belong in `generated/{built_in,std,utils}`, which stay in `native/**` as substrate/residual code, and which remain blocked in inventories/allowlists.
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-01] Cut Wave A (`go/java/kotlin/scala/swift/nim`) path / hook / build / selfhost definitions over to `generated/native`.
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-02] Regenerate Wave A `generated/{built_in,std,utils}` from the SoT and make the compare lanes real.
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-03] Shrink Wave A `native/**` residuals module-by-module and sync the required allowlists/inventories.
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-01] Cut Wave B (`js/ts/lua/ruby/php`) path / shim / package-export / selfhost definitions over to `generated/native`.
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-02] Regenerate Wave B `generated/{built_in,std,utils}` from the SoT and make the compare lanes real.
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-03] Clean up the responsibility boundary between Wave B `native/**` residuals and the `pytra/**` compatibility lane, then sync the required allowlists/inventories.
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S4-01] Update cross-backend guards / inventories / docs to the `generated/native` vocabulary so no backend remains incomparable.
+
+Decision log:
+- 2026-03-12: Per user direction, split the program so `rs/cs` stay in P0 and the remaining backends (`go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php`) move into this P1 rollout. P1 keeps the same rule: `generated=SoT only`, `native=hand-written only`.
+- 2026-03-12: Ordered the P1 rollout as static-runtime family first (`go/java/kotlin/scala/swift/nim`), then script-runtime family (`js/ts/lua/ruby/php`) so packaging and shim differences do not mix in the same slice.

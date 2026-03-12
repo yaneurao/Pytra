@@ -1,0 +1,121 @@
+# P1: 残り non-C++ backend runtime を C++ 比較可能な `generated/native` layout へ段階 rollout する
+
+最終更新: 2026-03-12
+
+関連 TODO:
+- `docs/ja/todo/index.md` の `ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01`
+
+背景:
+- `rs/cs` は P0 で `src/runtime/<lang>/{generated,native,pytra}` へ切替済みだが、残 backend (`go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php`) はまだ `pytra-core/pytra-gen/pytra` naming に残っている。
+- この差により、`built_in/std/utils` のどの module が SoT から生成済みで、どの module が hand-written residual として残っているかを tree diff だけで比較しづらい。
+- ユーザー方針として、`generated/` には SoT (`src/pytra/**`) から生成した file だけを置き、hand-written 実装を rename して押し込む運用は認めない。
+- まず `rs/cs` を P0 で収束させ、残 backend は P1 で wave 単位に進める。
+
+目的:
+- 残 backend すべてについて、runtime tree の ownership を `generated/native` に揃える。
+- `generated/{built_in,std,utils}` に SoT 由来 module を並べ、`native/**` には handwritten substrate / residual だけを残す。
+- backend 間の compare 単位を `<lane>/<bucket>/<module>` に固定し、C++ と `rs/cs` を基準に欠落 module と residual module を比較できるようにする。
+
+対象:
+- `src/runtime/{go,java,kotlin,scala,swift,nim,js,ts,lua,ruby,php}/**`
+- `tools/gen_runtime_from_manifest.py`
+- `tools/runtime_generation_manifest.json`
+- `src/toolchain/compiler/backend_registry_metadata.py`
+- 各 backend の CLI/runtime shim/selfhost/build path 定義
+- runtime guard / allowlist / inventory / docs
+
+非対象:
+- `rs/cs` runtime 自体の追加再設計
+- C++ runtime 自体の再設計
+- backend parity matrix の cell 実装そのもの
+- 非 SoT hand-written runtime の即時全廃
+
+受け入れ基準:
+- 対象 backend すべてに `src/runtime/<lang>/{generated,native,pytra}` が存在する。
+- `src/runtime/<lang>/generated/**` に存在する file は `source:` と `generated-by:` を持つ SoT 生成物だけである。
+- `src/runtime/<lang>/native/**` には `generated-by:` marker が存在せず、hand-written runtime だけが残る。
+- `src/runtime/<lang>/generated/{built_in,std,utils}` に、生成可能な `src/pytra/{built_in,std,utils}` module が `<lane>/<bucket>/<module>` 単位で揃う。
+- 生成不能な module は backend 別 inventory/allowlist に理由付きで記録され、欠落か residual かが compare 可能である。
+- backend hook / build / shim / selfhost check は新 `generated/native` path を参照する。
+- runtime guard / inventory / docs は `pytra-core/pytra-gen` ではなく `generated/native` vocabulary を正本として監査する。
+
+確認コマンド（予定）:
+- `python3 tools/check_todo_priority.py`
+- `python3 tools/check_runtime_core_gen_markers.py`
+- `python3 tools/check_runtime_pytra_gen_naming.py`
+- `python3 tools/check_runtime_std_sot_guard.py`
+- `python3 tools/check_crossruntime_pyruntime_residual_caller_inventory.py`
+- `python3 tools/check_crossruntime_pyruntime_final_thincompat_inventory.py`
+- `python3 tools/check_cpp_pyruntime_contract_inventory.py`
+- `python3 tools/check_multilang_selfhost_stage1.py`
+- `python3 tools/check_multilang_selfhost_multistage.py`
+
+実施方針:
+1. `generated/` には rename した hand-written file を置かず、manifest/generator を通した SoT 再生成だけを許可する。
+2. `native/` は current `pytra-core` の rename 先とし、substrate と residual hand-written runtime だけを残す。
+3. `pytra/` は public shim / compatibility lane として当面維持してよいが、ownership 判定の正本には使わない。
+4. compare 単位は `<lane>/<bucket>/<module>` に固定し、拡張子差 (`.go/.java/.kt/.scala/.swift/.nim/.js/.ts/.lua/.rb/.php`) は枝葉として扱う。
+5. `generated/built_in/*` は `src/pytra/built_in/*.py` の SoT lane、`native/built_in/py_runtime.*` のような substrate は handwritten lane として分離する。
+
+## rollout wave
+
+### Wave A: static runtime family
+
+対象:
+- `go`
+- `java`
+- `kotlin`
+- `scala`
+- `swift`
+- `nim`
+
+狙い:
+- compile-time/runtime packaging が比較的静的な backend を先に揃え、`generated/{built_in,std,utils}` と `native/**` の ownership contract を安定化する。
+- `backend_registry_metadata.py` と selfhost/build check の path update を先に一般化する。
+
+### Wave B: script runtime family
+
+対象:
+- `js`
+- `ts`
+- `lua`
+- `ruby`
+- `php`
+
+狙い:
+- runtime shim / loader / package export の差分をまとめて処理する。
+- `pytra/**` compatibility lane と `generated/native` lane の責務境界を script backend 群で統一する。
+
+## backend family ごとの作業観点
+
+### static runtime family
+
+- `pytra-core -> native`, `pytra-gen -> generated` rename
+- manifest 出力先と runtime hook 更新
+- `generated/built_in/*` の実体化
+- `generated/std/*` / `generated/utils/*` の compare lane 実体化
+- `native/**` に残る residual の inventory 化と縮退
+
+### script runtime family
+
+- `pytra-core -> native`, `pytra-gen -> generated` rename
+- runtime shim / import path / require path / package export 更新
+- `generated/built_in/*` の実体化
+- `generated/std/*` / `generated/utils/*` の compare lane 実体化
+- `pytra/**` shim と `native/**` residue の責務分離
+
+## 分解
+
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S1-01] 残 backend の current tree (`pytra-core/pytra-gen/pytra`) と target tree (`generated/native/pytra`) の対応表を backend ごとに作る。
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S1-02] backend ごとに `generated/{built_in,std,utils}` へ載せる module、`native/**` に残す substrate/residual、blocked module を inventory/allowlist に固定する。
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-01] Wave A (`go/java/kotlin/scala/swift/nim`) の path / hook / build / selfhost 定義を `generated/native` へ切り替える。
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-02] Wave A の `generated/{built_in,std,utils}` を SoT から再生成し、compare lane を実体化する。
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-03] Wave A の `native/**` residual を module 単位で縮退し、必要な allowlist/inventory を同期する。
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-01] Wave B (`js/ts/lua/ruby/php`) の path / shim / package export / selfhost 定義を `generated/native` へ切り替える。
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-02] Wave B の `generated/{built_in,std,utils}` を SoT から再生成し、compare lane を実体化する。
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-03] Wave B の `native/**` residual と `pytra/**` compatibility lane の責務を整理し、必要な allowlist/inventory を同期する。
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S4-01] cross-backend guard / inventory / docs を `generated/native` vocabulary に全面更新し、compare 不能 backend をなくす。
+
+決定ログ:
+- 2026-03-12: ユーザー指示に従い、`rs/cs` は P0、残 backend (`go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php`) は P1 に切り分けた。P1 でも `generated=SoT only`, `native=hand-written only` を維持する。
+- 2026-03-12: P1 の rollout は backend 依存の packaging 差を減らすため、まず static runtime family (`go/java/kotlin/scala/swift/nim`)、次に script runtime family (`js/ts/lua/ruby/php`) の順に進める。
