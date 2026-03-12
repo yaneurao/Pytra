@@ -4806,6 +4806,95 @@ class PadState:
             )
             self.assertEqual(comp.returncode, 0, msg=comp.stderr)
 
+    def test_dataclass_rc_default_factory_lowers_to_rc_new_in_cpp_representative_lane(self) -> None:
+        src = """from dataclasses import dataclass, field
+
+@dataclass(slots=True)
+class Child:
+    value: int = 0
+
+    def read(self) -> int:
+        return self.value
+
+@dataclass(slots=True)
+class Parent:
+    child: Child = field(default_factory=Child)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "dataclass_field_default_factory_rc.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("rc<Child> child;", cpp)
+        self.assertIn("Parent(rc<Child> child = ::rc_new<Child>())", cpp)
+        self.assertNotIn("Parent(rc<Child> child = Child())", cpp)
+
+    def test_dataclass_rc_default_factory_builds_and_runs_in_cpp_representative_lane(self) -> None:
+        src = """from dataclasses import dataclass, field
+
+@dataclass(slots=True)
+class Child:
+    value: int = 0
+
+    def read(self) -> int:
+        return self.value
+
+@dataclass(slots=True)
+class Parent:
+    child: Child = field(default_factory=Child)
+
+def read_child_value() -> int:
+    parent = Parent()
+    return parent.child.read()
+
+print(read_child_value())
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src_py = work / "dataclass_field_default_factory_rc_obj.py"
+            out_cpp = work / "dataclass_field_default_factory_rc_obj.cpp"
+            out_exe = work / "dataclass_field_default_factory_rc_obj.out"
+            manifest = work / "manifest.json"
+            src_py.write_text(src, encoding="utf-8")
+            transpile(src_py, out_cpp)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "include_dir": str(work),
+                        "modules": [
+                            {
+                                "source": str(out_cpp),
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            comp = self._run_subprocess_with_timeout(
+                [
+                    "python3",
+                    "tools/build_multi_cpp.py",
+                    str(manifest),
+                    "-o",
+                    str(out_exe),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="compile dataclass rc default_factory lane",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+            run = self._run_subprocess_with_timeout(
+                [str(out_exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run dataclass rc default_factory lane",
+            )
+            self.assertEqual(run.returncode, 0, msg=run.stderr)
+            self.assertEqual(run.stdout.strip(), "0")
+
     def test_deque_annotation_lowers_to_std_deque_cpp_type(self) -> None:
         src = """from collections import deque
 

@@ -49,6 +49,8 @@ class CppClassEmitter:
             return self.render_expr(factory_expr)
         if kind == "Name":
             factory_name = self.any_dict_get_str(factory_expr, "id", "")
+            if self.cpp_signature_type(field_type).startswith("rc<") and factory_name in self.ref_classes:
+                return f"::rc_new<{factory_name}>()"
             if factory_name in {"list", "dict", "set", "tuple", "str", "bytes", "bytearray", "deque"}:
                 return self.cpp_signature_type(field_type) + "{}"
         if kind == "Attribute":

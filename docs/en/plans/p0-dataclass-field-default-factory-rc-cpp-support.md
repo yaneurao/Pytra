@@ -45,6 +45,8 @@ Decision log:
 ## Breakdown
 
 - [ ] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01] Align the `field(default_factory=...)` rc-field lane with the representative C++ contract and remove the Pytra-NES blocker.
-- [ ] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01-S1-01] Lock the minimal-sample baseline and current C++ failure with focused regressions, TODO, and plan.
-- [ ] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01-S2-01] Align `default_factory` with the correct ctor/member-init lowering in the representative C++ rc-field lane.
+- [x] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01-S1-01] Lock the minimal-sample baseline and current C++ failure with focused regressions, TODO, and plan.
+- [x] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01-S2-01] Align `default_factory` with the correct ctor/member-init lowering in the representative C++ rc-field lane.
 - [ ] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01-S3-01] Sync docs, support wording, and representative-subset regressions with the current contract and close the task.
+
+- 2026-03-12: In the representative C++ lane, `field(default_factory=Child)` on an `rc<...>` field now lowers ctor defaults/member init to `::rc_new<Child>()` as the current contract.
