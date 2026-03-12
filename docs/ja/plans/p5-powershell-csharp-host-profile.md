@@ -42,7 +42,7 @@ representative layout:
 
 - [x] [ID: P5-POWERSHELL-CS-HOST-01-S1-01] `pwsh + cs backend` representative lane の前提（Windows / PowerShell 7 / `dotnet` or `csc`）と非対象を固定する。
 - [x] [ID: P5-POWERSHELL-CS-HOST-01-S2-01] launcher `.ps1` の責務を定義し、generated `.cs` / runtime `.cs` / output layout / `Main` entrypoint 契約を決める。
-- [ ] [ID: P5-POWERSHELL-CS-HOST-01-S2-02] build driver の優先順（`dotnet`, `csc`, `Add-Type`）と fail-closed 条件を整理する。
+- [x] [ID: P5-POWERSHELL-CS-HOST-01-S2-02] build driver の優先順（`dotnet`, `csc`, `Add-Type`）と fail-closed 条件を整理する。
 - [ ] [ID: P5-POWERSHELL-CS-HOST-01-S3-01] representative smoke / sample parity / CLI profile の導線を設計し、既存 `py2cs` smoke との差分を明示する。
 - [ ] [ID: P5-POWERSHELL-CS-HOST-01-S4-01] docs / how-to-use / user caveat を整理し、PowerShell host profile を後段 TODO へ積める状態にする。
 
@@ -52,3 +52,4 @@ representative layout:
 - 2026-03-12: 優先度は低く、実験用 host profile の性格が強いため `P5` とする。
 - 2026-03-12: `S1-01` として `pwsh / Windows / PowerShell 7 / dotnet-or-csc required / Add-Type optional` を canonical baseline に固定し、docs drift は `check_powershell_cs_host_contract.py` で落とす。
 - 2026-03-12: `S2-01` として representative layout を `run.ps1`, `src/Program.cs`, `runtime/*.cs`, `build/Program.exe` に固定し、launcher は generated `Program.Main(string[] args)` を書き換えず、runtime `.cs` は `runtime/` に分離配置する contract を採用した。
+- 2026-03-12: `S2-02` として build driver priority を `dotnet` -> `csc` -> `Add-Type` に固定し、Add-Type は最後段の non-canonical fallback とした。persistent `build/Program.exe` が要る representative smoke / parity lane では使わない。

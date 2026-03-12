@@ -33,7 +33,7 @@
 
 1. [ ] [ID: P5-POWERSHELL-CS-HOST-01] PowerShell backend を新設する代わりに、C# backend の出力を `pwsh` から build / run する host profile を整理する。
    文脈: [p5-powershell-csharp-host-profile.md](/workspace/Pytra/docs/ja/plans/p5-powershell-csharp-host-profile.md)
-   概要: `py2cs` の generated `.cs` と runtime 同梱物を `pwsh` から representative に起動する host profile を定義し、Windows / PowerShell 7 / `.NET` 系 toolchain を前提に `dotnet` / `csc` / `Add-Type` の優先順と fail-closed 条件を固定する。pure PowerShell backend は対象外とする。進捗: `S1-01` で representative assumptions / non-goals、`S2-01` で `run.ps1` / `src/Program.cs` / `runtime/*.cs` / `build/Program.exe` 契約を追加済み。
+   概要: `py2cs` の generated `.cs` と runtime 同梱物を `pwsh` から representative に起動する host profile を定義し、Windows / PowerShell 7 / `.NET` 系 toolchain を前提に `dotnet` / `csc` / `Add-Type` の優先順と fail-closed 条件を固定する。pure PowerShell backend は対象外とする。進捗: `S1-01` で representative assumptions / non-goals、`S2-01` で `run.ps1` / `src/Program.cs` / `runtime/*.cs` / `build/Program.exe` 契約、`S2-02` で `dotnet -> csc -> Add-Type` 優先順と non-canonical fallback 条件を追加済み。
 
 2. [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01] cross-backend backend parity matrix を実際の `feature × backend` support-state table として埋め、全 backend の canonical source にする。
    文脈: [p6-backend-parity-matrix-cell-fill.md](/workspace/Pytra/docs/ja/plans/p6-backend-parity-matrix-cell-fill.md)

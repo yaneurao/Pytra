@@ -42,7 +42,7 @@ Verification commands:
 
 - [x] [ID: P5-POWERSHELL-CS-HOST-01-S1-01] Fix the representative assumptions and non-goals for the `pwsh + cs backend` lane (Windows / PowerShell 7 / `dotnet` or `csc`).
 - [x] [ID: P5-POWERSHELL-CS-HOST-01-S2-01] Define launcher `.ps1` responsibilities plus the generated `.cs`, runtime `.cs`, output layout, and `Main` entrypoint contract.
-- [ ] [ID: P5-POWERSHELL-CS-HOST-01-S2-02] Set the build-driver priority (`dotnet`, `csc`, `Add-Type`) and fail-closed conditions.
+- [x] [ID: P5-POWERSHELL-CS-HOST-01-S2-02] Set the build-driver priority (`dotnet`, `csc`, `Add-Type`) and fail-closed conditions.
 - [ ] [ID: P5-POWERSHELL-CS-HOST-01-S3-01] Design the representative smoke / sample parity / CLI profile path and make the delta from current `py2cs` smoke explicit.
 - [ ] [ID: P5-POWERSHELL-CS-HOST-01-S4-01] Organize docs / how-to-use / user caveats so this profile can be promoted into TODO later.
 
@@ -52,3 +52,4 @@ Verification commands:
 - 2026-03-12: This remains low priority and mainly experimental host infrastructure, so it is tracked as `P5`.
 - 2026-03-12: `S1-01` fixes `pwsh / Windows / PowerShell 7 / dotnet-or-csc required / Add-Type optional` as the canonical baseline and routes doc drift through `check_powershell_cs_host_contract.py`.
 - 2026-03-12: `S2-01` fixes the representative layout as `run.ps1`, `src/Program.cs`, `runtime/*.cs`, and `build/Program.exe`, with the launcher preserving generated `Program.Main(string[] args)` instead of synthesizing its own entrypoint.
+- 2026-03-12: `S2-02` fixes the build-driver priority as `dotnet` -> `csc` -> `Add-Type`, and keeps `Add-Type` as the last non-canonical fallback instead of a representative smoke/parity path that requires a persistent `build/Program.exe`.
