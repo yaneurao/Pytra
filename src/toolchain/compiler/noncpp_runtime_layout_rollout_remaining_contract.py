@@ -43,6 +43,11 @@ class RemainingRuntimeModuleBucketEntry(TypedDict):
     blocked_modules: tuple[str, ...]
 
 
+class RemainingRuntimeWaveAHookSourceEntry(TypedDict):
+    backend: str
+    runtime_hook_files: tuple[str, ...]
+
+
 REMAINING_NONCPP_BACKEND_ORDER_V1: Final[tuple[str, ...]] = (
     "go",
     "java",
@@ -94,26 +99,26 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "backend": "go",
         "family": "static",
         "runtime_hook_key": "go",
-        "current_roots": ("pytra", "pytra-core", "pytra-gen"),
+        "current_roots": ("generated", "native", "pytra"),
         "target_roots": ("generated", "native", "pytra"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/go/pytra-core/built_in/",
+                "current_prefix": "src/runtime/go/native/built_in/",
                 "target_prefix": "src/runtime/go/native/built_in/",
                 "ownership": "native",
-                "rationale": "Go keeps its handwritten runtime substrate in pytra-core/built_in today.",
+                "rationale": "Go handwritten runtime substrate already lives in native/built_in after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/go/pytra-gen/utils/",
+                "current_prefix": "src/runtime/go/generated/utils/",
                 "target_prefix": "src/runtime/go/generated/utils/",
                 "ownership": "generated",
-                "rationale": "Go image helpers already come from SoT generation under pytra-gen/utils.",
+                "rationale": "Go image helpers already live in the canonical generated/utils lane after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/go/pytra/py_runtime.go",
+                "current_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
                 "target_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
                 "ownership": "compat",
-                "rationale": "The public Go shim is still flat today and will be bucketed under pytra/built_in during rollout.",
+                "rationale": "The public Go runtime shim has already been normalized into pytra/built_in.",
             },
         ),
     },
@@ -121,32 +126,32 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "backend": "java",
         "family": "static",
         "runtime_hook_key": "java",
-        "current_roots": ("pytra", "pytra-core", "pytra-gen"),
+        "current_roots": ("generated", "native", "pytra"),
         "target_roots": ("generated", "native", "pytra"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/java/pytra-core/built_in/",
+                "current_prefix": "src/runtime/java/native/built_in/",
                 "target_prefix": "src/runtime/java/native/built_in/",
                 "ownership": "native",
-                "rationale": "Java handwritten runtime helpers currently live in pytra-core/built_in.",
+                "rationale": "Java handwritten runtime helpers already live in native/built_in after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/java/pytra-core/std/",
+                "current_prefix": "src/runtime/java/native/std/",
                 "target_prefix": "src/runtime/java/native/std/",
                 "ownership": "native",
-                "rationale": "Java std handwritten seams are still under pytra-core/std.",
+                "rationale": "Java handwritten std seams already live in native/std after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/java/pytra-gen/std/",
+                "current_prefix": "src/runtime/java/generated/std/",
                 "target_prefix": "src/runtime/java/generated/std/",
                 "ownership": "generated",
-                "rationale": "Java already has SoT-generated std compare artifacts under pytra-gen/std.",
+                "rationale": "Java SoT-generated std compare artifacts already live in generated/std after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/java/pytra-gen/utils/",
+                "current_prefix": "src/runtime/java/generated/utils/",
                 "target_prefix": "src/runtime/java/generated/utils/",
                 "ownership": "generated",
-                "rationale": "Java image helpers are already emitted from SoT into pytra-gen/utils.",
+                "rationale": "Java image helpers already live in the canonical generated/utils lane after the Wave A path cutover.",
             },
             {
                 "current_prefix": "src/runtime/java/pytra/built_in/",
@@ -160,26 +165,26 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "backend": "kotlin",
         "family": "static",
         "runtime_hook_key": "kotlin",
-        "current_roots": ("pytra", "pytra-core", "pytra-gen"),
+        "current_roots": ("generated", "native", "pytra"),
         "target_roots": ("generated", "native", "pytra"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/kotlin/pytra-core/built_in/",
+                "current_prefix": "src/runtime/kotlin/native/built_in/",
                 "target_prefix": "src/runtime/kotlin/native/built_in/",
                 "ownership": "native",
-                "rationale": "Kotlin handwritten runtime substrate still sits in pytra-core/built_in.",
+                "rationale": "Kotlin handwritten runtime substrate already lives in native/built_in after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/kotlin/pytra-gen/utils/",
+                "current_prefix": "src/runtime/kotlin/generated/utils/",
                 "target_prefix": "src/runtime/kotlin/generated/utils/",
                 "ownership": "generated",
-                "rationale": "Kotlin image helpers are SoT-generated in pytra-gen/utils.",
+                "rationale": "Kotlin image helpers already live in generated/utils after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/kotlin/pytra/py_runtime.kt",
+                "current_prefix": "src/runtime/kotlin/pytra/built_in/py_runtime.kt",
                 "target_prefix": "src/runtime/kotlin/pytra/built_in/py_runtime.kt",
                 "ownership": "compat",
-                "rationale": "Kotlin public shim is currently flat and will be normalized into pytra/built_in.",
+                "rationale": "Kotlin public shim has already been normalized into pytra/built_in.",
             },
         ),
     },
@@ -187,26 +192,26 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "backend": "scala",
         "family": "static",
         "runtime_hook_key": "scala",
-        "current_roots": ("pytra", "pytra-core", "pytra-gen"),
+        "current_roots": ("generated", "native", "pytra"),
         "target_roots": ("generated", "native", "pytra"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/scala/pytra-core/built_in/",
+                "current_prefix": "src/runtime/scala/native/built_in/",
                 "target_prefix": "src/runtime/scala/native/built_in/",
                 "ownership": "native",
-                "rationale": "Scala handwritten runtime substrate still sits in pytra-core/built_in.",
+                "rationale": "Scala handwritten runtime substrate already lives in native/built_in after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/scala/pytra-gen/utils/",
+                "current_prefix": "src/runtime/scala/generated/utils/",
                 "target_prefix": "src/runtime/scala/generated/utils/",
                 "ownership": "generated",
-                "rationale": "Scala image helpers are SoT-generated in pytra-gen/utils.",
+                "rationale": "Scala image helpers already live in generated/utils after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/scala/pytra/py_runtime.scala",
+                "current_prefix": "src/runtime/scala/pytra/built_in/py_runtime.scala",
                 "target_prefix": "src/runtime/scala/pytra/built_in/py_runtime.scala",
                 "ownership": "compat",
-                "rationale": "Scala public shim is currently flat and will be normalized into pytra/built_in.",
+                "rationale": "Scala public shim has already been normalized into pytra/built_in.",
             },
         ),
     },
@@ -214,26 +219,26 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "backend": "swift",
         "family": "static",
         "runtime_hook_key": "swift",
-        "current_roots": ("pytra", "pytra-core", "pytra-gen"),
+        "current_roots": ("generated", "native", "pytra"),
         "target_roots": ("generated", "native", "pytra"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/swift/pytra-core/built_in/",
+                "current_prefix": "src/runtime/swift/native/built_in/",
                 "target_prefix": "src/runtime/swift/native/built_in/",
                 "ownership": "native",
-                "rationale": "Swift handwritten runtime substrate still sits in pytra-core/built_in.",
+                "rationale": "Swift handwritten runtime substrate already lives in native/built_in after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/swift/pytra-gen/utils/",
+                "current_prefix": "src/runtime/swift/generated/utils/",
                 "target_prefix": "src/runtime/swift/generated/utils/",
                 "ownership": "generated",
-                "rationale": "Swift image helpers are SoT-generated in pytra-gen/utils.",
+                "rationale": "Swift image helpers already live in generated/utils after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/swift/pytra/py_runtime.swift",
+                "current_prefix": "src/runtime/swift/pytra/built_in/py_runtime.swift",
                 "target_prefix": "src/runtime/swift/pytra/built_in/py_runtime.swift",
                 "ownership": "compat",
-                "rationale": "Swift public shim is currently flat and will be normalized into pytra/built_in.",
+                "rationale": "Swift public shim has already been normalized into pytra/built_in.",
             },
         ),
     },
@@ -241,26 +246,26 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "backend": "nim",
         "family": "static",
         "runtime_hook_key": "nim",
-        "current_roots": ("pytra", "pytra-core", "pytra-gen"),
+        "current_roots": ("generated", "native", "pytra"),
         "target_roots": ("generated", "native", "pytra"),
         "lane_mappings": (
             {
-                "current_prefix": "src/runtime/nim/pytra-core/built_in/",
+                "current_prefix": "src/runtime/nim/native/built_in/",
                 "target_prefix": "src/runtime/nim/native/built_in/",
                 "ownership": "native",
-                "rationale": "Nim handwritten runtime substrate still sits in pytra-core/built_in.",
+                "rationale": "Nim handwritten runtime substrate already lives in native/built_in after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/nim/pytra-gen/utils/",
+                "current_prefix": "src/runtime/nim/generated/utils/",
                 "target_prefix": "src/runtime/nim/generated/utils/",
                 "ownership": "generated",
-                "rationale": "Nim image helpers are SoT-generated in pytra-gen/utils.",
+                "rationale": "Nim image helpers already live in generated/utils after the Wave A path cutover.",
             },
             {
-                "current_prefix": "src/runtime/nim/pytra/py_runtime.nim",
+                "current_prefix": "src/runtime/nim/pytra/built_in/py_runtime.nim",
                 "target_prefix": "src/runtime/nim/pytra/built_in/py_runtime.nim",
                 "ownership": "compat",
-                "rationale": "Nim public shim is currently flat and will be normalized into pytra/built_in.",
+                "rationale": "Nim public shim has already been normalized into pytra/built_in.",
             },
         ),
     },
@@ -509,7 +514,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
         "backend": "go",
         "pytra_core_files": ("built_in/py_runtime.go",),
         "pytra_gen_files": ("utils/gif.go", "utils/png.go"),
-        "pytra_files": ("py_runtime.go",),
+        "pytra_files": ("built_in/py_runtime.go",),
     },
     {
         "backend": "java",
@@ -536,7 +541,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "utils/image_runtime.kt",
             "utils/png_helper.kt",
         ),
-        "pytra_files": ("py_runtime.kt",),
+        "pytra_files": ("built_in/py_runtime.kt",),
     },
     {
         "backend": "scala",
@@ -546,7 +551,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "utils/image_runtime.scala",
             "utils/png_helper.scala",
         ),
-        "pytra_files": ("py_runtime.scala",),
+        "pytra_files": ("built_in/py_runtime.scala",),
     },
     {
         "backend": "swift",
@@ -556,7 +561,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "utils/image_runtime.swift",
             "utils/png_helper.swift",
         ),
-        "pytra_files": ("py_runtime.swift",),
+        "pytra_files": ("built_in/py_runtime.swift",),
     },
     {
         "backend": "nim",
@@ -566,7 +571,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "utils/image_runtime.nim",
             "utils/png_helper.nim",
         ),
-        "pytra_files": ("py_runtime.nim",),
+        "pytra_files": ("built_in/py_runtime.nim",),
     },
     {
         "backend": "js",
@@ -890,6 +895,62 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
 )
 
 
+REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1: Final[
+    tuple[RemainingRuntimeWaveAHookSourceEntry, ...]
+] = (
+    {
+        "backend": "go",
+        "runtime_hook_files": (
+            "runtime/go/native/built_in/py_runtime.go",
+            "runtime/go/generated/utils/png.go",
+            "runtime/go/generated/utils/gif.go",
+        ),
+    },
+    {
+        "backend": "java",
+        "runtime_hook_files": (
+            "runtime/java/native/built_in/PyRuntime.java",
+            "runtime/java/native/std/time_impl.java",
+            "runtime/java/native/std/math_impl.java",
+            "runtime/java/generated/utils/png.java",
+            "runtime/java/generated/utils/gif.java",
+            "runtime/java/generated/std/time.java",
+            "runtime/java/generated/std/json.java",
+            "runtime/java/generated/std/pathlib.java",
+            "runtime/java/generated/std/math.java",
+        ),
+    },
+    {
+        "backend": "kotlin",
+        "runtime_hook_files": (
+            "runtime/kotlin/native/built_in/py_runtime.kt",
+            "runtime/kotlin/generated/utils/image_runtime.kt",
+        ),
+    },
+    {
+        "backend": "scala",
+        "runtime_hook_files": (
+            "runtime/scala/native/built_in/py_runtime.scala",
+            "runtime/scala/generated/utils/image_runtime.scala",
+        ),
+    },
+    {
+        "backend": "swift",
+        "runtime_hook_files": (
+            "runtime/swift/native/built_in/py_runtime.swift",
+            "runtime/swift/generated/utils/image_runtime.swift",
+        ),
+    },
+    {
+        "backend": "nim",
+        "runtime_hook_files": (
+            "runtime/nim/native/built_in/py_runtime.nim",
+            "runtime/nim/generated/utils/image_runtime.nim",
+        ),
+    },
+)
+
+
 def iter_remaining_noncpp_backend_order() -> tuple[str, ...]:
     return REMAINING_NONCPP_BACKEND_ORDER_V1
 
@@ -912,3 +973,7 @@ def iter_remaining_noncpp_runtime_generated_compare_baseline() -> tuple[str, ...
 
 def iter_remaining_noncpp_runtime_module_buckets() -> tuple[RemainingRuntimeModuleBucketEntry, ...]:
     return REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1
+
+
+def iter_remaining_noncpp_runtime_wave_a_hook_sources() -> tuple[RemainingRuntimeWaveAHookSourceEntry, ...]:
+    return REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1

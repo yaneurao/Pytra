@@ -1,121 +1,11 @@
-// Auto-generated canonical Scala runtime for Pytra native backend.
-// Source of truth: src/runtime/scala/pytra/py_runtime.scala
-// source: src/pytra/utils/png.py
-// source: src/pytra/utils/gif.py
+// Scala runtime core for Pytra native backend.
+// Source of truth: src/runtime/scala/native/built_in/py_runtime.scala
 
 import scala.collection.mutable
 import java.nio.file.{Files, Paths}
 
 def __pytra_noop(args: Any*): Unit = { }
 
-def __pytra_to_byte(v: Any): Int = {
-    (__pytra_int(v) & 0xFFL).toInt
-}
-
-def __pytra_to_byte_buffer(v: Any): mutable.ArrayBuffer[Byte] = {
-    val src = __pytra_as_list(v)
-    val out = mutable.ArrayBuffer[Byte]()
-    var i = 0
-    while (i < src.size) {
-        out.append(__pytra_to_byte(src(i)).toByte)
-        i += 1
-    }
-    out
-}
-
-def __pytra_append_u16le(out: mutable.ArrayBuffer[Byte], value: Int): Unit = {
-    out.append((value & 0xFF).toByte)
-    out.append(((value >>> 8) & 0xFF).toByte)
-}
-
-def __pytra_append_u32be(out: mutable.ArrayBuffer[Byte], value: Int): Unit = {
-    out.append(((value >>> 24) & 0xFF).toByte)
-    out.append(((value >>> 16) & 0xFF).toByte)
-    out.append(((value >>> 8) & 0xFF).toByte)
-    out.append((value & 0xFF).toByte)
-}
-
-def __pytra_crc32(data: mutable.ArrayBuffer[Byte]): Int = {
-    var crc = 0xFFFFFFFFL
-    val poly = 0xEDB88320L
-    var i = 0
-    while (i < data.size) {
-        crc ^= (data(i) & 0xFF).toLong
-        var j = 0
-        while (j < 8) {
-            if ((crc & 1L) != 0L) crc = (crc >>> 1) ^ poly
-            else crc = crc >>> 1
-            j += 1
-        }
-        i += 1
-    }
-    (crc ^ 0xFFFFFFFFL).toInt
-}
-
-def __pytra_adler32(data: mutable.ArrayBuffer[Byte]): Int = {
-    val mod = 65521
-    var s1 = 1
-    var s2 = 0
-    var i = 0
-    while (i < data.size) {
-        s1 += (data(i) & 0xFF)
-        if (s1 >= mod) s1 -= mod
-        s2 += s1
-        s2 %= mod
-        i += 1
-    }
-    ((s2 << 16) | s1) & 0xFFFFFFFF
-}
-
-def __pytra_zlib_deflate_store(data: mutable.ArrayBuffer[Byte]): mutable.ArrayBuffer[Byte] = {
-    val out = mutable.ArrayBuffer[Byte](0x78.toByte, 0x01.toByte)
-    val n = data.size
-    var pos = 0
-    while (pos < n) {
-        val remain = n - pos
-        val chunkLen = if (remain > 65535) 65535 else remain
-        val finalFlag = if ((pos + chunkLen) >= n) 1 else 0
-        out.append(finalFlag.toByte)
-        __pytra_append_u16le(out, chunkLen)
-        __pytra_append_u16le(out, 0xFFFF ^ chunkLen)
-        var i = 0
-        while (i < chunkLen) {
-            out.append(data(pos + i))
-            i += 1
-        }
-        pos += chunkLen
-    }
-    __pytra_append_u32be(out, __pytra_adler32(data))
-    out
-}
-
-def __pytra_png_chunk(chunkType: String, data: mutable.ArrayBuffer[Byte]): mutable.ArrayBuffer[Byte] = {
-    val out = mutable.ArrayBuffer[Byte]()
-    __pytra_append_u32be(out, data.size)
-    val ct = chunkType.getBytes("US-ASCII")
-    val crcData = mutable.ArrayBuffer[Byte]()
-    var i = 0
-    while (i < ct.length) {
-        out.append(ct(i))
-        crcData.append(ct(i))
-        i += 1
-    }
-    i = 0
-    while (i < data.size) {
-        out.append(data(i))
-        crcData.append(data(i))
-        i += 1
-    }
-    __pytra_append_u32be(out, __pytra_crc32(crcData))
-    out
-}
-
-def __pytra_write_file_bytes(path: Any, data: mutable.ArrayBuffer[Byte]): Unit = {
-    val p = Paths.get(__pytra_str(path))
-    val parent = p.getParent
-    if (parent != null) Files.createDirectories(parent)
-    Files.write(p, data.toArray)
-}
 
 def __pytra_path_new(path: Any): String = {
     Paths.get(__pytra_str(path)).toString
@@ -158,152 +48,6 @@ def __pytra_path_write_text(path: Any, text: Any): Unit = {
 
 def __pytra_path_read_text(path: Any): String = {
     Files.readString(Paths.get(__pytra_str(path)))
-}
-
-def __pytra_grayscale_palette(): mutable.ArrayBuffer[Any] = {
-    val p = mutable.ArrayBuffer[Any]()
-    var i = 0L
-    while (i < 256L) {
-        p.append(i)
-        p.append(i)
-        p.append(i)
-        i += 1L
-    }
-    p
-}
-
-def __pytra_write_rgb_png(path: Any, width: Any, height: Any, pixels: Any): Unit = {
-    val w = __pytra_int(width).toInt
-    val h = __pytra_int(height).toInt
-    val raw = __pytra_to_byte_buffer(pixels)
-    val expected = w * h * 3
-    if (raw.size != expected) {
-        throw new RuntimeException("pixels length mismatch")
-    }
-    val scanlines = mutable.ArrayBuffer[Byte]()
-    val rowBytes = w * 3
-    var y = 0
-    while (y < h) {
-        scanlines.append(0.toByte)
-        val start = y * rowBytes
-        var x = 0
-        while (x < rowBytes) {
-            scanlines.append(raw(start + x))
-            x += 1
-        }
-        y += 1
-    }
-    val ihdr = mutable.ArrayBuffer[Byte]()
-    __pytra_append_u32be(ihdr, w)
-    __pytra_append_u32be(ihdr, h)
-    ihdr.append(8.toByte)
-    ihdr.append(2.toByte)
-    ihdr.append(0.toByte)
-    ihdr.append(0.toByte)
-    ihdr.append(0.toByte)
-    val idat = __pytra_zlib_deflate_store(scanlines)
-    val png = mutable.ArrayBuffer[Byte](0x89.toByte, 'P'.toByte, 'N'.toByte, 'G'.toByte, 0x0D.toByte, 0x0A.toByte, 0x1A.toByte, 0x0A.toByte)
-    png ++= __pytra_png_chunk("IHDR", ihdr)
-    png ++= __pytra_png_chunk("IDAT", idat)
-    png ++= __pytra_png_chunk("IEND", mutable.ArrayBuffer[Byte]())
-    __pytra_write_file_bytes(path, png)
-}
-
-def __pytra_gif_lzw_encode(data: mutable.ArrayBuffer[Byte], minCodeSize: Int = 8): mutable.ArrayBuffer[Byte] = {
-    if (data.isEmpty) return mutable.ArrayBuffer[Byte]()
-    val clearCode = 1 << minCodeSize
-    val endCode = clearCode + 1
-    var codeSize = minCodeSize + 1
-    val out = mutable.ArrayBuffer[Byte]()
-    var bitBuffer = 0
-    var bitCount = 0
-    def writeCode(code: Int): Unit = {
-        bitBuffer |= (code << bitCount)
-        bitCount += codeSize
-        while (bitCount >= 8) {
-            out.append((bitBuffer & 0xFF).toByte)
-            bitBuffer = bitBuffer >>> 8
-            bitCount -= 8
-        }
-    }
-    writeCode(clearCode)
-    codeSize = minCodeSize + 1
-    var i = 0
-    while (i < data.size) {
-        val v = data(i) & 0xFF
-        writeCode(v)
-        writeCode(clearCode)
-        codeSize = minCodeSize + 1
-        i += 1
-    }
-    writeCode(endCode)
-    if (bitCount > 0) out.append((bitBuffer & 0xFF).toByte)
-    out
-}
-
-def __pytra_save_gif(path: Any, width: Any, height: Any, frames: Any, palette: Any, delayCsArg: Any = 4L, loopArg: Any = 0L): Unit = {
-    val w = __pytra_int(width).toInt
-    val h = __pytra_int(height).toInt
-    val delayCs = __pytra_int(delayCsArg).toInt
-    val loop = __pytra_int(loopArg).toInt
-    val paletteBytes = __pytra_to_byte_buffer(palette)
-    if (paletteBytes.size != 256 * 3) {
-        throw new RuntimeException("palette must be 256*3 bytes")
-    }
-    val frameItems = __pytra_as_list(frames)
-    val out = mutable.ArrayBuffer[Byte]('G'.toByte, 'I'.toByte, 'F'.toByte, '8'.toByte, '9'.toByte, 'a'.toByte)
-    __pytra_append_u16le(out, w)
-    __pytra_append_u16le(out, h)
-    out.append(0xF7.toByte)
-    out.append(0.toByte)
-    out.append(0.toByte)
-    out ++= paletteBytes
-    out.append(0x21.toByte)
-    out.append(0xFF.toByte)
-    out.append(0x0B.toByte)
-    out ++= mutable.ArrayBuffer[Byte]('N'.toByte, 'E'.toByte, 'T'.toByte, 'S'.toByte, 'C'.toByte, 'A'.toByte, 'P'.toByte, 'E'.toByte, '2'.toByte, '.'.toByte, '0'.toByte)
-    out.append(0x03.toByte)
-    out.append(0x01.toByte)
-    __pytra_append_u16le(out, loop)
-    out.append(0.toByte)
-    var i = 0
-    while (i < frameItems.size) {
-        val fr = __pytra_to_byte_buffer(frameItems(i))
-        if (fr.size != w * h) {
-            throw new RuntimeException("frame size mismatch")
-        }
-        out.append(0x21.toByte)
-        out.append(0xF9.toByte)
-        out.append(0x04.toByte)
-        out.append(0x00.toByte)
-        __pytra_append_u16le(out, delayCs)
-        out.append(0x00.toByte)
-        out.append(0x00.toByte)
-        out.append(0x2C.toByte)
-        __pytra_append_u16le(out, 0)
-        __pytra_append_u16le(out, 0)
-        __pytra_append_u16le(out, w)
-        __pytra_append_u16le(out, h)
-        out.append(0x00.toByte)
-        out.append(8.toByte)
-        val compressed = __pytra_gif_lzw_encode(fr, 8)
-        var pos = 0
-        while (pos < compressed.size) {
-            val remain = compressed.size - pos
-            val chunkLen = if (remain > 255) 255 else remain
-            out.append(chunkLen.toByte)
-            var j = 0
-            while (j < chunkLen) {
-                out.append(compressed(pos + j))
-                j += 1
-            }
-            pos += chunkLen
-        }
-        out.append(0.toByte)
-        i += 1
-    }
-    out.append(0x3B.toByte)
-    __pytra_write_file_bytes(path, out)
 }
 
 def __pytra_any_default(): Any = {
@@ -621,3 +365,276 @@ def __pytra_is_bool(v: Any): Boolean = v.isInstanceOf[Boolean]
 def __pytra_is_str(v: Any): Boolean = v.isInstanceOf[String]
 
 def __pytra_is_list(v: Any): Boolean = v.isInstanceOf[scala.collection.Seq[?]]
+
+def pyMathSqrt(v: Any): Double = scala.math.sqrt(__pytra_float(v))
+def pyMathSin(v: Any): Double = scala.math.sin(__pytra_float(v))
+def pyMathCos(v: Any): Double = scala.math.cos(__pytra_float(v))
+def pyMathTan(v: Any): Double = scala.math.tan(__pytra_float(v))
+def pyMathExp(v: Any): Double = scala.math.exp(__pytra_float(v))
+def pyMathLog(v: Any): Double = scala.math.log(__pytra_float(v))
+def pyMathFabs(v: Any): Double = scala.math.abs(__pytra_float(v))
+def pyMathFloor(v: Any): Double = scala.math.floor(__pytra_float(v))
+def pyMathCeil(v: Any): Double = scala.math.ceil(__pytra_float(v))
+def pyMathPow(a: Any, b: Any): Double = scala.math.pow(__pytra_float(a), __pytra_float(b))
+def pyMathPi(): Double = scala.math.Pi
+def pyMathE(): Double = scala.math.E
+
+class Path(v: Any) {
+    private val _value: String = __pytra_str(v)
+
+    def /(rhs: Any): Path = Path(__pytra_path_join(_value, __pytra_str(rhs)))
+    def resolve(): Path = Path(Paths.get(_value).toAbsolutePath.normalize.toString)
+    def exists(): Boolean = __pytra_path_exists(_value)
+    def mkdir(parents: Boolean = false, exist_ok: Boolean = false): Unit = {
+        if (parents) {
+            __pytra_path_mkdir(_value)
+            return
+        }
+        if (exist_ok && __pytra_path_exists(_value)) return
+        Files.createDirectory(Paths.get(_value))
+    }
+    def write_text(text: Any, encoding: String = "utf-8"): Unit = __pytra_path_write_text(_value, text)
+    def read_text(encoding: String = "utf-8"): String = __pytra_path_read_text(_value)
+
+    def name: String = __pytra_path_name(_value)
+    def stem: String = __pytra_path_stem(_value)
+    def parent: Path = {
+        val p = __pytra_path_parent(_value)
+        if (p == "" || p == _value) Path(".") else Path(p)
+    }
+
+    override def toString: String = _value
+}
+
+object Path {
+    def apply(v: Any): Path = new Path(v)
+}
+
+private def __pytra_json_escape_string(s: String): String = {
+    val sb = new java.lang.StringBuilder("\"")
+    var i = 0
+    while (i < s.length) {
+        val ch = s.charAt(i)
+        if (ch == '"') sb.append("\\\"")
+        else if (ch == '\\') sb.append("\\\\")
+        else if (ch == '\b') sb.append("\\b")
+        else if (ch == '\f') sb.append("\\f")
+        else if (ch == '\n') sb.append("\\n")
+        else if (ch == '\r') sb.append("\\r")
+        else if (ch == '\t') sb.append("\\t")
+        else if (ch < 0x20) {
+            sb.append("\\u")
+            val hex = Integer.toHexString(ch.toInt)
+            var pad = 4 - hex.length
+            while (pad > 0) {
+                sb.append('0')
+                pad -= 1
+            }
+            sb.append(hex)
+        } else sb.append(ch)
+        i += 1
+    }
+    sb.append('"')
+    sb.toString
+}
+
+private def __pytra_json_stringify(v: Any): String = {
+    if (v == null) return "null"
+    v match {
+        case b: Boolean => if (b) "true" else "false"
+        case i: Int => i.toString
+        case i: Long => i.toString
+        case d: Double =>
+            if (!java.lang.Double.isFinite(d)) throw new RuntimeException("json.dumps: non-finite float")
+            d.toString
+        case f: Float =>
+            if (!java.lang.Float.isFinite(f)) throw new RuntimeException("json.dumps: non-finite float")
+            f.toString
+        case s: String => __pytra_json_escape_string(s)
+        case xs: scala.collection.Seq[?] =>
+            val out = mutable.ArrayBuffer[String]()
+            for (item <- xs) out.append(__pytra_json_stringify(item))
+            "[" + out.mkString(",") + "]"
+        case m: mutable.LinkedHashMap[?, ?] =>
+            val out = mutable.ArrayBuffer[String]()
+            val mm = m.asInstanceOf[mutable.LinkedHashMap[Any, Any]]
+            for ((k, valueAny) <- mm) {
+                out.append(__pytra_json_escape_string(__pytra_str(k)) + ":" + __pytra_json_stringify(valueAny))
+            }
+            "{" + out.mkString(",") + "}"
+        case m: scala.collection.Map[?, ?] =>
+            val out = mutable.ArrayBuffer[String]()
+            val mm = m.asInstanceOf[scala.collection.Map[Any, Any]]
+            for ((k, valueAny) <- mm) {
+                out.append(__pytra_json_escape_string(__pytra_str(k)) + ":" + __pytra_json_stringify(valueAny))
+            }
+            "{" + out.mkString(",") + "}"
+        case _ => __pytra_json_escape_string(__pytra_str(v))
+    }
+}
+
+private final class __PytraJsonParser(text: String) {
+    private val n = text.length
+    private var i = 0
+
+    def parse(): Any = {
+        skipWs()
+        val out = parseValue()
+        skipWs()
+        if (i != n) throw new RuntimeException("invalid json: trailing characters")
+        out
+    }
+
+    private def isDigit(ch: Char): Boolean = ch >= '0' && ch <= '9'
+
+    private def skipWs(): Unit = {
+        while (i < n) {
+            val ch = text.charAt(i)
+            if (ch != ' ' && ch != '\t' && ch != '\r' && ch != '\n') return
+            i += 1
+        }
+    }
+
+    private def parseValue(): Any = {
+        if (i >= n) throw new RuntimeException("invalid json: unexpected end")
+        val ch = text.charAt(i)
+        if (ch == '{') return parseObject()
+        if (ch == '[') return parseArray()
+        if (ch == '"') return parseString()
+        if (ch == 't' && i + 4 <= n && text.substring(i, i + 4) == "true") {
+            i += 4
+            return true
+        }
+        if (ch == 'f' && i + 5 <= n && text.substring(i, i + 5) == "false") {
+            i += 5
+            return false
+        }
+        if (ch == 'n' && i + 4 <= n && text.substring(i, i + 4) == "null") {
+            i += 4
+            return null
+        }
+        parseNumber()
+    }
+
+    private def parseObject(): mutable.LinkedHashMap[Any, Any] = {
+        val out = mutable.LinkedHashMap[Any, Any]()
+        i += 1
+        skipWs()
+        if (i < n && text.charAt(i) == '}') {
+            i += 1
+            return out
+        }
+        while (true) {
+            skipWs()
+            if (i >= n || text.charAt(i) != '"') throw new RuntimeException("invalid json object key")
+            val key = parseString()
+            skipWs()
+            if (i >= n || text.charAt(i) != ':') throw new RuntimeException("invalid json object: missing ':'")
+            i += 1
+            skipWs()
+            out(key) = parseValue()
+            skipWs()
+            if (i >= n) throw new RuntimeException("invalid json object: unexpected end")
+            val sep = text.charAt(i)
+            i += 1
+            if (sep == '}') return out
+            if (sep != ',') throw new RuntimeException("invalid json object separator")
+        }
+        out
+    }
+
+    private def parseArray(): mutable.ArrayBuffer[Any] = {
+        val out = mutable.ArrayBuffer[Any]()
+        i += 1
+        skipWs()
+        if (i < n && text.charAt(i) == ']') {
+            i += 1
+            return out
+        }
+        while (true) {
+            skipWs()
+            out.append(parseValue())
+            skipWs()
+            if (i >= n) throw new RuntimeException("invalid json array: unexpected end")
+            val sep = text.charAt(i)
+            i += 1
+            if (sep == ']') return out
+            if (sep != ',') throw new RuntimeException("invalid json array separator")
+        }
+        out
+    }
+
+    private def parseString(): String = {
+        if (text.charAt(i) != '"') throw new RuntimeException("invalid json string")
+        i += 1
+        val sb = new java.lang.StringBuilder()
+        while (i < n) {
+            val ch = text.charAt(i)
+            i += 1
+            if (ch == '"') return sb.toString
+            if (ch == '\\') {
+                if (i >= n) throw new RuntimeException("invalid json string escape")
+                val esc = text.charAt(i)
+                i += 1
+                if (esc == '"') sb.append('"')
+                else if (esc == '\\') sb.append('\\')
+                else if (esc == '/') sb.append('/')
+                else if (esc == 'b') sb.append('\b')
+                else if (esc == 'f') sb.append('\f')
+                else if (esc == 'n') sb.append('\n')
+                else if (esc == 'r') sb.append('\r')
+                else if (esc == 't') sb.append('\t')
+                else if (esc == 'u') {
+                    if (i + 4 > n) throw new RuntimeException("invalid json unicode escape")
+                    val hx = text.substring(i, i + 4)
+                    val cp = try Integer.parseInt(hx, 16) catch { case _: NumberFormatException => throw new RuntimeException("invalid json unicode escape") }
+                    sb.appendCodePoint(cp)
+                    i += 4
+                } else throw new RuntimeException("invalid json escape")
+            } else sb.append(ch)
+        }
+        throw new RuntimeException("unterminated json string")
+    }
+
+    private def parseNumber(): Any = {
+        val start = i
+        if (text.charAt(i) == '-') i += 1
+        if (i >= n) throw new RuntimeException("invalid json number")
+        if (text.charAt(i) == '0') {
+            i += 1
+        } else {
+            if (!isDigit(text.charAt(i))) throw new RuntimeException("invalid json number")
+            while (i < n && isDigit(text.charAt(i))) i += 1
+        }
+        var isFloat = false
+        if (i < n && text.charAt(i) == '.') {
+            isFloat = true
+            i += 1
+            if (i >= n || !isDigit(text.charAt(i))) throw new RuntimeException("invalid json number")
+            while (i < n && isDigit(text.charAt(i))) i += 1
+        }
+        if (i < n && (text.charAt(i) == 'e' || text.charAt(i) == 'E')) {
+            isFloat = true
+            i += 1
+            if (i < n && (text.charAt(i) == '+' || text.charAt(i) == '-')) i += 1
+            if (i >= n || !isDigit(text.charAt(i))) throw new RuntimeException("invalid json exponent")
+            while (i < n && isDigit(text.charAt(i))) i += 1
+        }
+        val token = text.substring(start, i)
+        if (isFloat) {
+            try token.toDouble
+            catch { case _: NumberFormatException => throw new RuntimeException("invalid json number") }
+        } else {
+            try token.toLong
+            catch { case _: NumberFormatException => throw new RuntimeException("invalid json number") }
+        }
+    }
+}
+
+def pyJsonLoads(v: Any): Any = {
+    new __PytraJsonParser(__pytra_str(v)).parse()
+}
+
+def pyJsonDumps(v: Any): String = {
+    __pytra_json_stringify(v)
+}

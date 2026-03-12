@@ -23,20 +23,20 @@ def _crc32(data: mutable.ArrayBuffer[Long]): Long = {
     var __i_1: Long = 0L
     while (__i_1 < __iter_0.size.toLong) {
         val b: Long = __pytra_int(__iter_0(__i_1.toInt))
-        crc = crc + b
+        crc = crc ^ b
         var i: Long = 0L
         while (i < 8L) {
-            var lowbit: Long = crc + 1L
+            var lowbit: Long = crc & 1L
             if (lowbit != 0L) {
-                crc = (crc + 1L + poly)
+                crc = (crc >> 1L ^ poly)
             } else {
-                crc = crc + 1L
+                crc = crc >> 1L
             }
             i += 1L
         }
         __i_1 += 1L
     }
-    return crc + 4294967295L
+    return crc ^ 4294967295L
 }
 
 def _adler32(data: mutable.ArrayBuffer[Long]): Long = {
@@ -55,15 +55,15 @@ def _adler32(data: mutable.ArrayBuffer[Long]): Long = {
         s2 = s2 % mod
         __i_1 += 1L
     }
-    return (((s2 + 16L + s1)) + 4294967295L)
+    return (((s2 << 16L | s1)) & 4294967295L)
 }
 
 def _png_u16le(v: Long): mutable.ArrayBuffer[Long] = {
-    return __pytra_as_list(mutable.ArrayBuffer[Long](v + 255L, (v + 8L + 255L))).asInstanceOf[mutable.ArrayBuffer[Long]]
+    return __pytra_as_list(mutable.ArrayBuffer[Long](v & 255L, (v >> 8L & 255L))).asInstanceOf[mutable.ArrayBuffer[Long]]
 }
 
 def _png_u32be(v: Long): mutable.ArrayBuffer[Long] = {
-    return __pytra_as_list(mutable.ArrayBuffer[Long]((v + 24L + 255L), (v + 16L + 255L), (v + 8L + 255L), v + 255L)).asInstanceOf[mutable.ArrayBuffer[Long]]
+    return __pytra_as_list(mutable.ArrayBuffer[Long]((v >> 24L & 255L), (v >> 16L & 255L), (v >> 8L & 255L), v & 255L)).asInstanceOf[mutable.ArrayBuffer[Long]]
 }
 
 def _zlib_deflate_store(data: mutable.ArrayBuffer[Long]): mutable.ArrayBuffer[Long] = {
@@ -77,7 +77,7 @@ def _zlib_deflate_store(data: mutable.ArrayBuffer[Long]): mutable.ArrayBuffer[Lo
         var py_final: Long = __pytra_int(__pytra_ifexp((pos + chunk_len >= n), 1L, 0L))
         out.append(py_final)
         _png_append_list(out, _png_u16le(chunk_len))
-        _png_append_list(out, _png_u16le(65535L + chunk_len))
+        _png_append_list(out, _png_u16le(65535L ^ chunk_len))
         var i: Long = pos
         var end: Long = pos + chunk_len
         while (i < end) {
@@ -94,7 +94,7 @@ def _chunk(chunk_type: mutable.ArrayBuffer[Long], data: mutable.ArrayBuffer[Long
     var crc_input: mutable.ArrayBuffer[Long] = __pytra_as_list(mutable.ArrayBuffer[Any]()).asInstanceOf[mutable.ArrayBuffer[Long]]
     _png_append_list(crc_input, chunk_type)
     _png_append_list(crc_input, data)
-    var crc: Long = _crc32(crc_input) + 4294967295L
+    var crc: Long = _crc32(crc_input) & 4294967295L
     var out: mutable.ArrayBuffer[Long] = __pytra_as_list(mutable.ArrayBuffer[Any]()).asInstanceOf[mutable.ArrayBuffer[Long]]
     _png_append_list(out, _png_u32be(__pytra_len(data)))
     _png_append_list(out, chunk_type)

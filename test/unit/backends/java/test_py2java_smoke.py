@@ -341,15 +341,15 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertNotIn("from common.", src)
 
     def test_java_runtime_source_path_is_migrated(self) -> None:
-        runtime_path = ROOT / "src" / "runtime" / "java" / "pytra-core" / "built_in" / "PyRuntime.java"
-        core_time_impl = ROOT / "src" / "runtime" / "java" / "pytra-core" / "std" / "time_impl.java"
-        core_math_impl = ROOT / "src" / "runtime" / "java" / "pytra-core" / "std" / "math_impl.java"
-        png_helper = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "utils" / "png.java"
-        gif_helper = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "utils" / "gif.java"
-        std_time = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "std" / "time.java"
-        std_json = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "std" / "json.java"
-        std_pathlib = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "std" / "pathlib.java"
-        std_math = ROOT / "src" / "runtime" / "java" / "pytra-gen" / "std" / "math.java"
+        runtime_path = ROOT / "src" / "runtime" / "java" / "native" / "built_in" / "PyRuntime.java"
+        core_time_impl = ROOT / "src" / "runtime" / "java" / "native" / "std" / "time_impl.java"
+        core_math_impl = ROOT / "src" / "runtime" / "java" / "native" / "std" / "math_impl.java"
+        png_helper = ROOT / "src" / "runtime" / "java" / "generated" / "utils" / "png.java"
+        gif_helper = ROOT / "src" / "runtime" / "java" / "generated" / "utils" / "gif.java"
+        std_time = ROOT / "src" / "runtime" / "java" / "generated" / "std" / "time.java"
+        std_json = ROOT / "src" / "runtime" / "java" / "generated" / "std" / "json.java"
+        std_pathlib = ROOT / "src" / "runtime" / "java" / "generated" / "std" / "pathlib.java"
+        std_math = ROOT / "src" / "runtime" / "java" / "generated" / "std" / "math.java"
         legacy_path = ROOT / "src" / "java_module" / "PyRuntime.java"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(core_time_impl.exists())

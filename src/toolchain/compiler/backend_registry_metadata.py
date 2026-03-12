@@ -77,37 +77,37 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
     "go": {
         "kind": "copy_files",
         "files": [
-            ("runtime/go/pytra-core/built_in/py_runtime.go", "py_runtime.go"),
-            ("runtime/go/pytra-gen/utils/png.go", "png.go"),
-            ("runtime/go/pytra-gen/utils/gif.go", "gif.go"),
+            ("runtime/go/native/built_in/py_runtime.go", "py_runtime.go"),
+            ("runtime/go/generated/utils/png.go", "png.go"),
+            ("runtime/go/generated/utils/gif.go", "gif.go"),
         ],
     },
     "java": {
         "kind": "copy_files",
         "files": [
-            ("runtime/java/pytra-core/built_in/PyRuntime.java", "PyRuntime.java"),
-            ("runtime/java/pytra-core/std/time_impl.java", "_impl.java"),
-            ("runtime/java/pytra-core/std/math_impl.java", "_m.java"),
-            ("runtime/java/pytra-gen/utils/png.java", "png.java"),
-            ("runtime/java/pytra-gen/utils/gif.java", "gif.java"),
-            ("runtime/java/pytra-gen/std/time.java", "time.java"),
-            ("runtime/java/pytra-gen/std/json.java", "json.java"),
-            ("runtime/java/pytra-gen/std/pathlib.java", "pathlib.java"),
-            ("runtime/java/pytra-gen/std/math.java", "math.java"),
+            ("runtime/java/native/built_in/PyRuntime.java", "PyRuntime.java"),
+            ("runtime/java/native/std/time_impl.java", "_impl.java"),
+            ("runtime/java/native/std/math_impl.java", "_m.java"),
+            ("runtime/java/generated/utils/png.java", "png.java"),
+            ("runtime/java/generated/utils/gif.java", "gif.java"),
+            ("runtime/java/generated/std/time.java", "time.java"),
+            ("runtime/java/generated/std/json.java", "json.java"),
+            ("runtime/java/generated/std/pathlib.java", "pathlib.java"),
+            ("runtime/java/generated/std/math.java", "math.java"),
         ],
     },
     "kotlin": {
         "kind": "copy_files",
         "files": [
-            ("runtime/kotlin/pytra-core/built_in/py_runtime.kt", "py_runtime.kt"),
-            ("runtime/kotlin/pytra-gen/utils/image_runtime.kt", "image_runtime.kt"),
+            ("runtime/kotlin/native/built_in/py_runtime.kt", "py_runtime.kt"),
+            ("runtime/kotlin/generated/utils/image_runtime.kt", "image_runtime.kt"),
         ],
     },
     "swift": {
         "kind": "copy_files",
         "files": [
-            ("runtime/swift/pytra-core/built_in/py_runtime.swift", "py_runtime.swift"),
-            ("runtime/swift/pytra-gen/utils/image_runtime.swift", "image_runtime.swift"),
+            ("runtime/swift/native/built_in/py_runtime.swift", "py_runtime.swift"),
+            ("runtime/swift/generated/utils/image_runtime.swift", "image_runtime.swift"),
         ],
     },
     "ruby": {
@@ -127,8 +127,8 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
     "scala": {
         "kind": "copy_files",
         "files": [
-            ("runtime/scala/pytra-core/built_in/py_runtime.scala", "py_runtime.scala"),
-            ("runtime/scala/pytra-gen/utils/image_runtime.scala", "image_runtime.scala"),
+            ("runtime/scala/native/built_in/py_runtime.scala", "py_runtime.scala"),
+            ("runtime/scala/generated/utils/image_runtime.scala", "image_runtime.scala"),
         ],
     },
     "php": {
@@ -143,8 +143,8 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
     "nim": {
         "kind": "copy_files",
         "files": [
-            ("runtime/nim/pytra-core/built_in/py_runtime.nim", "py_runtime.nim"),
-            ("runtime/nim/pytra-gen/utils/image_runtime.nim", "image_runtime.nim"),
+            ("runtime/nim/native/built_in/py_runtime.nim", "py_runtime.nim"),
+            ("runtime/nim/generated/utils/image_runtime.nim", "image_runtime.nim"),
         ],
     },
 }

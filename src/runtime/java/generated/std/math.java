@@ -6,52 +6,52 @@ public final class math {
     private math() {
     }
 
-    public static double pi = _m.pi;
-    public static double e = _m.e;
+    public static double pi = extern(math.pi);
+    public static double e = extern(math.e);
 
 
     public static double sqrt(double x) {
-        return _m.sqrt(x);
+        return math.sqrt(x);
     }
 
     public static double sin(double x) {
-        return _m.sin(x);
+        return math.sin(x);
     }
 
     public static double cos(double x) {
-        return _m.cos(x);
+        return math.cos(x);
     }
 
     public static double tan(double x) {
-        return _m.tan(x);
+        return math.tan(x);
     }
 
     public static double exp(double x) {
-        return _m.exp(x);
+        return math.exp(x);
     }
 
     public static double log(double x) {
-        return _m.log(x);
+        return math.log(x);
     }
 
     public static double log10(double x) {
-        return _m.log10(x);
+        return math.log10(x);
     }
 
     public static double fabs(double x) {
-        return _m.fabs(x);
+        return math.fabs(x);
     }
 
     public static double floor(double x) {
-        return _m.floor(x);
+        return math.floor(x);
     }
 
     public static double ceil(double x) {
-        return _m.ceil(x);
+        return math.ceil(x);
     }
 
     public static double pow(double x, double y) {
-        return _m.pow(x, y);
+        return math.pow(x, y);
     }
 
     public static void main(String[] args) {

@@ -16,6 +16,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_target_inventory_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_target_inventory_issues(), [])
 
+    def test_wave_a_runtime_hook_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_a_runtime_hook_issues(), [])
+
     def test_module_bucket_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_module_bucket_issues(), [])
 
@@ -59,6 +62,49 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             },
         )
 
+    def test_wave_a_runtime_hook_sources_are_fixed(self) -> None:
+        by_backend = {
+            entry["backend"]: entry["runtime_hook_files"]
+            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_a_hook_sources()
+        }
+        self.assertEqual(
+            by_backend,
+            {
+                "go": (
+                    "runtime/go/native/built_in/py_runtime.go",
+                    "runtime/go/generated/utils/png.go",
+                    "runtime/go/generated/utils/gif.go",
+                ),
+                "java": (
+                    "runtime/java/native/built_in/PyRuntime.java",
+                    "runtime/java/native/std/time_impl.java",
+                    "runtime/java/native/std/math_impl.java",
+                    "runtime/java/generated/utils/png.java",
+                    "runtime/java/generated/utils/gif.java",
+                    "runtime/java/generated/std/time.java",
+                    "runtime/java/generated/std/json.java",
+                    "runtime/java/generated/std/pathlib.java",
+                    "runtime/java/generated/std/math.java",
+                ),
+                "kotlin": (
+                    "runtime/kotlin/native/built_in/py_runtime.kt",
+                    "runtime/kotlin/generated/utils/image_runtime.kt",
+                ),
+                "scala": (
+                    "runtime/scala/native/built_in/py_runtime.scala",
+                    "runtime/scala/generated/utils/image_runtime.scala",
+                ),
+                "swift": (
+                    "runtime/swift/native/built_in/py_runtime.swift",
+                    "runtime/swift/generated/utils/image_runtime.swift",
+                ),
+                "nim": (
+                    "runtime/nim/native/built_in/py_runtime.nim",
+                    "runtime/nim/generated/utils/image_runtime.nim",
+                ),
+            },
+        )
+
     def test_target_root_taxonomy_is_fixed(self) -> None:
         for entry in contract_mod.iter_remaining_noncpp_runtime_layout():
             self.assertEqual(entry["target_roots"], ("generated", "native", "pytra"))
@@ -93,10 +139,19 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         }
         self.assertIn(
             {
-                "current_prefix": "src/runtime/go/pytra/py_runtime.go",
+                "current_prefix": "src/runtime/go/generated/utils/",
+                "target_prefix": "src/runtime/go/generated/utils/",
+                "ownership": "generated",
+                "rationale": "Go image helpers already live in the canonical generated/utils lane after the Wave A path cutover.",
+            },
+            by_backend["go"],
+        )
+        self.assertIn(
+            {
+                "current_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
                 "target_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
                 "ownership": "compat",
-                "rationale": "The public Go shim is still flat today and will be bucketed under pytra/built_in during rollout.",
+                "rationale": "The public Go runtime shim has already been normalized into pytra/built_in.",
             },
             by_backend["go"],
         )
@@ -130,7 +185,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "backend": "go",
                 "pytra_core_files": ("built_in/py_runtime.go",),
                 "pytra_gen_files": ("utils/gif.go", "utils/png.go"),
-                "pytra_files": ("py_runtime.go",),
+                "pytra_files": ("built_in/py_runtime.go",),
             },
         )
 

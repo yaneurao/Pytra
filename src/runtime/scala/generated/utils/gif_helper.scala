@@ -17,24 +17,24 @@ def _gif_append_list(dst: mutable.ArrayBuffer[Long], src: mutable.ArrayBuffer[Lo
 }
 
 def _gif_u16le(v: Long): mutable.ArrayBuffer[Long] = {
-    return __pytra_as_list(mutable.ArrayBuffer[Long](v + 255L, (v + 8L + 255L))).asInstanceOf[mutable.ArrayBuffer[Long]]
+    return __pytra_as_list(mutable.ArrayBuffer[Long](v & 255L, (v >> 8L & 255L))).asInstanceOf[mutable.ArrayBuffer[Long]]
 }
 
 def _lzw_encode(data: mutable.ArrayBuffer[Long], min_code_size: Long): mutable.ArrayBuffer[Long] = {
     if (__pytra_len(data) == 0L) {
         return __pytra_bytes(mutable.ArrayBuffer[Any]())
     }
-    var clear_code: Long = 1L + min_code_size
+    var clear_code: Long = 1L << min_code_size
     var end_code: Long = clear_code + 1L
     var code_size: Long = min_code_size + 1L
     var out: mutable.ArrayBuffer[Long] = __pytra_as_list(mutable.ArrayBuffer[Any]()).asInstanceOf[mutable.ArrayBuffer[Long]]
     var bit_buffer: Long = 0L
     var bit_count: Long = 0L
-    bit_buffer += clear_code + bit_count
+    bit_buffer += clear_code << bit_count
     bit_count += code_size
     while (bit_count >= 8L) {
-        out.append(bit_buffer + 255L)
-        bit_buffer = bit_buffer + 8L
+        out.append(bit_buffer & 255L)
+        bit_buffer = bit_buffer >> 8L
         bit_count -= 8L
     }
     code_size = min_code_size + 1L
@@ -42,32 +42,32 @@ def _lzw_encode(data: mutable.ArrayBuffer[Long], min_code_size: Long): mutable.A
     var __i_1: Long = 0L
     while (__i_1 < __iter_0.size.toLong) {
         val v: Long = __pytra_int(__iter_0(__i_1.toInt))
-        bit_buffer += v + bit_count
+        bit_buffer += v << bit_count
         bit_count += code_size
         while (bit_count >= 8L) {
-            out.append(bit_buffer + 255L)
-            bit_buffer = bit_buffer + 8L
+            out.append(bit_buffer & 255L)
+            bit_buffer = bit_buffer >> 8L
             bit_count -= 8L
         }
-        bit_buffer += clear_code + bit_count
+        bit_buffer += clear_code << bit_count
         bit_count += code_size
         while (bit_count >= 8L) {
-            out.append(bit_buffer + 255L)
-            bit_buffer = bit_buffer + 8L
+            out.append(bit_buffer & 255L)
+            bit_buffer = bit_buffer >> 8L
             bit_count -= 8L
         }
         code_size = min_code_size + 1L
         __i_1 += 1L
     }
-    bit_buffer += end_code + bit_count
+    bit_buffer += end_code << bit_count
     bit_count += code_size
     while (bit_count >= 8L) {
-        out.append(bit_buffer + 255L)
-        bit_buffer = bit_buffer + 8L
+        out.append(bit_buffer & 255L)
+        bit_buffer = bit_buffer >> 8L
         bit_count -= 8L
     }
     if (bit_count > 0L) {
-        out.append(bit_buffer + 255L)
+        out.append(bit_buffer & 255L)
     }
     return __pytra_bytes(out)
 }

@@ -3,8 +3,8 @@
 
 Policy:
 - Canonical source of module basenames is `src/pytra/std/*.py` and `src/pytra/utils/*.py`.
-- For `rs/cs`, canonical generated lanes live under
-  `src/runtime/{rs,cs}/generated/std|utils/<module>.<ext>`.
+- For migrated non-C++ backends, canonical generated lanes live under
+  `src/runtime/<lang>/generated/std|utils/<module>.<ext>`.
 - Legacy `src/runtime/<lang>/pytra-gen/**` is still scanned for backends that have not yet
   rolled over to the `generated/native` layout.
 - Under `std` / `utils`, use passthrough module basenames only.
@@ -83,7 +83,9 @@ def _iter_pytra_gen_files() -> list[Path]:
         if "/pytra-gen/" in rel:
             out.append(p)
             continue
-        if rel.startswith("/src/runtime/rs/generated/") or rel.startswith("/src/runtime/cs/generated/"):
+        if rel.startswith("/src/runtime/cpp/generated/"):
+            continue
+        if "/generated/" in rel:
             out.append(p)
             continue
     return out
