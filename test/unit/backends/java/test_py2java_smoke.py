@@ -23,7 +23,11 @@ if str(ROOT / "test" / "unit" / "backends") not in sys.path:
 
 from backends.java.emitter import load_java_profile, transpile_to_java
 from toolchain.compiler.transpile_cli import load_east3_document
-from backends.java.emitter.java_native_emitter import _render_expr, transpile_to_java_native
+from backends.java.emitter.java_native_emitter import (
+    _java_string_literal,
+    _render_expr,
+    transpile_to_java_native,
+)
 from src.toolchain.ir.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 from relative_import_jvm_package_smoke_support import (
@@ -122,6 +126,10 @@ class Py2JavaSmokeTest(unittest.TestCase):
         java = transpile_to_java_native(east, class_name="Main")
         self.assertIn('return "loud-" + super.speak();', java)
         self.assertNotIn("super().speak()", java)
+
+    def test_java_string_literal_escapes_control_characters(self) -> None:
+        rendered = _java_string_literal("\\\"\r\n\t\b\f")
+        self.assertEqual(rendered, '"\\\\\\\"\\r\\n\\t\\b\\f"')
 
     def test_java_native_emitter_skeleton_maps_simple_int_signature(self) -> None:
         fixture = find_fixture_case("add")

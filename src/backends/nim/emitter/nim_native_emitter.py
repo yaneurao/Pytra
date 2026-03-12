@@ -560,10 +560,6 @@ class NimNativeEmitter:
             self._emit_for(stmt)
         elif kind == "Raise":
             self._emit_raise(stmt)
-        elif kind == "Try":
-            # Keep image-helper regeneration reproducible until Nim gets a real
-            # try/finally lowering lane.
-            self._emit_line("# unsupported stmt: Try")
         elif kind == "Pass":
             self._emit_line("discard")
         elif kind == "Import":

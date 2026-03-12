@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
@@ -100,10 +101,33 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return time_native.perf_counter();", out)
         self.assertNotIn("return __t.perf_counter();", out)
 
-    def test_run_py2x_nim_png_helper_reuses_fail_soft_try_comment(self) -> None:
-        out = gen_mod.run_py2x("nim", "src/pytra/utils/png.py", "src/runtime/nim/generated/utils/png_helper.nim")
-        self.assertIn("proc write_rgb_png*", out)
-        self.assertIn("# unsupported stmt: Try", out)
+    def test_run_py2x_raises_when_backend_emits_no_text_and_no_file(self) -> None:
+        with (
+            patch.object(gen_mod, "get_backend_spec", return_value={}),
+            patch.object(gen_mod, "load_east3_document", return_value={}),
+            patch.object(gen_mod, "resolve_layer_options", return_value={}),
+            patch.object(gen_mod, "lower_ir", return_value={}),
+            patch.object(gen_mod, "optimize_ir", return_value={}),
+            patch.object(gen_mod, "emit_source", return_value=""),
+        ):
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "runtime generation backend emitted no inline text and wrote no file: "
+                "nim -> src/runtime/nim/generated/utils/png_helper.nim",
+            ):
+                gen_mod.run_py2x(
+                    "nim",
+                    "src/pytra/utils/png.py",
+                    "src/runtime/nim/generated/utils/png_helper.nim",
+                )
+
+    def test_run_py2x_nim_png_helper_surfaces_try_blocker(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "unsupported stmt kind: Try"):
+            gen_mod.run_py2x(
+                "nim",
+                "src/pytra/utils/png.py",
+                "src/runtime/nim/generated/utils/png_helper.nim",
+            )
 
 
 if __name__ == "__main__":
