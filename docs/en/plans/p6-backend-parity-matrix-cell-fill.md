@@ -53,6 +53,7 @@ Decision log:
 - 2026-03-12: `S3-02` fixed the role split between the cross-backend matrix and the cpp-only support table, and locked the matrix-first maintenance order in docs/tooling contract form.
 - 2026-03-12: `S4-01` added the rollout-tier fill order (`representative -> secondary -> long_tail`) to the matrix manifest and fixed the same order in the docs pages.
 - 2026-03-12: `S4-02` promoted only the direct fixture-backed representative `rs/cs` cells from conservative seeds to `supported/transpile_smoke`, while secondary and long-tail lanes stay on placeholder seeds.
+- 2026-03-12: `S4-03` promoted the direct-evidence secondary-tier cells and only raised the `go/java/kt/scala/swift/nim` lanes that already have representative fixture-backed smoke to `supported/transpile_smoke`.
 
 ## Breakdown
 
@@ -63,5 +64,5 @@ Decision log:
 - [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S3-02] Fix the role split with the C++ detailed table, drill-down links, and maintenance order in docs / tooling contracts.
 - [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-01] Fix the rollout-tier fill order in the matrix manifest and docs.
 - [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-02] Replace conservative seeds with reviewed representative-tier (`cpp/rs/cs`) cell states.
-- [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-03] Promote direct-evidence secondary-tier (`go/java/kt/scala/swift/nim`) cells to reviewed states.
+- [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-03] Promote direct-evidence secondary-tier (`go/java/kt/scala/swift/nim`) cells to reviewed states.
 - [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-04] Reflect reviewed / fail-closed long-tail (`js/ts/lua/rb/php`) cells in the matrix.

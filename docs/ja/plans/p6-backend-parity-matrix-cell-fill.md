@@ -53,6 +53,7 @@
 - 2026-03-12: `S3-02` として cross-backend matrix を canonical source、`py2cpp` support matrix を cpp-only drill-down と明記し、matrix -> cpp の maintenance order を docs / tooling contract に固定した。
 - 2026-03-12: `S4-01` として matrix manifest に rollout-tier order (`representative -> secondary -> long_tail`) を追加し、docs でも fill order を固定した。
 - 2026-03-12: `S4-02` として direct fixture-backed smoke がある representative `rs/cs` cell だけを conservative seed から `supported/transpile_smoke` へ上げ、secondary / long_tail は placeholder seed を維持する。
+- 2026-03-12: `S4-03` として secondary tier の direct-evidence cell を reviewed state に上げ、`go/java/kt/scala/swift/nim` の representative fixture-backed smoke がある lane だけを `supported/transpile_smoke` へ更新した。
 
 ## 分解
 
@@ -63,5 +64,5 @@
 - [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S3-02] C++ 詳細 table との役割分担、drill-down link、maintenance order を docs / tooling contract に固定する。
 - [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-01] rollout-tier の fill order を matrix manifest と docs に固定する。
 - [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-02] representative tier (`cpp/rs/cs`) の reviewed cell を conservative seed から実値へ埋める。
-- [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-03] secondary tier (`go/java/kt/scala/swift/nim`) の direct-evidence cell を reviewed state に上げる。
+- [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-03] secondary tier (`go/java/kt/scala/swift/nim`) の direct-evidence cell を reviewed state に上げる。
 - [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S4-04] long-tail tier (`js/ts/lua/rb/php`) の reviewed / fail-closed cell を matrix に反映する。

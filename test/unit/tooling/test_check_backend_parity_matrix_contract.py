@@ -76,8 +76,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
         self.assertEqual(
             contract_mod.PARITY_MATRIX_CELL_GAP_SUMMARY,
             {
-                "seed_state_is_conservative": "Current backend cell seeds stay conservative outside the reviewed representative cpp/rs/cs cells that already have direct transpile or build/run smoke evidence.",
-                "docs_table_is_seed_only": "The docs page now renders the seeded 2D support table, but non-reviewed lanes still stay on placeholders outside the reviewed representative cpp/rs/cs cells.",
+                "seed_state_is_conservative": "Current backend cell seeds stay conservative outside the reviewed representative and secondary cells that already have direct transpile or build/run smoke evidence.",
+                "docs_table_is_seed_only": "The docs page now renders the seeded 2D support table, but non-reviewed lanes still stay on placeholders outside the reviewed representative and secondary cells.",
                 "cell_details_are_sparse": "Per-cell details/evidence_ref/diagnostic_kind remain sparse until follow-up row fill bundles land.",
             },
         )
@@ -86,16 +86,31 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             {
                 "syntax.control.for_range": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "nim": {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "syntax.oop.virtual_dispatch": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "scala": {"backend": "scala", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "swift": {"backend": "swift", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "builtin.iter.range": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "nim": {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "builtin.bit.invert_and_mask": {
+                    "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "scala": {"backend": "scala", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "swift": {"backend": "swift", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "nim": {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.math.imported_symbols": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -240,26 +255,52 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         )
         self.assertEqual(
-            rows["syntax.control.for_range"]["backend_cells"][2],
-            {"backend": "cs", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+            rows["syntax.control.for_range"]["backend_cells"][4],
+            {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        )
+        self.assertEqual(
+            rows["syntax.control.for_range"]["backend_cells"][8],
+            {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         )
         self.assertEqual(
             rows["builtin.iter.range"]["backend_cells"][1],
             {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         )
         self.assertEqual(
-            rows["builtin.iter.range"]["backend_cells"][2],
-            {"backend": "cs", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+            rows["builtin.iter.range"]["backend_cells"][4],
+            {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        )
+        self.assertEqual(
+            rows["builtin.iter.range"]["backend_cells"][8],
+            {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         )
         self.assertEqual(
             rows["syntax.oop.virtual_dispatch"]["backend_cells"][2],
             {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         )
         self.assertEqual(
-            rows["builtin.bit.invert_and_mask"]["backend_cells"][1:3],
+            rows["syntax.oop.virtual_dispatch"]["backend_cells"][3:9],
+            [
+                {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "scala", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "swift", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "nim", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+            ],
+        )
+        self.assertEqual(
+            rows["builtin.bit.invert_and_mask"]["backend_cells"][1:10],
             [
                 {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "scala", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "swift", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "js", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
             ],
         )
         self.assertEqual(
