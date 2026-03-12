@@ -7,7 +7,11 @@ from pytra.std.pathlib import Path
 from typing import Any
 
 from backends.js.hooks.js_hooks import build_js_hooks
-from backends.common.emitter.code_emitter import CodeEmitter, reject_backend_typed_vararg_signatures
+from backends.common.emitter.code_emitter import (
+    CodeEmitter,
+    reject_backend_homogeneous_tuple_ellipsis_type_exprs,
+    reject_backend_typed_vararg_signatures,
+)
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 
@@ -1673,5 +1677,6 @@ class JsEmitter(CodeEmitter):
 def transpile_to_js(east_doc: dict[str, Any]) -> str:
     """EAST ドキュメントを JavaScript コードへ変換する。"""
     reject_backend_typed_vararg_signatures(east_doc, backend_name="JS backend")
+    reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="JS backend")
     emitter = JsEmitter(east_doc)
     return emitter.transpile()

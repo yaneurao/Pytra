@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 from typing import Any
-from backends.common.emitter.code_emitter import reject_backend_general_union_type_exprs, reject_backend_typed_vararg_signatures
+from backends.common.emitter.code_emitter import (
+    reject_backend_general_union_type_exprs,
+    reject_backend_homogeneous_tuple_ellipsis_type_exprs,
+    reject_backend_typed_vararg_signatures,
+)
 from toolchain.compiler.stdlib.signature_registry import list_noncpp_assertion_runtime_calls
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
@@ -2590,6 +2594,7 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     _reject_unsupported_relative_import_forms(body_any)
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Java backend")
     reject_backend_general_union_type_exprs(east_doc, backend_name="Java backend")
+    reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Java backend")
     main_guard_any = east_doc.get("main_guard_body")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []
 

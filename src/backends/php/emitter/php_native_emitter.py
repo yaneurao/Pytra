@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from backends.common.emitter.code_emitter import reject_backend_typed_vararg_signatures
+from backends.common.emitter.code_emitter import (
+    reject_backend_homogeneous_tuple_ellipsis_type_exprs,
+    reject_backend_typed_vararg_signatures,
+)
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
 
@@ -1424,6 +1427,7 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
         raise RuntimeError("php native emitter: Module.body must be list")
     _reject_unsupported_relative_import_forms(body_any)
     reject_backend_typed_vararg_signatures(east_doc, backend_name="PHP backend")
+    reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="PHP backend")
     main_guard_any = east_doc.get("main_guard_body")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []
 

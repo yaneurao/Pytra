@@ -79,6 +79,55 @@ def _typed_varargs_signature_module() -> dict[str, object]:
     }
 
 
+def _homogeneous_tuple_ellipsis_module() -> dict[str, object]:
+    return {
+        "kind": "Module",
+        "east_stage": 3,
+        "body": [
+            {
+                "kind": "AnnAssign",
+                "target": {"kind": "Name", "id": "LENGTH_TABLE"},
+                "decl_type": "tuple[int64, ...]",
+                "decl_type_expr": parse_type_expr_text("tuple[int, ...]"),
+                "value": {
+                    "kind": "Tuple",
+                    "elts": [_const_i(10), _const_i(20), _const_i(30)],
+                    "resolved_type": "tuple[int64, ...]",
+                    "type_expr": parse_type_expr_text("tuple[int, ...]"),
+                },
+            },
+            {
+                "kind": "FunctionDef",
+                "name": "head",
+                "arg_order": ["xs"],
+                "args": [{"arg": "xs"}],
+                "arg_types": {"xs": "tuple[int64, ...]"},
+                "arg_type_exprs": {"xs": parse_type_expr_text("tuple[int, ...]")},
+                "return_type": "int64",
+                "return_type_expr": parse_type_expr_text("int"),
+                "body": [
+                    {
+                        "kind": "Return",
+                        "value": {
+                            "kind": "Subscript",
+                            "value": {
+                                "kind": "Name",
+                                "id": "xs",
+                                "resolved_type": "tuple[int64, ...]",
+                                "type_expr": parse_type_expr_text("tuple[int, ...]"),
+                            },
+                            "slice": _const_i(0),
+                            "resolved_type": "int64",
+                        },
+                    }
+                ],
+            },
+        ],
+        "main_guard_body": [],
+        "meta": {},
+    }
+
+
 def _nominal_adt_class(
     name: str,
     *,
@@ -273,6 +322,35 @@ class NonCppEast3ContractGuardTest(unittest.TestCase):
                     transpile(copy.deepcopy(east))
                 self.assertIn(
                     "unsupported typed varargs lane: FunctionDef merge_values(*values: int64)",
+                    str(cm.exception),
+                )
+
+    def test_all_noncpp_backends_fail_closed_on_homogeneous_tuple_ellipsis_type_expr(self) -> None:
+        east = _homogeneous_tuple_ellipsis_module()
+        backends = [
+            ("Rust backend", transpile_to_rust),
+            ("C# backend", transpile_to_csharp),
+            ("Go backend", transpile_to_go),
+            ("Java backend", transpile_to_java),
+            ("Kotlin backend", transpile_to_kotlin),
+            ("Scala backend", transpile_to_scala),
+            ("Swift backend", transpile_to_swift),
+            ("Nim backend", transpile_to_nim),
+            ("PHP backend", transpile_to_php),
+            ("Ruby backend", transpile_to_ruby),
+            ("Lua backend", transpile_to_lua),
+            ("JS backend", transpile_to_js),
+            ("TS backend", transpile_to_typescript),
+        ]
+        for backend_name, transpile in backends:
+            with self.subTest(backend=backend_name):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "unsupported_syntax\\|" + re.escape(backend_name) + " does not support homogeneous tuple ellipsis TypeExpr yet",
+                ) as cm:
+                    transpile(copy.deepcopy(east))
+                self.assertIn(
+                    "unsupported homogeneous tuple lane: tuple[int64, ...]",
                     str(cm.exception),
                 )
 

@@ -94,6 +94,79 @@ def reject_backend_general_union_type_exprs(doc: object, *, backend_name: str) -
     )
 
 
+def _find_homogeneous_tuple_ellipsis_lane(type_expr: object) -> dict[str, Any] | None:
+    if not _is_type_expr_payload(type_expr):
+        return None
+    expr_obj = type_expr
+    kind = str(expr_obj.get("kind", ""))
+    if kind == "GenericType":
+        tuple_shape = str(expr_obj.get("tuple_shape", "")).strip()
+        base = str(expr_obj.get("base", "")).strip()
+        if tuple_shape == "homogeneous_ellipsis" and base == "tuple":
+            return expr_obj
+        args_obj = expr_obj.get("args")
+        if isinstance(args_obj, list):
+            for arg in args_obj:
+                found = _find_homogeneous_tuple_ellipsis_lane(arg)
+                if found is not None:
+                    return found
+        return None
+    if kind == "OptionalType":
+        return _find_homogeneous_tuple_ellipsis_lane(expr_obj.get("inner"))
+    if kind == "UnionType":
+        options_obj = expr_obj.get("options")
+        if isinstance(options_obj, list):
+            for option in options_obj:
+                found = _find_homogeneous_tuple_ellipsis_lane(option)
+                if found is not None:
+                    return found
+    return None
+
+
+def _collect_homogeneous_tuple_ellipsis_issues(
+    doc: object,
+    *,
+    path: str,
+    out: list[dict[str, str]],
+) -> None:
+    if _is_type_expr_payload(doc):
+        lane = _find_homogeneous_tuple_ellipsis_lane(doc)
+        if lane is not None:
+            carrier = type_expr_to_string(doc)
+            lane_text = type_expr_to_string(lane)
+            out.append({"path": path, "carrier": carrier, "lane": lane_text})
+        return
+    if isinstance(doc, dict):
+        for key, value in doc.items():
+            if isinstance(key, str):
+                _collect_homogeneous_tuple_ellipsis_issues(value, path=path + "." + key, out=out)
+        return
+    if isinstance(doc, list):
+        for idx, item in enumerate(doc):
+            _collect_homogeneous_tuple_ellipsis_issues(item, path=path + "[" + str(idx) + "]", out=out)
+
+
+def reject_backend_homogeneous_tuple_ellipsis_type_exprs(doc: object, *, backend_name: str) -> None:
+    """Reject representative `tuple[T, ...]` lanes for backends that have no rollout yet."""
+    issues: list[dict[str, str]] = []
+    _collect_homogeneous_tuple_ellipsis_issues(doc, path="$", out=issues)
+    if len(issues) == 0:
+        return
+    first = issues[0]
+    carrier = first.get("carrier", "unknown")
+    lane = first.get("lane", carrier)
+    path = first.get("path", "$")
+    details: list[str] = [path + ": " + carrier, "unsupported homogeneous tuple lane: " + lane]
+    if len(issues) > 1:
+        details.append("additional homogeneous tuple carriers: " + str(len(issues) - 1))
+    details.append("Representative tuple[T, ...] rollout is implemented only in the C++ backend right now.")
+    raise make_user_error(
+        "unsupported_syntax",
+        backend_name + " does not support homogeneous tuple ellipsis TypeExpr yet",
+        details,
+    )
+
+
 def _format_typed_vararg_signature_lane(node: dict[str, Any]) -> str:
     name_any = node.get("name")
     name = name_any if isinstance(name_any, str) and name_any.strip() != "" else "<anonymous>"
