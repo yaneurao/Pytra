@@ -22,6 +22,8 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn(("built_in/type_id", "rs", "src/runtime/rs/generated/built_in/type_id.rs"), pairs)
         self.assertIn(("built_in/type_id", "cs", "src/runtime/cs/generated/built_in/type_id.cs"), pairs)
         self.assertIn(("std/pathlib", "cs", "src/runtime/cs/generated/std/pathlib.cs"), pairs)
+        self.assertIn(("std/math", "js", "src/runtime/js/generated/std/math.js"), pairs)
+        self.assertIn(("std/math", "ts", "src/runtime/ts/generated/std/math.ts"), pairs)
         self.assertIn(("std/time", "java", "src/runtime/java/generated/std/time.java"), pairs)
         self.assertIn(("std/time", "js", "src/runtime/js/generated/std/time.js"), pairs)
         self.assertIn(("std/time", "ts", "src/runtime/ts/generated/std/time.ts"), pairs)
@@ -134,6 +136,59 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return Math.pow(x, y);", out)
         self.assertNotIn("extern(math.pi)", out)
 
+    def test_rewrite_js_std_math_live_wrapper_inlines_math_and_exports_constants(self) -> None:
+        src = "\n".join(
+            [
+                'import { extern } from "./pytra/std.js";',
+                "",
+                "function sin(x) {",
+                "    return __m.sin(x);",
+                "}",
+                "function pow(x, y) {",
+                "    return __m.pow(x, y);",
+                "}",
+                "",
+                '"pytra.std.math: extern-marked math API with Python runtime fallback.";',
+                "let pi = extern(__m.pi);",
+                "let e = extern(__m.e);",
+            ]
+        )
+        out = gen_mod.rewrite_js_std_math_live_wrapper(src)
+        self.assertIn("const pi = Math.PI;", out)
+        self.assertIn("const e = Math.E;", out)
+        self.assertIn("return Math.sin(x);", out)
+        self.assertIn("return Math.pow(x, y);", out)
+        self.assertIn("module.exports = { pi, e, sin, cos, tan, sqrt, exp, log, log10, fabs, floor, ceil, pow };", out)
+        self.assertNotIn("__m.", out)
+        self.assertNotIn("extern(", out)
+
+    def test_rewrite_ts_std_math_live_wrapper_exports_typed_symbols(self) -> None:
+        src = "\n".join(
+            [
+                'import { extern } from "./pytra/std.js";',
+                "",
+                "function sin(x) {",
+                "    return __m.sin(x);",
+                "}",
+                "function pow(x, y) {",
+                "    return __m.pow(x, y);",
+                "}",
+                "",
+                '"pytra.std.math: extern-marked math API with Python runtime fallback.";',
+                "let pi = extern(__m.pi);",
+                "let e = extern(__m.e);",
+            ]
+        )
+        out = gen_mod.rewrite_ts_std_math_live_wrapper(src)
+        self.assertIn("export const pi: number = Math.PI;", out)
+        self.assertIn("export const e: number = Math.E;", out)
+        self.assertIn("export function sin(x: number): number {", out)
+        self.assertIn("return Math.sin(x);", out)
+        self.assertIn("export function pow(x: number, y: number): number {", out)
+        self.assertIn("return Math.pow(x, y);", out)
+        self.assertNotIn("__m.", out)
+        self.assertNotIn("extern(", out)
+
     def test_rewrite_js_std_time_live_wrapper_inlines_hrtime_and_alias(self) -> None:
         src = "\n".join(
             [
@@ -235,7 +290,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         item_ids = gen_mod.resolve_item_ids("all", items)
         plan = gen_mod.build_generation_plan(items, targets, item_ids)
         checked, updated = gen_mod.generate(plan, check=True, dry_run=False)
-        self.assertEqual(checked, 13)
+        self.assertEqual(checked, 15)
         self.assertEqual(updated, 0)
 
 

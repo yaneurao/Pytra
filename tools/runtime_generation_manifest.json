@@ -272,7 +272,9 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/math.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/math.cs" },
-        { "target": "java", "output": "src/runtime/java/generated/std/math.java", "postprocess": "java_std_math_live_wrapper" }
+        { "target": "java", "output": "src/runtime/java/generated/std/math.java", "postprocess": "java_std_math_live_wrapper" },
+        { "target": "js", "output": "src/runtime/js/generated/std/math.js", "postprocess": "js_std_math_live_wrapper" },
+        { "target": "ts", "output": "src/runtime/ts/generated/std/math.ts", "postprocess": "ts_std_math_live_wrapper" }
       ]
     },
     {

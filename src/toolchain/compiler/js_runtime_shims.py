@@ -19,7 +19,7 @@ def write_js_runtime_shims(output_dir: Path) -> None:
             "exports.perfCounter = perf_counter;\n"
         ),
         "pytra/std/math.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/native/std/math.js');\n"
+            "const rt = require(process.cwd() + '/src/runtime/js/generated/std/math.js');\n"
             "exports.pi = rt.pi;\n"
             "exports.e = rt.e;\n"
             "exports.sin = rt.sin;\n"

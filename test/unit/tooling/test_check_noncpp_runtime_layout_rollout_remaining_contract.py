@@ -297,11 +297,15 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["js"]["pytra_gen_files"],
-            ("std/time.js", "utils/gif.js", "utils/png.js"),
+            ("std/math.js", "std/time.js", "utils/gif.js", "utils/png.js"),
         )
         self.assertEqual(
             by_backend["php"]["pytra_gen_files"],
             ("std/time.php", "utils/gif.php", "utils/png.php"),
+        )
+        self.assertEqual(
+            by_backend["ts"]["pytra_gen_files"],
+            ("std/math.ts", "std/time.ts", "utils/gif.ts", "utils/png.ts"),
         )
 
     def test_target_inventory_is_fixed(self) -> None:
@@ -332,7 +336,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["ts"]["generated_files"],
-            ("generated/std/time.ts", "generated/utils/gif.ts", "generated/utils/png.ts"),
+            (
+                "generated/std/math.ts",
+                "generated/std/time.ts",
+                "generated/utils/gif.ts",
+                "generated/utils/png.ts",
+            ),
         )
         self.assertEqual(
             by_backend["php"],
@@ -397,7 +406,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "built_in/type_id",
                 "built_in/zip_ops",
                 "std/json",
-                "std/math",
                 "std/pathlib",
             ),
         )
@@ -449,7 +457,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                         "built_in/zip_ops",
                         "std/json",
                     ),
-                    "native_compare_residual_modules": ("std/math", "std/pathlib"),
+                    "native_compare_residual_modules": ("std/pathlib",),
                     "helper_shaped_compare_gap_modules": (),
                 },
                 "ts": {
@@ -467,7 +475,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                         "built_in/zip_ops",
                         "std/json",
                     ),
-                    "native_compare_residual_modules": ("std/math", "std/pathlib"),
+                    "native_compare_residual_modules": ("std/pathlib",),
                     "helper_shaped_compare_gap_modules": (),
                 },
                 "lua": {

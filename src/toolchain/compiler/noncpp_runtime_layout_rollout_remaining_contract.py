@@ -608,7 +608,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "std/pathlib.js",
             "std/time.js",
         ),
-        "pytra_gen_files": ("std/time.js", "utils/gif.js", "utils/png.js"),
+        "pytra_gen_files": ("std/math.js", "std/time.js", "utils/gif.js", "utils/png.js"),
         "pytra_files": (
             "README.md",
             "py_runtime.js",
@@ -627,7 +627,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "std/pathlib.ts",
             "std/time.ts",
         ),
-        "pytra_gen_files": ("std/time.ts", "utils/gif.ts", "utils/png.ts"),
+        "pytra_gen_files": ("std/math.ts", "std/time.ts", "utils/gif.ts", "utils/png.ts"),
         "pytra_files": (
             "README.md",
             "py_runtime.ts",
@@ -734,7 +734,12 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
     },
     {
         "backend": "js",
-        "generated_files": ("generated/std/time.js", "generated/utils/gif.js", "generated/utils/png.js"),
+        "generated_files": (
+            "generated/std/math.js",
+            "generated/std/time.js",
+            "generated/utils/gif.js",
+            "generated/utils/png.js",
+        ),
         "native_files": (
             "native/built_in/py_runtime.js",
             "native/std/math.js",
@@ -753,7 +758,12 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
     },
     {
         "backend": "ts",
-        "generated_files": ("generated/std/time.ts", "generated/utils/gif.ts", "generated/utils/png.ts"),
+        "generated_files": (
+            "generated/std/math.ts",
+            "generated/std/time.ts",
+            "generated/utils/gif.ts",
+            "generated/utils/png.ts",
+        ),
         "native_files": (
             "native/built_in/py_runtime.ts",
             "native/std/math.ts",
@@ -859,7 +869,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     },
     {
         "backend": "js",
-        "generated_modules": ("std/time", "utils/gif", "utils/png"),
+        "generated_modules": ("std/math", "std/time", "utils/gif", "utils/png"),
         "native_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
         "compat_modules": (
             "built_in/py_runtime",
@@ -871,12 +881,12 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
         ),
         "blocked_modules": (
             REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("std/json", "std/math", "std/pathlib")
+            + ("std/json", "std/pathlib")
         ),
     },
     {
         "backend": "ts",
-        "generated_modules": ("std/time", "utils/gif", "utils/png"),
+        "generated_modules": ("std/math", "std/time", "utils/gif", "utils/png"),
         "native_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
         "compat_modules": (
             "built_in/py_runtime",
@@ -888,7 +898,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
         ),
         "blocked_modules": (
             REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("std/json", "std/math", "std/pathlib")
+            + ("std/json", "std/pathlib")
         ),
     },
     {
@@ -925,7 +935,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_BLOCKED_REASONS_V1: Final[
         "missing_compare_lane_modules": (
             REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1 + ("std/json",)
         ),
-        "native_compare_residual_modules": ("std/math", "std/pathlib"),
+        "native_compare_residual_modules": ("std/pathlib",),
         "helper_shaped_compare_gap_modules": (),
     },
     {
@@ -933,7 +943,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_BLOCKED_REASONS_V1: Final[
         "missing_compare_lane_modules": (
             REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1 + ("std/json",)
         ),
-        "native_compare_residual_modules": ("std/math", "std/pathlib"),
+        "native_compare_residual_modules": ("std/pathlib",),
         "helper_shaped_compare_gap_modules": (),
     },
     {

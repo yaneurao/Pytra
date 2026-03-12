@@ -1,1 +1,1 @@
-export * from "../../native/std/math";
+export * from "../../generated/std/math";
