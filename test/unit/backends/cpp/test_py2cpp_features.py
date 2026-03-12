@@ -4753,7 +4753,7 @@ def main() -> None:
         self.assertIn("auto child = py_at(__itobj_", cpp)
         self.assertNotIn("object receiver method call", cpp)
 
-    def test_homogeneous_tuple_ellipsis_currently_emits_invalid_std_tuple_pack(self) -> None:
+    def test_homogeneous_tuple_ellipsis_lowers_to_readonly_list_lane(self) -> None:
         src = """LENGTH_TABLE: tuple[int, ...] = (10, 20, 30)
 
 def head(xs: tuple[int, ...]) -> int:
@@ -4764,8 +4764,11 @@ def head(xs: tuple[int, ...]) -> int:
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn("::std::tuple<int64, ...> LENGTH_TABLE", cpp)
-        self.assertIn("const ::std::tuple<int64, ...>& xs", cpp)
+        self.assertNotIn("::std::tuple<int64, ...>", cpp)
+        self.assertIn("list<int64> LENGTH_TABLE", cpp)
+        self.assertIn("const list<int64>& xs", cpp)
+        self.assertIn("LENGTH_TABLE = list<int64>{10, 20, 30};", cpp)
+        self.assertIn("return xs[0];", cpp)
 
     def test_microgpt_compat_min_syntax_check(self) -> None:
         self._transpile_and_syntax_check_fixture("microgpt_compat_min")

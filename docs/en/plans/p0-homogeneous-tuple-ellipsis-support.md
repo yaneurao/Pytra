@@ -48,11 +48,12 @@ Decision log:
 - 2026-03-12: v1 will lock representative lanes first and prefer fail-closed behavior for unsupported backends or lanes. Whether all backends should eventually reuse the exact same representation as lists is deferred.
 - 2026-03-12: The current parser does not reject `tuple[int, ...]`; it accepts it as `GenericType(base="tuple", args=[NamedType("int64"), NamedType("...")])`. This baseline and the current invalid C++ emission `::std::tuple<int64, ...>` are now locked by regression before category splitting starts.
 - 2026-03-12: `tuple[T, ...]` stays a `GenericType(base="tuple", tuple_shape="homogeneous_ellipsis")` instead of introducing a brand-new TypeExpr kind. The summary layer alone moves it to `category=homogeneous_tuple`, which keeps backend TypeExpr allowlists stable while still separating it from fixed tuples.
+- 2026-03-12: the representative C++ v1 lane lowers `tuple[T, ...]` to `list<T>`. Fixed tuples stay on `::std::tuple<...>`, while homogeneous ellipsis tuple literals, parameter defaults, and read-only index access all route through the immutable list lane.
 
 ## Breakdown
 
 - [x] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S1-01] Lock the type parser / normalization / representative failure with plan and regressions.
 - [x] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S2-01] Carry `tuple[T, ...]` as a distinct category from fixed tuples in EAST / type summaries.
-- [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S2-02] Stop invalid C++ emission of `::std::tuple<int64, ...>` and lower the representative v1 lane as a read-only immutable sequence.
+- [x] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S2-02] Stop invalid C++ emission of `::std::tuple<int64, ...>` and lower the representative v1 lane as a read-only immutable sequence.
 - [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S3-01] Define representative backend policy and lock unsupported lanes / backends as fail-closed.
 - [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S3-02] Sync docs / TODO / regressions / inventories to the current contract and close the task.

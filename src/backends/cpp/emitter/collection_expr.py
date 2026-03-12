@@ -71,7 +71,10 @@ class CppCollectionExprEmitter:
         elem_types: list[str] = []
         rt0 = self.get_expr_type(expr)
         rt = rt0 if isinstance(rt0, str) else ""
-        if rt.startswith("tuple[") and rt.endswith("]"):
+        homogeneous_tuple_item_t = self._homogeneous_tuple_ellipsis_item_type(rt)
+        if homogeneous_tuple_item_t != "":
+            elem_types = [homogeneous_tuple_item_t] * len(elements)
+        elif rt.startswith("tuple[") and rt.endswith("]"):
             elem_types = self.split_generic(rt[6:-1])
         rendered_items: list[str] = []
         for i, e in enumerate(elements):
@@ -84,6 +87,8 @@ class CppCollectionExprEmitter:
             rendered_items.append(item)
         sep = ", "
         items = sep.join(rendered_items)
+        if homogeneous_tuple_item_t != "":
+            return f"{self._cpp_type_text(rt)}{{{items}}}"
         return f"::std::make_tuple({items})"
 
     def _render_expr_kind_set(self, expr: Any, expr_d: dict[str, Any]) -> str:
