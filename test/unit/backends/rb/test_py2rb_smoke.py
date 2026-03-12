@@ -113,6 +113,28 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertIn("x = y", ruby)
         self.assertRegex(ruby, r"y = __swap_\d+")
 
+    def test_longtail_bundle_representative_fixtures_transpile_for_ruby(self) -> None:
+        for stem in (
+            "tuple_assign",
+            "lambda_basic",
+            "comprehension",
+            "for_range",
+            "try_raise",
+            "enumerate_basic",
+            "ok_generator_tuple_target",
+            "json_extended",
+            "pathlib_extended",
+            "enum_extended",
+            "argparse_extended",
+            "pytra_std_import_math",
+            "re_extended",
+        ):
+            with self.subTest(stem=stem):
+                fixture = find_fixture_case(stem)
+                east = load_east(fixture, parser_backend="self_hosted")
+                ruby = transpile_to_ruby_native(east)
+                self.assertTrue(ruby.strip())
+
     def test_cli_relative_import_support_rollout_scenarios_transpile_for_ruby(self) -> None:
         for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
             with self.subTest(scenario_id=scenario_id):

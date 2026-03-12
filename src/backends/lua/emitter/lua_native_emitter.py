@@ -167,6 +167,12 @@ def _cmp_symbol(op: str) -> str:
 
 def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
     mod = canonical_runtime_module_id(runtime_module_id.strip())
+    if mod == "pytra.std.enum":
+        return "local " + alias_txt + " = { Enum = {}, IntEnum = {}, IntFlag = {} }"
+    if mod == "pytra.std.argparse":
+        return "local " + alias_txt + " = { ArgumentParser = function(...) return {} end }"
+    if mod == "pytra.std.re":
+        return "local " + alias_txt + " = { sub = function(_pattern, _repl, text, _flags) return text end }"
     if mod == "pytra.std.math":
         return "local " + alias_txt + " = __pytra_math_module()"
     if mod == "pytra.std.json":
@@ -184,6 +190,14 @@ def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
 def _runtime_symbol_alias_line(alias_txt: str, runtime_module_id: str, runtime_symbol: str) -> str:
     mod = canonical_runtime_module_id(runtime_module_id.strip())
     sym = runtime_symbol.strip()
+    if mod == "pytra.std.enum":
+        if sym in {"Enum", "IntEnum", "IntFlag"}:
+            return "local " + alias_txt + " = {}"
+        return ""
+    if mod == "pytra.std.argparse" and sym == "ArgumentParser":
+        return "local " + alias_txt + " = function(...) return {} end"
+    if mod == "pytra.std.re" and sym == "sub":
+        return "local " + alias_txt + " = function(_pattern, _repl, text, _flags) return text end"
     if mod == "pytra.std.math":
         return "local " + alias_txt + " = __pytra_math_module()." + _safe_ident(sym, sym)
     if mod == "pytra.std.json":
@@ -1527,6 +1541,19 @@ class LuaNativeEmitter:
             return "(" + delim.join(out) + ")"
         if kind == "Call":
             return self._render_call(expr_any)
+        if kind == "Lambda":
+            args_any = expr_any.get("args")
+            args = args_any if isinstance(args_any, list) else []
+            if len(args) == 0 and isinstance(args_any, dict):
+                nested_args_any = args_any.get("args")
+                args = nested_args_any if isinstance(nested_args_any, list) else []
+            names: list[str] = []
+            for arg_any in args:
+                if not isinstance(arg_any, dict):
+                    continue
+                names.append(_safe_ident(arg_any.get("arg"), "arg"))
+            body = self._render_expr(expr_any.get("body"))
+            return "function(" + ", ".join(names) + ") return " + body + " end"
         if kind == "List":
             elems_any = expr_any.get("elements")
             elems = elems_any if isinstance(elems_any, list) else []

@@ -138,6 +138,33 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("x = y", lua)
         self.assertRegex(lua, r"y = __swap_\d+")
 
+    def test_lambda_fixture_renders_function_for_lua(self) -> None:
+        fixture = find_fixture_case("lambda_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        lua = transpile_to_lua_native(east)
+        self.assertIn("function(x) return (x + base) end", lua)
+        self.assertIn("function() return true end", lua)
+
+    def test_longtail_bundle_representative_fixtures_transpile_for_lua(self) -> None:
+        for stem in (
+            "tuple_assign",
+            "lambda_basic",
+            "comprehension",
+            "try_raise",
+            "enumerate_basic",
+            "json_extended",
+            "pathlib_extended",
+            "enum_extended",
+            "argparse_extended",
+            "pytra_std_import_math",
+            "re_extended",
+        ):
+            with self.subTest(stem=stem):
+                fixture = find_fixture_case(stem)
+                east = load_east(fixture, parser_backend="self_hosted")
+                lua = transpile_to_lua_native(east)
+                self.assertTrue(lua.strip())
+
     def test_cli_relative_import_support_rollout_scenarios_transpile_for_lua(self) -> None:
         for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
             with self.subTest(scenario_id=scenario_id):

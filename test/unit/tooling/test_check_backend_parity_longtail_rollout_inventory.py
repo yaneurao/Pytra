@@ -25,9 +25,9 @@ class CheckBackendParityLongtailRolloutInventoryTest(unittest.TestCase):
             tuple(bundle["bundle_id"] for bundle in inventory_mod.iter_longtail_rollout_bundles()),
             ("js_ts_bundle", "lua_rb_php_bundle"),
         )
-        self.assertEqual(inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["completed_backends"], ("js", "ts"))
-        self.assertEqual(inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["next_backend"], "lua")
-        self.assertEqual(inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["next_bundle"], "lua_rb_php_bundle")
+        self.assertEqual(inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["completed_backends"], ("js", "ts", "lua", "rb", "php"))
+        self.assertIsNone(inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["next_backend"])
+        self.assertIsNone(inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["next_bundle"])
 
     def test_bundle_feature_pairs_cover_exact_residual_set(self) -> None:
         residual_pairs = {
@@ -51,46 +51,10 @@ class CheckBackendParityLongtailRolloutInventoryTest(unittest.TestCase):
                 "ts": (
                 ),
                 "lua": (
-                    "syntax.assign.tuple_destructure",
-                    "syntax.expr.lambda",
-                    "syntax.expr.list_comprehension",
-                    "syntax.control.try_raise",
-                    "builtin.iter.enumerate",
-                    "stdlib.json.loads_dumps",
-                    "stdlib.pathlib.path_ops",
-                    "stdlib.enum.enum_and_intflag",
-                    "stdlib.argparse.parse_args",
-                    "stdlib.math.imported_symbols",
-                    "stdlib.re.sub",
                 ),
                 "rb": (
-                    "syntax.assign.tuple_destructure",
-                    "syntax.expr.lambda",
-                    "syntax.expr.list_comprehension",
-                    "syntax.control.for_range",
-                    "syntax.control.try_raise",
-                    "builtin.iter.range",
-                    "builtin.iter.enumerate",
-                    "builtin.iter.zip",
-                    "stdlib.json.loads_dumps",
-                    "stdlib.pathlib.path_ops",
-                    "stdlib.enum.enum_and_intflag",
-                    "stdlib.argparse.parse_args",
-                    "stdlib.math.imported_symbols",
-                    "stdlib.re.sub",
                 ),
                 "php": (
-                    "syntax.assign.tuple_destructure",
-                    "syntax.expr.lambda",
-                    "syntax.expr.list_comprehension",
-                    "syntax.control.try_raise",
-                    "builtin.iter.enumerate",
-                    "stdlib.json.loads_dumps",
-                    "stdlib.pathlib.path_ops",
-                    "stdlib.enum.enum_and_intflag",
-                    "stdlib.argparse.parse_args",
-                    "stdlib.math.imported_symbols",
-                    "stdlib.re.sub",
                 ),
             },
         )
