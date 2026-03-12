@@ -90,7 +90,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
         generated_time_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "time.php"
         png_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "png.php"
         gif_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "gif.php"
-        compat_pathlib_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "pathlib.php"
+        compat_time_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "time.php"
         legacy_path = ROOT / "src" / "runtime" / "php" / "pytra-core"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(generated_math_path.exists())
@@ -99,15 +99,17 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertTrue(generated_time_path.exists())
         self.assertTrue(png_path.exists())
         self.assertTrue(gif_path.exists())
-        self.assertTrue(compat_pathlib_path.exists())
+        self.assertTrue(compat_time_path.exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "math.php").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "pathlib.php").exists())
         self.assertFalse(legacy_path.exists())
 
     def test_php_repo_generated_and_compat_lanes_resolve_native_substrate(self) -> None:
-        compat_pathlib_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "pathlib.php"
+        generated_pathlib_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "pathlib.php"
         generated_png_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "png.php"
         code = "\n".join(
             [
-                f"require {compat_pathlib_path.as_posix()!r};",
+                f"require {generated_pathlib_path.as_posix()!r};",
                 f"require {generated_png_path.as_posix()!r};",
                 "echo (new Path('tmp/a.txt'))->name, PHP_EOL;",
                 "echo function_exists('write_rgb_png') ? 'png-ok' : 'png-missing', PHP_EOL;",

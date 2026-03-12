@@ -517,8 +517,8 @@ def _collect_wave_b_compat_issues() -> list[str]:
             issues.append(f"wave-b compat overlap drifted: {backend}")
         if substrate | compare_shims != set(bucket["compat_modules"]):
             issues.append(f"wave-b compat coverage drifted: {backend}")
-        if compare_shims != set(generated_compare[backend]["materialized_compare_modules"]):
-            issues.append(f"wave-b compat compare shim drifted: {backend}")
+        if not compare_shims.issubset(set(generated_compare[backend]["materialized_compare_modules"])):
+            issues.append(f"wave-b compat compare shim escaped generated compare set: {backend}")
         if not substrate.issubset(set(native_residuals[backend]["substrate_modules"])):
             issues.append(f"wave-b compat substrate escaped native residuals: {backend}")
     return issues

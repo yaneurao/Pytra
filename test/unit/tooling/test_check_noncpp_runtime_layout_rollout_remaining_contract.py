@@ -373,8 +373,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "native_files": ("native/built_in/py_runtime.php", "native/std/time.php"),
                 "compat_files": (
                     "pytra/py_runtime.php",
-                    "pytra/std/math.php",
-                    "pytra/std/pathlib.php",
                     "pytra/std/time.php",
                     "pytra/utils/gif.php",
                     "pytra/utils/png.php",
@@ -438,7 +436,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "backend": "php",
                 "generated_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
                 "native_modules": ("built_in/py_runtime", "std/time"),
-                "compat_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+                "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
                 "blocked_modules": (
                     "built_in/contains",
                     "built_in/io_ops",
@@ -743,13 +741,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "php": {
                     "backend": "php",
                     "substrate_shim_modules": ("built_in/py_runtime",),
-                    "generated_compare_shim_modules": (
-                        "std/math",
-                        "std/pathlib",
-                        "std/time",
-                        "utils/gif",
-                        "utils/png",
-                    ),
+                    "generated_compare_shim_modules": ("std/time", "utils/gif", "utils/png"),
                 },
             },
         )
@@ -801,13 +793,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "php": {
                     "backend": "php",
                     "substrate_shim_files": ("py_runtime.php",),
-                    "generated_compare_shim_files": (
-                        "std/math.php",
-                        "std/pathlib.php",
-                        "std/time.php",
-                        "utils/gif.php",
-                        "utils/png.php",
-                    ),
+                    "generated_compare_shim_files": ("std/time.php", "utils/gif.php", "utils/png.php"),
                     "ancillary_files": (),
                 },
             },
