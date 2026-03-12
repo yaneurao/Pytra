@@ -100,7 +100,11 @@
       "id": "std/time",
       "source": "src/pytra/std/time.py",
       "bucket": "std",
-      "targets": [{ "target": "java", "output": "src/runtime/java/pytra-gen/std/time.java" }]
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/std/time.rs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/time.cs" },
+        { "target": "java", "output": "src/runtime/java/pytra-gen/std/time.java" }
+      ]
     },
     {
       "id": "std/json",
@@ -112,13 +116,48 @@
       "id": "std/pathlib",
       "source": "src/pytra/std/pathlib.py",
       "bucket": "std",
-      "targets": [{ "target": "java", "output": "src/runtime/java/pytra-gen/std/pathlib.java" }]
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/std/pathlib.rs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/pathlib.cs" },
+        { "target": "java", "output": "src/runtime/java/pytra-gen/std/pathlib.java" }
+      ]
     },
     {
       "id": "std/math",
       "source": "src/pytra/std/math.py",
       "bucket": "std",
-      "targets": [{ "target": "java", "output": "src/runtime/java/pytra-gen/std/math.java" }]
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/std/math.rs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/math.cs" },
+        { "target": "java", "output": "src/runtime/java/pytra-gen/std/math.java" }
+      ]
+    },
+    {
+      "id": "std/os",
+      "source": "src/pytra/std/os.py",
+      "bucket": "std",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/std/os.rs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/os.cs" }
+      ]
+    },
+    {
+      "id": "std/os_path",
+      "source": "src/pytra/std/os_path.py",
+      "bucket": "std",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/std/os_path.rs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/os_path.cs" }
+      ]
+    },
+    {
+      "id": "std/glob",
+      "source": "src/pytra/std/glob.py",
+      "bucket": "std",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/std/glob.rs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/glob.cs" }
+      ]
     }
   ]
 }
