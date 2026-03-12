@@ -80,7 +80,8 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         native_path_bundle = [
             row["backend"]
             for row in RELATIVE_IMPORT_NONCPP_ROLLOUT_V1
-            if row["next_verification_lane"] == "native_path_bundle_rollout"
+            if row["next_verification_lane"] == "transpile_smoke_locked"
+            and row["backend"] in {"go", "nim", "swift"}
         ]
         self.assertEqual(
             native_path_bundle,
@@ -89,7 +90,7 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         remaining_second_wave = [
             row["backend"]
             for row in RELATIVE_IMPORT_NONCPP_ROLLOUT_V1
-            if row["next_verification_lane"] == "remaining_second_wave_rollout_planning"
+            if row["next_verification_lane"] == "jvm_package_bundle_rollout"
         ]
         self.assertEqual(
             remaining_second_wave,
@@ -116,11 +117,11 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         )
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["next_rollout_bundle_backends"],
-            ("go", "nim", "swift"),
+            ("java", "kotlin", "scala"),
         )
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["followup_rollout_bundle_backends"],
-            ("java", "kotlin", "scala"),
+            ("lua", "php", "ruby"),
         )
 
     def test_backend_parity_docs_link_live_noncpp_rollout_plan(self) -> None:

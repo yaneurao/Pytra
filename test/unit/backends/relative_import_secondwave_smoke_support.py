@@ -102,13 +102,3 @@ def relative_import_secondwave_expected_needles(
             f"console.log({scenario['representative_expr']});",
         )
     raise KeyError(f"unknown second-wave relative-import scenario: {scenario_id}")
-
-
-def relative_import_native_path_expected_rewrite(
-    scenario_id: str,
-) -> tuple[str, str]:
-    if scenario_id == "parent_module_alias":
-        return ("helper.f()", "h.f()")
-    if scenario_id == "parent_symbol_alias":
-        return ("helper.f()", "g()")
-    raise KeyError(f"unknown native-path relative-import scenario: {scenario_id}")

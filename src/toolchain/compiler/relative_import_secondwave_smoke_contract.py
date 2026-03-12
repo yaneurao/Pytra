@@ -47,7 +47,7 @@ RELATIVE_IMPORT_SECOND_WAVE_HANDOFF_V1: Final[dict[str, object]] = {
         "docs/ja/language/backend-parity-matrix.md",
         "docs/en/language/backend-parity-matrix.md",
     ),
-    "next_rollout_backends": ("go", "nim", "swift"),
-    "next_verification_lane": "native_path_bundle_rollout",
+    "next_rollout_backends": ("java", "kotlin", "scala"),
+    "next_verification_lane": "jvm_package_bundle_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
 }

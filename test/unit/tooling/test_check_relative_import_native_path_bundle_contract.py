@@ -30,7 +30,7 @@ class RelativeImportNativePathBundleContractTest(unittest.TestCase):
         )
         self.assertTrue(
             all(
-                entry["verification_lane"] == "native_path_bundle_rollout"
+                entry["verification_lane"] == "transpile_smoke_locked"
                 for entry in RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_BACKENDS_V1
             )
         )
