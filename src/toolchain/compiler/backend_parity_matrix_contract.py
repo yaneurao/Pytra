@@ -183,6 +183,14 @@ class BackendParityMatrixCellSeed(TypedDict):
 
 
 REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityMatrixCellSeed]]] = {
+    "syntax.assign.tuple_destructure": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
+    "syntax.expr.lambda": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
     "syntax.control.for_range": {
         "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -210,6 +218,7 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
         "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
     },
     "builtin.type.isinstance": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},

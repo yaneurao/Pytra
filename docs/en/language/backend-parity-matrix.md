@@ -146,8 +146,8 @@ This page is the canonical publish target for feature × backend support-state r
         <td class="feature">syntax.assign.tuple_destructure</td>
         <td class="fixture">test/fixtures/core/tuple_assign.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
@@ -164,8 +164,8 @@ This page is the canonical publish target for feature × backend support-state r
         <td class="feature">syntax.expr.lambda</td>
         <td class="fixture">test/fixtures/core/lambda_basic.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
@@ -308,7 +308,7 @@ This page is the canonical publish target for feature × backend support-state r
         <td class="feature">builtin.type.isinstance</td>
         <td class="fixture">test/fixtures/oop/is_instance.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>

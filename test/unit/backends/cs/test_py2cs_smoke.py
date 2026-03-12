@@ -194,6 +194,22 @@ class Child(Base):
             cs = transpile_to_csharp(east)
         self.assertIn("public Child(long x) : base(x)", cs)
 
+    def test_tuple_assign_fixture_lowers_swap_with_temp(self) -> None:
+        fixture = find_fixture_case("tuple_assign")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("var __swap", cs)
+        self.assertIn("x = y;", cs)
+        self.assertIn("y = __swap", cs)
+
+    def test_lambda_fixture_uses_func_signatures_and_parameters(self) -> None:
+        fixture = find_fixture_case("lambda_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("System.Func<dynamic, dynamic> add_base = (x) => x + py_base;", cs)
+        self.assertIn("System.Func<bool> always_true = () => true;", cs)
+        self.assertIn("System.Func<dynamic, bool> is_positive = (x) => (x) > (0);", cs)
+
     def test_attribute_annassign_uses_type_hint_for_set_and_dict_literals(self) -> None:
         src = """class Holder:
     def __init__(self):

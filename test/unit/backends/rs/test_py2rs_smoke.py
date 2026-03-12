@@ -156,6 +156,21 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertNotIn("i = __for_i_", rust)
         self.assertNotIn("while i < n {", rust)
 
+    def test_tuple_assign_fixture_lowers_swap_stmt(self) -> None:
+        fixture = find_fixture_case("tuple_assign")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("std::mem::swap(&mut x, &mut y);", rust)
+        self.assertIn("fn swap_sum_18(a: i64, b: i64) -> i64 {", rust)
+
+    def test_lambda_fixture_keeps_closure_parameters(self) -> None:
+        fixture = find_fixture_case("lambda_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("let add_base = |x| x + base;", rust)
+        self.assertIn("let always_true = || true;", rust)
+        self.assertIn("let is_positive = |x| (x > 0);", rust)
+
     def test_load_east_from_json_wrapper_payload(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)
@@ -819,6 +834,13 @@ def f(x: Any) -> bool:
 
         self.assertNotIn("return isinstance(", rust)
         self.assertIn("py_runtime_value_isinstance(&x, PYTRA_TID_SET)", rust)
+
+    def test_representative_is_instance_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("is_instance")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("py_runtime_value_isinstance(", rust)
+        self.assertNotIn("unsupported", rust)
 
     def test_transpile_rejects_general_union_type_expr_in_annassign(self) -> None:
         east = {

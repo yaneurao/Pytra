@@ -81,6 +81,14 @@ def _collect_contract_issues() -> list[str]:
     }:
         issues.append("matrix cell gap summary drifted")
     if contract_mod.REVIEWED_REPRESENTATIVE_CELL_OVERRIDES != {
+        "syntax.assign.tuple_destructure": {
+            "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        },
+        "syntax.expr.lambda": {
+            "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        },
         "syntax.control.for_range": {
             "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -108,6 +116,7 @@ def _collect_contract_issues() -> list[str]:
             "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         },
         "builtin.type.isinstance": {
+            "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},

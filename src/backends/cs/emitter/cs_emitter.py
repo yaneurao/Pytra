@@ -731,6 +731,28 @@ class CSharpEmitter(CodeEmitter):
         mapped = self.any_dict_get_str(self.type_map, t, "")
         if mapped != "":
             return mapped
+        if t.startswith("callable[") and t.endswith("]"):
+            signature = t[9:-1]
+            parts = signature.split("->", 1)
+            if len(parts) == 2:
+                raw_args = parts[0].strip()
+                raw_ret = parts[1].strip()
+                arg_types: list[str] = []
+                if raw_args != "":
+                    for part in self.split_generic(raw_args):
+                        arg_t = self.normalize_type_name(part)
+                        if arg_t == "" or arg_t == "unknown":
+                            arg_types.append("dynamic")
+                        else:
+                            arg_types.append(self._cs_type(arg_t))
+                ret_t = "dynamic" if raw_ret == "" or raw_ret == "unknown" else self._cs_type(raw_ret)
+                if ret_t == "void":
+                    if len(arg_types) == 0:
+                        return "System.Action"
+                    return "System.Action<" + ", ".join(arg_types) + ">"
+                return "System.Func<" + ", ".join(arg_types + [ret_t]) + ">"
+        if t == "callable":
+            return "System.Delegate"
         if t.startswith("list[") and t.endswith("]"):
             inner = t[5:-1].strip()
             return "System.Collections.Generic.List<" + self._cs_type(inner) + ">"
@@ -1937,6 +1959,9 @@ class CSharpEmitter(CodeEmitter):
         if kind == "ForCore":
             self._emit_for_core(stmt)
             return
+        if kind == "Swap":
+            self._emit_swap(stmt)
+            return
         if kind == "Import" or kind == "ImportFrom":
             return
 
@@ -1985,6 +2010,14 @@ class CSharpEmitter(CodeEmitter):
             self.emit("} finally {")
             self.emit_scoped_stmt_list(finalbody, self._empty_scope_names())
         self.emit("}")
+
+    def _emit_swap(self, stmt: dict[str, Any]) -> None:
+        left = self.render_expr(stmt.get("left"))
+        right = self.render_expr(stmt.get("right"))
+        tmp_name = self.next_tmp("__swap")
+        self.emit("var " + tmp_name + " = " + left + ";")
+        self.emit(left + " = " + right + ";")
+        self.emit(right + " = " + tmp_name + ";")
 
     def _render_except_match_cond(self, type_node: Any, ex_name: str) -> str:
         """except 型注釈を C# 条件式へ変換する（fail-closed で broad catch）。"""
@@ -3168,7 +3201,9 @@ class CSharpEmitter(CodeEmitter):
             return owner + "[System.Convert.ToInt32(" + idx + ")]"
 
         if kind == "Lambda":
-            args = self.any_to_list(self.any_to_dict_or_empty(expr_d.get("args")).get("args"))
+            args = self.any_to_list(expr_d.get("args"))
+            if len(args) == 0:
+                args = self.any_to_list(self.any_to_dict_or_empty(expr_d.get("args")).get("args"))
             names: list[str] = []
             for arg in args:
                 names.append(self._safe_name(self.any_to_str(self.any_to_dict_or_empty(arg).get("arg"))))

@@ -63,3 +63,5 @@
 - 2026-03-12: representative tier は `cpp -> rs -> cs` の順に進め、matrix の `support_state` 更新は各実装 slice の完了条件に含める。
 - 2026-03-12: `S1-01` として representative residual inventory を tool 化し、現時点の `cpp` residual は空、live rollout の実装対象は `rs -> cs` だけだと固定した。bundle は syntax/iter と stdlib に分け、shared fixture を優先する。
 - 2026-03-12: `S2-01` は no-op close とし、`cpp_locked_baseline` bundle と empty residual inventory をもって representative cpp lane は build/run baseline lock 済みと扱う。次 backend はそのまま `rs`。
+- 2026-03-12: `S2-02` の first lift として `rs` の `builtin.type.isinstance` を `transpile_smoke` へ引き上げた。evidence は Rust smoke suite の representative fixture transpile と existing type-predicate lowering regressionsで固定する。
+- 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02-A1` と `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03-A1` として `tuple_assign.py` の `Swap` lane と `lambda_basic.py` の closure parameter lane を `rs` / `cs` backend で実装し、matrix residual inventory から `syntax.assign.tuple_destructure` / `syntax.expr.lambda` を除外した。

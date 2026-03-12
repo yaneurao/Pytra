@@ -63,3 +63,4 @@ Verification:
 - 2026-03-12: The representative tier remains ordered as `cpp -> rs -> cs`, and every implementation slice must update the matrix state as part of completion.
 - 2026-03-12: `S1-01` fixed the representative residual inventory in tooling, established that the current `cpp` residual set is empty, and narrowed the live implementation order to `rs -> cs`. Bundles stay split between syntax/iterator rows and stdlib rows so shared fixtures can move multiple cells at once.
 - 2026-03-12: `S2-01` closes as a no-op because the `cpp_locked_baseline` bundle and the empty residual inventory already prove that the representative cpp lane is baseline-locked. The next backend remains `rs`.
+- 2026-03-12: As the first `S2-02` lift, `rs` promoted `builtin.type.isinstance` to `transpile_smoke`. The evidence is locked by the Rust smoke suite's representative fixture transpile plus the existing type-predicate lowering regressions.

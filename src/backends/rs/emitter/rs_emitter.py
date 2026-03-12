@@ -2521,6 +2521,9 @@ class RustEmitter(CodeEmitter):
         if kind == "ForCore":
             self._emit_for_core(stmt)
             return
+        if kind == "Swap":
+            self._emit_swap(stmt)
+            return
         if kind == "Try":
             self._emit_try(stmt)
             return
@@ -2583,6 +2586,25 @@ class RustEmitter(CodeEmitter):
             self.emit("{")
             self.emit_scoped_stmt_list(final_stmts, set())
             self.emit("}")
+
+    def _render_swap_target(self, target_node: Any) -> str:
+        target = self.any_to_dict_or_empty(target_node)
+        kind = self.any_dict_get_str(target, "kind", "")
+        if kind == "Name":
+            return self._safe_name(self.any_dict_get_str(target, "id", ""))
+        if kind == "Subscript":
+            return self._render_subscript_lvalue(target)
+        if kind == "Attribute":
+            owner = self.render_expr(target.get("value"))
+            attr = self.any_dict_get_str(target, "attr", "")
+            if attr != "":
+                return owner + "." + attr
+        return self.render_expr(target_node)
+
+    def _emit_swap(self, stmt: dict[str, Any]) -> None:
+        left = self._render_swap_target(stmt.get("left"))
+        right = self._render_swap_target(stmt.get("right"))
+        self.emit("std::mem::swap(&mut " + left + ", &mut " + right + ");")
 
     def _emit_if_else_chain(self, else_stmts: list[dict[str, Any]]) -> None:
         if len(else_stmts) == 0:
@@ -4469,7 +4491,9 @@ class RustEmitter(CodeEmitter):
                 return lower_txt + ".."
             return lower_txt + ".." + upper_txt
         if kind == "Lambda":
-            args = self.any_to_list(self.any_to_dict_or_empty(expr_d.get("args")).get("args"))
+            args = self.any_to_list(expr_d.get("args"))
+            if len(args) == 0:
+                args = self.any_to_list(self.any_to_dict_or_empty(expr_d.get("args")).get("args"))
             names: list[str] = []
             for arg in args:
                 names.append(self._safe_name(self.any_to_str(self.any_to_dict_or_empty(arg).get("arg"))))
