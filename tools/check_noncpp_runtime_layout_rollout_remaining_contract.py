@@ -770,11 +770,24 @@ def _collect_wave_a_generated_compare_smoke_issues() -> list[str]:
         smoke_modules.discard(None)
         if not smoke_modules.issubset(allowed_modules):
             issues.append(f"wave-a generated compare smoke escaped generated modules: {backend}")
-        if backend in ("go", "java", "kotlin", "nim"):
+        if backend in ("go", "java", "kotlin", "swift", "nim"):
             if smoke_kind != "build_run_smoke":
                 issues.append(f"wave-a generated compare smoke kind drifted: {backend}")
         elif smoke_kind != "source_guard":
             issues.append(f"wave-a generated compare smoke kind drifted: {backend}")
+    return issues
+
+
+def _collect_wave_a_compare_impossible_issues() -> list[str]:
+    issues: list[str] = []
+    actual = tuple(
+        entry["backend"]
+        for entry in contract_mod.iter_remaining_noncpp_runtime_wave_a_generated_compare()
+        if not entry["materialized_compare_modules"]
+    )
+    expected = contract_mod.iter_remaining_noncpp_runtime_wave_a_compare_impossible_backends()
+    if actual != expected:
+        issues.append("wave-a compare-impossible backend set drifted")
     return issues
 
 
@@ -846,6 +859,7 @@ def main() -> int:
     issues.extend(_collect_wave_b_generated_compare_smoke_issues())
     issues.extend(_collect_wave_a_generated_compare_issues())
     issues.extend(_collect_wave_a_generated_compare_smoke_issues())
+    issues.extend(_collect_wave_a_compare_impossible_issues())
     issues.extend(_collect_wave_a_generated_smoke_issues())
     issues.extend(_collect_wave_a_native_residual_issues())
     issues.extend(_collect_wave_a_native_residual_file_issues())

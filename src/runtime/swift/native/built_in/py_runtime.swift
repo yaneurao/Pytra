@@ -213,6 +213,32 @@ func __pytra_contains(_ container: Any?, _ value: Any?) -> Bool {
     return false
 }
 
+func __pytra_as_list(_ v: Any?) -> [Any] {
+    if let list = v as? [Any] {
+        return list
+    }
+    if let mutableList = v as? NSArray {
+        return mutableList.map { $0 }
+    }
+    return []
+}
+
+func __pytra_as_dict(_ v: Any?) -> [AnyHashable: Any] {
+    if let dict = v as? [AnyHashable: Any] {
+        return dict
+    }
+    if let nsDict = v as? NSDictionary {
+        var out: [AnyHashable: Any] = [:]
+        for (key, value) in nsDict {
+            if let hashableKey = key as? AnyHashable {
+                out[hashableKey] = value
+            }
+        }
+        return out
+    }
+    return [:]
+}
+
 func __pytra_ifexp(_ cond: Bool, _ a: Any, _ b: Any) -> Any {
     return cond ? a : b
 }

@@ -291,11 +291,59 @@ def f(xs: list[int], ys: dict[str, int]) -> int:
 
     def test_swift_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "swift" / "native" / "built_in" / "py_runtime.swift"
+        generated_contains = ROOT / "src" / "runtime" / "swift" / "generated" / "built_in" / "contains.swift"
+        generated_zip = ROOT / "src" / "runtime" / "swift" / "generated" / "built_in" / "zip_ops.swift"
         image_runtime = ROOT / "src" / "runtime" / "swift" / "generated" / "utils" / "image_runtime.swift"
         legacy_path = ROOT / "src" / "swift_module" / "py_runtime.swift"
         self.assertTrue(runtime_path.exists())
+        self.assertTrue(generated_contains.exists())
+        self.assertTrue(generated_zip.exists())
         self.assertTrue(image_runtime.exists())
         self.assertFalse(legacy_path.exists())
+
+    def test_swift_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:
+        runtime_path = ROOT / "src" / "runtime" / "swift" / "native" / "built_in" / "py_runtime.swift"
+        contains_path = ROOT / "src" / "runtime" / "swift" / "generated" / "built_in" / "contains.swift"
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            (tmp / "py_runtime.swift").write_text(runtime_path.read_text(encoding="utf-8"), encoding="utf-8")
+            (tmp / "contains.swift").write_text(contains_path.read_text(encoding="utf-8"), encoding="utf-8")
+            (tmp / "Main.swift").write_text(
+                "\n".join(
+                    [
+                        "@main",
+                        "struct Main {",
+                        "    static func main() {",
+                        '        print(py_contains_str_object("abc", "b") ? "swift-built-in-ok" : "swift-built-in-bad")',
+                        "    }",
+                        "}",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            build_proc = subprocess.run(
+                [
+                    "swiftc",
+                    str(tmp / "py_runtime.swift"),
+                    str(tmp / "contains.swift"),
+                    str(tmp / "Main.swift"),
+                    "-o",
+                    str(tmp / "built_in"),
+                ],
+                cwd=tmp,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(build_proc.returncode, 0, build_proc.stderr)
+            run_proc = subprocess.run(
+                [str(tmp / "built_in")],
+                cwd=tmp,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(run_proc.returncode, 0, run_proc.stderr)
+            self.assertEqual(run_proc.stdout.strip(), "swift-built-in-ok")
 
 
 if __name__ == "__main__":

@@ -1518,6 +1518,12 @@ def rewrite_scala_program_to_library(scala_src: str) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def rewrite_swift_program_to_library(swift_src: str) -> str:
+    lines = _strip_trailing_string_literal_expr(swift_src).splitlines()
+    lines = _remove_block_by_signature(lines, re.compile(r"^@main$"))
+    return "\n".join(lines).rstrip() + "\n"
+
+
 def _php_generated_runtime_require_block() -> str:
     return "\n".join(
         [
@@ -2145,6 +2151,8 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_kotlin_program_to_library(generated)
     elif item.postprocess == "scala_program_to_library":
         generated = rewrite_scala_program_to_library(generated)
+    elif item.postprocess == "swift_program_to_library":
+        generated = rewrite_swift_program_to_library(generated)
     elif item.postprocess == "php_std_time_live_wrapper":
         generated = rewrite_php_std_time_live_wrapper(generated)
     elif item.postprocess == "php_std_math_live_wrapper":

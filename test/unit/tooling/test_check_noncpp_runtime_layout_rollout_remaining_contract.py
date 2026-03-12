@@ -52,6 +52,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_wave_a_generated_compare_smoke_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_a_generated_compare_smoke_issues(), [])
 
+    def test_wave_a_compare_impossible_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_a_compare_impossible_issues(), [])
+
     def test_wave_a_generated_smoke_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_a_generated_smoke_issues(), [])
 
@@ -192,6 +195,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "swift",
                     "smoke_kind": "source_guard",
                     "smoke_targets": (
+                        "built_in/contains.swift",
                         "utils/gif_helper.swift",
                         "utils/image_runtime.swift",
                         "utils/png_helper.swift",
@@ -236,12 +240,8 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 },
                 {
                     "backend": "swift",
-                    "smoke_kind": "source_guard",
-                    "smoke_targets": (
-                        "utils/gif_helper.swift",
-                        "utils/image_runtime.swift",
-                        "utils/png_helper.swift",
-                    ),
+                    "smoke_kind": "build_run_smoke",
+                    "smoke_targets": ("built_in/contains.swift",),
                 },
                 {
                     "backend": "nim",
@@ -323,7 +323,14 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 },
                 "swift": {
                     "backend": "swift",
-                    "materialized_compare_modules": (),
+                    "materialized_compare_modules": (
+                        "built_in/contains",
+                        "built_in/io_ops",
+                        "built_in/iter_ops",
+                        "built_in/predicates",
+                        "built_in/sequence",
+                        "built_in/zip_ops",
+                    ),
                     "helper_artifact_modules": (
                         "utils/gif_helper",
                         "utils/image_runtime",
@@ -346,6 +353,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     ),
                 },
             },
+        )
+
+    def test_wave_a_compare_impossible_backend_set_is_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.iter_remaining_noncpp_runtime_wave_a_compare_impossible_backends(),
+            (),
         )
 
     def test_wave_a_native_residuals_are_fixed(self) -> None:
@@ -604,6 +617,15 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertIn(
             {
+                "current_prefix": "src/runtime/swift/generated/built_in/",
+                "target_prefix": "src/runtime/swift/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "Swift compile-safe built_in compare artifacts live in generated/built_in after the S4 alignment bundle.",
+            },
+            by_backend["swift"],
+        )
+        self.assertIn(
+            {
                 "current_prefix": "src/runtime/nim/generated/built_in/",
                 "target_prefix": "src/runtime/nim/generated/built_in/",
                 "ownership": "generated",
@@ -739,6 +761,20 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "utils/gif_helper.scala",
                 "utils/image_runtime.scala",
                 "utils/png_helper.scala",
+            ),
+        )
+        self.assertEqual(
+            by_backend["swift"]["pytra_gen_files"],
+            (
+                "built_in/contains.swift",
+                "built_in/io_ops.swift",
+                "built_in/iter_ops.swift",
+                "built_in/predicates.swift",
+                "built_in/sequence.swift",
+                "built_in/zip_ops.swift",
+                "utils/gif_helper.swift",
+                "utils/image_runtime.swift",
+                "utils/png_helper.swift",
             ),
         )
         self.assertEqual(
@@ -882,6 +918,20 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "generated/utils/gif_helper.scala",
                 "generated/utils/image_runtime.scala",
                 "generated/utils/png_helper.scala",
+            ),
+        )
+        self.assertEqual(
+            by_backend["swift"]["generated_files"],
+            (
+                "generated/built_in/contains.swift",
+                "generated/built_in/io_ops.swift",
+                "generated/built_in/iter_ops.swift",
+                "generated/built_in/predicates.swift",
+                "generated/built_in/sequence.swift",
+                "generated/built_in/zip_ops.swift",
+                "generated/utils/gif_helper.swift",
+                "generated/utils/image_runtime.swift",
+                "generated/utils/png_helper.swift",
             ),
         )
         self.assertEqual(
@@ -1066,6 +1116,37 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "compat_modules": ("built_in/py_runtime",),
                 "blocked_modules": (
                     "built_in/io_ops",
+                    "built_in/numeric_ops",
+                    "built_in/scalar_ops",
+                    "built_in/string_ops",
+                    "built_in/type_id",
+                    "std/json",
+                    "std/math",
+                    "std/pathlib",
+                    "std/time",
+                    "utils/gif",
+                    "utils/png",
+                ),
+            },
+        )
+        self.assertEqual(
+            by_backend["swift"],
+            {
+                "backend": "swift",
+                "generated_modules": (
+                    "built_in/contains",
+                    "built_in/io_ops",
+                    "built_in/iter_ops",
+                    "built_in/predicates",
+                    "built_in/sequence",
+                    "built_in/zip_ops",
+                    "utils/gif_helper",
+                    "utils/image_runtime",
+                    "utils/png_helper",
+                ),
+                "native_modules": ("built_in/py_runtime",),
+                "compat_modules": ("built_in/py_runtime",),
+                "blocked_modules": (
                     "built_in/numeric_ops",
                     "built_in/scalar_ops",
                     "built_in/string_ops",

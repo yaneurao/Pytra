@@ -124,6 +124,11 @@
           "output": "src/runtime/scala/generated/built_in/contains.scala",
           "postprocess": "scala_program_to_library"
         },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/built_in/contains.swift",
+          "postprocess": "swift_program_to_library"
+        },
         { "target": "nim", "output": "src/runtime/nim/generated/built_in/contains.nim" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/contains.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/contains.ts", "postprocess": "js_ts_built_in_cjs_module" },
@@ -148,6 +153,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/io_ops.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/built_in/io_ops.swift",
+          "postprocess": "swift_program_to_library"
+        },
         { "target": "js", "output": "src/runtime/js/generated/built_in/io_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/io_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/io_ops.php", "postprocess": "php_program_to_library" }
@@ -180,6 +190,11 @@
           "target": "scala",
           "output": "src/runtime/scala/generated/built_in/iter_ops.scala",
           "postprocess": "scala_program_to_library"
+        },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/built_in/iter_ops.swift",
+          "postprocess": "swift_program_to_library"
         },
         { "target": "nim", "output": "src/runtime/nim/generated/built_in/iter_ops.nim" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/iter_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
@@ -233,6 +248,11 @@
           "output": "src/runtime/scala/generated/built_in/predicates.scala",
           "postprocess": "scala_program_to_library"
         },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/built_in/predicates.swift",
+          "postprocess": "swift_program_to_library"
+        },
         { "target": "nim", "output": "src/runtime/nim/generated/built_in/predicates.nim" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/predicates.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/predicates.ts", "postprocess": "js_ts_built_in_cjs_module" },
@@ -283,6 +303,11 @@
           "target": "scala",
           "output": "src/runtime/scala/generated/built_in/sequence.scala",
           "postprocess": "scala_program_to_library"
+        },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/built_in/sequence.swift",
+          "postprocess": "swift_program_to_library"
         },
         { "target": "js", "output": "src/runtime/js/generated/built_in/sequence.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/sequence.ts", "postprocess": "js_ts_built_in_cjs_module" },
@@ -350,6 +375,11 @@
           "target": "scala",
           "output": "src/runtime/scala/generated/built_in/zip_ops.scala",
           "postprocess": "scala_program_to_library"
+        },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/built_in/zip_ops.swift",
+          "postprocess": "swift_program_to_library"
         },
         { "target": "nim", "output": "src/runtime/nim/generated/built_in/zip_ops.nim" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/zip_ops.js", "postprocess": "js_ts_built_in_cjs_module" },

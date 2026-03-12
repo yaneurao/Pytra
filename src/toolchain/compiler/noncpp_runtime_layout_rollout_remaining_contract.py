@@ -205,6 +205,22 @@ REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]
     "built_in/type_id",
 )
 
+REMAINING_NONCPP_SWIFT_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
+    "built_in/contains",
+    "built_in/io_ops",
+    "built_in/iter_ops",
+    "built_in/predicates",
+    "built_in/sequence",
+    "built_in/zip_ops",
+)
+
+REMAINING_NONCPP_SWIFT_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
+    "built_in/numeric_ops",
+    "built_in/scalar_ops",
+    "built_in/string_ops",
+    "built_in/type_id",
+)
+
 REMAINING_NONCPP_NIM_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
     "built_in/contains",
     "built_in/iter_ops",
@@ -379,6 +395,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/swift/generated/utils/",
                 "ownership": "generated",
                 "rationale": "Swift image helpers already live in generated/utils after the Wave A path cutover.",
+            },
+            {
+                "current_prefix": "src/runtime/swift/generated/built_in/",
+                "target_prefix": "src/runtime/swift/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "Swift compile-safe built_in compare artifacts live in generated/built_in after the S4 alignment bundle.",
             },
             {
                 "current_prefix": "src/runtime/swift/pytra/built_in/py_runtime.swift",
@@ -778,6 +800,12 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
         "backend": "swift",
         "pytra_core_files": ("built_in/py_runtime.swift",),
         "pytra_gen_files": (
+            "built_in/contains.swift",
+            "built_in/io_ops.swift",
+            "built_in/iter_ops.swift",
+            "built_in/predicates.swift",
+            "built_in/sequence.swift",
+            "built_in/zip_ops.swift",
             "utils/gif_helper.swift",
             "utils/image_runtime.swift",
             "utils/png_helper.swift",
@@ -992,6 +1020,12 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
     {
         "backend": "swift",
         "generated_files": (
+            "generated/built_in/contains.swift",
+            "generated/built_in/io_ops.swift",
+            "generated/built_in/iter_ops.swift",
+            "generated/built_in/predicates.swift",
+            "generated/built_in/sequence.swift",
+            "generated/built_in/zip_ops.swift",
             "generated/utils/gif_helper.swift",
             "generated/utils/image_runtime.swift",
             "generated/utils/png_helper.swift",
@@ -1200,10 +1234,17 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     },
     {
         "backend": "swift",
-        "generated_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "generated_modules": (
+            REMAINING_NONCPP_SWIFT_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + ("utils/gif_helper", "utils/image_runtime", "utils/png_helper")
+        ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
-        "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "blocked_modules": (
+            REMAINING_NONCPP_SWIFT_BLOCKED_BUILT_IN_MODULES_V1
+            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
+            + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
+        ),
     },
     {
         "backend": "nim",
@@ -1621,7 +1662,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_V1: Final[
     },
     {
         "backend": "swift",
-        "materialized_compare_modules": (),
+        "materialized_compare_modules": REMAINING_NONCPP_SWIFT_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
         "helper_artifact_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
     },
     {
@@ -1657,12 +1698,8 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_SMOKE_V1: Final[
     },
     {
         "backend": "swift",
-        "smoke_kind": "source_guard",
-        "smoke_targets": (
-            "utils/gif_helper.swift",
-            "utils/image_runtime.swift",
-            "utils/png_helper.swift",
-        ),
+        "smoke_kind": "build_run_smoke",
+        "smoke_targets": ("built_in/contains.swift",),
     },
     {
         "backend": "nim",
@@ -1670,6 +1707,9 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_SMOKE_V1: Final[
         "smoke_targets": ("built_in/contains.nim",),
     },
 )
+
+
+REMAINING_NONCPP_RUNTIME_WAVE_A_COMPARE_IMPOSSIBLE_BACKENDS_V1: Final[tuple[str, ...]] = ()
 
 
 REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
@@ -1721,6 +1761,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
         "backend": "swift",
         "smoke_kind": "source_guard",
         "smoke_targets": (
+            "built_in/contains.swift",
             "utils/gif_helper.swift",
             "utils/image_runtime.swift",
             "utils/png_helper.swift",
@@ -1934,6 +1975,10 @@ def iter_remaining_noncpp_runtime_wave_a_generated_compare() -> (
     tuple[RemainingRuntimeWaveAGeneratedCompareEntry, ...]
 ):
     return REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_V1
+
+
+def iter_remaining_noncpp_runtime_wave_a_compare_impossible_backends() -> tuple[str, ...]:
+    return REMAINING_NONCPP_RUNTIME_WAVE_A_COMPARE_IMPOSSIBLE_BACKENDS_V1
 
 
 def iter_remaining_noncpp_runtime_wave_a_generated_smoke() -> tuple[RemainingRuntimeWaveAGeneratedSmokeEntry, ...]:
