@@ -6,6 +6,12 @@
 
 このページは、feature × backend の support state を公開する canonical publish target です。
 
+## 現在の実装段階
+
+- 現在の matrix は `row_seed_scaffold` 段階です。
+- つまり representative feature row は publish されていますが、各 `feature × backend` cell はまだ実体化されていません。
+- per-cell の `support_state` / `evidence_kind` は次段の matrix fill task で追加します。
+
 ## Source Of Truth
 
 - matrix contract: [backend_parity_matrix_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_matrix_contract.py)

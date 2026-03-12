@@ -20,6 +20,16 @@ def _collect_contract_issues() -> list[str]:
         issues.append("support state order drifted away from feature contract")
     if contract_mod.PARITY_MATRIX_SOURCE_DESTINATION != "support_matrix":
         issues.append("matrix source destination must stay fixed to support_matrix")
+    if contract_mod.PARITY_MATRIX_IMPLEMENTATION_PHASE != "row_seed_scaffold":
+        issues.append("matrix implementation phase drifted away from row_seed_scaffold baseline")
+    if contract_mod.PARITY_MATRIX_CELL_SCHEMA_STATUS != "not_populated":
+        issues.append("matrix cell schema status drifted away from not_populated baseline")
+    if contract_mod.PARITY_MATRIX_CELL_GAP_SUMMARY != {
+        "missing_per_backend_cells": "The current matrix exports representative row seeds only and does not yet publish per-backend cells.",
+        "missing_support_state_per_cell": "Each feature × backend cell still lacks an explicit support_state entry.",
+        "missing_evidence_kind_per_cell": "Each feature × backend cell still lacks an explicit evidence_kind entry.",
+    }:
+        issues.append("matrix cell gap summary drifted")
     support_matrix_summary_entry = next(
         entry
         for entry in conformance_summary_mod.iter_representative_conformance_summary_handoff()
@@ -75,6 +85,9 @@ def _collect_manifest_issues() -> list[str]:
         "inventory_version",
         "source_manifests",
         "source_destination",
+        "implementation_phase",
+        "cell_schema_status",
+        "cell_gap_summary",
         "backend_order",
         "support_state_order",
         "publish_paths",
@@ -88,6 +101,12 @@ def _collect_manifest_issues() -> list[str]:
         issues.append("manifest source_manifests drifted")
     if manifest["source_destination"] != contract_mod.PARITY_MATRIX_SOURCE_DESTINATION:
         issues.append("manifest source_destination drifted")
+    if manifest["implementation_phase"] != contract_mod.PARITY_MATRIX_IMPLEMENTATION_PHASE:
+        issues.append("manifest implementation_phase drifted")
+    if manifest["cell_schema_status"] != contract_mod.PARITY_MATRIX_CELL_SCHEMA_STATUS:
+        issues.append("manifest cell_schema_status drifted")
+    if manifest["cell_gap_summary"] != contract_mod.PARITY_MATRIX_CELL_GAP_SUMMARY:
+        issues.append("manifest cell_gap_summary drifted")
     if manifest["backend_order"] != list(contract_mod.PARITY_MATRIX_BACKEND_ORDER):
         issues.append("manifest backend_order drifted")
     if manifest["support_state_order"] != list(contract_mod.PARITY_MATRIX_SUPPORT_STATE_ORDER):

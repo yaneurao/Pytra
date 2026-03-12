@@ -30,6 +30,16 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             },
         )
         self.assertEqual(contract_mod.PARITY_MATRIX_SOURCE_DESTINATION, "support_matrix")
+        self.assertEqual(contract_mod.PARITY_MATRIX_IMPLEMENTATION_PHASE, "row_seed_scaffold")
+        self.assertEqual(contract_mod.PARITY_MATRIX_CELL_SCHEMA_STATUS, "not_populated")
+        self.assertEqual(
+            contract_mod.PARITY_MATRIX_CELL_GAP_SUMMARY,
+            {
+                "missing_per_backend_cells": "The current matrix exports representative row seeds only and does not yet publish per-backend cells.",
+                "missing_support_state_per_cell": "Each feature × backend cell still lacks an explicit support_state entry.",
+                "missing_evidence_kind_per_cell": "Each feature × backend cell still lacks an explicit evidence_kind entry.",
+            },
+        )
         self.assertEqual(
             contract_mod.PARITY_MATRIX_ROW_KEYS,
             (
@@ -73,6 +83,9 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 "inventory_version",
                 "source_manifests",
                 "source_destination",
+                "implementation_phase",
+                "cell_schema_status",
+                "cell_gap_summary",
                 "backend_order",
                 "support_state_order",
                 "publish_paths",

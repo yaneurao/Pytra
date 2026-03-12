@@ -6,6 +6,12 @@
 
 This page is the canonical publish target for feature × backend support-state reporting.
 
+## Current Implementation Phase
+
+- The current matrix is still at the `row_seed_scaffold` phase.
+- Representative feature rows are already published, but the actual `feature × backend` cells are not populated yet.
+- Per-cell `support_state` / `evidence_kind` will be added in the next matrix-fill task.
+
 ## Source Of Truth
 
 - matrix contract: [backend_parity_matrix_contract.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_matrix_contract.py)

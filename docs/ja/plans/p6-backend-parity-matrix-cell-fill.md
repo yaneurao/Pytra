@@ -46,10 +46,11 @@
 - 2026-03-12: current matrix は scaffold であり、per-cell support state table ではないことを baseline として固定する。
 - 2026-03-12: cross-backend matrix を canonical source、各言語の support table は drill-down と位置付ける。
 - 2026-03-12: initial cell schema は `support_state` と `evidence_kind` を必須にし、details は optional handoff にとどめる。
+- 2026-03-12: `S1-01` として matrix contract / manifest / docs publish target に `row_seed_scaffold` baseline と per-cell gap summary を追加し、scaffold 段階を fail-closed に固定した。
 
 ## 分解
 
-- [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S1-01] current scaffold baseline と gap を docs / contract / tooling で固定する。
+- [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S1-01] current scaffold baseline と gap を docs / contract / tooling で固定する。
 - [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S2-01] parity matrix contract に per-cell schema を追加し、manifest export を更新する。
 - [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S2-02] representative feature rows へ backend cell seed を追加し、`support_state` / `evidence_kind` を埋められるようにする。
 - [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S3-01] docs publish target を 2 次元 table として実体化し、cross-backend canonical source を明記する。

@@ -20,6 +20,13 @@ PARITY_MATRIX_PUBLISH_PATHS: Final[dict[str, str]] = {
 PARITY_MATRIX_SOURCE_DESTINATION: Final[str] = "support_matrix"
 PARITY_MATRIX_BACKEND_ORDER: Final[tuple[str, ...]] = feature_contract_mod.SUPPORT_MATRIX_BACKEND_ORDER
 PARITY_MATRIX_SUPPORT_STATE_ORDER: Final[tuple[str, ...]] = feature_contract_mod.SUPPORT_STATE_ORDER
+PARITY_MATRIX_IMPLEMENTATION_PHASE: Final[str] = "row_seed_scaffold"
+PARITY_MATRIX_CELL_SCHEMA_STATUS: Final[str] = "not_populated"
+PARITY_MATRIX_CELL_GAP_SUMMARY: Final[dict[str, str]] = {
+    "missing_per_backend_cells": "The current matrix exports representative row seeds only and does not yet publish per-backend cells.",
+    "missing_support_state_per_cell": "Each feature × backend cell still lacks an explicit support_state entry.",
+    "missing_evidence_kind_per_cell": "Each feature × backend cell still lacks an explicit evidence_kind entry.",
+}
 PARITY_MATRIX_ROW_KEYS: Final[tuple[str, ...]] = (
     "feature_id",
     "category",
@@ -90,6 +97,9 @@ def build_backend_parity_matrix_manifest() -> dict[str, object]:
         "inventory_version": 1,
         "source_manifests": dict(PARITY_MATRIX_SOURCE_MANIFESTS),
         "source_destination": PARITY_MATRIX_SOURCE_DESTINATION,
+        "implementation_phase": PARITY_MATRIX_IMPLEMENTATION_PHASE,
+        "cell_schema_status": PARITY_MATRIX_CELL_SCHEMA_STATUS,
+        "cell_gap_summary": dict(PARITY_MATRIX_CELL_GAP_SUMMARY),
         "backend_order": list(PARITY_MATRIX_BACKEND_ORDER),
         "support_state_order": list(PARITY_MATRIX_SUPPORT_STATE_ORDER),
         "publish_paths": dict(PARITY_MATRIX_PUBLISH_PATHS),

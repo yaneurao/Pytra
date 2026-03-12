@@ -46,10 +46,11 @@ Decision log:
 - 2026-03-12: Lock the current matrix as a scaffold baseline rather than a fully populated per-cell support table.
 - 2026-03-12: Treat the cross-backend matrix as the canonical source and per-language support tables as drill-down documentation.
 - 2026-03-12: The initial cell schema requires `support_state` and `evidence_kind`, while richer details remain optional handoff data.
+- 2026-03-12: `S1-01` fixed the `row_seed_scaffold` baseline in the matrix contract / manifest / docs publish target and fail-closed the current per-cell gap summary.
 
 ## Breakdown
 
-- [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S1-01] Lock the current scaffold baseline and the gap in docs / contract / tooling.
+- [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S1-01] Lock the current scaffold baseline and the gap in docs / contract / tooling.
 - [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S2-01] Add a per-cell schema to the parity matrix contract and update manifest export.
 - [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S2-02] Add backend cell seeds to representative feature rows so `support_state` / `evidence_kind` can be filled.
 - [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S3-01] Materialize the docs publish target as a 2D table and explicitly document the cross-backend matrix as canonical.
