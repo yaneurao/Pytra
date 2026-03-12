@@ -197,6 +197,7 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     },
     "syntax.control.for_range": {
         "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "nim": {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -204,6 +205,7 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     },
     "syntax.control.try_raise": {
         "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
     },
     "syntax.oop.virtual_dispatch": {
         "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -224,11 +226,13 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
     },
     "builtin.iter.zip": {
         "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
     },
     "builtin.iter.range": {
         "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "nim": {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
