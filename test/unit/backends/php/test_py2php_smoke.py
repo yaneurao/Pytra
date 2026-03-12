@@ -125,6 +125,27 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertEqual(proc.stdout, "a.txt\npng-ok\n")
 
+    def test_php_repo_public_compat_lane_resolves_remaining_shims(self) -> None:
+        compat_runtime_path = ROOT / "src" / "runtime" / "php" / "pytra" / "py_runtime.php"
+        compat_time_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "time.php"
+        code = "\n".join(
+            [
+                f"require {compat_runtime_path.as_posix()!r};",
+                f"require {compat_time_path.as_posix()!r};",
+                "echo __pytra_truthy([1]) ? 'truthy-ok' : 'truthy-missing', PHP_EOL;",
+                "echo (perf_counter() > 0.0) ? 'time-ok' : 'time-missing', PHP_EOL;",
+            ]
+        )
+        proc = subprocess.run(
+            ["php", "-r", code],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(proc.stdout, "truthy-ok\ntime-ok\n")
+
     def test_bitwise_invert_basic_uses_php_invert_operator(self) -> None:
         fixture = find_fixture_case("bitwise_invert_basic")
         east = load_east(fixture, parser_backend="self_hosted")
