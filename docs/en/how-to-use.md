@@ -95,6 +95,15 @@ Notes:
 - When `--output` is omitted, Rust transpilation writes to `--output-dir/<input-stem>.rs` (for example `out/rs_case/add.rs`).
 - For temporary outputs, prefer consolidating into `out/`, and use `/tmp` only when shared temporary inspection is really needed.
 
+## PowerShell Host Profile (Experimental)
+
+Pytra is currently organizing a `pwsh + py2cs` host profile.
+This is not a pure PowerShell target backend.
+
+The current representative priority is `dotnet -> csc -> Add-Type`.
+At the moment, the user-facing lane still stops at `py2cs` transpilation plus manual compile/run afterward.
+`test/unit/backends/cs/test_py2cs_smoke.py` remains a backend-transpile smoke only.
+
 ## C++ max-opt route
 
 - `./pytra ... --target cpp --codegen-opt 3` uses the linked-program optimizer route rather than the legacy C++ compat route.

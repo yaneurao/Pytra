@@ -44,7 +44,7 @@ representative layout:
 - [x] [ID: P5-POWERSHELL-CS-HOST-01-S2-01] launcher `.ps1` の責務を定義し、generated `.cs` / runtime `.cs` / output layout / `Main` entrypoint 契約を決める。
 - [x] [ID: P5-POWERSHELL-CS-HOST-01-S2-02] build driver の優先順（`dotnet`, `csc`, `Add-Type`）と fail-closed 条件を整理する。
 - [x] [ID: P5-POWERSHELL-CS-HOST-01-S3-01] representative smoke / sample parity / CLI profile の導線を設計し、既存 `py2cs` smoke との差分を明示する。
-- [ ] [ID: P5-POWERSHELL-CS-HOST-01-S4-01] docs / how-to-use / user caveat を整理し、PowerShell host profile を後段 TODO へ積める状態にする。
+- [x] [ID: P5-POWERSHELL-CS-HOST-01-S4-01] docs / how-to-use / user caveat を整理し、PowerShell host profile を後段 TODO へ積める状態にする。
 
 ## 決定ログ
 
@@ -55,3 +55,4 @@ representative layout:
 - 2026-03-12: `S2-02` として build driver priority を `dotnet` -> `csc` -> `Add-Type` に固定し、Add-Type は最後段の non-canonical fallback とした。persistent `build/Program.exe` が要る representative smoke / parity lane では使わない。
 - 2026-03-12: `S3-01` として current anchor を `test/unit/backends/cs/test_py2cs_smoke.py` に固定しつつ、future PowerShell host regression を `test/unit/tooling/test_powershell_cs_host_profile.py`、`tools/check_powershell_cs_host_sample_parity.py`、`test/unit/tooling/test_pytra_cli_powershell_cs_host_profile.py` に分離した。差分は launcher staging、runtime bundling、driver selection、compiled execution、sample parity、CLI profile selection の 6 category とする。
 - 2026-03-12: `S3-01` の representative sample/parity anchor は `sample/py/01_mandelbrot.py`、CLI profile anchor は `src/pytra-cli.py` と `src/toolchain/compiler/pytra_cli_profiles.py` に固定する。
+- 2026-03-12: `S4-01` として README / how-to-use に `pwsh + py2cs` host profile であり pure backend ではないこと、current user-facing lane は `py2cs` smoke と手動 compile/run に留まることを明記した。

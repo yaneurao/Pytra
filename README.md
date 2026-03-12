@@ -33,6 +33,8 @@
     <img alt="Julia" src="https://img.shields.io/badge/-Julia-9558B2?style=flat-square&logo=julia&logoColor=white">
     <br>
     PowerShell, Dart, and Julia are currently in progress.
+    <br>
+    PowerShell is being organized as a `pwsh + py2cs` host profile rather than a pure backend.
 </div>
 
 ## Latest News

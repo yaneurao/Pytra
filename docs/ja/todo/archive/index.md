@@ -29,6 +29,7 @@
 - [2026-03-12 / P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01](../plans/archive/20260312-p1-relative-import-longtail-bundle.md)
 - [2026-03-12 / P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01](../plans/archive/20260312-p1-relative-import-longtail-support.md)
 - [2026-03-12 / P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01](../plans/archive/20260312-p1-relative-import-longtail-support-implementation.md)
+- [2026-03-12 / P5-POWERSHELL-CS-HOST-01](../plans/archive/20260312-p5-powershell-csharp-host-profile.md)
 - [2026-03-12 / P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01](../plans/archive/20260312-p2-relative-import-backend-coverage.md)
 - [2026-03-12 / P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01](../plans/archive/20260312-p2-relative-import-noncpp-rollout.md)
 - [2026-03-12 / P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01](../plans/archive/20260312-p5-cpp-pyruntime-residual-thin-seam-shrink.md)
@@ -162,7 +163,7 @@
 
 ## 日付別リンク
 
-- [2026-03-12](20260312.md)（25 セクション）
+- [2026-03-12](20260312.md)（27 セクション）
 - [2026-03-11](20260311.md)（25 セクション）
 - [2026-03-09](20260309.md)（29 セクション）
 - [2026-03-08](20260308.md)（31 セクション）

@@ -184,5 +184,25 @@ class CheckPowershellCsHostContractTest(unittest.TestCase):
                 "entrypoint_contract",
                 "runtime_cs_files",
                 "launcher_responsibilities",
+                "docs_targets",
+                "user_caveat_summary",
+            },
+        )
+
+    def test_docs_targets_and_user_caveat_are_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.REPRESENTATIVE_DOC_TARGETS,
+            {
+                "ja_readme": "docs/ja/README.md",
+                "en_readme": "README.md",
+                "ja_usage": "docs/ja/tutorial/how-to-use.md",
+                "en_usage": "docs/en/how-to-use.md",
+            },
+        )
+        self.assertEqual(
+            set(contract_mod.USER_CAVEAT_SUMMARY.keys()),
+            {
+                "not_pure_backend",
+                "current_user_lane",
             },
         )

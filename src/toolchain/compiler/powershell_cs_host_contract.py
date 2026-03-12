@@ -114,6 +114,18 @@ LAUNCHER_RESPONSIBILITIES = {
     "fail_closed_missing_layout": "Fail closed when `run.ps1`, `src/Program.cs`, required runtime `.cs`, or the `build/` output layout is missing.",
 }
 
+REPRESENTATIVE_DOC_TARGETS = {
+    "ja_readme": "docs/ja/README.md",
+    "en_readme": "README.md",
+    "ja_usage": "docs/ja/tutorial/how-to-use.md",
+    "en_usage": "docs/en/how-to-use.md",
+}
+
+USER_CAVEAT_SUMMARY = {
+    "not_pure_backend": "PowerShell support is tracked as a future `pwsh + py2cs` host profile, not as a pure target backend.",
+    "current_user_lane": "Current user-facing execution remains `py2cs` transpile plus manual C# compile/run. `run.ps1` host smoke, sample parity, and CLI profile lanes are still future work.",
+}
+
 
 def build_powershell_cs_host_contract_manifest() -> dict[str, object]:
     return {
@@ -137,4 +149,6 @@ def build_powershell_cs_host_contract_manifest() -> dict[str, object]:
         "entrypoint_contract": dict(REPRESENTATIVE_ENTRYPOINT_CONTRACT),
         "runtime_cs_files": list(REPRESENTATIVE_RUNTIME_CS_FILES),
         "launcher_responsibilities": dict(LAUNCHER_RESPONSIBILITIES),
+        "docs_targets": dict(REPRESENTATIVE_DOC_TARGETS),
+        "user_caveat_summary": dict(USER_CAVEAT_SUMMARY),
     }

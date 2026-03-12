@@ -11,10 +11,16 @@ if str(ROOT) not in sys.path:
 from src.toolchain.compiler import powershell_cs_host_contract as contract_mod
 
 
-JA_PLAN = ROOT / "docs/ja/plans/p5-powershell-csharp-host-profile.md"
-EN_PLAN = ROOT / "docs/en/plans/p5-powershell-csharp-host-profile.md"
-JA_TODO = ROOT / "docs/ja/todo/index.md"
-EN_TODO = ROOT / "docs/en/todo/index.md"
+JA_PLAN = ROOT / "docs/ja/plans/archive/20260312-p5-powershell-csharp-host-profile.md"
+EN_PLAN = ROOT / "docs/en/plans/archive/20260312-p5-powershell-csharp-host-profile.md"
+JA_TODO_ARCHIVE_INDEX = ROOT / "docs/ja/todo/archive/index.md"
+EN_TODO_ARCHIVE_INDEX = ROOT / "docs/en/todo/archive/index.md"
+JA_TODO_ARCHIVE_DAY = ROOT / "docs/ja/todo/archive/20260312.md"
+EN_TODO_ARCHIVE_DAY = ROOT / "docs/en/todo/archive/20260312.md"
+JA_README = ROOT / "docs/ja/README.md"
+EN_README = ROOT / "README.md"
+JA_HOWTO = ROOT / "docs/ja/tutorial/how-to-use.md"
+EN_HOWTO = ROOT / "docs/en/how-to-use.md"
 
 EXPECTED_JA_PLAN_PHRASES = (
     "PowerShell を新しい backend として実装する代わりに、既存の C# backend を PowerShell から起動する host profile を定義する。",
@@ -26,6 +32,7 @@ EXPECTED_JA_PLAN_PHRASES = (
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-01]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-02]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S3-01]",
+    "[x] [ID: P5-POWERSHELL-CS-HOST-01-S4-01]",
     "`test/unit/backends/cs/test_py2cs_smoke.py`",
     "`test/unit/tooling/test_powershell_cs_host_profile.py`",
     "`tools/check_powershell_cs_host_sample_parity.py`",
@@ -52,6 +59,7 @@ EXPECTED_EN_PLAN_PHRASES = (
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-01]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-02]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S3-01]",
+    "[x] [ID: P5-POWERSHELL-CS-HOST-01-S4-01]",
     "`test/unit/backends/cs/test_py2cs_smoke.py`",
     "`test/unit/tooling/test_powershell_cs_host_profile.py`",
     "`tools/check_powershell_cs_host_sample_parity.py`",
@@ -68,24 +76,54 @@ EXPECTED_EN_PLAN_PHRASES = (
     "last non-canonical fallback",
 )
 
-EXPECTED_JA_TODO_PHRASES = (
-    "[ID: P5-POWERSHELL-CS-HOST-01]",
-    "`pwsh`",
-    "`dotnet` / `csc` / `Add-Type`",
-    "pure PowerShell backend は対象外",
-    "`run.ps1` / `src/Program.cs` / `runtime/*.cs` / `build/Program.exe`",
-    "`dotnet -> csc -> Add-Type`",
-    "`test_py2cs_smoke.py` / host smoke / sample parity / CLI profile",
+EXPECTED_JA_ARCHIVE_INDEX_PHRASES = (
+    "[2026-03-12 / P5-POWERSHELL-CS-HOST-01]",
+    "../plans/archive/20260312-p5-powershell-csharp-host-profile.md",
 )
 
-EXPECTED_EN_TODO_PHRASES = (
+EXPECTED_EN_ARCHIVE_INDEX_PHRASES = (
+    "[2026-03-12 / P5-POWERSHELL-CS-HOST-01]",
+    "../plans/archive/20260312-p5-powershell-csharp-host-profile.md",
+)
+
+EXPECTED_JA_ARCHIVE_DAY_PHRASES = (
+    "## 2026-03-12 移管: C# backend 用 PowerShell host profile complete",
     "[ID: P5-POWERSHELL-CS-HOST-01]",
-    "`pwsh + py2cs`",
-    "`dotnet` / `csc` / `Add-Type`",
-    "pure PowerShell target backend stays out of scope",
-    "`run.ps1` / `src/Program.cs` / `runtime/*.cs` / `build/Program.exe`",
+    "`pwsh + py2cs` host profile",
+    "PowerShell を target language とする pure backend ではありません。",
+)
+
+EXPECTED_EN_ARCHIVE_DAY_PHRASES = (
+    "## 2026-03-12 migration: PowerShell host profile for the C# backend complete",
+    "[ID: P5-POWERSHELL-CS-HOST-01]",
+    "`pwsh + py2cs` host profile",
+    "PowerShell as a pure target backend remains out of scope.",
+)
+
+EXPECTED_JA_README_PHRASES = (
+    "PowerShell、Dart、Julliaは対応作業中です。",
+    "`pwsh + py2cs` host profile として整理中であり、pure backend ではありません。",
+)
+
+EXPECTED_EN_README_PHRASES = (
+    "PowerShell, Dart, and Julia are currently in progress.",
+    "PowerShell is being organized as a `pwsh + py2cs` host profile rather than a pure backend.",
+)
+
+EXPECTED_JA_HOWTO_PHRASES = (
+    "## PowerShell host profile（実験中）",
+    "`pwsh + py2cs` host profile を整理中です。",
+    "PowerShell を target language とする pure backend ではありません。",
     "`dotnet -> csc -> Add-Type`",
-    "`test_py2cs_smoke.py` / host smoke / sample parity / CLI profile",
+    "`test/unit/backends/cs/test_py2cs_smoke.py` は backend transpile smoke に留まります。",
+)
+
+EXPECTED_EN_HOWTO_PHRASES = (
+    "## PowerShell Host Profile (Experimental)",
+    "Pytra is currently organizing a `pwsh + py2cs` host profile.",
+    "This is not a pure PowerShell target backend.",
+    "`dotnet -> csc -> Add-Type`",
+    "`test/unit/backends/cs/test_py2cs_smoke.py` remains a backend-transpile smoke only.",
 )
 
 
@@ -215,8 +253,22 @@ def _collect_contract_issues() -> list[str]:
         "entrypoint_contract",
         "runtime_cs_files",
         "launcher_responsibilities",
+        "docs_targets",
+        "user_caveat_summary",
     }:
         issues.append("contract manifest keys drifted")
+    if contract_mod.REPRESENTATIVE_DOC_TARGETS != {
+        "ja_readme": "docs/ja/README.md",
+        "en_readme": "README.md",
+        "ja_usage": "docs/ja/tutorial/how-to-use.md",
+        "en_usage": "docs/en/how-to-use.md",
+    }:
+        issues.append("representative docs targets drifted")
+    if set(contract_mod.USER_CAVEAT_SUMMARY.keys()) != {
+        "not_pure_backend",
+        "current_user_lane",
+    }:
+        issues.append("user caveat summary keys drifted")
     return issues
 
 
@@ -224,20 +276,44 @@ def _collect_docs_issues() -> list[str]:
     issues: list[str] = []
     ja_plan = JA_PLAN.read_text(encoding="utf-8")
     en_plan = EN_PLAN.read_text(encoding="utf-8")
-    ja_todo = JA_TODO.read_text(encoding="utf-8")
-    en_todo = EN_TODO.read_text(encoding="utf-8")
+    ja_todo_archive_index = JA_TODO_ARCHIVE_INDEX.read_text(encoding="utf-8")
+    en_todo_archive_index = EN_TODO_ARCHIVE_INDEX.read_text(encoding="utf-8")
+    ja_todo_archive_day = JA_TODO_ARCHIVE_DAY.read_text(encoding="utf-8")
+    en_todo_archive_day = EN_TODO_ARCHIVE_DAY.read_text(encoding="utf-8")
+    ja_readme = JA_README.read_text(encoding="utf-8")
+    en_readme = EN_README.read_text(encoding="utf-8")
+    ja_howto = JA_HOWTO.read_text(encoding="utf-8")
+    en_howto = EN_HOWTO.read_text(encoding="utf-8")
     for phrase in EXPECTED_JA_PLAN_PHRASES:
         if phrase not in ja_plan:
             issues.append(f"missing phrase in ja plan: {phrase}")
     for phrase in EXPECTED_EN_PLAN_PHRASES:
         if phrase not in en_plan:
             issues.append(f"missing phrase in en plan: {phrase}")
-    for phrase in EXPECTED_JA_TODO_PHRASES:
-        if phrase not in ja_todo:
-            issues.append(f"missing phrase in ja todo: {phrase}")
-    for phrase in EXPECTED_EN_TODO_PHRASES:
-        if phrase not in en_todo:
-            issues.append(f"missing phrase in en todo: {phrase}")
+    for phrase in EXPECTED_JA_ARCHIVE_INDEX_PHRASES:
+        if phrase not in ja_todo_archive_index:
+            issues.append(f"missing phrase in ja todo archive index: {phrase}")
+    for phrase in EXPECTED_EN_ARCHIVE_INDEX_PHRASES:
+        if phrase not in en_todo_archive_index:
+            issues.append(f"missing phrase in en todo archive index: {phrase}")
+    for phrase in EXPECTED_JA_ARCHIVE_DAY_PHRASES:
+        if phrase not in ja_todo_archive_day:
+            issues.append(f"missing phrase in ja todo archive day: {phrase}")
+    for phrase in EXPECTED_EN_ARCHIVE_DAY_PHRASES:
+        if phrase not in en_todo_archive_day:
+            issues.append(f"missing phrase in en todo archive day: {phrase}")
+    for phrase in EXPECTED_JA_README_PHRASES:
+        if phrase not in ja_readme:
+            issues.append(f"missing phrase in ja readme: {phrase}")
+    for phrase in EXPECTED_EN_README_PHRASES:
+        if phrase not in en_readme:
+            issues.append(f"missing phrase in en readme: {phrase}")
+    for phrase in EXPECTED_JA_HOWTO_PHRASES:
+        if phrase not in ja_howto:
+            issues.append(f"missing phrase in ja howto: {phrase}")
+    for phrase in EXPECTED_EN_HOWTO_PHRASES:
+        if phrase not in en_howto:
+            issues.append(f"missing phrase in en howto: {phrase}")
     return issues
 
 

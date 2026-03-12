@@ -86,6 +86,15 @@ Rust に変換したいなら `--target` だけ変えます。
 - Rust 変換は `--output` 未指定時、`--output-dir/<入力stem>.rs` へ出力されます（例: `out/rs_case/add.rs`）。
 - 一時出力は `out/` に集約する運用を推奨し、共有一時確認が必要な場合のみ `/tmp` を使用します。
 
+## PowerShell host profile（実験中）
+
+PowerShell は `pwsh + py2cs` host profile を整理中です。
+PowerShell を target language とする pure backend ではありません。
+
+現時点の representative な優先順は `dotnet -> csc -> Add-Type` です。
+ただし現在の user-facing lane は `py2cs` の transpile と、その後の手動 compile/run に留まります。
+`test/unit/backends/cs/test_py2cs_smoke.py` は backend transpile smoke に留まります。
+
 ## 最初に確認する制約
 
 - Python の標準ライブラリ直接 import は原則非推奨です。`pytra.std.*` を使ってください。
