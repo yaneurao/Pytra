@@ -4731,6 +4731,75 @@ class PadState:
         self.assertNotIn("PadState(int64 frame, ::std::deque<float64> timestamps", cpp)
         self.assertIn(": frame(frame)", cpp)
 
+    def test_dataclass_deque_init_false_only_uses_zero_arg_ctor(self) -> None:
+        src = """from dataclasses import dataclass, field
+from collections import deque
+
+@dataclass
+class PadState:
+    timestamps: deque[float] = field(init=False, repr=False)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "dataclass_deque_init_false_only.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("::std::deque<float64> timestamps;", cpp)
+        self.assertIn("PadState()", cpp)
+        self.assertNotIn("PadState(::std::deque<float64> timestamps", cpp)
+
+    def test_dataclass_deque_default_factory_builds_in_cpp_representative_lane(self) -> None:
+        src = """from dataclasses import dataclass, field
+from collections import deque
+
+@dataclass
+class PadState:
+    timestamps: deque[float] = field(default_factory=deque, repr=False)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src_py = work / "dataclass_deque_default_factory.py"
+            out_cpp = work / "dataclass_deque_default_factory.cpp"
+            out_exe = work / "dataclass_deque_default_factory.out"
+            manifest = work / "manifest.json"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+            self.assertIn(
+                "PadState(::std::deque<float64> timestamps = ::std::deque<float64>{})",
+                cpp,
+            )
+            transpile(src_py, out_cpp)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "include_dir": str(work),
+                        "modules": [
+                            {
+                                "source": str(out_cpp),
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            comp = self._run_subprocess_with_timeout(
+                [
+                    "python3",
+                    "tools/build_multi_cpp.py",
+                    str(manifest),
+                    "-o",
+                    str(out_exe),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="compile dataclass deque default_factory lane",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+
     def test_deque_annotation_lowers_to_std_deque_cpp_type(self) -> None:
         src = """from collections import deque
 
