@@ -70,6 +70,19 @@ class PytraCliProfilesTest(unittest.TestCase):
         self.assertIn("-r", plan.build_cmd)
         self.assertIsNone(plan.run_cmd)
 
+    def test_make_noncpp_build_plan_cs_uses_generated_time_lane(self) -> None:
+        output = Path("out/hello.cs")
+        plan = make_noncpp_build_plan(
+            root=ROOT,
+            target="cs",
+            output_path=output,
+            source_stem="hello",
+            run_after_build=False,
+        )
+        self.assertIsNotNone(plan.build_cmd)
+        self.assertIn(str(ROOT / "src/runtime/cs/generated/std/time.cs"), plan.build_cmd)
+        self.assertIn(str(ROOT / "src/runtime/cs/native/built_in/time.cs"), plan.build_cmd)
+
     def test_validate_profile_option_compatibility_rejects_codegen_opt_for_noncpp(self) -> None:
         profile = get_target_profile("rs")
         err = validate_profile_option_compatibility(

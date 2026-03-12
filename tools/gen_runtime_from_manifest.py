@@ -245,6 +245,11 @@ def rewrite_cs_program_to_helper(cs_src: str, helper_name: str) -> str:
     return text.replace("Program.", helper_name + ".")
 
 
+def rewrite_cs_std_time_live_wrapper(cs_src: str) -> str:
+    text = rewrite_cs_program_to_helper(cs_src, "time")
+    return text.replace("return __t.perf_counter();", "return time_native.perf_counter();")
+
+
 def _strip_trailing_string_literal_expr(text: str) -> str:
     lines = text.splitlines()
     if len(lines) == 0:
@@ -420,6 +425,8 @@ def render_item(item: GenerationItem) -> str:
         if item.helper_name == "":
             raise RuntimeError("missing helper_name for cs_program_to_helper: " + item.item_id)
         generated = rewrite_cs_program_to_helper(generated, item.helper_name)
+    elif item.postprocess == "cs_std_time_live_wrapper":
+        generated = rewrite_cs_std_time_live_wrapper(generated)
     elif item.postprocess == "js_program_to_cjs_module":
         generated = rewrite_js_program_to_cjs_module(generated)
     elif item.postprocess == "go_program_to_library":

@@ -84,6 +84,22 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("public static class png_helper", out)
         self.assertNotIn("public static class Program", out)
 
+    def test_rewrite_cs_std_time_live_wrapper_targets_time_native(self) -> None:
+        src = "\n".join(
+            [
+                "using Pytra.CsModule;",
+                "public static class Program",
+                "{",
+                "    public static double perf_counter() { return __t.perf_counter(); }",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_cs_std_time_live_wrapper(src)
+        self.assertIn("namespace Pytra.CsModule", out)
+        self.assertIn("public static class time", out)
+        self.assertIn("return time_native.perf_counter();", out)
+        self.assertNotIn("return __t.perf_counter();", out)
+
 
 if __name__ == "__main__":
     unittest.main()

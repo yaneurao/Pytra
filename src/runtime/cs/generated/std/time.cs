@@ -9,16 +9,15 @@ using Any = System.Object;
 using int64 = System.Int64;
 using float64 = System.Double;
 using str = System.String;
-using Pytra.CsModule;
 
-public static class Program
+namespace Pytra.CsModule
 {
-    public static double perf_counter()
+    public static class time
     {
-        return __t.perf_counter();
-    }
-    
-    public static void Main(string[] args)
-    {
+        public static double perf_counter()
+        {
+            return time_native.perf_counter();
+        }
+
     }
 }

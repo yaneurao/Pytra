@@ -242,7 +242,7 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/time.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/time.cs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/time.cs", "postprocess": "cs_std_time_live_wrapper" },
         { "target": "java", "output": "src/runtime/java/pytra-gen/std/time.java" }
       ]
     },

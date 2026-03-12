@@ -2,8 +2,8 @@ using System.Diagnostics;
 
 namespace Pytra.CsModule
 {
-    // Python の time モジュール相当（必要最小限）。
-    public static class time
+    // Generated std/time.cs から参照される backing seam。
+    public static class time_native
     {
         private static readonly Stopwatch _sw = Stopwatch.StartNew();
 

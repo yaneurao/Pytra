@@ -61,8 +61,8 @@ RS_STD_CANONICAL_LANE_ORDER: Final[tuple[str, ...]] = CS_STD_CANONICAL_LANE_ORDE
 CS_STD_LANE_OWNERSHIP_V1: Final[tuple[CsStdLaneOwnershipEntry, ...]] = (
     {
         "module_name": "time",
-        "canonical_lane": "native/built_in",
-        "generated_std_state": "compare_artifact",
+        "canonical_lane": "generated/std",
+        "generated_std_state": "canonical_generated",
         "generated_std_rel": "src/runtime/cs/generated/std/time.cs",
         "native_rel": "src/runtime/cs/native/built_in/time.cs",
         "canonical_runtime_symbol": "Pytra.CsModule.time",
@@ -71,7 +71,7 @@ CS_STD_LANE_OWNERSHIP_V1: Final[tuple[CsStdLaneOwnershipEntry, ...]] = (
             "def test_representative_time_import_fixture_transpiles",
             "Pytra.CsModule.time.perf_counter()",
         ),
-        "rationale": "generated/std/time.cs is still a compare artifact, but it is the narrowest C# std lane and therefore the first live-generated migration candidate.",
+        "rationale": "generated/std/time.cs is the first live-generated C# std lane, while native/built_in/time.cs remains only as the backing seam referenced by the generated wrapper.",
     },
     {
         "module_name": "json",
@@ -162,7 +162,7 @@ CS_STD_LANE_OWNERSHIP_V1: Final[tuple[CsStdLaneOwnershipEntry, ...]] = (
 
 CS_STD_FIRST_LIVE_GENERATED_CANDIDATE_V1: Final[CsStdFirstLiveGeneratedCandidateEntry] = {
     "module_name": "time",
-    "current_canonical_lane": "native/built_in",
+    "current_canonical_lane": "generated/std",
     "generated_std_rel": "src/runtime/cs/generated/std/time.cs",
     "native_rel": "src/runtime/cs/native/built_in/time.cs",
     "representative_fixture": "test/fixtures/imports/import_time_from.py",
@@ -172,7 +172,7 @@ CS_STD_FIRST_LIVE_GENERATED_CANDIDATE_V1: Final[CsStdFirstLiveGeneratedCandidate
     ),
     "deferred_native_canonical_modules": ("json", "pathlib", "math"),
     "deferred_no_runtime_modules": ("re", "argparse", "enum"),
-    "rationale": "time is the first live-generated C# std candidate because its representative surface is a single `perf_counter()` lane, while `json` remains blocked and `pathlib/math` still depend on heavier native canonical seams.",
+    "rationale": "time is the first live-generated C# std lane because its representative surface is a single `perf_counter()` wrapper, while `json` remains blocked and `pathlib/math` still depend on heavier native canonical seams.",
 }
 
 RS_STD_LANE_OWNERSHIP_V1: Final[tuple[RsStdLaneOwnershipEntry, ...]] = (

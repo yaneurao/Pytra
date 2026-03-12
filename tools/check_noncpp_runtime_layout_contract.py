@@ -113,6 +113,24 @@ def _collect_csharp_lane_issues() -> list[str]:
                 issues.append(f"no_runtime_module must not set generated path: {module_name}")
             if f"src/runtime/cs/generated/std/{module_name}.cs" in manifest_text:
                 issues.append(f"no_runtime_module unexpectedly owns a C# generated std target: {module_name}")
+        elif generated_state == "canonical_generated":
+            if generated_rel == "":
+                issues.append(f"canonical_generated lane missing generated path: {module_name}")
+            elif not (ROOT / generated_rel).exists():
+                issues.append(f"missing canonical generated artifact: {module_name}: {generated_rel}")
+            else:
+                generated_text = _load_text(ROOT / generated_rel)
+                if "generated-by: tools/gen_runtime_from_manifest.py" not in generated_text:
+                    issues.append(f"canonical generated artifact missing marker: {module_name}: {generated_rel}")
+                if module_name == "time":
+                    if "namespace Pytra.CsModule" not in generated_text:
+                        issues.append("canonical generated time lane lost the Pytra.CsModule namespace wrapper")
+                    if "public static class time" not in generated_text:
+                        issues.append("canonical generated time lane lost the live helper class")
+                    if "return time_native.perf_counter();" not in generated_text:
+                        issues.append("canonical generated time lane no longer targets the native backing seam")
+            if generated_rel not in manifest_text:
+                issues.append(f"manifest missing canonical C# std output path: {module_name}")
         else:
             issues.append(f"unknown generated state: {module_name}: {generated_state}")
 
@@ -140,6 +158,17 @@ def _collect_csharp_lane_issues() -> list[str]:
                 issues.append(f"generated compare artifact leaked into C# build profile: {module_name}")
             if entry["canonical_runtime_symbol"] != "" and entry["canonical_runtime_symbol"] not in emitter_text and entry["canonical_runtime_symbol"] not in smoke_text:
                 issues.append(f"native/built_in canonical runtime symbol not referenced: {module_name}")
+        elif canonical_lane == "generated/std":
+            if generated_rel == "":
+                issues.append(f"generated/std lane missing generated path: {module_name}")
+            elif generated_rel not in build_profile_text:
+                issues.append(f"generated/std lane missing from C# build profile: {module_name}")
+            if native_rel == "":
+                issues.append(f"generated/std backing seam missing native path: {module_name}")
+            elif native_rel not in build_profile_text:
+                issues.append(f"generated/std backing seam missing from C# build profile: {module_name}")
+            if entry["canonical_runtime_symbol"] != "" and entry["canonical_runtime_symbol"] not in emitter_text and entry["canonical_runtime_symbol"] not in smoke_text:
+                issues.append(f"generated/std canonical runtime symbol not referenced: {module_name}")
         elif canonical_lane == "no_runtime_module":
             if native_rel != "":
                 issues.append(f"no_runtime_module must not set native path: {module_name}")
