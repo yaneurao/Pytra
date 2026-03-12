@@ -31,8 +31,6 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01] `collections.deque[T]` の representative C++ lane を固定し、Pytra-NES blocker を外す（文脈: [p0-collections-deque-cpp-representative-support.md](../plans/p0-collections-deque-cpp-representative-support.md)）
-  - 2026-03-12: `deque[T]` の representative C++ type lowering と dataclass field zero-arg/default-factory lane を compile smoke まで固定した。次は docs / support wording を current contract に同期する。
 - [ ] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01] `bytes` truthiness の representative C++ lane を固定し、Pytra-NES blocker を外す（文脈: [p0-bytes-truthiness-cpp-representative-support.md](../plans/p0-bytes-truthiness-cpp-representative-support.md)）
 - [ ] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01] `field(default_factory=...)` の rc field lane を representative C++ contract に揃え、Pytra-NES blocker を外す（文脈: [p0-dataclass-field-default-factory-rc-cpp-support.md](../plans/p0-dataclass-field-default-factory-rc-cpp-support.md)）
 - [ ] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01] `str(Path(...))` の representative C++ stringify lane を固定し、Pytra-NES blocker を外す（文脈: [p0-path-stringify-cpp-representative-support.md](../plans/p0-path-stringify-cpp-representative-support.md)）
