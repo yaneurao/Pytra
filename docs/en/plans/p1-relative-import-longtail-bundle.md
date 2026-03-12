@@ -46,10 +46,11 @@ Decision log:
 - 2026-03-12: The JVM package bundle is now treated as an archived bundle with representative smoke locked, and the next live rollout moves to the `lua/php/ruby` long-tail bundle.
 - 2026-03-12: The active long-tail lane stays `longtail_relative_import_rollout`, with `backend_specific_fail_closed` fixed as the fail-closed lane.
 - 2026-03-12: The second-wave bundle order remains as historical contract context, while the next live rollout handoff is updated to the long-tail bundle.
+- 2026-03-12: For `lua/php/ruby`, the current representative contract is explicit backend-native rejection of relative-import projects, with wildcard relative imports fixed to the same `unsupported relative import form` fail-closed family.
 
 ## Breakdown
 
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01] Fix the `lua/php/ruby` long-tail bundle live handoff and representative rollout contract.
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S1-01] Add the live long-tail plan / TODO / contract / checker / docs handoff and switch the JVM bundle contract to archive semantics.
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-01] Add representative transpile-smoke / fail-closed regressions for `lua/php/ruby`.
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-01] Add representative transpile-smoke / fail-closed regressions for `lua/php/ruby` and lock backend-native explicit rejection as the current contract.
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-02] Sync backend parity docs / coverage inventory / handoff wording to the long-tail current state and make the task close-ready.

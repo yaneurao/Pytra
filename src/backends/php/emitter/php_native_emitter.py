@@ -82,6 +82,39 @@ _PHP_KEYWORDS = {
 _CLASS_NAMES: set[str] = set()
 
 
+def _reject_unsupported_relative_import_forms(body_any: Any) -> None:
+    if not isinstance(body_any, list):
+        return
+    i = 0
+    while i < len(body_any):
+        stmt = body_any[i]
+        i += 1
+        if not isinstance(stmt, dict):
+            continue
+        kind = stmt.get("kind")
+        if kind != "Import" and kind != "ImportFrom":
+            continue
+        module_any = stmt.get("module")
+        module_id = module_any if isinstance(module_any, str) else ""
+        level_any = stmt.get("level")
+        level = level_any if isinstance(level_any, int) else 0
+        if level <= 0 and not module_id.startswith("."):
+            continue
+        names_any = stmt.get("names")
+        names = names_any if isinstance(names_any, list) else []
+        j = 0
+        while j < len(names):
+            ent = names[j]
+            if isinstance(ent, dict) and ent.get("name") == "*":
+                raise RuntimeError(
+                    "php native emitter: unsupported relative import form: wildcard import"
+                )
+            j += 1
+        raise RuntimeError(
+            "php native emitter: unsupported relative import form: relative import"
+        )
+
+
 def _safe_ident(name: Any, fallback: str) -> str:
     if not isinstance(name, str) or name == "":
         return fallback
@@ -1266,6 +1299,7 @@ def transpile_to_php_native(east_doc: dict[str, Any]) -> str:
     body_any = east_doc.get("body")
     if not isinstance(body_any, list):
         raise RuntimeError("php native emitter: Module.body must be list")
+    _reject_unsupported_relative_import_forms(body_any)
     reject_backend_typed_vararg_signatures(east_doc, backend_name="PHP backend")
     main_guard_any = east_doc.get("main_guard_body")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []

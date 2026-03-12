@@ -18,11 +18,17 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "test" / "unit" / "backends") not in sys.path:
+    sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
 from backends.lua.emitter import load_lua_profile, transpile_to_lua, transpile_to_lua_native
 from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments
+from relative_import_longtail_smoke_support import (
+    relative_import_longtail_scenarios,
+    transpile_relative_import_longtail_expect_failure,
+)
 
 
 def load_east(
@@ -87,6 +93,26 @@ class Py2LuaSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         lua = transpile_to_lua_native(east)
         self.assertIn("~y", lua)
+
+    def test_cli_relative_import_longtail_bundle_fail_closed_for_lua(self) -> None:
+        for scenario_id, scenario in relative_import_longtail_scenarios().items():
+            with self.subTest(scenario_id=scenario_id):
+                err = transpile_relative_import_longtail_expect_failure(
+                    "lua",
+                    str(scenario["import_form"]),
+                    str(scenario["representative_expr"]),
+                )
+                self.assertIn("unsupported relative import form: relative import", err)
+                self.assertIn("lua native emitter", err)
+
+    def test_cli_relative_import_longtail_bundle_fail_closed_for_wildcard_on_lua(self) -> None:
+        err = transpile_relative_import_longtail_expect_failure(
+            "lua",
+            "from ..helper import *",
+            "f()",
+        )
+        self.assertIn("unsupported relative import form: wildcard import", err)
+        self.assertIn("lua native emitter", err)
 
     def test_module_leading_comments_are_emitted(self) -> None:
         with tempfile.TemporaryDirectory() as td:

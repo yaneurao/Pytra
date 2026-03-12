@@ -18,9 +18,15 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "test" / "unit" / "backends") not in sys.path:
+    sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
 from backends.php.emitter import load_php_profile, transpile_to_php, transpile_to_php_native
 from toolchain.compiler.transpile_cli import load_east3_document
+from relative_import_longtail_smoke_support import (
+    relative_import_longtail_scenarios,
+    transpile_relative_import_longtail_expect_failure,
+)
 
 
 def load_east(
@@ -91,6 +97,26 @@ class Py2PhpSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         php = transpile_to_php_native(east)
         self.assertIn("~$y", php)
+
+    def test_cli_relative_import_longtail_bundle_fail_closed_for_php(self) -> None:
+        for scenario_id, scenario in relative_import_longtail_scenarios().items():
+            with self.subTest(scenario_id=scenario_id):
+                err = transpile_relative_import_longtail_expect_failure(
+                    "php",
+                    str(scenario["import_form"]),
+                    str(scenario["representative_expr"]),
+                )
+                self.assertIn("unsupported relative import form: relative import", err)
+                self.assertIn("php native emitter", err)
+
+    def test_cli_relative_import_longtail_bundle_fail_closed_for_wildcard_on_php(self) -> None:
+        err = transpile_relative_import_longtail_expect_failure(
+            "php",
+            "from ..helper import *",
+            "f()",
+        )
+        self.assertIn("unsupported relative import form: wildcard import", err)
+        self.assertIn("php native emitter", err)
 
     def test_transpile_downcount_range_fixture_uses_descending_condition(self) -> None:
         fixture = find_fixture_case("range_downcount_len_minus1")

@@ -143,6 +143,39 @@ def _runtime_symbol_alias_line(alias_txt: str, runtime_module_id: str, runtime_s
     return ""
 
 
+def _reject_unsupported_relative_import_forms(body_any: Any) -> None:
+    if not isinstance(body_any, list):
+        return
+    i = 0
+    while i < len(body_any):
+        stmt = body_any[i]
+        i += 1
+        if not isinstance(stmt, dict):
+            continue
+        kind = stmt.get("kind")
+        if kind != "Import" and kind != "ImportFrom":
+            continue
+        module_any = stmt.get("module")
+        module_id = module_any if isinstance(module_any, str) else ""
+        level_any = stmt.get("level")
+        level = level_any if isinstance(level_any, int) else 0
+        if level <= 0 and not module_id.startswith("."):
+            continue
+        names_any = stmt.get("names")
+        names = names_any if isinstance(names_any, list) else []
+        j = 0
+        while j < len(names):
+            ent = names[j]
+            if isinstance(ent, dict) and ent.get("name") == "*":
+                raise RuntimeError(
+                    "lua native emitter: unsupported relative import form: wildcard import"
+                )
+            j += 1
+        raise RuntimeError(
+            "lua native emitter: unsupported relative import form: relative import"
+        )
+
+
 class LuaNativeEmitter:
     def __init__(self, east_doc: dict[str, Any]) -> None:
         if not isinstance(east_doc, dict):
@@ -1759,4 +1792,6 @@ class LuaNativeEmitter:
 def transpile_to_lua_native(east_doc: dict[str, Any]) -> str:
     """EAST3 ドキュメントを Lua native ソースへ変換する。"""
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Lua backend")
+    body_any = east_doc.get("body") if isinstance(east_doc, dict) else None
+    _reject_unsupported_relative_import_forms(body_any)
     return LuaNativeEmitter(east_doc).transpile()
