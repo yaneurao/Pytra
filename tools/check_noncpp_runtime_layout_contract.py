@@ -19,6 +19,12 @@ CS_SMOKE_PATH = ROOT / "test" / "unit" / "backends" / "cs" / "test_py2cs_smoke.p
 RS_SMOKE_PATH = ROOT / "test" / "unit" / "backends" / "rs" / "test_py2rs_smoke.py"
 RS_RUNTIME_SCAFFOLD_PATH = ROOT / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs"
 BACKEND_REGISTRY_METADATA_PATH = ROOT / "src" / "toolchain" / "compiler" / "backend_registry_metadata.py"
+CS_GENERATED_BUILTIN_ROOT = ROOT / "src" / "runtime" / "cs" / "generated" / "built_in"
+CS_NATIVE_BUILTIN_ROOT = ROOT / "src" / "runtime" / "cs" / "native" / "built_in"
+CS_PYTRA_ROOT = ROOT / "src" / "runtime" / "cs" / "pytra"
+RS_GENERATED_BUILTIN_ROOT = ROOT / "src" / "runtime" / "rs" / "generated" / "built_in"
+RS_NATIVE_BUILTIN_ROOT = ROOT / "src" / "runtime" / "rs" / "native" / "built_in"
+RS_PYTRA_ROOT = ROOT / "src" / "runtime" / "rs" / "pytra"
 
 
 def _load_text(path: Path) -> str:
@@ -27,6 +33,30 @@ def _load_text(path: Path) -> str:
 
 def _manifest_text() -> str:
     return _load_text(MANIFEST_PATH)
+
+
+def _collect_relative_files(base: Path, suffix: str) -> tuple[str, ...]:
+    if not base.exists():
+        return ()
+    return tuple(
+        sorted(
+            str(path.relative_to(base)).replace("\\", "/")
+            for path in base.rglob(f"*{suffix}")
+            if path.is_file()
+        )
+    )
+
+
+def _collect_relative_files_by_suffixes(base: Path, suffixes: tuple[str, ...]) -> tuple[str, ...]:
+    if not base.exists():
+        return ()
+    return tuple(
+        sorted(
+            str(path.relative_to(base)).replace("\\", "/")
+            for path in base.rglob("*")
+            if path.is_file() and path.suffix in suffixes
+        )
+    )
 
 
 def _collect_contract_issues() -> list[str]:
@@ -68,6 +98,78 @@ def _collect_contract_issues() -> list[str]:
         issues.append("canonical lane order drifted")
     if contract_mod.RS_STD_CANONICAL_LANE_ORDER != contract_mod.CS_STD_CANONICAL_LANE_ORDER:
         issues.append("rs canonical lane order drifted")
+    return issues
+
+
+def _collect_builtin_lane_issues() -> list[str]:
+    issues: list[str] = []
+    manifest_text = _manifest_text()
+    build_profile_text = _load_text(CS_BUILD_PROFILE_PATH)
+
+    generated_expected = tuple(f"{module}.cs" for module in contract_mod.iter_noncpp_generated_builtin_modules())
+    if _collect_relative_files(CS_GENERATED_BUILTIN_ROOT, ".cs") != generated_expected:
+        issues.append("C# generated built_in module set drifted")
+    if _collect_relative_files(RS_GENERATED_BUILTIN_ROOT, ".rs") != tuple(
+        f"{module}.rs" for module in contract_mod.iter_noncpp_generated_builtin_modules()
+    ):
+        issues.append("Rust generated built_in module set drifted")
+
+    for module in contract_mod.iter_noncpp_generated_builtin_modules():
+        cs_rel = f"src/runtime/cs/generated/built_in/{module}.cs"
+        rs_rel = f"src/runtime/rs/generated/built_in/{module}.rs"
+        for rel_path in (cs_rel, rs_rel):
+            path = ROOT / rel_path
+            if not path.exists():
+                issues.append(f"missing generated built_in module: {rel_path}")
+                continue
+            text = _load_text(path)
+            if "generated-by: tools/gen_runtime_from_manifest.py" not in text:
+                issues.append(f"generated built_in module missing marker: {rel_path}")
+            if f"source: src/pytra/built_in/{module}.py" not in text:
+                issues.append(f"generated built_in module lost source marker: {rel_path}")
+            if rel_path not in manifest_text:
+                issues.append(f"manifest missing generated built_in output: {rel_path}")
+
+    if _collect_relative_files(CS_NATIVE_BUILTIN_ROOT, ".cs") != tuple(
+        f"{module}.cs" for module in contract_mod.iter_cs_native_builtin_residual_modules()
+    ):
+        issues.append("C# native built_in residual set drifted")
+    if _collect_relative_files(RS_NATIVE_BUILTIN_ROOT, ".rs") != tuple(
+        f"{module}.rs" for module in contract_mod.iter_rs_native_builtin_residual_modules()
+    ):
+        issues.append("Rust native built_in residual set drifted")
+
+    for rel_path in (
+        "src/runtime/cs/native/built_in/math.cs",
+        "src/runtime/cs/native/built_in/py_runtime.cs",
+        "src/runtime/cs/native/built_in/time.cs",
+        "src/runtime/rs/native/built_in/py_runtime.rs",
+    ):
+        text = _load_text(ROOT / rel_path)
+        if "generated-by: tools/gen_runtime_from_manifest.py" in text:
+            issues.append(f"native built_in residual unexpectedly became generated: {rel_path}")
+
+    cs_duplicate_targets = tuple(contract_mod.iter_cs_pytra_duplicate_delete_targets())
+    if _collect_relative_files(CS_PYTRA_ROOT, ".cs") != tuple(
+        rel.replace("src/runtime/cs/pytra/", "", 1) for rel in cs_duplicate_targets
+    ):
+        issues.append("C# pytra duplicate delete-target set drifted")
+    for rel_path in contract_mod.iter_cs_pytra_generated_duplicate_delete_targets():
+        text = _load_text(ROOT / rel_path)
+        if "generated-by:" not in text:
+            issues.append(f"C# generated duplicate target lost generated marker: {rel_path}")
+    for rel_path in contract_mod.iter_cs_pytra_handwritten_duplicate_delete_targets():
+        text = _load_text(ROOT / rel_path)
+        if "generated-by:" in text:
+            issues.append(f"C# handwritten duplicate target unexpectedly became generated: {rel_path}")
+    if "src/runtime/cs/pytra/" in build_profile_text:
+        issues.append("C# build profile leaked duplicate pytra lane")
+
+    if _collect_relative_files_by_suffixes(RS_PYTRA_ROOT, (".md", ".rs")) != tuple(
+        rel.replace("src/runtime/rs/pytra/", "", 1) for rel in contract_mod.iter_rs_pytra_compat_allowlist()
+    ):
+        issues.append("Rust pytra compat allowlist drifted")
+
     return issues
 
 
@@ -275,7 +377,12 @@ def _collect_rust_lane_issues() -> list[str]:
 
 
 def main() -> int:
-    issues = _collect_contract_issues() + _collect_csharp_lane_issues() + _collect_rust_lane_issues()
+    issues = (
+        _collect_contract_issues()
+        + _collect_builtin_lane_issues()
+        + _collect_csharp_lane_issues()
+        + _collect_rust_lane_issues()
+    )
     if issues:
         for issue in issues:
             print("[FAIL]", issue)

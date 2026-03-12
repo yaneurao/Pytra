@@ -27,7 +27,7 @@ Scope:
 Out of scope:
 - redesigning the C++ runtime itself
 - rolling the remaining non-`rs/cs` backends
-- immediately deleting the `pytra/` public shim lane
+- immediately deleting the Rust `pytra/` compatibility lane
 
 Acceptance criteria:
 - `src/runtime/{rs,cs}/generated/**` exists and contains only generated artifacts with `source:` and `generated-by:` markers.
@@ -37,6 +37,7 @@ Acceptance criteria:
 - `backend_registry_metadata.py`, `pytra_cli_profiles.py`, and selfhost checks reference the new `rs/cs` layout.
 - Runtime guards no longer treat `pytra-gen/pytra-core` as the canonical vocabulary; `generated/native` becomes the primary audited layout.
 - When runtime trees are compared by `<lane>/<bucket>/<module>`, missing vs. lingering runtime modules in `rs/cs` are obvious from the filesystem alone.
+- `src/runtime/cs/pytra/**` does not own canonical implementations; if it remains during tooling migration, it is transitional compatibility debris only and must eventually become empty or be removed.
 
 Planned verification:
 - `python3 tools/check_todo_priority.py`
@@ -49,7 +50,7 @@ Planned verification:
 Execution policy:
 1. Do not move handwritten files into `generated/`; regenerate them from the SoT through the manifest/generator lane.
 2. Introduce `native/` as the renamed handwritten lane for current `pytra-core`.
-3. Keep `pytra/` as a compatibility/public shim lane for now if needed, but do not treat it as the ownership source of truth.
+3. Rust may keep `pytra/` as a temporary compatibility lane, but it must not be treated as the ownership source of truth. C# `pytra/` is not a valid shim lane and should not host implementation bodies; it is a deletion target.
 4. Compare runtime coverage by `<lane>/<bucket>/<module>` and ignore extension multiplicity (`.h/.cpp` vs `.rs/.cs`) as a secondary detail.
 5. Treat `generated/built_in/*` as the lane for `src/pytra/built_in/*.py`, while keeping substrate files such as `py_runtime.*` in `native/built_in/*`.
 
@@ -62,7 +63,8 @@ Canonical `rs/cs` layout:
 - `src/runtime/<lang>/native/{built_in,std,utils}/`
   - handwritten runtime only
 - `src/runtime/<lang>/pytra/{built_in,std,utils}/`
-  - public shim / compatibility lane when needed
+  - Rust-only compatibility lane when needed
+  - not a canonical C# implementation lane; duplicate leftovers there should be removed
 
 Notes:
 - C++-specific `core/` and `.h/.cpp` pairing are not copied literally into every backend.
@@ -112,7 +114,7 @@ This compare unit is the basis for making `missing generated artifact` and `hand
 | `src/runtime/cs/pytra-core/std/pathlib.cs` | `native/std/pathlib` | hand-written |
 | `src/runtime/cs/pytra-gen/utils/gif.cs` | `generated/utils/gif` | SoT generated |
 | `src/runtime/cs/pytra-gen/utils/png.cs` | `generated/utils/png` | SoT generated |
-| `src/runtime/cs/pytra/**` | `pytra/**` | compat/public shim |
+| `src/runtime/cs/pytra/**` | remove / empty lane | duplicate residual (delete target) |
 
 ## Breakdown
 
@@ -127,7 +129,7 @@ This compare unit is the basis for making `missing generated artifact` and `hand
   - [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-02-B] Fix `time` as the first live-generated C# std candidate, and separate `json/pathlib/math` as deferred native-canonical lanes plus `re/argparse/enum` as deferred no-runtime lanes.
   - [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-02-C] Wire the chosen `rs/cs` std lane into the live build/runtime hook and shrink the compare-artifact-only state.
 - [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S4-01] Generate `rs/cs` `generated/built_in/*` from `src/pytra/built_in/*.py` so the built-in compare lane is real.
-- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S4-02] Fix the `generated/built_in/*` vs `native/built_in/*` responsibility boundary and shrink built-in residuals in `py_runtime.*`.
+- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S4-02] Fix the `generated/built_in/*` vs `native/built_in/*` responsibility boundary and shrink built-in residuals in `py_runtime.*`. In the same slice, delete the duplicate C# `pytra/**` lane (`math/time/json/pathlib/png/gif` and related files) rather than trying to preserve it as a shim.
 - [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S5-01] Update runtime guards / allowlists / docs to the `generated/native` vocabulary.
 
 Decision log:
@@ -143,3 +145,5 @@ Decision log:
 - 2026-03-12: Closed `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S4-01` by adding `rs/cs` targets for `built_in/{contains,io_ops,iter_ops,numeric_ops,predicates,scalar_ops,sequence,string_ops,type_id,zip_ops}` to `tools/runtime_generation_manifest.json` and regenerating `src/runtime/{rs,cs}/generated/built_in/*` from SoT through `tools/gen_runtime_from_manifest.py --targets rs,cs --items ...`. The C# compare lane goes through `cs_program_to_helper` so multiple generated built-ins do not collide on `Program`.
 - 2026-03-12: Closed `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-02-B` by fixing the first live-generated C# std candidate as `time`. `generated/std/time.cs` remains a compare artifact for now, but its representative surface is only the `perf_counter()` lane, so it is the narrowest next live-generated target. `json/pathlib/math` stay deferred native-canonical lanes, while `re/argparse/enum` remain deferred no-runtime lanes.
 - 2026-03-12: Closed `P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-02-C` by regenerating C# `generated/std/time.cs` through `cs_std_time_live_wrapper` into `namespace Pytra.CsModule { public static class time { ... } }`, with the wrapper calling the native `time_native` backing seam. The C# build plan now compiles `generated/std/time.cs` as the canonical module while keeping `native/built_in/time.cs` only as the backing seam, and the contract checker validates the wrapper content directly.
+- 2026-03-12: Per user direction, clarified that C# `pytra/` is not a shim/public lane. Because there is no `#include`-style indirection in C#, `src/runtime/cs/pytra/**` has no reason to host implementation bodies; any remaining duplicate files there are part of `S4-02` and should be deleted.
+- 2026-03-12: Fixed the current `S4-02` boundary inventory: `generated/built_in/*` must stay the exact SoT set `contains/io_ops/iter_ops/numeric_ops/predicates/scalar_ops/sequence/string_ops/type_id/zip_ops`, `native/built_in/*` residuals are `rs={py_runtime}` and `cs={math,py_runtime,time}`, the C# `pytra/**` delete-target allowlist is the 7 files `built_in/{math,py_runtime,time}`, `std/{json,pathlib}`, and `utils/{gif,png}`, and Rust `pytra/**` is reduced to the compatibility allowlist `README* + built_in/py_runtime.rs`.

@@ -16,6 +16,9 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
     def test_rust_lane_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_rust_lane_issues(), [])
 
+    def test_builtin_lane_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_builtin_lane_issues(), [])
+
     def test_csharp_module_order_is_fixed(self) -> None:
         self.assertEqual(
             tuple(entry["module_name"] for entry in contract_mod.iter_cs_std_lane_ownership()),
@@ -46,6 +49,74 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
         self.assertEqual(
             contract_mod.RS_STD_CANONICAL_LANE_ORDER,
             ("generated/std", "native/std", "native/built_in", "no_runtime_module"),
+        )
+
+    def test_noncpp_generated_builtin_modules_are_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.iter_noncpp_generated_builtin_modules(),
+            (
+                "contains",
+                "io_ops",
+                "iter_ops",
+                "numeric_ops",
+                "predicates",
+                "scalar_ops",
+                "sequence",
+                "string_ops",
+                "type_id",
+                "zip_ops",
+            ),
+        )
+
+    def test_native_builtin_residual_sets_are_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.iter_cs_native_builtin_residual_modules(),
+            ("math", "py_runtime", "time"),
+        )
+        self.assertEqual(
+            contract_mod.iter_rs_native_builtin_residual_modules(),
+            ("py_runtime",),
+        )
+
+    def test_pytra_duplicate_and_compat_sets_are_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.iter_cs_pytra_duplicate_delete_targets(),
+            (
+                "src/runtime/cs/pytra/built_in/math.cs",
+                "src/runtime/cs/pytra/built_in/py_runtime.cs",
+                "src/runtime/cs/pytra/built_in/time.cs",
+                "src/runtime/cs/pytra/std/json.cs",
+                "src/runtime/cs/pytra/std/pathlib.cs",
+                "src/runtime/cs/pytra/utils/gif.cs",
+                "src/runtime/cs/pytra/utils/png.cs",
+            ),
+        )
+        self.assertEqual(
+            contract_mod.iter_cs_pytra_generated_duplicate_delete_targets(),
+            (
+                "src/runtime/cs/pytra/utils/gif.cs",
+                "src/runtime/cs/pytra/utils/png.cs",
+            ),
+        )
+        self.assertEqual(
+            contract_mod.iter_cs_pytra_handwritten_duplicate_delete_targets(),
+            (
+                "src/runtime/cs/pytra/built_in/math.cs",
+                "src/runtime/cs/pytra/built_in/py_runtime.cs",
+                "src/runtime/cs/pytra/built_in/time.cs",
+                "src/runtime/cs/pytra/std/json.cs",
+                "src/runtime/cs/pytra/std/pathlib.cs",
+            ),
+        )
+        self.assertEqual(
+            contract_mod.iter_rs_pytra_compat_allowlist(),
+            (
+                "src/runtime/rs/pytra/README.md",
+                "src/runtime/rs/pytra/built_in/py_runtime.rs",
+                "src/runtime/rs/pytra/compiler/README.md",
+                "src/runtime/rs/pytra/std/README.md",
+                "src/runtime/rs/pytra/utils/README.md",
+            ),
         )
 
     def test_csharp_lane_decisions_are_fixed(self) -> None:

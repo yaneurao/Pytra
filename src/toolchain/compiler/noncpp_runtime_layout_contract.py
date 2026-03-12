@@ -41,6 +41,59 @@ class RsStdLaneOwnershipEntry(TypedDict):
     rationale: str
 
 
+NONCPP_GENERATED_BUILTIN_MODULES_V1: Final[tuple[str, ...]] = (
+    "contains",
+    "io_ops",
+    "iter_ops",
+    "numeric_ops",
+    "predicates",
+    "scalar_ops",
+    "sequence",
+    "string_ops",
+    "type_id",
+    "zip_ops",
+)
+
+CS_NATIVE_BUILTIN_RESIDUAL_MODULES_V1: Final[tuple[str, ...]] = (
+    "math",
+    "py_runtime",
+    "time",
+)
+
+RS_NATIVE_BUILTIN_RESIDUAL_MODULES_V1: Final[tuple[str, ...]] = ("py_runtime",)
+
+CS_PYTRA_DUPLICATE_DELETE_TARGETS_V1: Final[tuple[str, ...]] = (
+    "src/runtime/cs/pytra/built_in/math.cs",
+    "src/runtime/cs/pytra/built_in/py_runtime.cs",
+    "src/runtime/cs/pytra/built_in/time.cs",
+    "src/runtime/cs/pytra/std/json.cs",
+    "src/runtime/cs/pytra/std/pathlib.cs",
+    "src/runtime/cs/pytra/utils/gif.cs",
+    "src/runtime/cs/pytra/utils/png.cs",
+)
+
+CS_PYTRA_GENERATED_DUPLICATE_DELETE_TARGETS_V1: Final[tuple[str, ...]] = (
+    "src/runtime/cs/pytra/utils/gif.cs",
+    "src/runtime/cs/pytra/utils/png.cs",
+)
+
+CS_PYTRA_HANDWRITTEN_DUPLICATE_DELETE_TARGETS_V1: Final[tuple[str, ...]] = (
+    "src/runtime/cs/pytra/built_in/math.cs",
+    "src/runtime/cs/pytra/built_in/py_runtime.cs",
+    "src/runtime/cs/pytra/built_in/time.cs",
+    "src/runtime/cs/pytra/std/json.cs",
+    "src/runtime/cs/pytra/std/pathlib.cs",
+)
+
+RS_PYTRA_COMPAT_ALLOWLIST_V1: Final[tuple[str, ...]] = (
+    "src/runtime/rs/pytra/README.md",
+    "src/runtime/rs/pytra/built_in/py_runtime.rs",
+    "src/runtime/rs/pytra/compiler/README.md",
+    "src/runtime/rs/pytra/std/README.md",
+    "src/runtime/rs/pytra/utils/README.md",
+)
+
+
 CS_STD_GENERATED_STATE_ORDER: Final[tuple[str, ...]] = (
     "canonical_generated",
     "compare_artifact",
@@ -319,3 +372,31 @@ def get_cs_std_first_live_generated_candidate() -> CsStdFirstLiveGeneratedCandid
 
 def iter_rs_std_lane_ownership() -> tuple[RsStdLaneOwnershipEntry, ...]:
     return RS_STD_LANE_OWNERSHIP_V1
+
+
+def iter_noncpp_generated_builtin_modules() -> tuple[str, ...]:
+    return NONCPP_GENERATED_BUILTIN_MODULES_V1
+
+
+def iter_cs_native_builtin_residual_modules() -> tuple[str, ...]:
+    return CS_NATIVE_BUILTIN_RESIDUAL_MODULES_V1
+
+
+def iter_rs_native_builtin_residual_modules() -> tuple[str, ...]:
+    return RS_NATIVE_BUILTIN_RESIDUAL_MODULES_V1
+
+
+def iter_cs_pytra_duplicate_delete_targets() -> tuple[str, ...]:
+    return CS_PYTRA_DUPLICATE_DELETE_TARGETS_V1
+
+
+def iter_cs_pytra_generated_duplicate_delete_targets() -> tuple[str, ...]:
+    return CS_PYTRA_GENERATED_DUPLICATE_DELETE_TARGETS_V1
+
+
+def iter_cs_pytra_handwritten_duplicate_delete_targets() -> tuple[str, ...]:
+    return CS_PYTRA_HANDWRITTEN_DUPLICATE_DELETE_TARGETS_V1
+
+
+def iter_rs_pytra_compat_allowlist() -> tuple[str, ...]:
+    return RS_PYTRA_COMPAT_ALLOWLIST_V1
