@@ -1,9 +1,23 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../utils/png.php';
-require_once __DIR__ . '/../utils/gif.php';
-require_once __DIR__ . '/std/time.php';
+function __pytra_require_runtime_file(string $packaged_rel, string $repo_rel): void {
+    $candidates = [
+        __DIR__ . '/' . $packaged_rel,
+        dirname(__DIR__, 2) . '/pytra/' . $repo_rel,
+    ];
+    foreach ($candidates as $candidate) {
+        if (is_file($candidate)) {
+            require_once $candidate;
+            return;
+        }
+    }
+    throw new RuntimeException('runtime dependency not found: ' . $repo_rel);
+}
+
+__pytra_require_runtime_file('../../pytra/utils/png.php', 'utils/png.php');
+__pytra_require_runtime_file('../../pytra/utils/gif.php', 'utils/gif.php');
+__pytra_require_runtime_file('../../pytra/std/time.php', 'std/time.php');
 
 function __pytra_print(...$args): void {
     if (count($args) === 0) {

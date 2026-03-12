@@ -68,6 +68,19 @@ class RemainingRuntimeWaveBNativeResidualFileEntry(TypedDict):
     compare_residual_files: tuple[str, ...]
 
 
+class RemainingRuntimeWaveBCompatEntry(TypedDict):
+    backend: str
+    substrate_shim_modules: tuple[str, ...]
+    generated_compare_shim_modules: tuple[str, ...]
+
+
+class RemainingRuntimeWaveBCompatFileEntry(TypedDict):
+    backend: str
+    substrate_shim_files: tuple[str, ...]
+    generated_compare_shim_files: tuple[str, ...]
+    ancillary_files: tuple[str, ...]
+
+
 class RemainingRuntimeWaveAHookSourceEntry(TypedDict):
     backend: str
     runtime_hook_files: tuple[str, ...]
@@ -1105,6 +1118,91 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUAL_FILES_V1: Final[
 )
 
 
+REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_V1: Final[
+    tuple[RemainingRuntimeWaveBCompatEntry, ...]
+] = (
+    {
+        "backend": "js",
+        "substrate_shim_modules": ("built_in/py_runtime",),
+        "generated_compare_shim_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+    },
+    {
+        "backend": "ts",
+        "substrate_shim_modules": ("built_in/py_runtime",),
+        "generated_compare_shim_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+    },
+    {
+        "backend": "lua",
+        "substrate_shim_modules": ("built_in/py_runtime",),
+        "generated_compare_shim_modules": (),
+    },
+    {
+        "backend": "ruby",
+        "substrate_shim_modules": ("built_in/py_runtime",),
+        "generated_compare_shim_modules": (),
+    },
+    {
+        "backend": "php",
+        "substrate_shim_modules": ("built_in/py_runtime",),
+        "generated_compare_shim_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+    },
+)
+
+
+REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_FILES_V1: Final[
+    tuple[RemainingRuntimeWaveBCompatFileEntry, ...]
+] = (
+    {
+        "backend": "js",
+        "substrate_shim_files": ("py_runtime.js",),
+        "generated_compare_shim_files": (
+            "std/math.js",
+            "std/pathlib.js",
+            "std/time.js",
+            "utils/gif.js",
+            "utils/png.js",
+        ),
+        "ancillary_files": ("README.md",),
+    },
+    {
+        "backend": "ts",
+        "substrate_shim_files": ("py_runtime.ts",),
+        "generated_compare_shim_files": (
+            "std/math.ts",
+            "std/pathlib.ts",
+            "std/time.ts",
+            "utils/gif.ts",
+            "utils/png.ts",
+        ),
+        "ancillary_files": ("README.md",),
+    },
+    {
+        "backend": "lua",
+        "substrate_shim_files": ("built_in/py_runtime.lua",),
+        "generated_compare_shim_files": (),
+        "ancillary_files": (),
+    },
+    {
+        "backend": "ruby",
+        "substrate_shim_files": ("built_in/py_runtime.rb",),
+        "generated_compare_shim_files": (),
+        "ancillary_files": (),
+    },
+    {
+        "backend": "php",
+        "substrate_shim_files": ("py_runtime.php",),
+        "generated_compare_shim_files": (
+            "std/math.php",
+            "std/pathlib.php",
+            "std/time.php",
+            "utils/gif.php",
+            "utils/png.php",
+        ),
+        "ancillary_files": (),
+    },
+)
+
+
 
 REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1: Final[
     tuple[RemainingRuntimeWaveAHookSourceEntry, ...]
@@ -1270,6 +1368,14 @@ def iter_remaining_noncpp_runtime_wave_b_native_residuals() -> tuple[RemainingRu
 
 def iter_remaining_noncpp_runtime_wave_b_native_residual_files() -> tuple[RemainingRuntimeWaveBNativeResidualFileEntry, ...]:
     return REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUAL_FILES_V1
+
+
+def iter_remaining_noncpp_runtime_wave_b_compat() -> tuple[RemainingRuntimeWaveBCompatEntry, ...]:
+    return REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_V1
+
+
+def iter_remaining_noncpp_runtime_wave_b_compat_files() -> tuple[RemainingRuntimeWaveBCompatFileEntry, ...]:
+    return REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_FILES_V1
 
 
 def iter_remaining_noncpp_runtime_wave_a_hook_sources() -> tuple[RemainingRuntimeWaveAHookSourceEntry, ...]:

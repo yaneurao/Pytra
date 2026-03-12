@@ -102,6 +102,27 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertTrue(compat_pathlib_path.exists())
         self.assertFalse(legacy_path.exists())
 
+    def test_php_repo_generated_and_compat_lanes_resolve_native_substrate(self) -> None:
+        compat_pathlib_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "pathlib.php"
+        generated_png_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "png.php"
+        code = "\n".join(
+            [
+                f"require {compat_pathlib_path.as_posix()!r};",
+                f"require {generated_png_path.as_posix()!r};",
+                "echo (new Path('tmp/a.txt'))->name, PHP_EOL;",
+                "echo function_exists('write_rgb_png') ? 'png-ok' : 'png-missing', PHP_EOL;",
+            ]
+        )
+        proc = subprocess.run(
+            ["php", "-r", code],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(proc.stdout, "a.txt\npng-ok\n")
+
     def test_bitwise_invert_basic_uses_php_invert_operator(self) -> None:
         fixture = find_fixture_case("bitwise_invert_basic")
         east = load_east(fixture, parser_backend="self_hosted")

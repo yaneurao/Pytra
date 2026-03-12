@@ -488,6 +488,71 @@ def _collect_wave_b_native_residual_file_issues() -> list[str]:
     return issues
 
 
+def _collect_wave_b_compat_issues() -> list[str]:
+    issues: list[str] = []
+    module_buckets = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_module_buckets()
+    }
+    generated_compare = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_generated_compare()
+    }
+    native_residuals = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_native_residuals()
+    }
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_compat()
+    if tuple(entry["backend"] for entry in entries) != ("js", "ts", "lua", "ruby", "php"):
+        issues.append("wave-b compat order drifted")
+    for entry in entries:
+        backend = entry["backend"]
+        bucket = module_buckets.get(backend)
+        if bucket is None or backend not in generated_compare or backend not in native_residuals:
+            issues.append(f"wave-b compat backend drifted: {backend}")
+            continue
+        substrate = set(entry["substrate_shim_modules"])
+        compare_shims = set(entry["generated_compare_shim_modules"])
+        if substrate & compare_shims:
+            issues.append(f"wave-b compat overlap drifted: {backend}")
+        if substrate | compare_shims != set(bucket["compat_modules"]):
+            issues.append(f"wave-b compat coverage drifted: {backend}")
+        if compare_shims != set(generated_compare[backend]["materialized_compare_modules"]):
+            issues.append(f"wave-b compat compare shim drifted: {backend}")
+        if not substrate.issubset(set(native_residuals[backend]["substrate_modules"])):
+            issues.append(f"wave-b compat substrate escaped native residuals: {backend}")
+    return issues
+
+
+def _collect_wave_b_compat_file_issues() -> list[str]:
+    issues: list[str] = []
+    target_inventory = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_target_inventory()
+    }
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_compat_files()
+    if tuple(entry["backend"] for entry in entries) != ("js", "ts", "lua", "ruby", "php"):
+        issues.append("wave-b compat file order drifted")
+    for entry in entries:
+        backend = entry["backend"]
+        substrate = set(entry["substrate_shim_files"])
+        compare_shims = set(entry["generated_compare_shim_files"])
+        ancillary = set(entry["ancillary_files"])
+        if substrate & compare_shims:
+            issues.append(f"wave-b compat file overlap drifted: {backend}: substrate/generated")
+        if substrate & ancillary:
+            issues.append(f"wave-b compat file overlap drifted: {backend}: substrate/ancillary")
+        if compare_shims & ancillary:
+            issues.append(f"wave-b compat file overlap drifted: {backend}: generated/ancillary")
+        actual_files = {
+            path.removeprefix("pytra/")
+            for path in target_inventory[backend]["compat_files"]
+        }
+        if substrate | compare_shims | ancillary != actual_files:
+            issues.append(f"wave-b compat file inventory drifted: {backend}")
+    return issues
+
+
 def _collect_wave_a_native_residual_issues() -> list[str]:
     issues: list[str] = []
     module_buckets = {
@@ -550,6 +615,8 @@ def main() -> int:
     issues.extend(_collect_wave_b_generated_compare_issues())
     issues.extend(_collect_wave_b_native_residual_issues())
     issues.extend(_collect_wave_b_native_residual_file_issues())
+    issues.extend(_collect_wave_b_compat_issues())
+    issues.extend(_collect_wave_b_compat_file_issues())
     issues.extend(_collect_wave_a_native_residual_issues())
     issues.extend(_collect_wave_a_native_residual_file_issues())
     if issues:

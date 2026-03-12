@@ -5,7 +5,19 @@
 
 declare(strict_types=1);
 
-require_once dirname(__DIR__) . '/py_runtime.php';
+$__pytra_runtime_candidates = [
+    dirname(__DIR__) . '/py_runtime.php',
+    dirname(__DIR__, 2) . '/native/built_in/py_runtime.php',
+];
+foreach ($__pytra_runtime_candidates as $__pytra_runtime_path) {
+    if (is_file($__pytra_runtime_path)) {
+        require_once $__pytra_runtime_path;
+        break;
+    }
+}
+if (!function_exists('__pytra_len')) {
+    throw new RuntimeException('py_runtime.php not found for generated PHP runtime lane');
+}
 
 $pi = pyMathPi();
 $e = pyMathE();

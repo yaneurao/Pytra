@@ -34,6 +34,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_wave_b_native_residual_file_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_b_native_residual_file_issues(), [])
 
+    def test_wave_b_compat_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_b_compat_issues(), [])
+
+    def test_wave_b_compat_file_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_b_compat_file_issues(), [])
+
     def test_wave_a_native_residual_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_a_native_residual_issues(), [])
 
@@ -690,6 +696,119 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "php",
                     "substrate_files": ("built_in/py_runtime.php", "std/time.php"),
                     "compare_residual_files": (),
+                },
+            },
+        )
+
+    def test_wave_b_compat_modules_are_fixed(self) -> None:
+        by_backend = {
+            entry["backend"]: entry
+            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_compat()
+        }
+        self.assertEqual(
+            by_backend,
+            {
+                "js": {
+                    "backend": "js",
+                    "substrate_shim_modules": ("built_in/py_runtime",),
+                    "generated_compare_shim_modules": (
+                        "std/math",
+                        "std/pathlib",
+                        "std/time",
+                        "utils/gif",
+                        "utils/png",
+                    ),
+                },
+                "ts": {
+                    "backend": "ts",
+                    "substrate_shim_modules": ("built_in/py_runtime",),
+                    "generated_compare_shim_modules": (
+                        "std/math",
+                        "std/pathlib",
+                        "std/time",
+                        "utils/gif",
+                        "utils/png",
+                    ),
+                },
+                "lua": {
+                    "backend": "lua",
+                    "substrate_shim_modules": ("built_in/py_runtime",),
+                    "generated_compare_shim_modules": (),
+                },
+                "ruby": {
+                    "backend": "ruby",
+                    "substrate_shim_modules": ("built_in/py_runtime",),
+                    "generated_compare_shim_modules": (),
+                },
+                "php": {
+                    "backend": "php",
+                    "substrate_shim_modules": ("built_in/py_runtime",),
+                    "generated_compare_shim_modules": (
+                        "std/math",
+                        "std/pathlib",
+                        "std/time",
+                        "utils/gif",
+                        "utils/png",
+                    ),
+                },
+            },
+        )
+
+    def test_wave_b_compat_files_are_fixed(self) -> None:
+        by_backend = {
+            entry["backend"]: entry
+            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_compat_files()
+        }
+        self.assertEqual(
+            by_backend,
+            {
+                "js": {
+                    "backend": "js",
+                    "substrate_shim_files": ("py_runtime.js",),
+                    "generated_compare_shim_files": (
+                        "std/math.js",
+                        "std/pathlib.js",
+                        "std/time.js",
+                        "utils/gif.js",
+                        "utils/png.js",
+                    ),
+                    "ancillary_files": ("README.md",),
+                },
+                "ts": {
+                    "backend": "ts",
+                    "substrate_shim_files": ("py_runtime.ts",),
+                    "generated_compare_shim_files": (
+                        "std/math.ts",
+                        "std/pathlib.ts",
+                        "std/time.ts",
+                        "utils/gif.ts",
+                        "utils/png.ts",
+                    ),
+                    "ancillary_files": ("README.md",),
+                },
+                "lua": {
+                    "backend": "lua",
+                    "substrate_shim_files": ("built_in/py_runtime.lua",),
+                    "generated_compare_shim_files": (),
+                    "ancillary_files": (),
+                },
+                "ruby": {
+                    "backend": "ruby",
+                    "substrate_shim_files": ("built_in/py_runtime.rb",),
+                    "generated_compare_shim_files": (),
+                    "ancillary_files": (),
+                },
+                "php": {
+                    "backend": "php",
+                    "substrate_shim_files": ("py_runtime.php",),
+                    "generated_compare_shim_files": (
+                        "std/math.php",
+                        "std/pathlib.php",
+                        "std/time.php",
+                        "utils/gif.php",
+                        "utils/png.php",
+                    ),
+                    "ancillary_files": (),
                 },
             },
         )

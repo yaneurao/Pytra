@@ -848,14 +848,35 @@ def rewrite_go_program_to_library(go_src: str) -> str:
     return text.rstrip() + "\n"
 
 
+def _php_generated_runtime_require_block() -> str:
+    return "\n".join(
+        [
+            "$__pytra_runtime_candidates = [",
+            "    dirname(__DIR__) . '/py_runtime.php',",
+            "    dirname(__DIR__, 2) . '/native/built_in/py_runtime.php',",
+            "];",
+            "foreach ($__pytra_runtime_candidates as $__pytra_runtime_path) {",
+            "    if (is_file($__pytra_runtime_path)) {",
+            "        require_once $__pytra_runtime_path;",
+            "        break;",
+            "    }",
+            "}",
+            "if (!function_exists('__pytra_len')) {",
+            "    throw new RuntimeException('py_runtime.php not found for generated PHP runtime lane');",
+            "}",
+        ]
+    ) + "\n"
+
+
 def rewrite_php_program_to_library(php_src: str) -> str:
     lines = _strip_trailing_string_literal_expr(php_src).splitlines()
     lines = _remove_block_by_signature(lines, re.compile(r"^function\s+__pytra_main\s*\("))
+    runtime_require = _php_generated_runtime_require_block().rstrip()
     out: list[str] = []
     for line in lines:
         line = line.replace(
             "require_once __DIR__ . '/pytra/py_runtime.php';",
-            "require_once dirname(__DIR__) . '/py_runtime.php';",
+            runtime_require,
         )
         if line.strip() == "__pytra_main();":
             continue
@@ -890,9 +911,10 @@ def rewrite_php_std_time_live_wrapper(php_src: str) -> str:
 
 def rewrite_php_std_math_live_wrapper(php_src: str) -> str:
     text = rewrite_php_program_to_library(php_src)
+    runtime_require = _php_generated_runtime_require_block().rstrip()
     text = text.replace(
-        "require_once dirname(__DIR__) . '/py_runtime.php';\n",
-        "require_once dirname(__DIR__) . '/py_runtime.php';\n\n$pi = pyMathPi();\n$e = pyMathE();\n",
+        runtime_require,
+        runtime_require + "\n\n$pi = pyMathPi();\n$e = pyMathE();",
         1,
     )
     signature_replacements = {
@@ -935,12 +957,13 @@ def rewrite_php_std_pathlib_live_wrapper(php_src: str) -> str:
     for fragment in required_fragments:
         if fragment not in php_src:
             raise RuntimeError("generated PHP std/pathlib wrapper is missing: " + fragment)
+    runtime_require = _php_generated_runtime_require_block().rstrip()
     return "\n".join(
         [
             "<?php",
             "declare(strict_types=1);",
             "",
-            "require_once dirname(__DIR__) . '/py_runtime.php';",
+            runtime_require,
             "",
             "if (!class_exists('Path', false)) {",
             "    class Path {",

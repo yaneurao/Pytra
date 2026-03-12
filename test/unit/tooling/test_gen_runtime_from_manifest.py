@@ -302,6 +302,30 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertNotIn("/pytra/py_runtime.php", out)
         self.assertNotIn("__pytra_main();", out)
 
+    def test_rewrite_php_program_to_library_prefers_packaged_root_and_falls_back_to_repo_native(self) -> None:
+        src = "\n".join(
+            [
+                "<?php",
+                "declare(strict_types=1);",
+                "",
+                "require_once __DIR__ . '/pytra/py_runtime.php';",
+                "",
+                "function helper() {",
+                "    return __pytra_len([]);",
+                "}",
+                "",
+                "function __pytra_main(): void {",
+                "}",
+                "",
+                "__pytra_main();",
+            ]
+        )
+        out = gen_mod.rewrite_php_program_to_library(src)
+        self.assertIn("dirname(__DIR__) . '/py_runtime.php'", out)
+        self.assertIn("dirname(__DIR__, 2) . '/native/built_in/py_runtime.php'", out)
+        self.assertIn("function_exists('__pytra_len')", out)
+        self.assertNotIn("__pytra_main();", out)
+
     def test_rewrite_php_std_math_live_wrapper_exports_pi_and_e(self) -> None:
         src = "\n".join(
             [
@@ -325,7 +349,8 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
             ]
         )
         out = gen_mod.rewrite_php_std_math_live_wrapper(src)
-        self.assertIn("require_once dirname(__DIR__) . '/py_runtime.php';", out)
+        self.assertIn("dirname(__DIR__) . '/py_runtime.php'", out)
+        self.assertIn("dirname(__DIR__, 2) . '/native/built_in/py_runtime.php'", out)
         self.assertIn("$pi = pyMathPi();", out)
         self.assertIn("$e = pyMathE();", out)
         self.assertIn("function sqrt($x): float {", out)
@@ -356,7 +381,8 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
             ]
         )
         out = gen_mod.rewrite_php_std_pathlib_live_wrapper(src)
-        self.assertIn("require_once dirname(__DIR__) . '/py_runtime.php';", out)
+        self.assertIn("dirname(__DIR__) . '/py_runtime.php'", out)
+        self.assertIn("dirname(__DIR__, 2) . '/native/built_in/py_runtime.php'", out)
         self.assertIn("if (!class_exists('Path', false)) {", out)
         self.assertIn("public string $suffix;", out)
         self.assertIn("public static function cwd(): Path {", out)
