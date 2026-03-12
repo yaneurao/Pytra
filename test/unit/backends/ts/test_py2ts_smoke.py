@@ -93,6 +93,38 @@ class Py2TsSmokeTest(unittest.TestCase):
         ts = transpile_to_typescript(east)
         self.assertIn("~y", ts)
 
+    def test_secondary_bundle_representative_fixtures_transpile_for_typescript(self) -> None:
+        for stem in (
+            "tuple_assign",
+            "lambda_basic",
+            "comprehension",
+            "for_range",
+            "try_raise",
+            "inheritance_virtual_dispatch_multilang",
+            "enumerate_basic",
+            "ok_generator_tuple_target",
+            "is_instance",
+            "json_extended",
+            "pathlib_extended",
+            "enum_extended",
+            "argparse_extended",
+            "pytra_std_import_math",
+            "re_extended",
+        ):
+            with self.subTest(stem=stem):
+                fixture = find_fixture_case(stem)
+                east = load_east(fixture, parser_backend="self_hosted")
+                ts = transpile_to_typescript(east)
+                self.assertTrue(ts.strip())
+
+    def test_tuple_assign_fixture_lowers_swap_via_temp_for_typescript(self) -> None:
+        fixture = find_fixture_case("tuple_assign")
+        east = load_east(fixture, parser_backend="self_hosted")
+        ts = transpile_to_typescript(east)
+        self.assertIn("const __swap_", ts)
+        self.assertIn("x = y;", ts)
+        self.assertRegex(ts, r"y = __swap_\d+;")
+
     def test_cli_relative_import_secondwave_scenarios_transpile_for_typescript(self) -> None:
         for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
             with self.subTest(scenario_id=scenario_id):

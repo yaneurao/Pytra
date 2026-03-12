@@ -31,4 +31,4 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 
-- [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01] Fill the remaining unsupported support-matrix cells for the long-tail tier (`js/ts/lua/rb/php`) as a live implementation rollout task (context: [p6-backend-parity-longtail-rollout.md](../plans/p6-backend-parity-longtail-rollout.md)). Progress: `S1-01` fixed the long-tail residual cells, backend order, and the two-bundle handoff (`js/ts` -> `lua/rb/php`) into an inventory/checker driven directly from the matrix seed
+- [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01] Fill the remaining unsupported support-matrix cells for the long-tail tier (`js/ts/lua/rb/php`) as a live implementation rollout task (context: [p6-backend-parity-longtail-rollout.md](../plans/p6-backend-parity-longtail-rollout.md)). Progress: `S2-01` promoted the `js/ts` bundle to `supported/transpile_smoke` and advanced the handoff to the `lua/rb/php` bundle

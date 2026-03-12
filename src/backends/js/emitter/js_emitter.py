@@ -794,6 +794,9 @@ class JsEmitter(CodeEmitter):
         if kind == "Assign":
             self._emit_assign(stmt)
             return
+        if kind == "Swap":
+            self._emit_swap(stmt)
+            return
         if kind == "AugAssign":
             self._emit_augassign(stmt)
             return
@@ -1053,6 +1056,14 @@ class JsEmitter(CodeEmitter):
                 i += 1
             return
         self.emit(self.render_expr(target) + " = " + value + ";")
+
+    def _emit_swap(self, stmt: dict[str, Any]) -> None:
+        left = self.render_expr(stmt.get("left"))
+        right = self.render_expr(stmt.get("right"))
+        tmp_name = self.next_tmp("__swap")
+        self.emit("const " + tmp_name + " = " + left + ";")
+        self.emit(left + " = " + right + ";")
+        self.emit(right + " = " + tmp_name + ";")
 
     def _emit_augassign(self, stmt: dict[str, Any]) -> None:
         target, value, mapped = self.render_augassign_basic(stmt, self.aug_ops, "+=")
