@@ -46,6 +46,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_wave_b_generated_compare_smoke_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_b_generated_compare_smoke_issues(), [])
 
+    def test_wave_a_generated_compare_smoke_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_a_generated_compare_smoke_issues(), [])
+
     def test_wave_a_generated_smoke_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_a_generated_smoke_issues(), [])
 
@@ -161,6 +164,59 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                         "utils/gif.java",
                         "utils/png.java",
                     ),
+                },
+                {
+                    "backend": "kotlin",
+                    "smoke_kind": "source_guard",
+                    "smoke_targets": (
+                        "utils/gif_helper.kt",
+                        "utils/image_runtime.kt",
+                        "utils/png_helper.kt",
+                    ),
+                },
+                {
+                    "backend": "scala",
+                    "smoke_kind": "source_guard",
+                    "smoke_targets": (
+                        "utils/gif_helper.scala",
+                        "utils/image_runtime.scala",
+                        "utils/png_helper.scala",
+                    ),
+                },
+                {
+                    "backend": "swift",
+                    "smoke_kind": "source_guard",
+                    "smoke_targets": (
+                        "utils/gif_helper.swift",
+                        "utils/image_runtime.swift",
+                        "utils/png_helper.swift",
+                    ),
+                },
+                {
+                    "backend": "nim",
+                    "smoke_kind": "source_guard",
+                    "smoke_targets": (
+                        "utils/gif_helper.nim",
+                        "utils/image_runtime.nim",
+                        "utils/png_helper.nim",
+                    ),
+                },
+            ),
+        )
+
+    def test_wave_a_generated_compare_smoke_inventory_is_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.iter_remaining_noncpp_runtime_wave_a_generated_compare_smoke(),
+            (
+                {
+                    "backend": "go",
+                    "smoke_kind": "build_run_smoke",
+                    "smoke_targets": ("built_in/contains.go",),
+                },
+                {
+                    "backend": "java",
+                    "smoke_kind": "build_run_smoke",
+                    "smoke_targets": ("built_in/contains.java",),
                 },
                 {
                     "backend": "kotlin",

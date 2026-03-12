@@ -93,6 +93,12 @@ class RemainingRuntimeWaveBGeneratedCompareSmokeEntry(TypedDict):
     smoke_targets: tuple[str, ...]
 
 
+class RemainingRuntimeWaveAGeneratedCompareSmokeEntry(TypedDict):
+    backend: str
+    smoke_kind: str
+    smoke_targets: tuple[str, ...]
+
+
 class RemainingRuntimeWaveAGeneratedSmokeEntry(TypedDict):
     backend: str
     smoke_kind: str
@@ -1470,6 +1476,58 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_SMOKE_V1: Final[
 )
 
 
+REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_SMOKE_V1: Final[
+    tuple[RemainingRuntimeWaveAGeneratedCompareSmokeEntry, ...]
+] = (
+    {
+        "backend": "go",
+        "smoke_kind": "build_run_smoke",
+        "smoke_targets": ("built_in/contains.go",),
+    },
+    {
+        "backend": "java",
+        "smoke_kind": "build_run_smoke",
+        "smoke_targets": ("built_in/contains.java",),
+    },
+    {
+        "backend": "kotlin",
+        "smoke_kind": "source_guard",
+        "smoke_targets": (
+            "utils/gif_helper.kt",
+            "utils/image_runtime.kt",
+            "utils/png_helper.kt",
+        ),
+    },
+    {
+        "backend": "scala",
+        "smoke_kind": "source_guard",
+        "smoke_targets": (
+            "utils/gif_helper.scala",
+            "utils/image_runtime.scala",
+            "utils/png_helper.scala",
+        ),
+    },
+    {
+        "backend": "swift",
+        "smoke_kind": "source_guard",
+        "smoke_targets": (
+            "utils/gif_helper.swift",
+            "utils/image_runtime.swift",
+            "utils/png_helper.swift",
+        ),
+    },
+    {
+        "backend": "nim",
+        "smoke_kind": "source_guard",
+        "smoke_targets": (
+            "utils/gif_helper.nim",
+            "utils/image_runtime.nim",
+            "utils/png_helper.nim",
+        ),
+    },
+)
+
+
 REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
     tuple[RemainingRuntimeWaveAGeneratedSmokeEntry, ...]
 ] = (
@@ -1717,6 +1775,12 @@ def iter_remaining_noncpp_runtime_wave_b_generated_compare_smoke() -> (
     tuple[RemainingRuntimeWaveBGeneratedCompareSmokeEntry, ...]
 ):
     return REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_SMOKE_V1
+
+
+def iter_remaining_noncpp_runtime_wave_a_generated_compare_smoke() -> (
+    tuple[RemainingRuntimeWaveAGeneratedCompareSmokeEntry, ...]
+):
+    return REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_SMOKE_V1
 
 
 def iter_remaining_noncpp_runtime_wave_a_generated_smoke() -> tuple[RemainingRuntimeWaveAGeneratedSmokeEntry, ...]:
