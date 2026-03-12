@@ -143,4 +143,5 @@ proc write_rgb_png*(path: string, width: int, height: int, pixels: seq[uint8]) =
   iend_data = @[] # seq[int]
   vpng_append_list(png, vchunk(@[73, 69, 78, 68], iend_data))
   var f = open(path, "wb")
-  # unsupported stmt: Try
+  f.write(png)
+  f.close()
