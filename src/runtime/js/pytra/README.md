@@ -1,5 +1,5 @@
-# JavaScript runtime（legacy互換レイアウト）
+# JavaScript runtime compatibility lane
 
-- `src/runtime/js/pytra-core/` が手書き runtime の正本です。
-- `src/runtime/js/pytra-gen/` が画像runtime（`png/gif`）の配置先です。
-- この `src/runtime/js/pytra/` は互換導線向けの legacy レイアウトです。
+- `src/runtime/js/native/` が手書き runtime の正本です。
+- `src/runtime/js/generated/` が SoT 由来生成 runtime の正本です。
+- この `src/runtime/js/pytra/` には public import path を維持する compat shim だけを置きます。

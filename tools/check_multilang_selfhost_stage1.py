@@ -414,7 +414,7 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
         "pytra/py_runtime.js": (
             "import { createRequire } from 'node:module';\n"
             "const require = createRequire(import.meta.url);\n"
-            "const rt = require('../runtime/js/pytra-core/built_in/py_runtime.js');\n"
+            "const rt = require('../runtime/js/native/built_in/py_runtime.js');\n"
             "export const PY_TYPE_NONE = rt.PY_TYPE_NONE;\n"
             "export const PY_TYPE_BOOL = rt.PY_TYPE_BOOL;\n"
             "export const PY_TYPE_NUMBER = rt.PY_TYPE_NUMBER;\n"
@@ -451,7 +451,7 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
         "pytra/std/pathlib.js": (
             "import { createRequire } from 'node:module';\n"
             "const require = createRequire(import.meta.url);\n"
-            "const rt = require('../../runtime/js/pytra-core/std/pathlib.js');\n"
+            "const rt = require('../../runtime/js/native/std/pathlib.js');\n"
             "function _wrap_path_obj(obj) {\n"
             "  if (obj === null || obj === undefined || typeof obj !== 'object') { return obj; }\n"
             "  if (typeof obj.parent === 'function' && !Object.prototype.hasOwnProperty.call(obj, '__pytra_parent_wrapped')) {\n"
@@ -494,7 +494,7 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
         "pytra/std/math.js": (
             "import { createRequire } from 'node:module';\n"
             "const require = createRequire(import.meta.url);\n"
-            "const rt = require('../../runtime/js/pytra-core/std/math.js');\n"
+            "const rt = require('../../runtime/js/native/std/math.js');\n"
             "export const pi = rt.pi;\n"
             "export const e = rt.e;\n"
             "export const sin = rt.sin;\n"
@@ -512,7 +512,7 @@ def _write_js_selfhost_shims(stage_src_root: Path) -> None:
         "pytra/std/time.js": (
             "import { createRequire } from 'node:module';\n"
             "const require = createRequire(import.meta.url);\n"
-            "const rt = require('../../runtime/js/pytra-core/std/time.js');\n"
+            "const rt = require('../../runtime/js/native/std/time.js');\n"
             "const perf_counter = typeof rt.perf_counter === 'function' ? rt.perf_counter : rt.perfCounter;\n"
             "export { perf_counter };\n"
             "export const perfCounter = perf_counter;\n"
