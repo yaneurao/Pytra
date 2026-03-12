@@ -19,7 +19,7 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
     def test_csharp_module_order_is_fixed(self) -> None:
         self.assertEqual(
             tuple(entry["module_name"] for entry in contract_mod.iter_cs_std_lane_ownership()),
-            ("json", "pathlib", "math", "re", "argparse", "enum"),
+            ("time", "json", "pathlib", "math", "re", "argparse", "enum"),
         )
 
     def test_rust_module_order_is_fixed(self) -> None:
@@ -52,6 +52,23 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
         by_module = {
             entry["module_name"]: entry for entry in contract_mod.iter_cs_std_lane_ownership()
         }
+        self.assertEqual(
+            by_module["time"],
+            {
+                "module_name": "time",
+                "canonical_lane": "native/built_in",
+                "generated_std_state": "compare_artifact",
+                "generated_std_rel": "src/runtime/cs/generated/std/time.cs",
+                "native_rel": "src/runtime/cs/native/built_in/time.cs",
+                "canonical_runtime_symbol": "Pytra.CsModule.time",
+                "representative_fixture": "test/fixtures/imports/import_time_from.py",
+                "smoke_guard_needles": (
+                    "def test_representative_time_import_fixture_transpiles",
+                    "Pytra.CsModule.time.perf_counter()",
+                ),
+                "rationale": "generated/std/time.cs is still a compare artifact, but it is the narrowest C# std lane and therefore the first live-generated migration candidate.",
+            },
+        )
         self.assertEqual(
             by_module["json"],
             {
@@ -96,6 +113,25 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
         self.assertEqual(
             by_module["enum"]["canonical_lane"],
             "no_runtime_module",
+        )
+
+    def test_csharp_first_live_generated_candidate_is_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.get_cs_std_first_live_generated_candidate(),
+            {
+                "module_name": "time",
+                "current_canonical_lane": "native/built_in",
+                "generated_std_rel": "src/runtime/cs/generated/std/time.cs",
+                "native_rel": "src/runtime/cs/native/built_in/time.cs",
+                "representative_fixture": "test/fixtures/imports/import_time_from.py",
+                "smoke_guard_needles": (
+                    "def test_representative_time_import_fixture_transpiles",
+                    "Pytra.CsModule.time.perf_counter()",
+                ),
+                "deferred_native_canonical_modules": ("json", "pathlib", "math"),
+                "deferred_no_runtime_modules": ("re", "argparse", "enum"),
+                "rationale": "time is the first live-generated C# std candidate because its representative surface is a single `perf_counter()` lane, while `json` remains blocked and `pathlib/math` still depend on heavier native canonical seams.",
+            },
         )
 
     def test_rust_lane_decisions_are_fixed(self) -> None:

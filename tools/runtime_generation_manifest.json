@@ -97,6 +97,146 @@
       ]
     },
     {
+      "id": "built_in/contains",
+      "source": "src/pytra/built_in/contains.py",
+      "bucket": "built_in",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/built_in/contains.rs" },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/built_in/contains.cs",
+          "postprocess": "cs_program_to_helper",
+          "helper_name": "contains_helper"
+        }
+      ]
+    },
+    {
+      "id": "built_in/io_ops",
+      "source": "src/pytra/built_in/io_ops.py",
+      "bucket": "built_in",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/built_in/io_ops.rs" },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/built_in/io_ops.cs",
+          "postprocess": "cs_program_to_helper",
+          "helper_name": "io_ops_helper"
+        }
+      ]
+    },
+    {
+      "id": "built_in/iter_ops",
+      "source": "src/pytra/built_in/iter_ops.py",
+      "bucket": "built_in",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/built_in/iter_ops.rs" },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/built_in/iter_ops.cs",
+          "postprocess": "cs_program_to_helper",
+          "helper_name": "iter_ops_helper"
+        }
+      ]
+    },
+    {
+      "id": "built_in/numeric_ops",
+      "source": "src/pytra/built_in/numeric_ops.py",
+      "bucket": "built_in",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/built_in/numeric_ops.rs" },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/built_in/numeric_ops.cs",
+          "postprocess": "cs_program_to_helper",
+          "helper_name": "numeric_ops_helper"
+        }
+      ]
+    },
+    {
+      "id": "built_in/predicates",
+      "source": "src/pytra/built_in/predicates.py",
+      "bucket": "built_in",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/built_in/predicates.rs" },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/built_in/predicates.cs",
+          "postprocess": "cs_program_to_helper",
+          "helper_name": "predicates_helper"
+        }
+      ]
+    },
+    {
+      "id": "built_in/scalar_ops",
+      "source": "src/pytra/built_in/scalar_ops.py",
+      "bucket": "built_in",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/built_in/scalar_ops.rs" },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/built_in/scalar_ops.cs",
+          "postprocess": "cs_program_to_helper",
+          "helper_name": "scalar_ops_helper"
+        }
+      ]
+    },
+    {
+      "id": "built_in/sequence",
+      "source": "src/pytra/built_in/sequence.py",
+      "bucket": "built_in",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/built_in/sequence.rs" },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/built_in/sequence.cs",
+          "postprocess": "cs_program_to_helper",
+          "helper_name": "sequence_helper"
+        }
+      ]
+    },
+    {
+      "id": "built_in/string_ops",
+      "source": "src/pytra/built_in/string_ops.py",
+      "bucket": "built_in",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/built_in/string_ops.rs" },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/built_in/string_ops.cs",
+          "postprocess": "cs_program_to_helper",
+          "helper_name": "string_ops_helper"
+        }
+      ]
+    },
+    {
+      "id": "built_in/type_id",
+      "source": "src/pytra/built_in/type_id.py",
+      "bucket": "built_in",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/built_in/type_id.rs" },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/built_in/type_id.cs",
+          "postprocess": "cs_program_to_helper",
+          "helper_name": "type_id_helper"
+        }
+      ]
+    },
+    {
+      "id": "built_in/zip_ops",
+      "source": "src/pytra/built_in/zip_ops.py",
+      "bucket": "built_in",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/built_in/zip_ops.rs" },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/built_in/zip_ops.cs",
+          "postprocess": "cs_program_to_helper",
+          "helper_name": "zip_ops_helper"
+        }
+      ]
+    },
+    {
       "id": "std/time",
       "source": "src/pytra/std/time.py",
       "bucket": "std",

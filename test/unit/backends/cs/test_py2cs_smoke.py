@@ -952,6 +952,13 @@ def f(x: object) -> bool:
         self.assertIn('string s1 = System.Convert.ToString(dumps("abc"));', cs)
         self.assertNotIn("unsupported", cs)
 
+    def test_representative_time_import_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("import_time_from")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("Pytra.CsModule.time.perf_counter()", cs)
+        self.assertNotIn("unsupported", cs)
+
     def test_representative_pathlib_extended_fixture_transpiles(self) -> None:
         fixture = find_fixture_case("pathlib_extended")
         east = load_east(fixture, parser_backend="self_hosted")
