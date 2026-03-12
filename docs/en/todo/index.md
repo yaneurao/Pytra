@@ -39,6 +39,10 @@ Last updated: 2026-03-12
    Context: [p5-cpp-pyruntime-residual-thin-seam-shrink.md](/workspace/Pytra/docs/en/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md)
    Summary: the current `py_runtime.h` has already been reduced substantially, but `py_append(object&)` and the `py_runtime_value_*` / `py_runtime_object_*` / `py_runtime_type_id_*` thin seams still remain. These cannot be removed by editing the header alone, so this `P5` task fixes the later-stage shrink plan and bundle order across the C++ / Rust / C# emitters and runtimes.
 
-3. [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01] turn the cross-backend parity matrix into a real `feature × backend` support-state table and make it the canonical source across all backends.
+3. [ ] [ID: P5-POWERSHELL-CS-HOST-01] define a PowerShell host profile that builds and runs C# backend output from `pwsh` instead of adding a pure PowerShell backend.
+   Context: [p5-powershell-csharp-host-profile.md](/workspace/Pytra/docs/en/plans/p5-powershell-csharp-host-profile.md)
+   Summary: this task fixes a representative `pwsh + py2cs` host profile, including generated `.cs` plus bundled runtime layout, build-driver priority across `dotnet` / `csc` / `Add-Type`, and explicit fail-closed conditions. A pure PowerShell target backend stays out of scope.
+
+4. [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01] turn the cross-backend parity matrix into a real `feature × backend` support-state table and make it the canonical source across all backends.
    Context: [p6-backend-parity-matrix-cell-fill.md](/workspace/Pytra/docs/en/plans/p6-backend-parity-matrix-cell-fill.md)
    Summary: the current parity matrix already has the row seed and the state taxonomy, but it does not yet populate per-cell support states. This `P6` turns the cross-backend matrix into the canonical 2D table with `support_state` / `evidence_kind`, while keeping the C++ table as drill-down documentation.
