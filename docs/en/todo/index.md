@@ -30,14 +30,3 @@ Last updated: 2026-03-12
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
-
-### P1: relative-import native-path bundle rollout
-
-- Context: [docs/ja/plans/p1-relative-import-native-path-bundle.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-native-path-bundle.md)
-- Progress memo: Added the live native-path bundle plan / contract / checker and repointed coverage, second-wave handoff, and backend-parity docs away from the old planning task.
-
-1. [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01] Lock the live handoff and representative rollout contract for the `go/nim/swift` native-path bundle.
-2. [x] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S1-01] Add the live plan / TODO / contract / checker and switch the coverage handoff to the native-path bundle.
-3. [x] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S2-01] Lock representative native-emitter rewrite smoke and wildcard-import fail-closed regressions for `go/nim/swift`.
-4. [x] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S2-02] Sync `go/nim/swift` as current locked representative smoke while keeping the active native-path rollout and explicit JVM follow-up handoff.
-5. [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S3-01] Sync focused docs / tests / handoff wording to the current state and close the task.

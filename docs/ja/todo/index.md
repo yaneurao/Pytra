@@ -30,14 +30,3 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-
-### P1: relative import native-path bundle rollout
-
-- 文脈: [docs/ja/plans/p1-relative-import-native-path-bundle.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-native-path-bundle.md)
-- `P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S1-01` native-path bundle live plan / contract / checker を追加し、coverage / second-wave handoff / backend parity docs の参照先を old planning task から切り替えた。
-
-1. [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01] `go/nim/swift` native-path bundle の live handoff と representative rollout contract を固定する。
-2. [x] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S1-01] live plan / TODO / contract / checker を追加し、coverage handoff を native-path bundle へ切り替える。
-3. [x] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S2-01] `go/nim/swift` native emitter で representative function-body rewrite と wildcard import fail-closed regression を固定した。
-4. [x] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S2-02] `go/nim/swift` を current coverage では representative smoke locked、rollout では active native-path bundle として同期し、JVM follow-up handoff を明記した。
-5. [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S3-01] focused docs / tests / handoff wording を current state に揃えて task を閉じる。
