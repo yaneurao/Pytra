@@ -31,6 +31,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P0-CPP-RELATIVE-IMPORT-MIXED-SYMBOL-01] C++ multi-file build で 1 つの sibling relative import statement から constant と class/type を同時に取り込む mixed symbol contract を representative smoke で固定する。
-   文脈: [p0-cpp-relative-import-mixed-symbol-contract.md](/workspace/Pytra/docs/ja/plans/p0-cpp-relative-import-mixed-symbol-contract.md)
-   - `P0-CPP-RELATIVE-IMPORT-MIXED-SYMBOL-01`: constant-only と class-only の sibling relative import lane は個別に固定済みであり、残りは mixed symbol statement の representative build/run contract である。
+現時点で未完了タスクはありません。

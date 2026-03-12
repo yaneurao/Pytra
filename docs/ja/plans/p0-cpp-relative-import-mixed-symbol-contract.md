@@ -39,10 +39,11 @@
 
 決定ログ:
 - 2026-03-12: TODO が空になったため、relative import support の adjacent follow-up を `P0` で起票した。対象は semantics 変更ではなく representative mixed-symbol contract の固定である。
+- 2026-03-12: representative smoke `from .controller import (BUTTON_A, Pad)` は current C++ multi-file lane のままで build/run success し、constant lane と class/type lane の組み合わせに追加修正は不要だった。
 
 ## 分解
 
-- [ ] [ID: P0-CPP-RELATIVE-IMPORT-MIXED-SYMBOL-01-S1-01] plan / TODO に representative mixed-symbol contract を固定する。
-- [ ] [ID: P0-CPP-RELATIVE-IMPORT-MIXED-SYMBOL-01-S2-01] mixed constant + class sibling relative import の representative C++ multi-file smoke を追加し、current lane を確認する。
-- [ ] [ID: P0-CPP-RELATIVE-IMPORT-MIXED-SYMBOL-01-S2-02] mixed symbol lane で residual が見つかった場合のみ emitter / writer / schema を修正する。
-- [ ] [ID: P0-CPP-RELATIVE-IMPORT-MIXED-SYMBOL-01-S3-01] docs / TODO / regression を current contract に同期して task を閉じる。
+- [x] [ID: P0-CPP-RELATIVE-IMPORT-MIXED-SYMBOL-01-S1-01] plan / TODO に representative mixed-symbol contract を固定する。
+- [x] [ID: P0-CPP-RELATIVE-IMPORT-MIXED-SYMBOL-01-S2-01] mixed constant + class sibling relative import の representative C++ multi-file smoke を追加し、current lane を確認する。
+- [x] [ID: P0-CPP-RELATIVE-IMPORT-MIXED-SYMBOL-01-S2-02] mixed symbol lane で residual が見つかった場合のみ emitter / writer / schema を修正する。
+- [x] [ID: P0-CPP-RELATIVE-IMPORT-MIXED-SYMBOL-01-S3-01] docs / TODO / regression を current contract に同期して task を閉じる。

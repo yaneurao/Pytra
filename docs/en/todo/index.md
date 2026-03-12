@@ -31,6 +31,4 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-1. [ ] [ID: P0-CPP-RELATIVE-IMPORT-MIXED-SYMBOL-01] Lock the representative C++ multi-file contract where one sibling relative-import statement brings in both constants and classes/types.
-   Context: [p0-cpp-relative-import-mixed-symbol-contract.md](/workspace/Pytra/docs/en/plans/p0-cpp-relative-import-mixed-symbol-contract.md)
-   - `P0-CPP-RELATIVE-IMPORT-MIXED-SYMBOL-01`: the constant-only and class-only sibling relative-import lanes are already locked separately; the remaining work is the representative build/run contract for a mixed-symbol statement.
+There are currently no unfinished tasks.
