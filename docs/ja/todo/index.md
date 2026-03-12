@@ -38,3 +38,7 @@
 2. [ ] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01] `py_runtime.h` に残っている object-bridge mutation seam と shared `type_id` thin seam を cross-runtime 契約の整理後に最小化する。
    文脈: [p5-cpp-pyruntime-residual-thin-seam-shrink.md](/workspace/Pytra/docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md)
    概要: 現在の `py_runtime.h` は以前よりかなり縮小済みだが、`py_append(object&)` と `py_runtime_value_*` / `py_runtime_object_*` / `py_runtime_type_id_*` の thin seam が残っている。これらは header 単体では削れず、C++ / Rust / C# emitter と runtime の shared contract 整理を伴うので、後段の `P5` として bundle 単位で縮退計画を固定する。
+
+3. [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01] cross-backend backend parity matrix を実際の `feature × backend` support-state table として埋め、全 backend の canonical source にする。
+   文脈: [p6-backend-parity-matrix-cell-fill.md](/workspace/Pytra/docs/ja/plans/p6-backend-parity-matrix-cell-fill.md)
+   概要: 現在の parity matrix は row seed と state taxonomy を持つ scaffold だが、各 cell の support state はまだ埋まっていない。C++ 個別 matrix を drill-down にとどめ、全 backend を横断した canonical 2 次元表を `support_state` / `evidence_kind` 付きで実体化する。
