@@ -45,10 +45,23 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
         self.assertEqual(inventory_mod.EXPECTED_BUCKETS["typed_lane_removable"], set())
         self.assertIn("typed_lane_removable", inventory_mod.EMPTY_BUCKETS_ALLOWED)
 
-    def test_object_bridge_required_bucket_can_reach_zero_after_upstreaming(self) -> None:
+    def test_object_bridge_required_bucket_is_cs_bytearray_and_runtime_only(self) -> None:
         object_bridge = inventory_mod.EXPECTED_BUCKETS["object_bridge_required"]
-        self.assertEqual(object_bridge, set())
-        self.assertIn("object_bridge_required", inventory_mod.EMPTY_BUCKETS_ALLOWED)
+        self.assertEqual(
+            object_bridge,
+            {
+                ("py_append", "src/backends/cs/emitter/cs_emitter.py"),
+                ("py_pop", "src/backends/cs/emitter/cs_emitter.py"),
+                ("py_append", "src/runtime/cs/pytra/utils/gif.cs"),
+                ("py_append", "src/runtime/cs/pytra/utils/png.cs"),
+            },
+        )
+        self.assertTrue(
+            all(
+                path.startswith("src/backends/cs/") or path.startswith("src/runtime/cs/")
+                for _, path in object_bridge
+            )
+        )
 
     def test_shared_runtime_contract_bucket_is_type_id_and_cross_runtime_only(self) -> None:
         shared = inventory_mod.EXPECTED_BUCKETS["shared_runtime_contract"]
@@ -89,8 +102,10 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
             or entry[1].startswith("src/backends/cs/")
             or entry[1].startswith("src/backends/rs/")
         }
-        self.assertIn(("py_append", "src/runtime/cs/pytra/utils/gif.cs"), cross_runtime_mutations)
-        self.assertIn(("py_append", "src/runtime/cs/pytra/utils/png.cs"), cross_runtime_mutations)
+        self.assertNotIn(("py_append", "src/runtime/cs/pytra/utils/gif.cs"), cross_runtime_mutations)
+        self.assertNotIn(("py_append", "src/runtime/cs/pytra/utils/png.cs"), cross_runtime_mutations)
+        self.assertNotIn(("py_append", "src/backends/cs/emitter/cs_emitter.py"), shared)
+        self.assertNotIn(("py_pop", "src/backends/cs/emitter/cs_emitter.py"), shared)
         self.assertIn(
             ("py_runtime_type_id_issubclass", "src/backends/rs/emitter/rs_emitter.py"),
             shared,
