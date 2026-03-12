@@ -54,6 +54,12 @@ class RemainingRuntimeWaveANativeResidualEntry(TypedDict):
     compare_residual_modules: tuple[str, ...]
 
 
+class RemainingRuntimeWaveANativeResidualFileEntry(TypedDict):
+    backend: str
+    substrate_files: tuple[str, ...]
+    compare_residual_files: tuple[str, ...]
+
+
 REMAINING_NONCPP_BACKEND_ORDER_V1: Final[tuple[str, ...]] = (
     "go",
     "java",
@@ -140,12 +146,6 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/java/native/built_in/",
                 "ownership": "native",
                 "rationale": "Java handwritten runtime helpers already live in native/built_in after the Wave A path cutover.",
-            },
-            {
-                "current_prefix": "src/runtime/java/native/std/",
-                "target_prefix": "src/runtime/java/native/std/",
-                "ownership": "native",
-                "rationale": "Java handwritten std seams already live in native/std after the Wave A path cutover.",
             },
             {
                 "current_prefix": "src/runtime/java/generated/std/",
@@ -524,11 +524,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     },
     {
         "backend": "java",
-        "pytra_core_files": (
-            "built_in/PyRuntime.java",
-            "std/math_impl.java",
-            "std/time_impl.java",
-        ),
+        "pytra_core_files": ("built_in/PyRuntime.java",),
         "pytra_gen_files": (
             "std/json.java",
             "std/math.java",
@@ -668,11 +664,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/gif.java",
             "generated/utils/png.java",
         ),
-        "native_files": (
-            "native/built_in/PyRuntime.java",
-            "native/std/math_impl.java",
-            "native/std/time_impl.java",
-        ),
+        "native_files": ("native/built_in/PyRuntime.java",),
         "compat_files": ("pytra/built_in/PyRuntime.java",),
     },
     {
@@ -808,7 +800,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             "utils/gif",
             "utils/png",
         ),
-        "native_modules": ("built_in/py_runtime", "std/math", "std/time"),
+        "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
         "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
     },
@@ -916,8 +908,6 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1: Final[
         "backend": "java",
         "runtime_hook_files": (
             "runtime/java/native/built_in/PyRuntime.java",
-            "runtime/java/native/std/time_impl.java",
-            "runtime/java/native/std/math_impl.java",
             "runtime/java/generated/utils/png.java",
             "runtime/java/generated/utils/gif.java",
             "runtime/java/generated/std/time.java",
@@ -968,7 +958,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_NATIVE_RESIDUALS_V1: Final[
     {
         "backend": "java",
         "substrate_modules": ("built_in/py_runtime",),
-        "compare_residual_modules": ("std/math", "std/time"),
+        "compare_residual_modules": (),
     },
     {
         "backend": "kotlin",
@@ -989,6 +979,42 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_NATIVE_RESIDUALS_V1: Final[
         "backend": "nim",
         "substrate_modules": ("built_in/py_runtime",),
         "compare_residual_modules": (),
+    },
+)
+
+
+REMAINING_NONCPP_RUNTIME_WAVE_A_NATIVE_RESIDUAL_FILES_V1: Final[
+    tuple[RemainingRuntimeWaveANativeResidualFileEntry, ...]
+] = (
+    {
+        "backend": "go",
+        "substrate_files": ("built_in/py_runtime.go",),
+        "compare_residual_files": (),
+    },
+    {
+        "backend": "java",
+        "substrate_files": ("built_in/PyRuntime.java",),
+        "compare_residual_files": (),
+    },
+    {
+        "backend": "kotlin",
+        "substrate_files": ("built_in/py_runtime.kt",),
+        "compare_residual_files": (),
+    },
+    {
+        "backend": "scala",
+        "substrate_files": ("built_in/py_runtime.scala",),
+        "compare_residual_files": (),
+    },
+    {
+        "backend": "swift",
+        "substrate_files": ("built_in/py_runtime.swift",),
+        "compare_residual_files": (),
+    },
+    {
+        "backend": "nim",
+        "substrate_files": ("built_in/py_runtime.nim",),
+        "compare_residual_files": (),
     },
 )
 
@@ -1023,3 +1049,7 @@ def iter_remaining_noncpp_runtime_wave_a_hook_sources() -> tuple[RemainingRuntim
 
 def iter_remaining_noncpp_runtime_wave_a_native_residuals() -> tuple[RemainingRuntimeWaveANativeResidualEntry, ...]:
     return REMAINING_NONCPP_RUNTIME_WAVE_A_NATIVE_RESIDUALS_V1
+
+
+def iter_remaining_noncpp_runtime_wave_a_native_residual_files() -> tuple[RemainingRuntimeWaveANativeResidualFileEntry, ...]:
+    return REMAINING_NONCPP_RUNTIME_WAVE_A_NATIVE_RESIDUAL_FILES_V1

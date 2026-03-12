@@ -380,6 +380,31 @@ def _collect_wave_a_native_residual_issues() -> list[str]:
     return issues
 
 
+def _collect_wave_a_native_residual_file_issues() -> list[str]:
+    issues: list[str] = []
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_a_native_residual_files()
+    if tuple(entry["backend"] for entry in entries) != ("go", "java", "kotlin", "scala", "swift", "nim"):
+        issues.append("wave-a native residual file order drifted")
+    for entry in entries:
+        backend = entry["backend"]
+        native_root = ROOT / "src" / "runtime" / backend / "native"
+        actual_files = tuple(
+            sorted(
+                str(path.relative_to(native_root)).replace("\\", "/")
+                for path in native_root.rglob("*")
+                if path.is_file()
+            )
+        )
+        substrate_files = set(entry["substrate_files"])
+        compare_residual_files = set(entry["compare_residual_files"])
+        if substrate_files & compare_residual_files:
+            issues.append(f"wave-a native residual file overlap drifted: {backend}")
+        expected_files = tuple(sorted(substrate_files.union(compare_residual_files)))
+        if actual_files != expected_files:
+            issues.append(f"wave-a native residual file inventory drifted: {backend}")
+    return issues
+
+
 def main() -> int:
     issues = _collect_contract_issues()
     issues.extend(_collect_wave_a_runtime_hook_issues())
@@ -387,6 +412,7 @@ def main() -> int:
     issues.extend(_collect_target_inventory_issues())
     issues.extend(_collect_module_bucket_issues())
     issues.extend(_collect_wave_a_native_residual_issues())
+    issues.extend(_collect_wave_a_native_residual_file_issues())
     if issues:
         print("non-c++ runtime layout rollout remaining contract check failed:", file=sys.stderr)
         for issue in issues:

@@ -25,6 +25,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_wave_a_native_residual_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_a_native_residual_issues(), [])
 
+    def test_wave_a_native_residual_file_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_a_native_residual_file_issues(), [])
+
     def test_backend_order_is_fixed(self) -> None:
         self.assertEqual(
             contract_mod.iter_remaining_noncpp_backend_order(),
@@ -80,8 +83,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 ),
                 "java": (
                     "runtime/java/native/built_in/PyRuntime.java",
-                    "runtime/java/native/std/time_impl.java",
-                    "runtime/java/native/std/math_impl.java",
                     "runtime/java/generated/utils/png.java",
                     "runtime/java/generated/utils/gif.java",
                     "runtime/java/generated/std/time.java",
@@ -124,7 +125,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "java": {
                     "backend": "java",
                     "substrate_modules": ("built_in/py_runtime",),
-                    "compare_residual_modules": ("std/math", "std/time"),
+                    "compare_residual_modules": (),
                 },
                 "kotlin": {
                     "backend": "kotlin",
@@ -145,6 +146,47 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "nim",
                     "substrate_modules": ("built_in/py_runtime",),
                     "compare_residual_modules": (),
+                },
+            },
+        )
+
+    def test_wave_a_native_residual_files_are_fixed(self) -> None:
+        by_backend = {
+            entry["backend"]: entry
+            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_a_native_residual_files()
+        }
+        self.assertEqual(
+            by_backend,
+            {
+                "go": {
+                    "backend": "go",
+                    "substrate_files": ("built_in/py_runtime.go",),
+                    "compare_residual_files": (),
+                },
+                "java": {
+                    "backend": "java",
+                    "substrate_files": ("built_in/PyRuntime.java",),
+                    "compare_residual_files": (),
+                },
+                "kotlin": {
+                    "backend": "kotlin",
+                    "substrate_files": ("built_in/py_runtime.kt",),
+                    "compare_residual_files": (),
+                },
+                "scala": {
+                    "backend": "scala",
+                    "substrate_files": ("built_in/py_runtime.scala",),
+                    "compare_residual_files": (),
+                },
+                "swift": {
+                    "backend": "swift",
+                    "substrate_files": ("built_in/py_runtime.swift",),
+                    "compare_residual_files": (),
+                },
+                "nim": {
+                    "backend": "nim",
+                    "substrate_files": ("built_in/py_runtime.nim",),
+                    "compare_residual_files": (),
                 },
             },
         )
