@@ -31,5 +31,4 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-- [ ] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01] Align the `field(default_factory=...)` rc-field lane with the representative C++ contract and remove the Pytra-NES blocker (context: [p0-dataclass-field-default-factory-rc-cpp-support.md](../plans/p0-dataclass-field-default-factory-rc-cpp-support.md))
 - [ ] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01] Lock the representative C++ stringify lane for `str(Path(...))` and remove the Pytra-NES blocker (context: [p0-path-stringify-cpp-representative-support.md](../plans/p0-path-stringify-cpp-representative-support.md))
