@@ -398,6 +398,44 @@ def _collect_wave_b_blocked_reason_issues() -> list[str]:
     return issues
 
 
+def _collect_wave_b_generated_compare_issues() -> list[str]:
+    issues: list[str] = []
+    module_buckets = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_module_buckets()
+    }
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_generated_compare()
+    if tuple(entry["backend"] for entry in entries) != ("js", "ts", "lua", "ruby", "php"):
+        issues.append("wave-b generated compare order drifted")
+    compare_baseline = set(contract_mod.iter_remaining_noncpp_runtime_generated_compare_baseline())
+    for entry in entries:
+        backend = entry["backend"]
+        bucket = module_buckets.get(backend)
+        if bucket is None:
+            issues.append(f"wave-b generated compare backend drifted: {backend}")
+            continue
+        generated_modules = set(bucket["generated_modules"])
+        blocked_modules = set(bucket["blocked_modules"])
+        native_modules = set(bucket["native_modules"])
+        materialized_modules = set(entry["materialized_compare_modules"])
+        helper_artifact_modules = set(entry["helper_artifact_modules"])
+        if materialized_modules & helper_artifact_modules:
+            issues.append(f"wave-b generated compare overlap drifted: {backend}")
+        expected_materialized = generated_modules.intersection(compare_baseline)
+        if materialized_modules != expected_materialized:
+            issues.append(f"wave-b materialized compare modules drifted: {backend}")
+        expected_helper_artifacts = generated_modules.difference(compare_baseline)
+        if helper_artifact_modules != expected_helper_artifacts:
+            issues.append(f"wave-b helper artifact modules drifted: {backend}")
+        if materialized_modules & blocked_modules:
+            issues.append(f"wave-b materialized compare overlaps blocked bucket: {backend}")
+        if helper_artifact_modules & blocked_modules:
+            issues.append(f"wave-b helper artifact overlaps blocked bucket: {backend}")
+        if helper_artifact_modules & native_modules:
+            issues.append(f"wave-b helper artifact overlaps native bucket: {backend}")
+    return issues
+
+
 def _collect_wave_a_native_residual_issues() -> list[str]:
     issues: list[str] = []
     module_buckets = {
@@ -457,6 +495,7 @@ def main() -> int:
     issues.extend(_collect_target_inventory_issues())
     issues.extend(_collect_module_bucket_issues())
     issues.extend(_collect_wave_b_blocked_reason_issues())
+    issues.extend(_collect_wave_b_generated_compare_issues())
     issues.extend(_collect_wave_a_native_residual_issues())
     issues.extend(_collect_wave_a_native_residual_file_issues())
     if issues:

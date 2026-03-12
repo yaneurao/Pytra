@@ -50,6 +50,12 @@ class RemainingRuntimeWaveBBlockedReasonEntry(TypedDict):
     helper_shaped_compare_gap_modules: tuple[str, ...]
 
 
+class RemainingRuntimeWaveBGeneratedCompareEntry(TypedDict):
+    backend: str
+    materialized_compare_modules: tuple[str, ...]
+    helper_artifact_modules: tuple[str, ...]
+
+
 class RemainingRuntimeWaveAHookSourceEntry(TypedDict):
     backend: str
     runtime_hook_files: tuple[str, ...]
@@ -976,6 +982,36 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_BLOCKED_REASONS_V1: Final[
     },
 )
 
+REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_V1: Final[
+    tuple[RemainingRuntimeWaveBGeneratedCompareEntry, ...]
+] = (
+    {
+        "backend": "js",
+        "materialized_compare_modules": ("std/math", "std/time", "utils/gif", "utils/png"),
+        "helper_artifact_modules": (),
+    },
+    {
+        "backend": "ts",
+        "materialized_compare_modules": ("std/math", "std/time", "utils/gif", "utils/png"),
+        "helper_artifact_modules": (),
+    },
+    {
+        "backend": "lua",
+        "materialized_compare_modules": (),
+        "helper_artifact_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+    },
+    {
+        "backend": "ruby",
+        "materialized_compare_modules": (),
+        "helper_artifact_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+    },
+    {
+        "backend": "php",
+        "materialized_compare_modules": ("std/math", "std/time", "utils/gif", "utils/png"),
+        "helper_artifact_modules": (),
+    },
+)
+
 
 
 REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1: Final[
@@ -1130,6 +1166,10 @@ def iter_remaining_noncpp_runtime_module_buckets() -> tuple[RemainingRuntimeModu
 
 def iter_remaining_noncpp_runtime_wave_b_blocked_reasons() -> tuple[RemainingRuntimeWaveBBlockedReasonEntry, ...]:
     return REMAINING_NONCPP_RUNTIME_WAVE_B_BLOCKED_REASONS_V1
+
+
+def iter_remaining_noncpp_runtime_wave_b_generated_compare() -> tuple[RemainingRuntimeWaveBGeneratedCompareEntry, ...]:
+    return REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_V1
 
 
 def iter_remaining_noncpp_runtime_wave_a_hook_sources() -> tuple[RemainingRuntimeWaveAHookSourceEntry, ...]:

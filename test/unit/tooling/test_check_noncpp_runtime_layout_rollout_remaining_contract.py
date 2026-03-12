@@ -25,6 +25,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_wave_b_blocked_reason_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_b_blocked_reason_issues(), [])
 
+    def test_wave_b_generated_compare_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_b_generated_compare_issues(), [])
+
     def test_wave_a_native_residual_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_a_native_residual_issues(), [])
 
@@ -547,6 +550,65 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     ),
                     "native_compare_residual_modules": (),
                     "helper_shaped_compare_gap_modules": (),
+                },
+            },
+        )
+
+    def test_wave_b_generated_compare_end_state_is_fixed(self) -> None:
+        by_backend = {
+            entry["backend"]: entry
+            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_generated_compare()
+        }
+        self.assertEqual(
+            by_backend,
+            {
+                "js": {
+                    "backend": "js",
+                    "materialized_compare_modules": (
+                        "std/math",
+                        "std/time",
+                        "utils/gif",
+                        "utils/png",
+                    ),
+                    "helper_artifact_modules": (),
+                },
+                "ts": {
+                    "backend": "ts",
+                    "materialized_compare_modules": (
+                        "std/math",
+                        "std/time",
+                        "utils/gif",
+                        "utils/png",
+                    ),
+                    "helper_artifact_modules": (),
+                },
+                "lua": {
+                    "backend": "lua",
+                    "materialized_compare_modules": (),
+                    "helper_artifact_modules": (
+                        "utils/gif_helper",
+                        "utils/image_runtime",
+                        "utils/png_helper",
+                    ),
+                },
+                "ruby": {
+                    "backend": "ruby",
+                    "materialized_compare_modules": (),
+                    "helper_artifact_modules": (
+                        "utils/gif_helper",
+                        "utils/image_runtime",
+                        "utils/png_helper",
+                    ),
+                },
+                "php": {
+                    "backend": "php",
+                    "materialized_compare_modules": (
+                        "std/math",
+                        "std/time",
+                        "utils/gif",
+                        "utils/png",
+                    ),
+                    "helper_artifact_modules": (),
                 },
             },
         )
