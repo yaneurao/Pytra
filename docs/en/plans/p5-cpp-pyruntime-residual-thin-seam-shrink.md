@@ -40,6 +40,8 @@ Verification commands:
 - `python3 tools/check_cpp_pyruntime_header_surface.py`
 - `python3 tools/check_cpp_pyruntime_contract_inventory.py`
 - `python3 tools/check_crossruntime_pyruntime_emitter_inventory.py`
+- `python3 tools/check_cpp_pyruntime_residual_thin_seam_contract.py`
+- `python3 tools/check_cpp_pyruntime_residual_thin_seam_handoff_contract.py`
 - `git diff --check`
 
 Decision log:
@@ -49,10 +51,11 @@ Decision log:
 - 2026-03-12: The follow-up and handoff references inside `check_cpp_pyruntime_header_surface.py` and `check_crossruntime_pyruntime_emitter_inventory.py` are pinned to the active `P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01` task instead of archived `P0/P4` tasks, so this task itself guards the current residual baseline.
 - 2026-03-12: In the source-wide contract inventory, only the C# bytearray compat seam (`py_append/py_pop`) plus the `gif/png` utility runtime remain in `object_bridge_required`, while the shared runtime contract keeps only the `type_id` thin seam and the native compiler `py_runtime_object_isinstance` bridge.
 - 2026-03-12: The shared `type_id` thin seam classification is fixed by the `P5-...-S2-02` guard in `check_crossruntime_pyruntime_emitter_inventory.py`; C++ keeps only `py_runtime_value_type_id` as future-reducible, while Rust/C# treat all remaining residual callers as must-remain-until-runtime-task.
+- 2026-03-12: Final handoff criteria are centralized in `check_cpp_pyruntime_residual_thin_seam_handoff_contract.py`, which pins the bundle order plus the header-surface, source-wide contract, and crossruntime emitter guards as the archive preconditions for this `P5` task.
 
 ## Breakdown
 
 - [x] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S1-01] Lock the current header surface and cross-runtime residual caller baseline in docs, tooling, and inventory.
 - [x] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-01] Classify ownership for the object-bridge mutation seam and identify lanes that can move back to backend-local lowering.
 - [x] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02] Classify the shared `type_id` thin seam contracts across C++ / Rust / C# and separate must-remain from future-reducible callers.
-- [ ] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S3-01] Sync final-shrink handoff criteria, bundle order, and representative regressions into docs, tooling, and archive flow.
+- [x] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S3-01] Sync final-shrink handoff criteria, bundle order, and representative regressions into docs, tooling, and archive flow.
