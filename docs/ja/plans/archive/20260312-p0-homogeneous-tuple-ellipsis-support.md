@@ -50,6 +50,7 @@
 - 2026-03-12: `tuple[T, ...]` は new kind ではなく `GenericType(base=\"tuple\", tuple_shape=\"homogeneous_ellipsis\")` として保持し、summary だけ `category=homogeneous_tuple` に分ける。これで backend 側の TypeExpr kind allowlist を壊さずに fixed tuple との差分を運べる。
 - 2026-03-12: representative C++ v1 lane は `tuple[T, ...]` を `list<T>` に lower する。fixed tuple は `::std::tuple<...>` のまま維持し、homogeneous ellipsis tuple の literal / param default / read-only index access だけを immutable list lane に乗せる。
 - 2026-03-12: non-C++ backend probe の結果、Rust/Nim は invalid tuple-ish syntax を emit し、Go/Java/Kotlin/Swift/Lua/Ruby/PHP/JS/TS も silent fallback に流れていた。`S3-01` では representative policy を `C++ only` に固定し、non-C++ は `unsupported_syntax` で fail-closed に寄せる。
+- 2026-03-12: closeout では representative non-C++ fail-closed regression、version bump、docs/TODO/archive handoff を current contract に同期し、この task を archive へ移した。
 
 ## 分解
 
@@ -57,4 +58,4 @@
 - [x] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S2-01] `tuple[T, ...]` を fixed tuple と別 category として EAST / type summary に載せる。
 - [x] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S2-02] C++ backend の invalid `::std::tuple<..., ...>` emission を止め、representative v1 lane を read-only immutable sequence として lower する。
 - [x] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S3-01] representative backend policy を整理し、未対応 lane / backend を fail-closed で固定する。
-- [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S3-02] docs / TODO / regression / inventory を current contract に同期して task を閉じる。
+- [x] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S3-02] docs / TODO / regression / inventory を current contract に同期して task を閉じる。
