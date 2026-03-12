@@ -23,6 +23,12 @@ EXPECTED_JA_PLAN_PHRASES = (
     "PowerShell 5.1 と 7.x の完全互換保証。",
     "非 Windows 環境での PowerShell host 動作保証。",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S1-01]",
+    "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-01]",
+    "`run.ps1`",
+    "`src/Program.cs`",
+    "`runtime/`",
+    "`build/Program.exe`",
+    "`public static void Main(string[] args)`",
 )
 
 EXPECTED_EN_PLAN_PHRASES = (
@@ -32,6 +38,12 @@ EXPECTED_EN_PLAN_PHRASES = (
     "Full compatibility guarantees across both Windows PowerShell 5.1 and PowerShell 7.x.",
     "Guaranteed PowerShell-host support on non-Windows environments.",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S1-01]",
+    "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-01]",
+    "`run.ps1`",
+    "`src/Program.cs`",
+    "`runtime/`",
+    "`build/Program.exe`",
+    "`public static void Main(string[] args)`",
 )
 
 EXPECTED_JA_TODO_PHRASES = (
@@ -39,6 +51,7 @@ EXPECTED_JA_TODO_PHRASES = (
     "`pwsh`",
     "`dotnet` / `csc` / `Add-Type`",
     "pure PowerShell backend は対象外",
+    "`run.ps1` / `src/Program.cs` / `runtime/*.cs` / `build/Program.exe`",
 )
 
 EXPECTED_EN_TODO_PHRASES = (
@@ -46,6 +59,7 @@ EXPECTED_EN_TODO_PHRASES = (
     "`pwsh + py2cs`",
     "`dotnet` / `csc` / `Add-Type`",
     "pure PowerShell target backend stays out of scope",
+    "`run.ps1` / `src/Program.cs` / `runtime/*.cs` / `build/Program.exe`",
 )
 
 
@@ -74,6 +88,40 @@ def _collect_contract_issues() -> list[str]:
         "non_windows_support",
     }:
         issues.append("non-goal key set drifted")
+    if contract_mod.REPRESENTATIVE_OUTPUT_LAYOUT != {
+        "launcher_rel": "run.ps1",
+        "generated_entry_rel": "src/Program.cs",
+        "runtime_source_dir_rel": "runtime",
+        "build_output_dir_rel": "build",
+        "build_artifact_rel": "build/Program.exe",
+    }:
+        issues.append("representative output layout drifted")
+    if contract_mod.REPRESENTATIVE_ENTRYPOINT_CONTRACT != {
+        "class_name": "Program",
+        "method_name": "Main",
+        "signature": "public static void Main(string[] args)",
+        "generated_entry_owns_main": True,
+        "runtime_sources_define_main": False,
+    }:
+        issues.append("representative entrypoint contract drifted")
+    if contract_mod.REPRESENTATIVE_RUNTIME_CS_FILES != (
+        "py_runtime.cs",
+        "time.cs",
+        "math.cs",
+        "pathlib.cs",
+        "json.cs",
+        "png.cs",
+        "gif.cs",
+    ):
+        issues.append("representative runtime cs file set drifted")
+    if set(contract_mod.LAUNCHER_RESPONSIBILITIES.keys()) != {
+        "stage_generated_entry",
+        "stage_runtime_sources",
+        "delegate_compile_or_load",
+        "forward_program_args",
+        "fail_closed_missing_layout",
+    }:
+        issues.append("launcher responsibility key set drifted")
     manifest = contract_mod.build_powershell_cs_host_contract_manifest()
     if set(manifest.keys()) != {
         "profile",
@@ -81,6 +129,10 @@ def _collect_contract_issues() -> list[str]:
         "required_executable_groups",
         "optional_host_mechanisms",
         "non_goals",
+        "output_layout",
+        "entrypoint_contract",
+        "runtime_cs_files",
+        "launcher_responsibilities",
     }:
         issues.append("contract manifest keys drifted")
     return issues

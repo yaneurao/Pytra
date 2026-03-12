@@ -30,6 +30,40 @@ NON_GOALS = {
     "non_windows_support": "Do not guarantee PowerShell-host support on non-Windows environments.",
 }
 
+REPRESENTATIVE_OUTPUT_LAYOUT = {
+    "launcher_rel": "run.ps1",
+    "generated_entry_rel": "src/Program.cs",
+    "runtime_source_dir_rel": "runtime",
+    "build_output_dir_rel": "build",
+    "build_artifact_rel": "build/Program.exe",
+}
+
+REPRESENTATIVE_ENTRYPOINT_CONTRACT = {
+    "class_name": "Program",
+    "method_name": "Main",
+    "signature": "public static void Main(string[] args)",
+    "generated_entry_owns_main": True,
+    "runtime_sources_define_main": False,
+}
+
+REPRESENTATIVE_RUNTIME_CS_FILES = (
+    "py_runtime.cs",
+    "time.cs",
+    "math.cs",
+    "pathlib.cs",
+    "json.cs",
+    "png.cs",
+    "gif.cs",
+)
+
+LAUNCHER_RESPONSIBILITIES = {
+    "stage_generated_entry": "Stage the generated entry source at `src/Program.cs` without rewriting `Program.Main`.",
+    "stage_runtime_sources": "Copy the selected runtime `.cs` support files into `runtime/` and keep them separate from the generated entry source.",
+    "delegate_compile_or_load": "Delegate compile/load to the selected host driver rather than synthesizing backend logic inside PowerShell.",
+    "forward_program_args": "Forward user CLI arguments to the compiled `Program.Main(string[] args)` entrypoint.",
+    "fail_closed_missing_layout": "Fail closed when `run.ps1`, `src/Program.cs`, required runtime `.cs`, or the `build/` output layout is missing.",
+}
+
 
 def build_powershell_cs_host_contract_manifest() -> dict[str, object]:
     return {
@@ -40,4 +74,8 @@ def build_powershell_cs_host_contract_manifest() -> dict[str, object]:
         },
         "optional_host_mechanisms": list(OPTIONAL_HOST_MECHANISMS),
         "non_goals": dict(NON_GOALS),
+        "output_layout": dict(REPRESENTATIVE_OUTPUT_LAYOUT),
+        "entrypoint_contract": dict(REPRESENTATIVE_ENTRYPOINT_CONTRACT),
+        "runtime_cs_files": list(REPRESENTATIVE_RUNTIME_CS_FILES),
+        "launcher_responsibilities": dict(LAUNCHER_RESPONSIBILITIES),
     }

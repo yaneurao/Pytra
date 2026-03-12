@@ -47,6 +47,52 @@ class CheckPowershellCsHostContractTest(unittest.TestCase):
             },
         )
 
+    def test_output_layout_and_entrypoint_are_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.REPRESENTATIVE_OUTPUT_LAYOUT,
+            {
+                "launcher_rel": "run.ps1",
+                "generated_entry_rel": "src/Program.cs",
+                "runtime_source_dir_rel": "runtime",
+                "build_output_dir_rel": "build",
+                "build_artifact_rel": "build/Program.exe",
+            },
+        )
+        self.assertEqual(
+            contract_mod.REPRESENTATIVE_ENTRYPOINT_CONTRACT,
+            {
+                "class_name": "Program",
+                "method_name": "Main",
+                "signature": "public static void Main(string[] args)",
+                "generated_entry_owns_main": True,
+                "runtime_sources_define_main": False,
+            },
+        )
+
+    def test_runtime_cs_files_and_launcher_responsibilities_are_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.REPRESENTATIVE_RUNTIME_CS_FILES,
+            (
+                "py_runtime.cs",
+                "time.cs",
+                "math.cs",
+                "pathlib.cs",
+                "json.cs",
+                "png.cs",
+                "gif.cs",
+            ),
+        )
+        self.assertEqual(
+            set(contract_mod.LAUNCHER_RESPONSIBILITIES.keys()),
+            {
+                "stage_generated_entry",
+                "stage_runtime_sources",
+                "delegate_compile_or_load",
+                "forward_program_args",
+                "fail_closed_missing_layout",
+            },
+        )
+
     def test_manifest_shape_is_fixed(self) -> None:
         self.assertEqual(
             set(contract_mod.build_powershell_cs_host_contract_manifest().keys()),
@@ -56,5 +102,9 @@ class CheckPowershellCsHostContractTest(unittest.TestCase):
                 "required_executable_groups",
                 "optional_host_mechanisms",
                 "non_goals",
+                "output_layout",
+                "entrypoint_contract",
+                "runtime_cs_files",
+                "launcher_responsibilities",
             },
         )
