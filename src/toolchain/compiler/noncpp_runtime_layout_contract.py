@@ -17,6 +17,18 @@ class CsStdLaneOwnershipEntry(TypedDict):
     rationale: str
 
 
+class RsStdLaneOwnershipEntry(TypedDict):
+    module_name: str
+    canonical_lane: str
+    generated_std_state: str
+    generated_std_rel: str
+    native_rel: str
+    canonical_runtime_symbol: str
+    representative_fixture: str
+    smoke_guard_needles: tuple[str, ...]
+    rationale: str
+
+
 CS_STD_GENERATED_STATE_ORDER: Final[tuple[str, ...]] = (
     "canonical_generated",
     "compare_artifact",
@@ -30,6 +42,9 @@ CS_STD_CANONICAL_LANE_ORDER: Final[tuple[str, ...]] = (
     "native/built_in",
     "no_runtime_module",
 )
+
+RS_STD_GENERATED_STATE_ORDER: Final[tuple[str, ...]] = CS_STD_GENERATED_STATE_ORDER
+RS_STD_CANONICAL_LANE_ORDER: Final[tuple[str, ...]] = CS_STD_CANONICAL_LANE_ORDER
 
 CS_STD_LANE_OWNERSHIP_V1: Final[tuple[CsStdLaneOwnershipEntry, ...]] = (
     {
@@ -119,6 +134,143 @@ CS_STD_LANE_OWNERSHIP_V1: Final[tuple[CsStdLaneOwnershipEntry, ...]] = (
     },
 )
 
+RS_STD_LANE_OWNERSHIP_V1: Final[tuple[RsStdLaneOwnershipEntry, ...]] = (
+    {
+        "module_name": "time",
+        "canonical_lane": "native/built_in",
+        "generated_std_state": "compare_artifact",
+        "generated_std_rel": "src/runtime/rs/generated/std/time.rs",
+        "native_rel": "src/runtime/rs/native/built_in/py_runtime.rs",
+        "canonical_runtime_symbol": "pub use super::super::time;",
+        "representative_fixture": "test/fixtures/imports/import_time_from.py",
+        "smoke_guard_needles": (
+            "def test_runtime_scaffold_exposes_pytra_std_time_and_math",
+        ),
+        "rationale": "generated/std/time.rs exists for compare, but the live Rust runtime still comes from the native built_in scaffold re-export in py_runtime.rs.",
+    },
+    {
+        "module_name": "math",
+        "canonical_lane": "native/built_in",
+        "generated_std_state": "compare_artifact",
+        "generated_std_rel": "src/runtime/rs/generated/std/math.rs",
+        "native_rel": "src/runtime/rs/native/built_in/py_runtime.rs",
+        "canonical_runtime_symbol": "pub use super::super::math;",
+        "representative_fixture": "test/fixtures/stdlib/pytra_std_import_math.py",
+        "smoke_guard_needles": (
+            "def test_imports_emit_use_lines",
+            "use crate::pytra::std::math::floor;",
+        ),
+        "rationale": "generated/std/math.rs exists for compare, but the live Rust runtime still comes from the native built_in scaffold re-export in py_runtime.rs.",
+    },
+    {
+        "module_name": "pathlib",
+        "canonical_lane": "no_runtime_module",
+        "generated_std_state": "compare_artifact",
+        "generated_std_rel": "src/runtime/rs/generated/std/pathlib.rs",
+        "native_rel": "",
+        "canonical_runtime_symbol": "",
+        "representative_fixture": "test/fixtures/stdlib/pathlib_extended.py",
+        "smoke_guard_needles": (
+            "def test_representative_pathlib_extended_fixture_transpiles",
+            "use crate::pytra::std::pathlib::Path;",
+        ),
+        "rationale": "generated/std/pathlib.rs exists for compare, but the current Rust lane is still transpile-only and does not ship a live runtime module.",
+    },
+    {
+        "module_name": "os",
+        "canonical_lane": "no_runtime_module",
+        "generated_std_state": "compare_artifact",
+        "generated_std_rel": "src/runtime/rs/generated/std/os.rs",
+        "native_rel": "",
+        "canonical_runtime_symbol": "",
+        "representative_fixture": "test/fixtures/stdlib/pathlib_extended.py",
+        "smoke_guard_needles": (),
+        "rationale": "generated/std/os.rs exists for compare, but the current Rust lane is still transpile-only and does not ship a live runtime module.",
+    },
+    {
+        "module_name": "os_path",
+        "canonical_lane": "no_runtime_module",
+        "generated_std_state": "compare_artifact",
+        "generated_std_rel": "src/runtime/rs/generated/std/os_path.rs",
+        "native_rel": "",
+        "canonical_runtime_symbol": "",
+        "representative_fixture": "test/fixtures/stdlib/pathlib_extended.py",
+        "smoke_guard_needles": (),
+        "rationale": "generated/std/os_path.rs exists for compare, but the current Rust lane is still transpile-only and does not ship a live runtime module.",
+    },
+    {
+        "module_name": "glob",
+        "canonical_lane": "no_runtime_module",
+        "generated_std_state": "compare_artifact",
+        "generated_std_rel": "src/runtime/rs/generated/std/glob.rs",
+        "native_rel": "",
+        "canonical_runtime_symbol": "",
+        "representative_fixture": "test/fixtures/stdlib/pathlib_extended.py",
+        "smoke_guard_needles": (),
+        "rationale": "generated/std/glob.rs exists for compare, but the current Rust lane is still transpile-only and does not ship a live runtime module.",
+    },
+    {
+        "module_name": "json",
+        "canonical_lane": "no_runtime_module",
+        "generated_std_state": "blocked",
+        "generated_std_rel": "",
+        "native_rel": "",
+        "canonical_runtime_symbol": "",
+        "representative_fixture": "test/fixtures/stdlib/json_extended.py",
+        "smoke_guard_needles": (
+            "def test_representative_json_extended_fixture_transpiles",
+            "use crate::pytra::std::json::dumps;",
+        ),
+        "rationale": "json.py does not yet emit an rs generated/std lane, and the current Rust representative remains transpile-only.",
+    },
+    {
+        "module_name": "re",
+        "canonical_lane": "no_runtime_module",
+        "generated_std_state": "no_runtime_module",
+        "generated_std_rel": "",
+        "native_rel": "",
+        "canonical_runtime_symbol": "",
+        "representative_fixture": "test/fixtures/stdlib/re_extended.py",
+        "smoke_guard_needles": (
+            "def test_representative_re_extended_fixture_transpiles",
+            "use crate::pytra::std::re::sub;",
+        ),
+        "rationale": "the current Rust representative lane is transpile-only and does not own a dedicated runtime module under generated/std or native/built_in.",
+    },
+    {
+        "module_name": "argparse",
+        "canonical_lane": "no_runtime_module",
+        "generated_std_state": "no_runtime_module",
+        "generated_std_rel": "",
+        "native_rel": "",
+        "canonical_runtime_symbol": "",
+        "representative_fixture": "test/fixtures/stdlib/argparse_extended.py",
+        "smoke_guard_needles": (
+            "def test_representative_argparse_extended_fixture_transpiles",
+            "use crate::pytra::std::argparse::ArgumentParser;",
+        ),
+        "rationale": "the current Rust representative lane is transpile-only and does not own a dedicated runtime module under generated/std or native/built_in.",
+    },
+    {
+        "module_name": "enum",
+        "canonical_lane": "no_runtime_module",
+        "generated_std_state": "no_runtime_module",
+        "generated_std_rel": "",
+        "native_rel": "",
+        "canonical_runtime_symbol": "",
+        "representative_fixture": "test/fixtures/stdlib/enum_extended.py",
+        "smoke_guard_needles": (
+            "def test_representative_enum_extended_fixture_transpiles",
+            "trait __pytra_trait_Color",
+        ),
+        "rationale": "the current Rust representative lane is transpile-only and does not own a dedicated runtime module under generated/std or native/built_in.",
+    },
+)
+
 
 def iter_cs_std_lane_ownership() -> tuple[CsStdLaneOwnershipEntry, ...]:
     return CS_STD_LANE_OWNERSHIP_V1
+
+
+def iter_rs_std_lane_ownership() -> tuple[RsStdLaneOwnershipEntry, ...]:
+    return RS_STD_LANE_OWNERSHIP_V1

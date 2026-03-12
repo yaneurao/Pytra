@@ -16,6 +16,9 @@ MANIFEST_PATH = ROOT / "tools" / "runtime_generation_manifest.json"
 CS_EMITTER_PATH = ROOT / "src" / "backends" / "cs" / "emitter" / "cs_emitter.py"
 CS_BUILD_PROFILE_PATH = ROOT / "src" / "toolchain" / "compiler" / "pytra_cli_profiles.py"
 CS_SMOKE_PATH = ROOT / "test" / "unit" / "backends" / "cs" / "test_py2cs_smoke.py"
+RS_SMOKE_PATH = ROOT / "test" / "unit" / "backends" / "rs" / "test_py2rs_smoke.py"
+RS_RUNTIME_SCAFFOLD_PATH = ROOT / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs"
+BACKEND_REGISTRY_METADATA_PATH = ROOT / "src" / "toolchain" / "compiler" / "backend_registry_metadata.py"
 
 
 def _load_text(path: Path) -> str:
@@ -28,10 +31,25 @@ def _manifest_text() -> str:
 
 def _collect_contract_issues() -> list[str]:
     issues: list[str] = []
-    entries = contract_mod.iter_cs_std_lane_ownership()
-    module_names = tuple(entry["module_name"] for entry in entries)
-    if module_names != ("json", "pathlib", "math", "re", "argparse", "enum"):
+    cs_entries = contract_mod.iter_cs_std_lane_ownership()
+    cs_module_names = tuple(entry["module_name"] for entry in cs_entries)
+    if cs_module_names != ("json", "pathlib", "math", "re", "argparse", "enum"):
         issues.append("cs std lane ownership module order drifted")
+    rs_entries = contract_mod.iter_rs_std_lane_ownership()
+    rs_module_names = tuple(entry["module_name"] for entry in rs_entries)
+    if rs_module_names != (
+        "time",
+        "math",
+        "pathlib",
+        "os",
+        "os_path",
+        "glob",
+        "json",
+        "re",
+        "argparse",
+        "enum",
+    ):
+        issues.append("rs std lane ownership module order drifted")
     if contract_mod.CS_STD_GENERATED_STATE_ORDER != (
         "canonical_generated",
         "compare_artifact",
@@ -39,6 +57,8 @@ def _collect_contract_issues() -> list[str]:
         "no_runtime_module",
     ):
         issues.append("generated state order drifted")
+    if contract_mod.RS_STD_GENERATED_STATE_ORDER != contract_mod.CS_STD_GENERATED_STATE_ORDER:
+        issues.append("rs generated state order drifted")
     if contract_mod.CS_STD_CANONICAL_LANE_ORDER != (
         "generated/std",
         "native/std",
@@ -46,6 +66,8 @@ def _collect_contract_issues() -> list[str]:
         "no_runtime_module",
     ):
         issues.append("canonical lane order drifted")
+    if contract_mod.RS_STD_CANONICAL_LANE_ORDER != contract_mod.CS_STD_CANONICAL_LANE_ORDER:
+        issues.append("rs canonical lane order drifted")
     return issues
 
 
@@ -135,8 +157,77 @@ def _collect_csharp_lane_issues() -> list[str]:
     return issues
 
 
+def _collect_rust_lane_issues() -> list[str]:
+    issues: list[str] = []
+    manifest_text = _manifest_text()
+    smoke_text = _load_text(RS_SMOKE_PATH)
+    runtime_scaffold_text = _load_text(RS_RUNTIME_SCAFFOLD_PATH)
+    backend_registry_text = _load_text(BACKEND_REGISTRY_METADATA_PATH)
+
+    for entry in contract_mod.iter_rs_std_lane_ownership():
+        module_name = entry["module_name"]
+        canonical_lane = entry["canonical_lane"]
+        generated_state = entry["generated_std_state"]
+        generated_rel = entry["generated_std_rel"]
+        native_rel = entry["native_rel"]
+        fixture_rel = entry["representative_fixture"]
+        if not (ROOT / fixture_rel).exists():
+            issues.append(f"missing representative fixture: rs:{module_name}: {fixture_rel}")
+        for needle in entry["smoke_guard_needles"]:
+            if needle not in smoke_text:
+                issues.append(f"missing Rust smoke guard for {module_name}: {needle}")
+
+        if generated_state == "compare_artifact":
+            if generated_rel == "":
+                issues.append(f"compare_artifact lane missing generated path: rs:{module_name}")
+            elif not (ROOT / generated_rel).exists():
+                issues.append(f"missing generated compare artifact: rs:{module_name}: {generated_rel}")
+            else:
+                generated_text = _load_text(ROOT / generated_rel)
+                if "generated-by: tools/gen_runtime_from_manifest.py" not in generated_text:
+                    issues.append(f"generated compare artifact missing marker: rs:{module_name}: {generated_rel}")
+            if generated_rel not in manifest_text:
+                issues.append(f"manifest missing Rust std output path: {module_name}")
+        elif generated_state == "blocked":
+            if generated_rel != "":
+                issues.append(f"blocked module must not set generated path: rs:{module_name}")
+            if f"src/runtime/rs/generated/std/{module_name}.rs" in manifest_text:
+                issues.append(f"blocked module unexpectedly owns an rs generated std target: {module_name}")
+        elif generated_state == "no_runtime_module":
+            if generated_rel != "":
+                issues.append(f"no_runtime_module must not set generated path: rs:{module_name}")
+            if f"src/runtime/rs/generated/std/{module_name}.rs" in manifest_text:
+                issues.append(f"no_runtime_module unexpectedly owns an rs generated std target: {module_name}")
+        else:
+            issues.append(f"unknown Rust generated state: {module_name}: {generated_state}")
+
+        if canonical_lane == "native/built_in":
+            if native_rel == "":
+                issues.append(f"native/built_in lane missing native path: rs:{module_name}")
+            elif not (ROOT / native_rel).exists():
+                issues.append(f"missing Rust native/built_in module: {module_name}: {native_rel}")
+            if native_rel.replace("src/", "") not in backend_registry_text:
+                issues.append(f"native/built_in module missing from Rust runtime hook: {module_name}")
+            if generated_rel != "" and generated_rel.replace("src/", "") in backend_registry_text:
+                issues.append(f"generated compare artifact leaked into Rust runtime hook: {module_name}")
+            if entry["canonical_runtime_symbol"] not in runtime_scaffold_text:
+                issues.append(f"Rust scaffold missing canonical runtime symbol: {module_name}")
+        elif canonical_lane == "no_runtime_module":
+            if native_rel != "":
+                issues.append(f"no_runtime_module must not set native path: rs:{module_name}")
+            generated_runtime_rel = f"src/runtime/rs/generated/std/{module_name}.rs"
+            if generated_runtime_rel.replace("src/", "") in backend_registry_text:
+                issues.append(f"{module_name} unexpectedly leaked into the Rust runtime hook")
+            native_runtime_rel = f"src/runtime/rs/native/std/{module_name}.rs"
+            if native_runtime_rel.replace("src/", "") in backend_registry_text or (ROOT / native_runtime_rel).exists():
+                issues.append(f"{module_name} unexpectedly owns a native/std Rust runtime module")
+        else:
+            issues.append(f"unknown Rust canonical lane: {module_name}: {canonical_lane}")
+    return issues
+
+
 def main() -> int:
-    issues = _collect_contract_issues() + _collect_csharp_lane_issues()
+    issues = _collect_contract_issues() + _collect_csharp_lane_issues() + _collect_rust_lane_issues()
     if issues:
         for issue in issues:
             print("[FAIL]", issue)
