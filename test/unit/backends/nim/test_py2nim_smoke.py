@@ -204,5 +204,15 @@ class Py2NimSmokeTest(unittest.TestCase):
             transpile_to_nim_native(east)
         self.assertIn("unresolved stdlib runtime", str(cm.exception))
 
+    def test_nim_runtime_source_path_is_migrated(self) -> None:
+        runtime_path = ROOT / "src" / "runtime" / "nim" / "pytra" / "built_in" / "py_runtime.nim"
+        native_runtime = ROOT / "src" / "runtime" / "nim" / "native" / "built_in" / "py_runtime.nim"
+        image_runtime = ROOT / "src" / "runtime" / "nim" / "generated" / "utils" / "image_runtime.nim"
+        legacy_path = ROOT / "src" / "nim_module" / "py_runtime.nim"
+        self.assertTrue(runtime_path.exists())
+        self.assertTrue(native_runtime.exists())
+        self.assertTrue(image_runtime.exists())
+        self.assertFalse(legacy_path.exists())
+
 if __name__ == "__main__":
     unittest.main()

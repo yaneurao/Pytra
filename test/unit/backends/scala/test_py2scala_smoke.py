@@ -316,6 +316,16 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertNotIn("src.common", src)
         self.assertNotIn("from common.", src)
 
+    def test_scala_runtime_source_path_is_migrated(self) -> None:
+        runtime_path = ROOT / "src" / "runtime" / "scala" / "pytra" / "built_in" / "py_runtime.scala"
+        native_runtime = ROOT / "src" / "runtime" / "scala" / "native" / "built_in" / "py_runtime.scala"
+        image_runtime = ROOT / "src" / "runtime" / "scala" / "generated" / "utils" / "image_runtime.scala"
+        legacy_path = ROOT / "src" / "scala_module" / "py_runtime.scala"
+        self.assertTrue(runtime_path.exists())
+        self.assertTrue(native_runtime.exists())
+        self.assertTrue(image_runtime.exists())
+        self.assertFalse(legacy_path.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
