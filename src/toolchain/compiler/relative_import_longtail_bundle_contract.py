@@ -1,4 +1,4 @@
-"""Canonical live contract for the long-tail relative-import rollout bundle."""
+"""Canonical archived contract for the long-tail relative-import fail-closed bundle."""
 
 from __future__ import annotations
 
@@ -26,19 +26,19 @@ RELATIVE_IMPORT_LONGTAIL_BUNDLE_SCENARIOS_V1: Final[list[dict[str, object]]] = [
 RELATIVE_IMPORT_LONGTAIL_BUNDLE_BACKENDS_V1: Final[list[dict[str, object]]] = [
     {
         "backend": "lua",
-        "verification_lane": "longtail_relative_import_rollout",
+        "verification_lane": "backend_native_fail_closed",
         "scenario_ids": ("parent_module_alias", "parent_symbol_alias"),
         "fail_closed_lane": "backend_specific_fail_closed",
     },
     {
         "backend": "php",
-        "verification_lane": "longtail_relative_import_rollout",
+        "verification_lane": "backend_native_fail_closed",
         "scenario_ids": ("parent_module_alias", "parent_symbol_alias"),
         "fail_closed_lane": "backend_specific_fail_closed",
     },
     {
         "backend": "ruby",
-        "verification_lane": "longtail_relative_import_rollout",
+        "verification_lane": "backend_native_fail_closed",
         "scenario_ids": ("parent_module_alias", "parent_symbol_alias"),
         "fail_closed_lane": "backend_specific_fail_closed",
     },
@@ -47,9 +47,9 @@ RELATIVE_IMPORT_LONGTAIL_BUNDLE_BACKENDS_V1: Final[list[dict[str, object]]] = [
 
 RELATIVE_IMPORT_LONGTAIL_BUNDLE_HANDOFF_V1: Final[dict[str, object]] = {
     "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01",
-    "active_plan_paths": (
-        "docs/ja/plans/p1-relative-import-longtail-bundle.md",
-        "docs/en/plans/p1-relative-import-longtail-bundle.md",
+    "archive_plan_paths": (
+        "docs/ja/plans/archive/20260312-p1-relative-import-longtail-bundle.md",
+        "docs/en/plans/archive/20260312-p1-relative-import-longtail-bundle.md",
     ),
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
@@ -59,8 +59,11 @@ RELATIVE_IMPORT_LONGTAIL_BUNDLE_HANDOFF_V1: Final[dict[str, object]] = {
     ),
     "bundle_id": "longtail_relative_import_rollout",
     "backends": ("lua", "php", "ruby"),
-    "verification_lane": "longtail_relative_import_rollout",
+    "bundle_state": "locked_fail_closed_baseline",
+    "verification_lane": "backend_native_fail_closed",
     "fail_closed_lane": "backend_specific_fail_closed",
+    "current_contract_state": "fail_closed_locked",
+    "current_evidence_lane": "backend_native_fail_closed",
     "locked_transpile_smoke_backends": (
         "rs",
         "cs",
@@ -73,5 +76,7 @@ RELATIVE_IMPORT_LONGTAIL_BUNDLE_HANDOFF_V1: Final[dict[str, object]] = {
         "swift",
         "ts",
     ),
-    "bundle_state": "active_rollout",
+    "followup_bundle_id": "longtail_relative_import_support_rollout",
+    "followup_backends": ("lua", "php", "ruby"),
+    "followup_verification_lane": "longtail_relative_import_support_rollout",
 }

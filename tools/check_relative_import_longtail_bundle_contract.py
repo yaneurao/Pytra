@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the live long-tail relative-import rollout bundle contract."""
+"""Validate the archived long-tail relative-import fail-closed bundle contract."""
 
 from __future__ import annotations
 
@@ -37,9 +37,9 @@ EXPECTED_BACKENDS = ("lua", "php", "ruby")
 
 EXPECTED_HANDOFF = {
     "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01",
-    "active_plan_paths": (
-        "docs/ja/plans/p1-relative-import-longtail-bundle.md",
-        "docs/en/plans/p1-relative-import-longtail-bundle.md",
+    "archive_plan_paths": (
+        "docs/ja/plans/archive/20260312-p1-relative-import-longtail-bundle.md",
+        "docs/en/plans/archive/20260312-p1-relative-import-longtail-bundle.md",
     ),
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
@@ -49,8 +49,11 @@ EXPECTED_HANDOFF = {
     ),
     "bundle_id": "longtail_relative_import_rollout",
     "backends": ("lua", "php", "ruby"),
-    "verification_lane": "longtail_relative_import_rollout",
+    "bundle_state": "locked_fail_closed_baseline",
+    "verification_lane": "backend_native_fail_closed",
     "fail_closed_lane": "backend_specific_fail_closed",
+    "current_contract_state": "fail_closed_locked",
+    "current_evidence_lane": "backend_native_fail_closed",
     "locked_transpile_smoke_backends": (
         "rs",
         "cs",
@@ -63,7 +66,9 @@ EXPECTED_HANDOFF = {
         "swift",
         "ts",
     ),
-    "bundle_state": "active_rollout",
+    "followup_bundle_id": "longtail_relative_import_support_rollout",
+    "followup_backends": ("lua", "php", "ruby"),
+    "followup_verification_lane": "longtail_relative_import_support_rollout",
 }
 
 
@@ -91,9 +96,9 @@ def validate_relative_import_longtail_bundle_contract() -> None:
             f"expected={EXPECTED_BACKENDS}, got={backend_order}"
         )
     for entry in RELATIVE_IMPORT_LONGTAIL_BUNDLE_BACKENDS_V1:
-        if entry["verification_lane"] != "longtail_relative_import_rollout":
+        if entry["verification_lane"] != "backend_native_fail_closed":
             raise SystemExit(
-                "long-tail bundle backend must stay on longtail_relative_import_rollout: "
+                "long-tail bundle backend must stay on backend_native_fail_closed: "
                 f"{entry['backend']}={entry['verification_lane']}"
             )
         if tuple(entry["scenario_ids"]) != tuple(EXPECTED_SCENARIOS):
@@ -108,9 +113,9 @@ def validate_relative_import_longtail_bundle_contract() -> None:
             )
     if RELATIVE_IMPORT_LONGTAIL_BUNDLE_HANDOFF_V1 != EXPECTED_HANDOFF:
         raise SystemExit("relative import long-tail handoff drifted from the fixed inventory")
-    for rel_path in RELATIVE_IMPORT_LONGTAIL_BUNDLE_HANDOFF_V1["active_plan_paths"]:
+    for rel_path in RELATIVE_IMPORT_LONGTAIL_BUNDLE_HANDOFF_V1["archive_plan_paths"]:
         if not (ROOT / rel_path).is_file():
-            raise SystemExit(f"missing long-tail active plan path: {rel_path}")
+            raise SystemExit(f"missing long-tail archive plan path: {rel_path}")
 
 
 def main() -> None:

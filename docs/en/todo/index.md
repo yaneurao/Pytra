@@ -31,18 +31,17 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01] Fix the live handoff and representative contract for the `lua/php/ruby` long-tail relative-import rollout.
-  Context: [docs/ja/plans/p1-relative-import-longtail-bundle.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-longtail-bundle.md)
-  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S1-01] Add the live long-tail plan / TODO / contract / checker / docs handoff and switch the JVM bundle contract to archive semantics.
-  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-01] Add representative transpile-smoke / fail-closed regressions for `lua/php/ruby` and lock the current backend-native rejection contract.
-  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-02] Sync backend parity docs / coverage inventory / handoff wording to the current `not_locked + backend_native_fail_closed` state and make the task close-ready.
+- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01] Fix the live handoff and representative contract for the `lua/php/ruby` relative-import support rollout while keeping the archived fail-closed baseline.
+  Context: [docs/en/plans/p1-relative-import-longtail-support.md](/workspace/Pytra/docs/en/plans/p1-relative-import-longtail-support.md)
+  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01] Archive the long-tail fail-closed bundle and add the live support rollout plan / TODO / contract / checker / handoff.
 
-### P1: move the active live relative-import rollout to the long-tail bundle (`lua/php/ruby`) and lock the post-JVM handoff
+### P1: keep the archived long-tail fail-closed baseline and fix the live handoff for the `lua/php/ruby` relative-import support rollout
 
-Context: [docs/en/plans/p1-relative-import-longtail-bundle.md](/workspace/Pytra/docs/en/plans/p1-relative-import-longtail-bundle.md)
+Context: [docs/en/plans/p1-relative-import-longtail-support.md](/workspace/Pytra/docs/en/plans/p1-relative-import-longtail-support.md)
 
-1. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01] Fix the long-tail backends (`lua/php/ruby`) as the active live rollout bundle and align the post-JVM handoff to the representative contract.
-2. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S1-01] Add the live plan / TODO / contract / checker and switch the coverage / second-wave handoff / backend-parity docs to the long-tail bundle.
-3. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-01] Add representative fail-closed regressions for `lua/php/ruby` and lock the current non-support contract.
-4. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-02] Either widen representative transpile smoke or document the canonical fail-closed end state so the task becomes close-ready.
-5. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S3-01] Align docs / tests / handoff wording to the current long-tail state and close the task.
+1. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01] Fix the live handoff and representative contract for the `lua/php/ruby` relative-import support rollout while keeping the archived fail-closed baseline.
+2. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01] Archive the long-tail fail-closed bundle and add the live support rollout plan / TODO / contract / checker / handoff.
+3. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01] Fix the representative support-rollout contract and focused verification lane for the Lua backend.
+4. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02] Fix the representative support-rollout contract and focused verification lane for the PHP backend.
+5. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03] Fix the representative support-rollout contract and focused verification lane for the Ruby backend.
+6. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S3-01] Sync backend-parity docs / coverage inventory / active handoff wording to the current support-rollout state and close the task.

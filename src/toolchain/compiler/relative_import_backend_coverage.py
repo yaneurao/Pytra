@@ -50,9 +50,9 @@ RELATIVE_IMPORT_BACKEND_COVERAGE_V1: Final[list[dict[str, str]]] = [
     },
     {
         "backend": "lua",
-        "contract_state": "not_locked",
+        "contract_state": "fail_closed_locked",
         "evidence_lane": "backend_native_fail_closed",
-        "notes": "Long-tail rollout is live and representative relative-import projects are locked as backend-native explicit rejection, but support is still not claimed.",
+        "notes": "The archived long-tail fail-closed bundle locks representative relative-import projects as backend-native fail-closed rejection, and the active follow-up is the long-tail support rollout.",
     },
     {
         "backend": "nim",
@@ -62,15 +62,15 @@ RELATIVE_IMPORT_BACKEND_COVERAGE_V1: Final[list[dict[str, str]]] = [
     },
     {
         "backend": "php",
-        "contract_state": "not_locked",
+        "contract_state": "fail_closed_locked",
         "evidence_lane": "backend_native_fail_closed",
-        "notes": "Long-tail rollout is live and representative relative-import projects are locked as backend-native explicit rejection, but support is still not claimed.",
+        "notes": "The archived long-tail fail-closed bundle locks representative relative-import projects as backend-native fail-closed rejection, and the active follow-up is the long-tail support rollout.",
     },
     {
         "backend": "ruby",
-        "contract_state": "not_locked",
+        "contract_state": "fail_closed_locked",
         "evidence_lane": "backend_native_fail_closed",
-        "notes": "Long-tail rollout is live and representative relative-import projects are locked as backend-native explicit rejection, but support is still not claimed.",
+        "notes": "The archived long-tail fail-closed bundle locks representative relative-import projects as backend-native fail-closed rejection, and the active follow-up is the long-tail support rollout.",
     },
     {
         "backend": "scala",
@@ -146,9 +146,9 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
     {
         "backend": "lua",
         "rollout_wave": "long_tail",
-        "next_verification_lane": "longtail_relative_import_rollout",
+        "next_verification_lane": "longtail_relative_import_support_rollout",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "The live long-tail rollout now owns the remaining relative-import parity work.",
+        "notes": "The archived long-tail fail-closed bundle is fixed, and the active follow-up is the long-tail support rollout.",
     },
     {
         "backend": "nim",
@@ -160,16 +160,16 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
     {
         "backend": "php",
         "rollout_wave": "long_tail",
-        "next_verification_lane": "longtail_relative_import_rollout",
+        "next_verification_lane": "longtail_relative_import_support_rollout",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "The live long-tail rollout now owns the remaining relative-import parity work.",
+        "notes": "The archived long-tail fail-closed bundle is fixed, and the active follow-up is the long-tail support rollout.",
     },
     {
         "backend": "ruby",
         "rollout_wave": "long_tail",
-        "next_verification_lane": "longtail_relative_import_rollout",
+        "next_verification_lane": "longtail_relative_import_support_rollout",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "The live long-tail rollout now owns the remaining relative-import parity work.",
+        "notes": "The archived long-tail fail-closed bundle is fixed, and the active follow-up is the long-tail support rollout.",
     },
     {
         "backend": "scala",
@@ -196,7 +196,7 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
 
 
 RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
-    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01",
+    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01",
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
     "backend_parity_docs": (
@@ -204,8 +204,8 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
         "docs/en/language/backend-parity-matrix.md",
     ),
     "next_rollout_plan": (
-        "docs/ja/plans/p1-relative-import-longtail-bundle.md",
-        "docs/en/plans/p1-relative-import-longtail-bundle.md",
+        "docs/ja/plans/p1-relative-import-longtail-support.md",
+        "docs/en/plans/p1-relative-import-longtail-support.md",
     ),
     "locked_transpile_smoke_backends": (
         "rs",
@@ -221,17 +221,19 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
     ),
     "next_rollout_backends": ("lua", "php", "ruby"),
     "current_bundle_smoke_locked_backends": (),
+    "current_bundle_fail_closed_locked_backends": ("lua", "php", "ruby"),
+    "current_bundle_contract_state": "fail_closed_locked",
     "current_bundle_evidence_lane": "backend_native_fail_closed",
     "second_wave_bundle_order": (
         "locked_js_ts_smoke_bundle",
         "native_path_bundle",
         "jvm_package_bundle",
     ),
-    "next_rollout_bundle": "longtail_relative_import_rollout",
+    "next_rollout_bundle": "longtail_relative_import_support_rollout",
     "next_rollout_bundle_backends": ("lua", "php", "ruby"),
     "followup_rollout_bundle": "none",
     "followup_rollout_bundle_backends": (),
     "followup_verification_lane": "none",
-    "next_verification_lane": "longtail_relative_import_rollout",
+    "next_verification_lane": "longtail_relative_import_support_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
 }

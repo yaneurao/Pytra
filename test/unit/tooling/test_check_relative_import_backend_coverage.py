@@ -46,6 +46,14 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
             ["rs", "cs", "go", "java", "js", "kotlin", "nim", "scala", "swift", "ts"],
         )
 
+    def test_lua_php_ruby_are_fail_closed_locked(self) -> None:
+        locked = [
+            row["backend"]
+            for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
+            if row["contract_state"] == "fail_closed_locked"
+        ]
+        self.assertEqual(locked, ["lua", "php", "ruby"])
+
     def test_jvm_package_bundle_uses_package_project_transpile_evidence_lane(self) -> None:
         rows = [
             row
@@ -73,7 +81,7 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
             if row["backend"] in {"lua", "php", "ruby"}
         ]
         self.assertEqual(len(rows), 3)
-        self.assertTrue(all(row["contract_state"] == "not_locked" for row in rows))
+        self.assertTrue(all(row["contract_state"] == "fail_closed_locked" for row in rows))
         self.assertTrue(all(row["evidence_lane"] == "backend_native_fail_closed" for row in rows))
 
     def test_validator_accepts_noncpp_rollout_inventory(self) -> None:
@@ -122,7 +130,7 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         longtail = [
             row["backend"]
             for row in RELATIVE_IMPORT_NONCPP_ROLLOUT_V1
-            if row["next_verification_lane"] == "longtail_relative_import_rollout"
+            if row["next_verification_lane"] == "longtail_relative_import_support_rollout"
         ]
         self.assertEqual(longtail, ["lua", "php", "ruby"])
 
@@ -155,6 +163,14 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_smoke_locked_backends"],
             (),
+        )
+        self.assertEqual(
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_fail_closed_locked_backends"],
+            ("lua", "php", "ruby"),
+        )
+        self.assertEqual(
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_contract_state"],
+            "fail_closed_locked",
         )
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_evidence_lane"],

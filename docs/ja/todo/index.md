@@ -31,18 +31,17 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01] `lua/php/ruby` long-tail relative-import rollout の live handoff と representative contract を固定する。
-  文脈: [docs/ja/plans/p1-relative-import-longtail-bundle.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-longtail-bundle.md)
-  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S1-01] long-tail bundle の live plan / TODO / contract / checker / docs handoff を追加し、JVM bundle contract を archive semantics に切り替える。
-  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-01] `lua/php/ruby` の representative transpile smoke / fail-closed regression を追加し、backend-native emitter が relative import を明示的に reject する current contract を固定した。
-  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-02] backend parity docs / coverage inventory / handoff wording を `not_locked + backend_native_fail_closed` の current state に同期して close-ready にした。
+- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01] archived long-tail fail-closed baseline を前提に、`lua/php/ruby` relative import support rollout の live handoff と representative contract を固定する。
+  文脈: [docs/ja/plans/p1-relative-import-longtail-support.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-longtail-support.md)
+  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01] archived long-tail fail-closed bundle を archive へ移し、support rollout の live plan / TODO / contract / checker / handoff を追加した。
 
-### P1: relative import の active live rollout を long-tail bundle (`lua/php/ruby`) へ移し、post-JVM handoff を固定する
+### P1: archived long-tail fail-closed baseline を維持したまま、`lua/php/ruby` relative import support rollout の live handoff を固定する
 
-文脈: [docs/ja/plans/p1-relative-import-longtail-bundle.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-longtail-bundle.md)
+文脈: [docs/ja/plans/p1-relative-import-longtail-support.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-longtail-support.md)
 
-1. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01] long-tail backend (`lua/php/ruby`) を active live rollout bundle として固定し、post-JVM handoff を representative contract に揃える。
-2. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S1-01] live plan / TODO / contract / checker を追加し、coverage / second-wave handoff / backend parity docs を long-tail bundle へ切り替える。
-3. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-01] `lua/php/ruby` の representative fail-closed regression を追加し、current non-support contract を固定する。
-4. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S2-02] representative transpile smoke を widen するか、fail-closed canonical end state を明文化して close-ready にする。
-5. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01-S3-01] docs / tests / handoff wording を current long-tail state に揃えて task を閉じる。
+1. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01] archived long-tail fail-closed baseline を維持したまま、`lua/php/ruby` relative import support rollout の live handoff と representative contract を固定する。
+2. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01] archived long-tail fail-closed bundle を archive へ移し、support rollout の live plan / TODO / contract / checker / handoff を追加した。
+3. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01] Lua backend の representative support rollout contract と focused verification lane を固定する。
+4. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02] PHP backend の representative support rollout contract と focused verification lane を固定する。
+5. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03] Ruby backend の representative support rollout contract と focused verification lane を固定する。
+6. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S3-01] backend parity docs / coverage inventory / active handoff wording を current support rollout state に同期して task を閉じる。

@@ -30,7 +30,7 @@ class RelativeImportLongtailBundleContractTest(unittest.TestCase):
         )
         self.assertTrue(
             all(
-                entry["verification_lane"] == "longtail_relative_import_rollout"
+                entry["verification_lane"] == "backend_native_fail_closed"
                 for entry in RELATIVE_IMPORT_LONGTAIL_BUNDLE_BACKENDS_V1
             )
         )
