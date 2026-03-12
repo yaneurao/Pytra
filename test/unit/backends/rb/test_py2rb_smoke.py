@@ -101,7 +101,7 @@ class Py2RbSmokeTest(unittest.TestCase):
         ruby = transpile_to_ruby_native(east)
         self.assertIn("~y", ruby)
 
-    def test_cli_relative_import_longtail_bundle_fail_closed_for_ruby(self) -> None:
+    def test_cli_relative_import_support_rollout_fail_closed_for_ruby(self) -> None:
         for scenario_id, scenario in relative_import_longtail_scenarios().items():
             with self.subTest(scenario_id=scenario_id):
                 err = transpile_relative_import_longtail_expect_failure(
@@ -112,7 +112,7 @@ class Py2RbSmokeTest(unittest.TestCase):
                 self.assertIn("unsupported relative import form: relative import", err)
                 self.assertIn("ruby native emitter", err)
 
-    def test_cli_relative_import_longtail_bundle_fail_closed_for_wildcard_on_ruby(self) -> None:
+    def test_cli_relative_import_support_rollout_fail_closed_for_wildcard_on_ruby(self) -> None:
         err = transpile_relative_import_longtail_expect_failure(
             "ruby",
             "from ..helper import *",

@@ -37,14 +37,17 @@
 - `python3 tools/check_relative_import_longtail_support_contract.py`
 - `python3 tools/check_relative_import_lua_support_contract.py`
 - `python3 tools/check_relative_import_php_support_contract.py`
+- `python3 tools/check_relative_import_ruby_support_contract.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_backend_coverage.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_secondwave_rollout_contract.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_longtail_bundle_contract.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_longtail_support_contract.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_lua_support_contract.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_php_support_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_ruby_support_contract.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/lua -p 'test_py2lua_smoke.py' -k relative_import_support_rollout`
 - `PYTHONPATH=src:test/unit python3 test/unit/backends/php/test_py2php_smoke.py -k relative_import_support_rollout -v`
+- `PYTHONPATH=src:test/unit:test/unit/backends python3 -m unittest discover -s test/unit/backends/rb -p 'test_py2rb_smoke.py' -k relative_import_support_rollout`
 - `python3 tools/check_todo_priority.py`
 - `git diff --check`
 
@@ -54,6 +57,7 @@
 - 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01` は live plan / TODO / support contract / checker と archive handoff を一緒に揃える closeout-first bundle とする。
 - 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01` では Lua backend の focused verification lane を `lua_relative_import_support_rollout_smoke` とし、current diagnostic family は `backend_specific_fail_closed`、current evidence は `backend_native_fail_closed` のまま固定する。
 - 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02` では PHP backend の focused verification lane を `php_relative_import_support_rollout_smoke` とし、Lua と同じく backend-local contract/checker で smoke 名と diagnostic marker を固定する。
+- 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03` では Ruby backend の focused verification lane を `ruby_relative_import_support_rollout_smoke` とし、Lua/PHP と同じく backend-local contract/checker で smoke 名と diagnostic marker を固定する。
 
 ## 分解
 
@@ -61,5 +65,5 @@
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01] archived long-tail fail-closed bundle を archive へ移し、support rollout の live plan / TODO / contract / checker / handoff を追加した。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01] Lua backend の representative support rollout contract と focused verification lane を固定する。
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02] PHP backend の representative support rollout contract と focused verification lane を fixed inventory / checker / smoke で固定した。
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03] Ruby backend の representative support rollout contract と focused verification lane を固定する。
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03] Ruby backend の representative support rollout contract と focused verification lane を fixed inventory / checker / smoke で固定した。
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S3-01] backend parity docs / coverage inventory / active handoff wording を current support rollout state に同期して task を閉じる。
