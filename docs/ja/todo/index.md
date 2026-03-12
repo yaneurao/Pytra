@@ -34,3 +34,7 @@
 1. [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01] `tuple[T, ...]` を fixed tuple と別 category として受理し、representative backend で immutable sequence として扱えるようにする。
    文脈: [p0-homogeneous-tuple-ellipsis-support.md](/workspace/Pytra/docs/ja/plans/p0-homogeneous-tuple-ellipsis-support.md)
    - `P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01`: current C++ backend は `tuple[int, ...]` を `::std::tuple<int64, ...>` に誤 lower する。v1 では fixed tuple とは分離し、representative lane を immutable sequence として固定し、未対応 lane は fail-closed にする。
+
+2. [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01] `dataclasses.field(...)` を runtime call ではなく静的 dataclass metadata subset として扱い、representative lane を fail-closed contract 付きで固定する。
+   文脈: [p1-dataclass-field-static-subset.md](/workspace/Pytra/docs/ja/plans/p1-dataclass-field-static-subset.md)
+   概要: Pytra-NES の `timestamps: deque[float] = field(init=False, repr=False)` のような representative case で、現状は `field(...)` が通常の式として backend へ漏れて壊れたコードを生成する。v1 では `default` / `default_factory` / `init` / `repr` / `compare` を静的 metadata subset として扱い、unsupported option は fail-closed にする。

@@ -1,0 +1,60 @@
+# P1: static dataclass `field(...)` subset
+
+Last updated: 2026-03-12
+
+Related TODO:
+- `ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01` in `docs/en/todo/index.md`
+
+Background:
+- Pytra-NES uses `dataclasses.field(...)` in representative forms such as `timestamps: deque[float] = field(init=False, repr=False)`.
+- Current Pytra does not absorb `field(...)` as dataclass metadata and instead forwards it to backends as an ordinary expression or function call.
+- As a result, the representative C++ lane emits broken constructor/default code such as `field(false, false)`, which blocks the experiment.
+- The required capability here is not reflection or runtime field introspection, but only a compile-time dataclass metadata subset.
+
+Goal:
+- Treat `dataclasses.field(...)` as static dataclass metadata rather than a runtime call.
+- In v1, formally support the subset `default` / `default_factory` / `init` / `repr` / `compare` and lock representative lanes with explicit backend policy.
+- Keep unsupported options fail-closed instead of silently falling back.
+
+In scope:
+- Static metadata absorption of `field(...)` during frontend / lowering
+- Carrying `default` / `default_factory` / `init` / `repr` / `compare` in the dataclass field carrier
+- Representative constructor-generation and field-initialization policy
+- Contracts that prevent `field(...)` from appearing in runtime backend output on representative backends
+- Fail-closed regressions for unsupported options or unsupported factories
+
+Out of scope:
+- Dataclass field reflection or runtime metadata APIs
+- Full Python dataclasses parity
+- Advanced options such as `metadata`, `hash`, and `kw_only`
+- Allowing arbitrary callables as `default_factory`
+- Solving full backend support for `deque[T]` as part of this task
+
+Acceptance criteria:
+- In representative cases, `field(...)` no longer leaks into backend output as an ordinary expression.
+- `init=False` affects constructor generation.
+- The v1 subset `default` / `default_factory` / `repr` / `compare` is carried in the field carrier.
+- Unsupported options fail closed explicitly.
+- `python3 tools/check_todo_priority.py`, focused unit tests, `python3 tools/build_selfhost.py`, and `git diff --check` all pass.
+
+Verification commands:
+- `python3 tools/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core*.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/common -p 'test_import_diagnostics.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k dataclass`
+- `python3 tools/build_selfhost.py`
+- `git diff --check`
+
+Decision log:
+- 2026-03-12: `field(...)` will be absorbed as a compile-time dataclass metadata subset, not treated as a runtime function. No reflection or dynamic typing will be introduced.
+- 2026-03-12: The v1 subset is limited to `default` / `default_factory` / `init` / `repr` / `compare`; everything else remains fail-closed.
+- 2026-03-12: `default_factory` will initially focus on representative zero-argument factories; full arbitrary-callable support is deferred.
+- 2026-03-12: Full backend support for `deque[T]` is a separate topic, so this task first locks the contract that `field(...)` itself must not leak as an expression.
+
+## Breakdown
+
+- [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S1-01] Lock representative failures and scope with regressions and docs.
+- [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S2-01] Absorb `field(...)` into a static metadata carrier during frontend / lowering.
+- [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S2-02] Lock constructor / field-init contracts for `init` / `default` / `default_factory`.
+- [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S3-01] Lock metadata lanes for `repr` / `compare` and the fail-closed policy for unsupported options.
+- [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01-S3-02] Sync docs / TODO / regressions / inventories and close the task.
