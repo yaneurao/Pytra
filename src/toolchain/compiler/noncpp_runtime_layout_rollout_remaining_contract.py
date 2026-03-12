@@ -35,6 +35,14 @@ class RemainingRuntimeTargetInventoryEntry(TypedDict):
     compat_files: tuple[str, ...]
 
 
+class RemainingRuntimeModuleBucketEntry(TypedDict):
+    backend: str
+    generated_modules: tuple[str, ...]
+    native_modules: tuple[str, ...]
+    compat_modules: tuple[str, ...]
+    blocked_modules: tuple[str, ...]
+
+
 REMAINING_NONCPP_BACKEND_ORDER_V1: Final[tuple[str, ...]] = (
     "go",
     "java",
@@ -47,6 +55,37 @@ REMAINING_NONCPP_BACKEND_ORDER_V1: Final[tuple[str, ...]] = (
     "lua",
     "ruby",
     "php",
+)
+
+REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
+    "built_in/contains",
+    "built_in/io_ops",
+    "built_in/iter_ops",
+    "built_in/numeric_ops",
+    "built_in/predicates",
+    "built_in/scalar_ops",
+    "built_in/sequence",
+    "built_in/string_ops",
+    "built_in/type_id",
+    "built_in/zip_ops",
+)
+
+REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1: Final[tuple[str, ...]] = (
+    "std/json",
+    "std/math",
+    "std/pathlib",
+    "std/time",
+)
+
+REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1: Final[tuple[str, ...]] = (
+    "utils/gif",
+    "utils/png",
+)
+
+REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1: Final[tuple[str, ...]] = (
+    REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+    + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
+    + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
 )
 
 
@@ -737,6 +776,368 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
 )
 
 
+REMAINING_NONCPP_RUNTIME_TARGET_MODULE_INVENTORY_V1: Final[
+    tuple[RemainingRuntimeTargetModuleInventoryEntry, ...]
+] = (
+    {
+        "backend": "go",
+        "generated_modules": ("utils/gif", "utils/png"),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_generated_modules": (
+            _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+                _BLOCKED_BUILT_IN_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1,
+                _BLOCKED_STD_COMPARE_REASON,
+            )
+        ),
+    },
+    {
+        "backend": "java",
+        "generated_modules": (
+            "std/json",
+            "std/math",
+            "std/pathlib",
+            "std/time",
+            "utils/gif",
+            "utils/png",
+        ),
+        "native_modules": ("built_in/py_runtime", "std/math_impl", "std/time_impl"),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_generated_modules": _blocked_generated_modules(
+            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+            _BLOCKED_BUILT_IN_COMPARE_REASON,
+        ),
+    },
+    {
+        "backend": "kotlin",
+        "generated_modules": (
+            "utils/gif_helper",
+            "utils/image_runtime",
+            "utils/png_helper",
+        ),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_generated_modules": (
+            _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+                _BLOCKED_BUILT_IN_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1,
+                _BLOCKED_STD_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1,
+                _BLOCKED_UTILS_COMPARE_SPLIT_REASON,
+            )
+        ),
+    },
+    {
+        "backend": "scala",
+        "generated_modules": (
+            "utils/gif_helper",
+            "utils/image_runtime",
+            "utils/png_helper",
+        ),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_generated_modules": (
+            _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+                _BLOCKED_BUILT_IN_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1,
+                _BLOCKED_STD_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1,
+                _BLOCKED_UTILS_COMPARE_SPLIT_REASON,
+            )
+        ),
+    },
+    {
+        "backend": "swift",
+        "generated_modules": (
+            "utils/gif_helper",
+            "utils/image_runtime",
+            "utils/png_helper",
+        ),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_generated_modules": (
+            _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+                _BLOCKED_BUILT_IN_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1,
+                _BLOCKED_STD_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1,
+                _BLOCKED_UTILS_COMPARE_SPLIT_REASON,
+            )
+        ),
+    },
+    {
+        "backend": "nim",
+        "generated_modules": (
+            "utils/gif_helper",
+            "utils/image_runtime",
+            "utils/png_helper",
+        ),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_generated_modules": (
+            _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+                _BLOCKED_BUILT_IN_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1,
+                _BLOCKED_STD_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1,
+                _BLOCKED_UTILS_COMPARE_SPLIT_REASON,
+            )
+        ),
+    },
+    {
+        "backend": "js",
+        "generated_modules": ("utils/gif", "utils/png"),
+        "native_modules": (
+            "built_in/py_runtime",
+            "std/math",
+            "std/pathlib",
+            "std/time",
+        ),
+        "compat_modules": (
+            "built_in/py_runtime",
+            "std/math",
+            "std/pathlib",
+            "std/time",
+            "utils/gif",
+            "utils/png",
+        ),
+        "blocked_generated_modules": (
+            _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+                _BLOCKED_BUILT_IN_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1,
+                _BLOCKED_STD_COMPARE_HANDWRITTEN_REASON,
+            )
+        ),
+    },
+    {
+        "backend": "ts",
+        "generated_modules": ("utils/gif", "utils/png"),
+        "native_modules": (
+            "built_in/py_runtime",
+            "std/math",
+            "std/pathlib",
+            "std/time",
+        ),
+        "compat_modules": (
+            "built_in/py_runtime",
+            "std/math",
+            "std/pathlib",
+            "std/time",
+            "utils/gif",
+            "utils/png",
+        ),
+        "blocked_generated_modules": (
+            _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+                _BLOCKED_BUILT_IN_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1,
+                _BLOCKED_STD_COMPARE_HANDWRITTEN_REASON,
+            )
+        ),
+    },
+    {
+        "backend": "lua",
+        "generated_modules": (
+            "utils/gif_helper",
+            "utils/image_runtime",
+            "utils/png_helper",
+        ),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_generated_modules": (
+            _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+                _BLOCKED_BUILT_IN_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1,
+                _BLOCKED_STD_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1,
+                _BLOCKED_UTILS_COMPARE_SPLIT_REASON,
+            )
+        ),
+    },
+    {
+        "backend": "ruby",
+        "generated_modules": (
+            "utils/gif_helper",
+            "utils/image_runtime",
+            "utils/png_helper",
+        ),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_generated_modules": (
+            _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+                _BLOCKED_BUILT_IN_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1,
+                _BLOCKED_STD_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1,
+                _BLOCKED_UTILS_COMPARE_SPLIT_REASON,
+            )
+        ),
+    },
+    {
+        "backend": "php",
+        "generated_modules": ("utils/gif", "utils/png"),
+        "native_modules": ("built_in/py_runtime", "std/time"),
+        "compat_modules": (
+            "built_in/py_runtime",
+            "std/time",
+            "utils/gif",
+            "utils/png",
+        ),
+        "blocked_generated_modules": (
+            _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+                _BLOCKED_BUILT_IN_COMPARE_REASON,
+            )
+            + _blocked_generated_modules(
+                REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1,
+                _BLOCKED_STD_COMPARE_HANDWRITTEN_REASON,
+            )
+        ),
+    },
+)
+
+
+REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBucketEntry, ...]] = (
+    {
+        "backend": "go",
+        "generated_modules": ("utils/gif", "utils/png"),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_modules": ("std/json", "std/math", "std/pathlib", "std/time"),
+    },
+    {
+        "backend": "java",
+        "generated_modules": (
+            "std/json",
+            "std/math",
+            "std/pathlib",
+            "std/time",
+            "utils/gif",
+            "utils/png",
+        ),
+        "native_modules": ("built_in/py_runtime", "std/math", "std/time"),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_modules": (),
+    },
+    {
+        "backend": "kotlin",
+        "generated_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_modules": ("std/json", "std/math", "std/pathlib", "std/time"),
+    },
+    {
+        "backend": "scala",
+        "generated_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_modules": ("std/json", "std/math", "std/pathlib", "std/time"),
+    },
+    {
+        "backend": "swift",
+        "generated_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_modules": ("std/json", "std/math", "std/pathlib", "std/time"),
+    },
+    {
+        "backend": "nim",
+        "generated_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_modules": ("std/json", "std/math", "std/pathlib", "std/time"),
+    },
+    {
+        "backend": "js",
+        "generated_modules": ("utils/gif", "utils/png"),
+        "native_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
+        "compat_modules": (
+            "built_in/py_runtime",
+            "std/math",
+            "std/pathlib",
+            "std/time",
+            "utils/gif",
+            "utils/png",
+        ),
+        "blocked_modules": ("std/json",),
+    },
+    {
+        "backend": "ts",
+        "generated_modules": ("utils/gif", "utils/png"),
+        "native_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
+        "compat_modules": (
+            "built_in/py_runtime",
+            "std/math",
+            "std/pathlib",
+            "std/time",
+            "utils/gif",
+            "utils/png",
+        ),
+        "blocked_modules": ("std/json",),
+    },
+    {
+        "backend": "lua",
+        "generated_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_modules": ("std/json", "std/math", "std/pathlib", "std/time"),
+    },
+    {
+        "backend": "ruby",
+        "generated_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "native_modules": ("built_in/py_runtime",),
+        "compat_modules": ("built_in/py_runtime",),
+        "blocked_modules": ("std/json", "std/math", "std/pathlib", "std/time"),
+    },
+    {
+        "backend": "php",
+        "generated_modules": ("utils/gif", "utils/png"),
+        "native_modules": ("built_in/py_runtime", "std/time"),
+        "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
+        "blocked_modules": ("std/json", "std/math", "std/pathlib"),
+    },
+)
+
+
 def iter_remaining_noncpp_backend_order() -> tuple[str, ...]:
     return REMAINING_NONCPP_BACKEND_ORDER_V1
 
@@ -751,3 +1152,17 @@ def iter_remaining_noncpp_runtime_current_inventory() -> tuple[RemainingRuntimeC
 
 def iter_remaining_noncpp_runtime_target_inventory() -> tuple[RemainingRuntimeTargetInventoryEntry, ...]:
     return REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1
+
+
+def iter_remaining_noncpp_runtime_generated_compare_baseline() -> tuple[str, ...]:
+    return REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1
+
+
+def iter_remaining_noncpp_runtime_target_module_inventory() -> tuple[
+    RemainingRuntimeTargetModuleInventoryEntry, ...
+]:
+    return REMAINING_NONCPP_RUNTIME_TARGET_MODULE_INVENTORY_V1
+
+
+def iter_remaining_noncpp_runtime_module_buckets() -> tuple[RemainingRuntimeModuleBucketEntry, ...]:
+    return REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1
