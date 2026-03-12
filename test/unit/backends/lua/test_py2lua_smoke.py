@@ -90,6 +90,25 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertTrue(image_runtime.exists())
         self.assertFalse(legacy_path.exists())
 
+    def test_lua_repo_compat_lane_resolves_runtime_helpers(self) -> None:
+        compat_runtime = ROOT / "src" / "runtime" / "lua" / "pytra" / "built_in" / "py_runtime.lua"
+        code = "\n".join(
+            [
+                f"dofile({compat_runtime.as_posix()!r})",
+                "io.write((__pytra_truthy({1}) and 'lua-ok' or 'lua-missing') .. '\\n')",
+            ]
+        )
+        proc = subprocess.run(
+            ["lua", "-"],
+            cwd=ROOT,
+            input=code,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(proc.stdout, "lua-ok\n")
+
     def test_bitwise_invert_basic_uses_lua_invert_operator(self) -> None:
         fixture = find_fixture_case("bitwise_invert_basic")
         east = load_east(fixture, parser_backend="self_hosted")

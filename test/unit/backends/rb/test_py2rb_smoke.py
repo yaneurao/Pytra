@@ -144,6 +144,24 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertTrue(image_runtime.exists())
         self.assertFalse(legacy_path.exists())
 
+    def test_ruby_repo_compat_lane_resolves_runtime_helpers(self) -> None:
+        compat_runtime = ROOT / "src" / "runtime" / "ruby" / "pytra" / "built_in" / "py_runtime.rb"
+        code = "\n".join(
+            [
+                f"load {compat_runtime.as_posix()!r}",
+                "puts(__pytra_truthy([1]) ? 'ruby-ok' : 'ruby-missing')",
+            ]
+        )
+        proc = subprocess.run(
+            ["ruby", "-e", code],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(proc.stdout, "ruby-ok\n")
+
     def test_generated_add_fixture_executes_when_ruby_available(self) -> None:
         if shutil.which("ruby") is None:
             self.skipTest("ruby toolchain is not installed in this environment")
