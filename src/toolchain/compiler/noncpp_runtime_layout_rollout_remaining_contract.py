@@ -48,6 +48,12 @@ class RemainingRuntimeWaveAHookSourceEntry(TypedDict):
     runtime_hook_files: tuple[str, ...]
 
 
+class RemainingRuntimeWaveANativeResidualEntry(TypedDict):
+    backend: str
+    substrate_modules: tuple[str, ...]
+    compare_residual_modules: tuple[str, ...]
+
+
 REMAINING_NONCPP_BACKEND_ORDER_V1: Final[tuple[str, ...]] = (
     "go",
     "java",
@@ -951,6 +957,42 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1: Final[
 )
 
 
+REMAINING_NONCPP_RUNTIME_WAVE_A_NATIVE_RESIDUALS_V1: Final[
+    tuple[RemainingRuntimeWaveANativeResidualEntry, ...]
+] = (
+    {
+        "backend": "go",
+        "substrate_modules": ("built_in/py_runtime",),
+        "compare_residual_modules": (),
+    },
+    {
+        "backend": "java",
+        "substrate_modules": ("built_in/py_runtime",),
+        "compare_residual_modules": ("std/math", "std/time"),
+    },
+    {
+        "backend": "kotlin",
+        "substrate_modules": ("built_in/py_runtime",),
+        "compare_residual_modules": (),
+    },
+    {
+        "backend": "scala",
+        "substrate_modules": ("built_in/py_runtime",),
+        "compare_residual_modules": (),
+    },
+    {
+        "backend": "swift",
+        "substrate_modules": ("built_in/py_runtime",),
+        "compare_residual_modules": (),
+    },
+    {
+        "backend": "nim",
+        "substrate_modules": ("built_in/py_runtime",),
+        "compare_residual_modules": (),
+    },
+)
+
+
 def iter_remaining_noncpp_backend_order() -> tuple[str, ...]:
     return REMAINING_NONCPP_BACKEND_ORDER_V1
 
@@ -977,3 +1019,7 @@ def iter_remaining_noncpp_runtime_module_buckets() -> tuple[RemainingRuntimeModu
 
 def iter_remaining_noncpp_runtime_wave_a_hook_sources() -> tuple[RemainingRuntimeWaveAHookSourceEntry, ...]:
     return REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1
+
+
+def iter_remaining_noncpp_runtime_wave_a_native_residuals() -> tuple[RemainingRuntimeWaveANativeResidualEntry, ...]:
+    return REMAINING_NONCPP_RUNTIME_WAVE_A_NATIVE_RESIDUALS_V1

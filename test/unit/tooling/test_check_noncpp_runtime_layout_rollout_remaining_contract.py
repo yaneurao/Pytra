@@ -22,6 +22,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_module_bucket_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_module_bucket_issues(), [])
 
+    def test_wave_a_native_residual_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_a_native_residual_issues(), [])
+
     def test_backend_order_is_fixed(self) -> None:
         self.assertEqual(
             contract_mod.iter_remaining_noncpp_backend_order(),
@@ -102,6 +105,47 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "runtime/nim/native/built_in/py_runtime.nim",
                     "runtime/nim/generated/utils/image_runtime.nim",
                 ),
+            },
+        )
+
+    def test_wave_a_native_residuals_are_fixed(self) -> None:
+        by_backend = {
+            entry["backend"]: entry
+            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_a_native_residuals()
+        }
+        self.assertEqual(
+            by_backend,
+            {
+                "go": {
+                    "backend": "go",
+                    "substrate_modules": ("built_in/py_runtime",),
+                    "compare_residual_modules": (),
+                },
+                "java": {
+                    "backend": "java",
+                    "substrate_modules": ("built_in/py_runtime",),
+                    "compare_residual_modules": ("std/math", "std/time"),
+                },
+                "kotlin": {
+                    "backend": "kotlin",
+                    "substrate_modules": ("built_in/py_runtime",),
+                    "compare_residual_modules": (),
+                },
+                "scala": {
+                    "backend": "scala",
+                    "substrate_modules": ("built_in/py_runtime",),
+                    "compare_residual_modules": (),
+                },
+                "swift": {
+                    "backend": "swift",
+                    "substrate_modules": ("built_in/py_runtime",),
+                    "compare_residual_modules": (),
+                },
+                "nim": {
+                    "backend": "nim",
+                    "substrate_modules": ("built_in/py_runtime",),
+                    "compare_residual_modules": (),
+                },
             },
         )
 

@@ -353,12 +353,40 @@ def _collect_module_bucket_issues() -> list[str]:
     return issues
 
 
+def _collect_wave_a_native_residual_issues() -> list[str]:
+    issues: list[str] = []
+    module_buckets = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_module_buckets()
+    }
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_a_native_residuals()
+    if tuple(entry["backend"] for entry in entries) != ("go", "java", "kotlin", "scala", "swift", "nim"):
+        issues.append("wave-a native residual order drifted")
+    for entry in entries:
+        backend = entry["backend"]
+        bucket = module_buckets.get(backend)
+        if bucket is None:
+            issues.append(f"wave-a native residual backend drifted: {backend}")
+            continue
+        native_modules = set(bucket["native_modules"])
+        substrate = set(entry["substrate_modules"])
+        compare_residual = set(entry["compare_residual_modules"])
+        if not substrate.issubset(native_modules):
+            issues.append(f"wave-a substrate escaped native bucket: {backend}")
+        if not compare_residual.issubset(native_modules):
+            issues.append(f"wave-a compare residual escaped native bucket: {backend}")
+        if substrate & compare_residual:
+            issues.append(f"wave-a native residual overlap drifted: {backend}")
+    return issues
+
+
 def main() -> int:
     issues = _collect_contract_issues()
     issues.extend(_collect_wave_a_runtime_hook_issues())
     issues.extend(_collect_current_inventory_issues())
     issues.extend(_collect_target_inventory_issues())
     issues.extend(_collect_module_bucket_issues())
+    issues.extend(_collect_wave_a_native_residual_issues())
     if issues:
         print("non-c++ runtime layout rollout remaining contract check failed:", file=sys.stderr)
         for issue in issues:
