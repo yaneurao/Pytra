@@ -33,7 +33,7 @@ def _collect_contract_issues() -> list[str]:
     issues: list[str] = []
     cs_entries = contract_mod.iter_cs_std_lane_ownership()
     cs_module_names = tuple(entry["module_name"] for entry in cs_entries)
-    if cs_module_names != ("json", "pathlib", "math", "re", "argparse", "enum"):
+    if cs_module_names != ("time", "json", "pathlib", "math", "re", "argparse", "enum"):
         issues.append("cs std lane ownership module order drifted")
     rs_entries = contract_mod.iter_rs_std_lane_ownership()
     rs_module_names = tuple(entry["module_name"] for entry in rs_entries)
@@ -77,6 +77,7 @@ def _collect_csharp_lane_issues() -> list[str]:
     emitter_text = _load_text(CS_EMITTER_PATH)
     build_profile_text = _load_text(CS_BUILD_PROFILE_PATH)
     smoke_text = _load_text(CS_SMOKE_PATH)
+    candidate = contract_mod.get_cs_std_first_live_generated_candidate()
 
     for entry in contract_mod.iter_cs_std_lane_ownership():
         module_name = entry["module_name"]
@@ -150,6 +151,24 @@ def _collect_csharp_lane_issues() -> list[str]:
                 issues.append(f"{module_name} unexpectedly owns a native/std runtime module")
         else:
             issues.append(f"unknown canonical lane: {module_name}: {canonical_lane}")
+
+    candidate_module = candidate["module_name"]
+    ownership_modules = {entry["module_name"] for entry in contract_mod.iter_cs_std_lane_ownership()}
+    if candidate_module not in ownership_modules:
+        issues.append("C# live-generated candidate is missing from std ownership contract")
+    else:
+        by_module = {entry["module_name"]: entry for entry in contract_mod.iter_cs_std_lane_ownership()}
+        candidate_entry = by_module[candidate_module]
+        if candidate_entry["canonical_lane"] != candidate["current_canonical_lane"]:
+            issues.append("C# live-generated candidate canonical lane drifted")
+        if candidate_entry["generated_std_rel"] != candidate["generated_std_rel"]:
+            issues.append("C# live-generated candidate generated path drifted")
+        if candidate_entry["native_rel"] != candidate["native_rel"]:
+            issues.append("C# live-generated candidate native path drifted")
+    if tuple(candidate["deferred_native_canonical_modules"]) != ("json", "pathlib", "math"):
+        issues.append("C# deferred native-canonical module set drifted")
+    if tuple(candidate["deferred_no_runtime_modules"]) != ("re", "argparse", "enum"):
+        issues.append("C# deferred no-runtime-module set drifted")
     if 'return "Pytra.CsModule.math"' not in emitter_text:
         issues.append("math module alias target drifted from Pytra.CsModule.math")
     if 'return "Pytra.CsModule.py_path"' not in emitter_text:
