@@ -1,8 +1,8 @@
 #pragma once
 
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
 
-#include "pytra/std/pathlib.h"
+#include "generated/std/pathlib.h"
 
 namespace pytra::compiler::transpile_cli {
 struct CompilerRootDocument;

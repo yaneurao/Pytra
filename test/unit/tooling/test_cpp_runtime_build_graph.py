@@ -97,11 +97,11 @@ class CppRuntimeBuildGraphTest(unittest.TestCase):
             text = output_makefile.read_text(encoding="utf-8")
             self.assertIn(str(ROOT / "src/runtime/cpp/native/std/math.cpp"), text)
 
-    def test_runtime_cpp_candidates_support_generated_native_layout(self) -> None:
+    def test_runtime_cpp_candidates_support_generated_native_layout_for_header_only_math(self) -> None:
         header = ROOT / "src/runtime/cpp/generated/std/math.h"
         paths = [path.as_posix() for path in runtime_cpp_candidates_from_header(header)]
-        self.assertIn((ROOT / "src/runtime/cpp/generated/std/math.cpp").as_posix(), paths)
         self.assertIn((ROOT / "src/runtime/cpp/native/std/math.cpp").as_posix(), paths)
+        self.assertNotIn((ROOT / "src/runtime/cpp/generated/std/math.cpp").as_posix(), paths)
         self.assertNotIn((ROOT / "src/runtime/cpp/std/math.gen.cpp").as_posix(), paths)
         self.assertNotIn((ROOT / "src/runtime/cpp/std/math.ext.cpp").as_posix(), paths)
 

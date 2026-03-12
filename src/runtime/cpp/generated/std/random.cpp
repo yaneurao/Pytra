@@ -1,13 +1,13 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/random.py
 // generated-by: src/backends/cpp/cli.py
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
 
 #include "runtime/cpp/generated/std/random.h"
-#include "runtime/cpp/core/process_runtime.h"
-#include "runtime/cpp/core/scope_exit.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/std/math.h"
+#include "generated/std/math.h"
 
 namespace pytra::std::random {
 

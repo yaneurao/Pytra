@@ -177,7 +177,9 @@ def _load_header_source_index() -> dict[str, list[Path]]:
                 for ent in modules.values():
                     if not isinstance(ent, dict):
                         continue
-                    headers_obj = ent.get("public_headers")
+                    headers_obj = ent.get("compiler_headers")
+                    if not isinstance(headers_obj, list):
+                        headers_obj = ent.get("public_headers")
                     sources_obj = ent.get("compile_sources")
                     if not isinstance(headers_obj, list) or not isinstance(sources_obj, list):
                         continue
@@ -218,7 +220,9 @@ def collect_runtime_cpp_sources(module_sources: list[str], include_dir: Path) ->
     seen_nodes: set[Path] = set()
     seen_sources: set[str] = set()
     queue: list[Path] = _resolve_module_sources(module_sources)
-    seed = RUNTIME_ROOT / "core" / "py_runtime.h"
+    seed = RUNTIME_ROOT / "native" / "core" / "py_runtime.h"
+    if not seed.exists():
+        seed = RUNTIME_ROOT / "core" / "py_runtime.h"
     if seed.exists():
         queue.append(seed)
     while queue:

@@ -5,7 +5,7 @@
 #ifndef PYTRA_GENERATED_STD_OS_PATH_H
 #define PYTRA_GENERATED_STD_OS_PATH_H
 
-#include "runtime/cpp/core/py_types.h"
+#include "runtime/cpp/native/core/py_types.h"
 
 #include <tuple>
 

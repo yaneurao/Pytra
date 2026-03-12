@@ -165,9 +165,11 @@ def _target_module_artifacts(lang: str, group: str, tail: str) -> dict[str, Any]
         return None
     stem = base_dir / tail
     public_headers: list[str] = []
+    compiler_headers: list[str] = []
     compile_sources: list[str] = []
     companions: list[str] = []
     seen_public: set[str] = set()
+    seen_compiler: set[str] = set()
     seen_sources: set[str] = set()
 
     gen_h = stem.with_name(stem.name + ".gen.h")
@@ -198,6 +200,15 @@ def _target_module_artifacts(lang: str, group: str, tail: str) -> dict[str, Any]
         seen_sources.add(rel)
         compile_sources.append(rel)
 
+    def append_compiler(path: Path) -> None:
+        if not path.exists():
+            return
+        rel = _path_to_rel_txt(path)
+        if rel in seen_compiler:
+            return
+        seen_compiler.add(rel)
+        compiler_headers.append(rel)
+
     if lang == "cpp" and public_shim.exists():
         append_public(public_shim)
         append_public(generated_h)
@@ -214,6 +225,10 @@ def _target_module_artifacts(lang: str, group: str, tail: str) -> dict[str, Any]
     append_source(gen_cpp)
     append_source(native_cpp)
     append_source(ext_cpp)
+    append_compiler(generated_h)
+    append_compiler(gen_h)
+    append_compiler(native_h)
+    append_compiler(ext_h)
 
     if generated_h.exists() or generated_cpp.exists() or gen_h.exists() or gen_cpp.exists():
         companions.append("gen")
@@ -223,6 +238,7 @@ def _target_module_artifacts(lang: str, group: str, tail: str) -> dict[str, Any]
         return None
     return {
         "public_headers": public_headers,
+        "compiler_headers": compiler_headers,
         "compile_sources": compile_sources,
         "companions": companions,
     }
@@ -231,6 +247,7 @@ def _target_module_artifacts(lang: str, group: str, tail: str) -> dict[str, Any]
 def _target_cpp_module_artifacts(group: str, tail: str) -> dict[str, Any] | None:
     runtime_root = ROOT / "src" / "runtime" / "cpp"
     public_headers: list[str] = []
+    compiler_headers: list[str] = []
     compile_sources: list[str] = []
     companions: list[str] = []
 
@@ -252,6 +269,11 @@ def _target_cpp_module_artifacts(group: str, tail: str) -> dict[str, Any] | None
         if native_h is not None:
             public_headers.append(_path_to_rel_txt(native_h))
 
+    if generated_h is not None:
+        compiler_headers.append(_path_to_rel_txt(generated_h))
+    elif native_h is not None:
+        compiler_headers.append(_path_to_rel_txt(native_h))
+
     if generated_cpp is not None:
         compile_sources.append(_path_to_rel_txt(generated_cpp))
     if native_cpp is not None:
@@ -266,6 +288,7 @@ def _target_cpp_module_artifacts(group: str, tail: str) -> dict[str, Any] | None
         return None
     return {
         "public_headers": public_headers,
+        "compiler_headers": compiler_headers,
         "compile_sources": compile_sources,
         "companions": companions,
     }
@@ -288,6 +311,7 @@ def _pick_existing(paths: list[Path]) -> list[Path]:
 def _target_cpp_core_artifacts(tail: str) -> dict[str, Any] | None:
     runtime_root = ROOT / "src" / "runtime" / "cpp"
     public_headers: list[str] = []
+    compiler_headers: list[str] = []
     compile_sources: list[str] = []
     companions: list[str] = []
 
@@ -330,6 +354,19 @@ def _target_cpp_core_artifacts(tail: str) -> dict[str, Any] | None:
         if first_native_header is not None:
             public_headers.append(_path_to_rel_txt(first_native_header))
 
+    if native_header_candidates:
+        first_native_header = next((p for p in native_header_candidates if p.suffix == ".h"), None)
+        if first_native_header is not None:
+            compiler_headers.append(_path_to_rel_txt(first_native_header))
+    elif generated_header_candidates:
+        first_generated_header = next(
+            (p for p in generated_header_candidates if p.suffix == ".h"), None
+        )
+        if first_generated_header is not None:
+            compiler_headers.append(_path_to_rel_txt(first_generated_header))
+    elif public_header_candidates:
+        compiler_headers.append(_path_to_rel_txt(public_header_candidates[0]))
+
     def append_sources(paths: list[Path]) -> None:
         seen_sources = set(compile_sources)
         for path in paths:
@@ -352,6 +389,7 @@ def _target_cpp_core_artifacts(tail: str) -> dict[str, Any] | None:
         return None
     return {
         "public_headers": public_headers,
+        "compiler_headers": compiler_headers,
         "compile_sources": compile_sources,
         "companions": companions,
     }

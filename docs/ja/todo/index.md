@@ -31,7 +31,7 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01] C++ runtime packaging を compiler 直結の `generated/native` include 面へ切り替え、`pytra/core` shim を compiler path から退役させる（文脈: [p0-cpp-runtime-packaging-deshim.md](../plans/p0-cpp-runtime-packaging-deshim.md)）。進捗: `compiler_headers` と `public_headers` を分離し、compiler が `generated/native` と `native/core` を直接参照する contract を first wave として固定する plan を追加済み
+- [ ] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01] C++ runtime packaging を compiler 直結の `generated/native` include 面へ切り替え、`pytra/core` shim を compiler path から退役させる（文脈: [p0-cpp-runtime-packaging-deshim.md](../plans/p0-cpp-runtime-packaging-deshim.md)）。進捗: `compiler_headers` / emitter / runtime emit / build graph / layout checker は `generated/native` と `native/core` 直参照へ同期済みで、残りは export-time SDK generator 要否の判断だけ
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01] `go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php` runtime を P0 と同じ `generated/native` ownership model へ段階 rollout する（文脈: [p1-noncpp-runtime-layout-rollout-remaining.md](../plans/p1-noncpp-runtime-layout-rollout-remaining.md)）。進捗: P0 で確定した compare 単位 `<lane>/<bucket>/<module>` と `generated=SoT only`, `native=hand-written only` を残 backend に拡張する plan を追加済み
 - [ ] [ID: P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01] backend parity の secondary tier (`go/java/kt/scala/swift/nim`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p5-backend-parity-secondary-rollout.md](../plans/p5-backend-parity-secondary-rollout.md)）
 - [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01] backend parity の long-tail tier (`js/ts/lua/rb/php`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p6-backend-parity-longtail-rollout.md](../plans/p6-backend-parity-longtail-rollout.md)）

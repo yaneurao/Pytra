@@ -215,6 +215,20 @@ def lookup_target_module_public_headers(target: str, module_id: str) -> list[str
     return out
 
 
+def lookup_target_module_compiler_headers(target: str, module_id: str) -> list[str]:
+    artifacts = lookup_target_module_artifacts(target, module_id)
+    items = artifacts.get("compiler_headers")
+    if not isinstance(items, list):
+        return lookup_target_module_public_headers(target, module_id)
+    out: list[str] = []
+    for item in items:
+        if isinstance(item, str) and item != "":
+            out.append(item)
+    if len(out) > 0:
+        return out
+    return lookup_target_module_public_headers(target, module_id)
+
+
 def lookup_target_module_compile_sources(target: str, module_id: str) -> list[str]:
     artifacts = lookup_target_module_artifacts(target, module_id)
     items = artifacts.get("compile_sources")
@@ -238,6 +252,24 @@ def lookup_target_module_primary_header(target: str, module_id: str) -> str:
                 return header
         for header in headers:
             if header.endswith(".gen.h"):
+                return header
+        for header in headers:
+            if header.startswith("src/runtime/cpp/native/"):
+                return header
+    for suffix in (".gen.h", ".ext.h", ".h"):
+        for header in headers:
+            if header.endswith(suffix):
+                return header
+    if len(headers) > 0:
+        return headers[0]
+    return ""
+
+
+def lookup_target_module_primary_compiler_header(target: str, module_id: str) -> str:
+    headers = lookup_target_module_compiler_headers(target, module_id)
+    if target == "cpp":
+        for header in headers:
+            if header.startswith("src/runtime/cpp/generated/"):
                 return header
         for header in headers:
             if header.startswith("src/runtime/cpp/native/"):

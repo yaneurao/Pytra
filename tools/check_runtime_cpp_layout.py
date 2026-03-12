@@ -7,7 +7,8 @@ Rules:
 - Module runtime under `src/runtime/cpp/generated/{built_in,std,utils,compiler}` must contain the auto-generated marker.
 - Module runtime under `src/runtime/cpp/native/{built_in,std,utils,compiler}` must NOT contain the auto-generated marker.
 - Public shim under `src/runtime/cpp/pytra/{built_in,std,utils,compiler}` must contain the auto-generated marker and stay header-only.
-- `src/runtime/cpp/core/**` is the stable include surface and must not contain implementation `.cpp`.
+- `src/runtime/cpp/core/**` is an export/sdk compatibility surface and must not contain implementation `.cpp`.
+- Compiler-facing `generated/**` and `native/**` files may include `runtime/cpp/native/core/**` directly.
 - Future `src/runtime/cpp/generated/core/**` and `src/runtime/cpp/native/core/**` must obey generated/handwritten marker rules without reintroducing ownership mixing under `core/`.
 """
 
@@ -176,6 +177,8 @@ def _check_direct_native_core_includes(
     direct_native_core_include_violations: list[str],
     *,
     core_dir: Path,
+    generated_dir: Path,
+    native_dir: Path,
 ) -> None:
     for p in files:
         txt = p.read_text(encoding="utf-8", errors="ignore")
@@ -184,7 +187,8 @@ def _check_direct_native_core_includes(
         if len(includes) == 0:
             continue
         is_core_forwarder = p.parent == core_dir and p.suffix == ".h"
-        if is_core_forwarder:
+        is_compiler_lane = p.is_relative_to(generated_dir) or p.is_relative_to(native_dir)
+        if is_core_forwarder or is_compiler_lane:
             continue
         for include_txt in includes:
             direct_native_core_include_violations.append(f"{rel} -> {include_txt}")
@@ -281,6 +285,8 @@ def main() -> int:
         runtime_tree_files,
         direct_native_core_include_violations,
         core_dir=core_dir,
+        generated_dir=generated_dir,
+        native_dir=native_dir,
     )
 
     if py_runtime_header.exists():

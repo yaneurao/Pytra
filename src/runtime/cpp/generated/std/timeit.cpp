@@ -1,13 +1,13 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/timeit.py
 // generated-by: src/backends/cpp/cli.py
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
 
 #include "runtime/cpp/generated/std/timeit.h"
-#include "runtime/cpp/core/process_runtime.h"
-#include "runtime/cpp/core/scope_exit.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/std/time.h"
+#include "generated/std/time.h"
 
 namespace pytra::std::timeit {
 

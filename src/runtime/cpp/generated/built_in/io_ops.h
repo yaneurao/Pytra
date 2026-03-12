@@ -5,7 +5,8 @@
 #ifndef PYTRA_GENERATED_BUILT_IN_IO_OPS_H
 #define PYTRA_GENERATED_BUILT_IN_IO_OPS_H
 
-#include "runtime/cpp/core/py_types.h"
+#include "runtime/cpp/native/core/py_types.h"
+#include "runtime/cpp/native/built_in/io_ops.h"
 
 void py_print(const object& value);
 

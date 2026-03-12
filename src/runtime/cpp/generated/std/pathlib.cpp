@@ -1,15 +1,15 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/pathlib.py
 // generated-by: src/backends/cpp/cli.py
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
 
 #include "runtime/cpp/generated/std/pathlib.h"
-#include "runtime/cpp/core/process_runtime.h"
-#include "runtime/cpp/core/scope_exit.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/std/glob.h"
-#include "pytra/std/os.h"
-#include "pytra/std/os_path.h"
+#include "generated/std/glob.h"
+#include "generated/std/os.h"
+#include "generated/std/os_path.h"
 
 namespace pytra::std::pathlib {
 

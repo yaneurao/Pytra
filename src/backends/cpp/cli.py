@@ -212,6 +212,39 @@ def _runtime_public_forwarder_includes(module_tail: str) -> list[str]:
     return includes
 
 
+def _runtime_native_companion_include_line(module_tail: str) -> str:
+    generated_rel_tail = _runtime_output_rel_tail(module_tail)
+    if not generated_rel_tail.startswith("generated/"):
+        return ""
+    native_rel_tail = "native/" + generated_rel_tail[len("generated/") :]
+    native_hdr = RUNTIME_CPP_ROOT / (native_rel_tail + ".h")
+    if not native_hdr.exists():
+        return ""
+    return '#include "runtime/cpp/' + native_rel_tail + '.h"'
+
+
+def _inject_runtime_native_companion_include(header_text: str, module_tail: str) -> str:
+    include_line = _runtime_native_companion_include_line(module_tail)
+    if include_line == "" or include_line in header_text:
+        return header_text
+    lines = header_text.splitlines()
+    insert_at = -1
+    for i, line in enumerate(lines):
+        if line.startswith("#include "):
+            insert_at = i + 1
+    if insert_at < 0:
+        for i, line in enumerate(lines):
+            if line.startswith("#define "):
+                insert_at = i + 1
+                break
+    if insert_at < 0:
+        insert_at = 0
+    lines.insert(insert_at, include_line)
+    if insert_at + 1 < len(lines) and lines[insert_at + 1] != "":
+        lines.insert(insert_at + 1, "")
+    return join_str_list("\n", lines) + "\n"
+
+
 def _is_runtime_emit_input_path(input_path: Path) -> bool:
     """Delegate to runtime emit module."""
     return _is_runtime_emit_input_path_impl(input_path)
@@ -244,9 +277,9 @@ SCOPE_NESTING_KINDS: set[str] = {
 }
 
 
-CPP_HEADER = """#include "runtime/cpp/core/py_runtime.h"
-#include "runtime/cpp/core/process_runtime.h"
-#include "runtime/cpp/core/scope_exit.h"
+CPP_HEADER = """#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
 """
 
@@ -1145,6 +1178,7 @@ def main(argv: list[str]) -> int:
                     "",
                     cpp_list_model_opt,
                 )
+                hdr_txt_runtime = _inject_runtime_native_companion_include(hdr_txt_runtime, module_tail)
                 generated_lines_runtime = count_text_lines(hdr_txt_runtime)
                 check_guard_limit(
                     "emit",
@@ -1215,9 +1249,9 @@ def main(argv: list[str]) -> int:
                 return 0
             own_runtime_header = '#include "runtime/cpp/' + rel_tail + '.h"'
             if own_runtime_header not in cpp_txt_runtime:
-                old_runtime_include = '#include "runtime/cpp/core/py_runtime.h"\n'
+                old_runtime_include = '#include "runtime/cpp/native/core/py_runtime.h"\n'
                 new_runtime_include = (
-                    '#include "runtime/cpp/core/py_runtime.h"\n\n' + own_runtime_header + "\n"
+                    '#include "runtime/cpp/native/core/py_runtime.h"\n\n' + own_runtime_header + "\n"
                 )
                 cpp_txt_runtime = replace_first(
                     cpp_txt_runtime,
@@ -1225,9 +1259,9 @@ def main(argv: list[str]) -> int:
                     new_runtime_include,
                 )
             if own_runtime_header not in cpp_txt_runtime_for_header:
-                old_runtime_include = '#include "runtime/cpp/core/py_runtime.h"\n'
+                old_runtime_include = '#include "runtime/cpp/native/core/py_runtime.h"\n'
                 new_runtime_include = (
-                    '#include "runtime/cpp/core/py_runtime.h"\n\n' + own_runtime_header + "\n"
+                    '#include "runtime/cpp/native/core/py_runtime.h"\n\n' + own_runtime_header + "\n"
                 )
                 cpp_txt_runtime_for_header = replace_first(
                     cpp_txt_runtime_for_header,
@@ -1244,6 +1278,7 @@ def main(argv: list[str]) -> int:
                 cpp_txt_runtime_for_header,
                 cpp_list_model_opt,
             )
+            hdr_txt_runtime = _inject_runtime_native_companion_include(hdr_txt_runtime, module_tail)
             generated_lines_runtime = count_text_lines(cpp_txt_runtime) + count_text_lines(hdr_txt_runtime)
             check_guard_limit("emit", "max_generated_lines", generated_lines_runtime, guard_limits, str(input_path))
             write_text_file(cpp_out, cpp_txt_runtime)

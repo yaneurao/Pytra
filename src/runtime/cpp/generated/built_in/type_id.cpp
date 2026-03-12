@@ -1,13 +1,13 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/built_in/type_id.py
 // generated-by: src/backends/cpp/cli.py
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
 
 #include "runtime/cpp/generated/built_in/type_id.h"
-#include "runtime/cpp/core/process_runtime.h"
-#include "runtime/cpp/core/scope_exit.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/built_in/contains.h"
+#include "generated/built_in/contains.h"
 
 list<int64> _TYPE_IDS;
 dict<int64, int64> _TYPE_BASE;
@@ -224,6 +224,8 @@ void _ensure_builtins() {
 
 int64 _normalize_base_type_id(int64 base_type_id) {
     _ensure_builtins();
+    if (!(py_runtime_value_isinstance(base_type_id, PYTRA_TID_INT)))
+        throw ValueError("base type_id must be int");
     if (!py_contains(_TYPE_BASE, base_type_id))
         throw ValueError("unknown base type_id: " + ::std::to_string(base_type_id));
     return base_type_id;
@@ -248,6 +250,8 @@ int64 py_tid_register_class_type(int64 base_type_id) {
 int64 py_tid_register_known_class_type(int64 type_id, int64 base_type_id) {
     /* Register a pre-allocated user class type_id into the canonical registry. */
     _ensure_builtins();
+    if (!(py_runtime_value_isinstance(type_id, PYTRA_TID_INT)))
+        throw ValueError("type_id must be int");
     if (type_id < _tid_user_base())
         throw ValueError("user type_id must be >= " + ::std::to_string(_tid_user_base()));
     int64 base_tid = _normalize_base_type_id(base_type_id);
@@ -265,15 +269,34 @@ int64 py_tid_register_known_class_type(int64 type_id, int64 base_type_id) {
 }
 
 int64 _try_runtime_tagged_type_id(const object& value) {
-    int64 tagged = static_cast<int64>(py_runtime_object_type_id(value));
-    if (py_contains(_TYPE_BASE, tagged))
-        return tagged;
+    int64 tagged = py_runtime_value_type_id(value);
+    if (py_runtime_value_isinstance(tagged, PYTRA_TID_INT)) {
+        int64 tagged_id = tagged;
+        if (py_contains(_TYPE_BASE, tagged_id))
+            return tagged_id;
+    }
     return -(1);
 }
 
 int64 py_tid_runtime_type_id(const object& value) {
     /* Resolve runtime type_id for a Python value. */
     _ensure_builtins();
+    if (py_is_none(value))
+        return _tid_none();
+    if (py_runtime_value_isinstance(value, PYTRA_TID_BOOL))
+        return _tid_bool();
+    if (py_runtime_value_isinstance(value, PYTRA_TID_INT))
+        return _tid_int();
+    if (py_runtime_value_isinstance(value, PYTRA_TID_FLOAT))
+        return _tid_float();
+    if (py_runtime_value_isinstance(value, PYTRA_TID_STR))
+        return _tid_str();
+    if (py_runtime_value_isinstance(value, PYTRA_TID_LIST))
+        return _tid_list();
+    if (py_runtime_value_isinstance(value, PYTRA_TID_DICT))
+        return _tid_dict();
+    if (py_runtime_value_isinstance(value, PYTRA_TID_SET))
+        return _tid_set();
     int64 tagged = _try_runtime_tagged_type_id(value);
     if (tagged >= 0)
         return tagged;
@@ -299,7 +322,7 @@ bool py_tid_issubclass(int64 actual_type_id, int64 expected_type_id) {
 }
 
 bool py_tid_isinstance(const object& value, int64 expected_type_id) {
-    return py_tid_is_subtype(static_cast<int64>(py_runtime_object_type_id(value)), expected_type_id);
+    return py_tid_is_subtype(py_runtime_value_type_id(value), expected_type_id);
 }
 
 void _py_reset_type_registry_for_test() {

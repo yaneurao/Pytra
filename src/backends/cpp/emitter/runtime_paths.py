@@ -4,7 +4,7 @@ from pytra.std.pathlib import Path
 
 from toolchain.compiler.transpile_cli import join_str_list
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
-from toolchain.frontends.runtime_symbol_index import lookup_target_module_primary_header
+from toolchain.frontends.runtime_symbol_index import lookup_target_module_primary_compiler_header
 from toolchain.frontends.runtime_symbol_index import runtime_module_exists
 
 
@@ -52,7 +52,7 @@ def join_runtime_path(base_dir: Path, rel_path: str) -> Path:
 def runtime_cpp_header_exists_for_module(module_name_norm: str) -> bool:
     """`pytra.*` モジュールの runtime C++ ヘッダ実在有無を返す。"""
     module_id = canonical_runtime_module_id(module_name_norm)
-    return lookup_target_module_primary_header("cpp", module_id) != ""
+    return lookup_target_module_primary_compiler_header("cpp", module_id) != ""
 
 
 def runtime_module_tail_from_source_path(input_path: Path) -> str:
@@ -135,7 +135,7 @@ def runtime_namespace_for_tail(module_tail: str) -> str:
 def module_name_to_cpp_include(module_name_norm: str) -> str:
     """`pytra.std|utils|compiler|built_in` 名を C++ include 形式へ変換する。"""
     module_id = canonical_runtime_module_id(module_name_norm)
-    indexed = lookup_target_module_primary_header("cpp", module_id)
+    indexed = lookup_target_module_primary_compiler_header("cpp", module_id)
     if indexed != "":
         if indexed.startswith("src/runtime/cpp/"):
             return indexed[len("src/runtime/cpp/") :]

@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 #include "runtime/cpp/generated/compiler/transpile_cli.h"
-#include "pytra/std/json.h"
+#include "generated/std/json.h"
 
 #if defined(_WIN32)
 #include <process.h>

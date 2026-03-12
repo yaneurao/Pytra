@@ -1,15 +1,15 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/json.py
 // generated-by: src/backends/cpp/cli.py
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
 
 #include "runtime/cpp/generated/std/json.h"
-#include "runtime/cpp/core/process_runtime.h"
-#include "runtime/cpp/core/scope_exit.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/built_in/contains.h"
-#include "pytra/built_in/scalar_ops.h"
-#include "pytra/built_in/sequence.h"
+#include "generated/built_in/contains.h"
+#include "generated/built_in/scalar_ops.h"
+#include "generated/built_in/sequence.h"
 
 namespace pytra::std::json {
 
@@ -204,7 +204,7 @@ namespace pytra::std::json {
 
     ::std::optional<JsonObj> JsonValue::as_obj() {
             object raw = make_object(this->raw);
-            if (py_runtime_object_isinstance(raw, PYTRA_TID_DICT)) {
+            if (py_runtime_value_isinstance(raw, PYTRA_TID_DICT)) {
                 dict<str, object> raw_obj = dict<str, object>(raw);
                 return JsonObj(raw_obj);
             }
@@ -213,7 +213,7 @@ namespace pytra::std::json {
 
     ::std::optional<JsonArr> JsonValue::as_arr() {
             object raw = make_object(this->raw);
-            if (py_runtime_object_isinstance(raw, PYTRA_TID_LIST)) {
+            if (py_runtime_value_isinstance(raw, PYTRA_TID_LIST)) {
                 object raw_arr = make_object(list<object>(raw));
                 return JsonArr(raw_arr);
             }
@@ -222,16 +222,16 @@ namespace pytra::std::json {
 
     ::std::optional<str> JsonValue::as_str() {
             object raw = make_object(this->raw);
-            if (py_runtime_object_isinstance(raw, PYTRA_TID_STR))
+            if (py_runtime_value_isinstance(raw, PYTRA_TID_STR))
                 return raw;
             return ::std::nullopt;
     }
 
     ::std::optional<int64> JsonValue::as_int() {
             object raw = make_object(this->raw);
-            if (py_runtime_object_isinstance(raw, PYTRA_TID_BOOL))
+            if (py_runtime_value_isinstance(raw, PYTRA_TID_BOOL))
                 return ::std::nullopt;
-            if (py_runtime_object_isinstance(raw, PYTRA_TID_INT)) {
+            if (py_runtime_value_isinstance(raw, PYTRA_TID_INT)) {
                 int64 raw_i = py_to_int64(raw);
                 return raw_i;
             }
@@ -240,7 +240,7 @@ namespace pytra::std::json {
 
     ::std::optional<float64> JsonValue::as_float() {
             object raw = make_object(this->raw);
-            if (py_runtime_object_isinstance(raw, PYTRA_TID_FLOAT)) {
+            if (py_runtime_value_isinstance(raw, PYTRA_TID_FLOAT)) {
                 float64 raw_f = py_to_float64(raw);
                 return raw_f;
             }
@@ -249,7 +249,7 @@ namespace pytra::std::json {
 
     ::std::optional<bool> JsonValue::as_bool() {
             object raw = make_object(this->raw);
-            if (py_runtime_object_isinstance(raw, PYTRA_TID_BOOL)) {
+            if (py_runtime_value_isinstance(raw, PYTRA_TID_BOOL)) {
                 bool raw_b = py_to<bool>(raw);
                 return raw_b;
             }
@@ -461,7 +461,7 @@ namespace pytra::std::json {
     
     ::std::optional<JsonObj> loads_obj(const str& text) {
         object value = make_object(_JsonParser(text).parse());
-        if (py_runtime_object_isinstance(value, PYTRA_TID_DICT)) {
+        if (py_runtime_value_isinstance(value, PYTRA_TID_DICT)) {
             dict<str, object> raw_obj = dict<str, object>(value);
             return JsonObj(raw_obj);
         }
@@ -470,7 +470,7 @@ namespace pytra::std::json {
     
     ::std::optional<JsonArr> loads_arr(const str& text) {
         object value = make_object(_JsonParser(text).parse());
-        if (py_runtime_object_isinstance(value, PYTRA_TID_LIST)) {
+        if (py_runtime_value_isinstance(value, PYTRA_TID_LIST)) {
             object raw_arr = make_object(list<object>(value));
             return JsonArr(raw_arr);
         }
@@ -580,21 +580,21 @@ namespace pytra::std::json {
     str _dump_json_value(const object& v, bool ensure_ascii, const ::std::optional<int64>& indent, const str& item_sep, const str& key_sep, int64 level) {
         if (py_is_none(v))
             return "null";
-        if (py_runtime_object_isinstance(v, PYTRA_TID_BOOL)) {
+        if (py_runtime_value_isinstance(v, PYTRA_TID_BOOL)) {
             bool raw_b = py_to<bool>(v);
             return (raw_b ? "true" : "false");
         }
-        if (py_runtime_object_isinstance(v, PYTRA_TID_INT))
+        if (py_runtime_value_isinstance(v, PYTRA_TID_INT))
             return py_to_string(v);
-        if (py_runtime_object_isinstance(v, PYTRA_TID_FLOAT))
+        if (py_runtime_value_isinstance(v, PYTRA_TID_FLOAT))
             return py_to_string(v);
-        if (py_runtime_object_isinstance(v, PYTRA_TID_STR))
+        if (py_runtime_value_isinstance(v, PYTRA_TID_STR))
             return _escape_str(py_to_string(v), ensure_ascii);
-        if (py_runtime_object_isinstance(v, PYTRA_TID_LIST)) {
+        if (py_runtime_value_isinstance(v, PYTRA_TID_LIST)) {
             object as_list = make_object(list<object>(v));
             return _dump_json_list(as_list, ensure_ascii, indent, item_sep, key_sep, level);
         }
-        if (py_runtime_object_isinstance(v, PYTRA_TID_DICT)) {
+        if (py_runtime_value_isinstance(v, PYTRA_TID_DICT)) {
             dict<str, object> as_dict = dict<str, object>(v);
             return _dump_json_dict(as_dict, ensure_ascii, indent, item_sep, key_sep, level);
         }
