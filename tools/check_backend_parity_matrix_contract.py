@@ -138,18 +138,23 @@ def _collect_contract_issues() -> list[str]:
         },
         "stdlib.json.loads_dumps": {
             "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         },
         "stdlib.pathlib.path_ops": {
             "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         },
         "stdlib.enum.enum_and_intflag": {
             "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         },
         "stdlib.argparse.parse_args": {
             "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         },
         "stdlib.re.sub": {
             "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         },
         "builtin.type.isinstance": {
             "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -175,6 +180,7 @@ def _collect_contract_issues() -> list[str]:
         },
         "stdlib.math.imported_symbols": {
             "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         },
     }:
         issues.append("reviewed representative cell overrides drifted")

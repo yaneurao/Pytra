@@ -40,22 +40,22 @@
 
 - [x] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S1-01] representative tier の current `not_started` / `fail_closed` cell を inventory 化し、live rollout order を固定する。
 - [x] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-01] `cpp` の未対応 representative cell を `build_run_smoke` または `transpile_smoke` へ引き上げる。
-- [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02] `rs` の未対応 representative cell を `transpile_smoke` 以上へ引き上げる。
-- [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03] `cs` の未対応 representative cell を `transpile_smoke` 以上へ引き上げる。
-- [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S3-01] representative tier の matrix / docs / support wording を current rollout state に同期して閉じる。
+- [x] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02] `rs` の未対応 representative cell を `transpile_smoke` 以上へ引き上げる。
+- [x] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03] `cs` の未対応 representative cell を `transpile_smoke` 以上へ引き上げる。
+- [x] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S3-01] representative tier の matrix / docs / support wording を current rollout state に同期して閉じる。
 
 ## 固定 inventory / rollout order
 
 - 正本: [backend_parity_representative_rollout_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_representative_rollout_inventory.py)
 - checker: [check_backend_parity_representative_rollout_inventory.py](/workspace/Pytra/tools/check_backend_parity_representative_rollout_inventory.py)
-- current residual backend は `rs`, `cs` のみで、`cpp` residual は空
+- current residual backend は空で、representative residual inventory は closed
 - fixed bundle order:
   - `cpp_locked_baseline`
   - `rs_syntax_iter_bundle`
   - `rs_stdlib_bundle`
   - `cs_syntax_iter_bundle`
   - `cs_stdlib_bundle`
-- current next backend は `cs`
+- current next backend は `None` で、残 bundle は closeout sync のみ
 
 ## 決定ログ
 
@@ -75,3 +75,5 @@
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03-A5` として `for_range.py` の representative smoke を `cs` backend に追加し、`syntax.control.for_range` / `builtin.iter.range` を C# residual inventory から除外した。
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03-A6` として `try_raise.py` の representative smoke を `cs` backend に追加し、`syntax.control.try_raise` を C# residual inventory から除外した。
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03-A7` として C# emitter の list/generator comprehension tuple-target zip lane を実装し、`ok_generator_tuple_target.py` の representative smoke を追加して `builtin.iter.zip` を C# residual inventory から除外した。これで `cs_syntax_iter_bundle` は空になり、live next bundle は `cs_stdlib_bundle` に進む。
+- 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03-A8` として `json_extended.py` / `pathlib_extended.py` / `enum_extended.py` / `argparse_extended.py` / `pytra_std_import_math.py` / `re_extended.py` の representative smoke を `cs` backend に追加し、C# stdlib residual をすべて `transpile_smoke` へ引き上げた。これで representative residual inventory は空になり、live next backend は `None` になった。
+- 2026-03-12: `S3-01` として representative parity matrix / contract / active TODO wording を final rollout state に同期し、active plan 側の closeout sync を完了した。残りは archive handoff のみ。

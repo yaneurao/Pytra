@@ -945,6 +945,52 @@ def f(x: object) -> bool:
         self.assertNotIn("foreach (var _ in zip(wo, x))", cs)
         self.assertNotIn("unsupported", cs)
 
+    def test_representative_json_extended_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("json_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn('string s1 = System.Convert.ToString(dumps("abc"));', cs)
+        self.assertNotIn("unsupported", cs)
+
+    def test_representative_pathlib_extended_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("pathlib_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("using Path = Pytra.CsModule.py_path;", cs)
+        self.assertIn("root.mkdir(true, true);", cs)
+        self.assertNotIn("unsupported", cs)
+
+    def test_representative_enum_extended_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("enum_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("public class Color : Enum", cs)
+        self.assertIn("public class Perm : IntFlag", cs)
+        self.assertNotIn("unsupported", cs)
+
+    def test_representative_argparse_extended_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("argparse_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn('ArgumentParser p = ArgumentParser("x");', cs)
+        self.assertIn("p.parse_args(", cs)
+        self.assertNotIn("unsupported", cs)
+
+    def test_representative_math_import_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("pytra_std_import_math")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("using msqrt = Pytra.CsModule.sqrt;", cs)
+        self.assertIn("Pytra.CsModule.math.sqrt(81.0)", cs)
+        self.assertNotIn("unsupported", cs)
+
+    def test_representative_re_extended_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("re_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn('string py_out = System.Convert.ToString(sub("\\\\s+", " ", "a   b\\tc"));', cs)
+        self.assertNotIn("unsupported", cs)
+
     def test_path_alias_constructor_and_parent_are_lowered(self) -> None:
         src = """from pytra.std.pathlib import Path
 

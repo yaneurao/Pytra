@@ -149,18 +149,23 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 },
                 "stdlib.json.loads_dumps": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.pathlib.path_ops": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.enum.enum_and_intflag": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.argparse.parse_args": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.re.sub": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "builtin.type.isinstance": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -186,6 +191,7 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 },
                 "stdlib.math.imported_symbols": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
             },
         )
@@ -406,17 +412,31 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
         self.assertEqual(
             [
                 cells["stdlib.json.loads_dumps"]["rs"],
+                cells["stdlib.json.loads_dumps"]["cs"],
                 cells["stdlib.pathlib.path_ops"]["rs"],
+                cells["stdlib.pathlib.path_ops"]["cs"],
                 cells["stdlib.enum.enum_and_intflag"]["rs"],
+                cells["stdlib.enum.enum_and_intflag"]["cs"],
                 cells["stdlib.argparse.parse_args"]["rs"],
+                cells["stdlib.argparse.parse_args"]["cs"],
+                cells["stdlib.math.imported_symbols"]["rs"],
+                cells["stdlib.math.imported_symbols"]["cs"],
                 cells["stdlib.re.sub"]["rs"],
+                cells["stdlib.re.sub"]["cs"],
             ],
             [
                 {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
             ],
         )
         self.assertEqual(
@@ -515,7 +535,7 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
         )
         self.assertEqual(
             cells["stdlib.math.imported_symbols"]["cs"],
-            {"backend": "cs", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+            {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         )
         self.assertEqual(
             contract_mod.build_backend_parity_matrix_manifest()["cell_schema"],

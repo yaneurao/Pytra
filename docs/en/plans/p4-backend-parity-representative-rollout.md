@@ -40,22 +40,22 @@ Verification:
 
 - [x] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S1-01] Inventory the current `not_started` / `fail_closed` representative-tier cells and lock the live rollout order.
 - [x] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-01] Raise remaining `cpp` representative cells to `build_run_smoke` or `transpile_smoke`.
-- [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02] Raise remaining `rs` representative cells to at least `transpile_smoke`.
-- [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03] Raise remaining `cs` representative cells to at least `transpile_smoke`.
-- [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S3-01] Sync representative-tier matrix/docs/support wording to the final rollout state and close the task.
+- [x] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02] Raise remaining `rs` representative cells to at least `transpile_smoke`.
+- [x] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03] Raise remaining `cs` representative cells to at least `transpile_smoke`.
+- [x] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S3-01] Sync representative-tier matrix/docs/support wording to the final rollout state and close the task.
 
 ## Locked Inventory / Rollout Order
 
 - Source of truth: [backend_parity_representative_rollout_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_representative_rollout_inventory.py)
 - Checker: [check_backend_parity_representative_rollout_inventory.py](/workspace/Pytra/tools/check_backend_parity_representative_rollout_inventory.py)
-- The current residual backends are `rs` and `cs` only; the `cpp` residual set is empty
+- The current residual backend set is empty; the representative residual inventory is closed
 - Fixed bundle order:
   - `cpp_locked_baseline`
   - `rs_syntax_iter_bundle`
   - `rs_stdlib_bundle`
   - `cs_syntax_iter_bundle`
   - `cs_stdlib_bundle`
-- The current next backend is `cs`
+- The current next backend is `None`, and only the closeout sync remains
 
 ## Decision log
 
@@ -75,3 +75,5 @@ Verification:
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03-A5` added representative smoke for `for_range.py` to the `cs` backend and removed `syntax.control.for_range` and `builtin.iter.range` from the C# residual inventory.
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03-A6` added representative smoke for `try_raise.py` to the `cs` backend and removed `syntax.control.try_raise` from the C# residual inventory.
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03-A7` implemented the C# list/generator-comprehension tuple-target `zip` lane and added representative smoke for `ok_generator_tuple_target.py`, removing `builtin.iter.zip` from the C# residual inventory. This empties `cs_syntax_iter_bundle` and advances the live next bundle to `cs_stdlib_bundle`.
+- 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03-A8` added representative smoke for `json_extended.py`, `pathlib_extended.py`, `enum_extended.py`, `argparse_extended.py`, `pytra_std_import_math.py`, and `re_extended.py` to the `cs` backend, promoting every C# stdlib residual row to `transpile_smoke`. This empties the representative residual inventory and sets the live next backend to `None`.
+- 2026-03-12: `S3-01` synchronized the representative parity matrix, contracts, and active TODO wording to the final rollout state. Only the archive handoff remains.

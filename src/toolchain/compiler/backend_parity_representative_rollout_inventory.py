@@ -63,50 +63,7 @@ def _iter_observed_representative_residual_cells() -> tuple[RepresentativeResidu
     )
 
 
-REPRESENTATIVE_RESIDUAL_CELLS_V1: Final[tuple[RepresentativeResidualCell, ...]] = (
-    {
-        "backend": "cs",
-        "feature_id": "stdlib.json.loads_dumps",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/stdlib/json_extended.py",
-    },
-    {
-        "backend": "cs",
-        "feature_id": "stdlib.pathlib.path_ops",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/stdlib/pathlib_extended.py",
-    },
-    {
-        "backend": "cs",
-        "feature_id": "stdlib.enum.enum_and_intflag",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/stdlib/enum_extended.py",
-    },
-    {
-        "backend": "cs",
-        "feature_id": "stdlib.argparse.parse_args",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/stdlib/argparse_extended.py",
-    },
-    {
-        "backend": "cs",
-        "feature_id": "stdlib.math.imported_symbols",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/stdlib/pytra_std_import_math.py",
-    },
-    {
-        "backend": "cs",
-        "feature_id": "stdlib.re.sub",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/stdlib/re_extended.py",
-    },
-)
+REPRESENTATIVE_RESIDUAL_CELLS_V1: Final[tuple[RepresentativeResidualCell, ...]] = ()
 
 
 REPRESENTATIVE_ROLLOUT_BUNDLES_V1: Final[tuple[RepresentativeRolloutBundle, ...]] = (
@@ -141,16 +98,9 @@ REPRESENTATIVE_ROLLOUT_BUNDLES_V1: Final[tuple[RepresentativeRolloutBundle, ...]
     {
         "bundle_id": "cs_stdlib_bundle",
         "backend": "cs",
-        "feature_ids": (
-            "stdlib.json.loads_dumps",
-            "stdlib.pathlib.path_ops",
-            "stdlib.enum.enum_and_intflag",
-            "stdlib.argparse.parse_args",
-            "stdlib.math.imported_symbols",
-            "stdlib.re.sub",
-        ),
+        "feature_ids": (),
         "target_evidence": "transpile_smoke",
-        "notes": "Finish the C# representative residuals with the remaining stdlib rows.",
+        "notes": "The representative C# stdlib rows are green; keep the empty bundle as the final handoff marker before archival close.",
     },
 )
 
@@ -166,9 +116,9 @@ REPRESENTATIVE_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
     ),
     "backend_order": REPRESENTATIVE_BACKEND_ORDER,
     "residual_states": REPRESENTATIVE_RESIDUAL_STATES,
-    "completed_backends": ("cpp", "rs"),
-    "next_backend": "cs",
-    "remaining_backends": ("cs",),
+    "completed_backends": ("cpp", "rs", "cs"),
+    "next_backend": None,
+    "remaining_backends": (),
     "bundle_order": tuple(bundle["bundle_id"] for bundle in REPRESENTATIVE_ROLLOUT_BUNDLES_V1),
     "target_evidence_lane": "transpile_smoke",
 }

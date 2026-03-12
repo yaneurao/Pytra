@@ -345,7 +345,7 @@
         <td class="fixture">test/fixtures/stdlib/json_extended.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
@@ -363,7 +363,7 @@
         <td class="fixture">test/fixtures/stdlib/pathlib_extended.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
@@ -381,7 +381,7 @@
         <td class="fixture">test/fixtures/stdlib/enum_extended.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
@@ -399,7 +399,7 @@
         <td class="fixture">test/fixtures/stdlib/argparse_extended.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
@@ -417,7 +417,7 @@
         <td class="fixture">test/fixtures/stdlib/pytra_std_import_math.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
@@ -435,7 +435,7 @@
         <td class="fixture">test/fixtures/stdlib/re_extended.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
