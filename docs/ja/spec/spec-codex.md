@@ -60,18 +60,18 @@
 ## 5. 実装・配置ルール
 
 - `src/backends/common/` には言語非依存コードのみ配置します。
-- 言語固有コードは各 `py2*.py`、`src/backends/<lang>/`、`src/backends/<lang>/profiles/`、`src/runtime/<lang>/pytra/` に配置します。
+- 言語固有コードは各 `py2*.py`、`src/backends/<lang>/`、`src/backends/<lang>/profiles/`、`src/runtime/<lang>/{generated,native}/` に配置します。未移行 backend の `pytra-gen/pytra-core` は一時 debt としてのみ扱います。
 - `src/` 直下にはトランスパイラ本体（`py2*.py`）以外を置きません。
 - `CodeEmitter` など全言語で共有可能な基底ロジックは `src/backends/common/` 側へ寄せ、`py2cpp.py` には C++ 固有ロジックのみを残します。
 - 今後の多言語展開を見据え、`py2cpp.py` の肥大化を避けるため、共通化可能な処理は段階的に `src/backends/common/` へ移管します。
-- 生成コードの補助関数は各ターゲット言語ランタイム（`src/runtime/<lang>/pytra/`）へ集約し、生成コードに重複埋め込みしません。
+- 生成コードの補助関数は各ターゲット言語の canonical runtime lane（移行済み backend は `src/runtime/<lang>/{generated,native}/`）へ集約し、生成コードに重複埋め込みしません。
 - `src/*_module/` は互換レイヤ扱いとし、新規 runtime 実体ファイルを追加しません（段階撤去対象）。
-- `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` は `src/pytra/utils/*.py` からの生成物として扱い、手編集しません（`py2cpp.py` 実行時に自動更新される）。
-- `src/runtime/<lang>/pytra/` の `png/gif` 書き出し本体は、`src/pytra/utils/png.py` / `src/pytra/utils/gif.py` を正本とした生成物のみを許可し、言語別の手書き実装を禁止します。
+- `src/runtime/cpp/generated/utils/png.cpp` / `src/runtime/cpp/generated/utils/gif.cpp` は `src/pytra/utils/*.py` からの生成物として扱い、手編集しません（`py2cpp.py` 実行時に自動更新される）。
+- `src/runtime/<lang>/generated/` の `png/gif` 書き出し本体は、`src/pytra/utils/png.py` / `src/pytra/utils/gif.py` を正本とした生成物のみを許可し、言語別の手書き実装を禁止します。
 - `png/gif` で許可される言語差分は、入出力アダプタや最小のランタイム接続コードに限定し、エンコード本体ロジック（CRC32/Adler32/DEFLATE/LZW/chunk構築）を手で複製してはいけません。
-- 画像runtimeは C++ と同じ責務分離を全言語で強制します。`src/runtime/<lang>/pytra-core/` には手書きruntimeのみ、`src/runtime/<lang>/pytra-gen/` には `src/pytra/utils/{png,gif}.py` 由来の生成物のみを配置します。
-- `py_runtime.*` など core 側ファイルへ PNG/GIF エンコード本体（`write_rgb_png` / `save_gif` / `grayscale_palette`）を直書きしてはいけません。必要な場合は `pytra-gen` 側APIへの薄い委譲だけを許可します。
-- `pytra-gen` 側の画像runtime生成物には、生成元と生成導線が追跡できる印（例: `source: src/pytra/utils/png.py`, `source: src/pytra/utils/gif.py`, `generated-by: ...`）を必須とします。
+- 画像runtimeは C++ と同じ責務分離を全言語で強制します。canonical 形は `src/runtime/<lang>/native/` に手書き runtime、`src/runtime/<lang>/generated/` に `src/pytra/utils/{png,gif}.py` 由来の生成物のみを置く形です。未移行 backend の `pytra-core/pytra-gen` は rollout debt としてのみ許可します。
+- `py_runtime.*` など core 側ファイルへ PNG/GIF エンコード本体（`write_rgb_png` / `save_gif` / `grayscale_palette`）を直書きしてはいけません。必要な場合は canonical generated lane API への薄い委譲だけを許可します。
+- generated 側の画像runtime生成物には、生成元と生成導線が追跡できる印（例: `source: src/pytra/utils/png.py`, `source: src/pytra/utils/gif.py`, `generated-by: ...`）を必須とします。
 - `json` に限らず、Python 標準ライブラリ相当機能を `runtime/cpp` 側へ追加実装してはいけません。
 - Python 標準ライブラリ相当機能の正本は常に `src/pytra/std/*.py` とし、各ターゲット言語ではそのトランスパイル結果を利用します。
 - selfhost 対象コード（特に `src/toolchain/compiler/east.py` 系）では、動的 import（`try/except ImportError` フォールバック、`importlib` による遅延 import）を使いません。

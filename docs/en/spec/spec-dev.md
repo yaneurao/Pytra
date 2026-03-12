@@ -17,7 +17,7 @@ This document defines the transpiler's implementation policy, structure, and con
   - The standard backend stage layout is `src/backends/<lang>/{lower,optimizer,emitter}/` (source of truth: `spec-folder.md`).
   - During the transition period, `extensions/<topic>/` may coexist (plan 2). In the long run, the codebase will converge on `lower/optimizer/emitter` (plan 3).
   - `backends/common/profiles/` and `backends/<lang>/profiles/`: language-difference JSON for `CodeEmitter` (`types`, `operators`, `runtime_calls`, `syntax`)
-  - `runtime/`: canonical runtime placement for each target language (`src/runtime/<lang>/pytra/`)
+  - `runtime/`: canonical runtime placement for each target language (`src/runtime/<lang>/{generated,native}/` on migrated backends; legacy `pytra-gen/pytra-core` is rollout debt)
   - `*_module/`: legacy runtime placement kept only as a compatibility layer and scheduled for staged removal
   - `pytra/`: canonical shared library on the Python side
 - `test/`: `py` inputs and converted outputs for each target language
@@ -426,14 +426,14 @@ Names starting with `_` are treated as internal implementation details. The foll
 - The `CppEmitter` implementation is separated into `src/backends/cpp/emitter/cpp_emitter.py`, and `py2x.py --target cpp` is treated as the CLI/orchestration layer.
 - Detailed feature support such as `enumerate(start)`, `lambda`, and comprehensions is managed canonically in the [py2cpp support matrix](../language/cpp/spec-support.md).
 - Generated code uses runtime helpers under `src/runtime/cpp/`.
-- Helper functions are not inlined into generated `.cpp`; use `runtime/cpp/core/py_runtime.h` instead.
+- Helper functions are not inlined into generated `.cpp`; use `runtime/cpp/native/core/py_runtime.h` instead.
 - Not only `json`: standard-library-equivalent features use `src/pytra/std/*.py` as their source of truth, and `runtime/cpp` must not carry independent reimplementations.
   - When the C++ side needs that behavior, it must use the transpiled result of those Python source modules.
 - Classes are emitted as C++ classes inheriting `pytra::gc::PyObj` except for exception classes.
 - Class-method calls are split by dispatch mode (`virtual`, `direct`, `fallback`) in `src/backends/cpp/emitter/call.py`.
   - `virtual` / `direct`: routes where user-defined class method signatures can be resolved
   - `fallback`: routes intentionally kept outside virtual-dispatch replacement, including runtime/type_id APIs such as `IsInstance`, `IsSubtype`, `IsSubclass`, and `ObjTypeId`, and routes that assume `BuiltinCall` lowering
-- Selfhost regression fixes the invariant that no `type_id` comparison or switch-based dispatch remains in `sample/cpp` and `src/runtime/cpp/pytra-gen` except `built_in/type_id.cpp` (`test_selfhost_virtual_dispatch_regression.py`).
+- Selfhost regression fixes the invariant that no `type_id` comparison or switch-based dispatch remains in `sample/cpp` and `src/runtime/cpp/generated` except `built_in/type_id.cpp` (`test_selfhost_virtual_dispatch_regression.py`).
 - Class members are emitted as `inline static`.
 - `@dataclass` generates field definitions and constructors.
 - Supports `raise`, `try`, `except`, and `while`.
@@ -512,12 +512,12 @@ Names starting with `_` are treated as internal implementation details. The foll
 
 `py2x.py --target cpp` generates includes according to imports.
 
-- `import pytra.std.math` -> `#include "pytra/std/math.h"`
-- `import pytra.std.pathlib` -> `#include "pytra/std/pathlib.h"`
-- `import pytra.std.time` / `from pytra.std.time import ...` -> `#include "pytra/std/time.h"`
-- `import pytra.utils.png` -> `#include "pytra/utils/png.h"`
-- `import pytra.utils.gif` -> `#include "pytra/utils/gif.h"`
-- GC always uses `#include "runtime/cpp/pytra/built_in/gc.h"`
+- `import pytra.std.math` -> `#include "generated/std/math.h"`
+- `import pytra.std.pathlib` -> `#include "generated/std/pathlib.h"`
+- `import pytra.std.time` / `from pytra.std.time import ...` -> `#include "generated/std/time.h"`
+- `import pytra.utils.png` -> `#include "generated/utils/png.h"`
+- `import pytra.utils.gif` -> `#include "generated/utils/gif.h"`
+- The low-level prelude in generated code always uses `#include "runtime/cpp/native/core/py_runtime.h"`
 
 Calls like `module.attr(...)` are resolved into C++ through `LanguageProfile` (JSON) or module-name to namespace resolution.
 
@@ -541,21 +541,18 @@ Notes:
 
 Main C++ runtime implementation layers:
 
-- `src/runtime/cpp/core/py_runtime.h`
 - `src/runtime/cpp/native/core/py_runtime.h`
-- `src/runtime/cpp/generated/{built_in,std,utils}/*.h|*.cpp`
-- `src/runtime/cpp/native/{built_in,std,utils}/*.h|*.cpp`
-- `src/runtime/cpp/pytra/{built_in,std,utils}/*.h`
+- `src/runtime/cpp/generated/{built_in,std,utils,core}/*.h|*.cpp`
+- `src/runtime/cpp/native/{built_in,std,utils,core}/*.h|*.cpp`
 
-Positioning of `src/runtime/cpp/core/py_runtime.h` and `src/runtime/cpp/native/core/py_runtime.h`:
+Positioning of `src/runtime/cpp/native/core/py_runtime.h`:
 
-- `core/py_runtime.h` is the stable include surface.
 - `native/core/py_runtime.h` is the handwritten source of truth and is the place for `PyObj`, `object`, `rc<>`, type_id, low-level container primitives, dynamic iteration, process I/O, and C++ glue.
 - It is not a place to permanently accumulate built-in semantics that could be moved back into pure-Python SoT.
 - High-level string/collection helpers are expected to move back into `generated/built_in` or `src/pytra/built_in/*.py`.
 - `py_runtime.h` currently includes `str/path/list/dict/set` and similar headers directly, but this is only for low-level aggregation; it does not authorize adding replacement implementations of built-in modules there.
 
-Container policy for `src/runtime/cpp/core/py_runtime.h`:
+Container policy for `src/runtime/cpp/native/core/py_runtime.h`:
 
 - `list<T>`: wrapper around `std::vector<T>` providing `append`, `extend`, and `pop`
 - `dict<K, V>`: wrapper around `std::unordered_map<K,V>` providing `get`, `keys`, `values`, and `items`
@@ -567,9 +564,9 @@ Additional rules:
 - Pure helpers such as `str::split`, `splitlines`, `count`, and `join` must not remain in `py_runtime` permanently. They are allowed only as migration debt and only with a concrete plan to move them back into the SoT side.
 - Low-level dynamic helpers such as `dict_get_*`, `py_dict_get_default`, and object/`std::any` bridges must not be moved casually into `generated/built_in`. Until a proper lane is designed, keeping them in `native/core` is acceptable.
 - Helpers placed in `generated/built_in` must use `src/pytra/built_in/*.py` as the only SoT, and checked-in artifacts must be updated only through the canonical `--emit-runtime-cpp` route.
-- `generated/built_in/*.h` may only reference stable core headers, and `generated/built_in/*.cpp` may include only `runtime/cpp/core/py_runtime.h` and sibling generated headers. Direct includes of `runtime/cpp/native/core/...` are forbidden.
+- `generated/built_in/*.h` may reference stable `native/core/*.h` headers and, when required, the matching `native/<bucket>/*.h` companion for the same module. `generated/built_in/*.cpp` may include `runtime/cpp/native/core/py_runtime.h` and sibling generated headers, but must not depend on legacy shim paths or unrelated handwritten glue.
 - A generated helper that wants mutable containers by value at its boundary must have an explicit contract such as `@abi`. The C++ backend's internal ref-first representation must not become helper ABI by default.
-- `generated/core` is a reserved lane for low-level pure helpers only, and must not become a dumping ground for `built_in` semantics. Even helpers placed in `generated/core` must keep `runtime/cpp/core/*.h` as the public include surface.
+- `generated/core` is a reserved lane for low-level pure helpers only, and must not become a dumping ground for `built_in` semantics. There is no checked-in `runtime/cpp/core/*.h` surface.
 
 Constraints:
 
@@ -588,9 +585,9 @@ Constraints:
 
 - `png` and `gif` use the Python side (`src/pytra/utils/`) as the source-of-truth implementation.
 - Language-side runtime implementations should, in principle, use transpiled artifacts generated from that canonical Python implementation.
-- All languages separate `src/runtime/<lang>/pytra-core/` (handwritten) from `src/runtime/<lang>/pytra-gen/` (generated from source of truth), and image-runtime bodies must always live on the `pytra-gen` side.
-- Do not hand-write image-encoding bodies into core files such as `py_runtime.*`; when required, only thin delegation into `pytra-gen` APIs is allowed.
-- The image runtime on the `pytra-gen` side must contain `source: src/pytra/utils/{png,gif}.py` and `generated-by: ...`, and manual editing is forbidden.
+- For backends that already use the canonical layout (`cpp`, `rs`, `cs`), separate handwritten runtime under `src/runtime/<lang>/native/` from SoT-derived artifacts under `src/runtime/<lang>/generated/`, and keep image-runtime bodies only on the generated side. Legacy `pytra-core/pytra-gen` on not-yet-migrated backends remains rollout debt only.
+- Do not hand-write image-encoding bodies into core files such as `py_runtime.*`; when required, allow only thin delegation into the canonical generated-lane APIs.
+- Generated image-runtime artifacts must contain `source: src/pytra/utils/{png,gif}.py` and `generated-by: ...`, and manual editing is forbidden.
 - Do not hand-write the PNG/GIF encoding bodies separately for each language.
 - Only minimal I/O adapters and runtime connection code may be language-specific. Duplicating the encoding logic itself is forbidden.
 - Cross-language equality is judged primarily by exact byte-for-byte equality of the generated files.
@@ -602,8 +599,8 @@ Constraints:
 ### 3.3.1 Guard for std/utils SoT Operation (No Handwritten Reimplementation)
 
 - `src/pytra/std/*.py` and `src/pytra/utils/*.py` are the only SoT for runtime functionality.
-- Equivalent logic to the SoT must not be handwritten under `src/runtime/<lang>/pytra-core/**` or `src/runtime/<lang>/pytra/**`.
-- SoT-derived code must always be generated into `src/runtime/<lang>/pytra-gen/**` and must preserve `source:` and `generated-by:` traces.
+- Equivalent logic to the SoT must not be handwritten under `src/runtime/<lang>/native/**`, legacy `src/runtime/<lang>/pytra-core/**`, or compatibility leftovers under `src/runtime/<lang>/pytra/**`.
+- SoT-derived code must always be generated into the canonical generated lane (`src/runtime/<lang>/generated/**` for migrated backends, `src/runtime/<lang>/pytra-gen/**` for legacy backends) and must preserve `source:` and `generated-by:` traces.
 - Existing debt is allowed only when explicitly recorded in `tools/runtime_std_sot_allowlist.txt`; unrecorded additions are forbidden.
 - The canonical validation is `python3 tools/check_runtime_std_sot_guard.py`, which runs continuously through `tools/run_local_ci.py`.
 
@@ -614,12 +611,12 @@ Constraints:
 
 ### 3.5 Image Runtime Optimization Policy (py2cpp)
 
-- Targets: `src/runtime/cpp/pytra/utils/png.cpp` and `src/runtime/cpp/pytra/utils/gif.cpp` (generated)
+- Targets: `src/runtime/cpp/generated/utils/png.cpp` and `src/runtime/cpp/generated/utils/gif.cpp` (generated)
 - Preconditions: `src/pytra/utils/png.py` and `src/pytra/utils/gif.py` are the source of truth; do not introduce semantic differences.
 - Generation steps:
   - `python3 src/py2x.py src/pytra/utils/png.py --target cpp -o /tmp/png.cpp`
   - `python3 src/py2x.py src/pytra/utils/gif.py --target cpp -o /tmp/gif.cpp`
-  - The generated output is written directly to `src/runtime/cpp/pytra/utils/png.cpp` and `src/runtime/cpp/pytra/utils/gif.cpp`.
+  - The generated output is written directly to `src/runtime/cpp/generated/utils/png.cpp` and `src/runtime/cpp/generated/utils/gif.cpp`.
   - Do not add handwritten body logic into those two files.
   - Derive the C++ namespace automatically from the source Python path instead of hard-coding it.
     - Example: `src/pytra/utils/gif.py` -> `pytra::utils::gif`
@@ -666,7 +663,7 @@ Constraints:
 - `src/toolchain/compiler/east_parts/east_io.py`: read EAST from `.py/.json` input and fill leading trivia (canonical)
 - `src/backends/common/emitter/code_emitter.py`: shared base utilities for emitters in all languages (node tests, type-string helpers, safe `Any` conversions)
 - `src/backends/cpp/cli.py`: EAST JSON -> C++
-- `src/runtime/cpp/core/py_runtime.h`: C++ runtime aggregation
+- `src/runtime/cpp/native/core/py_runtime.h`: C++ runtime aggregation
 - Responsibility split:
   - `range(...)` semantics must be resolved during EAST construction
   - `src/backends/cpp/cli.py` only stringifies already-normalized EAST
@@ -770,7 +767,7 @@ Constraints:
 
 - Put only language-agnostic reusable logic under `src/backends/common/`.
 - Do not place language-specific rules such as type mappings, reserved words, or runtime names under `src/backends/common/`.
-- Place runtime bodies under `src/runtime/<lang>/pytra/`, and do not add new runtime bodies under `src/*_module/`.
+- Place runtime bodies under the canonical lanes (`src/runtime/<lang>/{generated,native}/` on migrated backends), and do not add new runtime bodies under `src/*_module/`.
 - Logic that can be shared by `py2x.py --target cpp` and `py2rs.py` must first move into `CodeEmitter`, not directly into individual emitters.
 - Separate language-specific branches into `hooks` or `profiles`, and keep each `py2*.py` as a thin orchestrator.
 - Resolve runtime modules, helper ABI, and source-side stdlib names entirely through profiles, the runtime symbol index, and lowerers. Do not add new branches for `math`, `png`, `gif`, `save_gif`, `write_rgb_png`, and similar names to emitter bodies.

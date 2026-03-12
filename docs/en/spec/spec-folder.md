@@ -22,7 +22,7 @@ Algorithm details belong to other specs (`spec-dev.md`, `spec-east123.md`, `spec
 ### 2.1 `src/`
 
 - Purpose: transpiler implementation, shared libraries, and target runtimes.
-- Allowed: `py2*.py`, `src/pytra/`, `src/runtime/<lang>/pytra/`, `src/backends/`.
+- Allowed: `py2*.py`, `src/pytra/`, `src/runtime/<lang>/{generated,native}/`, `src/backends/`. Legacy `pytra-gen/pytra-core` is rollout debt only.
 - Not allowed: logs, temporary outputs, process docs.
 
 ### 2.2 `test/`
@@ -115,7 +115,7 @@ Algorithm details belong to other specs (`spec-dev.md`, `spec-east123.md`, `spec
 ### 3.4 `src/runtime/`
 
 - Purpose: target runtime implementations.
-- Allowed: `src/runtime/<lang>/pytra/`.
+- Allowed: `src/runtime/<lang>/{generated,native}/`. Legacy backends may temporarily keep `pytra-gen/pytra-core`.
 - Not allowed: transpiler core logic.
 
 ### 3.5 `src/*_module/` (legacy compatibility)
@@ -123,7 +123,7 @@ Algorithm details belong to other specs (`spec-dev.md`, `spec-east123.md`, `spec
 - Purpose: compatibility with old layout.
 - Allowed: existing compatibility assets only.
 - Not allowed: new runtime implementations.
-- Note: phased removal target; new implementations go to `src/runtime/<lang>/pytra/`.
+- Note: phased removal target; new implementations go to the canonical lanes under `src/runtime/<lang>/{generated,native}/`.
 
 ## 4. Documentation Operation Boundaries
 

@@ -27,7 +27,7 @@
   - `py2*.py` エントリ
   - `src/toolchain/`（変換プログラム本体）
   - `src/pytra/`（変換時参照ライブラリ正本）
-  - `src/runtime/<lang>/pytra/`（ターゲット言語ランタイム）
+  - `src/runtime/<lang>/{generated,native}/`（ターゲット言語ランタイム。未移行 backend の `pytra-gen/pytra-core` は一時 debt）
   - `src/backends/`
 - 置かないもの:
   - 運用ログ、検証一時生成物、手順ドキュメント
@@ -149,7 +149,7 @@
 ### 3.5 `src/runtime/`
 
 - 目的: ターゲット言語ランタイム実装を保持する。
-- 置くもの: `src/runtime/<lang>/pytra/` 実装
+- 置くもの: `src/runtime/<lang>/{generated,native}/` 実装（未移行 backend は `pytra-gen/pytra-core` を暫定許容）
 - 置かないもの: トランスパイラ本体ロジック
 
 ### 3.6 `src/*_module/`（レガシー互換）
@@ -157,7 +157,7 @@
 - 目的: 旧配置との互換維持
 - 置くもの: 既存互換資産のみ
 - 置かないもの: 新規実体実装
-- 備考: 段階撤去対象。新規は `src/runtime/<lang>/pytra/` を使用する。
+- 備考: 段階撤去対象。新規は canonical lane（`src/runtime/<lang>/{generated,native}/`）を使用する。
 
 ## 4. ドキュメント運用境界
 

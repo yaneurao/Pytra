@@ -18,7 +18,7 @@
   - backend 段階実装の標準ディレクトリは `src/backends/<lang>/{lower,optimizer,emitter}/` とする（正本: `spec-folder.md`）。
   - 当面は `extensions/<topic>/` を併用する（案2）。将来は `lower/optimizer/emitter` 中心へ縮退する（案3）。
   - `backends/common/profiles/` と `backends/<lang>/profiles/`: `CodeEmitter` 用の言語差分 JSON（型/演算子/runtime call/syntax）
-  - `runtime/`: 各ターゲット言語のランタイム配置先（正本、`src/runtime/<lang>/pytra/`）
+  - `runtime/`: 各ターゲット言語のランタイム配置先（正本は `src/runtime/<lang>/{generated,native}/`。未移行 backend の `pytra-gen/pytra-core` は一時 debt）
   - `*_module/`: 旧ランタイム配置（互換レイヤ、段階撤去対象）
   - `pytra/`: Python 側の共通ライブラリ（正式）
 - `test/`: `py`（入力）と各ターゲット言語の変換結果
@@ -432,14 +432,14 @@ migration note:
 - `CppEmitter` 実装は `src/backends/cpp/emitter/cpp_emitter.py` へ分離され、`py2x.py --target cpp` は CLI / オーケストレーション層として扱います。
 - 言語機能の詳細なサポート粒度（`enumerate(start)` / `lambda` / 内包表記など）は [py2cpp サポートマトリクス](../language/cpp/spec-support.md) を正として管理します。
 - 生成コードは `src/runtime/cpp/` のランタイム補助実装を利用します。
-- 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/core/py_runtime.h` 側を利用します。
+- 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/native/core/py_runtime.h` 側を利用します。
 - `json` に限らず、Python 標準ライブラリ相当機能は `src/pytra/std/*.py` を正本とし、`runtime/cpp` 側へ独自実装を追加しません。
   - C++ 側で必要な処理は、これら Python 正本のトランスパイル結果を利用します。
 - class は `pytra::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
 - class method 呼び出しは `src/backends/cpp/emitter/call.py` の dispatch mode（`virtual` / `direct` / `fallback`）で描画先を分離します。
   - `virtual` / `direct`: ユーザー定義 class method シグネチャが解決できる経路。
   - `fallback`: `BuiltinCall` lower 前提経路や runtime/type_id API（`IsInstance/IsSubtype/IsSubclass/ObjTypeId`）など、virtual dispatch 置換対象外の経路。
-- selfhost 回帰では `sample/cpp` と `src/runtime/cpp/pytra-gen`（`built_in/type_id.cpp` 除外）に `type_id` 比較/switch dispatch を残さないことをテストで固定します（`test_selfhost_virtual_dispatch_regression.py`）。
+- selfhost 回帰では `sample/cpp` と `src/runtime/cpp/generated`（`built_in/type_id.cpp` 除外）に `type_id` 比較/switch dispatch を残さないことをテストで固定します（`test_selfhost_virtual_dispatch_regression.py`）。
 - class member は `inline static` として生成します。
 - `@dataclass` はフィールド定義とコンストラクタ生成を行います。
 - `raise` / `try` / `except` / `while` をサポートします。
@@ -518,12 +518,12 @@ migration note:
 
 `py2x.py --target cpp` は import 文に応じて include を生成します。
 
-- `import pytra.std.math` -> `#include "pytra/std/math.h"`
-- `import pytra.std.pathlib` -> `#include "pytra/std/pathlib.h"`
-- `import pytra.std.time` / `from pytra.std.time import ...` -> `#include "pytra/std/time.h"`
-- `import pytra.utils.png` -> `#include "pytra/utils/png.h"`
-- `import pytra.utils.gif` -> `#include "pytra/utils/gif.h"`
-- GC は常時 `#include "runtime/cpp/pytra/built_in/gc.h"` を利用
+- `import pytra.std.math` -> `#include "generated/std/math.h"`
+- `import pytra.std.pathlib` -> `#include "generated/std/pathlib.h"`
+- `import pytra.std.time` / `from pytra.std.time import ...` -> `#include "generated/std/time.h"`
+- `import pytra.utils.png` -> `#include "generated/utils/png.h"`
+- `import pytra.utils.gif` -> `#include "generated/utils/gif.h"`
+- 生成コードの low-level prelude は常時 `#include "runtime/cpp/native/core/py_runtime.h"` を利用
 
 `module.attr(...)` 呼び出しは、`LanguageProfile`（JSON）の設定またはモジュール名→namespace 解決で C++ 側へ解決します。
 
@@ -547,21 +547,18 @@ migration note:
 
 主な C++ runtime 実装レイヤ:
 
-- `src/runtime/cpp/core/py_runtime.h`
 - `src/runtime/cpp/native/core/py_runtime.h`
-- `src/runtime/cpp/generated/{built_in,std,utils}/*.h|*.cpp`
-- `src/runtime/cpp/native/{built_in,std,utils}/*.h|*.cpp`
-- `src/runtime/cpp/pytra/{built_in,std,utils}/*.h`
+- `src/runtime/cpp/generated/{built_in,std,utils,core}/*.h|*.cpp`
+- `src/runtime/cpp/native/{built_in,std,utils,core}/*.h|*.cpp`
 
-`src/runtime/cpp/core/py_runtime.h` / `src/runtime/cpp/native/core/py_runtime.h` の位置づけ:
+`src/runtime/cpp/native/core/py_runtime.h` の位置づけ:
 
-- `core/py_runtime.h` は stable include surface です。
-- `native/core/py_runtime.h` はその handwritten 正本であり、`PyObj` / `object` / `rc<>` / type_id / low-level container primitive / dynamic iteration / process I/O / C++ glue を置く場所です。
+- `native/core/py_runtime.h` は low-level runtime の handwritten 正本であり、`PyObj` / `object` / `rc<>` / type_id / low-level container primitive / dynamic iteration / process I/O / C++ glue を置く場所です。
 - pure Python SoT へ戻せる built_in semantics を permanent に抱え込む場所ではありません。
 - 文字列・collection の高水準 helper は `generated/built_in` または `src/pytra/built_in/*.py` へ戻す前提で扱います。
 - `py_runtime.h` は current でも `str/path/list/dict/set` などを直接 include しますが、これは low-level 集約のためであって built_in module の代替実装を増やしてよい、という意味ではありません。
 
-`src/runtime/cpp/core/py_runtime.h` のコンテナ方針:
+`src/runtime/cpp/native/core/py_runtime.h` のコンテナ方針:
 
 - `list<T>`: `std::vector<T>` ラッパー（`append`, `extend`, `pop` を提供）
 - `dict<K, V>`: `std::unordered_map<K,V>` ラッパー（`get`, `keys`, `values`, `items` を提供）
@@ -573,9 +570,9 @@ migration note:
 - `str::split` / `splitlines` / `count` / `join` のような pure helper は `py_runtime` に残り続けてはならない。移行期 debt として only-by-exception で許容し、SoT 側へ戻す計画を同時に持つ。
 - `dict_get_*` / `py_dict_get_default` / object/`std::any` bridge のような low-level dynamic helper は、`generated/built_in` へ雑に移してはならない。lane 設計前は `native/core` 保留でよい。
 - `generated/built_in` に出す helper は `src/pytra/built_in/*.py` を唯一 SoT とし、`--emit-runtime-cpp` の正規導線でのみ checked-in artifact を更新する。
-- `generated/built_in/*.h` は stable core header だけを参照し、`generated/built_in/*.cpp` は `runtime/cpp/core/py_runtime.h` と sibling generated header を include する。`runtime/cpp/native/core/...` 直 include は禁止する。
+- `generated/built_in/*.h` は stable `native/core/*.h` と、必要なら同名 module の `native/<bucket>/*.h` companion だけを参照する。`generated/built_in/*.cpp` は `runtime/cpp/native/core/py_runtime.h` と sibling generated header を include してよいが、legacy shim path や無関係な handwritten glue をぶら下げてはならない。
 - mutable container を helper 境界で value 受けしたい generated helper は、`@abi` などの明示契約を持たなければならない。C++ backend 内部の ref-first 表現を helper ABI として固定してはならない。
-- `generated/core` は low-level pure helper 専用の予約 lane であり、`built_in` semantics の逃がし先にしてはならない。`generated/core` へ置く helper でも public include 面は `runtime/cpp/core/*.h` のまま維持する。
+- `generated/core` は low-level pure helper 専用の予約 lane であり、`built_in` semantics の逃がし先にしてはならない。checked-in `runtime/cpp/core/*.h` surface は持たない。
 
 制約:
 
@@ -604,9 +601,9 @@ migration note:
 
 - `png` / `gif` は Python 側（`src/pytra/utils/`）を正本実装とします。
 - 各言語の `*_module` 実装は、原則として正本 Python 実装のトランスパイル成果物を利用します。
-- 全言語で `src/runtime/<lang>/pytra-core/`（手書き）と `src/runtime/<lang>/pytra-gen/`（正本由来生成物）を分離し、画像runtime本体は必ず `pytra-gen` 側へ置きます。
-- `py_runtime.*` など core 側ファイルへの画像エンコード本体直書きは禁止し、必要時は `pytra-gen` API への薄い委譲のみに限定します。
-- `pytra-gen` 側の画像runtimeには `source: src/pytra/utils/{png,gif}.py` と `generated-by: ...` を必須とし、手編集運用を禁止します。
+- canonical layout へ移行済み backend（現行: `cpp`, `rs`, `cs`）では `src/runtime/<lang>/native/`（手書き）と `src/runtime/<lang>/generated/`（正本由来生成物）を分離し、画像 runtime 本体は必ず `generated` 側へ置きます。未移行 backend の `pytra-core/pytra-gen` は一時 debt としてのみ許容します。
+- `py_runtime.*` など core 側ファイルへの画像エンコード本体直書きは禁止し、必要時は canonical generated lane API への薄い委譲のみに限定します。
+- canonical generated lane の画像 runtime には `source: src/pytra/utils/{png,gif}.py` と `generated-by: ...` を必須とし、手編集運用を禁止します。
 - `png/gif` エンコード本体を言語別に手書き実装してはいけません。
 - 言語別で許可するのは、最小の I/O アダプタ・ランタイム接続コードのみです（エンコード本体ロジックの複製は禁止）。
 - 言語間一致は「生成ファイルのバイト列完全一致」を主判定とします。
@@ -618,8 +615,8 @@ migration note:
 ### 3.3.1 std/utils 正本運用ガード（手書き禁止）
 
 - `src/pytra/std/*.py` および `src/pytra/utils/*.py` を runtime 機能の唯一正本とする。
-- `src/runtime/<lang>/pytra-core/**` および `src/runtime/<lang>/pytra/**` へ、正本と同等のロジックを手書き実装してはならない。
-- 正本由来コードは必ず `src/runtime/<lang>/pytra-gen/**` に生成し、`source:` / `generated-by:` トレースを保持する。
+- `src/runtime/<lang>/native/**` と legacy `src/runtime/<lang>/pytra-core/**`、および互換残骸の `src/runtime/<lang>/pytra/**` へ、正本と同等のロジックを手書き実装してはならない。
+- 正本由来コードは canonical generated lane（移行済み backend は `src/runtime/<lang>/generated/**`、未移行 backend は `src/runtime/<lang>/pytra-gen/**`）に生成し、`source:` / `generated-by:` トレースを保持する。
 - 例外（既存負債）は `tools/runtime_std_sot_allowlist.txt` に明示し、無記録の追加は禁止する。
 - 検証の正本は `python3 tools/check_runtime_std_sot_guard.py` とし、`tools/run_local_ci.py` で常時実行する。
 
@@ -630,12 +627,12 @@ migration note:
 
 ### 3.5 画像ランタイム最適化ポリシー（py2cpp）
 
-- 対象: `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp`（自動生成）。
+- 対象: `src/runtime/cpp/generated/utils/png.cpp` / `src/runtime/cpp/generated/utils/gif.cpp`（自動生成）。
 - 前提: `src/pytra/utils/png.py` / `src/pytra/utils/gif.py` を正本とし、意味差を導入しない。
 - 生成手順:
   - `python3 src/py2x.py src/pytra/utils/png.py --target cpp -o /tmp/png.cpp`
   - `python3 src/py2x.py src/pytra/utils/gif.py --target cpp -o /tmp/gif.cpp`
-  - 生成物は `src/runtime/cpp/pytra/utils/png.cpp` / `src/runtime/cpp/pytra/utils/gif.cpp` に直接出力される。
+  - 生成物は `src/runtime/cpp/generated/utils/png.cpp` / `src/runtime/cpp/generated/utils/gif.cpp` に直接出力される。
   - これら 2 ファイルの本体ロジックを手書きで追加してはならない。
   - C++ namespace は生成元 Python ファイルのパスから自動導出する（ハードコードしない）。
     - 例: `src/pytra/utils/gif.py` -> `pytra::utils::gif`
@@ -682,7 +679,7 @@ migration note:
 - `src/toolchain/compiler/east_parts/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（正本）
 - `src/backends/common/emitter/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
 - `src/backends/cpp/cli.py`: EAST JSON -> C++
-- `src/runtime/cpp/pytra/built_in/py_runtime.h`: C++ ランタイム集約
+- `src/runtime/cpp/native/core/py_runtime.h`: C++ ランタイム集約
 - 責務分離:
   - `range(...)` の意味解釈は EAST 構築側で完了させる
   - `src/backends/cpp/cli.py` は正規化済み EAST を文字列化する
@@ -787,7 +784,7 @@ migration note:
 
 - `src/backends/common/` には言語非依存で再利用される処理のみを配置します。
 - 言語固有仕様（型マッピング、予約語、ランタイム名など）は `src/backends/common/` に置きません。
-- ランタイム実体は `src/runtime/<lang>/pytra/` に配置し、`src/*_module/` 直下へ新規実体を追加しません。
+- ランタイム実体は canonical lane（移行済み backend は `src/runtime/<lang>/{generated,native}/`）に配置し、`src/*_module/` 直下へ新規実体を追加しません。
 - `py2x.py --target cpp` と `py2rs.py` で共通化できる処理は、各エミッタへ直接足さずに `CodeEmitter` 側へ先に寄せます。
 - 言語固有分岐は `hooks` / `profiles` 側へ分離し、`py2*.py` は薄いオーケストレータを維持します。
 - runtime module / helper ABI / source-side stdlib 名の解決は `profiles` / `runtime symbol index` / lowerer 側で完結させ、emitter 本体に `math` / `png` / `gif` / `save_gif` / `write_rgb_png` などの分岐を増やしません。
