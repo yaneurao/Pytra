@@ -113,7 +113,7 @@ rustc -O test/transpile/rs/iterable.rs -o test/transpile/obj/iterable_rs.out
 ```
 
 補足:
-- 入力コードで使う Python モジュールに対応する実装を `src/runtime/rs/pytra/` に用意してください。
+- 入力コードで使う Python モジュールに対応する実装は、canonical lane として `src/runtime/rs/{native,generated}/` に置いてください。`src/runtime/rs/pytra/` は互換 lane です。
 
 </details>
 

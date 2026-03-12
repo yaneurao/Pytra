@@ -3,10 +3,11 @@
 
 Policy:
 - Canonical source of module basenames is `src/pytra/std/*.py` and `src/pytra/utils/*.py`.
-- Generated runtime files must live under:
-  - `src/runtime/<lang>/pytra-gen/std|utils/<module>.<ext>`
-  - `src/runtime/{rs,cs}/generated/std|utils/<module>.<ext>`
-- `std` / `utils` 配下では module basename を素通しで使う（特別命名禁止）。
+- For `rs/cs`, canonical generated lanes live under
+  `src/runtime/{rs,cs}/generated/std|utils/<module>.<ext>`.
+- Legacy `src/runtime/<lang>/pytra-gen/**` is still scanned for backends that have not yet
+  rolled over to the `generated/native` layout.
+- Under `std` / `utils`, use passthrough module basenames only.
 """
 
 from __future__ import annotations
@@ -63,7 +64,7 @@ def _collect_module_names(base: Path) -> set[str]:
         if p.name == "__init__.py":
             continue
         if p.stem.endswith("_impl"):
-            # *_impl は pytra-core 側の impl 境界で扱う。
+            # *_impl remains a handwritten impl-boundary lane, not a generated passthrough name.
             continue
         names.add(p.stem)
     return names

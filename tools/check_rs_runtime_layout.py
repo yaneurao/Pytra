@@ -2,7 +2,9 @@
 """Guard Rust runtime layout state.
 
 Policy:
-- Runtime implementation must live under `src/runtime/rs/pytra/`.
+- Canonical handwritten runtime for Rust lives under `src/runtime/rs/native/**`.
+- `src/runtime/rs/pytra/**` may remain only as a compatibility lane and must not be
+  treated as the ownership source of truth.
 - `src/rs_module/` is deprecated and must not contain source files.
 """
 
@@ -13,7 +15,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LEGACY_DIR = ROOT / "src" / "rs_module"
-NEW_RUNTIME = ROOT / "src" / "runtime" / "rs" / "pytra" / "built_in" / "py_runtime.rs"
+CANONICAL_RUNTIME = ROOT / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs"
+COMPAT_RUNTIME = ROOT / "src" / "runtime" / "rs" / "pytra" / "built_in" / "py_runtime.rs"
 
 
 def _collect_files(base: Path) -> list[Path]:
@@ -28,9 +31,9 @@ def _collect_files(base: Path) -> list[Path]:
 
 
 def main() -> int:
-    if not NEW_RUNTIME.exists():
-        print("[FAIL] missing new Rust runtime file")
-        print(f"  - {NEW_RUNTIME.relative_to(ROOT)}")
+    if not CANONICAL_RUNTIME.exists():
+        print("[FAIL] missing canonical Rust runtime file")
+        print(f"  - {CANONICAL_RUNTIME.relative_to(ROOT)}")
         return 1
 
     legacy_files = _collect_files(LEGACY_DIR)
@@ -43,7 +46,11 @@ def main() -> int:
 
     print("[OK] rs runtime layout guard passed")
     print("  legacy: src/rs_module has no source files")
-    print(f"  runtime: {NEW_RUNTIME.relative_to(ROOT)}")
+    print(f"  canonical runtime: {CANONICAL_RUNTIME.relative_to(ROOT)}")
+    if COMPAT_RUNTIME.exists():
+        print(f"  compat runtime: {COMPAT_RUNTIME.relative_to(ROOT)}")
+    else:
+        print("  compat runtime: absent")
     return 0
 
 

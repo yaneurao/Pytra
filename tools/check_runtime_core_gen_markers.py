@@ -2,14 +2,14 @@
 """Guard runtime marker/layout policy for generated/native ownership boundaries.
 
 Policy:
-- `src/runtime/<lang>/pytra-gen/**` and `src/runtime/{rs,cs}/generated/**` files must include both:
-  - `source: ...`
-  - `generated-by: ...`
-- `src/runtime/<lang>/pytra-core/**` and `src/runtime/{rs,cs}/native/**` files must not include generated markers.
-- `src/runtime/cpp/generated/core/**` files must include both:
-  - `source: ...`
-  - `generated-by: ...`
-- `src/runtime/cpp/native/core/**` and `src/runtime/cpp/core/**` must not include generated markers.
+- For `rs/cs`, canonical generated lanes are `src/runtime/{rs,cs}/generated/**` and canonical
+  handwritten lanes are `src/runtime/{rs,cs}/native/**`.
+- Legacy `src/runtime/<lang>/pytra-gen/**` / `pytra-core/**` trees are still scanned for
+  backends that have not yet rolled over to the `generated/native` layout.
+- Generated lanes must include both `source:` and `generated-by:` markers.
+- Handwritten lanes must not include generated markers.
+- `src/runtime/cpp/generated/core/**` files must include both markers, while
+  `src/runtime/cpp/native/core/**` and `src/runtime/cpp/core/**` must not.
 """
 
 from __future__ import annotations

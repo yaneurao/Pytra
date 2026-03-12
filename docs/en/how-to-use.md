@@ -419,7 +419,7 @@ rustc -O test/transpile/rs/iterable.rs -o test/transpile/obj/iterable_rs.out
 ```
 
 Notes:
-- Prepare corresponding implementations under `src/rs_module/` for Python modules used by input code.
+- Place corresponding runtime implementations for Python modules used by input code under the canonical `src/runtime/rs/{native,generated}/` lanes. `src/runtime/rs/pytra/` remains a compatibility lane only.
 
 </details>
 

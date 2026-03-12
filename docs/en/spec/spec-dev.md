@@ -689,7 +689,7 @@ Constraints:
 
 - Restrict `src/py2rs.py` to a thin CLI and I/O orchestrator.
 - Separate Rust-specific output into `src/backends/rs/emitter/rs_emitter.py` (`RustEmitter`).
-- `src/py2rs.py` must not depend on `src/backends/common/` or `src/rs_module/` and is already unified on `src/runtime/rs/pytra/`.
+- `src/py2rs.py` must not depend on `src/backends/common/` or `src/rs_module/`; the canonical runtime now lives under `src/runtime/rs/{native,generated}/`, while `src/runtime/rs/pytra/` remains only as a compatibility lane.
 - Separate language-specific differences into `src/backends/rs/profiles/` and `src/backends/rs/`.
 - The canonical smoke check for convertibility is `tools/check_py2rs_transpile.py`.
 - Default `--east-stage` is `3`. `--east-stage 2` remains a migration-compatibility mode with a warning.
