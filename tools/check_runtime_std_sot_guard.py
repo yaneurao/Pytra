@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 """Guard source-of-truth runtime policy for std/utils modules.
 
-Policy (phase-1):
+Policy (current):
 - Canonical module logic must come from `src/pytra/std/*.py` or `src/pytra/utils/*.py`.
-- Handwritten runtime implementations of guarded module symbols are prohibited outside
-  `src/runtime/*/pytra-gen/**` and `src/runtime/{rs,cs}/generated/**`.
+- For `rs/cs`, canonical generated runtime lanes are `src/runtime/{rs,cs}/generated/**`.
+- Legacy `pytra-gen` lanes may still exist for backends that have not yet migrated to the
+  `generated/native` vocabulary, but new handwritten guarded implementations must not
+  re-enter those lanes.
 - Existing debt is tracked explicitly in `tools/runtime_std_sot_allowlist.txt`.
 
 Current guarded module set:
 - json (`pyJsonLoads` / `pyJsonDumps`)
 - assertions (`py_assert_*`)
 - re (`Match` / `strip_group`)
-- C++ std/utils runtime shape (`generated/` + `pytra/` ownership + required manual impl split)
+- C++ std/utils runtime shape (`generated/native/pytra` ownership + required manual impl split)
 """
 
 from __future__ import annotations

@@ -63,11 +63,11 @@ They serve three main goals:
 - `tools/verify_image_runtime_parity.py`
   - Purpose: verify parity between Python SoT and C++ image runtime (PNG/GIF)
 - `tools/check_runtime_std_sot_guard.py`
-  - Purpose: enforce `src/pytra/std/*.py` / `src/pytra/utils/*.py` as the source of truth and fail handwritten implementations outside the allowed generated lane
+  - Purpose: enforce `src/pytra/std/*.py` / `src/pytra/utils/*.py` as the source of truth, treat `src/runtime/{rs,cs}/generated/**` as the canonical generated lane for `rs/cs`, and fail handwritten re-entry into legacy generated lanes for the guarded module set
 - `tools/check_runtime_core_gen_markers.py`
-  - Purpose: require `source/generated-by` markers in `src/runtime/<lang>/pytra-gen/**` and detect mixed generated markers in handwritten lanes; for C++, also require markers in `src/runtime/cpp/generated/core/**` and forbid them in `src/runtime/cpp/native/core/**` and `src/runtime/cpp/core/**`
+  - Purpose: require `source/generated-by` markers in the canonical generated lane (`src/runtime/<lang>/generated/**` for `rs/cs`, `pytra-gen/**` for legacy backends) and detect mixed generated markers in handwritten lanes; for C++, also require markers in `src/runtime/cpp/generated/core/**` and forbid them in `src/runtime/cpp/native/core/**` and `src/runtime/cpp/core/**`
 - `tools/check_runtime_pytra_gen_naming.py`
-  - Purpose: validate `src/runtime/*/pytra-gen/` naming/layout for `std|utils`
+  - Purpose: validate the canonical generated-lane naming/layout for `std|utils` (`generated/**` for `rs/cs`, `pytra-gen/**` for legacy backends)
 - `tools/check_emitter_runtimecall_guardrails.py`
   - Purpose: detect new literal runtime/stdlib dispatch branches in non-C++ emitters
 - `tools/check_emitter_forbidden_runtime_symbols.py`
