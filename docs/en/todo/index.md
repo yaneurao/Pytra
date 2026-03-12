@@ -33,8 +33,12 @@ Last updated: 2026-03-12
 
 1. [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01] Accept `tuple[T, ...]` as a category distinct from fixed tuples and make representative backends treat it as an immutable sequence.
    Context: [p0-homogeneous-tuple-ellipsis-support.md](/workspace/Pytra/docs/en/plans/p0-homogeneous-tuple-ellipsis-support.md)
-   - `P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01`: the current C++ backend incorrectly lowers `tuple[int, ...]` to `::std::tuple<int64, ...>`. In v1 this will be separated from fixed tuples, representative lanes will be locked as immutable-sequence lowering, and unsupported lanes will remain fail-closed.
+   - `P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01`: `S2-02` fixed the representative C++ lane as `tuple[T, ...] -> list<T>`. Next the backend policy will be tightened and unsupported lanes will be locked fail-closed.
 
 2. [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01] Treat `dataclasses.field(...)` as a static dataclass metadata subset rather than a runtime call, with representative lanes locked by fail-closed contracts.
    Context: [p1-dataclass-field-static-subset.md](/workspace/Pytra/docs/en/plans/p1-dataclass-field-static-subset.md)
    Summary: representative Pytra-NES cases such as `timestamps: deque[float] = field(init=False, repr=False)` currently leak `field(...)` as a normal expression into backend output and generate broken code. In v1, `default` / `default_factory` / `init` / `repr` / `compare` will be handled as a static metadata subset and unsupported options will fail closed.
+
+3. [ ] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01] Minimize the remaining object-bridge mutation seam and shared `type_id` thin seam in `py_runtime.h` after the cross-runtime contracts are fully classified.
+   Context: [p5-cpp-pyruntime-residual-thin-seam-shrink.md](/workspace/Pytra/docs/en/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md)
+   Summary: the current `py_runtime.h` has already been reduced substantially, but `py_append(object&)` and the `py_runtime_value_*` / `py_runtime_object_*` / `py_runtime_type_id_*` thin seams still remain. These cannot be removed by editing the header alone, so this `P5` task fixes the later-stage shrink plan and bundle order across the C++ / Rust / C# emitters and runtimes.
