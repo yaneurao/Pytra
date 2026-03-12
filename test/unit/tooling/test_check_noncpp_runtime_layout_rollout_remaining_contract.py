@@ -16,6 +16,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_target_inventory_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_target_inventory_issues(), [])
 
+    def test_module_bucket_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_module_bucket_issues(), [])
+
     def test_backend_order_is_fixed(self) -> None:
         self.assertEqual(
             contract_mod.iter_remaining_noncpp_backend_order(),
@@ -146,6 +149,40 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "pytra/utils/gif.php",
                     "pytra/utils/png.php",
                 ),
+            },
+        )
+
+    def test_module_buckets_are_fixed(self) -> None:
+        by_backend = {
+            entry["backend"]: entry
+            for entry in contract_mod.iter_remaining_noncpp_runtime_module_buckets()
+        }
+        self.assertEqual(
+            by_backend["go"],
+            {
+                "backend": "go",
+                "generated_modules": ("utils/gif", "utils/png"),
+                "native_modules": ("built_in/py_runtime",),
+                "compat_modules": ("built_in/py_runtime",),
+                "blocked_modules": ("std/json", "std/math", "std/pathlib", "std/time"),
+            },
+        )
+        self.assertEqual(
+            by_backend["java"]["generated_modules"],
+            ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+        )
+        self.assertEqual(
+            by_backend["js"]["blocked_modules"],
+            ("std/json",),
+        )
+        self.assertEqual(
+            by_backend["php"],
+            {
+                "backend": "php",
+                "generated_modules": ("utils/gif", "utils/png"),
+                "native_modules": ("built_in/py_runtime", "std/time"),
+                "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
+                "blocked_modules": ("std/json", "std/math", "std/pathlib"),
             },
         )
 

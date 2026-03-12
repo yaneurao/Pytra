@@ -185,6 +185,60 @@ def _expand_target_inventory_for_backend(backend: str) -> dict[str, tuple[str, .
     }
 
 
+def _normalize_target_module_label(rel_path: str) -> str | None:
+    if rel_path.endswith("README.md"):
+        return None
+    parts = rel_path.split("/")
+    if not parts:
+        return None
+    root = parts[0]
+    if root in ("generated", "native") and len(parts) >= 3:
+        bucket = parts[1]
+        stem = Path(parts[2]).stem
+    elif root == "pytra":
+        if len(parts) == 2:
+            stem = Path(parts[1]).stem
+            if stem == "py_runtime":
+                return "built_in/py_runtime"
+            if stem in ("math", "pathlib", "time"):
+                return f"std/{stem}"
+            if stem in ("gif", "png"):
+                return f"utils/{stem}"
+            return None
+        if len(parts) >= 3:
+            bucket = parts[1]
+            stem = Path(parts[2]).stem
+        else:
+            return None
+    else:
+        return None
+    if stem == "PyRuntime":
+        stem = "py_runtime"
+    if stem.endswith("_impl"):
+        stem = stem[:-5]
+    return f"{bucket}/{stem}"
+
+
+def _collect_target_module_buckets_for_backend(backend: str) -> dict[str, tuple[str, ...]]:
+    target_inventory = next(
+        entry for entry in contract_mod.iter_remaining_noncpp_runtime_target_inventory() if entry["backend"] == backend
+    )
+    buckets: dict[str, set[str]] = {"generated": set(), "native": set(), "compat": set()}
+    for ownership, inventory_key in (
+        ("generated", "generated_files"),
+        ("native", "native_files"),
+        ("compat", "compat_files"),
+    ):
+        for rel_path in target_inventory[inventory_key]:
+            label = _normalize_target_module_label(rel_path)
+            if label is not None:
+                buckets[ownership].add(label)
+    return {
+        ownership: tuple(sorted(labels))
+        for ownership, labels in buckets.items()
+    }
+
+
 def _collect_target_inventory_issues() -> list[str]:
     issues: list[str] = []
     inventory_entries = contract_mod.iter_remaining_noncpp_runtime_target_inventory()
@@ -203,10 +257,36 @@ def _collect_target_inventory_issues() -> list[str]:
     return issues
 
 
+def _collect_module_bucket_issues() -> list[str]:
+    issues: list[str] = []
+    entries = contract_mod.iter_remaining_noncpp_runtime_module_buckets()
+    bucket_order = tuple(entry["backend"] for entry in entries)
+    if bucket_order != contract_mod.iter_remaining_noncpp_backend_order():
+        issues.append("remaining runtime module bucket order drifted")
+    for entry in entries:
+        backend = entry["backend"]
+        actual = _collect_target_module_buckets_for_backend(backend)
+        if actual["generated"] != entry["generated_modules"]:
+            issues.append(f"generated module bucket drifted: {backend}")
+        if actual["native"] != entry["native_modules"]:
+            issues.append(f"native module bucket drifted: {backend}")
+        if actual["compat"] != entry["compat_modules"]:
+            issues.append(f"compat module bucket drifted: {backend}")
+        blocked = set(entry["blocked_modules"])
+        if blocked & set(entry["generated_modules"]):
+            issues.append(f"blocked/generated overlap drifted: {backend}")
+        if blocked & set(entry["native_modules"]):
+            issues.append(f"blocked/native overlap drifted: {backend}")
+        if blocked & set(entry["compat_modules"]):
+            issues.append(f"blocked/compat overlap drifted: {backend}")
+    return issues
+
+
 def main() -> int:
     issues = _collect_contract_issues()
     issues.extend(_collect_current_inventory_issues())
     issues.extend(_collect_target_inventory_issues())
+    issues.extend(_collect_module_bucket_issues())
     if issues:
         print("non-c++ runtime layout rollout remaining contract check failed:", file=sys.stderr)
         for issue in issues:

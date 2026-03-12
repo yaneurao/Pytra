@@ -123,3 +123,4 @@
 - 2026-03-13: `S1-01` として remaining backend ごとの current->target mapping table を `noncpp_runtime_layout_rollout_remaining_contract.py` に固定した。checker は backend 順、runtime hook key、current root 実在、lane ごとの current prefix 実在、`native/generated/compat -> native/generated/pytra` taxonomy を first bundle として監査する。
 - 2026-03-13: `S1-02` の first bundle として、remaining backend ごとの current materialized file inventory (`pytra-core/pytra-gen/pytra`) を contract に固定した。blocked module や target generated/native bucket の詳細分類は後続 bundle で追加する。
 - 2026-03-13: `S1-02` の second bundle として、current inventory と lane mapping から導かれる target inventory (`generated/native/pytra`) baseline も contract に固定した。checker は ownership ごとの expected target path 集合まで監査する。
+- 2026-03-13: `S1-02` の third bundle として、target inventory から導かれる logical module bucket (`generated/native/compat`) と backend ごとの blocked module baseline も contract に固定した。compat は native/generated と重複可、blocked は他 bucket と交差しないことを checker で監査する。

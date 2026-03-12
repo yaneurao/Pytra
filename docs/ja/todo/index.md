@@ -31,6 +31,6 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01] `go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php` runtime を P0 と同じ `generated/native` ownership model へ段階 rollout する（文脈: [p1-noncpp-runtime-layout-rollout-remaining.md](../plans/p1-noncpp-runtime-layout-rollout-remaining.md)）。進捗: `S1-01` で mapping table と hook/path baseline checker、`S1-02` first bundle で current file inventory baseline、second bundle で target inventory baseline を固定済み
+- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01] `go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php` runtime を P0 と同じ `generated/native` ownership model へ段階 rollout する（文脈: [p1-noncpp-runtime-layout-rollout-remaining.md](../plans/p1-noncpp-runtime-layout-rollout-remaining.md)）。進捗: `S1-01` で mapping table と hook/path baseline checker、`S1-02` first bundle で current file inventory baseline、second bundle で target inventory baseline、third bundle で module bucket と blocked baseline を固定済み
 - [ ] [ID: P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01] backend parity の secondary tier (`go/java/kt/scala/swift/nim`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p5-backend-parity-secondary-rollout.md](../plans/p5-backend-parity-secondary-rollout.md)）
 - [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01] backend parity の long-tail tier (`js/ts/lua/rb/php`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p6-backend-parity-longtail-rollout.md](../plans/p6-backend-parity-longtail-rollout.md)）
