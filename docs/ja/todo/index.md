@@ -33,7 +33,7 @@
 
 1. [ ] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01] `py_runtime.h` に残っている object-bridge mutation seam と shared `type_id` thin seam を cross-runtime 契約の整理後に最小化する。
    文脈: [p5-cpp-pyruntime-residual-thin-seam-shrink.md](/workspace/Pytra/docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md)
-   概要: 現在の `py_runtime.h` は以前よりかなり縮小済みだが、`py_append(object&)` と `py_runtime_value_*` / `py_runtime_object_*` / `py_runtime_type_id_*` の thin seam が残っている。これらは header 単体では削れず、C++ / Rust / C# emitter と runtime の shared contract 整理を伴うので、後段の `P5` として bundle 単位で縮退計画を固定する。進捗: `S1-01` で header surface baseline を active `P5` に固定し、`S2-01` で C# bytearray compat / gif/png utility runtime を object-bridge residual として source-wide inventory から切り分け済み。
+   概要: 現在の `py_runtime.h` は以前よりかなり縮小済みだが、`py_append(object&)` と `py_runtime_value_*` / `py_runtime_object_*` / `py_runtime_type_id_*` の thin seam が残っている。これらは header 単体では削れず、C++ / Rust / C# emitter と runtime の shared contract 整理を伴うので、後段の `P5` として bundle 単位で縮退計画を固定する。進捗: `S1-01` で header surface baseline を active `P5` に固定し、`S2-01` で C# bytearray compat / gif/png utility runtime を object-bridge residual として source-wide inventory から切り分け、`S2-02` で shared `type_id` thin seam の must-remain / future-reducible split を C++ / Rust / C# 横断で固定済み。
 
 2. [ ] [ID: P5-POWERSHELL-CS-HOST-01] PowerShell backend を新設する代わりに、C# backend の出力を `pwsh` から build / run する host profile を整理する。
    文脈: [p5-powershell-csharp-host-profile.md](/workspace/Pytra/docs/ja/plans/p5-powershell-csharp-host-profile.md)

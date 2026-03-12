@@ -382,6 +382,24 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             },
         )
 
+    def test_shared_type_id_classification_contract_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.SHARED_TYPE_ID_CLASSIFICATION_TASK_ID,
+            "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02",
+        )
+        self.assertEqual(
+            inventory_mod.SHARED_TYPE_ID_CLASSIFICATION_ORDER,
+            (
+                "cpp_emitter_shared_type_id_residual",
+                "rs_emitter_shared_type_id_residual",
+                "cs_emitter_shared_type_id_residual",
+            ),
+        )
+        self.assertEqual(
+            inventory_mod._collect_shared_type_id_classification_issues(),
+            [],
+        )
+
     def test_cpp_future_shared_type_id_classification_is_fixed(self) -> None:
         self.assertEqual(
             inventory_mod._collect_cpp_future_shared_type_id_classification_issues(),
