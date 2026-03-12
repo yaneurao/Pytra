@@ -1081,6 +1081,28 @@ def _emit_unpack_target_assign(
     return lines
 
 
+def _legacy_target_from_for_core_plan(plan: dict[str, Any]) -> dict[str, Any]:
+    kind = plan.get("kind")
+    if kind == "NameTarget":
+        return {"kind": "Name", "id": plan.get("id", "_")}
+    if kind == "TupleTarget":
+        elems_any = plan.get("elements")
+        elems = elems_any if isinstance(elems_any, list) else []
+        legacy_elems: list[dict[str, Any]] = []
+        i = 0
+        while i < len(elems):
+            elem = elems[i]
+            if isinstance(elem, dict):
+                legacy_elems.append(_legacy_target_from_for_core_plan(elem))
+            i += 1
+        return {"kind": "Tuple", "elements": legacy_elems}
+    if kind == "ExprTarget":
+        target_any = plan.get("target")
+        if isinstance(target_any, dict):
+            return target_any
+    return {"kind": "Name", "id": "_"}
+
+
 def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
     iter_plan_any = stmt.get("iter_plan")
     target_plan_any = stmt.get("target_plan")
@@ -1108,6 +1130,51 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
                     lines.append(indent + "    " + _safe_var(elems[1].get("id"), "item") + " = " + list_expr + "[" + idx_name + "];")
             elif target_plan_any.get("kind") == "NameTarget":
                 lines.append(indent + "    " + _safe_var(target_plan_any.get("id"), "item") + " = " + list_expr + "[" + idx_name + "];")
+            i = 0
+            while i < len(body):
+                lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
+                i += 1
+            lines.append(indent + "}")
+            return lines
+
+        if target_plan_any.get("kind") == "TupleTarget":
+            tuple_target = _legacy_target_from_for_core_plan(target_plan_any)
+            tuple_item_tmp = _next_tmp(ctx, "iter_item")
+            if isinstance(iter_expr_any, dict) and iter_expr_any.get("kind") == "Call":
+                func_any = iter_expr_any.get("func")
+                if isinstance(func_any, dict) and func_any.get("kind") == "Attribute" and func_any.get("attr") == "items":
+                    owner_any = iter_expr_any.get("runtime_owner")
+                    if not isinstance(owner_any, dict):
+                        owner_any = func_any.get("value")
+                    key_tmp = _next_tmp(ctx, "iter_key")
+                    value_tmp = _next_tmp(ctx, "iter_value")
+                    iter_expr = _render_expr(owner_any)
+                    lines.append(indent + "foreach (" + iter_expr + " as " + key_tmp + " => " + value_tmp + ") {")
+                    lines.append(indent + "    " + tuple_item_tmp + " = [" + key_tmp + ", " + value_tmp + "];")
+                    lines.extend(
+                        _emit_unpack_target_assign(
+                            tuple_target,
+                            tuple_item_tmp,
+                            indent=indent + "    ",
+                            tmp_seq=[0],
+                        )
+                    )
+                    i = 0
+                    while i < len(body):
+                        lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
+                        i += 1
+                    lines.append(indent + "}")
+                    return lines
+            iter_expr = _render_expr(iter_expr_any)
+            lines.append(indent + "foreach (" + iter_expr + " as " + tuple_item_tmp + ") {")
+            lines.extend(
+                _emit_unpack_target_assign(
+                    tuple_target,
+                    tuple_item_tmp,
+                    indent=indent + "    ",
+                    tmp_seq=[0],
+                )
+            )
             i = 0
             while i < len(body):
                 lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))

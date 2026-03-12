@@ -152,6 +152,15 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertEqual(proc.stdout, "truthy-ok\ntime-ok\npng-ok\ngif-ok\n")
 
+    def test_transpile_dict_items_fixture_uses_foreach_key_value(self) -> None:
+        fixture = find_fixture_case("dict_get_items")
+        east = load_east(fixture, parser_backend="self_hosted")
+        php = transpile_to_php_native(east)
+        self.assertIn('foreach (($table["a"] ?? []) as $__pytra_iter_key_', php)
+        self.assertIn('foreach (($table["missing"] ?? []) as $__pytra_iter_key_', php)
+        self.assertIn('$_k = ($__pytra_iter_item_', php)
+        self.assertIn('$v = ($__pytra_iter_item_', php)
+
     def test_bitwise_invert_basic_uses_php_invert_operator(self) -> None:
         fixture = find_fixture_case("bitwise_invert_basic")
         east = load_east(fixture, parser_backend="self_hosted")
