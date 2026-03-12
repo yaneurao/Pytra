@@ -202,6 +202,9 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
         "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
     },
+    "syntax.control.try_raise": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
     "syntax.oop.virtual_dispatch": {
         "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -219,12 +222,31 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
         "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
     },
+    "builtin.iter.zip": {
+        "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
     "builtin.iter.range": {
         "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "nim": {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
+    "stdlib.json.loads_dumps": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
+    "stdlib.pathlib.path_ops": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
+    "stdlib.enum.enum_and_intflag": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
+    "stdlib.argparse.parse_args": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
+    "stdlib.re.sub": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
     },
     "builtin.type.isinstance": {
         "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},

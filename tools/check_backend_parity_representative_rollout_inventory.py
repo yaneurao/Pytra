@@ -71,7 +71,7 @@ def _collect_bundle_issues() -> list[str]:
     if residual_pairs != bundled_pairs:
         issues.append("representative rollout bundles no longer cover the exact residual feature set")
     if inventory_mod.REPRESENTATIVE_ROLLOUT_HANDOFF_V1["next_backend"] != "rs":
-        issues.append("representative rollout next_backend must stay rs while cpp residual is empty")
+        issues.append("representative rollout next_backend must stay rs while builtin.iter.zip remains in the Rust residual set")
     return issues
 
 

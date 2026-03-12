@@ -66,52 +66,10 @@ def _iter_observed_representative_residual_cells() -> tuple[RepresentativeResidu
 REPRESENTATIVE_RESIDUAL_CELLS_V1: Final[tuple[RepresentativeResidualCell, ...]] = (
     {
         "backend": "rs",
-        "feature_id": "syntax.control.try_raise",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/control/try_raise.py",
-    },
-    {
-        "backend": "rs",
         "feature_id": "builtin.iter.zip",
         "support_state": "not_started",
         "evidence_kind": "not_started_placeholder",
         "representative_fixture": "test/fixtures/signature/ok_generator_tuple_target.py",
-    },
-    {
-        "backend": "rs",
-        "feature_id": "stdlib.json.loads_dumps",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/stdlib/json_extended.py",
-    },
-    {
-        "backend": "rs",
-        "feature_id": "stdlib.pathlib.path_ops",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/stdlib/pathlib_extended.py",
-    },
-    {
-        "backend": "rs",
-        "feature_id": "stdlib.enum.enum_and_intflag",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/stdlib/enum_extended.py",
-    },
-    {
-        "backend": "rs",
-        "feature_id": "stdlib.argparse.parse_args",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/stdlib/argparse_extended.py",
-    },
-    {
-        "backend": "rs",
-        "feature_id": "stdlib.re.sub",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/stdlib/re_extended.py",
     },
     {
         "backend": "cs",
@@ -197,25 +155,16 @@ REPRESENTATIVE_ROLLOUT_BUNDLES_V1: Final[tuple[RepresentativeRolloutBundle, ...]
     {
         "bundle_id": "rs_syntax_iter_bundle",
         "backend": "rs",
-        "feature_ids": (
-            "syntax.control.try_raise",
-            "builtin.iter.zip",
-        ),
+        "feature_ids": ("builtin.iter.zip",),
         "target_evidence": "transpile_smoke",
-        "notes": "Start with shared syntax and iterator features so the same focused regressions unlock multiple representative rows.",
+        "notes": "Rust representative syntax rows are green; keep the remaining iterator zip row isolated until direct evidence is locked.",
     },
     {
         "bundle_id": "rs_stdlib_bundle",
         "backend": "rs",
-        "feature_ids": (
-            "stdlib.json.loads_dumps",
-            "stdlib.pathlib.path_ops",
-            "stdlib.enum.enum_and_intflag",
-            "stdlib.argparse.parse_args",
-            "stdlib.re.sub",
-        ),
+        "feature_ids": (),
         "target_evidence": "transpile_smoke",
-        "notes": "Finish the remaining Rust stdlib rows after the syntax and iterator cluster is green.",
+        "notes": "The representative Rust stdlib rows are green; keep the empty bundle as a handoff marker while cs becomes the next backend.",
     },
     {
         "bundle_id": "cs_syntax_iter_bundle",
