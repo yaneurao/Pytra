@@ -5,7 +5,7 @@
 </a>
 
 
-最終更新: 2026-03-11
+最終更新: 2026-03-12
 
 この文書は、`src/py2cpp.py` の言語機能サポート状況を「実装コード」と「実行テスト」の両方で確認できる粒度でまとめたものです。
 
@@ -51,7 +51,7 @@
 | `from M import S` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:242`, `test/unit/test_py2cpp_features.py:1283`, `test/fixtures/imports/from_import_symbols.py:3` |
 | `from M import S as A` | supported | サポート済み。 | `test/unit/test_py2cpp_features.py:1283`, `test/fixtures/imports/from_import_symbols.py:3` |
 | 循環 import 検出 | unsupported | 検出して `input_invalid(kind=import_cycle)` で停止。 | `src/py2cpp.py:5734`, `test/unit/test_py2cpp_features.py:567` |
-| 相対 import（`from .m import x`） | supported | sibling / parent relative `from-import` はサポート済み。alias 付き `from .. import helper as h` と `from ..helper import f as g` に加えて、`from .controller import (BUTTON_A, BUTTON_B)` のような sibling relative symbol-list import も multi-file build/run regression で固定済み。imported module-level function / global は namespace-qualified name と forward declaration 付きで emit される。entry root を越える root escape は `input_invalid(kind=relative_import_escape)` で fail-closed。 | `test/unit/tooling/test_py2x_cli.py`, `test/unit/common/test_import_graph_issue_structure.py`, `test/unit/backends/cpp/test_py2cpp_features.py` |
+| 相対 import（`from .m import x`） | supported | sibling / parent relative `from-import` はサポート済み。alias 付き `from .. import helper as h` と `from ..helper import f as g` に加えて、`from .controller import (BUTTON_A, BUTTON_B)` のような sibling relative symbol-list import も parser regression、representative CLI regression、multi-file build/run regression で固定済み。imported module-level function / global は namespace-qualified name と forward declaration 付きで emit される。entry root を越える root escape は `input_invalid(kind=relative_import_escape)` で fail-closed。 | `test/unit/tooling/test_py2x_cli.py`, `test/unit/common/test_import_graph_issue_structure.py`, `test/unit/backends/cpp/test_py2cpp_features.py` |
 | `from M import *` | partial | wildcard import は静的に公開シンボルを展開できる場合のみ通る。未解決 wildcard は `input_invalid(kind=unresolved_wildcard)` で fail-closed。 | `test/unit/backends/cpp/test_py2cpp_features.py:720`, `test/unit/backends/cpp/test_py2cpp_features.py:2328`, `test/unit/backends/cpp/test_py2cpp_features.py:2498` |
 | 未解決モジュール import | unsupported | `input_invalid(kind=missing_module)`。 | `test/unit/test_py2cpp_features.py:544` |
 | import 束縛重複 | unsupported | `input_invalid(kind=duplicate_binding)`。 | `test/unit/test_py2cpp_features.py:645`, `test/unit/test_py2cpp_features.py:675` |

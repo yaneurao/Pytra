@@ -30,6 +30,3 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-
-- [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01] 括弧付き sibling relative import を current support contract として固定する（文脈: [p0-relative-import-paren-sibling-contract.md](../plans/p0-relative-import-paren-sibling-contract.md)）
-  - 2026-03-12: parser / CLI / C++ multi-file の representative regression がそろった。残りは current support wording と handoff の closeout だけ。

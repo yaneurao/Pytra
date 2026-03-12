@@ -15,6 +15,8 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-12 / P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01](../plans/archive/20260312-p0-relative-import-paren-sibling-contract.md)
+- [2026-03-12 / P6-BACKEND-PARITY-MATRIX-CELL-FILL-01](../plans/archive/20260312-p6-backend-parity-matrix-cell-fill.md)
 - [2026-03-12 / P1-DATACLASS-FIELD-STATIC-SUBSET-01](../plans/archive/20260312-p1-dataclass-field-static-subset.md)
 - [2026-03-12 / P1-IMPORT-GRAPH-FRONTEND-DECOMPOSITION-01](../plans/archive/20260312-p1-import-graph-frontend-decomposition.md)
 - [2026-03-12 / P1-RELATIVE-IMPORT-LEGACY-DIAGNOSTIC-CLEANUP-01](../plans/archive/20260312-p1-relative-import-legacy-diagnostic-cleanup.md)

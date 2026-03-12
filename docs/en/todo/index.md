@@ -30,6 +30,3 @@ Last updated: 2026-03-12
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
-
-- [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01] Lock parenthesized sibling relative imports as a current support contract (context: [p0-relative-import-paren-sibling-contract.md](../plans/p0-relative-import-paren-sibling-contract.md))
-  - 2026-03-12: Representative parser / CLI / C++ multi-file regressions are now in place. Only the current-support wording and handoff closeout remain.

@@ -44,10 +44,11 @@ Verification commands:
 Decision log:
 - 2026-03-12: The current tree already passed both the parser and C++ smoke cases, so this task is filed as contract hardening rather than feature implementation.
 - 2026-03-12: The representative case follows the Pytra-NES report and prioritizes `from .controller import (BUTTON_A, BUTTON_B)`.
+- 2026-03-12: The parser regression, representative `py2x.py --target cpp` CLI regression, C++ multi-file build/run smoke, and support-doc handoff wording are now aligned, so the task is closed and moved to archive.
 
 ## Breakdown
 
-- [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01] Lock parenthesized sibling relative imports as a current support contract.
+- [x] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01] Lock parenthesized sibling relative imports as a current support contract.
 - [x] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S1-01] Add the active plan / TODO entry and sync the English mirror.
 - [x] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S2-01] Add a representative CLI regression that locks the `py2x.py --target cpp` lane.
-- [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S2-02] Align parser / C++ smoke / docs handoff wording and close the task.
+- [x] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S2-02] Align parser / CLI / C++ smoke / docs handoff wording and close the task.

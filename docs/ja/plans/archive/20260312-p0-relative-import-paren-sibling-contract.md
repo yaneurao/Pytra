@@ -44,10 +44,11 @@
 決定ログ:
 - 2026-03-12: current tree では parser と C++ smoke が既に通っていたため、本 task は implementation 追加ではなく contract 固定として起票した。
 - 2026-03-12: representative case は Pytra-NES の報告に合わせて `from .controller import (BUTTON_A, BUTTON_B)` 形式を優先する。
+- 2026-03-12: parser regression、`py2x.py --target cpp` の representative CLI regression、C++ multi-file build/run smoke、support docs の handoff wording がそろったので task 全体を完了として archive へ移す。
 
 ## 分解
 
-- [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01] 括弧付き sibling relative import を current support contract として固定する。
+- [x] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01] 括弧付き sibling relative import を current support contract として固定する。
 - [x] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S1-01] active plan / TODO / English mirror を追加し、task の scope を固定する。
 - [x] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S2-01] representative CLI regression を追加して `py2x.py --target cpp` lane を固定する。
-- [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S2-02] parser / C++ smoke / docs の handoff を current support wording に揃えて task を閉じる。
+- [x] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S2-02] parser / CLI / C++ smoke / docs の handoff を current support wording に揃えて task を閉じる。
