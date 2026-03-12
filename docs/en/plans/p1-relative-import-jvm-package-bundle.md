@@ -49,10 +49,11 @@ Decision log:
 - 2026-03-12: The native-path bundle is now treated as a locked representative-smoke baseline and moves to archive semantics before the JVM package bundle becomes the next live rollout.
 - 2026-03-12: The current non-C++ rollout handoff is fixed as `rs/cs/go/js/nim/swift/ts=transpile_smoke_locked`, `java/kotlin/scala=jvm_package_bundle_rollout`, and `lua/php/ruby=defer_until_jvm_package_bundle_complete`.
 - 2026-03-12: `P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S1-01` is a closeout-first bundle that switches the live handoff in plans, TODO, contracts, checkers, and docs before backend smoke is added in later bundles.
+- 2026-03-12: `P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-01` locks representative package-style transpile smoke for `java/kotlin/scala` and keeps wildcard relative import fail-closed in the backend-native emitters.
 
 ## Breakdown
 
 - [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01] Fix the `java/kotlin/scala` JVM package bundle as the next live rollout and align the handoff after native-path closeout.
 - [x] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S1-01] Switch the native-path bundle to archive semantics and add the live JVM package bundle plan / TODO / contract / checker / docs handoff.
-- [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-01] Add representative transpile-smoke / fail-closed regressions for `java/kotlin/scala`.
+- [x] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-01] Add representative transpile-smoke / fail-closed regressions for `java/kotlin/scala`.
 - [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-02] Sync backend-parity docs / coverage inventory / handoff wording to the current JVM bundle state and make the task close-ready.

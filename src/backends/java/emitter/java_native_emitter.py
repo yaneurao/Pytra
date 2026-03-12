@@ -378,6 +378,9 @@ def _render_name_expr(expr: dict[str, Any]) -> str:
     ident = _safe_ident(expr.get("id"), "value")
     if ident == "self":
         return "this"
+    relative_alias = _RELATIVE_IMPORT_NAME_ALIASES.get(ident, "")
+    if relative_alias != "":
+        return relative_alias
     return ident
 
 
@@ -677,7 +680,11 @@ def _call_name(expr: dict[str, Any]) -> str:
     raw = raw_any if isinstance(raw_any, str) else ""
     if raw == "super":
         return "super"
-    return _safe_ident(raw, "")
+    ident = _safe_ident(raw, "")
+    relative_alias = _RELATIVE_IMPORT_NAME_ALIASES.get(ident, "")
+    if relative_alias != "":
+        return relative_alias
+    return ident
 
 
 def _call_arg_nodes(expr: dict[str, Any]) -> list[Any]:
@@ -742,6 +749,100 @@ def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
 
 _ASSERTION_RUNTIME_CALLS = set(list_noncpp_assertion_runtime_calls())
 _CURRENT_IMPORT_SYMBOLS: dict[str, dict[str, str]] = {}
+_RELATIVE_IMPORT_NAME_ALIASES: dict[str, str] = {}
+
+
+def _reject_unsupported_relative_import_forms(body_any: Any) -> None:
+    if not isinstance(body_any, list):
+        return
+    i = 0
+    while i < len(body_any):
+        stmt = body_any[i]
+        if not isinstance(stmt, dict):
+            i += 1
+            continue
+        kind = stmt.get("kind")
+        if kind != "Import" and kind != "ImportFrom":
+            i += 1
+            continue
+        module_any = stmt.get("module")
+        module_id = module_any if isinstance(module_any, str) else ""
+        level_any = stmt.get("level")
+        level = level_any if isinstance(level_any, int) else 0
+        if level <= 0 and not module_id.startswith("."):
+            i += 1
+            continue
+        names_any = stmt.get("names")
+        names = names_any if isinstance(names_any, list) else []
+        j = 0
+        while j < len(names):
+            ent = names[j]
+            if isinstance(ent, dict) and ent.get("name") == "*":
+                raise RuntimeError(
+                    "java native emitter: unsupported relative import form: wildcard import"
+                )
+            j += 1
+        i += 1
+
+
+def _relative_import_module_path(module_id: str) -> str:
+    module_path = module_id.lstrip(".").strip()
+    if module_path == "":
+        return ""
+    parts = module_path.split(".")
+    out: list[str] = []
+    i = 0
+    while i < len(parts):
+        safe = _safe_ident(parts[i], "")
+        if safe != "":
+            out.append(safe)
+        i += 1
+    return ".".join(out)
+
+
+def _relative_import_target_expr(module_id: str, imported_name: str) -> str:
+    module_path = _relative_import_module_path(module_id)
+    symbol = _safe_ident(imported_name, "")
+    if module_path == "":
+        return symbol
+    if symbol == "":
+        return module_path
+    return module_path + "." + symbol
+
+
+def _collect_relative_import_name_aliases(body_any: Any) -> dict[str, str]:
+    out: dict[str, str] = {}
+    if not isinstance(body_any, list):
+        return out
+    i = 0
+    while i < len(body_any):
+        stmt = body_any[i]
+        i += 1
+        if not isinstance(stmt, dict) or stmt.get("kind") != "ImportFrom":
+            continue
+        module_any = stmt.get("module")
+        module_id = module_any if isinstance(module_any, str) else ""
+        if not module_id.startswith("."):
+            continue
+        names_any = stmt.get("names")
+        names = names_any if isinstance(names_any, list) else []
+        j = 0
+        while j < len(names):
+            entry = names[j]
+            j += 1
+            if not isinstance(entry, dict):
+                continue
+            imported_any = entry.get("name")
+            imported_name = imported_any if isinstance(imported_any, str) else ""
+            if imported_name == "" or imported_name == "*":
+                continue
+            local_any = entry.get("asname")
+            local_name = local_any if isinstance(local_any, str) and local_any != "" else imported_name
+            local_ident = _safe_ident(local_name, "")
+            target_expr = _relative_import_target_expr(module_id, imported_name)
+            if local_ident != "" and target_expr != "":
+                out[local_ident] = target_expr
+    return out
 
 
 def _snake_to_java_camel(name: str) -> str:
@@ -2486,6 +2587,7 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     body_any = east_doc.get("body")
     if not isinstance(body_any, list):
         raise RuntimeError("java native emitter: Module.body must be list")
+    _reject_unsupported_relative_import_forms(body_any)
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Java backend")
     reject_backend_general_union_type_exprs(east_doc, backend_name="Java backend")
     main_guard_any = east_doc.get("main_guard_body")

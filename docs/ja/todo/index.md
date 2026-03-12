@@ -37,6 +37,6 @@
 
 1. [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01] `java/kotlin/scala` JVM package bundle の live handoff と representative rollout contract を固定する。
 2. [x] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S1-01] live plan / TODO / contract / checker を追加し、coverage / second-wave handoff を JVM package bundle へ切り替える。
-3. [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-01] `java/kotlin/scala` backend に representative package-style relative import transpile smoke を追加する。
+3. [x] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-01] `java/kotlin/scala` backend に representative package-style relative import transpile smoke と wildcard fail-closed regression を追加する。
 4. [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-02] coverage inventory / backend parity docs を current JVM bundle state に同期し、long-tail handoff を明記する。
 5. [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S3-01] focused docs / tests / handoff wording を current state に揃えて task を閉じる。
