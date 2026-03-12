@@ -521,6 +521,35 @@ def rewrite_php_std_time_live_wrapper(php_src: str) -> str:
     return text.rstrip() + "\n"
 
 
+def rewrite_php_std_math_live_wrapper(php_src: str) -> str:
+    text = rewrite_php_program_to_library(php_src)
+    text = text.replace(
+        "require_once dirname(__DIR__) . '/py_runtime.php';\n",
+        "require_once dirname(__DIR__) . '/py_runtime.php';\n\n$pi = pyMathPi();\n$e = pyMathE();\n",
+        1,
+    )
+    signature_replacements = {
+        "function sqrt($x) {": "function sqrt($x): float {",
+        "function sin($x) {": "function sin($x): float {",
+        "function cos($x) {": "function cos($x): float {",
+        "function tan($x) {": "function tan($x): float {",
+        "function exp($x) {": "function exp($x): float {",
+        "function log($x) {": "function log($x): float {",
+        "function log10($x) {": "function log10($x): float {",
+        "function fabs($x) {": "function fabs($x): float {",
+        "function floor($x) {": "function floor($x): float {",
+        "function ceil($x) {": "function ceil($x): float {",
+        "function pow($x, $y) {": "function pow($x, $y): float {",
+    }
+    for before, after in signature_replacements.items():
+        text = text.replace(before, after)
+    if "pyMathPi()" not in text or "pyMathE()" not in text:
+        raise RuntimeError("generated PHP std/math wrapper is missing pi/e helpers")
+    if "__pytra_main" in text:
+        raise RuntimeError("generated PHP std/math wrapper still contains main stub")
+    return text.rstrip() + "\n"
+
+
 def rewrite_cpp_program_to_namespace(cpp_src: str, namespace_name: str) -> str:
     lines = _strip_trailing_string_literal_expr(cpp_src).splitlines()
     lines = _remove_block_by_signature(lines, re.compile(r"^static\s+void\s+__pytra_module_init\s*\("))
@@ -599,6 +628,8 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_go_program_to_library(generated)
     elif item.postprocess == "php_std_time_live_wrapper":
         generated = rewrite_php_std_time_live_wrapper(generated)
+    elif item.postprocess == "php_std_math_live_wrapper":
+        generated = rewrite_php_std_math_live_wrapper(generated)
     elif item.postprocess == "php_program_to_library":
         generated = rewrite_php_program_to_library(generated)
     elif item.postprocess == "cpp_program_to_namespace":
