@@ -1,6 +1,6 @@
 # P1: 残り non-C++ backend runtime を C++ 比較可能な `generated/native` layout へ段階 rollout する
 
-最終更新: 2026-03-12
+最終更新: 2026-03-13
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01`
@@ -41,6 +41,7 @@
 
 確認コマンド（予定）:
 - `python3 tools/check_todo_priority.py`
+- `python3 tools/check_noncpp_runtime_layout_rollout_remaining_contract.py`
 - `python3 tools/check_runtime_core_gen_markers.py`
 - `python3 tools/check_runtime_pytra_gen_naming.py`
 - `python3 tools/check_runtime_std_sot_guard.py`
@@ -106,7 +107,7 @@
 
 ## 分解
 
-- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S1-01] 残 backend の current tree (`pytra-core/pytra-gen/pytra`) と target tree (`generated/native/pytra`) の対応表を backend ごとに作る。
+- [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S1-01] 残 backend の current tree (`pytra-core/pytra-gen/pytra`) と target tree (`generated/native/pytra`) の対応表を backend ごとに作る。
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S1-02] backend ごとに `generated/{built_in,std,utils}` へ載せる module、`native/**` に残す substrate/residual、blocked module を inventory/allowlist に固定する。
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-01] Wave A (`go/java/kotlin/scala/swift/nim`) の path / hook / build / selfhost 定義を `generated/native` へ切り替える。
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-02] Wave A の `generated/{built_in,std,utils}` を SoT から再生成し、compare lane を実体化する。
@@ -119,3 +120,4 @@
 決定ログ:
 - 2026-03-12: ユーザー指示に従い、`rs/cs` は P0、残 backend (`go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php`) は P1 に切り分けた。P1 でも `generated=SoT only`, `native=hand-written only` を維持する。
 - 2026-03-12: P1 の rollout は backend 依存の packaging 差を減らすため、まず static runtime family (`go/java/kotlin/scala/swift/nim`)、次に script runtime family (`js/ts/lua/ruby/php`) の順に進める。
+- 2026-03-13: `S1-01` として remaining backend ごとの current->target mapping table を `noncpp_runtime_layout_rollout_remaining_contract.py` に固定した。checker は backend 順、runtime hook key、current root 実在、lane ごとの current prefix 実在、`native/generated/compat -> native/generated/pytra` taxonomy を first bundle として監査する。

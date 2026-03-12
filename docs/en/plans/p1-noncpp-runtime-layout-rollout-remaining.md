@@ -1,6 +1,6 @@
 # P1: Roll the remaining non-C++ backend runtimes onto a C++-comparable `generated/native` layout
 
-Last updated: 2026-03-12
+Last updated: 2026-03-13
 
 Related TODO:
 - `docs/ja/todo/index.md` `ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01`
@@ -41,6 +41,7 @@ Acceptance criteria:
 
 Planned verification:
 - `python3 tools/check_todo_priority.py`
+- `python3 tools/check_noncpp_runtime_layout_rollout_remaining_contract.py`
 - `python3 tools/check_runtime_core_gen_markers.py`
 - `python3 tools/check_runtime_pytra_gen_naming.py`
 - `python3 tools/check_runtime_std_sot_guard.py`
@@ -106,7 +107,7 @@ Focus:
 
 ## Breakdown
 
-- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S1-01] Build per-backend mapping tables from the current `pytra-core/pytra-gen/pytra` trees to the target `generated/native/pytra` trees.
+- [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S1-01] Build per-backend mapping tables from the current `pytra-core/pytra-gen/pytra` trees to the target `generated/native/pytra` trees.
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S1-02] Fix, per backend, which modules belong in `generated/{built_in,std,utils}`, which stay in `native/**` as substrate/residual code, and which remain blocked in inventories/allowlists.
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-01] Cut Wave A (`go/java/kotlin/scala/swift/nim`) path / hook / build / selfhost definitions over to `generated/native`.
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-02] Regenerate Wave A `generated/{built_in,std,utils}` from the SoT and make the compare lanes real.
@@ -119,3 +120,4 @@ Focus:
 Decision log:
 - 2026-03-12: Per user direction, split the program so `rs/cs` stay in P0 and the remaining backends (`go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php`) move into this P1 rollout. P1 keeps the same rule: `generated=SoT only`, `native=hand-written only`.
 - 2026-03-12: Ordered the P1 rollout as static-runtime family first (`go/java/kotlin/scala/swift/nim`), then script-runtime family (`js/ts/lua/ruby/php`) so packaging and shim differences do not mix in the same slice.
+- 2026-03-13: As `S1-01`, the remaining backend current->target mapping table was fixed in `noncpp_runtime_layout_rollout_remaining_contract.py`. The first checker bundle only guards backend order, runtime hook keys, current root presence, lane-level current prefix presence, and the `native/generated/compat -> native/generated/pytra` taxonomy.
