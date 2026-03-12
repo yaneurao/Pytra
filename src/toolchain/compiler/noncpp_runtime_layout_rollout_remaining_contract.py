@@ -87,6 +87,18 @@ class RemainingRuntimeWaveBCompatSmokeEntry(TypedDict):
     smoke_targets: tuple[str, ...]
 
 
+class RemainingRuntimeWaveBGeneratedCompareSmokeEntry(TypedDict):
+    backend: str
+    smoke_kind: str
+    smoke_targets: tuple[str, ...]
+
+
+class RemainingRuntimeWaveAGeneratedSmokeEntry(TypedDict):
+    backend: str
+    smoke_kind: str
+    smoke_targets: tuple[str, ...]
+
+
 class RemainingRuntimeWaveAHookSourceEntry(TypedDict):
     backend: str
     runtime_hook_files: tuple[str, ...]
@@ -149,6 +161,22 @@ REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1: Final[tuple[str, ...]] = (
     + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
 )
 
+REMAINING_NONCPP_GO_JAVA_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
+    "built_in/contains",
+    "built_in/io_ops",
+    "built_in/iter_ops",
+    "built_in/numeric_ops",
+    "built_in/scalar_ops",
+    "built_in/zip_ops",
+)
+
+REMAINING_NONCPP_GO_JAVA_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
+    "built_in/predicates",
+    "built_in/sequence",
+    "built_in/string_ops",
+    "built_in/type_id",
+)
+
 
 REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEntry, ...]] = (
     {
@@ -171,6 +199,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "rationale": "Go image helpers already live in the canonical generated/utils lane after the Wave A path cutover.",
             },
             {
+                "current_prefix": "src/runtime/go/generated/built_in/",
+                "target_prefix": "src/runtime/go/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "Go live-generated built_in compare artifacts live in generated/built_in for the compile-safe subset after the S4 alignment bundle.",
+            },
+            {
                 "current_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
                 "target_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
                 "ownership": "compat",
@@ -190,6 +224,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/java/native/built_in/",
                 "ownership": "native",
                 "rationale": "Java handwritten runtime helpers already live in native/built_in after the Wave A path cutover.",
+            },
+            {
+                "current_prefix": "src/runtime/java/generated/built_in/",
+                "target_prefix": "src/runtime/java/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "Java live-generated built_in compare artifacts live in generated/built_in for the compile-safe subset after the S4 alignment bundle.",
             },
             {
                 "current_prefix": "src/runtime/java/generated/std/",
@@ -611,13 +651,28 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     {
         "backend": "go",
         "pytra_core_files": ("built_in/py_runtime.go",),
-        "pytra_gen_files": ("utils/gif.go", "utils/png.go"),
+        "pytra_gen_files": (
+            "built_in/contains.go",
+            "built_in/io_ops.go",
+            "built_in/iter_ops.go",
+            "built_in/numeric_ops.go",
+            "built_in/scalar_ops.go",
+            "built_in/zip_ops.go",
+            "utils/gif.go",
+            "utils/png.go",
+        ),
         "pytra_files": ("built_in/py_runtime.go",),
     },
     {
         "backend": "java",
         "pytra_core_files": ("built_in/PyRuntime.java",),
         "pytra_gen_files": (
+            "built_in/contains.java",
+            "built_in/io_ops.java",
+            "built_in/iter_ops.java",
+            "built_in/numeric_ops.java",
+            "built_in/scalar_ops.java",
+            "built_in/zip_ops.java",
             "std/json.java",
             "std/math.java",
             "std/pathlib.java",
@@ -795,13 +850,28 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
 REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTargetInventoryEntry, ...]] = (
     {
         "backend": "go",
-        "generated_files": ("generated/utils/gif.go", "generated/utils/png.go"),
+        "generated_files": (
+            "generated/built_in/contains.go",
+            "generated/built_in/io_ops.go",
+            "generated/built_in/iter_ops.go",
+            "generated/built_in/numeric_ops.go",
+            "generated/built_in/scalar_ops.go",
+            "generated/built_in/zip_ops.go",
+            "generated/utils/gif.go",
+            "generated/utils/png.go",
+        ),
         "native_files": ("native/built_in/py_runtime.go",),
         "compat_files": ("pytra/built_in/py_runtime.go",),
     },
     {
         "backend": "java",
         "generated_files": (
+            "generated/built_in/contains.java",
+            "generated/built_in/io_ops.java",
+            "generated/built_in/iter_ops.java",
+            "generated/built_in/numeric_ops.java",
+            "generated/built_in/scalar_ops.java",
+            "generated/built_in/zip_ops.java",
             "generated/std/json.java",
             "generated/std/math.java",
             "generated/std/pathlib.java",
@@ -980,27 +1050,33 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
 REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBucketEntry, ...]] = (
     {
         "backend": "go",
-        "generated_modules": ("utils/gif", "utils/png"),
+        "generated_modules": (
+            REMAINING_NONCPP_GO_JAVA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
+        ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
         "blocked_modules": (
-            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            REMAINING_NONCPP_GO_JAVA_BLOCKED_BUILT_IN_MODULES_V1
             + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
         ),
     },
     {
         "backend": "java",
         "generated_modules": (
-            "std/json",
-            "std/math",
-            "std/pathlib",
-            "std/time",
-            "utils/gif",
-            "utils/png",
+            REMAINING_NONCPP_GO_JAVA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + (
+                "std/json",
+                "std/math",
+                "std/pathlib",
+                "std/time",
+                "utils/gif",
+                "utils/png",
+            )
         ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
-        "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+        "blocked_modules": REMAINING_NONCPP_GO_JAVA_BLOCKED_BUILT_IN_MODULES_V1,
     },
     {
         "backend": "kotlin",
@@ -1362,6 +1438,102 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_SMOKE_V1: Final[
 )
 
 
+REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_SMOKE_V1: Final[
+    tuple[RemainingRuntimeWaveBGeneratedCompareSmokeEntry, ...]
+] = (
+    {
+        "backend": "js",
+        "smoke_kind": "direct_load",
+        "smoke_targets": (
+            "built_in/contains.js",
+            "built_in/predicates.js",
+            "built_in/sequence.js",
+        ),
+    },
+    {
+        "backend": "ts",
+        "smoke_kind": "source_guard",
+        "smoke_targets": (
+            "built_in/contains.ts",
+            "built_in/sequence.ts",
+        ),
+    },
+    {
+        "backend": "php",
+        "smoke_kind": "direct_load",
+        "smoke_targets": (
+            "built_in/contains.php",
+            "built_in/predicates.php",
+            "built_in/sequence.php",
+        ),
+    },
+)
+
+
+REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
+    tuple[RemainingRuntimeWaveAGeneratedSmokeEntry, ...]
+] = (
+    {
+        "backend": "go",
+        "smoke_kind": "source_guard",
+        "smoke_targets": (
+            "built_in/contains.go",
+            "utils/gif.go",
+            "utils/png.go",
+        ),
+    },
+    {
+        "backend": "java",
+        "smoke_kind": "source_guard",
+        "smoke_targets": (
+            "built_in/contains.java",
+            "std/json.java",
+            "std/math.java",
+            "std/pathlib.java",
+            "std/time.java",
+            "utils/gif.java",
+            "utils/png.java",
+        ),
+    },
+    {
+        "backend": "kotlin",
+        "smoke_kind": "source_guard",
+        "smoke_targets": (
+            "utils/gif_helper.kt",
+            "utils/image_runtime.kt",
+            "utils/png_helper.kt",
+        ),
+    },
+    {
+        "backend": "scala",
+        "smoke_kind": "source_guard",
+        "smoke_targets": (
+            "utils/gif_helper.scala",
+            "utils/image_runtime.scala",
+            "utils/png_helper.scala",
+        ),
+    },
+    {
+        "backend": "swift",
+        "smoke_kind": "source_guard",
+        "smoke_targets": (
+            "utils/gif_helper.swift",
+            "utils/image_runtime.swift",
+            "utils/png_helper.swift",
+        ),
+    },
+    {
+        "backend": "nim",
+        "smoke_kind": "source_guard",
+        "smoke_targets": (
+            "utils/gif_helper.nim",
+            "utils/image_runtime.nim",
+            "utils/png_helper.nim",
+        ),
+    },
+)
+
+
 
 REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1: Final[
     tuple[RemainingRuntimeWaveAHookSourceEntry, ...]
@@ -1539,6 +1711,16 @@ def iter_remaining_noncpp_runtime_wave_b_compat_files() -> tuple[RemainingRuntim
 
 def iter_remaining_noncpp_runtime_wave_b_compat_smoke() -> tuple[RemainingRuntimeWaveBCompatSmokeEntry, ...]:
     return REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_SMOKE_V1
+
+
+def iter_remaining_noncpp_runtime_wave_b_generated_compare_smoke() -> (
+    tuple[RemainingRuntimeWaveBGeneratedCompareSmokeEntry, ...]
+):
+    return REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_SMOKE_V1
+
+
+def iter_remaining_noncpp_runtime_wave_a_generated_smoke() -> tuple[RemainingRuntimeWaveAGeneratedSmokeEntry, ...]:
+    return REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1
 
 
 def iter_remaining_noncpp_runtime_wave_a_hook_sources() -> tuple[RemainingRuntimeWaveAHookSourceEntry, ...]:

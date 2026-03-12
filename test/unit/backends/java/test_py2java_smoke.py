@@ -350,6 +350,8 @@ class Py2JavaSmokeTest(unittest.TestCase):
 
     def test_java_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "java" / "native" / "built_in" / "PyRuntime.java"
+        built_in_contains = ROOT / "src" / "runtime" / "java" / "generated" / "built_in" / "contains.java"
+        built_in_zip = ROOT / "src" / "runtime" / "java" / "generated" / "built_in" / "zip_ops.java"
         png_helper = ROOT / "src" / "runtime" / "java" / "generated" / "utils" / "png.java"
         gif_helper = ROOT / "src" / "runtime" / "java" / "generated" / "utils" / "gif.java"
         std_time = ROOT / "src" / "runtime" / "java" / "generated" / "std" / "time.java"
@@ -358,6 +360,8 @@ class Py2JavaSmokeTest(unittest.TestCase):
         std_math = ROOT / "src" / "runtime" / "java" / "generated" / "std" / "math.java"
         legacy_path = ROOT / "src" / "java_module" / "PyRuntime.java"
         self.assertTrue(runtime_path.exists())
+        self.assertTrue(built_in_contains.exists())
+        self.assertTrue(built_in_zip.exists())
         self.assertTrue(png_helper.exists())
         self.assertTrue(gif_helper.exists())
         self.assertTrue(std_time.exists())
@@ -367,6 +371,41 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertFalse(legacy_path.exists())
         self.assertIn("System.nanoTime()", std_time.read_text(encoding="utf-8"))
         self.assertIn("Math.PI", std_math.read_text(encoding="utf-8"))
+
+    def test_java_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            files = (
+                ROOT / "src" / "runtime" / "java" / "native" / "built_in" / "PyRuntime.java",
+                ROOT / "src" / "runtime" / "java" / "generated" / "built_in" / "contains.java",
+            )
+            for src in files:
+                (tmp / src.name).write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+            main_java = tmp / "Main.java"
+            main_java.write_text(
+                "\n".join(
+                    [
+                        "public final class Main {",
+                        "    public static void main(String[] args) {",
+                        '        if (!contains.py_contains_str_object("abc", "b")) {',
+                        '            throw new RuntimeException("contains");',
+                        "        }",
+                        '        System.out.println("java-built-in-ok");',
+                        "    }",
+                        "}",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            proc = subprocess.run(
+                ["bash", "-lc", "javac PyRuntime.java contains.java Main.java && java Main"],
+                cwd=tmp,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+        self.assertIn("java-built-in-ok", proc.stdout)
 
     def test_java_native_emitter_has_no_direct_runtime_call_branches_for_json_png_gif(self) -> None:
         src_path = ROOT / "src" / "backends" / "java" / "emitter" / "java_native_emitter.py"

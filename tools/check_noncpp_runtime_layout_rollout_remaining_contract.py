@@ -19,6 +19,8 @@ from src.toolchain.compiler import noncpp_runtime_layout_rollout_remaining_contr
 _VALID_OWNERSHIP = ("native", "generated", "compat")
 _VALID_TARGET_ROOTS = ("generated", "native", "pytra")
 _VALID_WAVE_B_COMPAT_SMOKE_KINDS = ("direct_load", "source_reexport")
+_VALID_WAVE_B_GENERATED_COMPARE_SMOKE_KINDS = ("direct_load", "source_guard")
+_VALID_WAVE_A_GENERATED_SMOKE_KINDS = ("source_guard",)
 
 
 def _runtime_hook_key_for_backend(backend: str) -> str:
@@ -590,6 +592,100 @@ def _collect_wave_b_compat_smoke_issues() -> list[str]:
     return issues
 
 
+def _collect_wave_b_generated_compare_smoke_issues() -> list[str]:
+    issues: list[str] = []
+    target_inventory = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_target_inventory()
+    }
+    generated_compare = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_generated_compare()
+    }
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_generated_compare_smoke()
+    if tuple(entry["backend"] for entry in entries) != ("js", "ts", "php"):
+        issues.append("wave-b generated compare smoke order drifted")
+    for entry in entries:
+        backend = entry["backend"]
+        smoke_kind = entry["smoke_kind"]
+        if smoke_kind not in _VALID_WAVE_B_GENERATED_COMPARE_SMOKE_KINDS:
+            issues.append(f"wave-b generated compare smoke kind drifted: {backend}")
+            continue
+        inventory_entry = target_inventory.get(backend)
+        compare_entry = generated_compare.get(backend)
+        if inventory_entry is None or compare_entry is None:
+            issues.append(f"wave-b generated compare smoke backend drifted: {backend}")
+            continue
+        allowed_targets = {
+            path.removeprefix("generated/")
+            for path in inventory_entry["generated_files"]
+        }
+        smoke_targets = set(entry["smoke_targets"])
+        if not smoke_targets:
+            issues.append(f"wave-b generated compare smoke targets drifted: {backend}")
+        if not smoke_targets.issubset(allowed_targets):
+            issues.append(f"wave-b generated compare smoke escaped generated files: {backend}")
+        allowed_modules = set(compare_entry["materialized_compare_modules"])
+        smoke_modules = {
+            _normalize_target_module_label(f"generated/{rel_path}")
+            for rel_path in smoke_targets
+        }
+        smoke_modules.discard(None)
+        if not smoke_modules.issubset(allowed_modules):
+            issues.append(f"wave-b generated compare smoke escaped compare modules: {backend}")
+        if backend == "ts" and smoke_kind != "source_guard":
+            issues.append("wave-b generated compare smoke kind drifted: ts")
+        if backend != "ts" and smoke_kind != "direct_load":
+            issues.append(f"wave-b generated compare smoke kind drifted: {backend}")
+    return issues
+
+
+def _collect_wave_a_generated_smoke_issues() -> list[str]:
+    issues: list[str] = []
+    target_inventory = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_target_inventory()
+    }
+    module_buckets = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_module_buckets()
+    }
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_a_generated_smoke()
+    if tuple(entry["backend"] for entry in entries) != ("go", "java", "kotlin", "scala", "swift", "nim"):
+        issues.append("wave-a generated smoke order drifted")
+    for entry in entries:
+        backend = entry["backend"]
+        smoke_kind = entry["smoke_kind"]
+        if smoke_kind not in _VALID_WAVE_A_GENERATED_SMOKE_KINDS:
+            issues.append(f"wave-a generated smoke kind drifted: {backend}")
+            continue
+        inventory_entry = target_inventory.get(backend)
+        bucket_entry = module_buckets.get(backend)
+        if inventory_entry is None or bucket_entry is None:
+            issues.append(f"wave-a generated smoke backend drifted: {backend}")
+            continue
+        allowed_targets = {
+            path.removeprefix("generated/")
+            for path in inventory_entry["generated_files"]
+        }
+        smoke_targets = set(entry["smoke_targets"])
+        if not smoke_targets:
+            issues.append(f"wave-a generated smoke targets drifted: {backend}")
+        if not smoke_targets.issubset(allowed_targets):
+            issues.append(f"wave-a generated smoke escaped generated files: {backend}")
+        allowed_modules = set(bucket_entry["generated_modules"])
+        smoke_modules = {
+            _normalize_target_module_label(f"generated/{rel_path}")
+            for rel_path in smoke_targets
+        }
+        smoke_modules.discard(None)
+        if not smoke_modules.issubset(allowed_modules):
+            issues.append(f"wave-a generated smoke escaped generated modules: {backend}")
+        if smoke_kind != "source_guard":
+            issues.append(f"wave-a generated smoke kind drifted: {backend}")
+    return issues
+
+
 def _collect_wave_a_native_residual_issues() -> list[str]:
     issues: list[str] = []
     module_buckets = {
@@ -655,6 +751,8 @@ def main() -> int:
     issues.extend(_collect_wave_b_compat_issues())
     issues.extend(_collect_wave_b_compat_file_issues())
     issues.extend(_collect_wave_b_compat_smoke_issues())
+    issues.extend(_collect_wave_b_generated_compare_smoke_issues())
+    issues.extend(_collect_wave_a_generated_smoke_issues())
     issues.extend(_collect_wave_a_native_residual_issues())
     issues.extend(_collect_wave_a_native_residual_file_issues())
     if issues:

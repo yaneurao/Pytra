@@ -360,14 +360,56 @@ class Py2GoSmokeTest(unittest.TestCase):
     def test_go_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "go" / "pytra" / "built_in" / "py_runtime.go"
         native_runtime = ROOT / "src" / "runtime" / "go" / "native" / "built_in" / "py_runtime.go"
+        built_in_contains = ROOT / "src" / "runtime" / "go" / "generated" / "built_in" / "contains.go"
+        built_in_zip = ROOT / "src" / "runtime" / "go" / "generated" / "built_in" / "zip_ops.go"
         image_png = ROOT / "src" / "runtime" / "go" / "generated" / "utils" / "png.go"
         image_gif = ROOT / "src" / "runtime" / "go" / "generated" / "utils" / "gif.go"
         legacy_path = ROOT / "src" / "go_module" / "py_runtime.go"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(native_runtime.exists())
+        self.assertTrue(built_in_contains.exists())
+        self.assertTrue(built_in_zip.exists())
         self.assertTrue(image_png.exists())
         self.assertTrue(image_gif.exists())
         self.assertFalse(legacy_path.exists())
+
+    def test_go_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            files = (
+                ROOT / "src" / "runtime" / "go" / "native" / "built_in" / "py_runtime.go",
+                ROOT / "src" / "runtime" / "go" / "generated" / "utils" / "png.go",
+                ROOT / "src" / "runtime" / "go" / "generated" / "utils" / "gif.go",
+                ROOT / "src" / "runtime" / "go" / "generated" / "built_in" / "contains.go",
+            )
+            for src in files:
+                (tmp / src.name).write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+            main_go = tmp / "main.go"
+            main_go.write_text(
+                "\n".join(
+                    [
+                        "package main",
+                        'import "fmt"',
+                        "",
+                        "func main() {",
+                        '    if !py_contains_str_object("abc", "b") {',
+                        '        panic("contains")',
+                        "    }",
+                        '    fmt.Println("go-built-in-ok")',
+                        "}",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            proc = subprocess.run(
+                ["go", "run", "py_runtime.go", "png.go", "gif.go", "contains.go", "main.go"],
+                cwd=tmp,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+        self.assertEqual(proc.stdout.strip(), "go-built-in-ok")
 
 
 if __name__ == "__main__":

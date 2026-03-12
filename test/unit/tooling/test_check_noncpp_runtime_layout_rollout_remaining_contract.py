@@ -43,6 +43,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_wave_b_compat_smoke_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_b_compat_smoke_issues(), [])
 
+    def test_wave_b_generated_compare_smoke_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_b_generated_compare_smoke_issues(), [])
+
+    def test_wave_a_generated_smoke_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_a_generated_smoke_issues(), [])
+
     def test_wave_a_native_residual_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_a_native_residual_issues(), [])
 
@@ -128,6 +134,71 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "runtime/nim/generated/utils/image_runtime.nim",
                 ),
             },
+        )
+
+    def test_wave_a_generated_smoke_inventory_is_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.iter_remaining_noncpp_runtime_wave_a_generated_smoke(),
+            (
+                {
+                    "backend": "go",
+                    "smoke_kind": "source_guard",
+                    "smoke_targets": (
+                        "built_in/contains.go",
+                        "utils/gif.go",
+                        "utils/png.go",
+                    ),
+                },
+                {
+                    "backend": "java",
+                    "smoke_kind": "source_guard",
+                    "smoke_targets": (
+                        "built_in/contains.java",
+                        "std/json.java",
+                        "std/math.java",
+                        "std/pathlib.java",
+                        "std/time.java",
+                        "utils/gif.java",
+                        "utils/png.java",
+                    ),
+                },
+                {
+                    "backend": "kotlin",
+                    "smoke_kind": "source_guard",
+                    "smoke_targets": (
+                        "utils/gif_helper.kt",
+                        "utils/image_runtime.kt",
+                        "utils/png_helper.kt",
+                    ),
+                },
+                {
+                    "backend": "scala",
+                    "smoke_kind": "source_guard",
+                    "smoke_targets": (
+                        "utils/gif_helper.scala",
+                        "utils/image_runtime.scala",
+                        "utils/png_helper.scala",
+                    ),
+                },
+                {
+                    "backend": "swift",
+                    "smoke_kind": "source_guard",
+                    "smoke_targets": (
+                        "utils/gif_helper.swift",
+                        "utils/image_runtime.swift",
+                        "utils/png_helper.swift",
+                    ),
+                },
+                {
+                    "backend": "nim",
+                    "smoke_kind": "source_guard",
+                    "smoke_targets": (
+                        "utils/gif_helper.nim",
+                        "utils/image_runtime.nim",
+                        "utils/png_helper.nim",
+                    ),
+                },
+            ),
         )
 
     def test_wave_a_native_residuals_are_fixed(self) -> None:
@@ -265,6 +336,39 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             ),
         )
 
+    def test_wave_b_generated_compare_smoke_inventory_is_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.iter_remaining_noncpp_runtime_wave_b_generated_compare_smoke(),
+            (
+                {
+                    "backend": "js",
+                    "smoke_kind": "direct_load",
+                    "smoke_targets": (
+                        "built_in/contains.js",
+                        "built_in/predicates.js",
+                        "built_in/sequence.js",
+                    ),
+                },
+                {
+                    "backend": "ts",
+                    "smoke_kind": "source_guard",
+                    "smoke_targets": (
+                        "built_in/contains.ts",
+                        "built_in/sequence.ts",
+                    ),
+                },
+                {
+                    "backend": "php",
+                    "smoke_kind": "direct_load",
+                    "smoke_targets": (
+                        "built_in/contains.php",
+                        "built_in/predicates.php",
+                        "built_in/sequence.php",
+                    ),
+                },
+            ),
+        )
+
     def test_target_root_taxonomy_is_fixed(self) -> None:
         for entry in contract_mod.iter_remaining_noncpp_runtime_layout():
             self.assertEqual(entry["target_roots"], ("generated", "native", "pytra"))
@@ -308,12 +412,30 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertIn(
             {
+                "current_prefix": "src/runtime/go/generated/built_in/",
+                "target_prefix": "src/runtime/go/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "Go live-generated built_in compare artifacts live in generated/built_in for the compile-safe subset after the S4 alignment bundle.",
+            },
+            by_backend["go"],
+        )
+        self.assertIn(
+            {
                 "current_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
                 "target_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
                 "ownership": "compat",
                 "rationale": "The public Go runtime shim has already been normalized into pytra/built_in.",
             },
             by_backend["go"],
+        )
+        self.assertIn(
+            {
+                "current_prefix": "src/runtime/java/generated/built_in/",
+                "target_prefix": "src/runtime/java/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "Java live-generated built_in compare artifacts live in generated/built_in for the compile-safe subset after the S4 alignment bundle.",
+            },
+            by_backend["java"],
         )
         self.assertIn(
             {
@@ -389,9 +511,35 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             {
                 "backend": "go",
                 "pytra_core_files": ("built_in/py_runtime.go",),
-                "pytra_gen_files": ("utils/gif.go", "utils/png.go"),
+                "pytra_gen_files": (
+                    "built_in/contains.go",
+                    "built_in/io_ops.go",
+                    "built_in/iter_ops.go",
+                    "built_in/numeric_ops.go",
+                    "built_in/scalar_ops.go",
+                    "built_in/zip_ops.go",
+                    "utils/gif.go",
+                    "utils/png.go",
+                ),
                 "pytra_files": ("built_in/py_runtime.go",),
             },
+        )
+        self.assertEqual(
+            by_backend["java"]["pytra_gen_files"],
+            (
+                "built_in/contains.java",
+                "built_in/io_ops.java",
+                "built_in/iter_ops.java",
+                "built_in/numeric_ops.java",
+                "built_in/scalar_ops.java",
+                "built_in/zip_ops.java",
+                "std/json.java",
+                "std/math.java",
+                "std/pathlib.java",
+                "std/time.java",
+                "utils/gif.java",
+                "utils/png.java",
+            ),
         )
         self.assertEqual(
             by_backend["js"]["pytra_gen_files"],
@@ -466,10 +614,36 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             by_backend["go"],
             {
                 "backend": "go",
-                "generated_files": ("generated/utils/gif.go", "generated/utils/png.go"),
+                "generated_files": (
+                    "generated/built_in/contains.go",
+                    "generated/built_in/io_ops.go",
+                    "generated/built_in/iter_ops.go",
+                    "generated/built_in/numeric_ops.go",
+                    "generated/built_in/scalar_ops.go",
+                    "generated/built_in/zip_ops.go",
+                    "generated/utils/gif.go",
+                    "generated/utils/png.go",
+                ),
                 "native_files": ("native/built_in/py_runtime.go",),
                 "compat_files": ("pytra/built_in/py_runtime.go",),
             },
+        )
+        self.assertEqual(
+            by_backend["java"]["generated_files"],
+            (
+                "generated/built_in/contains.java",
+                "generated/built_in/io_ops.java",
+                "generated/built_in/iter_ops.java",
+                "generated/built_in/numeric_ops.java",
+                "generated/built_in/scalar_ops.java",
+                "generated/built_in/zip_ops.java",
+                "generated/std/json.java",
+                "generated/std/math.java",
+                "generated/std/pathlib.java",
+                "generated/std/time.java",
+                "generated/utils/gif.java",
+                "generated/utils/png.java",
+            ),
         )
         self.assertEqual(
             by_backend["js"]["compat_files"],
@@ -546,20 +720,23 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             by_backend["go"],
             {
                 "backend": "go",
-                "generated_modules": ("utils/gif", "utils/png"),
-                "native_modules": ("built_in/py_runtime",),
-                "compat_modules": ("built_in/py_runtime",),
-                "blocked_modules": (
+                "generated_modules": (
                     "built_in/contains",
                     "built_in/io_ops",
                     "built_in/iter_ops",
                     "built_in/numeric_ops",
-                    "built_in/predicates",
                     "built_in/scalar_ops",
+                    "built_in/zip_ops",
+                    "utils/gif",
+                    "utils/png",
+                ),
+                "native_modules": ("built_in/py_runtime",),
+                "compat_modules": ("built_in/py_runtime",),
+                "blocked_modules": (
+                    "built_in/predicates",
                     "built_in/sequence",
                     "built_in/string_ops",
                     "built_in/type_id",
-                    "built_in/zip_ops",
                     "std/json",
                     "std/math",
                     "std/pathlib",
@@ -569,7 +746,24 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["java"]["generated_modules"],
-            ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+            (
+                "built_in/contains",
+                "built_in/io_ops",
+                "built_in/iter_ops",
+                "built_in/numeric_ops",
+                "built_in/scalar_ops",
+                "built_in/zip_ops",
+                "std/json",
+                "std/math",
+                "std/pathlib",
+                "std/time",
+                "utils/gif",
+                "utils/png",
+            ),
+        )
+        self.assertEqual(
+            by_backend["java"]["blocked_modules"],
+            ("built_in/predicates", "built_in/sequence", "built_in/string_ops", "built_in/type_id"),
         )
         self.assertEqual(
             by_backend["js"]["blocked_modules"],

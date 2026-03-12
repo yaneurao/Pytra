@@ -21,6 +21,8 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn(("utils/png", "rs", "src/runtime/rs/generated/utils/png.rs"), pairs)
         self.assertIn(("built_in/type_id", "rs", "src/runtime/rs/generated/built_in/type_id.rs"), pairs)
         self.assertIn(("built_in/type_id", "cs", "src/runtime/cs/generated/built_in/type_id.cs"), pairs)
+        self.assertIn(("built_in/contains", "go", "src/runtime/go/generated/built_in/contains.go"), pairs)
+        self.assertIn(("built_in/contains", "java", "src/runtime/java/generated/built_in/contains.java"), pairs)
         self.assertIn(("built_in/type_id", "js", "src/runtime/js/generated/built_in/type_id.js"), pairs)
         self.assertIn(("built_in/type_id", "ts", "src/runtime/ts/generated/built_in/type_id.ts"), pairs)
         self.assertIn(("built_in/type_id", "php", "src/runtime/php/generated/built_in/type_id.php"), pairs)
@@ -62,6 +64,14 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "zip_ops",
             ],
         )
+        go_java_supported = {
+            "contains",
+            "io_ops",
+            "iter_ops",
+            "numeric_ops",
+            "scalar_ops",
+            "zip_ops",
+        }
         for module_name in module_names:
             item_id = f"built_in/{module_name}"
             self.assertEqual(
@@ -84,6 +94,18 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 by_pair[(item_id, "php")],
                 f"src/runtime/php/generated/built_in/{module_name}.php",
             )
+            if module_name in go_java_supported:
+                self.assertEqual(
+                    by_pair[(item_id, "go")],
+                    f"src/runtime/go/generated/built_in/{module_name}.go",
+                )
+                self.assertEqual(
+                    by_pair[(item_id, "java")],
+                    f"src/runtime/java/generated/built_in/{module_name}.java",
+                )
+            else:
+                self.assertNotIn((item_id, "go"), by_pair)
+                self.assertNotIn((item_id, "java"), by_pair)
 
     def test_resolve_targets_all_contains_cpp_and_swift(self) -> None:
         items = gen_mod.load_manifest_items(ROOT / "tools" / "runtime_generation_manifest.json")

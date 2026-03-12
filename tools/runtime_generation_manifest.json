@@ -108,6 +108,12 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "contains_helper"
         },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/built_in/contains.go",
+          "postprocess": "go_program_to_library"
+        },
+        { "target": "java", "output": "src/runtime/java/generated/built_in/contains.java" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/contains.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/contains.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/contains.php", "postprocess": "php_program_to_library" }
@@ -125,6 +131,12 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "io_ops_helper"
         },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/built_in/io_ops.go",
+          "postprocess": "go_program_to_library"
+        },
+        { "target": "java", "output": "src/runtime/java/generated/built_in/io_ops.java" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/io_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/io_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/io_ops.php", "postprocess": "php_program_to_library" }
@@ -142,6 +154,12 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "iter_ops_helper"
         },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/built_in/iter_ops.go",
+          "postprocess": "go_program_to_library"
+        },
+        { "target": "java", "output": "src/runtime/java/generated/built_in/iter_ops.java" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/iter_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/iter_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/iter_ops.php", "postprocess": "php_program_to_library" }
@@ -159,6 +177,12 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "numeric_ops_helper"
         },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/built_in/numeric_ops.go",
+          "postprocess": "go_program_to_library"
+        },
+        { "target": "java", "output": "src/runtime/java/generated/built_in/numeric_ops.java" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/numeric_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/numeric_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/numeric_ops.php", "postprocess": "php_program_to_library" }
@@ -193,6 +217,12 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "scalar_ops_helper"
         },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/built_in/scalar_ops.go",
+          "postprocess": "go_program_to_library"
+        },
+        { "target": "java", "output": "src/runtime/java/generated/built_in/scalar_ops.java" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/scalar_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/scalar_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/scalar_ops.php", "postprocess": "php_program_to_library" }
@@ -261,6 +291,12 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "zip_ops_helper"
         },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/built_in/zip_ops.go",
+          "postprocess": "go_program_to_library"
+        },
+        { "target": "java", "output": "src/runtime/java/generated/built_in/zip_ops.java" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/zip_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/zip_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/zip_ops.php", "postprocess": "php_program_to_library" }
