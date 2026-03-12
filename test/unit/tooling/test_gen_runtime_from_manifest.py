@@ -24,6 +24,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn(("std/pathlib", "cs", "src/runtime/cs/generated/std/pathlib.cs"), pairs)
         self.assertIn(("std/pathlib", "js", "src/runtime/js/generated/std/pathlib.js"), pairs)
         self.assertIn(("std/pathlib", "ts", "src/runtime/ts/generated/std/pathlib.ts"), pairs)
+        self.assertIn(("std/pathlib", "php", "src/runtime/php/generated/std/pathlib.php"), pairs)
         self.assertIn(("std/math", "js", "src/runtime/js/generated/std/math.js"), pairs)
         self.assertIn(("std/math", "ts", "src/runtime/ts/generated/std/math.ts"), pairs)
         self.assertIn(("std/math", "php", "src/runtime/php/generated/std/math.php"), pairs)
@@ -330,6 +331,36 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("function sqrt($x): float {", out)
         self.assertIn("function pow($x, $y): float {", out)
         self.assertNotIn("__pytra_main", out)
+
+    def test_rewrite_php_std_pathlib_live_wrapper_guards_path_redefinition(self) -> None:
+        src = "\n".join(
+            [
+                "<?php",
+                "declare(strict_types=1);",
+                "",
+                "require_once __DIR__ . '/pytra/py_runtime.php';",
+                "",
+                "class Path {",
+                "    public function __truediv__($rhs) { return new Path($rhs); }",
+                "    public function parent() { return new Path('.'); }",
+                "    public function name() { return 'n'; }",
+                "    public function stem() { return 'n'; }",
+                "    public function resolve() { return new Path('.'); }",
+                "    public function exists() { return true; }",
+                "    public function mkdir($parents, $exist_ok) { }",
+                "    public function read_text($encoding) { return ''; }",
+                "    public function write_text($text, $encoding) { return 0; }",
+                "    public function glob($pattern) { return []; }",
+                "    public function cwd() { return new Path('.'); }",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_php_std_pathlib_live_wrapper(src)
+        self.assertIn("require_once dirname(__DIR__) . '/py_runtime.php';", out)
+        self.assertIn("if (!class_exists('Path', false)) {", out)
+        self.assertIn("public string $suffix;", out)
+        self.assertIn("public static function cwd(): Path {", out)
+
     def test_run_py2x_raises_when_backend_emits_no_text_and_no_file(self) -> None:
         with (
             patch.object(gen_mod, "get_backend_spec", return_value={}),
@@ -376,7 +407,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         item_ids = gen_mod.resolve_item_ids("all", items)
         plan = gen_mod.build_generation_plan(items, targets, item_ids)
         checked, updated = gen_mod.generate(plan, check=True, dry_run=False)
-        self.assertEqual(checked, 18)
+        self.assertEqual(checked, 19)
         self.assertEqual(updated, 0)
 
 
