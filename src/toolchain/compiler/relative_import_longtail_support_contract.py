@@ -65,8 +65,8 @@ RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1: Final[list[dict[str, object]]] = [
 RELATIVE_IMPORT_LONGTAIL_SUPPORT_HANDOFF_V1: Final[dict[str, object]] = {
     "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01",
     "active_plan_paths": (
-        "docs/ja/plans/p1-relative-import-longtail-support.md",
-        "docs/en/plans/p1-relative-import-longtail-support.md",
+        "docs/ja/plans/archive/20260312-p1-relative-import-longtail-support-implementation.md",
+        "docs/en/plans/archive/20260312-p1-relative-import-longtail-support-implementation.md",
     ),
     "archived_prereq_plan_paths": (
         "docs/ja/plans/archive/20260312-p1-relative-import-longtail-bundle.md",

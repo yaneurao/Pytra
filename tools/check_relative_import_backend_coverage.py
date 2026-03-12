@@ -44,8 +44,8 @@ EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
         "docs/en/language/backend-parity-matrix.md",
     ),
     "next_rollout_plan": (
-        "docs/ja/plans/p1-relative-import-longtail-support.md",
-        "docs/en/plans/p1-relative-import-longtail-support.md",
+        "docs/ja/plans/archive/20260312-p1-relative-import-longtail-support-implementation.md",
+        "docs/en/plans/archive/20260312-p1-relative-import-longtail-support-implementation.md",
     ),
     "locked_transpile_smoke_backends": (
         "rs",

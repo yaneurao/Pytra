@@ -25,7 +25,7 @@ Out of scope:
 - Adding full support claims
 
 Acceptance criteria:
-- The active handoff points to `docs/en/plans/p1-relative-import-longtail-support.md` and fixes `lua/php/ruby` on `longtail_relative_import_support_rollout`.
+- The active handoff points to `docs/en/plans/archive/20260312-p1-relative-import-longtail-support-implementation.md` and fixes `lua/php/ruby` on `longtail_relative_import_support_rollout`.
 - The archived long-tail fail-closed bundle checker references the support rollout as its follow-up, and the support-rollout checker references the archived baseline as its prerequisite.
 - Backend coverage / second-wave handoff / backend-parity docs no longer reference the deleted live long-tail bundle plan.
 - `python3 tools/check_relative_import_*contract.py` and the matching unit tests pass.

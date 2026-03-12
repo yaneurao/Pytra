@@ -30,7 +30,3 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-
-1. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01] `lua/php/ruby` の representative relative import project を staged rollout で support し、backend coverage / parity docs / contract を current rollout state に同期する。
-   文脈: [p1-relative-import-longtail-support.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-longtail-support.md)
-   - `P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01`: `lua/php/ruby` の representative relative import transpile smoke は `transpile_smoke_locked + native_emitter_function_body_transpile` に揃い、wildcard relative import だけ fail-closed に残した。

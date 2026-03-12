@@ -30,7 +30,3 @@ Last updated: 2026-03-12
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
-
-1. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01] Support the representative relative-import project for `lua/php/ruby` in a staged rollout and sync backend coverage, parity docs, and contracts to the current rollout state.
-   Context: [p1-relative-import-longtail-support.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-longtail-support.md)
-   - `P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01`: The representative relative-import transpile smoke for `lua/php/ruby` is now aligned at `transpile_smoke_locked + native_emitter_function_body_transpile`, with only wildcard relative import left fail-closed.

@@ -67,8 +67,8 @@ EXPECTED_HANDOFF = {
     "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-02",
     "parent_todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01",
     "active_plan_paths": (
-        "docs/ja/plans/p1-relative-import-longtail-support.md",
-        "docs/en/plans/p1-relative-import-longtail-support.md",
+        "docs/ja/plans/archive/20260312-p1-relative-import-longtail-support-implementation.md",
+        "docs/en/plans/archive/20260312-p1-relative-import-longtail-support-implementation.md",
     ),
     "support_contract_inventory": "src/toolchain/compiler/relative_import_longtail_support_contract.py",
     "support_checker": "tools/check_relative_import_longtail_support_contract.py",

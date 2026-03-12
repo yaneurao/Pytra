@@ -25,7 +25,7 @@
 - full support claim の追加
 
 受け入れ基準:
-- active handoff は `docs/ja/plans/p1-relative-import-longtail-support.md` を参照し、`lua/php/ruby` を `longtail_relative_import_support_rollout` に固定する。
+- active handoff は `docs/ja/plans/archive/20260312-p1-relative-import-longtail-support-implementation.md` を参照し、`lua/php/ruby` を `longtail_relative_import_support_rollout` に固定する。
 - archived long-tail fail-closed bundle checker は support rollout を follow-up として参照し、support contract checker は archived baseline を prereq として参照する。
 - backend coverage / second-wave handoff / backend parity docs が deleted live long-tail bundle plan を参照しない。
 - `python3 tools/check_relative_import_*contract.py` と対応 unit test が通る。

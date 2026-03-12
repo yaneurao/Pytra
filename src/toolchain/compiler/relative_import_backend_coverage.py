@@ -204,8 +204,8 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
         "docs/en/language/backend-parity-matrix.md",
     ),
     "next_rollout_plan": (
-        "docs/ja/plans/p1-relative-import-longtail-support.md",
-        "docs/en/plans/p1-relative-import-longtail-support.md",
+        "docs/ja/plans/archive/20260312-p1-relative-import-longtail-support-implementation.md",
+        "docs/en/plans/archive/20260312-p1-relative-import-longtail-support-implementation.md",
     ),
     "locked_transpile_smoke_backends": (
         "rs",
