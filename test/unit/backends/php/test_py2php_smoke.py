@@ -82,6 +82,18 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
+    def test_php_runtime_source_path_is_migrated(self) -> None:
+        runtime_path = ROOT / "src" / "runtime" / "php" / "native" / "built_in" / "py_runtime.php"
+        time_path = ROOT / "src" / "runtime" / "php" / "native" / "std" / "time.php"
+        png_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "png.php"
+        gif_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "gif.php"
+        legacy_path = ROOT / "src" / "runtime" / "php" / "pytra-core"
+        self.assertTrue(runtime_path.exists())
+        self.assertTrue(time_path.exists())
+        self.assertTrue(png_path.exists())
+        self.assertTrue(gif_path.exists())
+        self.assertFalse(legacy_path.exists())
+
     def test_bitwise_invert_basic_uses_php_invert_operator(self) -> None:
         fixture = find_fixture_case("bitwise_invert_basic")
         east = load_east(fixture, parser_backend="self_hosted")

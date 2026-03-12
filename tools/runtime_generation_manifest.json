@@ -38,12 +38,12 @@
         { "target": "java", "output": "src/runtime/java/generated/utils/png.java" },
         { "target": "swift", "output": "src/runtime/swift/generated/utils/png_helper.swift" },
         { "target": "kotlin", "output": "src/runtime/kotlin/generated/utils/png_helper.kt" },
-        { "target": "ruby", "output": "src/runtime/ruby/pytra-gen/utils/png_helper.rb" },
-        { "target": "lua", "output": "src/runtime/lua/pytra-gen/utils/png_helper.lua" },
+        { "target": "ruby", "output": "src/runtime/ruby/generated/utils/png_helper.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/utils/png_helper.lua" },
         { "target": "scala", "output": "src/runtime/scala/generated/utils/png_helper.scala" },
         {
           "target": "php",
-          "output": "src/runtime/php/pytra-gen/runtime/png.php",
+          "output": "src/runtime/php/generated/utils/png.php",
           "postprocess": "php_program_to_library"
         },
         { "target": "nim", "output": "src/runtime/nim/generated/utils/png_helper.nim" }
@@ -85,12 +85,12 @@
         { "target": "java", "output": "src/runtime/java/generated/utils/gif.java" },
         { "target": "swift", "output": "src/runtime/swift/generated/utils/gif_helper.swift" },
         { "target": "kotlin", "output": "src/runtime/kotlin/generated/utils/gif_helper.kt" },
-        { "target": "ruby", "output": "src/runtime/ruby/pytra-gen/utils/gif_helper.rb" },
-        { "target": "lua", "output": "src/runtime/lua/pytra-gen/utils/gif_helper.lua" },
+        { "target": "ruby", "output": "src/runtime/ruby/generated/utils/gif_helper.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/utils/gif_helper.lua" },
         { "target": "scala", "output": "src/runtime/scala/generated/utils/gif_helper.scala" },
         {
           "target": "php",
-          "output": "src/runtime/php/pytra-gen/runtime/gif.php",
+          "output": "src/runtime/php/generated/utils/gif.php",
           "postprocess": "php_program_to_library"
         },
         { "target": "nim", "output": "src/runtime/nim/generated/utils/gif_helper.nim" }

@@ -50,7 +50,7 @@ Runtime separation contract (fixed in S1-01):
 - Helper bodies are not embedded into generated `.php` (import only).
 - Runtime placement:
   - `src/runtime/php/pytra/py_runtime.php` (common helpers)
-  - `src/runtime/php/pytra/runtime/png.php` / `gif.php` (I/O helpers)
+  - `src/runtime/php/pytra/utils/png.php` / `gif.php` (I/O helpers)
   - `src/runtime/php/pytra/std/*.php` (`time`, `math`, `pathlib`)
 - `tools/regenerate_samples.py` synchronizes copy of `sample/php/pytra/**` when generating samples.
 - Keep helper-name semantics aligned across all backends (e.g., `py_truthy`, `py_len`, `py_str`).

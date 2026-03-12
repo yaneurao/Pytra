@@ -1,12 +1,5 @@
 -- Auto-generated canonical Lua runtime for Pytra native backend.
--- Source of truth: src/runtime/lua/pytra/py_runtime.lua
-
-local __pytra_runtime_source = debug.getinfo(1, "S").source
-local __pytra_runtime_dir = ""
-if type(__pytra_runtime_source) == "string" and string.sub(__pytra_runtime_source, 1, 1) == "@" then
-    __pytra_runtime_dir = string.match(string.sub(__pytra_runtime_source, 2), "^(.*[/\\])") or ""
-end
-dofile(__pytra_runtime_dir .. "image_runtime.lua")
+-- Source of truth: src/runtime/lua/pytra/built_in/py_runtime.lua
 
 function __pytra_print(...)
     local argc = select("#", ...)
@@ -323,317 +316,264 @@ function __pytra_path_mt:read_text()
     return data
 end
 
-function Path(v)
-    return __pytra_path_new(v)
+function __pytra_u16le(n)
+    local v = math.floor(tonumber(n) or 0) & 0xFFFF
+    return string.char(v & 0xFF, (v >> 8) & 0xFF)
 end
 
-function pyMathSqrt(v)
-    return math.sqrt(__pytra_float(v))
-end
-
-function pyMathSin(v)
-    return math.sin(__pytra_float(v))
-end
-
-function pyMathCos(v)
-    return math.cos(__pytra_float(v))
-end
-
-function pyMathTan(v)
-    return math.tan(__pytra_float(v))
-end
-
-function pyMathExp(v)
-    return math.exp(__pytra_float(v))
-end
-
-function pyMathLog(v)
-    return math.log(__pytra_float(v))
-end
-
-function pyMathFabs(v)
-    return math.abs(__pytra_float(v))
-end
-
-function pyMathFloor(v)
-    return math.floor(__pytra_float(v))
-end
-
-function pyMathCeil(v)
-    return math.ceil(__pytra_float(v))
-end
-
-function pyMathPow(a, b)
-    return __pytra_float(a) ^ __pytra_float(b)
-end
-
-function pyMathPi()
-    return math.pi
-end
-
-function pyMathE()
-    return math.exp(1.0)
-end
-
-local __pytra_json_null = { __pytra_json_null = true }
-
-local function __pytra_json_is_null(v)
-    return type(v) == "table" and v.__pytra_json_null == true
-end
-
-local function __pytra_json_skip_ws(text, i)
-    local n = #text
-    while i <= n do
-        local ch = string.sub(text, i, i)
-        if ch ~= " " and ch ~= "\t" and ch ~= "\r" and ch ~= "\n" then
-            break
+function __pytra_to_byte_table(data)
+    if type(data) == "string" then
+        local out = {}
+        for i = 1, #data do
+            out[#out + 1] = string.byte(data, i)
         end
-        i = i + 1
+        return out
     end
-    return i
+    if type(data) == "table" then
+        local out = {}
+        for i = 1, #data do
+            local n = math.floor(tonumber(data[i]) or 0)
+            if n < 0 then n = 0 end
+            if n > 255 then n = 255 end
+            out[#out + 1] = n
+        end
+        return out
+    end
+    return {}
 end
 
-local function __pytra_json_utf8(cp)
-    if cp <= 0x7F then
-        return string.char(cp)
+function __pytra_bytes_from_table(data)
+    local parts = {}
+    for i = 1, #data do
+        parts[#parts + 1] = string.char(data[i])
     end
-    if cp <= 0x7FF then
-        local b1 = 0xC0 + math.floor(cp / 0x40)
-        local b2 = 0x80 + (cp % 0x40)
-        return string.char(b1, b2)
-    end
-    local b1 = 0xE0 + math.floor(cp / 0x1000)
-    local b2 = 0x80 + (math.floor(cp / 0x40) % 0x40)
-    local b3 = 0x80 + (cp % 0x40)
-    return string.char(b1, b2, b3)
+    return table.concat(parts)
 end
 
-local function __pytra_json_parse_string(text, i)
-    local n = #text
-    i = i + 1
+function __pytra_gif_lzw_encode(data, min_code_size)
+    if #data == 0 then return "" end
+    local clear_code = 1 << min_code_size
+    local end_code = clear_code + 1
+    local code_size = min_code_size + 1
     local out = {}
-    while i <= n do
-        local ch = string.sub(text, i, i)
-        if ch == "\"" then
-            return table.concat(out), i + 1
-        end
-        if ch == "\\" then
-            i = i + 1
-            if i > n then
-                error("invalid json string escape")
-            end
-            local esc = string.sub(text, i, i)
-            if esc == "\"" then
-                out[#out + 1] = "\""
-            elseif esc == "\\" then
-                out[#out + 1] = "\\"
-            elseif esc == "/" then
-                out[#out + 1] = "/"
-            elseif esc == "b" then
-                out[#out + 1] = "\b"
-            elseif esc == "f" then
-                out[#out + 1] = "\f"
-            elseif esc == "n" then
-                out[#out + 1] = "\n"
-            elseif esc == "r" then
-                out[#out + 1] = "\r"
-            elseif esc == "t" then
-                out[#out + 1] = "\t"
-            elseif esc == "u" then
-                if i + 4 > n then
-                    error("invalid json unicode escape")
-                end
-                local hx = string.sub(text, i + 1, i + 4)
-                local cp = tonumber(hx, 16)
-                if cp == nil then
-                    error("invalid json unicode escape")
-                end
-                out[#out + 1] = __pytra_json_utf8(cp)
-                i = i + 4
-            else
-                error("invalid json escape")
-            end
-        else
-            out[#out + 1] = ch
-        end
-        i = i + 1
-    end
-    error("unterminated json string")
-end
-
-local __pytra_json_parse_value
-
-local function __pytra_json_parse_array(text, i)
-    local out = {}
-    i = __pytra_json_skip_ws(text, i + 1)
-    if string.sub(text, i, i) == "]" then
-        return out, i + 1
-    end
-    while true do
-        local v
-        v, i = __pytra_json_parse_value(text, i)
-        out[#out + 1] = v
-        i = __pytra_json_skip_ws(text, i)
-        local ch = string.sub(text, i, i)
-        if ch == "]" then
-            return out, i + 1
-        end
-        if ch ~= "," then
-            error("invalid json array separator")
-        end
-        i = __pytra_json_skip_ws(text, i + 1)
-    end
-end
-
-local function __pytra_json_parse_object(text, i)
-    local out = {}
-    i = __pytra_json_skip_ws(text, i + 1)
-    if string.sub(text, i, i) == "}" then
-        return out, i + 1
-    end
-    while true do
-        if string.sub(text, i, i) ~= "\"" then
-            error("invalid json object key")
-        end
-        local k
-        k, i = __pytra_json_parse_string(text, i)
-        i = __pytra_json_skip_ws(text, i)
-        if string.sub(text, i, i) ~= ":" then
-            error("invalid json object: missing ':'")
-        end
-        i = __pytra_json_skip_ws(text, i + 1)
-        local v
-        v, i = __pytra_json_parse_value(text, i)
-        out[k] = v
-        i = __pytra_json_skip_ws(text, i)
-        local ch = string.sub(text, i, i)
-        if ch == "}" then
-            return out, i + 1
-        end
-        if ch ~= "," then
-            error("invalid json object separator")
-        end
-        i = __pytra_json_skip_ws(text, i + 1)
-    end
-end
-
-__pytra_json_parse_value = function(text, i)
-    i = __pytra_json_skip_ws(text, i)
-    local ch = string.sub(text, i, i)
-    if ch == "{" then
-        return __pytra_json_parse_object(text, i)
-    end
-    if ch == "[" then
-        return __pytra_json_parse_array(text, i)
-    end
-    if ch == "\"" then
-        return __pytra_json_parse_string(text, i)
-    end
-    if string.sub(text, i, i + 3) == "true" then
-        return true, i + 4
-    end
-    if string.sub(text, i, i + 4) == "false" then
-        return false, i + 5
-    end
-    if string.sub(text, i, i + 3) == "null" then
-        return __pytra_json_null, i + 4
-    end
-    local token = string.match(string.sub(text, i), "^%-?%d+%.?%d*[eE]?[%+%-]?%d*")
-    if token == nil or token == "" then
-        error("invalid json number")
-    end
-    local num = tonumber(token)
-    if num == nil then
-        error("invalid json number")
-    end
-    return num, i + #token
-end
-
-local function __pytra_json_escape_string(s)
-    local out = { "\"" }
-    for i = 1, #s do
-        local ch = string.sub(s, i, i)
-        if ch == "\"" then
-            out[#out + 1] = "\\\""
-        elseif ch == "\\" then
-            out[#out + 1] = "\\\\"
-        elseif ch == "\b" then
-            out[#out + 1] = "\\b"
-        elseif ch == "\f" then
-            out[#out + 1] = "\\f"
-        elseif ch == "\n" then
-            out[#out + 1] = "\\n"
-        elseif ch == "\r" then
-            out[#out + 1] = "\\r"
-        elseif ch == "\t" then
-            out[#out + 1] = "\\t"
-        else
-            out[#out + 1] = ch
+    local bit_buffer = 0
+    local bit_count = 0
+    local function emit_code(code)
+        bit_buffer = bit_buffer | (code << bit_count)
+        bit_count = bit_count + code_size
+        while bit_count >= 8 do
+            out[#out + 1] = string.char(bit_buffer & 0xFF)
+            bit_buffer = bit_buffer >> 8
+            bit_count = bit_count - 8
         end
     end
-    out[#out + 1] = "\""
+    emit_code(clear_code)
+    code_size = min_code_size + 1
+    for i = 1, #data do
+        emit_code(data[i])
+        emit_code(clear_code)
+        code_size = min_code_size + 1
+    end
+    emit_code(end_code)
+    if bit_count > 0 then
+        out[#out + 1] = string.char(bit_buffer & 0xFF)
+    end
     return table.concat(out)
 end
 
-local function __pytra_json_is_array(tbl)
-    local n = 0
-    for k, _ in pairs(tbl) do
-        if type(k) ~= "number" or k < 1 or math.floor(k) ~= k then
-            return false, 0
-        end
-        if k > n then n = k end
-    end
-    for i = 1, n do
-        if rawget(tbl, i) == nil then
-            return false, 0
-        end
-    end
-    return true, n
-end
-
-local function __pytra_json_encode(v)
-    if v == nil or __pytra_json_is_null(v) then
-        return "null"
-    end
-    local tv = type(v)
-    if tv == "boolean" then
-        return v and "true" or "false"
-    end
-    if tv == "number" then
-        return tostring(v)
-    end
-    if tv == "string" then
-        return __pytra_json_escape_string(v)
-    end
-    if tv == "table" then
-        local is_arr, n = __pytra_json_is_array(v)
-        local parts = {}
-        if is_arr then
-            for i = 1, n do
-                parts[#parts + 1] = __pytra_json_encode(v[i])
-            end
-            return "[" .. table.concat(parts, ",") .. "]"
-        end
-        for k, item in pairs(v) do
-            parts[#parts + 1] = __pytra_json_escape_string(tostring(k)) .. ":" .. __pytra_json_encode(item)
-        end
-        return "{" .. table.concat(parts, ",") .. "}"
-    end
-    return __pytra_json_escape_string(tostring(v))
-end
-
-function pyJsonLoads(v)
-    local text = tostring(v)
-    local out, i = __pytra_json_parse_value(text, 1)
-    i = __pytra_json_skip_ws(text, i)
-    if i <= #text then
-        error("invalid json: trailing characters")
+function __pytra_grayscale_palette()
+    local out = {}
+    for i = 0, 255 do
+        out[#out + 1] = i
+        out[#out + 1] = i
+        out[#out + 1] = i
     end
     return out
 end
 
-function pyJsonDumps(v)
-    return __pytra_json_encode(v)
+function __pytra_save_gif(path, width, height, frames, palette, delay_cs, loop)
+    local w = math.floor(tonumber(width) or 0)
+    local h = math.floor(tonumber(height) or 0)
+    local delay = math.floor(tonumber(delay_cs) or 4)
+    local loop_count = math.floor(tonumber(loop) or 0)
+    local palette_tbl = __pytra_to_byte_table(palette)
+    if #palette_tbl ~= (256 * 3) then
+        error("palette must be 256*3 bytes")
+    end
+    local norm_frames = {}
+    for i = 1, #frames do
+        local fr = __pytra_to_byte_table(frames[i])
+        if #fr ~= (w * h) then
+            error("frame size mismatch")
+        end
+        norm_frames[#norm_frames + 1] = fr
+    end
+    local out = {}
+    out[#out + 1] = "GIF89a"
+    out[#out + 1] = __pytra_u16le(w)
+    out[#out + 1] = __pytra_u16le(h)
+    out[#out + 1] = string.char(0xF7, 0, 0)
+    out[#out + 1] = __pytra_bytes_from_table(palette_tbl)
+    out[#out + 1] = string.char(0x21, 0xFF, 0x0B)
+    out[#out + 1] = "NETSCAPE2.0"
+    out[#out + 1] = string.char(0x03, 0x01)
+    out[#out + 1] = __pytra_u16le(loop_count)
+    out[#out + 1] = string.char(0x00)
+    for i = 1, #norm_frames do
+        local fr = norm_frames[i]
+        out[#out + 1] = string.char(0x21, 0xF9, 0x04, 0x00)
+        out[#out + 1] = __pytra_u16le(delay)
+        out[#out + 1] = string.char(0x00, 0x00)
+        out[#out + 1] = string.char(0x2C)
+        out[#out + 1] = __pytra_u16le(0)
+        out[#out + 1] = __pytra_u16le(0)
+        out[#out + 1] = __pytra_u16le(w)
+        out[#out + 1] = __pytra_u16le(h)
+        out[#out + 1] = string.char(0x00)
+        out[#out + 1] = string.char(8)
+        local compressed = __pytra_gif_lzw_encode(fr, 8)
+        local pos = 1
+        while pos <= #compressed do
+            local chunk = string.sub(compressed, pos, pos + 254)
+            out[#out + 1] = string.char(#chunk)
+            out[#out + 1] = chunk
+            pos = pos + #chunk
+        end
+        out[#out + 1] = string.char(0x00)
+    end
+    out[#out + 1] = string.char(0x3B)
+    local f = assert(io.open(tostring(path), "wb"))
+    f:write(table.concat(out))
+    f:close()
+end
+
+function __pytra_gif_module()
+    return {
+        grayscale_palette = __pytra_grayscale_palette,
+        save_gif = function(...)
+            local path, width, height, frames, palette, delay_cs, loop = ...
+            return __pytra_save_gif(path, width, height, frames, palette, delay_cs, loop)
+        end,
+    }
+end
+
+function __pytra_u32be(n)
+    local v = math.floor(tonumber(n) or 0) & 0xFFFFFFFF
+    return string.char((v >> 24) & 0xFF, (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF)
+end
+
+local __pytra_crc_table = nil
+function __pytra_init_crc_table()
+    if __pytra_crc_table ~= nil then
+        return
+    end
+    local tbl = {}
+    for i = 0, 255 do
+        local c = i
+        for _ = 1, 8 do
+            if (c & 1) ~= 0 then
+                c = ((c >> 1) ~ 0xEDB88320) & 0xFFFFFFFF
+            else
+                c = (c >> 1) & 0xFFFFFFFF
+            end
+        end
+        tbl[i] = c
+    end
+    __pytra_crc_table = tbl
+end
+
+function __pytra_png_crc32(data)
+    __pytra_init_crc_table()
+    local c = 0xFFFFFFFF
+    for i = 1, #data do
+        local b = string.byte(data, i)
+        local idx = (c ~ b) & 0xFF
+        c = ((c >> 8) ~ __pytra_crc_table[idx]) & 0xFFFFFFFF
+    end
+    return (~c) & 0xFFFFFFFF
+end
+
+function __pytra_png_adler32(data)
+    local s1 = 1
+    local s2 = 0
+    for i = 1, #data do
+        s1 = (s1 + string.byte(data, i)) % 65521
+        s2 = (s2 + s1) % 65521
+    end
+    return ((s2 << 16) | s1) & 0xFFFFFFFF
+end
+
+function __pytra_png_chunk(kind, data)
+    local payload = data or ""
+    local crc = __pytra_png_crc32(kind .. payload)
+    return __pytra_u32be(#payload) .. kind .. payload .. __pytra_u32be(crc)
+end
+
+function __pytra_zlib_store(raw)
+    local out = { string.char(0x78, 0x01) }
+    local pos = 1
+    while pos <= #raw do
+        local block_len = math.min(65535, #raw - pos + 1)
+        local final_block = ((pos + block_len - 1) >= #raw) and 1 or 0
+        local nlen = 65535 - block_len
+        out[#out + 1] = string.char(final_block, block_len & 0xFF, (block_len >> 8) & 0xFF, nlen & 0xFF, (nlen >> 8) & 0xFF)
+        out[#out + 1] = string.sub(raw, pos, pos + block_len - 1)
+        pos = pos + block_len
+    end
+    out[#out + 1] = __pytra_u32be(__pytra_png_adler32(raw))
+    return table.concat(out)
+end
+
+function __pytra_write_rgb_png(path, width, height, pixels)
+    local out_path = tostring(path)
+    local w = math.floor(tonumber(width) or 0)
+    local h = math.floor(tonumber(height) or 0)
+    if w <= 0 or h <= 0 then
+        error("write_rgb_png: width/height must be positive")
+    end
+    if type(pixels) ~= "table" then
+        error("write_rgb_png: pixels must be table")
+    end
+    local expected = w * h * 3
+    if #pixels ~= expected then
+        error("write_rgb_png: pixels length mismatch")
+    end
+    local scan = {}
+    local idx = 1
+    for _y = 1, h do
+        scan[#scan + 1] = string.char(0)
+        for _x = 1, w * 3 do
+            local n = math.floor(tonumber(pixels[idx]) or 0)
+            if n < 0 then n = 0 end
+            if n > 255 then n = 255 end
+            scan[#scan + 1] = string.char(n)
+            idx = idx + 1
+        end
+    end
+    local raw = table.concat(scan)
+    local ihdr = __pytra_u32be(w) .. __pytra_u32be(h) .. string.char(8, 2, 0, 0, 0)
+    local idat = __pytra_zlib_store(raw)
+    local png_data = string.char(137, 80, 78, 71, 13, 10, 26, 10) .. __pytra_png_chunk("IHDR", ihdr) .. __pytra_png_chunk("IDAT", idat) .. __pytra_png_chunk("IEND", "")
+    local fh = assert(io.open(out_path, "wb"))
+    fh:write(png_data)
+    fh:close()
+end
+
+function __pytra_png_module()
+    return {
+        write_rgb_png = function(...)
+            local argc = select("#", ...)
+            if argc == 5 then
+                local _, path, width, height, pixels = ...
+                return __pytra_write_rgb_png(path, width, height, pixels)
+            end
+            local path, width, height, pixels = ...
+            return __pytra_write_rgb_png(path, width, height, pixels)
+        end,
+        write_gif = function(...)
+            error("lua runtime: write_gif is not implemented")
+        end,
+    }
 end
 
 function __pytra_isinstance(obj, class_tbl)

@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/runtime/png.php';
-require_once __DIR__ . '/runtime/gif.php';
+require_once __DIR__ . '/../utils/png.php';
+require_once __DIR__ . '/../utils/gif.php';
 require_once __DIR__ . '/std/time.php';
 
 function __pytra_print(...$args): void {

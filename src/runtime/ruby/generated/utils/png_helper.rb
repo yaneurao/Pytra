@@ -18,19 +18,19 @@ def _crc32(data)
   crc = 4294967295
   poly = 3988292384
   for b in __pytra_as_list(data)
-    crc = crc + b
+    crc = crc ^ b
     i = 0
     while i < 8
-      lowbit = crc + 1
+      lowbit = crc & 1
       if lowbit != 0
-        crc = (crc + 1 + poly)
+        crc = (crc >> 1 ^ poly)
       else
-        crc = crc + 1
+        crc = crc >> 1
       end
       i += 1
     end
   end
-  return crc + 4294967295
+  return crc ^ 4294967295
 end
 
 def _adler32(data)
@@ -45,15 +45,15 @@ def _adler32(data)
     s2 += s1
     s2 = s2 % mod
   end
-  return ((s2 + 16 + s1) + 4294967295)
+  return ((s2 << 16 | s1) & 4294967295)
 end
 
 def _png_u16le(v)
-  return [v + 255, (v + 8 + 255)]
+  return [v & 255, (v >> 8 & 255)]
 end
 
 def _png_u32be(v)
-  return [(v + 24 + 255), (v + 16 + 255), (v + 8 + 255), v + 255]
+  return [(v >> 24 & 255), (v >> 16 & 255), (v >> 8 & 255), v & 255]
 end
 
 def _zlib_deflate_store(data)
@@ -67,7 +67,7 @@ def _zlib_deflate_store(data)
     final = ((pos + chunk_len >= n) ? 1 : 0)
     out.append(final)
     _png_append_list(out, _png_u16le(chunk_len))
-    _png_append_list(out, _png_u16le(65535 + chunk_len))
+    _png_append_list(out, _png_u16le(65535 ^ chunk_len))
     i = pos
     end_ = pos + chunk_len
     while i < end_
@@ -84,7 +84,7 @@ def _chunk(chunk_type, data)
   crc_input = []
   _png_append_list(crc_input, chunk_type)
   _png_append_list(crc_input, data)
-  crc = _crc32(crc_input) + 4294967295
+  crc = _crc32(crc_input) & 4294967295
   out = []
   _png_append_list(out, _png_u32be(__pytra_len(data)))
   _png_append_list(out, chunk_type)

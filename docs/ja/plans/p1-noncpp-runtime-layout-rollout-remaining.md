@@ -6,7 +6,7 @@
 - `docs/ja/todo/index.md` の `ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01`
 
 背景:
-- `rs/cs` は P0 で `src/runtime/<lang>/{generated,native,pytra}` へ切替済みだが、残 backend (`go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php`) はまだ `pytra-core/pytra-gen/pytra` naming に残っている。
+- `rs/cs` は P0 で `src/runtime/<lang>/{generated,native,pytra}` へ切替済みで、P1 は残 backend (`go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php`) を同じ ownership model へ揃えるために開始した。
 - この差により、`built_in/std/utils` のどの module が SoT から生成済みで、どの module が hand-written residual として残っているかを tree diff だけで比較しづらい。
 - ユーザー方針として、`generated/` には SoT (`src/pytra/**`) から生成した file だけを置き、hand-written 実装を rename して押し込む運用は認めない。
 - まず `rs/cs` を P0 で収束させ、残 backend は P1 で wave 単位に進める。
@@ -112,7 +112,7 @@
 - [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-01] Wave A (`go/java/kotlin/scala/swift/nim`) の path / hook / build / selfhost 定義を `generated/native` へ切り替える。
 - [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-02] Wave A の `generated/{built_in,std,utils}` を SoT から再生成し、compare lane を実体化する。
 - [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-03] Wave A の `native/**` residual を module 単位で縮退し、必要な allowlist/inventory を同期する。
-- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-01] Wave B (`js/ts/lua/ruby/php`) の path / shim / package export / selfhost 定義を `generated/native` へ切り替える。
+- [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-01] Wave B (`js/ts/lua/ruby/php`) の path / shim / package export / selfhost 定義を `generated/native` へ切り替える。
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-02] Wave B の `generated/{built_in,std,utils}` を SoT から再生成し、compare lane を実体化する。
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-03] Wave B の `native/**` residual と `pytra/**` compatibility lane の責務を整理し、必要な allowlist/inventory を同期する。
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S4-01] cross-backend guard / inventory / docs を `generated/native` vocabulary に全面更新し、compare 不能 backend をなくす。
@@ -137,3 +137,4 @@
 - 2026-03-13: `S2-03` の follow-up bundle として、Java `generated/std/time.java` は `System.nanoTime()`、`generated/std/math.java` は `java.lang.Math` へ live-wrapper rewrite する postprocess を manifest に追加し、runtime hook metadata から `native/std/{time_impl,math_impl}.java` を外した。`test_gen_runtime_from_manifest.py` と `test_py2java_smoke.py` はこの generated-only end state を固定する。
 - 2026-03-13: `S2-03` の close-out として、Wave A backend の `native/**` residual は全 backend で `built_in/py_runtime.*` substrate のみになった。compare-residual は消滅し、contract/checker/docs をこの終状態へ同期できたため `S2-03` を完了扱いにした。
 - 2026-03-13: `S3-01` の first bundle として、Wave B のうち `js/ts` runtime tree を `generated/native/pytra` へ実移行した。`pytra-core -> native`、`pytra-gen -> generated`、flat compat file -> `pytra/std|utils` への正規化を行い、`js_runtime_shims.py`、selfhost JS shim writer、contract/checker、runtime dispatch test を新 path に同期した。`src/runtime/{js,ts}/pytra/**` は compat shim のみを置く。
+- 2026-03-13: `S3-01` の second bundle として、`lua/ruby/php` runtime tree も `generated/native/pytra` へ実移行した。`backend_registry_metadata.py`、manifest 出力先、contract/current inventory、`check_py2x_profiles.json`、`lua/rb/php` smoke path baseline を新 path に同期し、PHP は public output bucket も `pytra/runtime/*` から `pytra/utils/*` へ正規化した。これで Wave B 全 backend の path / shim / package export baseline が `generated/native` vocabulary に揃ったため `S3-01` を完了扱いにする。

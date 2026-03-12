@@ -24,7 +24,7 @@ class GenImageRuntimeFromCanonicalTest(unittest.TestCase):
         plan = gen_mod.build_generation_plan(all_items, ["cpp", "php"], ["utils/png"])
         paths = [item.output_rel for item in plan]
         self.assertIn("src/runtime/cpp/generated/utils/png.cpp", paths)
-        self.assertIn("src/runtime/php/pytra-gen/runtime/png.php", paths)
+        self.assertIn("src/runtime/php/generated/utils/png.php", paths)
 
     def test_inject_generated_header_for_php_keeps_php_open_tag(self) -> None:
         src = "<?php\necho 'x';\n"

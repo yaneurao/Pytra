@@ -26,12 +26,12 @@ class AuditImageRuntimeSotTest(unittest.TestCase):
         *,
         core_text: str,
         gen_text: str,
-        legacy_text: str = "",
+        compat_text: str = "",
     ) -> dict[str, object]:
-        _write_text(runtime_root / "pytra-core" / "built_in" / "py_runtime.fake", core_text)
-        _write_text(runtime_root / "pytra-gen" / "utils" / "image_runtime.fake", gen_text)
-        if legacy_text != "":
-            _write_text(runtime_root / "pytra" / "legacy.fake", legacy_text)
+        _write_text(runtime_root / "native" / "built_in" / "py_runtime.fake", core_text)
+        _write_text(runtime_root / "generated" / "utils" / "image_runtime.fake", gen_text)
+        if compat_text != "":
+            _write_text(runtime_root / "pytra" / "compat.fake", compat_text)
 
         root = runtime_root.parents[2]
         fake_specs = {

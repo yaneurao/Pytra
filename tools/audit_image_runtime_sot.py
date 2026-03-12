@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Audit image runtime layout (`pytra-core` / `pytra-gen`) per language.
+"""Audit image runtime layout (`native` / `generated`) per language.
 
 Checks:
-- `pytra-core` must not contain image encoder core symbols.
-- `pytra-gen` must contain image runtime symbols.
-- image runtime files in `pytra-gen` must include:
+- `native` must not contain image encoder core symbols.
+- `generated` must contain image runtime symbols.
+- image runtime files in `generated` must include:
   - `source: src/pytra/utils/png.py` or `source: src/pytra/utils/gif.py`
   - `generated-by: ...`
 
@@ -123,13 +123,12 @@ def _scan_gen_markers(gen_root: Path) -> tuple[list[str], list[str], list[str]]:
 
 def _scan_runtime_layout(spec: LangSpec) -> dict[str, object]:
     runtime_root = ROOT / spec.runtime_root
-    core_root = runtime_root / "pytra-core"
-    gen_root = runtime_root / "pytra-gen"
-    legacy_root = runtime_root / "pytra"
+    core_root = runtime_root / "native"
+    gen_root = runtime_root / "generated"
+    compat_root = runtime_root / "pytra"
 
     core_hits = _scan_tree_for_symbols(core_root, CORE_FORBIDDEN_SYMBOL_RE)
     gen_hits, gen_missing_source, gen_missing_generated_by = _scan_gen_markers(gen_root)
-    legacy_hits = _scan_tree_for_symbols(legacy_root, GEN_IMAGE_SYMBOL_RE)
 
     reasons: list[str] = []
     if not core_root.exists():
@@ -144,9 +143,6 @@ def _scan_runtime_layout(spec: LangSpec) -> dict[str, object]:
         reasons.append("gen_missing_source_marker")
     if len(gen_missing_generated_by) > 0:
         reasons.append("gen_missing_generated_by_marker")
-    if len(legacy_hits) > 0:
-        reasons.append("legacy_layout_still_contains_image_symbols")
-
     status = "compliant_core_gen_layout" if len(reasons) == 0 else "non_compliant_core_gen_layout"
     return {
         "status": status,
@@ -155,14 +151,13 @@ def _scan_runtime_layout(spec: LangSpec) -> dict[str, object]:
             "runtime_root": spec.runtime_root,
             "core_root": str(core_root.relative_to(ROOT)),
             "gen_root": str(gen_root.relative_to(ROOT)),
-            "legacy_root": str(legacy_root.relative_to(ROOT)),
+            "compat_root": str(compat_root.relative_to(ROOT)),
         },
         "scan": {
             "core_image_symbol_files": core_hits,
             "gen_image_symbol_files": gen_hits,
             "gen_missing_source_marker_files": gen_missing_source,
             "gen_missing_generated_by_files": gen_missing_generated_by,
-            "legacy_image_symbol_files": legacy_hits,
         },
     }
 

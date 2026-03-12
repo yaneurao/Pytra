@@ -15,53 +15,53 @@ def _gif_append_list(dst, src)
 end
 
 def _gif_u16le(v)
-  return [v + 255, (v + 8 + 255)]
+  return [v & 255, (v >> 8 & 255)]
 end
 
 def _lzw_encode(data, min_code_size)
   if __pytra_len(data) == 0
     return __pytra_bytes([])
   end
-  clear_code = 1 + min_code_size
+  clear_code = 1 << min_code_size
   end_code = clear_code + 1
   code_size = min_code_size + 1
   out = []
   bit_buffer = 0
   bit_count = 0
-  bit_buffer += clear_code + bit_count
+  bit_buffer |= clear_code << bit_count
   bit_count += code_size
   while bit_count >= 8
-    out.append(bit_buffer + 255)
-    bit_buffer = bit_buffer + 8
+    out.append(bit_buffer & 255)
+    bit_buffer = bit_buffer >> 8
     bit_count -= 8
   end
   code_size = min_code_size + 1
   for v in __pytra_as_list(data)
-    bit_buffer += v + bit_count
+    bit_buffer |= v << bit_count
     bit_count += code_size
     while bit_count >= 8
-      out.append(bit_buffer + 255)
-      bit_buffer = bit_buffer + 8
+      out.append(bit_buffer & 255)
+      bit_buffer = bit_buffer >> 8
       bit_count -= 8
     end
-    bit_buffer += clear_code + bit_count
+    bit_buffer |= clear_code << bit_count
     bit_count += code_size
     while bit_count >= 8
-      out.append(bit_buffer + 255)
-      bit_buffer = bit_buffer + 8
+      out.append(bit_buffer & 255)
+      bit_buffer = bit_buffer >> 8
       bit_count -= 8
     end
     code_size = min_code_size + 1
   end
-  bit_buffer += end_code + bit_count
+  bit_buffer |= end_code << bit_count
   bit_count += code_size
   while bit_count >= 8
-    out.append(bit_buffer + 255)
-    bit_buffer = bit_buffer + 8
+    out.append(bit_buffer & 255)
+    bit_buffer = bit_buffer >> 8
     bit_count -= 8
   end
   if bit_count > 0
-    out.append(bit_buffer + 255)
+    out.append(bit_buffer & 255)
   end
   return __pytra_bytes(out)
 end

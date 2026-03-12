@@ -252,10 +252,10 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertIn(
             {
-                "current_prefix": "src/runtime/php/pytra-gen/runtime/",
+                "current_prefix": "src/runtime/php/generated/utils/",
                 "target_prefix": "src/runtime/php/generated/utils/",
                 "ownership": "generated",
-                "rationale": "PHP still uses a legacy runtime bucket for SoT-generated image helpers; rollout renames it to generated/utils.",
+                "rationale": "PHP image helpers already live in generated/utils after the Wave B path cutover.",
             },
             by_backend["php"],
         )

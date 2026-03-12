@@ -111,15 +111,15 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
     "ruby": {
         "kind": "copy_files",
         "files": [
-            ("runtime/ruby/pytra-core/built_in/py_runtime.rb", "py_runtime.rb"),
-            ("runtime/ruby/pytra-gen/utils/image_runtime.rb", "image_runtime.rb"),
+            ("runtime/ruby/native/built_in/py_runtime.rb", "py_runtime.rb"),
+            ("runtime/ruby/generated/utils/image_runtime.rb", "image_runtime.rb"),
         ],
     },
     "lua": {
         "kind": "copy_files",
         "files": [
-            ("runtime/lua/pytra-core/built_in/py_runtime.lua", "py_runtime.lua"),
-            ("runtime/lua/pytra-gen/utils/image_runtime.lua", "image_runtime.lua"),
+            ("runtime/lua/native/built_in/py_runtime.lua", "py_runtime.lua"),
+            ("runtime/lua/generated/utils/image_runtime.lua", "image_runtime.lua"),
         ],
     },
     "scala": {
@@ -132,10 +132,10 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
     "php": {
         "kind": "php_runtime",
         "files": [
-            ("pytra-core/py_runtime.php", "py_runtime.php"),
-            ("pytra-core/std/time.php", "std/time.php"),
-            ("pytra-gen/runtime/png.php", "runtime/png.php"),
-            ("pytra-gen/runtime/gif.php", "runtime/gif.php"),
+            ("native/built_in/py_runtime.php", "py_runtime.php"),
+            ("native/std/time.php", "std/time.php"),
+            ("generated/utils/png.php", "utils/png.php"),
+            ("generated/utils/gif.php", "utils/gif.php"),
         ],
     },
     "nim": {

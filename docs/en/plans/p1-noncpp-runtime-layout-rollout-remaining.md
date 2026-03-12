@@ -6,7 +6,7 @@ Related TODO:
 - `docs/ja/todo/index.md` `ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01`
 
 Background:
-- `rs/cs` have already been moved in P0 to `src/runtime/<lang>/{generated,native,pytra}`, but the remaining backends (`go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php`) still use the old `pytra-core/pytra-gen/pytra` naming.
+- `rs/cs` have already been moved in P0 to `src/runtime/<lang>/{generated,native,pytra}`, and this P1 rollout was started to bring the remaining backends (`go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php`) onto the same ownership model.
 - That mismatch makes it hard to compare tree diffs and tell which `built_in/std/utils` modules are already emitted from SoT and which ones still survive as handwritten residuals.
 - Per the user directive, `generated/` may contain only artifacts emitted from the SoT (`src/pytra/**`). Renaming handwritten runtime files into that lane is invalid.
 - `rs/cs` are handled first in P0; the remaining backends are rolled out in P1 by wave.
@@ -112,7 +112,7 @@ Focus:
 - [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-01] Cut Wave A (`go/java/kotlin/scala/swift/nim`) path / hook / build / selfhost definitions over to `generated/native`.
 - [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-02] Regenerate Wave A `generated/{built_in,std,utils}` from the SoT and make the compare lanes real.
 - [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S2-03] Shrink Wave A `native/**` residuals module-by-module and sync the required allowlists/inventories.
-- [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-01] Cut Wave B (`js/ts/lua/ruby/php`) path / shim / package-export / selfhost definitions over to `generated/native`.
+- [x] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-01] Cut Wave B (`js/ts/lua/ruby/php`) path / shim / package-export / selfhost definitions over to `generated/native`.
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-02] Regenerate Wave B `generated/{built_in,std,utils}` from the SoT and make the compare lanes real.
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S3-03] Clean up the responsibility boundary between Wave B `native/**` residuals and the `pytra/**` compatibility lane, then sync the required allowlists/inventories.
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01-S4-01] Update cross-backend guards / inventories / docs to the `generated/native` vocabulary so no backend remains incomparable.
@@ -137,3 +137,4 @@ Decision log:
 - 2026-03-13: As a follow-up `S2-03` bundle, Java `generated/std/time.java` now rewrites its live wrapper to `System.nanoTime()` and `generated/std/math.java` rewrites to `java.lang.Math` through manifest postprocess hooks, so `backend_registry_metadata.py` no longer ships `native/std/{time_impl,math_impl}.java`. `test_gen_runtime_from_manifest.py` and `test_py2java_smoke.py` now lock that generated-only end state.
 - 2026-03-13: As the `S2-03` close-out, every Wave A backend now leaves only `built_in/py_runtime.*` substrate under `native/**`. The compare residual set is gone, and the contract/checker/docs are synchronized to that end state, so `S2-03` is marked complete.
 - 2026-03-13: As the first `S3-01` bundle, the `js/ts` slice of Wave B moved onto the `generated/native/pytra` tree. `pytra-core -> native`, `pytra-gen -> generated`, and the old flat compat files were normalized into `pytra/std|utils`, while `js_runtime_shims.py`, the selfhost JS shim writers, the contract/checker, and the runtime-dispatch test were synchronized to the new paths. `src/runtime/{js,ts}/pytra/**` now contains compat shims only.
+- 2026-03-13: As the second `S3-01` bundle, the `lua/ruby/php` runtime tree also moved onto `generated/native/pytra`. `backend_registry_metadata.py`, manifest outputs, the contract/current inventory, `check_py2x_profiles.json`, and the `lua/rb/php` smoke path baseline were synchronized to the new paths, and PHP also normalized its public output bucket from `pytra/runtime/*` to `pytra/utils/*`. That completes the Wave B path / shim / package-export baseline, so `S3-01` is now complete.

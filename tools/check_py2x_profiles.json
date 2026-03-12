@@ -653,8 +653,8 @@
       ],
       "required_runtime_files": [
         "pytra/py_runtime.php",
-        "pytra/runtime/png.php",
-        "pytra/runtime/gif.php",
+        "pytra/utils/png.php",
+        "pytra/utils/gif.php",
         "pytra/std/time.php"
       ],
       "required_runtime_file_contains": {},

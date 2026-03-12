@@ -137,8 +137,8 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertNotIn("from common.", src)
 
     def test_ruby_runtime_source_path_is_migrated(self) -> None:
-        runtime_path = ROOT / "src" / "runtime" / "ruby" / "pytra-core" / "built_in" / "py_runtime.rb"
-        image_runtime = ROOT / "src" / "runtime" / "ruby" / "pytra-gen" / "utils" / "image_runtime.rb"
+        runtime_path = ROOT / "src" / "runtime" / "ruby" / "native" / "built_in" / "py_runtime.rb"
+        image_runtime = ROOT / "src" / "runtime" / "ruby" / "generated" / "utils" / "image_runtime.rb"
         legacy_path = ROOT / "src" / "ruby_module" / "py_runtime.rb"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(image_runtime.exists())

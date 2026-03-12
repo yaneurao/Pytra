@@ -82,6 +82,14 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
+    def test_lua_runtime_source_path_is_migrated(self) -> None:
+        runtime_path = ROOT / "src" / "runtime" / "lua" / "native" / "built_in" / "py_runtime.lua"
+        image_runtime = ROOT / "src" / "runtime" / "lua" / "generated" / "utils" / "image_runtime.lua"
+        legacy_path = ROOT / "src" / "runtime" / "lua" / "pytra-core"
+        self.assertTrue(runtime_path.exists())
+        self.assertTrue(image_runtime.exists())
+        self.assertFalse(legacy_path.exists())
+
     def test_bitwise_invert_basic_uses_lua_invert_operator(self) -> None:
         fixture = find_fixture_case("bitwise_invert_basic")
         east = load_east(fixture, parser_backend="self_hosted")

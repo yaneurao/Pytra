@@ -50,7 +50,7 @@ runtime 分離契約（S1-01 確定）:
 - 生成 `.php` へ helper 本体は埋め込まない（import only）。
 - runtime 配置:
   - `src/runtime/php/pytra/py_runtime.php`（共通 helper）
-  - `src/runtime/php/pytra/runtime/png.php` / `gif.php`（I/O helper）
+  - `src/runtime/php/pytra/utils/png.php` / `gif.php`（I/O helper）
   - `src/runtime/php/pytra/std/*.php`（`time`, `math`, `pathlib`）
 - `tools/regenerate_samples.py` は sample 出力時に `sample/php/pytra/**` を同期コピーする。
 - 同一 helper 名は全 backend で意味を揃える（例: `py_truthy`, `py_len`, `py_str`）。
