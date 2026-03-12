@@ -30,13 +30,15 @@ Acceptance criteria:
 Verification:
 - `python3 tools/check_todo_priority.py`
 - `python3 tools/check_backend_parity_matrix_contract.py`
+- `python3 tools/check_backend_parity_longtail_rollout_inventory.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_matrix_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_longtail_rollout_inventory.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 
 ## Breakdown
 
-- [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01-S1-01] Lock the current residual cells and implementation bundles for the long-tail tier.
+- [x] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01-S1-01] Lock the current residual cells and implementation bundles for the long-tail tier.
 - [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01-S2-01] Fill unsupported cells in the `js/ts` bundle with representative evidence.
 - [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01-S2-02] Fill unsupported cells in the `lua/rb/php` bundle with representative evidence.
 - [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01-S3-01] Sync long-tail matrix/docs/support wording to the current rollout state and close the task.
@@ -45,3 +47,4 @@ Verification:
 
 - 2026-03-12: The long-tail tier is split into `js/ts` and `lua/rb/php` bundles so the rollout can track real evidence batches instead of singleton tasks.
 - 2026-03-12: Unsupported lanes remain fail-closed; only lanes with actual evidence move to a supported state.
+- 2026-03-13: `S1-01` added `backend_parity_longtail_rollout_inventory.py`, its checker, and a unit test so the long-tail residual cells are now fixed directly against the matrix seed. The bundle order is now concretely handed off as `js/ts` first and `lua/rb/php` second; `js` keeps the tuple/lambda/comprehension/control/iterator/std gaps, `ts` adds `virtual_dispatch`, `lua/php` keep the lighter syntax + enumerate + std gaps, and `rb` additionally keeps `for_range/range/zip`.

@@ -30,13 +30,15 @@
 確認コマンド:
 - `python3 tools/check_todo_priority.py`
 - `python3 tools/check_backend_parity_matrix_contract.py`
+- `python3 tools/check_backend_parity_longtail_rollout_inventory.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_matrix_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_backend_parity_longtail_rollout_inventory.py'`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 
 ## 分解
 
-- [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01-S1-01] long-tail tier の current residual cell と implementation bundle を固定する。
+- [x] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01-S1-01] long-tail tier の current residual cell と implementation bundle を固定する。
 - [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01-S2-01] `js/ts` bundle の未対応 cell を representative evidence 付きで埋める。
 - [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01-S2-02] `lua/rb/php` bundle の未対応 cell を representative evidence 付きで埋める。
 - [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01-S3-01] long-tail tier の matrix / docs / support wording を current rollout state に同期して閉じる。
@@ -45,3 +47,4 @@
 
 - 2026-03-12: long-tail tier は `js/ts` と `lua/rb/php` に bundle 分割し、既存 smoke がある lane から先に `supported` へ引き上げる。
 - 2026-03-12: unsupported lane は silent fallback ではなく fail-closed のまま保ち、evidence を伴う lane だけ更新する。
+- 2026-03-13: `S1-01` として `backend_parity_longtail_rollout_inventory.py` / checker / unit test を追加し、long-tail residual cell を matrix seed から固定した。bundle order は `js/ts` の first bundle と `lua/rb/php` の second bundle に確定し、`js` は tuple/lambda/comprehension/control/iter/std、`ts` はそこに `virtual_dispatch`、`lua/php` は軽量 syntax + enumerate + std、`rb` はさらに `for_range/range/zip` を持つ current snapshot を handoff manifest に反映した。
