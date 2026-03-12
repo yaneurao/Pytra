@@ -40,6 +40,9 @@ CORE_ATTR_SUFFIX_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_at
 CORE_SUBSCRIPT_SUFFIX_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_expr_subscript_suffix.py"
 CORE_CLASS_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_class_semantics.py"
 CORE_DECORATOR_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_decorator_semantics.py"
+CORE_DATACLASS_FIELD_SEMANTICS_SOURCE_PATH = (
+    ROOT / "src" / "toolchain" / "ir" / "core_dataclass_field_semantics.py"
+)
 CORE_EXTERN_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_extern_semantics.py"
 CORE_IMPORT_SEMANTICS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_import_semantics.py"
 CORE_IMPORT_MODULE_BUILDERS_SOURCE_PATH = ROOT / "src" / "toolchain" / "ir" / "core_import_module_builders.py"

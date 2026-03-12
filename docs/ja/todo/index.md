@@ -31,18 +31,14 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01] `dataclasses.field(...)` を runtime call ではなく静的 dataclass metadata subset として扱い、representative lane を fail-closed contract 付きで固定する。
-   文脈: [p1-dataclass-field-static-subset.md](/workspace/Pytra/docs/ja/plans/p1-dataclass-field-static-subset.md)
-   概要: Pytra-NES の `timestamps: deque[float] = field(init=False, repr=False)` のような representative case で、現状は `field(...)` が通常の式として backend へ漏れて壊れたコードを生成する。v1 では `default` / `default_factory` / `init` / `repr` / `compare` を静的 metadata subset として扱い、unsupported option は fail-closed にする。進捗: `S3-01` で `repr` / `compare` metadata と unsupported option / duplicate option / `default` + `default_factory` conflict の fail-closed regression を固定した。
-
-2. [ ] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01] `py_runtime.h` に残っている object-bridge mutation seam と shared `type_id` thin seam を cross-runtime 契約の整理後に最小化する。
+1. [ ] [ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01] `py_runtime.h` に残っている object-bridge mutation seam と shared `type_id` thin seam を cross-runtime 契約の整理後に最小化する。
    文脈: [p5-cpp-pyruntime-residual-thin-seam-shrink.md](/workspace/Pytra/docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md)
    概要: 現在の `py_runtime.h` は以前よりかなり縮小済みだが、`py_append(object&)` と `py_runtime_value_*` / `py_runtime_object_*` / `py_runtime_type_id_*` の thin seam が残っている。これらは header 単体では削れず、C++ / Rust / C# emitter と runtime の shared contract 整理を伴うので、後段の `P5` として bundle 単位で縮退計画を固定する。
 
-3. [ ] [ID: P5-POWERSHELL-CS-HOST-01] PowerShell backend を新設する代わりに、C# backend の出力を `pwsh` から build / run する host profile を整理する。
+2. [ ] [ID: P5-POWERSHELL-CS-HOST-01] PowerShell backend を新設する代わりに、C# backend の出力を `pwsh` から build / run する host profile を整理する。
    文脈: [p5-powershell-csharp-host-profile.md](/workspace/Pytra/docs/ja/plans/p5-powershell-csharp-host-profile.md)
    概要: `py2cs` の generated `.cs` と runtime 同梱物を `pwsh` から representative に起動する host profile を定義し、Windows / PowerShell 7 / `.NET` 系 toolchain を前提に `dotnet` / `csc` / `Add-Type` の優先順と fail-closed 条件を固定する。pure PowerShell backend は対象外とする。
 
-4. [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01] cross-backend backend parity matrix を実際の `feature × backend` support-state table として埋め、全 backend の canonical source にする。
+3. [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01] cross-backend backend parity matrix を実際の `feature × backend` support-state table として埋め、全 backend の canonical source にする。
    文脈: [p6-backend-parity-matrix-cell-fill.md](/workspace/Pytra/docs/ja/plans/p6-backend-parity-matrix-cell-fill.md)
    概要: 現在の parity matrix は row seed と state taxonomy を持つ scaffold だが、各 cell の support state はまだ埋まっていない。C++ 個別 matrix を drill-down にとどめ、全 backend を横断した canonical 2 次元表を `support_state` / `evidence_kind` 付きで実体化する。
