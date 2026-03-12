@@ -46,10 +46,11 @@ Verification commands:
 Decision log:
 - 2026-03-12: `tuple[T, ...]` will not share the same lane as fixed tuples. In v1 it is split out as a `homogeneous immutable sequence` category because the current C++ emission produces invalid `::std::tuple<int64, ...>`.
 - 2026-03-12: v1 will lock representative lanes first and prefer fail-closed behavior for unsupported backends or lanes. Whether all backends should eventually reuse the exact same representation as lists is deferred.
+- 2026-03-12: The current parser does not reject `tuple[int, ...]`; it accepts it as `GenericType(base="tuple", args=[NamedType("int64"), NamedType("...")])`. This baseline and the current invalid C++ emission `::std::tuple<int64, ...>` are now locked by regression before category splitting starts.
 
 ## Breakdown
 
-- [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S1-01] Lock the type parser / normalization / representative failure with plan and regressions.
+- [x] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S1-01] Lock the type parser / normalization / representative failure with plan and regressions.
 - [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S2-01] Carry `tuple[T, ...]` as a distinct category from fixed tuples in EAST / type summaries.
 - [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S2-02] Stop invalid C++ emission of `::std::tuple<int64, ...>` and lower the representative v1 lane as a read-only immutable sequence.
 - [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01-S3-01] Define representative backend policy and lock unsupported lanes / backends as fail-closed.
