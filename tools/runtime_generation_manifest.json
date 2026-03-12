@@ -22,12 +22,12 @@
         },
         {
           "target": "js",
-          "output": "src/runtime/js/pytra-gen/utils/png.js",
+          "output": "src/runtime/js/generated/utils/png.js",
           "postprocess": "js_program_to_cjs_module"
         },
         {
           "target": "ts",
-          "output": "src/runtime/ts/pytra-gen/utils/png.ts",
+          "output": "src/runtime/ts/generated/utils/png.ts",
           "postprocess": "js_program_to_cjs_module"
         },
         {
@@ -69,12 +69,12 @@
         },
         {
           "target": "js",
-          "output": "src/runtime/js/pytra-gen/utils/gif.js",
+          "output": "src/runtime/js/generated/utils/gif.js",
           "postprocess": "js_program_to_cjs_module"
         },
         {
           "target": "ts",
-          "output": "src/runtime/ts/pytra-gen/utils/gif.ts",
+          "output": "src/runtime/ts/generated/utils/gif.ts",
           "postprocess": "js_program_to_cjs_module"
         },
         {

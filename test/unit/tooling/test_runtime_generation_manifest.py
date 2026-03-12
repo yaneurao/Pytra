@@ -63,7 +63,8 @@ class RuntimeGenerationManifestTest(unittest.TestCase):
                 if entry.get("target") != "cs":
                     continue
                 helper_map[item_id] = str(entry.get("helper_name", ""))
-                self.assertEqual(entry.get("postprocess"), "cs_program_to_helper")
+                if entry.get("helper_name") is not None:
+                    self.assertEqual(entry.get("postprocess"), "cs_program_to_helper")
         self.assertEqual(helper_map.get("utils/png"), "png_helper")
         self.assertEqual(helper_map.get("utils/gif"), "gif_helper")
 

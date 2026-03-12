@@ -243,10 +243,10 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertIn(
             {
-                "current_prefix": "src/runtime/js/pytra/time.js",
+                "current_prefix": "src/runtime/js/pytra/std/time.js",
                 "target_prefix": "src/runtime/js/pytra/std/time.js",
                 "ownership": "compat",
-                "rationale": "Flat JS std shim files will be bucketed under pytra/std during rollout.",
+                "rationale": "JS public std shims already live in bucketed pytra/std paths after the Wave B path cutover.",
             },
             by_backend["js"],
         )
