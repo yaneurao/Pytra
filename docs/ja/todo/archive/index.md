@@ -4,7 +4,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-12
+最終更新: 2026-03-13
 
 ## 運用方針
 
@@ -14,6 +14,8 @@
 - `docs/` 側は `docs/ja/` を正として翻訳を同期します。
 
 ## 完了 plan アーカイブ
+
+- [2026-03-13 / P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01](../plans/archive/20260313-p0-noncpp-runtime-layout-alignment.md)
 
 - [2026-03-12 / P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01](../plans/archive/20260312-p0-path-stringify-cpp-representative-support.md)
 - [2026-03-12 / P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01](../plans/archive/20260312-p0-dataclass-field-default-factory-rc-cpp-support.md)
@@ -169,6 +171,8 @@
 - [2026-03-06 / P4-MULTILANG-SH-01](../plans/archive/20260306-p4-multilang-selfhost-full-rollout.md)（ABI 確立後に再投入）
 
 ## 日付別リンク
+
+- [2026-03-13](20260313.md)（1 セクション）
 
 - [2026-03-12](20260312.md)（28 セクション）
 - [2026-03-11](20260311.md)（25 セクション）

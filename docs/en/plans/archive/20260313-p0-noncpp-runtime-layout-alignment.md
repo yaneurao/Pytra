@@ -1,6 +1,6 @@
 # P0: Align the `rs/cs` runtimes to a C++-comparable `generated/native` layout
 
-Last updated: 2026-03-12
+Last updated: 2026-03-13
 
 Related TODO:
 - `docs/ja/todo/index.md` `ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01`
@@ -124,13 +124,13 @@ This compare unit is the basis for making `missing generated artifact` and `hand
 - [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S2-02] Cut C# over from `pytra-core/pytra-gen` to `native/generated`, then sync build/selfhost/runtime paths.
 - [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S2-03] Regenerate `rs/cs` `png/gif` into the new `generated/utils` lane and remove old-path dependencies.
 - [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-01] Decide module-by-module which `cs` std lanes (`json/pathlib/math/re/argparse/enum`) belong in `generated/std` and which stay in `native`.
-- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-02] Migrate the `rs/cs` std lanes into `generated/std` and shrink handwritten logic in `native`.
+- [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-02] Migrate the `rs/cs` std lanes into `generated/std` and shrink handwritten logic in `native`.
   - [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-02-A] Lock the current `rs` std ownership baseline and guard `math/time` as native, `pathlib/os/os_path/glob` as compare artifacts, and `json/re/argparse/enum` as no-live-module lanes.
   - [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-02-B] Fix `time` as the first live-generated C# std candidate, and separate `json/pathlib/math` as deferred native-canonical lanes plus `re/argparse/enum` as deferred no-runtime lanes.
   - [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S3-02-C] Wire the chosen `rs/cs` std lane into the live build/runtime hook and shrink the compare-artifact-only state.
 - [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S4-01] Generate `rs/cs` `generated/built_in/*` from `src/pytra/built_in/*.py` so the built-in compare lane is real.
 - [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S4-02] Fix the `generated/built_in/*` vs `native/built_in/*` responsibility boundary and shrink built-in residuals in `py_runtime.*`. In the same slice, delete the duplicate C# `pytra/**` lane (`math/time/json/pathlib/png/gif` and related files) rather than trying to preserve it as a shim.
-- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S5-01] Update runtime guards / allowlists / docs to the `generated/native` vocabulary.
+- [x] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01-S5-01] Update runtime guards / allowlists / docs to the `generated/native` vocabulary.
 
 Decision log:
 - 2026-03-12: Per user direction, promoted the non-C++ runtime layout reset to P0 and fixed the rule that `generated/` may contain only SoT-emitted artifacts.
