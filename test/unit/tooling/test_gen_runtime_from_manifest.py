@@ -170,6 +170,15 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("function save_gif(", out)
         self.assertNotIn("pytra.std.abi", out)
 
+    def test_wave_b_runtime_regeneration_check_passes(self) -> None:
+        items = gen_mod.load_manifest_items(ROOT / "tools" / "runtime_generation_manifest.json")
+        targets = gen_mod.resolve_targets("js,ts,lua,ruby,php", items)
+        item_ids = gen_mod.resolve_item_ids("all", items)
+        plan = gen_mod.build_generation_plan(items, targets, item_ids)
+        checked, updated = gen_mod.generate(plan, check=True, dry_run=False)
+        self.assertEqual(checked, 10)
+        self.assertEqual(updated, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
