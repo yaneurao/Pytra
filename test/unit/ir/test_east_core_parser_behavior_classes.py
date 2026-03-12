@@ -180,6 +180,66 @@ class PadState:
         self.assertEqual(factory_expr.get("kind"), "Name")
         self.assertEqual(factory_expr.get("id"), "list")
 
+    def test_dataclass_field_repr_and_compare_are_preserved_in_metadata(self) -> None:
+        src = """
+from dataclasses import dataclass, field
+
+@dataclass
+class PadState:
+    count: int = field(default=1, repr=False, compare=False)
+"""
+        east = convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+        classes = [
+            n
+            for n in _walk(east)
+            if isinstance(n, dict) and n.get("kind") == "ClassDef" and n.get("name") == "PadState"
+        ]
+        self.assertEqual(len(classes), 1)
+        body = classes[0].get("body", [])
+        self.assertEqual(len(body), 1)
+        meta = body[0].get("meta", {}).get("dataclass_field_v1", {})
+        self.assertEqual(meta.get("repr_enabled"), False)
+        self.assertEqual(meta.get("compare"), False)
+        default_expr = meta.get("default_expr", {})
+        self.assertEqual(default_expr.get("kind"), "Constant")
+        self.assertEqual(default_expr.get("value"), 1)
+
+    def test_dataclass_field_unsupported_option_fails_closed(self) -> None:
+        src = """
+from dataclasses import dataclass, field
+
+@dataclass
+class PadState:
+    count: int = field(default=1, hash=False)
+"""
+        with self.assertRaisesRegex(RuntimeError, "unsupported dataclass field option: hash"):
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+
+    def test_dataclass_field_duplicate_option_fails_closed(self) -> None:
+        src = """
+from dataclasses import dataclass, field
+
+@dataclass
+class PadState:
+    count: int = field(default=1, default=2)
+"""
+        with self.assertRaisesRegex(RuntimeError, "duplicate dataclass field option: default"):
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+
+    def test_dataclass_field_default_and_default_factory_conflict_fails_closed(self) -> None:
+        src = """
+from dataclasses import dataclass, field
+
+@dataclass
+class PadState:
+    count: int = field(default=1, default_factory=list)
+"""
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "dataclass field\\(\\.\\.\\.\\) cannot use both default and default_factory",
+        ):
+            convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
+
     def test_nominal_adt_family_and_variants_are_parsed(self) -> None:
         src = """
 from dataclasses import dataclass

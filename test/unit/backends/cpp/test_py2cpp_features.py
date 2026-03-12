@@ -4746,6 +4746,23 @@ class PadState:
         self.assertIn("PadState(int64 count = 1, list<int64> samples = list<int64>{})", cpp)
         self.assertIn(": count(count), samples(samples)", cpp)
 
+    def test_dataclass_field_repr_compare_metadata_do_not_leak_into_cpp(self) -> None:
+        src = """from dataclasses import dataclass, field
+
+@dataclass
+class PadState:
+    count: int = field(default=1, repr=False, compare=False)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "dataclass_field_repr_compare.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("PadState(int64 count = 1)", cpp)
+        self.assertNotIn("field(", cpp)
+        self.assertNotIn("repr_enabled", cpp)
+        self.assertNotIn("compare", cpp)
+
     def test_enum_extended_runtime(self) -> None:
         out = self._compile_and_run_fixture("enum_extended")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
