@@ -50,10 +50,12 @@
 - 2026-03-12: current non-C++ rollout handoff は `rs/cs/go/js/nim/swift/ts=transpile_smoke_locked`、`java/kotlin/scala=jvm_package_bundle_rollout`、`lua/php/ruby=defer_until_jvm_package_bundle_complete` で固定する。
 - 2026-03-12: `P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S1-01` は live plan / TODO / contract / checker / docs handoff を切り替える closeout-first bundle とし、backend smoke の追加は後続 bundle に分ける。
 - 2026-03-12: `P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-01` では `java/kotlin/scala` の representative package-style transpile smoke を固定し、wildcard relative import は backend-native emitter で fail-closed にする。
+- 2026-03-12: `P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-02` で coverage inventory を current smoke state に同期し、`java/kotlin/scala` は `transpile_smoke_locked` evidence を持ちながらも active `jvm_package_bundle_rollout` として long-tail handoff を保持する、と整理した。
+- 2026-03-12: `P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-02` の evidence lane は `java/kotlin/scala=package_project_transpile`、`go/nim/swift=native_emitter_function_body_transpile` として backend parity docs まで固定し、followup long-tail lane は `longtail_relative_import_rollout / defer_until_jvm_package_bundle_complete` に揃えた。
 
 ## 分解
 
 - [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01] `java/kotlin/scala` の JVM package bundle を next live rollout として固定し、native-path closeout 後の handoff を整える。
 - [x] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S1-01] native-path bundle を archive semantics に切り替え、JVM package bundle の live plan / TODO / contract / checker / docs handoff を追加する。
 - [x] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-01] `java/kotlin/scala` の representative transpile smoke / fail-closed regression を追加する。
-- [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-02] backend parity docs / coverage inventory / handoff wording を current JVM bundle state に同期して close-ready にする。
+- [x] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-02] backend parity docs / coverage inventory / handoff wording を current JVM bundle state に同期して close-ready にする。

@@ -49,6 +49,8 @@ EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
     ),
     "locked_transpile_smoke_backends": ("rs", "cs", "go", "js", "nim", "swift", "ts"),
     "next_rollout_backends": ("java", "kotlin", "scala"),
+    "current_bundle_smoke_locked_backends": ("java", "kotlin", "scala"),
+    "current_bundle_evidence_lane": "package_project_transpile",
     "second_wave_bundle_order": (
         "locked_js_ts_smoke_bundle",
         "native_path_bundle",
@@ -58,6 +60,7 @@ EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
     "next_rollout_bundle_backends": ("java", "kotlin", "scala"),
     "followup_rollout_bundle": "longtail_relative_import_rollout",
     "followup_rollout_bundle_backends": ("lua", "php", "ruby"),
+    "followup_verification_lane": "defer_until_jvm_package_bundle_complete",
     "next_verification_lane": "jvm_package_bundle_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
 }
@@ -86,15 +89,15 @@ def validate_relative_import_backend_coverage() -> None:
         for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
         if row["contract_state"] == "transpile_smoke_locked"
     ]
-    if transpile_smoke_locked != ["rs", "cs", "go", "js", "nim", "swift", "ts"]:
+    if transpile_smoke_locked != ["rs", "cs", "go", "java", "js", "kotlin", "nim", "scala", "swift", "ts"]:
         raise SystemExit(
-            "relative import backend coverage must keep rs/cs/go/js/nim/swift/ts as the only "
+            "relative import backend coverage must keep rs/cs/go/java/js/kotlin/nim/scala/swift/ts as the only "
             f"transpile_smoke_locked lanes: got {transpile_smoke_locked}"
         )
     for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1:
         if row["backend"] == "cpp":
             continue
-        if row["backend"] in {"rs", "cs", "go", "js", "nim", "swift", "ts"}:
+        if row["backend"] in {"rs", "cs", "go", "java", "js", "kotlin", "nim", "scala", "swift", "ts"}:
             continue
         if row["contract_state"] != "not_locked":
             raise SystemExit(
@@ -109,6 +112,15 @@ def validate_relative_import_backend_coverage() -> None:
     if any(row["evidence_lane"] != "native_emitter_function_body_transpile" for row in native_path_rows):
         raise SystemExit(
             "native-path bundle backends must stay locked on native_emitter_function_body_transpile evidence"
+        )
+    jvm_rows = [
+        row
+        for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
+        if row["backend"] in {"java", "kotlin", "scala"}
+    ]
+    if any(row["evidence_lane"] != "package_project_transpile" for row in jvm_rows):
+        raise SystemExit(
+            "JVM package bundle backends must stay locked on package_project_transpile evidence"
         )
 
 
@@ -207,6 +219,30 @@ def validate_relative_import_noncpp_rollout_handoff() -> None:
         if RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["fail_closed_lane"] not in doc_text:
             raise SystemExit(
                 "relative import backend parity docs must mention the fail-closed lane: "
+                f"{doc_path}"
+            )
+        if (
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_evidence_lane"]
+            not in doc_text
+        ):
+            raise SystemExit(
+                "relative import backend parity docs must mention the current JVM evidence lane: "
+                f"{doc_path}"
+            )
+        if (
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["followup_verification_lane"]
+            not in doc_text
+        ):
+            raise SystemExit(
+                "relative import backend parity docs must mention the long-tail followup lane: "
+                f"{doc_path}"
+            )
+        if (
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["followup_rollout_bundle"]
+            not in doc_text
+        ):
+            raise SystemExit(
+                "relative import backend parity docs must mention the long-tail followup bundle: "
                 f"{doc_path}"
             )
         for bundle_id in RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["second_wave_bundle_order"]:

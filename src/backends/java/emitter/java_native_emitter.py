@@ -2594,8 +2594,11 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []
 
     prev_import_symbols = dict(_CURRENT_IMPORT_SYMBOLS)
+    prev_relative_import_aliases = dict(_RELATIVE_IMPORT_NAME_ALIASES)
     try:
         _CURRENT_IMPORT_SYMBOLS.clear()
+        _RELATIVE_IMPORT_NAME_ALIASES.clear()
+        _RELATIVE_IMPORT_NAME_ALIASES.update(_collect_relative_import_name_aliases(body_any))
         meta_any = east_doc.get("meta")
         if isinstance(meta_any, dict):
             import_symbols_any = meta_any.get("import_symbols")
@@ -2723,3 +2726,5 @@ def transpile_to_java_native(east_doc: dict[str, Any], class_name: str = "Main")
     finally:
         _CURRENT_IMPORT_SYMBOLS.clear()
         _CURRENT_IMPORT_SYMBOLS.update(prev_import_symbols)
+        _RELATIVE_IMPORT_NAME_ALIASES.clear()
+        _RELATIVE_IMPORT_NAME_ALIASES.update(prev_relative_import_aliases)

@@ -32,9 +32,9 @@ RELATIVE_IMPORT_BACKEND_COVERAGE_V1: Final[list[dict[str, str]]] = [
     },
     {
         "backend": "java",
-        "contract_state": "not_locked",
-        "evidence_lane": "none",
-        "notes": "No representative relative-import backend smoke is locked yet.",
+        "contract_state": "transpile_smoke_locked",
+        "evidence_lane": "package_project_transpile",
+        "notes": "Representative JVM-package relative-import smoke is now locked through the Java backend smoke suite; the active bundle still owns closeout and long-tail handoff.",
     },
     {
         "backend": "js",
@@ -44,9 +44,9 @@ RELATIVE_IMPORT_BACKEND_COVERAGE_V1: Final[list[dict[str, str]]] = [
     },
     {
         "backend": "kotlin",
-        "contract_state": "not_locked",
-        "evidence_lane": "none",
-        "notes": "No representative relative-import backend smoke is locked yet.",
+        "contract_state": "transpile_smoke_locked",
+        "evidence_lane": "package_project_transpile",
+        "notes": "Representative JVM-package relative-import smoke is now locked through the Kotlin backend smoke suite; the active bundle still owns closeout and long-tail handoff.",
     },
     {
         "backend": "lua",
@@ -74,9 +74,9 @@ RELATIVE_IMPORT_BACKEND_COVERAGE_V1: Final[list[dict[str, str]]] = [
     },
     {
         "backend": "scala",
-        "contract_state": "not_locked",
-        "evidence_lane": "none",
-        "notes": "No representative relative-import backend smoke is locked yet.",
+        "contract_state": "transpile_smoke_locked",
+        "evidence_lane": "package_project_transpile",
+        "notes": "Representative JVM-package relative-import smoke is now locked through the Scala backend smoke suite; the active bundle still owns closeout and long-tail handoff.",
     },
     {
         "backend": "swift",
@@ -127,7 +127,7 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
         "rollout_wave": "second_wave",
         "next_verification_lane": "jvm_package_bundle_rollout",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "JS/TS and native-path representative smoke are locked; the jvm_package_bundle is now the active live rollout bundle.",
+        "notes": "Representative JVM-package transpile smoke is locked, but the active jvm_package_bundle still owns parity-doc closeout and the long-tail handoff.",
     },
     {
         "backend": "js",
@@ -141,7 +141,7 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
         "rollout_wave": "second_wave",
         "next_verification_lane": "jvm_package_bundle_rollout",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "JS/TS and native-path representative smoke are locked; the jvm_package_bundle is now the active live rollout bundle.",
+        "notes": "Representative JVM-package transpile smoke is locked, but the active jvm_package_bundle still owns parity-doc closeout and the long-tail handoff.",
     },
     {
         "backend": "lua",
@@ -176,7 +176,7 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
         "rollout_wave": "second_wave",
         "next_verification_lane": "jvm_package_bundle_rollout",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "JS/TS and native-path representative smoke are locked; the jvm_package_bundle is now the active live rollout bundle.",
+        "notes": "Representative JVM-package transpile smoke is locked, but the active jvm_package_bundle still owns parity-doc closeout and the long-tail handoff.",
     },
     {
         "backend": "swift",
@@ -209,6 +209,8 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
     ),
     "locked_transpile_smoke_backends": ("rs", "cs", "go", "js", "nim", "swift", "ts"),
     "next_rollout_backends": ("java", "kotlin", "scala"),
+    "current_bundle_smoke_locked_backends": ("java", "kotlin", "scala"),
+    "current_bundle_evidence_lane": "package_project_transpile",
     "second_wave_bundle_order": (
         "locked_js_ts_smoke_bundle",
         "native_path_bundle",
@@ -218,6 +220,7 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
     "next_rollout_bundle_backends": ("java", "kotlin", "scala"),
     "followup_rollout_bundle": "longtail_relative_import_rollout",
     "followup_rollout_bundle_backends": ("lua", "php", "ruby"),
+    "followup_verification_lane": "defer_until_jvm_package_bundle_complete",
     "next_verification_lane": "jvm_package_bundle_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
 }

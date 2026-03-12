@@ -35,13 +35,25 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         ]
         self.assertEqual(locked, ["cpp"])
 
-    def test_rs_cs_go_js_nim_swift_ts_are_transpile_smoke_locked(self) -> None:
+    def test_rs_cs_go_java_js_kotlin_nim_scala_swift_ts_are_transpile_smoke_locked(self) -> None:
         locked = [
             row["backend"]
             for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
             if row["contract_state"] == "transpile_smoke_locked"
         ]
-        self.assertEqual(locked, ["rs", "cs", "go", "js", "nim", "swift", "ts"])
+        self.assertEqual(
+            locked,
+            ["rs", "cs", "go", "java", "js", "kotlin", "nim", "scala", "swift", "ts"],
+        )
+
+    def test_jvm_package_bundle_uses_package_project_transpile_evidence_lane(self) -> None:
+        rows = [
+            row
+            for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
+            if row["backend"] in {"java", "kotlin", "scala"}
+        ]
+        self.assertEqual(len(rows), 3)
+        self.assertTrue(all(row["evidence_lane"] == "package_project_transpile" for row in rows))
 
     def test_native_path_bundle_uses_native_emitter_evidence_lane(self) -> None:
         rows = [
@@ -123,6 +135,18 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["followup_rollout_bundle_backends"],
             ("lua", "php", "ruby"),
         )
+        self.assertEqual(
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_smoke_locked_backends"],
+            ("java", "kotlin", "scala"),
+        )
+        self.assertEqual(
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_evidence_lane"],
+            "package_project_transpile",
+        )
+        self.assertEqual(
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["followup_verification_lane"],
+            "defer_until_jvm_package_bundle_complete",
+        )
 
     def test_backend_parity_docs_link_live_noncpp_rollout_plan(self) -> None:
         for doc_path in RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["backend_parity_docs"]:
@@ -135,6 +159,18 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
             )
             self.assertIn(
                 RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["fail_closed_lane"],
+                doc_text,
+            )
+            self.assertIn(
+                RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_evidence_lane"],
+                doc_text,
+            )
+            self.assertIn(
+                RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["followup_verification_lane"],
+                doc_text,
+            )
+            self.assertIn(
+                RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["followup_rollout_bundle"],
                 doc_text,
             )
             for bundle_id in RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["second_wave_bundle_order"]:

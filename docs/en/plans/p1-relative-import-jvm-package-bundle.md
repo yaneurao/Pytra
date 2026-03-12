@@ -50,10 +50,12 @@ Decision log:
 - 2026-03-12: The current non-C++ rollout handoff is fixed as `rs/cs/go/js/nim/swift/ts=transpile_smoke_locked`, `java/kotlin/scala=jvm_package_bundle_rollout`, and `lua/php/ruby=defer_until_jvm_package_bundle_complete`.
 - 2026-03-12: `P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S1-01` is a closeout-first bundle that switches the live handoff in plans, TODO, contracts, checkers, and docs before backend smoke is added in later bundles.
 - 2026-03-12: `P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-01` locks representative package-style transpile smoke for `java/kotlin/scala` and keeps wildcard relative import fail-closed in the backend-native emitters.
+- 2026-03-12: `P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-02` syncs the coverage inventory to the current smoke state and records that `java/kotlin/scala` now carry `transpile_smoke_locked` evidence while the active `jvm_package_bundle_rollout` still owns the long-tail handoff.
+- 2026-03-12: `P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-02` fixes the evidence lane as `java/kotlin/scala=package_project_transpile` and `go/nim/swift=native_emitter_function_body_transpile` all the way through the backend parity docs, while keeping the long-tail follow-up on `longtail_relative_import_rollout / defer_until_jvm_package_bundle_complete`.
 
 ## Breakdown
 
 - [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01] Fix the `java/kotlin/scala` JVM package bundle as the next live rollout and align the handoff after native-path closeout.
 - [x] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S1-01] Switch the native-path bundle to archive semantics and add the live JVM package bundle plan / TODO / contract / checker / docs handoff.
 - [x] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-01] Add representative transpile-smoke / fail-closed regressions for `java/kotlin/scala`.
-- [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-02] Sync backend-parity docs / coverage inventory / handoff wording to the current JVM bundle state and make the task close-ready.
+- [x] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-02] Sync backend-parity docs / coverage inventory / handoff wording to the current JVM bundle state and make the task close-ready.
