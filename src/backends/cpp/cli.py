@@ -68,7 +68,6 @@ from backends.cpp.emitter.runtime_paths import RUNTIME_CPP_ROOT
 from backends.cpp.emitter.runtime_paths import is_runtime_emit_input_path as _is_runtime_emit_input_path_impl
 from backends.cpp.emitter.runtime_paths import join_runtime_path as _join_runtime_path_impl
 from backends.cpp.emitter.runtime_paths import module_tail_to_cpp_header_path as _module_tail_to_cpp_header_path_impl
-from backends.cpp.emitter.runtime_paths import module_tail_to_cpp_public_header_path as _module_tail_to_cpp_public_header_path_impl
 from backends.cpp.emitter.runtime_paths import prepend_generated_cpp_banner as _prepend_generated_cpp_banner_impl
 from backends.cpp.emitter.runtime_paths import runtime_cpp_header_exists_for_module as _runtime_cpp_header_exists_for_module_impl
 from backends.cpp.emitter.runtime_paths import runtime_module_tail_from_source_path as _runtime_module_tail_from_source_path_impl
@@ -85,11 +84,6 @@ RUNTIME_BUILT_IN_SOURCE_ROOT = Path("src/pytra/built_in")
 def _module_tail_to_cpp_header_path(module_tail: str) -> str:
     """Delegate to runtime emit module."""
     return _module_tail_to_cpp_header_path_impl(module_tail)
-
-
-def _module_tail_to_cpp_public_header_path(module_tail: str) -> str:
-    """Delegate to runtime emit module."""
-    return _module_tail_to_cpp_public_header_path_impl(module_tail)
 
 
 def _join_runtime_path(base_dir: Path, rel_path: str) -> Path:
@@ -112,24 +106,9 @@ def _prepend_generated_cpp_banner(cpp_text: str, source_path: Path) -> str:
     return _prepend_generated_cpp_banner_impl(cpp_text, source_path)
 
 
-def _build_cpp_public_header_forwarder(include_txts: list[str], source_path: Path) -> str:
-    lines = [
-        "// AUTO-GENERATED FILE. DO NOT EDIT.",
-        "// source: " + str(source_path),
-        "// generated-by: src/backends/cpp/cli.py",
-        "",
-        "#pragma once",
-        "",
-    ]
-    for include_txt in include_txts:
-        lines.append('#include "' + include_txt + '"')
-    lines.append("")
-    return join_str_list("\n", lines)
-
-
 def _header_guard_from_runtime_output_path(path: Path) -> str:
     src = str(path).replace("\\", "/")
-    for prefix in ("src/runtime/cpp/core/", "src/runtime/cpp/", "runtime/cpp/core/", "runtime/cpp/"):
+    for prefix in ("src/runtime/cpp/", "runtime/cpp/"):
         if src.startswith(prefix):
             src = src[len(prefix) :]
             break
@@ -199,19 +178,6 @@ def _build_cpp_template_header_only_module(cpp_text: str, header_path: Path) -> 
     return join_str_list("\n", out_lines)
 
 
-def _runtime_public_forwarder_includes(module_tail: str) -> list[str]:
-    generated_rel_tail = _runtime_output_rel_tail(module_tail)
-    includes: list[str] = ['runtime/cpp/' + generated_rel_tail + '.h']
-    native_rel_tail = ""
-    if generated_rel_tail.startswith("generated/"):
-        native_rel_tail = "native/" + generated_rel_tail[len("generated/") :]
-    if native_rel_tail != "":
-        native_hdr = RUNTIME_CPP_ROOT / (native_rel_tail + ".h")
-        if native_hdr.exists():
-            includes.append('runtime/cpp/' + native_rel_tail + '.h')
-    return includes
-
-
 def _runtime_native_companion_include_line(module_tail: str) -> str:
     generated_rel_tail = _runtime_output_rel_tail(module_tail)
     if not generated_rel_tail.startswith("generated/"):
@@ -228,18 +194,15 @@ def _inject_runtime_native_companion_include(header_text: str, module_tail: str)
     if include_line == "" or include_line in header_text:
         return header_text
     lines = header_text.splitlines()
-    insert_at = -1
+    insert_at = len(lines)
     for i, line in enumerate(lines):
-        if line.startswith("#include "):
-            insert_at = i + 1
-    if insert_at < 0:
-        for i, line in enumerate(lines):
-            if line.startswith("#define "):
-                insert_at = i + 1
-                break
-    if insert_at < 0:
-        insert_at = 0
+        if line.startswith("#endif"):
+            insert_at = i
+            break
     lines.insert(insert_at, include_line)
+    if insert_at > 0 and lines[insert_at - 1] != "":
+        lines.insert(insert_at, "")
+        insert_at += 1
     if insert_at + 1 < len(lines) and lines[insert_at + 1] != "":
         lines.insert(insert_at + 1, "")
     return join_str_list("\n", lines) + "\n"
@@ -1163,11 +1126,7 @@ def main(argv: list[str]) -> int:
             out_root = RUNTIME_CPP_ROOT
             cpp_out = _join_runtime_path(out_root, rel_tail + ".cpp")
             hdr_out = _join_runtime_path(out_root, rel_tail + ".h")
-            public_hdr_rel = _module_tail_to_cpp_public_header_path(module_tail)
-            public_hdr_out = _join_runtime_path(out_root, public_hdr_rel) if public_hdr_rel != "" else Path("")
             mkdirs_for_cli(path_parent_text(hdr_out))
-            if str(public_hdr_out) != "":
-                mkdirs_for_cli(path_parent_text(public_hdr_out))
             cpp_emit_module = _build_cpp_emit_module_without_extern_decls(east_module)
             if not _has_cpp_emit_definitions(cpp_emit_module):
                 hdr_txt_runtime = build_cpp_header_from_east(
@@ -1188,14 +1147,7 @@ def main(argv: list[str]) -> int:
                     str(input_path),
                 )
                 write_text_file(hdr_out, hdr_txt_runtime)
-                if str(public_hdr_out) != "":
-                    write_text_file(
-                        public_hdr_out,
-                        _build_cpp_public_header_forwarder(_runtime_public_forwarder_includes(module_tail), input_path),
-                    )
                 print("generated: " + str(hdr_out))
-                if str(public_hdr_out) != "":
-                    print("generated: " + str(public_hdr_out))
                 print("skipped: header-only runtime module (no emit definitions): " + str(cpp_out))
                 return 0
             mkdirs_for_cli(path_parent_text(cpp_out))
@@ -1237,14 +1189,7 @@ def main(argv: list[str]) -> int:
                 write_text_file(hdr_out, hdr_txt_runtime)
                 if cpp_out.exists():
                     _host_os.remove(str(cpp_out))
-                if str(public_hdr_out) != "":
-                    write_text_file(
-                        public_hdr_out,
-                        _build_cpp_public_header_forwarder(_runtime_public_forwarder_includes(module_tail), input_path),
-                    )
                 print("generated: " + str(hdr_out))
-                if str(public_hdr_out) != "":
-                    print("generated: " + str(public_hdr_out))
                 print("skipped: header-only runtime module (template definitions stay in header): " + str(cpp_out))
                 return 0
             own_runtime_header = '#include "runtime/cpp/' + rel_tail + '.h"'
@@ -1283,15 +1228,8 @@ def main(argv: list[str]) -> int:
             check_guard_limit("emit", "max_generated_lines", generated_lines_runtime, guard_limits, str(input_path))
             write_text_file(cpp_out, cpp_txt_runtime)
             write_text_file(hdr_out, hdr_txt_runtime)
-            if str(public_hdr_out) != "":
-                write_text_file(
-                    public_hdr_out,
-                    _build_cpp_public_header_forwarder(_runtime_public_forwarder_includes(module_tail), input_path),
-                )
             print("generated: " + str(hdr_out))
             print("generated: " + str(cpp_out))
-            if str(public_hdr_out) != "":
-                print("generated: " + str(public_hdr_out))
             return 0
         if single_file:
             empty_ns: dict[str, str] = {}

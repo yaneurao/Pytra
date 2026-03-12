@@ -651,26 +651,24 @@ extern "C" void pytra_utils_png_write_png(const list<bytearray>& image) {
 
 runtime の正規配置は `docs/ja/spec/spec-runtime.md` に従う。
 
-本仕様で前提とする要点だけ抜粋すると、現行 C++ runtime は次の 4 区分で構成する。
+本仕様で前提とする要点だけ抜粋すると、現行 C++ runtime は次の ownership lane で構成する。
 
-- `runtime/cpp/core/`
-- `runtime/cpp/generated/{built_in,std,utils}/`
-- `runtime/cpp/native/{built_in,std,utils}/`
-- `runtime/cpp/pytra/{built_in,std,utils}/`
+- `runtime/cpp/generated/{built_in,std,utils,compiler}/`
+- `runtime/cpp/native/{built_in,std,utils,compiler}/`
+- `runtime/cpp/generated/core/`
+- `runtime/cpp/native/core/`
 
 ownership 規則:
 
 - SoT から生成される宣言 / thin wrapper は `generated/`
 - OS / SDK / C++ 標準ライブラリへ接着する最小 native 実装は `native/`
-- 生成コードが include する public header は `pytra/`
-- `core/` は低レベル runtime の stable include surface であり、`runtime/cpp/core/*.h` の plain naming を使う
+- low-level core は `generated/core` と `native/core` に ownership を分ける
 
 補足:
 
 - C++ module runtime の ownership は suffix ではなく directory で判別する。
 - `src/runtime/cpp/{built_in,std,utils}` の suffix ベース module runtime は legacy-closed であり、再導入しない。
-- `core` についても `runtime/cpp/generated/core/` と `runtime/cpp/native/core/` に ownership を分離し、`runtime/cpp/core/*.h` は互換 include 面、`runtime/cpp/native/core/*.{h,cpp}` は handwritten 正本とする。
-- `pytra/core` は導入しない。`pytra/` は module runtime の generated public shim に限定する。
+- `core` についても `runtime/cpp/generated/core/` と `runtime/cpp/native/core/` に ownership を分離し、checked-in `runtime/cpp/core/*.h` は持たない。
 - ABI の考え方自体は変わらない。
 - 詳細は `docs/ja/spec/spec-runtime.md`、`docs/ja/plans/archive/20260307-p0-cpp-runtime-layout-generated-native.md`、`docs/ja/plans/p0-cpp-core-ownership-split.md` に従う。
 
@@ -682,14 +680,11 @@ ownership 規則:
   - `runtime/cpp/generated/std/math.h`
 - native 実体:
   - `runtime/cpp/native/std/math.cpp`
-- public shim:
-  - `runtime/cpp/pytra/std/math.h`
-
 重要:
 
 - `math` は header-only 生成なので、`runtime/cpp/generated/std/math.cpp` は生成しない
 - `math.cpp` が `math.h` に対する native 実体を提供する
-- 生成コードは `runtime/cpp/pytra/std/math.h` を include し、build graph が `generated/native` を解決する
+- 生成コードは `runtime/cpp/generated/std/math.h` を include し、build graph が `generated/native` を解決する
 - manifest / build 入力は `spec-runtime.md` の配置規約に従う
 
 つまり、`@extern` を含むモジュールであっても、

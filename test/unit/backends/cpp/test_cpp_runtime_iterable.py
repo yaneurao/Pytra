@@ -37,8 +37,8 @@ class CppRuntimeIterableTest(unittest.TestCase):
 
     def test_path_stringify_runtime_exposes_stringify_without_generic_py_to_string_fallback(self) -> None:
         cpp_src = r'''
-#include "runtime/cpp/core/py_runtime.h"
-#include "pytra/std/pathlib.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "generated/std/pathlib.h"
 
 #include <cassert>
 #include <iostream>
@@ -85,12 +85,12 @@ int main() {
 
     def test_runtime_iterable_protocol_helpers(self) -> None:
         cpp_src = r'''
-#include "runtime/cpp/core/py_runtime.h"
-#include "pytra/built_in/contains.h"
-#include "pytra/built_in/iter_ops.h"
-#include "pytra/built_in/numeric_ops.h"
-#include "pytra/built_in/sequence.h"
-#include "pytra/built_in/zip_ops.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "generated/built_in/contains.h"
+#include "generated/built_in/iter_ops.h"
+#include "generated/built_in/numeric_ops.h"
+#include "generated/built_in/sequence.h"
+#include "generated/built_in/zip_ops.h"
 
 #include <cassert>
 #include <iostream>
@@ -333,10 +333,7 @@ int main() {
             self.assertIn("runtime iterable ok", run.stdout)
 
     def test_runtime_list_overload_inventory(self) -> None:
-        forwarder_header = (ROOT / "src/runtime/cpp/core/py_runtime.h").read_text(encoding="utf-8")
-        process_forwarder = (ROOT / "src/runtime/cpp/core/process_runtime.h").read_text(encoding="utf-8")
         process_native = (ROOT / "src/runtime/cpp/native/core/process_runtime.h").read_text(encoding="utf-8")
-        scope_exit_forwarder = (ROOT / "src/runtime/cpp/core/scope_exit.h").read_text(encoding="utf-8")
         scope_exit_native = (ROOT / "src/runtime/cpp/native/core/scope_exit.h").read_text(encoding="utf-8")
         gc_header = (ROOT / "src/runtime/cpp/native/core/gc.h").read_text(encoding="utf-8")
         runtime_header = (ROOT / "src/runtime/cpp/native/core/py_runtime.h").read_text(encoding="utf-8")
@@ -358,11 +355,8 @@ int main() {
         gif_cpp = (ROOT / "src/runtime/cpp/generated/utils/gif.cpp").read_text(encoding="utf-8")
         png_cpp = (ROOT / "src/runtime/cpp/generated/utils/png.cpp").read_text(encoding="utf-8")
 
-        self.assertIn('#include "runtime/cpp/native/core/py_runtime.h"', forwarder_header)
-        self.assertIn('#include "runtime/cpp/native/core/process_runtime.h"', process_forwarder)
         self.assertIn("static inline list<str> py_runtime_argv()", process_native)
         self.assertIn("[[noreturn]] static inline void py_runtime_exit(int64 code = 0)", process_native)
-        self.assertIn('#include "runtime/cpp/native/core/scope_exit.h"', scope_exit_forwarder)
         self.assertIn("class py_scope_exit", scope_exit_native)
         self.assertIn("static inline auto py_make_scope_exit(F&& fn)", scope_exit_native)
         self.assertNotIn("virtual bool py_isinstance_of(", gc_header)
@@ -613,9 +607,9 @@ int main() {
         self.assertNotIn("py_append(", zip_ops_header)
         self.assertNotIn("py_append(out,", iter_ops_cpp)
         self.assertIn("out.append(this->_parse_value());", json_cpp)
-        self.assertIn('py_list_append_mut(obj_to_list_ref_or_raise(out, "py_append"), make_object(py_at(values, py_to<int64>(i))));', iter_ops_cpp)
+        self.assertIn('py_list_append_mut(obj_to_list_ref_or_raise(out, "append"), make_object(py_at(values, py_to<int64>(i))));', iter_ops_cpp)
         self.assertIn(
-            'py_list_append_mut(\n            obj_to_list_ref_or_raise(out, "py_append"),\n            make_object(list<object>{make_object(start + i), make_object(py_at(values, py_to<int64>(i)))}));',
+            'py_list_append_mut(obj_to_list_ref_or_raise(out, "append"), make_object(list<object>{make_object(start + i), make_object(py_at(values, py_to<int64>(i)))}));',
             iter_ops_cpp,
         )
         self.assertNotIn("static inline bool operator==(const ::std::any& lhs, const char* rhs)", runtime_header)
@@ -666,10 +660,10 @@ int main() {
         self.assertIn("int64 py_tid_runtime_type_id(const object& value) {", type_id_cpp)
         self.assertIn("int64 py_tid_register_known_class_type(int64 type_id, int64 base_type_id) {", type_id_cpp)
         self.assertIn("int64 _try_runtime_tagged_type_id(const object& value) {", type_id_cpp)
-        self.assertIn("py_runtime_object_type_id(value)", type_id_cpp)
+        self.assertIn("py_runtime_value_type_id(value)", type_id_cpp)
         self.assertIn("py_tid_is_subtype(", type_id_cpp)
         self.assertIn("return py_tid_is_subtype(actual_type_id, expected_type_id);", type_id_cpp)
-        self.assertIn("return py_tid_is_subtype(static_cast<int64>(py_runtime_object_type_id(value)), expected_type_id);", type_id_cpp)
+        self.assertIn("return py_tid_is_subtype(py_runtime_value_type_id(value), expected_type_id);", type_id_cpp)
         self.assertIn("py_tid_isinstance(", type_id_cpp)
         self.assertNotIn("py_isinstance(", type_id_cpp)
         self.assertNotIn("return py_is_subtype(actual_type_id, expected_type_id);", type_id_cpp)

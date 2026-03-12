@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-13 / P0-CPP-RUNTIME-PACKAGING-DESHIM-01](../plans/archive/20260313-p0-cpp-runtime-packaging-deshim.md)
 - [2026-03-13 / P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01](../plans/archive/20260313-p0-noncpp-runtime-layout-alignment.md)
 
 - [2026-03-12 / P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01](../plans/archive/20260312-p0-path-stringify-cpp-representative-support.md)
@@ -172,7 +173,7 @@
 
 ## 日付別リンク
 
-- [2026-03-13](20260313.md)（1 セクション）
+- [2026-03-13](20260313.md)（2 セクション）
 
 - [2026-03-12](20260312.md)（28 セクション）
 - [2026-03-11](20260311.md)（25 セクション）

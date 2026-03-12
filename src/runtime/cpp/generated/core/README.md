@@ -6,8 +6,8 @@
 
 - `generated/core/` に置くコードは `source:` と `generated-by:` marker を必須にする。
 - 生成は `src/py2x.py --emit-runtime-cpp` の正規導線のみを使い、core helper 専用 generator は追加しない。
-- compiler include 面は `src/runtime/cpp/native/core/*.h` を使い、`src/runtime/cpp/core/*.h` は export/sdk compatibility surface としてのみ扱う。
-- compile/source 解決は `core/...` public header から `generated/core/...` と `native/core/...` を導出する。
+- compiler/include 面は `src/runtime/cpp/native/core/*.h` と `src/runtime/cpp/generated/core/*.h` の ownership lane だけを使う。
+- compile/source 解決は `native/core/...` と `generated/core/...` から直接導出する。
 - `generated/core/` の real artifact は plain naming (`*.h`, `*.cpp`) のみを許可し、`.ext` / `.gen` suffix を再導入しない。
 - real artifact がまだ無い段階でも、このディレクトリ自体は正式レイアウトとして維持する。
 - `generated/core` は `native/core/py_runtime.h` の肥大化逃がし用 bucket ではない。`built_in` semantics をここへ流し込んではならない。

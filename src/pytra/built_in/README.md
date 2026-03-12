@@ -6,7 +6,7 @@
 
 - 正本は `src/pytra/built_in/*.py`。
 - target 固有コード（C++ の `#include`、JS/TS のランタイム依存 API 直呼びなど）はここに書かない。
-- GC/ABI など低レベルのブート処理は target 側（例: `src/runtime/cpp/core/`）に残す。
+- GC/ABI など低レベルのブート処理は target 側（例: `src/runtime/cpp/native/core/`）に残す。
 
 ## 命名ルール
 
@@ -17,7 +17,7 @@
 ## 生成対象ルール
 
 - `src/pytra/built_in/<name>.py` は
-  `src/runtime/cpp/generated/built_in/<name>.{h,cpp}` へ生成し、公開 include は `src/runtime/cpp/pytra/built_in/<name>.h` から参照する。
+  `src/runtime/cpp/generated/built_in/<name>.{h,cpp}` へ生成し、C++ compiler はその generated header を直接使う。
 - 他言語も同一方針で `src/runtime/<lang>/built_in/` へ展開する。
 - 生成層を厚くし、手書き層は最小ブート処理だけに限定する。
 

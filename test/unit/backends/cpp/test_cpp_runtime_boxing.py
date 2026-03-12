@@ -36,8 +36,8 @@ class CppRuntimeBoxingTest(unittest.TestCase):
 
     def test_runtime_boxing_helpers_behave_as_expected(self) -> None:
         cpp_src = r'''
-#include "runtime/cpp/core/py_runtime.h"
-#include "pytra/built_in/scalar_ops.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "generated/built_in/scalar_ops.h"
 
 #include <cassert>
 #include <iostream>

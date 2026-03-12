@@ -6,7 +6,7 @@
 
 - 生成は `src/py2x.py --emit-runtime-cpp` の正規導線のみを使い、module 専用 generator を追加しない。
 - real artifact は plain naming (`*.h`, `*.cpp`) と `source:` / `generated-by:` marker を必須とする。
-- `.h` は stable low-level core header だけを include し、public shim (`pytra/...`) や `runtime/cpp/core/...` forwarder を compiler include 面として使ってはならない。
+- `.h` は `runtime/cpp/native/core/...` と sibling generated/native header だけを include し、shim/compat tree を compiler include 面として使ってはならない。
 - `.cpp` は `runtime/cpp/native/core/py_runtime.h` と必要な `runtime/cpp/native/core/{process_runtime,scope_exit}.h`、および sibling generated header を include してよいが、C++ 専用 handwritten glue を埋め込んではならない。
 - helper 境界で mutable container を value 受けしたい場合は `@abi` などの明示契約を使う。C++ backend 内部の ref-first 表現を helper ABI として固定してはならない。
 

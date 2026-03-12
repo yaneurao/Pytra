@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "runtime/cpp/generated/built_in/io_ops.h"
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
 
 inline void py_print(const object& v) {
     ::std::cout << py_to_string(v) << ::std::endl;
