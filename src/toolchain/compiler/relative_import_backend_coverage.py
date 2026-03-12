@@ -209,6 +209,15 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
     ),
     "locked_transpile_smoke_backends": ("rs", "cs", "js", "ts"),
     "next_rollout_backends": ("go", "java", "kotlin", "nim", "scala", "swift"),
+    "second_wave_bundle_order": (
+        "locked_js_ts_smoke_bundle",
+        "native_path_bundle",
+        "jvm_package_bundle",
+    ),
+    "next_rollout_bundle": "native_path_bundle",
+    "next_rollout_bundle_backends": ("go", "nim", "swift"),
+    "followup_rollout_bundle": "jvm_package_bundle",
+    "followup_rollout_bundle_backends": ("java", "kotlin", "scala"),
     "next_verification_lane": "remaining_second_wave_rollout_planning",
     "fail_closed_lane": "backend_specific_fail_closed",
 }

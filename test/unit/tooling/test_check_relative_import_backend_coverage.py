@@ -85,6 +85,24 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
             EXPECTED_NONCPP_ROLLOUT_HANDOFF,
         )
 
+    def test_noncpp_rollout_handoff_tracks_bundle_order(self) -> None:
+        self.assertEqual(
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["second_wave_bundle_order"],
+            (
+                "locked_js_ts_smoke_bundle",
+                "native_path_bundle",
+                "jvm_package_bundle",
+            ),
+        )
+        self.assertEqual(
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["next_rollout_bundle_backends"],
+            ("go", "nim", "swift"),
+        )
+        self.assertEqual(
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["followup_rollout_bundle_backends"],
+            ("java", "kotlin", "scala"),
+        )
+
     def test_backend_parity_docs_link_live_noncpp_rollout_plan(self) -> None:
         for doc_path in RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["backend_parity_docs"]:
             doc_text = (ROOT / doc_path).read_text(encoding="utf-8")
@@ -98,6 +116,8 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
                 RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["fail_closed_lane"],
                 doc_text,
             )
+            for bundle_id in RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["second_wave_bundle_order"]:
+                self.assertIn(bundle_id, doc_text)
 
 
 if __name__ == "__main__":

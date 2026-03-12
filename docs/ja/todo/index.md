@@ -35,9 +35,9 @@
 
 文脈: [p1-relative-import-secondwave-planning.md](../plans/p1-relative-import-secondwave-planning.md)
 
-1. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01] second-wave relative import rollout の live contract / docs handoff / verification lane を固定する。
+1. [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01] second-wave relative import rollout の live contract / docs handoff / verification lane を固定する。
 2. [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S1-01] live plan / TODO と second-wave rollout contract / checker / docs handoff を追加した。
 3. [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S2-01] second-wave backend を `js/ts` locked bundle、`go/nim/swift` native-path bundle、`java/kotlin/scala` JVM-package bundle の順に固定した。
-4. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S3-01] coverage docs / support wording / archive handoff を second-wave current state に同期して task を閉じる。
+4. [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S3-01] coverage inventory handoff と backend parity docs に bundle 順 / next bundle / follow-up bundle を同期して task を閉じた。
 
-- 進捗メモ: second-wave backend 集合は `go/java/js/kotlin/nim/scala/swift/ts`、representative scenario は `parent_module_alias` / `parent_symbol_alias`、bundle 順は `js/ts -> go/nim/swift -> java/kotlin/scala`、handoff は live plan `p1-relative-import-secondwave-planning.md` に同期した。
+- 進捗メモ: second-wave backend 集合は `go/java/js/kotlin/nim/scala/swift/ts`、representative scenario は `parent_module_alias` / `parent_symbol_alias`、bundle 順は `js/ts -> go/nim/swift -> java/kotlin/scala`、coverage handoff と parity docs も live plan に同期して close-ready になった。
