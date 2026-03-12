@@ -121,3 +121,4 @@
 - 2026-03-12: ユーザー指示に従い、`rs/cs` は P0、残 backend (`go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php`) は P1 に切り分けた。P1 でも `generated=SoT only`, `native=hand-written only` を維持する。
 - 2026-03-12: P1 の rollout は backend 依存の packaging 差を減らすため、まず static runtime family (`go/java/kotlin/scala/swift/nim`)、次に script runtime family (`js/ts/lua/ruby/php`) の順に進める。
 - 2026-03-13: `S1-01` として remaining backend ごとの current->target mapping table を `noncpp_runtime_layout_rollout_remaining_contract.py` に固定した。checker は backend 順、runtime hook key、current root 実在、lane ごとの current prefix 実在、`native/generated/compat -> native/generated/pytra` taxonomy を first bundle として監査する。
+- 2026-03-13: `S1-02` の first bundle として、remaining backend ごとの current materialized file inventory (`pytra-core/pytra-gen/pytra`) を contract に固定した。blocked module や target generated/native bucket の詳細分類は後続 bundle で追加する。

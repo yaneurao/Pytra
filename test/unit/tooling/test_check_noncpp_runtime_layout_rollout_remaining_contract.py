@@ -10,6 +10,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_contract_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_contract_issues(), [])
 
+    def test_current_inventory_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_current_inventory_issues(), [])
+
     def test_backend_order_is_fixed(self) -> None:
         self.assertEqual(
             contract_mod.iter_remaining_noncpp_backend_order(),
@@ -85,6 +88,58 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "rationale": "PHP still uses a legacy runtime bucket for SoT-generated image helpers; rollout renames it to generated/utils.",
             },
             by_backend["php"],
+        )
+
+    def test_current_inventory_is_fixed(self) -> None:
+        by_backend = {
+            entry["backend"]: entry
+            for entry in contract_mod.iter_remaining_noncpp_runtime_current_inventory()
+        }
+        self.assertEqual(
+            by_backend["go"],
+            {
+                "backend": "go",
+                "pytra_core_files": ("built_in/py_runtime.go",),
+                "pytra_gen_files": ("utils/gif.go", "utils/png.go"),
+                "pytra_files": ("py_runtime.go",),
+            },
+        )
+        self.assertEqual(
+            by_backend["java"]["pytra_gen_files"],
+            (
+                "std/json.java",
+                "std/math.java",
+                "std/pathlib.java",
+                "std/time.java",
+                "utils/gif.java",
+                "utils/png.java",
+            ),
+        )
+        self.assertEqual(
+            by_backend["js"]["pytra_files"],
+            (
+                "README.md",
+                "gif.js",
+                "math.js",
+                "pathlib.js",
+                "png.js",
+                "py_runtime.js",
+                "time.js",
+            ),
+        )
+        self.assertEqual(
+            by_backend["php"],
+            {
+                "backend": "php",
+                "pytra_core_files": ("py_runtime.php", "std/time.php"),
+                "pytra_gen_files": ("runtime/gif.php", "runtime/png.php"),
+                "pytra_files": (
+                    "py_runtime.php",
+                    "runtime/gif.php",
+                    "runtime/png.php",
+                    "std/time.php",
+                ),
+            },
         )
 
 

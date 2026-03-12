@@ -30,6 +30,18 @@ def _runtime_root_path(backend: str, root_name: str) -> Path:
     return ROOT / "src" / "runtime" / backend / root_name
 
 
+def _collect_relative_files(base: Path) -> tuple[str, ...]:
+    if not base.exists():
+        return ()
+    return tuple(
+        sorted(
+            str(path.relative_to(base)).replace("\\", "/")
+            for path in base.rglob("*")
+            if path.is_file()
+        )
+    )
+
+
 def _collect_contract_issues() -> list[str]:
     issues: list[str] = []
     entries = contract_mod.iter_remaining_noncpp_runtime_layout()
@@ -109,8 +121,35 @@ def _collect_contract_issues() -> list[str]:
     return issues
 
 
+def _collect_current_inventory_issues() -> list[str]:
+    issues: list[str] = []
+    inventory_entries = contract_mod.iter_remaining_noncpp_runtime_current_inventory()
+    inventory_order = tuple(entry["backend"] for entry in inventory_entries)
+    if inventory_order != contract_mod.iter_remaining_noncpp_backend_order():
+        issues.append("remaining runtime current inventory order drifted")
+
+    layout_backends = {
+        entry["backend"] for entry in contract_mod.iter_remaining_noncpp_runtime_layout()
+    }
+    inventory_backends = {entry["backend"] for entry in inventory_entries}
+    if inventory_backends != layout_backends:
+        issues.append("remaining runtime current inventory backend set drifted")
+
+    for entry in inventory_entries:
+        backend = entry["backend"]
+        runtime_root = ROOT / "src" / "runtime" / backend
+        if _collect_relative_files(runtime_root / "pytra-core") != entry["pytra_core_files"]:
+            issues.append(f"pytra-core inventory drifted: {backend}")
+        if _collect_relative_files(runtime_root / "pytra-gen") != entry["pytra_gen_files"]:
+            issues.append(f"pytra-gen inventory drifted: {backend}")
+        if _collect_relative_files(runtime_root / "pytra") != entry["pytra_files"]:
+            issues.append(f"pytra inventory drifted: {backend}")
+    return issues
+
+
 def main() -> int:
     issues = _collect_contract_issues()
+    issues.extend(_collect_current_inventory_issues())
     if issues:
         print("non-c++ runtime layout rollout remaining contract check failed:", file=sys.stderr)
         for issue in issues:
