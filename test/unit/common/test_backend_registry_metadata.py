@@ -54,9 +54,10 @@ class BackendRegistryMetadataTest(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "unsupported program writer key: missing-writer"):
             get_program_writer_ref("missing-writer")
 
-    def test_php_runtime_hook_ships_generated_pathlib(self) -> None:
+    def test_php_runtime_hook_ships_generated_json_and_pathlib(self) -> None:
         desc = get_runtime_hook_descriptor("php")
         self.assertEqual(desc.get("kind"), "php_runtime")
         files = desc.get("files")
         self.assertIsInstance(files, list)
+        self.assertIn(("generated/std/json.php", "std/json.php"), files)
         self.assertIn(("generated/std/pathlib.php", "std/pathlib.php"), files)

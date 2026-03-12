@@ -84,6 +84,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
 
     def test_php_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "php" / "native" / "built_in" / "py_runtime.php"
+        generated_json_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "json.php"
         generated_math_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "math.php"
         generated_pathlib_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "pathlib.php"
         time_path = ROOT / "src" / "runtime" / "php" / "native" / "std" / "time.php"
@@ -93,6 +94,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
         compat_time_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "time.php"
         legacy_path = ROOT / "src" / "runtime" / "php" / "pytra-core"
         self.assertTrue(runtime_path.exists())
+        self.assertTrue(generated_json_path.exists())
         self.assertTrue(generated_math_path.exists())
         self.assertTrue(generated_pathlib_path.exists())
         self.assertTrue(time_path.exists())
@@ -105,12 +107,21 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertFalse(legacy_path.exists())
 
     def test_php_repo_generated_and_compat_lanes_resolve_native_substrate(self) -> None:
+        generated_json_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "json.php"
         generated_pathlib_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "pathlib.php"
         generated_png_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "png.php"
         code = "\n".join(
             [
+                f"require {generated_json_path.as_posix()!r};",
                 f"require {generated_pathlib_path.as_posix()!r};",
                 f"require {generated_png_path.as_posix()!r};",
+                "$doc = loads_obj('{\"name\":\"a.txt\",\"items\":[1,2],\"empty\":{}}');",
+                "echo ($doc instanceof JsonObj ? $doc->get_str('name') : 'json-missing'), PHP_EOL;",
+                "$items = $doc instanceof JsonObj ? $doc->get_arr('items') : null;",
+                "echo ($items instanceof JsonArr && $items->get_int(1) === 2 ? 'json-ok' : 'json-missing'), PHP_EOL;",
+                "$empty = $doc instanceof JsonObj ? $doc->get_obj('empty') : null;",
+                "echo ($empty instanceof JsonObj ? 'json-obj-ok' : 'json-obj-missing'), PHP_EOL;",
+                "echo dumps(['x' => 1]), PHP_EOL;",
                 "echo (new Path('tmp/a.txt'))->name, PHP_EOL;",
                 "echo function_exists('write_rgb_png') ? 'png-ok' : 'png-missing', PHP_EOL;",
             ]
@@ -123,7 +134,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
             check=False,
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertEqual(proc.stdout, "a.txt\npng-ok\n")
+        self.assertEqual(proc.stdout, "a.txt\njson-ok\njson-obj-ok\n{\"x\":1}\na.txt\npng-ok\n")
 
     def test_php_repo_public_compat_lane_resolves_remaining_shims(self) -> None:
         compat_runtime_path = ROOT / "src" / "runtime" / "php" / "pytra" / "py_runtime.php"

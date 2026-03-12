@@ -40,6 +40,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_wave_b_compat_file_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_b_compat_file_issues(), [])
 
+    def test_wave_b_compat_smoke_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_b_compat_smoke_issues(), [])
+
     def test_wave_a_native_residual_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_a_native_residual_issues(), [])
 
@@ -209,6 +212,59 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             },
         )
 
+    def test_wave_b_compat_smoke_inventory_is_fixed(self) -> None:
+        self.assertEqual(
+            contract_mod.iter_remaining_noncpp_runtime_wave_b_compat_smoke(),
+            (
+                {
+                    "backend": "js",
+                    "smoke_kind": "direct_load",
+                    "smoke_targets": (
+                        "py_runtime.js",
+                        "std/json.js",
+                        "std/math.js",
+                        "std/pathlib.js",
+                        "std/time.js",
+                        "utils/gif.js",
+                        "utils/png.js",
+                    ),
+                },
+                {
+                    "backend": "ts",
+                    "smoke_kind": "source_reexport",
+                    "smoke_targets": (
+                        "py_runtime.ts",
+                        "std/json.ts",
+                        "std/math.ts",
+                        "std/pathlib.ts",
+                        "std/time.ts",
+                        "utils/gif.ts",
+                        "utils/png.ts",
+                    ),
+                },
+                {
+                    "backend": "lua",
+                    "smoke_kind": "direct_load",
+                    "smoke_targets": ("built_in/py_runtime.lua",),
+                },
+                {
+                    "backend": "ruby",
+                    "smoke_kind": "direct_load",
+                    "smoke_targets": ("built_in/py_runtime.rb",),
+                },
+                {
+                    "backend": "php",
+                    "smoke_kind": "direct_load",
+                    "smoke_targets": (
+                        "py_runtime.php",
+                        "std/time.php",
+                        "utils/gif.php",
+                        "utils/png.php",
+                    ),
+                },
+            ),
+        )
+
     def test_target_root_taxonomy_is_fixed(self) -> None:
         for entry in contract_mod.iter_remaining_noncpp_runtime_layout():
             self.assertEqual(entry["target_roots"], ("generated", "native", "pytra"))
@@ -316,7 +372,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["php"]["pytra_gen_files"],
-            ("std/math.php", "std/pathlib.php", "std/time.php", "utils/gif.php", "utils/png.php"),
+            ("std/json.php", "std/math.php", "std/pathlib.php", "std/time.php", "utils/gif.php", "utils/png.php"),
         )
         self.assertEqual(
             by_backend["ts"]["pytra_gen_files"],
@@ -366,6 +422,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             {
                 "backend": "php",
                 "generated_files": (
+                    "generated/std/json.php",
                     "generated/std/math.php",
                     "generated/std/pathlib.php",
                     "generated/std/time.php",
@@ -435,7 +492,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             by_backend["php"],
             {
                 "backend": "php",
-                "generated_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+                "generated_modules": ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
                 "native_modules": ("built_in/py_runtime", "std/time"),
                 "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
                 "blocked_modules": (
@@ -449,7 +506,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "built_in/string_ops",
                     "built_in/type_id",
                     "built_in/zip_ops",
-                    "std/json",
                 ),
             },
         )
@@ -555,7 +611,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                         "built_in/string_ops",
                         "built_in/type_id",
                         "built_in/zip_ops",
-                        "std/json",
                     ),
                     "native_compare_residual_modules": (),
                     "helper_shaped_compare_gap_modules": (),
@@ -616,6 +671,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "php": {
                     "backend": "php",
                     "materialized_compare_modules": (
+                        "std/json",
                         "std/math",
                         "std/pathlib",
                         "std/time",

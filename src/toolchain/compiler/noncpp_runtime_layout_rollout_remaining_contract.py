@@ -81,6 +81,12 @@ class RemainingRuntimeWaveBCompatFileEntry(TypedDict):
     ancillary_files: tuple[str, ...]
 
 
+class RemainingRuntimeWaveBCompatSmokeEntry(TypedDict):
+    backend: str
+    smoke_kind: str
+    smoke_targets: tuple[str, ...]
+
+
 class RemainingRuntimeWaveAHookSourceEntry(TypedDict):
     backend: str
     runtime_hook_files: tuple[str, ...]
@@ -721,6 +727,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
         "backend": "php",
         "pytra_core_files": ("built_in/py_runtime.php", "std/time.php"),
         "pytra_gen_files": (
+            "std/json.php",
             "std/math.php",
             "std/pathlib.php",
             "std/time.php",
@@ -874,6 +881,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
     {
         "backend": "php",
         "generated_files": (
+            "generated/std/json.php",
             "generated/std/math.php",
             "generated/std/pathlib.php",
             "generated/std/time.php",
@@ -990,10 +998,10 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     },
     {
         "backend": "php",
-        "generated_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+        "generated_modules": ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
         "native_modules": ("built_in/py_runtime", "std/time"),
         "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
-        "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1 + ("std/json",),
+        "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
     },
 )
 
@@ -1026,7 +1034,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_BLOCKED_REASONS_V1: Final[
     },
     {
         "backend": "php",
-        "missing_compare_lane_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1 + ("std/json",),
+        "missing_compare_lane_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
         "native_compare_residual_modules": (),
         "helper_shaped_compare_gap_modules": (),
     },
@@ -1057,7 +1065,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_V1: Final[
     },
     {
         "backend": "php",
-        "materialized_compare_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
+        "materialized_compare_modules": ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
         "helper_artifact_modules": (),
     },
 )
@@ -1202,6 +1210,58 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_FILES_V1: Final[
         "substrate_shim_files": ("py_runtime.php",),
         "generated_compare_shim_files": ("std/time.php", "utils/gif.php", "utils/png.php"),
         "ancillary_files": (),
+    },
+)
+
+
+REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_SMOKE_V1: Final[
+    tuple[RemainingRuntimeWaveBCompatSmokeEntry, ...]
+] = (
+    {
+        "backend": "js",
+        "smoke_kind": "direct_load",
+        "smoke_targets": (
+            "py_runtime.js",
+            "std/json.js",
+            "std/math.js",
+            "std/pathlib.js",
+            "std/time.js",
+            "utils/gif.js",
+            "utils/png.js",
+        ),
+    },
+    {
+        "backend": "ts",
+        "smoke_kind": "source_reexport",
+        "smoke_targets": (
+            "py_runtime.ts",
+            "std/json.ts",
+            "std/math.ts",
+            "std/pathlib.ts",
+            "std/time.ts",
+            "utils/gif.ts",
+            "utils/png.ts",
+        ),
+    },
+    {
+        "backend": "lua",
+        "smoke_kind": "direct_load",
+        "smoke_targets": ("built_in/py_runtime.lua",),
+    },
+    {
+        "backend": "ruby",
+        "smoke_kind": "direct_load",
+        "smoke_targets": ("built_in/py_runtime.rb",),
+    },
+    {
+        "backend": "php",
+        "smoke_kind": "direct_load",
+        "smoke_targets": (
+            "py_runtime.php",
+            "std/time.php",
+            "utils/gif.php",
+            "utils/png.php",
+        ),
     },
 )
 
@@ -1379,6 +1439,10 @@ def iter_remaining_noncpp_runtime_wave_b_compat() -> tuple[RemainingRuntimeWaveB
 
 def iter_remaining_noncpp_runtime_wave_b_compat_files() -> tuple[RemainingRuntimeWaveBCompatFileEntry, ...]:
     return REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_FILES_V1
+
+
+def iter_remaining_noncpp_runtime_wave_b_compat_smoke() -> tuple[RemainingRuntimeWaveBCompatSmokeEntry, ...]:
+    return REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_SMOKE_V1
 
 
 def iter_remaining_noncpp_runtime_wave_a_hook_sources() -> tuple[RemainingRuntimeWaveAHookSourceEntry, ...]:

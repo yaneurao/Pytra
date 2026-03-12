@@ -18,6 +18,7 @@ from src.toolchain.compiler import noncpp_runtime_layout_rollout_remaining_contr
 
 _VALID_OWNERSHIP = ("native", "generated", "compat")
 _VALID_TARGET_ROOTS = ("generated", "native", "pytra")
+_VALID_WAVE_B_COMPAT_SMOKE_KINDS = ("direct_load", "source_reexport")
 
 
 def _runtime_hook_key_for_backend(backend: str) -> str:
@@ -553,6 +554,42 @@ def _collect_wave_b_compat_file_issues() -> list[str]:
     return issues
 
 
+def _collect_wave_b_compat_smoke_issues() -> list[str]:
+    issues: list[str] = []
+    compat_files = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_compat_files()
+    }
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_compat_smoke()
+    if tuple(entry["backend"] for entry in entries) != ("js", "ts", "lua", "ruby", "php"):
+        issues.append("wave-b compat smoke order drifted")
+    for entry in entries:
+        backend = entry["backend"]
+        smoke_kind = entry["smoke_kind"]
+        if smoke_kind not in _VALID_WAVE_B_COMPAT_SMOKE_KINDS:
+            issues.append(f"wave-b compat smoke kind drifted: {backend}")
+            continue
+        files_entry = compat_files.get(backend)
+        if files_entry is None:
+            issues.append(f"wave-b compat smoke backend drifted: {backend}")
+            continue
+        allowed_targets = set(files_entry["substrate_shim_files"]).union(
+            files_entry["generated_compare_shim_files"]
+        )
+        smoke_targets = set(entry["smoke_targets"])
+        if not smoke_targets:
+            issues.append(f"wave-b compat smoke targets drifted: {backend}")
+        if not smoke_targets.issubset(allowed_targets):
+            issues.append(f"wave-b compat smoke escaped compat shim files: {backend}")
+        if smoke_targets != allowed_targets:
+            issues.append(f"wave-b compat smoke coverage drifted: {backend}")
+        if backend == "ts" and smoke_kind != "source_reexport":
+            issues.append("wave-b compat smoke kind drifted: ts")
+        if backend != "ts" and smoke_kind != "direct_load":
+            issues.append(f"wave-b compat smoke kind drifted: {backend}")
+    return issues
+
+
 def _collect_wave_a_native_residual_issues() -> list[str]:
     issues: list[str] = []
     module_buckets = {
@@ -617,6 +654,7 @@ def main() -> int:
     issues.extend(_collect_wave_b_native_residual_file_issues())
     issues.extend(_collect_wave_b_compat_issues())
     issues.extend(_collect_wave_b_compat_file_issues())
+    issues.extend(_collect_wave_b_compat_smoke_issues())
     issues.extend(_collect_wave_a_native_residual_issues())
     issues.extend(_collect_wave_a_native_residual_file_issues())
     if issues:

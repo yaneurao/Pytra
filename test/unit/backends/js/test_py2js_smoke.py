@@ -571,12 +571,14 @@ def main() -> None:
                 "-e",
                 (
                     "const rt = require('./src/runtime/js/pytra/py_runtime.js');"
+                    "const json = require('./src/runtime/js/pytra/std/json.js');"
                     "const math = require('./src/runtime/js/pytra/std/math.js');"
                     "const pathlib = require('./src/runtime/js/pytra/std/pathlib.js');"
                     "const time = require('./src/runtime/js/pytra/std/time.js');"
                     "const png = require('./src/runtime/js/pytra/utils/png.js');"
                     "const gif = require('./src/runtime/js/pytra/utils/gif.js');"
                     "if (rt.pyBool([1]) !== true) throw new Error('pyBool');"
+                    "if (typeof json.loads_obj !== 'function') throw new Error('json');"
                     "if (math.sqrt(9) !== 3) throw new Error('sqrt');"
                     "const p = pathlib.Path('tmp/a.txt');"
                     "if (String(p) !== 'tmp/a.txt') throw new Error('Path');"

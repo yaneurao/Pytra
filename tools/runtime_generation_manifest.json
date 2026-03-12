@@ -256,7 +256,8 @@
       "targets": [
         { "target": "java", "output": "src/runtime/java/generated/std/json.java" },
         { "target": "js", "output": "src/runtime/js/generated/std/json.js", "postprocess": "js_std_json_live_wrapper" },
-        { "target": "ts", "output": "src/runtime/ts/generated/std/json.ts", "postprocess": "ts_std_json_live_wrapper" }
+        { "target": "ts", "output": "src/runtime/ts/generated/std/json.ts", "postprocess": "ts_std_json_live_wrapper" },
+        { "target": "php", "output": "src/runtime/php/generated/std/json.php", "postprocess": "php_std_json_live_wrapper" }
       ]
     },
     {

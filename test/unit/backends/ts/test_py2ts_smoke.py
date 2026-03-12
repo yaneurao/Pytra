@@ -159,6 +159,50 @@ def main() -> None:
             pathlib_shim = (Path(td) / "pytra" / "std" / "pathlib.js").read_text(encoding="utf-8")
             self.assertIn("generated/std/pathlib.js", pathlib_shim)
 
+    def test_ts_repo_compat_lane_reexports_runtime_helpers(self) -> None:
+        compat_runtime = ROOT / "src" / "runtime" / "ts" / "pytra" / "py_runtime.ts"
+        compat_json = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "json.ts"
+        compat_math = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "math.ts"
+        compat_pathlib = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "pathlib.ts"
+        compat_time = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "time.ts"
+        compat_png = ROOT / "src" / "runtime" / "ts" / "pytra" / "utils" / "png.ts"
+        compat_gif = ROOT / "src" / "runtime" / "ts" / "pytra" / "utils" / "gif.ts"
+        self.assertTrue(compat_runtime.exists())
+        self.assertTrue(compat_json.exists())
+        self.assertTrue(compat_math.exists())
+        self.assertTrue(compat_pathlib.exists())
+        self.assertTrue(compat_time.exists())
+        self.assertTrue(compat_png.exists())
+        self.assertTrue(compat_gif.exists())
+        self.assertEqual(
+            compat_runtime.read_text(encoding="utf-8").strip(),
+            'export * from "../native/built_in/py_runtime";',
+        )
+        self.assertEqual(
+            compat_json.read_text(encoding="utf-8").strip(),
+            'export * from "../../generated/std/json";',
+        )
+        self.assertEqual(
+            compat_math.read_text(encoding="utf-8").strip(),
+            'export * from "../../generated/std/math";',
+        )
+        self.assertEqual(
+            compat_pathlib.read_text(encoding="utf-8").strip(),
+            'export * from "../../generated/std/pathlib";',
+        )
+        self.assertEqual(
+            compat_time.read_text(encoding="utf-8").strip(),
+            'export { perf_counter, perfCounter } from "../../generated/std/time";',
+        )
+        self.assertEqual(
+            compat_png.read_text(encoding="utf-8").strip(),
+            'export * from "../../generated/utils/png";',
+        )
+        self.assertEqual(
+            compat_gif.read_text(encoding="utf-8").strip(),
+            'export * from "../../generated/utils/gif";',
+        )
+
     def test_pathlib_runtime_symbol_uses_factory_and_property_access(self) -> None:
         fixture = find_fixture_case("math_path_runtime_ir")
         east = load_east(fixture, parser_backend="self_hosted")

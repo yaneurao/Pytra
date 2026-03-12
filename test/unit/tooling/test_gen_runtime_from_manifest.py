@@ -30,6 +30,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn(("std/math", "php", "src/runtime/php/generated/std/math.php"), pairs)
         self.assertIn(("std/json", "js", "src/runtime/js/generated/std/json.js"), pairs)
         self.assertIn(("std/json", "ts", "src/runtime/ts/generated/std/json.ts"), pairs)
+        self.assertIn(("std/json", "php", "src/runtime/php/generated/std/json.php"), pairs)
         self.assertIn(("std/time", "java", "src/runtime/java/generated/std/time.java"), pairs)
         self.assertIn(("std/time", "js", "src/runtime/js/generated/std/time.js"), pairs)
         self.assertIn(("std/time", "ts", "src/runtime/ts/generated/std/time.ts"), pairs)
@@ -433,6 +434,33 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("public string $suffix;", out)
         self.assertIn("public static function cwd(): Path {", out)
 
+    def test_rewrite_php_std_json_live_wrapper_exports_json_facade(self) -> None:
+        src = "\n".join(
+            [
+                "<?php",
+                "declare(strict_types=1);",
+                "",
+                "class JsonObj {",
+                "}",
+                "class JsonArr {",
+                "}",
+                "class JsonValue {",
+                "}",
+                "function loads($text) { return $text; }",
+                "function loads_obj($text) { return $text; }",
+                "function loads_arr($text) { return $text; }",
+                "function dumps($obj) { return $obj; }",
+            ]
+        )
+        out = gen_mod.rewrite_php_std_json_live_wrapper(src)
+        self.assertIn("dirname(__DIR__) . '/py_runtime.php'", out)
+        self.assertIn("dirname(__DIR__, 2) . '/native/built_in/py_runtime.php'", out)
+        self.assertIn("class JsonObj {", out)
+        self.assertIn("function loads(string $text)", out)
+        self.assertIn("return json_decode((string)$text, false, 512, JSON_THROW_ON_ERROR);", out)
+        self.assertIn("function dumps($obj, bool $ensure_ascii = true, $indent = null, $separators = null): string {", out)
+        self.assertIn("JSON_PRESERVE_ZERO_FRACTION", out)
+
     def test_run_py2x_raises_when_backend_emits_no_text_and_no_file(self) -> None:
         with (
             patch.object(gen_mod, "get_backend_spec", return_value={}),
@@ -479,7 +507,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         item_ids = gen_mod.resolve_item_ids("all", items)
         plan = gen_mod.build_generation_plan(items, targets, item_ids)
         checked, updated = gen_mod.generate(plan, check=True, dry_run=False)
-        self.assertEqual(checked, 21)
+        self.assertEqual(checked, 22)
         self.assertEqual(updated, 0)
 
 
