@@ -59,5 +59,5 @@ class BackendRegistryMetadataTest(unittest.TestCase):
         self.assertEqual(desc.get("kind"), "php_runtime")
         files = desc.get("files")
         self.assertIsInstance(files, list)
-        self.assertIn(("generated/std/json.php", "std/json.php"), files)
-        self.assertIn(("generated/std/pathlib.php", "std/pathlib.php"), files)
+        self.assertIn(["generated/std/json.php", "std/json.php"], files)
+        self.assertIn(["generated/std/pathlib.php", "std/pathlib.php"], files)
