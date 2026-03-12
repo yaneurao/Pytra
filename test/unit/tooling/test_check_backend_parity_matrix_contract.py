@@ -76,9 +76,30 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
         self.assertEqual(
             contract_mod.PARITY_MATRIX_CELL_GAP_SUMMARY,
             {
-                "seed_state_is_conservative": "Current backend cell seeds use conservative placeholder states outside cpp until reviewed backend-by-backend evidence is filled.",
-                "docs_table_is_seed_only": "The docs page now renders the seeded 2D support table, but the published cells are still placeholders outside the reviewed cpp lane.",
+                "seed_state_is_conservative": "Current backend cell seeds stay conservative outside the reviewed representative cpp/rs/cs cells that already have direct transpile or build/run smoke evidence.",
+                "docs_table_is_seed_only": "The docs page now renders the seeded 2D support table, but non-reviewed lanes still stay on placeholders outside the reviewed representative cpp/rs/cs cells.",
                 "cell_details_are_sparse": "Per-cell details/evidence_ref/diagnostic_kind remain sparse until follow-up row fill bundles land.",
+            },
+        )
+        self.assertEqual(
+            contract_mod.REVIEWED_REPRESENTATIVE_CELL_OVERRIDES,
+            {
+                "syntax.control.for_range": {
+                    "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                },
+                "syntax.oop.virtual_dispatch": {
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                },
+                "builtin.iter.range": {
+                    "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                },
+                "builtin.bit.invert_and_mask": {
+                    "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                },
+                "stdlib.math.imported_symbols": {
+                    "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                },
             },
         )
         self.assertEqual(
@@ -202,6 +223,52 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 }
                 for backend, cell in zip(contract_mod.PARITY_MATRIX_BACKEND_ORDER[1:], first_row["backend_cells"][1:])
             )
+        )
+        rows = {
+            row["feature_id"]: row
+            for row in contract_mod.build_backend_parity_matrix_manifest()["matrix_rows"]
+        }
+        self.assertEqual(
+            rows["builtin.bit.invert_and_mask"]["backend_cells"][1:3],
+            [
+                {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            ],
+        )
+        self.assertEqual(
+            rows["syntax.control.for_range"]["backend_cells"][1],
+            {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        )
+        self.assertEqual(
+            rows["syntax.control.for_range"]["backend_cells"][2],
+            {"backend": "cs", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+        )
+        self.assertEqual(
+            rows["builtin.iter.range"]["backend_cells"][1],
+            {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        )
+        self.assertEqual(
+            rows["builtin.iter.range"]["backend_cells"][2],
+            {"backend": "cs", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+        )
+        self.assertEqual(
+            rows["syntax.oop.virtual_dispatch"]["backend_cells"][2],
+            {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        )
+        self.assertEqual(
+            rows["builtin.bit.invert_and_mask"]["backend_cells"][1:3],
+            [
+                {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            ],
+        )
+        self.assertEqual(
+            rows["stdlib.math.imported_symbols"]["backend_cells"][1],
+            {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        )
+        self.assertEqual(
+            rows["stdlib.math.imported_symbols"]["backend_cells"][2],
+            {"backend": "cs", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
         )
         self.assertEqual(
             contract_mod.build_backend_parity_matrix_manifest()["cell_schema"],

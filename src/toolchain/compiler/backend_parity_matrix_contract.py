@@ -55,8 +55,8 @@ PARITY_MATRIX_ALLOWED_EVIDENCE_KINDS_BY_STATE: Final[dict[str, tuple[str, ...]]]
     "experimental": ("preview_guard", "transpile_smoke", "build_run_smoke"),
 }
 PARITY_MATRIX_CELL_GAP_SUMMARY: Final[dict[str, str]] = {
-    "seed_state_is_conservative": "Current backend cell seeds use conservative placeholder states outside cpp until reviewed backend-by-backend evidence is filled.",
-    "docs_table_is_seed_only": "The docs page now renders the seeded 2D support table, but the published cells are still placeholders outside the reviewed cpp lane.",
+    "seed_state_is_conservative": "Current backend cell seeds stay conservative outside the reviewed representative cpp/rs/cs cells that already have direct transpile or build/run smoke evidence.",
+    "docs_table_is_seed_only": "The docs page now renders the seeded 2D support table, but non-reviewed lanes still stay on placeholders outside the reviewed representative cpp/rs/cs cells.",
     "cell_details_are_sparse": "Per-cell details/evidence_ref/diagnostic_kind remain sparse until follow-up row fill bundles land.",
 }
 PARITY_MATRIX_ROW_KEYS: Final[tuple[str, ...]] = (
@@ -147,7 +147,30 @@ class BackendParityMatrixCellSeed(TypedDict):
     evidence_kind: str
 
 
-def _seed_backend_cell(backend: str) -> BackendParityMatrixCellSeed:
+REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityMatrixCellSeed]]] = {
+    "syntax.control.for_range": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
+    "syntax.oop.virtual_dispatch": {
+        "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
+    "builtin.iter.range": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
+    "builtin.bit.invert_and_mask": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
+    "stdlib.math.imported_symbols": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+    },
+}
+
+
+def _seed_backend_cell(feature_id: str, backend: str) -> BackendParityMatrixCellSeed:
+    reviewed = REVIEWED_REPRESENTATIVE_CELL_OVERRIDES.get(feature_id, {}).get(backend)
+    if reviewed is not None:
+        return reviewed
     if backend == "cpp":
         return {
             "backend": backend,
@@ -172,7 +195,7 @@ REPRESENTATIVE_PARITY_MATRIX_ROWS: Final[tuple[RepresentativeParityMatrixRow, ..
         "summary_keys": PARITY_MATRIX_SUMMARY_KEYS,
         "downstream_task": PARITY_MATRIX_DOWNSTREAM_TASK,
         "downstream_plan": PARITY_MATRIX_DOWNSTREAM_PLAN,
-        "backend_cells": tuple(_seed_backend_cell(backend) for backend in PARITY_MATRIX_BACKEND_ORDER),
+        "backend_cells": tuple(_seed_backend_cell(entry["feature_id"], backend) for backend in PARITY_MATRIX_BACKEND_ORDER),
     }
     for entry in feature_contract_mod.iter_representative_support_matrix_handoff()
 )

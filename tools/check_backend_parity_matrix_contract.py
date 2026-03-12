@@ -58,11 +58,30 @@ def _collect_contract_issues() -> list[str]:
     }:
         issues.append("matrix state/evidence compatibility drifted")
     if contract_mod.PARITY_MATRIX_CELL_GAP_SUMMARY != {
-        "seed_state_is_conservative": "Current backend cell seeds use conservative placeholder states outside cpp until reviewed backend-by-backend evidence is filled.",
-        "docs_table_is_seed_only": "The docs page now renders the seeded 2D support table, but the published cells are still placeholders outside the reviewed cpp lane.",
+        "seed_state_is_conservative": "Current backend cell seeds stay conservative outside the reviewed representative cpp/rs/cs cells that already have direct transpile or build/run smoke evidence.",
+        "docs_table_is_seed_only": "The docs page now renders the seeded 2D support table, but non-reviewed lanes still stay on placeholders outside the reviewed representative cpp/rs/cs cells.",
         "cell_details_are_sparse": "Per-cell details/evidence_ref/diagnostic_kind remain sparse until follow-up row fill bundles land.",
     }:
         issues.append("matrix cell gap summary drifted")
+    if contract_mod.REVIEWED_REPRESENTATIVE_CELL_OVERRIDES != {
+        "syntax.control.for_range": {
+            "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        },
+        "syntax.oop.virtual_dispatch": {
+            "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        },
+        "builtin.iter.range": {
+            "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        },
+        "builtin.bit.invert_and_mask": {
+            "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+            "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        },
+        "stdlib.math.imported_symbols": {
+            "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        },
+    }:
+        issues.append("reviewed representative cell overrides drifted")
     support_matrix_summary_entry = next(
         entry
         for entry in conformance_summary_mod.iter_representative_conformance_summary_handoff()
@@ -146,6 +165,12 @@ def _collect_contract_issues() -> list[str]:
             issues.append(f"{entry['feature_id']}: support state order drifted")
         if tuple(cell["backend"] for cell in entry["backend_cells"]) != contract_mod.PARITY_MATRIX_BACKEND_ORDER:
             issues.append(f"{entry['feature_id']}: backend cell order drifted")
+        expected_cells = tuple(
+            contract_mod._seed_backend_cell(entry["feature_id"], backend)
+            for backend in contract_mod.PARITY_MATRIX_BACKEND_ORDER
+        )
+        if entry["backend_cells"] != expected_cells:
+            issues.append(f"{entry['feature_id']}: reviewed backend cells drifted")
         for cell in entry["backend_cells"]:
             allowed_kinds = contract_mod.PARITY_MATRIX_ALLOWED_EVIDENCE_KINDS_BY_STATE[cell["support_state"]]
             if cell["evidence_kind"] not in allowed_kinds:
