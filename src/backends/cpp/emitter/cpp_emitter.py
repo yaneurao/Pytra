@@ -1140,7 +1140,7 @@ class CppEmitter(
             "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
             "#ifndef " + guard + "\n"
             "#define " + guard + "\n\n"
-            '#include "runtime/cpp/core/py_runtime.h"\n\n'
+            '#include "runtime/cpp/native/core/py_runtime.h"\n\n'
             "namespace pytra_multi_helper {\n"
             "object object_iter_or_raise(const object& value);\n"
             "::std::optional<object> object_iter_next_or_stop(const object& iter_obj);\n"

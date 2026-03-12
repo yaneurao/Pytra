@@ -1,14 +1,14 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/re.py
 // generated-by: src/backends/cpp/cli.py
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
 
 #include "runtime/cpp/generated/std/re.h"
-#include "runtime/cpp/core/process_runtime.h"
-#include "runtime/cpp/core/scope_exit.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/built_in/contains.h"
-#include "pytra/built_in/string_ops.h"
+#include "generated/built_in/contains.h"
+#include "generated/built_in/string_ops.h"
 
 namespace pytra::std::re {
 

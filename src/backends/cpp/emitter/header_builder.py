@@ -480,7 +480,7 @@ def build_cpp_header_from_east(
     lines.append("")
     runtime_types_include = _header_runtime_types_include(used_types, len(class_blocks) > 0)
     if runtime_types_include != "":
-        lines.append('#include "runtime/cpp/core/' + runtime_types_include + '"')
+        lines.append('#include "runtime/cpp/native/core/' + runtime_types_include + '"')
         lines.append("")
     for include in includes:
         lines.append(include)
@@ -901,7 +901,10 @@ def _extract_cpp_include_lines(cpp_text: str, output_path: Path) -> list[str]:
                 inc_path = line[q0 + 1 : q1].replace("\\", "/")
                 if inc_path.split("/")[-1] == own_name:
                     continue
-        if line == '#include "runtime/cpp/core/py_runtime.h"':
+        if line in {
+            '#include "runtime/cpp/core/py_runtime.h"',
+            '#include "runtime/cpp/native/core/py_runtime.h"',
+        }:
             continue
         if line in seen:
             continue

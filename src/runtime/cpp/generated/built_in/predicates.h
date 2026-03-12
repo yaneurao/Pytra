@@ -5,7 +5,7 @@
 #ifndef PYTRA_GENERATED_BUILT_IN_PREDICATES_H
 #define PYTRA_GENERATED_BUILT_IN_PREDICATES_H
 
-#include "runtime/cpp/core/py_types.h"
+#include "runtime/cpp/native/core/py_types.h"
 
 bool py_any(const object& values);
 bool py_all(const object& values);

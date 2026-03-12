@@ -5,9 +5,9 @@
 #ifndef PYTRA_GENERATED_BUILT_IN_ZIP_OPS_H
 #define PYTRA_GENERATED_BUILT_IN_ZIP_OPS_H
 
-#include "runtime/cpp/core/py_runtime.h"
-#include "runtime/cpp/core/process_runtime.h"
-#include "runtime/cpp/core/scope_exit.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
 
 /* Pure-Python source-of-truth for generic zip helpers. */

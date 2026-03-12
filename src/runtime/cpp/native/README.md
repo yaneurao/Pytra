@@ -7,14 +7,14 @@
 - 宣言の正本は原則 `src/runtime/cpp/generated/` に置く。
 - `native/` には SoT から生成できない C++ 固有処理だけを置く。
 - `native/*.h` は template / inline helper など本当に必要なものだけに限定する。
-- `native/core/` には low-level runtime の handwritten 正本 header / source を置き、public include 面は `src/runtime/cpp/core/` forwarder から維持する。
-- `native/core/...` は ownership 正本であって include 正本ではない。`core/` forwarder 以外から直接 include しない。
+- `native/core/` には low-level runtime の handwritten 正本 header / source を置き、compiler include 面もここを正本とする。
+- `src/runtime/cpp/core/` は export/sdk compatibility surface であり、compiler include 正本ではない。
 - legacy module dir (`src/runtime/cpp/std/`, `src/runtime/cpp/built_in/`, `src/runtime/cpp/utils/`) には実装本体を置かない。
-- public include は `src/runtime/cpp/pytra/` shim を経由する。
+- `src/runtime/cpp/pytra/` shim は public/export include 面として残ってよいが、compiler include 正本には使わない。
 
 ## 配置境界
 
-- `src/runtime/cpp/core/`: low-level runtime の stable include surface
+- `src/runtime/cpp/core/`: low-level runtime の export/sdk compatibility surface
 - `src/runtime/cpp/generated/core/`: low-level core の generated lane
 - `src/runtime/cpp/native/core/`: low-level core の handwritten 正本
 - `src/runtime/cpp/generated/std/`: `pytra.std.*` の generated runtime

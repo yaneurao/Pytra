@@ -87,14 +87,19 @@ optional SDK/export 面:
 
 ## 分解
 
-- [ ] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S1-01] C++ runtime packaging の責務を docs/TODO に固定し、`compiler_headers` と `public_headers` の二面契約を導入する。
-- [ ] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S1-02] `tools/gen_runtime_symbol_index.py` / loader / tests に `compiler_headers` を追加し、module は `generated/native`、core は `native/core` を返す contract を固定する。
-- [ ] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S2-01] C++ emitter/runtime-path/helper include 解決を `compiler_headers` 基準へ切り替え、transpiled user code が `pytra/**` / `core/**` を include しないようにする。
-- [ ] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S2-02] `emit-runtime-cpp` 生成物・multi-file prelude・helper artifact の core include を `runtime/cpp/native/core/**` へ切り替え、checked-in generated runtime を再生成する。
-- [ ] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S3-01] `tools/cpp_runtime_deps.py` と build graph test を compiler-direct include 契約へ同期し、shim 非依存で compile source を回収できるようにする。
-- [ ] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S3-02] `tools/check_runtime_cpp_layout.py` と docs を「generated/native/compiler lane は native/core を直接 include 可、`pytra/core` は export/sdk lane」として更新する。
+- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S1-01] C++ runtime packaging の責務を docs/TODO に固定し、`compiler_headers` と `public_headers` の二面契約を導入する。
+- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S1-02] `tools/gen_runtime_symbol_index.py` / loader / tests に `compiler_headers` を追加し、module は `generated/native`、core は `native/core` を返す contract を固定する。
+- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S2-01] C++ emitter/runtime-path/helper include 解決を `compiler_headers` 基準へ切り替え、transpiled user code が `pytra/**` / `core/**` を include しないようにする。
+- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S2-02] `emit-runtime-cpp` 生成物・multi-file prelude・helper artifact の core include を `runtime/cpp/native/core/**` へ切り替え、checked-in generated runtime を再生成する。
+- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S3-01] `tools/cpp_runtime_deps.py` と build graph test を compiler-direct include 契約へ同期し、shim 非依存で compile source を回収できるようにする。
+- [x] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S3-02] `tools/check_runtime_cpp_layout.py` と docs を「generated/native/compiler lane は native/core を直接 include 可、`pytra/core` は export/sdk lane」として更新する。
 - [ ] [ID: P0-CPP-RUNTIME-PACKAGING-DESHIM-01-S4-01] export-time SDK generator の要否を決め、必要なら `pytra/**` / `core/**` forwarder を build/export 時生成へ移す。不必要なら repo から削除する。
 
 決定ログ:
 - 2026-03-13: ユーザー指示により、C++ compiler は `pytra/**` / `core/**` shim に依存せず、runtime packaging が `generated/native` 実体を直接 include できる構造へ寄せる方針を新規 P0 として起票した。
 - 2026-03-13: first wave は repo 上の shim を即 delete するのではなく、compiler path から外すことを優先する。`public_headers` は一時的に残してもよいが、codegen/build の正本には使わない。
+- 2026-03-13: `compiler_headers` / `runtime_paths.py` / `emit-runtime-cpp` / `program_writer.py` / checked-in generated runtime / `cpp_runtime_deps.py` / `check_runtime_cpp_layout.py` はすでに current contract (`generated/native` + `native/core`) へ同期していたため、plan 前半 slice は README と progress state を current 実装へ揃えたうえで完了扱いにした。
+- 2026-03-13: `runtime_symbol_index` は `public_headers` と別に `compiler_headers` を持つように変更した。C++ loader では module runtime に `generated/**`、core runtime に `native/core/**` を優先する `lookup_target_module_primary_compiler_header()` を追加し、emitter 側の include 解決はこの API だけを見るように切り替えた。
+- 2026-03-13: helper include map の hard-coded `pytra/built_in/*.h` は廃止し、`pytra.built_in.*` module id から compiler header を引く方式へ寄せた。これにより transpiled user code は `generated/built_in/*` / `generated/std/*` / `generated/utils/*` を直接 include する。
+- 2026-03-13: `emit-runtime-cpp` は `runtime/cpp/native/core/**` を直接 include するように変更し、`generated/<bucket>/<module>.h` には対応する `native/<bucket>/<module>.h` が存在する場合だけ companion include を自動注入するようにした。これで旧 `pytra/**` shim が担っていた `generated + native` aggregation を compiler-facing header 側へ移し直した。
+- 2026-03-13: `src/toolchain/compiler/backend_registry_static.py` は self-hosted parser の既知 residual（`unterminated string literal`）で `--emit-runtime-cpp` 再生成に失敗したため、first wave では generated compiler shim を維持しつつ、hand-written `native/compiler/backend_registry_static.{h,cpp}` の include だけを `generated/std/{json,pathlib}.h` と `runtime/cpp/native/core/py_runtime.h` へ手同期した。

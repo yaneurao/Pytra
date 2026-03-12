@@ -6,7 +6,7 @@
 
 - `generated/core/` に置くコードは `source:` と `generated-by:` marker を必須にする。
 - 生成は `src/py2x.py --emit-runtime-cpp` の正規導線のみを使い、core helper 専用 generator は追加しない。
-- include 面は増やさず、public/stable include は引き続き `src/runtime/cpp/core/*.h` を使う。
+- compiler include 面は `src/runtime/cpp/native/core/*.h` を使い、`src/runtime/cpp/core/*.h` は export/sdk compatibility surface としてのみ扱う。
 - compile/source 解決は `core/...` public header から `generated/core/...` と `native/core/...` を導出する。
 - `generated/core/` の real artifact は plain naming (`*.h`, `*.cpp`) のみを許可し、`.ext` / `.gen` suffix を再導入しない。
 - real artifact がまだ無い段階でも、このディレクトリ自体は正式レイアウトとして維持する。
@@ -14,8 +14,8 @@
 
 ## 置いてよいもの
 
-- pure Python SoT から機械変換でき、`core/...` の public include 名を壊さずに追加できる low-level helper。
-- `native/core` を直接 include せず、`core/...` public header か self-contained generated header だけで完結する artifact。
+- pure Python SoT から機械変換でき、`native/core/...` compiler include 面を壊さずに追加できる low-level helper。
+- `runtime/cpp/native/core/...` と self-contained generated header だけで完結する artifact。
 - C++ 固有の ownership / ABI glue / OS 接着を持たず、`generated-by` marker 付き checked-in artifact として再生成可能なもの。
 
 ## まだ置いてはいけないもの

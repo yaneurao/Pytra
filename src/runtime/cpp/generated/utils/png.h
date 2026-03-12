@@ -5,7 +5,7 @@
 #ifndef PYTRA_GENERATED_UTILS_PNG_H
 #define PYTRA_GENERATED_UTILS_PNG_H
 
-#include "runtime/cpp/core/py_types.h"
+#include "runtime/cpp/native/core/py_types.h"
 
 namespace pytra::utils::png {
 

@@ -1,15 +1,15 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // source: src/pytra/std/argparse.py
 // generated-by: src/backends/cpp/cli.py
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
 
 #include "runtime/cpp/generated/std/argparse.h"
-#include "runtime/cpp/core/process_runtime.h"
-#include "runtime/cpp/core/scope_exit.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/built_in/contains.h"
-#include "pytra/built_in/string_ops.h"
-#include "pytra/std/sys.h"
+#include "generated/built_in/contains.h"
+#include "generated/built_in/string_ops.h"
+#include "generated/std/sys.h"
 
 namespace pytra::std::argparse {
 
