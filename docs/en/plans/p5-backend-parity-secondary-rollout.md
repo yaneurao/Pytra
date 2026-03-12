@@ -40,7 +40,7 @@ Verification:
 
 - [x] [ID: P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01-S1-01] Lock the current residual cells and backend order of the secondary tier as live rollout bundles.
 - [x] [ID: P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01-S2-01] Fill unsupported cells in the `go/java/kt` bundle with representative evidence.
-- [ ] [ID: P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01-S2-02] Fill unsupported cells in the `scala/swift/nim` bundle with representative evidence.
+- [x] [ID: P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01-S2-02] Fill unsupported cells in the `scala/swift/nim` bundle with representative evidence.
 - [ ] [ID: P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01-S3-01] Sync secondary-tier matrix/docs/support wording to the current rollout state and close the task.
 
 ## Decision log
@@ -49,3 +49,4 @@ Verification:
 - 2026-03-12: This remains a waiting task while higher-priority representative-tier work is unfinished.
 - 2026-03-13: `S1-01` added `backend_parity_secondary_rollout_inventory.py`, its checker, and a unit test so the secondary residual cells are now fixed directly against the matrix seed. The bundle order is now concretely handed off as `go/java/kt` first and `scala/swift/nim` second; the first bundle captures the tuple/lambda/comprehension/iterator/std gaps, while the second bundle records that Scala/Swift still add `for_range/range` gaps and Nim swaps those for a `virtual_dispatch` gap.
 - 2026-03-13: `S2-01` closed the `go/java/kt` bundle. The `go/java/kotlin` emitters now lower the `Swap` stmt used by `tuple_assign.py`, the secondary representative fixture bundle smoke locks transpile evidence for `tuple/lambda/comprehension/for_range/try_raise/enumerate/zip/isinstance/json/pathlib/enum/argparse/math/re`, and the matrix promotes the `go/java/kt` residual cells to `supported/transpile_smoke`. The secondary residual inventory now shrinks the first bundle into an empty completed marker and advances the next active bundle to `scala/swift/nim`.
+- 2026-03-13: `S2-02` closed the `scala/swift/nim` bundle. Scala/Swift now carry representative transpile smoke for `for_range/range`, Nim carries the same bundle plus `virtual_dispatch` smoke and `Swap` lowering, and the matrix promotes the full secondary tier to `supported/transpile_smoke`. The secondary residual inventory is now empty and the handoff collapses to `completed_backends = full secondary tier`, `next_backend = None`, and `remaining_backends = ()`.

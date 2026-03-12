@@ -152,13 +152,13 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">syntax.expr.lambda</td>
@@ -170,13 +170,13 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">syntax.expr.list_comprehension</td>
@@ -188,13 +188,13 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">syntax.control.for_range</td>
@@ -206,11 +206,11 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
@@ -224,13 +224,13 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">syntax.oop.virtual_dispatch</td>
@@ -248,7 +248,7 @@
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">builtin.iter.range</td>
@@ -260,11 +260,11 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
@@ -278,13 +278,13 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">builtin.iter.zip</td>
@@ -296,13 +296,13 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">builtin.type.isinstance</td>
@@ -314,13 +314,13 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">builtin.bit.invert_and_mask</td>
@@ -350,13 +350,13 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">stdlib.pathlib.path_ops</td>
@@ -368,13 +368,13 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">stdlib.enum.enum_and_intflag</td>
@@ -386,13 +386,13 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">stdlib.argparse.parse_args</td>
@@ -404,13 +404,13 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">stdlib.math.imported_symbols</td>
@@ -422,13 +422,13 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
       <tr>
         <td class="feature">stdlib.re.sub</td>
@@ -440,13 +440,13 @@
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
       </tr>
     </tbody>
   </table>

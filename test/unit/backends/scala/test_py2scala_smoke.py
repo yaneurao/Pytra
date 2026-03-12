@@ -118,6 +118,29 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertIn("override def speak(): String = {", scala)
         self.assertIn("super.speak()", scala)
 
+    def test_secondary_bundle_representative_fixtures_transpile_for_scala(self) -> None:
+        for stem in (
+            "tuple_assign",
+            "lambda_basic",
+            "comprehension",
+            "for_range",
+            "try_raise",
+            "enumerate_basic",
+            "ok_generator_tuple_target",
+            "is_instance",
+            "json_extended",
+            "pathlib_extended",
+            "enum_extended",
+            "argparse_extended",
+            "pytra_std_import_math",
+            "re_extended",
+        ):
+            with self.subTest(stem=stem):
+                fixture = find_fixture_case(stem)
+                east = load_east(fixture, parser_backend="self_hosted")
+                scala = transpile_to_scala_native(east)
+                self.assertTrue(scala.strip())
+
     def test_module_leading_comments_are_emitted(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"
         east = load_east(sample, parser_backend="self_hosted")

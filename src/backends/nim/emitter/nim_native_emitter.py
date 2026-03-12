@@ -266,6 +266,7 @@ class NimNativeEmitter:
         self.var_types: dict[str, str] = {}
         self.function_names: set[str] = set()
         self.function_level_vars: set[str] = set()
+        self.tmp_counter = 0
         self.scope_stack: list[int] = [0]
         self.next_scope_id = 1
         self.scope_declared: set[tuple[int, str]] = set()
@@ -321,6 +322,11 @@ class NimNativeEmitter:
         if len(self.scope_stack) == 0:
             return (0, name)
         return (self.scope_stack[-1], name)
+
+    def _fresh_tmp(self, prefix: str) -> str:
+        name = "__" + prefix + "_" + str(self.tmp_counter)
+        self.tmp_counter += 1
+        return name
 
     def _map_type(self, py_type: Any) -> str:
         if not isinstance(py_type, str):
@@ -548,6 +554,8 @@ class NimNativeEmitter:
             self._emit_ann_assign(stmt)
         elif kind == "AugAssign":
             self._emit_aug_assign(stmt)
+        elif kind == "Swap":
+            self._emit_swap(stmt)
         elif kind == "Return":
             val_node = stmt.get("value")
             val = self._render_expr(val_node) if val_node else ""
@@ -961,6 +969,14 @@ class NimNativeEmitter:
             return
 
         self._emit_line(f"{target} = {value}")
+
+    def _emit_swap(self, stmt: dict[str, Any]) -> None:
+        left = self._render_expr(stmt.get("left"))
+        right = self._render_expr(stmt.get("right"))
+        tmp = self._fresh_tmp("swap")
+        self._emit_line(f"var {tmp} = {left}")
+        self._emit_line(f"{left} = {right}")
+        self._emit_line(f"{right} = {tmp}")
 
     def _emit_ann_assign(self, stmt: dict[str, Any]) -> None:
         target_node = stmt.get("target")
