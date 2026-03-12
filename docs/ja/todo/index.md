@@ -31,4 +31,5 @@
 
 ## 未完了タスク
 
-- 現在、未完了タスクはありません。
+- [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01] 括弧付き sibling relative import を current support contract として固定する（文脈: [p0-relative-import-paren-sibling-contract.md](../plans/p0-relative-import-paren-sibling-contract.md)）
+  - 2026-03-12: Pytra-NES の representative case `from .controller import (...)` は parser と C++ multi-file smoke では既に通る。次は CLI / docs / contract を current support として揃える。
