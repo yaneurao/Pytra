@@ -352,6 +352,16 @@ FUTURE_CROSSRUNTIME_MUTATION_CLASSIFICATION = {
     "must_remain_until_runtime_task": set(),
 }
 
+SHARED_TYPE_ID_CLASSIFICATION_TASK_ID = (
+    "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02"
+)
+
+SHARED_TYPE_ID_CLASSIFICATION_ORDER = (
+    "cpp_emitter_shared_type_id_residual",
+    "rs_emitter_shared_type_id_residual",
+    "cs_emitter_shared_type_id_residual",
+)
+
 
 def _iter_target_files() -> list[Path]:
     return [ROOT / rel for rel in sorted(TRACKED_PATHS)]
@@ -549,27 +559,7 @@ def _collect_future_followup_issues() -> list[str]:
     if set(FUTURE_FOLLOWUP_BASELINE_BUCKETS) - set(EXPECTED_BUCKETS.keys()):
         issues.append("future follow-up baseline references unknown emitter residual buckets")
     issues.extend(_collect_future_representative_lane_issues())
-    issues.extend(_collect_cpp_future_shared_type_id_classification_issues())
-    issues.extend(
-        _collect_future_bucket_classification_issues(
-            label="future rs shared type-id classification",
-            classification=FUTURE_RS_SHARED_TYPE_ID_CLASSIFICATION,
-            expected_future_reducible=set(),
-            expected_must_remain=EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
-            expected_bucket=EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
-            required_prefix="src/backends/rs/",
-        )
-    )
-    issues.extend(
-        _collect_future_bucket_classification_issues(
-            label="future cs shared type-id classification",
-            classification=FUTURE_CS_SHARED_TYPE_ID_CLASSIFICATION,
-            expected_future_reducible=set(),
-            expected_must_remain=EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
-            expected_bucket=EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
-            required_prefix="src/backends/cs/",
-        )
-    )
+    issues.extend(_collect_shared_type_id_classification_issues())
     issues.extend(
         _collect_future_bucket_classification_issues(
             label="future crossruntime mutation classification",
@@ -613,6 +603,42 @@ def _collect_cpp_future_shared_type_id_classification_issues() -> list[str]:
                 "future cpp shared type-id classification contains non-cpp path: "
                 f"{symbol} @ {rel}"
             )
+    return issues
+
+
+def _collect_shared_type_id_classification_issues() -> list[str]:
+    issues: list[str] = []
+    if SHARED_TYPE_ID_CLASSIFICATION_TASK_ID != (
+        "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02"
+    ):
+        issues.append("shared type-id classification task id drifted")
+    if SHARED_TYPE_ID_CLASSIFICATION_ORDER != (
+        "cpp_emitter_shared_type_id_residual",
+        "rs_emitter_shared_type_id_residual",
+        "cs_emitter_shared_type_id_residual",
+    ):
+        issues.append("shared type-id classification order drifted")
+    issues.extend(_collect_cpp_future_shared_type_id_classification_issues())
+    issues.extend(
+        _collect_future_bucket_classification_issues(
+            label="future rs shared type-id classification",
+            classification=FUTURE_RS_SHARED_TYPE_ID_CLASSIFICATION,
+            expected_future_reducible=set(),
+            expected_must_remain=EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
+            expected_bucket=EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
+            required_prefix="src/backends/rs/",
+        )
+    )
+    issues.extend(
+        _collect_future_bucket_classification_issues(
+            label="future cs shared type-id classification",
+            classification=FUTURE_CS_SHARED_TYPE_ID_CLASSIFICATION,
+            expected_future_reducible=set(),
+            expected_must_remain=EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
+            expected_bucket=EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
+            required_prefix="src/backends/cs/",
+        )
+    )
     return issues
 
 
