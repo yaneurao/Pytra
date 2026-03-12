@@ -45,10 +45,12 @@
 - 2026-03-12: v1 の対象は user module symbol のうち `module-level constant/global + function` に限定し、class/type import や cross-runtime import contract までは広げない。
 - 2026-03-12: representative smoke は `ppu.py -> from .controller import (BUTTON_A, BUTTON_B)` とし、`BUTTON_A | BUTTON_B` が generated `ppu.cpp` で `pytra_mod_controller::BUTTON_A | pytra_mod_controller::BUTTON_B` へ render される contract に固定した。
 - 2026-03-12: multi-file writer は imported user module の forward declaration に関数だけでなく module-level globals も含める。v1 は `build_module_type_schema()` へ `globals` schema を追加して同期する。
+- 2026-03-12: focused C++ relative-import regression と selfhost build を通したので、`S1-01` / `S2-01` / `S2-02` は完了とし、残る `S3-01` は alias regression と docs wording の同期だけに縮んだ。
+- 2026-03-12: existing relative-import function alias / module alias regression を壊さずに sibling relative symbol-list import constants smoke が build/run で通ったため、task 全体を完了扱いにして archive へ移す。
 
 ## 分解
 
 - [x] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S1-01] current compile failure と representative smoke contract を plan / TODO / focused regression に固定する。
 - [x] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S2-01] imported user-module symbol の `Name` render を namespace-qualified user symbol へ揃える。
 - [x] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S2-02] multi-file writer に imported module-level symbol forward declaration を追加する。
-- [ ] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S3-01] relative import function alias / module alias regression と docs を current contract に同期して閉じる。
+- [x] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01-S3-01] relative import function alias / module alias regression と docs を current contract に同期して閉じる。

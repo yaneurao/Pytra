@@ -31,6 +31,4 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-1. [ ] [ID: P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01] Fix the residual where C++ multi-file builds leave relative-imported module-level symbols as plain names, and make the Pytra-NES-style sibling import constants build and run.
-   Context: [p0-cpp-relative-import-linked-symbol-support.md](/workspace/Pytra/docs/en/plans/p0-cpp-relative-import-linked-symbol-support.md)
-   - `P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01`: the representative constant-import smoke is now locked, and the C++ consumer module renders imported user-module symbols as namespace-qualified names with forward declarations that include module-level globals. Only alias-regression sync and closeout remain.
+There are currently no unfinished tasks.
