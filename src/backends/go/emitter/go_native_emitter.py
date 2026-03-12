@@ -43,6 +43,7 @@ _CURRENT_RECEIVER_CLASS: str = ""
 _CURRENT_RECEIVER_VAR: str = "self"
 _INT_RESOLVED_TYPES = {"int", "int64", "uint8"}
 _FLOAT_RESOLVED_TYPES = {"float", "float64"}
+_RELATIVE_IMPORT_NAME_ALIASES: dict[str, str] = {}
 
 
 def _class_iface_name(class_name: str) -> str:
@@ -69,6 +70,60 @@ def _safe_ident(name: Any, fallback: str) -> str:
     if out in _GO_KEYWORDS:
         out = out + "_"
     return out
+
+
+def _relative_import_module_path(module_id: str) -> str:
+    parts = [
+        _safe_ident(part, "module")
+        for part in module_id.lstrip(".").split(".")
+        if part != ""
+    ]
+    return ".".join(parts)
+
+
+def _collect_relative_import_name_aliases(body: list[Any]) -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    i = 0
+    while i < len(body):
+        stmt = body[i]
+        if not isinstance(stmt, dict) or stmt.get("kind") != "ImportFrom":
+            i += 1
+            continue
+        module_any = stmt.get("module")
+        module_id = module_any if isinstance(module_any, str) else ""
+        level_any = stmt.get("level")
+        level = level_any if isinstance(level_any, int) else 0
+        if level <= 0 and not module_id.startswith("."):
+            i += 1
+            continue
+        module_path = _relative_import_module_path(module_id)
+        names_any = stmt.get("names")
+        names = names_any if isinstance(names_any, list) else []
+        j = 0
+        while j < len(names):
+            ent = names[j]
+            if not isinstance(ent, dict):
+                j += 1
+                continue
+            name_any = ent.get("name")
+            name = name_any if isinstance(name_any, str) else ""
+            if name == "":
+                j += 1
+                continue
+            if name == "*":
+                raise RuntimeError(
+                    "go native emitter: unsupported relative import form: wildcard import"
+                )
+            asname_any = ent.get("asname")
+            local_name = asname_any if isinstance(asname_any, str) and asname_any != "" else name
+            local_rendered = _safe_ident(local_name, "value")
+            target_name = _safe_ident(name, "value")
+            aliases[local_rendered] = (
+                target_name if module_path == "" else module_path + "." + target_name
+            )
+            j += 1
+        i += 1
+    return aliases
 
 
 def _resolved_type(expr_any: Any) -> str:
@@ -358,7 +413,8 @@ def _cast_from_any(expr: str, go_type: str, value_any: Any = None, type_map: dic
 
 
 def _render_name_expr(expr: dict[str, Any]) -> str:
-    return _safe_ident(expr.get("id"), "value")
+    ident = _safe_ident(expr.get("id"), "value")
+    return _RELATIVE_IMPORT_NAME_ALIASES.get(ident, ident)
 
 
 def _render_constant_expr(expr: dict[str, Any]) -> str:
@@ -2391,8 +2447,9 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
                 functions.append(node)
         i += 1
 
-    global _CLASS_NAMES, _CLASS_BASE_MAP, _CLASS_HAS_DERIVED
+    global _CLASS_NAMES, _CLASS_BASE_MAP, _CLASS_HAS_DERIVED, _RELATIVE_IMPORT_NAME_ALIASES
     _CLASS_NAMES = set()
+    _RELATIVE_IMPORT_NAME_ALIASES = _collect_relative_import_name_aliases(body_any)
     i = 0
     while i < len(classes):
         _CLASS_NAMES.add(_safe_ident(classes[i].get("name"), "PytraClass"))

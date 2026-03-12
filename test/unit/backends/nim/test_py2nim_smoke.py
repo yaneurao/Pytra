@@ -18,9 +18,16 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "test" / "unit" / "backends") not in sys.path:
+    sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
 from backends.nim.emitter import load_nim_profile, transpile_to_nim, transpile_to_nim_native
 from toolchain.compiler.transpile_cli import load_east3_document
+from relative_import_secondwave_smoke_support import (
+    relative_import_native_path_expected_rewrite,
+    relative_import_secondwave_scenarios,
+    write_relative_import_project,
+)
 
 
 def load_east(
@@ -83,6 +90,36 @@ class Py2NimSmokeTest(unittest.TestCase):
         east = load_east(fixture, parser_backend="self_hosted")
         nim = transpile_to_nim_native(east)
         self.assertIn("not y", nim)
+
+    def test_cli_relative_import_native_path_bundle_scenarios_transpile_for_nim(self) -> None:
+        for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
+            with self.subTest(scenario_id=scenario_id):
+                scenario = relative_import_secondwave_scenarios()[scenario_id]
+                with tempfile.TemporaryDirectory() as td:
+                    entry_path = write_relative_import_project(
+                        Path(td),
+                        str(scenario["import_form"]),
+                        "def call() -> int:\n"
+                        f"    return {scenario['representative_expr']}\n",
+                    )
+                    east = load_east(entry_path, parser_backend="self_hosted")
+                    nim = transpile_to_nim_native(east)
+                positive, forbidden = relative_import_native_path_expected_rewrite(scenario_id)
+                self.assertIn(positive, nim)
+                self.assertNotIn(forbidden, nim)
+
+    def test_cli_relative_import_native_path_bundle_fail_closed_for_wildcard_on_nim(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            entry_path = write_relative_import_project(
+                Path(td),
+                "from ..helper import *",
+                "def call() -> int:\n    return f()\n",
+            )
+            east = load_east(entry_path, parser_backend="self_hosted")
+            with self.assertRaises(RuntimeError) as cm:
+                transpile_to_nim_native(east)
+        self.assertIn("unsupported relative import form: wildcard import", str(cm.exception))
+        self.assertIn("nim native emitter", str(cm.exception))
 
     def test_nim_native_emitter_backend_only_ir_fixture_resolves_math_and_path(self) -> None:
         fixture = ROOT / "test" / "ir" / "java_math_path_runtime.east3.json"

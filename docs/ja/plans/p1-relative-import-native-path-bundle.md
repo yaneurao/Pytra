@@ -43,11 +43,12 @@
 - 2026-03-12: completed planning task は archive へ移し、next live handoff は `P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01` に切り替える。
 - 2026-03-12: native-path bundle の representative backend は `go/nim/swift`、representative scenario は `parent_module_alias` / `parent_symbol_alias` に固定する。
 - 2026-03-12: live verification lane は `native_path_bundle_rollout`、follow-up JVM bundle は `remaining_second_wave_rollout_planning` のまま維持する。
+- 2026-03-12: `go/nim/swift` は CLI top-level `print(...)` ではなく function-body `return` lane を native emitter へ直接流す representative smoke で固定し、relative wildcard import は backend-specific fail-closed とする。
 
 ## 分解
 
 - [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01] `go/nim/swift` native-path bundle の live handoff と representative rollout contract を固定する。
 - [x] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S1-01] live plan / TODO / contract / checker を追加し、coverage handoff を native-path bundle へ切り替える。
-- [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S2-01] `go/nim/swift` の representative transpile smoke / fail-closed regression を追加する。
+- [x] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S2-01] `go/nim/swift` native emitter の representative transpile smoke / fail-closed regression を追加する。
 - [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S2-02] backend parity docs / coverage inventory を native-path bundle current state に同期し、JVM follow-up handoff を明記する。
 - [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S3-01] focused docs / tests / handoff wording を current state に揃えて task を閉じる。

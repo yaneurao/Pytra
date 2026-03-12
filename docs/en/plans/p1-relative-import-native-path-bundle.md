@@ -43,11 +43,12 @@ Decision log:
 - 2026-03-12: The completed planning task moves to archive, and the next live handoff switches to `P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01`.
 - 2026-03-12: The representative native-path bundle backends are fixed as `go/nim/swift`, and the representative scenarios stay `parent_module_alias` / `parent_symbol_alias`.
 - 2026-03-12: The live verification lane becomes `native_path_bundle_rollout`, while the follow-up JVM bundle stays on `remaining_second_wave_rollout_planning`.
+- 2026-03-12: Lock `go/nim/swift` on direct native-emitter function-body smoke instead of CLI top-level `print(...)`, and require backend-specific fail-closed diagnostics for relative wildcard imports.
 
 ## Breakdown
 
 - [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01] Lock the live handoff and representative rollout contract for the `go/nim/swift` native-path bundle.
 - [x] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S1-01] Add the live plan / TODO / contract / checker and switch the coverage handoff to the native-path bundle.
-- [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S2-01] Add representative transpile-smoke / fail-closed regressions for `go/nim/swift`.
+- [x] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S2-01] Add representative native-emitter transpile-smoke / fail-closed regressions for `go/nim/swift`.
 - [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S2-02] Sync backend-parity docs / coverage inventory to the native-path bundle current state and spell out the JVM follow-up handoff.
 - [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S3-01] Sync focused docs / tests / handoff wording to the current state and close the task.

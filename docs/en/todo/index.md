@@ -38,6 +38,6 @@ Last updated: 2026-03-12
 
 1. [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01] Lock the live handoff and representative rollout contract for the `go/nim/swift` native-path bundle.
 2. [x] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S1-01] Add the live plan / TODO / contract / checker and switch the coverage handoff to the native-path bundle.
-3. [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S2-01] Add representative transpile-smoke / fail-closed regressions for `go/nim/swift`.
+3. [x] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S2-01] Lock representative native-emitter rewrite smoke and wildcard-import fail-closed regressions for `go/nim/swift`.
 4. [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S2-02] Sync backend-parity docs / coverage inventory to the native-path bundle current state and spell out the JVM follow-up handoff.
 5. [ ] [ID: P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01-S3-01] Sync focused docs / tests / handoff wording to the current state and close the task.
