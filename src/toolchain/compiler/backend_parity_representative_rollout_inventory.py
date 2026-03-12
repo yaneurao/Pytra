@@ -73,13 +73,6 @@ REPRESENTATIVE_RESIDUAL_CELLS_V1: Final[tuple[RepresentativeResidualCell, ...]] 
     },
     {
         "backend": "rs",
-        "feature_id": "syntax.oop.virtual_dispatch",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/oop/inheritance_virtual_dispatch_multilang.py",
-    },
-    {
-        "backend": "rs",
         "feature_id": "builtin.iter.zip",
         "support_state": "not_started",
         "evidence_kind": "not_started_placeholder",
@@ -206,7 +199,6 @@ REPRESENTATIVE_ROLLOUT_BUNDLES_V1: Final[tuple[RepresentativeRolloutBundle, ...]
         "backend": "rs",
         "feature_ids": (
             "syntax.control.try_raise",
-            "syntax.oop.virtual_dispatch",
             "builtin.iter.zip",
         ),
         "target_evidence": "transpile_smoke",

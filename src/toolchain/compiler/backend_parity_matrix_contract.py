@@ -203,6 +203,7 @@ REVIEWED_REPRESENTATIVE_CELL_OVERRIDES: Final[dict[str, dict[str, BackendParityM
         "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
     },
     "syntax.oop.virtual_dispatch": {
+        "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},

@@ -68,3 +68,4 @@ Verification:
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02-A2` and `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03-A2` added representative smoke for `comprehension.py` to the `rs` / `cs` backends and removed `syntax.expr.list_comprehension` from the residual inventory.
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02-A3` added representative smoke for `enumerate_basic.py` to the `rs` backend and removed `builtin.iter.enumerate` from the Rust residual inventory.
 - 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03-A4` added representative smoke for `is_instance.py` to the `cs` backend and removed `builtin.type.isinstance` from the C# residual inventory.
+- 2026-03-12: `P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02-A4` added representative smoke for `inheritance_virtual_dispatch_multilang.py` to the `rs` backend and removed `syntax.oop.virtual_dispatch` from the Rust residual inventory.

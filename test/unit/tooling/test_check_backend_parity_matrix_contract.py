@@ -112,6 +112,7 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "syntax.oop.virtual_dispatch": {
+                    "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -344,6 +345,10 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
         self.assertEqual(
             cells["builtin.iter.range"]["php"],
             {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+        )
+        self.assertEqual(
+            cells["syntax.oop.virtual_dispatch"]["rs"],
+            {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
         )
         self.assertEqual(
             cells["syntax.oop.virtual_dispatch"]["cs"],
