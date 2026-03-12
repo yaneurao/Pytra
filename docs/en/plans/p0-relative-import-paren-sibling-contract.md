@@ -48,6 +48,6 @@ Decision log:
 ## Breakdown
 
 - [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01] Lock parenthesized sibling relative imports as a current support contract.
-- [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S1-01] Add the active plan / TODO entry and sync the English mirror.
-- [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S2-01] Add a representative CLI regression that locks the `py2x.py --target cpp` lane.
+- [x] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S1-01] Add the active plan / TODO entry and sync the English mirror.
+- [x] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S2-01] Add a representative CLI regression that locks the `py2x.py --target cpp` lane.
 - [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S2-02] Align parser / C++ smoke / docs handoff wording and close the task.

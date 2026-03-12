@@ -32,4 +32,4 @@ Last updated: 2026-03-12
 ## Unfinished Tasks
 
 - [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01] Lock parenthesized sibling relative imports as a current support contract (context: [p0-relative-import-paren-sibling-contract.md](../plans/p0-relative-import-paren-sibling-contract.md))
-  - 2026-03-12: The representative Pytra-NES case `from .controller import (...)` already passes through the parser and C++ multi-file smoke. The next step is to align the CLI/docs/contract surface with that current support.
+  - 2026-03-12: Representative parser / CLI / C++ multi-file regressions are now in place. Only the current-support wording and handoff closeout remain.

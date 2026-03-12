@@ -48,6 +48,6 @@
 ## 分解
 
 - [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01] 括弧付き sibling relative import を current support contract として固定する。
-- [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S1-01] active plan / TODO / English mirror を追加し、task の scope を固定する。
-- [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S2-01] representative CLI regression を追加して `py2x.py --target cpp` lane を固定する。
+- [x] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S1-01] active plan / TODO / English mirror を追加し、task の scope を固定する。
+- [x] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S2-01] representative CLI regression を追加して `py2x.py --target cpp` lane を固定する。
 - [ ] [ID: P0-RELATIVE-IMPORT-PAREN-SIBLING-CONTRACT-01-S2-02] parser / C++ smoke / docs の handoff を current support wording に揃えて task を閉じる。
