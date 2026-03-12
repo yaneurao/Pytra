@@ -863,6 +863,15 @@ def f(x: Any) -> bool:
         self.assertIn(".enumerate().map(|(i, v)| (i as i64, v))", rust)
         self.assertNotIn("unsupported", rust)
 
+    def test_representative_virtual_dispatch_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("inheritance_virtual_dispatch_multilang")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("trait __pytra_trait_Animal", rust)
+        self.assertIn("fn call_via_animal(a: &impl __pytra_trait_Animal) -> String", rust)
+        self.assertIn("fn call_via_dog(d: &impl __pytra_trait_Dog) -> String", rust)
+        self.assertNotIn("unsupported", rust)
+
     def test_transpile_rejects_general_union_type_expr_in_annassign(self) -> None:
         east = {
             "kind": "Module",
