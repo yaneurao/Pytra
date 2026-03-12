@@ -31,6 +31,4 @@
 
 ## 未完了タスク
 
-1. [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01] cross-backend backend parity matrix を実際の `feature × backend` support-state table として埋め、全 backend の canonical source にする。
-   文脈: [p6-backend-parity-matrix-cell-fill.md](/workspace/Pytra/docs/ja/plans/p6-backend-parity-matrix-cell-fill.md)
-   概要: 現在の parity matrix は row seed と state taxonomy を持つ scaffold だが、各 cell の support state はまだ埋まっていない。C++ 個別 matrix を drill-down にとどめ、全 backend を横断した canonical 2 次元表を `support_state` / `evidence_kind` 付きで実体化する。
+- 現在、未完了タスクはありません。

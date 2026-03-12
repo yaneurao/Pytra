@@ -31,6 +31,4 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-1. [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01] turn the cross-backend parity matrix into a real `feature × backend` support-state table and make it the canonical source across all backends.
-   Context: [p6-backend-parity-matrix-cell-fill.md](/workspace/Pytra/docs/en/plans/p6-backend-parity-matrix-cell-fill.md)
-   Summary: the current parity matrix already has the row seed and the state taxonomy, but it does not yet populate per-cell support states. This `P6` turns the cross-backend matrix into the canonical 2D table with `support_state` / `evidence_kind`, while keeping the C++ table as drill-down documentation.
+- There are currently no unfinished tasks.
