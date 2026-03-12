@@ -31,6 +31,6 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-- [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01] Fill the remaining unsupported support-matrix cells for the representative tier (`cpp/rs/cs`) as a live implementation rollout task (context: [p4-backend-parity-representative-rollout.md](../plans/p4-backend-parity-representative-rollout.md)). Progress: the residual inventory and bundle order are fixed, and `rs` is the next backend.
+- [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01] Fill the remaining unsupported support-matrix cells for the representative tier (`cpp/rs/cs`) as a live implementation rollout task (context: [p4-backend-parity-representative-rollout.md](../plans/p4-backend-parity-representative-rollout.md)). Progress: the residual inventory is fixed, the `cpp` baseline lock is confirmed, and `rs` is the next backend.
 - [ ] [ID: P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01] Fill the remaining unsupported support-matrix cells for the secondary tier (`go/java/kt/scala/swift/nim`) as a live implementation rollout task (context: [p5-backend-parity-secondary-rollout.md](../plans/p5-backend-parity-secondary-rollout.md))
 - [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01] Fill the remaining unsupported support-matrix cells for the long-tail tier (`js/ts/lua/rb/php`) as a live implementation rollout task (context: [p6-backend-parity-longtail-rollout.md](../plans/p6-backend-parity-longtail-rollout.md))

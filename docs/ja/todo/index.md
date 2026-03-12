@@ -31,6 +31,6 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01] backend parity の representative tier (`cpp/rs/cs`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p4-backend-parity-representative-rollout.md](../plans/p4-backend-parity-representative-rollout.md)）。進捗: residual inventory と bundle order は固定済み、次 backend は `rs`
+- [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01] backend parity の representative tier (`cpp/rs/cs`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p4-backend-parity-representative-rollout.md](../plans/p4-backend-parity-representative-rollout.md)）。進捗: residual inventory は固定済み、`cpp` baseline lock を確認済み、次 backend は `rs`
 - [ ] [ID: P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01] backend parity の secondary tier (`go/java/kt/scala/swift/nim`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p5-backend-parity-secondary-rollout.md](../plans/p5-backend-parity-secondary-rollout.md)）
 - [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01] backend parity の long-tail tier (`js/ts/lua/rb/php`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p6-backend-parity-longtail-rollout.md](../plans/p6-backend-parity-longtail-rollout.md)）
