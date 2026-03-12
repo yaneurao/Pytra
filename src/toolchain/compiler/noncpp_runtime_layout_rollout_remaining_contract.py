@@ -691,10 +691,17 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     {
         "backend": "php",
         "pytra_core_files": ("built_in/py_runtime.php", "std/time.php"),
-        "pytra_gen_files": ("std/math.php", "std/time.php", "utils/gif.php", "utils/png.php"),
+        "pytra_gen_files": (
+            "std/math.php",
+            "std/pathlib.php",
+            "std/time.php",
+            "utils/gif.php",
+            "utils/png.php",
+        ),
         "pytra_files": (
             "py_runtime.php",
             "std/math.php",
+            "std/pathlib.php",
             "std/time.php",
             "utils/gif.php",
             "utils/png.php",
@@ -837,6 +844,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
         "backend": "php",
         "generated_files": (
             "generated/std/math.php",
+            "generated/std/pathlib.php",
             "generated/std/time.php",
             "generated/utils/gif.php",
             "generated/utils/png.php",
@@ -845,6 +853,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
         "compat_files": (
             "pytra/py_runtime.php",
             "pytra/std/math.php",
+            "pytra/std/pathlib.php",
             "pytra/std/time.php",
             "pytra/utils/gif.php",
             "pytra/utils/png.php",
@@ -950,13 +959,17 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     },
     {
         "backend": "php",
-        "generated_modules": ("std/math", "std/time", "utils/gif", "utils/png"),
+        "generated_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
         "native_modules": ("built_in/py_runtime", "std/time"),
-        "compat_modules": ("built_in/py_runtime", "std/math", "std/time", "utils/gif", "utils/png"),
-        "blocked_modules": (
-            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("std/json", "std/pathlib")
+        "compat_modules": (
+            "built_in/py_runtime",
+            "std/math",
+            "std/pathlib",
+            "std/time",
+            "utils/gif",
+            "utils/png",
         ),
+        "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1 + ("std/json",),
     },
 )
 
@@ -993,10 +1006,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_BLOCKED_REASONS_V1: Final[
     },
     {
         "backend": "php",
-        "missing_compare_lane_modules": (
-            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("std/json", "std/pathlib")
-        ),
+        "missing_compare_lane_modules": REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1 + ("std/json",),
         "native_compare_residual_modules": (),
         "helper_shaped_compare_gap_modules": (),
     },
@@ -1027,7 +1037,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_V1: Final[
     },
     {
         "backend": "php",
-        "materialized_compare_modules": ("std/math", "std/time", "utils/gif", "utils/png"),
+        "materialized_compare_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
         "helper_artifact_modules": (),
     },
 )

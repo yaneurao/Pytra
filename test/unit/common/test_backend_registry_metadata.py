@@ -53,3 +53,10 @@ class BackendRegistryMetadataTest(unittest.TestCase):
     def test_metadata_rejects_unknown_program_writer_key(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "unsupported program writer key: missing-writer"):
             get_program_writer_ref("missing-writer")
+
+    def test_php_runtime_hook_ships_generated_pathlib(self) -> None:
+        desc = get_runtime_hook_descriptor("php")
+        self.assertEqual(desc.get("kind"), "php_runtime")
+        files = desc.get("files")
+        self.assertIsInstance(files, list)
+        self.assertIn(("generated/std/pathlib.php", "std/pathlib.php"), files)

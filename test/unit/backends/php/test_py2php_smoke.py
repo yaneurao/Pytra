@@ -85,17 +85,21 @@ class Py2PhpSmokeTest(unittest.TestCase):
     def test_php_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "php" / "native" / "built_in" / "py_runtime.php"
         generated_math_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "math.php"
+        generated_pathlib_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "pathlib.php"
         time_path = ROOT / "src" / "runtime" / "php" / "native" / "std" / "time.php"
         generated_time_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "time.php"
         png_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "png.php"
         gif_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "gif.php"
+        compat_pathlib_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "pathlib.php"
         legacy_path = ROOT / "src" / "runtime" / "php" / "pytra-core"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(generated_math_path.exists())
+        self.assertTrue(generated_pathlib_path.exists())
         self.assertTrue(time_path.exists())
         self.assertTrue(generated_time_path.exists())
         self.assertTrue(png_path.exists())
         self.assertTrue(gif_path.exists())
+        self.assertTrue(compat_pathlib_path.exists())
         self.assertFalse(legacy_path.exists())
 
     def test_bitwise_invert_basic_uses_php_invert_operator(self) -> None:

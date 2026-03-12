@@ -134,6 +134,7 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
         "files": [
             ("native/built_in/py_runtime.php", "py_runtime.php"),
             ("generated/std/math.php", "std/math.php"),
+            ("generated/std/pathlib.php", "std/pathlib.php"),
             ("generated/std/time.php", "std/time.php"),
             ("generated/utils/png.php", "utils/png.php"),
             ("generated/utils/gif.php", "utils/gif.php"),

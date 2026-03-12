@@ -264,7 +264,8 @@
         { "target": "cs", "output": "src/runtime/cs/generated/std/pathlib.cs" },
         { "target": "java", "output": "src/runtime/java/generated/std/pathlib.java" },
         { "target": "js", "output": "src/runtime/js/generated/std/pathlib.js", "postprocess": "js_std_pathlib_live_wrapper" },
-        { "target": "ts", "output": "src/runtime/ts/generated/std/pathlib.ts", "postprocess": "ts_std_pathlib_live_wrapper" }
+        { "target": "ts", "output": "src/runtime/ts/generated/std/pathlib.ts", "postprocess": "ts_std_pathlib_live_wrapper" },
+        { "target": "php", "output": "src/runtime/php/generated/std/pathlib.php", "postprocess": "php_std_pathlib_live_wrapper" }
       ]
     },
     {

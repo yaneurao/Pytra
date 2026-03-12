@@ -310,7 +310,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["php"]["pytra_gen_files"],
-            ("std/math.php", "std/time.php", "utils/gif.php", "utils/png.php"),
+            ("std/math.php", "std/pathlib.php", "std/time.php", "utils/gif.php", "utils/png.php"),
         )
         self.assertEqual(
             by_backend["ts"]["pytra_gen_files"],
@@ -359,6 +359,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "backend": "php",
                 "generated_files": (
                     "generated/std/math.php",
+                    "generated/std/pathlib.php",
                     "generated/std/time.php",
                     "generated/utils/gif.php",
                     "generated/utils/png.php",
@@ -367,6 +368,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "compat_files": (
                     "pytra/py_runtime.php",
                     "pytra/std/math.php",
+                    "pytra/std/pathlib.php",
                     "pytra/std/time.php",
                     "pytra/utils/gif.php",
                     "pytra/utils/png.php",
@@ -428,9 +430,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             by_backend["php"],
             {
                 "backend": "php",
-                "generated_modules": ("std/math", "std/time", "utils/gif", "utils/png"),
+                "generated_modules": ("std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
                 "native_modules": ("built_in/py_runtime", "std/time"),
-                "compat_modules": ("built_in/py_runtime", "std/math", "std/time", "utils/gif", "utils/png"),
+                "compat_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
                 "blocked_modules": (
                     "built_in/contains",
                     "built_in/io_ops",
@@ -443,7 +445,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "built_in/type_id",
                     "built_in/zip_ops",
                     "std/json",
-                    "std/pathlib",
                 ),
             },
         )
@@ -552,7 +553,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                         "built_in/type_id",
                         "built_in/zip_ops",
                         "std/json",
-                        "std/pathlib",
                     ),
                     "native_compare_residual_modules": (),
                     "helper_shaped_compare_gap_modules": (),
@@ -612,6 +612,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "php",
                     "materialized_compare_modules": (
                         "std/math",
+                        "std/pathlib",
                         "std/time",
                         "utils/gif",
                         "utils/png",
