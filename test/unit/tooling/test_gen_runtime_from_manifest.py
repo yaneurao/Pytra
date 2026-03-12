@@ -22,6 +22,8 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn(("built_in/type_id", "rs", "src/runtime/rs/generated/built_in/type_id.rs"), pairs)
         self.assertIn(("built_in/type_id", "cs", "src/runtime/cs/generated/built_in/type_id.cs"), pairs)
         self.assertIn(("std/pathlib", "cs", "src/runtime/cs/generated/std/pathlib.cs"), pairs)
+        self.assertIn(("std/pathlib", "js", "src/runtime/js/generated/std/pathlib.js"), pairs)
+        self.assertIn(("std/pathlib", "ts", "src/runtime/ts/generated/std/pathlib.ts"), pairs)
         self.assertIn(("std/math", "js", "src/runtime/js/generated/std/math.js"), pairs)
         self.assertIn(("std/math", "ts", "src/runtime/ts/generated/std/math.ts"), pairs)
         self.assertIn(("std/math", "php", "src/runtime/php/generated/std/math.php"), pairs)
@@ -206,6 +208,33 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("module.exports = {perf_counter, perfCounter};", out)
         self.assertNotIn("__t.perf_counter()", out)
 
+    def test_rewrite_js_std_pathlib_live_wrapper_exports_factory_with_property_getters(self) -> None:
+        src = "\n".join(
+            [
+                "class Path {",
+                "    __truediv__(rhs) { return new Path(rhs); }",
+                "    parent() { return new Path('.'); }",
+                "    parents() { return []; }",
+                "    name() { return 'n'; }",
+                "    suffix() { return '.txt'; }",
+                "    stem() { return 'n'; }",
+                "    resolve() { return new Path('.'); }",
+                "    exists() { return true; }",
+                "    mkdir(parents, exist_ok) { }",
+                "    read_text(encoding) { return ''; }",
+                "    write_text(text, encoding) { return 0; }",
+                "    glob(pattern) { return []; }",
+                "    cwd() { return new Path('.'); }",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_js_std_pathlib_live_wrapper(src)
+        self.assertIn("class PathValue {", out)
+        self.assertIn("function Path(value = \"\") {", out)
+        self.assertIn("Path.cwd = function() {", out)
+        self.assertIn('Object.defineProperty(obj, "parent"', out)
+        self.assertIn("module.exports = { Path, pathJoin };", out)
+
     def test_rewrite_ts_std_time_live_wrapper_exports_perf_counter(self) -> None:
         src = "\n".join(
             [
@@ -221,6 +250,32 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("process.hrtime.bigint()", out)
         self.assertIn("export const perfCounter = perf_counter;", out)
         self.assertNotIn("__t.perf_counter()", out)
+
+    def test_rewrite_ts_std_pathlib_live_wrapper_exports_factory_with_property_getters(self) -> None:
+        src = "\n".join(
+            [
+                "class Path {",
+                "    __truediv__(rhs) { return new Path(rhs); }",
+                "    parent() { return new Path('.'); }",
+                "    parents() { return []; }",
+                "    name() { return 'n'; }",
+                "    suffix() { return '.txt'; }",
+                "    stem() { return 'n'; }",
+                "    resolve() { return new Path('.'); }",
+                "    exists() { return true; }",
+                "    mkdir(parents, exist_ok) { }",
+                "    read_text(encoding) { return ''; }",
+                "    write_text(text, encoding) { return 0; }",
+                "    glob(pattern) { return []; }",
+                "    cwd() { return new Path('.'); }",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_ts_std_pathlib_live_wrapper(src)
+        self.assertIn("export class PathValue {", out)
+        self.assertIn("export const Path: ((value?: unknown) => PathValue) & { cwd(): PathValue }", out)
+        self.assertIn('Object.defineProperty(obj, "parent"', out)
+        self.assertIn("export function pathJoin(base: unknown, child: unknown): PathValue {", out)
 
     def test_rewrite_php_std_time_live_wrapper_inlines_microtime(self) -> None:
         src = "\n".join(
@@ -321,7 +376,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         item_ids = gen_mod.resolve_item_ids("all", items)
         plan = gen_mod.build_generation_plan(items, targets, item_ids)
         checked, updated = gen_mod.generate(plan, check=True, dry_run=False)
-        self.assertEqual(checked, 16)
+        self.assertEqual(checked, 18)
         self.assertEqual(updated, 0)
 
 

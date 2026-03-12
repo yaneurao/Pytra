@@ -549,8 +549,21 @@ def main() -> None:
             )
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
             self.assertTrue((Path(td) / "pytra" / "std" / "time.js").exists())
+            self.assertTrue((Path(td) / "pytra" / "std" / "pathlib.js").exists())
             self.assertTrue((Path(td) / "pytra" / "py_runtime.js").exists())
             self.assertTrue((Path(td) / "pytra" / "utils" / "assertions.js").exists())
+            pathlib_shim = (Path(td) / "pytra" / "std" / "pathlib.js").read_text(encoding="utf-8")
+            self.assertIn("generated/std/pathlib.js", pathlib_shim)
+
+    def test_pathlib_runtime_symbol_uses_factory_and_property_access(self) -> None:
+        fixture = find_fixture_case("math_path_runtime_ir")
+        east = load_east(fixture, parser_backend="self_hosted")
+        js = transpile_to_js(east)
+        self.assertIn('import { Path } from "./pytra/std/pathlib.js";', js)
+        self.assertIn('let p = Path("tmp/a.txt");', js)
+        self.assertIn("let q = p.parent;", js)
+        self.assertIn("let n = p.name;", js)
+        self.assertIn("let s = p.stem;", js)
 
     def test_py2js_does_not_import_src_common(self) -> None:
         src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")

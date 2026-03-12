@@ -28,6 +28,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_wave_b_generated_compare_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_b_generated_compare_issues(), [])
 
+    def test_wave_b_native_residual_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_b_native_residual_issues(), [])
+
+    def test_wave_b_native_residual_file_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_b_native_residual_file_issues(), [])
+
     def test_wave_a_native_residual_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_a_native_residual_issues(), [])
 
@@ -300,7 +306,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["js"]["pytra_gen_files"],
-            ("std/math.js", "std/time.js", "utils/gif.js", "utils/png.js"),
+            ("std/math.js", "std/pathlib.js", "std/time.js", "utils/gif.js", "utils/png.js"),
         )
         self.assertEqual(
             by_backend["php"]["pytra_gen_files"],
@@ -308,7 +314,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["ts"]["pytra_gen_files"],
-            ("std/math.ts", "std/time.ts", "utils/gif.ts", "utils/png.ts"),
+            ("std/math.ts", "std/pathlib.ts", "std/time.ts", "utils/gif.ts", "utils/png.ts"),
         )
 
     def test_target_inventory_is_fixed(self) -> None:
@@ -341,6 +347,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             by_backend["ts"]["generated_files"],
             (
                 "generated/std/math.ts",
+                "generated/std/pathlib.ts",
                 "generated/std/time.ts",
                 "generated/utils/gif.ts",
                 "generated/utils/png.ts",
@@ -415,7 +422,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "built_in/type_id",
                 "built_in/zip_ops",
                 "std/json",
-                "std/pathlib",
             ),
         )
         self.assertEqual(
@@ -465,7 +471,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                         "built_in/zip_ops",
                         "std/json",
                     ),
-                    "native_compare_residual_modules": ("std/pathlib",),
+                    "native_compare_residual_modules": (),
                     "helper_shaped_compare_gap_modules": (),
                 },
                 "ts": {
@@ -483,7 +489,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                         "built_in/zip_ops",
                         "std/json",
                     ),
-                    "native_compare_residual_modules": ("std/pathlib",),
+                    "native_compare_residual_modules": (),
                     "helper_shaped_compare_gap_modules": (),
                 },
                 "lua": {
@@ -566,6 +572,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "js",
                     "materialized_compare_modules": (
                         "std/math",
+                        "std/pathlib",
                         "std/time",
                         "utils/gif",
                         "utils/png",
@@ -576,6 +583,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "ts",
                     "materialized_compare_modules": (
                         "std/math",
+                        "std/pathlib",
                         "std/time",
                         "utils/gif",
                         "utils/png",
@@ -609,6 +617,78 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                         "utils/png",
                     ),
                     "helper_artifact_modules": (),
+                },
+            },
+        )
+
+    def test_wave_b_native_residuals_are_fixed(self) -> None:
+        by_backend = {
+            entry["backend"]: entry
+            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_native_residuals()
+        }
+        self.assertEqual(
+            by_backend,
+            {
+                "js": {
+                    "backend": "js",
+                    "substrate_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
+                    "compare_residual_modules": (),
+                },
+                "ts": {
+                    "backend": "ts",
+                    "substrate_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
+                    "compare_residual_modules": (),
+                },
+                "lua": {
+                    "backend": "lua",
+                    "substrate_modules": ("built_in/py_runtime",),
+                    "compare_residual_modules": (),
+                },
+                "ruby": {
+                    "backend": "ruby",
+                    "substrate_modules": ("built_in/py_runtime",),
+                    "compare_residual_modules": (),
+                },
+                "php": {
+                    "backend": "php",
+                    "substrate_modules": ("built_in/py_runtime", "std/time"),
+                    "compare_residual_modules": (),
+                },
+            },
+        )
+
+    def test_wave_b_native_residual_files_are_fixed(self) -> None:
+        by_backend = {
+            entry["backend"]: entry
+            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_native_residual_files()
+        }
+        self.assertEqual(
+            by_backend,
+            {
+                "js": {
+                    "backend": "js",
+                    "substrate_files": ("built_in/py_runtime.js", "std/math.js", "std/pathlib.js", "std/time.js"),
+                    "compare_residual_files": (),
+                },
+                "ts": {
+                    "backend": "ts",
+                    "substrate_files": ("built_in/py_runtime.ts", "std/math.ts", "std/pathlib.ts", "std/time.ts"),
+                    "compare_residual_files": (),
+                },
+                "lua": {
+                    "backend": "lua",
+                    "substrate_files": ("built_in/py_runtime.lua",),
+                    "compare_residual_files": (),
+                },
+                "ruby": {
+                    "backend": "ruby",
+                    "substrate_files": ("built_in/py_runtime.rb",),
+                    "compare_residual_files": (),
+                },
+                "php": {
+                    "backend": "php",
+                    "substrate_files": ("built_in/py_runtime.php", "std/time.php"),
+                    "compare_residual_files": (),
                 },
             },
         )

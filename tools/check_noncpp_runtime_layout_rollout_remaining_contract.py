@@ -436,6 +436,58 @@ def _collect_wave_b_generated_compare_issues() -> list[str]:
     return issues
 
 
+def _collect_wave_b_native_residual_issues() -> list[str]:
+    issues: list[str] = []
+    module_buckets = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_module_buckets()
+    }
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_native_residuals()
+    if tuple(entry["backend"] for entry in entries) != ("js", "ts", "lua", "ruby", "php"):
+        issues.append("wave-b native residual order drifted")
+    for entry in entries:
+        backend = entry["backend"]
+        bucket = module_buckets.get(backend)
+        if bucket is None:
+            issues.append(f"wave-b native residual backend drifted: {backend}")
+            continue
+        native_modules = set(bucket["native_modules"])
+        substrate = set(entry["substrate_modules"])
+        compare_residual = set(entry["compare_residual_modules"])
+        if not substrate.issubset(native_modules):
+            issues.append(f"wave-b substrate escaped native bucket: {backend}")
+        if not compare_residual.issubset(native_modules):
+            issues.append(f"wave-b compare residual escaped native bucket: {backend}")
+        if substrate & compare_residual:
+            issues.append(f"wave-b native residual overlap drifted: {backend}")
+    return issues
+
+
+def _collect_wave_b_native_residual_file_issues() -> list[str]:
+    issues: list[str] = []
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_native_residual_files()
+    if tuple(entry["backend"] for entry in entries) != ("js", "ts", "lua", "ruby", "php"):
+        issues.append("wave-b native residual file order drifted")
+    for entry in entries:
+        backend = entry["backend"]
+        native_root = ROOT / "src" / "runtime" / backend / "native"
+        actual_files = tuple(
+            sorted(
+                str(path.relative_to(native_root)).replace("\\", "/")
+                for path in native_root.rglob("*")
+                if path.is_file()
+            )
+        )
+        substrate_files = set(entry["substrate_files"])
+        compare_residual_files = set(entry["compare_residual_files"])
+        if substrate_files & compare_residual_files:
+            issues.append(f"wave-b native residual file overlap drifted: {backend}")
+        expected_files = tuple(sorted(substrate_files.union(compare_residual_files)))
+        if actual_files != expected_files:
+            issues.append(f"wave-b native residual file inventory drifted: {backend}")
+    return issues
+
+
 def _collect_wave_a_native_residual_issues() -> list[str]:
     issues: list[str] = []
     module_buckets = {
@@ -496,6 +548,8 @@ def main() -> int:
     issues.extend(_collect_module_bucket_issues())
     issues.extend(_collect_wave_b_blocked_reason_issues())
     issues.extend(_collect_wave_b_generated_compare_issues())
+    issues.extend(_collect_wave_b_native_residual_issues())
+    issues.extend(_collect_wave_b_native_residual_file_issues())
     issues.extend(_collect_wave_a_native_residual_issues())
     issues.extend(_collect_wave_a_native_residual_file_issues())
     if issues:

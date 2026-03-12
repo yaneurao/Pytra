@@ -1,1 +1,1 @@
-export * from "../../native/std/pathlib";
+export * from "../../generated/std/pathlib";

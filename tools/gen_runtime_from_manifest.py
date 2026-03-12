@@ -407,6 +407,188 @@ def rewrite_js_std_time_live_wrapper(js_src: str) -> str:
     return text + "\n\nconst perfCounter = perf_counter;\nmodule.exports = {perf_counter, perfCounter};\n"
 
 
+def rewrite_js_std_pathlib_live_wrapper(js_src: str) -> str:
+    required_fragments = (
+        "class Path {",
+        "__truediv__(rhs)",
+        "parent()",
+        "parents()",
+        "name()",
+        "suffix()",
+        "stem()",
+        "resolve()",
+        "exists()",
+        "mkdir(parents, exist_ok)",
+        "read_text(encoding)",
+        "write_text(text, encoding)",
+        "glob(pattern)",
+        "cwd()",
+    )
+    for fragment in required_fragments:
+        if fragment not in js_src:
+            raise RuntimeError("generated JS std/pathlib wrapper is missing: " + fragment)
+    return (
+        'const fs = require("fs");\n'
+        'const nodepath = require("path");\n\n'
+        "function _coercePathText(value) {\n"
+        "    if (value && typeof value.__fspath__ === \"function\") {\n"
+        "        return String(value.__fspath__());\n"
+        "    }\n"
+        "    if (value && typeof value.toString === \"function\" && value.toString !== Object.prototype.toString) {\n"
+        "        return String(value.toString());\n"
+        "    }\n"
+        "    return String(value ?? \"\");\n"
+        "}\n\n"
+        "function _globSegmentToRegExp(segment) {\n"
+        "    const escaped = String(segment).replace(/[|\\\\{}()[\\]^$+?.]/g, \"\\\\$&\");\n"
+        "    return new RegExp(\"^\" + escaped.replace(/\\*/g, \".*\") + \"$\");\n"
+        "}\n\n"
+        "function _globPaths(pattern) {\n"
+        "    const text = _coercePathText(pattern);\n"
+        "    if (text.indexOf(\"*\") === -1) {\n"
+        "        return fs.existsSync(text) ? [text] : [];\n"
+        "    }\n"
+        "    const normalized = text.replace(/\\\\/g, \"/\");\n"
+        "    const lastSlash = normalized.lastIndexOf(\"/\");\n"
+        "    const baseDir = lastSlash >= 0 ? normalized.slice(0, lastSlash) : \".\";\n"
+        "    const leafPattern = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;\n"
+        "    const dirPath = baseDir === \"\" ? \".\" : baseDir;\n"
+        "    if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) {\n"
+        "        return [];\n"
+        "    }\n"
+        "    const leafRe = _globSegmentToRegExp(leafPattern);\n"
+        "    const out = [];\n"
+        "    for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {\n"
+        "        if (!leafRe.test(entry.name)) {\n"
+        "            continue;\n"
+        "        }\n"
+        "        out.push(nodepath.join(dirPath, entry.name));\n"
+        "    }\n"
+        "    return out;\n"
+        "}\n\n"
+        "class PathValue {\n"
+        "    constructor(value) {\n"
+        "        this._value = _coercePathText(value);\n"
+        "    }\n\n"
+        "    __str__() {\n"
+        "        return this._value;\n"
+        "    }\n\n"
+        "    __repr__() {\n"
+        "        return \"Path(\" + this._value + \")\";\n"
+        "    }\n\n"
+        "    __fspath__() {\n"
+        "        return this._value;\n"
+        "    }\n\n"
+        "    __truediv__(rhs) {\n"
+        "        return new PathValue(nodepath.join(this._value, _coercePathText(rhs)));\n"
+        "    }\n\n"
+        "    parent() {\n"
+        "        let parentTxt = nodepath.dirname(this._value);\n"
+        "        if (parentTxt === \"\") {\n"
+        "            parentTxt = \".\";\n"
+        "        }\n"
+        "        return new PathValue(parentTxt);\n"
+        "    }\n\n"
+        "    parents() {\n"
+        "        const out = [];\n"
+        "        let current = nodepath.dirname(this._value);\n"
+        "        while (true) {\n"
+        "            if (current === \"\") {\n"
+        "                current = \".\";\n"
+        "            }\n"
+        "            out.push(new PathValue(current));\n"
+        "            let nextCurrent = nodepath.dirname(current);\n"
+        "            if (nextCurrent === \"\") {\n"
+        "                nextCurrent = \".\";\n"
+        "            }\n"
+        "            if (nextCurrent === current) {\n"
+        "                break;\n"
+        "            }\n"
+        "            current = nextCurrent;\n"
+        "        }\n"
+        "        return out;\n"
+        "    }\n\n"
+        "    name() {\n"
+        "        return nodepath.basename(this._value);\n"
+        "    }\n\n"
+        "    suffix() {\n"
+        "        return nodepath.extname(this._value);\n"
+        "    }\n\n"
+        "    stem() {\n"
+        "        return nodepath.parse(this._value).name;\n"
+        "    }\n\n"
+        "    resolve() {\n"
+        "        return new PathValue(nodepath.resolve(this._value));\n"
+        "    }\n\n"
+        "    exists() {\n"
+        "        return fs.existsSync(this._value);\n"
+        "    }\n\n"
+        "    mkdir(parents = false, exist_ok = false) {\n"
+        "        if (parents) {\n"
+        "            fs.mkdirSync(this._value, { recursive: true });\n"
+        "            return;\n"
+        "        }\n"
+        "        try {\n"
+        "            fs.mkdirSync(this._value);\n"
+        "        } catch (err) {\n"
+        "            if (!(exist_ok && err && err.code === \"EEXIST\")) {\n"
+        "                throw err;\n"
+        "            }\n"
+        "        }\n"
+        "    }\n\n"
+        "    read_text(_encoding = \"utf-8\") {\n"
+        "        return fs.readFileSync(this._value, \"utf8\");\n"
+        "    }\n\n"
+        "    write_text(text, _encoding = \"utf-8\") {\n"
+        "        const rendered = String(text);\n"
+        "        fs.writeFileSync(this._value, rendered, \"utf8\");\n"
+        "        return rendered.length;\n"
+        "    }\n\n"
+        "    glob(pattern) {\n"
+        "        const matches = _globPaths(nodepath.join(this._value, _coercePathText(pattern)));\n"
+        "        return matches.map((item) => new PathValue(item));\n"
+        "    }\n\n"
+        "    toString() {\n"
+        "        return this._value;\n"
+        "    }\n\n"
+        "    static cwd() {\n"
+        "        return new PathValue(process.cwd());\n"
+        "    }\n"
+        "}\n\n"
+        "function _wrap_path_obj(obj) {\n"
+        "    if (!(obj instanceof PathValue)) {\n"
+        "        return obj;\n"
+        "    }\n"
+        "    if (!Object.prototype.hasOwnProperty.call(obj, \"parent\")) {\n"
+        "        Object.defineProperty(obj, \"parent\", { get: function() { return _wrap_path_obj(PathValue.prototype.parent.call(this)); }, configurable: true });\n"
+        "    }\n"
+        "    if (!Object.prototype.hasOwnProperty.call(obj, \"parents\")) {\n"
+        "        Object.defineProperty(obj, \"parents\", { get: function() { return PathValue.prototype.parents.call(this).map(_wrap_path_obj); }, configurable: true });\n"
+        "    }\n"
+        "    if (!Object.prototype.hasOwnProperty.call(obj, \"name\")) {\n"
+        "        Object.defineProperty(obj, \"name\", { get: function() { return PathValue.prototype.name.call(this); }, configurable: true });\n"
+        "    }\n"
+        "    if (!Object.prototype.hasOwnProperty.call(obj, \"suffix\")) {\n"
+        "        Object.defineProperty(obj, \"suffix\", { get: function() { return PathValue.prototype.suffix.call(this); }, configurable: true });\n"
+        "    }\n"
+        "    if (!Object.prototype.hasOwnProperty.call(obj, \"stem\")) {\n"
+        "        Object.defineProperty(obj, \"stem\", { get: function() { return PathValue.prototype.stem.call(this); }, configurable: true });\n"
+        "    }\n"
+        "    return obj;\n"
+        "}\n\n"
+        "function Path(value = \"\") {\n"
+        "    return _wrap_path_obj(new PathValue(value));\n"
+        "}\n\n"
+        "Path.cwd = function() {\n"
+        "    return _wrap_path_obj(PathValue.cwd());\n"
+        "};\n\n"
+        "function pathJoin(base, child) {\n"
+        "    return _wrap_path_obj(new PathValue(nodepath.join(_coercePathText(base), _coercePathText(child))));\n"
+        "}\n\n"
+        "module.exports = { Path, pathJoin };\n"
+    )
+
+
 def rewrite_ts_std_math_live_wrapper(ts_src: str) -> str:
     text = _strip_trailing_string_literal_expr(ts_src)
     text = text.replace('import { extern } from "./pytra/std.js";\n\n', "")
@@ -462,6 +644,191 @@ def rewrite_ts_std_time_live_wrapper(ts_src: str) -> str:
     if "export function perf_counter(): number {" not in text:
         raise RuntimeError("generated TS std/time wrapper is missing perf_counter()")
     return text + "\n\nexport const perfCounter = perf_counter;\n"
+
+
+def rewrite_ts_std_pathlib_live_wrapper(ts_src: str) -> str:
+    required_fragments = (
+        "class Path {",
+        "__truediv__(rhs)",
+        "parent()",
+        "parents()",
+        "name()",
+        "suffix()",
+        "stem()",
+        "resolve()",
+        "exists()",
+        "mkdir(parents, exist_ok)",
+        "read_text(encoding)",
+        "write_text(text, encoding)",
+        "glob(pattern)",
+        "cwd()",
+    )
+    for fragment in required_fragments:
+        if fragment not in ts_src:
+            raise RuntimeError("generated TS std/pathlib wrapper is missing: " + fragment)
+    return (
+        'import * as fs from "fs";\n'
+        'import * as nodepath from "path";\n\n'
+        "function _coercePathText(value: unknown): string {\n"
+        "    const maybePath = value as { __fspath__?: () => unknown; toString?: () => string } | null | undefined;\n"
+        "    if (maybePath && typeof maybePath.__fspath__ === \"function\") {\n"
+        "        return String(maybePath.__fspath__());\n"
+        "    }\n"
+        "    if (maybePath && typeof maybePath.toString === \"function\" && maybePath.toString !== Object.prototype.toString) {\n"
+        "        return String(maybePath.toString());\n"
+        "    }\n"
+        "    return String(value ?? \"\");\n"
+        "}\n\n"
+        "function _globSegmentToRegExp(segment: string): RegExp {\n"
+        "    const escaped = String(segment).replace(/[|\\\\{}()[\\]^$+?.]/g, \"\\\\$&\");\n"
+        "    return new RegExp(\"^\" + escaped.replace(/\\*/g, \".*\") + \"$\");\n"
+        "}\n\n"
+        "function _globPaths(pattern: string): string[] {\n"
+        "    const text = _coercePathText(pattern);\n"
+        "    if (text.indexOf(\"*\") === -1) {\n"
+        "        return fs.existsSync(text) ? [text] : [];\n"
+        "    }\n"
+        "    const normalized = text.replace(/\\\\/g, \"/\");\n"
+        "    const lastSlash = normalized.lastIndexOf(\"/\");\n"
+        "    const baseDir = lastSlash >= 0 ? normalized.slice(0, lastSlash) : \".\";\n"
+        "    const leafPattern = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;\n"
+        "    const dirPath = baseDir === \"\" ? \".\" : baseDir;\n"
+        "    if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) {\n"
+        "        return [];\n"
+        "    }\n"
+        "    const leafRe = _globSegmentToRegExp(leafPattern);\n"
+        "    const out: string[] = [];\n"
+        "    for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {\n"
+        "        if (!leafRe.test(entry.name)) {\n"
+        "            continue;\n"
+        "        }\n"
+        "        out.push(nodepath.join(dirPath, entry.name));\n"
+        "    }\n"
+        "    return out;\n"
+        "}\n\n"
+        "export class PathValue {\n"
+        "    _value: string;\n\n"
+        "    constructor(value: unknown) {\n"
+        "        this._value = _coercePathText(value);\n"
+        "    }\n\n"
+        "    __str__(): string {\n"
+        "        return this._value;\n"
+        "    }\n\n"
+        "    __repr__(): string {\n"
+        "        return \"Path(\" + this._value + \")\";\n"
+        "    }\n\n"
+        "    __fspath__(): string {\n"
+        "        return this._value;\n"
+        "    }\n\n"
+        "    __truediv__(rhs: unknown): PathValue {\n"
+        "        return new PathValue(nodepath.join(this._value, _coercePathText(rhs)));\n"
+        "    }\n\n"
+        "    parent(): PathValue {\n"
+        "        let parentTxt = nodepath.dirname(this._value);\n"
+        "        if (parentTxt === \"\") {\n"
+        "            parentTxt = \".\";\n"
+        "        }\n"
+        "        return new PathValue(parentTxt);\n"
+        "    }\n\n"
+        "    parents(): PathValue[] {\n"
+        "        const out: PathValue[] = [];\n"
+        "        let current = nodepath.dirname(this._value);\n"
+        "        while (true) {\n"
+        "            if (current === \"\") {\n"
+        "                current = \".\";\n"
+        "            }\n"
+        "            out.push(new PathValue(current));\n"
+        "            let nextCurrent = nodepath.dirname(current);\n"
+        "            if (nextCurrent === \"\") {\n"
+        "                nextCurrent = \".\";\n"
+        "            }\n"
+        "            if (nextCurrent === current) {\n"
+        "                break;\n"
+        "            }\n"
+        "            current = nextCurrent;\n"
+        "        }\n"
+        "        return out;\n"
+        "    }\n\n"
+        "    name(): string {\n"
+        "        return nodepath.basename(this._value);\n"
+        "    }\n\n"
+        "    suffix(): string {\n"
+        "        return nodepath.extname(this._value);\n"
+        "    }\n\n"
+        "    stem(): string {\n"
+        "        return nodepath.parse(this._value).name;\n"
+        "    }\n\n"
+        "    resolve(): PathValue {\n"
+        "        return new PathValue(nodepath.resolve(this._value));\n"
+        "    }\n\n"
+        "    exists(): boolean {\n"
+        "        return fs.existsSync(this._value);\n"
+        "    }\n\n"
+        "    mkdir(parents: boolean = false, exist_ok: boolean = false): void {\n"
+        "        if (parents) {\n"
+        "            fs.mkdirSync(this._value, { recursive: true });\n"
+        "            return;\n"
+        "        }\n"
+        "        try {\n"
+        "            fs.mkdirSync(this._value);\n"
+        "        } catch (err: unknown) {\n"
+        "            const e = err as { code?: string };\n"
+        "            if (!(exist_ok && e.code === \"EEXIST\")) {\n"
+        "                throw err;\n"
+        "            }\n"
+        "        }\n"
+        "    }\n\n"
+        "    read_text(_encoding: string = \"utf-8\"): string {\n"
+        "        return fs.readFileSync(this._value, \"utf8\");\n"
+        "    }\n\n"
+        "    write_text(text: unknown, _encoding: string = \"utf-8\"): number {\n"
+        "        const rendered = String(text);\n"
+        "        fs.writeFileSync(this._value, rendered, \"utf8\");\n"
+        "        return rendered.length;\n"
+        "    }\n\n"
+        "    glob(pattern: string): PathValue[] {\n"
+        "        const matches = _globPaths(nodepath.join(this._value, _coercePathText(pattern)));\n"
+        "        return matches.map((item) => new PathValue(item));\n"
+        "    }\n\n"
+        "    toString(): string {\n"
+        "        return this._value;\n"
+        "    }\n\n"
+        "    static cwd(): PathValue {\n"
+        "        return new PathValue(process.cwd());\n"
+        "    }\n"
+        "}\n\n"
+        "function _wrap_path_obj(obj: PathValue): PathValue {\n"
+        "    if (!Object.prototype.hasOwnProperty.call(obj, \"parent\")) {\n"
+        "        Object.defineProperty(obj, \"parent\", { get: function(this: PathValue) { return _wrap_path_obj(PathValue.prototype.parent.call(this)); }, configurable: true });\n"
+        "    }\n"
+        "    if (!Object.prototype.hasOwnProperty.call(obj, \"parents\")) {\n"
+        "        Object.defineProperty(obj, \"parents\", { get: function(this: PathValue) { return PathValue.prototype.parents.call(this).map(_wrap_path_obj); }, configurable: true });\n"
+        "    }\n"
+        "    if (!Object.prototype.hasOwnProperty.call(obj, \"name\")) {\n"
+        "        Object.defineProperty(obj, \"name\", { get: function(this: PathValue) { return PathValue.prototype.name.call(this); }, configurable: true });\n"
+        "    }\n"
+        "    if (!Object.prototype.hasOwnProperty.call(obj, \"suffix\")) {\n"
+        "        Object.defineProperty(obj, \"suffix\", { get: function(this: PathValue) { return PathValue.prototype.suffix.call(this); }, configurable: true });\n"
+        "    }\n"
+        "    if (!Object.prototype.hasOwnProperty.call(obj, \"stem\")) {\n"
+        "        Object.defineProperty(obj, \"stem\", { get: function(this: PathValue) { return PathValue.prototype.stem.call(this); }, configurable: true });\n"
+        "    }\n"
+        "    return obj;\n"
+        "}\n\n"
+        "export const Path: ((value?: unknown) => PathValue) & { cwd(): PathValue } = Object.assign(\n"
+        "    function Path(value: unknown = \"\"): PathValue {\n"
+        "        return _wrap_path_obj(new PathValue(value));\n"
+        "    },\n"
+        "    {\n"
+        "        cwd(): PathValue {\n"
+        "            return _wrap_path_obj(PathValue.cwd());\n"
+        "        },\n"
+        "    },\n"
+        ");\n\n"
+        "export function pathJoin(base: unknown, child: unknown): PathValue {\n"
+        "    return _wrap_path_obj(new PathValue(nodepath.join(_coercePathText(base), _coercePathText(child))));\n"
+        "}\n"
+    )
 
 
 def rewrite_go_program_to_library(go_src: str) -> str:
@@ -618,10 +985,14 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_js_std_math_live_wrapper(generated)
     elif item.postprocess == "js_std_time_live_wrapper":
         generated = rewrite_js_std_time_live_wrapper(generated)
+    elif item.postprocess == "js_std_pathlib_live_wrapper":
+        generated = rewrite_js_std_pathlib_live_wrapper(generated)
     elif item.postprocess == "ts_std_math_live_wrapper":
         generated = rewrite_ts_std_math_live_wrapper(generated)
     elif item.postprocess == "ts_std_time_live_wrapper":
         generated = rewrite_ts_std_time_live_wrapper(generated)
+    elif item.postprocess == "ts_std_pathlib_live_wrapper":
+        generated = rewrite_ts_std_pathlib_live_wrapper(generated)
     elif item.postprocess == "js_program_to_cjs_module":
         generated = rewrite_js_program_to_cjs_module(generated)
     elif item.postprocess == "go_program_to_library":
