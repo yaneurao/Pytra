@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-12
+最終更新: 2026-03-13
 
 ## 文脈運用ルール
 
@@ -31,7 +31,6 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01] `rs/cs` runtime を C++ と file-level compare 可能な `generated/native` layout へ再配置する（文脈: [p0-noncpp-runtime-layout-alignment.md](../plans/p0-noncpp-runtime-layout-alignment.md)）。進捗: `rs/cs` は `native/generated` へ切替済みで `utils/{png,gif}`、`std/{time,math,os,os_path,glob,pathlib}`、`built_in/*` を SoT 再生成済み。C# std ownership は `time=generated(std) canonical + native(built_in) backing seam` まで live 配線済みで、`json=native(std, generated blocked)`, `pathlib/math=native canonical + generated compare artifact`, `re/argparse/enum=no runtime module` を deferred lane として切り分け済み。加えて `generated/native built_in` の exact inventory は固定済みで、C# `src/runtime/cs/pytra/**` duplicate lane は削除済み。Rust std ownership は `time/math=native(built_in)`, `pathlib/os/os_path/glob=compare artifact only`, `json blocked`, `re/argparse/enum=no runtime module` に固定済み
 - [ ] [ID: P1-NONCPP-RUNTIME-LAYOUT-ROLLOUT-REMAINING-01] `go/java/kotlin/scala/swift/nim/js/ts/lua/ruby/php` runtime を P0 と同じ `generated/native` ownership model へ段階 rollout する（文脈: [p1-noncpp-runtime-layout-rollout-remaining.md](../plans/p1-noncpp-runtime-layout-rollout-remaining.md)）。進捗: P0 で確定した compare 単位 `<lane>/<bucket>/<module>` と `generated=SoT only`, `native=hand-written only` を残 backend に拡張する plan を追加済み
 - [ ] [ID: P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01] backend parity の secondary tier (`go/java/kt/scala/swift/nim`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p5-backend-parity-secondary-rollout.md](../plans/p5-backend-parity-secondary-rollout.md)）
 - [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01] backend parity の long-tail tier (`js/ts/lua/rb/php`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p6-backend-parity-longtail-rollout.md](../plans/p6-backend-parity-longtail-rollout.md)）

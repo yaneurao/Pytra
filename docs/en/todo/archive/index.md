@@ -4,7 +4,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-12
+Last updated: 2026-03-13
 
 ## Operation Policy
 
@@ -14,6 +14,8 @@ Last updated: 2026-03-12
 - On the `docs/` side, `docs/ja/` remains the source of truth and translations are synchronized from it.
 
 ## Completed Plan Archive
+
+- [2026-03-13 / P0-NONCPP-RUNTIME-LAYOUT-ALIGN-01](../plans/archive/20260313-p0-noncpp-runtime-layout-alignment.md)
 
 - [2026-03-12 / P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01](../plans/archive/20260312-p0-path-stringify-cpp-representative-support.md)
 - [2026-03-12 / P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01](../plans/archive/20260312-p0-dataclass-field-default-factory-rc-cpp-support.md)
@@ -121,6 +123,8 @@ Last updated: 2026-03-12
 - [2026-03-06 / P4-MULTILANG-SH-01](../plans/archive/20260306-p4-multilang-selfhost-full-rollout.md) (requeue after the ABI boundary is fixed)
 
 ## Date Links
+
+- [2026-03-13](20260313.md) (1 section)
 
 - [2026-03-12](20260312.md) (28 sections)
 - [2026-03-11](20260311.md) (25 sections)
