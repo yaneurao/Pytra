@@ -93,6 +93,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             contract_mod.REVIEWED_REPRESENTATIVE_CELL_OVERRIDES,
             {
                 "syntax.assign.tuple_destructure": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -103,6 +105,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "syntax.expr.lambda": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -113,6 +117,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "syntax.expr.list_comprehension": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -123,6 +129,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "syntax.control.for_range": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -135,6 +143,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "syntax.control.try_raise": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -154,11 +164,14 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "nim": {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "builtin.iter.enumerate": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -169,6 +182,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "builtin.iter.zip": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -181,6 +196,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "builtin.iter.range": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -193,6 +210,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.json.loads_dumps": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -203,6 +222,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.pathlib.path_ops": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -213,6 +234,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.enum.enum_and_intflag": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -223,6 +246,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.argparse.parse_args": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -233,6 +258,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.re.sub": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -243,6 +270,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "builtin.type.isinstance": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -271,6 +300,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
                 "stdlib.math.imported_symbols": {
+                    "js": {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "ts": {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "go": {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "kt": {"backend": "kt", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -399,8 +430,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             [
                 {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
-                {"backend": "js", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
-                {"backend": "ts", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+                {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "go", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "swift", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -571,7 +602,7 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             ],
             [
                 {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
-                {"backend": "ts", "support_state": "not_started", "evidence_kind": "not_started_placeholder"},
+                {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -613,6 +644,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             [
                 cells["builtin.type.isinstance"]["rs"],
                 cells["builtin.type.isinstance"]["cs"],
+                cells["builtin.type.isinstance"]["js"],
+                cells["builtin.type.isinstance"]["ts"],
                 cells["builtin.type.isinstance"]["scala"],
                 cells["builtin.type.isinstance"]["swift"],
                 cells["builtin.type.isinstance"]["nim"],
@@ -623,6 +656,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             [
                 {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "scala", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "swift", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -635,6 +670,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             [
                 cells["stdlib.math.imported_symbols"]["rs"],
                 cells["stdlib.math.imported_symbols"]["cs"],
+                cells["stdlib.math.imported_symbols"]["js"],
+                cells["stdlib.math.imported_symbols"]["ts"],
                 cells["stdlib.math.imported_symbols"]["scala"],
                 cells["stdlib.math.imported_symbols"]["swift"],
                 cells["stdlib.math.imported_symbols"]["nim"],
@@ -642,6 +679,8 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
             [
                 {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "js", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "ts", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "scala", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "swift", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "nim", "support_state": "supported", "evidence_kind": "transpile_smoke"},

@@ -25,9 +25,9 @@ class CheckBackendParityLongtailRolloutInventoryTest(unittest.TestCase):
             tuple(bundle["bundle_id"] for bundle in inventory_mod.iter_longtail_rollout_bundles()),
             ("js_ts_bundle", "lua_rb_php_bundle"),
         )
-        self.assertEqual(inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["completed_backends"], ())
-        self.assertEqual(inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["next_backend"], "js")
-        self.assertEqual(inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["next_bundle"], "js_ts_bundle")
+        self.assertEqual(inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["completed_backends"], ("js", "ts"))
+        self.assertEqual(inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["next_backend"], "lua")
+        self.assertEqual(inventory_mod.LONGTAIL_ROLLOUT_HANDOFF_V1["next_bundle"], "lua_rb_php_bundle")
 
     def test_bundle_feature_pairs_cover_exact_residual_set(self) -> None:
         residual_pairs = {
@@ -47,39 +47,8 @@ class CheckBackendParityLongtailRolloutInventoryTest(unittest.TestCase):
             inventory_mod.LONGTAIL_RESIDUAL_FEATURE_IDS_BY_BACKEND_V1,
             {
                 "js": (
-                    "syntax.assign.tuple_destructure",
-                    "syntax.expr.lambda",
-                    "syntax.expr.list_comprehension",
-                    "syntax.control.for_range",
-                    "syntax.control.try_raise",
-                    "builtin.iter.range",
-                    "builtin.iter.enumerate",
-                    "builtin.iter.zip",
-                    "builtin.type.isinstance",
-                    "stdlib.json.loads_dumps",
-                    "stdlib.pathlib.path_ops",
-                    "stdlib.enum.enum_and_intflag",
-                    "stdlib.argparse.parse_args",
-                    "stdlib.math.imported_symbols",
-                    "stdlib.re.sub",
                 ),
                 "ts": (
-                    "syntax.assign.tuple_destructure",
-                    "syntax.expr.lambda",
-                    "syntax.expr.list_comprehension",
-                    "syntax.control.for_range",
-                    "syntax.control.try_raise",
-                    "syntax.oop.virtual_dispatch",
-                    "builtin.iter.range",
-                    "builtin.iter.enumerate",
-                    "builtin.iter.zip",
-                    "builtin.type.isinstance",
-                    "stdlib.json.loads_dumps",
-                    "stdlib.pathlib.path_ops",
-                    "stdlib.enum.enum_and_intflag",
-                    "stdlib.argparse.parse_args",
-                    "stdlib.math.imported_symbols",
-                    "stdlib.re.sub",
                 ),
                 "lua": (
                     "syntax.assign.tuple_destructure",

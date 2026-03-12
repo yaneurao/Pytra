@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01] backend parity の long-tail tier (`js/ts/lua/rb/php`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p6-backend-parity-longtail-rollout.md](../plans/p6-backend-parity-longtail-rollout.md)）。進捗: `S1-01` で matrix seed から long-tail residual cell / backend order / 2 bundle handoff（`js/ts` → `lua/rb/php`）を inventory/checker に固定した
+- [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01] backend parity の long-tail tier (`js/ts/lua/rb/php`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p6-backend-parity-longtail-rollout.md](../plans/p6-backend-parity-longtail-rollout.md)）。進捗: `S2-01` で `js/ts` bundle を `supported/transpile_smoke` へ引き上げ、handoff を `lua/rb/php` bundle へ前進させた
