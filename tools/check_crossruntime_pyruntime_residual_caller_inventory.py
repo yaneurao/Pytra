@@ -38,23 +38,11 @@ PATH_SYMBOLS = {
         "py_runtime_value_type_id",
         "py_runtime_value_isinstance",
     },
-    "src/runtime/cs/pytra/built_in/py_runtime.cs": {
-        "py_runtime_type_id_is_subtype",
-        "py_runtime_type_id_issubclass",
-        "py_runtime_value_type_id",
-        "py_runtime_value_isinstance",
-    },
     "src/runtime/cs/native/built_in/py_runtime.cs": {
         "py_runtime_type_id_is_subtype",
         "py_runtime_type_id_issubclass",
         "py_runtime_value_type_id",
         "py_runtime_value_isinstance",
-    },
-    "src/runtime/cs/pytra/utils/png.cs": {
-        "py_append",
-    },
-    "src/runtime/cs/pytra/utils/gif.cs": {
-        "py_append",
     },
 }
 
@@ -75,10 +63,6 @@ EXPECTED_BUCKETS = {
     "generated_cpp_shared_type_id_residual": {
         ("py_runtime_object_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"),
     },
-    "cs_runtime_utils_object_bridge_residual": {
-        ("py_append", "src/runtime/cs/pytra/utils/png.cs"),
-        ("py_append", "src/runtime/cs/pytra/utils/gif.cs"),
-    },
     "rs_runtime_builtin_shared_type_id_residual": {
         ("py_runtime_type_id_is_subtype", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
         ("py_runtime_type_id_issubclass", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
@@ -90,10 +74,6 @@ EXPECTED_BUCKETS = {
         ("py_runtime_value_isinstance", "src/runtime/rs/native/built_in/py_runtime.rs"),
     },
     "cs_runtime_builtin_shared_type_id_residual": {
-        ("py_runtime_type_id_is_subtype", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
-        ("py_runtime_type_id_issubclass", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
-        ("py_runtime_value_type_id", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
-        ("py_runtime_value_isinstance", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
         ("py_runtime_type_id_is_subtype", "src/runtime/cs/native/built_in/py_runtime.cs"),
         ("py_runtime_type_id_issubclass", "src/runtime/cs/native/built_in/py_runtime.cs"),
         ("py_runtime_value_type_id", "src/runtime/cs/native/built_in/py_runtime.cs"),
@@ -105,7 +85,6 @@ CATEGORY_BUCKETS = {
     "object_bridge_compat": {
         "native_wrapper_object_bridge_residual",
         "generated_cpp_object_bridge_residual",
-        "cs_runtime_utils_object_bridge_residual",
     },
     "shared_type_id_contract": {
         "generated_cpp_shared_type_id_residual",
@@ -118,7 +97,6 @@ TARGET_END_STATE = {
     "native_wrapper_object_bridge_residual": "native_decode_helpers_only",
     "generated_cpp_object_bridge_residual": "generated_runtime_object_bridge_only_until_jsonvalue_rework",
     "generated_cpp_shared_type_id_residual": "generated_type_id_bridge_only",
-    "cs_runtime_utils_object_bridge_residual": "runtime_utils_object_bridge_only_until_typed_bytes_lane",
     "rs_runtime_builtin_shared_type_id_residual": "runtime_builtin_thin_type_id_surface_only",
     "cs_runtime_builtin_shared_type_id_residual": "runtime_builtin_thin_type_id_surface_only",
 }
@@ -151,12 +129,6 @@ SOURCE_GUARD_REQUIRED_SUBSTRINGS = {
         "pub fn py_runtime_type_id_issubclass",
         "pub fn py_runtime_value_isinstance",
     },
-    "src/runtime/cs/pytra/built_in/py_runtime.cs": {
-        "public static long py_runtime_value_type_id",
-        "public static bool py_runtime_type_id_is_subtype",
-        "public static bool py_runtime_type_id_issubclass",
-        "public static bool py_runtime_value_isinstance",
-    },
     "src/runtime/cs/native/built_in/py_runtime.cs": {
         "public static long py_runtime_value_type_id",
         "public static bool py_runtime_type_id_is_subtype",
@@ -185,12 +157,6 @@ SOURCE_GUARD_FORBIDDEN_SUBSTRINGS = {
         "pub fn py_isinstance<",
         "pub fn py_is_subtype(",
         "pub fn py_issubclass(",
-    },
-    "src/runtime/cs/pytra/built_in/py_runtime.cs": {
-        "public static long py_runtime_type_id(",
-        "public static bool py_isinstance(",
-        "public static bool py_is_subtype(",
-        "public static bool py_issubclass(",
     },
     "src/runtime/cs/native/built_in/py_runtime.cs": {
         "public static long py_runtime_type_id(",
@@ -260,14 +226,6 @@ REPRESENTATIVE_BUCKET_MANIFEST = {
             "src/runtime/cpp/generated/built_in/type_id.cpp",
         },
     },
-    "cs_runtime_utils_object_bridge_residual": {
-        "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
-        "smoke_tests": {
-            "test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not",
-            "test_bytearray_index_and_slice_compat_helpers_stay_explicit",
-        },
-        "source_guard_paths": set(),
-    },
     "rs_runtime_builtin_shared_type_id_residual": {
         "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",
         "smoke_tests": {
@@ -284,7 +242,6 @@ REPRESENTATIVE_BUCKET_MANIFEST = {
             "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
         },
         "source_guard_paths": {
-            "src/runtime/cs/pytra/built_in/py_runtime.cs",
             "src/runtime/cs/native/built_in/py_runtime.cs",
         },
     },
@@ -304,10 +261,6 @@ RS_RUNTIME_BUILTIN_MUST_REMAIN = {
 RS_RUNTIME_BUILTIN_REDELEGATABLE = set()
 
 CS_RUNTIME_BUILTIN_MUST_REMAIN = {
-    ("py_runtime_type_id_is_subtype", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
-    ("py_runtime_type_id_issubclass", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
-    ("py_runtime_value_type_id", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
-    ("py_runtime_value_isinstance", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
     ("py_runtime_type_id_is_subtype", "src/runtime/cs/native/built_in/py_runtime.cs"),
     ("py_runtime_type_id_issubclass", "src/runtime/cs/native/built_in/py_runtime.cs"),
     ("py_runtime_value_type_id", "src/runtime/cs/native/built_in/py_runtime.cs"),

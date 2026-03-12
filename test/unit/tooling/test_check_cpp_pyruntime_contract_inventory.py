@@ -52,8 +52,6 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
             {
                 ("py_append", "src/backends/cs/emitter/cs_emitter.py"),
                 ("py_pop", "src/backends/cs/emitter/cs_emitter.py"),
-                ("py_append", "src/runtime/cs/pytra/utils/gif.cs"),
-                ("py_append", "src/runtime/cs/pytra/utils/png.cs"),
             },
         )
         self.assertTrue(
@@ -102,8 +100,6 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
             or entry[1].startswith("src/backends/cs/")
             or entry[1].startswith("src/backends/rs/")
         }
-        self.assertNotIn(("py_append", "src/runtime/cs/pytra/utils/gif.cs"), cross_runtime_mutations)
-        self.assertNotIn(("py_append", "src/runtime/cs/pytra/utils/png.cs"), cross_runtime_mutations)
         self.assertNotIn(("py_append", "src/backends/cs/emitter/cs_emitter.py"), shared)
         self.assertNotIn(("py_pop", "src/backends/cs/emitter/cs_emitter.py"), shared)
         self.assertIn(

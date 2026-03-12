@@ -35,8 +35,6 @@ EXPECTED_BUCKETS = {
     "object_bridge_required": {
         ("py_append", "src/backends/cs/emitter/cs_emitter.py"),
         ("py_pop", "src/backends/cs/emitter/cs_emitter.py"),
-        ("py_append", "src/runtime/cs/pytra/utils/gif.cs"),
-        ("py_append", "src/runtime/cs/pytra/utils/png.cs"),
     },
     "shared_runtime_contract": {
         ("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
@@ -55,14 +53,13 @@ EXPECTED_BUCKETS = {
         ("py_runtime_object_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
         ("py_runtime_object_isinstance", "src/runtime/cpp/native/compiler/backend_registry_static.cpp"),
         ("py_runtime_object_isinstance", "src/runtime/cpp/native/compiler/transpile_cli.cpp"),
-        ("py_runtime_value_type_id", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
-        ("py_runtime_value_isinstance", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
-        ("py_runtime_type_id_is_subtype", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
-        ("py_runtime_type_id_issubclass", "src/runtime/cs/pytra/built_in/py_runtime.cs"),
         ("py_runtime_value_type_id", "src/runtime/cs/native/built_in/py_runtime.cs"),
         ("py_runtime_value_isinstance", "src/runtime/cs/native/built_in/py_runtime.cs"),
         ("py_runtime_type_id_is_subtype", "src/runtime/cs/native/built_in/py_runtime.cs"),
         ("py_runtime_type_id_issubclass", "src/runtime/cs/native/built_in/py_runtime.cs"),
+        ("py_runtime_value_type_id", "src/runtime/cs/generated/built_in/type_id.cs"),
+        ("py_runtime_value_isinstance", "src/runtime/cs/generated/built_in/type_id.cs"),
+        ("py_runtime_type_id_is_subtype", "src/runtime/cs/generated/built_in/type_id.cs"),
         ("py_runtime_value_type_id", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
         ("py_runtime_value_isinstance", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
         ("py_runtime_type_id_is_subtype", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
@@ -71,6 +68,9 @@ EXPECTED_BUCKETS = {
         ("py_runtime_value_isinstance", "src/runtime/rs/native/built_in/py_runtime.rs"),
         ("py_runtime_type_id_is_subtype", "src/runtime/rs/native/built_in/py_runtime.rs"),
         ("py_runtime_type_id_issubclass", "src/runtime/rs/native/built_in/py_runtime.rs"),
+        ("py_runtime_value_type_id", "src/runtime/rs/generated/built_in/type_id.rs"),
+        ("py_runtime_value_isinstance", "src/runtime/rs/generated/built_in/type_id.rs"),
+        ("py_runtime_type_id_is_subtype", "src/runtime/rs/generated/built_in/type_id.rs"),
     },
 }
 

@@ -118,6 +118,10 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
                 "src/runtime/rs/pytra/utils/README.md",
             ),
         )
+        self.assertEqual(
+            check_mod._collect_relative_files(check_mod.CS_PYTRA_ROOT, ".cs"),
+            (),
+        )
 
     def test_csharp_lane_decisions_are_fixed(self) -> None:
         by_module = {

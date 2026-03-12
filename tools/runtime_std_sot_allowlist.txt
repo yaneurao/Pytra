@@ -6,7 +6,6 @@
 # - Keep this file empty unless a verified transitional exception is required.
 
 # Transitional debt while non-C++ runtimes are being migrated to SoT-generated std/json.
-json src/runtime/cs/pytra/std/json.cs
 json src/runtime/cs/native/std/json.cs
 json src/runtime/go/pytra/py_runtime.go
 json src/runtime/go/pytra-core/built_in/py_runtime.go

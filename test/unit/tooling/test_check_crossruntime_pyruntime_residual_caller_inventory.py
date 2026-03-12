@@ -46,7 +46,6 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
             {
                 "native_wrapper_object_bridge_residual",
                 "generated_cpp_object_bridge_residual",
-                "cs_runtime_utils_object_bridge_residual",
             },
         )
 
@@ -94,15 +93,6 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
         )
         self.assertEqual(inventory_mod.GENERATED_CPP_REDELEGATABLE, set())
 
-    def test_cs_runtime_utils_object_bridge_bucket_is_stable(self) -> None:
-        self.assertEqual(
-            inventory_mod.EXPECTED_BUCKETS["cs_runtime_utils_object_bridge_residual"],
-            {
-                ("py_append", "src/runtime/cs/pytra/utils/png.cs"),
-                ("py_append", "src/runtime/cs/pytra/utils/gif.cs"),
-            },
-        )
-
     def test_runtime_builtin_buckets_cover_both_runtime_trees(self) -> None:
         rs_bucket = inventory_mod.EXPECTED_BUCKETS["rs_runtime_builtin_shared_type_id_residual"]
         cs_bucket = inventory_mod.EXPECTED_BUCKETS["cs_runtime_builtin_shared_type_id_residual"]
@@ -116,7 +106,6 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
         self.assertEqual(
             {path for _, path in cs_bucket},
             {
-                "src/runtime/cs/pytra/built_in/py_runtime.cs",
                 "src/runtime/cs/native/built_in/py_runtime.cs",
             },
         )
@@ -176,14 +165,6 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
                         "src/runtime/cpp/generated/built_in/type_id.cpp",
                     },
                 },
-                "cs_runtime_utils_object_bridge_residual": {
-                    "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
-                    "smoke_tests": {
-                        "test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not",
-                        "test_bytearray_index_and_slice_compat_helpers_stay_explicit",
-                    },
-                    "source_guard_paths": set(),
-                },
                 "rs_runtime_builtin_shared_type_id_residual": {
                     "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",
                     "smoke_tests": {
@@ -200,7 +181,6 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
                         "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
                     },
                     "source_guard_paths": {
-                        "src/runtime/cs/pytra/built_in/py_runtime.cs",
                         "src/runtime/cs/native/built_in/py_runtime.cs",
                     },
                 },

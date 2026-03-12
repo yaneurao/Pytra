@@ -149,19 +149,11 @@ def _collect_builtin_lane_issues() -> list[str]:
         if "generated-by: tools/gen_runtime_from_manifest.py" in text:
             issues.append(f"native built_in residual unexpectedly became generated: {rel_path}")
 
-    cs_duplicate_targets = tuple(contract_mod.iter_cs_pytra_duplicate_delete_targets())
-    if _collect_relative_files(CS_PYTRA_ROOT, ".cs") != tuple(
-        rel.replace("src/runtime/cs/pytra/", "", 1) for rel in cs_duplicate_targets
-    ):
-        issues.append("C# pytra duplicate delete-target set drifted")
-    for rel_path in contract_mod.iter_cs_pytra_generated_duplicate_delete_targets():
-        text = _load_text(ROOT / rel_path)
-        if "generated-by:" not in text:
-            issues.append(f"C# generated duplicate target lost generated marker: {rel_path}")
-    for rel_path in contract_mod.iter_cs_pytra_handwritten_duplicate_delete_targets():
-        text = _load_text(ROOT / rel_path)
-        if "generated-by:" in text:
-            issues.append(f"C# handwritten duplicate target unexpectedly became generated: {rel_path}")
+    if _collect_relative_files(CS_PYTRA_ROOT, ".cs") != ():
+        issues.append("C# pytra duplicate lane is not empty after delete-target cleanup")
+    for rel_path in contract_mod.iter_cs_pytra_duplicate_delete_targets():
+        if (ROOT / rel_path).exists():
+            issues.append(f"C# duplicate delete target still exists: {rel_path}")
     if "src/runtime/cs/pytra/" in build_profile_text:
         issues.append("C# build profile leaked duplicate pytra lane")
 

@@ -67,6 +67,15 @@ class CheckCrossRuntimePyRuntimeFinalThinCompatInventoryTest(unittest.TestCase):
                 self.assertTrue(all(path.startswith("src/runtime/rs/") for _, path in bucket))
             else:
                 self.assertTrue(all(path.startswith("src/runtime/cs/") for _, path in bucket))
+        self.assertEqual(
+            inventory_mod.EXPECTED_BUCKETS["cs_runtime_generic_alias_surface"],
+            {
+                ("py_runtime_type_id", "src/runtime/cs/native/built_in/py_runtime.cs"),
+                ("py_is_subtype", "src/runtime/cs/native/built_in/py_runtime.cs"),
+                ("py_issubclass", "src/runtime/cs/native/built_in/py_runtime.cs"),
+                ("py_isinstance", "src/runtime/cs/native/built_in/py_runtime.cs"),
+            },
+        )
 
     def test_rs_and_cs_aliases_are_no_longer_public(self) -> None:
         self.assertEqual(inventory_mod._collect_target_end_state_issues(), [])
