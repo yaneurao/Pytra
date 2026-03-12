@@ -27,7 +27,7 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
             set(EXPECTED_BACKENDS),
         )
 
-    def test_cpp_is_only_locked_backend(self) -> None:
+    def test_cpp_is_only_build_run_locked_backend(self) -> None:
         locked = [
             row["backend"]
             for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
@@ -35,13 +35,13 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         ]
         self.assertEqual(locked, ["cpp"])
 
-    def test_rs_and_cs_are_first_wave_transpile_smoke_locked(self) -> None:
+    def test_rs_cs_js_ts_are_transpile_smoke_locked(self) -> None:
         locked = [
             row["backend"]
             for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
             if row["contract_state"] == "transpile_smoke_locked"
         ]
-        self.assertEqual(locked, ["rs", "cs"])
+        self.assertEqual(locked, ["rs", "cs", "js", "ts"])
 
     def test_validator_accepts_noncpp_rollout_inventory(self) -> None:
         validate_relative_import_noncpp_rollout()
@@ -52,13 +52,28 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
             set(EXPECTED_BACKENDS),
         )
 
-    def test_first_wave_is_rs_and_cs_with_transpile_smoke(self) -> None:
+    def test_rollout_inventory_tracks_locked_and_remaining_second_wave(self) -> None:
         first_wave = [
             row for row in RELATIVE_IMPORT_NONCPP_ROLLOUT_V1 if row["rollout_wave"] == "first_wave"
         ]
         self.assertEqual([row["backend"] for row in first_wave], ["rs", "cs"])
         self.assertTrue(
-            all(row["next_verification_lane"] == "transpile_smoke" for row in first_wave)
+            all(row["next_verification_lane"] == "transpile_smoke_locked" for row in first_wave)
+        )
+        locked_second_wave = [
+            row["backend"]
+            for row in RELATIVE_IMPORT_NONCPP_ROLLOUT_V1
+            if row["backend"] in {"js", "ts"}
+        ]
+        self.assertEqual(locked_second_wave, ["js", "ts"])
+        remaining_second_wave = [
+            row["backend"]
+            for row in RELATIVE_IMPORT_NONCPP_ROLLOUT_V1
+            if row["next_verification_lane"] == "remaining_second_wave_rollout_planning"
+        ]
+        self.assertEqual(
+            remaining_second_wave,
+            ["go", "java", "kotlin", "nim", "scala", "swift"],
         )
 
     def test_validator_accepts_noncpp_rollout_handoff(self) -> None:

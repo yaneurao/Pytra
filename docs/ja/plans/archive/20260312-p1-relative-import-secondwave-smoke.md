@@ -26,8 +26,8 @@
 
 受け入れ基準:
 - `js` と `ts` に representative relative import transpile smoke がある。
-- coverage inventory で `js/ts=transpile_smoke_locked`、残る second-wave / long-tail backend は `not_locked` のまま固定される。
-- backend parity docs と handoff metadata が `js/ts` baseline へ同期する。
+- coverage inventory で `js/ts=transpile_smoke_locked`、残る second-wave / long-tail backend は current handoff lane に同期したまま `not_locked` を維持する。
+- backend parity docs と handoff metadata が `js/ts` baseline と remaining second-wave planning handoff へ同期する。
 
 確認コマンド:
 - `python3 tools/check_relative_import_secondwave_smoke_contract.py`
@@ -43,11 +43,12 @@
 - 2026-03-12: second-wave smoke contract は `relative_import_secondwave_smoke_contract.py` / checker / tooling test を正本とし、`S1-01` はその live contract の formal close として扱う。
 - 2026-03-12: `py2js` smoke は shared helper 経由で second-wave contract に追従させ、scenario ごとの expected needle を共通化する。
 - 2026-03-12: `py2ts` smoke も同じ shared helper へ揃え、`js/ts` の representative transpile smoke shape を一致させる。
+- 2026-03-12: coverage inventory の next handoff は `P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01` に維持したまま、`js/ts` を `transpile_smoke_locked` baseline へ引き上げる。
 
 ## 分解
 
-- [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01] `js/ts` の relative import representative transpile smoke を lock し、coverage inventory / docs handoff を次 baseline に更新する。
+- [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01] `js/ts` の relative import representative transpile smoke を lock し、coverage inventory / docs handoff を次 baseline に更新する。
 - [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S1-01] live plan / TODO と `js/ts` second-wave smoke contract を固定する。
 - [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-01] `py2js` smoke に representative relative import transpile case を追加する。
 - [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S2-02] `py2ts` smoke に representative relative import transpile case を追加する。
-- [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S3-01] coverage inventory / backend parity docs / handoff metadata を `js/ts` baseline へ同期して close-ready にする。
+- [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01-S3-01] coverage inventory / backend parity docs / handoff metadata を `js/ts` baseline へ同期して close-ready にする。

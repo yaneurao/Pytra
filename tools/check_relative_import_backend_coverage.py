@@ -47,8 +47,9 @@ EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
         "docs/ja/plans/p1-relative-import-secondwave-planning.md",
         "docs/en/plans/p1-relative-import-secondwave-planning.md",
     ),
-    "first_wave_backends": ("rs", "cs"),
-    "next_verification_lane": "second_wave_rollout_planning",
+    "locked_transpile_smoke_backends": ("rs", "cs", "js", "ts"),
+    "next_rollout_backends": ("go", "java", "kotlin", "nim", "scala", "swift"),
+    "next_verification_lane": "remaining_second_wave_rollout_planning",
     "fail_closed_lane": "backend_specific_fail_closed",
 }
 
@@ -71,20 +72,20 @@ def validate_relative_import_backend_coverage() -> None:
             "relative import backend coverage must keep cpp as the only "
             f"build_run_locked lane: got {locked}"
         )
-    first_wave_smoke = [
+    transpile_smoke_locked = [
         row["backend"]
         for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
         if row["contract_state"] == "transpile_smoke_locked"
     ]
-    if first_wave_smoke != ["rs", "cs"]:
+    if transpile_smoke_locked != ["rs", "cs", "js", "ts"]:
         raise SystemExit(
-            "relative import backend coverage must keep rs/cs as the only "
-            f"transpile_smoke_locked lanes: got {first_wave_smoke}"
+            "relative import backend coverage must keep rs/cs/js/ts as the only "
+            f"transpile_smoke_locked lanes: got {transpile_smoke_locked}"
         )
     for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1:
         if row["backend"] == "cpp":
             continue
-        if row["backend"] in {"rs", "cs"}:
+        if row["backend"] in {"rs", "cs", "js", "ts"}:
             continue
         if row["contract_state"] != "not_locked":
             raise SystemExit(
@@ -126,15 +127,29 @@ def validate_relative_import_noncpp_rollout() -> None:
                 f"got {backend}={row['fail_closed_lane']}"
             )
         if backend in {"rs", "cs"}:
-            if row["next_verification_lane"] != "transpile_smoke":
+            if row["next_verification_lane"] != "transpile_smoke_locked":
                 raise SystemExit(
-                    "first-wave backends must lock transpile_smoke next: "
+                    "first-wave backends must stay locked at transpile_smoke: "
                     f"got {backend}={row['next_verification_lane']}"
                 )
             continue
-        if row["next_verification_lane"] != "defer_until_first_wave_complete":
+        if backend in {"js", "ts"}:
+            if row["next_verification_lane"] != "transpile_smoke_locked":
+                raise SystemExit(
+                    "locked second-wave backends must stay at transpile_smoke_locked: "
+                    f"got {backend}={row['next_verification_lane']}"
+                )
+            continue
+        if backend in {"go", "java", "kotlin", "nim", "scala", "swift"}:
+            if row["next_verification_lane"] != "remaining_second_wave_rollout_planning":
+                raise SystemExit(
+                    "remaining second-wave backends must move to remaining_second_wave_rollout_planning: "
+                    f"got {backend}={row['next_verification_lane']}"
+                )
+            continue
+        if row["next_verification_lane"] != "defer_until_second_wave_remaining_complete":
             raise SystemExit(
-                "second-wave and long-tail backends must stay deferred until first wave completes: "
+                "long-tail backends must stay deferred until remaining second-wave rollout completes: "
                 f"got {backend}={row['next_verification_lane']}"
             )
 

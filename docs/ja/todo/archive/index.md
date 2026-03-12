@@ -21,6 +21,7 @@
 - [2026-03-12 / P1-RELATIVE-IMPORT-MULTIFILE-RUNTIME-HARDENING-01](../plans/archive/20260312-p1-relative-import-multifile-runtime-hardening.md)
 - [2026-03-12 / P1-RELATIVE-IMPORT-ALIAS-HARDENING-01](../plans/archive/20260312-p1-relative-import-alias-hardening.md)
 - [2026-03-12 / P1-RELATIVE-IMPORT-FIRSTWAVE-SMOKE-01](../plans/archive/20260312-p1-relative-import-firstwave-smoke.md)
+- [2026-03-12 / P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01](../plans/archive/20260312-p1-relative-import-secondwave-smoke.md)
 - [2026-03-12 / P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01](../plans/archive/20260312-p2-relative-import-backend-coverage.md)
 - [2026-03-12 / P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01](../plans/archive/20260312-p2-relative-import-noncpp-rollout.md)
 - [2026-03-12 / P0-RELATIVE-IMPORT-BARE-PARENT-01](../plans/archive/20260312-p0-relative-import-bare-parent-hardening.md)

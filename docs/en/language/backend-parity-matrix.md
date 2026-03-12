@@ -30,6 +30,6 @@ This page is the canonical publish target for feature × backend support-state r
 ## Current Relative-Import Coverage
 
 - The current relative-import coverage baseline is published canonically through [relative_import_backend_coverage.py](/workspace/Pytra/src/toolchain/compiler/relative_import_backend_coverage.py) and [check_relative_import_backend_coverage.py](/workspace/Pytra/tools/check_relative_import_backend_coverage.py).
-- Today `cpp` is `build_run_locked`, `rs/cs` are `transpile_smoke_locked`, and `go/java/js/kotlin/lua/nim/php/ruby/scala/swift/ts` remain `not_locked`.
+- Today `cpp` is `build_run_locked`, `rs/cs/js/ts` are `transpile_smoke_locked`, and `go/java/kotlin/lua/nim/php/ruby/scala/swift` remain `not_locked`.
 - This section is a verification-coverage handoff, not a support claim. Even after representative smoke is locked, non-C++ lanes do not become fully supported automatically.
-- The next rollout handoff lives in [p1-relative-import-secondwave-planning.md](../plans/p1-relative-import-secondwave-planning.md): `rs/cs` stay fixed as the `transpile_smoke_locked` baseline, while every remaining non-C++ lane keeps `backend_specific_fail_closed` during `second_wave_rollout_planning`.
+- The next rollout handoff lives in [p1-relative-import-secondwave-planning.md](../plans/p1-relative-import-secondwave-planning.md): `rs/cs/js/ts` stay fixed as the `transpile_smoke_locked` baseline, every remaining non-C++ lane keeps `backend_specific_fail_closed`, `go/java/kotlin/nim/scala/swift` move under `remaining_second_wave_rollout_planning`, and `lua/php/ruby` stay deferred behind `defer_until_second_wave_remaining_complete`.
