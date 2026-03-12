@@ -347,7 +347,7 @@ def rewrite_js_program_to_cjs_module(js_src: str) -> str:
     if len(public_names) == 0:
         return js_src
     body = js_src.rstrip("\n")
-    if "function open(" not in body:
+    if "open(" in body and "function open(" not in body:
         prelude = (
             "const fs = require('node:fs');\n"
             "const path = require('node:path');\n"
@@ -368,6 +368,33 @@ def rewrite_js_program_to_cjs_module(js_src: str) -> str:
         body = prelude + body
     exports = "module.exports = {" + ", ".join(public_names) + "};\n"
     return body + "\n\n" + exports
+
+
+def rewrite_js_std_time_live_wrapper(js_src: str) -> str:
+    text = _strip_trailing_string_literal_expr(js_src)
+    text = text.replace(
+        "return __t.perf_counter();",
+        "return Number(process.hrtime.bigint()) / 1_000_000_000;",
+    ).rstrip()
+    if "function perf_counter(" not in text:
+        raise RuntimeError("generated JS std/time wrapper is missing perf_counter()")
+    return text + "\n\nconst perfCounter = perf_counter;\nmodule.exports = {perf_counter, perfCounter};\n"
+
+
+def rewrite_ts_std_time_live_wrapper(ts_src: str) -> str:
+    text = _strip_trailing_string_literal_expr(ts_src)
+    text = text.replace(
+        "function perf_counter() {",
+        "export function perf_counter(): number {",
+        1,
+    )
+    text = text.replace(
+        "return __t.perf_counter();",
+        "return Number(process.hrtime.bigint()) / 1_000_000_000;",
+    ).rstrip()
+    if "export function perf_counter(): number {" not in text:
+        raise RuntimeError("generated TS std/time wrapper is missing perf_counter()")
+    return text + "\n\nexport const perfCounter = perf_counter;\n"
 
 
 def rewrite_go_program_to_library(go_src: str) -> str:
@@ -406,6 +433,24 @@ def rewrite_php_program_to_library(php_src: str) -> str:
         r"function \1(&$\2, \3) {",
         text,
     )
+    return text.rstrip() + "\n"
+
+
+def rewrite_php_std_time_live_wrapper(php_src: str) -> str:
+    lines = _strip_trailing_string_literal_expr(php_src).splitlines()
+    lines = _remove_block_by_signature(lines, re.compile(r"^function\s+__pytra_main\s*\("))
+    out: list[str] = []
+    for line in lines:
+        if line.strip() == "require_once __DIR__ . '/pytra/py_runtime.php';":
+            continue
+        if line.strip() == "__pytra_main();":
+            continue
+        out.append(line)
+    text = "\n".join(out)
+    text = text.replace("function perf_counter() {", "function perf_counter(): float {")
+    text = text.replace("return $__t->perf_counter();", "return microtime(true);")
+    if "function perf_counter(): float {" not in text:
+        raise RuntimeError("generated PHP std/time wrapper is missing perf_counter()")
     return text.rstrip() + "\n"
 
 
@@ -473,10 +518,16 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_java_std_time_live_wrapper(generated)
     elif item.postprocess == "java_std_math_live_wrapper":
         generated = rewrite_java_std_math_live_wrapper(generated)
+    elif item.postprocess == "js_std_time_live_wrapper":
+        generated = rewrite_js_std_time_live_wrapper(generated)
+    elif item.postprocess == "ts_std_time_live_wrapper":
+        generated = rewrite_ts_std_time_live_wrapper(generated)
     elif item.postprocess == "js_program_to_cjs_module":
         generated = rewrite_js_program_to_cjs_module(generated)
     elif item.postprocess == "go_program_to_library":
         generated = rewrite_go_program_to_library(generated)
+    elif item.postprocess == "php_std_time_live_wrapper":
+        generated = rewrite_php_std_time_live_wrapper(generated)
     elif item.postprocess == "php_program_to_library":
         generated = rewrite_php_program_to_library(generated)
     elif item.postprocess == "cpp_program_to_namespace":

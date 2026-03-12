@@ -243,7 +243,10 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/time.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/time.cs", "postprocess": "cs_std_time_live_wrapper" },
-        { "target": "java", "output": "src/runtime/java/generated/std/time.java", "postprocess": "java_std_time_live_wrapper" }
+        { "target": "java", "output": "src/runtime/java/generated/std/time.java", "postprocess": "java_std_time_live_wrapper" },
+        { "target": "js", "output": "src/runtime/js/generated/std/time.js", "postprocess": "js_std_time_live_wrapper" },
+        { "target": "ts", "output": "src/runtime/ts/generated/std/time.ts", "postprocess": "ts_std_time_live_wrapper" },
+        { "target": "php", "output": "src/runtime/php/generated/std/time.php", "postprocess": "php_std_time_live_wrapper" }
       ]
     },
     {

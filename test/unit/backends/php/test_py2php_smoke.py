@@ -85,11 +85,13 @@ class Py2PhpSmokeTest(unittest.TestCase):
     def test_php_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "php" / "native" / "built_in" / "py_runtime.php"
         time_path = ROOT / "src" / "runtime" / "php" / "native" / "std" / "time.php"
+        generated_time_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "time.php"
         png_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "png.php"
         gif_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "gif.php"
         legacy_path = ROOT / "src" / "runtime" / "php" / "pytra-core"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(time_path.exists())
+        self.assertTrue(generated_time_path.exists())
         self.assertTrue(png_path.exists())
         self.assertTrue(gif_path.exists())
         self.assertFalse(legacy_path.exists())

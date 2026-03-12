@@ -23,6 +23,9 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn(("built_in/type_id", "cs", "src/runtime/cs/generated/built_in/type_id.cs"), pairs)
         self.assertIn(("std/pathlib", "cs", "src/runtime/cs/generated/std/pathlib.cs"), pairs)
         self.assertIn(("std/time", "java", "src/runtime/java/generated/std/time.java"), pairs)
+        self.assertIn(("std/time", "js", "src/runtime/js/generated/std/time.js"), pairs)
+        self.assertIn(("std/time", "ts", "src/runtime/ts/generated/std/time.ts"), pairs)
+        self.assertIn(("std/time", "php", "src/runtime/php/generated/std/time.php"), pairs)
 
     def test_built_in_manifest_covers_rs_and_cs_for_all_sot_modules(self) -> None:
         items = gen_mod.load_manifest_items(ROOT / "tools" / "runtime_generation_manifest.json")
@@ -130,6 +133,62 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return Math.abs(x);", out)
         self.assertIn("return Math.pow(x, y);", out)
         self.assertNotIn("extern(math.pi)", out)
+
+    def test_rewrite_js_std_time_live_wrapper_inlines_hrtime_and_alias(self) -> None:
+        src = "\n".join(
+            [
+                "function perf_counter() {",
+                "    return __t.perf_counter();",
+                "}",
+                "",
+                "\"pytra.std.time: extern-marked time API with Python runtime fallback.\";",
+            ]
+        )
+        out = gen_mod.rewrite_js_std_time_live_wrapper(src)
+        self.assertIn("process.hrtime.bigint()", out)
+        self.assertIn("const perfCounter = perf_counter;", out)
+        self.assertIn("module.exports = {perf_counter, perfCounter};", out)
+        self.assertNotIn("__t.perf_counter()", out)
+
+    def test_rewrite_ts_std_time_live_wrapper_exports_perf_counter(self) -> None:
+        src = "\n".join(
+            [
+                "function perf_counter() {",
+                "    return __t.perf_counter();",
+                "}",
+                "",
+                "\"pytra.std.time: extern-marked time API with Python runtime fallback.\";",
+            ]
+        )
+        out = gen_mod.rewrite_ts_std_time_live_wrapper(src)
+        self.assertIn("export function perf_counter(): number {", out)
+        self.assertIn("process.hrtime.bigint()", out)
+        self.assertIn("export const perfCounter = perf_counter;", out)
+        self.assertNotIn("__t.perf_counter()", out)
+
+    def test_rewrite_php_std_time_live_wrapper_inlines_microtime(self) -> None:
+        src = "\n".join(
+            [
+                "<?php",
+                "declare(strict_types=1);",
+                "",
+                "require_once __DIR__ . '/pytra/py_runtime.php';",
+                "",
+                "function perf_counter() {",
+                "    return $__t->perf_counter();",
+                "}",
+                "",
+                "function __pytra_main(): void {",
+                "}",
+                "",
+                "__pytra_main();",
+            ]
+        )
+        out = gen_mod.rewrite_php_std_time_live_wrapper(src)
+        self.assertIn("function perf_counter(): float {", out)
+        self.assertIn("return microtime(true);", out)
+        self.assertNotIn("/pytra/py_runtime.php", out)
+        self.assertNotIn("__pytra_main();", out)
     def test_run_py2x_raises_when_backend_emits_no_text_and_no_file(self) -> None:
         with (
             patch.object(gen_mod, "get_backend_spec", return_value={}),
@@ -176,7 +235,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         item_ids = gen_mod.resolve_item_ids("all", items)
         plan = gen_mod.build_generation_plan(items, targets, item_ids)
         checked, updated = gen_mod.generate(plan, check=True, dry_run=False)
-        self.assertEqual(checked, 10)
+        self.assertEqual(checked, 13)
         self.assertEqual(updated, 0)
 
 

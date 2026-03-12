@@ -22,6 +22,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_module_bucket_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_module_bucket_issues(), [])
 
+    def test_wave_b_blocked_reason_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_b_blocked_reason_issues(), [])
+
     def test_wave_a_native_residual_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_a_native_residual_issues(), [])
 
@@ -252,10 +255,28 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertIn(
             {
+                "current_prefix": "src/runtime/js/generated/std/",
+                "target_prefix": "src/runtime/js/generated/std/",
+                "ownership": "generated",
+                "rationale": "JS live-generated std compare artifacts live in generated/std once the Wave B std lanes are materialized.",
+            },
+            by_backend["js"],
+        )
+        self.assertIn(
+            {
                 "current_prefix": "src/runtime/php/generated/utils/",
                 "target_prefix": "src/runtime/php/generated/utils/",
                 "ownership": "generated",
                 "rationale": "PHP image helpers already live in generated/utils after the Wave B path cutover.",
+            },
+            by_backend["php"],
+        )
+        self.assertIn(
+            {
+                "current_prefix": "src/runtime/php/generated/std/",
+                "target_prefix": "src/runtime/php/generated/std/",
+                "ownership": "generated",
+                "rationale": "PHP live-generated std compare artifacts live in generated/std once the Wave B std lanes are materialized.",
             },
             by_backend["php"],
         )
@@ -273,6 +294,14 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "pytra_gen_files": ("utils/gif.go", "utils/png.go"),
                 "pytra_files": ("built_in/py_runtime.go",),
             },
+        )
+        self.assertEqual(
+            by_backend["js"]["pytra_gen_files"],
+            ("std/time.js", "utils/gif.js", "utils/png.js"),
+        )
+        self.assertEqual(
+            by_backend["php"]["pytra_gen_files"],
+            ("std/time.php", "utils/gif.php", "utils/png.php"),
         )
 
     def test_target_inventory_is_fixed(self) -> None:
@@ -302,10 +331,14 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             ),
         )
         self.assertEqual(
+            by_backend["ts"]["generated_files"],
+            ("generated/std/time.ts", "generated/utils/gif.ts", "generated/utils/png.ts"),
+        )
+        self.assertEqual(
             by_backend["php"],
             {
                 "backend": "php",
-                "generated_files": ("generated/utils/gif.php", "generated/utils/png.php"),
+                "generated_files": ("generated/std/time.php", "generated/utils/gif.php", "generated/utils/png.php"),
                 "native_files": ("native/built_in/py_runtime.php", "native/std/time.php"),
                 "compat_files": (
                     "pytra/py_runtime.php",
@@ -366,14 +399,13 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "std/json",
                 "std/math",
                 "std/pathlib",
-                "std/time",
             ),
         )
         self.assertEqual(
             by_backend["php"],
             {
                 "backend": "php",
-                "generated_modules": ("utils/gif", "utils/png"),
+                "generated_modules": ("std/time", "utils/gif", "utils/png"),
                 "native_modules": ("built_in/py_runtime", "std/time"),
                 "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
                 "blocked_modules": (
@@ -390,8 +422,120 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "std/json",
                     "std/math",
                     "std/pathlib",
-                    "std/time",
                 ),
+            },
+        )
+
+    def test_wave_b_blocked_reasons_are_fixed(self) -> None:
+        by_backend = {
+            entry["backend"]: entry
+            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_blocked_reasons()
+        }
+        self.assertEqual(
+            by_backend,
+            {
+                "js": {
+                    "backend": "js",
+                    "missing_compare_lane_modules": (
+                        "built_in/contains",
+                        "built_in/io_ops",
+                        "built_in/iter_ops",
+                        "built_in/numeric_ops",
+                        "built_in/predicates",
+                        "built_in/scalar_ops",
+                        "built_in/sequence",
+                        "built_in/string_ops",
+                        "built_in/type_id",
+                        "built_in/zip_ops",
+                        "std/json",
+                    ),
+                    "native_compare_residual_modules": ("std/math", "std/pathlib"),
+                    "helper_shaped_compare_gap_modules": (),
+                },
+                "ts": {
+                    "backend": "ts",
+                    "missing_compare_lane_modules": (
+                        "built_in/contains",
+                        "built_in/io_ops",
+                        "built_in/iter_ops",
+                        "built_in/numeric_ops",
+                        "built_in/predicates",
+                        "built_in/scalar_ops",
+                        "built_in/sequence",
+                        "built_in/string_ops",
+                        "built_in/type_id",
+                        "built_in/zip_ops",
+                        "std/json",
+                    ),
+                    "native_compare_residual_modules": ("std/math", "std/pathlib"),
+                    "helper_shaped_compare_gap_modules": (),
+                },
+                "lua": {
+                    "backend": "lua",
+                    "missing_compare_lane_modules": (),
+                    "native_compare_residual_modules": (),
+                    "helper_shaped_compare_gap_modules": (
+                        "built_in/contains",
+                        "built_in/io_ops",
+                        "built_in/iter_ops",
+                        "built_in/numeric_ops",
+                        "built_in/predicates",
+                        "built_in/scalar_ops",
+                        "built_in/sequence",
+                        "built_in/string_ops",
+                        "built_in/type_id",
+                        "built_in/zip_ops",
+                        "std/json",
+                        "std/math",
+                        "std/pathlib",
+                        "std/time",
+                        "utils/gif",
+                        "utils/png",
+                    ),
+                },
+                "ruby": {
+                    "backend": "ruby",
+                    "missing_compare_lane_modules": (),
+                    "native_compare_residual_modules": (),
+                    "helper_shaped_compare_gap_modules": (
+                        "built_in/contains",
+                        "built_in/io_ops",
+                        "built_in/iter_ops",
+                        "built_in/numeric_ops",
+                        "built_in/predicates",
+                        "built_in/scalar_ops",
+                        "built_in/sequence",
+                        "built_in/string_ops",
+                        "built_in/type_id",
+                        "built_in/zip_ops",
+                        "std/json",
+                        "std/math",
+                        "std/pathlib",
+                        "std/time",
+                        "utils/gif",
+                        "utils/png",
+                    ),
+                },
+                "php": {
+                    "backend": "php",
+                    "missing_compare_lane_modules": (
+                        "built_in/contains",
+                        "built_in/io_ops",
+                        "built_in/iter_ops",
+                        "built_in/numeric_ops",
+                        "built_in/predicates",
+                        "built_in/scalar_ops",
+                        "built_in/sequence",
+                        "built_in/string_ops",
+                        "built_in/type_id",
+                        "built_in/zip_ops",
+                        "std/json",
+                        "std/math",
+                        "std/pathlib",
+                    ),
+                    "native_compare_residual_modules": (),
+                    "helper_shaped_compare_gap_modules": (),
+                },
             },
         )
 

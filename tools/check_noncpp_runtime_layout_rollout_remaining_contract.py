@@ -353,6 +353,51 @@ def _collect_module_bucket_issues() -> list[str]:
     return issues
 
 
+def _collect_wave_b_blocked_reason_issues() -> list[str]:
+    issues: list[str] = []
+    module_buckets = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_module_buckets()
+    }
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_blocked_reasons()
+    if tuple(entry["backend"] for entry in entries) != ("js", "ts", "lua", "ruby", "php"):
+        issues.append("wave-b blocked reason order drifted")
+    for entry in entries:
+        backend = entry["backend"]
+        bucket = module_buckets.get(backend)
+        if bucket is None:
+            issues.append(f"wave-b blocked reason backend drifted: {backend}")
+            continue
+        missing_modules = set(entry["missing_compare_lane_modules"])
+        native_residual_modules = set(entry["native_compare_residual_modules"])
+        helper_gap_modules = set(entry["helper_shaped_compare_gap_modules"])
+        if missing_modules & native_residual_modules:
+            issues.append(f"wave-b blocked reason overlap drifted: {backend}: missing/native")
+        if missing_modules & helper_gap_modules:
+            issues.append(f"wave-b blocked reason overlap drifted: {backend}: missing/helper")
+        if native_residual_modules & helper_gap_modules:
+            issues.append(f"wave-b blocked reason overlap drifted: {backend}: native/helper")
+
+        blocked_modules = set(bucket["blocked_modules"])
+        reason_union = missing_modules.union(native_residual_modules).union(helper_gap_modules)
+        if reason_union != blocked_modules:
+            issues.append(f"wave-b blocked reason coverage drifted: {backend}")
+
+        native_modules = set(bucket["native_modules"])
+        generated_modules = set(bucket["generated_modules"])
+        if not native_residual_modules.issubset(native_modules):
+            issues.append(f"wave-b native residual reason escaped native bucket: {backend}")
+        if missing_modules & native_modules:
+            issues.append(f"wave-b missing reason overlaps native bucket: {backend}")
+        if missing_modules & generated_modules:
+            issues.append(f"wave-b missing reason overlaps generated bucket: {backend}")
+        if helper_gap_modules & native_modules:
+            issues.append(f"wave-b helper-gap reason overlaps native bucket: {backend}")
+        if helper_gap_modules & generated_modules:
+            issues.append(f"wave-b helper-gap reason overlaps generated bucket: {backend}")
+    return issues
+
+
 def _collect_wave_a_native_residual_issues() -> list[str]:
     issues: list[str] = []
     module_buckets = {
@@ -411,6 +456,7 @@ def main() -> int:
     issues.extend(_collect_current_inventory_issues())
     issues.extend(_collect_target_inventory_issues())
     issues.extend(_collect_module_bucket_issues())
+    issues.extend(_collect_wave_b_blocked_reason_issues())
     issues.extend(_collect_wave_a_native_residual_issues())
     issues.extend(_collect_wave_a_native_residual_file_issues())
     if issues:

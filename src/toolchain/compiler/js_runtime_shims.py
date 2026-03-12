@@ -13,7 +13,7 @@ def write_js_runtime_shims(output_dir: Path) -> None:
     """
     files: dict[str, str] = {
         "pytra/std/time.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/native/std/time.js');\n"
+            "const rt = require(process.cwd() + '/src/runtime/js/generated/std/time.js');\n"
             "const perf_counter = typeof rt.perf_counter === 'function' ? rt.perf_counter : rt.perfCounter;\n"
             "exports.perf_counter = perf_counter;\n"
             "exports.perfCounter = perf_counter;\n"

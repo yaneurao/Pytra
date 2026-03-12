@@ -43,6 +43,13 @@ class RemainingRuntimeModuleBucketEntry(TypedDict):
     blocked_modules: tuple[str, ...]
 
 
+class RemainingRuntimeWaveBBlockedReasonEntry(TypedDict):
+    backend: str
+    missing_compare_lane_modules: tuple[str, ...]
+    native_compare_residual_modules: tuple[str, ...]
+    helper_shaped_compare_gap_modules: tuple[str, ...]
+
+
 class RemainingRuntimeWaveAHookSourceEntry(TypedDict):
     backend: str
     runtime_hook_files: tuple[str, ...]
@@ -301,6 +308,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "rationale": "JS image helpers already live in generated/utils after the Wave B path cutover.",
             },
             {
+                "current_prefix": "src/runtime/js/generated/std/",
+                "target_prefix": "src/runtime/js/generated/std/",
+                "ownership": "generated",
+                "rationale": "JS live-generated std compare artifacts live in generated/std once the Wave B std lanes are materialized.",
+            },
+            {
                 "current_prefix": "src/runtime/js/pytra/py_runtime.js",
                 "target_prefix": "src/runtime/js/pytra/py_runtime.js",
                 "ownership": "compat",
@@ -368,6 +381,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/ts/generated/utils/",
                 "ownership": "generated",
                 "rationale": "TS image helpers already live in generated/utils after the Wave B path cutover.",
+            },
+            {
+                "current_prefix": "src/runtime/ts/generated/std/",
+                "target_prefix": "src/runtime/ts/generated/std/",
+                "ownership": "generated",
+                "rationale": "TS live-generated std compare artifacts live in generated/std once the Wave B std lanes are materialized.",
             },
             {
                 "current_prefix": "src/runtime/ts/pytra/py_runtime.ts",
@@ -493,6 +512,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "rationale": "PHP image helpers already live in generated/utils after the Wave B path cutover.",
             },
             {
+                "current_prefix": "src/runtime/php/generated/std/",
+                "target_prefix": "src/runtime/php/generated/std/",
+                "ownership": "generated",
+                "rationale": "PHP live-generated std compare artifacts live in generated/std once the Wave B std lanes are materialized.",
+            },
+            {
                 "current_prefix": "src/runtime/php/pytra/py_runtime.php",
                 "target_prefix": "src/runtime/php/pytra/py_runtime.php",
                 "ownership": "compat",
@@ -583,7 +608,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "std/pathlib.js",
             "std/time.js",
         ),
-        "pytra_gen_files": ("utils/gif.js", "utils/png.js"),
+        "pytra_gen_files": ("std/time.js", "utils/gif.js", "utils/png.js"),
         "pytra_files": (
             "README.md",
             "py_runtime.js",
@@ -602,7 +627,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "std/pathlib.ts",
             "std/time.ts",
         ),
-        "pytra_gen_files": ("utils/gif.ts", "utils/png.ts"),
+        "pytra_gen_files": ("std/time.ts", "utils/gif.ts", "utils/png.ts"),
         "pytra_files": (
             "README.md",
             "py_runtime.ts",
@@ -636,7 +661,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     {
         "backend": "php",
         "pytra_core_files": ("built_in/py_runtime.php", "std/time.php"),
-        "pytra_gen_files": ("utils/gif.php", "utils/png.php"),
+        "pytra_gen_files": ("std/time.php", "utils/gif.php", "utils/png.php"),
         "pytra_files": (
             "py_runtime.php",
             "std/time.php",
@@ -709,7 +734,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
     },
     {
         "backend": "js",
-        "generated_files": ("generated/utils/gif.js", "generated/utils/png.js"),
+        "generated_files": ("generated/std/time.js", "generated/utils/gif.js", "generated/utils/png.js"),
         "native_files": (
             "native/built_in/py_runtime.js",
             "native/std/math.js",
@@ -728,7 +753,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
     },
     {
         "backend": "ts",
-        "generated_files": ("generated/utils/gif.ts", "generated/utils/png.ts"),
+        "generated_files": ("generated/std/time.ts", "generated/utils/gif.ts", "generated/utils/png.ts"),
         "native_files": (
             "native/built_in/py_runtime.ts",
             "native/std/math.ts",
@@ -767,7 +792,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
     },
     {
         "backend": "php",
-        "generated_files": ("generated/utils/gif.php", "generated/utils/png.php"),
+        "generated_files": ("generated/std/time.php", "generated/utils/gif.php", "generated/utils/png.php"),
         "native_files": ("native/built_in/py_runtime.php", "native/std/time.php"),
         "compat_files": (
             "pytra/py_runtime.php",
@@ -834,7 +859,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     },
     {
         "backend": "js",
-        "generated_modules": ("utils/gif", "utils/png"),
+        "generated_modules": ("std/time", "utils/gif", "utils/png"),
         "native_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
         "compat_modules": (
             "built_in/py_runtime",
@@ -846,12 +871,12 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
         ),
         "blocked_modules": (
             REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
+            + ("std/json", "std/math", "std/pathlib")
         ),
     },
     {
         "backend": "ts",
-        "generated_modules": ("utils/gif", "utils/png"),
+        "generated_modules": ("std/time", "utils/gif", "utils/png"),
         "native_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
         "compat_modules": (
             "built_in/py_runtime",
@@ -863,7 +888,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
         ),
         "blocked_modules": (
             REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
+            + ("std/json", "std/math", "std/pathlib")
         ),
     },
     {
@@ -882,15 +907,58 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     },
     {
         "backend": "php",
-        "generated_modules": ("utils/gif", "utils/png"),
+        "generated_modules": ("std/time", "utils/gif", "utils/png"),
         "native_modules": ("built_in/py_runtime", "std/time"),
         "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
         "blocked_modules": (
             REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
+            + ("std/json", "std/math", "std/pathlib")
         ),
     },
 )
+
+REMAINING_NONCPP_RUNTIME_WAVE_B_BLOCKED_REASONS_V1: Final[
+    tuple[RemainingRuntimeWaveBBlockedReasonEntry, ...]
+] = (
+    {
+        "backend": "js",
+        "missing_compare_lane_modules": (
+            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1 + ("std/json",)
+        ),
+        "native_compare_residual_modules": ("std/math", "std/pathlib"),
+        "helper_shaped_compare_gap_modules": (),
+    },
+    {
+        "backend": "ts",
+        "missing_compare_lane_modules": (
+            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1 + ("std/json",)
+        ),
+        "native_compare_residual_modules": ("std/math", "std/pathlib"),
+        "helper_shaped_compare_gap_modules": (),
+    },
+    {
+        "backend": "lua",
+        "missing_compare_lane_modules": (),
+        "native_compare_residual_modules": (),
+        "helper_shaped_compare_gap_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+    },
+    {
+        "backend": "ruby",
+        "missing_compare_lane_modules": (),
+        "native_compare_residual_modules": (),
+        "helper_shaped_compare_gap_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+    },
+    {
+        "backend": "php",
+        "missing_compare_lane_modules": (
+            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + ("std/json", "std/math", "std/pathlib")
+        ),
+        "native_compare_residual_modules": (),
+        "helper_shaped_compare_gap_modules": (),
+    },
+)
+
 
 
 REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1: Final[
@@ -1041,6 +1109,10 @@ def iter_remaining_noncpp_runtime_generated_compare_baseline() -> tuple[str, ...
 
 def iter_remaining_noncpp_runtime_module_buckets() -> tuple[RemainingRuntimeModuleBucketEntry, ...]:
     return REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1
+
+
+def iter_remaining_noncpp_runtime_wave_b_blocked_reasons() -> tuple[RemainingRuntimeWaveBBlockedReasonEntry, ...]:
+    return REMAINING_NONCPP_RUNTIME_WAVE_B_BLOCKED_REASONS_V1
 
 
 def iter_remaining_noncpp_runtime_wave_a_hook_sources() -> tuple[RemainingRuntimeWaveAHookSourceEntry, ...]:
