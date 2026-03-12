@@ -32,6 +32,36 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
         self.assertEqual(contract_mod.PARITY_MATRIX_SOURCE_DESTINATION, "support_matrix")
         self.assertEqual(contract_mod.PARITY_MATRIX_IMPLEMENTATION_PHASE, "row_seed_scaffold")
         self.assertEqual(contract_mod.PARITY_MATRIX_CELL_SCHEMA_STATUS, "not_populated")
+        self.assertEqual(contract_mod.PARITY_MATRIX_CELL_SCHEMA_VERSION, 1)
+        self.assertEqual(contract_mod.PARITY_MATRIX_CELL_COLLECTION_KEY, "backend_cells")
+        self.assertEqual(
+            contract_mod.PARITY_MATRIX_CELL_REQUIRED_KEYS,
+            ("backend", "support_state", "evidence_kind"),
+        )
+        self.assertEqual(
+            contract_mod.PARITY_MATRIX_CELL_OPTIONAL_KEYS,
+            ("details", "evidence_ref", "diagnostic_kind"),
+        )
+        self.assertEqual(
+            contract_mod.PARITY_MATRIX_CELL_EVIDENCE_KIND_ORDER,
+            (
+                "build_run_smoke",
+                "transpile_smoke",
+                "contract_guard",
+                "diagnostic_guard",
+                "not_started_placeholder",
+                "preview_guard",
+            ),
+        )
+        self.assertEqual(
+            contract_mod.PARITY_MATRIX_ALLOWED_EVIDENCE_KINDS_BY_STATE,
+            {
+                "supported": ("build_run_smoke", "transpile_smoke"),
+                "fail_closed": ("contract_guard", "diagnostic_guard"),
+                "not_started": ("not_started_placeholder",),
+                "experimental": ("preview_guard", "transpile_smoke", "build_run_smoke"),
+            },
+        )
         self.assertEqual(
             contract_mod.PARITY_MATRIX_CELL_GAP_SUMMARY,
             {
@@ -85,6 +115,7 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 "source_destination",
                 "implementation_phase",
                 "cell_schema_status",
+                "cell_schema",
                 "cell_gap_summary",
                 "backend_order",
                 "support_state_order",
@@ -93,6 +124,30 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 "summary_keys",
                 "row_keys",
                 "matrix_rows",
+            },
+        )
+        self.assertEqual(
+            contract_mod.build_backend_parity_matrix_manifest()["cell_schema"],
+            {
+                "schema_version": 1,
+                "collection_key": "backend_cells",
+                "required_keys": ["backend", "support_state", "evidence_kind"],
+                "optional_keys": ["details", "evidence_ref", "diagnostic_kind"],
+                "support_state_order": ["supported", "fail_closed", "not_started", "experimental"],
+                "evidence_kind_order": [
+                    "build_run_smoke",
+                    "transpile_smoke",
+                    "contract_guard",
+                    "diagnostic_guard",
+                    "not_started_placeholder",
+                    "preview_guard",
+                ],
+                "allowed_evidence_kinds_by_state": {
+                    "supported": ["build_run_smoke", "transpile_smoke"],
+                    "fail_closed": ["contract_guard", "diagnostic_guard"],
+                    "not_started": ["not_started_placeholder"],
+                    "experimental": ["preview_guard", "transpile_smoke", "build_run_smoke"],
+                },
             },
         )
 

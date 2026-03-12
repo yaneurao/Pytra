@@ -10,7 +10,8 @@
 
 - 現在の matrix は `row_seed_scaffold` 段階です。
 - つまり representative feature row は publish されていますが、各 `feature × backend` cell はまだ実体化されていません。
-- per-cell の `support_state` / `evidence_kind` は次段の matrix fill task で追加します。
+- per-cell の schema は先に固定されており、required key は `backend` / `support_state` / `evidence_kind`、optional key は `details` / `evidence_ref` / `diagnostic_kind` です。
+- ただし actual `feature × backend` cell はまだ未実体化で、次段の matrix fill task で row ごとに埋めます。
 
 ## Source Of Truth
 

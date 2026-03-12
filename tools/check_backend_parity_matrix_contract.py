@@ -24,6 +24,30 @@ def _collect_contract_issues() -> list[str]:
         issues.append("matrix implementation phase drifted away from row_seed_scaffold baseline")
     if contract_mod.PARITY_MATRIX_CELL_SCHEMA_STATUS != "not_populated":
         issues.append("matrix cell schema status drifted away from not_populated baseline")
+    if contract_mod.PARITY_MATRIX_CELL_SCHEMA_VERSION != 1:
+        issues.append("matrix cell schema version drifted")
+    if contract_mod.PARITY_MATRIX_CELL_COLLECTION_KEY != "backend_cells":
+        issues.append("matrix cell collection key drifted")
+    if contract_mod.PARITY_MATRIX_CELL_REQUIRED_KEYS != ("backend", "support_state", "evidence_kind"):
+        issues.append("matrix cell required keys drifted")
+    if contract_mod.PARITY_MATRIX_CELL_OPTIONAL_KEYS != ("details", "evidence_ref", "diagnostic_kind"):
+        issues.append("matrix cell optional keys drifted")
+    if contract_mod.PARITY_MATRIX_CELL_EVIDENCE_KIND_ORDER != (
+        "build_run_smoke",
+        "transpile_smoke",
+        "contract_guard",
+        "diagnostic_guard",
+        "not_started_placeholder",
+        "preview_guard",
+    ):
+        issues.append("matrix cell evidence kind order drifted")
+    if contract_mod.PARITY_MATRIX_ALLOWED_EVIDENCE_KINDS_BY_STATE != {
+        "supported": ("build_run_smoke", "transpile_smoke"),
+        "fail_closed": ("contract_guard", "diagnostic_guard"),
+        "not_started": ("not_started_placeholder",),
+        "experimental": ("preview_guard", "transpile_smoke", "build_run_smoke"),
+    }:
+        issues.append("matrix state/evidence compatibility drifted")
     if contract_mod.PARITY_MATRIX_CELL_GAP_SUMMARY != {
         "missing_per_backend_cells": "The current matrix exports representative row seeds only and does not yet publish per-backend cells.",
         "missing_support_state_per_cell": "Each feature × backend cell still lacks an explicit support_state entry.",
@@ -87,6 +111,7 @@ def _collect_manifest_issues() -> list[str]:
         "source_destination",
         "implementation_phase",
         "cell_schema_status",
+        "cell_schema",
         "cell_gap_summary",
         "backend_order",
         "support_state_order",
@@ -105,6 +130,19 @@ def _collect_manifest_issues() -> list[str]:
         issues.append("manifest implementation_phase drifted")
     if manifest["cell_schema_status"] != contract_mod.PARITY_MATRIX_CELL_SCHEMA_STATUS:
         issues.append("manifest cell_schema_status drifted")
+    if manifest["cell_schema"] != {
+        "schema_version": contract_mod.PARITY_MATRIX_CELL_SCHEMA_VERSION,
+        "collection_key": contract_mod.PARITY_MATRIX_CELL_COLLECTION_KEY,
+        "required_keys": list(contract_mod.PARITY_MATRIX_CELL_REQUIRED_KEYS),
+        "optional_keys": list(contract_mod.PARITY_MATRIX_CELL_OPTIONAL_KEYS),
+        "support_state_order": list(contract_mod.PARITY_MATRIX_SUPPORT_STATE_ORDER),
+        "evidence_kind_order": list(contract_mod.PARITY_MATRIX_CELL_EVIDENCE_KIND_ORDER),
+        "allowed_evidence_kinds_by_state": {
+            state: list(kinds)
+            for state, kinds in contract_mod.PARITY_MATRIX_ALLOWED_EVIDENCE_KINDS_BY_STATE.items()
+        },
+    }:
+        issues.append("manifest cell_schema drifted")
     if manifest["cell_gap_summary"] != contract_mod.PARITY_MATRIX_CELL_GAP_SUMMARY:
         issues.append("manifest cell_gap_summary drifted")
     if manifest["backend_order"] != list(contract_mod.PARITY_MATRIX_BACKEND_ORDER):

@@ -10,7 +10,8 @@ This page is the canonical publish target for feature × backend support-state r
 
 - The current matrix is still at the `row_seed_scaffold` phase.
 - Representative feature rows are already published, but the actual `feature × backend` cells are not populated yet.
-- Per-cell `support_state` / `evidence_kind` will be added in the next matrix-fill task.
+- The per-cell schema is already fixed: required keys are `backend` / `support_state` / `evidence_kind`, and optional keys are `details` / `evidence_ref` / `diagnostic_kind`.
+- The actual `feature × backend` cells are still not populated and will be filled row by row in the next matrix-fill task.
 
 ## Source Of Truth
 
