@@ -102,12 +102,19 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         remaining_second_wave = [
             row["backend"]
             for row in RELATIVE_IMPORT_NONCPP_ROLLOUT_V1
-            if row["next_verification_lane"] == "jvm_package_bundle_rollout"
+            if row["next_verification_lane"] == "transpile_smoke_locked"
+            and row["backend"] in {"java", "kotlin", "scala"}
         ]
         self.assertEqual(
             remaining_second_wave,
             ["java", "kotlin", "scala"],
         )
+        longtail = [
+            row["backend"]
+            for row in RELATIVE_IMPORT_NONCPP_ROLLOUT_V1
+            if row["next_verification_lane"] == "longtail_relative_import_rollout"
+        ]
+        self.assertEqual(longtail, ["lua", "php", "ruby"])
 
     def test_validator_accepts_noncpp_rollout_handoff(self) -> None:
         validate_relative_import_noncpp_rollout_handoff()
@@ -129,23 +136,23 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         )
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["next_rollout_bundle_backends"],
-            ("java", "kotlin", "scala"),
-        )
-        self.assertEqual(
-            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["followup_rollout_bundle_backends"],
             ("lua", "php", "ruby"),
         )
         self.assertEqual(
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["followup_rollout_bundle_backends"],
+            (),
+        )
+        self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_smoke_locked_backends"],
-            ("java", "kotlin", "scala"),
+            (),
         )
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_evidence_lane"],
-            "package_project_transpile",
+            "none",
         )
         self.assertEqual(
             RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["followup_verification_lane"],
-            "defer_until_jvm_package_bundle_complete",
+            "none",
         )
 
     def test_backend_parity_docs_link_live_noncpp_rollout_plan(self) -> None:

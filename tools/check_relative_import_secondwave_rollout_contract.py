@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the live second-wave relative-import rollout handoff contract."""
+"""Validate the post-second-wave relative-import rollout handoff contract."""
 
 from __future__ import annotations
 
@@ -56,12 +56,12 @@ EXPECTED_BUNDLES = [
     },
 ]
 EXPECTED_HANDOFF = {
-    "todo_id": "P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01",
-    "verification_lane": "jvm_package_bundle_rollout",
+    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01",
+    "verification_lane": "longtail_relative_import_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
     "active_plan_paths": (
-        "docs/ja/plans/p1-relative-import-jvm-package-bundle.md",
-        "docs/en/plans/p1-relative-import-jvm-package-bundle.md",
+        "docs/ja/plans/p1-relative-import-longtail-bundle.md",
+        "docs/en/plans/p1-relative-import-longtail-bundle.md",
     ),
     "backend_parity_docs": (
         "docs/ja/language/backend-parity-matrix.md",
@@ -74,7 +74,7 @@ EXPECTED_HANDOFF = {
         "native_path_bundle",
         "jvm_package_bundle",
     ),
-    "next_bundle_id": "jvm_package_bundle",
+    "next_bundle_id": "longtail_relative_import_rollout",
 }
 
 

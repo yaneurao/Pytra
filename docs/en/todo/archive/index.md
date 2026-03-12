@@ -24,6 +24,7 @@ Last updated: 2026-03-12
 - [2026-03-12 / P1-RELATIVE-IMPORT-SECONDWAVE-SMOKE-01](../plans/archive/20260312-p1-relative-import-secondwave-smoke.md)
 - [2026-03-12 / P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01](../plans/archive/20260312-p1-relative-import-secondwave-planning.md)
 - [2026-03-12 / P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01](../plans/archive/20260312-p1-relative-import-native-path-bundle.md)
+- [2026-03-12 / P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01](../plans/archive/20260312-p1-relative-import-jvm-package-bundle.md)
 - [2026-03-12 / P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01](../plans/archive/20260312-p2-relative-import-backend-coverage.md)
 - [2026-03-12 / P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01](../plans/archive/20260312-p2-relative-import-noncpp-rollout.md)
 - [2026-03-12 / P0-RELATIVE-IMPORT-BARE-PARENT-01](../plans/archive/20260312-p0-relative-import-bare-parent-hardening.md)
@@ -106,7 +107,7 @@ Last updated: 2026-03-12
 
 ## Date Links
 
-- [2026-03-12](20260312.md) (20 sections)
+- [2026-03-12](20260312.md) (21 sections)
 - [2026-03-11](20260311.md) (25 sections)
 - [2026-03-09](20260309.md) (2 sections)
 - [2026-03-08](20260308.md) (8 sections)

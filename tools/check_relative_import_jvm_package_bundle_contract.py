@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the live JVM-package relative-import rollout bundle contract."""
+"""Validate the archived JVM-package relative-import rollout bundle contract."""
 
 from __future__ import annotations
 
@@ -15,6 +15,8 @@ from toolchain.compiler.relative_import_jvm_package_bundle_contract import (
     RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_BACKENDS_V1,
     RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_HANDOFF_V1,
     RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_SCENARIOS_V1,
+    relative_import_jvm_package_bundle_coverage_rows,
+    relative_import_jvm_package_bundle_handoff_snapshot,
 )
 
 
@@ -37,9 +39,9 @@ EXPECTED_BACKENDS = ("java", "kotlin", "scala")
 
 EXPECTED_HANDOFF = {
     "todo_id": "P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01",
-    "active_plan_paths": (
-        "docs/ja/plans/p1-relative-import-jvm-package-bundle.md",
-        "docs/en/plans/p1-relative-import-jvm-package-bundle.md",
+    "archive_plan_paths": (
+        "docs/ja/plans/archive/20260312-p1-relative-import-jvm-package-bundle.md",
+        "docs/en/plans/archive/20260312-p1-relative-import-jvm-package-bundle.md",
     ),
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
@@ -49,11 +51,12 @@ EXPECTED_HANDOFF = {
     ),
     "bundle_id": "jvm_package_bundle",
     "backends": ("java", "kotlin", "scala"),
-    "verification_lane": "jvm_package_bundle_rollout",
+    "bundle_state": "locked_representative_smoke",
+    "verification_lane": "transpile_smoke_locked",
     "fail_closed_lane": "backend_specific_fail_closed",
     "followup_bundle_id": "longtail_relative_import_rollout",
     "followup_backends": ("lua", "php", "ruby"),
-    "followup_verification_lane": "defer_until_jvm_package_bundle_complete",
+    "followup_verification_lane": "longtail_relative_import_rollout",
 }
 
 
@@ -84,9 +87,9 @@ def validate_relative_import_jvm_package_bundle_contract() -> None:
             f"expected={EXPECTED_BACKENDS}, got={backend_order}"
         )
     for entry in RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_BACKENDS_V1:
-        if entry["verification_lane"] != "jvm_package_bundle_rollout":
+        if entry["verification_lane"] != "transpile_smoke_locked":
             raise SystemExit(
-                "JVM-package bundle backend must stay on jvm_package_bundle_rollout: "
+                "JVM-package bundle backend must stay on transpile_smoke_locked: "
                 f"{entry['backend']}={entry['verification_lane']}"
             )
         if tuple(entry["scenario_ids"]) != tuple(EXPECTED_SCENARIOS):
@@ -101,9 +104,33 @@ def validate_relative_import_jvm_package_bundle_contract() -> None:
             )
     if RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_HANDOFF_V1 != EXPECTED_HANDOFF:
         raise SystemExit("relative import JVM-package handoff drifted from the fixed inventory")
-    for rel_path in RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_HANDOFF_V1["active_plan_paths"]:
+    coverage_rows = relative_import_jvm_package_bundle_coverage_rows()
+    if [row["backend"] for row in coverage_rows] != list(EXPECTED_BACKENDS):
+        raise SystemExit(
+            "relative import JVM-package coverage rows drifted from the backend order"
+        )
+    for row in coverage_rows:
+        if row["contract_state"] != EXPECTED_HANDOFF["verification_lane"]:
+            raise SystemExit(
+                "relative import JVM-package coverage rows must stay transpile_smoke_locked: "
+                f"{row['backend']}={row['contract_state']}"
+            )
+        if row["evidence_lane"] != "package_project_transpile":
+            raise SystemExit(
+                "relative import JVM-package coverage rows must stay on package_project_transpile: "
+                f"{row['backend']}={row['evidence_lane']}"
+            )
+    if relative_import_jvm_package_bundle_handoff_snapshot() != {
+        "next_rollout_backends": EXPECTED_HANDOFF["followup_backends"],
+        "next_verification_lane": EXPECTED_HANDOFF["followup_verification_lane"],
+        "fail_closed_lane": EXPECTED_HANDOFF["fail_closed_lane"],
+    }:
+        raise SystemExit(
+            "relative import JVM-package handoff snapshot drifted from coverage handoff"
+        )
+    for rel_path in RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_HANDOFF_V1["archive_plan_paths"]:
         if not (ROOT / rel_path).is_file():
-            raise SystemExit(f"missing JVM-package active plan path: {rel_path}")
+            raise SystemExit(f"missing JVM-package archive plan path: {rel_path}")
 
 
 def main() -> None:

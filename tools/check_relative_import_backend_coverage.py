@@ -36,7 +36,7 @@ EXPECTED_BACKENDS = (
 )
 
 EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
-    "todo_id": "P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01",
+    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-BUNDLE-01",
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
     "backend_parity_docs": (
@@ -44,24 +44,35 @@ EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
         "docs/en/language/backend-parity-matrix.md",
     ),
     "next_rollout_plan": (
-        "docs/ja/plans/p1-relative-import-jvm-package-bundle.md",
-        "docs/en/plans/p1-relative-import-jvm-package-bundle.md",
+        "docs/ja/plans/p1-relative-import-longtail-bundle.md",
+        "docs/en/plans/p1-relative-import-longtail-bundle.md",
     ),
-    "locked_transpile_smoke_backends": ("rs", "cs", "go", "js", "nim", "swift", "ts"),
-    "next_rollout_backends": ("java", "kotlin", "scala"),
-    "current_bundle_smoke_locked_backends": ("java", "kotlin", "scala"),
-    "current_bundle_evidence_lane": "package_project_transpile",
+    "locked_transpile_smoke_backends": (
+        "rs",
+        "cs",
+        "go",
+        "java",
+        "js",
+        "kotlin",
+        "nim",
+        "scala",
+        "swift",
+        "ts",
+    ),
+    "next_rollout_backends": ("lua", "php", "ruby"),
+    "current_bundle_smoke_locked_backends": (),
+    "current_bundle_evidence_lane": "none",
     "second_wave_bundle_order": (
         "locked_js_ts_smoke_bundle",
         "native_path_bundle",
         "jvm_package_bundle",
     ),
-    "next_rollout_bundle": "jvm_package_bundle",
-    "next_rollout_bundle_backends": ("java", "kotlin", "scala"),
-    "followup_rollout_bundle": "longtail_relative_import_rollout",
-    "followup_rollout_bundle_backends": ("lua", "php", "ruby"),
-    "followup_verification_lane": "defer_until_jvm_package_bundle_complete",
-    "next_verification_lane": "jvm_package_bundle_rollout",
+    "next_rollout_bundle": "longtail_relative_import_rollout",
+    "next_rollout_bundle_backends": ("lua", "php", "ruby"),
+    "followup_rollout_bundle": "none",
+    "followup_rollout_bundle_backends": (),
+    "followup_verification_lane": "none",
+    "next_verification_lane": "longtail_relative_import_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
 }
 
@@ -178,15 +189,15 @@ def validate_relative_import_noncpp_rollout() -> None:
                 )
             continue
         if backend in {"java", "kotlin", "scala"}:
-            if row["next_verification_lane"] != "jvm_package_bundle_rollout":
+            if row["next_verification_lane"] != "transpile_smoke_locked":
                 raise SystemExit(
-                    "active JVM second-wave backends must stay on jvm_package_bundle_rollout: "
+                    "completed JVM backends must stay on transpile_smoke_locked: "
                     f"got {backend}={row['next_verification_lane']}"
                 )
             continue
-        if row["next_verification_lane"] != "defer_until_jvm_package_bundle_complete":
+        if row["next_verification_lane"] != "longtail_relative_import_rollout":
             raise SystemExit(
-                "long-tail backends must stay deferred until the JVM package bundle completes: "
+                "long-tail backends must stay on the live longtail_relative_import_rollout lane: "
                 f"got {backend}={row['next_verification_lane']}"
             )
 
