@@ -150,13 +150,6 @@ REPRESENTATIVE_RESIDUAL_CELLS_V1: Final[tuple[RepresentativeResidualCell, ...]] 
     },
     {
         "backend": "cs",
-        "feature_id": "builtin.type.isinstance",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/oop/is_instance.py",
-    },
-    {
-        "backend": "cs",
         "feature_id": "stdlib.json.loads_dumps",
         "support_state": "not_started",
         "evidence_kind": "not_started_placeholder",
@@ -240,7 +233,6 @@ REPRESENTATIVE_ROLLOUT_BUNDLES_V1: Final[tuple[RepresentativeRolloutBundle, ...]
             "syntax.control.try_raise",
             "builtin.iter.range",
             "builtin.iter.zip",
-            "builtin.type.isinstance",
         ),
         "target_evidence": "transpile_smoke",
         "notes": "Cover the C# syntax and iterator rows together before moving to stdlib-heavy bundles.",

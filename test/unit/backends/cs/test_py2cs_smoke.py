@@ -908,6 +908,13 @@ def f(x: object) -> bool:
         self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(x, Pytra.CsModule.py_runtime.PYTRA_TID_SET)", cs)
         self.assertNotIn("return isinstance(", cs)
 
+    def test_representative_is_instance_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("is_instance")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("Pytra.CsModule.py_runtime.py_runtime_value_isinstance(", cs)
+        self.assertNotIn("unsupported", cs)
+
     def test_path_alias_constructor_and_parent_are_lowered(self) -> None:
         src = """from pytra.std.pathlib import Path
 

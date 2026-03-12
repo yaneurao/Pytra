@@ -136,6 +136,7 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 },
                 "builtin.type.isinstance": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "lua": {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "rb": {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "php": {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},
@@ -417,12 +418,14 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
         self.assertEqual(
             [
                 cells["builtin.type.isinstance"]["rs"],
+                cells["builtin.type.isinstance"]["cs"],
                 cells["builtin.type.isinstance"]["lua"],
                 cells["builtin.type.isinstance"]["rb"],
                 cells["builtin.type.isinstance"]["php"],
             ],
             [
                 {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "lua", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "rb", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 {"backend": "php", "support_state": "supported", "evidence_kind": "transpile_smoke"},

@@ -855,6 +855,14 @@ def f(x: Any) -> bool:
         self.assertIn("py_runtime_value_isinstance(", rust)
         self.assertNotIn("unsupported", rust)
 
+    def test_representative_enumerate_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("enumerate_basic")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("enumerate((values).clone(), 1)", rust)
+        self.assertIn(".enumerate().map(|(i, v)| (i as i64, v))", rust)
+        self.assertNotIn("unsupported", rust)
+
     def test_transpile_rejects_general_union_type_expr_in_annassign(self) -> None:
         east = {
             "kind": "Module",
