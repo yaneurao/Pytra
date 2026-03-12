@@ -67,7 +67,12 @@ class CppModuleEmitter:
 
     def _module_name_to_cpp_namespace(self, module_name: str) -> str:
         """Python import モジュール名を C++ namespace へ解決する。"""
-        module_name_norm = module_name
+        module_name_norm = self._normalize_runtime_module_name(module_name)
+        module_ns_map = getattr(self, "module_namespace_map", {})
+        if isinstance(module_ns_map, dict):
+            mapped_ns = module_ns_map.get(module_name_norm)
+            if isinstance(mapped_ns, str) and mapped_ns != "":
+                return mapped_ns
         ns = lookup_cpp_namespace_for_runtime_module(module_name_norm)
         if ns != "" or module_name_norm.startswith("pytra.core.") or module_name_norm.startswith("pytra.built_in."):
             return ns
@@ -264,51 +269,16 @@ class CppModuleEmitter:
             return Path("")
         return Path("")
 
-    def _module_generated_header_path(self, module_name: str) -> Path:
-        """runtime module の generated header パスを返す（未解決時は空 Path）。"""
-        src_path = self._module_source_path_for_name(module_name)
-        if str(src_path) in {"", "."}:
-            return Path("")
-        prefix = ""
-        rel_path = Path("")
-        try:
-            rel_path = src_path.relative_to(RUNTIME_STD_SOURCE_ROOT)
-            prefix = "std"
-        except ValueError:
-            try:
-                rel_path = src_path.relative_to(RUNTIME_UTILS_SOURCE_ROOT)
-                prefix = "utils"
-            except ValueError:
-                try:
-                    rel_path = src_path.relative_to(RUNTIME_BUILT_IN_SOURCE_ROOT)
-                    prefix = "built_in"
-                except ValueError:
-                    return Path("")
-        if rel_path.name == "__init__.py":
-            rel_no_suffix = rel_path.parent
-        else:
-            rel_no_suffix = rel_path.with_suffix("")
-        return RUNTIME_CPP_GENERATED_ROOT / prefix / rel_no_suffix.with_suffix(".h")
-
-    def _module_class_signature_docs(self, module_name: str) -> dict[str, dict[str, Any]]:
-        """runtime module の class/method シグネチャを SoT から抽出する。"""
-        module_name_norm = self._normalize_runtime_module_name(module_name)
-        cached = self._module_class_signature_cache.get(module_name_norm)
-        if isinstance(cached, dict):
-            return cached
+    def _module_class_signature_docs_from_east(
+        self,
+        module_name: str,
+        east_doc: dict[str, Any],
+    ) -> dict[str, dict[str, Any]]:
+        """EAST doc から class/method シグネチャを抽出する。"""
         out: dict[str, dict[str, Any]] = {}
-        src_path = self._module_source_path_for_name(module_name_norm)
-        if str(src_path) == "":
-            self._module_class_signature_cache[module_name_norm] = out
-            return out
-        try:
-            east = load_east_document(src_path)
-        except Exception:
-            self._module_class_signature_cache[module_name_norm] = out
-            return out
-        body = east.get("body")
+        body = east_doc.get("body")
         stmts = body if isinstance(body, list) else []
-        ns = self._module_name_to_cpp_namespace(module_name_norm)
+        ns = self._module_name_to_cpp_namespace(module_name)
         for stmt in stmts:
             if not isinstance(stmt, dict) or stmt.get("kind") != "ClassDef":
                 continue
@@ -359,6 +329,58 @@ class CppModuleEmitter:
                 "method_returns": method_returns,
                 "method_names": sorted(method_names),
             }
+        return out
+
+    def _module_generated_header_path(self, module_name: str) -> Path:
+        """runtime module の generated header パスを返す（未解決時は空 Path）。"""
+        src_path = self._module_source_path_for_name(module_name)
+        if str(src_path) in {"", "."}:
+            return Path("")
+        prefix = ""
+        rel_path = Path("")
+        try:
+            rel_path = src_path.relative_to(RUNTIME_STD_SOURCE_ROOT)
+            prefix = "std"
+        except ValueError:
+            try:
+                rel_path = src_path.relative_to(RUNTIME_UTILS_SOURCE_ROOT)
+                prefix = "utils"
+            except ValueError:
+                try:
+                    rel_path = src_path.relative_to(RUNTIME_BUILT_IN_SOURCE_ROOT)
+                    prefix = "built_in"
+                except ValueError:
+                    return Path("")
+        if rel_path.name == "__init__.py":
+            rel_no_suffix = rel_path.parent
+        else:
+            rel_no_suffix = rel_path.with_suffix("")
+        return RUNTIME_CPP_GENERATED_ROOT / prefix / rel_no_suffix.with_suffix(".h")
+
+    def _module_class_signature_docs(self, module_name: str) -> dict[str, dict[str, Any]]:
+        """runtime module の class/method シグネチャを SoT から抽出する。"""
+        module_name_norm = self._normalize_runtime_module_name(module_name)
+        cached = self._module_class_signature_cache.get(module_name_norm)
+        if isinstance(cached, dict):
+            return cached
+        out: dict[str, dict[str, Any]] = {}
+        user_module_docs = getattr(self, "user_module_east_map", {})
+        if isinstance(user_module_docs, dict):
+            east_doc = user_module_docs.get(module_name_norm)
+            if isinstance(east_doc, dict) and len(east_doc) > 0:
+                out = self._module_class_signature_docs_from_east(module_name_norm, east_doc)
+                self._module_class_signature_cache[module_name_norm] = out
+                return out
+        src_path = self._module_source_path_for_name(module_name_norm)
+        if str(src_path) == "":
+            self._module_class_signature_cache[module_name_norm] = out
+            return out
+        try:
+            east = load_east_document(src_path)
+        except Exception:
+            self._module_class_signature_cache[module_name_norm] = out
+            return out
+        out = self._module_class_signature_docs_from_east(module_name_norm, east)
         self._module_class_signature_cache[module_name_norm] = out
         return out
 

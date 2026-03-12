@@ -1384,6 +1384,7 @@ class CppEmitter(
                     if m in self.class_method_names.get(base, set()):
                         self.class_method_virtual[base].add(m)
                     base = self.class_base.get(base, "")
+        self._prime_import_bindings_from_body(body)
         self._register_imported_runtime_class_metadata()
 
         self.emit_module_leading_trivia()
@@ -2097,6 +2098,12 @@ class CppEmitter(
 
     def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
         kind = self._node_kind_from_dict(stmt)
+        if kind in {"Import", "ImportFrom"}:
+            self._prime_import_bindings_from_stmt(stmt)
+        return
+
+    def _prime_import_bindings_from_stmt(self, stmt: dict[str, Any]) -> None:
+        kind = self._node_kind_from_dict(stmt)
         ents = self._dict_stmt_list(stmt.get("names"))
         if kind == "Import":
             for ent in ents:
@@ -2112,9 +2119,18 @@ class CppEmitter(
                 asname = dict_any_get_str(ent, "asname")
                 local_name = asname if asname != "" else name
                 set_import_symbol_binding_and_module_set(
-                    self.import_symbols, self.import_symbol_modules, local_name, mod, name
+                    self.import_symbols,
+                    self.import_symbol_modules,
+                    local_name,
+                    mod,
+                    name,
                 )
-        return
+
+    def _prime_import_bindings_from_body(self, body: list[dict[str, Any]]) -> None:
+        for stmt in body:
+            kind = self._node_kind_from_dict(stmt)
+            if kind in {"Import", "ImportFrom"}:
+                self._prime_import_bindings_from_stmt(stmt)
 
     def _emit_pass_stmt(self, stmt: dict[str, Any]) -> None:
         _ = stmt

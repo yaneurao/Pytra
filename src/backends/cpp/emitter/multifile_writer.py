@@ -13,7 +13,6 @@ from toolchain.compiler.transpile_cli import (
     module_id_from_east_for_graph,
     module_rel_label,
     path_parent_text,
-    sanitize_module_label,
     sort_str_list_copy,
     replace_first,
     write_text_file,
@@ -21,6 +20,7 @@ from toolchain.compiler.transpile_cli import (
 
 from backends.cpp.program_writer import write_cpp_rendered_program
 from backends.cpp.emitter.cpp_emitter import CppEmitter
+from backends.cpp.emitter.header_builder import build_cpp_header_from_east
 from backends.cpp.optimizer import optimize_cpp_ir
 from backends.cpp.optimizer import render_cpp_opt_trace
 
@@ -59,6 +59,7 @@ def write_multi_file_cpp(
     module_ns_map: dict[str, str] = {}
     module_label_map: dict[str, str] = {}
     module_key_by_name: dict[str, str] = {}
+    module_doc_by_name: dict[str, dict[str, Any]] = {}
     for mod_key in files:
         mod_path = Path(mod_key)
         east0 = dict_any_get_dict(module_east_map, mod_key)
@@ -69,6 +70,7 @@ def write_multi_file_cpp(
             module_ns_map[mod_name] = "pytra_mod_" + label
             if mod_name not in module_key_by_name:
                 module_key_by_name[mod_name] = mod_key
+            module_doc_by_name[mod_name] = east0
 
     type_schema = East1BuildHelpers.build_module_type_schema(module_east_map)
     rendered_modules: list[dict[str, Any]] = []
@@ -87,15 +89,6 @@ def write_multi_file_cpp(
             continue
         mod_path = Path(mod_key)
         label = module_label_map[mod_key] if mod_key in module_label_map else ""
-        guard = "PYTRA_MULTI_" + sanitize_module_label(label).upper() + "_H"
-        hdr_text = "// AUTO-GENERATED FILE. DO NOT EDIT.\n"
-        hdr_text += "#ifndef " + guard + "\n"
-        hdr_text += "#define " + guard + "\n\n"
-        hdr_text += "namespace pytra_multi {\n"
-        hdr_text += "void module_" + label + "();\n"
-        hdr_text += "}  // namespace pytra_multi\n\n"
-        hdr_text += "#endif  // " + guard + "\n"
-
         is_entry = mod_key == entry_key
         optimized_east: dict[str, Any] = east
         if isinstance(east, dict):
@@ -126,6 +119,9 @@ def write_multi_file_cpp(
                 )
             if is_entry and dump_cpp_opt_trace != "":
                 _write_debug_text(dump_cpp_opt_trace, render_cpp_opt_trace(cpp_opt_report))
+        module_name = module_id_from_east_for_graph(root, mod_path, optimized_east)
+        if module_name != "":
+            module_doc_by_name[module_name] = optimized_east
 
         type_emitter = CppEmitter(
             optimized_east,
@@ -144,6 +140,7 @@ def write_multi_file_cpp(
         type_emitter.enable_helper_artifact_lane = True
         if cpp_list_model in {"value", "pyobj"}:
             type_emitter.cpp_list_model = cpp_list_model
+        type_emitter.user_module_east_map = module_doc_by_name
         cpp_txt = type_emitter.transpile()
         helper_artifacts = type_emitter.finalize_helper_artifacts()
 
@@ -165,6 +162,21 @@ def write_multi_file_cpp(
             module_id = dict_any_get_str(sym_obj if isinstance(sym_obj, dict) else {}, "module")
             if module_id:
                 dep_modules.add(module_id)
+
+        dep_include_lines: list[str] = []
+        seen_dep_includes: set[str] = set()
+        for mod_name in dep_modules:
+            target_key = module_key_by_name.get(mod_name, "")
+            if target_key == "" or target_key == mod_key:
+                continue
+            dep_label = module_label_map.get(target_key, "")
+            if dep_label == "":
+                continue
+            include_line = f'#include "{dep_label}.h"'
+            if include_line in seen_dep_includes:
+                continue
+            seen_dep_includes.add(include_line)
+            dep_include_lines.append(include_line)
 
         fwd_lines: list[str] = []
         for mod_name in dep_modules:
@@ -224,8 +236,18 @@ def write_multi_file_cpp(
                 fwd_lines.append("namespace " + target_ns + " {")
                 fwd_lines.extend(global_decls)
                 fwd_lines.append("}  // namespace " + target_ns)
+        if len(dep_include_lines) > 0:
+            cpp_txt = inject_after_includes_block(cpp_txt, join_str_list("\n", dep_include_lines))
         if len(fwd_lines) > 0:
             cpp_txt = inject_after_includes_block(cpp_txt, join_str_list("\n", fwd_lines))
+        hdr_text = build_cpp_header_from_east(
+            optimized_east,
+            mod_path,
+            output_dir / "include" / f"{label}.h",
+            top_namespace="pytra_mod_" + label,
+            cpp_text=cpp_txt,
+            cpp_list_model=cpp_list_model,
+        )
         rendered_modules.append(
             {
                 "module": mod_key,
