@@ -35,13 +35,24 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         ]
         self.assertEqual(locked, ["cpp"])
 
-    def test_rs_cs_js_ts_are_transpile_smoke_locked(self) -> None:
+    def test_rs_cs_go_js_nim_swift_ts_are_transpile_smoke_locked(self) -> None:
         locked = [
             row["backend"]
             for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
             if row["contract_state"] == "transpile_smoke_locked"
         ]
-        self.assertEqual(locked, ["rs", "cs", "js", "ts"])
+        self.assertEqual(locked, ["rs", "cs", "go", "js", "nim", "swift", "ts"])
+
+    def test_native_path_bundle_uses_native_emitter_evidence_lane(self) -> None:
+        rows = [
+            row
+            for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
+            if row["backend"] in {"go", "nim", "swift"}
+        ]
+        self.assertEqual(len(rows), 3)
+        self.assertTrue(
+            all(row["evidence_lane"] == "native_emitter_function_body_transpile" for row in rows)
+        )
 
     def test_validator_accepts_noncpp_rollout_inventory(self) -> None:
         validate_relative_import_noncpp_rollout()

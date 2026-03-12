@@ -38,9 +38,9 @@ RELATIVE_IMPORT_SECONDWAVE_BACKEND_BUNDLES_V1: Final[list[dict[str, object]]] = 
     {
         "bundle_id": "native_path_bundle",
         "backends": ("go", "nim", "swift"),
-        "verification_lane": "remaining_second_wave_rollout_planning",
+        "verification_lane": "native_path_bundle_rollout",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "bundle_state": "next_rollout",
+        "bundle_state": "active_rollout",
     },
     {
         "bundle_id": "jvm_package_bundle",

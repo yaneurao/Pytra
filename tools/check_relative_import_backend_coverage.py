@@ -86,21 +86,30 @@ def validate_relative_import_backend_coverage() -> None:
         for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
         if row["contract_state"] == "transpile_smoke_locked"
     ]
-    if transpile_smoke_locked != ["rs", "cs", "js", "ts"]:
+    if transpile_smoke_locked != ["rs", "cs", "go", "js", "nim", "swift", "ts"]:
         raise SystemExit(
-            "relative import backend coverage must keep rs/cs/js/ts as the only "
+            "relative import backend coverage must keep rs/cs/go/js/nim/swift/ts as the only "
             f"transpile_smoke_locked lanes: got {transpile_smoke_locked}"
         )
     for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1:
         if row["backend"] == "cpp":
             continue
-        if row["backend"] in {"rs", "cs", "js", "ts"}:
+        if row["backend"] in {"rs", "cs", "go", "js", "nim", "swift", "ts"}:
             continue
         if row["contract_state"] != "not_locked":
             raise SystemExit(
                 "non-cpp relative import backend coverage must remain "
                 f"not_locked until verified: got {row['backend']}={row['contract_state']}"
             )
+    native_path_rows = [
+        row
+        for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
+        if row["backend"] in {"go", "nim", "swift"}
+    ]
+    if any(row["evidence_lane"] != "native_emitter_function_body_transpile" for row in native_path_rows):
+        raise SystemExit(
+            "native-path bundle backends must stay locked on native_emitter_function_body_transpile evidence"
+        )
 
 
 def validate_relative_import_noncpp_rollout() -> None:

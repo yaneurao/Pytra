@@ -26,9 +26,9 @@ RELATIVE_IMPORT_BACKEND_COVERAGE_V1: Final[list[dict[str, str]]] = [
     },
     {
         "backend": "go",
-        "contract_state": "not_locked",
-        "evidence_lane": "none",
-        "notes": "No representative relative-import backend smoke is locked yet.",
+        "contract_state": "transpile_smoke_locked",
+        "evidence_lane": "native_emitter_function_body_transpile",
+        "notes": "Representative relative-import smoke is locked through direct native-emitter function-body transpile checks.",
     },
     {
         "backend": "java",
@@ -56,9 +56,9 @@ RELATIVE_IMPORT_BACKEND_COVERAGE_V1: Final[list[dict[str, str]]] = [
     },
     {
         "backend": "nim",
-        "contract_state": "not_locked",
-        "evidence_lane": "none",
-        "notes": "No representative relative-import backend smoke is locked yet.",
+        "contract_state": "transpile_smoke_locked",
+        "evidence_lane": "native_emitter_function_body_transpile",
+        "notes": "Representative relative-import smoke is locked through direct native-emitter function-body transpile checks.",
     },
     {
         "backend": "php",
@@ -80,9 +80,9 @@ RELATIVE_IMPORT_BACKEND_COVERAGE_V1: Final[list[dict[str, str]]] = [
     },
     {
         "backend": "swift",
-        "contract_state": "not_locked",
-        "evidence_lane": "none",
-        "notes": "No representative relative-import backend smoke is locked yet.",
+        "contract_state": "transpile_smoke_locked",
+        "evidence_lane": "native_emitter_function_body_transpile",
+        "notes": "Representative relative-import smoke is locked through direct native-emitter function-body transpile checks.",
     },
     {
         "backend": "ts",
