@@ -19,9 +19,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_module_bucket_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_module_bucket_issues(), [])
 
-    def test_module_bucket_issues_are_empty(self) -> None:
-        self.assertEqual(check_mod._collect_module_bucket_issues(), [])
-
     def test_backend_order_is_fixed(self) -> None:
         self.assertEqual(
             contract_mod.iter_remaining_noncpp_backend_order(),

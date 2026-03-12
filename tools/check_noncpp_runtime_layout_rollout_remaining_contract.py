@@ -69,7 +69,7 @@ def _collect_contract_issues() -> list[str]:
                 if path.is_dir()
             )
         )
-        if tuple(sorted(current_roots)) != actual_current_roots:
+        if not set(current_roots).issubset(actual_current_roots):
             issues.append(f"current roots drifted: {backend}")
 
         if entry["target_roots"] != _VALID_TARGET_ROOTS:
@@ -90,7 +90,8 @@ def _collect_contract_issues() -> list[str]:
             seen_current_prefixes.add(current_prefix)
 
             current_prefix_path = ROOT / current_prefix
-            if not current_prefix_path.exists():
+            target_prefix_path = ROOT / target_prefix
+            if not current_prefix_path.exists() and not target_prefix_path.exists():
                 issues.append(f"missing current prefix: {backend}: {current_prefix}")
 
             if not current_prefix.startswith(f"src/runtime/{backend}/"):
@@ -138,11 +139,41 @@ def _collect_current_inventory_issues() -> list[str]:
     for entry in inventory_entries:
         backend = entry["backend"]
         runtime_root = ROOT / "src" / "runtime" / backend
-        if _collect_relative_files(runtime_root / "pytra-core") != entry["pytra_core_files"]:
+        legacy_core = _collect_relative_files(runtime_root / "pytra-core")
+        legacy_gen = _collect_relative_files(runtime_root / "pytra-gen")
+        legacy_pytra = _collect_relative_files(runtime_root / "pytra")
+        if (
+            legacy_core == entry["pytra_core_files"]
+            and legacy_gen == entry["pytra_gen_files"]
+            and legacy_pytra == entry["pytra_files"]
+        ):
+            continue
+
+        expanded = _expand_target_inventory_for_backend(backend)
+        actual_generated = _collect_relative_files(runtime_root / "generated")
+        actual_native = _collect_relative_files(runtime_root / "native")
+        actual_compat = _collect_relative_files(runtime_root / "pytra")
+        expected_generated = tuple(
+            path.removeprefix("generated/") for path in expanded["generated"]
+        )
+        expected_native = tuple(
+            path.removeprefix("native/") for path in expanded["native"]
+        )
+        expected_compat = tuple(
+            path.removeprefix("pytra/") for path in expanded["compat"]
+        )
+        if (
+            expected_generated == actual_generated
+            and expected_native == actual_native
+            and expected_compat == actual_compat
+        ):
+            continue
+
+        if legacy_core != entry["pytra_core_files"]:
             issues.append(f"pytra-core inventory drifted: {backend}")
-        if _collect_relative_files(runtime_root / "pytra-gen") != entry["pytra_gen_files"]:
+        if legacy_gen != entry["pytra_gen_files"]:
             issues.append(f"pytra-gen inventory drifted: {backend}")
-        if _collect_relative_files(runtime_root / "pytra") != entry["pytra_files"]:
+        if legacy_pytra != entry["pytra_files"]:
             issues.append(f"pytra inventory drifted: {backend}")
     return issues
 
