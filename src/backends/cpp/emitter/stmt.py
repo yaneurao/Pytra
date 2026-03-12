@@ -239,6 +239,10 @@ class CppStatementEmitter:
             if vkind == "BoolOp":
                 if ann_t_str != "bool":
                     rendered_val = self.render_boolop(stmt.get("value"), True)
+            if vkind == "Tuple":
+                homogeneous_tuple_item_t = self._homogeneous_tuple_ellipsis_item_type(ann_t_norm)
+                if homogeneous_tuple_item_t != "":
+                    rendered_val = self._render_param_default_expr(stmt.get("value"), ann_t_norm)
             if vkind == "List" and len(self._dict_stmt_list(val.get("elements"))) == 0:
                 if ref_first_list_ann:
                     rendered_val = f"{self._cpp_list_value_model_type_text(ann_t_norm)}{{}}"

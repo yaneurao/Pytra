@@ -24,6 +24,20 @@ def _header_safe_identifier(name: str) -> str:
     return name
 
 
+def _header_homogeneous_tuple_ellipsis_item_type(east_t: str) -> str:
+    txt = east_t.strip()
+    if not (txt.startswith("tuple[") and txt.endswith("]")):
+        return ""
+    inner = split_type_args(txt[6:-1].strip())
+    if len(inner) != 2:
+        return ""
+    item_t = inner[0].strip()
+    tail_t = inner[1].strip()
+    if item_t == "" or tail_t != "...":
+        return ""
+    return item_t
+
+
 def _header_dict_stmt_list(raw: Any) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     if not isinstance(raw, list):
@@ -358,6 +372,8 @@ def build_cpp_header_from_east(
                                 default_node,
                                 at,
                                 pyobj_ref_lists=pyobj_ref_lists,
+                                ref_classes=ref_classes,
+                                class_names=class_names,
                             )
                             if default_txt != "":
                                 param_txt += " = " + default_txt
@@ -1238,6 +1254,9 @@ def _header_cpp_type_from_east(
             return "dict<" + _header_cpp_type_from_east(inner[0], ref_classes, class_names) + ", " + _header_cpp_type_from_east(inner[1], ref_classes, class_names) + ">"
         return "dict<str, object>"
     if t.startswith("tuple[") and t.endswith("]"):
+        homogeneous_tuple_item_t = _header_homogeneous_tuple_ellipsis_item_type(t)
+        if homogeneous_tuple_item_t != "":
+            return "list<" + _header_cpp_type_from_east(homogeneous_tuple_item_t, ref_classes, class_names) + ">"
         inner = split_type_args(t[6:-1].strip())
         vals: list[str] = []
         for part in inner:
@@ -1423,8 +1442,12 @@ def _header_render_default_expr(
     east_target_t: str,
     *,
     pyobj_ref_lists: bool = False,
+    ref_classes: set[str] | None = None,
+    class_names: set[str] | None = None,
 ) -> str:
     """EAST の既定値ノードを C++ ヘッダ宣言用の式文字列へ変換する。"""
+    ref_class_names = ref_classes if ref_classes is not None else set()
+    known_class_names = class_names if class_names is not None else set()
     kind = dict_any_get_str(node, "kind")
     if kind == "Constant":
         val = node.get("value")
@@ -1450,16 +1473,31 @@ def _header_render_default_expr(
         return ""
     if kind == "Tuple":
         elems = dict_any_get_dict_list(node, "elements")
-        if len(elems) == 0:
+        homogeneous_tuple_item_t = _header_homogeneous_tuple_ellipsis_item_type(east_target_t)
+        if len(elems) == 0 and homogeneous_tuple_item_t == "":
             return "::std::tuple<>{}"
         parts: list[str] = []
+        elem_target_t = homogeneous_tuple_item_t if homogeneous_tuple_item_t != "" else "Any"
         for e in elems:
-            txt = _header_render_default_expr(e, "Any")
+            txt = _header_render_default_expr(
+                e,
+                elem_target_t,
+                pyobj_ref_lists=pyobj_ref_lists,
+                ref_classes=ref_class_names,
+                class_names=known_class_names,
+            )
             if txt == "":
                 return ""
             parts.append(txt)
         if len(parts) == 0:
             return ""
+        if homogeneous_tuple_item_t != "":
+            return (
+                _header_cpp_type_from_east(east_target_t, ref_class_names, known_class_names)
+                + "{"
+                + join_str_list(", ", parts)
+                + "}"
+            )
         return "::std::make_tuple(" + join_str_list(", ", parts) + ")"
     if kind == "List":
         elems = dict_any_get_dict_list(node, "elements")

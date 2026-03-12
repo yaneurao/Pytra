@@ -435,6 +435,9 @@ class CppEmitter(
                 if len(list_parts) == 1:
                     return self.normalize_type_name(list_parts[0])
             if owner_t.startswith("tuple[") and owner_t.endswith("]"):
+                homogeneous_tuple_item_t = self._homogeneous_tuple_ellipsis_item_type(owner_t)
+                if homogeneous_tuple_item_t != "":
+                    return homogeneous_tuple_item_t
                 tuple_parts = self.split_generic(owner_t[6:-1])
                 if len(tuple_parts) == 1:
                     return self.normalize_type_name(tuple_parts[0])
@@ -1868,12 +1871,15 @@ class CppEmitter(
             return ""
         if kind == "Tuple":
             elems = self.any_dict_get_list(nd, "elements")
+            homogeneous_tuple_item_t = self._homogeneous_tuple_ellipsis_item_type(east_target_t)
             parts: list[str] = []
             for elem in elems:
-                txt = self._render_param_default_expr(elem, "Any")
+                txt = self._render_param_default_expr(elem, homogeneous_tuple_item_t if homogeneous_tuple_item_t != "" else "Any")
                 if txt == "":
                     return ""
                 parts.append(txt)
+            if homogeneous_tuple_item_t != "":
+                return self._cpp_type_text(east_target_t) + "{" + join_str_list(", ", parts) + "}"
             return "::std::make_tuple(" + join_str_list(", ", parts) + ")"
         if kind == "List":
             elems = self.any_dict_get_list(nd, "elements")
@@ -3498,6 +3504,11 @@ class CppEmitter(
                 return self._render_unbox_target_cast(at_expr, expr_t, "subscript:list")
             return at_expr
         if val_ty.startswith("tuple[") and val_ty.endswith("]"):
+            homogeneous_tuple_item_t = self._homogeneous_tuple_ellipsis_item_type(val_ty)
+            if homogeneous_tuple_item_t != "":
+                if self.is_any_like_type(idx_ty):
+                    idx = f"py_to<int64>({idx})"
+                return self._render_sequence_index(val, idx, sl, f"list[{homogeneous_tuple_item_t}]")
             parts = self.split_generic(val_ty[6:-1])
             if idx_const is None:
                 return f"py_at({val}, py_to<int64>({idx}))"

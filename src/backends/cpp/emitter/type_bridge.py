@@ -8,6 +8,18 @@ from toolchain.frontends.type_expr import type_expr_to_string
 class CppTypeBridgeEmitter:
     """Type conversion and Any-boundary helpers extracted from CppEmitter."""
 
+    def _homogeneous_tuple_ellipsis_item_type(self, east_type: str) -> str:
+        """`tuple[T, ...]` の要素型を返す。該当しない場合は空文字。"""
+        t_norm = self.normalize_type_name(east_type)
+        tuple_inner = self.type_generic_args(t_norm, "tuple")
+        if len(tuple_inner) != 2:
+            return ""
+        item_t = self.normalize_type_name(tuple_inner[0])
+        tail_t = self.normalize_type_name(tuple_inner[1])
+        if item_t == "" or tail_t != "...":
+            return ""
+        return item_t
+
     def _is_type_expr_payload(self, value: Any) -> bool:
         if not isinstance(value, dict):
             return False
@@ -200,6 +212,9 @@ class CppTypeBridgeEmitter:
     def _render_unbox_target_cast(self, expr_txt: str, target_t: str, ctx: str) -> str:
         """`Unbox` / `CastOrRaise` の最終 C++ 変換を行う。"""
         t_norm = self.normalize_type_name(target_t)
+        homogeneous_tuple_item_t = self._homogeneous_tuple_ellipsis_item_type(t_norm)
+        if homogeneous_tuple_item_t != "":
+            return self._render_unbox_target_cast(expr_txt, f"list[{homogeneous_tuple_item_t}]", ctx)
         if self.should_skip_same_type_cast(expr_txt, t_norm):
             return expr_txt
         if t_norm in self.ref_classes:
@@ -542,6 +557,9 @@ class CppTypeBridgeEmitter:
             )
         tuple_inner = self.type_generic_args(east_type, "tuple")
         if len(tuple_inner) > 0:
+            homogeneous_tuple_item_t = self._homogeneous_tuple_ellipsis_item_type(east_type)
+            if homogeneous_tuple_item_t != "":
+                return f"list<{self._cpp_type_text(homogeneous_tuple_item_t, pyobj_ref_lists=pyobj_ref_lists)}>"
             inner_cpp: list[str] = []
             for x in tuple_inner:
                 inner_cpp.append(self._cpp_type_text(x, pyobj_ref_lists=pyobj_ref_lists))
