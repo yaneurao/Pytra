@@ -147,9 +147,66 @@ def _collect_current_inventory_issues() -> list[str]:
     return issues
 
 
+def _expand_target_inventory_for_backend(backend: str) -> dict[str, tuple[str, ...]]:
+    layout_entry = next(
+        entry for entry in contract_mod.iter_remaining_noncpp_runtime_layout() if entry["backend"] == backend
+    )
+    inventory_entry = next(
+        entry for entry in contract_mod.iter_remaining_noncpp_runtime_current_inventory() if entry["backend"] == backend
+    )
+    lane_root_by_key = {
+        "pytra_core_files": "pytra-core",
+        "pytra_gen_files": "pytra-gen",
+        "pytra_files": "pytra",
+    }
+    expanded: dict[str, list[str]] = {"generated": [], "native": [], "compat": []}
+    lane_mappings = tuple(
+        sorted(layout_entry["lane_mappings"], key=lambda lane: len(lane["current_prefix"]), reverse=True)
+    )
+    for inventory_key, root_name in lane_root_by_key.items():
+        for rel_path in inventory_entry[inventory_key]:
+            current_path = f"src/runtime/{backend}/{root_name}/{rel_path}"
+            matched_lane = None
+            for lane in lane_mappings:
+                if current_path.startswith(lane["current_prefix"]):
+                    matched_lane = lane
+                    break
+            if matched_lane is None:
+                raise AssertionError(f"unmatched current runtime path: {current_path}")
+            target_path = current_path.replace(
+                matched_lane["current_prefix"],
+                matched_lane["target_prefix"],
+                1,
+            ).removeprefix(f"src/runtime/{backend}/")
+            expanded[matched_lane["ownership"]].append(target_path)
+    return {
+        ownership: tuple(sorted(paths))
+        for ownership, paths in expanded.items()
+    }
+
+
+def _collect_target_inventory_issues() -> list[str]:
+    issues: list[str] = []
+    inventory_entries = contract_mod.iter_remaining_noncpp_runtime_target_inventory()
+    inventory_order = tuple(entry["backend"] for entry in inventory_entries)
+    if inventory_order != contract_mod.iter_remaining_noncpp_backend_order():
+        issues.append("remaining runtime target inventory order drifted")
+    for entry in inventory_entries:
+        backend = entry["backend"]
+        expanded = _expand_target_inventory_for_backend(backend)
+        if expanded["generated"] != entry["generated_files"]:
+            issues.append(f"generated target inventory drifted: {backend}")
+        if expanded["native"] != entry["native_files"]:
+            issues.append(f"native target inventory drifted: {backend}")
+        if expanded["compat"] != entry["compat_files"]:
+            issues.append(f"compat target inventory drifted: {backend}")
+    return issues
+
+
 def main() -> int:
     issues = _collect_contract_issues()
     issues.extend(_collect_current_inventory_issues())
+    issues.extend(_collect_target_inventory_issues())
     if issues:
         print("non-c++ runtime layout rollout remaining contract check failed:", file=sys.stderr)
         for issue in issues:

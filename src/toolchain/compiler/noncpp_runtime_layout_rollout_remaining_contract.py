@@ -28,6 +28,13 @@ class RemainingRuntimeCurrentInventoryEntry(TypedDict):
     pytra_files: tuple[str, ...]
 
 
+class RemainingRuntimeTargetInventoryEntry(TypedDict):
+    backend: str
+    generated_files: tuple[str, ...]
+    native_files: tuple[str, ...]
+    compat_files: tuple[str, ...]
+
+
 REMAINING_NONCPP_BACKEND_ORDER_V1: Final[tuple[str, ...]] = (
     "go",
     "java",
@@ -594,6 +601,142 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
 )
 
 
+REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTargetInventoryEntry, ...]] = (
+    {
+        "backend": "go",
+        "generated_files": ("generated/utils/gif.go", "generated/utils/png.go"),
+        "native_files": ("native/built_in/py_runtime.go",),
+        "compat_files": ("pytra/built_in/py_runtime.go",),
+    },
+    {
+        "backend": "java",
+        "generated_files": (
+            "generated/std/json.java",
+            "generated/std/math.java",
+            "generated/std/pathlib.java",
+            "generated/std/time.java",
+            "generated/utils/gif.java",
+            "generated/utils/png.java",
+        ),
+        "native_files": (
+            "native/built_in/PyRuntime.java",
+            "native/std/math_impl.java",
+            "native/std/time_impl.java",
+        ),
+        "compat_files": ("pytra/built_in/PyRuntime.java",),
+    },
+    {
+        "backend": "kotlin",
+        "generated_files": (
+            "generated/utils/gif_helper.kt",
+            "generated/utils/image_runtime.kt",
+            "generated/utils/png_helper.kt",
+        ),
+        "native_files": ("native/built_in/py_runtime.kt",),
+        "compat_files": ("pytra/built_in/py_runtime.kt",),
+    },
+    {
+        "backend": "scala",
+        "generated_files": (
+            "generated/utils/gif_helper.scala",
+            "generated/utils/image_runtime.scala",
+            "generated/utils/png_helper.scala",
+        ),
+        "native_files": ("native/built_in/py_runtime.scala",),
+        "compat_files": ("pytra/built_in/py_runtime.scala",),
+    },
+    {
+        "backend": "swift",
+        "generated_files": (
+            "generated/utils/gif_helper.swift",
+            "generated/utils/image_runtime.swift",
+            "generated/utils/png_helper.swift",
+        ),
+        "native_files": ("native/built_in/py_runtime.swift",),
+        "compat_files": ("pytra/built_in/py_runtime.swift",),
+    },
+    {
+        "backend": "nim",
+        "generated_files": (
+            "generated/utils/gif_helper.nim",
+            "generated/utils/image_runtime.nim",
+            "generated/utils/png_helper.nim",
+        ),
+        "native_files": ("native/built_in/py_runtime.nim",),
+        "compat_files": ("pytra/built_in/py_runtime.nim",),
+    },
+    {
+        "backend": "js",
+        "generated_files": ("generated/utils/gif.js", "generated/utils/png.js"),
+        "native_files": (
+            "native/built_in/py_runtime.js",
+            "native/std/math.js",
+            "native/std/pathlib.js",
+            "native/std/time.js",
+        ),
+        "compat_files": (
+            "pytra/README.md",
+            "pytra/py_runtime.js",
+            "pytra/std/math.js",
+            "pytra/std/pathlib.js",
+            "pytra/std/time.js",
+            "pytra/utils/gif.js",
+            "pytra/utils/png.js",
+        ),
+    },
+    {
+        "backend": "ts",
+        "generated_files": ("generated/utils/gif.ts", "generated/utils/png.ts"),
+        "native_files": (
+            "native/built_in/py_runtime.ts",
+            "native/std/math.ts",
+            "native/std/pathlib.ts",
+            "native/std/time.ts",
+        ),
+        "compat_files": (
+            "pytra/README.md",
+            "pytra/py_runtime.ts",
+            "pytra/std/math.ts",
+            "pytra/std/pathlib.ts",
+            "pytra/std/time.ts",
+            "pytra/utils/gif.ts",
+            "pytra/utils/png.ts",
+        ),
+    },
+    {
+        "backend": "lua",
+        "generated_files": (
+            "generated/utils/gif_helper.lua",
+            "generated/utils/image_runtime.lua",
+            "generated/utils/png_helper.lua",
+        ),
+        "native_files": ("native/built_in/py_runtime.lua",),
+        "compat_files": ("pytra/built_in/py_runtime.lua",),
+    },
+    {
+        "backend": "ruby",
+        "generated_files": (
+            "generated/utils/gif_helper.rb",
+            "generated/utils/image_runtime.rb",
+            "generated/utils/png_helper.rb",
+        ),
+        "native_files": ("native/built_in/py_runtime.rb",),
+        "compat_files": ("pytra/built_in/py_runtime.rb",),
+    },
+    {
+        "backend": "php",
+        "generated_files": ("generated/utils/gif.php", "generated/utils/png.php"),
+        "native_files": ("native/built_in/py_runtime.php", "native/std/time.php"),
+        "compat_files": (
+            "pytra/py_runtime.php",
+            "pytra/std/time.php",
+            "pytra/utils/gif.php",
+            "pytra/utils/png.php",
+        ),
+    },
+)
+
+
 def iter_remaining_noncpp_backend_order() -> tuple[str, ...]:
     return REMAINING_NONCPP_BACKEND_ORDER_V1
 
@@ -604,3 +747,7 @@ def iter_remaining_noncpp_runtime_layout() -> tuple[RemainingRuntimeBackendMappi
 
 def iter_remaining_noncpp_runtime_current_inventory() -> tuple[RemainingRuntimeCurrentInventoryEntry, ...]:
     return REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1
+
+
+def iter_remaining_noncpp_runtime_target_inventory() -> tuple[RemainingRuntimeTargetInventoryEntry, ...]:
+    return REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1

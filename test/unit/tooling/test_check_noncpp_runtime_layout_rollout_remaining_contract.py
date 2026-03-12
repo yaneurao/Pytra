@@ -13,6 +13,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_current_inventory_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_current_inventory_issues(), [])
 
+    def test_target_inventory_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_target_inventory_issues(), [])
+
     def test_backend_order_is_fixed(self) -> None:
         self.assertEqual(
             contract_mod.iter_remaining_noncpp_backend_order(),
@@ -104,40 +107,44 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "pytra_files": ("py_runtime.go",),
             },
         )
+
+    def test_target_inventory_is_fixed(self) -> None:
+        by_backend = {
+            entry["backend"]: entry
+            for entry in contract_mod.iter_remaining_noncpp_runtime_target_inventory()
+        }
         self.assertEqual(
-            by_backend["java"]["pytra_gen_files"],
-            (
-                "std/json.java",
-                "std/math.java",
-                "std/pathlib.java",
-                "std/time.java",
-                "utils/gif.java",
-                "utils/png.java",
-            ),
+            by_backend["go"],
+            {
+                "backend": "go",
+                "generated_files": ("generated/utils/gif.go", "generated/utils/png.go"),
+                "native_files": ("native/built_in/py_runtime.go",),
+                "compat_files": ("pytra/built_in/py_runtime.go",),
+            },
         )
         self.assertEqual(
-            by_backend["js"]["pytra_files"],
+            by_backend["js"]["compat_files"],
             (
-                "README.md",
-                "gif.js",
-                "math.js",
-                "pathlib.js",
-                "png.js",
-                "py_runtime.js",
-                "time.js",
+                "pytra/README.md",
+                "pytra/py_runtime.js",
+                "pytra/std/math.js",
+                "pytra/std/pathlib.js",
+                "pytra/std/time.js",
+                "pytra/utils/gif.js",
+                "pytra/utils/png.js",
             ),
         )
         self.assertEqual(
             by_backend["php"],
             {
                 "backend": "php",
-                "pytra_core_files": ("py_runtime.php", "std/time.php"),
-                "pytra_gen_files": ("runtime/gif.php", "runtime/png.php"),
-                "pytra_files": (
-                    "py_runtime.php",
-                    "runtime/gif.php",
-                    "runtime/png.php",
-                    "std/time.php",
+                "generated_files": ("generated/utils/gif.php", "generated/utils/png.php"),
+                "native_files": ("native/built_in/py_runtime.php", "native/std/time.php"),
+                "compat_files": (
+                    "pytra/py_runtime.php",
+                    "pytra/std/time.php",
+                    "pytra/utils/gif.php",
+                    "pytra/utils/png.php",
                 ),
             },
         )
