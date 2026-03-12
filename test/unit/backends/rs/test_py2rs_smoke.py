@@ -171,6 +171,12 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertIn("let always_true = || true;", rust)
         self.assertIn("let is_positive = |x| (x > 0);", rust)
 
+    def test_comprehension_fixture_collects_vec(self) -> None:
+        fixture = find_fixture_case("comprehension")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("(vec![1, 2, 3, 4]).map(|i| i).collect::<Vec<_>>()", rust)
+
     def test_load_east_from_json_wrapper_payload(self) -> None:
         fixture = find_fixture_case("add")
         east = convert_path(fixture)

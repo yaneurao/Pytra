@@ -182,8 +182,8 @@
         <td class="feature">syntax.expr.list_comprehension</td>
         <td class="fixture">test/fixtures/collections/comprehension.py</td>
         <td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
-        <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
+        <td class="cell supported-transpile" title="supported / transpile_smoke"><code>TS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>
         <td class="cell not-started" title="not_started / not_started_placeholder"><code>NS</code></td>

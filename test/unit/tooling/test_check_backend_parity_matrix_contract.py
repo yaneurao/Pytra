@@ -100,6 +100,10 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                 },
+                "syntax.expr.list_comprehension": {
+                    "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                    "cs": {"backend": "cs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
+                },
                 "syntax.control.for_range": {
                     "rs": {"backend": "rs", "support_state": "supported", "evidence_kind": "transpile_smoke"},
                     "java": {"backend": "java", "support_state": "supported", "evidence_kind": "transpile_smoke"},

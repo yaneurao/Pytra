@@ -210,6 +210,13 @@ class Child(Base):
         self.assertIn("System.Func<bool> always_true = () => true;", cs)
         self.assertIn("System.Func<dynamic, bool> is_positive = (x) => (x) > (0);", cs)
 
+    def test_comprehension_fixture_materializes_list(self) -> None:
+        fixture = find_fixture_case("comprehension")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("new System.Func<System.Collections.Generic.List<long>>", cs)
+        self.assertIn("foreach (var i in new System.Collections.Generic.List<long> { 1, 2, 3, 4 })", cs)
+
     def test_attribute_annassign_uses_type_hint_for_set_and_dict_literals(self) -> None:
         src = """class Holder:
     def __init__(self):

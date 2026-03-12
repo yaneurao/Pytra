@@ -66,13 +66,6 @@ def _iter_observed_representative_residual_cells() -> tuple[RepresentativeResidu
 REPRESENTATIVE_RESIDUAL_CELLS_V1: Final[tuple[RepresentativeResidualCell, ...]] = (
     {
         "backend": "rs",
-        "feature_id": "syntax.expr.list_comprehension",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/collections/comprehension.py",
-    },
-    {
-        "backend": "rs",
         "feature_id": "syntax.control.try_raise",
         "support_state": "not_started",
         "evidence_kind": "not_started_placeholder",
@@ -133,13 +126,6 @@ REPRESENTATIVE_RESIDUAL_CELLS_V1: Final[tuple[RepresentativeResidualCell, ...]] 
         "support_state": "not_started",
         "evidence_kind": "not_started_placeholder",
         "representative_fixture": "test/fixtures/stdlib/re_extended.py",
-    },
-    {
-        "backend": "cs",
-        "feature_id": "syntax.expr.list_comprehension",
-        "support_state": "not_started",
-        "evidence_kind": "not_started_placeholder",
-        "representative_fixture": "test/fixtures/collections/comprehension.py",
     },
     {
         "backend": "cs",
@@ -240,7 +226,6 @@ REPRESENTATIVE_ROLLOUT_BUNDLES_V1: Final[tuple[RepresentativeRolloutBundle, ...]
         "bundle_id": "rs_syntax_iter_bundle",
         "backend": "rs",
         "feature_ids": (
-            "syntax.expr.list_comprehension",
             "syntax.control.try_raise",
             "syntax.oop.virtual_dispatch",
             "builtin.iter.enumerate",
@@ -266,7 +251,6 @@ REPRESENTATIVE_ROLLOUT_BUNDLES_V1: Final[tuple[RepresentativeRolloutBundle, ...]
         "bundle_id": "cs_syntax_iter_bundle",
         "backend": "cs",
         "feature_ids": (
-            "syntax.expr.list_comprehension",
             "syntax.control.for_range",
             "syntax.control.try_raise",
             "builtin.iter.range",
