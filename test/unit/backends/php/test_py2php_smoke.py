@@ -128,12 +128,18 @@ class Py2PhpSmokeTest(unittest.TestCase):
     def test_php_repo_public_compat_lane_resolves_remaining_shims(self) -> None:
         compat_runtime_path = ROOT / "src" / "runtime" / "php" / "pytra" / "py_runtime.php"
         compat_time_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "time.php"
+        compat_png_path = ROOT / "src" / "runtime" / "php" / "pytra" / "utils" / "png.php"
+        compat_gif_path = ROOT / "src" / "runtime" / "php" / "pytra" / "utils" / "gif.php"
         code = "\n".join(
             [
-                f"require {compat_runtime_path.as_posix()!r};",
-                f"require {compat_time_path.as_posix()!r};",
+                f"require_once {compat_runtime_path.as_posix()!r};",
+                f"require_once {compat_time_path.as_posix()!r};",
+                f"require_once {compat_png_path.as_posix()!r};",
+                f"require_once {compat_gif_path.as_posix()!r};",
                 "echo __pytra_truthy([1]) ? 'truthy-ok' : 'truthy-missing', PHP_EOL;",
                 "echo (perf_counter() > 0.0) ? 'time-ok' : 'time-missing', PHP_EOL;",
+                "echo function_exists('__pytra_write_rgb_png') ? 'png-ok' : 'png-missing', PHP_EOL;",
+                "echo function_exists('__pytra_save_gif') ? 'gif-ok' : 'gif-missing', PHP_EOL;",
             ]
         )
         proc = subprocess.run(
@@ -144,7 +150,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
             check=False,
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertEqual(proc.stdout, "truthy-ok\ntime-ok\n")
+        self.assertEqual(proc.stdout, "truthy-ok\ntime-ok\npng-ok\ngif-ok\n")
 
     def test_bitwise_invert_basic_uses_php_invert_operator(self) -> None:
         fixture = find_fixture_case("bitwise_invert_basic")
