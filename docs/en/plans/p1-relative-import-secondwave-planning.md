@@ -40,10 +40,11 @@ Verification commands:
 Decision log:
 - 2026-03-12: Immediately after archiving the first-wave `rs/cs` smoke task, the second-wave planning task is made live so the next handoff stays anchored.
 - 2026-03-12: The second-wave backend set is fixed as `go/java/js/kotlin/nim/scala/swift/ts`; the representative scenarios stay `parent_module_alias` / `parent_symbol_alias`; the verification lane stays `second_wave_rollout_planning`; and the fail-closed baseline remains `backend_specific_fail_closed`.
+- 2026-03-12: The second-wave rollout order is fixed as backend-group bundles `locked_js_ts_smoke_bundle -> native_path_bundle(go/nim/swift) -> jvm_package_bundle(java/kotlin/scala)`. The native/path-oriented targets go first because they are closest to the current path-root relative-import semantics, while the JVM package bundle stays as the follow-up rollout.
 
 ## Breakdown
 
 - [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01] Lock the live contract, docs handoff, and verification lane for second-wave relative-import rollout.
 - [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S1-01] Add the live plan / TODO plus the second-wave rollout contract, checker, and docs handoff.
-- [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S2-01] Break the second-wave backend rollout order into backend-group bundles for representative smoke / fail-closed rollout.
+- [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S2-01] Break the second-wave backend rollout order into backend-group bundles for representative smoke / fail-closed rollout.
 - [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S3-01] Sync coverage docs / support wording / archive handoff to the current second-wave state and close the task.

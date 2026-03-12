@@ -40,10 +40,11 @@
 決定ログ:
 - 2026-03-12: first-wave `rs/cs` smoke task を archive へ移した直後に、next handoff を切らさないよう second-wave planning を live 化する。
 - 2026-03-12: second wave backend は `go/java/js/kotlin/nim/scala/swift/ts`、representative scenario は `parent_module_alias` / `parent_symbol_alias` に固定し、lane は `second_wave_rollout_planning`、fail-closed は `backend_specific_fail_closed` を維持する。
+- 2026-03-12: second-wave rollout は backend group bundle として `locked_js_ts_smoke_bundle -> native_path_bundle(go/nim/swift) -> jvm_package_bundle(java/kotlin/scala)` の順に固定する。relative import の current path-root semantics に最も近い native/path-oriented target を next rollout bundle とし、JVM package bundle は follow-up に回す。
 
 ## 分解
 
 - [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01] second-wave relative import rollout の live contract / docs handoff / verification lane を固定する。
 - [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S1-01] live plan / TODO と second-wave rollout contract / checker / docs handoff を追加する。
-- [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S2-01] second-wave backend ごとの representative smoke / fail-closed 導入順を backend group 単位の bundle に落とす。
+- [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S2-01] second-wave backend ごとの representative smoke / fail-closed 導入順を backend group 単位の bundle に落とす。
 - [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S3-01] coverage docs / support wording / archive handoff を second-wave current state に同期して task を閉じる。

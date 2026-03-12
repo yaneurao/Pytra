@@ -37,7 +37,7 @@ Context: [p1-relative-import-secondwave-planning.md](../plans/p1-relative-import
 
 1. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01] Lock the live contract, docs handoff, and verification lane for second-wave relative-import rollout.
 2. [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S1-01] Added the live plan / TODO plus the second-wave rollout contract, checker, and docs handoff.
-3. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S2-01] Break the second-wave backend rollout order into backend-group bundles for representative smoke / fail-closed rollout.
+3. [x] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S2-01] Fixed the second-wave backend bundles as `js/ts` locked baseline, `go/nim/swift` native-path bundle, then `java/kotlin/scala` JVM-package bundle.
 4. [ ] [ID: P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01-S3-01] Sync coverage docs / support wording / archive handoff to the current second-wave state and close the task.
 
-- Progress note: The second-wave backend set is now `go/java/js/kotlin/nim/scala/swift/ts`, the representative scenarios stay `parent_module_alias` / `parent_symbol_alias`, and the handoff now points to the live `p1-relative-import-secondwave-planning.md` plan.
+- Progress note: The second-wave backend set is `go/java/js/kotlin/nim/scala/swift/ts`, the representative scenarios stay `parent_module_alias` / `parent_symbol_alias`, the bundle order is `js/ts -> go/nim/swift -> java/kotlin/scala`, and the handoff points to the live `p1-relative-import-secondwave-planning.md` plan.
