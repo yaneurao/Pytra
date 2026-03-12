@@ -82,6 +82,14 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertIn("syntax", profile)
         self.assertIn("runtime_calls", profile)
 
+    def test_tuple_assign_fixture_lowers_swap_via_temp_for_php(self) -> None:
+        fixture = find_fixture_case("tuple_assign")
+        east = load_east(fixture, parser_backend="self_hosted")
+        php = transpile_to_php_native(east)
+        self.assertIn("$__pytra_swap_", php)
+        self.assertIn("$x = $y;", php)
+        self.assertRegex(php, r"\$y = \$__pytra_swap_\d+;")
+
     def test_php_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "php" / "native" / "built_in" / "py_runtime.php"
         generated_contains_path = ROOT / "src" / "runtime" / "php" / "generated" / "built_in" / "contains.php"

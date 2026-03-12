@@ -130,6 +130,14 @@ class Py2LuaSmokeTest(unittest.TestCase):
         lua = transpile_to_lua_native(east)
         self.assertIn("~y", lua)
 
+    def test_tuple_assign_fixture_lowers_swap_via_temp_for_lua(self) -> None:
+        fixture = find_fixture_case("tuple_assign")
+        east = load_east(fixture, parser_backend="self_hosted")
+        lua = transpile_to_lua_native(east)
+        self.assertIn("local __swap_", lua)
+        self.assertIn("x = y", lua)
+        self.assertRegex(lua, r"y = __swap_\d+")
+
     def test_cli_relative_import_support_rollout_scenarios_transpile_for_lua(self) -> None:
         for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
             with self.subTest(scenario_id=scenario_id):
