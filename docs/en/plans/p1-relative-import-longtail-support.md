@@ -51,6 +51,7 @@ Decision log:
 - 2026-03-12: After the Lua bundle lands, record the current long-tail rollout as `mixed_rollout_locked`, with `lua` as the smoke-locked backend and `php/ruby` as the remaining fail-closed residuals.
 - 2026-03-12: The first Pytra-NES blocker was parenthesized `from ... import (...)`, so land the frontend parser fix before the PHP/Ruby rollout bundles.
 - 2026-03-12: Lock PHP support with the direct native-emitter rewrite strategy (`helper_f()`), while leaving wildcard relative imports fail-closed.
+- 2026-03-12: After the PHP bundle lands, record the current long-tail rollout with `lua/php` as smoke-locked backends and `ruby` as the remaining fail-closed residual.
 
 ## Breakdown
 

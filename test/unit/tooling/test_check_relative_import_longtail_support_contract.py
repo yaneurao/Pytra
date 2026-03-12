@@ -40,11 +40,19 @@ class RelativeImportLongtailSupportContractTest(unittest.TestCase):
             RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1[0]["current_evidence_lane"],
             "native_emitter_function_body_transpile",
         )
+        self.assertEqual(
+            RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1[1]["current_contract_state"],
+            "transpile_smoke_locked",
+        )
+        self.assertEqual(
+            RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1[1]["current_evidence_lane"],
+            "native_emitter_function_body_transpile",
+        )
         self.assertTrue(
             all(
                 entry["current_contract_state"] == "fail_closed_locked"
                 and entry["current_evidence_lane"] == "backend_native_fail_closed"
-                for entry in RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1[1:]
+                for entry in RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1[2:]
             )
         )
         self.assertEqual(
@@ -63,11 +71,13 @@ class RelativeImportLongtailSupportContractTest(unittest.TestCase):
         self.assertEqual([row["backend"] for row in rows], list(EXPECTED_BACKENDS))
         self.assertEqual(rows[0]["contract_state"], "transpile_smoke_locked")
         self.assertEqual(rows[0]["evidence_lane"], "native_emitter_function_body_transpile")
+        self.assertEqual(rows[1]["contract_state"], "transpile_smoke_locked")
+        self.assertEqual(rows[1]["evidence_lane"], "native_emitter_function_body_transpile")
         self.assertTrue(
-            all(row["contract_state"] == "fail_closed_locked" for row in rows[1:])
+            all(row["contract_state"] == "fail_closed_locked" for row in rows[2:])
         )
         self.assertTrue(
-            all(row["evidence_lane"] == "backend_native_fail_closed" for row in rows[1:])
+            all(row["evidence_lane"] == "backend_native_fail_closed" for row in rows[2:])
         )
 
     def test_archive_snapshot_matches_archived_bundle_handoff(self) -> None:
@@ -90,8 +100,8 @@ class RelativeImportLongtailSupportContractTest(unittest.TestCase):
                 "next_verification_lane": EXPECTED_HANDOFF["verification_lane"],
                 "current_bundle_contract_state": EXPECTED_HANDOFF["current_contract_state"],
                 "current_bundle_evidence_lane": EXPECTED_HANDOFF["current_evidence_lane"],
-                "current_bundle_smoke_locked_backends": ("lua",),
-                "current_bundle_fail_closed_locked_backends": ("php", "ruby"),
+                "current_bundle_smoke_locked_backends": ("lua", "php"),
+                "current_bundle_fail_closed_locked_backends": ("ruby",),
                 "focused_verification_lanes": EXPECTED_FOCUSED_VERIFICATION_LANES,
             },
         )
