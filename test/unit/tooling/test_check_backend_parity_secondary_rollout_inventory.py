@@ -25,8 +25,9 @@ class CheckBackendParitySecondaryRolloutInventoryTest(unittest.TestCase):
             tuple(bundle["bundle_id"] for bundle in inventory_mod.iter_secondary_rollout_bundles()),
             ("go_java_kt_bundle", "scala_swift_nim_bundle"),
         )
-        self.assertEqual(inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["next_backend"], "go")
-        self.assertEqual(inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["next_bundle"], "go_java_kt_bundle")
+        self.assertEqual(inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["completed_backends"], ("go", "java", "kt"))
+        self.assertEqual(inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["next_backend"], "scala")
+        self.assertEqual(inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["next_bundle"], "scala_swift_nim_bundle")
 
     def test_bundle_feature_pairs_cover_exact_residual_set(self) -> None:
         residual_pairs = {
@@ -45,55 +46,9 @@ class CheckBackendParitySecondaryRolloutInventoryTest(unittest.TestCase):
         self.assertEqual(
             inventory_mod.SECONDARY_RESIDUAL_FEATURE_IDS_BY_BACKEND_V1,
             {
-                "go": (
-                    "syntax.assign.tuple_destructure",
-                    "syntax.expr.lambda",
-                    "syntax.expr.list_comprehension",
-                    "syntax.control.for_range",
-                    "syntax.control.try_raise",
-                    "builtin.iter.range",
-                    "builtin.iter.enumerate",
-                    "builtin.iter.zip",
-                    "builtin.type.isinstance",
-                    "stdlib.json.loads_dumps",
-                    "stdlib.pathlib.path_ops",
-                    "stdlib.enum.enum_and_intflag",
-                    "stdlib.argparse.parse_args",
-                    "stdlib.math.imported_symbols",
-                    "stdlib.re.sub",
-                ),
-                "java": (
-                    "syntax.assign.tuple_destructure",
-                    "syntax.expr.lambda",
-                    "syntax.expr.list_comprehension",
-                    "syntax.control.try_raise",
-                    "builtin.iter.enumerate",
-                    "builtin.iter.zip",
-                    "builtin.type.isinstance",
-                    "stdlib.json.loads_dumps",
-                    "stdlib.pathlib.path_ops",
-                    "stdlib.enum.enum_and_intflag",
-                    "stdlib.argparse.parse_args",
-                    "stdlib.math.imported_symbols",
-                    "stdlib.re.sub",
-                ),
-                "kt": (
-                    "syntax.assign.tuple_destructure",
-                    "syntax.expr.lambda",
-                    "syntax.expr.list_comprehension",
-                    "syntax.control.for_range",
-                    "syntax.control.try_raise",
-                    "builtin.iter.range",
-                    "builtin.iter.enumerate",
-                    "builtin.iter.zip",
-                    "builtin.type.isinstance",
-                    "stdlib.json.loads_dumps",
-                    "stdlib.pathlib.path_ops",
-                    "stdlib.enum.enum_and_intflag",
-                    "stdlib.argparse.parse_args",
-                    "stdlib.math.imported_symbols",
-                    "stdlib.re.sub",
-                ),
+                "go": (),
+                "java": (),
+                "kt": (),
                 "scala": (
                     "syntax.assign.tuple_destructure",
                     "syntax.expr.lambda",

@@ -66,10 +66,25 @@ def _collect_bundle_issues() -> list[str]:
     }
     if residual_pairs != bundled_pairs:
         issues.append("secondary rollout bundles no longer cover the exact residual feature set")
-    if bundles[0]["bundle_id"] != inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["next_bundle"]:
-        issues.append("secondary rollout first bundle must stay aligned with next_bundle")
-    if bundles[0]["backend_order"][0] != inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["next_backend"]:
-        issues.append("secondary rollout next_backend must stay aligned with the first bundle")
+    next_bundle_id = inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["next_bundle"]
+    bundle_by_id = {bundle["bundle_id"]: bundle for bundle in bundles}
+    next_bundle = bundle_by_id.get(next_bundle_id)
+    if next_bundle is None:
+        issues.append("secondary rollout next_bundle must point at one of the fixed rollout bundles")
+        return issues
+    next_index = bundle_order.index(next_bundle_id)
+    completed_backends = tuple(
+        backend
+        for bundle in bundles[:next_index]
+        for backend in bundle["backend_order"]
+    )
+    if completed_backends != inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["completed_backends"]:
+        issues.append("secondary rollout completed_backends drifted from the completed bundle prefix")
+    for bundle in bundles[:next_index]:
+        if any(bundle["feature_ids_by_backend"].values()):
+            issues.append("secondary rollout bundles before next_bundle must stay empty handoff markers once completed")
+    if next_bundle["backend_order"][0] != inventory_mod.SECONDARY_ROLLOUT_HANDOFF_V1["next_backend"]:
+        issues.append("secondary rollout next_backend must stay aligned with the active next_bundle")
     return issues
 
 

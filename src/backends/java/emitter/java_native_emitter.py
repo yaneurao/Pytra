@@ -1564,6 +1564,20 @@ def _target_name(target: Any) -> str:
     return "tmp"
 
 
+def _emit_swap(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> list[str]:
+    left = _target_name(stmt.get("left"))
+    right = _target_name(stmt.get("right"))
+    tmp = _fresh_tmp(ctx, "swap")
+    tmp_type = _infer_java_type_from_expr_node(stmt.get("left"), _type_map(ctx))
+    if tmp_type == "void":
+        tmp_type = "Object"
+    return [
+        indent + tmp_type + " " + tmp + " = " + left + ";",
+        indent + left + " = " + right + ";",
+        indent + right + " = " + tmp + ";",
+    ]
+
+
 def _augassign_op(op: Any) -> str:
     if op == "Add":
         return "+="
@@ -2294,6 +2308,8 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         rhs = _render_expr(stmt.get("value"))
         op = _augassign_op(stmt.get("op"))
         return [indent + lhs + " " + op + " " + rhs + ";"]
+    if kind == "Swap":
+        return _emit_swap(stmt, indent=indent, ctx=ctx)
     if kind == "Raise":
         exc_any = stmt.get("exc")
         if exc_any is None:
