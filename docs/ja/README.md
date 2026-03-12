@@ -34,8 +34,6 @@
     <img alt="Julia" src="https://img.shields.io/badge/-Julia-9558B2?style=flat-square&logo=julia&logoColor=white">
     <br>
     PowerShell、Dart、Julliaは対応作業中です。
-    <br>
-    PowerShell は `pwsh + py2cs` host profile として整理中であり、pure backend ではありません。
 </div>
 </div>
 
