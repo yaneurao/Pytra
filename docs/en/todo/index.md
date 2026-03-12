@@ -30,3 +30,13 @@ Last updated: 2026-03-12
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+
+### P1: move the next live relative-import rollout to the JVM package bundle and lock the representative `java/kotlin/scala` contract
+
+Context: [docs/ja/plans/p1-relative-import-jvm-package-bundle.md](../plans/p1-relative-import-jvm-package-bundle.md)
+
+1. [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01] Lock the live handoff and representative rollout contract for the `java/kotlin/scala` JVM package bundle.
+2. [x] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S1-01] Add the live plan / TODO / contract / checker and switch the coverage / second-wave handoff to the JVM package bundle.
+3. [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-01] Add representative package-style relative-import transpile smoke for the `java/kotlin/scala` backends.
+4. [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S2-02] Sync the coverage inventory / backend parity docs to the current JVM bundle state and spell out the long-tail handoff.
+5. [ ] [ID: P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01-S3-01] Close the task after aligning focused docs / tests / handoff wording to the current state.

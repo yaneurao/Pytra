@@ -25,10 +25,10 @@ from backends.swift.emitter import load_swift_profile, transpile_to_swift, trans
 from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
-from relative_import_secondwave_smoke_support import (
+from relative_import_native_path_smoke_support import (
     relative_import_native_path_expected_rewrite,
-    relative_import_secondwave_scenarios,
-    write_relative_import_project,
+    relative_import_native_path_scenarios,
+    write_relative_import_native_path_project,
 )
 
 
@@ -98,13 +98,15 @@ class Py2SwiftSmokeTest(unittest.TestCase):
     def test_cli_relative_import_native_path_bundle_scenarios_transpile_for_swift(self) -> None:
         for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
             with self.subTest(scenario_id=scenario_id):
-                scenario = relative_import_secondwave_scenarios()[scenario_id]
+                scenario = relative_import_native_path_scenarios()[scenario_id]
                 with tempfile.TemporaryDirectory() as td:
-                    entry_path = write_relative_import_project(
+                    entry_path = write_relative_import_native_path_project(
                         Path(td),
-                        str(scenario["import_form"]),
-                        "def call() -> int:\n"
-                        f"    return {scenario['representative_expr']}\n",
+                        import_form=str(scenario["import_form"]),
+                        body_text=(
+                            "def call() -> int:\n"
+                            f"    return {scenario['representative_expr']}\n"
+                        ),
                     )
                     east = load_east(entry_path, parser_backend="self_hosted")
                     swift = transpile_to_swift_native(east)
@@ -114,10 +116,10 @@ class Py2SwiftSmokeTest(unittest.TestCase):
 
     def test_cli_relative_import_native_path_bundle_fail_closed_for_wildcard_on_swift(self) -> None:
         with tempfile.TemporaryDirectory() as td:
-            entry_path = write_relative_import_project(
+            entry_path = write_relative_import_native_path_project(
                 Path(td),
-                "from ..helper import *",
-                "def call() -> int:\n    return f()\n",
+                import_form="from ..helper import *",
+                body_text="def call() -> int:\n    return f()\n",
             )
             east = load_east(entry_path, parser_backend="self_hosted")
             with self.assertRaises(RuntimeError) as cm:

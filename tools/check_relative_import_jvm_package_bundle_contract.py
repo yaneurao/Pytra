@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the archived native-path relative-import rollout bundle contract."""
+"""Validate the live JVM-package relative-import rollout bundle contract."""
 
 from __future__ import annotations
 
@@ -11,10 +11,10 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from toolchain.compiler.relative_import_native_path_bundle_contract import (
-    RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_BACKENDS_V1,
-    RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_HANDOFF_V1,
-    RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_SCENARIOS_V1,
+from toolchain.compiler.relative_import_jvm_package_bundle_contract import (
+    RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_BACKENDS_V1,
+    RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_HANDOFF_V1,
+    RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_SCENARIOS_V1,
 )
 
 
@@ -33,13 +33,13 @@ EXPECTED_SCENARIOS = {
     },
 }
 
-EXPECTED_BACKENDS = ("go", "nim", "swift")
+EXPECTED_BACKENDS = ("java", "kotlin", "scala")
 
 EXPECTED_HANDOFF = {
-    "todo_id": "P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01",
-    "archive_plan_paths": (
-        "docs/ja/plans/archive/20260312-p1-relative-import-native-path-bundle.md",
-        "docs/en/plans/archive/20260312-p1-relative-import-native-path-bundle.md",
+    "todo_id": "P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01",
+    "active_plan_paths": (
+        "docs/ja/plans/p1-relative-import-jvm-package-bundle.md",
+        "docs/en/plans/p1-relative-import-jvm-package-bundle.md",
     ),
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
@@ -47,25 +47,24 @@ EXPECTED_HANDOFF = {
         "docs/ja/language/backend-parity-matrix.md",
         "docs/en/language/backend-parity-matrix.md",
     ),
-    "bundle_id": "native_path_bundle",
-    "bundle_state": "locked_representative_smoke",
-    "backends": ("go", "nim", "swift"),
-    "verification_lane": "transpile_smoke_locked",
+    "bundle_id": "jvm_package_bundle",
+    "backends": ("java", "kotlin", "scala"),
+    "verification_lane": "jvm_package_bundle_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
-    "followup_bundle_id": "jvm_package_bundle",
-    "followup_backends": ("java", "kotlin", "scala"),
-    "followup_verification_lane": "jvm_package_bundle_rollout",
+    "followup_bundle_id": "longtail_relative_import_rollout",
+    "followup_backends": ("lua", "php", "ruby"),
+    "followup_verification_lane": "defer_until_jvm_package_bundle_complete",
 }
 
 
-def validate_relative_import_native_path_bundle_contract() -> None:
+def validate_relative_import_jvm_package_bundle_contract() -> None:
     scenario_map = {
         str(entry["scenario_id"]): entry
-        for entry in RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_SCENARIOS_V1
+        for entry in RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_SCENARIOS_V1
     }
     if set(scenario_map) != set(EXPECTED_SCENARIOS):
         raise SystemExit(
-            "relative import native-path scenarios drifted: "
+            "relative import JVM-package scenarios drifted: "
             f"expected={sorted(EXPECTED_SCENARIOS)}, got={sorted(scenario_map)}"
         )
     for scenario_id, expected in EXPECTED_SCENARIOS.items():
@@ -73,43 +72,43 @@ def validate_relative_import_native_path_bundle_contract() -> None:
         for key, value in expected.items():
             if current[key] != value:
                 raise SystemExit(
-                    "relative import native-path scenario drifted: "
+                    "relative import JVM-package scenario drifted: "
                     f"{scenario_id}.{key}={current[key]!r} != {value!r}"
                 )
     backend_order = tuple(
-        entry["backend"] for entry in RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_BACKENDS_V1
+        entry["backend"] for entry in RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_BACKENDS_V1
     )
     if backend_order != EXPECTED_BACKENDS:
         raise SystemExit(
-            "relative import native-path backends drifted: "
+            "relative import JVM-package backends drifted: "
             f"expected={EXPECTED_BACKENDS}, got={backend_order}"
         )
-    for entry in RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_BACKENDS_V1:
-        if entry["verification_lane"] != "transpile_smoke_locked":
+    for entry in RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_BACKENDS_V1:
+        if entry["verification_lane"] != "jvm_package_bundle_rollout":
             raise SystemExit(
-                "native-path bundle backend must stay on transpile_smoke_locked: "
+                "JVM-package bundle backend must stay on jvm_package_bundle_rollout: "
                 f"{entry['backend']}={entry['verification_lane']}"
             )
         if tuple(entry["scenario_ids"]) != tuple(EXPECTED_SCENARIOS):
             raise SystemExit(
-                "native-path bundle scenario coverage drifted: "
+                "JVM-package bundle scenario coverage drifted: "
                 f"{entry['backend']}={entry['scenario_ids']}"
             )
         if entry["fail_closed_lane"] != "backend_specific_fail_closed":
             raise SystemExit(
-                "native-path bundle fail-closed lane drifted: "
+                "JVM-package bundle fail-closed lane drifted: "
                 f"{entry['backend']}={entry['fail_closed_lane']}"
             )
-    if RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_HANDOFF_V1 != EXPECTED_HANDOFF:
-        raise SystemExit("relative import native-path handoff drifted from the fixed inventory")
-    for rel_path in RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_HANDOFF_V1["archive_plan_paths"]:
+    if RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_HANDOFF_V1 != EXPECTED_HANDOFF:
+        raise SystemExit("relative import JVM-package handoff drifted from the fixed inventory")
+    for rel_path in RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_HANDOFF_V1["active_plan_paths"]:
         if not (ROOT / rel_path).is_file():
-            raise SystemExit(f"missing native-path archive plan path: {rel_path}")
+            raise SystemExit(f"missing JVM-package active plan path: {rel_path}")
 
 
 def main() -> None:
-    validate_relative_import_native_path_bundle_contract()
-    print("[OK] relative import native-path bundle contract passed")
+    validate_relative_import_jvm_package_bundle_contract()
+    print("[OK] relative import JVM-package bundle contract passed")
 
 
 if __name__ == "__main__":

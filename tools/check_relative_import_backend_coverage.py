@@ -36,7 +36,7 @@ EXPECTED_BACKENDS = (
 )
 
 EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
-    "todo_id": "P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01",
+    "todo_id": "P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01",
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
     "backend_parity_docs": (
@@ -44,21 +44,21 @@ EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
         "docs/en/language/backend-parity-matrix.md",
     ),
     "next_rollout_plan": (
-        "docs/ja/plans/p1-relative-import-native-path-bundle.md",
-        "docs/en/plans/p1-relative-import-native-path-bundle.md",
+        "docs/ja/plans/p1-relative-import-jvm-package-bundle.md",
+        "docs/en/plans/p1-relative-import-jvm-package-bundle.md",
     ),
-    "locked_transpile_smoke_backends": ("rs", "cs", "js", "ts"),
-    "next_rollout_backends": ("go", "nim", "swift"),
+    "locked_transpile_smoke_backends": ("rs", "cs", "go", "js", "nim", "swift", "ts"),
+    "next_rollout_backends": ("java", "kotlin", "scala"),
     "second_wave_bundle_order": (
         "locked_js_ts_smoke_bundle",
         "native_path_bundle",
         "jvm_package_bundle",
     ),
-    "next_rollout_bundle": "native_path_bundle",
-    "next_rollout_bundle_backends": ("go", "nim", "swift"),
-    "followup_rollout_bundle": "jvm_package_bundle",
-    "followup_rollout_bundle_backends": ("java", "kotlin", "scala"),
-    "next_verification_lane": "native_path_bundle_rollout",
+    "next_rollout_bundle": "jvm_package_bundle",
+    "next_rollout_bundle_backends": ("java", "kotlin", "scala"),
+    "followup_rollout_bundle": "longtail_relative_import_rollout",
+    "followup_rollout_bundle_backends": ("lua", "php", "ruby"),
+    "next_verification_lane": "jvm_package_bundle_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
 }
 
@@ -159,22 +159,22 @@ def validate_relative_import_noncpp_rollout() -> None:
                 )
             continue
         if backend in {"go", "nim", "swift"}:
-            if row["next_verification_lane"] != "native_path_bundle_rollout":
+            if row["next_verification_lane"] != "transpile_smoke_locked":
                 raise SystemExit(
-                    "native-path bundle backends must move to native_path_bundle_rollout: "
+                    "completed native-path bundle backends must stay on transpile_smoke_locked: "
                     f"got {backend}={row['next_verification_lane']}"
                 )
             continue
         if backend in {"java", "kotlin", "scala"}:
-            if row["next_verification_lane"] != "remaining_second_wave_rollout_planning":
+            if row["next_verification_lane"] != "jvm_package_bundle_rollout":
                 raise SystemExit(
-                    "follow-up JVM second-wave backends must stay on remaining_second_wave_rollout_planning: "
+                    "active JVM second-wave backends must stay on jvm_package_bundle_rollout: "
                     f"got {backend}={row['next_verification_lane']}"
                 )
             continue
-        if row["next_verification_lane"] != "defer_until_second_wave_remaining_complete":
+        if row["next_verification_lane"] != "defer_until_jvm_package_bundle_complete":
             raise SystemExit(
-                "long-tail backends must stay deferred until remaining second-wave rollout completes: "
+                "long-tail backends must stay deferred until the JVM package bundle completes: "
                 f"got {backend}={row['next_verification_lane']}"
             )
 
@@ -187,6 +187,9 @@ def validate_relative_import_noncpp_rollout_handoff() -> None:
     plan_paths = RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["next_rollout_plan"]
     for doc_path in RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["backend_parity_docs"]:
         doc_text = (ROOT / doc_path).read_text(encoding="utf-8")
+        for plan_path in plan_paths:
+            if not (ROOT / plan_path).is_file():
+                raise SystemExit(f"missing next rollout plan: {plan_path}")
         for plan_path in plan_paths:
             plan_name = Path(plan_path).name
             if plan_name not in doc_text:

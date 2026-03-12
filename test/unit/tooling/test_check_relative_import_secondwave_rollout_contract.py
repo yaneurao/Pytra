@@ -54,7 +54,7 @@ class RelativeImportSecondwaveRolloutContractTest(unittest.TestCase):
         self.assertEqual(bundle_ids, RELATIVE_IMPORT_SECONDWAVE_HANDOFF_V1["bundle_order"])
         self.assertEqual(
             RELATIVE_IMPORT_SECONDWAVE_HANDOFF_V1["next_bundle_id"],
-            "native_path_bundle",
+            "jvm_package_bundle",
         )
 
 

@@ -43,25 +43,25 @@ EXPECTED_BUNDLES = [
     {
         "bundle_id": "native_path_bundle",
         "backends": ("go", "nim", "swift"),
-        "verification_lane": "native_path_bundle_rollout",
+        "verification_lane": "transpile_smoke_locked",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "bundle_state": "active_rollout",
+        "bundle_state": "locked_representative_smoke",
     },
     {
         "bundle_id": "jvm_package_bundle",
         "backends": ("java", "kotlin", "scala"),
-        "verification_lane": "remaining_second_wave_rollout_planning",
+        "verification_lane": "jvm_package_bundle_rollout",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "bundle_state": "followup_rollout",
+        "bundle_state": "active_rollout",
     },
 ]
 EXPECTED_HANDOFF = {
-    "todo_id": "P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01",
-    "verification_lane": "native_path_bundle_rollout",
+    "todo_id": "P1-RELATIVE-IMPORT-JVM-PACKAGE-BUNDLE-01",
+    "verification_lane": "jvm_package_bundle_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
     "active_plan_paths": (
-        "docs/ja/plans/p1-relative-import-native-path-bundle.md",
-        "docs/en/plans/p1-relative-import-native-path-bundle.md",
+        "docs/ja/plans/p1-relative-import-jvm-package-bundle.md",
+        "docs/en/plans/p1-relative-import-jvm-package-bundle.md",
     ),
     "backend_parity_docs": (
         "docs/ja/language/backend-parity-matrix.md",
@@ -74,7 +74,7 @@ EXPECTED_HANDOFF = {
         "native_path_bundle",
         "jvm_package_bundle",
     ),
-    "next_bundle_id": "native_path_bundle",
+    "next_bundle_id": "jvm_package_bundle",
 }
 
 
