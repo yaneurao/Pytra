@@ -338,11 +338,57 @@ class Py2KotlinSmokeTest(unittest.TestCase):
 
     def test_kotlin_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "kotlin" / "native" / "built_in" / "py_runtime.kt"
+        generated_contains = ROOT / "src" / "runtime" / "kotlin" / "generated" / "built_in" / "contains.kt"
+        generated_zip = ROOT / "src" / "runtime" / "kotlin" / "generated" / "built_in" / "zip_ops.kt"
         image_runtime = ROOT / "src" / "runtime" / "kotlin" / "generated" / "utils" / "image_runtime.kt"
         legacy_path = ROOT / "src" / "kotlin_module" / "py_runtime.kt"
         self.assertTrue(runtime_path.exists())
+        self.assertTrue(generated_contains.exists())
+        self.assertTrue(generated_zip.exists())
         self.assertTrue(image_runtime.exists())
         self.assertFalse(legacy_path.exists())
+
+    def test_kotlin_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:
+        runtime_path = ROOT / "src" / "runtime" / "kotlin" / "native" / "built_in" / "py_runtime.kt"
+        contains_path = ROOT / "src" / "runtime" / "kotlin" / "generated" / "built_in" / "contains.kt"
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            (tmp / "py_runtime.kt").write_text(runtime_path.read_text(encoding="utf-8"), encoding="utf-8")
+            (tmp / "contains.kt").write_text(contains_path.read_text(encoding="utf-8"), encoding="utf-8")
+            (tmp / "Main.kt").write_text(
+                "\n".join(
+                    [
+                        "fun main() {",
+                        '    println(if (py_contains_str_object("abc", "b")) "kotlin-built-in-ok" else "kotlin-built-in-bad")',
+                        "}",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            compile_proc = subprocess.run(
+                [
+                    "kotlinc",
+                    str(tmp / "py_runtime.kt"),
+                    str(tmp / "contains.kt"),
+                    str(tmp / "Main.kt"),
+                    "-include-runtime",
+                    "-d",
+                    str(tmp / "built_in.jar"),
+                ],
+                cwd=tmp,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(compile_proc.returncode, 0, compile_proc.stderr)
+            run_proc = subprocess.run(
+                ["java", "-jar", str(tmp / "built_in.jar")],
+                cwd=tmp,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(run_proc.returncode, 0, run_proc.stderr)
+            self.assertEqual(run_proc.stdout.strip(), "kotlin-built-in-ok")
 
 
 if __name__ == "__main__":

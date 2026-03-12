@@ -114,6 +114,17 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/contains.java" },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/built_in/contains.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/built_in/contains.scala",
+          "postprocess": "scala_program_to_library"
+        },
+        { "target": "nim", "output": "src/runtime/nim/generated/built_in/contains.nim" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/contains.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/contains.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/contains.php", "postprocess": "php_program_to_library" }
@@ -160,6 +171,17 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/iter_ops.java" },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/built_in/iter_ops.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/built_in/iter_ops.scala",
+          "postprocess": "scala_program_to_library"
+        },
+        { "target": "nim", "output": "src/runtime/nim/generated/built_in/iter_ops.nim" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/iter_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/iter_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/iter_ops.php", "postprocess": "php_program_to_library" }
@@ -183,6 +205,7 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/numeric_ops.java" },
+        { "target": "nim", "output": "src/runtime/nim/generated/built_in/numeric_ops.nim" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/numeric_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/numeric_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/numeric_ops.php", "postprocess": "php_program_to_library" }
@@ -200,6 +223,17 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "predicates_helper"
         },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/built_in/predicates.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/built_in/predicates.scala",
+          "postprocess": "scala_program_to_library"
+        },
+        { "target": "nim", "output": "src/runtime/nim/generated/built_in/predicates.nim" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/predicates.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/predicates.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/predicates.php", "postprocess": "php_program_to_library" }
@@ -239,6 +273,16 @@
           "output": "src/runtime/cs/generated/built_in/sequence.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "sequence_helper"
+        },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/built_in/sequence.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/built_in/sequence.scala",
+          "postprocess": "scala_program_to_library"
         },
         { "target": "js", "output": "src/runtime/js/generated/built_in/sequence.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/sequence.ts", "postprocess": "js_ts_built_in_cjs_module" },
@@ -297,6 +341,17 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/zip_ops.java" },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/built_in/zip_ops.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/built_in/zip_ops.scala",
+          "postprocess": "scala_program_to_library"
+        },
+        { "target": "nim", "output": "src/runtime/nim/generated/built_in/zip_ops.nim" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/zip_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/zip_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/zip_ops.php", "postprocess": "php_program_to_library" }

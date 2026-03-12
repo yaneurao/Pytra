@@ -319,12 +319,22 @@ class Py2ScalaSmokeTest(unittest.TestCase):
     def test_scala_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "scala" / "pytra" / "built_in" / "py_runtime.scala"
         native_runtime = ROOT / "src" / "runtime" / "scala" / "native" / "built_in" / "py_runtime.scala"
+        generated_contains = ROOT / "src" / "runtime" / "scala" / "generated" / "built_in" / "contains.scala"
+        generated_zip = ROOT / "src" / "runtime" / "scala" / "generated" / "built_in" / "zip_ops.scala"
         image_runtime = ROOT / "src" / "runtime" / "scala" / "generated" / "utils" / "image_runtime.scala"
         legacy_path = ROOT / "src" / "scala_module" / "py_runtime.scala"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(native_runtime.exists())
+        self.assertTrue(generated_contains.exists())
+        self.assertTrue(generated_zip.exists())
         self.assertTrue(image_runtime.exists())
         self.assertFalse(legacy_path.exists())
+
+    def test_scala_generated_built_in_compare_lane_is_materialized(self) -> None:
+        contains_path = ROOT / "src" / "runtime" / "scala" / "generated" / "built_in" / "contains.scala"
+        text = contains_path.read_text(encoding="utf-8")
+        self.assertIn("def py_contains_str_object(values: Any, key: Any): Boolean = {", text)
+        self.assertNotIn("def main(args: Array[String]): Unit = {", text)
 
 
 if __name__ == "__main__":

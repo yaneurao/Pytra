@@ -1506,6 +1506,18 @@ def rewrite_go_program_to_library(go_src: str) -> str:
     return text.rstrip() + "\n"
 
 
+def rewrite_kotlin_program_to_library(kotlin_src: str) -> str:
+    lines = _strip_trailing_string_literal_expr(kotlin_src).splitlines()
+    lines = _remove_block_by_signature(lines, re.compile(r"^fun\s+main\s*\("))
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def rewrite_scala_program_to_library(scala_src: str) -> str:
+    lines = _strip_trailing_string_literal_expr(scala_src).splitlines()
+    lines = _remove_block_by_signature(lines, re.compile(r"^def\s+main\s*\("))
+    return "\n".join(lines).rstrip() + "\n"
+
+
 def _php_generated_runtime_require_block() -> str:
     return "\n".join(
         [
@@ -2129,6 +2141,10 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_js_ts_built_in_cjs_module(generated)
     elif item.postprocess == "go_program_to_library":
         generated = rewrite_go_program_to_library(generated)
+    elif item.postprocess == "kotlin_program_to_library":
+        generated = rewrite_kotlin_program_to_library(generated)
+    elif item.postprocess == "scala_program_to_library":
+        generated = rewrite_scala_program_to_library(generated)
     elif item.postprocess == "php_std_time_live_wrapper":
         generated = rewrite_php_std_time_live_wrapper(generated)
     elif item.postprocess == "php_std_math_live_wrapper":

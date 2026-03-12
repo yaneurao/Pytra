@@ -23,6 +23,9 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn(("built_in/type_id", "cs", "src/runtime/cs/generated/built_in/type_id.cs"), pairs)
         self.assertIn(("built_in/contains", "go", "src/runtime/go/generated/built_in/contains.go"), pairs)
         self.assertIn(("built_in/contains", "java", "src/runtime/java/generated/built_in/contains.java"), pairs)
+        self.assertIn(("built_in/contains", "kotlin", "src/runtime/kotlin/generated/built_in/contains.kt"), pairs)
+        self.assertIn(("built_in/contains", "scala", "src/runtime/scala/generated/built_in/contains.scala"), pairs)
+        self.assertIn(("built_in/contains", "nim", "src/runtime/nim/generated/built_in/contains.nim"), pairs)
         self.assertIn(("built_in/type_id", "js", "src/runtime/js/generated/built_in/type_id.js"), pairs)
         self.assertIn(("built_in/type_id", "ts", "src/runtime/ts/generated/built_in/type_id.ts"), pairs)
         self.assertIn(("built_in/type_id", "php", "src/runtime/php/generated/built_in/type_id.php"), pairs)
@@ -64,13 +67,12 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "zip_ops",
             ],
         )
-        go_java_supported = {
-            "contains",
-            "io_ops",
-            "iter_ops",
-            "numeric_ops",
-            "scalar_ops",
-            "zip_ops",
+        supported_by_target = {
+            "go": {"contains", "io_ops", "iter_ops", "numeric_ops", "scalar_ops", "zip_ops"},
+            "java": {"contains", "io_ops", "iter_ops", "numeric_ops", "scalar_ops", "zip_ops"},
+            "kotlin": {"contains", "iter_ops", "predicates", "sequence", "zip_ops"},
+            "scala": {"contains", "iter_ops", "predicates", "sequence", "zip_ops"},
+            "nim": {"contains", "iter_ops", "numeric_ops", "predicates", "zip_ops"},
         }
         for module_name in module_names:
             item_id = f"built_in/{module_name}"
@@ -94,18 +96,21 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 by_pair[(item_id, "php")],
                 f"src/runtime/php/generated/built_in/{module_name}.php",
             )
-            if module_name in go_java_supported:
-                self.assertEqual(
-                    by_pair[(item_id, "go")],
-                    f"src/runtime/go/generated/built_in/{module_name}.go",
-                )
-                self.assertEqual(
-                    by_pair[(item_id, "java")],
-                    f"src/runtime/java/generated/built_in/{module_name}.java",
-                )
-            else:
-                self.assertNotIn((item_id, "go"), by_pair)
-                self.assertNotIn((item_id, "java"), by_pair)
+            for target, supported in supported_by_target.items():
+                suffix = {
+                    "go": "go",
+                    "java": "java",
+                    "kotlin": "kt",
+                    "scala": "scala",
+                    "nim": "nim",
+                }[target]
+                if module_name in supported:
+                    self.assertEqual(
+                        by_pair[(item_id, target)],
+                        f"src/runtime/{target}/generated/built_in/{module_name}.{suffix}",
+                    )
+                else:
+                    self.assertNotIn((item_id, target), by_pair)
 
     def test_resolve_targets_all_contains_cpp_and_swift(self) -> None:
         items = gen_mod.load_manifest_items(ROOT / "tools" / "runtime_generation_manifest.json")
@@ -149,6 +154,36 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("public static class time", out)
         self.assertIn("return time_native.perf_counter();", out)
         self.assertNotIn("return __t.perf_counter();", out)
+
+    def test_rewrite_kotlin_program_to_library_removes_empty_main(self) -> None:
+        src = "\n".join(
+            [
+                "fun py_contains_str_object(values: Any?, key: Any?): Boolean {",
+                "    return true",
+                "}",
+                "",
+                "fun main(args: Array<String>) {",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_kotlin_program_to_library(src)
+        self.assertIn("fun py_contains_str_object(values: Any?, key: Any?): Boolean {", out)
+        self.assertNotIn("fun main(args: Array<String>) {", out)
+
+    def test_rewrite_scala_program_to_library_removes_empty_main(self) -> None:
+        src = "\n".join(
+            [
+                "def py_contains_str_object(values: Any, key: Any): Boolean = {",
+                "    true",
+                "}",
+                "",
+                "def main(args: Array[String]): Unit = {",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_scala_program_to_library(src)
+        self.assertIn("def py_contains_str_object(values: Any, key: Any): Boolean = {", out)
+        self.assertNotIn("def main(args: Array[String]): Unit = {", out)
 
     def test_rewrite_java_std_time_live_wrapper_inlines_system_nanotime(self) -> None:
         src = "\n".join(

@@ -169,6 +169,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "kotlin",
                     "smoke_kind": "source_guard",
                     "smoke_targets": (
+                        "built_in/contains.kt",
                         "utils/gif_helper.kt",
                         "utils/image_runtime.kt",
                         "utils/png_helper.kt",
@@ -178,6 +179,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "scala",
                     "smoke_kind": "source_guard",
                     "smoke_targets": (
+                        "built_in/contains.scala",
                         "utils/gif_helper.scala",
                         "utils/image_runtime.scala",
                         "utils/png_helper.scala",
@@ -196,6 +198,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "nim",
                     "smoke_kind": "source_guard",
                     "smoke_targets": (
+                        "built_in/contains.nim",
                         "utils/gif_helper.nim",
                         "utils/image_runtime.nim",
                         "utils/png_helper.nim",
@@ -220,21 +223,13 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 },
                 {
                     "backend": "kotlin",
-                    "smoke_kind": "source_guard",
-                    "smoke_targets": (
-                        "utils/gif_helper.kt",
-                        "utils/image_runtime.kt",
-                        "utils/png_helper.kt",
-                    ),
+                    "smoke_kind": "build_run_smoke",
+                    "smoke_targets": ("built_in/contains.kt",),
                 },
                 {
                     "backend": "scala",
                     "smoke_kind": "source_guard",
-                    "smoke_targets": (
-                        "utils/gif_helper.scala",
-                        "utils/image_runtime.scala",
-                        "utils/png_helper.scala",
-                    ),
+                    "smoke_targets": ("built_in/contains.scala",),
                 },
                 {
                     "backend": "swift",
@@ -247,12 +242,8 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 },
                 {
                     "backend": "nim",
-                    "smoke_kind": "source_guard",
-                    "smoke_targets": (
-                        "utils/gif_helper.nim",
-                        "utils/image_runtime.nim",
-                        "utils/png_helper.nim",
-                    ),
+                    "smoke_kind": "build_run_smoke",
+                    "smoke_targets": ("built_in/contains.nim",),
                 },
             ),
         )
@@ -495,6 +486,33 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertIn(
             {
+                "current_prefix": "src/runtime/kotlin/generated/built_in/",
+                "target_prefix": "src/runtime/kotlin/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "Kotlin compile-safe built_in compare artifacts live in generated/built_in after the S4 alignment bundle.",
+            },
+            by_backend["kotlin"],
+        )
+        self.assertIn(
+            {
+                "current_prefix": "src/runtime/scala/generated/built_in/",
+                "target_prefix": "src/runtime/scala/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "Scala source-guarded built_in compare artifacts live in generated/built_in after the S4 alignment bundle.",
+            },
+            by_backend["scala"],
+        )
+        self.assertIn(
+            {
+                "current_prefix": "src/runtime/nim/generated/built_in/",
+                "target_prefix": "src/runtime/nim/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "Nim compile-safe built_in compare artifacts live in generated/built_in after the S4 alignment bundle.",
+            },
+            by_backend["nim"],
+        )
+        self.assertIn(
+            {
                 "current_prefix": "src/runtime/js/pytra/std/time.js",
                 "target_prefix": "src/runtime/js/pytra/std/time.js",
                 "ownership": "compat",
@@ -595,6 +613,45 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "std/time.java",
                 "utils/gif.java",
                 "utils/png.java",
+            ),
+        )
+        self.assertEqual(
+            by_backend["kotlin"]["pytra_gen_files"],
+            (
+                "built_in/contains.kt",
+                "built_in/iter_ops.kt",
+                "built_in/predicates.kt",
+                "built_in/sequence.kt",
+                "built_in/zip_ops.kt",
+                "utils/gif_helper.kt",
+                "utils/image_runtime.kt",
+                "utils/png_helper.kt",
+            ),
+        )
+        self.assertEqual(
+            by_backend["scala"]["pytra_gen_files"],
+            (
+                "built_in/contains.scala",
+                "built_in/iter_ops.scala",
+                "built_in/predicates.scala",
+                "built_in/sequence.scala",
+                "built_in/zip_ops.scala",
+                "utils/gif_helper.scala",
+                "utils/image_runtime.scala",
+                "utils/png_helper.scala",
+            ),
+        )
+        self.assertEqual(
+            by_backend["nim"]["pytra_gen_files"],
+            (
+                "built_in/contains.nim",
+                "built_in/iter_ops.nim",
+                "built_in/numeric_ops.nim",
+                "built_in/predicates.nim",
+                "built_in/zip_ops.nim",
+                "utils/gif_helper.nim",
+                "utils/image_runtime.nim",
+                "utils/png_helper.nim",
             ),
         )
         self.assertEqual(
@@ -699,6 +756,45 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "generated/std/time.java",
                 "generated/utils/gif.java",
                 "generated/utils/png.java",
+            ),
+        )
+        self.assertEqual(
+            by_backend["kotlin"]["generated_files"],
+            (
+                "generated/built_in/contains.kt",
+                "generated/built_in/iter_ops.kt",
+                "generated/built_in/predicates.kt",
+                "generated/built_in/sequence.kt",
+                "generated/built_in/zip_ops.kt",
+                "generated/utils/gif_helper.kt",
+                "generated/utils/image_runtime.kt",
+                "generated/utils/png_helper.kt",
+            ),
+        )
+        self.assertEqual(
+            by_backend["scala"]["generated_files"],
+            (
+                "generated/built_in/contains.scala",
+                "generated/built_in/iter_ops.scala",
+                "generated/built_in/predicates.scala",
+                "generated/built_in/sequence.scala",
+                "generated/built_in/zip_ops.scala",
+                "generated/utils/gif_helper.scala",
+                "generated/utils/image_runtime.scala",
+                "generated/utils/png_helper.scala",
+            ),
+        )
+        self.assertEqual(
+            by_backend["nim"]["generated_files"],
+            (
+                "generated/built_in/contains.nim",
+                "generated/built_in/iter_ops.nim",
+                "generated/built_in/numeric_ops.nim",
+                "generated/built_in/predicates.nim",
+                "generated/built_in/zip_ops.nim",
+                "generated/utils/gif_helper.nim",
+                "generated/utils/image_runtime.nim",
+                "generated/utils/png_helper.nim",
             ),
         )
         self.assertEqual(
@@ -820,6 +916,99 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         self.assertEqual(
             by_backend["java"]["blocked_modules"],
             ("built_in/predicates", "built_in/sequence", "built_in/string_ops", "built_in/type_id"),
+        )
+        self.assertEqual(
+            by_backend["kotlin"],
+            {
+                "backend": "kotlin",
+                "generated_modules": (
+                    "built_in/contains",
+                    "built_in/iter_ops",
+                    "built_in/predicates",
+                    "built_in/sequence",
+                    "built_in/zip_ops",
+                    "utils/gif_helper",
+                    "utils/image_runtime",
+                    "utils/png_helper",
+                ),
+                "native_modules": ("built_in/py_runtime",),
+                "compat_modules": ("built_in/py_runtime",),
+                "blocked_modules": (
+                    "built_in/io_ops",
+                    "built_in/numeric_ops",
+                    "built_in/scalar_ops",
+                    "built_in/string_ops",
+                    "built_in/type_id",
+                    "std/json",
+                    "std/math",
+                    "std/pathlib",
+                    "std/time",
+                    "utils/gif",
+                    "utils/png",
+                ),
+            },
+        )
+        self.assertEqual(
+            by_backend["scala"],
+            {
+                "backend": "scala",
+                "generated_modules": (
+                    "built_in/contains",
+                    "built_in/iter_ops",
+                    "built_in/predicates",
+                    "built_in/sequence",
+                    "built_in/zip_ops",
+                    "utils/gif_helper",
+                    "utils/image_runtime",
+                    "utils/png_helper",
+                ),
+                "native_modules": ("built_in/py_runtime",),
+                "compat_modules": ("built_in/py_runtime",),
+                "blocked_modules": (
+                    "built_in/io_ops",
+                    "built_in/numeric_ops",
+                    "built_in/scalar_ops",
+                    "built_in/string_ops",
+                    "built_in/type_id",
+                    "std/json",
+                    "std/math",
+                    "std/pathlib",
+                    "std/time",
+                    "utils/gif",
+                    "utils/png",
+                ),
+            },
+        )
+        self.assertEqual(
+            by_backend["nim"],
+            {
+                "backend": "nim",
+                "generated_modules": (
+                    "built_in/contains",
+                    "built_in/iter_ops",
+                    "built_in/numeric_ops",
+                    "built_in/predicates",
+                    "built_in/zip_ops",
+                    "utils/gif_helper",
+                    "utils/image_runtime",
+                    "utils/png_helper",
+                ),
+                "native_modules": ("built_in/py_runtime",),
+                "compat_modules": ("built_in/py_runtime",),
+                "blocked_modules": (
+                    "built_in/io_ops",
+                    "built_in/scalar_ops",
+                    "built_in/sequence",
+                    "built_in/string_ops",
+                    "built_in/type_id",
+                    "std/json",
+                    "std/math",
+                    "std/pathlib",
+                    "std/time",
+                    "utils/gif",
+                    "utils/png",
+                ),
+            },
         )
         self.assertEqual(
             by_backend["js"]["blocked_modules"],

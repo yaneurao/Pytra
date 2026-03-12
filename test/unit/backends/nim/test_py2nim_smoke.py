@@ -207,12 +207,55 @@ class Py2NimSmokeTest(unittest.TestCase):
     def test_nim_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "nim" / "pytra" / "built_in" / "py_runtime.nim"
         native_runtime = ROOT / "src" / "runtime" / "nim" / "native" / "built_in" / "py_runtime.nim"
+        generated_contains = ROOT / "src" / "runtime" / "nim" / "generated" / "built_in" / "contains.nim"
+        generated_zip = ROOT / "src" / "runtime" / "nim" / "generated" / "built_in" / "zip_ops.nim"
         image_runtime = ROOT / "src" / "runtime" / "nim" / "generated" / "utils" / "image_runtime.nim"
         legacy_path = ROOT / "src" / "nim_module" / "py_runtime.nim"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(native_runtime.exists())
+        self.assertTrue(generated_contains.exists())
+        self.assertTrue(generated_zip.exists())
         self.assertTrue(image_runtime.exists())
         self.assertFalse(legacy_path.exists())
+
+    def test_nim_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:
+        runtime_path = ROOT / "src" / "runtime" / "nim" / "native" / "built_in" / "py_runtime.nim"
+        image_runtime = ROOT / "src" / "runtime" / "nim" / "generated" / "utils" / "image_runtime.nim"
+        contains_path = ROOT / "src" / "runtime" / "nim" / "generated" / "built_in" / "contains.nim"
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            (tmp / "py_runtime.nim").write_text(runtime_path.read_text(encoding="utf-8"), encoding="utf-8")
+            (tmp / "image_runtime.nim").write_text(image_runtime.read_text(encoding="utf-8"), encoding="utf-8")
+            (tmp / "contains.nim").write_text(contains_path.read_text(encoding="utf-8"), encoding="utf-8")
+            (tmp / "main.nim").write_text(
+                "\n".join(
+                    [
+                        'include "contains.nim"',
+                        "",
+                        "when isMainModule:",
+                        '  if py_contains_str_object("abc", "b"):',
+                        '    echo "nim-built-in-ok"',
+                        "  else:",
+                        '    echo "nim-built-in-bad"',
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            run_proc = subprocess.run(
+                [
+                    "nim",
+                    "c",
+                    "-r",
+                    "--nimcache:" + str(tmp / "nimcache"),
+                    str(tmp / "main.nim"),
+                ],
+                cwd=tmp,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(run_proc.returncode, 0, run_proc.stderr)
+            self.assertIn("nim-built-in-ok", run_proc.stdout)
 
 if __name__ == "__main__":
     unittest.main()

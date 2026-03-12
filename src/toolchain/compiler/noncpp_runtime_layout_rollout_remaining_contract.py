@@ -99,6 +99,12 @@ class RemainingRuntimeWaveAGeneratedCompareSmokeEntry(TypedDict):
     smoke_targets: tuple[str, ...]
 
 
+class RemainingRuntimeWaveAGeneratedCompareEntry(TypedDict):
+    backend: str
+    materialized_compare_modules: tuple[str, ...]
+    helper_artifact_modules: tuple[str, ...]
+
+
 class RemainingRuntimeWaveAGeneratedSmokeEntry(TypedDict):
     backend: str
     smoke_kind: str
@@ -178,6 +184,38 @@ REMAINING_NONCPP_GO_JAVA_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str,
 
 REMAINING_NONCPP_GO_JAVA_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
     "built_in/predicates",
+    "built_in/sequence",
+    "built_in/string_ops",
+    "built_in/type_id",
+)
+
+REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
+    "built_in/contains",
+    "built_in/iter_ops",
+    "built_in/predicates",
+    "built_in/sequence",
+    "built_in/zip_ops",
+)
+
+REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
+    "built_in/io_ops",
+    "built_in/numeric_ops",
+    "built_in/scalar_ops",
+    "built_in/string_ops",
+    "built_in/type_id",
+)
+
+REMAINING_NONCPP_NIM_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
+    "built_in/contains",
+    "built_in/iter_ops",
+    "built_in/numeric_ops",
+    "built_in/predicates",
+    "built_in/zip_ops",
+)
+
+REMAINING_NONCPP_NIM_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
+    "built_in/io_ops",
+    "built_in/scalar_ops",
     "built_in/sequence",
     "built_in/string_ops",
     "built_in/type_id",
@@ -277,6 +315,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "rationale": "Kotlin image helpers already live in generated/utils after the Wave A path cutover.",
             },
             {
+                "current_prefix": "src/runtime/kotlin/generated/built_in/",
+                "target_prefix": "src/runtime/kotlin/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "Kotlin compile-safe built_in compare artifacts live in generated/built_in after the S4 alignment bundle.",
+            },
+            {
                 "current_prefix": "src/runtime/kotlin/pytra/built_in/py_runtime.kt",
                 "target_prefix": "src/runtime/kotlin/pytra/built_in/py_runtime.kt",
                 "ownership": "compat",
@@ -302,6 +346,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/scala/generated/utils/",
                 "ownership": "generated",
                 "rationale": "Scala image helpers already live in generated/utils after the Wave A path cutover.",
+            },
+            {
+                "current_prefix": "src/runtime/scala/generated/built_in/",
+                "target_prefix": "src/runtime/scala/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "Scala source-guarded built_in compare artifacts live in generated/built_in after the S4 alignment bundle.",
             },
             {
                 "current_prefix": "src/runtime/scala/pytra/built_in/py_runtime.scala",
@@ -356,6 +406,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/nim/generated/utils/",
                 "ownership": "generated",
                 "rationale": "Nim image helpers already live in generated/utils after the Wave A path cutover.",
+            },
+            {
+                "current_prefix": "src/runtime/nim/generated/built_in/",
+                "target_prefix": "src/runtime/nim/generated/built_in/",
+                "ownership": "generated",
+                "rationale": "Nim compile-safe built_in compare artifacts live in generated/built_in after the S4 alignment bundle.",
             },
             {
                 "current_prefix": "src/runtime/nim/pytra/built_in/py_runtime.nim",
@@ -692,6 +748,11 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
         "backend": "kotlin",
         "pytra_core_files": ("built_in/py_runtime.kt",),
         "pytra_gen_files": (
+            "built_in/contains.kt",
+            "built_in/iter_ops.kt",
+            "built_in/predicates.kt",
+            "built_in/sequence.kt",
+            "built_in/zip_ops.kt",
             "utils/gif_helper.kt",
             "utils/image_runtime.kt",
             "utils/png_helper.kt",
@@ -702,6 +763,11 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
         "backend": "scala",
         "pytra_core_files": ("built_in/py_runtime.scala",),
         "pytra_gen_files": (
+            "built_in/contains.scala",
+            "built_in/iter_ops.scala",
+            "built_in/predicates.scala",
+            "built_in/sequence.scala",
+            "built_in/zip_ops.scala",
             "utils/gif_helper.scala",
             "utils/image_runtime.scala",
             "utils/png_helper.scala",
@@ -722,6 +788,11 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
         "backend": "nim",
         "pytra_core_files": ("built_in/py_runtime.nim",),
         "pytra_gen_files": (
+            "built_in/contains.nim",
+            "built_in/iter_ops.nim",
+            "built_in/numeric_ops.nim",
+            "built_in/predicates.nim",
+            "built_in/zip_ops.nim",
             "utils/gif_helper.nim",
             "utils/image_runtime.nim",
             "utils/png_helper.nim",
@@ -891,6 +962,11 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
     {
         "backend": "kotlin",
         "generated_files": (
+            "generated/built_in/contains.kt",
+            "generated/built_in/iter_ops.kt",
+            "generated/built_in/predicates.kt",
+            "generated/built_in/sequence.kt",
+            "generated/built_in/zip_ops.kt",
             "generated/utils/gif_helper.kt",
             "generated/utils/image_runtime.kt",
             "generated/utils/png_helper.kt",
@@ -901,6 +977,11 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
     {
         "backend": "scala",
         "generated_files": (
+            "generated/built_in/contains.scala",
+            "generated/built_in/iter_ops.scala",
+            "generated/built_in/predicates.scala",
+            "generated/built_in/sequence.scala",
+            "generated/built_in/zip_ops.scala",
             "generated/utils/gif_helper.scala",
             "generated/utils/image_runtime.scala",
             "generated/utils/png_helper.scala",
@@ -921,6 +1002,11 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
     {
         "backend": "nim",
         "generated_files": (
+            "generated/built_in/contains.nim",
+            "generated/built_in/iter_ops.nim",
+            "generated/built_in/numeric_ops.nim",
+            "generated/built_in/predicates.nim",
+            "generated/built_in/zip_ops.nim",
             "generated/utils/gif_helper.nim",
             "generated/utils/image_runtime.nim",
             "generated/utils/png_helper.nim",
@@ -1086,17 +1172,31 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     },
     {
         "backend": "kotlin",
-        "generated_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "generated_modules": (
+            REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + ("utils/gif_helper", "utils/image_runtime", "utils/png_helper")
+        ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
-        "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "blocked_modules": (
+            REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1
+            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
+            + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
+        ),
     },
     {
         "backend": "scala",
-        "generated_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "generated_modules": (
+            REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + ("utils/gif_helper", "utils/image_runtime", "utils/png_helper")
+        ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
-        "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "blocked_modules": (
+            REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1
+            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
+            + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
+        ),
     },
     {
         "backend": "swift",
@@ -1107,10 +1207,17 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     },
     {
         "backend": "nim",
-        "generated_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "generated_modules": (
+            REMAINING_NONCPP_NIM_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + ("utils/gif_helper", "utils/image_runtime", "utils/png_helper")
+        ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
-        "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "blocked_modules": (
+            REMAINING_NONCPP_NIM_BLOCKED_BUILT_IN_MODULES_V1
+            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
+            + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
+        ),
     },
     {
         "backend": "js",
@@ -1476,6 +1583,55 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_SMOKE_V1: Final[
 )
 
 
+REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_V1: Final[
+    tuple[RemainingRuntimeWaveAGeneratedCompareEntry, ...]
+] = (
+    {
+        "backend": "go",
+        "materialized_compare_modules": (
+            REMAINING_NONCPP_GO_JAVA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
+        ),
+        "helper_artifact_modules": (),
+    },
+    {
+        "backend": "java",
+        "materialized_compare_modules": (
+            REMAINING_NONCPP_GO_JAVA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + (
+                "std/json",
+                "std/math",
+                "std/pathlib",
+                "std/time",
+                "utils/gif",
+                "utils/png",
+            )
+        ),
+        "helper_artifact_modules": (),
+    },
+    {
+        "backend": "kotlin",
+        "materialized_compare_modules": REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+        "helper_artifact_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+    },
+    {
+        "backend": "scala",
+        "materialized_compare_modules": REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+        "helper_artifact_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+    },
+    {
+        "backend": "swift",
+        "materialized_compare_modules": (),
+        "helper_artifact_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+    },
+    {
+        "backend": "nim",
+        "materialized_compare_modules": REMAINING_NONCPP_NIM_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
+        "helper_artifact_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+    },
+)
+
+
 REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_SMOKE_V1: Final[
     tuple[RemainingRuntimeWaveAGeneratedCompareSmokeEntry, ...]
 ] = (
@@ -1491,21 +1647,13 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_SMOKE_V1: Final[
     },
     {
         "backend": "kotlin",
-        "smoke_kind": "source_guard",
-        "smoke_targets": (
-            "utils/gif_helper.kt",
-            "utils/image_runtime.kt",
-            "utils/png_helper.kt",
-        ),
+        "smoke_kind": "build_run_smoke",
+        "smoke_targets": ("built_in/contains.kt",),
     },
     {
         "backend": "scala",
         "smoke_kind": "source_guard",
-        "smoke_targets": (
-            "utils/gif_helper.scala",
-            "utils/image_runtime.scala",
-            "utils/png_helper.scala",
-        ),
+        "smoke_targets": ("built_in/contains.scala",),
     },
     {
         "backend": "swift",
@@ -1518,12 +1666,8 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_SMOKE_V1: Final[
     },
     {
         "backend": "nim",
-        "smoke_kind": "source_guard",
-        "smoke_targets": (
-            "utils/gif_helper.nim",
-            "utils/image_runtime.nim",
-            "utils/png_helper.nim",
-        ),
+        "smoke_kind": "build_run_smoke",
+        "smoke_targets": ("built_in/contains.nim",),
     },
 )
 
@@ -1557,6 +1701,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
         "backend": "kotlin",
         "smoke_kind": "source_guard",
         "smoke_targets": (
+            "built_in/contains.kt",
             "utils/gif_helper.kt",
             "utils/image_runtime.kt",
             "utils/png_helper.kt",
@@ -1566,6 +1711,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
         "backend": "scala",
         "smoke_kind": "source_guard",
         "smoke_targets": (
+            "built_in/contains.scala",
             "utils/gif_helper.scala",
             "utils/image_runtime.scala",
             "utils/png_helper.scala",
@@ -1584,6 +1730,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
         "backend": "nim",
         "smoke_kind": "source_guard",
         "smoke_targets": (
+            "built_in/contains.nim",
             "utils/gif_helper.nim",
             "utils/image_runtime.nim",
             "utils/png_helper.nim",
@@ -1781,6 +1928,12 @@ def iter_remaining_noncpp_runtime_wave_a_generated_compare_smoke() -> (
     tuple[RemainingRuntimeWaveAGeneratedCompareSmokeEntry, ...]
 ):
     return REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_SMOKE_V1
+
+
+def iter_remaining_noncpp_runtime_wave_a_generated_compare() -> (
+    tuple[RemainingRuntimeWaveAGeneratedCompareEntry, ...]
+):
+    return REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_V1
 
 
 def iter_remaining_noncpp_runtime_wave_a_generated_smoke() -> tuple[RemainingRuntimeWaveAGeneratedSmokeEntry, ...]:

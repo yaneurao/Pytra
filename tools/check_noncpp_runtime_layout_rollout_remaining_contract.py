@@ -687,15 +687,54 @@ def _collect_wave_a_generated_smoke_issues() -> list[str]:
     return issues
 
 
+def _collect_wave_a_generated_compare_issues() -> list[str]:
+    issues: list[str] = []
+    module_buckets = {
+        entry["backend"]: entry
+        for entry in contract_mod.iter_remaining_noncpp_runtime_module_buckets()
+    }
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_a_generated_compare()
+    expected_order = ("go", "java", "kotlin", "scala", "swift", "nim")
+    if tuple(entry["backend"] for entry in entries) != expected_order:
+        issues.append("wave-a generated compare order drifted")
+    compare_baseline = set(contract_mod.iter_remaining_noncpp_runtime_generated_compare_baseline())
+    for entry in entries:
+        backend = entry["backend"]
+        bucket = module_buckets.get(backend)
+        if bucket is None:
+            issues.append(f"wave-a generated compare backend drifted: {backend}")
+            continue
+        generated_modules = set(bucket["generated_modules"])
+        blocked_modules = set(bucket["blocked_modules"])
+        native_modules = set(bucket["native_modules"])
+        materialized_modules = set(entry["materialized_compare_modules"])
+        helper_artifact_modules = set(entry["helper_artifact_modules"])
+        if materialized_modules & helper_artifact_modules:
+            issues.append(f"wave-a generated compare overlap drifted: {backend}")
+        expected_materialized = generated_modules.intersection(compare_baseline)
+        if materialized_modules != expected_materialized:
+            issues.append(f"wave-a materialized compare modules drifted: {backend}")
+        expected_helper_artifacts = generated_modules.difference(compare_baseline)
+        if helper_artifact_modules != expected_helper_artifacts:
+            issues.append(f"wave-a helper artifact modules drifted: {backend}")
+        if materialized_modules & blocked_modules:
+            issues.append(f"wave-a materialized compare overlaps blocked bucket: {backend}")
+        if helper_artifact_modules & blocked_modules:
+            issues.append(f"wave-a helper artifact overlaps blocked bucket: {backend}")
+        if helper_artifact_modules & native_modules:
+            issues.append(f"wave-a helper artifact overlaps native bucket: {backend}")
+    return issues
+
+
 def _collect_wave_a_generated_compare_smoke_issues() -> list[str]:
     issues: list[str] = []
     target_inventory = {
         entry["backend"]: entry
         for entry in contract_mod.iter_remaining_noncpp_runtime_target_inventory()
     }
-    module_buckets = {
+    generated_compare = {
         entry["backend"]: entry
-        for entry in contract_mod.iter_remaining_noncpp_runtime_module_buckets()
+        for entry in contract_mod.iter_remaining_noncpp_runtime_wave_a_generated_compare()
     }
     entries = contract_mod.iter_remaining_noncpp_runtime_wave_a_generated_compare_smoke()
     expected_order = ("go", "java", "kotlin", "scala", "swift", "nim")
@@ -708,8 +747,8 @@ def _collect_wave_a_generated_compare_smoke_issues() -> list[str]:
             issues.append(f"wave-a generated compare smoke kind drifted: {backend}")
             continue
         inventory_entry = target_inventory.get(backend)
-        bucket_entry = module_buckets.get(backend)
-        if inventory_entry is None or bucket_entry is None:
+        compare_entry = generated_compare.get(backend)
+        if inventory_entry is None or compare_entry is None:
             issues.append(f"wave-a generated compare smoke backend drifted: {backend}")
             continue
         allowed_targets = {
@@ -721,7 +760,9 @@ def _collect_wave_a_generated_compare_smoke_issues() -> list[str]:
             issues.append(f"wave-a generated compare smoke targets drifted: {backend}")
         if not smoke_targets.issubset(allowed_targets):
             issues.append(f"wave-a generated compare smoke escaped generated files: {backend}")
-        allowed_modules = set(bucket_entry["generated_modules"])
+        allowed_modules = set(compare_entry["materialized_compare_modules"]).union(
+            compare_entry["helper_artifact_modules"]
+        )
         smoke_modules = {
             _normalize_target_module_label(f"generated/{rel_path}")
             for rel_path in smoke_targets
@@ -729,7 +770,7 @@ def _collect_wave_a_generated_compare_smoke_issues() -> list[str]:
         smoke_modules.discard(None)
         if not smoke_modules.issubset(allowed_modules):
             issues.append(f"wave-a generated compare smoke escaped generated modules: {backend}")
-        if backend in ("go", "java"):
+        if backend in ("go", "java", "kotlin", "nim"):
             if smoke_kind != "build_run_smoke":
                 issues.append(f"wave-a generated compare smoke kind drifted: {backend}")
         elif smoke_kind != "source_guard":
@@ -803,6 +844,7 @@ def main() -> int:
     issues.extend(_collect_wave_b_compat_file_issues())
     issues.extend(_collect_wave_b_compat_smoke_issues())
     issues.extend(_collect_wave_b_generated_compare_smoke_issues())
+    issues.extend(_collect_wave_a_generated_compare_issues())
     issues.extend(_collect_wave_a_generated_compare_smoke_issues())
     issues.extend(_collect_wave_a_generated_smoke_issues())
     issues.extend(_collect_wave_a_native_residual_issues())
