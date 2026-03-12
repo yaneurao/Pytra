@@ -343,11 +343,15 @@ def main() -> int:
 
     if violations or stale_allow:
         print("[FAIL] runtime std/utils source-of-truth guard failed")
+        print("  canonical generated lanes: src/runtime/{rs,cs}/generated/**")
+        print("  legacy generated lanes are allowed only for not-yet-migrated backends")
         if violations:
             print("  disallowed handwritten runtime implementation detected:")
             for item in violations:
                 print("    - " + item)
-            print("  fix: move implementation to src/pytra/* canonical source and generate runtime artifacts")
+            print(
+                "  fix: move implementation to src/pytra/* canonical source and regenerate the canonical runtime lane"
+            )
         if stale_allow:
             print("  stale allowlist entries (remove them):")
             for item in stale_allow:
@@ -357,6 +361,7 @@ def main() -> int:
     tracked = sum(len(v) for v in allow.values())
     print("[OK] runtime std/utils source-of-truth guard passed")
     print(f"  rules: {', '.join(sorted(RULES.keys()))}")
+    print("  canonical generated lanes: src/runtime/{rs,cs}/generated/**")
     print(f"  allowlist entries used: {tracked}")
     return 0
 

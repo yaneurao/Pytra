@@ -4,6 +4,9 @@
 # NOTE:
 # - New entries are prohibited unless accompanied by an explicit TODO/plan ID.
 # - Keep this file empty unless a verified transitional exception is required.
+# - `src/runtime/{rs,cs}/generated/**` is the canonical generated lane.
+# - Entries below are legacy migration debt only; remove them once each backend is moved
+#   onto the `generated/native` vocabulary.
 
 # Transitional debt while non-C++ runtimes are being migrated to SoT-generated std/json.
 json src/runtime/cs/native/std/json.cs
