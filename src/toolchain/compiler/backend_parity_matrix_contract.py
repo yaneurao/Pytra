@@ -22,6 +22,32 @@ PARITY_MATRIX_BACKEND_ORDER: Final[tuple[str, ...]] = feature_contract_mod.SUPPO
 PARITY_MATRIX_SUPPORT_STATE_ORDER: Final[tuple[str, ...]] = feature_contract_mod.SUPPORT_STATE_ORDER
 PARITY_MATRIX_IMPLEMENTATION_PHASE: Final[str] = "row_seed_scaffold"
 PARITY_MATRIX_CELL_SCHEMA_STATUS: Final[str] = "not_populated"
+PARITY_MATRIX_CELL_SCHEMA_VERSION: Final[int] = 1
+PARITY_MATRIX_CELL_COLLECTION_KEY: Final[str] = "backend_cells"
+PARITY_MATRIX_CELL_REQUIRED_KEYS: Final[tuple[str, ...]] = (
+    "backend",
+    "support_state",
+    "evidence_kind",
+)
+PARITY_MATRIX_CELL_OPTIONAL_KEYS: Final[tuple[str, ...]] = (
+    "details",
+    "evidence_ref",
+    "diagnostic_kind",
+)
+PARITY_MATRIX_CELL_EVIDENCE_KIND_ORDER: Final[tuple[str, ...]] = (
+    "build_run_smoke",
+    "transpile_smoke",
+    "contract_guard",
+    "diagnostic_guard",
+    "not_started_placeholder",
+    "preview_guard",
+)
+PARITY_MATRIX_ALLOWED_EVIDENCE_KINDS_BY_STATE: Final[dict[str, tuple[str, ...]]] = {
+    "supported": ("build_run_smoke", "transpile_smoke"),
+    "fail_closed": ("contract_guard", "diagnostic_guard"),
+    "not_started": ("not_started_placeholder",),
+    "experimental": ("preview_guard", "transpile_smoke", "build_run_smoke"),
+}
 PARITY_MATRIX_CELL_GAP_SUMMARY: Final[dict[str, str]] = {
     "missing_per_backend_cells": "The current matrix exports representative row seeds only and does not yet publish per-backend cells.",
     "missing_support_state_per_cell": "Each feature × backend cell still lacks an explicit support_state entry.",
@@ -72,6 +98,16 @@ class RepresentativeParityMatrixRow(TypedDict):
     downstream_plan: str
 
 
+class BackendParityMatrixCellSchema(TypedDict):
+    schema_version: int
+    collection_key: str
+    required_keys: tuple[str, ...]
+    optional_keys: tuple[str, ...]
+    support_state_order: tuple[str, ...]
+    evidence_kind_order: tuple[str, ...]
+    allowed_evidence_kinds_by_state: dict[str, tuple[str, ...]]
+
+
 REPRESENTATIVE_PARITY_MATRIX_ROWS: Final[tuple[RepresentativeParityMatrixRow, ...]] = tuple(
     {
         "feature_id": entry["feature_id"],
@@ -87,6 +123,16 @@ REPRESENTATIVE_PARITY_MATRIX_ROWS: Final[tuple[RepresentativeParityMatrixRow, ..
     for entry in feature_contract_mod.iter_representative_support_matrix_handoff()
 )
 
+BACKEND_PARITY_MATRIX_CELL_SCHEMA: Final[BackendParityMatrixCellSchema] = {
+    "schema_version": PARITY_MATRIX_CELL_SCHEMA_VERSION,
+    "collection_key": PARITY_MATRIX_CELL_COLLECTION_KEY,
+    "required_keys": PARITY_MATRIX_CELL_REQUIRED_KEYS,
+    "optional_keys": PARITY_MATRIX_CELL_OPTIONAL_KEYS,
+    "support_state_order": PARITY_MATRIX_SUPPORT_STATE_ORDER,
+    "evidence_kind_order": PARITY_MATRIX_CELL_EVIDENCE_KIND_ORDER,
+    "allowed_evidence_kinds_by_state": PARITY_MATRIX_ALLOWED_EVIDENCE_KINDS_BY_STATE,
+}
+
 
 def iter_representative_parity_matrix_rows() -> tuple[RepresentativeParityMatrixRow, ...]:
     return REPRESENTATIVE_PARITY_MATRIX_ROWS
@@ -99,6 +145,18 @@ def build_backend_parity_matrix_manifest() -> dict[str, object]:
         "source_destination": PARITY_MATRIX_SOURCE_DESTINATION,
         "implementation_phase": PARITY_MATRIX_IMPLEMENTATION_PHASE,
         "cell_schema_status": PARITY_MATRIX_CELL_SCHEMA_STATUS,
+        "cell_schema": {
+            "schema_version": BACKEND_PARITY_MATRIX_CELL_SCHEMA["schema_version"],
+            "collection_key": BACKEND_PARITY_MATRIX_CELL_SCHEMA["collection_key"],
+            "required_keys": list(BACKEND_PARITY_MATRIX_CELL_SCHEMA["required_keys"]),
+            "optional_keys": list(BACKEND_PARITY_MATRIX_CELL_SCHEMA["optional_keys"]),
+            "support_state_order": list(BACKEND_PARITY_MATRIX_CELL_SCHEMA["support_state_order"]),
+            "evidence_kind_order": list(BACKEND_PARITY_MATRIX_CELL_SCHEMA["evidence_kind_order"]),
+            "allowed_evidence_kinds_by_state": {
+                state: list(kinds)
+                for state, kinds in BACKEND_PARITY_MATRIX_CELL_SCHEMA["allowed_evidence_kinds_by_state"].items()
+            },
+        },
         "cell_gap_summary": dict(PARITY_MATRIX_CELL_GAP_SUMMARY),
         "backend_order": list(PARITY_MATRIX_BACKEND_ORDER),
         "support_state_order": list(PARITY_MATRIX_SUPPORT_STATE_ORDER),

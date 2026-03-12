@@ -47,11 +47,12 @@ Decision log:
 - 2026-03-12: Treat the cross-backend matrix as the canonical source and per-language support tables as drill-down documentation.
 - 2026-03-12: The initial cell schema requires `support_state` and `evidence_kind`, while richer details remain optional handoff data.
 - 2026-03-12: `S1-01` fixed the `row_seed_scaffold` baseline in the matrix contract / manifest / docs publish target and fail-closed the current per-cell gap summary.
+- 2026-03-12: `S2-01` fixed the per-cell schema as `backend/support_state/evidence_kind` required with `details/evidence_ref/diagnostic_kind` optional, and exported it at the top level of the manifest.
 
 ## Breakdown
 
 - [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S1-01] Lock the current scaffold baseline and the gap in docs / contract / tooling.
-- [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S2-01] Add a per-cell schema to the parity matrix contract and update manifest export.
+- [x] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S2-01] Add a per-cell schema to the parity matrix contract and update manifest export.
 - [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S2-02] Add backend cell seeds to representative feature rows so `support_state` / `evidence_kind` can be filled.
 - [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S3-01] Materialize the docs publish target as a 2D table and explicitly document the cross-backend matrix as canonical.
 - [ ] [ID: P6-BACKEND-PARITY-MATRIX-CELL-FILL-01-S3-02] Fix the role split with the C++ detailed table, drill-down links, and maintenance order in docs / tooling contracts.
