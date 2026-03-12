@@ -1,4 +1,4 @@
-"""Canonical live contract for second-wave relative-import rollout planning."""
+"""Canonical live handoff contract for second-wave relative-import rollout."""
 
 from __future__ import annotations
 
@@ -52,12 +52,12 @@ RELATIVE_IMPORT_SECONDWAVE_BACKEND_BUNDLES_V1: Final[list[dict[str, object]]] = 
 ]
 
 RELATIVE_IMPORT_SECONDWAVE_HANDOFF_V1: Final[dict[str, object]] = {
-    "todo_id": "P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01",
-    "verification_lane": "second_wave_rollout_planning",
+    "todo_id": "P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01",
+    "verification_lane": "native_path_bundle_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
     "active_plan_paths": (
-        "docs/ja/plans/p1-relative-import-secondwave-planning.md",
-        "docs/en/plans/p1-relative-import-secondwave-planning.md",
+        "docs/ja/plans/p1-relative-import-native-path-bundle.md",
+        "docs/en/plans/p1-relative-import-native-path-bundle.md",
     ),
     "backend_parity_docs": (
         "docs/ja/language/backend-parity-matrix.md",

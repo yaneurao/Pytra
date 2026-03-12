@@ -66,6 +66,15 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
             if row["backend"] in {"js", "ts"}
         ]
         self.assertEqual(locked_second_wave, ["js", "ts"])
+        native_path_bundle = [
+            row["backend"]
+            for row in RELATIVE_IMPORT_NONCPP_ROLLOUT_V1
+            if row["next_verification_lane"] == "native_path_bundle_rollout"
+        ]
+        self.assertEqual(
+            native_path_bundle,
+            ["go", "nim", "swift"],
+        )
         remaining_second_wave = [
             row["backend"]
             for row in RELATIVE_IMPORT_NONCPP_ROLLOUT_V1
@@ -73,7 +82,7 @@ class RelativeImportBackendCoverageTest(unittest.TestCase):
         ]
         self.assertEqual(
             remaining_second_wave,
-            ["go", "java", "kotlin", "nim", "scala", "swift"],
+            ["java", "kotlin", "scala"],
         )
 
     def test_validator_accepts_noncpp_rollout_handoff(self) -> None:

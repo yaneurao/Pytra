@@ -118,9 +118,9 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
     {
         "backend": "go",
         "rollout_wave": "second_wave",
-        "next_verification_lane": "remaining_second_wave_rollout_planning",
+        "next_verification_lane": "native_path_bundle_rollout",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "JS/TS representative smoke is locked; the native_path_bundle is the next remaining second-wave rollout bundle.",
+        "notes": "JS/TS representative smoke is locked; the native_path_bundle is now the active live rollout bundle.",
     },
     {
         "backend": "java",
@@ -153,9 +153,9 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
     {
         "backend": "nim",
         "rollout_wave": "second_wave",
-        "next_verification_lane": "remaining_second_wave_rollout_planning",
+        "next_verification_lane": "native_path_bundle_rollout",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "JS/TS representative smoke is locked; the native_path_bundle is the next remaining second-wave rollout bundle.",
+        "notes": "JS/TS representative smoke is locked; the native_path_bundle is now the active live rollout bundle.",
     },
     {
         "backend": "php",
@@ -181,9 +181,9 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
     {
         "backend": "swift",
         "rollout_wave": "second_wave",
-        "next_verification_lane": "remaining_second_wave_rollout_planning",
+        "next_verification_lane": "native_path_bundle_rollout",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "JS/TS representative smoke is locked; the native_path_bundle is the next remaining second-wave rollout bundle.",
+        "notes": "JS/TS representative smoke is locked; the native_path_bundle is now the active live rollout bundle.",
     },
     {
         "backend": "ts",
@@ -196,7 +196,7 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
 
 
 RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
-    "todo_id": "P1-RELATIVE-IMPORT-SECONDWAVE-PLANNING-01",
+    "todo_id": "P1-RELATIVE-IMPORT-NATIVE-PATH-BUNDLE-01",
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
     "backend_parity_docs": (
@@ -204,11 +204,11 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
         "docs/en/language/backend-parity-matrix.md",
     ),
     "next_rollout_plan": (
-        "docs/ja/plans/p1-relative-import-secondwave-planning.md",
-        "docs/en/plans/p1-relative-import-secondwave-planning.md",
+        "docs/ja/plans/p1-relative-import-native-path-bundle.md",
+        "docs/en/plans/p1-relative-import-native-path-bundle.md",
     ),
     "locked_transpile_smoke_backends": ("rs", "cs", "js", "ts"),
-    "next_rollout_backends": ("go", "java", "kotlin", "nim", "scala", "swift"),
+    "next_rollout_backends": ("go", "nim", "swift"),
     "second_wave_bundle_order": (
         "locked_js_ts_smoke_bundle",
         "native_path_bundle",
@@ -218,6 +218,6 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
     "next_rollout_bundle_backends": ("go", "nim", "swift"),
     "followup_rollout_bundle": "jvm_package_bundle",
     "followup_rollout_bundle_backends": ("java", "kotlin", "scala"),
-    "next_verification_lane": "remaining_second_wave_rollout_planning",
+    "next_verification_lane": "native_path_bundle_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
 }
