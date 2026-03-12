@@ -39,7 +39,7 @@ RELATIVE_IMPORT_RUBY_SUPPORT_SMOKE_V1: Final[dict[str, object]] = {
 }
 
 RELATIVE_IMPORT_RUBY_SUPPORT_HANDOFF_V1: Final[dict[str, object]] = {
-    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03",
+    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-03",
     "parent_todo_id": RELATIVE_IMPORT_LONGTAIL_SUPPORT_HANDOFF_V1["todo_id"],
     "active_plan_paths": RELATIVE_IMPORT_LONGTAIL_SUPPORT_HANDOFF_V1["active_plan_paths"],
     "support_contract_inventory": "src/toolchain/compiler/relative_import_longtail_support_contract.py",

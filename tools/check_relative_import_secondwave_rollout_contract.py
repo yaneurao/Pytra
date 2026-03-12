@@ -56,7 +56,7 @@ EXPECTED_BUNDLES = [
     },
 ]
 EXPECTED_HANDOFF = {
-    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01",
+    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01",
     "verification_lane": "longtail_relative_import_support_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
     "active_plan_paths": (

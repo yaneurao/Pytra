@@ -58,6 +58,60 @@ def _safe_ident(name: Any, fallback: str = "value") -> str:
     return out
 
 
+def _relative_import_module_path(module_id: str) -> str:
+    parts = [
+        _safe_ident(part, "module")
+        for part in module_id.lstrip(".").split(".")
+        if part != ""
+    ]
+    return ".".join(parts)
+
+
+def _collect_relative_import_name_aliases(body: list[Any]) -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    i = 0
+    while i < len(body):
+        stmt = body[i]
+        if not isinstance(stmt, dict) or stmt.get("kind") != "ImportFrom":
+            i += 1
+            continue
+        module_any = stmt.get("module")
+        module_id = module_any if isinstance(module_any, str) else ""
+        level_any = stmt.get("level")
+        level = level_any if isinstance(level_any, int) else 0
+        if level <= 0 and not module_id.startswith("."):
+            i += 1
+            continue
+        module_path = _relative_import_module_path(module_id)
+        names_any = stmt.get("names")
+        names = names_any if isinstance(names_any, list) else []
+        j = 0
+        while j < len(names):
+            ent = names[j]
+            if not isinstance(ent, dict):
+                j += 1
+                continue
+            name_any = ent.get("name")
+            name = name_any if isinstance(name_any, str) else ""
+            if name == "":
+                j += 1
+                continue
+            if name == "*":
+                raise RuntimeError(
+                    "lua native emitter: unsupported relative import form: wildcard import"
+                )
+            asname_any = ent.get("asname")
+            local_name = asname_any if isinstance(asname_any, str) and asname_any != "" else name
+            local_rendered = _safe_ident(local_name, "value")
+            target_name = _safe_ident(name, "value")
+            aliases[local_rendered] = (
+                target_name if module_path == "" else module_path + "." + target_name
+            )
+            j += 1
+        i += 1
+    return aliases
+
+
 def _lua_string(text: str) -> str:
     out = text.replace("\\", "\\\\")
     out = out.replace('"', '\\"')
@@ -171,6 +225,8 @@ def _reject_unsupported_relative_import_forms(body_any: Any) -> None:
                     "lua native emitter: unsupported relative import form: wildcard import"
                 )
             j += 1
+        if kind == "ImportFrom":
+            continue
         raise RuntimeError(
             "lua native emitter: unsupported relative import form: relative import"
         )
@@ -192,6 +248,7 @@ class LuaNativeEmitter:
         self.class_names: set[str] = set()
         self.imported_modules: set[str] = set()
         self.function_names: set[str] = set()
+        self.relative_import_name_aliases: dict[str, str] = {}
         self.loop_continue_labels: list[str] = []
         self.current_class_name: str = ""
         self.current_class_base_name: str = ""
@@ -520,6 +577,7 @@ class LuaNativeEmitter:
         self.class_names = set()
         self.imported_modules = set()
         self.function_names = set()
+        self.relative_import_name_aliases = _collect_relative_import_name_aliases(body)
         for stmt in body:
             kind = stmt.get("kind")
             if kind == "ClassDef":
@@ -547,6 +605,8 @@ class LuaNativeEmitter:
                 module_name = stmt.get("module")
                 if not isinstance(module_name, str):
                     continue
+                level_any = stmt.get("level")
+                level = level_any if isinstance(level_any, int) else 0
                 names_any = stmt.get("names")
                 names = names_any if isinstance(names_any, list) else []
                 for ent in names:
@@ -557,9 +617,20 @@ class LuaNativeEmitter:
                         continue
                     asname = ent.get("asname")
                     alias = asname if isinstance(asname, str) and asname != "" else symbol
+                    if level > 0 or module_name.startswith("."):
+                        module_path = _relative_import_module_path(module_name)
+                        if module_path == "":
+                            self.imported_modules.add(_safe_ident(alias, "mod"))
+                        continue
                     resolved = resolve_import_binding_doc(module_name, symbol, "symbol")
                     if resolved.get("resolved_binding_kind") == "module":
                         self.imported_modules.add(_safe_ident(alias, "mod"))
+
+    def _render_name_expr(self, expr_any: dict[str, Any]) -> str:
+        ident = _safe_ident(expr_any.get("id"), "value")
+        if ident == "main" and "__pytra_main" in self.function_names and "main" not in self.function_names:
+            ident = "__pytra_main"
+        return self.relative_import_name_aliases.get(ident, ident)
 
     def _emit_imports(self, body: list[dict[str, Any]]) -> None:
         import_lines: list[str] = []
@@ -594,6 +665,10 @@ class LuaNativeEmitter:
             if kind == "ImportFrom":
                 mod = stmt.get("module")
                 if not isinstance(mod, str):
+                    continue
+                level_any = stmt.get("level")
+                level = level_any if isinstance(level_any, int) else 0
+                if level > 0 or mod.startswith("."):
                     continue
                 names_any = stmt.get("names")
                 names = names_any if isinstance(names_any, list) else []
@@ -1373,7 +1448,7 @@ class LuaNativeEmitter:
         if kind == "Constant":
             return self._render_constant(expr_any.get("value"))
         if kind == "Name":
-            return _safe_ident(expr_any.get("id"), "value")
+            return self._render_name_expr(expr_any)
         if kind == "BinOp":
             left_node = expr_any.get("left")
             right_node = expr_any.get("right")
@@ -1669,8 +1744,6 @@ class LuaNativeEmitter:
             raise RuntimeError("lang=lua unresolved stdlib runtime call: " + semantic_tag)
         if isinstance(func_any, dict) and func_any.get("kind") == "Name":
             fn_name = _safe_ident(func_any.get("id"), "fn")
-            if fn_name == "main" and "__pytra_main" in self.function_names and "main" not in self.function_names:
-                fn_name = "__pytra_main"
             if fn_name == "print":
                 return "__pytra_print(" + ", ".join(rendered_args) + ")"
             if fn_name == "int":
@@ -1721,7 +1794,8 @@ class LuaNativeEmitter:
                 return "__pytra_bytes(" + rendered_args[0] + ")"
             if fn_name in self.class_names:
                 return fn_name + ".new(" + ", ".join(rendered_args) + ")"
-            return fn_name + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
+            rendered_name = self._render_name_expr(func_any)
+            return rendered_name + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
         if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
             owner_node = func_any.get("value")
             attr = _safe_ident(func_any.get("attr"), "call")

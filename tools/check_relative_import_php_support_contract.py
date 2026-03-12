@@ -59,8 +59,8 @@ EXPECTED_SMOKE = {
 }
 
 EXPECTED_HANDOFF = {
-    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02",
-    "parent_todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01",
+    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-02",
+    "parent_todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01",
     "active_plan_paths": (
         "docs/ja/plans/p1-relative-import-longtail-support.md",
         "docs/en/plans/p1-relative-import-longtail-support.md",

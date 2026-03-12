@@ -35,8 +35,8 @@ RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1: Final[list[dict[str, object]]] = [
     {
         "backend": "lua",
         "scenario_ids": ("parent_module_alias", "parent_symbol_alias"),
-        "current_contract_state": "fail_closed_locked",
-        "current_evidence_lane": "backend_native_fail_closed",
+        "current_contract_state": "transpile_smoke_locked",
+        "current_evidence_lane": "native_emitter_function_body_transpile",
         "verification_lane": "longtail_relative_import_support_rollout",
         "focused_verification_lane": "lua_relative_import_support_rollout_smoke",
         "fail_closed_lane": "backend_specific_fail_closed",
@@ -63,7 +63,7 @@ RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1: Final[list[dict[str, object]]] = [
 
 
 RELATIVE_IMPORT_LONGTAIL_SUPPORT_HANDOFF_V1: Final[dict[str, object]] = {
-    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01",
+    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01",
     "active_plan_paths": (
         "docs/ja/plans/p1-relative-import-longtail-support.md",
         "docs/en/plans/p1-relative-import-longtail-support.md",
@@ -83,12 +83,13 @@ RELATIVE_IMPORT_LONGTAIL_SUPPORT_HANDOFF_V1: Final[dict[str, object]] = {
     "backends": ("lua", "php", "ruby"),
     "verification_lane": "longtail_relative_import_support_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
-    "current_contract_state": "fail_closed_locked",
-    "current_evidence_lane": "backend_native_fail_closed",
+    "current_contract_state": "mixed_rollout_locked",
+    "current_evidence_lane": "mixed_backend_evidence",
     "prereq_bundle_id": "longtail_relative_import_rollout",
     "followup_bundle_id": "none",
     "followup_backends": (),
     "followup_verification_lane": "none",
+    "remaining_rollout_backends": ("php", "ruby"),
 }
 
 
@@ -120,9 +121,7 @@ def relative_import_longtail_support_archive_snapshot() -> dict[str, object]:
 
 def relative_import_longtail_support_handoff_snapshot() -> dict[str, object]:
     return {
-        "next_rollout_backends": RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1[
-            "next_rollout_backends"
-        ],
+        "next_rollout_backends": RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["next_rollout_backends"],
         "next_verification_lane": RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1[
             "next_verification_lane"
         ],
@@ -132,6 +131,12 @@ def relative_import_longtail_support_handoff_snapshot() -> dict[str, object]:
         "current_bundle_evidence_lane": RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1[
             "current_bundle_evidence_lane"
         ],
+        "current_bundle_smoke_locked_backends": tuple(
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_smoke_locked_backends"]
+        ),
+        "current_bundle_fail_closed_locked_backends": tuple(
+            RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1["current_bundle_fail_closed_locked_backends"]
+        ),
         "focused_verification_lanes": tuple(
             str(entry["focused_verification_lane"])
             for entry in RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1

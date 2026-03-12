@@ -32,11 +32,19 @@ class RelativeImportLongtailSupportContractTest(unittest.TestCase):
             tuple(entry["backend"] for entry in RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1),
             EXPECTED_BACKENDS,
         )
+        self.assertEqual(
+            RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1[0]["current_contract_state"],
+            "transpile_smoke_locked",
+        )
+        self.assertEqual(
+            RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1[0]["current_evidence_lane"],
+            "native_emitter_function_body_transpile",
+        )
         self.assertTrue(
             all(
                 entry["current_contract_state"] == "fail_closed_locked"
                 and entry["current_evidence_lane"] == "backend_native_fail_closed"
-                for entry in RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1
+                for entry in RELATIVE_IMPORT_LONGTAIL_SUPPORT_BACKENDS_V1[1:]
             )
         )
         self.assertEqual(
@@ -50,12 +58,16 @@ class RelativeImportLongtailSupportContractTest(unittest.TestCase):
     def test_handoff_is_fixed(self) -> None:
         self.assertEqual(RELATIVE_IMPORT_LONGTAIL_SUPPORT_HANDOFF_V1, EXPECTED_HANDOFF)
 
-    def test_current_bundle_coverage_state_is_fail_closed_locked(self) -> None:
+    def test_current_bundle_coverage_state_is_mixed_rollout_locked(self) -> None:
         rows = relative_import_longtail_support_coverage_rows()
         self.assertEqual([row["backend"] for row in rows], list(EXPECTED_BACKENDS))
-        self.assertTrue(all(row["contract_state"] == "fail_closed_locked" for row in rows))
+        self.assertEqual(rows[0]["contract_state"], "transpile_smoke_locked")
+        self.assertEqual(rows[0]["evidence_lane"], "native_emitter_function_body_transpile")
         self.assertTrue(
-            all(row["evidence_lane"] == "backend_native_fail_closed" for row in rows)
+            all(row["contract_state"] == "fail_closed_locked" for row in rows[1:])
+        )
+        self.assertTrue(
+            all(row["evidence_lane"] == "backend_native_fail_closed" for row in rows[1:])
         )
 
     def test_archive_snapshot_matches_archived_bundle_handoff(self) -> None:
@@ -63,8 +75,8 @@ class RelativeImportLongtailSupportContractTest(unittest.TestCase):
             relative_import_longtail_support_archive_snapshot(),
             {
                 "prereq_bundle_id": EXPECTED_HANDOFF["prereq_bundle_id"],
-                "prereq_current_contract_state": EXPECTED_HANDOFF["current_contract_state"],
-                "prereq_current_evidence_lane": EXPECTED_HANDOFF["current_evidence_lane"],
+                "prereq_current_contract_state": "fail_closed_locked",
+                "prereq_current_evidence_lane": "backend_native_fail_closed",
                 "prereq_followup_bundle_id": EXPECTED_HANDOFF["bundle_id"],
                 "prereq_followup_verification_lane": EXPECTED_HANDOFF["verification_lane"],
             },
@@ -74,10 +86,12 @@ class RelativeImportLongtailSupportContractTest(unittest.TestCase):
         self.assertEqual(
             relative_import_longtail_support_handoff_snapshot(),
             {
-                "next_rollout_backends": EXPECTED_HANDOFF["backends"],
+                "next_rollout_backends": EXPECTED_HANDOFF["remaining_rollout_backends"],
                 "next_verification_lane": EXPECTED_HANDOFF["verification_lane"],
                 "current_bundle_contract_state": EXPECTED_HANDOFF["current_contract_state"],
                 "current_bundle_evidence_lane": EXPECTED_HANDOFF["current_evidence_lane"],
+                "current_bundle_smoke_locked_backends": ("lua",),
+                "current_bundle_fail_closed_locked_backends": ("php", "ruby"),
                 "focused_verification_lanes": EXPECTED_FOCUSED_VERIFICATION_LANES,
             },
         )

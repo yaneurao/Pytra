@@ -36,7 +36,7 @@ EXPECTED_BACKENDS = (
 )
 
 EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
-    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01",
+    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01",
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
     "backend_parity_docs": (
@@ -54,23 +54,24 @@ EXPECTED_NONCPP_ROLLOUT_HANDOFF = {
         "java",
         "js",
         "kotlin",
+        "lua",
         "nim",
         "scala",
         "swift",
         "ts",
     ),
-    "next_rollout_backends": ("lua", "php", "ruby"),
-    "current_bundle_smoke_locked_backends": (),
-    "current_bundle_fail_closed_locked_backends": ("lua", "php", "ruby"),
-    "current_bundle_contract_state": "fail_closed_locked",
-    "current_bundle_evidence_lane": "backend_native_fail_closed",
+    "next_rollout_backends": ("php", "ruby"),
+    "current_bundle_smoke_locked_backends": ("lua",),
+    "current_bundle_fail_closed_locked_backends": ("php", "ruby"),
+    "current_bundle_contract_state": "mixed_rollout_locked",
+    "current_bundle_evidence_lane": "mixed_backend_evidence",
     "second_wave_bundle_order": (
         "locked_js_ts_smoke_bundle",
         "native_path_bundle",
         "jvm_package_bundle",
     ),
     "next_rollout_bundle": "longtail_relative_import_support_rollout",
-    "next_rollout_bundle_backends": ("lua", "php", "ruby"),
+    "next_rollout_bundle_backends": ("php", "ruby"),
     "followup_rollout_bundle": "none",
     "followup_rollout_bundle_backends": (),
     "followup_verification_lane": "none",
@@ -102,9 +103,9 @@ def validate_relative_import_backend_coverage() -> None:
         for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
         if row["contract_state"] == "transpile_smoke_locked"
     ]
-    if transpile_smoke_locked != ["rs", "cs", "go", "java", "js", "kotlin", "nim", "scala", "swift", "ts"]:
+    if transpile_smoke_locked != ["rs", "cs", "go", "java", "js", "kotlin", "lua", "nim", "scala", "swift", "ts"]:
         raise SystemExit(
-            "relative import backend coverage must keep rs/cs/go/java/js/kotlin/nim/scala/swift/ts as the only "
+            "relative import backend coverage must keep rs/cs/go/java/js/kotlin/lua/nim/scala/swift/ts as the only "
             f"transpile_smoke_locked lanes: got {transpile_smoke_locked}"
         )
     fail_closed_locked = [
@@ -112,9 +113,9 @@ def validate_relative_import_backend_coverage() -> None:
         for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1
         if row["contract_state"] == "fail_closed_locked"
     ]
-    if fail_closed_locked != ["lua", "php", "ruby"]:
+    if fail_closed_locked != ["php", "ruby"]:
         raise SystemExit(
-            "relative import backend coverage must keep lua/php/ruby as the only "
+            "relative import backend coverage must keep php/ruby as the only "
             f"fail_closed_locked lanes: got {fail_closed_locked}"
         )
     for row in RELATIVE_IMPORT_BACKEND_COVERAGE_V1:
@@ -123,10 +124,17 @@ def validate_relative_import_backend_coverage() -> None:
             continue
         if backend in {"rs", "cs", "go", "java", "js", "kotlin", "nim", "scala", "swift", "ts"}:
             continue
-        if backend in {"lua", "php", "ruby"}:
+        if backend == "lua":
+            if row["evidence_lane"] != "native_emitter_function_body_transpile":
+                raise SystemExit(
+                    "lua must stay locked on native_emitter_function_body_transpile evidence: "
+                    f"got {backend}={row['evidence_lane']}"
+                )
+            continue
+        if backend in {"php", "ruby"}:
             if row["evidence_lane"] != "backend_native_fail_closed":
                 raise SystemExit(
-                    "long-tail backends must stay locked on backend_native_fail_closed evidence: "
+                    "php/ruby must stay locked on backend_native_fail_closed evidence: "
                     f"got {backend}={row['evidence_lane']}"
                 )
             continue
@@ -220,9 +228,16 @@ def validate_relative_import_noncpp_rollout() -> None:
                     f"got {backend}={row['next_verification_lane']}"
                 )
             continue
+        if backend == "lua":
+            if row["next_verification_lane"] != "transpile_smoke_locked":
+                raise SystemExit(
+                    "lua must move to transpile_smoke_locked after the representative support bundle: "
+                    f"got {backend}={row['next_verification_lane']}"
+                )
+            continue
         if row["next_verification_lane"] != "longtail_relative_import_support_rollout":
             raise SystemExit(
-                "long-tail backends must stay on the active longtail_relative_import_support_rollout lane: "
+                "remaining long-tail backends must stay on the active longtail_relative_import_support_rollout lane: "
                 f"got {backend}={row['next_verification_lane']}"
             )
 
@@ -262,7 +277,7 @@ def validate_relative_import_noncpp_rollout_handoff() -> None:
             not in doc_text
         ):
             raise SystemExit(
-                "relative import backend parity docs must mention the current JVM evidence lane: "
+                "relative import backend parity docs must mention the current long-tail bundle evidence lane: "
                 f"{doc_path}"
             )
         if (

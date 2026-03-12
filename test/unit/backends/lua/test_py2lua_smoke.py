@@ -18,6 +18,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "test" / "unit") not in sys.path:
+    sys.path.insert(0, str(ROOT / "test" / "unit"))
 if str(ROOT / "test" / "unit" / "backends") not in sys.path:
     sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
@@ -26,9 +28,16 @@ from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments
 from relative_import_longtail_smoke_support import (
+    relative_import_longtail_expected_rewrite,
     relative_import_longtail_scenarios,
+    transpile_relative_import_longtail_project,
     transpile_relative_import_longtail_expect_failure,
 )
+
+
+LUA_RELATIVE_IMPORT_REWRITE_MARKER = "helper.f()"
+LUA_RELATIVE_IMPORT_MODULE_ALIAS_FORBIDDEN = "h.f()"
+LUA_RELATIVE_IMPORT_SYMBOL_ALIAS_FORBIDDEN = "g()"
 
 
 def load_east(
@@ -94,16 +103,21 @@ class Py2LuaSmokeTest(unittest.TestCase):
         lua = transpile_to_lua_native(east)
         self.assertIn("~y", lua)
 
-    def test_cli_relative_import_support_rollout_fail_closed_for_lua(self) -> None:
-        for scenario_id, scenario in relative_import_longtail_scenarios().items():
+    def test_cli_relative_import_support_rollout_scenarios_transpile_for_lua(self) -> None:
+        for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
             with self.subTest(scenario_id=scenario_id):
-                err = transpile_relative_import_longtail_expect_failure(
-                    "lua",
-                    str(scenario["import_form"]),
-                    str(scenario["representative_expr"]),
-                )
-                self.assertIn("unsupported relative import form: relative import", err)
-                self.assertIn("lua native emitter", err)
+                lua = transpile_relative_import_longtail_project("lua", scenario_id)
+                positive, forbidden = relative_import_longtail_expected_rewrite(scenario_id)
+                self.assertEqual(positive, LUA_RELATIVE_IMPORT_REWRITE_MARKER)
+                if scenario_id == "parent_module_alias":
+                    self.assertEqual(forbidden, LUA_RELATIVE_IMPORT_MODULE_ALIAS_FORBIDDEN)
+                    self.assertIn("helper.f()", lua)
+                    self.assertNotIn("h.f()", lua)
+                else:
+                    self.assertEqual(forbidden, LUA_RELATIVE_IMPORT_SYMBOL_ALIAS_FORBIDDEN)
+                    self.assertIn("helper.f()", lua)
+                    self.assertNotIn("g()", lua)
+                self.assertNotIn("(not yet mapped)", lua)
 
     def test_cli_relative_import_support_rollout_fail_closed_for_wildcard_on_lua(self) -> None:
         err = transpile_relative_import_longtail_expect_failure(

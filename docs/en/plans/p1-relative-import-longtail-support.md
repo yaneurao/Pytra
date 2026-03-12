@@ -7,7 +7,7 @@ Related TODO:
 
 Background:
 - C++ already satisfies the relative-import baseline through multi-file build/run smoke.
-- `rs/cs/go/java/js/kotlin/nim/scala/swift/ts` already own a transpile-smoke baseline, while `lua/php/ruby` still remain on the archived long-tail `fail_closed_locked + backend_native_fail_closed` baseline.
+- `rs/cs/go/java/js/kotlin/nim/scala/swift/ts` already own a transpile-smoke baseline, and `lua` has now moved its representative alias-rewrite lane to `transpile_smoke_locked + native_emitter_function_body_transpile`. `php/ruby` still remain on the archived long-tail `fail_closed_locked + backend_native_fail_closed` baseline.
 - The archived support-rollout plan fixed only the handoff and closed, so there is no live plan for the actual support implementation.
 - The Pytra-NES experiment needs package-structured Python to move through the transpiler, so the staged relative-import rollout should be pulled forward.
 
@@ -48,12 +48,13 @@ Decision log:
 - 2026-03-12: Keep the archived support-rollout plan as handoff history, and reopen the live implementation plan at the same `p1-relative-import-longtail-support.md` path.
 - 2026-03-12: Limit the first implementation bundle to the Lua backend; keep PHP/Ruby as fail-closed residuals in the contract.
 - 2026-03-12: Implement Lua support with the same relative-import alias rewriting strategy already used by Go/Nim/Swift, and lock the representative smoke on the direct native-emitter transpile lane.
+- 2026-03-12: After the Lua bundle lands, record the current long-tail rollout as `mixed_rollout_locked`, with `lua` as the smoke-locked backend and `php/ruby` as the remaining fail-closed residuals.
 
 ## Breakdown
 
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01] Advance the staged rollout for `lua/php/ruby` and sync the current relative-import support state into docs, tooling, and backend coverage.
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S1-01] Reopen the active plan, TODO, and support handoff for the live implementation work.
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-01] Add relative-import alias rewriting to the Lua native emitter and switch the representative smoke and contracts to the success lane.
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S1-01] Reopen the active plan, TODO, and support handoff for the live implementation work.
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-01] Add relative-import alias rewriting to the Lua native emitter and switch the representative smoke and contracts to the success lane.
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-02] Extend the same representative scenarios to the PHP backend and update the contracts, smoke tests, and parity docs.
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-03] Extend the same representative scenarios to the Ruby backend and update the contracts, smoke tests, and parity docs.
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S3-01] Sync backend coverage, parity docs, and archived handoff wording to the final rollout state and close the task.

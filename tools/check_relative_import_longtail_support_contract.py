@@ -44,7 +44,7 @@ EXPECTED_FOCUSED_VERIFICATION_LANES = (
 )
 
 EXPECTED_HANDOFF = {
-    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01",
+    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01",
     "active_plan_paths": (
         "docs/ja/plans/p1-relative-import-longtail-support.md",
         "docs/en/plans/p1-relative-import-longtail-support.md",
@@ -64,12 +64,13 @@ EXPECTED_HANDOFF = {
     "backends": ("lua", "php", "ruby"),
     "verification_lane": "longtail_relative_import_support_rollout",
     "fail_closed_lane": "backend_specific_fail_closed",
-    "current_contract_state": "fail_closed_locked",
-    "current_evidence_lane": "backend_native_fail_closed",
+    "current_contract_state": "mixed_rollout_locked",
+    "current_evidence_lane": "mixed_backend_evidence",
     "prereq_bundle_id": "longtail_relative_import_rollout",
     "followup_bundle_id": "none",
     "followup_backends": (),
     "followup_verification_lane": "none",
+    "remaining_rollout_backends": ("php", "ruby"),
 }
 
 
@@ -105,16 +106,28 @@ def validate_relative_import_longtail_support_contract() -> None:
                 "relative import long-tail support scenario coverage drifted: "
                 f"{entry['backend']}={entry['scenario_ids']}"
             )
-        if entry["current_contract_state"] != "fail_closed_locked":
-            raise SystemExit(
-                "long-tail support backend must keep the archived fail-closed baseline: "
-                f"{entry['backend']}={entry['current_contract_state']}"
-            )
-        if entry["current_evidence_lane"] != "backend_native_fail_closed":
-            raise SystemExit(
-                "long-tail support backend must keep backend_native_fail_closed as current evidence: "
-                f"{entry['backend']}={entry['current_evidence_lane']}"
-            )
+        if entry["backend"] == "lua":
+            if entry["current_contract_state"] != "transpile_smoke_locked":
+                raise SystemExit(
+                    "lua must move to transpile_smoke_locked in the active long-tail rollout: "
+                    f"{entry['current_contract_state']}"
+                )
+            if entry["current_evidence_lane"] != "native_emitter_function_body_transpile":
+                raise SystemExit(
+                    "lua must use native_emitter_function_body_transpile as current evidence: "
+                    f"{entry['current_evidence_lane']}"
+                )
+        else:
+            if entry["current_contract_state"] != "fail_closed_locked":
+                raise SystemExit(
+                    "php/ruby must remain fail_closed_locked during the live rollout: "
+                    f"{entry['backend']}={entry['current_contract_state']}"
+                )
+            if entry["current_evidence_lane"] != "backend_native_fail_closed":
+                raise SystemExit(
+                    "php/ruby must keep backend_native_fail_closed as current evidence: "
+                    f"{entry['backend']}={entry['current_evidence_lane']}"
+                )
         if entry["verification_lane"] != "longtail_relative_import_support_rollout":
             raise SystemExit(
                 "long-tail support backend verification lane drifted: "
@@ -142,20 +155,32 @@ def validate_relative_import_longtail_support_contract() -> None:
             "relative import long-tail support coverage rows drifted from backend order"
         )
     for row in coverage_rows:
-        if row["contract_state"] != "fail_closed_locked":
-            raise SystemExit(
-                "relative import long-tail support coverage rows must stay fail_closed_locked: "
-                f"{row['backend']}={row['contract_state']}"
-            )
-        if row["evidence_lane"] != "backend_native_fail_closed":
-            raise SystemExit(
-                "relative import long-tail support coverage rows must stay backend_native_fail_closed: "
-                f"{row['backend']}={row['evidence_lane']}"
-            )
+        if row["backend"] == "lua":
+            if row["contract_state"] != "transpile_smoke_locked":
+                raise SystemExit(
+                    "lua coverage row must move to transpile_smoke_locked: "
+                    f"{row['contract_state']}"
+                )
+            if row["evidence_lane"] != "native_emitter_function_body_transpile":
+                raise SystemExit(
+                    "lua coverage row must use native_emitter_function_body_transpile: "
+                    f"{row['evidence_lane']}"
+                )
+        else:
+            if row["contract_state"] != "fail_closed_locked":
+                raise SystemExit(
+                    "php/ruby coverage rows must stay fail_closed_locked: "
+                    f"{row['backend']}={row['contract_state']}"
+                )
+            if row["evidence_lane"] != "backend_native_fail_closed":
+                raise SystemExit(
+                    "php/ruby coverage rows must stay backend_native_fail_closed: "
+                    f"{row['backend']}={row['evidence_lane']}"
+                )
     if relative_import_longtail_support_archive_snapshot() != {
         "prereq_bundle_id": EXPECTED_HANDOFF["prereq_bundle_id"],
-        "prereq_current_contract_state": EXPECTED_HANDOFF["current_contract_state"],
-        "prereq_current_evidence_lane": EXPECTED_HANDOFF["current_evidence_lane"],
+        "prereq_current_contract_state": "fail_closed_locked",
+        "prereq_current_evidence_lane": "backend_native_fail_closed",
         "prereq_followup_bundle_id": EXPECTED_HANDOFF["bundle_id"],
         "prereq_followup_verification_lane": EXPECTED_HANDOFF["verification_lane"],
     }:
@@ -163,11 +188,13 @@ def validate_relative_import_longtail_support_contract() -> None:
             "relative import long-tail support archive snapshot drifted from the archived bundle handoff"
         )
     if relative_import_longtail_support_handoff_snapshot() != {
-        "next_rollout_backends": EXPECTED_HANDOFF["backends"],
-        "next_verification_lane": EXPECTED_HANDOFF["verification_lane"],
-        "current_bundle_contract_state": EXPECTED_HANDOFF["current_contract_state"],
-        "current_bundle_evidence_lane": EXPECTED_HANDOFF["current_evidence_lane"],
-        "focused_verification_lanes": EXPECTED_FOCUSED_VERIFICATION_LANES,
+            "next_rollout_backends": EXPECTED_HANDOFF["remaining_rollout_backends"],
+            "next_verification_lane": EXPECTED_HANDOFF["verification_lane"],
+            "current_bundle_contract_state": EXPECTED_HANDOFF["current_contract_state"],
+            "current_bundle_evidence_lane": EXPECTED_HANDOFF["current_evidence_lane"],
+            "current_bundle_smoke_locked_backends": ("lua",),
+            "current_bundle_fail_closed_locked_backends": ("php", "ruby"),
+            "focused_verification_lanes": EXPECTED_FOCUSED_VERIFICATION_LANES,
     }:
         raise SystemExit(
             "relative import long-tail support handoff snapshot drifted from backend coverage"

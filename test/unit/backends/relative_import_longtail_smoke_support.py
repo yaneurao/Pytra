@@ -50,6 +50,27 @@ def _load_relative_import_longtail_east(entry_path: Path, target: str) -> dict[s
     return east if isinstance(east, dict) else {}
 
 
+def transpile_relative_import_longtail_project(target: str, scenario_id: str) -> str:
+    scenario = relative_import_longtail_scenarios()[scenario_id]
+    emitters = {
+        "lua": transpile_to_lua_native,
+        "php": transpile_to_php_native,
+        "ruby": transpile_to_ruby_native,
+    }
+    emit = emitters[target]
+    with tempfile.TemporaryDirectory() as td:
+        entry_path = write_relative_import_longtail_project(
+            Path(td),
+            import_form=str(scenario["import_form"]),
+            body_text=(
+                "def call() -> int:\n"
+                f"    return {scenario['representative_expr']}\n"
+            ),
+        )
+        east = _load_relative_import_longtail_east(entry_path, target)
+        return emit(east)
+
+
 def transpile_relative_import_longtail_expect_failure(
     target: str,
     import_form: str,
@@ -76,3 +97,13 @@ def transpile_relative_import_longtail_expect_failure(
         except Exception as exc:
             return str(exc)
     raise AssertionError(f"expected failure for {target} relative-import project")
+
+
+def relative_import_longtail_expected_rewrite(
+    scenario_id: str,
+) -> tuple[str, str]:
+    if scenario_id == "parent_module_alias":
+        return ("helper.f()", "h.f()")
+    if scenario_id == "parent_symbol_alias":
+        return ("helper.f()", "g()")
+    raise KeyError(f"unknown long-tail relative-import scenario: {scenario_id}")

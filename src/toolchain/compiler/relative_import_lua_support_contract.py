@@ -18,8 +18,8 @@ RELATIVE_IMPORT_LUA_SUPPORT_SCENARIOS_V1: Final[list[dict[str, object]]] = [
 RELATIVE_IMPORT_LUA_SUPPORT_BACKEND_V1: Final[dict[str, object]] = {
     "backend": "lua",
     "scenario_ids": ("parent_module_alias", "parent_symbol_alias"),
-    "current_contract_state": "fail_closed_locked",
-    "current_evidence_lane": "backend_native_fail_closed",
+    "current_contract_state": "transpile_smoke_locked",
+    "current_evidence_lane": "native_emitter_function_body_transpile",
     "verification_lane": "longtail_relative_import_support_rollout",
     "focused_verification_lane": "lua_relative_import_support_rollout_smoke",
     "fail_closed_lane": "backend_specific_fail_closed",
@@ -28,18 +28,23 @@ RELATIVE_IMPORT_LUA_SUPPORT_BACKEND_V1: Final[dict[str, object]] = {
 RELATIVE_IMPORT_LUA_SUPPORT_SMOKE_V1: Final[dict[str, object]] = {
     "smoke_test_file": "test/unit/backends/lua/test_py2lua_smoke.py",
     "focused_tests": (
-        "test_cli_relative_import_support_rollout_fail_closed_for_lua",
+        "test_cli_relative_import_support_rollout_scenarios_transpile_for_lua",
         "test_cli_relative_import_support_rollout_fail_closed_for_wildcard_on_lua",
     ),
-    "expected_error_family": (
-        "unsupported relative import form: relative import",
-        "unsupported relative import form: wildcard import",
+    "expected_rewrite_markers": (
+        "helper.f()",
     ),
+    "expected_emitter_markers": (
+        "_collect_relative_import_name_aliases",
+        "self.relative_import_name_aliases = _collect_relative_import_name_aliases(body)",
+        "return self.relative_import_name_aliases.get(ident, ident)",
+    ),
+    "expected_error_family": ("unsupported relative import form: wildcard import",),
     "expected_backend_marker": "lua native emitter",
 }
 
 RELATIVE_IMPORT_LUA_SUPPORT_HANDOFF_V1: Final[dict[str, object]] = {
-    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01",
+    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01-S2-01",
     "parent_todo_id": RELATIVE_IMPORT_LONGTAIL_SUPPORT_HANDOFF_V1["todo_id"],
     "active_plan_paths": RELATIVE_IMPORT_LONGTAIL_SUPPORT_HANDOFF_V1["active_plan_paths"],
     "support_contract_inventory": "src/toolchain/compiler/relative_import_longtail_support_contract.py",

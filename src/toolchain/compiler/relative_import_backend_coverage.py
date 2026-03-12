@@ -50,9 +50,9 @@ RELATIVE_IMPORT_BACKEND_COVERAGE_V1: Final[list[dict[str, str]]] = [
     },
     {
         "backend": "lua",
-        "contract_state": "fail_closed_locked",
-        "evidence_lane": "backend_native_fail_closed",
-        "notes": "The archived long-tail fail-closed bundle locks representative relative-import projects as backend-native fail-closed rejection, and the active follow-up is the long-tail support rollout.",
+        "contract_state": "transpile_smoke_locked",
+        "evidence_lane": "native_emitter_function_body_transpile",
+        "notes": "Representative relative-import smoke is now locked through direct native-emitter function-body transpile checks; wildcard import remains fail-closed while PHP/Ruby stay in the residual long-tail rollout.",
     },
     {
         "backend": "nim",
@@ -146,9 +146,9 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
     {
         "backend": "lua",
         "rollout_wave": "long_tail",
-        "next_verification_lane": "longtail_relative_import_support_rollout",
+        "next_verification_lane": "transpile_smoke_locked",
         "fail_closed_lane": "backend_specific_fail_closed",
-        "notes": "The archived long-tail fail-closed bundle is fixed, and the active follow-up is the long-tail support rollout.",
+        "notes": "Representative long-tail relative-import support is now locked for Lua; wildcard relative import remains fail-closed.",
     },
     {
         "backend": "nim",
@@ -196,7 +196,7 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_V1: Final[list[dict[str, str]]] = [
 
 
 RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
-    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01",
+    "todo_id": "P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01",
     "coverage_inventory": "src/toolchain/compiler/relative_import_backend_coverage.py",
     "coverage_checker": "tools/check_relative_import_backend_coverage.py",
     "backend_parity_docs": (
@@ -214,23 +214,24 @@ RELATIVE_IMPORT_NONCPP_ROLLOUT_HANDOFF_V1: Final[dict[str, object]] = {
         "java",
         "js",
         "kotlin",
+        "lua",
         "nim",
         "scala",
         "swift",
         "ts",
     ),
-    "next_rollout_backends": ("lua", "php", "ruby"),
-    "current_bundle_smoke_locked_backends": (),
-    "current_bundle_fail_closed_locked_backends": ("lua", "php", "ruby"),
-    "current_bundle_contract_state": "fail_closed_locked",
-    "current_bundle_evidence_lane": "backend_native_fail_closed",
+    "next_rollout_backends": ("php", "ruby"),
+    "current_bundle_smoke_locked_backends": ("lua",),
+    "current_bundle_fail_closed_locked_backends": ("php", "ruby"),
+    "current_bundle_contract_state": "mixed_rollout_locked",
+    "current_bundle_evidence_lane": "mixed_backend_evidence",
     "second_wave_bundle_order": (
         "locked_js_ts_smoke_bundle",
         "native_path_bundle",
         "jvm_package_bundle",
     ),
     "next_rollout_bundle": "longtail_relative_import_support_rollout",
-    "next_rollout_bundle_backends": ("lua", "php", "ruby"),
+    "next_rollout_bundle_backends": ("php", "ruby"),
     "followup_rollout_bundle": "none",
     "followup_rollout_bundle_backends": (),
     "followup_verification_lane": "none",
