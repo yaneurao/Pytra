@@ -3,7 +3,7 @@
 Last updated: 2026-03-12
 
 Related TODO:
-- `ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01` in `docs/en/todo/index.md`
+- Archived into `docs/en/todo/archive/20260312.md` on 2026-03-12.
 
 Background:
 - `src/runtime/cpp/native/core/py_runtime.h` has already been reduced significantly, and the typed collection compatibility plus generic `type_id` compatibility buckets are now empty in the header-surface inventory.

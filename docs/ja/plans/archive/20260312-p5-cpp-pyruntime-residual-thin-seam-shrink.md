@@ -3,7 +3,7 @@
 最終更新: 2026-03-12
 
 関連 TODO:
-- `docs/ja/todo/index.md` の `ID: P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01`
+- 2026-03-12 時点で `docs/ja/todo/archive/20260312.md` へ移管済み。
 
 背景:
 - `src/runtime/cpp/native/core/py_runtime.h` はすでに大きく縮小され、typed collection compatibility と generic `type_id` compatibility は header surface inventory 上は空になっている。

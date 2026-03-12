@@ -31,6 +31,7 @@
 - [2026-03-12 / P1-RELATIVE-IMPORT-LONGTAIL-IMPLEMENTATION-01](../plans/archive/20260312-p1-relative-import-longtail-support-implementation.md)
 - [2026-03-12 / P2-RELATIVE-IMPORT-BACKEND-COVERAGE-01](../plans/archive/20260312-p2-relative-import-backend-coverage.md)
 - [2026-03-12 / P2-RELATIVE-IMPORT-NONCPP-ROLLOUT-01](../plans/archive/20260312-p2-relative-import-noncpp-rollout.md)
+- [2026-03-12 / P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01](../plans/archive/20260312-p5-cpp-pyruntime-residual-thin-seam-shrink.md)
 - [2026-03-12 / P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01](../plans/archive/20260312-p0-homogeneous-tuple-ellipsis-support.md)
 - [2026-03-12 / P0-CPP-RELATIVE-IMPORT-LINKED-SYMBOL-01](../plans/archive/20260312-p0-cpp-relative-import-linked-symbol-support.md)
 - [2026-03-12 / P0-RELATIVE-IMPORT-BARE-PARENT-01](../plans/archive/20260312-p0-relative-import-bare-parent-hardening.md)
