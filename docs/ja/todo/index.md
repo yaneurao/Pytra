@@ -32,3 +32,6 @@
 ## 未完了タスク
 
 - [ ] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01] `str(Path(...))` の representative C++ stringify lane を固定し、Pytra-NES blocker を外す（文脈: [p0-path-stringify-cpp-representative-support.md](../plans/p0-path-stringify-cpp-representative-support.md)）
+- [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01] backend parity の representative tier (`cpp/rs/cs`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p4-backend-parity-representative-rollout.md](../plans/p4-backend-parity-representative-rollout.md)）
+- [ ] [ID: P5-BACKEND-PARITY-SECONDARY-ROLLOUT-01] backend parity の secondary tier (`go/java/kt/scala/swift/nim`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p5-backend-parity-secondary-rollout.md](../plans/p5-backend-parity-secondary-rollout.md)）
+- [ ] [ID: P6-BACKEND-PARITY-LONGTAIL-ROLLOUT-01] backend parity の long-tail tier (`js/ts/lua/rb/php`) に残る未対応 cell を live rollout task として実装で埋める（文脈: [p6-backend-parity-longtail-rollout.md](../plans/p6-backend-parity-longtail-rollout.md)）
