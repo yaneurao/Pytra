@@ -5,7 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 from backends.rs.hooks.rs_hooks import build_rs_hooks
-from backends.common.emitter.code_emitter import CodeEmitter, reject_backend_typed_vararg_signatures
+from backends.common.emitter.code_emitter import (
+    CodeEmitter,
+    reject_backend_homogeneous_tuple_ellipsis_type_exprs,
+    reject_backend_typed_vararg_signatures,
+)
 from toolchain.compiler.transpile_cli import make_user_error
 from toolchain.frontends.type_expr import type_expr_to_string
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
@@ -4488,5 +4492,6 @@ class RustEmitter(CodeEmitter):
 def transpile_to_rust(east_doc: dict[str, Any]) -> str:
     """EAST ドキュメントを Rust コードへ変換する。"""
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Rust backend")
+    reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Rust backend")
     emitter = RustEmitter(east_doc)
     return emitter.transpile()

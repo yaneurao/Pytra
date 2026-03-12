@@ -33,7 +33,7 @@ Last updated: 2026-03-12
 
 1. [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01] Accept `tuple[T, ...]` as a category distinct from fixed tuples and make representative backends treat it as an immutable sequence.
    Context: [p0-homogeneous-tuple-ellipsis-support.md](/workspace/Pytra/docs/en/plans/p0-homogeneous-tuple-ellipsis-support.md)
-   - `P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01`: `S2-02` fixed the representative C++ lane as `tuple[T, ...] -> list<T>`. Next the backend policy will be tightened and unsupported lanes will be locked fail-closed.
+   - `P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01`: `S3-01` fixed the representative policy as `C++ only`, and non-C++ backends now fail closed on homogeneous tuple ellipsis lanes with `unsupported_syntax`. Next the docs / inventory / closeout will be synchronized.
 
 2. [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01] Treat `dataclasses.field(...)` as a static dataclass metadata subset rather than a runtime call, with representative lanes locked by fail-closed contracts.
    Context: [p1-dataclass-field-static-subset.md](/workspace/Pytra/docs/en/plans/p1-dataclass-field-static-subset.md)

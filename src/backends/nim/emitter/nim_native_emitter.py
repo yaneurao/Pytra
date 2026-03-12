@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from backends.common.emitter.code_emitter import reject_backend_typed_vararg_signatures
+from backends.common.emitter.code_emitter import (
+    reject_backend_general_union_type_exprs,
+    reject_backend_homogeneous_tuple_ellipsis_type_exprs,
+    reject_backend_typed_vararg_signatures,
+)
 
 from typing import Any
 
-from backends.common.emitter.code_emitter import reject_backend_general_union_type_exprs
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 
 
@@ -1539,5 +1542,6 @@ class NimNativeEmitter:
 
 def transpile_to_nim_native(east_doc: dict[str, Any]) -> str:
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Nim backend")
+    reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Nim backend")
     emitter = NimNativeEmitter(east_doc)
     return emitter.transpile()

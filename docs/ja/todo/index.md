@@ -33,7 +33,7 @@
 
 1. [ ] [ID: P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01] `tuple[T, ...]` を fixed tuple と別 category として受理し、representative backend で immutable sequence として扱えるようにする。
    文脈: [p0-homogeneous-tuple-ellipsis-support.md](/workspace/Pytra/docs/ja/plans/p0-homogeneous-tuple-ellipsis-support.md)
-   - `P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01`: `S2-02` で representative C++ lane は `tuple[T, ...] -> list<T>` に固定した。次は backend policy を整理して未対応 lane を fail-closed に固定する。
+   - `P0-HOMOGENEOUS-TUPLE-ELLIPSIS-SUPPORT-01`: `S3-01` で representative policy を `C++ only` に固定し、non-C++ backend は `unsupported_syntax` で homogeneous tuple ellipsis lane を fail-closed にした。次は docs / inventory / closeout を揃える。
 
 2. [ ] [ID: P1-DATACLASS-FIELD-STATIC-SUBSET-01] `dataclasses.field(...)` を runtime call ではなく静的 dataclass metadata subset として扱い、representative lane を fail-closed contract 付きで固定する。
    文脈: [p1-dataclass-field-static-subset.md](/workspace/Pytra/docs/ja/plans/p1-dataclass-field-static-subset.md)
