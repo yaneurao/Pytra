@@ -37,14 +37,17 @@ Verification commands:
 - `python3 tools/check_relative_import_longtail_support_contract.py`
 - `python3 tools/check_relative_import_lua_support_contract.py`
 - `python3 tools/check_relative_import_php_support_contract.py`
+- `python3 tools/check_relative_import_ruby_support_contract.py`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_backend_coverage.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_secondwave_rollout_contract.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_longtail_bundle_contract.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_longtail_support_contract.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_lua_support_contract.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_php_support_contract.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_relative_import_ruby_support_contract.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/lua -p 'test_py2lua_smoke.py' -k relative_import_support_rollout`
 - `PYTHONPATH=src:test/unit python3 test/unit/backends/php/test_py2php_smoke.py -k relative_import_support_rollout -v`
+- `PYTHONPATH=src:test/unit:test/unit/backends python3 -m unittest discover -s test/unit/backends/rb -p 'test_py2rb_smoke.py' -k relative_import_support_rollout`
 - `python3 tools/check_todo_priority.py`
 - `git diff --check`
 
@@ -54,6 +57,7 @@ Decision log:
 - 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01` is the closeout-first bundle that aligns the live plan / TODO / support contract / checker and the archive handoff together.
 - 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01` fixes the Lua-focused verification lane as `lua_relative_import_support_rollout_smoke`, while the current diagnostic family stays `backend_specific_fail_closed` and the current evidence lane stays `backend_native_fail_closed`.
 - 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02` fixes the PHP-focused verification lane as `php_relative_import_support_rollout_smoke` and locks the smoke ids plus diagnostic markers in a backend-local contract/checker.
+- 2026-03-12: `P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03` fixes the Ruby-focused verification lane as `ruby_relative_import_support_rollout_smoke` and locks the smoke ids plus diagnostic markers in a backend-local contract/checker.
 
 ## Breakdown
 
@@ -61,5 +65,5 @@ Decision log:
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01] Archive the long-tail fail-closed bundle and add the live support rollout plan / TODO / contract / checker / handoff.
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01] Fix the representative support-rollout contract and focused verification lane for the Lua backend.
 - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02] Lock the representative support-rollout contract and focused verification lane for the PHP backend with inventory / checker / smoke coverage.
-- [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03] Fix the representative support-rollout contract and focused verification lane for the Ruby backend.
+- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03] Lock the representative support-rollout contract and focused verification lane for the Ruby backend with inventory / checker / smoke coverage.
 - [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S3-01] Sync backend-parity docs / coverage inventory / active handoff wording to the current support-rollout state and close the task.
