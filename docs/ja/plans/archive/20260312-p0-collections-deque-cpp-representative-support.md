@@ -45,11 +45,12 @@
 - 2026-03-12: baseline は `test_deque_annotation_current_baseline_still_leaks_raw_cpp_type` で固定し、current C++ emitter が `deque[float64]` を raw type のまま出していることを representative failure とする。
 - 2026-03-12: `S2-01` では runtime alias を増やさず、C++ type lowering は `::std::deque<T>` 直 lowering とし、`py_types.h` / header builder に `<deque>` include を足す最小 bundle で通す。
 - 2026-03-12: `S2-02` では plain class の general ctor policy には触れず、Pytra-NES blocker に直結する dataclass field lane に限定して `init=False` の zero-arg ctor と `default_factory=deque` の compile smoke を固定する。
+- 2026-03-12: `S3-01` では C++ support wording を `partial` とし、`deque[T]` の representative contract は type lowering と dataclass field lane に限定、full `deque` API 互換は非対象として明記する。
 
 ## 分解
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01] `collections.deque[T]` の representative C++ lane を固定し、Pytra-NES blocker を外す。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01] `collections.deque[T]` の representative C++ lane を固定し、Pytra-NES blocker を外す。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S1-01] current baseline failure と representative scope を focused regression / TODO / plan で固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S2-01] `deque[T]` の C++ type lowering を representative lane で固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S2-02] zero-arg ctor / dataclass field member lane を representative C++ emission に揃える。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S3-01] docs / regression / support wording を current contract に同期して閉じる。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S3-01] docs / regression / support wording を current contract に同期して閉じる。
