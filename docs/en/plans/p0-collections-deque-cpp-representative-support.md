@@ -44,11 +44,12 @@ Decision log:
 - 2026-03-12: v1 only targets the representative C++ lane; non-C++ rollout is deferred.
 - 2026-03-12: The baseline is locked by `test_deque_annotation_current_baseline_still_leaks_raw_cpp_type`, which records the current representative failure where the C++ emitter still outputs raw `deque[float64]`.
 - 2026-03-12: `S2-01` keeps the runtime surface minimal by lowering directly to `::std::deque<T>` and adding only the required `<deque>` includes in `py_types.h` and the header builder.
+- 2026-03-12: `S2-02` stays scoped to the dataclass field lane that blocks Pytra-NES, locking `init=False` zero-arg construction and `default_factory=deque` compile smoke without changing the general plain-class constructor policy.
 
 ## Breakdown
 
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01] Lock the representative C++ lane for `collections.deque[T]` and remove the Pytra-NES blocker.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S1-01] Lock the current baseline failure and representative scope in focused regressions / TODO / plan.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S2-01] Lock representative C++ type lowering for `deque[T]`.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S2-02] Align the zero-arg constructor / dataclass-field member lane with representative C++ emission.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S2-02] Align the zero-arg constructor / dataclass-field member lane with representative C++ emission.
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S3-01] Sync docs / regressions / support wording to the current contract and close the task.
