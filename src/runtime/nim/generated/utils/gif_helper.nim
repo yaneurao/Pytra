@@ -136,4 +136,5 @@ proc save_gif*(path: string, width: int, height: int, frames: seq[seq[uint8]], p
     `out`.add(0)
   `out`.add(59)
   var f = open(path, "wb")
-  # unsupported stmt: Try
+  f.write(`out`)
+  f.close()

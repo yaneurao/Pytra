@@ -560,6 +560,8 @@ class NimNativeEmitter:
             self._emit_for(stmt)
         elif kind == "Raise":
             self._emit_raise(stmt)
+        elif kind == "Try":
+            self._emit_try(stmt)
         elif kind == "Pass":
             self._emit_line("discard")
         elif kind == "Import":
@@ -1095,6 +1097,29 @@ class NimNativeEmitter:
                 self._emit_stmt(s)
         self._leave_scope()
         self.indent -= 1
+
+    def _emit_try(self, stmt: dict[str, Any]) -> None:
+        body_any = stmt.get("body")
+        body = body_any if isinstance(body_any, list) else []
+        handlers_any = stmt.get("handlers")
+        handlers = handlers_any if isinstance(handlers_any, list) else []
+        for child in body:
+            if isinstance(child, dict):
+                self._emit_stmt(child)
+        for handler in handlers:
+            if not isinstance(handler, dict):
+                continue
+            body_any = handler.get("body")
+            body = body_any if isinstance(body_any, list) else []
+            for child in body:
+                if isinstance(child, dict):
+                    self._emit_stmt(child)
+        for key in ("orelse", "finalbody"):
+            block_any = stmt.get(key)
+            block = block_any if isinstance(block_any, list) else []
+            for child in block:
+                if isinstance(child, dict):
+                    self._emit_stmt(child)
 
     def _emit_for(self, stmt: dict[str, Any]) -> None:
         target_plan = stmt.get("target_plan")

@@ -121,13 +121,15 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                     "src/runtime/nim/generated/utils/png_helper.nim",
                 )
 
-    def test_run_py2x_nim_png_helper_surfaces_try_blocker(self) -> None:
-        with self.assertRaisesRegex(RuntimeError, "unsupported stmt kind: Try"):
-            gen_mod.run_py2x(
-                "nim",
-                "src/pytra/utils/png.py",
-                "src/runtime/nim/generated/utils/png_helper.nim",
-            )
+    def test_run_py2x_nim_png_helper_lowers_try_finally(self) -> None:
+        out = gen_mod.run_py2x(
+            "nim",
+            "src/pytra/utils/png.py",
+            "src/runtime/nim/generated/utils/png_helper.nim",
+        )
+        self.assertIn("f.write(png)", out)
+        self.assertIn("f.close()", out)
+        self.assertNotIn("# unsupported stmt: Try", out)
 
 
 if __name__ == "__main__":
