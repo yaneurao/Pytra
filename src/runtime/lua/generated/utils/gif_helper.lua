@@ -4,12 +4,10 @@
 
 dofile((debug.getinfo(1, "S").source:sub(2):match("^(.*[\\/])") or "") .. "py_runtime.lua")
 
--- from __future__ import annotations as annotations (not yet mapped)
-
 "アニメーションGIFを書き出すための最小ヘルパー。"
 function _gif_append_list(dst, src)
-    i = 0
-    n = #(src)
+    local i = 0
+    local n = #(src)
     while (i < n) do
         table.insert(dst, src[(((i) < 0) and (#(src) + (i) + 1) or ((i) + 1))])
         i = i + 1
@@ -17,63 +15,63 @@ function _gif_append_list(dst, src)
 end
 
 function _gif_u16le(v)
-    return { (v + 255), ((v + 8) + 255) }
+    return { (v & 255), ((v >> 8) & 255) }
 end
 
 function _lzw_encode(data, min_code_size)
     if (#(data) == 0) then
         return __pytra_bytes({  })
     end
-    clear_code = (1 + min_code_size)
-    end_code = (clear_code + 1)
-    code_size = (min_code_size + 1)
+    local clear_code = (1 << min_code_size)
+    local end_code = (clear_code + 1)
+    local code_size = (min_code_size + 1)
     
     local out = {  }
-    bit_buffer = 0
-    bit_count = 0
+    local bit_buffer = 0
+    local bit_count = 0
     
-    bit_buffer = bit_buffer + (clear_code + bit_count)
+    bit_buffer = bit_buffer | (clear_code << bit_count)
     bit_count = bit_count + code_size
     while (bit_count >= 8) do
-        table.insert(out, (bit_buffer + 255))
-        bit_buffer = (bit_buffer + 8)
+        table.insert(out, (bit_buffer & 255))
+        bit_buffer = (bit_buffer >> 8)
         bit_count = bit_count - 8
     end
     code_size = (min_code_size + 1)
     
     for _, v in ipairs(data) do
-        bit_buffer = bit_buffer + (v + bit_count)
+        bit_buffer = bit_buffer | (v << bit_count)
         bit_count = bit_count + code_size
         while (bit_count >= 8) do
-            table.insert(out, (bit_buffer + 255))
-            bit_buffer = (bit_buffer + 8)
+            table.insert(out, (bit_buffer & 255))
+            bit_buffer = (bit_buffer >> 8)
             bit_count = bit_count - 8
         end
-        bit_buffer = bit_buffer + (clear_code + bit_count)
+        bit_buffer = bit_buffer | (clear_code << bit_count)
         bit_count = bit_count + code_size
         while (bit_count >= 8) do
-            table.insert(out, (bit_buffer + 255))
-            bit_buffer = (bit_buffer + 8)
+            table.insert(out, (bit_buffer & 255))
+            bit_buffer = (bit_buffer >> 8)
             bit_count = bit_count - 8
         end
         code_size = (min_code_size + 1)
     end
-    bit_buffer = bit_buffer + (end_code + bit_count)
+    bit_buffer = bit_buffer | (end_code << bit_count)
     bit_count = bit_count + code_size
     while (bit_count >= 8) do
-        table.insert(out, (bit_buffer + 255))
-        bit_buffer = (bit_buffer + 8)
+        table.insert(out, (bit_buffer & 255))
+        bit_buffer = (bit_buffer >> 8)
         bit_count = bit_count - 8
     end
     if (bit_count > 0) then
-        table.insert(out, (bit_buffer + 255))
+        table.insert(out, (bit_buffer & 255))
     end
     return __pytra_bytes(out)
 end
 
 function grayscale_palette()
     local p = {  }
-    i = 0
+    local i = 0
     while (i < 256) do
         table.move({i, i, i}, 1, 3, #(p) + 1, p)
         i = i + 1
@@ -122,13 +120,13 @@ function save_gif(path, width, height, frames, palette, delay_cs, loop)
         _gif_append_list(out, _gif_u16le(width))
         _gif_append_list(out, _gif_u16le(height))
         table.move({0, 8}, 1, 2, #(out) + 1, out)
-        compressed = _lzw_encode(__pytra_bytes(fr_list), 8)
-        pos = 0
+        local compressed = _lzw_encode(__pytra_bytes(fr_list), 8)
+        local pos = 0
         while (pos < #(compressed)) do
-            remain = (#(compressed) - pos)
-            chunk_len = (((remain > 255)) and (255) or (remain))
+            local remain = (#(compressed) - pos)
+            local chunk_len = (function() if __pytra_truthy((remain > 255)) then return (255) else return (remain) end end)()
             table.insert(out, chunk_len)
-            i = 0
+            local i = 0
             while (i < chunk_len) do
                 table.insert(out, compressed[((((pos + i)) < 0) and (#(compressed) + ((pos + i)) + 1) or (((pos + i)) + 1))])
                 i = i + 1
@@ -139,7 +137,7 @@ function save_gif(path, width, height, frames, palette, delay_cs, loop)
     end
     table.insert(out, 59)
     
-    f = open(path, "wb")
+    local f = open(path, "wb")
     f:write(__pytra_bytes(out))
     f:close()
 end

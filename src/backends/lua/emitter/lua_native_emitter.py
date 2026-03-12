@@ -37,6 +37,7 @@ _LUA_KEYWORDS = {
     "while",
 }
 _NIL_FREE_DECL_TYPES = {"int", "int64", "float", "float64", "bool", "str"}
+_COMPILETIME_STD_IMPORT_SYMBOLS = {"abi", "template", "extern"}
 
 
 def _safe_ident(name: Any, fallback: str = "value") -> str:
@@ -198,6 +199,11 @@ def _runtime_symbol_alias_line(alias_txt: str, runtime_module_id: str, runtime_s
     if mod.startswith("pytra.utils.") and sym != "":
         return "local " + alias_txt + " = __pytra_" + _safe_ident(sym, sym)
     return ""
+
+
+def _is_compile_time_std_import_symbol(module_id: str, symbol: str) -> bool:
+    mod = canonical_runtime_module_id(module_id.strip())
+    return mod == "pytra.std" and symbol in _COMPILETIME_STD_IMPORT_SYMBOLS
 
 
 def _reject_unsupported_relative_import_forms(body_any: Any) -> None:
@@ -684,6 +690,8 @@ class LuaNativeEmitter:
                     asname = ent.get("asname")
                     alias = asname if isinstance(asname, str) and asname != "" else sym
                     alias_txt = _safe_ident(alias, sym)
+                    if _is_compile_time_std_import_symbol(mod, sym):
+                        continue
                     if mod in {"pytra.utils.assertions", "pytra.std.test"} and sym == "py_assert_stdout":
                         import_lines.append(
                             "local py_assert_stdout = function(_expected, _fn) return true end"

@@ -160,6 +160,16 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("f.close()", out)
         self.assertNotIn("# unsupported stmt: Try", out)
 
+    def test_run_py2x_lua_gif_helper_ignores_compile_time_std_imports(self) -> None:
+        out = gen_mod.run_py2x(
+            "lua",
+            "src/pytra/utils/gif.py",
+            "src/runtime/lua/generated/utils/gif_helper.lua",
+        )
+        self.assertIn("function grayscale_palette()", out)
+        self.assertIn("function save_gif(", out)
+        self.assertNotIn("pytra.std.abi", out)
+
 
 if __name__ == "__main__":
     unittest.main()
