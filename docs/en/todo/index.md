@@ -30,3 +30,6 @@ Last updated: 2026-03-12
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01] Lock the representative C++ lane for `collections.deque[T]` and remove the Pytra-NES blocker (context: [p0-collections-deque-cpp-representative-support.md](../plans/p0-collections-deque-cpp-representative-support.md))
+  - 2026-03-12: The baseline failure is now locked in a focused regression and plan. Next is representative C++ type lowering for `deque[T]`.

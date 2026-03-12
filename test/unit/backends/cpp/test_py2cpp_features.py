@@ -4730,6 +4730,19 @@ class PadState:
         self.assertNotIn("PadState(int64 frame, deque[float64] timestamps", cpp)
         self.assertIn(": frame(frame)", cpp)
 
+    def test_deque_annotation_current_baseline_still_leaks_raw_cpp_type(self) -> None:
+        src = """from collections import deque
+
+class PadState:
+    timestamps: deque[float]
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "deque_annotation_case.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("deque[float64] timestamps;", cpp)
+
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
         src = """from dataclasses import dataclass, field
 

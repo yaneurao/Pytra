@@ -1,0 +1,52 @@
+# P0: Representative C++ support for `collections.deque[T]`
+
+Last updated: 2026-03-12
+
+Related TODO:
+- `ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01` in `docs/ja/todo/index.md`
+
+Background:
+- Pytra-NES uses dataclass fields such as `timestamps: deque[float] = field(init=False, repr=False)` in real code.
+- The `field(...)` leak itself is already fixed, but the C++ emitter still outputs raw `deque[float64]`, so the representative C++ lane is not complete yet.
+- The current user need is not full Python `collections.deque` compatibility; it is a representative C++ lane that unblocks Pytra-NES.
+
+Goal:
+- Make `collections.deque[T]` usable in the representative C++ lane and unblock the Pytra-NES dataclass-field / mutable-queue use case.
+- Keep this separate from the `field(...)` task and lock the `deque[T]` type / ctor / member lane as the current support contract.
+
+In scope:
+- `from collections import deque`
+- C++ type lowering for `deque[T]` annotations
+- representative dataclass-field and zero-arg constructor lanes
+- syncing focused regressions / docs / TODO
+
+Out of scope:
+- simultaneous rollout to all backends
+- full Python `deque` compatibility (`maxlen`, rotate, full rich API)
+- redesign of `collections` as a whole
+- reflection-like dataclass support
+
+Acceptance criteria:
+- A representative C++ regression locks the raw `deque[T]` type-leak baseline.
+- The ja/en plan and TODO mirrors record the Pytra-NES blocker and scope.
+- The follow-up bundles are split cleanly into `type lowering` and `zero-arg ctor/member lane`.
+
+Verification commands:
+- `python3 tools/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k deque`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/ir -p 'test_east_core_parser_behavior_classes.py' -k deque`
+- `python3 tools/build_selfhost.py`
+- `git diff --check`
+
+Decision log:
+- 2026-03-12: The static-metadata work for `dataclasses.field(...)` is already complete, so this task is restricted to `deque[T]` type lowering and representative runtime lanes rather than field semantics.
+- 2026-03-12: v1 only targets the representative C++ lane; non-C++ rollout is deferred.
+- 2026-03-12: The baseline is locked by `test_deque_annotation_current_baseline_still_leaks_raw_cpp_type`, which records the current representative failure where the C++ emitter still outputs raw `deque[float64]`.
+
+## Breakdown
+
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01] Lock the representative C++ lane for `collections.deque[T]` and remove the Pytra-NES blocker.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S1-01] Lock the current baseline failure and representative scope in focused regressions / TODO / plan.
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S2-01] Lock representative C++ type lowering for `deque[T]`.
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S2-02] Align the zero-arg constructor / dataclass-field member lane with representative C++ emission.
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REPRESENTATIVE-01-S3-01] Sync docs / regressions / support wording to the current contract and close the task.
