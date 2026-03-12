@@ -38,13 +38,27 @@ Verification:
 
 ## Breakdown
 
-- [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S1-01] Inventory the current `not_started` / `fail_closed` representative-tier cells and lock the live rollout order.
+- [x] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S1-01] Inventory the current `not_started` / `fail_closed` representative-tier cells and lock the live rollout order.
 - [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-01] Raise remaining `cpp` representative cells to `build_run_smoke` or `transpile_smoke`.
 - [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02] Raise remaining `rs` representative cells to at least `transpile_smoke`.
 - [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03] Raise remaining `cs` representative cells to at least `transpile_smoke`.
 - [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S3-01] Sync representative-tier matrix/docs/support wording to the final rollout state and close the task.
 
+## Locked Inventory / Rollout Order
+
+- Source of truth: [backend_parity_representative_rollout_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_representative_rollout_inventory.py)
+- Checker: [check_backend_parity_representative_rollout_inventory.py](/workspace/Pytra/tools/check_backend_parity_representative_rollout_inventory.py)
+- The current residual backends are `rs` and `cs` only; the `cpp` residual set is empty
+- Fixed bundle order:
+  - `cpp_locked_baseline`
+  - `rs_syntax_iter_bundle`
+  - `rs_stdlib_bundle`
+  - `cs_syntax_iter_bundle`
+  - `cs_stdlib_bundle`
+- The current next backend is `rs`
+
 ## Decision log
 
 - 2026-03-12: Because matrix/tier contracts are already archived, this plan focuses only on live implementation work that fills unsupported cells.
 - 2026-03-12: The representative tier remains ordered as `cpp -> rs -> cs`, and every implementation slice must update the matrix state as part of completion.
+- 2026-03-12: `S1-01` fixed the representative residual inventory in tooling, established that the current `cpp` residual set is empty, and narrowed the live implementation order to `rs -> cs`. Bundles stay split between syntax/iterator rows and stdlib rows so shared fixtures can move multiple cells at once.

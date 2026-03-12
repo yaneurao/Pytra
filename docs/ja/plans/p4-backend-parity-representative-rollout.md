@@ -38,13 +38,27 @@
 
 ## 分解
 
-- [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S1-01] representative tier の current `not_started` / `fail_closed` cell を inventory 化し、live rollout order を固定する。
+- [x] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S1-01] representative tier の current `not_started` / `fail_closed` cell を inventory 化し、live rollout order を固定する。
 - [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-01] `cpp` の未対応 representative cell を `build_run_smoke` または `transpile_smoke` へ引き上げる。
 - [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-02] `rs` の未対応 representative cell を `transpile_smoke` 以上へ引き上げる。
 - [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S2-03] `cs` の未対応 representative cell を `transpile_smoke` 以上へ引き上げる。
 - [ ] [ID: P4-BACKEND-PARITY-REPRESENTATIVE-ROLLOUT-01-S3-01] representative tier の matrix / docs / support wording を current rollout state に同期して閉じる。
 
+## 固定 inventory / rollout order
+
+- 正本: [backend_parity_representative_rollout_inventory.py](/workspace/Pytra/src/toolchain/compiler/backend_parity_representative_rollout_inventory.py)
+- checker: [check_backend_parity_representative_rollout_inventory.py](/workspace/Pytra/tools/check_backend_parity_representative_rollout_inventory.py)
+- current residual backend は `rs`, `cs` のみで、`cpp` residual は空
+- fixed bundle order:
+  - `cpp_locked_baseline`
+  - `rs_syntax_iter_bundle`
+  - `rs_stdlib_bundle`
+  - `cs_syntax_iter_bundle`
+  - `cs_stdlib_bundle`
+- current next backend は `rs`
+
 ## 決定ログ
 
 - 2026-03-12: parity matrix / rollout tier の contract は archive 済みのため、この plan は「未対応セルを実装で埋める live rollout」だけに責務を絞る。
 - 2026-03-12: representative tier は `cpp -> rs -> cs` の順に進め、matrix の `support_state` 更新は各実装 slice の完了条件に含める。
+- 2026-03-12: `S1-01` として representative residual inventory を tool 化し、現時点の `cpp` residual は空、live rollout の実装対象は `rs -> cs` だけだと固定した。bundle は syntax/iter と stdlib に分け、shared fixture を優先する。
