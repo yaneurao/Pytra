@@ -4397,6 +4397,12 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
+    def test_bytes_truthiness_runtime(self) -> None:
+        out = self._compile_and_run_fixture("bytes_truthiness")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
     def test_bytearray_basic_runtime(self) -> None:
         out = self._compile_and_run_fixture("bytearray_basic")
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]

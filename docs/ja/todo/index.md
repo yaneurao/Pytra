@@ -31,6 +31,5 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-BYTES-TRUTHINESS-CPP-REPRESENTATIVE-01] `bytes` truthiness の representative C++ lane を固定し、Pytra-NES blocker を外す（文脈: [p0-bytes-truthiness-cpp-representative-support.md](../plans/p0-bytes-truthiness-cpp-representative-support.md)）
 - [ ] [ID: P0-DATACLASS-FIELD-DEFAULT-FACTORY-RC-CPP-01] `field(default_factory=...)` の rc field lane を representative C++ contract に揃え、Pytra-NES blocker を外す（文脈: [p0-dataclass-field-default-factory-rc-cpp-support.md](../plans/p0-dataclass-field-default-factory-rc-cpp-support.md)）
 - [ ] [ID: P0-PATH-STRINGIFY-CPP-REPRESENTATIVE-01] `str(Path(...))` の representative C++ stringify lane を固定し、Pytra-NES blocker を外す（文脈: [p0-path-stringify-cpp-representative-support.md](../plans/p0-path-stringify-cpp-representative-support.md)）

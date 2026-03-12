@@ -786,6 +786,11 @@ class East3CppBridgeTest(unittest.TestCase):
         any_name = {"kind": "Name", "id": "v", "resolved_type": "Any"}
         self.assertEqual(emitter.render_cond(any_name), "py_to<bool>(v)")
 
+    def test_render_cond_for_bytes_routes_to_len_truthiness(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        bytes_name = {"kind": "Name", "id": "payload", "resolved_type": "bytes"}
+        self.assertEqual(emitter.render_cond(bytes_name), "py_len(payload) != 0")
+
     def test_render_unbox_honors_ctx_for_refclass_cast(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         emitter.ref_classes = {"Box"}
