@@ -98,7 +98,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
         php = transpile_to_php_native(east)
         self.assertIn("~$y", php)
 
-    def test_cli_relative_import_longtail_bundle_fail_closed_for_php(self) -> None:
+    def test_cli_relative_import_support_rollout_fail_closed_for_php(self) -> None:
         for scenario_id, scenario in relative_import_longtail_scenarios().items():
             with self.subTest(scenario_id=scenario_id):
                 err = transpile_relative_import_longtail_expect_failure(
@@ -109,7 +109,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
                 self.assertIn("unsupported relative import form: relative import", err)
                 self.assertIn("php native emitter", err)
 
-    def test_cli_relative_import_longtail_bundle_fail_closed_for_wildcard_on_php(self) -> None:
+    def test_cli_relative_import_support_rollout_fail_closed_for_wildcard_on_php(self) -> None:
         err = transpile_relative_import_longtail_expect_failure(
             "php",
             "from ..helper import *",

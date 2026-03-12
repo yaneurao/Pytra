@@ -35,6 +35,7 @@
   文脈: [docs/ja/plans/p1-relative-import-longtail-support.md](/workspace/Pytra/docs/ja/plans/p1-relative-import-longtail-support.md)
   - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01] archived long-tail fail-closed bundle を archive へ移し、support rollout の live plan / TODO / contract / checker / handoff を追加した。
   - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01] Lua backend の representative support rollout contract / checker / focused smoke lane を固定した。
+  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02] PHP backend の representative support rollout contract / checker / focused smoke lane を固定した。
 
 ### P1: archived long-tail fail-closed baseline を維持したまま、`lua/php/ruby` relative import support rollout の live handoff を固定する
 
@@ -43,6 +44,6 @@
 1. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01] archived long-tail fail-closed baseline を維持したまま、`lua/php/ruby` relative import support rollout の live handoff と representative contract を固定する。
 2. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01] archived long-tail fail-closed bundle を archive へ移し、support rollout の live plan / TODO / contract / checker / handoff を追加した。
 3. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01] Lua backend の representative support rollout contract と focused verification lane を固定する。
-4. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02] PHP backend の representative support rollout contract と focused verification lane を固定する。
+4. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02] PHP backend の representative support rollout contract と focused verification lane を fixed inventory / checker / smoke で固定した。
 5. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03] Ruby backend の representative support rollout contract と focused verification lane を固定する。
 6. [ ] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S3-01] backend parity docs / coverage inventory / active handoff wording を current support rollout state に同期して task を閉じる。
