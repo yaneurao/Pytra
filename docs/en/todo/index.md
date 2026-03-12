@@ -31,21 +31,4 @@ Last updated: 2026-03-12
 
 ## Unfinished Tasks
 
-- [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01] Fix the live handoff and representative contract for the `lua/php/ruby` relative-import support rollout while keeping the archived fail-closed baseline.
-  Context: [docs/en/plans/p1-relative-import-longtail-support.md](/workspace/Pytra/docs/en/plans/p1-relative-import-longtail-support.md)
-  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01] Archive the long-tail fail-closed bundle and add the live support rollout plan / TODO / contract / checker / handoff.
-  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01] Lock the Lua representative support-rollout contract, checker, and focused smoke lane.
-  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02] Lock the PHP representative support-rollout contract, checker, and focused smoke lane.
-  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03] Lock the Ruby representative support-rollout contract, checker, and focused smoke lane.
-  - [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S3-01] Sync backend-parity docs / coverage inventory / active handoff wording to the current support-rollout state and close the task.
-
-### P1: keep the archived long-tail fail-closed baseline and fix the live handoff for the `lua/php/ruby` relative-import support rollout
-
-Context: [docs/en/plans/p1-relative-import-longtail-support.md](/workspace/Pytra/docs/en/plans/p1-relative-import-longtail-support.md)
-
-1. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01] Fix the live handoff and representative contract for the `lua/php/ruby` relative-import support rollout while keeping the archived fail-closed baseline.
-2. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S1-01] Archive the long-tail fail-closed bundle and add the live support rollout plan / TODO / contract / checker / handoff.
-3. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-01] Fix the representative support-rollout contract and focused verification lane for the Lua backend.
-4. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-02] Lock the representative support-rollout contract and focused verification lane for the PHP backend with inventory / checker / smoke coverage.
-5. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S2-03] Lock the representative support-rollout contract and focused verification lane for the Ruby backend with inventory / checker / smoke coverage.
-6. [x] [ID: P1-RELATIVE-IMPORT-LONGTAIL-SUPPORT-01-S3-01] Sync backend-parity docs / coverage inventory / active handoff wording to the current support-rollout state and close the task.
+- There are currently no unfinished tasks.
