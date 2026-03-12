@@ -65,6 +65,7 @@
   }
   .backend-parity-grid th {
     background: #e2e8f0;
+    color: #111827;
     font-weight: 700;
   }
   .backend-parity-grid .feature,
