@@ -69,7 +69,8 @@
   }
   .backend-parity-grid .feature,
   .backend-parity-grid .fixture {
-    background: #f8fafc;
+    background: #ffffff;
+    color: #111827;
     text-align: left;
     white-space: nowrap;
   }

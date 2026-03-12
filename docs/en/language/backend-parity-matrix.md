@@ -69,7 +69,8 @@ This page is the canonical publish target for feature × backend support-state r
   }
   .backend-parity-grid .feature,
   .backend-parity-grid .fixture {
-    background: #f8fafc;
+    background: #ffffff;
+    color: #111827;
     text-align: left;
     white-space: nowrap;
   }
