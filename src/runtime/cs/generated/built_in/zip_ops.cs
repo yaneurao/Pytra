@@ -17,8 +17,8 @@ namespace Pytra.CsModule
         public static System.Collections.Generic.List<(A, B)> zip(System.Collections.Generic.List<A> lhs, System.Collections.Generic.List<B> rhs)
         {
             System.Collections.Generic.List<(A, B)> py_out = new System.Collections.Generic.List<(A, B)>();
-            int64 i = 0;
-            int64 n = (lhs).Count;
+            long i = 0;
+            long n = (lhs).Count;
             if (((rhs).Count) < (n)) {
                 n = (rhs).Count;
             }

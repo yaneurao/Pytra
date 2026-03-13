@@ -13,32 +13,32 @@ using Pytra.CsModule;
 
 public static class Program
 {
-    public static str join(str a, str b)
+    public static string join(string a, string b)
     {
         return __path.join(a, b);
     }
     
-    public static str dirname(str p)
+    public static string dirname(string p)
     {
         return __path.dirname(p);
     }
     
-    public static str basename(str p)
+    public static string basename(string p)
     {
         return __path.basename(p);
     }
     
-    public static (str, str) splitext(str p)
+    public static (string, string) splitext(string p)
     {
         return __path.splitext(p);
     }
     
-    public static str abspath(str p)
+    public static string abspath(string p)
     {
         return __path.abspath(p);
     }
     
-    public static bool exists(str p)
+    public static bool exists(string p)
     {
         return __path.exists(p);
     }

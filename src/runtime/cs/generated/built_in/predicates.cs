@@ -14,10 +14,10 @@ namespace Pytra.CsModule
 {
     public static class predicates_helper
     {
-        public static bool py_any(Any values)
+        public static bool py_any(object values)
         {
-            int64 i = 0;
-            int64 n = (values).Count();
+            long i = 0;
+            long n = (values).Count();
             while ((i) < (n)) {
                 if (Pytra.CsModule.py_runtime.py_bool(values[System.Convert.ToInt32(i)])) {
                     return true;
@@ -27,10 +27,10 @@ namespace Pytra.CsModule
             return false;
         }
 
-        public static bool py_all(Any values)
+        public static bool py_all(object values)
         {
-            int64 i = 0;
-            int64 n = (values).Count();
+            long i = 0;
+            long n = (values).Count();
             while ((i) < (n)) {
                 if (!(Pytra.CsModule.py_runtime.py_bool(values[System.Convert.ToInt32(i)]))) {
                     return false;

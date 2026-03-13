@@ -20,8 +20,8 @@ namespace Pytra.CsModule
                 return 0;
             }
             var acc = Pytra.CsModule.py_runtime.py_get(values, 0) - Pytra.CsModule.py_runtime.py_get(values, 0);
-            int64 i = 0;
-            int64 n = (values).Count;
+            long i = 0;
+            long n = (values).Count;
             while ((i) < (n)) {
                 acc += Pytra.CsModule.py_runtime.py_get(values, i);
                 i += 1;
