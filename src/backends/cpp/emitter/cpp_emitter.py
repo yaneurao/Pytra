@@ -369,6 +369,21 @@ class CppEmitter(
             i -= 1
         return False
 
+    def is_locally_declared(self, name: str) -> bool:
+        """Module import binding を除いた local shadow 判定。"""
+        if name == "":
+            return False
+        scope_len = len(self.scope_stack)
+        if scope_len <= 1:
+            return False
+        i = scope_len - 1
+        while i >= 1:
+            scope = self.scope_stack[i]
+            if name in scope:
+                return True
+            i -= 1
+        return False
+
     def should_declare_name_binding(
         self,
         stmt: dict[str, Any],
@@ -3712,11 +3727,11 @@ class CppEmitter(
     def _render_name_expr(self, expr_d: dict[str, Any]) -> str:
         """Name ノードを C++ 式へ変換する。"""
         name_txt = dict_any_get_str(expr_d, "id")
-        if name_txt != "" and not self.is_declared(name_txt):
+        if name_txt != "" and not self.is_locally_declared(name_txt):
             imported = self._resolve_imported_symbol(name_txt)
             imported_module = dict_any_get_str(imported, "module")
             imported_name = dict_any_get_str(imported, "name")
-            imported_ns = self.module_namespace_map.get(imported_module, "")
+            imported_module, imported_ns = self._resolve_imported_symbol_cpp_target(imported_module, imported_name)
             if imported_ns != "" and imported_name != "":
                 emitted_name = self.rename_if_reserved(
                     imported_name,

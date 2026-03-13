@@ -73,6 +73,18 @@ def main() -> None:
         self.assertIn('#include "generated/std/time.h"', cpp)
         self.assertIn("pytra::std::time::perf_counter()", cpp)
 
+    def test_frontend_facade_symbol_import_uses_runtime_namespace(self) -> None:
+        cpp = self._transpile(
+            """from toolchain.frontends import load_east3_document_typed
+
+def main(input_path: str) -> None:
+    _ = load_east3_document_typed(input_path)
+""",
+            "frontend_facade_symbol_case.py",
+        )
+        self.assertIn('#include "runtime/cpp/generated/compiler/transpile_cli.h"', cpp)
+        self.assertIn("pytra::compiler::transpile_cli::load_east3_document_typed(", cpp)
+
     def test_runtime_paths_uses_index_for_std_and_core_modules(self) -> None:
         self.assertEqual(module_name_to_cpp_include("math"), "generated/std/math.h")
         self.assertEqual(module_name_to_cpp_include("pytra.std.time"), "generated/std/time.h")
