@@ -659,7 +659,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
 
     def test_target_root_taxonomy_is_fixed(self) -> None:
         for entry in contract_mod.iter_remaining_noncpp_runtime_layout():
-            self.assertEqual(entry["target_roots"], ("generated", "native", "pytra"))
+            self.assertEqual(entry["target_roots"], ("generated", "native"))
 
     def test_generated_compare_baseline_is_fixed(self) -> None:
         self.assertEqual(
@@ -1177,7 +1177,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "generated/utils/png.go",
                 ),
                 "native_files": ("native/built_in/py_runtime.go",),
-                "compat_files": ("pytra/built_in/py_runtime.go",),
+                "delete_target_files": ("pytra/built_in/py_runtime.go",),
             },
         )
         self.assertEqual(
@@ -1395,7 +1395,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             ),
         )
         self.assertEqual(
-            by_backend["js"]["compat_files"],
+            by_backend["js"]["delete_target_files"],
             (
                 "pytra/README.md",
                 "pytra/py_runtime.js",
@@ -1471,7 +1471,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "generated/utils/png.php",
                 ),
                 "native_files": ("native/built_in/py_runtime.php",),
-                "compat_files": (
+                "delete_target_files": (
                     "pytra/py_runtime.php",
                     "pytra/std/time.php",
                     "pytra/utils/gif.php",
@@ -1517,7 +1517,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/png",
                 ),
                 "native_modules": ("built_in/py_runtime",),
-                "compat_modules": ("built_in/py_runtime",),
+                "delete_target_modules": ("built_in/py_runtime",),
                 "blocked_modules": (),
             },
         )
@@ -1585,7 +1585,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/png",
                 ),
                 "native_modules": ("built_in/py_runtime",),
-                "compat_modules": ("built_in/py_runtime",),
+                "delete_target_modules": ("built_in/py_runtime",),
                 "blocked_modules": (),
             },
         )
@@ -1622,7 +1622,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/png",
                 ),
                 "native_modules": ("built_in/py_runtime",),
-                "compat_modules": ("built_in/py_runtime",),
+                "delete_target_modules": ("built_in/py_runtime",),
                 "blocked_modules": (),
             },
         )
@@ -1659,7 +1659,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/png",
                 ),
                 "native_modules": ("built_in/py_runtime",),
-                "compat_modules": ("built_in/py_runtime",),
+                "delete_target_modules": ("built_in/py_runtime",),
                 "blocked_modules": (),
             },
         )
@@ -1696,7 +1696,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/png",
                 ),
                 "native_modules": ("built_in/py_runtime",),
-                "compat_modules": ("built_in/py_runtime",),
+                "delete_target_modules": ("built_in/py_runtime",),
                 "blocked_modules": (),
             },
         )
@@ -1736,7 +1736,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/png",
                 ),
                 "native_modules": ("built_in/py_runtime",),
-                "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
+                "delete_target_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
                 "blocked_modules": (),
             },
         )

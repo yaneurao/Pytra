@@ -18,7 +18,7 @@ from src.toolchain.compiler import noncpp_runtime_layout_rollout_remaining_contr
 
 
 _VALID_OWNERSHIP = ("native", "generated", "delete_target")
-_VALID_TARGET_ROOTS = ("generated", "native", "pytra")
+_VALID_TARGET_ROOTS = ("generated", "native")
 _VALID_WAVE_B_COMPAT_SMOKE_KINDS = ("direct_load", "source_reexport")
 _VALID_WAVE_B_GENERATED_COMPARE_SMOKE_KINDS = ("direct_load", "source_guard")
 _VALID_WAVE_A_GENERATED_COMPARE_SMOKE_KINDS = ("build_run_smoke", "source_guard")
@@ -126,15 +126,15 @@ def _collect_contract_issues() -> list[str]:
             target_root = target_prefix.removeprefix(f"src/runtime/{backend}/").split("/", 1)[0]
             if current_root not in current_roots:
                 issues.append(f"current prefix root drifted: {backend}: {current_prefix}")
-            if target_root not in _VALID_TARGET_ROOTS:
-                issues.append(f"target prefix root drifted: {backend}: {target_prefix}")
-
             if ownership == "generated" and target_root != "generated":
                 issues.append(f"generated lane target drifted: {backend}: {target_prefix}")
             if ownership == "native" and target_root != "native":
                 issues.append(f"native lane target drifted: {backend}: {target_prefix}")
-            if ownership == "delete_target" and target_root != "pytra":
-                issues.append(f"checked-in pytra debt lane drifted: {backend}: {target_prefix}")
+            if ownership == "delete_target":
+                if target_root != "pytra":
+                    issues.append(f"checked-in pytra debt lane drifted: {backend}: {target_prefix}")
+            elif target_root not in _VALID_TARGET_ROOTS:
+                issues.append(f"target prefix root drifted: {backend}: {target_prefix}")
 
             rationale = lane["rationale"].strip()
             if not rationale:
@@ -278,7 +278,7 @@ def _collect_target_module_buckets_for_backend(backend: str) -> dict[str, tuple[
     for ownership, inventory_key in (
         ("generated", "generated_files"),
         ("native", "native_files"),
-        ("delete_target", "compat_files"),
+        ("delete_target", "delete_target_files"),
     ):
         for rel_path in target_inventory[inventory_key]:
             label = _normalize_target_module_label(rel_path)
@@ -303,7 +303,7 @@ def _collect_target_inventory_issues() -> list[str]:
             issues.append(f"generated target inventory drifted: {backend}")
         if expanded["native"] != entry["native_files"]:
             issues.append(f"native target inventory drifted: {backend}")
-        if expanded["delete_target"] != entry["compat_files"]:
+        if expanded["delete_target"] != entry["delete_target_files"]:
             issues.append(f"compat target inventory drifted: {backend}")
     return issues
 
@@ -345,7 +345,7 @@ def _collect_module_bucket_issues() -> list[str]:
             issues.append(f"generated module bucket drifted: {backend}")
         if actual["native"] != entry["native_modules"]:
             issues.append(f"native module bucket drifted: {backend}")
-        if actual["delete_target"] != entry["compat_modules"]:
+        if actual["delete_target"] != entry["delete_target_modules"]:
             issues.append(f"compat module bucket drifted: {backend}")
         blocked = set(entry["blocked_modules"])
         if not blocked.issubset(compare_baseline):
@@ -520,7 +520,7 @@ def _collect_wave_b_compat_issues() -> list[str]:
         compare_shims = set(entry["generated_compare_shim_modules"])
         if substrate & compare_shims:
             issues.append(f"wave-b compat overlap drifted: {backend}")
-        if substrate | compare_shims != set(bucket["compat_modules"]):
+        if substrate | compare_shims != set(bucket["delete_target_modules"]):
             issues.append(f"wave-b compat coverage drifted: {backend}")
         if not compare_shims.issubset(set(generated_compare[backend]["materialized_compare_modules"])):
             issues.append(f"wave-b compat compare shim escaped generated compare set: {backend}")
@@ -551,7 +551,7 @@ def _collect_wave_b_compat_file_issues() -> list[str]:
             issues.append(f"wave-b compat file overlap drifted: {backend}: generated/ancillary")
         actual_files = {
             path.removeprefix("pytra/")
-            for path in target_inventory[backend]["compat_files"]
+            for path in target_inventory[backend]["delete_target_files"]
         }
         if substrate | compare_shims | ancillary != actual_files:
             issues.append(f"wave-b compat file inventory drifted: {backend}")
@@ -560,7 +560,7 @@ def _collect_wave_b_compat_file_issues() -> list[str]:
 
 def _collect_wave_b_compat_smoke_issues() -> list[str]:
     issues: list[str] = []
-    compat_files = {
+    delete_target_files = {
         entry["backend"]: entry
         for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_compat_files()
     }
@@ -573,7 +573,7 @@ def _collect_wave_b_compat_smoke_issues() -> list[str]:
         if smoke_kind not in _VALID_WAVE_B_COMPAT_SMOKE_KINDS:
             issues.append(f"wave-b compat smoke kind drifted: {backend}")
             continue
-        files_entry = compat_files.get(backend)
+        files_entry = delete_target_files.get(backend)
         if files_entry is None:
             issues.append(f"wave-b compat smoke backend drifted: {backend}")
             continue

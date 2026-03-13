@@ -32,14 +32,14 @@ class RemainingRuntimeTargetInventoryEntry(TypedDict):
     backend: str
     generated_files: tuple[str, ...]
     native_files: tuple[str, ...]
-    compat_files: tuple[str, ...]
+    delete_target_files: tuple[str, ...]
 
 
 class RemainingRuntimeModuleBucketEntry(TypedDict):
     backend: str
     generated_modules: tuple[str, ...]
     native_modules: tuple[str, ...]
-    compat_modules: tuple[str, ...]
+    delete_target_modules: tuple[str, ...]
     blocked_modules: tuple[str, ...]
 
 
@@ -267,7 +267,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "family": "static",
         "runtime_hook_key": "go",
         "current_roots": ("generated", "native", "pytra"),
-        "target_roots": ("generated", "native", "pytra"),
+        "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
                 "current_prefix": "src/runtime/go/native/built_in/",
@@ -306,7 +306,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "family": "static",
         "runtime_hook_key": "java",
         "current_roots": ("generated", "native", "pytra"),
-        "target_roots": ("generated", "native", "pytra"),
+        "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
                 "current_prefix": "src/runtime/java/native/built_in/",
@@ -345,7 +345,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "family": "static",
         "runtime_hook_key": "kotlin",
         "current_roots": ("generated", "native", "pytra"),
-        "target_roots": ("generated", "native", "pytra"),
+        "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
                 "current_prefix": "src/runtime/kotlin/native/built_in/",
@@ -384,7 +384,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "family": "static",
         "runtime_hook_key": "scala",
         "current_roots": ("generated", "native", "pytra"),
-        "target_roots": ("generated", "native", "pytra"),
+        "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
                 "current_prefix": "src/runtime/scala/native/built_in/",
@@ -423,7 +423,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "family": "static",
         "runtime_hook_key": "swift",
         "current_roots": ("generated", "native", "pytra"),
-        "target_roots": ("generated", "native", "pytra"),
+        "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
                 "current_prefix": "src/runtime/swift/native/built_in/",
@@ -462,7 +462,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "family": "static",
         "runtime_hook_key": "nim",
         "current_roots": ("generated", "native", "pytra"),
-        "target_roots": ("generated", "native", "pytra"),
+        "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
                 "current_prefix": "src/runtime/nim/native/built_in/",
@@ -501,7 +501,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "family": "script",
         "runtime_hook_key": "js_shims",
         "current_roots": ("generated", "native", "pytra"),
-        "target_roots": ("generated", "native", "pytra"),
+        "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
                 "current_prefix": "src/runtime/js/native/built_in/",
@@ -582,7 +582,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "family": "script",
         "runtime_hook_key": "js_shims",
         "current_roots": ("generated", "native", "pytra"),
-        "target_roots": ("generated", "native", "pytra"),
+        "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
                 "current_prefix": "src/runtime/ts/native/built_in/",
@@ -663,7 +663,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "family": "script",
         "runtime_hook_key": "lua",
         "current_roots": ("generated", "native", "pytra"),
-        "target_roots": ("generated", "native", "pytra"),
+        "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
                 "current_prefix": "src/runtime/lua/native/built_in/",
@@ -690,7 +690,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "family": "script",
         "runtime_hook_key": "ruby",
         "current_roots": ("generated", "native", "pytra"),
-        "target_roots": ("generated", "native", "pytra"),
+        "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
                 "current_prefix": "src/runtime/ruby/native/built_in/",
@@ -717,7 +717,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "family": "script",
         "runtime_hook_key": "php",
         "current_roots": ("generated", "native", "pytra"),
-        "target_roots": ("generated", "native", "pytra"),
+        "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
                 "current_prefix": "src/runtime/php/native/built_in/py_runtime.php",
@@ -1128,7 +1128,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.go",
         ),
         "native_files": ("native/built_in/py_runtime.go",),
-        "compat_files": ("pytra/built_in/py_runtime.go",),
+        "delete_target_files": ("pytra/built_in/py_runtime.go",),
     },
     {
         "backend": "java",
@@ -1160,7 +1160,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.java",
         ),
         "native_files": ("native/built_in/PyRuntime.java",),
-        "compat_files": ("pytra/built_in/PyRuntime.java",),
+        "delete_target_files": ("pytra/built_in/PyRuntime.java",),
     },
     {
         "backend": "kotlin",
@@ -1193,7 +1193,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.kt",
         ),
         "native_files": ("native/built_in/py_runtime.kt",),
-        "compat_files": ("pytra/built_in/py_runtime.kt",),
+        "delete_target_files": ("pytra/built_in/py_runtime.kt",),
     },
     {
         "backend": "scala",
@@ -1226,7 +1226,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.scala",
         ),
         "native_files": ("native/built_in/py_runtime.scala",),
-        "compat_files": ("pytra/built_in/py_runtime.scala",),
+        "delete_target_files": ("pytra/built_in/py_runtime.scala",),
     },
     {
         "backend": "swift",
@@ -1259,7 +1259,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.swift",
         ),
         "native_files": ("native/built_in/py_runtime.swift",),
-        "compat_files": ("pytra/built_in/py_runtime.swift",),
+        "delete_target_files": ("pytra/built_in/py_runtime.swift",),
     },
     {
         "backend": "nim",
@@ -1292,7 +1292,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.nim",
         ),
         "native_files": ("native/built_in/py_runtime.nim",),
-        "compat_files": ("pytra/built_in/py_runtime.nim",),
+        "delete_target_files": ("pytra/built_in/py_runtime.nim",),
     },
     {
         "backend": "js",
@@ -1324,7 +1324,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.js",
         ),
         "native_files": ("native/built_in/py_runtime.js",),
-        "compat_files": (
+        "delete_target_files": (
             "pytra/README.md",
             "pytra/py_runtime.js",
             "pytra/std/json.js",
@@ -1365,7 +1365,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.ts",
         ),
         "native_files": ("native/built_in/py_runtime.ts",),
-        "compat_files": (
+        "delete_target_files": (
             "pytra/README.md",
             "pytra/py_runtime.ts",
             "pytra/std/json.ts",
@@ -1380,13 +1380,13 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
         "backend": "lua",
         "generated_files": REMAINING_NONCPP_LUA_TARGET_GENERATED_FILES_V1,
         "native_files": ("native/built_in/py_runtime.lua",),
-        "compat_files": ("pytra/built_in/py_runtime.lua",),
+        "delete_target_files": ("pytra/built_in/py_runtime.lua",),
     },
     {
         "backend": "ruby",
         "generated_files": REMAINING_NONCPP_RUBY_TARGET_GENERATED_FILES_V1,
         "native_files": ("native/built_in/py_runtime.rb",),
-        "compat_files": ("pytra/built_in/py_runtime.rb",),
+        "delete_target_files": ("pytra/built_in/py_runtime.rb",),
     },
     {
         "backend": "php",
@@ -1418,7 +1418,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.php",
         ),
         "native_files": ("native/built_in/py_runtime.php",),
-        "compat_files": (
+        "delete_target_files": (
             "pytra/py_runtime.php",
             "pytra/std/time.php",
             "pytra/utils/gif.php",
@@ -1452,7 +1452,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             )
         ),
         "native_modules": ("built_in/py_runtime",),
-        "compat_modules": ("built_in/py_runtime",),
+        "delete_target_modules": ("built_in/py_runtime",),
         "blocked_modules": (),
     },
     {
@@ -1478,7 +1478,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             )
         ),
         "native_modules": ("built_in/py_runtime",),
-        "compat_modules": ("built_in/py_runtime",),
+        "delete_target_modules": ("built_in/py_runtime",),
         "blocked_modules": (),
     },
     {
@@ -1505,7 +1505,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             )
         ),
         "native_modules": ("built_in/py_runtime",),
-        "compat_modules": ("built_in/py_runtime",),
+        "delete_target_modules": ("built_in/py_runtime",),
         "blocked_modules": REMAINING_NONCPP_KOTLIN_BLOCKED_BUILT_IN_MODULES_V1,
     },
     {
@@ -1532,7 +1532,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             )
         ),
         "native_modules": ("built_in/py_runtime",),
-        "compat_modules": ("built_in/py_runtime",),
+        "delete_target_modules": ("built_in/py_runtime",),
         "blocked_modules": REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1,
     },
     {
@@ -1559,7 +1559,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             )
         ),
         "native_modules": ("built_in/py_runtime",),
-        "compat_modules": ("built_in/py_runtime",),
+        "delete_target_modules": ("built_in/py_runtime",),
         "blocked_modules": REMAINING_NONCPP_SWIFT_BLOCKED_BUILT_IN_MODULES_V1,
     },
     {
@@ -1586,14 +1586,14 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             )
         ),
         "native_modules": ("built_in/py_runtime",),
-        "compat_modules": ("built_in/py_runtime",),
+        "delete_target_modules": ("built_in/py_runtime",),
         "blocked_modules": REMAINING_NONCPP_NIM_BLOCKED_BUILT_IN_MODULES_V1,
     },
     {
         "backend": "js",
         "generated_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
         "native_modules": ("built_in/py_runtime",),
-        "compat_modules": (
+        "delete_target_modules": (
             "built_in/py_runtime",
             "std/json",
             "std/math",
@@ -1608,7 +1608,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
         "backend": "ts",
         "generated_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
         "native_modules": ("built_in/py_runtime",),
-        "compat_modules": (
+        "delete_target_modules": (
             "built_in/py_runtime",
             "std/json",
             "std/math",
@@ -1623,14 +1623,14 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
         "backend": "lua",
         "generated_modules": REMAINING_NONCPP_LUA_GENERATED_MODULES_V1,
         "native_modules": ("built_in/py_runtime",),
-        "compat_modules": ("built_in/py_runtime",),
+        "delete_target_modules": ("built_in/py_runtime",),
         "blocked_modules": (),
     },
     {
         "backend": "ruby",
         "generated_modules": REMAINING_NONCPP_RUBY_GENERATED_MODULES_V1,
         "native_modules": ("built_in/py_runtime",),
-        "compat_modules": ("built_in/py_runtime",),
+        "delete_target_modules": ("built_in/py_runtime",),
         "blocked_modules": (),
     },
     {
@@ -1663,7 +1663,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             "utils/png",
         ),
         "native_modules": ("built_in/py_runtime",),
-        "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
+        "delete_target_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
         "blocked_modules": (),
     },
 )
