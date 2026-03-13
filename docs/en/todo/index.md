@@ -30,3 +30,16 @@ Last updated: 2026-03-13
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+- [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01] Fix raw EAST3 validator node-shape misclassification so auxiliary `meta` / `kind` keys do not produce false positives. Context: [p0-raw-east3-node-shape-validator.md](../plans/p0-raw-east3-node-shape-validator.md)
+- [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S1-01] Lock `any_dict_items` / `18_mini_language_interpreter` plus a synthetic auxiliary-map case into regression tests and the plan.
+- [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S2-01] Narrow raw EAST3 validation to node-shaped dicts while preserving fail-closed behavior for actual nodes.
+- [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S2-02] Sync targeted backend transpile verification plus the TODO / decision log and reduce validator-origin matrix failures.
+
+### P0: Pytra-NES representative C++ mini repro contract
+
+- [ ] [ID: P0-PYTRA-NES-CPP-MINI-REPRO-01] Lock a representative Pytra-NES multi-file package (parenthesized sibling relative import + `dataclass` + `deque[float]` field + `deque` methods) through build/run on the representative C++ lane.
+  - Context: [docs/en/plans/p0-pytra-nes-cpp-mini-repro-contract.md](../plans/p0-pytra-nes-cpp-mini-repro-contract.md)
+- [x] [ID: P0-PYTRA-NES-CPP-MINI-REPRO-01-S1-01] Added a representative package smoke and locked the current C++ multi-file build/run baseline that combines `from .controller import (...)` with `timestamps: deque[float] = field(init=False, repr=False)`.
+  - Progress note: Added a 3-module `controller.py` / `pad_state.py` / `ppu.py` package to `test_py2cpp_features.py` and locked that `pad_state.h` emits `::std::deque<float64>` without leaking `field(...)`, while runtime output stays `3 / 1.5 / 1`.
+- [ ] [ID: P0-PYTRA-NES-CPP-MINI-REPRO-01-S2-01] Turn the generated include / class layout / method-lowering surface exposed by the smoke into source guards so the representative Pytra-NES lane fails fast on drift.
+- [ ] [ID: P0-PYTRA-NES-CPP-MINI-REPRO-01-S3-01] Sync TODO / plan / support docs to the representative Pytra-NES mini repro contract and close it.
