@@ -17,7 +17,7 @@ namespace Pytra.CsModule
         public static object py_reversed_object(object values)
         {
             System.Collections.Generic.List<object> py_out = new System.Collections.Generic.List<object>();
-            long i = (values).Count() - 1;
+            int64 i = (values).Count() - 1;
             while ((i) >= (0)) {
                 py_out.Add(values[System.Convert.ToInt32(i)]);
                 i -= 1;
@@ -25,11 +25,11 @@ namespace Pytra.CsModule
             return py_out;
         }
 
-        public static object py_enumerate_object(object values, long start = 0)
+        public static object py_enumerate_object(object values, int64 start = 0)
         {
             System.Collections.Generic.List<object> py_out = new System.Collections.Generic.List<object>();
-            long i = 0;
-            long n = (values).Count();
+            int64 i = 0;
+            int64 n = (values).Count();
             while ((i) < (n)) {
                 py_out.Add(new System.Collections.Generic.List<object> { start + i, values[System.Convert.ToInt32(i)] });
                 i += 1;

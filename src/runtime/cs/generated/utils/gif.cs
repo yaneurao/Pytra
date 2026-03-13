@@ -14,33 +14,33 @@ namespace Pytra.CsModule
 {
     public static class gif_helper
     {
-        public static void _gif_append_list(System.Collections.Generic.List<long> dst, System.Collections.Generic.List<long> src)
+        public static void _gif_append_list(System.Collections.Generic.List<int64> dst, System.Collections.Generic.List<int64> src)
         {
-            long i = 0;
-            long n = (src).Count;
+            int64 i = 0;
+            int64 n = (src).Count;
             while ((i) < (n)) {
                 dst.Add(Pytra.CsModule.py_runtime.py_get(src, i));
                 i += 1;
             }
         }
 
-        public static System.Collections.Generic.List<long> _gif_u16le(long v)
+        public static System.Collections.Generic.List<int64> _gif_u16le(int64 v)
         {
-            return new System.Collections.Generic.List<long> { v & 0xFF, v >> System.Convert.ToInt32(8) & 0xFF };
+            return new System.Collections.Generic.List<int64> { v & 0xFF, v >> System.Convert.ToInt32(8) & 0xFF };
         }
 
-        public static List<byte> _lzw_encode(List<byte> data, long min_code_size = 8)
+        public static bytes _lzw_encode(bytes data, int64 min_code_size = 8)
         {
             if (((data).Count) == (0)) {
                 return Pytra.CsModule.py_runtime.py_bytes(new System.Collections.Generic.List<object>());
             }
-            long clear_code = 1 << System.Convert.ToInt32(min_code_size);
-            long end_code = clear_code + 1;
-            long code_size = min_code_size + 1;
+            int64 clear_code = 1 << System.Convert.ToInt32(min_code_size);
+            int64 end_code = clear_code + 1;
+            int64 code_size = min_code_size + 1;
 
-            System.Collections.Generic.List<long> py_out = new System.Collections.Generic.List<long>();
-            long bit_buffer = 0;
-            long bit_count = 0;
+            System.Collections.Generic.List<int64> py_out = new System.Collections.Generic.List<int64>();
+            int64 bit_buffer = 0;
+            int64 bit_count = 0;
 
             bit_buffer |= clear_code << System.Convert.ToInt32(bit_count);
             bit_count += code_size;
@@ -81,10 +81,10 @@ namespace Pytra.CsModule
             return Pytra.CsModule.py_runtime.py_bytes(py_out);
         }
 
-        public static List<byte> grayscale_palette()
+        public static bytes grayscale_palette()
         {
-            System.Collections.Generic.List<long> p = new System.Collections.Generic.List<long>();
-            long i = 0;
+            System.Collections.Generic.List<int64> p = new System.Collections.Generic.List<int64>();
+            int64 i = 0;
             while ((i) < (256)) {
                 p.Add(i);
                 p.Add(i);
@@ -94,14 +94,14 @@ namespace Pytra.CsModule
             return Pytra.CsModule.py_runtime.py_bytes(p);
         }
 
-        public static void save_gif(string path, long width, long height, System.Collections.Generic.List<List<byte>> frames, List<byte> palette, long delay_cs = 4, long loop = 0)
+        public static void save_gif(str path, int64 width, int64 height, System.Collections.Generic.List<bytes> frames, bytes palette, int64 delay_cs = 4, int64 loop = 0)
         {
             if (((palette).Count) != (256 * 3)) {
                 throw new System.Exception("palette must be 256*3 bytes");
             }
-            System.Collections.Generic.List<System.Collections.Generic.List<long>> frame_lists = new System.Collections.Generic.List<System.Collections.Generic.List<long>>();
+            System.Collections.Generic.List<System.Collections.Generic.List<int64>> frame_lists = new System.Collections.Generic.List<System.Collections.Generic.List<int64>>();
             foreach (var fr in frames) {
-                System.Collections.Generic.List<long> fr_list = new System.Collections.Generic.List<long>();
+                System.Collections.Generic.List<int64> fr_list = new System.Collections.Generic.List<int64>();
                 foreach (var v in fr) {
                     fr_list.Add(Pytra.CsModule.py_runtime.py_int(v));
                 }
@@ -110,12 +110,12 @@ namespace Pytra.CsModule
                 }
                 frame_lists.Add(fr_list);
             }
-            System.Collections.Generic.List<long> palette_list = new System.Collections.Generic.List<long>();
+            System.Collections.Generic.List<int64> palette_list = new System.Collections.Generic.List<int64>();
             foreach (var v in palette) {
                 palette_list.Add(Pytra.CsModule.py_runtime.py_int(v));
             }
-            System.Collections.Generic.List<long> py_out = new System.Collections.Generic.List<long>();
-            _gif_append_list(py_out, new System.Collections.Generic.List<long> { 71, 73, 70, 56, 57, 97 });
+            System.Collections.Generic.List<int64> py_out = new System.Collections.Generic.List<int64>();
+            _gif_append_list(py_out, new System.Collections.Generic.List<int64> { 71, 73, 70, 56, 57, 97 });
             _gif_append_list(py_out, _gif_u16le(width));
             _gif_append_list(py_out, _gif_u16le(height));
             py_out.Add(0xF7);
@@ -123,14 +123,14 @@ namespace Pytra.CsModule
             py_out.Add(0);
             _gif_append_list(py_out, palette_list);
 
-            _gif_append_list(py_out, new System.Collections.Generic.List<long> { 0x21, 0xFF, 0x0B, 78, 69, 84, 83, 67, 65, 80, 69, 50, 46, 48, 0x03, 0x01 });
+            _gif_append_list(py_out, new System.Collections.Generic.List<int64> { 0x21, 0xFF, 0x0B, 78, 69, 84, 83, 67, 65, 80, 69, 50, 46, 48, 0x03, 0x01 });
             _gif_append_list(py_out, _gif_u16le(loop));
             py_out.Add(0);
 
             foreach (var fr_list in frame_lists) {
-                _gif_append_list(py_out, new System.Collections.Generic.List<long> { 0x21, 0xF9, 0x04, 0x00 });
+                _gif_append_list(py_out, new System.Collections.Generic.List<int64> { 0x21, 0xF9, 0x04, 0x00 });
                 _gif_append_list(py_out, _gif_u16le(delay_cs));
-                _gif_append_list(py_out, new System.Collections.Generic.List<long> { 0x00, 0x00 });
+                _gif_append_list(py_out, new System.Collections.Generic.List<int64> { 0x00, 0x00 });
 
                 py_out.Add(0x2C);
                 _gif_append_list(py_out, _gif_u16le(0));
@@ -139,13 +139,13 @@ namespace Pytra.CsModule
                 _gif_append_list(py_out, _gif_u16le(height));
                 py_out.Add(0);
                 py_out.Add(8);
-                List<byte> compressed = _lzw_encode(Pytra.CsModule.py_runtime.py_bytes(fr_list), 8);
-                long pos = 0;
+                bytes compressed = _lzw_encode(Pytra.CsModule.py_runtime.py_bytes(fr_list), 8);
+                int64 pos = 0;
                 while ((pos) < ((compressed).Count)) {
-                    long remain = (compressed).Count - pos;
-                    long chunk_len = ((remain) > (255) ? 255 : remain);
+                    int64 remain = (compressed).Count - pos;
+                    int64 chunk_len = ((remain) > (255) ? 255 : remain);
                     py_out.Add(chunk_len);
-                    long i = 0;
+                    int64 i = 0;
                     while ((i) < (chunk_len)) {
                         py_out.Add(Pytra.CsModule.py_runtime.py_get(compressed, pos + i));
                         i += 1;

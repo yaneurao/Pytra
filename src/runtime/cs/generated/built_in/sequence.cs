@@ -14,20 +14,20 @@ namespace Pytra.CsModule
 {
     public static class sequence_helper
     {
-        public static System.Collections.Generic.List<long> py_range(long start, long stop, long step)
+        public static System.Collections.Generic.List<int64> py_range(int64 start, int64 stop, int64 step)
         {
-            System.Collections.Generic.List<long> py_out = new System.Collections.Generic.List<long>();
+            System.Collections.Generic.List<int64> py_out = new System.Collections.Generic.List<int64>();
             if ((step) == (0)) {
                 return py_out;
             }
             if ((step) > (0)) {
-                long i = start;
+                int64 i = start;
                 while ((i) < (stop)) {
                     py_out.Add(i);
                     i += step;
                 }
             } else {
-                long i = start;
+                int64 i = start;
                 while ((i) > (stop)) {
                     py_out.Add(i);
                     i += step;
@@ -36,13 +36,13 @@ namespace Pytra.CsModule
             return py_out;
         }
 
-        public static string py_repeat(string v, long n)
+        public static str py_repeat(str v, int64 n)
         {
             if ((n) <= (0)) {
                 return "";
             }
-            string py_out = "";
-            long i = 0;
+            str py_out = "";
+            int64 i = 0;
             while ((i) < (n)) {
                 py_out += v;
                 i += 1;

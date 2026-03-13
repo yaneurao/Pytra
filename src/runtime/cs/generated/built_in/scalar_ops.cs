@@ -14,17 +14,17 @@ namespace Pytra.CsModule
 {
     public static class scalar_ops_helper
     {
-        public static long py_to_int64_base(string v, long py_base)
+        public static int64 py_to_int64_base(str v, int64 py_base)
         {
             return __b.py_int(v, py_base);
         }
 
-        public static long py_ord(string ch)
+        public static int64 py_ord(str ch)
         {
             return __b.ord(ch);
         }
 
-        public static string py_chr(long codepoint)
+        public static str py_chr(int64 codepoint)
         {
             return __b.chr(codepoint);
         }

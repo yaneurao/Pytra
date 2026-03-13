@@ -16,29 +16,29 @@ using path = Pytra.CsModule;
 public class Path
 {
     public static readonly long PYTRA_TYPE_ID = Pytra.CsModule.py_runtime.py_register_class_type(Pytra.CsModule.py_runtime.PYTRA_TID_OBJECT);
-    public string _value;
+    public str _value;
     
-    public Path(string value)
+    public Path(str value)
     {
         this._value = value;
     }
     
-    public string __str__()
+    public str __str__()
     {
         return this._value;
     }
     
-    public string __repr__()
+    public str __repr__()
     {
         return "Path(" + this._value + ")";
     }
     
-    public string __fspath__()
+    public str __fspath__()
     {
         return this._value;
     }
     
-    public Path __truediv__(string rhs)
+    public Path __truediv__(str rhs)
     {
         return new Path(path.join(this._value, rhs));
     }
@@ -55,13 +55,13 @@ public class Path
     public System.Collections.Generic.List<Path> parents()
     {
         System.Collections.Generic.List<Path> py_out = new System.Collections.Generic.List<Path>();
-        string current = System.Convert.ToString(path.dirname(this._value));
+        str current = System.Convert.ToString(path.dirname(this._value));
         while (true) {
             if ((current) == ("")) {
                 current = ".";
             }
             py_out.Add(new Path(current));
-            string next_current = System.Convert.ToString(path.dirname(current));
+            str next_current = System.Convert.ToString(path.dirname(current));
             if ((next_current) == ("")) {
                 next_current = ".";
             }
@@ -73,12 +73,12 @@ public class Path
         return py_out;
     }
     
-    public string name()
+    public str name()
     {
         return path.basename(this._value);
     }
     
-    public string suffix()
+    public str suffix()
     {
         var __tmp_1 = path.splitext(path.basename(this._value));
         var _ = __tmp_1.Item1;
@@ -86,7 +86,7 @@ public class Path
         return ext;
     }
     
-    public string stem()
+    public str stem()
     {
         var __tmp_2 = path.splitext(path.basename(this._value));
         var root = __tmp_2.Item1;
@@ -116,7 +116,7 @@ public class Path
         os.mkdir(this._value);
     }
     
-    public string read_text(string encoding = "utf-8")
+    public str read_text(str encoding = "utf-8")
     {
         PyFile f = Pytra.CsModule.py_runtime.open(this._value, "r");
         try
@@ -125,10 +125,10 @@ public class Path
         } finally {
             f.close();
         }
-    return default(string);
+    return default(str);
     }
     
-    public long write_text(string text, string encoding = "utf-8")
+    public int64 write_text(str text, str encoding = "utf-8")
     {
         PyFile f = Pytra.CsModule.py_runtime.open(this._value, "w");
         try
@@ -137,12 +137,12 @@ public class Path
         } finally {
             f.close();
         }
-    return default(long);
+    return default(int64);
     }
     
-    public System.Collections.Generic.List<Path> glob(string pattern)
+    public System.Collections.Generic.List<Path> glob(str pattern)
     {
-        System.Collections.Generic.List<string> paths = py_glob.glob(path.join(this._value, pattern));
+        System.Collections.Generic.List<str> paths = py_glob.glob(path.join(this._value, pattern));
         System.Collections.Generic.List<Path> py_out = new System.Collections.Generic.List<Path>();
         foreach (var p in paths) {
             py_out.Add(new Path(p));

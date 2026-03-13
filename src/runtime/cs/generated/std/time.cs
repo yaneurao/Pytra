@@ -14,7 +14,7 @@ namespace Pytra.CsModule
 {
     public static class time
     {
-        public static double perf_counter()
+        public static float64 perf_counter()
         {
             return time_native.perf_counter();
         }

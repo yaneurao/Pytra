@@ -13,7 +13,7 @@ using Pytra.CsModule;
 
 public static class Program
 {
-    public static System.Collections.Generic.List<string> glob(string pattern)
+    public static System.Collections.Generic.List<str> glob(str pattern)
     {
         return __glob.glob(pattern);
     }

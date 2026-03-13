@@ -16,7 +16,7 @@ namespace Pytra.CsModule
     {
         public static bool py_contains_dict_object(object values, object key)
         {
-            string needle = System.Convert.ToString(key);
+            str needle = System.Convert.ToString(key);
             foreach (var cur in ((System.Collections.IEnumerable)(values))) {
                 if ((cur) == (needle)) {
                     return true;
@@ -47,17 +47,17 @@ namespace Pytra.CsModule
 
         public static bool py_contains_str_object(object values, object key)
         {
-            string needle = System.Convert.ToString(key);
-            string haystack = System.Convert.ToString(values);
-            long n = (haystack).Length;
-            long m = (needle).Length;
+            str needle = System.Convert.ToString(key);
+            str haystack = System.Convert.ToString(values);
+            int64 n = (haystack).Length;
+            int64 m = (needle).Length;
             if ((m) == (0)) {
                 return true;
             }
-            long i = 0;
-            long last = n - m;
+            int64 i = 0;
+            int64 last = n - m;
             while ((i) <= (last)) {
-                long j = 0;
+                int64 j = 0;
                 bool ok = true;
                 while ((j) < (m)) {
                     if ((Pytra.CsModule.py_runtime.py_get(haystack, i + j)) != (Pytra.CsModule.py_runtime.py_get(needle, j))) {
