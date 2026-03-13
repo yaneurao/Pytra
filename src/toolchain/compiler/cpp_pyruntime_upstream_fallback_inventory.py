@@ -213,19 +213,15 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_INVENTORY_V1: Final[
         "scope_rel": "src/backends/cpp/emitter",
         "matcher_kind": "literal",
         "needle": "obj_to_list_ref_or_raise(",
-        "expected_count": 2,
+        "expected_count": 1,
         "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01",
         "evidence_refs": (
             {
                 "relpath": "src/backends/cpp/emitter/call.py",
                 "needle": 'return f\'obj_to_list_ref_or_raise({owner_expr}, "{ctx}")\'',
             },
-            {
-                "relpath": "src/backends/cpp/emitter/cpp_emitter.py",
-                "needle": "obj_to_list_ref_or_raise({boxed_value},",
-            },
         ),
-        "notes": "Emitter still generates explicit object-list bridge calls for mutation/extend paths.",
+        "notes": "Emitter now centralizes object-list bridge rendering in the helper definition only.",
     },
     {
         "inventory_id": "generated_runtime_object_list_bridge_sites",

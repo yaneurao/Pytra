@@ -4380,10 +4380,11 @@ class CppEmitter(
                 boxed_value = self._box_expr_for_any(value_expr, value_node)
                 extend_ctx = self._pyobj_runtime_list_bridge_context("extend")
                 list_ref_expr = self._render_pyobj_runtime_list_bridge_ref(owner_expr, extend_ctx)
+                value_list_ref_expr = self._render_pyobj_runtime_list_bridge_ref(boxed_value, extend_ctx)
                 return (
                     f"py_list_extend_mut("
                     f"{list_ref_expr}, "
-                    f"obj_to_list_ref_or_raise({boxed_value}, \"{extend_ctx}\"))"
+                    f"{value_list_ref_expr})"
                 )
             return f"{owner_expr}.insert({owner_expr}.end(), {value_expr}.begin(), {value_expr}.end())"
         if kind == "SetAdd":

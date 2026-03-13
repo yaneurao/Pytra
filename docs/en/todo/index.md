@@ -35,4 +35,4 @@ Last updated: 2026-03-14
 
 1. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] Push typed fallback out of `py_runtime.h` and back into EAST3, the C++ emitter, and runtime SoT so the header shrinks without physical splitting.
 Context: [docs/en/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md](../plans/p2-cpp-pyruntime-upstream-fallback-shrink.md)
-- Progress memo: The first `S2-01` bundle is done. The header bulk remains partitioned into 4 `object-only compat` anchors and 5 `Any/object boundary fallback` anchors, while the typed-lane residuals are now 1 emitter bucket, 3 generated-runtime buckets, and 2 sample buckets. Next is the remaining emitter-side `obj_to_list_ref_or_raise(` helper bucket.
+- Progress memo: The second `S2-01` bundle is done. Empty pyobj list seeds now use a direct `PyListObj` ctor, and the inline `extend` bridge was folded through the shared helper. The typed-lane residuals are now a helper-only emitter bucket plus 3 generated-runtime buckets and 2 sample buckets. Next is either generated/sample shrink or a redesign of the helper itself.

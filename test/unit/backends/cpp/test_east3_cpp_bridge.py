@@ -1147,6 +1147,20 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(node), "xs.insert(xs.end(), ys.begin(), ys.end())")
 
+    def test_render_expr_pyobj_runtime_list_extend_keeps_bridge_output(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.cpp_list_model = "pyobj"
+        node = {
+            "kind": "ListExtend",
+            "owner": {"kind": "Name", "id": "xs", "resolved_type": "Any"},
+            "value": {"kind": "Name", "id": "ys", "resolved_type": "Any"},
+            "resolved_type": "None",
+        }
+        self.assertEqual(
+            emitter.render_expr(node),
+            'py_list_extend_mut(obj_to_list_ref_or_raise(xs, "extend"), obj_to_list_ref_or_raise(ys, "extend"))',
+        )
+
     def test_builtin_runtime_list_extend_uses_ir_node_path(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         expr = {

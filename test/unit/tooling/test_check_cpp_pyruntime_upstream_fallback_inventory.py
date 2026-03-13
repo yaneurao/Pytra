@@ -96,7 +96,7 @@ class CheckCppPyRuntimeUpstreamFallbackInventoryTest(unittest.TestCase):
         }
         self.assertEqual(
             by_id["cpp_emitter_object_list_bridge_sites"]["expected_count"],
-            2,
+            1,
         )
         self.assertEqual(
             by_id["generated_runtime_object_list_bridge_sites"]["expected_count"],
