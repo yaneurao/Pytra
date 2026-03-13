@@ -10,6 +10,7 @@
 
 - このページは support matrix の canonical publish target であり、bundle-based coverage matrix そのものではありません。
 - 将来の coverage matrix は `feature x required_lane x backend` の contract coverage を別 surface として公開し、`backend-test-matrix.md` は backend-owned suite health の publish target に留めます。
+- bundle-based coverage の live surface は [backend-coverage-matrix.md](./backend-coverage-matrix.md) を使います。
 - coverage 100% の定義は line/branch coverage ではなく、`feature x required_lane x backend` ごとの contract coverage です。
 
 ## Canonical Source と Drill-Down

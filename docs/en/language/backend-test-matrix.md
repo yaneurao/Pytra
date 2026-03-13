@@ -12,6 +12,7 @@ This page is the publish target that visualizes how green each backend-owned `te
 - Publish the test counterpart to `docs/en/language/backend-parity-matrix.md`, so implementation claims and measured test status stay separate.
 - Show the difference between per-backend smoke, shared smoke, and full backend-directory discovery in one table.
 - This page is the publish target for backend-owned suite health and is not a substitute for the future bundle-based coverage matrix.
+- For bundle-based coverage seed and ownership, use [backend-coverage-matrix.md](./backend-coverage-matrix.md).
 
 ## Maintenance Rule
 

@@ -71,7 +71,7 @@
 - [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S2-01] coverage bundle taxonomy と machine-readable manifest/checker を導入し、`feature x lane x backend` の bundle 所属を検証可能にする。
 - [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S2-02] `test/unit`, `test/ir`, `test/integration`, `test/transpile` を coverage bundle へ接続し、未接続 suite を明示的に洗い出す。
 - [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S2-03] multi-backend で既に使われている未掲載 fixture を、support-matrix 昇格候補と coverage-only representative に仕分ける。
-- [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S3-01] docs/export/checker/English mirror を同期し、新規 feature/suite の coverage 漏れを fail-fast にする。
+- [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S3-01] docs/export/checker/English mirror を同期し、新規 feature/suite の coverage 漏れを fail-fast にする。
 
 決定ログ:
 - 2026-03-14: `backend-parity-matrix` が representative support claim であって suite inventory ではないことを確認し、bundle-based coverage matrix を別建てして contract coverage 100% を定義する P2 task として起票した。
@@ -80,3 +80,4 @@
 - 2026-03-14: `backend_contract_coverage_matrix_contract.py` / checker / unit test を追加し、representative feature の `required_lane x backend` seed ownership を machine-readable に固定した。`parse/east/east3_lowering/emit` は bundle owner、`runtime` は `case_runtime_followup` / `module_runtime_strategy_followup` rule として seed 化し、bundle 未接続 lane を explicit rule 付きで可視化する。
 - 2026-03-14: `backend_contract_coverage_suite_attachment_contract.py` / checker / unit test を追加し、live suite family ごとの bundle attachment / explicit exclusion を machine-readable に固定した。`unit_common`, `unit_backends`, `unit_ir`, `ir_fixture`, `integration`, `transpile_artifact` は direct bundle attachment、`unit_link`, `unit_selfhost`, `unit_tooling` は supporting-only exclusion reason を必須にして、未接続 suite を checker で可視化する。
 - 2026-03-14: unpublished multi-backend fixture inventory に `target_surface` と `status -> target_surface` invariant を追加し、`property_method_call` は `support_matrix_promotion_candidate`、`list_bool_index` は `coverage_matrix_only` 維持の `coverage_only_representative` として固定した。これにより、support matrix へ昇格させる候補と coverage matrix 専用の回帰 fixture を machine-readable seed の段階で区別できるようにした。
+- 2026-03-14: `backend-coverage-matrix.md` の ja/en live surface、`export_backend_contract_coverage_docs.py`、`backend_contract_coverage_handoff_contract.py` / checker / unit test を追加し、coverage bundle taxonomy / suite attachment / required-lane seed ownership / unpublished fixture classification を exporter 管理の docs surface に同期した。support/test docs から coverage page へのリンクも固定し、coverage docs drift を checker で fail-fast にした。

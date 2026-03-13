@@ -65,10 +65,10 @@ BACKEND_CONTRACT_COVERAGE_REQUIRED_DOC_NEEDLES: Final[dict[str, tuple[str, ...]]
         "Added `backend_contract_coverage_contract.py`, its checker, and a unit test to lock the role split between the support matrix, the future coverage matrix, and the backend test matrix, together with the definition of 100% contract coverage for `feature x required_lane x backend`.",
     ),
     "docs/ja/todo/index.md": (
-        "`S2-03` までで unpublished multi-backend fixture の `support_matrix` 昇格候補 / `coverage_matrix_only` 維持を machine-readable seed と invariant へ固定し、`property_method_call` を promotion candidate、`list_bool_index` を coverage-only representative として分類した。",
+        "`S3-01` までで coverage docs/export/checker/English mirror を live surface に同期し、`backend-coverage-matrix.md` を canonical coverage publish target として exporter 管理下へ置いた。",
     ),
     "docs/en/todo/index.md": (
-        "Through `S2-03`, locked unpublished multi-backend fixture classification into machine-readable seeds and invariants, with `property_method_call` marked as the next `support_matrix` promotion candidate and `list_bool_index` retained as a `coverage_matrix_only` representative.",
+        "Through `S3-01`, synchronized coverage docs, exports, checkers, and the English mirror onto the live surface, putting `backend-coverage-matrix.md` under exporter-managed publication as the canonical coverage target.",
     ),
 }
 

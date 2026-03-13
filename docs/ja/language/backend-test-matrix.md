@@ -12,6 +12,7 @@
 - `docs/ja/language/backend-parity-matrix.md` の test 版として、実装 claim と test 実測を分けて公開する。
 - backend ごとの smoke / shared smoke / backend directory 全体 discover の差を、同じ表で把握する。
 - このページは backend-owned suite health の publish target であり、将来の bundle-based coverage matrix の代替ではありません。
+- bundle-based coverage seed と ownership は [backend-coverage-matrix.md](./backend-coverage-matrix.md) を参照する。
 
 ## Maintenance Rule
 
