@@ -305,6 +305,29 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return time_native.perf_counter();", out)
         self.assertNotIn("return __t.perf_counter();", out)
 
+    def test_rewrite_cs_std_math_live_wrapper_uses_system_math(self) -> None:
+        src = "\n".join(
+            [
+                "using Pytra.CsModule;",
+                "public static class Program",
+                "{",
+                "    public static double sqrt(double x) { return __m.sqrt(x); }",
+                "    public static double ceil(double x) { return __m.ceil(x); }",
+                "    public static void Main(string[] args) { double pi = System.Convert.ToDouble(py_extern(__m.pi)); }",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_cs_std_math_live_wrapper(src)
+        self.assertIn("namespace Pytra.CsModule", out)
+        self.assertIn("public static class math", out)
+        self.assertIn("public const double pi = Math.PI;", out)
+        self.assertIn("public const double e = Math.E;", out)
+        self.assertIn("public const double tau = Math.PI * 2.0;", out)
+        self.assertIn("return Math.Sqrt(x);", out)
+        self.assertIn("return Math.Ceiling(x);", out)
+        self.assertNotIn("__m.", out)
+        self.assertNotIn("py_extern(", out)
+
     def test_rewrite_kotlin_program_to_library_removes_empty_main(self) -> None:
         src = "\n".join(
             [

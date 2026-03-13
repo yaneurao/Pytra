@@ -263,6 +263,36 @@ def rewrite_cs_std_time_live_wrapper(cs_src: str) -> str:
     return text.replace("return __t.perf_counter();", "return time_native.perf_counter();")
 
 
+def rewrite_cs_std_math_live_wrapper(cs_src: str) -> str:
+    text = rewrite_cs_program_to_helper(cs_src, "math")
+    text = text.replace(
+        "    public static class math\n    {\n",
+        "    public static class math\n    {\n"
+        "        public const double pi = Math.PI;\n"
+        "        public const double e = Math.E;\n"
+        "        public const double tau = Math.PI * 2.0;\n\n",
+        1,
+    )
+    replacements = {
+        "return __m.sqrt(x);": "return Math.Sqrt(x);",
+        "return __m.sin(x);": "return Math.Sin(x);",
+        "return __m.cos(x);": "return Math.Cos(x);",
+        "return __m.tan(x);": "return Math.Tan(x);",
+        "return __m.exp(x);": "return Math.Exp(x);",
+        "return __m.log(x);": "return Math.Log(x);",
+        "return __m.log10(x);": "return Math.Log10(x);",
+        "return __m.fabs(x);": "return Math.Abs(x);",
+        "return __m.floor(x);": "return Math.Floor(x);",
+        "return __m.ceil(x);": "return Math.Ceiling(x);",
+        "return __m.pow(x, y);": "return Math.Pow(x, y);",
+    }
+    for before, after in replacements.items():
+        text = text.replace(before, after)
+    if "__m." in text or "py_extern(" in text:
+        raise RuntimeError("generated C# std/math wrapper still contains extern/math runtime residue")
+    return text
+
+
 def rewrite_java_std_time_live_wrapper(java_src: str) -> str:
     return java_src.replace(
         "return __t.perf_counter();",
@@ -2121,6 +2151,8 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_cs_program_to_helper(generated, item.helper_name)
     elif item.postprocess == "cs_std_time_live_wrapper":
         generated = rewrite_cs_std_time_live_wrapper(generated)
+    elif item.postprocess == "cs_std_math_live_wrapper":
+        generated = rewrite_cs_std_math_live_wrapper(generated)
     elif item.postprocess == "java_std_time_live_wrapper":
         generated = rewrite_java_std_time_live_wrapper(generated)
     elif item.postprocess == "java_std_math_live_wrapper":

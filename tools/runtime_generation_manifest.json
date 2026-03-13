@@ -668,7 +668,7 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/math.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/math.cs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/math.cs", "postprocess": "cs_std_math_live_wrapper" },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/math.go",

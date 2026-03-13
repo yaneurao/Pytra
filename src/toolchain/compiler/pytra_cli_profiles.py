@@ -173,7 +173,7 @@ def make_noncpp_build_plan(
             str(root / "src/runtime/cs/native/built_in/py_runtime.cs"),
             str(root / "src/runtime/cs/generated/std/time.cs"),
             str(root / "src/runtime/cs/native/built_in/time.cs"),
-            str(root / "src/runtime/cs/native/built_in/math.cs"),
+            str(root / "src/runtime/cs/generated/std/math.cs"),
             str(root / "src/runtime/cs/generated/utils/png.cs"),
             str(root / "src/runtime/cs/generated/utils/gif.cs"),
             str(root / "src/runtime/cs/native/std/pathlib.cs"),

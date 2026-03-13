@@ -71,7 +71,7 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
     def test_native_builtin_residual_sets_are_fixed(self) -> None:
         self.assertEqual(
             contract_mod.iter_cs_native_builtin_residual_modules(),
-            ("math", "py_runtime", "time"),
+            ("py_runtime", "time"),
         )
         self.assertEqual(
             contract_mod.iter_rs_native_builtin_residual_modules(),
@@ -171,12 +171,13 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_module["math"]["canonical_lane"],
-            "native/built_in",
+            "generated/std",
         )
         self.assertEqual(
             by_module["math"]["generated_std_state"],
-            "compare_artifact",
+            "canonical_generated",
         )
+        self.assertEqual(by_module["math"]["native_rel"], "")
         self.assertEqual(
             by_module["random"]["generated_std_state"],
             "compare_artifact",
@@ -231,9 +232,9 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
                     "def test_representative_time_import_fixture_transpiles",
                     "Pytra.CsModule.time.perf_counter()",
                 ),
-                "deferred_native_canonical_modules": ("json", "pathlib", "math"),
+                "deferred_native_canonical_modules": ("json", "pathlib"),
                 "deferred_no_runtime_modules": ("random", "re", "argparse", "sys", "timeit", "enum"),
-                "rationale": "time is the first live-generated C# std lane because its representative surface is a single `perf_counter()` wrapper, while `json/pathlib/math` still depend on heavier native canonical seams and the remaining std compare artifacts are not wired into the live runtime yet.",
+                "rationale": "time remains the first live-generated C# std lane because its representative surface is only a `perf_counter()` wrapper, while `json/pathlib` still depend on heavier native canonical seams and the remaining std compare artifacts are not wired into the live runtime yet.",
             },
         )
 

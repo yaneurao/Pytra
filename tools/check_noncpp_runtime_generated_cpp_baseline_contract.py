@@ -16,10 +16,26 @@ from src.toolchain.compiler import (  # noqa: E402
     noncpp_runtime_generated_cpp_baseline_contract as contract_mod,
     noncpp_runtime_layout_contract as layout_contract_mod,
     noncpp_runtime_layout_rollout_remaining_contract as remaining_contract_mod,
+    pytra_cli_profiles as cli_profiles_mod,
 )
 
 
 CPP_GENERATED_ROOT = ROOT / "src" / "runtime" / "cpp" / "generated"
+_OUTPUT_EXTENSIONS = {
+    "cs": ".cs",
+    "go": ".go",
+    "java": ".java",
+    "js": ".js",
+    "ts": ".ts",
+    "swift": ".swift",
+    "kotlin": ".kt",
+    "scala": ".scala",
+    "lua": ".lua",
+    "ruby": ".rb",
+    "php": ".php",
+    "nim": ".nim",
+    "rs": ".rs",
+}
 
 
 def _collect_cpp_generated_bucket_modules(bucket: str) -> tuple[str, ...]:
@@ -158,6 +174,76 @@ def _collect_helper_artifact_overlap_modules() -> tuple[str, ...]:
     return tuple(sorted(overlap))
 
 
+def _collect_build_profile_inventory() -> tuple[dict[str, object], ...]:
+    staged_runtime_names = {
+        "py_runtime.go",
+        "png.go",
+        "gif.go",
+        "PyRuntime.java",
+        "png.java",
+        "gif.java",
+        "py_runtime.swift",
+        "image_runtime.swift",
+        "py_runtime.kt",
+        "image_runtime.kt",
+        "py_runtime.scala",
+        "image_runtime.scala",
+    }
+    inventories: list[dict[str, object]] = []
+    for entry in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_build_profiles():
+        backend = entry["backend"]
+        extension = _OUTPUT_EXTENSIONS[backend]
+        output_path = Path("out") / ("Main.java" if backend == "java" else f"main{extension}")
+        plan = cli_profiles_mod.make_noncpp_build_plan(
+            root=ROOT,
+            target=backend,
+            output_path=output_path,
+            source_stem="main",
+            run_after_build=True,
+        )
+        runtime_refs: list[str] = []
+        for arg in tuple(plan.build_cmd or ()) + tuple(plan.run_cmd or ()):
+            if arg.startswith(str(ROOT / "src" / "runtime")):
+                runtime_refs.append(Path(arg).relative_to(ROOT).as_posix())
+                continue
+            if not arg.startswith("out/"):
+                continue
+            if Path(arg).name == output_path.name:
+                continue
+            if Path(arg).name in staged_runtime_names:
+                runtime_refs.append(arg)
+        if any(ref.startswith("src/runtime/") for ref in runtime_refs):
+            wiring_mode = "repo_runtime_bundle_residual"
+        elif runtime_refs and backend == "scala":
+            wiring_mode = "staged_output_runner_bundle"
+        elif runtime_refs:
+            wiring_mode = "staged_output_runtime_bundle"
+        elif backend in {"js", "ts", "lua", "ruby", "php"}:
+            wiring_mode = "direct_script_runner"
+        else:
+            wiring_mode = "standalone_compiler_only"
+        inventories.append(
+            {
+                "backend": backend,
+                "wiring_mode": wiring_mode,
+                "runtime_refs": tuple(runtime_refs),
+            }
+        )
+    return tuple(inventories)
+
+
+def _collect_smoke_inventory_issues() -> list[str]:
+    issues: list[str] = []
+    for entry in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_smoke_inventory():
+        test_path = ROOT / entry["test_path"]
+        text = test_path.read_text(encoding="utf-8")
+        for test_name in entry["required_tests"]:
+            needle = f"def {test_name}("
+            if needle not in text:
+                issues.append(f"generated-first smoke inventory drifted: {entry['test_path']}: {test_name}")
+    return issues
+
+
 def _collect_contract_issues() -> list[str]:
     issues: list[str] = []
 
@@ -212,6 +298,14 @@ def _collect_contract_issues() -> list[str]:
                     f"{backend} generated baseline missing modules for {bucket}: {missing!r}"
                 )
 
+    actual_build_profiles = _collect_build_profile_inventory()
+    expected_build_profiles = contract_mod.iter_noncpp_runtime_generated_cpp_baseline_build_profiles()
+    if actual_build_profiles != expected_build_profiles:
+        issues.append(
+            "generated-first build profile inventory drifted: "
+            f"expected={expected_build_profiles!r} actual={actual_build_profiles!r}"
+        )
+
     return issues
 
 
@@ -232,9 +326,14 @@ def _collect_policy_wording_issues() -> list[str]:
     return issues
 
 
+def _collect_smoke_issues() -> list[str]:
+    return _collect_smoke_inventory_issues()
+
+
 def main() -> int:
     issues = _collect_contract_issues()
     issues.extend(_collect_policy_wording_issues())
+    issues.extend(_collect_smoke_issues())
     if issues:
         for issue in issues:
             print(f"[NG] {issue}")

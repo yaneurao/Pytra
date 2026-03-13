@@ -27,6 +27,18 @@ class NonCppRuntimeGeneratedCppBaselineActivePolicyDocEntry(TypedDict):
     forbidden_needles: tuple[str, ...]
 
 
+class NonCppRuntimeGeneratedCppBaselineBuildProfileEntry(TypedDict):
+    backend: str
+    wiring_mode: str
+    runtime_refs: tuple[str, ...]
+
+
+class NonCppRuntimeGeneratedCppBaselineSmokeEntry(TypedDict):
+    backend: str
+    test_path: str
+    required_tests: tuple[str, ...]
+
+
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_BUCKET_ORDER_V1: Final[tuple[str, ...]] = (
     "built_in",
     "std",
@@ -109,7 +121,6 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "modules": (
             "std/argparse",
             "std/json",
-            "std/math",
             "std/pathlib",
             "std/random",
             "std/re",
@@ -120,7 +131,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
     {
         "backend": "cs",
         "legacy_state": "native_canonical",
-        "modules": ("std/json", "std/math", "std/pathlib"),
+        "modules": ("std/json", "std/pathlib"),
     },
     {
         "backend": "rs",
@@ -217,6 +228,180 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_ACTIVE_POLICY_DOCS_V1: Final[
     },
 )
 
+NONCPP_RUNTIME_GENERATED_CPP_BASELINE_BUILD_PROFILES_V1: Final[
+    tuple[NonCppRuntimeGeneratedCppBaselineBuildProfileEntry, ...]
+] = (
+    {
+        "backend": "cs",
+        "wiring_mode": "repo_runtime_bundle_residual",
+        "runtime_refs": (
+            "src/runtime/cs/native/built_in/py_runtime.cs",
+            "src/runtime/cs/generated/std/time.cs",
+            "src/runtime/cs/native/built_in/time.cs",
+            "src/runtime/cs/generated/std/math.cs",
+            "src/runtime/cs/generated/utils/png.cs",
+            "src/runtime/cs/generated/utils/gif.cs",
+            "src/runtime/cs/native/std/pathlib.cs",
+            "src/runtime/cs/native/std/json.cs",
+        ),
+    },
+    {
+        "backend": "go",
+        "wiring_mode": "staged_output_runtime_bundle",
+        "runtime_refs": ("out/py_runtime.go", "out/png.go", "out/gif.go"),
+    },
+    {
+        "backend": "java",
+        "wiring_mode": "staged_output_runtime_bundle",
+        "runtime_refs": ("out/PyRuntime.java", "out/png.java", "out/gif.java"),
+    },
+    {
+        "backend": "swift",
+        "wiring_mode": "staged_output_runtime_bundle",
+        "runtime_refs": ("out/py_runtime.swift", "out/image_runtime.swift"),
+    },
+    {
+        "backend": "kotlin",
+        "wiring_mode": "staged_output_runtime_bundle",
+        "runtime_refs": ("out/py_runtime.kt", "out/image_runtime.kt"),
+    },
+    {
+        "backend": "scala",
+        "wiring_mode": "staged_output_runner_bundle",
+        "runtime_refs": ("out/py_runtime.scala", "out/image_runtime.scala"),
+    },
+    {
+        "backend": "nim",
+        "wiring_mode": "standalone_compiler_only",
+        "runtime_refs": (),
+    },
+    {
+        "backend": "rs",
+        "wiring_mode": "standalone_compiler_only",
+        "runtime_refs": (),
+    },
+    {
+        "backend": "js",
+        "wiring_mode": "direct_script_runner",
+        "runtime_refs": (),
+    },
+    {
+        "backend": "ts",
+        "wiring_mode": "direct_script_runner",
+        "runtime_refs": (),
+    },
+    {
+        "backend": "lua",
+        "wiring_mode": "direct_script_runner",
+        "runtime_refs": (),
+    },
+    {
+        "backend": "ruby",
+        "wiring_mode": "direct_script_runner",
+        "runtime_refs": (),
+    },
+    {
+        "backend": "php",
+        "wiring_mode": "direct_script_runner",
+        "runtime_refs": (),
+    },
+)
+
+NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
+    tuple[NonCppRuntimeGeneratedCppBaselineSmokeEntry, ...]
+] = (
+    {
+        "backend": "go",
+        "test_path": "test/unit/backends/go/test_py2go_smoke.py",
+        "required_tests": (
+            "test_go_runtime_source_path_is_migrated",
+            "test_go_generated_built_in_compare_lane_compiles_with_runtime_bundle",
+        ),
+    },
+    {
+        "backend": "java",
+        "test_path": "test/unit/backends/java/test_py2java_smoke.py",
+        "required_tests": (
+            "test_java_runtime_source_path_is_migrated",
+            "test_java_generated_built_in_compare_lane_compiles_with_runtime_bundle",
+        ),
+    },
+    {
+        "backend": "kotlin",
+        "test_path": "test/unit/backends/kotlin/test_py2kotlin_smoke.py",
+        "required_tests": (
+            "test_kotlin_runtime_source_path_is_migrated",
+            "test_kotlin_generated_built_in_compare_lane_compiles_with_runtime_bundle",
+        ),
+    },
+    {
+        "backend": "scala",
+        "test_path": "test/unit/backends/scala/test_py2scala_smoke.py",
+        "required_tests": (
+            "test_scala_runtime_source_path_is_migrated",
+            "test_scala_generated_built_in_compare_lane_is_materialized",
+        ),
+    },
+    {
+        "backend": "swift",
+        "test_path": "test/unit/backends/swift/test_py2swift_smoke.py",
+        "required_tests": (
+            "test_swift_runtime_source_path_is_migrated",
+            "test_swift_generated_built_in_compare_lane_compiles_with_runtime_bundle",
+        ),
+    },
+    {
+        "backend": "nim",
+        "test_path": "test/unit/backends/nim/test_py2nim_smoke.py",
+        "required_tests": (
+            "test_nim_runtime_source_path_is_migrated",
+            "test_nim_generated_built_in_compare_lane_compiles_with_runtime_bundle",
+        ),
+    },
+    {
+        "backend": "js",
+        "test_path": "test/unit/backends/js/test_py2js_smoke.py",
+        "required_tests": (
+            "test_js_repo_compat_lane_resolves_runtime_helpers",
+            "test_js_generated_built_in_compare_lane_resolves_native_runtime",
+        ),
+    },
+    {
+        "backend": "ts",
+        "test_path": "test/unit/backends/ts/test_py2ts_smoke.py",
+        "required_tests": (
+            "test_ts_repo_compat_lane_reexports_runtime_helpers",
+            "test_ts_generated_built_in_compare_lane_rehomes_native_runtime_import",
+        ),
+    },
+    {
+        "backend": "lua",
+        "test_path": "test/unit/backends/lua/test_py2lua_smoke.py",
+        "required_tests": (
+            "test_lua_runtime_source_path_is_migrated",
+            "test_lua_repo_compat_lane_resolves_runtime_helpers",
+        ),
+    },
+    {
+        "backend": "ruby",
+        "test_path": "test/unit/backends/rb/test_py2rb_smoke.py",
+        "required_tests": (
+            "test_ruby_runtime_source_path_is_migrated",
+            "test_ruby_repo_compat_lane_resolves_runtime_helpers",
+        ),
+    },
+    {
+        "backend": "php",
+        "test_path": "test/unit/backends/php/test_py2php_smoke.py",
+        "required_tests": (
+            "test_php_runtime_source_path_is_migrated",
+            "test_php_repo_generated_and_compat_lanes_resolve_native_substrate",
+            "test_php_generated_built_in_compare_lane_resolves_native_runtime",
+            "test_php_repo_public_compat_lane_resolves_remaining_shims",
+        ),
+    },
+)
+
 
 def iter_noncpp_runtime_generated_cpp_baseline_bucket_order() -> tuple[str, ...]:
     return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_BUCKET_ORDER_V1
@@ -260,3 +445,15 @@ def iter_noncpp_runtime_generated_cpp_baseline_active_policy_docs() -> tuple[
     NonCppRuntimeGeneratedCppBaselineActivePolicyDocEntry, ...
 ]:
     return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_ACTIVE_POLICY_DOCS_V1
+
+
+def iter_noncpp_runtime_generated_cpp_baseline_build_profiles() -> tuple[
+    NonCppRuntimeGeneratedCppBaselineBuildProfileEntry, ...
+]:
+    return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_BUILD_PROFILES_V1
+
+
+def iter_noncpp_runtime_generated_cpp_baseline_smoke_inventory() -> tuple[
+    NonCppRuntimeGeneratedCppBaselineSmokeEntry, ...
+]:
+    return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1

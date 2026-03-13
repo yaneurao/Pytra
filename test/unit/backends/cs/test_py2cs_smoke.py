@@ -1007,6 +1007,20 @@ def f(x: object) -> bool:
         self.assertIn("Pytra.CsModule.math.sqrt(81.0)", cs)
         self.assertNotIn("unsupported", cs)
 
+    def test_generated_math_runtime_owner_is_live_wrapper_shaped(self) -> None:
+        generated = (
+            ROOT / "src" / "runtime" / "cs" / "generated" / "std" / "math.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("namespace Pytra.CsModule", generated)
+        self.assertIn("public static class math", generated)
+        self.assertIn("public const double pi = Math.PI;", generated)
+        self.assertIn("public const double e = Math.E;", generated)
+        self.assertIn("public const double tau = Math.PI * 2.0;", generated)
+        self.assertIn("return Math.Sqrt(x);", generated)
+        self.assertIn("return Math.Ceiling(x);", generated)
+        self.assertNotIn("public static class Program", generated)
+        self.assertNotIn("__m.", generated)
+
     def test_representative_re_extended_fixture_transpiles(self) -> None:
         fixture = find_fixture_case("re_extended")
         east = load_east(fixture, parser_backend="self_hosted")

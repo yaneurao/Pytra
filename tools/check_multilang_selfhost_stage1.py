@@ -797,7 +797,7 @@ def _run_cs_stage2(stage1_out: Path, sample_py: Path, stage2_tmp_dir: Path) -> t
     runtime_files = [
         ROOT / "src" / "runtime" / "cs" / "native" / "built_in" / "py_runtime.cs",
         ROOT / "src" / "runtime" / "cs" / "native" / "built_in" / "time.cs",
-        ROOT / "src" / "runtime" / "cs" / "native" / "built_in" / "math.cs",
+        ROOT / "src" / "runtime" / "cs" / "generated" / "std" / "math.cs",
         ROOT / "src" / "runtime" / "cs" / "generated" / "utils" / "png.cs",
         ROOT / "src" / "runtime" / "cs" / "generated" / "utils" / "gif.cs",
         ROOT / "src" / "runtime" / "cs" / "native" / "std" / "pathlib.cs",

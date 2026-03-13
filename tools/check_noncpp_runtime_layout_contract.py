@@ -155,7 +155,6 @@ def _collect_builtin_lane_issues() -> list[str]:
         issues.append("Rust native built_in residual set drifted")
 
     for rel_path in (
-        "src/runtime/cs/native/built_in/math.cs",
         "src/runtime/cs/native/built_in/py_runtime.cs",
         "src/runtime/cs/native/built_in/time.cs",
         "src/runtime/rs/native/built_in/py_runtime.rs",
@@ -238,6 +237,23 @@ def _collect_csharp_lane_issues() -> list[str]:
                         issues.append("canonical generated time lane lost the live helper class")
                     if "return time_native.perf_counter();" not in generated_text:
                         issues.append("canonical generated time lane no longer targets the native backing seam")
+                if module_name == "math":
+                    if "namespace Pytra.CsModule" not in generated_text:
+                        issues.append("canonical generated math lane lost the Pytra.CsModule namespace wrapper")
+                    if "public static class math" not in generated_text:
+                        issues.append("canonical generated math lane lost the live helper class")
+                    for needle in (
+                        "public const double pi = Math.PI;",
+                        "public const double e = Math.E;",
+                        "public const double tau = Math.PI * 2.0;",
+                        "return Math.Sqrt(x);",
+                        "return Math.Log10(x);",
+                        "return Math.Ceiling(x);",
+                    ):
+                        if needle not in generated_text:
+                            issues.append(f"canonical generated math lane lost live wrapper shape: {needle}")
+                    if "__m." in generated_text or "py_extern(" in generated_text:
+                        issues.append("canonical generated math lane still contains extern/runtime residue")
             if generated_rel not in manifest_text:
                 issues.append(f"manifest missing canonical C# std output path: {module_name}")
         else:
@@ -272,9 +288,7 @@ def _collect_csharp_lane_issues() -> list[str]:
                 issues.append(f"generated/std lane missing generated path: {module_name}")
             elif generated_rel not in build_profile_text:
                 issues.append(f"generated/std lane missing from C# build profile: {module_name}")
-            if native_rel == "":
-                issues.append(f"generated/std backing seam missing native path: {module_name}")
-            elif native_rel not in build_profile_text:
+            if native_rel != "" and native_rel not in build_profile_text:
                 issues.append(f"generated/std backing seam missing from C# build profile: {module_name}")
             if entry["canonical_runtime_symbol"] != "" and entry["canonical_runtime_symbol"] not in emitter_text and entry["canonical_runtime_symbol"] not in smoke_text:
                 issues.append(f"generated/std canonical runtime symbol not referenced: {module_name}")
@@ -307,7 +321,7 @@ def _collect_csharp_lane_issues() -> list[str]:
             issues.append("C# live-generated candidate generated path drifted")
         if candidate_entry["native_rel"] != candidate["native_rel"]:
             issues.append("C# live-generated candidate native path drifted")
-    if tuple(candidate["deferred_native_canonical_modules"]) != ("json", "pathlib", "math"):
+    if tuple(candidate["deferred_native_canonical_modules"]) != ("json", "pathlib"):
         issues.append("C# deferred native-canonical module set drifted")
     if tuple(candidate["deferred_no_runtime_modules"]) != (
         "random",
