@@ -247,6 +247,43 @@ def _is_perf_counter_runtime_symbol(runtime_module_id: str, runtime_symbol: str)
     return _runtime_symbol_semantic_tag(runtime_module_id, runtime_symbol) == "stdlib.fn.perf_counter"
 
 
+def _is_glob_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
+    return _runtime_symbol_semantic_tag(runtime_module_id, runtime_symbol) == "stdlib.fn.glob"
+
+
+def _is_os_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
+    return _runtime_symbol_semantic_tag(runtime_module_id, runtime_symbol) in {
+        "stdlib.fn.getcwd",
+        "stdlib.fn.mkdir",
+        "stdlib.fn.makedirs",
+    }
+
+
+def _is_os_path_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
+    return _runtime_symbol_semantic_tag(runtime_module_id, runtime_symbol) in {
+        "stdlib.fn.join",
+        "stdlib.fn.dirname",
+        "stdlib.fn.basename",
+        "stdlib.fn.splitext",
+        "stdlib.fn.abspath",
+        "stdlib.fn.exists",
+    }
+
+
+def _is_sys_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
+    return _runtime_symbol_semantic_tag(runtime_module_id, runtime_symbol) in {
+        "stdlib.symbol.argv",
+        "stdlib.symbol.path",
+        "stdlib.symbol.stderr",
+        "stdlib.symbol.stdout",
+        "stdlib.fn.exit",
+        "stdlib.fn.set_argv",
+        "stdlib.fn.set_path",
+        "stdlib.fn.write_stderr",
+        "stdlib.fn.write_stdout",
+    }
+
+
 def _pascal_symbol_name(name: str) -> str:
     out: list[str] = []
     uppercase_next = True
@@ -281,6 +318,42 @@ def _runtime_symbol_alias_expr(runtime_module_id: str, runtime_symbol: str) -> s
         return "pyMath" + _pascal_symbol_name(sym)
     if _is_perf_counter_runtime_symbol(mod, sym):
         return "__pytra_perf_counter"
+    if _is_glob_runtime_symbol(mod, sym):
+        return "function(_pattern) return {} end"
+    if _is_os_runtime_symbol(mod, sym):
+        if sym == "getcwd":
+            return "function() return '.' end"
+        return "function(_p, _exist_ok) end"
+    if _is_os_path_runtime_symbol(mod, sym):
+        if sym == "join":
+            return "function(a, b) return tostring(a) .. '/' .. tostring(b) end"
+        if sym == "dirname":
+            return "function(_p) return '' end"
+        if sym == "basename":
+            return "function(p) return tostring(p) end"
+        if sym == "splitext":
+            return "function(p) return { tostring(p), '' } end"
+        if sym == "abspath":
+            return "function(p) return tostring(p) end"
+        if sym == "exists":
+            return "function(_p) return false end"
+    if _is_sys_runtime_symbol(mod, sym):
+        if sym == "argv":
+            return "(arg or {})"
+        if sym == "path":
+            return "{}"
+        if sym == "stderr":
+            return "{ write = function(text) io.stderr:write(text) end }"
+        if sym == "stdout":
+            return "{ write = function(text) io.write(text) end }"
+        if sym == "exit":
+            return "function(code) os.exit(tonumber(code) or 0) end"
+        if sym == "set_argv" or sym == "set_path":
+            return "function(_values) end"
+        if sym == "write_stderr":
+            return "function(text) io.stderr:write(text) end"
+        if sym == "write_stdout":
+            return "function(text) io.write(text) end"
     return ""
 
 
@@ -306,47 +379,6 @@ def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
         return "local " + alias_txt + " = { Enum = {}, IntEnum = {}, IntFlag = {} }"
     if mod == "pytra.std.argparse":
         return "local " + alias_txt + " = { ArgumentParser = function(...) return {} end }"
-    if mod == "pytra.std.glob":
-        return "local " + alias_txt + " = { glob = function(_pattern) return {} end }"
-    if mod == "pytra.std.os":
-        return (
-            "local "
-            + alias_txt
-            + " = { "
-            + "getcwd = function() return '.' end, "
-            + "mkdir = function(_p) end, "
-            + "makedirs = function(_p, _exist_ok) end "
-            + "}"
-        )
-    if mod == "pytra.std.os_path":
-        return (
-            "local "
-            + alias_txt
-            + " = { "
-            + "join = function(a, b) return tostring(a) .. '/' .. tostring(b) end, "
-            + "dirname = function(_p) return '' end, "
-            + "basename = function(p) return tostring(p) end, "
-            + "splitext = function(p) return { tostring(p), '' } end, "
-            + "abspath = function(p) return tostring(p) end, "
-            + "exists = function(_p) return false end "
-            + "}"
-        )
-    if mod == "pytra.std.sys":
-        return (
-            "local "
-            + alias_txt
-            + " = { "
-            + "argv = (arg or {}), "
-            + "path = {}, "
-            + "stderr = { write = function(text) io.stderr:write(text) end }, "
-            + "stdout = { write = function(text) io.write(text) end }, "
-            + "exit = function(code) os.exit(tonumber(code) or 0) end, "
-            + "set_argv = function(_values) end, "
-            + "set_path = function(_values) end, "
-            + "write_stderr = function(text) io.stderr:write(text) end, "
-            + "write_stdout = function(text) io.write(text) end "
-            + "}"
-        )
     if mod == "pytra.std.re":
         return "local " + alias_txt + " = { sub = function(_pattern, _repl, text, _flags) return text end }"
     if mod == "pytra.std.json":
@@ -371,46 +403,6 @@ def _runtime_symbol_alias_line(alias_txt: str, runtime_module_id: str, runtime_s
         return ""
     if mod == "pytra.std.argparse" and sym == "ArgumentParser":
         return "local " + alias_txt + " = function(...) return {} end"
-    if mod == "pytra.std.glob" and sym == "glob":
-        return "local " + alias_txt + " = function(_pattern) return {} end"
-    if mod == "pytra.std.os":
-        if sym == "getcwd":
-            return "local " + alias_txt + " = function() return '.' end"
-        if sym == "mkdir" or sym == "makedirs":
-            return "local " + alias_txt + " = function(_p, _exist_ok) end"
-        return ""
-    if mod == "pytra.std.os_path":
-        if sym == "join":
-            return "local " + alias_txt + " = function(a, b) return tostring(a) .. '/' .. tostring(b) end"
-        if sym == "dirname":
-            return "local " + alias_txt + " = function(_p) return '' end"
-        if sym == "basename":
-            return "local " + alias_txt + " = function(p) return tostring(p) end"
-        if sym == "splitext":
-            return "local " + alias_txt + " = function(p) return { tostring(p), '' } end"
-        if sym == "abspath":
-            return "local " + alias_txt + " = function(p) return tostring(p) end"
-        if sym == "exists":
-            return "local " + alias_txt + " = function(_p) return false end"
-        return ""
-    if mod == "pytra.std.sys":
-        if sym == "argv":
-            return "local " + alias_txt + " = (arg or {})"
-        if sym == "path":
-            return "local " + alias_txt + " = {}"
-        if sym == "stderr":
-            return "local " + alias_txt + " = { write = function(text) io.stderr:write(text) end }"
-        if sym == "stdout":
-            return "local " + alias_txt + " = { write = function(text) io.write(text) end }"
-        if sym == "exit":
-            return "local " + alias_txt + " = function(code) os.exit(tonumber(code) or 0) end"
-        if sym == "set_argv" or sym == "set_path":
-            return "local " + alias_txt + " = function(_values) end"
-        if sym == "write_stderr":
-            return "local " + alias_txt + " = function(text) io.stderr:write(text) end"
-        if sym == "write_stdout":
-            return "local " + alias_txt + " = function(text) io.write(text) end"
-        return ""
     if mod == "pytra.std.re" and sym == "sub":
         return "local " + alias_txt + " = function(_pattern, _repl, text, _flags) return text end"
     if mod == "pytra.std.json":

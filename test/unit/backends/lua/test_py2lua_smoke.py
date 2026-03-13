@@ -240,6 +240,30 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertIn("return math.sin(pi)", lua)
         self.assertNotIn("__pytra_math_module()", lua)
 
+    def test_import_lowering_maps_os_sys_glob_runtime_via_generic_extern_metadata(self) -> None:
+        src = (
+            "import os\n"
+            "from os_path import join\n"
+            "from sys import write_stdout\n"
+            "from glob import glob\n"
+            "def f() -> None:\n"
+            "    _ = os.getcwd()\n"
+            "    _ = join('a', 'b')\n"
+            "    _ = glob('*.png')\n"
+            "    write_stdout('ok')\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "imports_os_sys_glob.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("local os = { ", lua)
+        self.assertIn("getcwd = function() return '.' end", lua)
+        self.assertIn("local join = function(a, b) return tostring(a) .. '/' .. tostring(b) end", lua)
+        self.assertIn("local write_stdout = function(text) io.write(text) end", lua)
+        self.assertIn("local glob = function(_pattern) return {} end", lua)
+        self.assertNotIn('mod == "pytra.std.os"', lua)
+
     def test_representative_property_method_call_fixture_transpiles(self) -> None:
         try:
             from test.unit.backends.representative_contract_support import (
@@ -765,6 +789,10 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertNotIn('mod == "time"', src)
         self.assertNotIn('mod == "pytra.std.math"', src)
         self.assertNotIn('mod == "pytra.std.time"', src)
+        self.assertNotIn('mod == "pytra.std.os"', src)
+        self.assertNotIn('mod == "pytra.std.os_path"', src)
+        self.assertNotIn('mod == "pytra.std.sys"', src)
+        self.assertNotIn('mod == "pytra.std.glob"', src)
         self.assertNotIn('mod == "pathlib"', src)
         self.assertNotIn('mod == "json"', src)
         self.assertNotIn('mod == "pytra.utils"', src)

@@ -35,7 +35,7 @@
 
 1. [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01] 全言語の `@extern` runtime/emitter 契約を見直し、generated rewrite ではなく native owner + generic extern metadata に揃える。
 文脈: [docs/ja/plans/p2-multilang-extern-runtime-realign.md](../plans/p2-multilang-extern-runtime-realign.md)
-- 進捗メモ: `std/math,time,os,os_path,sys,glob` と `built_in/io_ops,scalar_ops` の manifest postprocess・native owner・emitter hardcode・generated drift inventory/checker を固定し、`S2-01` で C# `std/time` は `cs_std_native_owner_wrapper + time_native`、`rs/java/js/ts/php` の `std/time` helper 名は generic `perf_counter` seam へ整理済み。`S2-02` first bundle では runtime symbol index に `math.float_args` / `math.value_getter` を追加し、Scala/Lua emitter の `std/math` shortcut と Lua `std/time` alias を generic metadata / semantic tag 経由へ揃えた。
+- 進捗メモ: `std/math,time,os,os_path,sys,glob` と `built_in/io_ops,scalar_ops` の manifest postprocess・native owner・emitter hardcode・generated drift inventory/checker を固定し、`S2-01` で C# `std/time` は `cs_std_native_owner_wrapper + time_native`、`rs/java/js/ts/php` の `std/time` helper 名は generic `perf_counter` seam へ整理済み。`S2-02` first bundle では runtime symbol index に `math.float_args` / `math.value_getter` を追加し、Scala/Lua emitter の `std/math` shortcut、Lua `std/time` alias、さらに Lua `std/os/os_path/sys/glob` alias も generic metadata / semantic tag 経由へ揃えた。
 
 2. [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01] bundle-based coverage matrix を導入し、`feature x lane x backend` の contract coverage 100% を support matrix と分離して固定する。
 文脈: [docs/ja/plans/p2-backend-contract-coverage-100.md](../plans/p2-backend-contract-coverage-100.md)
