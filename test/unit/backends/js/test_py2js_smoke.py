@@ -729,6 +729,20 @@ def main() -> None:
                 )
                 self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
+    def test_js_generated_math_runtime_wrapper_delegates_to_native_owner(self) -> None:
+        generated = (ROOT / "src" / "runtime" / "js" / "generated" / "std" / "math.js").read_text(
+            encoding="utf-8"
+        )
+        native = (ROOT / "src" / "runtime" / "js" / "native" / "std" / "math_native.js").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('require("../../native/std/math_native.js")', generated)
+        self.assertIn("return math_native.sqrt(x);", generated)
+        self.assertIn("const pi = math_native.pi;", generated)
+        self.assertNotIn("Math.PI", generated)
+        self.assertIn("return Math.sqrt(x);", native)
+        self.assertIn("const pi = Math.PI;", native)
+
     def test_pathlib_runtime_symbol_uses_factory_and_property_access(self) -> None:
         fixture = find_fixture_case("math_path_runtime_ir")
         east = load_east(fixture, parser_backend="self_hosted")

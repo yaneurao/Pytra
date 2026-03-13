@@ -22,6 +22,9 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
     def test_generated_drift_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_generated_drift_issues(), [])
 
+    def test_representative_smoke_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_representative_smoke_issues(), [])
+
     def test_module_order_is_fixed(self) -> None:
         self.assertEqual(
             inventory_mod.MODULE_ORDER,
@@ -65,6 +68,23 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
             ),
         )
         self.assertEqual(row["cpp_native_owner_paths"], ("src/runtime/cpp/native/std/math.cpp",))
+        self.assertEqual(
+            row["representative_smoke_needles"],
+            (
+                (
+                    "test/unit/backends/cs/test_py2cs_smoke.py",
+                    "def test_representative_math_import_fixture_transpiles",
+                ),
+                (
+                    "test/unit/backends/go/test_py2go_smoke.py",
+                    "def test_go_native_emitter_routes_math_calls_via_runtime_helpers",
+                ),
+                (
+                    "test/unit/backends/rs/test_py2rs_smoke.py",
+                    "def test_runtime_scaffold_exposes_pytra_std_time_and_math",
+                ),
+            ),
+        )
 
     def test_time_inventory_noncpp_native_seam_is_fixed(self) -> None:
         by_id = {
@@ -90,6 +110,23 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
             by_id["std/time"]["noncpp_native_owner_paths"],
             ("src/runtime/cs/native/std/time_native.cs",),
         )
+        self.assertEqual(
+            by_id["std/time"]["representative_smoke_needles"],
+            (
+                (
+                    "test/unit/backends/cs/test_py2cs_smoke.py",
+                    "def test_representative_time_import_fixture_transpiles",
+                ),
+                (
+                    "test/unit/backends/java/test_py2java_smoke.py",
+                    "def test_java_native_emitter_routes_perf_counter_via_runtime_helper",
+                ),
+                (
+                    "test/unit/backends/rs/test_py2rs_smoke.py",
+                    "def test_generated_time_and_math_runtime_hook_modules_compile_with_scaffold",
+                ),
+            ),
+        )
 
     def test_math_inventory_noncpp_native_seam_is_fixed(self) -> None:
         by_id = {
@@ -98,7 +135,11 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         }
         self.assertEqual(
             by_id["std/math"]["noncpp_native_owner_paths"],
-            ("src/runtime/cs/native/std/math_native.cs",),
+            (
+                "src/runtime/cs/native/std/math_native.cs",
+                "src/runtime/js/native/std/math_native.js",
+                "src/runtime/ts/native/std/math_native.ts",
+            ),
         )
         self.assertEqual(by_id["std/math"]["emitter_hardcode_needles"], ())
 
@@ -135,6 +176,19 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         }
         self.assertEqual(by_id["built_in/io_ops"]["emitter_hardcode_needles"], ())
         self.assertEqual(by_id["built_in/io_ops"]["generated_drift_needles"], ())
+        self.assertEqual(
+            by_id["built_in/io_ops"]["representative_smoke_needles"],
+            (
+                (
+                    "test/unit/backends/go/test_py2go_smoke.py",
+                    "def test_go_generated_built_in_compare_lane_compiles_with_runtime_bundle",
+                ),
+                (
+                    "test/unit/backends/kotlin/test_py2kotlin_smoke.py",
+                    "def test_kotlin_generated_built_in_compare_lane_compiles_with_runtime_bundle",
+                ),
+            ),
+        )
 
 
 if __name__ == "__main__":

@@ -304,6 +304,20 @@ def main() -> None:
                 for needle in needles:
                     self.assertIn(needle, text)
 
+    def test_ts_generated_math_runtime_wrapper_delegates_to_native_owner(self) -> None:
+        generated = (ROOT / "src" / "runtime" / "ts" / "generated" / "std" / "math.ts").read_text(
+            encoding="utf-8"
+        )
+        native = (ROOT / "src" / "runtime" / "ts" / "native" / "std" / "math_native.ts").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('import * as math_native from "../../native/std/math_native";', generated)
+        self.assertIn("return math_native.sqrt(x);", generated)
+        self.assertIn("export const pi: number = math_native.pi;", generated)
+        self.assertNotIn("Math.PI", generated)
+        self.assertIn("return Math.sqrt(x);", native)
+        self.assertIn("export const pi: number = Math.PI;", native)
+
     def test_pathlib_runtime_symbol_uses_factory_and_property_access(self) -> None:
         fixture = find_fixture_case("math_path_runtime_ir")
         east = load_east(fixture, parser_backend="self_hosted")

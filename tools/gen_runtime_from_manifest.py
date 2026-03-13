@@ -1473,24 +1473,25 @@ def rewrite_js_std_math_live_wrapper(js_src: str) -> str:
     text = _strip_trailing_string_literal_expr(js_src)
     text = text.replace('import { extern } from "./pytra/std.js";\n\n', "")
     text = text.replace('"pytra.std.math: extern-marked math API with Python runtime fallback.";\n', "")
-    text = text.replace("let pi = extern(__m.pi);", "const pi = Math.PI;")
-    text = text.replace("let e = extern(__m.e);", "const e = Math.E;")
+    text = "const math_native = require(\"../../native/std/math_native.js\");\n\n" + text
+    text = text.replace("let pi = extern(__m.pi);", "const pi = math_native.pi;")
+    text = text.replace("let e = extern(__m.e);", "const e = math_native.e;")
     replacements = {
-        "return __m.sqrt(x);": "return Math.sqrt(x);",
-        "return __m.sin(x);": "return Math.sin(x);",
-        "return __m.cos(x);": "return Math.cos(x);",
-        "return __m.tan(x);": "return Math.tan(x);",
-        "return __m.exp(x);": "return Math.exp(x);",
-        "return __m.log(x);": "return Math.log(x);",
-        "return __m.log10(x);": "return Math.log10(x);",
-        "return __m.fabs(x);": "return Math.abs(x);",
-        "return __m.floor(x);": "return Math.floor(x);",
-        "return __m.ceil(x);": "return Math.ceil(x);",
-        "return __m.pow(x, y);": "return Math.pow(x, y);",
+        "return __m.sqrt(x);": "return math_native.sqrt(x);",
+        "return __m.sin(x);": "return math_native.sin(x);",
+        "return __m.cos(x);": "return math_native.cos(x);",
+        "return __m.tan(x);": "return math_native.tan(x);",
+        "return __m.exp(x);": "return math_native.exp(x);",
+        "return __m.log(x);": "return math_native.log(x);",
+        "return __m.log10(x);": "return math_native.log10(x);",
+        "return __m.fabs(x);": "return math_native.fabs(x);",
+        "return __m.floor(x);": "return math_native.floor(x);",
+        "return __m.ceil(x);": "return math_native.ceil(x);",
+        "return __m.pow(x, y);": "return math_native.pow(x, y);",
     }
     for before, after in replacements.items():
         text = text.replace(before, after)
-    if "extern(" in text or "__m." in text:
+    if "extern(" in text or "__m." in text or "Math." in text:
         raise RuntimeError("generated JS std/math wrapper still contains extern/math runtime residue")
     return text.rstrip() + "\n\nmodule.exports = { pi, e, sin, cos, tan, sqrt, exp, log, log10, fabs, floor, ceil, pow };\n"
 
@@ -2173,8 +2174,9 @@ def rewrite_ts_std_math_live_wrapper(ts_src: str) -> str:
     text = _strip_trailing_string_literal_expr(ts_src)
     text = text.replace('import { extern } from "./pytra/std.js";\n\n', "")
     text = text.replace('"pytra.std.math: extern-marked math API with Python runtime fallback.";\n', "")
-    text = text.replace("let pi = extern(__m.pi);", "export const pi: number = Math.PI;")
-    text = text.replace("let e = extern(__m.e);", "export const e: number = Math.E;")
+    text = 'import * as math_native from "../../native/std/math_native";\n\n' + text
+    text = text.replace("let pi = extern(__m.pi);", "export const pi: number = math_native.pi;")
+    text = text.replace("let e = extern(__m.e);", "export const e: number = math_native.e;")
     signature_replacements = {
         "function sqrt(x) {": "export function sqrt(x: number): number {",
         "function sin(x) {": "export function sin(x: number): number {",
@@ -2191,21 +2193,21 @@ def rewrite_ts_std_math_live_wrapper(ts_src: str) -> str:
     for before, after in signature_replacements.items():
         text = text.replace(before, after)
     replacements = {
-        "return __m.sqrt(x);": "return Math.sqrt(x);",
-        "return __m.sin(x);": "return Math.sin(x);",
-        "return __m.cos(x);": "return Math.cos(x);",
-        "return __m.tan(x);": "return Math.tan(x);",
-        "return __m.exp(x);": "return Math.exp(x);",
-        "return __m.log(x);": "return Math.log(x);",
-        "return __m.log10(x);": "return Math.log10(x);",
-        "return __m.fabs(x);": "return Math.abs(x);",
-        "return __m.floor(x);": "return Math.floor(x);",
-        "return __m.ceil(x);": "return Math.ceil(x);",
-        "return __m.pow(x, y);": "return Math.pow(x, y);",
+        "return __m.sqrt(x);": "return math_native.sqrt(x);",
+        "return __m.sin(x);": "return math_native.sin(x);",
+        "return __m.cos(x);": "return math_native.cos(x);",
+        "return __m.tan(x);": "return math_native.tan(x);",
+        "return __m.exp(x);": "return math_native.exp(x);",
+        "return __m.log(x);": "return math_native.log(x);",
+        "return __m.log10(x);": "return math_native.log10(x);",
+        "return __m.fabs(x);": "return math_native.fabs(x);",
+        "return __m.floor(x);": "return math_native.floor(x);",
+        "return __m.ceil(x);": "return math_native.ceil(x);",
+        "return __m.pow(x, y);": "return math_native.pow(x, y);",
     }
     for before, after in replacements.items():
         text = text.replace(before, after)
-    if "extern(" in text or "__m." in text:
+    if "extern(" in text or "__m." in text or "Math." in text:
         raise RuntimeError("generated TS std/math wrapper still contains extern/math runtime residue")
     return text.rstrip() + "\n"
 

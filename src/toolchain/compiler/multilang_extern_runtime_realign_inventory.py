@@ -28,6 +28,7 @@ class ExternRuntimeRealignEntry(TypedDict):
     noncpp_native_owner_paths: tuple[str, ...]
     emitter_hardcode_needles: tuple[tuple[str, str], ...]
     generated_drift_needles: tuple[tuple[str, str], ...]
+    representative_smoke_needles: tuple[tuple[str, str], ...]
 
 
 MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignEntry, ...]] = (
@@ -48,12 +49,28 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "php:php_std_math_live_wrapper",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/math.cpp",),
-        "noncpp_native_owner_paths": ("src/runtime/cs/native/std/math_native.cs",),
+        "noncpp_native_owner_paths": (
+            "src/runtime/cs/native/std/math_native.cs",
+            "src/runtime/js/native/std/math_native.js",
+            "src/runtime/ts/native/std/math_native.ts",
+        ),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (
-            ("src/runtime/js/generated/std/math.js", "Math.PI"),
-            ("src/runtime/ts/generated/std/math.ts", "Math.PI"),
             ("src/runtime/nim/generated/std/math.nim", "Python runtime fallback."),
+        ),
+        "representative_smoke_needles": (
+            (
+                "test/unit/backends/cs/test_py2cs_smoke.py",
+                "def test_representative_math_import_fixture_transpiles",
+            ),
+            (
+                "test/unit/backends/go/test_py2go_smoke.py",
+                "def test_go_native_emitter_routes_math_calls_via_runtime_helpers",
+            ),
+            (
+                "test/unit/backends/rs/test_py2rs_smoke.py",
+                "def test_runtime_scaffold_exposes_pytra_std_time_and_math",
+            ),
         ),
     },
     {
@@ -80,6 +97,20 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             ("src/runtime/ts/generated/std/time.ts", "process.hrtime.bigint"),
             ("src/runtime/nim/generated/std/time.nim", "Python runtime fallback."),
         ),
+        "representative_smoke_needles": (
+            (
+                "test/unit/backends/cs/test_py2cs_smoke.py",
+                "def test_representative_time_import_fixture_transpiles",
+            ),
+            (
+                "test/unit/backends/java/test_py2java_smoke.py",
+                "def test_java_native_emitter_routes_perf_counter_via_runtime_helper",
+            ),
+            (
+                "test/unit/backends/rs/test_py2rs_smoke.py",
+                "def test_generated_time_and_math_runtime_hook_modules_compile_with_scaffold",
+            ),
+        ),
     },
     {
         "module_id": "std/os",
@@ -100,6 +131,16 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "generated_drift_needles": (
             ("src/runtime/rs/generated/std/os.rs", "Python runtime fallback."),
         ),
+        "representative_smoke_needles": (
+            (
+                "test/unit/backends/lua/test_py2lua_smoke.py",
+                "def test_import_lowering_maps_os_sys_glob_runtime_via_generic_extern_metadata",
+            ),
+            (
+                "test/unit/backends/php/test_py2php_smoke.py",
+                "def test_php_runtime_source_path_is_migrated",
+            ),
+        ),
     },
     {
         "module_id": "std/os_path",
@@ -119,6 +160,16 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (
             ("src/runtime/rs/generated/std/os_path.rs", "Python runtime fallback."),
+        ),
+        "representative_smoke_needles": (
+            (
+                "test/unit/backends/lua/test_py2lua_smoke.py",
+                "def test_import_lowering_maps_os_sys_glob_runtime_via_generic_extern_metadata",
+            ),
+            (
+                "test/unit/backends/js/test_py2js_smoke.py",
+                "def test_stdlib_imports_use_runtime_bundle_paths",
+            ),
         ),
     },
     {
@@ -141,6 +192,16 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             ("src/runtime/js/generated/std/sys.js", "process.argv"),
             ("src/runtime/ts/generated/std/sys.ts", "process.argv"),
         ),
+        "representative_smoke_needles": (
+            (
+                "test/unit/backends/cs/test_py2cs_smoke.py",
+                "def test_representative_sys_extended_fixture_transpiles",
+            ),
+            (
+                "test/unit/backends/lua/test_py2lua_smoke.py",
+                "def test_import_lowering_maps_os_sys_glob_runtime_via_generic_extern_metadata",
+            ),
+        ),
     },
     {
         "module_id": "std/glob",
@@ -161,6 +222,16 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "generated_drift_needles": (
             ("src/runtime/rs/generated/std/glob.rs", "Python runtime fallback."),
         ),
+        "representative_smoke_needles": (
+            (
+                "test/unit/backends/lua/test_py2lua_smoke.py",
+                "def test_import_lowering_maps_os_sys_glob_runtime_via_generic_extern_metadata",
+            ),
+            (
+                "test/unit/backends/ts/test_py2ts_smoke.py",
+                "def test_stdlib_imports_use_runtime_bundle_paths",
+            ),
+        ),
     },
     {
         "module_id": "built_in/io_ops",
@@ -180,6 +251,16 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "noncpp_native_owner_paths": (),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (),
+        "representative_smoke_needles": (
+            (
+                "test/unit/backends/go/test_py2go_smoke.py",
+                "def test_go_generated_built_in_compare_lane_compiles_with_runtime_bundle",
+            ),
+            (
+                "test/unit/backends/kotlin/test_py2kotlin_smoke.py",
+                "def test_kotlin_generated_built_in_compare_lane_compiles_with_runtime_bundle",
+            ),
+        ),
     },
     {
         "module_id": "built_in/scalar_ops",
@@ -199,6 +280,16 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "noncpp_native_owner_paths": (),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (),
+        "representative_smoke_needles": (
+            (
+                "test/unit/backends/scala/test_py2scala_smoke.py",
+                "def test_scala_generated_built_in_compare_lane_is_materialized",
+            ),
+            (
+                "test/unit/backends/swift/test_py2swift_smoke.py",
+                "def test_swift_generated_built_in_compare_lane_compiles_with_runtime_bundle",
+            ),
+        ),
     },
 )
 

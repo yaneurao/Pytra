@@ -744,6 +744,15 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertIn(
             {
+                "current_prefix": "src/runtime/js/native/std/",
+                "target_prefix": "src/runtime/js/native/std/",
+                "ownership": "native",
+                "rationale": "JS extern-backed std owner seams now live in native/std while generated/std wrappers stay declaration-only.",
+            },
+            by_backend["js"],
+        )
+        self.assertIn(
+            {
                 "current_prefix": "src/runtime/js/generated/std/",
                 "target_prefix": "src/runtime/js/generated/std/",
                 "ownership": "generated",
@@ -757,6 +766,15 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "target_prefix": "src/runtime/ts/generated/built_in/",
                 "ownership": "generated",
                 "rationale": "TS live-generated built_in compare artifacts live in generated/built_in once the Wave B compare lanes are materialized.",
+            },
+            by_backend["ts"],
+        )
+        self.assertIn(
+            {
+                "current_prefix": "src/runtime/ts/native/std/",
+                "target_prefix": "src/runtime/ts/native/std/",
+                "ownership": "native",
+                "rationale": "TS extern-backed std owner seams now live in native/std while generated/std wrappers stay declaration-only compare artifacts.",
             },
             by_backend["ts"],
         )
@@ -1013,6 +1031,10 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             ),
         )
         self.assertEqual(
+            by_backend["js"]["pytra_core_files"],
+            ("built_in/py_runtime.js", "std/math_native.js"),
+        )
+        self.assertEqual(
             by_backend["php"]["pytra_gen_files"],
             (
                 "built_in/contains.php",
@@ -1071,6 +1093,10 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "utils/gif.ts",
                 "utils/png.ts",
             ),
+        )
+        self.assertEqual(
+            by_backend["ts"]["pytra_core_files"],
+            ("built_in/py_runtime.ts", "std/math_native.ts"),
         )
         self.assertEqual(by_backend["lua"]["pytra_gen_files"], LUA_GENERATED_FILES)
         self.assertEqual(by_backend["ruby"]["pytra_gen_files"], RUBY_GENERATED_FILES)
@@ -1330,6 +1356,10 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             ),
         )
         self.assertEqual(
+            by_backend["js"]["native_files"],
+            ("native/built_in/py_runtime.js", "native/std/math_native.js"),
+        )
+        self.assertEqual(
             by_backend["js"]["delete_target_files"],
             (),
         )
@@ -1362,6 +1392,10 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "generated/utils/gif.ts",
                 "generated/utils/png.ts",
             ),
+        )
+        self.assertEqual(
+            by_backend["ts"]["native_files"],
+            ("native/built_in/py_runtime.ts", "native/std/math_native.ts"),
         )
         self.assertEqual(by_backend["lua"]["generated_files"], LUA_TARGET_GENERATED_FILES)
         self.assertEqual(by_backend["ruby"]["generated_files"], RUBY_TARGET_GENERATED_FILES)
@@ -1431,12 +1465,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "std/random",
                     "std/re",
                     "std/sys",
-                    "std/time",
-                    "std/timeit",
-                    "utils/assertions",
-                    "utils/gif",
-                    "utils/png",
-                ),
+                "std/time",
+                "std/timeit",
+                "utils/assertions",
+                "utils/gif",
+                "utils/png",
+            ),
                 "native_modules": ("built_in/py_runtime",),
                 "delete_target_modules": (),
                 "blocked_modules": (),
@@ -1622,6 +1656,14 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             },
         )
         self.assertEqual(
+            by_backend["js"]["native_modules"],
+            ("built_in/py_runtime", "std/math_native"),
+        )
+        self.assertEqual(
+            by_backend["ts"]["native_modules"],
+            ("built_in/py_runtime", "std/math_native"),
+        )
+        self.assertEqual(
             by_backend["js"]["blocked_modules"],
             SCRIPT_FAMILY_MISSING_COMPARE_MODULES,
         )
@@ -1750,12 +1792,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "js": {
                     "backend": "js",
                     "substrate_modules": ("built_in/py_runtime",),
-                    "compare_residual_modules": (),
+                    "compare_residual_modules": ("std/math_native",),
                 },
                 "ts": {
                     "backend": "ts",
                     "substrate_modules": ("built_in/py_runtime",),
-                    "compare_residual_modules": (),
+                    "compare_residual_modules": ("std/math_native",),
                 },
                 "lua": {
                     "backend": "lua",
@@ -1786,12 +1828,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "js": {
                     "backend": "js",
                     "substrate_files": ("built_in/py_runtime.js",),
-                    "compare_residual_files": (),
+                    "compare_residual_files": ("std/math_native.js",),
                 },
                 "ts": {
                     "backend": "ts",
                     "substrate_files": ("built_in/py_runtime.ts",),
-                    "compare_residual_files": (),
+                    "compare_residual_files": ("std/math_native.ts",),
                 },
                 "lua": {
                     "backend": "lua",

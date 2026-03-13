@@ -474,6 +474,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "rationale": "JS handwritten built-in runtime already lives in native/built_in after the Wave B path cutover.",
             },
             {
+                "current_prefix": "src/runtime/js/native/std/",
+                "target_prefix": "src/runtime/js/native/std/",
+                "ownership": "native",
+                "rationale": "JS extern-backed std owner seams now live in native/std while generated/std wrappers stay declaration-only.",
+            },
+            {
                 "current_prefix": "src/runtime/js/generated/utils/",
                 "target_prefix": "src/runtime/js/generated/utils/",
                 "ownership": "generated",
@@ -505,6 +511,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/ts/native/built_in/",
                 "ownership": "native",
                 "rationale": "TS handwritten built-in runtime already lives in native/built_in after the Wave B path cutover.",
+            },
+            {
+                "current_prefix": "src/runtime/ts/native/std/",
+                "target_prefix": "src/runtime/ts/native/std/",
+                "ownership": "native",
+                "rationale": "TS extern-backed std owner seams now live in native/std while generated/std wrappers stay declaration-only compare artifacts.",
             },
             {
                 "current_prefix": "src/runtime/ts/generated/utils/",
@@ -803,7 +815,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     },
     {
         "backend": "js",
-        "pytra_core_files": ("built_in/py_runtime.js",),
+        "pytra_core_files": ("built_in/py_runtime.js", "std/math_native.js"),
         "pytra_gen_files": (
             "built_in/contains.js",
             "built_in/io_ops.js",
@@ -835,7 +847,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     },
     {
         "backend": "ts",
-        "pytra_core_files": ("built_in/py_runtime.ts",),
+        "pytra_core_files": ("built_in/py_runtime.ts", "std/math_native.ts"),
         "pytra_gen_files": (
             "built_in/contains.ts",
             "built_in/io_ops.ts",
@@ -1138,7 +1150,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/gif.js",
             "generated/utils/png.js",
         ),
-        "native_files": ("native/built_in/py_runtime.js",),
+        "native_files": ("native/built_in/py_runtime.js", "native/std/math_native.js"),
         "delete_target_files": (),
     },
     {
@@ -1170,7 +1182,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/gif.ts",
             "generated/utils/png.ts",
         ),
-        "native_files": ("native/built_in/py_runtime.ts",),
+        "native_files": ("native/built_in/py_runtime.ts", "native/std/math_native.ts"),
         "delete_target_files": (),
     },
     {
@@ -1384,14 +1396,14 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     {
         "backend": "js",
         "generated_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
-        "native_modules": ("built_in/py_runtime",),
+        "native_modules": ("built_in/py_runtime", "std/math_native"),
         "delete_target_modules": (),
         "blocked_modules": REMAINING_NONCPP_SCRIPT_FAMILY_MISSING_COMPARE_MODULES_V1,
     },
     {
         "backend": "ts",
         "generated_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
-        "native_modules": ("built_in/py_runtime",),
+        "native_modules": ("built_in/py_runtime", "std/math_native"),
         "delete_target_modules": (),
         "blocked_modules": REMAINING_NONCPP_SCRIPT_FAMILY_MISSING_COMPARE_MODULES_V1,
     },
@@ -1516,12 +1528,12 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUALS_V1: Final[
     {
         "backend": "js",
         "substrate_modules": ("built_in/py_runtime",),
-        "compare_residual_modules": (),
+        "compare_residual_modules": ("std/math_native",),
     },
     {
         "backend": "ts",
         "substrate_modules": ("built_in/py_runtime",),
-        "compare_residual_modules": (),
+        "compare_residual_modules": ("std/math_native",),
     },
     {
         "backend": "lua",
@@ -1547,12 +1559,12 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUAL_FILES_V1: Final[
     {
         "backend": "js",
         "substrate_files": ("built_in/py_runtime.js",),
-        "compare_residual_files": (),
+        "compare_residual_files": ("std/math_native.js",),
     },
     {
         "backend": "ts",
         "substrate_files": ("built_in/py_runtime.ts",),
-        "compare_residual_files": (),
+        "compare_residual_files": ("std/math_native.ts",),
     },
     {
         "backend": "lua",

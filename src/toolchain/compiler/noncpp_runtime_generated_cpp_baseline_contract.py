@@ -479,7 +479,10 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/gif.js",
             "generated/utils/png.js",
         ),
-        "native_files": ("native/built_in/py_runtime.js",),
+        "native_files": (
+            "native/built_in/py_runtime.js",
+            "native/std/math_native.js",
+        ),
         "delete_target_files": (),
     },
     {
@@ -511,7 +514,10 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/gif.ts",
             "generated/utils/png.ts",
         ),
-        "native_files": ("native/built_in/py_runtime.ts",),
+        "native_files": (
+            "native/built_in/py_runtime.ts",
+            "native/std/math_native.ts",
+        ),
         "delete_target_files": (),
     },
     {

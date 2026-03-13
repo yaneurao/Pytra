@@ -511,7 +511,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return Math.pow(x, y);", out)
         self.assertNotIn("extern(math.pi)", out)
 
-    def test_rewrite_js_std_math_live_wrapper_inlines_math_and_exports_constants(self) -> None:
+    def test_rewrite_js_std_math_live_wrapper_delegates_to_math_native(self) -> None:
         src = "\n".join(
             [
                 'import { extern } from "./pytra/std.js";',
@@ -529,13 +529,15 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
             ]
         )
         out = gen_mod.rewrite_js_std_math_live_wrapper(src)
-        self.assertIn("const pi = Math.PI;", out)
-        self.assertIn("const e = Math.E;", out)
-        self.assertIn("return Math.sin(x);", out)
-        self.assertIn("return Math.pow(x, y);", out)
+        self.assertIn('const math_native = require("../../native/std/math_native.js");', out)
+        self.assertIn("const pi = math_native.pi;", out)
+        self.assertIn("const e = math_native.e;", out)
+        self.assertIn("return math_native.sin(x);", out)
+        self.assertIn("return math_native.pow(x, y);", out)
         self.assertIn("module.exports = { pi, e, sin, cos, tan, sqrt, exp, log, log10, fabs, floor, ceil, pow };", out)
         self.assertNotIn("__m.", out)
         self.assertNotIn("extern(", out)
+        self.assertNotIn("Math.", out)
 
     def test_rewrite_js_ts_built_in_cjs_module_rehomes_runtime_import(self) -> None:
         src = "\n".join(
@@ -553,7 +555,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("module.exports = {py_contains_str_object};", out)
         self.assertNotIn("./pytra/py_runtime.js", out)
 
-    def test_rewrite_ts_std_math_live_wrapper_exports_typed_symbols(self) -> None:
+    def test_rewrite_ts_std_math_live_wrapper_delegates_to_math_native(self) -> None:
         src = "\n".join(
             [
                 'import { extern } from "./pytra/std.js";',
@@ -571,14 +573,16 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
             ]
         )
         out = gen_mod.rewrite_ts_std_math_live_wrapper(src)
-        self.assertIn("export const pi: number = Math.PI;", out)
-        self.assertIn("export const e: number = Math.E;", out)
+        self.assertIn('import * as math_native from "../../native/std/math_native";', out)
+        self.assertIn("export const pi: number = math_native.pi;", out)
+        self.assertIn("export const e: number = math_native.e;", out)
         self.assertIn("export function sin(x: number): number {", out)
-        self.assertIn("return Math.sin(x);", out)
+        self.assertIn("return math_native.sin(x);", out)
         self.assertIn("export function pow(x: number, y: number): number {", out)
-        self.assertIn("return Math.pow(x, y);", out)
+        self.assertIn("return math_native.pow(x, y);", out)
         self.assertNotIn("__m.", out)
         self.assertNotIn("extern(", out)
+        self.assertNotIn("Math.", out)
 
     def test_rewrite_js_perf_counter_host_wrapper_inlines_hrtime_and_alias(self) -> None:
         src = "\n".join(

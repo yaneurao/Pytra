@@ -50,7 +50,7 @@
 - [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-02] `@extern` を「宣言のみ」「native owner 実装」「ambient extern は別系統」に分けた cross-target contract を spec / plan に固定する。
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-01] `tools/runtime_generation_manifest.json` と `tools/gen_runtime_from_manifest.py` から module-specific extern rewrite を除去し、generated lane を declaration/wrapper-only に揃える。
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-02] 各 target の `src/runtime/<lang>/native/**` に extern-backed canonical owner を整備し、runtime symbol index / layout contract を同期する。
-- [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-03] 各 backend emitter の `pytra.std.math` など module-specific extern hardcode を撤去し、generic extern/runtime metadata 経由へ移す。
+- [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-03] 各 backend emitter の `pytra.std.math` など module-specific extern hardcode を撤去し、generic extern/runtime metadata 経由へ移す。
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S3-01] representative runtime artifact / smoke / docs / contract inventory を current extern ownership contract に同期して task を閉じる。
 
 `S1-02` として、runtime SoT `@extern` を declaration-only、native owner 実装を runtime layout / manifest / runtime symbol index、ambient global `extern()` を別系統に固定する contract/checker/spec wording を追加した。
@@ -76,3 +76,6 @@
 - 2026-03-14: Lua emitter では `std/math` module/symbol alias を `math.float_args` / `math.value_getter` adapter metadata で、`std/time` alias を `stdlib.fn.perf_counter` semantic tag で判定する形へ寄せた。これで `if mod == "pytra.std.math"` / `if mod == "pytra.std.time"` needle を inventory から外し、Lua import lowering の `math` / `perf_counter` smoke を generic metadata 経由へ揃えた。
 - 2026-03-14: 同じ Lua slice で `std/glob`, `std/os`, `std/os_path`, `std/sys` も `semantic_tag` から symbol table alias を組み立てる形へ寄せ、`if mod == "pytra.std.glob|os|os_path|sys"` literal hardcode を inventory から外した。Lua 側の残り module-specific alias hardcode は `enum`, `argparse`, `re`, `json`, `pathlib`, `pytra.utils.*` だけになった。
 - 2026-03-14: Lua emitter の `std/os`, `std/os_path`, `std/sys`, `std/glob` も semantic tag ベースの symbol-table alias へ寄せ、`if mod == "pytra.std.*"` literal hardcode を inventory から外した。Lua import lowering は `os.getcwd`, `os_path.join`, `sys.write_stdout`, `glob.glob` を generic extern metadata 経由で通すように揃えた。
+- 2026-03-14: `S2-03` を docs へ反映し、emitter hardcode inventory が全 row green になった状態を plan/todo に同期した。
+- 2026-03-14: `S3-01` first bundle として inventory に `representative_smoke_needles` を追加し、`std/math/time` は C#/Go/Java/Rust、`std/os/os_path/sys/glob` は Lua/JS/TS/PHP、`built_in/io_ops/scalar_ops` は Go/Kotlin/Scala/Swift の smoke evidence へ固定した。
+- 2026-03-14: JS/TS `std/math` では generated wrapper から `Math.*` / `Math.PI` の host binding を除き、`src/runtime/js|ts/native/std/math_native.*` を canonical seam として追加した。あわせて baseline/rollout contract と JS/TS smoke を同期し、generated lane が native owner だけを見る形へ戻した。

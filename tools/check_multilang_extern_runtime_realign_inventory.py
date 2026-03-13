@@ -103,6 +103,24 @@ def _collect_generated_drift_issues() -> list[str]:
     return issues
 
 
+def _collect_representative_smoke_issues() -> list[str]:
+    issues: list[str] = []
+    for row in inventory_mod.iter_multilang_extern_runtime_realign_inventory():
+        module_id = row["module_id"]
+        if not row["representative_smoke_needles"]:
+            issues.append(f"representative smoke inventory missing: {module_id}")
+            continue
+        for rel, needle in row["representative_smoke_needles"]:
+            path = ROOT / rel
+            if not path.exists():
+                issues.append(f"missing representative smoke path: {module_id}: {rel}")
+                continue
+            text = path.read_text(encoding="utf-8")
+            if needle not in text:
+                issues.append(f"missing representative smoke needle: {module_id}: {rel}: {needle}")
+    return issues
+
+
 def main() -> int:
     issues = (
         _collect_inventory_issues()
@@ -110,6 +128,7 @@ def main() -> int:
         + _collect_native_owner_issues()
         + _collect_emitter_hardcode_issues()
         + _collect_generated_drift_issues()
+        + _collect_representative_smoke_issues()
     )
     if issues:
         for issue in issues:
