@@ -503,7 +503,7 @@ def validate_cpp_backend_input_doc(
         module_id=module_id,
         require_source_spans=False,
     )
-    for path, obj in _iter_object_tree(raw_doc, "$"):
+    for path, _parent_key, obj in _iter_object_tree(raw_doc, "$"):
         if not isinstance(obj, dict):
             continue
         if path.endswith(".meta") or ".meta." in path:
