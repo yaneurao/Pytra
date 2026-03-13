@@ -30,10 +30,18 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
+### P0: `LinkedProgramModule` import を `toolchain.link` facade に揃える
+
+- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01] `test_py2x_cli.py` の `LinkedProgramModule` import を `src.toolchain.link` facade 経由へ揃え、tooling consumer が `program_model` へ直接 reach-through しない状態を固定する。
+  - 文脈: [docs/ja/plans/p0-link-facade-linked-program-module-import.md](../plans/p0-link-facade-linked-program-module-import.md)
+- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S1-01] facade import を要求する source contract と TODO/plan baseline を追加する。
+- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S2-01] `test_py2x_cli.py` の import を facade 経由へ切り替え、focused unit を green に戻す。
+- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S3-01] TODO / plan / archive を同期して close 条件を固める。
 ### P0: `transpile_cli` typed C++ contract を direct ownership header/source に揃える
 
 - [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01] `transpile_cli` typed C++ contract を checked-in `cpp/pytra` wrapper 前提から外し、`generated/native` direct ownership header/source に揃える。
   - 文脈: [docs/ja/plans/p0-cpp-transpile-cli-direct-header-contract.md](../plans/p0-cpp-transpile-cli-direct-header-contract.md)
-- [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S1-01] stale contract surface と close 条件を plan / TODO に固定する。
-- [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S2-01] focused contract test を live tree に合わせて更新し、targeted test を green に戻す。
+- [x] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S1-01] stale contract surface と close 条件を plan / TODO に固定する。
+  - 進捗メモ: live tree は `generated/compiler/transpile_cli.{h,cpp}` を owner にし、checked-in `cpp/pytra/compiler/transpile_cli.h` は既に削除済み、という current contract を plan に固定した。
+- [x] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S2-01] focused contract test を live tree に合わせて更新し、targeted test を green に戻す。
 - [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S3-01] TODO / plan / archive を同期して close 条件を固定する。

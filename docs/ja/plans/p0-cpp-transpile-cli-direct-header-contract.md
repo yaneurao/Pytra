@@ -35,9 +35,10 @@
 
 分解:
 - [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01] `transpile_cli` typed C++ contract を checked-in `cpp/pytra` wrapper 前提から外し、`generated/native` direct ownership header/source に揃える。
-- [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S1-01] stale contract surface と close 条件を plan / TODO に固定する。
-- [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S2-01] focused contract test を live tree に合わせて更新し、targeted test を green に戻す。
+- [x] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S1-01] stale contract surface と close 条件を plan / TODO に固定する。
+- [x] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S2-01] focused contract test を live tree に合わせて更新し、targeted test を green に戻す。
 - [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S3-01] TODO / plan / archive を同期して close 条件を固定する。
 
 決定ログ:
 - 2026-03-13: TODO 空き後の follow-up P0 として起票。live tree では `generated/compiler/transpile_cli.{h,cpp}` が存在し、`cpp/pytra/compiler/transpile_cli.h` は削除済みなので、task は runtime layout を変えるのではなく source contract の stale assumption を消すことに限定する。
+- 2026-03-13: `S2-01` では `test_compiler_transpile_cli_typed_shim_skips_legacy_wrapper()` を更新し、削除済み `src/runtime/cpp/pytra/compiler/transpile_cli.h` を expected-missing として扱うようにした。代わりに `generated/compiler/transpile_cli.h` の native include と `generated/compiler/transpile_cli.cpp` の live ownership/source contract を直接検証する。
