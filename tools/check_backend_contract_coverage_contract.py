@@ -37,7 +37,7 @@ def _collect_contract_issues() -> list[str]:
     }:
         issues.append("coverage role split drifted")
     manifest = contract_mod.build_backend_contract_coverage_contract_manifest()
-    if manifest["bundle_order"] != list(inventory_mod.BUNDLE_KIND_ORDER):
+    if manifest["bundle_order"] != list(inventory_mod.COVERAGE_BUNDLE_ORDER):
         issues.append("coverage contract manifest drifted from coverage bundle order")
     return issues
 

@@ -61,10 +61,10 @@ BACKEND_CONTRACT_COVERAGE_REQUIRED_DOC_NEEDLES: Final[dict[str, tuple[str, ...]]
         "Added `backend_contract_coverage_contract.py`, its checker, and a unit test to lock the role split between the support matrix, the future coverage matrix, and the backend test matrix, together with the definition of 100% contract coverage for `feature x required_lane x backend`.",
     ),
     "docs/ja/todo/index.md": (
-        "`S1-02` までで representative seed と live suite family inventory を machine-readable checker に固定し、support matrix / future coverage matrix / backend test matrix の役割分担と contract coverage 100% 定義も docs/tooling contract に同期した。",
+        "`S2-02` までで representative seed・coverage matrix seed・live suite family attachment を machine-readable checker に固定し、support matrix / future coverage matrix / backend test matrix の役割分担と、direct bundle attachment / supporting-only exclusion を docs/tooling contract に同期した。",
     ),
     "docs/en/todo/index.md": (
-        "Through `S1-02`, locked machine-readable inventory/checkers for representative seeds and live suite families, and synced the role split between the support matrix, the future coverage matrix, and the backend test matrix plus the definition of 100% contract coverage into docs/tooling contracts.",
+        "Through `S2-02`, locked machine-readable checkers for representative seeds, coverage-matrix seed ownership, and live suite-family attachments, and synced the role split between the support matrix, the future coverage matrix, and the backend test matrix plus the direct-bundle-attachment versus supporting-only-exclusion rules into docs/tooling contracts.",
     ),
 }
 
@@ -77,7 +77,7 @@ def build_backend_contract_coverage_contract_manifest() -> dict[str, object]:
         "coverage_matrix_status": BACKEND_CONTRACT_COVERAGE_MATRIX_STATUS,
         "coverage_requirement_keys": list(BACKEND_CONTRACT_COVERAGE_REQUIREMENT_KEYS),
         "coverage_100_rules": dict(BACKEND_CONTRACT_COVERAGE_100_RULES),
-        "bundle_order": list(coverage_inventory_mod.BUNDLE_KIND_ORDER),
+        "bundle_order": list(coverage_inventory_mod.COVERAGE_BUNDLE_ORDER),
         "required_doc_needles": {
             path: list(needles)
             for path, needles in BACKEND_CONTRACT_COVERAGE_REQUIRED_DOC_NEEDLES.items()
