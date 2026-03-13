@@ -33,27 +33,23 @@
 
 ### P1
 
-1. [ ] [ID: P1-NES3-NOT-IMPLEMENTED-ERROR-CPP-01] `NotImplementedError` を C++ lane で未定義シンボルにせず、`not_implemented_error.py` を compile まで通す。
-文脈: [docs/ja/plans/p1-nes3-not-implemented-error-cpp-support.md](../plans/p1-nes3-not-implemented-error-cpp-support.md)
-- 進捗メモ: 未着手。
-
-2. [ ] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01] `bytes` member truthiness の `!bytes` residual を止め、`cartridge_like.py` を compile まで通す。
+1. [ ] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01] `bytes` member truthiness の `!bytes` residual を止め、`cartridge_like.py` を compile まで通す。
 文脈: [docs/ja/plans/p1-nes3-bytes-member-truthiness-cpp-support.md](../plans/p1-nes3-bytes-member-truthiness-cpp-support.md)
 - 進捗メモ: 未着手。
 
-3. [ ] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01] `field(default_factory=lambda: [0] * N)` の `rc<list<T>>` lane を整合させ、`list_default_factory.py` を compile まで通す。
+2. [ ] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01] `field(default_factory=lambda: [0] * N)` の `rc<list<T>>` lane を整合させ、`list_default_factory.py` を compile まで通す。
 文脈: [docs/ja/plans/p1-nes3-list-default-factory-rc-list-cpp-support.md](../plans/p1-nes3-list-default-factory-rc-list-cpp-support.md)
 - 進捗メモ: 未着手。
 
-4. [ ] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01] `pytra.std.pathlib.Path` の別モジュール alias 再利用を C++ multi-file contract に揃え、`path_alias_pkg` を compile まで通す。
+3. [ ] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01] `pytra.std.pathlib.Path` の別モジュール alias 再利用を C++ multi-file contract に揃え、`path_alias_pkg` を compile まで通す。
 文脈: [docs/ja/plans/p1-nes3-path-alias-pkg-cpp-support.md](../plans/p1-nes3-path-alias-pkg-cpp-support.md)
 - 進捗メモ: 未着手。
 
-5. [ ] [ID: P1-NES3-APU-CONST-PKG-CPP-01] モジュール定数を使う imported class の C++ header 順序と参照 lane を揃え、`apu_const_pkg` を compile まで通す。
+4. [ ] [ID: P1-NES3-APU-CONST-PKG-CPP-01] モジュール定数を使う imported class の C++ header 順序と参照 lane を揃え、`apu_const_pkg` を compile まで通す。
 文脈: [docs/ja/plans/p1-nes3-apu-const-pkg-cpp-support.md](../plans/p1-nes3-apu-const-pkg-cpp-support.md)
 - 進捗メモ: 未着手。
 
-6. [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01] import した bus 型の header/symbol qualification と受け渡し lane を揃え、`bus_port_pkg` を compile まで通す。
+5. [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01] import した bus 型の header/symbol qualification と受け渡し lane を揃え、`bus_port_pkg` を compile まで通す。
 文脈: [docs/ja/plans/p1-nes3-bus-port-pkg-cpp-support.md](../plans/p1-nes3-bus-port-pkg-cpp-support.md)
 - 進捗メモ: 未着手。
 

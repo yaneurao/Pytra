@@ -67,7 +67,16 @@ class CppClassEmitter:
         name = self.any_dict_get_str(stmt, "name", "Class")
         is_dataclass = self.any_dict_get_int(stmt, "dataclass", 0) != 0
         base = self.any_to_str(stmt.get("base"))
-        if base in {"Exception", "BaseException", "RuntimeError", "ValueError", "TypeError", "IndexError", "KeyError"}:
+        if base in {
+            "Exception",
+            "BaseException",
+            "RuntimeError",
+            "NotImplementedError",
+            "ValueError",
+            "TypeError",
+            "IndexError",
+            "KeyError",
+        }:
             # Python 例外継承は runtime 側の C++ 例外階層と1対1対応しないため、
             # クラス本体（フィールド/メソッド）を優先して継承は省略する。
             base = ""

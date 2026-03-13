@@ -16,6 +16,7 @@
     "bytearray": "bytearray",
     "Path": "pytra::std::pathlib::Path",
     "Exception": "std::runtime_error",
+    "NotImplementedError": "std::runtime_error",
     "Any": "object",
     "object": "object"
   }

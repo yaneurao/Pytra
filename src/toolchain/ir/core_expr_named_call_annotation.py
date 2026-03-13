@@ -319,7 +319,7 @@ class _ShExprNamedCallAnnotationMixin:
             return "scalar_ctor"
         if fn_name in {"min", "max"}:
             return "minmax"
-        if fn_name in {"Exception", "RuntimeError"}:
+        if fn_name in {"Exception", "RuntimeError", "NotImplementedError"}:
             return "exception_ctor"
         if fn_name == "open":
             return "open"

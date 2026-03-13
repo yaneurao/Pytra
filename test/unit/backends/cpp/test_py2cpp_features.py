@@ -4366,6 +4366,78 @@ if __name__ == "__main__":
             self.assertEqual(rn.returncode, 0, msg=rn.stderr)
             self.assertEqual(rn.stdout.strip().splitlines(), ["3", "1.5", "1"])
 
+    def test_cli_pytra_nes3_not_implemented_error_fixture_syntax_checks(self) -> None:
+        src_py = ROOT / "materials" / "refs" / "from-Pytra-NES3" / "not_implemented_error.py"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            out_cpp = work / "not_implemented_error.cpp"
+            transpile(src_py, out_cpp)
+            cpp = out_cpp.read_text(encoding="utf-8")
+            self.assertIn("::std::runtime_error(", cpp)
+            self.assertNotIn("throw NotImplementedError(", cpp)
+            comp = self._run_subprocess_with_timeout(
+                [
+                    "g++",
+                    "-std=c++20",
+                    "-O0",
+                    "-I",
+                    "src",
+                    "-I",
+                    "src/runtime/cpp",
+                    "-fsyntax-only",
+                    str(out_cpp),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="syntax-check pytra nes3 not implemented error fixture",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+
+    def test_cli_multi_file_pytra_nes3_bus_port_pkg_syntax_checks(self) -> None:
+        src_py = ROOT / "materials" / "refs" / "from-Pytra-NES3" / "bus_port_pkg" / "bus.py"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_dir = Path(tmpdir) / "out"
+            tr = self._run_subprocess_with_timeout(
+                [
+                    "python3",
+                    "src/py2x.py",
+                    "--target",
+                    "cpp",
+                    str(src_py),
+                    "--multi-file",
+                    "--output-dir",
+                    str(out_dir),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="transpile pytra nes3 bus_port_pkg multi-file sample",
+            )
+            self.assertEqual(tr.returncode, 0, msg=tr.stderr)
+            generated_bus_port = (out_dir / "src" / "bus_port.cpp").read_text(encoding="utf-8")
+            self.assertNotIn("throw NotImplementedError;", generated_bus_port)
+            self.assertIn('throw NotImplementedError("NotImplementedError");', generated_bus_port)
+            comp = self._run_subprocess_with_timeout(
+                [
+                    "g++",
+                    "-std=c++20",
+                    "-O0",
+                    "-c",
+                    str(out_dir / "src" / "bus_port.cpp"),
+                    "-I",
+                    str(out_dir / "include"),
+                    "-I",
+                    "src",
+                    "-I",
+                    "src/runtime/cpp",
+                    "-o",
+                    str(out_dir / "bus_port.o"),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="compile pytra nes3 bus_port_pkg bus_port.cpp",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+
     def test_cli_multi_file_object_iter_helper_artifact_build_and_run(self) -> None:
         src_main = """def main() -> None:
     xs: object = [1, 2, 3]

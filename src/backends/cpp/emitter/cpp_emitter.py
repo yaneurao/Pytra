@@ -2204,16 +2204,36 @@ class CppEmitter(
         )
 
     def _emit_raise_stmt(self, stmt: dict[str, Any]) -> None:
-        if not isinstance(stmt.get("exc"), dict):
+        exc_node = stmt.get("exc")
+        if not isinstance(exc_node, dict):
             self.emit(self.syntax_text("raise_default", 'throw ::std::runtime_error("raise");'))
-        else:
-            self.emit(
-                self.syntax_line(
-                    "raise_expr",
-                    "throw {exc};",
-                    {"exc": self.render_expr(stmt.get("exc"))},
+            return
+        if self.is_name(exc_node, None):
+            exc_name = self.any_to_str(self.any_to_dict_or_empty(exc_node).get("id"))
+            if exc_name in {
+                "Exception",
+                "RuntimeError",
+                "NotImplementedError",
+                "ValueError",
+                "TypeError",
+                "IndexError",
+                "KeyError",
+            }:
+                self.emit(
+                    self.syntax_line(
+                        "raise_named_exception_type",
+                        'throw {exc}("{message}");',
+                        {"exc": exc_name, "message": exc_name},
+                    )
                 )
+                return
+        self.emit(
+            self.syntax_line(
+                "raise_expr",
+                "throw {exc};",
+                {"exc": self.render_expr(exc_node)},
             )
+        )
 
     def _emit_local_function_stmt(self, stmt: dict[str, Any]) -> None:
         """ローカル関数定義をラムダ変数へ lowering して出力する。"""
