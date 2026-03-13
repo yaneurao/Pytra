@@ -30,3 +30,10 @@ Last updated: 2026-03-13
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+### P0: align the `transpile_cli` typed C++ contract to the direct-ownership header/source layout
+
+- [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01] Remove the checked-in `cpp/pytra` wrapper assumption from the `transpile_cli` typed C++ contract and align it to the `generated/native` direct-ownership header/source layout.
+  - Context: [docs/en/plans/p0-cpp-transpile-cli-direct-header-contract.md](../plans/p0-cpp-transpile-cli-direct-header-contract.md)
+- [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S1-01] Lock the stale contract surface and close condition in the plan / TODO.
+- [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S2-01] Update the focused contract test to match the live tree and bring the targeted test back to green.
+- [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S3-01] Sync TODO / plan / archive and lock the close condition.
