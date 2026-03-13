@@ -8,25 +8,23 @@ public final class predicates {
 
 
     public static boolean py_any(Any values) {
-        long i = 0L;
-        long n = PyRuntime.__pytra_len(values);
-        while (((i) < (n))) {
-            if (PyRuntime.__pytra_truthy(values.get((int)((((i) < 0L) ? (((long)(values.size())) + (i)) : (i)))))) {
+        java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(values));
+        for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
+            Object value = __iter_0.get((int)(__iter_i_1));
+            if (PyRuntime.__pytra_truthy(value)) {
                 return true;
             }
-            i += 1L;
         }
         return false;
     }
 
     public static boolean py_all(Any values) {
-        long i = 0L;
-        long n = PyRuntime.__pytra_len(values);
-        while (((i) < (n))) {
-            if ((!PyRuntime.__pytra_truthy(values.get((int)((((i) < 0L) ? (((long)(values.size())) + (i)) : (i))))))) {
+        java.util.ArrayList<Object> __iter_0 = ((java.util.ArrayList<Object>)(Object)(values));
+        for (long __iter_i_1 = 0L; __iter_i_1 < ((long)(__iter_0.size())); __iter_i_1 += 1L) {
+            Object value = __iter_0.get((int)(__iter_i_1));
+            if ((!PyRuntime.__pytra_truthy(value))) {
                 return false;
             }
-            i += 1L;
         }
         return true;
     }

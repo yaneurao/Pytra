@@ -16,26 +16,20 @@ namespace Pytra.CsModule
     {
         public static bool py_any(object values)
         {
-            long i = 0;
-            long n = (values).Count();
-            while ((i) < (n)) {
-                if (Pytra.CsModule.py_runtime.py_bool(values[System.Convert.ToInt32(i)])) {
+            foreach (var value in ((System.Collections.IEnumerable)(values))) {
+                if (Pytra.CsModule.py_runtime.py_bool(value)) {
                     return true;
                 }
-                i += 1;
             }
             return false;
         }
 
         public static bool py_all(object values)
         {
-            long i = 0;
-            long n = (values).Count();
-            while ((i) < (n)) {
-                if (!(Pytra.CsModule.py_runtime.py_bool(values[System.Convert.ToInt32(i)]))) {
+            foreach (var value in ((System.Collections.IEnumerable)(values))) {
+                if (!(Pytra.CsModule.py_runtime.py_bool(value))) {
                     return false;
                 }
-                i += 1;
             }
             return true;
         }

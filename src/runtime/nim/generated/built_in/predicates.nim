@@ -8,23 +8,13 @@ import std/os, std/times, std/tables, std/strutils, std/math, std/sequtils
 
 discard "Pure-Python source-of-truth for predicate helpers."
 proc py_any*(values: auto): bool =
-  var i: int = 0
-  var n: int = 0
-  i = 0
-  n = values.len
-  while (i < n):
-    if py_truthy(py_truthy(values[i])):
+  for value in values:
+    if py_truthy(py_truthy(value)):
       return true
-    i += 1
   return false
 
 proc py_all*(values: auto): bool =
-  var i: int = 0
-  var n: int = 0
-  i = 0
-  n = values.len
-  while (i < n):
-    if py_truthy((not py_truthy(py_truthy(values[i])))):
+  for value in values:
+    if py_truthy((not py_truthy(py_truthy(value)))):
       return false
-    i += 1
   return true

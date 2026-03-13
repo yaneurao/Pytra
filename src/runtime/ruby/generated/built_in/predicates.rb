@@ -6,25 +6,19 @@ require_relative "py_runtime"
 
 
 def py_any(values)
-  i = 0
-  n = __pytra_len(values)
-  while i < n
-    if __pytra_truthy(__pytra_get_index(values, i))
+  for value in __pytra_as_list(values)
+    if __pytra_truthy(value)
       return true
     end
-    i += 1
   end
   return false
 end
 
 def py_all(values)
-  i = 0
-  n = __pytra_len(values)
-  while i < n
-    if !__pytra_truthy(__pytra_get_index(values, i))
+  for value in __pytra_as_list(values)
+    if !__pytra_truthy(value)
       return false
     end
-    i += 1
   end
   return true
 end
