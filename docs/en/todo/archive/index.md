@@ -23,6 +23,7 @@ Last updated: 2026-03-14
 - [2026-03-14 / P1-NES3-PATH-ALIAS-PKG-CPP-01](../plans/archive/20260314-p1-nes3-path-alias-pkg-cpp-support.md)
 - [2026-03-14 / P1-NES3-BUS-PORT-PKG-CPP-01](../plans/archive/20260314-p1-nes3-bus-port-pkg-cpp-support.md)
 - [2026-03-14 / P2-CPP-LEGACY-CORE-COMPAT-RETIRE-01](../plans/archive/20260314-p2-cpp-legacy-core-compat-retire.md)
+- [2026-03-14 / P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01](../plans/archive/20260314-p2-multilang-extern-runtime-realign.md)
 
 - [2026-03-13 / P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01](../plans/archive/20260313-p0-frontends-facade-py2x-entrypoints-import.md)
 - [2026-03-13 / P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01](../plans/archive/20260313-p0-cpp-transpile-cli-direct-header-contract.md)
@@ -156,7 +157,7 @@ Last updated: 2026-03-14
 
 ## Date Links
 
-- [2026-03-14](20260314.md) (5 sections)
+- [2026-03-14](20260314.md) (6 sections)
 - [2026-03-13](20260313.md) (21 sections)
 
 - [2026-03-12](20260312.md) (28 sections)

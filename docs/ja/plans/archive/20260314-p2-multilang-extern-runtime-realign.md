@@ -51,7 +51,7 @@
 - [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-01] `tools/runtime_generation_manifest.json` と `tools/gen_runtime_from_manifest.py` から module-specific extern rewrite を除去し、generated lane を declaration/wrapper-only に揃える。
 - [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-02] 各 target の `src/runtime/<lang>/native/**` に extern-backed canonical owner を整備し、runtime symbol index / layout contract を同期する。
 - [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-03] 各 backend emitter の `pytra.std.math` など module-specific extern hardcode を撤去し、generic extern/runtime metadata 経由へ移す。
-- [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S3-01] representative runtime artifact / smoke / docs / contract inventory を current extern ownership contract に同期して task を閉じる。
+- [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S3-01] representative runtime artifact / smoke / docs / contract inventory を current extern ownership contract に同期して task を閉じる。
 
 `S1-02` として、runtime SoT `@extern` を declaration-only、native owner 実装を runtime layout / manifest / runtime symbol index、ambient global `extern()` を別系統に固定する contract/checker/spec wording を追加した。
 
@@ -92,3 +92,4 @@
 - 2026-03-14: 同じ `S2-01` の追加 slice として、JS/TS `std/time` の manifest postprocess 名も `js_perf_counter_host_wrapper` / `ts_perf_counter_host_wrapper` から `js|ts_std_native_owner_wrapper + helper_name=time` に統合した。generic owner-wrapper 側に `perfCounter` alias と TS `number` 戻り値注釈を吸収し、artifact 形状を維持したまま module-specific wrapper 名を外した。
 - 2026-03-14: Rust lane も `rs_std_native_owner_wrapper + helper_name=time|math` と `native/std/time_native.rs` / `native/std/math_native.rs` の分離へ進んでいたため、inventory・layout/baseline contract・runtime hook metadata・unit test の期待を現行 artifact shape へ同期した。C# alias guard も `Pytra.CsModule.math` 直返しではなく extern-owner 解決を通る現行実装に合わせた。
 - 2026-03-14: `S2-01/S2-02` の close bundle として inventory に `noncpp_ownership_mode` と `accepted_generated_compare_residual_targets` を追加し、`std/math,time,sys` は live native owner、`std/os,os_path,glob` と `built_in/io_ops,scalar_ops` は accepted generated-compare residual として checker 化した。これで manifest/generator の module-specific rewrite 除去と native-owner/current residual policy が同じ inventory 上で明示された。
+- 2026-03-14: `S3-01` close bundle として representative smoke inventory/checker、JS/TS/C#/Java/PHP/Rust の native seam wrapper evidence、docs mirror、TODO/archive を current extern ownership contract へ同期し、tracked `@extern` module の end state を「generated wrapper + native owner」または「accepted generated-compare residual」の 2 形態へ固定して task を完了にした。
