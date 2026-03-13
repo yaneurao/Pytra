@@ -245,7 +245,6 @@ def _collect_csharp_lane_issues() -> list[str]:
                     for needle in (
                         "public const double pi = Math.PI;",
                         "public const double e = Math.E;",
-                        "public const double tau = Math.PI * 2.0;",
                         "return Math.Sqrt(x);",
                         "return Math.Log10(x);",
                         "return Math.Ceiling(x);",

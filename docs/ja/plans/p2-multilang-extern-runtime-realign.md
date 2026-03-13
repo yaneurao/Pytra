@@ -1,6 +1,6 @@
 # P2: 全言語 `@extern` runtime/emitter 契約の再整列
 
-最終更新: 2026-03-13
+最終更新: 2026-03-14
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01`
@@ -55,3 +55,4 @@
 
 決定ログ:
 - 2026-03-13: ユーザー指摘により、`@extern` を backend shortcut として扱っていた現行非 C++ 設計を誤りと認め、全 target を対象に SoT/native-owner/generic-emitter へ戻す P2 task として起票した。
+- 2026-03-14: 最初の realignment slice として、SoT に存在しない `tau` を C# `std/math` generated wrapper が勝手に追加していた挙動を止め、`pi/e` のみを source-of-truth とする状態へ戻した。

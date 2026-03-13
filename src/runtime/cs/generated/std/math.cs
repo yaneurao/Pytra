@@ -16,7 +16,6 @@ namespace Pytra.CsModule
     {
         public const double pi = Math.PI;
         public const double e = Math.E;
-        public const double tau = Math.PI * 2.0;
 
         public static double sqrt(double x)
         {
