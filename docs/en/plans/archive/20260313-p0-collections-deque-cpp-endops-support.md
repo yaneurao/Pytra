@@ -47,11 +47,12 @@ Decision log:
 - 2026-03-13: as `S1-01`, a focused regression now locks the leaked `q.appendleft(1);` and `q.pop()` surface. This remains the baseline until the lowering is implemented.
 - 2026-03-13: `S2-01` is complete. `appendleft` now lowers to `push_front`, so the focused regression is narrowed to the remaining `pop` leak.
 - 2026-03-13: as `S2-02`, module-scope typed deques now also hit the `pop` fastpath and lower to a `back + pop_back` lambda. Only build/run smoke remains.
+- 2026-03-13: as `S3-01`, a representative build/run smoke now locks the end-op bundle output `1 / 2`, including typed and untyped `pop()` receivers. All acceptance criteria for this task are now satisfied.
 
 ## Breakdown
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01] Lock the representative C++ lane for `collections.deque` `appendleft` / `pop`.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01] Lock the representative C++ lane for `collections.deque` `appendleft` / `pop`.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01-S1-01] Lock the current invalid C++ surface (`appendleft`, `pop`) in focused regressions / TODO / plan.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01-S2-01] Lower `appendleft` to `push_front`.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01-S2-02] Lower `pop` to a `back + pop_back` lambda and align typed / untyped return surfaces.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01-S3-01] Sync build/run smoke and support wording, then close the task.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01-S3-01] Sync build/run smoke and support wording, then close the task.

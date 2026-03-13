@@ -31,4 +31,4 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01] Lock the representative C++ lane for `collections.deque` `appendleft` / `pop`. Progress: `S2-02` upstreamed `appendleft` / `pop` to `push_front` / `back + pop_back`. The remaining work is build/run smoke and support wording sync. Context: [p0-collections-deque-cpp-endops-support.md](../plans/p0-collections-deque-cpp-endops-support.md)
+There are no unfinished tasks right now.

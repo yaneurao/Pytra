@@ -47,11 +47,12 @@
 - 2026-03-13: `S1-01` として `q.appendleft(1);` と `q.pop()` の surface leak を focused regression で固定した。`push_front` / `pop_back` へはまだ lower しない baseline として扱う。
 - 2026-03-13: `S2-01` として `appendleft` は `push_front` へ lower 済みになったため、focused regression は `pop` leak だけを残す current state に更新した。
 - 2026-03-13: `S2-02` として module-scope の typed deque でも `pop` fastpath が拾えるようにし、`back + pop_back` lambda へ揃えた。残りは build/run smoke のみ。
+- 2026-03-13: `S3-01` として representative fixture の build/run smoke を追加し、typed/untyped `pop()` を含む end-op bundle の出力 `1 / 2` を固定した。これで task の受け入れ基準はすべて充足した。
 
 ## 分解
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01] `collections.deque` の `appendleft` / `pop` representative C++ lane を固定する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01] `collections.deque` の `appendleft` / `pop` representative C++ lane を固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01-S1-01] current invalid C++ surface (`appendleft`, `pop`) を focused regression / TODO / plan で固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01-S2-01] `appendleft` を `push_front` へ lower する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01-S2-02] `pop` を `back + pop_back` lambda に lower し、typed / untyped return surface を揃える。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01-S3-01] build/run smoke と support wording を同期して close する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01-S3-01] build/run smoke と support wording を同期して close する。
