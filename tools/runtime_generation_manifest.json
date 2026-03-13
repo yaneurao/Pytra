@@ -674,7 +674,7 @@
           "output": "src/runtime/go/generated/std/math.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/math.java", "postprocess": "java_std_math_live_wrapper" },
+        { "target": "java", "output": "src/runtime/java/generated/std/math.java", "postprocess": "java_std_native_owner_wrapper", "helper_name": "math" },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/math.kt",

@@ -58,7 +58,7 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
                 "rs:rs_std_math_live_wrapper",
                 "cs:cs_std_native_owner_wrapper",
                 "go:go_program_to_library",
-                "java:java_std_math_live_wrapper",
+                "java:java_std_native_owner_wrapper",
                 "kotlin:kotlin_program_to_library",
                 "scala:scala_program_to_library",
                 "swift:swift_program_to_library",
@@ -69,6 +69,15 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         )
         self.assertEqual(row["cpp_native_owner_paths"], ("src/runtime/cpp/native/std/math.cpp",))
         self.assertEqual(
+            row["noncpp_native_owner_paths"],
+            (
+                "src/runtime/cs/native/std/math_native.cs",
+                "src/runtime/java/native/std/math_native.java",
+                "src/runtime/js/native/std/math_native.js",
+                "src/runtime/ts/native/std/math_native.ts",
+            ),
+        )
+        self.assertEqual(
             row["representative_smoke_needles"],
             (
                 (
@@ -78,6 +87,10 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
                 (
                     "test/unit/backends/go/test_py2go_smoke.py",
                     "def test_go_native_emitter_routes_math_calls_via_runtime_helpers",
+                ),
+                (
+                    "test/unit/backends/java/test_py2java_smoke.py",
+                    "def test_java_generated_math_runtime_owner_is_live_wrapper_shaped",
                 ),
                 (
                     "test/unit/backends/rs/test_py2rs_smoke.py",
@@ -142,6 +155,7 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
             by_id["std/math"]["noncpp_native_owner_paths"],
             (
                 "src/runtime/cs/native/std/math_native.cs",
+                "src/runtime/java/native/std/math_native.java",
                 "src/runtime/js/native/std/math_native.js",
                 "src/runtime/ts/native/std/math_native.ts",
             ),

@@ -1450,25 +1450,40 @@ def rewrite_java_perf_counter_host_wrapper(java_src: str) -> str:
     return rewritten
 
 
-def rewrite_java_std_math_live_wrapper(java_src: str) -> str:
+def rewrite_java_std_native_owner_wrapper(java_src: str, helper_name: str) -> str:
     text = java_src
-    text = text.replace("public static double pi = extern(math.pi);", "public static double pi = Math.PI;")
-    text = text.replace("public static double e = extern(math.e);", "public static double e = Math.E;")
-    replacements = {
-        "return math.sqrt(x);": "return Math.sqrt(x);",
-        "return math.sin(x);": "return Math.sin(x);",
-        "return math.cos(x);": "return Math.cos(x);",
-        "return math.tan(x);": "return Math.tan(x);",
-        "return math.exp(x);": "return Math.exp(x);",
-        "return math.log(x);": "return Math.log(x);",
-        "return math.log10(x);": "return Math.log10(x);",
-        "return math.fabs(x);": "return Math.abs(x);",
-        "return math.floor(x);": "return Math.floor(x);",
-        "return math.ceil(x);": "return Math.ceil(x);",
-        "return math.pow(x, y);": "return Math.pow(x, y);",
-    }
-    for before, after in replacements.items():
-        text = text.replace(before, after)
+    native_owner = helper_name + "_native"
+    value_symbols: list[str] = []
+    for match in re.finditer(
+        r"(?m)^\s*public static [A-Za-z0-9_<>\[\], ?]+\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*extern\([^)]+\);",
+        java_src,
+    ):
+        symbol_name = match.group(1)
+        if symbol_name not in value_symbols:
+            value_symbols.append(symbol_name)
+    function_symbols: list[str] = []
+    for match in re.finditer(
+        r"(?m)^\s*public static [A-Za-z0-9_<>\[\], ?]+\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(",
+        java_src,
+    ):
+        symbol_name = match.group(1)
+        if symbol_name not in function_symbols:
+            function_symbols.append(symbol_name)
+    for symbol_name in value_symbols:
+        text = re.sub(
+            rf"(?m)^(\s*public static [A-Za-z0-9_<>\[\], ?]+\s+){re.escape(symbol_name)}(\s*=\s*)extern\([^)]+\);",
+            rf"\1{symbol_name}\2{native_owner}.{symbol_name};",
+            text,
+        )
+    for symbol_name in function_symbols:
+        text = text.replace(
+            f"return {helper_name}.{symbol_name}(",
+            f"return {native_owner}.{symbol_name}(",
+        )
+    if "extern(" in text or f"return {helper_name}." in text or "Math." in text:
+        raise RuntimeError(
+            "generated Java std/" + helper_name + " wrapper still contains extern/native owner residue"
+        )
     return text
 
 
@@ -3556,8 +3571,10 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_rs_std_math_live_wrapper(generated)
     elif item.postprocess == "java_perf_counter_host_wrapper":
         generated = rewrite_java_perf_counter_host_wrapper(generated)
-    elif item.postprocess == "java_std_math_live_wrapper":
-        generated = rewrite_java_std_math_live_wrapper(generated)
+    elif item.postprocess == "java_std_native_owner_wrapper":
+        if item.helper_name == "":
+            raise RuntimeError("missing helper_name for java_std_native_owner_wrapper: " + item.item_id)
+        generated = rewrite_java_std_native_owner_wrapper(generated, item.helper_name)
     elif item.postprocess == "js_std_native_owner_wrapper":
         if item.helper_name == "":
             raise RuntimeError("missing helper_name for js_std_native_owner_wrapper: " + item.item_id)

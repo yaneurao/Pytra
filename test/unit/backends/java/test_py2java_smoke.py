@@ -395,11 +395,13 @@ class Py2JavaSmokeTest(unittest.TestCase):
     def test_java_runtime_source_path_is_migrated(self) -> None:
         delete_target_runtime = ROOT / "src" / "runtime" / "java" / "pytra" / "built_in" / "PyRuntime.java"
         runtime_path = ROOT / "src" / "runtime" / "java" / "native" / "built_in" / "PyRuntime.java"
+        native_math_path = ROOT / "src" / "runtime" / "java" / "native" / "std" / "math_native.java"
         native_time_path = ROOT / "src" / "runtime" / "java" / "native" / "std" / "time_native.java"
         generated_root = ROOT / "src" / "runtime" / "java" / "generated"
         legacy_path = ROOT / "src" / "java_module" / "PyRuntime.java"
         self.assertFalse(delete_target_runtime.exists())
         self.assertTrue(runtime_path.exists())
+        self.assertTrue(native_math_path.exists())
         self.assertTrue(native_time_path.exists())
         for rel_path in (
             "built_in/contains.java",
@@ -431,7 +433,22 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertIn("return time_native.perf_counter();", generated_time)
         self.assertNotIn("System.nanoTime()", generated_time)
         self.assertIn("System.nanoTime()", native_time)
-        self.assertIn("Math.PI", (generated_root / "std" / "math.java").read_text(encoding="utf-8"))
+
+    def test_java_generated_math_runtime_owner_is_live_wrapper_shaped(self) -> None:
+        generated_root = ROOT / "src" / "runtime" / "java" / "generated"
+        native_path = ROOT / "src" / "runtime" / "java" / "native" / "std" / "math_native.java"
+        generated = (generated_root / "std" / "math.java").read_text(encoding="utf-8")
+        native = native_path.read_text(encoding="utf-8")
+        self.assertIn("public static double pi = math_native.pi;", generated)
+        self.assertIn("public static double e = math_native.e;", generated)
+        self.assertIn("return math_native.sqrt(x);", generated)
+        self.assertIn("return math_native.pow(x, y);", generated)
+        self.assertNotIn("Math.PI", generated)
+        self.assertNotIn("Math.sqrt", generated)
+        self.assertIn("public static double pi = Math.PI;", native)
+        self.assertIn("public static double e = Math.E;", native)
+        self.assertIn("return Math.sqrt(x);", native)
+        self.assertIn("return Math.pow(x, y);", native)
 
     def test_java_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as td:

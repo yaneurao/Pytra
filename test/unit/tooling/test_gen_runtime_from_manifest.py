@@ -496,7 +496,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertNotIn("__t.perf_counter()", out)
         self.assertNotIn("System.nanoTime()", out)
 
-    def test_rewrite_java_std_math_live_wrapper_inlines_java_math(self) -> None:
+    def test_rewrite_java_std_native_owner_wrapper_delegates_math_to_math_native(self) -> None:
         src = "\n".join(
             [
                 "public final class math {",
@@ -506,11 +506,12 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "}",
             ]
         )
-        out = gen_mod.rewrite_java_std_math_live_wrapper(src)
-        self.assertIn("public static double pi = Math.PI;", out)
-        self.assertIn("return Math.abs(x);", out)
-        self.assertIn("return Math.pow(x, y);", out)
+        out = gen_mod.rewrite_java_std_native_owner_wrapper(src, "math")
+        self.assertIn("public static double pi = math_native.pi;", out)
+        self.assertIn("return math_native.fabs(x);", out)
+        self.assertIn("return math_native.pow(x, y);", out)
         self.assertNotIn("extern(math.pi)", out)
+        self.assertNotIn("Math.", out)
 
     def test_rewrite_js_std_native_owner_wrapper_delegates_math_to_math_native(self) -> None:
         src = "\n".join(

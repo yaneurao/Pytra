@@ -657,7 +657,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     },
     {
         "backend": "java",
-        "pytra_core_files": ("built_in/PyRuntime.java", "std/time_native.java"),
+        "pytra_core_files": ("built_in/PyRuntime.java", "std/math_native.java", "std/time_native.java"),
         "pytra_gen_files": (
             "built_in/contains.java",
             "built_in/io_ops.java",
@@ -992,7 +992,11 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/gif.java",
             "generated/utils/png.java",
         ),
-        "native_files": ("native/built_in/PyRuntime.java", "native/std/time_native.java"),
+        "native_files": (
+            "native/built_in/PyRuntime.java",
+            "native/std/math_native.java",
+            "native/std/time_native.java",
+        ),
         "delete_target_files": (),
     },
     {
@@ -1295,7 +1299,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
                 "utils/png",
             )
         ),
-        "native_modules": ("built_in/py_runtime", "std/time_native"),
+        "native_modules": ("built_in/py_runtime", "std/math_native", "std/time_native"),
         "delete_target_modules": (),
         "blocked_modules": (),
     },
@@ -1925,6 +1929,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1: Final[
         "backend": "java",
         "runtime_hook_files": (
             "runtime/java/native/built_in/PyRuntime.java",
+            "runtime/java/native/std/math_native.java",
             "runtime/java/native/std/time_native.java",
             "runtime/java/generated/utils/assertions.java",
             "runtime/java/generated/utils/png.java",
@@ -1985,7 +1990,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_NATIVE_RESIDUALS_V1: Final[
     {
         "backend": "java",
         "substrate_modules": ("built_in/py_runtime",),
-        "compare_residual_modules": ("std/time_native",),
+        "compare_residual_modules": ("std/math_native", "std/time_native"),
     },
     {
         "backend": "kotlin",
@@ -2021,7 +2026,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_NATIVE_RESIDUAL_FILES_V1: Final[
     {
         "backend": "java",
         "substrate_files": ("built_in/PyRuntime.java",),
-        "compare_residual_files": ("std/time_native.java",),
+        "compare_residual_files": ("std/math_native.java", "std/time_native.java"),
     },
     {
         "backend": "kotlin",

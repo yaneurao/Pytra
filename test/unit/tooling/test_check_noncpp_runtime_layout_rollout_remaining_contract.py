@@ -180,6 +180,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 ),
                 "java": (
                     "runtime/java/native/built_in/PyRuntime.java",
+                    "runtime/java/native/std/math_native.java",
                     "runtime/java/native/std/time_native.java",
                     "runtime/java/generated/utils/assertions.java",
                     "runtime/java/generated/utils/png.java",
@@ -486,7 +487,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "java": {
                     "backend": "java",
                     "substrate_modules": ("built_in/py_runtime",),
-                    "compare_residual_modules": ("std/time_native",),
+                    "compare_residual_modules": ("std/math_native", "std/time_native"),
                 },
                 "kotlin": {
                     "backend": "kotlin",
@@ -527,7 +528,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "java": {
                     "backend": "java",
                     "substrate_files": ("built_in/PyRuntime.java",),
-                    "compare_residual_files": ("std/time_native.java",),
+                    "compare_residual_files": ("std/math_native.java", "std/time_native.java"),
                 },
                 "kotlin": {
                     "backend": "kotlin",
@@ -879,7 +880,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["java"]["pytra_core_files"],
-            ("built_in/PyRuntime.java", "std/time_native.java"),
+            ("built_in/PyRuntime.java", "std/math_native.java", "std/time_native.java"),
         )
         self.assertEqual(
             by_backend["kotlin"]["pytra_gen_files"],
@@ -1208,7 +1209,11 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["java"]["native_files"],
-            ("native/built_in/PyRuntime.java", "native/std/time_native.java"),
+            (
+                "native/built_in/PyRuntime.java",
+                "native/std/math_native.java",
+                "native/std/time_native.java",
+            ),
         )
         self.assertEqual(
             by_backend["kotlin"]["generated_files"],
@@ -1525,7 +1530,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["java"]["native_modules"],
-            ("built_in/py_runtime", "std/time_native"),
+            ("built_in/py_runtime", "std/math_native", "std/time_native"),
         )
         self.assertEqual(by_backend["java"]["blocked_modules"], ())
         self.assertEqual(
