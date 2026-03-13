@@ -34,7 +34,7 @@ Last updated: 2026-03-13
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01] Locked the current 12-backend `pytra/**` directory/file inventory, delete blocker references, and current->target mapping in plan / contract / checker / test form.
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] Switched active contracts / checkers / spec wording to `generated/native only` and made checked-in `pytra/**` re-entry fail fast.
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-01] Deleted checked-in `src/runtime/rs/pytra/**` for Rust (`rs`) and removed repo-tree `pytra/**` assumptions from `py2rs`, selfhost, runtime guards, and smoke.
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-02] Switch the static family (`go/java/kotlin/scala/swift/nim`) registry / packaging / smoke / tooling to direct `generated/native` references and remove repo-tree `pytra/**` dependencies.
+- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-02] Aligned the static family (`go/java/kotlin/scala/swift/nim`) registry / packaging / smoke / tooling on direct `generated/native` references so checked-in `pytra/**` remains only as deletion inventory.
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-03] Physically delete checked-in `src/runtime/<lang>/pytra/**` for the static family and sync allowlists / inventory / representative smoke to the deletion end state.
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-01] Rework JS/TS import paths, shim writers, selfhost, and smoke so repo-tree `src/runtime/{js,ts}/pytra/**` direct-load and compat contracts disappear.
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-02] Move Lua/Ruby/PHP packaging / runtime copy / loader contracts to `generated/native` or output-side staging and remove checked-in `pytra/**` assumptions.
