@@ -40,6 +40,5 @@ TYPED_LANE_MUST_NOT_USE_IDS: Final[tuple[str, ...]] = (
     "cpp_emitter_object_list_bridge_sites",
     "generated_runtime_object_list_bridge_sites",
     "generated_runtime_generic_index_sites",
-    "sample_cpp_py_append_sites",
     "sample_cpp_generic_index_sites",
 )

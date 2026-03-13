@@ -51,7 +51,7 @@
         "suffix": ".gif"
       },
       "source_rel": "sample/py/05_mandelbrot_zoom.py",
-      "source_sha256": "f06d76be0446ae48b5da52bd46bbce84f8be5ea56ad9efcf070b10ba937f918e",
+      "source_sha256": "8a8d31ce208990a191bf6e937c3d600c8fcf3886f42c3db0c0c637250f0750c3",
       "stdout_normalized": "output: sample/out/05_mandelbrot_zoom.gif\nframes: 48",
       "stdout_sha256": "a23cd895d4825638bf51d7b10a92986c3e279544b44bcaaaec5f8e1d81a2ed6b"
     },
@@ -62,7 +62,7 @@
         "suffix": ".gif"
       },
       "source_rel": "sample/py/06_julia_parameter_sweep.py",
-      "source_sha256": "25006d3313cae9d5de595bf44b9322ff43d2495ad822bfe6ddc8850e8164395d",
+      "source_sha256": "fa3ef844e687f7c3c1c93b5aef0eba6fab231d4f53a91a10fb21bed1177ac643",
       "stdout_normalized": "output: sample/out/06_julia_parameter_sweep.gif\nframes: 72",
       "stdout_sha256": "dee8b45a3cfc452be4f5f5ecf260eef432fef4a0043190949d0b1229bc70bd1a"
     },
@@ -84,7 +84,7 @@
         "suffix": ".gif"
       },
       "source_rel": "sample/py/08_langtons_ant.py",
-      "source_sha256": "519b2afad4c14adb701dd2f7cc09ba5c0af5dc9b7370642ec1839cc5245af010",
+      "source_sha256": "b827a3fc624a6dd512e685401ad25bda52e62430f17871cc30fecc72ea35ec44",
       "stdout_normalized": "output: sample/out/08_langtons_ant.gif\nframes: 200",
       "stdout_sha256": "bb3f8162844ba28bc6543ab527e587dadf21260571676cb6c4a4b586c2fbd5c0"
     },
@@ -95,7 +95,7 @@
         "suffix": ".gif"
       },
       "source_rel": "sample/py/09_fire_simulation.py",
-      "source_sha256": "0cfcdf8d95d9c272a15f3eb9aac0c82d9cf13c336d9a598d10a455bb34a512f5",
+      "source_sha256": "af26777f108d0fb0545341ee28bb79c5efa6a0e14ffbacaf3d76928840f1f7e6",
       "stdout_normalized": "output: sample/out/09_fire_simulation.gif\nframes: 420",
       "stdout_sha256": "f944a1322ab44739eec663692afb4f070051f117b635f057ec64eba0baaff29c"
     },
@@ -106,7 +106,7 @@
         "suffix": ".gif"
       },
       "source_rel": "sample/py/10_plasma_effect.py",
-      "source_sha256": "80ed68cfae4fb6f2e387dd574397732044d1f3cc1feb81a416e59d84698ca0a8",
+      "source_sha256": "da586bf1e2c08ebc3055555f9378b012567d039d564efb8105178bf05c16921a",
       "stdout_normalized": "output: sample/out/10_plasma_effect.gif\nframes: 216",
       "stdout_sha256": "0d70d8e084928381ee7281749b5f58bb65d6b4eebaee3bdf6c201788aee5a50d"
     },
@@ -117,7 +117,7 @@
         "suffix": ".gif"
       },
       "source_rel": "sample/py/11_lissajous_particles.py",
-      "source_sha256": "00d50519e965660fe5078201605d8006561c604c78d22f5c4d92cec6335d856b",
+      "source_sha256": "104544b97eb8cf0135bc5e045cce1778be2bb219bcd64f392bf78cd270c4f91e",
       "stdout_normalized": "output: sample/out/11_lissajous_particles.gif\nframes: 360",
       "stdout_sha256": "2bdfef1c6cd78b0ff6f9cd4d9aa6e9e0bc436076d61757fdfe33df63270cc1c2"
     },
@@ -139,7 +139,7 @@
         "suffix": ".gif"
       },
       "source_rel": "sample/py/13_maze_generation_steps.py",
-      "source_sha256": "941e0ff0381f3ac92cd063364d5bf4c44945046178727bde5339691112f1309d",
+      "source_sha256": "e1f9d66f7245a763ff7d11f891c2687d442f41c0e87a6e7a4b3c6ec786225bf3",
       "stdout_normalized": "output: sample/out/13_maze_generation_steps.gif\nframes: 147",
       "stdout_sha256": "7beaee754888d76b2f7001cbe866d351adadc1db7e4dbff2f9f5c9333d95b492"
     },
@@ -150,7 +150,7 @@
         "suffix": ".gif"
       },
       "source_rel": "sample/py/14_raymarching_light_cycle.py",
-      "source_sha256": "340f96e30fe289cd3b49182680b2935684db032f2920f7411c0a1c9a159fe74c",
+      "source_sha256": "db130dad8000e4ea8afbd60b57c54ec4f9a30d0e34ccde1df8f51c73a35a3f00",
       "stdout_normalized": "output: sample/out/14_raymarching_light_cycle.gif\nframes: 84",
       "stdout_sha256": "cfd143d0aaa58baf5eec8e17864761fe7270eb6187c0c3d4b99574f5b2397a85"
     },
@@ -172,7 +172,7 @@
         "suffix": ".gif"
       },
       "source_rel": "sample/py/16_glass_sculpture_chaos.py",
-      "source_sha256": "6de38b145e163c14919db25cbc18dff7d68d204e23a268606cfd3bd347ae5e33",
+      "source_sha256": "19e1a11c2c57b507e69343de221778585ff8e5379e9fd2ffc0ec4bfb537e70e2",
       "stdout_normalized": "output: sample/out/16_glass_sculpture_chaos.gif\nframes: 72",
       "stdout_sha256": "0df206633ba5fd907422a60aa947680878c78fef73bb1469623e3ad40d2a39d0"
     },
