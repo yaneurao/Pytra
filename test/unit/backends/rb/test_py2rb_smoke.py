@@ -235,11 +235,11 @@ class Py2RbSmokeTest(unittest.TestCase):
                 )
                 self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
-    def test_ruby_repo_compat_lane_resolves_runtime_helpers(self) -> None:
-        compat_runtime = ROOT / "src" / "runtime" / "ruby" / "pytra" / "built_in" / "py_runtime.rb"
+    def test_ruby_repo_delete_target_lane_resolves_runtime_helpers(self) -> None:
+        delete_target_runtime = ROOT / "src" / "runtime" / "ruby" / "pytra" / "built_in" / "py_runtime.rb"
         code = "\n".join(
             [
-                f"load {compat_runtime.as_posix()!r}",
+                f"load {delete_target_runtime.as_posix()!r}",
                 "puts(__pytra_truthy([1]) ? 'ruby-ok' : 'ruby-missing')",
             ]
         )

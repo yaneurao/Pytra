@@ -217,50 +217,50 @@ def main() -> None:
             pathlib_shim = (Path(td) / "pytra" / "std" / "pathlib.js").read_text(encoding="utf-8")
             self.assertIn("generated/std/pathlib.js", pathlib_shim)
 
-    def test_ts_repo_compat_lane_reexports_runtime_helpers(self) -> None:
+    def test_ts_repo_delete_target_lane_reexports_runtime_helpers(self) -> None:
         self.assertFalse((ROOT / "src" / "runtime" / "ts" / "native" / "std" / "math.ts").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "ts" / "native" / "std" / "pathlib.ts").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "ts" / "native" / "std" / "time.ts").exists())
-        compat_runtime = ROOT / "src" / "runtime" / "ts" / "pytra" / "py_runtime.ts"
-        compat_json = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "json.ts"
-        compat_math = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "math.ts"
-        compat_pathlib = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "pathlib.ts"
-        compat_time = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "time.ts"
-        compat_png = ROOT / "src" / "runtime" / "ts" / "pytra" / "utils" / "png.ts"
-        compat_gif = ROOT / "src" / "runtime" / "ts" / "pytra" / "utils" / "gif.ts"
-        self.assertTrue(compat_runtime.exists())
-        self.assertTrue(compat_json.exists())
-        self.assertTrue(compat_math.exists())
-        self.assertTrue(compat_pathlib.exists())
-        self.assertTrue(compat_time.exists())
-        self.assertTrue(compat_png.exists())
-        self.assertTrue(compat_gif.exists())
+        delete_target_runtime = ROOT / "src" / "runtime" / "ts" / "pytra" / "py_runtime.ts"
+        delete_target_json = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "json.ts"
+        delete_target_math = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "math.ts"
+        delete_target_pathlib = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "pathlib.ts"
+        delete_target_time = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "time.ts"
+        delete_target_png = ROOT / "src" / "runtime" / "ts" / "pytra" / "utils" / "png.ts"
+        delete_target_gif = ROOT / "src" / "runtime" / "ts" / "pytra" / "utils" / "gif.ts"
+        self.assertTrue(delete_target_runtime.exists())
+        self.assertTrue(delete_target_json.exists())
+        self.assertTrue(delete_target_math.exists())
+        self.assertTrue(delete_target_pathlib.exists())
+        self.assertTrue(delete_target_time.exists())
+        self.assertTrue(delete_target_png.exists())
+        self.assertTrue(delete_target_gif.exists())
         self.assertEqual(
-            compat_runtime.read_text(encoding="utf-8").strip(),
+            delete_target_runtime.read_text(encoding="utf-8").strip(),
             'export * from "../native/built_in/py_runtime";',
         )
         self.assertEqual(
-            compat_json.read_text(encoding="utf-8").strip(),
+            delete_target_json.read_text(encoding="utf-8").strip(),
             'export * from "../../generated/std/json";',
         )
         self.assertEqual(
-            compat_math.read_text(encoding="utf-8").strip(),
+            delete_target_math.read_text(encoding="utf-8").strip(),
             'export * from "../../generated/std/math";',
         )
         self.assertEqual(
-            compat_pathlib.read_text(encoding="utf-8").strip(),
+            delete_target_pathlib.read_text(encoding="utf-8").strip(),
             'export * from "../../generated/std/pathlib";',
         )
         self.assertEqual(
-            compat_time.read_text(encoding="utf-8").strip(),
+            delete_target_time.read_text(encoding="utf-8").strip(),
             'export { perf_counter, perfCounter } from "../../generated/std/time";',
         )
         self.assertEqual(
-            compat_png.read_text(encoding="utf-8").strip(),
+            delete_target_png.read_text(encoding="utf-8").strip(),
             'export * from "../../generated/utils/png";',
         )
         self.assertEqual(
-            compat_gif.read_text(encoding="utf-8").strip(),
+            delete_target_gif.read_text(encoding="utf-8").strip(),
             'export * from "../../generated/utils/gif";',
         )
 
