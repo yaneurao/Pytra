@@ -58,7 +58,7 @@
 ## 分解
 
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-01] `py_runtime.h` の current bulk と `sample/cpp` / `generated/**` / C++ emitter の residual caller を inventory 化し、upstream へ押し戻せる fallback を分類する。
-- [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02] `object-only compat` と `typed lane must not use` の境界を shrink contract として docs / tooling へ固定する。
+- [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02] `object-only compat` と `typed lane must not use` の境界を shrink contract として docs / tooling へ固定する。
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01] typed list mutation / indexing / tuple-list boxing の emit を改善し、`py_append(object&)` と `py_at(object, idx)` の caller を削減する。
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02] generated built_in/std runtime と representative sample の object-bridge fallback を減らし、baseline を更新する。
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-03] generic `make_object` / `py_to` / dict-key coercion の typed path fallback を縮退し、`Any/object` 境界へ寄せる。
@@ -69,3 +69,5 @@
 - 2026-03-14: residual thin-seam checker 群は archive 済み `P5` を active follow-up として参照していたため、この `P2` を current owner として rebasing し、bundle order も active な `S1-01..S3-01` shrink contract に揃える。
 - 2026-03-14: `S1-01` として `src/toolchain/compiler/cpp_pyruntime_upstream_fallback_inventory.py` / `tools/check_cpp_pyruntime_upstream_fallback_inventory.py` を追加し、header bulk anchor 9 件、C++ emitter residual 2 種、generated runtime residual 3 種、sample residual 2 種を machine-readable inventory と unit test で固定した。
 - 2026-03-14: 2026-03-14 時点の baseline は `src/runtime/cpp/native/core/py_runtime.h` 1287 行、header `py_to<*>(...object...)` 5 件、`src/backends/cpp/emitter/**` の `obj_to_list_ref_or_raise(` 2 件 / `make_object(list<object>{})` 3 件、`src/runtime/cpp/generated/**` の `obj_to_list_ref_or_raise(` 2 件 / `make_object(list<object>{})` 3 件 / `py_at(...py_to<int64>)` 47 件、`sample/cpp/**` の `py_append(` 41 件 / `py_at(...py_to<int64>)` 39 件とする。
+- 2026-03-14: `S1-02` として `src/toolchain/compiler/cpp_pyruntime_upstream_fallback_contract.py` / `tools/check_cpp_pyruntime_upstream_fallback_contract.py` を追加し、header bulk を `object_only_compat_header` 4 件、`any_object_boundary_header` 5 件、`typed_lane_must_not_use` 7 件へ partition した。
+- 2026-03-14: final handoff guard には upstream fallback boundary checker/test を追加し、active `P2` handoff が inventory baseline と boundary contract の両方を参照するようにした。

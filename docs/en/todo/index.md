@@ -35,4 +35,4 @@ Last updated: 2026-03-14
 
 1. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] Push typed fallback out of `py_runtime.h` and back into EAST3, the C++ emitter, and runtime SoT so the header shrinks without physical splitting.
 Context: [docs/en/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md](../plans/p2-cpp-pyruntime-upstream-fallback-shrink.md)
-- Progress memo: `S1-01` fixed the inventory baseline. The header stays at 1287 lines with 5 header `py_to<*>(...object...)` call sites, `sample/cpp` still has 41 `py_append(` plus 39 `py_at(...py_to<int64>)` calls, and `generated/**` still has 2 `obj_to_list_ref_or_raise(` plus 3 `make_object(list<object>{})` plus 47 `py_at(...py_to<int64>)` sites under checker guard. Next is `S1-02`, which will turn the object-only compatibility boundary into an explicit contract.
+- Progress memo: Completed through `S1-02`. The header bulk is now partitioned into 4 `object-only compat` anchors and 5 `Any/object boundary fallback` anchors, while 7 emitter/generated/sample residual buckets are locked as `typed lane must not use`.
