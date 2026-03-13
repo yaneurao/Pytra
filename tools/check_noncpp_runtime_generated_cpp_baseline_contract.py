@@ -37,6 +37,21 @@ def _collect_cpp_generated_bucket_modules(bucket: str) -> tuple[str, ...]:
     )
 
 
+def _generated_suffix_for_backend(backend: str) -> str:
+    return {
+        "cs": ".cs",
+        "rs": ".rs",
+    }[backend]
+
+
+def _collect_backend_generated_modules(backend: str, bucket: str) -> tuple[str, ...]:
+    base = ROOT / "src" / "runtime" / backend / "generated" / bucket
+    suffix = _generated_suffix_for_backend(backend)
+    if not base.exists():
+        return ()
+    return tuple(sorted(path.stem for path in base.iterdir() if path.is_file() and path.suffix == suffix))
+
+
 def _collect_runtime_layout_legacy_state_buckets() -> tuple[dict[str, object], ...]:
     baseline = set(contract_mod.iter_noncpp_runtime_generated_cpp_baseline_modules())
     buckets: dict[tuple[str, str], set[str]] = {}
@@ -160,6 +175,17 @@ def _collect_contract_issues() -> list[str]:
             f"expected={contract_mod.iter_noncpp_runtime_generated_cpp_baseline_helper_artifact_overlap()!r} "
             f"actual={helper_overlap!r}"
         )
+
+    for backend in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_materialized_backends():
+        for entry in bucket_entries:
+            bucket = entry["bucket"]
+            expected_modules = entry["modules"]
+            actual_modules = _collect_backend_generated_modules(backend, bucket)
+            missing = tuple(module for module in expected_modules if module not in actual_modules)
+            if missing:
+                issues.append(
+                    f"{backend} generated baseline missing modules for {bucket}: {missing!r}"
+                )
 
     return issues
 

@@ -48,6 +48,10 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                 "docs/en/spec/spec-tools.md",
             ),
         )
+        self.assertEqual(
+            contract_mod.iter_noncpp_runtime_generated_cpp_baseline_materialized_backends(),
+            ("cs", "rs"),
+        )
 
     def test_legacy_state_buckets_match_runtime_contracts(self) -> None:
         self.assertEqual(
@@ -60,3 +64,11 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
             check_mod._collect_helper_artifact_overlap_modules(),
             contract_mod.iter_noncpp_runtime_generated_cpp_baseline_helper_artifact_overlap(),
         )
+
+    def test_materialized_backend_baseline_has_no_missing_modules(self) -> None:
+        buckets = contract_mod.iter_noncpp_runtime_generated_cpp_baseline_buckets()
+        for backend in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_materialized_backends():
+            for entry in buckets:
+                actual = check_mod._collect_backend_generated_modules(backend, entry["bucket"])
+                missing = tuple(module for module in entry["modules"] if module not in actual)
+                self.assertEqual(missing, (), msg=f"{backend} {entry['bucket']}")

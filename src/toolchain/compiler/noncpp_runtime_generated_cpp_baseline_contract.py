@@ -254,6 +254,10 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1: Final[
     tuple[str, ...]
 ] = ()
 
+NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MATERIALIZED_BACKENDS_V1: Final[
+    tuple[str, ...]
+] = ("cs", "rs")
+
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_POLICY_FILES_V1: Final[
     tuple[NonCppRuntimeGeneratedCppBaselineLegacyPolicyFileEntry, ...]
 ] = (
@@ -343,6 +347,10 @@ def iter_noncpp_runtime_generated_cpp_baseline_legacy_state_buckets() -> tuple[
 
 def iter_noncpp_runtime_generated_cpp_baseline_helper_artifact_overlap() -> tuple[str, ...]:
     return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1
+
+
+def iter_noncpp_runtime_generated_cpp_baseline_materialized_backends() -> tuple[str, ...]:
+    return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MATERIALIZED_BACKENDS_V1
 
 
 def iter_noncpp_runtime_generated_cpp_baseline_legacy_policy_files() -> tuple[
