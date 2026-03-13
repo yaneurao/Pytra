@@ -457,7 +457,7 @@ fun match(pattern: String, text: String, flags: Long): Any? {
             return __pytra_any_default()
         }
         rest = __pytra_slice(rest, 2L, __pytra_len(rest)).strip()
-        if ((__pytra_contains(__pytra_any_default(), rest))) {
+        if (((__pytra_str(rest) == __pytra_str("\"__main__\"")) || (__pytra_str(rest) == __pytra_str("'__main__'")))) {
             return Match(text, mutableListOf<Any?>())
         }
         return __pytra_any_default()

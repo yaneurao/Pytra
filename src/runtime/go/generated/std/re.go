@@ -465,7 +465,7 @@ func match(pattern string, text string, flags int64) any {
             return nil
         }
         rest = __pytra_str(__pytra_slice(rest, int64(2), __pytra_len(rest)).strip())
-        if (__pytra_contains(nil, rest)) {
+        if ((__pytra_str(rest) == __pytra_str("\"__main__\"")) || (__pytra_str(rest) == __pytra_str("'__main__'"))) {
             return NewMatch(text, []any{})
         }
         return nil

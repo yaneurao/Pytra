@@ -2,8 +2,8 @@
 // source: src/pytra/std/argparse.py
 // generated-by: tools/gen_runtime_from_manifest.py
 
-import { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } from "./pytra/py_runtime.js";
-import * as sys from "./pytra/std/sys.js";
+const { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } = require("../../native/built_in/py_runtime.js");
+const sys = require("./sys.js");
 
 class Namespace {
     static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);

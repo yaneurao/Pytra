@@ -460,7 +460,7 @@ func match(_ pattern: String, _ text: String, _ flags: Int64) -> Any {
             return __pytra_any_default()
         }
         rest = __pytra_slice(rest, Int64(2), __pytra_len(rest)).strip()
-        if (__pytra_contains(__pytra_any_default(), rest)) {
+        if ((__pytra_str(rest) == __pytra_str("\"__main__\"")) || (__pytra_str(rest) == __pytra_str("'__main__'"))) {
             return Match(text, [])
         }
         return __pytra_any_default()

@@ -464,7 +464,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "backend": "js",
         "family": "script",
         "runtime_hook_key": "js_shims",
-        "current_roots": ("generated", "native", "pytra"),
+        "current_roots": ("generated", "native"),
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
@@ -491,61 +491,13 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "ownership": "generated",
                 "rationale": "JS live-generated std compare artifacts live in generated/std once the Wave B std lanes are materialized.",
             },
-            {
-                "current_prefix": "src/runtime/js/pytra/py_runtime.js",
-                "target_prefix": "src/runtime/js/pytra/py_runtime.js",
-                "ownership": "delete_target",
-                "rationale": "JS still keeps a checked-in root-level pytra delete-target shim for built_in py_runtime until output-side staging replaces it.",
-            },
-            {
-                "current_prefix": "src/runtime/js/pytra/std/json.js",
-                "target_prefix": "src/runtime/js/pytra/std/json.js",
-                "ownership": "delete_target",
-                "rationale": "JS still keeps checked-in pytra std delete-target shims in bucketed pytra/std paths until output-side staging replaces them.",
-            },
-            {
-                "current_prefix": "src/runtime/js/pytra/std/time.js",
-                "target_prefix": "src/runtime/js/pytra/std/time.js",
-                "ownership": "delete_target",
-                "rationale": "JS still keeps checked-in pytra std delete-target shims in bucketed pytra/std paths until output-side staging replaces them.",
-            },
-            {
-                "current_prefix": "src/runtime/js/pytra/std/math.js",
-                "target_prefix": "src/runtime/js/pytra/std/math.js",
-                "ownership": "delete_target",
-                "rationale": "JS still keeps checked-in pytra std delete-target shims in bucketed pytra/std paths until output-side staging replaces them.",
-            },
-            {
-                "current_prefix": "src/runtime/js/pytra/std/pathlib.js",
-                "target_prefix": "src/runtime/js/pytra/std/pathlib.js",
-                "ownership": "delete_target",
-                "rationale": "JS still keeps checked-in pytra std delete-target shims in bucketed pytra/std paths until output-side staging replaces them.",
-            },
-            {
-                "current_prefix": "src/runtime/js/pytra/utils/png.js",
-                "target_prefix": "src/runtime/js/pytra/utils/png.js",
-                "ownership": "delete_target",
-                "rationale": "JS still keeps checked-in pytra utils delete-target shims in bucketed pytra/utils paths until output-side staging replaces them.",
-            },
-            {
-                "current_prefix": "src/runtime/js/pytra/utils/gif.js",
-                "target_prefix": "src/runtime/js/pytra/utils/gif.js",
-                "ownership": "delete_target",
-                "rationale": "JS still keeps checked-in pytra utils delete-target shims in bucketed pytra/utils paths until output-side staging replaces them.",
-            },
-            {
-                "current_prefix": "src/runtime/js/pytra/README.md",
-                "target_prefix": "src/runtime/js/pytra/README.md",
-                "ownership": "delete_target",
-                "rationale": "The checked-in JS pytra README remains delete-target debt documentation until the script-family deshim bundle deletes the tree.",
-            },
         ),
     },
     {
         "backend": "ts",
         "family": "script",
         "runtime_hook_key": "js_shims",
-        "current_roots": ("generated", "native", "pytra"),
+        "current_roots": ("generated", "native"),
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
@@ -571,54 +523,6 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/ts/generated/std/",
                 "ownership": "generated",
                 "rationale": "TS live-generated std compare artifacts live in generated/std once the Wave B std lanes are materialized.",
-            },
-            {
-                "current_prefix": "src/runtime/ts/pytra/py_runtime.ts",
-                "target_prefix": "src/runtime/ts/pytra/py_runtime.ts",
-                "ownership": "delete_target",
-                "rationale": "TS still keeps a checked-in root-level pytra delete-target shim for built_in py_runtime until output-side staging replaces it.",
-            },
-            {
-                "current_prefix": "src/runtime/ts/pytra/std/json.ts",
-                "target_prefix": "src/runtime/ts/pytra/std/json.ts",
-                "ownership": "delete_target",
-                "rationale": "TS still keeps checked-in pytra std delete-target shims in bucketed pytra/std paths until output-side staging replaces them.",
-            },
-            {
-                "current_prefix": "src/runtime/ts/pytra/std/time.ts",
-                "target_prefix": "src/runtime/ts/pytra/std/time.ts",
-                "ownership": "delete_target",
-                "rationale": "TS still keeps checked-in pytra std delete-target shims in bucketed pytra/std paths until output-side staging replaces them.",
-            },
-            {
-                "current_prefix": "src/runtime/ts/pytra/std/math.ts",
-                "target_prefix": "src/runtime/ts/pytra/std/math.ts",
-                "ownership": "delete_target",
-                "rationale": "TS still keeps checked-in pytra std delete-target shims in bucketed pytra/std paths until output-side staging replaces them.",
-            },
-            {
-                "current_prefix": "src/runtime/ts/pytra/std/pathlib.ts",
-                "target_prefix": "src/runtime/ts/pytra/std/pathlib.ts",
-                "ownership": "delete_target",
-                "rationale": "TS still keeps checked-in pytra std delete-target shims in bucketed pytra/std paths until output-side staging replaces them.",
-            },
-            {
-                "current_prefix": "src/runtime/ts/pytra/utils/png.ts",
-                "target_prefix": "src/runtime/ts/pytra/utils/png.ts",
-                "ownership": "delete_target",
-                "rationale": "TS still keeps checked-in pytra utils delete-target shims in bucketed pytra/utils paths until output-side staging replaces them.",
-            },
-            {
-                "current_prefix": "src/runtime/ts/pytra/utils/gif.ts",
-                "target_prefix": "src/runtime/ts/pytra/utils/gif.ts",
-                "ownership": "delete_target",
-                "rationale": "TS still keeps checked-in pytra utils delete-target shims in bucketed pytra/utils paths until output-side staging replaces them.",
-            },
-            {
-                "current_prefix": "src/runtime/ts/pytra/README.md",
-                "target_prefix": "src/runtime/ts/pytra/README.md",
-                "ownership": "delete_target",
-                "rationale": "The checked-in TS pytra README remains delete-target debt documentation until the script-family deshim bundle deletes the tree.",
             },
         ),
     },
@@ -1844,32 +1748,6 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_FILES_V1: Final[
 REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_SMOKE_V1: Final[
     tuple[RemainingRuntimeWaveBDeleteTargetSmokeEntry, ...]
 ] = (
-    {
-        "backend": "js",
-        "smoke_kind": "direct_load",
-        "smoke_targets": (
-            "py_runtime.js",
-            "std/json.js",
-            "std/math.js",
-            "std/pathlib.js",
-            "std/time.js",
-            "utils/gif.js",
-            "utils/png.js",
-        ),
-    },
-    {
-        "backend": "ts",
-        "smoke_kind": "source_reexport",
-        "smoke_targets": (
-            "py_runtime.ts",
-            "std/json.ts",
-            "std/math.ts",
-            "std/pathlib.ts",
-            "std/time.ts",
-            "utils/gif.ts",
-            "utils/png.ts",
-        ),
-    },
     {
         "backend": "lua",
         "smoke_kind": "direct_load",

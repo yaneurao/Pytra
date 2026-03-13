@@ -2,7 +2,7 @@
 // source: src/pytra/std/re.py
 // generated-by: tools/gen_runtime_from_manifest.py
 
-import { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } from "./pytra/py_runtime.js";
+const { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } = require("../../native/built_in/py_runtime.js");
 
 class Match {
     static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);
@@ -436,7 +436,7 @@ function match(pattern, text, flags) {
             return null;
         }
         rest = rest.slice(2).strip();
-        if (rest in {'"__main__"', "'__main__'"}) {
+        if (rest === "\"__main__\"" || rest === "'__main__'") {
             return new Match(text, []);
         }
         return null;

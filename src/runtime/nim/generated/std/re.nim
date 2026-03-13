@@ -378,7 +378,7 @@ proc match*(pattern: string, text: string, flags: int): Match =
     if py_truthy((not py_truthy(rest.startswith("==")))):
       return nil
     rest = rest[2 ..< (rest.len)].strip()
-    if (rest in 0):
+    if py_truthy(((rest == "\"__main__\"") or (rest == "'__main__'"))):
       return newMatch(text, @[])
     return nil
   if (pattern == "^import\\s+(.+)$"):

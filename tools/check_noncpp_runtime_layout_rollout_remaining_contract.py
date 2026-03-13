@@ -568,7 +568,7 @@ def _collect_wave_b_delete_target_smoke_issues() -> list[str]:
         for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target_files()
     }
     entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target_smoke()
-    if tuple(entry["backend"] for entry in entries) != ("js", "ts", "lua", "ruby", "php"):
+    if tuple(entry["backend"] for entry in entries) != ("lua", "ruby", "php"):
         issues.append("wave-b delete-target smoke order drifted")
     for entry in entries:
         backend = entry["backend"]
@@ -590,9 +590,7 @@ def _collect_wave_b_delete_target_smoke_issues() -> list[str]:
             issues.append(f"wave-b delete-target smoke escaped delete-target shim files: {backend}")
         if smoke_targets != allowed_targets:
             issues.append(f"wave-b delete-target smoke coverage drifted: {backend}")
-        if backend == "ts" and smoke_kind != "source_reexport":
-            issues.append("wave-b delete-target smoke kind drifted: ts")
-        if backend != "ts" and smoke_kind != "direct_load":
+        if smoke_kind != "direct_load":
             issues.append(f"wave-b delete-target smoke kind drifted: {backend}")
     return issues
 

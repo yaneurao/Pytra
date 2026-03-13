@@ -556,32 +556,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target_smoke(),
             (
                 {
-                    "backend": "js",
-                    "smoke_kind": "direct_load",
-                    "smoke_targets": (
-                        "py_runtime.js",
-                        "std/json.js",
-                        "std/math.js",
-                        "std/pathlib.js",
-                        "std/time.js",
-                        "utils/gif.js",
-                        "utils/png.js",
-                    ),
-                },
-                {
-                    "backend": "ts",
-                    "smoke_kind": "source_reexport",
-                    "smoke_targets": (
-                        "py_runtime.ts",
-                        "std/json.ts",
-                        "std/math.ts",
-                        "std/pathlib.ts",
-                        "std/time.ts",
-                        "utils/gif.ts",
-                        "utils/png.ts",
-                    ),
-                },
-                {
                     "backend": "lua",
                     "smoke_kind": "direct_load",
                     "smoke_targets": ("built_in/py_runtime.lua",),
@@ -779,15 +753,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "rationale": "Nim SoT-generated std compare artifacts now live in generated/std after the cpp-baseline materialization bundle.",
             },
             by_backend["nim"],
-        )
-        self.assertIn(
-            {
-                "current_prefix": "src/runtime/js/pytra/std/time.js",
-                "target_prefix": "src/runtime/js/pytra/std/time.js",
-                "ownership": "delete_target",
-                "rationale": "JS still keeps checked-in pytra std delete-target shims in bucketed pytra/std paths until output-side staging replaces them.",
-            },
-            by_backend["js"],
         )
         self.assertIn(
             {

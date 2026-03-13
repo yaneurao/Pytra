@@ -158,17 +158,17 @@ class Py2TsSmokeTest(unittest.TestCase):
                 for needle in relative_import_secondwave_expected_needles(scenario_id):
                     self.assertIn(needle, ts)
 
-    def test_stdlib_imports_use_pytra_runtime_shim_paths(self) -> None:
+    def test_stdlib_imports_use_runtime_bundle_paths(self) -> None:
         fixture = find_fixture_case("import_time_from")
         east = load_east(fixture, parser_backend="self_hosted")
         ts = transpile_to_typescript(east)
-        self.assertIn('from "./pytra/std/time.js"', ts)
+        self.assertIn('from "./runtime/js/generated/std/time.js"', ts)
 
-    def test_stdlib_json_import_uses_pytra_runtime_shim_path(self) -> None:
+    def test_stdlib_json_import_uses_runtime_bundle_path(self) -> None:
         fixture = find_fixture_case("json_extended")
         east = load_east(fixture, parser_backend="self_hosted")
         ts = transpile_to_typescript(east)
-        self.assertIn('from "./pytra/std/json.js"', ts)
+        self.assertIn('from "./runtime/js/generated/std/json.js"', ts)
 
     def test_ts_preview_ambient_global_extern_is_lowered_without_decl_or_import(self) -> None:
         src = """
@@ -192,7 +192,7 @@ def main() -> None:
         self.assertNotIn("let doc = ", ts)
         self.assertNotIn("import { document", ts)
 
-    def test_cli_generates_pytra_runtime_shims(self) -> None:
+    def test_cli_stages_runtime_bundle(self) -> None:
         fixture = find_fixture_case("import_time_from")
         with tempfile.TemporaryDirectory() as td:
             out_ts = Path(td) / "import_time_from.ts"
@@ -208,16 +208,13 @@ def main() -> None:
                 text=True,
             )
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertTrue((Path(td) / "pytra" / "std" / "json.js").exists())
-            self.assertTrue((Path(td) / "pytra" / "std" / "time.js").exists())
-            self.assertTrue((Path(td) / "pytra" / "std" / "pathlib.js").exists())
-            self.assertTrue((Path(td) / "pytra" / "py_runtime.js").exists())
-            json_shim = (Path(td) / "pytra" / "std" / "json.js").read_text(encoding="utf-8")
-            self.assertIn("generated/std/json.js", json_shim)
-            pathlib_shim = (Path(td) / "pytra" / "std" / "pathlib.js").read_text(encoding="utf-8")
-            self.assertIn("generated/std/pathlib.js", pathlib_shim)
+            self.assertTrue((Path(td) / "runtime" / "js" / "generated" / "std" / "json.js").exists())
+            self.assertTrue((Path(td) / "runtime" / "js" / "generated" / "std" / "time.js").exists())
+            self.assertTrue((Path(td) / "runtime" / "js" / "generated" / "std" / "pathlib.js").exists())
+            self.assertTrue((Path(td) / "runtime" / "js" / "native" / "built_in" / "py_runtime.js").exists())
+            self.assertFalse((Path(td) / "pytra").exists())
 
-    def test_ts_cli_generated_runtime_shims_resolve_runtime_helpers(self) -> None:
+    def test_ts_cli_staged_runtime_bundle_resolves_runtime_helpers(self) -> None:
         fixture = find_fixture_case("import_time_from")
         with tempfile.TemporaryDirectory() as td:
             out_ts = Path(td) / "import_time_from.ts"
@@ -233,13 +230,13 @@ def main() -> None:
                 text=True,
             )
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            runtime_js = (Path(td) / "pytra" / "py_runtime.js").resolve()
-            json_js = (Path(td) / "pytra" / "std" / "json.js").resolve()
-            math_js = (Path(td) / "pytra" / "std" / "math.js").resolve()
-            pathlib_js = (Path(td) / "pytra" / "std" / "pathlib.js").resolve()
-            time_js = (Path(td) / "pytra" / "std" / "time.js").resolve()
-            png_js = (Path(td) / "pytra" / "utils" / "png.js").resolve()
-            gif_js = (Path(td) / "pytra" / "utils" / "gif.js").resolve()
+            runtime_js = (Path(td) / "runtime" / "js" / "native" / "built_in" / "py_runtime.js").resolve()
+            json_js = (Path(td) / "runtime" / "js" / "generated" / "std" / "json.js").resolve()
+            math_js = (Path(td) / "runtime" / "js" / "generated" / "std" / "math.js").resolve()
+            pathlib_js = (Path(td) / "runtime" / "js" / "generated" / "std" / "pathlib.js").resolve()
+            time_js = (Path(td) / "runtime" / "js" / "generated" / "std" / "time.js").resolve()
+            png_js = (Path(td) / "runtime" / "js" / "generated" / "utils" / "png.js").resolve()
+            gif_js = (Path(td) / "runtime" / "js" / "generated" / "utils" / "gif.js").resolve()
             proc = subprocess.run(
                 [
                     "node",
@@ -260,7 +257,7 @@ def main() -> None:
                         "if (!(time.perf_counter() > 0.0)) throw new Error('perf_counter');"
                         "if (typeof png.write_rgb_png !== 'function') throw new Error('png');"
                         "if (typeof gif.save_gif !== 'function') throw new Error('gif');"
-                        "console.log('ts-output-shim-ok');"
+                        "console.log('ts-runtime-bundle-ok');"
                     ),
                 ],
                 cwd=ROOT,
@@ -268,7 +265,7 @@ def main() -> None:
                 text=True,
             )
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-            self.assertEqual(proc.stdout.strip(), "ts-output-shim-ok")
+            self.assertEqual(proc.stdout.strip(), "ts-runtime-bundle-ok")
 
     def test_ts_generated_built_in_compare_lane_rehomes_native_runtime_import(self) -> None:
         generated_contains = ROOT / "src" / "runtime" / "ts" / "generated" / "built_in" / "contains.ts"
@@ -310,7 +307,7 @@ def main() -> None:
         fixture = find_fixture_case("math_path_runtime_ir")
         east = load_east(fixture, parser_backend="self_hosted")
         ts = transpile_to_typescript(east)
-        self.assertIn('import { Path } from "./pytra/std/pathlib.js";', ts)
+        self.assertIn('import { Path } from "./runtime/js/generated/std/pathlib.js";', ts)
         self.assertIn('let p = Path("tmp/a.txt");', ts)
         self.assertIn("let q = p.parent;", ts)
         self.assertIn("let n = p.name;", ts)

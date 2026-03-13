@@ -2,38 +2,39 @@
 // source: src/pytra/std/sys.py
 // generated-by: tools/gen_runtime_from_manifest.py
 
-import { extern } from "./pytra/std.js";
+const sys = {
+    argv: Array.from(process.argv),
+    path: [],
+    stderr: process.stderr,
+    stdout: process.stdout,
+    exit(code = 0) {
+        process.exit(Number(code) || 0);
+    },
+};
 
 function exit(code) {
-    __s.exit(code);
+    sys.exit(code);
 }
 
 function set_argv(values) {
-    argv.clear();
-    for (const v of values) {
-        argv.append(v);
-    }
+    sys.argv = Array.isArray(values) ? Array.from(values, (value) => String(value)) : [];
 }
 
 function set_path(values) {
-    path.clear();
-    for (const v of values) {
-        path.append(v);
-    }
+    sys.path = Array.isArray(values) ? Array.from(values, (value) => String(value)) : [];
 }
 
 function write_stderr(text) {
-    __s.stderr.write(text);
+    process.stderr.write(String(text));
 }
 
 function write_stdout(text) {
-    __s.stdout.write(text);
+    process.stdout.write(String(text));
 }
 
-"pytra.std.sys: extern-marked sys API with Python runtime fallback.";
-let argv = extern(__s.argv);
-let path = extern(__s.path);
-let stderr = extern(__s.stderr);
-let stdout = extern(__s.stdout);
+sys.set_argv = set_argv;
+sys.set_path = set_path;
+sys.write_stderr = write_stderr;
+sys.write_stdout = write_stdout;
 
-module.exports = {exit, set_argv, set_path, write_stderr, write_stdout};
+module.exports = { sys, argv: sys.argv, path: sys.path, stderr: sys.stderr, stdout: sys.stdout, exit, set_argv, set_path, write_stderr, write_stdout };

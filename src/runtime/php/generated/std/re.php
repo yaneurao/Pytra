@@ -447,7 +447,7 @@ function match_($pattern, $text, $flags) {
             return null;
         }
         $rest = __pytra_str_slice($rest, 2, __pytra_len($rest))->strip();
-        if ((in_array($rest, null, true))) {
+        if ((($rest == "\"__main__\"") || ($rest == "'__main__'"))) {
             return new Match_($text, []);
         }
         return null;

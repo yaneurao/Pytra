@@ -472,7 +472,7 @@ function match(pattern, text, flags)
             return nil
         end
         rest = py_strip(string.sub(rest, (2) + 1, #rest))
-        if __pytra_contains({ "\"__main__\"", "'__main__'" }, rest) then
+        if ((rest == "\"__main__\"") or (rest == "'__main__'")) then
             return Match.new(text, {  })
         end
         return nil

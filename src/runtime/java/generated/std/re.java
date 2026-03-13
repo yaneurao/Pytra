@@ -446,7 +446,7 @@ public final class re {
                 return null;
             }
             rest = PyRuntime.__pytra_str_slice(rest, (((2L) < 0L) ? (((long)(rest.length())) + (2L)) : (2L)), (((((long)(rest.length()))) < 0L) ? (((long)(rest.length())) + (((long)(rest.length())))) : (((long)(rest.length()))))).strip();
-            if ((null.contains(rest))) {
+            if (((java.util.Objects.equals(rest, "\"__main__\"")) || (java.util.Objects.equals(rest, "'__main__'")))) {
                 return new Match(text, new java.util.ArrayList<Object>());
             }
             return null;

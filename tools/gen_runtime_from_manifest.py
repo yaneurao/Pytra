@@ -1567,13 +1567,44 @@ def rewrite_js_program_to_cjs_module(js_src: str) -> str:
 def rewrite_js_ts_built_in_cjs_module(js_src: str) -> str:
     text = _strip_trailing_string_literal_expr(js_src)
     text = re.sub(
-        r'^import\s+\{([^}]+)\}\s+from\s+"\.\/pytra\/py_runtime\.js";$',
+        r'^import\s+\{([^}]+)\}\s+from\s+"\.\/(?:pytra|runtime\/js\/native\/built_in)\/py_runtime\.js";$',
         lambda m: 'const {' + m.group(1).strip() + '} = require("../../native/built_in/py_runtime.js");',
         text,
         flags=re.MULTILINE,
     )
-    if "./pytra/py_runtime.js" in text:
-        raise RuntimeError("generated JS/TS built_in module still points at pytra/py_runtime.js")
+    if "./pytra/py_runtime.js" in text or "./runtime/js/native/built_in/py_runtime.js" in text:
+        raise RuntimeError("generated JS/TS built_in module still points at staged runtime path")
+    return rewrite_js_program_to_cjs_module(text)
+
+
+def rewrite_js_std_module_runtime_imports(js_src: str, *, module_name: str) -> str:
+    text = _strip_trailing_string_literal_expr(js_src)
+    replacements = {
+        'import { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } from "./pytra/py_runtime.js";':
+            'const { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } = require("../../native/built_in/py_runtime.js");',
+        'import { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } from "./runtime/js/native/built_in/py_runtime.js";':
+            'const { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } = require("../../native/built_in/py_runtime.js");',
+        'import { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } from "./pytra/py_runtime.js";':
+            'const { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } = require("../../native/built_in/py_runtime.js");',
+        'import { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } from "./runtime/js/native/built_in/py_runtime.js";':
+            'const { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } = require("../../native/built_in/py_runtime.js");',
+        'import * as sys from "./pytra/std/sys.js";':
+            'const sys = require("./sys.js");',
+        'import * as sys from "./runtime/js/generated/std/sys.js";':
+            'const sys = require("./sys.js");',
+        'import * as _math from "./pytra/std/math.js";':
+            'const _math = require("./math.js");',
+        'import * as _math from "./runtime/js/generated/std/math.js";':
+            'const _math = require("./math.js");',
+        'import { perf_counter } from "./pytra/std/time.js";':
+            'const { perf_counter } = require("./time.js");',
+        'import { perf_counter } from "./runtime/js/generated/std/time.js";':
+            'const { perf_counter } = require("./time.js");',
+    }
+    for before, after in replacements.items():
+        text = text.replace(before, after)
+    if "./pytra/" in text or "./runtime/js/" in text:
+        raise RuntimeError("generated JS std/" + module_name + " wrapper still points at staged runtime paths")
     return rewrite_js_program_to_cjs_module(text)
 
 
@@ -1586,6 +1617,57 @@ def rewrite_js_std_time_live_wrapper(js_src: str) -> str:
     if "function perf_counter(" not in text:
         raise RuntimeError("generated JS std/time wrapper is missing perf_counter()")
     return text + "\n\nconst perfCounter = perf_counter;\nmodule.exports = {perf_counter, perfCounter};\n"
+
+
+def rewrite_js_std_sys_live_wrapper(js_src: str) -> str:
+    required_fragments = (
+        "function exit(code) {",
+        "function set_argv(values) {",
+        "function set_path(values) {",
+        "function write_stderr(text) {",
+        "function write_stdout(text) {",
+    )
+    for fragment in required_fragments:
+        if fragment not in js_src:
+            raise RuntimeError("generated JS std/sys wrapper is missing: " + fragment)
+    return """
+const sys = {
+    argv: Array.from(process.argv),
+    path: [],
+    stderr: process.stderr,
+    stdout: process.stdout,
+    exit(code = 0) {
+        process.exit(Number(code) || 0);
+    },
+};
+
+function exit(code) {
+    sys.exit(code);
+}
+
+function set_argv(values) {
+    sys.argv = Array.isArray(values) ? Array.from(values, (value) => String(value)) : [];
+}
+
+function set_path(values) {
+    sys.path = Array.isArray(values) ? Array.from(values, (value) => String(value)) : [];
+}
+
+function write_stderr(text) {
+    process.stderr.write(String(text));
+}
+
+function write_stdout(text) {
+    process.stdout.write(String(text));
+}
+
+sys.set_argv = set_argv;
+sys.set_path = set_path;
+sys.write_stderr = write_stderr;
+sys.write_stdout = write_stdout;
+
+module.exports = { sys, argv: sys.argv, path: sys.path, stderr: sys.stderr, stdout: sys.stdout, exit, set_argv, set_path, write_stderr, write_stdout };
+""".lstrip()
 
 
 def rewrite_js_std_pathlib_live_wrapper(js_src: str) -> str:
@@ -2133,6 +2215,110 @@ def rewrite_ts_std_time_live_wrapper(ts_src: str) -> str:
     if "export function perf_counter(): number {" not in text:
         raise RuntimeError("generated TS std/time wrapper is missing perf_counter()")
     return text + "\n\nexport const perfCounter = perf_counter;\n"
+
+
+def rewrite_ts_std_sys_live_wrapper(ts_src: str) -> str:
+    required_fragments = (
+        "function exit(code) {",
+        "function set_argv(values) {",
+        "function set_path(values) {",
+        "function write_stderr(text) {",
+        "function write_stdout(text) {",
+    )
+    for fragment in required_fragments:
+        if fragment not in ts_src:
+            raise RuntimeError("generated TS std/sys wrapper is missing: " + fragment)
+    return """
+type SysApi = {
+    argv: string[];
+    path: string[];
+    stderr: NodeJS.WriteStream;
+    stdout: NodeJS.WriteStream;
+    exit: (code?: number) => never;
+    set_argv: (values: unknown) => void;
+    set_path: (values: unknown) => void;
+    write_stderr: (text: unknown) => void;
+    write_stdout: (text: unknown) => void;
+};
+
+export const sys: SysApi = {
+    argv: Array.from(process.argv),
+    path: [],
+    stderr: process.stderr,
+    stdout: process.stdout,
+    exit(code: number = 0): never {
+        process.exit(Number(code) || 0);
+    },
+    set_argv(values: unknown): void {
+        sys.argv = Array.isArray(values) ? Array.from(values, (value) => String(value)) : [];
+    },
+    set_path(values: unknown): void {
+        sys.path = Array.isArray(values) ? Array.from(values, (value) => String(value)) : [];
+    },
+    write_stderr(text: unknown): void {
+        process.stderr.write(String(text));
+    },
+    write_stdout(text: unknown): void {
+        process.stdout.write(String(text));
+    },
+};
+
+export const argv = sys.argv;
+export const path = sys.path;
+export const stderr = sys.stderr;
+export const stdout = sys.stdout;
+
+export function exit(code: number = 0): never {
+    return sys.exit(code);
+}
+
+export function set_argv(values: unknown): void {
+    sys.set_argv(values);
+}
+
+export function set_path(values: unknown): void {
+    sys.set_path(values);
+}
+
+export function write_stderr(text: unknown): void {
+    sys.write_stderr(text);
+}
+
+export function write_stdout(text: unknown): void {
+    sys.write_stdout(text);
+}
+""".lstrip()
+
+
+def rewrite_ts_std_module_runtime_imports(ts_src: str, *, module_name: str) -> str:
+    text = _strip_trailing_string_literal_expr(ts_src)
+    replacements = {
+        'import { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } from "./pytra/py_runtime.js";':
+            'const { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } = require("../../native/built_in/py_runtime.js");',
+        'import { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } from "./runtime/js/native/built_in/py_runtime.js";':
+            'const { PYTRA_TYPE_ID, PY_TYPE_MAP, PY_TYPE_OBJECT, pyRegisterClassType, pyBool, pyLen } = require("../../native/built_in/py_runtime.js");',
+        'import { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } from "./pytra/py_runtime.js";':
+            'const { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } = require("../../native/built_in/py_runtime.js");',
+        'import { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } from "./runtime/js/native/built_in/py_runtime.js";':
+            'const { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } = require("../../native/built_in/py_runtime.js");',
+        'import * as sys from "./pytra/std/sys.js";':
+            'const sys = require("./sys.js");',
+        'import * as sys from "./runtime/js/generated/std/sys.js";':
+            'const sys = require("./sys.js");',
+        'import * as _math from "./pytra/std/math.js";':
+            'const _math = require("./math.js");',
+        'import * as _math from "./runtime/js/generated/std/math.js";':
+            'const _math = require("./math.js");',
+        'import { perf_counter } from "./pytra/std/time.js";':
+            'const { perf_counter } = require("./time.js");',
+        'import { perf_counter } from "./runtime/js/generated/std/time.js";':
+            'const { perf_counter } = require("./time.js");',
+    }
+    for before, after in replacements.items():
+        text = text.replace(before, after)
+    if "./pytra/" in text or "./runtime/js/" in text:
+        raise RuntimeError("generated TS std/" + module_name + " wrapper still points at staged runtime paths")
+    return rewrite_js_program_to_cjs_module(text)
 
 
 def rewrite_ts_std_pathlib_live_wrapper(ts_src: str) -> str:
@@ -3307,18 +3493,38 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_js_std_math_live_wrapper(generated)
     elif item.postprocess == "js_std_time_live_wrapper":
         generated = rewrite_js_std_time_live_wrapper(generated)
+    elif item.postprocess == "js_std_sys_live_wrapper":
+        generated = rewrite_js_std_sys_live_wrapper(generated)
     elif item.postprocess == "js_std_pathlib_live_wrapper":
         generated = rewrite_js_std_pathlib_live_wrapper(generated)
     elif item.postprocess == "js_std_json_live_wrapper":
         generated = rewrite_js_std_json_live_wrapper(generated)
+    elif item.postprocess == "js_std_argparse_runtime_imports":
+        generated = rewrite_js_std_module_runtime_imports(generated, module_name="argparse")
+    elif item.postprocess == "js_std_random_runtime_imports":
+        generated = rewrite_js_std_module_runtime_imports(generated, module_name="random")
+    elif item.postprocess == "js_std_re_runtime_imports":
+        generated = rewrite_js_std_module_runtime_imports(generated, module_name="re")
+    elif item.postprocess == "js_std_timeit_runtime_imports":
+        generated = rewrite_js_std_module_runtime_imports(generated, module_name="timeit")
     elif item.postprocess == "ts_std_math_live_wrapper":
         generated = rewrite_ts_std_math_live_wrapper(generated)
     elif item.postprocess == "ts_std_time_live_wrapper":
         generated = rewrite_ts_std_time_live_wrapper(generated)
+    elif item.postprocess == "ts_std_sys_live_wrapper":
+        generated = rewrite_ts_std_sys_live_wrapper(generated)
     elif item.postprocess == "ts_std_pathlib_live_wrapper":
         generated = rewrite_ts_std_pathlib_live_wrapper(generated)
     elif item.postprocess == "ts_std_json_live_wrapper":
         generated = rewrite_ts_std_json_live_wrapper(generated)
+    elif item.postprocess == "ts_std_argparse_runtime_imports":
+        generated = rewrite_ts_std_module_runtime_imports(generated, module_name="argparse")
+    elif item.postprocess == "ts_std_random_runtime_imports":
+        generated = rewrite_ts_std_module_runtime_imports(generated, module_name="random")
+    elif item.postprocess == "ts_std_re_runtime_imports":
+        generated = rewrite_ts_std_module_runtime_imports(generated, module_name="re")
+    elif item.postprocess == "ts_std_timeit_runtime_imports":
+        generated = rewrite_ts_std_module_runtime_imports(generated, module_name="timeit")
     elif item.postprocess == "js_program_to_cjs_module":
         generated = rewrite_js_program_to_cjs_module(generated)
     elif item.postprocess == "js_ts_built_in_cjs_module":

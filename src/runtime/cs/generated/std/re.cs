@@ -458,7 +458,7 @@ public static class Program
                 return null;
             }
             rest = Pytra.CsModule.py_runtime.py_slice(rest, System.Convert.ToInt64(2), null).Trim();
-            if ((new System.Collections.Generic.HashSet<string> { "\"__main__\"", "'__main__'" }).Contains(rest)) {
+            if (((rest) == ("\"__main__\"")) || ((rest) == ("'__main__'"))) {
                 return new Match(text, new System.Collections.Generic.List<object>());
             }
             return null;

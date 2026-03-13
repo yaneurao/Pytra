@@ -443,7 +443,7 @@ fn py_match(pattern: &str, text: &str, flags: i64) -> Option<Match> {
             return ();
         }
         rest = py_slice_str(&rest, Some((2) as i64), None).strip();
-        if {'"__main__"', "'__main__'"}.contains(&(rest)) {
+        if (rest == "\"__main__\"") || (rest == "'__main__'") {
             return Match::new(((text).to_string()), (vec![]).clone());
         }
         return ();

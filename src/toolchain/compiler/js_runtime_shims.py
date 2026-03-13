@@ -1,115 +1,32 @@
-"""Helpers for writing JS runtime shim modules next to transpiled outputs."""
+"""Helpers for staging the JS runtime bundle next to transpiled outputs."""
 
 from __future__ import annotations
+
+from pathlib import Path as NativePath
+import shutil
 
 from pytra.std.pathlib import Path
 
 
-def write_js_runtime_shims(output_dir: Path) -> None:
-    """Write CommonJS shims expected by JS/TS transpiled imports.
+_ROOT = NativePath(__file__).resolve().parents[3]
+_JS_RUNTIME_SRC_ROOT = _ROOT / "src" / "runtime" / "js"
+_JS_RUNTIME_STAGE_ROOTS = ("generated", "native")
 
-    Generated JS/TS currently imports runtime modules under `./pytra/...`.
-    These shims forward to runtime implementations in `src/runtime/js/{native,generated}`.
+
+def write_js_runtime_shims(output_dir: Path) -> None:
+    """Stage the JS runtime bundle expected by JS/TS transpiled imports.
+
+    Generated JS/TS imports runtime modules under `./runtime/js/...`.
+    Copy the checked-in generated/native runtime tree into the output bundle so
+    transpiled programs do not direct-load repo-owned files.
     """
-    files: dict[str, str] = {
-        "pytra/std/time.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/generated/std/time.js');\n"
-            "const perf_counter = typeof rt.perf_counter === 'function' ? rt.perf_counter : rt.perfCounter;\n"
-            "exports.perf_counter = perf_counter;\n"
-            "exports.perfCounter = perf_counter;\n"
-        ),
-        "pytra/std/math.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/generated/std/math.js');\n"
-            "exports.pi = rt.pi;\n"
-            "exports.e = rt.e;\n"
-            "exports.sin = rt.sin;\n"
-            "exports.cos = rt.cos;\n"
-            "exports.tan = rt.tan;\n"
-            "exports.sqrt = rt.sqrt;\n"
-            "exports.exp = rt.exp;\n"
-            "exports.log = rt.log;\n"
-            "exports.log10 = rt.log10;\n"
-            "exports.fabs = rt.fabs;\n"
-            "exports.floor = rt.floor;\n"
-            "exports.ceil = rt.ceil;\n"
-            "exports.pow = rt.pow;\n"
-        ),
-        "pytra/std/json.js": (
-            "module.exports = require(process.cwd() + '/src/runtime/js/generated/std/json.js');\n"
-        ),
-        "pytra/std/pathlib.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/generated/std/pathlib.js');\n"
-            "exports.Path = rt.Path;\n"
-            "exports.pathJoin = rt.pathJoin;\n"
-        ),
-        "pytra/py_runtime.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/native/built_in/py_runtime.js');\n"
-            "exports.PY_TYPE_NONE = rt.PY_TYPE_NONE;\n"
-            "exports.PY_TYPE_BOOL = rt.PY_TYPE_BOOL;\n"
-            "exports.PY_TYPE_NUMBER = rt.PY_TYPE_NUMBER;\n"
-            "exports.PY_TYPE_STRING = rt.PY_TYPE_STRING;\n"
-            "exports.PY_TYPE_ARRAY = rt.PY_TYPE_ARRAY;\n"
-            "exports.PY_TYPE_MAP = rt.PY_TYPE_MAP;\n"
-            "exports.PY_TYPE_SET = rt.PY_TYPE_SET;\n"
-            "exports.PY_TYPE_OBJECT = rt.PY_TYPE_OBJECT;\n"
-            "exports.PYTRA_TYPE_ID = rt.PYTRA_TYPE_ID;\n"
-            "exports.PYTRA_TRUTHY = rt.PYTRA_TRUTHY;\n"
-            "exports.PYTRA_TRY_LEN = rt.PYTRA_TRY_LEN;\n"
-            "exports.PYTRA_STR = rt.PYTRA_STR;\n"
-            "exports.pyRegisterType = rt.pyRegisterType;\n"
-            "exports.pyRegisterClassType = rt.pyRegisterClassType;\n"
-            "exports.pyIsSubtype = rt.pyIsSubtype;\n"
-            "exports.pyIsInstance = rt.pyIsInstance;\n"
-            "exports.pyTypeId = rt.pyTypeId;\n"
-            "exports.pyTruthy = rt.pyTruthy;\n"
-            "exports.pyTryLen = rt.pyTryLen;\n"
-            "exports.pyStr = rt.pyStr;\n"
-            "exports.pyToString = rt.pyToString;\n"
-            "exports.pyPrint = rt.pyPrint;\n"
-            "exports.pyLen = rt.pyLen;\n"
-            "exports.pyBool = rt.pyBool;\n"
-            "exports.pyRange = rt.pyRange;\n"
-            "exports.pyFloorDiv = rt.pyFloorDiv;\n"
-            "exports.pyMod = rt.pyMod;\n"
-            "exports.pyIn = rt.pyIn;\n"
-            "exports.pySlice = rt.pySlice;\n"
-            "exports.pyOrd = rt.pyOrd;\n"
-            "exports.pyChr = rt.pyChr;\n"
-            "exports.pyBytearray = rt.pyBytearray;\n"
-            "exports.pyBytes = rt.pyBytes;\n"
-            "exports.pyIsDigit = rt.pyIsDigit;\n"
-            "exports.pyIsAlpha = rt.pyIsAlpha;\n"
-        ),
-        "pytra/utils.js": (
-            "const png = require(process.cwd() + '/src/runtime/js/generated/utils/png.js');\n"
-            "const gif = require(process.cwd() + '/src/runtime/js/generated/utils/gif.js');\n"
-            "exports.png = png;\n"
-            "exports.gif = gif;\n"
-        ),
-        "pytra/utils/png.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/generated/utils/png.js');\n"
-            "exports.write_rgb_png = rt.write_rgb_png;\n"
-        ),
-        "pytra/utils/gif.js": (
-            "const rt = require(process.cwd() + '/src/runtime/js/generated/utils/gif.js');\n"
-            "exports.grayscale_palette = rt.grayscale_palette;\n"
-            "exports.save_gif = rt.save_gif;\n"
-        ),
-        "pytra/utils/assertions.js": (
-            "exports.py_assert_true = function(cond, _label) { return !!cond; };\n"
-            "exports.py_assert_eq = function(actual, expected, _label) { return actual === expected; };\n"
-            "exports.py_assert_all = function(results, _label) {\n"
-            "  if (!Array.isArray(results)) return false;\n"
-            "  for (const v of results) { if (!v) return false; }\n"
-            "  return true;\n"
-            "};\n"
-            "exports.py_assert_stdout = function(_expected_lines, fn) {\n"
-            "  if (typeof fn === 'function') { fn(); }\n"
-            "  return true;\n"
-            "};\n"
-        ),
-    }
-    for rel, text in files.items():
-        out = output_dir / rel
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(text, encoding="utf-8")
+    stage_root = NativePath(str(output_dir)) / "runtime" / "js"
+    stage_root.mkdir(parents=True, exist_ok=True)
+    for root_name in _JS_RUNTIME_STAGE_ROOTS:
+        src_root = _JS_RUNTIME_SRC_ROOT / root_name
+        if not src_root.exists():
+            raise RuntimeError("missing JS runtime stage root: " + str(src_root))
+        dst_root = stage_root / root_name
+        if dst_root.exists():
+            shutil.rmtree(dst_root)
+        shutil.copytree(src_root, dst_root)

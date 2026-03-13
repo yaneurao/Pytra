@@ -435,7 +435,7 @@ def match(pattern, text, flags)
       return nil
     end
     rest = __pytra_slice(rest, 2, __pytra_len(rest)).strip()
-    if __pytra_contains(nil, rest)
+    if (rest == "\"__main__\"") || (rest == "'__main__'")
       return Match.new(text, [])
     end
     return nil

@@ -371,7 +371,7 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
         if not rest.startswith("=="):
             return None
         rest = rest[2:].strip()
-        if rest in {'"__main__"', "'__main__'"}:
+        if rest == '"__main__"' or rest == "'__main__'":
             return Match(text, [])
         return None
 

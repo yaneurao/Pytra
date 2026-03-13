@@ -874,12 +874,12 @@
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/argparse.js",
-          "postprocess": "js_program_to_cjs_module"
+          "postprocess": "js_std_argparse_runtime_imports"
         },
         {
           "target": "ts",
           "output": "src/runtime/ts/generated/std/argparse.ts",
-          "postprocess": "js_program_to_cjs_module"
+          "postprocess": "ts_std_argparse_runtime_imports"
         },
         { "target": "lua", "output": "src/runtime/lua/generated/std/argparse.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/argparse.rb" },
@@ -922,12 +922,12 @@
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/random.js",
-          "postprocess": "js_program_to_cjs_module"
+          "postprocess": "js_std_random_runtime_imports"
         },
         {
           "target": "ts",
           "output": "src/runtime/ts/generated/std/random.ts",
-          "postprocess": "js_program_to_cjs_module"
+          "postprocess": "ts_std_random_runtime_imports"
         },
         { "target": "lua", "output": "src/runtime/lua/generated/std/random.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/random.rb" },
@@ -970,12 +970,12 @@
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/re.js",
-          "postprocess": "js_program_to_cjs_module"
+          "postprocess": "js_std_re_runtime_imports"
         },
         {
           "target": "ts",
           "output": "src/runtime/ts/generated/std/re.ts",
-          "postprocess": "js_program_to_cjs_module"
+          "postprocess": "ts_std_re_runtime_imports"
         },
         { "target": "lua", "output": "src/runtime/lua/generated/std/re.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/re.rb" },
@@ -1018,12 +1018,12 @@
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/sys.js",
-          "postprocess": "js_program_to_cjs_module"
+          "postprocess": "js_std_sys_live_wrapper"
         },
         {
           "target": "ts",
           "output": "src/runtime/ts/generated/std/sys.ts",
-          "postprocess": "js_program_to_cjs_module"
+          "postprocess": "ts_std_sys_live_wrapper"
         },
         { "target": "lua", "output": "src/runtime/lua/generated/std/sys.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/sys.rb" },
@@ -1066,12 +1066,12 @@
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/timeit.js",
-          "postprocess": "js_program_to_cjs_module"
+          "postprocess": "js_std_timeit_runtime_imports"
         },
         {
           "target": "ts",
           "output": "src/runtime/ts/generated/std/timeit.ts",
-          "postprocess": "js_program_to_cjs_module"
+          "postprocess": "ts_std_timeit_runtime_imports"
         },
         { "target": "lua", "output": "src/runtime/lua/generated/std/timeit.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/timeit.rb" },

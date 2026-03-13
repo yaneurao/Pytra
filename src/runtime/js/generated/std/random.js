@@ -2,7 +2,7 @@
 // source: src/pytra/std/random.py
 // generated-by: tools/gen_runtime_from_manifest.py
 
-import * as _math from "./pytra/std/math.js";
+const _math = require("./math.js");
 
 function seed(value) {
     let v = value & 2147483647;

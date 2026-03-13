@@ -16,6 +16,8 @@ from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 
 _JS_EMITTER_BASE = CodeEmitter
+_JS_OUTPUT_RUNTIME_NATIVE_ROOT = "./runtime/js/native"
+_JS_OUTPUT_RUNTIME_GENERATED_ROOT = "./runtime/js/generated"
 
 
 def _load_json_dict(path: Path) -> dict[str, Any]:
@@ -223,6 +225,14 @@ class JsEmitter(CodeEmitter):
         module_name = canonical_runtime_module_id(module_id.strip())
         if module_name == "":
             return ""
+        if module_name.startswith("pytra.std."):
+            tail = module_name.removeprefix("pytra.std.")
+            if tail != "":
+                return _JS_OUTPUT_RUNTIME_GENERATED_ROOT + "/std/" + tail.replace(".", "/") + ".js"
+        if module_name.startswith("pytra.utils."):
+            tail = module_name.removeprefix("pytra.utils.")
+            if tail != "":
+                return _JS_OUTPUT_RUNTIME_GENERATED_ROOT + "/utils/" + tail.replace(".", "/") + ".js"
         return "./" + module_name.replace(".", "/") + ".js"
 
     def _module_symbol_to_js_path(self, module_id: str, symbol_name: str) -> str:
@@ -564,7 +574,7 @@ class JsEmitter(CodeEmitter):
         runtime_symbols = self._collect_runtime_symbols(analysis_body, main_guard_body)
         runtime_import_line = ""
         if len(runtime_symbols) > 0:
-            runtime_import_line = "import { " + ", ".join(runtime_symbols) + " } from " + self.quote_string_literal("./pytra/py_runtime.js") + ";"
+            runtime_import_line = "import { " + ", ".join(runtime_symbols) + " } from " + self.quote_string_literal(_JS_OUTPUT_RUNTIME_NATIVE_ROOT + "/built_in/py_runtime.js") + ";"
         import_lines = self._collect_import_statements(analysis_body, meta, used_names)
         if runtime_import_line != "":
             self.emit(runtime_import_line)
