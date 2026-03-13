@@ -33,11 +33,7 @@
 
 ### P1
 
-1. [ ] [ID: P1-NES3-APU-CONST-PKG-CPP-01] モジュール定数を使う imported class の C++ header 順序と参照 lane を揃え、`apu_const_pkg` を compile まで通す。
-文脈: [docs/ja/plans/p1-nes3-apu-const-pkg-cpp-support.md](../plans/p1-nes3-apu-const-pkg-cpp-support.md)
-- 進捗メモ: 未着手。
-
-2. [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01] import した bus 型の header/symbol qualification と受け渡し lane を揃え、`bus_port_pkg` を compile まで通す。
+1. [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01] import した bus 型の header/symbol qualification と受け渡し lane を揃え、`bus_port_pkg` を compile まで通す。
 文脈: [docs/ja/plans/p1-nes3-bus-port-pkg-cpp-support.md](../plans/p1-nes3-bus-port-pkg-cpp-support.md)
 - 進捗メモ: 未着手。
 
