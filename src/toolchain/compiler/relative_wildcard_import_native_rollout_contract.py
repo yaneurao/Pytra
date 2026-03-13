@@ -26,8 +26,8 @@ RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1: Final[list[dict[str, object]]] = [
     },
     {
         "backend": "java",
-        "current_contract_state": "fail_closed_locked",
-        "current_evidence_lane": "package_project_transpile",
+        "current_contract_state": "transpile_smoke_locked",
+        "current_evidence_lane": "module_graph_bundle_transpile",
         "verification_lane": "relative_wildcard_import_native_rollout",
         "focused_verification_lane": "java_relative_wildcard_import_rollout_smoke",
         "fail_closed_lane": "backend_specific_fail_closed",
@@ -36,8 +36,8 @@ RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1: Final[list[dict[str, object]]] = [
     },
     {
         "backend": "kotlin",
-        "current_contract_state": "fail_closed_locked",
-        "current_evidence_lane": "package_project_transpile",
+        "current_contract_state": "transpile_smoke_locked",
+        "current_evidence_lane": "module_graph_bundle_transpile",
         "verification_lane": "relative_wildcard_import_native_rollout",
         "focused_verification_lane": "kotlin_relative_wildcard_import_rollout_smoke",
         "fail_closed_lane": "backend_specific_fail_closed",
@@ -86,8 +86,8 @@ RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1: Final[list[dict[str, object]]] = [
     },
     {
         "backend": "scala",
-        "current_contract_state": "fail_closed_locked",
-        "current_evidence_lane": "package_project_transpile",
+        "current_contract_state": "transpile_smoke_locked",
+        "current_evidence_lane": "module_graph_bundle_transpile",
         "verification_lane": "relative_wildcard_import_native_rollout",
         "focused_verification_lane": "scala_relative_wildcard_import_rollout_smoke",
         "fail_closed_lane": "backend_specific_fail_closed",
@@ -117,7 +117,7 @@ RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1: Final[dict[str, object]] = {
         "src/toolchain/compiler/relative_wildcard_import_native_rollout_contract.py"
     ),
     "contract_checker": "tools/check_relative_wildcard_import_native_rollout_contract.py",
-    "current_bundle_id": "native_path_bundle",
+    "current_bundle_id": "jvm_package_bundle",
     "current_bundle_state": "transpile_smoke_locked",
     "bundle_order": (
         "native_path_bundle",

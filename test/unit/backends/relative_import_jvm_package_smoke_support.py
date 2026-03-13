@@ -9,7 +9,7 @@ from backends.scala.emitter import transpile_to_scala_native
 from toolchain.compiler.relative_import_jvm_package_bundle_contract import (
     RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_SCENARIOS_V1,
 )
-from toolchain.compiler.transpile_cli import load_east3_document
+from toolchain.compiler.transpile_cli import build_module_east_map, load_east3_document
 
 
 def relative_import_jvm_package_scenarios() -> dict[str, dict[str, object]]:
@@ -74,6 +74,52 @@ def transpile_relative_import_jvm_package_project(
         return emit(east)
 
 
+def transpile_relative_import_jvm_package_via_module_graph(
+    *,
+    target: str,
+    import_form: str,
+    body_text: str,
+) -> str:
+    emitters = {
+        "java": lambda east: transpile_to_java_native(east, class_name="Main"),
+        "kotlin": transpile_to_kotlin_native,
+        "scala": transpile_to_scala_native,
+    }
+    emit = emitters[target]
+    with tempfile.TemporaryDirectory() as td:
+        entry_path = write_relative_import_jvm_package_project(
+            Path(td),
+            import_form=import_form,
+            body_text=body_text,
+        )
+
+        def _load(
+            input_path: Path,
+            parser_backend: str = "self_hosted",
+            east_stage: str = "3",
+            object_dispatch_mode: str = "native",
+        ) -> dict[str, object]:
+            if east_stage != "3":
+                raise RuntimeError("unsupported east_stage: " + east_stage)
+            doc3 = load_east3_document(
+                input_path,
+                parser_backend=parser_backend,
+                object_dispatch_mode=object_dispatch_mode,
+                target_lang=target,
+            )
+            return doc3 if isinstance(doc3, dict) else {}
+
+        module_map = build_module_east_map(
+            entry_path,
+            _load,
+            parser_backend="self_hosted",
+            east_stage="3",
+            object_dispatch_mode="native",
+        )
+        east = module_map.get(str(entry_path), {})
+        return emit(east if isinstance(east, dict) else {})
+
+
 def transpile_relative_import_jvm_package_expect_failure(
     target: str,
     import_form: str,
@@ -114,4 +160,8 @@ def relative_import_jvm_package_expected_needles(
         if target == "java":
             return ("return helper.f();", "return g();")
         return ("return __pytra_int(helper.f())", "return __pytra_int(g())")
+    if scenario_id == "parent_symbol_wildcard":
+        if target == "java":
+            return ("return f();", "return helper.f();")
+        return ("return __pytra_int(f())", "return __pytra_int(helper.f())")
     raise KeyError(f"unknown JVM-package relative-import scenario: {scenario_id}")

@@ -67,39 +67,6 @@ _CLASS_METHODS: dict[str, set[str]] = {}
 _RELATIVE_IMPORT_NAME_ALIASES: dict[str, str] = {}
 
 
-def _reject_unsupported_relative_import_forms(body_any: Any) -> None:
-    if not isinstance(body_any, list):
-        return
-    i = 0
-    while i < len(body_any):
-        stmt = body_any[i]
-        if not isinstance(stmt, dict):
-            i += 1
-            continue
-        kind = stmt.get("kind")
-        if kind != "Import" and kind != "ImportFrom":
-            i += 1
-            continue
-        module_any = stmt.get("module")
-        module_id = module_any if isinstance(module_any, str) else ""
-        level_any = stmt.get("level")
-        level = level_any if isinstance(level_any, int) else 0
-        if level <= 0 and not module_id.startswith("."):
-            i += 1
-            continue
-        names_any = stmt.get("names")
-        names = names_any if isinstance(names_any, list) else []
-        j = 0
-        while j < len(names):
-            ent = names[j]
-            if isinstance(ent, dict) and ent.get("name") == "*":
-                raise RuntimeError(
-                    "scala native emitter: unsupported relative import form: wildcard import"
-                )
-            j += 1
-        i += 1
-
-
 def _method_overrides_base(class_name: str, method_name: str) -> bool:
     base = _CLASS_BASES.get(class_name, "")
     seen: set[str] = set()
@@ -165,13 +132,14 @@ def _relative_import_target_expr(module_id: str, imported_name: str) -> str:
     return module_path + "." + symbol
 
 
-def _collect_relative_import_name_aliases(body_any: Any) -> dict[str, str]:
+def _collect_relative_import_name_aliases(east_doc: dict[str, Any]) -> dict[str, str]:
     out: dict[str, str] = {}
-    if not isinstance(body_any, list):
-        return out
+    wildcard_modules: dict[str, str] = {}
+    body_any = east_doc.get("body")
+    body = body_any if isinstance(body_any, list) else []
     i = 0
-    while i < len(body_any):
-        stmt = body_any[i]
+    while i < len(body):
+        stmt = body[i]
         i += 1
         if not isinstance(stmt, dict) or stmt.get("kind") != "ImportFrom":
             continue
@@ -189,7 +157,12 @@ def _collect_relative_import_name_aliases(body_any: Any) -> dict[str, str]:
                 continue
             imported_any = entry.get("name")
             imported_name = imported_any if isinstance(imported_any, str) else ""
-            if imported_name == "" or imported_name == "*":
+            if imported_name == "":
+                continue
+            if imported_name == "*":
+                wildcard_module = _relative_import_module_path(module_id)
+                if wildcard_module != "":
+                    wildcard_modules[wildcard_module] = wildcard_module
                 continue
             local_any = entry.get("asname")
             local_name = local_any if isinstance(local_any, str) and local_any != "" else imported_name
@@ -197,6 +170,38 @@ def _collect_relative_import_name_aliases(body_any: Any) -> dict[str, str]:
             target_expr = _relative_import_target_expr(module_id, imported_name)
             if local_ident != "" and target_expr != "":
                 out[local_ident] = target_expr
+    if len(wildcard_modules) == 0:
+        return out
+    meta_any = east_doc.get("meta")
+    meta = meta_any if isinstance(meta_any, dict) else {}
+    import_symbols_any = meta.get("import_symbols")
+    import_symbols = import_symbols_any if isinstance(import_symbols_any, dict) else {}
+    wildcard_resolved: dict[str, bool] = {module_id: False for module_id in wildcard_modules}
+    for local_name_any, binding_any in import_symbols.items():
+        if not isinstance(local_name_any, str) or local_name_any == "":
+            continue
+        if not isinstance(binding_any, dict):
+            continue
+        binding_module_any = binding_any.get("module")
+        binding_symbol_any = binding_any.get("name")
+        binding_module = (
+            _relative_import_module_path(binding_module_any)
+            if isinstance(binding_module_any, str)
+            else ""
+        )
+        binding_symbol = binding_symbol_any if isinstance(binding_symbol_any, str) else ""
+        if binding_module not in wildcard_resolved or binding_symbol == "":
+            continue
+        local_ident = _safe_ident(local_name_any, "")
+        target_expr = _relative_import_target_expr(binding_module_any, binding_symbol)
+        if local_ident != "" and target_expr != "":
+            out[local_ident] = target_expr
+            wildcard_resolved[binding_module] = True
+    unresolved = [module_id for module_id, resolved in wildcard_resolved.items() if not resolved]
+    if len(unresolved) > 0:
+        raise RuntimeError(
+            "scala native emitter: unsupported relative import form: wildcard import"
+        )
     return out
 
 
@@ -2731,9 +2736,8 @@ def transpile_to_scala_native(east_doc: dict[str, Any]) -> str:
     body_any = east_doc.get("body")
     if not isinstance(body_any, list):
         raise RuntimeError("scala native emitter: Module.body must be list")
-    _reject_unsupported_relative_import_forms(body_any)
     _RELATIVE_IMPORT_NAME_ALIASES.clear()
-    _RELATIVE_IMPORT_NAME_ALIASES.update(_collect_relative_import_name_aliases(body_any))
+    _RELATIVE_IMPORT_NAME_ALIASES.update(_collect_relative_import_name_aliases(east_doc))
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Scala backend")
     reject_backend_general_union_type_exprs(east_doc, backend_name="Scala backend")
     reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Scala backend")

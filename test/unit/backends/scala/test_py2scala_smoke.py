@@ -28,6 +28,7 @@ from relative_import_jvm_package_smoke_support import (
     relative_import_jvm_package_expected_needles,
     transpile_relative_import_jvm_package_expect_failure,
     transpile_relative_import_jvm_package_project,
+    transpile_relative_import_jvm_package_via_module_graph,
 )
 
 
@@ -102,7 +103,20 @@ class Py2ScalaSmokeTest(unittest.TestCase):
                 self.assertIn(positive, scala)
                 self.assertNotIn(forbidden, scala)
 
-    def test_cli_relative_import_jvm_package_bundle_fail_closed_for_wildcard_on_scala(self) -> None:
+    def test_cli_relative_import_jvm_package_bundle_wildcard_via_module_graph_for_scala(self) -> None:
+        scala = transpile_relative_import_jvm_package_via_module_graph(
+            target="scala",
+            import_form="from ..helper import *",
+            body_text="def call() -> int:\n    return f()\n",
+        )
+        positive, forbidden = relative_import_jvm_package_expected_needles(
+            "scala",
+            "parent_symbol_wildcard",
+        )
+        self.assertIn(positive, scala)
+        self.assertNotIn(forbidden, scala)
+
+    def test_cli_relative_import_jvm_package_bundle_direct_fail_closed_for_wildcard_on_scala(self) -> None:
         err = transpile_relative_import_jvm_package_expect_failure(
             "scala",
             "from ..helper import *",

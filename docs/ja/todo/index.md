@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-13
+最終更新: 2026-03-14
 
 ## 文脈運用ルール
 
@@ -35,7 +35,7 @@
 
 - [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01] relative wildcard import native backend rollout
   文脈: [p0-relative-wildcard-import-native-rollout.md](../plans/p0-relative-wildcard-import-native-rollout.md)
-  進捗メモ: `S2-01` で `go/nim/swift` を module-graph transpile smoke へ引き上げ、次は `java/kotlin/scala` package bundle を green にする。
+  進捗メモ: `S2-02` で `java/kotlin/scala` も module-graph bundle transpile smoke を green にし、single-file direct lane は wildcard を fail-closed のまま維持した。次は `lua/php/ruby` を揃える。
 
 ### P1
 

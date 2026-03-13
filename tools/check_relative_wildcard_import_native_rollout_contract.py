@@ -52,27 +52,25 @@ def validate_relative_wildcard_import_native_rollout_contract() -> None:
             "relative wildcard import native backend inventory drifted: "
             f"expected={EXPECTED_BACKENDS}, got={seen}"
         )
-    native_path_bundle = {"go", "nim", "swift"}
+    transpile_bundle = {"go", "java", "kotlin", "nim", "scala", "swift"}
     for row in RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1:
         expected_state = (
             "transpile_smoke_locked"
-            if row["backend"] in native_path_bundle
+            if row["backend"] in transpile_bundle
             else "fail_closed_locked"
-        )
-        expected_lane = (
-            "module_graph_bundle_transpile"
-            if row["backend"] in native_path_bundle
-            else row["current_evidence_lane"]
         )
         if row["current_contract_state"] != expected_state:
             raise SystemExit(
                 "relative wildcard import native backend state drifted: "
                 f"{row['backend']}={row['current_contract_state']}, expected={expected_state}"
             )
-        if row["backend"] in native_path_bundle and row["current_evidence_lane"] != expected_lane:
+        if (
+            row["backend"] in transpile_bundle
+            and row["current_evidence_lane"] != "module_graph_bundle_transpile"
+        ):
             raise SystemExit(
                 "relative wildcard import native evidence lane drifted: "
-                f"{row['backend']}={row['current_evidence_lane']}, expected={expected_lane}"
+                f"{row['backend']}={row['current_evidence_lane']}, expected=module_graph_bundle_transpile"
             )
         if row["fail_closed_lane"] != "backend_specific_fail_closed":
             raise SystemExit(
@@ -99,8 +97,8 @@ def validate_relative_wildcard_import_native_rollout_contract() -> None:
         != "backend_specific_fail_closed"
     ):
         raise SystemExit("relative wildcard import native fail-closed lane drifted")
-    if RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["current_bundle_id"] != "native_path_bundle":
-        raise SystemExit("relative wildcard import native current bundle id must stay native_path_bundle")
+    if RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["current_bundle_id"] != "jvm_package_bundle":
+        raise SystemExit("relative wildcard import native current bundle id must stay jvm_package_bundle")
     if RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["current_contract_state"] != "transpile_smoke_locked":
         raise SystemExit(
             "relative wildcard import native handoff contract state must stay transpile_smoke_locked"

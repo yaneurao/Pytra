@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-13
+Last updated: 2026-03-14
 
 ## Context Operation Rules
 
@@ -35,7 +35,7 @@ Last updated: 2026-03-13
 
 - [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01] relative wildcard import native backend rollout
   Context: [p0-relative-wildcard-import-native-rollout.md](../plans/p0-relative-wildcard-import-native-rollout.md)
-  Progress memo: `S2-01` lifts `go/nim/swift` to module-graph transpile smoke; next is making the `java/kotlin/scala` package bundle green.
+  Progress memo: `S2-02` makes `java/kotlin/scala` green on the module-graph bundle transpile smoke lane while keeping the single-file direct lane fail-closed for wildcard imports. Next is `lua/php/ruby`.
 
 ### P1
 
