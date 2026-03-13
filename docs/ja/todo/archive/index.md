@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-13 / P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01](../plans/archive/20260313-p0-noncpp-runtime-generated-cpp-baseline.md)
 - [2026-03-13 / P0-PYTRA-NES2-CROSSBACKEND-REPRO-01](../plans/archive/20260313-p0-pytra-nes2-crossbackend-repro-contract.md)
 - [2026-03-13 / P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01](../plans/archive/20260313-p0-collections-deque-cpp-searchmut-support.md)
 - [2026-03-13 / P0-COLLECTIONS-DEQUE-CPP-ROTATE-01](../plans/archive/20260313-p0-collections-deque-cpp-rotate-support.md)
