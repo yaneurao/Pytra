@@ -208,26 +208,6 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_INVENTORY_V1: Final[
         "notes": "Dict key coercion still boxes through object in both const and mutable py_at(dict, key) paths.",
     },
     {
-        "inventory_id": "cpp_emitter_boxed_list_seed_sites",
-        "bucket": "cpp_emitter_residual",
-        "scope_rel": "src/backends/cpp/emitter",
-        "matcher_kind": "literal",
-        "needle": "make_object(list<object>{})",
-        "expected_count": 3,
-        "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01",
-        "evidence_refs": (
-            {
-                "relpath": "src/backends/cpp/emitter/stmt.py",
-                "needle": 'rendered_val = "make_object(list<object>{})"',
-            },
-            {
-                "relpath": "src/backends/cpp/emitter/cpp_emitter.py",
-                "needle": 'return "make_object(list<object>{})"',
-            },
-        ),
-        "notes": "Emitter still seeds boxed list literals directly, which keeps object-bridge callers alive downstream.",
-    },
-    {
         "inventory_id": "cpp_emitter_object_list_bridge_sites",
         "bucket": "cpp_emitter_residual",
         "scope_rel": "src/backends/cpp/emitter",

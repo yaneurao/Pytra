@@ -253,7 +253,7 @@ class CppStatementEmitter:
                 elif (
                     self._is_pyobj_runtime_list_type(ann_t_str)
                 ):
-                    rendered_val = "make_object(list<object>{})"
+                    rendered_val = self._render_empty_pyobj_runtime_list_object()
                 else:
                     rendered_val = f"{t}{{}}"
             elif force_typed_list_ann and vkind == "List":

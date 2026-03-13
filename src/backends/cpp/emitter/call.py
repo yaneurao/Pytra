@@ -57,6 +57,10 @@ class CppCallEmitter:
             self._pyobj_runtime_list_bridge_context(op),
         )
 
+    def _render_empty_pyobj_runtime_list_object(self) -> str:
+        """Render an empty PyListObj directly instead of routing through generic make_object."""
+        return "object_new<PyListObj>(list<object>{})"
+
     def _render_json_decode_call(self, expr_d: dict[str, Any]) -> str:
         lowered_kind = self.any_dict_get_str(expr_d, "lowered_kind", "")
         if lowered_kind != "JsonDecodeCall":

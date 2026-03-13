@@ -1941,10 +1941,10 @@ class CppEmitter(
             return rendered_expr
         kind = self._node_kind_from_dict(node)
         if kind == "List" and t.startswith("list[") and t.endswith("]"):
-            if len(self._dict_stmt_list(node.get("elements"))) == 0:
-                if self._is_pyobj_runtime_list_type(t):
-                    return "make_object(list<object>{})"
-                return f"{self._cpp_type_text(t)}{{}}"
+                if len(self._dict_stmt_list(node.get("elements"))) == 0:
+                    if self._is_pyobj_runtime_list_type(t):
+                        return self._render_empty_pyobj_runtime_list_object()
+                    return f"{self._cpp_type_text(t)}{{}}"
         if kind == "Dict" and t.startswith("dict[") and t.endswith("]"):
             if len(self._dict_stmt_list(node.get("entries"))) == 0:
                 return f"{self._cpp_type_text(t)}{{}}"
@@ -3033,7 +3033,7 @@ class CppEmitter(
             )
             if runtime_list_ctor:
                 if len(args) == 0:
-                    return "make_object(list<object>{})"
+                    return self._render_empty_pyobj_runtime_list_object()
                 if len(args) != 1:
                     return None
                 at0 = self.get_expr_type(first_arg)

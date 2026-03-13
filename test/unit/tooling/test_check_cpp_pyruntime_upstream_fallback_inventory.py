@@ -95,10 +95,6 @@ class CheckCppPyRuntimeUpstreamFallbackInventoryTest(unittest.TestCase):
             for row in inventory_mod.iter_cpp_pyruntime_upstream_fallback_inventory()
         }
         self.assertEqual(
-            by_id["cpp_emitter_boxed_list_seed_sites"]["expected_count"],
-            3,
-        )
-        self.assertEqual(
             by_id["cpp_emitter_object_list_bridge_sites"]["expected_count"],
             2,
         )
@@ -122,6 +118,13 @@ class CheckCppPyRuntimeUpstreamFallbackInventoryTest(unittest.TestCase):
             by_id["sample_cpp_generic_index_sites"]["expected_count"],
             39,
         )
+
+    def test_emitter_boxed_list_seed_inventory_row_is_retired(self) -> None:
+        inventory_ids = {
+            row["inventory_id"]
+            for row in inventory_mod.iter_cpp_pyruntime_upstream_fallback_inventory()
+        }
+        self.assertNotIn("cpp_emitter_boxed_list_seed_sites", inventory_ids)
 
 
 if __name__ == "__main__":

@@ -981,6 +981,21 @@ class East3CppBridgeTest(unittest.TestCase):
             'py_list_append_mut(obj_to_list_ref_or_raise(xs, "append"), make_object(n))',
         )
 
+    def test_collection_ctor_empty_pyobj_list_uses_direct_pylist_object_ctor(self) -> None:
+        emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
+        emitter.cpp_list_model = "pyobj"
+        node = {
+            "kind": "RuntimeSpecialOp",
+            "op": "collection_ctor",
+            "ctor_name": "list",
+            "args": [],
+            "resolved_type": "Any",
+        }
+        self.assertEqual(
+            emitter.render_expr(node),
+            "object_new<PyListObj>(list<object>{})",
+        )
+
     def test_transpile_typed_list_append_stays_out_of_object_bridge(self) -> None:
         src = """def f(xs: list[int], n: int) -> None:
     xs.append(n)

@@ -51,7 +51,6 @@ class CheckCppPyRuntimeUpstreamFallbackContractTest(unittest.TestCase):
         self.assertEqual(
             contract_mod.TYPED_LANE_MUST_NOT_USE_IDS,
             (
-                "cpp_emitter_boxed_list_seed_sites",
                 "cpp_emitter_object_list_bridge_sites",
                 "generated_runtime_object_list_bridge_sites",
                 "generated_runtime_boxed_list_seed_sites",
