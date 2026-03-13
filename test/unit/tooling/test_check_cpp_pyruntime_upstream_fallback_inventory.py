@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+import sys
 import unittest
+from pathlib import Path
+
+ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from toolchain.compiler import cpp_pyruntime_upstream_fallback_inventory as inventory_mod
 from tools import check_cpp_pyruntime_upstream_fallback_inventory as check_mod
