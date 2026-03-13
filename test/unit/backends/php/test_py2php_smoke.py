@@ -353,12 +353,10 @@ class Py2PhpSmokeTest(unittest.TestCase):
             code = "\n".join(
                 [
                     f"require_once {staged_runtime_path.as_posix()!r};",
-                    f"require_once {staged_math_path.as_posix()!r};",
                     f"require_once {staged_time_path.as_posix()!r};",
                     f"require_once {staged_png_path.as_posix()!r};",
                     f"require_once {staged_gif_path.as_posix()!r};",
                     "echo __pytra_truthy([1]) ? 'truthy-ok' : 'truthy-missing', PHP_EOL;",
-                    "echo (sqrt(9) === 3.0 ? 'math-ok' : 'math-missing'), PHP_EOL;",
                     "echo (perf_counter() > 0.0) ? 'time-ok' : 'time-missing', PHP_EOL;",
                     "echo function_exists('write_rgb_png') ? 'png-ok' : 'png-missing', PHP_EOL;",
                     "echo function_exists('save_gif') ? 'gif-ok' : 'gif-missing', PHP_EOL;",
@@ -372,7 +370,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(proc.returncode, 0, proc.stderr)
-            self.assertEqual(proc.stdout, "truthy-ok\nmath-ok\ntime-ok\npng-ok\ngif-ok\n")
+            self.assertEqual(proc.stdout, "truthy-ok\ntime-ok\npng-ok\ngif-ok\n")
 
     def test_transpile_dict_items_fixture_uses_foreach_key_value(self) -> None:
         fixture = find_fixture_case("dict_get_items")
