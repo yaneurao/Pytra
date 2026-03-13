@@ -534,6 +534,62 @@ class CodeEmitterTest(unittest.TestCase):
         self.assertEqual(binds[1].get("runtime_module_id"), "pytra.utils.gif")
         self.assertEqual(binds[1].get("resolved_binding_kind"), "module")
 
+    def test_lookup_import_resolution_binding_returns_canonical_runtime_metadata(self) -> None:
+        em = CodeEmitter(
+            {
+                "meta": {
+                    "import_bindings": [
+                        {
+                            "binding_kind": "module",
+                            "local_name": "m",
+                            "module_id": "math",
+                        },
+                        {
+                            "binding_kind": "symbol",
+                            "local_name": "pi",
+                            "module_id": "math",
+                            "export_name": "pi",
+                        },
+                    ]
+                }
+            }
+        )
+        self.assertEqual(
+            em.lookup_import_resolution_binding("m"),
+            {
+                "binding_kind": "module",
+                "local_name": "m",
+                "module_id": "math",
+                "source_module_id": "math",
+                "source_export_name": "",
+                "source_binding_kind": "module",
+                "runtime_module_id": "pytra.std.math",
+                "runtime_group": "std",
+                "resolved_binding_kind": "module",
+            },
+        )
+        self.assertEqual(
+            em.lookup_import_resolution_binding("pi"),
+            {
+                "binding_kind": "symbol",
+                "local_name": "pi",
+                "module_id": "math",
+                "export_name": "pi",
+                "source_module_id": "math",
+                "source_export_name": "pi",
+                "source_binding_kind": "symbol",
+                "runtime_module_id": "pytra.std.math",
+                "runtime_group": "std",
+                "resolved_binding_kind": "symbol",
+                "runtime_symbol": "pi",
+                "runtime_symbol_kind": "const",
+                "runtime_symbol_dispatch": "value",
+                "runtime_extern_kind": "value",
+                "runtime_semantic_tag": "stdlib.symbol.pi",
+            },
+        )
+        self.assertEqual(em.lookup_import_resolution_binding("missing"), {})
+
     def test_imported_module_name_fallback_via_meta(self) -> None:
         em = CodeEmitter(
             {

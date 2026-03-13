@@ -2385,11 +2385,11 @@ class CodeEmitter:
                         self.import_modules[local_name] = module_id
                 elif binding_kind == "symbol":
                     if resolved_binding_kind == "module":
-                        export_name = runtime_symbol
-                        if export_name == "":
-                            export_name = self.any_to_str(ent.get("export_name"))
-                        if runtime_module_id != "" and export_name != "":
-                            self._add_symbol_binding(local_name, module_id, export_name)
+                        if runtime_module_id != "" and runtime_symbol != "":
+                            self._add_symbol_binding(local_name, module_id, runtime_symbol)
+                            continue
+                        if local_name != "" and runtime_module_id != "":
+                            self.import_modules[local_name] = runtime_module_id
                             continue
                         if local_name != "" and module_id != "":
                             self.import_modules[local_name] = module_id
@@ -2471,6 +2471,16 @@ class CodeEmitter:
                         merged[key] = value
             out.append(merged)
         return out
+
+    def lookup_import_resolution_binding(self, local_name: str) -> dict[str, Any]:
+        """ローカル束縛名から canonical runtime metadata 付き import binding を返す。"""
+        if local_name == "":
+            return {}
+        meta = self.any_to_dict_or_empty(self.doc.get("meta"))
+        for ent in self.get_import_resolution_bindings(meta):
+            if self.any_to_str(ent.get("local_name")) == local_name:
+                return ent
+        return {}
 
     def _add_symbol_binding(self, local_name: str, module_id: str, export_name: str) -> None:
         """from-import のローカル束縛を import 解決テーブルへ追加する。"""

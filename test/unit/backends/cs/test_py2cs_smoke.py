@@ -1024,8 +1024,9 @@ def f(x: object) -> bool:
         fixture = find_fixture_case("pytra_std_import_math")
         east = load_east(fixture, parser_backend="self_hosted")
         cs = transpile_to_csharp(east)
-        self.assertIn("using msqrt = Pytra.CsModule.sqrt;", cs)
         self.assertIn("Pytra.CsModule.math.sqrt(81.0)", cs)
+        self.assertIn("Pytra.CsModule.math.floor(3.9)", cs)
+        self.assertNotIn("using msqrt =", cs)
         self.assertNotIn("unsupported", cs)
 
     def test_generated_math_runtime_owner_is_live_wrapper_shaped(self) -> None:

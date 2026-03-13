@@ -50,7 +50,6 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/math.cpp",),
         "noncpp_native_owner_paths": ("src/runtime/cs/native/std/math_native.cs",),
         "emitter_hardcode_needles": (
-            ("src/backends/cs/emitter/cs_emitter.py", 'if imported_mod == "pytra.std.math" and imported_name in {"pi", "e", "tau"}:'),
             ("src/backends/go/emitter/go_native_emitter.py", 'return _runtime_module_id(expr) == "pytra.std.math"'),
             ("src/backends/kotlin/emitter/kotlin_native_emitter.py", 'return _runtime_module_id(expr) == "pytra.std.math"'),
             ("src/backends/lua/emitter/lua_native_emitter.py", 'if mod == "pytra.std.math":'),
@@ -85,8 +84,6 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/time.cpp",),
         "noncpp_native_owner_paths": ("src/runtime/cs/native/std/time_native.cs",),
         "emitter_hardcode_needles": (
-            ("src/backends/cs/emitter/cs_emitter.py", 'if module_name == "pytra.std.time":'),
-            ("src/backends/cs/emitter/cs_emitter.py", 'if owner_module == "pytra.std.time" and not self.is_declared(owner_name):'),
             ("src/backends/lua/emitter/lua_native_emitter.py", 'if mod == "pytra.std.time":'),
             ("src/backends/rs/emitter/rs_emitter.py", 'if module_name not in {"pytra.std.math", "pytra.std.time"}:'),
         ),
