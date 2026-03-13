@@ -1,6 +1,6 @@
 # P1: align cross-module `pytra.std.pathlib.Path` alias reuse with the C++ multi-file contract
 
-Last updated: 2026-03-13
+Last updated: 2026-03-14
 
 Related TODO:
 - `docs/ja/todo/index.md` `ID: P1-NES3-PATH-ALIAS-PKG-CPP-01`
@@ -37,9 +37,11 @@ Validation commands (planned):
 
 ## Breakdown
 
-- [ ] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01-S1-01] Lock the current compile failure and alias/type misclassification residual in focused regressions, the plan, and TODO.
-- [ ] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01-S2-01] Fix symbol classification and rendering so cross-module `Path` aliases resolve through the type/constructor lane.
-- [ ] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01-S3-01] Sync multi-file compile smoke and docs wording to the current contract.
+- [x] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01-S1-01] Locked the current compile failure and alias/type misclassification residual in focused regressions, the plan, and TODO.
+- [x] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01-S2-01] Fixed symbol classification and rendering so cross-module `Path` aliases resolve through the type/constructor lane.
+- [x] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01-S3-01] Synced multi-file compile smoke and docs wording to the current contract.
 
 Decision log:
 - 2026-03-13: Opened as a separate task because this is about cross-module alias reuse, not the already-fixed `Path` stringify lane.
+- 2026-03-14: Module class-doc lookup now walks `import_symbols` and `import_resolution` inside user modules so a reexported runtime class or user class can recurse to its real class doc.
+- 2026-03-14: Added the focused regression `test_cli_multi_file_pytra_nes3_path_alias_pkg_syntax_checks` and verified compile-green behavior through both `python3 src/py2x.py --target cpp --multi-file --output-dir /tmp/pytra_nes3_path_alias_pkg_py2x` and the selfhosted `bash ./pytra ... --target cpp --output-dir /tmp/pytra_nes3_path_alias_pkg_selfhost` lane.

@@ -1,6 +1,6 @@
 # P1: `pytra.std.pathlib.Path` の別モジュール alias 再利用を C++ multi-file contract に揃える
 
-最終更新: 2026-03-13
+最終更新: 2026-03-14
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P1-NES3-PATH-ALIAS-PKG-CPP-01`
@@ -37,9 +37,11 @@
 
 ## 分解
 
-- [ ] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01-S1-01] current compile failure と alias/type misclassification residual を focused regression / plan / TODO に固定する。
-- [ ] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01-S2-01] cross-module `Path` alias を type/constructor lane として正しく解決するよう symbol classification / rendering を修正する。
-- [ ] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01-S3-01] multi-file compile smoke と docs wording を current contract に同期する。
+- [x] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01-S1-01] current compile failure と alias/type misclassification residual を focused regression / plan / TODO に固定した。
+- [x] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01-S2-01] cross-module `Path` alias を type/constructor lane として正しく解決するよう symbol classification / rendering を修正した。
+- [x] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01-S3-01] multi-file compile smoke と docs wording を current contract に同期した。
 
 決定ログ:
 - 2026-03-13: `Path` stringify ではなく cross-module alias reuse の問題なので、Pytra-NES3 repro 専用の separate task として起票する。
+- 2026-03-14: module class doc lookup は user module の `import_symbols` / `import_resolution` も辿るようにし、reexport 先が runtime class や別 user module class でも class doc まで再帰解決する方針にした。
+- 2026-03-14: focused regression `test_cli_multi_file_pytra_nes3_path_alias_pkg_syntax_checks` を追加し、`python3 src/py2x.py --target cpp --multi-file --output-dir /tmp/pytra_nes3_path_alias_pkg_py2x` と selfhosted `bash ./pytra ... --target cpp --output-dir /tmp/pytra_nes3_path_alias_pkg_selfhost` の両 lane で compile green を確認した。

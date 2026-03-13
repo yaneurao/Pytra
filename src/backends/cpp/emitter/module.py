@@ -407,10 +407,71 @@ class CppModuleEmitter:
         return out
 
     def _module_class_doc(self, module_name: str, class_name: str) -> dict[str, Any]:
+        return self._module_class_doc_inner(module_name, class_name, set())
+
+    def _module_class_doc_inner(
+        self,
+        module_name: str,
+        class_name: str,
+        seen: set[tuple[str, str]],
+    ) -> dict[str, Any]:
+        module_name_norm = self._normalize_runtime_module_name(module_name)
+        if class_name == "":
+            return {}
+        cache_key = (module_name_norm, class_name)
+        if cache_key in seen:
+            return {}
+        seen.add(cache_key)
         docs = self._module_class_signature_docs(module_name)
         doc = docs.get(class_name)
         if isinstance(doc, dict):
             return doc
+        user_module_docs = getattr(self, "user_module_east_map", {})
+        east_doc: dict[str, Any] = {}
+        if isinstance(user_module_docs, dict):
+            east_any = user_module_docs.get(module_name_norm)
+            if isinstance(east_any, dict):
+                east_doc = east_any
+        if len(east_doc) == 0:
+            src_path = self._module_source_path_for_name(module_name_norm)
+            if str(src_path) not in {"", "."}:
+                try:
+                    loaded = load_east_document(src_path)
+                    if isinstance(loaded, dict):
+                        east_doc = loaded
+                except Exception:
+                    east_doc = {}
+        meta = self.any_to_dict_or_empty(east_doc.get("meta"))
+        import_symbols = self.any_to_dict_or_empty(meta.get("import_symbols"))
+        imported = self.any_to_dict_or_empty(import_symbols.get(class_name))
+        imported_module = dict_any_get_str(imported, "module")
+        imported_name = dict_any_get_str(imported, "name")
+        if imported_module != "" and imported_name != "":
+            imported_doc = self._module_class_doc_inner(imported_module, imported_name, seen)
+            if len(imported_doc) > 0:
+                return imported_doc
+        resolution = self.any_to_dict_or_empty(meta.get("import_resolution"))
+        bindings = self.any_to_dict_list(resolution.get("bindings"))
+        for binding in bindings:
+            local_name = dict_any_get_str(binding, "local_name")
+            export_name = dict_any_get_str(binding, "export_name")
+            if class_name not in {local_name, export_name}:
+                continue
+            target_module = dict_any_get_str(binding, "runtime_module_id")
+            if target_module == "":
+                target_module = dict_any_get_str(binding, "source_module_id")
+            if target_module == "":
+                target_module = dict_any_get_str(binding, "module_id")
+            target_name = dict_any_get_str(binding, "runtime_symbol")
+            if target_name == "":
+                target_name = dict_any_get_str(binding, "source_export_name")
+            if target_name == "":
+                target_name = export_name
+            if target_module == "" or target_name == "":
+                continue
+            rebound_doc = self._module_class_doc_inner(target_module, target_name, seen)
+            if len(rebound_doc) > 0:
+                return rebound_doc
         return {}
 
     def _imported_runtime_class_cpp_type(self, module_name: str, class_name: str) -> str:

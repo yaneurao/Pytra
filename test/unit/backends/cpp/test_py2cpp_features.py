@@ -4448,6 +4448,54 @@ if __name__ == "__main__":
             )
             self.assertEqual(comp.returncode, 0, msg=comp.stderr)
 
+    def test_cli_multi_file_pytra_nes3_path_alias_pkg_syntax_checks(self) -> None:
+        src_py = ROOT / "materials" / "refs" / "from-Pytra-NES3" / "path_alias_pkg" / "entry.py"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_dir = Path(tmpdir) / "out"
+            obj_dir = out_dir / "obj"
+            tr = self._run_subprocess_with_timeout(
+                [
+                    "python3",
+                    "src/py2x.py",
+                    "--target",
+                    "cpp",
+                    str(src_py),
+                    "--multi-file",
+                    "--output-dir",
+                    str(out_dir),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="transpile pytra nes3 path_alias_pkg multi-file sample",
+            )
+            self.assertEqual(tr.returncode, 0, msg=tr.stderr)
+            obj_dir.mkdir(parents=True, exist_ok=True)
+            generated_entry = (out_dir / "src" / "entry.cpp").read_text(encoding="utf-8")
+            self.assertIn("pytra::std::pathlib::Path(", generated_entry)
+            self.assertNotIn("pytra_mod_compat::Path(raw)", generated_entry)
+            for source_name in ("compat.cpp", "entry.cpp"):
+                comp = self._run_subprocess_with_timeout(
+                    [
+                        "g++",
+                        "-std=c++20",
+                        "-O0",
+                        "-c",
+                        str(out_dir / "src" / source_name),
+                        "-o",
+                        str(obj_dir / f"{source_name}.o"),
+                        "-I",
+                        str(out_dir / "include"),
+                        "-I",
+                        "src",
+                        "-I",
+                        "src/runtime/cpp",
+                    ],
+                    cwd=ROOT,
+                    timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                    label=f"syntax-check pytra nes3 path_alias_pkg {source_name}",
+                )
+                self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+
     def test_cli_multi_file_pytra_nes3_bus_port_pkg_syntax_checks(self) -> None:
         src_py = ROOT / "materials" / "refs" / "from-Pytra-NES3" / "bus_port_pkg" / "bus.py"
         with tempfile.TemporaryDirectory() as tmpdir:
