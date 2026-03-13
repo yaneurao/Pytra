@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-13 / P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01](../plans/archive/20260313-p0-frontends-facade-py2x-entrypoints-import.md)
 - [2026-03-13 / P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01](../plans/archive/20260313-p0-cpp-transpile-cli-direct-header-contract.md)
 - [2026-03-13 / P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01](../plans/archive/20260313-p0-link-facade-linked-program-module-import.md)
 - [2026-03-13 / P0-LINK-FACADE-RAW-EAST3-IMPORT-01](../plans/archive/20260313-p0-link-facade-raw-east3-import.md)
@@ -193,7 +194,7 @@
 
 ## 日付別リンク
 
-- [2026-03-13](20260313.md)（20 セクション）
+- [2026-03-13](20260313.md)（21 セクション）
 
 - [2026-03-12](20260312.md)（28 セクション）
 - [2026-03-11](20260311.md)（25 セクション）

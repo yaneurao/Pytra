@@ -39,11 +39,12 @@ Verification commands:
 - `git -C /workspace/Pytra diff --check`
 
 Breakdown:
-- [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01] Move the frontend imports in `py2x.py` / `py2x-selfhost.py` from `toolchain.compiler.transpile_cli` over to the `toolchain.frontends` facade so entrypoint consumers stop reaching through the compat shim.
+- [x] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01] Move the frontend imports in `py2x.py` / `py2x-selfhost.py` from `toolchain.compiler.transpile_cli` over to the `toolchain.frontends` facade so entrypoint consumers stop reaching through the compat shim.
 - [x] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S1-01] Lock the stale import surface and close condition in the plan / TODO.
 - [x] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S2-01] Update the `toolchain.frontends` facade exports plus the entrypoint imports and bring the source contract / focused tests back to green.
-- [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S3-01] Sync TODO / plan / archive and lock the close condition.
+- [x] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S3-01] Sync TODO / plan / archive and lock the close condition.
 
 Decision log:
 - 2026-03-13: Filed this as the next follow-up P0 after TODO became empty. Scope stays limited to the external entrypoint consumers, and does not attempt to delete the `toolchain.compiler.transpile_cli` compat shim yet.
 - 2026-03-13: `S2-01` routed `build_module_east_map` through `python_frontend.py` and the `toolchain.frontends` facade, then switched the frontend imports in `py2x.py` / `py2x-selfhost.py` over to the facade. The source contract now lives in `test_py2x_entrypoints_contract.py` and fails fast if the entrypoints regress back to direct compat-shim imports.
+- 2026-03-13: `S3-01` synchronized the active TODO, plan, and archive, and fixed the close condition as “the `toolchain.frontends` facade exports `build_module_east_map`, the `py2x` entrypoints import through the facade instead of the compat shim, and both the source contract plus `test_py2x_cli.py` stay green.”
