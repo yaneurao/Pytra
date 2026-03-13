@@ -1,6 +1,8 @@
 import tempfile
 import unittest
 
+import toolchain.link as link_pkg
+
 from pytra.std import json
 from pytra.std.pathlib import Path
 
@@ -14,10 +16,11 @@ from toolchain.link import load_link_input_doc
 from toolchain.link import load_link_output_doc
 from toolchain.link import load_linked_program
 from toolchain.link import save_manifest_doc
+from toolchain.link import translate_cpp_backend_emit_error
+from toolchain.link import validate_cpp_backend_input_doc
 from toolchain.link import validate_link_input_doc
 from toolchain.link import validate_link_output_doc
 from toolchain.link import write_link_input_bundle
-from toolchain.link.program_validator import validate_cpp_backend_input_doc
 
 
 def _east3_doc(dispatch_mode: str = "native") -> dict[str, object]:
@@ -31,6 +34,15 @@ def _east3_doc(dispatch_mode: str = "native") -> dict[str, object]:
 
 
 class LinkedProgramLoaderTests(unittest.TestCase):
+    def test_toolchain_link_facade_exports_cpp_backend_validator_helpers(self) -> None:
+        self.assertIs(link_pkg.validate_cpp_backend_input_doc, validate_cpp_backend_input_doc)
+        translated = translate_cpp_backend_emit_error(
+            RuntimeError("legacy loop node is unsupported in EAST3 for C++ backend"),
+            module_id="app.main",
+        )
+        self.assertIsNotNone(translated)
+        self.assertIn("backend_input_unsupported", str(translated))
+
     def test_validate_cpp_backend_input_doc_accepts_minimal_module(self) -> None:
         doc = _east3_doc()
 

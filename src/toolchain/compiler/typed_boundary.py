@@ -8,8 +8,8 @@ from typing import Callable
 from typing import TypeAlias
 
 from pytra.std.pathlib import Path
-from toolchain.link.program_validator import translate_cpp_backend_emit_error
-from toolchain.link.program_validator import validate_cpp_backend_input_doc
+from toolchain.link import translate_cpp_backend_emit_error
+from toolchain.link import validate_cpp_backend_input_doc
 
 
 CompilerOptionScalar = str | int | bool

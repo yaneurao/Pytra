@@ -694,6 +694,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         link_materializer_src = (
             ROOT / "src" / "toolchain" / "link" / "materializer.py"
         ).read_text(encoding="utf-8")
+        link_init_src = (ROOT / "src" / "toolchain" / "link" / "__init__.py").read_text(encoding="utf-8")
         program_validator_src = (
             ROOT / "src" / "toolchain" / "link" / "program_validator.py"
         ).read_text(encoding="utf-8")
@@ -731,10 +732,14 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("RuntimeHookCallable: TypeAlias = Callable[[Path], None]", typed_boundary_src)
         self.assertIn("class RuntimeHookAdapter:", typed_boundary_src)
         self.assertIn("runtime_hook: RuntimeHookAdapter", typed_boundary_src)
+        self.assertIn("from toolchain.link import translate_cpp_backend_emit_error", typed_boundary_src)
+        self.assertIn("from toolchain.link import validate_cpp_backend_input_doc", typed_boundary_src)
         self.assertIn('normalized.get("runtime_hook")', typed_boundary_src)
         self.assertIn("runtime_spec.runtime_hook.apply(output_path)", typed_boundary_src)
         self.assertNotIn("runtime_hook_impl: Any", typed_boundary_src)
         self.assertNotIn("def _coerce_runtime_hook_impl(", typed_boundary_src)
+        self.assertNotIn("from toolchain.link.program_validator import translate_cpp_backend_emit_error", typed_boundary_src)
+        self.assertNotIn("from toolchain.link.program_validator import validate_cpp_backend_input_doc", typed_boundary_src)
 
         self.assertIn("def load_json_object_doc(path: Path, *, label: str) -> json.JsonObj:", json_adapter_src)
         self.assertIn("def empty_json_object_doc() -> json.JsonObj:", json_adapter_src)
@@ -760,6 +765,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from toolchain.json_adapters import json_array_length", program_validator_src)
         self.assertIn("from toolchain.json_adapters import load_json_object_doc", link_manifest_src)
         self.assertIn("from toolchain.json_adapters import load_json_object_doc", link_materializer_src)
+        self.assertIn("from toolchain.link.program_validator import translate_cpp_backend_emit_error", link_init_src)
+        self.assertIn("from toolchain.link.program_validator import validate_cpp_backend_input_doc", link_init_src)
         self.assertIn("from toolchain.json_adapters import load_json_object_doc", runtime_index_src)
         self.assertIn("from toolchain.json_adapters import load_json_object_doc_or_none", py2x_src)
         self.assertIn("from toolchain.json_adapters import load_json_object_doc_or_none", ir2lang_src)

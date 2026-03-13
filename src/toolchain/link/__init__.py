@@ -17,6 +17,8 @@ from toolchain.link.program_model import LINK_INPUT_SCHEMA
 from toolchain.link.program_model import LINK_OUTPUT_SCHEMA
 from toolchain.link.program_model import LinkedProgram
 from toolchain.link.program_model import LinkedProgramModule
+from toolchain.link.program_validator import translate_cpp_backend_emit_error
+from toolchain.link.program_validator import validate_cpp_backend_input_doc
 from toolchain.link.program_validator import validate_link_input_doc
 from toolchain.link.program_validator import validate_link_output_doc
 from toolchain.link.program_validator import validate_raw_east3_doc
@@ -39,6 +41,8 @@ __all__ = [
     "write_link_input_bundle",
     "write_link_output_bundle",
     "load_linked_program",
+    "translate_cpp_backend_emit_error",
+    "validate_cpp_backend_input_doc",
     "validate_link_input_doc",
     "validate_link_output_doc",
     "validate_raw_east3_doc",

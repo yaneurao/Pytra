@@ -34,6 +34,7 @@
 
 - [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01] `toolchain.link` package facade から `validate_cpp_backend_input_doc()` と `translate_cpp_backend_emit_error()` を正規 export し、`typed_boundary` / link test が submodule reach-through に依存しない状態へ揃える。
   - 文脈: [docs/ja/plans/p0-link-facade-cpp-validator-export.md](../plans/p0-link-facade-cpp-validator-export.md)
-- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S1-01] facade export を要求する focused regression / source contract を追加し、current package-surface gap を fail-fast に固定する。
-- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S2-01] `toolchain.link.__init__` export と `typed_boundary` / link test import を facade 経由へ切り替え、targeted unit を green に戻す。
+- [x] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S1-01] facade export を要求する focused regression / source contract を追加し、current package-surface gap を fail-fast に固定する。
+  - 進捗メモ: `test_program_loader.py` に facade export regression を追加し、`test_py2x_entrypoints_contract.py` でも `typed_boundary` と `toolchain.link.__init__` の import surface を source contract として固定した。
+- [x] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S2-01] `toolchain.link.__init__` export と `typed_boundary` / link test import を facade 経由へ切り替え、targeted unit を green に戻す。
 - [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S3-01] TODO / plan / decision log を同期して close 条件を固める。
