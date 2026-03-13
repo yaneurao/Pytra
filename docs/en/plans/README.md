@@ -13,8 +13,18 @@ This folder stores long-term plans, design drafts, and investigation notes.
 - `backlog` means live `p*-*.md` files that are not registered in TODO yet and are either still unfinished backlog drafts or intentional live status/report sinks.
 - `stale-complete` means live `p*-*.md` files that are no longer referenced by TODO, have every checklist item complete, and are not live status/report sinks. These should be moved out of live `plans/`.
 
-Active live plans as of 2026-03-13:
-- `p0-collections-deque-cpp-iterable-support.md`
+Active live plans as of 2026-03-14:
+- `p0-relative-wildcard-import-native-rollout.md`
+- `p1-nes3-not-implemented-error-cpp-support.md`
+- `p1-nes3-bytes-member-truthiness-cpp-support.md`
+- `p1-nes3-list-default-factory-rc-list-cpp-support.md`
+- `p1-nes3-path-alias-pkg-cpp-support.md`
+- `p1-nes3-apu-const-pkg-cpp-support.md`
+- `p1-nes3-bus-port-pkg-cpp-support.md`
+- `p2-cpp-legacy-core-compat-retire.md`
+- `p2-multilang-extern-runtime-realign.md`
+- `p2-backend-contract-coverage-100.md`
+- `p2-cpp-pyruntime-upstream-fallback-shrink.md`
 
 ## Rules
 

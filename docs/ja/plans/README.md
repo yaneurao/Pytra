@@ -9,8 +9,18 @@
 - `backlog` は live の `p*-*.md` で、TODO 未登録かつ、未完了 backlog か live status/report sink として残してよいものとする。
 - `stale-complete` は live の `p*-*.md` で、TODO 未登録、checklist 完了、かつ live status/report sink でもないものとする。これは `plans/` 直下へ残さず archive へ移す。
 
-2026-03-13 時点の active live plan:
-- `p0-collections-deque-cpp-iterable-support.md`
+2026-03-14 時点の active live plan:
+- `p0-relative-wildcard-import-native-rollout.md`
+- `p1-nes3-not-implemented-error-cpp-support.md`
+- `p1-nes3-bytes-member-truthiness-cpp-support.md`
+- `p1-nes3-list-default-factory-rc-list-cpp-support.md`
+- `p1-nes3-path-alias-pkg-cpp-support.md`
+- `p1-nes3-apu-const-pkg-cpp-support.md`
+- `p1-nes3-bus-port-pkg-cpp-support.md`
+- `p2-cpp-legacy-core-compat-retire.md`
+- `p2-multilang-extern-runtime-realign.md`
+- `p2-backend-contract-coverage-100.md`
+- `p2-cpp-pyruntime-upstream-fallback-shrink.md`
 
 ## ルール
 
