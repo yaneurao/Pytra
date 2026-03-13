@@ -42,6 +42,7 @@ def _generated_suffix_for_backend(backend: str) -> str:
         "cs": ".cs",
         "go": ".go",
         "java": ".java",
+        "kotlin": ".kt",
         "nim": ".nim",
         "rs": ".rs",
         "swift": ".swift",
