@@ -13,17 +13,17 @@ using Pytra.CsModule;
 
 public static class Program
 {
-    public static string getcwd()
+    public static str getcwd()
     {
         return __os.getcwd();
     }
     
-    public static void mkdir(string p)
+    public static void mkdir(str p)
     {
         __os.mkdir(p);
     }
     
-    public static void makedirs(string p, bool exist_ok = false)
+    public static void makedirs(str p, bool exist_ok = false)
     {
         __os.makedirs(p, exist_ok);
     }

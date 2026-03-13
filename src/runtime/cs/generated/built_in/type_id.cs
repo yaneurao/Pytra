@@ -14,72 +14,72 @@ namespace Pytra.CsModule
 {
     public static class type_id_helper
     {
-        public static long _tid_none()
+        public static int64 _tid_none()
         {
             return 0;
         }
 
-        public static long _tid_bool()
+        public static int64 _tid_bool()
         {
             return 1;
         }
 
-        public static long _tid_int()
+        public static int64 _tid_int()
         {
             return 2;
         }
 
-        public static long _tid_float()
+        public static int64 _tid_float()
         {
             return 3;
         }
 
-        public static long _tid_str()
+        public static int64 _tid_str()
         {
             return 4;
         }
 
-        public static long _tid_list()
+        public static int64 _tid_list()
         {
             return 5;
         }
 
-        public static long _tid_dict()
+        public static int64 _tid_dict()
         {
             return 6;
         }
 
-        public static long _tid_set()
+        public static int64 _tid_set()
         {
             return 7;
         }
 
-        public static long _tid_object()
+        public static int64 _tid_object()
         {
             return 8;
         }
 
-        public static long _tid_user_base()
+        public static int64 _tid_user_base()
         {
             return 1000;
         }
 
-        public static System.Collections.Generic.List<long> _make_int_list_0()
+        public static System.Collections.Generic.List<int64> _make_int_list_0()
         {
-            System.Collections.Generic.List<long> py_out = new System.Collections.Generic.List<long>();
+            System.Collections.Generic.List<int64> py_out = new System.Collections.Generic.List<int64>();
             return py_out;
         }
 
-        public static System.Collections.Generic.List<long> _make_int_list_1(long a0)
+        public static System.Collections.Generic.List<int64> _make_int_list_1(int64 a0)
         {
-            System.Collections.Generic.List<long> py_out = new System.Collections.Generic.List<long>();
+            System.Collections.Generic.List<int64> py_out = new System.Collections.Generic.List<int64>();
             py_out.Add(a0);
             return py_out;
         }
 
-        public static bool _contains_int(System.Collections.Generic.List<long> items, long value)
+        public static bool _contains_int(System.Collections.Generic.List<int64> items, int64 value)
         {
-            long i = 0;
+            int64 i = 0;
             while ((i) < ((items).Count)) {
                 if ((Pytra.CsModule.py_runtime.py_get(items, i)) == (value)) {
                     return true;
@@ -89,10 +89,10 @@ namespace Pytra.CsModule
             return false;
         }
 
-        public static System.Collections.Generic.List<long> _copy_int_list(System.Collections.Generic.List<long> items)
+        public static System.Collections.Generic.List<int64> _copy_int_list(System.Collections.Generic.List<int64> items)
         {
-            System.Collections.Generic.List<long> py_out = new System.Collections.Generic.List<long>();
-            long i = 0;
+            System.Collections.Generic.List<int64> py_out = new System.Collections.Generic.List<int64>();
+            int64 i = 0;
             while ((i) < ((items).Count)) {
                 py_out.Add(Pytra.CsModule.py_runtime.py_get(items, i));
                 i += 1;
@@ -100,15 +100,15 @@ namespace Pytra.CsModule
             return py_out;
         }
 
-        public static System.Collections.Generic.List<long> _sorted_ints(System.Collections.Generic.List<long> items)
+        public static System.Collections.Generic.List<int64> _sorted_ints(System.Collections.Generic.List<int64> items)
         {
-            System.Collections.Generic.List<long> py_out = _copy_int_list(items);
-            long i = 0;
+            System.Collections.Generic.List<int64> py_out = _copy_int_list(items);
+            int64 i = 0;
             while ((i) < ((py_out).Count)) {
-                long j = i + 1;
+                int64 j = i + 1;
                 while ((j) < ((py_out).Count)) {
                     if ((Pytra.CsModule.py_runtime.py_get(py_out, j)) < (Pytra.CsModule.py_runtime.py_get(py_out, i))) {
-                        long tmp = Pytra.CsModule.py_runtime.py_get(py_out, i);
+                        int64 tmp = Pytra.CsModule.py_runtime.py_get(py_out, i);
                         Pytra.CsModule.py_runtime.py_set(py_out, i, Pytra.CsModule.py_runtime.py_get(py_out, j));
                         Pytra.CsModule.py_runtime.py_set(py_out, j, tmp);
                     }
@@ -119,7 +119,7 @@ namespace Pytra.CsModule
             return py_out;
         }
 
-        public static void _register_type_node(long type_id, long base_type_id)
+        public static void _register_type_node(int64 type_id, int64 base_type_id)
         {
             if (!_contains_int(_TYPE_IDS, type_id)) {
                 _TYPE_IDS.append(type_id);
@@ -141,22 +141,22 @@ namespace Pytra.CsModule
             }
         }
 
-        public static System.Collections.Generic.List<long> _sorted_child_type_ids(long type_id)
+        public static System.Collections.Generic.List<int64> _sorted_child_type_ids(int64 type_id)
         {
-            System.Collections.Generic.List<long> children = _make_int_list_0();
+            System.Collections.Generic.List<int64> children = _make_int_list_0();
             if ((_TYPE_CHILDREN).Contains(type_id)) {
                 children = _TYPE_CHILDREN[System.Convert.ToInt32(type_id)];
             }
             return _sorted_ints(children);
         }
 
-        public static System.Collections.Generic.List<long> _collect_root_type_ids()
+        public static System.Collections.Generic.List<int64> _collect_root_type_ids()
         {
-            System.Collections.Generic.List<long> roots = new System.Collections.Generic.List<long>();
-            long i = 0;
+            System.Collections.Generic.List<int64> roots = new System.Collections.Generic.List<int64>();
+            int64 i = 0;
             while ((i) < ((_TYPE_IDS).Count())) {
                 var tid = _TYPE_IDS[System.Convert.ToInt32(i)];
-                long base_tid = -1;
+                int64 base_tid = -1;
                 if ((_TYPE_BASE).Contains(tid)) {
                     base_tid = System.Convert.ToInt64(_TYPE_BASE[System.Convert.ToInt32(tid)]);
                 }
@@ -168,13 +168,13 @@ namespace Pytra.CsModule
             return _sorted_ints(roots);
         }
 
-        public static long _assign_type_ranges_dfs(long type_id, long next_order)
+        public static int64 _assign_type_ranges_dfs(int64 type_id, int64 next_order)
         {
             _TYPE_ORDER[System.Convert.ToInt32(type_id)] = next_order;
             _TYPE_MIN[System.Convert.ToInt32(type_id)] = next_order;
-            long cur = next_order + 1;
-            System.Collections.Generic.List<long> children = _sorted_child_type_ids(type_id);
-            long i = 0;
+            int64 cur = next_order + 1;
+            System.Collections.Generic.List<int64> children = _sorted_child_type_ids(type_id);
+            int64 i = 0;
             while ((i) < ((children).Count)) {
                 cur = _assign_type_ranges_dfs(Pytra.CsModule.py_runtime.py_get(children, i), cur);
                 i += 1;
@@ -189,17 +189,17 @@ namespace Pytra.CsModule
             _TYPE_MIN.clear();
             _TYPE_MAX.clear();
 
-            long next_order = 0;
-            System.Collections.Generic.List<long> roots = _collect_root_type_ids();
-            long i = 0;
+            int64 next_order = 0;
+            System.Collections.Generic.List<int64> roots = _collect_root_type_ids();
+            int64 i = 0;
             while ((i) < ((roots).Count)) {
                 next_order = _assign_type_ranges_dfs(Pytra.CsModule.py_runtime.py_get(roots, i), next_order);
                 i += 1;
             }
-            System.Collections.Generic.List<long> all_ids = _sorted_ints(_TYPE_IDS);
+            System.Collections.Generic.List<int64> all_ids = _sorted_ints(_TYPE_IDS);
             i = 0;
             while ((i) < ((all_ids).Count)) {
-                long tid = Pytra.CsModule.py_runtime.py_get(all_ids, i);
+                int64 tid = Pytra.CsModule.py_runtime.py_get(all_ids, i);
                 if (!((_TYPE_ORDER).Contains(tid))) {
                     next_order = _assign_type_ranges_dfs(tid, next_order);
                 }
@@ -254,7 +254,7 @@ namespace Pytra.CsModule
             _mark_type_ranges_clean();
         }
 
-        public static long _normalize_base_type_id(long base_type_id)
+        public static int64 _normalize_base_type_id(int64 base_type_id)
         {
             _ensure_builtins();
             if (!(Pytra.CsModule.py_runtime.py_runtime_value_isinstance(base_type_id, Pytra.CsModule.py_runtime.PYTRA_TID_INT))) {
@@ -266,10 +266,10 @@ namespace Pytra.CsModule
             return base_type_id;
         }
 
-        public static long py_tid_register_class_type(long base_type_id)
+        public static int64 py_tid_register_class_type(int64 base_type_id)
         {
             _ensure_builtins();
-            long base_tid = _normalize_base_type_id(base_type_id);
+            int64 base_tid = _normalize_base_type_id(base_type_id);
 
             var tid = _TYPE_STATE[System.Convert.ToInt32("next_user_type_id")];
             while ((_TYPE_BASE).Contains(tid)) {
@@ -282,7 +282,7 @@ namespace Pytra.CsModule
             return tid;
         }
 
-        public static long py_tid_register_known_class_type(long type_id, long base_type_id)
+        public static int64 py_tid_register_known_class_type(int64 type_id, int64 base_type_id)
         {
             _ensure_builtins();
             if (!(Pytra.CsModule.py_runtime.py_runtime_value_isinstance(type_id, Pytra.CsModule.py_runtime.PYTRA_TID_INT))) {
@@ -291,7 +291,7 @@ namespace Pytra.CsModule
             if ((type_id) < (_tid_user_base())) {
                 throw new System.Exception("user type_id must be >= " + System.Convert.ToString(_tid_user_base()));
             }
-            long base_tid = _normalize_base_type_id(base_type_id);
+            int64 base_tid = _normalize_base_type_id(base_type_id);
             if ((_TYPE_BASE).Contains(type_id)) {
                 if ((_TYPE_BASE[System.Convert.ToInt32(type_id)]) != (base_tid)) {
                     throw new System.Exception("type_id already registered with different base");
@@ -307,11 +307,11 @@ namespace Pytra.CsModule
             return type_id;
         }
 
-        public static long _try_runtime_tagged_type_id(object value)
+        public static int64 _try_runtime_tagged_type_id(Any value)
         {
-            long tagged = Pytra.CsModule.py_runtime.py_runtime_value_type_id(value);
+            int64 tagged = Pytra.CsModule.py_runtime.py_runtime_value_type_id(value);
             if (Pytra.CsModule.py_runtime.py_runtime_value_isinstance(tagged, Pytra.CsModule.py_runtime.PYTRA_TID_INT)) {
-                long tagged_id = Pytra.CsModule.py_runtime.py_int(tagged);
+                int64 tagged_id = Pytra.CsModule.py_runtime.py_int(tagged);
                 if ((_TYPE_BASE).Contains(tagged_id)) {
                     return tagged_id;
                 }
@@ -319,7 +319,7 @@ namespace Pytra.CsModule
             return -1;
         }
 
-        public static long py_tid_runtime_type_id(object value)
+        public static int64 py_tid_runtime_type_id(Any value)
         {
             _ensure_builtins();
             if ((value) == (null)) {
@@ -346,14 +346,14 @@ namespace Pytra.CsModule
             if (Pytra.CsModule.py_runtime.py_runtime_value_isinstance(value, Pytra.CsModule.py_runtime.PYTRA_TID_SET)) {
                 return _tid_set();
             }
-            long tagged = _try_runtime_tagged_type_id(value);
+            int64 tagged = _try_runtime_tagged_type_id(value);
             if ((tagged) >= (0)) {
                 return tagged;
             }
             return _tid_object();
         }
 
-        public static bool py_tid_is_subtype(long actual_type_id, long expected_type_id)
+        public static bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id)
         {
             _ensure_builtins();
             _ensure_type_ranges();
@@ -369,12 +369,12 @@ namespace Pytra.CsModule
             return (((expected_min) <= (actual_order)) && ((actual_order) <= (expected_max)));
         }
 
-        public static bool py_tid_issubclass(long actual_type_id, long expected_type_id)
+        public static bool py_tid_issubclass(int64 actual_type_id, int64 expected_type_id)
         {
             return Pytra.CsModule.py_runtime.py_runtime_type_id_is_subtype(actual_type_id, expected_type_id);
         }
 
-        public static bool py_tid_isinstance(object value, long expected_type_id)
+        public static bool py_tid_isinstance(Any value, int64 expected_type_id)
         {
             return Pytra.CsModule.py_runtime.py_runtime_type_id_is_subtype(Pytra.CsModule.py_runtime.py_runtime_value_type_id(value), expected_type_id);
         }
