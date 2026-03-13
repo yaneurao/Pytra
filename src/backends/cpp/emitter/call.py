@@ -125,8 +125,9 @@ class CppCallEmitter:
             return f"{ctor_cpp_name}({join_str_list(', ', ctor_args)})", raw
         if imported_module == "collections" and raw == "deque":
             call_args = self.merge_call_args(args, kw)
-            if len(call_args) == 0 and len(kw) == 0:
-                rendered = self._render_collection_constructor_call("deque", expr, call_args, expr)
+            if len(kw) == 0:
+                first_arg_node = arg_nodes[0] if len(arg_nodes) > 0 else expr
+                rendered = self._render_collection_constructor_call("deque", expr, call_args, first_arg_node)
                 if rendered is not None and rendered != "":
                     return rendered, raw
         runtime_module_id = self.any_dict_get_str(expr, "runtime_module_id", "")
@@ -639,6 +640,16 @@ class CppCallEmitter:
         push_method: str,
     ) -> str:
         """typed deque の要素追加を `push_front/back` へ lower する。"""
+        coerced_expr = self._coerce_typed_deque_item_expr(deque_owner_t, value_expr, value_node)
+        return f"{owner_expr}.{push_method}({coerced_expr})"
+
+    def _coerce_typed_deque_item_expr(
+        self,
+        deque_owner_t: str,
+        value_expr: str,
+        value_node: Any,
+    ) -> str:
+        """typed deque に push する要素式を inner type に合わせて整形する。"""
         a0 = value_expr
         arg0_t_raw = self.get_expr_type(value_node)
         arg0_t = self.normalize_type_name(arg0_t_raw) if isinstance(arg0_t_raw, str) else ""
@@ -657,10 +668,50 @@ class CppCallEmitter:
             if not (inner_t_norm == "bytes" and arg0_t == "bytes"):
                 inner_cpp_t = self._cpp_type_text(inner_t)
                 if inner_cpp_t.startswith("::std::tuple<") and a0.startswith("::std::make_tuple("):
-                    return f"{owner_expr}.{push_method}({a0})"
+                    return a0
                 if not self.should_skip_same_type_cast(a0, inner_cpp_t):
                     a0 = f"{inner_cpp_t}({a0})"
-        return f"{owner_expr}.{push_method}({a0})"
+        return a0
+
+    def _render_typed_deque_extendleft_call(
+        self,
+        deque_owner_t: str,
+        owner_expr: str,
+        value_expr: str,
+        value_node: Any,
+    ) -> str:
+        """typed deque の `extendleft(iterable)` を snapshot + push_front loop へ lower する。"""
+        source_t = self.normalize_type_name(self.get_expr_type(value_node))
+        if source_t in {"", "unknown"}:
+            source_t = self.normalize_type_name(self.infer_rendered_arg_type(value_expr, source_t, self.declared_var_types))
+        if source_t in {"", "unknown"}:
+            source_t = self.normalize_type_name(self.infer_rendered_arg_type(value_expr, source_t, self.module_global_var_types))
+        if not (
+            (source_t.startswith("list[") and source_t.endswith("]"))
+            or (source_t.startswith("deque[") and source_t.endswith("]"))
+        ):
+            return ""
+        source_expr = self._trim_ws(value_expr)
+        if source_expr == "":
+            return ""
+        source_tmp = self.next_tmp("__deque_src")
+        iter_tmp = self.next_tmp("__deque_it")
+        elem_t = ""
+        if source_t.startswith("list[") and source_t.endswith("]"):
+            elem_t = source_t[5:-1].strip()
+        elif source_t.startswith("deque[") and source_t.endswith("]"):
+            elem_t = source_t[6:-1].strip()
+        elem_node = self._build_name_expr_node(iter_tmp, elem_t or "unknown")
+        pushed_expr = self._coerce_typed_deque_item_expr(deque_owner_t, f"*{iter_tmp}", elem_node)
+        return (
+            "([&]() { "
+            f"auto {source_tmp} = {source_expr}; "
+            f"for (auto {iter_tmp} = {source_tmp}.begin(); {iter_tmp} != {source_tmp}.end(); ++{iter_tmp}) "
+            "{ "
+            f"{owner_expr}.push_front({pushed_expr}); "
+            "} "
+            "}())"
+        )
 
     def _is_super_call_expr(self, node: Any) -> bool:
         """`super()` 呼び出し式か判定する。"""
@@ -886,6 +937,11 @@ class CppCallEmitter:
             if append_rendered is not None and append_rendered != "":
                 return append_rendered
         if owner_t.startswith("deque[") and owner_t.endswith("]"):
+            if attr == "extendleft" and len(args) == 1 and len(kw) == 0:
+                value_node = arg_nodes[0] if len(arg_nodes) > 0 else {}
+                rendered = self._render_typed_deque_extendleft_call(owner_t, owner_expr, args[0], value_node)
+                if rendered != "":
+                    return rendered
             if attr == "appendleft" and len(args) == 1 and len(kw) == 0:
                 value_node = arg_nodes[0] if len(arg_nodes) > 0 else {}
                 return self._render_typed_deque_push_call(owner_t, owner_expr, args[0], value_node, "push_front")

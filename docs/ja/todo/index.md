@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01] `collections.deque` iterable constructor / `extendleft` representative C++ lane を固定する。進捗: `S2-01` で `deque(iterable)` を typed range ctor へ upstream 済み。残りは `extendleft -> push_front` loop bundle。文脈: [p0-collections-deque-cpp-iterable-support.md](../plans/p0-collections-deque-cpp-iterable-support.md)
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01] `collections.deque` iterable constructor / `extendleft` representative C++ lane を固定する。進捗: `S2-02` で `deque(iterable)` / `extendleft(iterable)` を `std::deque` surface へ upstream 済み。残りは representative smoke と closeout。文脈: [p0-collections-deque-cpp-iterable-support.md](../plans/p0-collections-deque-cpp-iterable-support.md)
