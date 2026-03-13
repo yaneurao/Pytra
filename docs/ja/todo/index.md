@@ -35,7 +35,7 @@
 
 1. [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01] 全言語の `@extern` runtime/emitter 契約を見直し、generated rewrite ではなく native owner + generic extern metadata に揃える。
 文脈: [docs/ja/plans/p2-multilang-extern-runtime-realign.md](../plans/p2-multilang-extern-runtime-realign.md)
-- 進捗メモ: 未着手。
+- 進捗メモ: `runtime_symbol_index` に `extern_contract_v1` / `extern_v1` を追加し、runtime SoT の extern 宣言を generic metadata として引ける状態まで進めた。
 
 2. [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01] bundle-based coverage matrix を導入し、`feature x lane x backend` の contract coverage 100% を support matrix と分離して固定する。
 文脈: [docs/ja/plans/p2-backend-contract-coverage-100.md](../plans/p2-backend-contract-coverage-100.md)
