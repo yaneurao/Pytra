@@ -4277,6 +4277,95 @@ if __name__ == "__main__":
             self.assertEqual(rn.returncode, 0, msg=rn.stderr)
             self.assertIn("3", rn.stdout)
 
+    def test_cli_multi_file_pytra_nes_relative_import_dataclass_deque_build_and_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            nes = root / "nes"
+            nes.mkdir(parents=True)
+            (nes / "__init__.py").write_text("", encoding="utf-8")
+
+            controller_py = nes / "controller.py"
+            pad_state_py = nes / "pad_state.py"
+            ppu_py = nes / "ppu.py"
+            out_dir = root / "out"
+            exe = out_dir / "app.out"
+
+            controller_py.write_text(
+                "BUTTON_A: int = 1\n"
+                "BUTTON_B: int = 2\n",
+                encoding="utf-8",
+            )
+            pad_state_py.write_text(
+                "from collections import deque\n"
+                "from dataclasses import dataclass, field\n"
+                "\n"
+                "@dataclass\n"
+                "class PadState:\n"
+                "    buttons: int\n"
+                "    timestamps: deque[float] = field(init=False, repr=False)\n",
+                encoding="utf-8",
+            )
+            ppu_py.write_text(
+                "from .controller import (\n"
+                "    BUTTON_A,\n"
+                "    BUTTON_B,\n"
+                ")\n"
+                "from .pad_state import (\n"
+                "    PadState,\n"
+                ")\n"
+                "\n"
+                "def main() -> None:\n"
+                "    state: PadState = PadState(BUTTON_A | BUTTON_B)\n"
+                "    state.timestamps.append(1.5)\n"
+                "    state.timestamps.append(2.5)\n"
+                "    first: float = state.timestamps.popleft()\n"
+                "    print(state.buttons)\n"
+                "    print(first)\n"
+                "    print(len(state.timestamps))\n"
+                "\n"
+                "if __name__ == \"__main__\":\n"
+                "    main()\n",
+                encoding="utf-8",
+            )
+
+            tr = self._run_subprocess_with_timeout(
+                ["python3", "src/py2x.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
+                label="transpile pytra nes representative multi-file sample",
+            )
+            self.assertEqual(tr.returncode, 0, msg=tr.stderr)
+            generated_ppu = (out_dir / "src" / "ppu.cpp").read_text(encoding="utf-8")
+            generated_pad_header = (out_dir / "include" / "pad_state.h").read_text(encoding="utf-8")
+            self.assertIn('#include "controller.h"', generated_ppu)
+            self.assertIn('#include "pad_state.h"', generated_ppu)
+            self.assertIn("::std::deque<float64> timestamps;", generated_pad_header)
+            self.assertNotIn("field(", generated_pad_header)
+            self.assertIn("state->timestamps.push_back(float64(1.5));", generated_ppu)
+            self.assertIn("state->timestamps.push_back(float64(2.5));", generated_ppu)
+            self.assertIn("state->timestamps.front();", generated_ppu)
+            self.assertIn("state->timestamps.pop_front();", generated_ppu)
+            self.assertIn("float64 first = py_to<float64>(([&]()", generated_ppu)
+            self.assertIn("(state->timestamps).size()", generated_ppu)
+            self.assertNotIn("py_list_append_mut(", generated_ppu)
+            self.assertNotIn("obj_to_list_ref_or_raise(", generated_ppu)
+            self.assertNotIn("state->timestamps.popleft()", generated_ppu)
+            bd = self._run_subprocess_with_timeout(
+                ["python3", "tools/build_multi_cpp.py", str(out_dir / "manifest.json"), "-o", str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="build pytra nes representative multi-file sample",
+            )
+            self.assertEqual(bd.returncode, 0, msg=bd.stderr)
+            rn = self._run_subprocess_with_timeout(
+                [str(exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run pytra nes representative multi-file sample",
+            )
+            self.assertEqual(rn.returncode, 0, msg=rn.stderr)
+            self.assertEqual(rn.stdout.strip().splitlines(), ["3", "1.5", "1"])
+
     def test_cli_multi_file_object_iter_helper_artifact_build_and_run(self) -> None:
         src_main = """def main() -> None:
     xs: object = [1, 2, 3]

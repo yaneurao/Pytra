@@ -305,6 +305,15 @@ class CppModuleEmitter:
             method_arg_defaults: dict[str, dict[str, Any]] = {}
             method_returns: dict[str, str] = {}
             method_names: set[str] = set()
+            field_types: dict[str, str] = {}
+            raw_field_types = stmt.get("field_types")
+            field_types_map = raw_field_types if isinstance(raw_field_types, dict) else {}
+            for raw_attr, raw_ft in field_types_map.items():
+                if not isinstance(raw_attr, str) or raw_attr == "":
+                    continue
+                field_t = self.normalize_type_name(self.any_to_str(raw_ft))
+                if field_t != "":
+                    field_types[raw_attr] = field_t
             for method_stmt in method_stmts:
                 if not isinstance(method_stmt, dict) or method_stmt.get("kind") != "FunctionDef":
                     continue
@@ -340,6 +349,7 @@ class CppModuleEmitter:
                 "method_arg_defaults": method_arg_defaults,
                 "method_returns": method_returns,
                 "method_names": sorted(method_names),
+                "field_types": field_types,
             }
         return out
 
@@ -479,6 +489,16 @@ class CppModuleEmitter:
             self.class_method_arg_types[cpp_name] = dict(doc.get("method_arg_types", {}))
             self.class_method_arg_defaults[cpp_name] = dict(doc.get("method_arg_defaults", {}))
             self.class_method_return_types[cpp_name] = dict(doc.get("method_returns", {}))
+            field_types_raw = doc.get("field_types")
+            field_types = field_types_raw if isinstance(field_types_raw, dict) else {}
+            class_field_types: dict[str, str] = {}
+            for raw_attr, raw_ft in field_types.items():
+                if not isinstance(raw_attr, str) or raw_attr == "":
+                    continue
+                field_t = self.normalize_type_name(self.any_to_str(raw_ft))
+                if field_t != "":
+                    class_field_types[raw_attr] = field_t
+            self.class_field_types[cpp_name] = class_field_types
 
     def _module_function_arg_types(self, module_name: str, fn_name: str) -> list[str]:
         """モジュール関数の引数型列を返す（不明時は空 list）。"""

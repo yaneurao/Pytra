@@ -426,8 +426,8 @@ class CppEmitter(
             owner_t0 = self.get_expr_type(node_for_base.get("value"))
             owner_t = self._strip_rc_wrapper(self.normalize_type_name(owner_t0 if isinstance(owner_t0, str) else ""))
             attr = self.any_to_str(node_for_base.get("attr"))
-            if owner_t in self.class_field_types:
-                owner_fields = self.class_field_types.get(owner_t, {})
+            for owner_candidate in self._expand_runtime_class_candidates(owner_t):
+                owner_fields = self.class_field_types.get(owner_candidate, {})
                 if isinstance(owner_fields, dict):
                     field_t = self.normalize_type_name(self.any_to_str(owner_fields.get(attr)))
                     if field_t not in {"", "unknown"}:
