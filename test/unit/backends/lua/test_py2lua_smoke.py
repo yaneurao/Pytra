@@ -218,6 +218,26 @@ class Py2LuaSmokeTest(unittest.TestCase):
                 lua = transpile_to_lua_native(east)
                 self.assertTrue(lua.strip())
 
+    def test_import_lowering_maps_math_runtime_via_generic_extern_metadata(self) -> None:
+        src = (
+            "import math\n"
+            "from math import pi, sqrt\n"
+            "def f() -> float:\n"
+            "    return sqrt(pi)\n"
+            "def g() -> float:\n"
+            "    return math.sin(pi)\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "imports_math.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py, parser_backend="self_hosted")
+            lua = transpile_to_lua_native(east)
+        self.assertIn("local math = __pytra_math_module()", lua)
+        self.assertIn("local pi = __pytra_math_module().pi", lua)
+        self.assertIn("local sqrt = __pytra_math_module().sqrt", lua)
+        self.assertIn("return sqrt(pi)", lua)
+        self.assertIn("return math.sin(pi)", lua)
+
     def test_representative_property_method_call_fixture_transpiles(self) -> None:
         try:
             from test.unit.backends.representative_contract_support import (
@@ -741,6 +761,8 @@ class Py2LuaSmokeTest(unittest.TestCase):
         src = (ROOT / "src" / "backends" / "lua" / "emitter" / "lua_native_emitter.py").read_text(encoding="utf-8")
         self.assertNotIn('mod == "math"', src)
         self.assertNotIn('mod == "time"', src)
+        self.assertNotIn('mod == "pytra.std.math"', src)
+        self.assertNotIn('mod == "pytra.std.time"', src)
         self.assertNotIn('mod == "pathlib"', src)
         self.assertNotIn('mod == "json"', src)
         self.assertNotIn('mod == "pytra.utils"', src)

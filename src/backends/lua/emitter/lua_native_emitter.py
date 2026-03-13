@@ -9,7 +9,12 @@ from backends.common.emitter.code_emitter import (
     reject_backend_typed_vararg_signatures,
 )
 
-from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id, resolve_import_binding_doc
+from toolchain.frontends.runtime_symbol_index import (
+    canonical_runtime_module_id,
+    lookup_runtime_module_symbols,
+    lookup_runtime_symbol_doc,
+    resolve_import_binding_doc,
+)
 
 
 _LUA_KEYWORDS = {
@@ -205,8 +210,116 @@ def _cmp_symbol(op: str) -> str:
     return "=="
 
 
+def _runtime_module_symbol_names(runtime_module_id: str) -> tuple[str, ...]:
+    mod = canonical_runtime_module_id(runtime_module_id.strip())
+    if mod == "":
+        return ()
+    symbols = lookup_runtime_module_symbols(mod)
+    out = [name for name in symbols if isinstance(name, str) and name != ""]
+    out.sort()
+    return tuple(out)
+
+
+def _runtime_symbol_call_adapter_kind(runtime_module_id: str, runtime_symbol: str) -> str:
+    symbol_doc = lookup_runtime_symbol_doc(runtime_module_id, runtime_symbol)
+    adapter_kind_any = symbol_doc.get("call_adapter_kind")
+    if isinstance(adapter_kind_any, str):
+        return adapter_kind_any.strip()
+    return ""
+
+
+def _runtime_symbol_semantic_tag(runtime_module_id: str, runtime_symbol: str) -> str:
+    symbol_doc = lookup_runtime_symbol_doc(runtime_module_id, runtime_symbol)
+    semantic_tag_any = symbol_doc.get("semantic_tag")
+    if isinstance(semantic_tag_any, str):
+        return semantic_tag_any.strip()
+    return ""
+
+
+def _is_math_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
+    return _runtime_symbol_call_adapter_kind(runtime_module_id, runtime_symbol) in {
+        "math.float_args",
+        "math.value_getter",
+    }
+
+
+def _is_math_runtime_module(runtime_module_id: str) -> bool:
+    symbol_names = _runtime_module_symbol_names(runtime_module_id)
+    if "pi" not in symbol_names or "sqrt" not in symbol_names:
+        return False
+    for symbol_name in symbol_names:
+        if not _is_math_runtime_symbol(runtime_module_id, symbol_name):
+            return False
+    return True
+
+
+def _is_perf_counter_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
+    return _runtime_symbol_semantic_tag(runtime_module_id, runtime_symbol) == "stdlib.fn.perf_counter"
+
+
+def _is_perf_counter_runtime_module(runtime_module_id: str) -> bool:
+    symbol_names = _runtime_module_symbol_names(runtime_module_id)
+    return symbol_names == ("perf_counter",) and _is_perf_counter_runtime_symbol(
+        runtime_module_id,
+        "perf_counter",
+    )
+
+
+def _pascal_symbol_name(name: str) -> str:
+    out: list[str] = []
+    uppercase_next = True
+    i = 0
+    while i < len(name):
+        ch = name[i]
+        if ch == "_":
+            uppercase_next = True
+            i += 1
+            continue
+        if uppercase_next:
+            out.append(ch.upper())
+            uppercase_next = False
+        else:
+            out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _runtime_symbol_alias_expr(runtime_module_id: str, runtime_symbol: str) -> str:
+    mod = canonical_runtime_module_id(runtime_module_id.strip())
+    sym = runtime_symbol.strip()
+    if sym == "":
+        return ""
+    if _is_math_runtime_symbol(mod, sym):
+        if sym == "pi":
+            return "pyMathPi()"
+        if sym == "e":
+            return "pyMathE()"
+        if sym == "log10":
+            return "function(x) return math.log(x, 10) end"
+        return "pyMath" + _pascal_symbol_name(sym)
+    if _is_perf_counter_runtime_symbol(mod, sym):
+        return "__pytra_perf_counter"
+    return ""
+
+
+def _runtime_module_alias_via_symbol_table(alias_txt: str, runtime_module_id: str) -> str:
+    symbol_names = _runtime_module_symbol_names(runtime_module_id)
+    if len(symbol_names) == 0:
+        return ""
+    entries: list[str] = []
+    for symbol_name in symbol_names:
+        expr = _runtime_symbol_alias_expr(runtime_module_id, symbol_name)
+        if expr == "":
+            return ""
+        entries.append(_safe_ident(symbol_name, symbol_name) + " = " + expr)
+    return "local " + alias_txt + " = { " + ", ".join(entries) + " }"
+
+
 def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
     mod = canonical_runtime_module_id(runtime_module_id.strip())
+    symbol_table_line = _runtime_module_alias_via_symbol_table(alias_txt, mod)
+    if symbol_table_line != "":
+        return symbol_table_line
     if mod == "pytra.std.enum":
         return "local " + alias_txt + " = { Enum = {}, IntEnum = {}, IntFlag = {} }"
     if mod == "pytra.std.argparse":
@@ -254,14 +367,10 @@ def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
         )
     if mod == "pytra.std.re":
         return "local " + alias_txt + " = { sub = function(_pattern, _repl, text, _flags) return text end }"
-    if mod == "pytra.std.math":
-        return "local " + alias_txt + " = __pytra_math_module()"
     if mod == "pytra.std.json":
         return "local " + alias_txt + " = { loads = pyJsonLoads, dumps = pyJsonDumps }"
     if mod == "pytra.std.pathlib":
         return "local " + alias_txt + " = { Path = Path }"
-    if mod == "pytra.std.time":
-        return "local " + alias_txt + " = { perf_counter = __pytra_perf_counter }"
     if mod in {"pytra.utils.png", "pytra.utils.gif"}:
         leaf = _safe_ident(mod.rsplit(".", 1)[-1], "utils")
         return "local " + alias_txt + " = __pytra_" + leaf + "_module()"
@@ -271,6 +380,9 @@ def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
 def _runtime_symbol_alias_line(alias_txt: str, runtime_module_id: str, runtime_symbol: str) -> str:
     mod = canonical_runtime_module_id(runtime_module_id.strip())
     sym = runtime_symbol.strip()
+    alias_expr = _runtime_symbol_alias_expr(mod, sym)
+    if alias_expr != "":
+        return "local " + alias_txt + " = " + alias_expr
     if mod == "pytra.std.enum":
         if sym in {"Enum", "IntEnum", "IntFlag"}:
             return "local " + alias_txt + " = {}"
@@ -319,8 +431,6 @@ def _runtime_symbol_alias_line(alias_txt: str, runtime_module_id: str, runtime_s
         return ""
     if mod == "pytra.std.re" and sym == "sub":
         return "local " + alias_txt + " = function(_pattern, _repl, text, _flags) return text end"
-    if mod == "pytra.std.math":
-        return "local " + alias_txt + " = __pytra_math_module()." + _safe_ident(sym, sym)
     if mod == "pytra.std.json":
         if sym == "loads":
             return "local " + alias_txt + " = pyJsonLoads"
@@ -329,8 +439,6 @@ def _runtime_symbol_alias_line(alias_txt: str, runtime_module_id: str, runtime_s
         return ""
     if mod == "pytra.std.pathlib" and sym == "Path":
         return "local " + alias_txt + " = Path"
-    if mod == "pytra.std.time" and sym == "perf_counter":
-        return "local " + alias_txt + " = __pytra_perf_counter"
     if mod.startswith("pytra.utils.") and sym != "":
         return "local " + alias_txt + " = __pytra_" + _safe_ident(sym, sym)
     return ""
