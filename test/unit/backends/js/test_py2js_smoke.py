@@ -621,7 +621,7 @@ def main() -> None:
             pathlib_shim = (Path(td) / "pytra" / "std" / "pathlib.js").read_text(encoding="utf-8")
             self.assertIn("generated/std/pathlib.js", pathlib_shim)
 
-    def test_js_repo_compat_lane_resolves_runtime_helpers(self) -> None:
+    def test_js_repo_delete_target_lane_resolves_runtime_helpers(self) -> None:
         self.assertFalse((ROOT / "src" / "runtime" / "js" / "native" / "std" / "math.js").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "js" / "native" / "std" / "pathlib.js").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "js" / "native" / "std" / "time.js").exists())
@@ -645,7 +645,7 @@ def main() -> None:
                     "if (!(time.perf_counter() > 0.0)) throw new Error('perf_counter');"
                     "if (typeof png.write_rgb_png !== 'function') throw new Error('png');"
                     "if (typeof gif.save_gif !== 'function') throw new Error('gif');"
-                    "console.log('js-compat-ok');"
+                    "console.log('js-delete-target-ok');"
                 ),
             ],
             cwd=ROOT,
@@ -653,7 +653,7 @@ def main() -> None:
             text=True,
         )
         self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-        self.assertEqual(proc.stdout.strip(), "js-compat-ok")
+        self.assertEqual(proc.stdout.strip(), "js-delete-target-ok")
 
     def test_js_generated_built_in_compare_lane_resolves_native_runtime(self) -> None:
         proc = subprocess.run(

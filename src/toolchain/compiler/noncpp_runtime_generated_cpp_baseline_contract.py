@@ -832,7 +832,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
         "backend": "js",
         "test_path": "test/unit/backends/js/test_py2js_smoke.py",
         "required_tests": (
-            "test_js_repo_compat_lane_resolves_runtime_helpers",
+            "test_js_repo_delete_target_lane_resolves_runtime_helpers",
             "test_js_generated_built_in_compare_lane_resolves_native_runtime",
         ),
     },
@@ -840,7 +840,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
         "backend": "ts",
         "test_path": "test/unit/backends/ts/test_py2ts_smoke.py",
         "required_tests": (
-            "test_ts_repo_compat_lane_reexports_runtime_helpers",
+            "test_ts_repo_delete_target_lane_reexports_runtime_helpers",
             "test_ts_generated_built_in_compare_lane_rehomes_native_runtime_import",
         ),
     },
@@ -849,7 +849,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
         "test_path": "test/unit/backends/lua/test_py2lua_smoke.py",
         "required_tests": (
             "test_lua_runtime_source_path_is_migrated",
-            "test_lua_repo_compat_lane_resolves_runtime_helpers",
+            "test_lua_repo_delete_target_lane_resolves_runtime_helpers",
         ),
     },
     {
@@ -857,7 +857,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
         "test_path": "test/unit/backends/rb/test_py2rb_smoke.py",
         "required_tests": (
             "test_ruby_runtime_source_path_is_migrated",
-            "test_ruby_repo_compat_lane_resolves_runtime_helpers",
+            "test_ruby_repo_delete_target_lane_resolves_runtime_helpers",
         ),
     },
     {
@@ -865,9 +865,9 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
         "test_path": "test/unit/backends/php/test_py2php_smoke.py",
         "required_tests": (
             "test_php_runtime_source_path_is_migrated",
-            "test_php_repo_generated_and_compat_lanes_resolve_native_substrate",
+            "test_php_repo_generated_and_delete_target_lanes_resolve_native_substrate",
             "test_php_generated_built_in_compare_lane_resolves_native_runtime",
-            "test_php_repo_public_compat_lane_resolves_remaining_shims",
+            "test_php_repo_public_delete_target_lane_resolves_remaining_shims",
         ),
     },
 )

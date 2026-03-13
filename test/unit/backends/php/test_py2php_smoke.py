@@ -156,7 +156,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
         assertions_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "assertions.php"
         png_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "png.php"
         gif_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "gif.php"
-        compat_time_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "time.php"
+        delete_target_time_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "time.php"
         legacy_path = ROOT / "src" / "runtime" / "php" / "pytra-core"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(generated_contains_path.exists())
@@ -177,7 +177,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertTrue(assertions_path.exists())
         self.assertTrue(png_path.exists())
         self.assertTrue(gif_path.exists())
-        self.assertTrue(compat_time_path.exists())
+        self.assertTrue(delete_target_time_path.exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "argparse.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "glob.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "math.php").exists())
@@ -224,7 +224,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
                 )
                 self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
-    def test_php_repo_generated_and_compat_lanes_resolve_native_substrate(self) -> None:
+    def test_php_repo_generated_and_delete_target_lanes_resolve_native_substrate(self) -> None:
         generated_json_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "json.php"
         generated_pathlib_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "pathlib.php"
         generated_png_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "png.php"
@@ -279,17 +279,17 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertEqual(proc.stdout, "contains-ok\npredicates-ok\nsequence-ok\n")
 
-    def test_php_repo_public_compat_lane_resolves_remaining_shims(self) -> None:
-        compat_runtime_path = ROOT / "src" / "runtime" / "php" / "pytra" / "py_runtime.php"
-        compat_time_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "time.php"
-        compat_png_path = ROOT / "src" / "runtime" / "php" / "pytra" / "utils" / "png.php"
-        compat_gif_path = ROOT / "src" / "runtime" / "php" / "pytra" / "utils" / "gif.php"
+    def test_php_repo_public_delete_target_lane_resolves_remaining_shims(self) -> None:
+        delete_target_runtime_path = ROOT / "src" / "runtime" / "php" / "pytra" / "py_runtime.php"
+        delete_target_time_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "time.php"
+        delete_target_png_path = ROOT / "src" / "runtime" / "php" / "pytra" / "utils" / "png.php"
+        delete_target_gif_path = ROOT / "src" / "runtime" / "php" / "pytra" / "utils" / "gif.php"
         code = "\n".join(
             [
-                f"require_once {compat_runtime_path.as_posix()!r};",
-                f"require_once {compat_time_path.as_posix()!r};",
-                f"require_once {compat_png_path.as_posix()!r};",
-                f"require_once {compat_gif_path.as_posix()!r};",
+                f"require_once {delete_target_runtime_path.as_posix()!r};",
+                f"require_once {delete_target_time_path.as_posix()!r};",
+                f"require_once {delete_target_png_path.as_posix()!r};",
+                f"require_once {delete_target_gif_path.as_posix()!r};",
                 "echo __pytra_truthy([1]) ? 'truthy-ok' : 'truthy-missing', PHP_EOL;",
                 "echo (perf_counter() > 0.0) ? 'time-ok' : 'time-missing', PHP_EOL;",
                 "echo function_exists('__pytra_write_rgb_png') ? 'png-ok' : 'png-missing', PHP_EOL;",

@@ -124,11 +124,11 @@ class Py2LuaSmokeTest(unittest.TestCase):
                 )
                 self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
-    def test_lua_repo_compat_lane_resolves_runtime_helpers(self) -> None:
-        compat_runtime = ROOT / "src" / "runtime" / "lua" / "pytra" / "built_in" / "py_runtime.lua"
+    def test_lua_repo_delete_target_lane_resolves_runtime_helpers(self) -> None:
+        delete_target_runtime = ROOT / "src" / "runtime" / "lua" / "pytra" / "built_in" / "py_runtime.lua"
         code = "\n".join(
             [
-                f"dofile({compat_runtime.as_posix()!r})",
+                f"dofile({delete_target_runtime.as_posix()!r})",
                 "io.write((__pytra_truthy({1}) and 'lua-ok' or 'lua-missing') .. '\\n')",
             ]
         )
