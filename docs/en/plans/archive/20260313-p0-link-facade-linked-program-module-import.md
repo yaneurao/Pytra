@@ -36,11 +36,12 @@ Verification commands:
 - `git -C /workspace/Pytra diff --check`
 
 Breakdown:
-- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01] Align the `LinkedProgramModule` import in `test_py2x_cli.py` to the `src.toolchain.link` facade so the tooling consumer no longer reaches through `program_model` directly.
+- [x] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01] Align the `LinkedProgramModule` import in `test_py2x_cli.py` to the `src.toolchain.link` facade so the tooling consumer no longer reaches through `program_model` directly.
 - [x] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S1-01] Add the facade-import source contract plus TODO/plan baseline.
 - [x] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S2-01] Switch the `test_py2x_cli.py` import to the facade path and bring the focused unit suite back to green.
-- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S3-01] Sync TODO / plan / archive and lock the close condition.
+- [x] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S3-01] Sync TODO / plan / archive and lock the close condition.
 
 Decision log:
 - 2026-03-13: Filed this follow-up P0 after TODO became empty, limiting scope to the direct `program_model` import that remains in the tooling test consumer lane.
 - 2026-03-13: `S1-01/S2-01` switched `test_py2x_cli.py` to `from src.toolchain.link import LinkedProgramModule` and added a source contract in `test_py2x_entrypoints_contract.py` so a regression back to the direct `program_model` import fails fast.
+- 2026-03-13: `S3-01` synchronized the active TODO, plan, and archive, and fixed the close condition as “`test_py2x_cli.py` imports `LinkedProgramModule` from the `src.toolchain.link` facade while both the source contract and the focused tooling unit stay green.” Any wider `program_model` export cleanup is deferred.

@@ -36,11 +36,12 @@
 - `git -C /workspace/Pytra diff --check`
 
 分解:
-- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01] `test_py2x_cli.py` の `LinkedProgramModule` import を `src.toolchain.link` facade 経由へ揃え、tooling consumer が `program_model` へ直接 reach-through しない状態を固定する。
+- [x] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01] `test_py2x_cli.py` の `LinkedProgramModule` import を `src.toolchain.link` facade 経由へ揃え、tooling consumer が `program_model` へ直接 reach-through しない状態を固定する。
 - [x] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S1-01] facade import を要求する source contract と TODO/plan baseline を追加する。
 - [x] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S2-01] `test_py2x_cli.py` の import を facade 経由へ切り替え、focused unit を green に戻す。
-- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S3-01] TODO / plan / archive を同期して close 条件を固める。
+- [x] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S3-01] TODO / plan / archive を同期して close 条件を固める。
 
 決定ログ:
 - 2026-03-13: TODO 空き後の follow-up P0 として、`LinkedProgramModule` の tooling consumer に残る direct `program_model` import を facade import へ揃える task を起票した。scope は `test_py2x_cli.py` の consumer lane に限定する。
 - 2026-03-13: `S1-01/S2-01` では `test_py2x_cli.py` の import を `from src.toolchain.link import LinkedProgramModule` に切り替え、source contract は `test_py2x_entrypoints_contract.py` に追加して facade import の再発防止を固定した。
+- 2026-03-13: `S3-01` では active TODO / plan / archive を同期し、close 条件を「`test_py2x_cli.py` が `LinkedProgramModule` を `src.toolchain.link` facade から import し、source contract と focused tooling unit が green」で固定した。`program_model` 内部の export 再編は次 task へ持ち越す。
