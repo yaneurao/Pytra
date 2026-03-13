@@ -190,20 +190,10 @@ REMAINING_NONCPP_GO_JAVA_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
 )
 
 REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
-    "built_in/contains",
-    "built_in/iter_ops",
-    "built_in/predicates",
-    "built_in/sequence",
-    "built_in/zip_ops",
+    REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
 )
 
-REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
-    "built_in/io_ops",
-    "built_in/numeric_ops",
-    "built_in/scalar_ops",
-    "built_in/string_ops",
-    "built_in/type_id",
-)
+REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = ()
 
 REMAINING_NONCPP_KOTLIN_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
     REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
@@ -366,6 +356,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/scala/generated/built_in/",
                 "ownership": "generated",
                 "rationale": "Scala source-guarded built_in compare artifacts live in generated/built_in after the S4 alignment bundle.",
+            },
+            {
+                "current_prefix": "src/runtime/scala/generated/std/",
+                "target_prefix": "src/runtime/scala/generated/std/",
+                "ownership": "generated",
+                "rationale": "Scala SoT-generated std compare artifacts now live in generated/std after the cpp-baseline materialization bundle.",
             },
             {
                 "current_prefix": "src/runtime/scala/pytra/built_in/py_runtime.scala",
@@ -844,10 +840,28 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
         "pytra_core_files": ("built_in/py_runtime.scala",),
         "pytra_gen_files": (
             "built_in/contains.scala",
+            "built_in/io_ops.scala",
             "built_in/iter_ops.scala",
+            "built_in/numeric_ops.scala",
             "built_in/predicates.scala",
+            "built_in/scalar_ops.scala",
             "built_in/sequence.scala",
+            "built_in/string_ops.scala",
+            "built_in/type_id.scala",
             "built_in/zip_ops.scala",
+            "std/argparse.scala",
+            "std/glob.scala",
+            "std/json.scala",
+            "std/math.scala",
+            "std/os.scala",
+            "std/os_path.scala",
+            "std/pathlib.scala",
+            "std/random.scala",
+            "std/re.scala",
+            "std/sys.scala",
+            "std/time.scala",
+            "std/timeit.scala",
+            "utils/assertions.scala",
             "utils/gif.scala",
             "utils/image_runtime.scala",
             "utils/png.scala",
@@ -1147,10 +1161,28 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
         "backend": "scala",
         "generated_files": (
             "generated/built_in/contains.scala",
+            "generated/built_in/io_ops.scala",
             "generated/built_in/iter_ops.scala",
+            "generated/built_in/numeric_ops.scala",
             "generated/built_in/predicates.scala",
+            "generated/built_in/scalar_ops.scala",
             "generated/built_in/sequence.scala",
+            "generated/built_in/string_ops.scala",
+            "generated/built_in/type_id.scala",
             "generated/built_in/zip_ops.scala",
+            "generated/std/argparse.scala",
+            "generated/std/glob.scala",
+            "generated/std/json.scala",
+            "generated/std/math.scala",
+            "generated/std/os.scala",
+            "generated/std/os_path.scala",
+            "generated/std/pathlib.scala",
+            "generated/std/random.scala",
+            "generated/std/re.scala",
+            "generated/std/sys.scala",
+            "generated/std/time.scala",
+            "generated/std/timeit.scala",
+            "generated/utils/assertions.scala",
             "generated/utils/gif.scala",
             "generated/utils/image_runtime.scala",
             "generated/utils/png.scala",
@@ -1433,14 +1465,28 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
         "backend": "scala",
         "generated_modules": (
             REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("utils/gif", "utils/image_runtime", "utils/png")
+            + (
+                "std/argparse",
+                "std/glob",
+                "std/json",
+                "std/math",
+                "std/os",
+                "std/os_path",
+                "std/pathlib",
+                "std/random",
+                "std/re",
+                "std/sys",
+                "std/time",
+                "std/timeit",
+                "utils/assertions",
+                "utils/gif",
+                "utils/image_runtime",
+                "utils/png",
+            )
         ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
-        "blocked_modules": (
-            REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-        ),
+        "blocked_modules": REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1,
     },
     {
         "backend": "swift",
@@ -1928,12 +1974,21 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_V1: Final[
         "backend": "scala",
         "materialized_compare_modules": (
             REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + (
-                "utils/gif",
-                "utils/png",
-            )
+            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
+            + ("utils/gif", "utils/png")
         ),
-        "helper_artifact_modules": ("utils/image_runtime",),
+        "helper_artifact_modules": (
+            "std/argparse",
+            "std/glob",
+            "std/os",
+            "std/os_path",
+            "std/random",
+            "std/re",
+            "std/sys",
+            "std/timeit",
+            "utils/assertions",
+            "utils/image_runtime",
+        ),
     },
     {
         "backend": "swift",
@@ -2105,6 +2160,24 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
         "smoke_kind": "source_guard",
         "smoke_targets": (
             "built_in/contains.scala",
+            "built_in/io_ops.scala",
+            "built_in/numeric_ops.scala",
+            "built_in/scalar_ops.scala",
+            "built_in/string_ops.scala",
+            "built_in/type_id.scala",
+            "std/argparse.scala",
+            "std/glob.scala",
+            "std/json.scala",
+            "std/math.scala",
+            "std/os.scala",
+            "std/os_path.scala",
+            "std/pathlib.scala",
+            "std/random.scala",
+            "std/re.scala",
+            "std/sys.scala",
+            "std/time.scala",
+            "std/timeit.scala",
+            "utils/assertions.scala",
             "utils/gif.scala",
             "utils/image_runtime.scala",
             "utils/png.scala",

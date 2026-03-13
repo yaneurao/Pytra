@@ -45,6 +45,7 @@ def _generated_suffix_for_backend(backend: str) -> str:
         "kotlin": ".kt",
         "nim": ".nim",
         "rs": ".rs",
+        "scala": ".scala",
         "swift": ".swift",
     }[backend]
 

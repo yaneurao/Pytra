@@ -119,6 +119,11 @@
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/utils/assertions.kt",
           "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/utils/assertions.scala",
+          "postprocess": "scala_program_to_library"
         }
       ]
     },
@@ -183,6 +188,11 @@
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/io_ops.kt",
           "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/built_in/io_ops.scala",
+          "postprocess": "scala_program_to_library"
         },
         {
           "target": "swift",
@@ -258,6 +268,11 @@
           "postprocess": "kotlin_program_to_library"
         },
         {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/built_in/numeric_ops.scala",
+          "postprocess": "scala_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/built_in/numeric_ops.swift",
           "postprocess": "swift_program_to_library"
@@ -329,6 +344,11 @@
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/scalar_ops.kt",
           "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/built_in/scalar_ops.scala",
+          "postprocess": "scala_program_to_library"
         },
         {
           "target": "swift",
@@ -404,6 +424,11 @@
           "postprocess": "kotlin_program_to_library"
         },
         {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/built_in/string_ops.scala",
+          "postprocess": "scala_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/built_in/string_ops.swift",
           "postprocess": "swift_program_to_library"
@@ -436,6 +461,11 @@
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/type_id.kt",
           "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/built_in/type_id.scala",
+          "postprocess": "scala_program_to_library"
         },
         {
           "target": "swift",
@@ -506,6 +536,11 @@
           "postprocess": "kotlin_program_to_library"
         },
         {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/std/time.scala",
+          "postprocess": "scala_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/time.swift",
           "postprocess": "swift_program_to_library"
@@ -533,6 +568,11 @@
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/json.kt",
           "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/std/json.scala",
+          "postprocess": "scala_program_to_library"
         },
         {
           "target": "swift",
@@ -564,6 +604,11 @@
           "postprocess": "kotlin_program_to_library"
         },
         {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/std/pathlib.scala",
+          "postprocess": "scala_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/pathlib.swift",
           "postprocess": "swift_program_to_library"
@@ -591,6 +636,11 @@
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/math.kt",
           "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/std/math.scala",
+          "postprocess": "scala_program_to_library"
         },
         {
           "target": "swift",
@@ -622,6 +672,11 @@
           "postprocess": "kotlin_program_to_library"
         },
         {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/std/os.scala",
+          "postprocess": "scala_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/os.swift",
           "postprocess": "swift_program_to_library"
@@ -646,6 +701,11 @@
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/os_path.kt",
           "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/std/os_path.scala",
+          "postprocess": "scala_program_to_library"
         },
         {
           "target": "swift",
@@ -674,6 +734,11 @@
           "postprocess": "kotlin_program_to_library"
         },
         {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/std/glob.scala",
+          "postprocess": "scala_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/glob.swift",
           "postprocess": "swift_program_to_library"
@@ -698,6 +763,11 @@
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/argparse.kt",
           "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/std/argparse.scala",
+          "postprocess": "scala_program_to_library"
         },
         {
           "target": "swift",
@@ -726,6 +796,11 @@
           "postprocess": "kotlin_program_to_library"
         },
         {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/std/random.scala",
+          "postprocess": "scala_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/random.swift",
           "postprocess": "swift_program_to_library"
@@ -750,6 +825,11 @@
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/re.kt",
           "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/std/re.scala",
+          "postprocess": "scala_program_to_library"
         },
         {
           "target": "swift",
@@ -778,6 +858,11 @@
           "postprocess": "kotlin_program_to_library"
         },
         {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/std/sys.scala",
+          "postprocess": "scala_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/sys.swift",
           "postprocess": "swift_program_to_library"
@@ -802,6 +887,11 @@
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/timeit.kt",
           "postprocess": "kotlin_program_to_library"
+        },
+        {
+          "target": "scala",
+          "output": "src/runtime/scala/generated/std/timeit.scala",
+          "postprocess": "scala_program_to_library"
         },
         {
           "target": "swift",

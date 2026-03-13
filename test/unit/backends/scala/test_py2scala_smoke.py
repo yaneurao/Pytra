@@ -342,19 +342,39 @@ class Py2ScalaSmokeTest(unittest.TestCase):
     def test_scala_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "scala" / "pytra" / "built_in" / "py_runtime.scala"
         native_runtime = ROOT / "src" / "runtime" / "scala" / "native" / "built_in" / "py_runtime.scala"
-        generated_contains = ROOT / "src" / "runtime" / "scala" / "generated" / "built_in" / "contains.scala"
-        generated_gif = ROOT / "src" / "runtime" / "scala" / "generated" / "utils" / "gif.scala"
-        generated_zip = ROOT / "src" / "runtime" / "scala" / "generated" / "built_in" / "zip_ops.scala"
-        image_runtime = ROOT / "src" / "runtime" / "scala" / "generated" / "utils" / "image_runtime.scala"
-        generated_png = ROOT / "src" / "runtime" / "scala" / "generated" / "utils" / "png.scala"
+        generated_root = ROOT / "src" / "runtime" / "scala" / "generated"
         legacy_path = ROOT / "src" / "scala_module" / "py_runtime.scala"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(native_runtime.exists())
-        self.assertTrue(generated_contains.exists())
-        self.assertTrue(generated_gif.exists())
-        self.assertTrue(generated_zip.exists())
-        self.assertTrue(image_runtime.exists())
-        self.assertTrue(generated_png.exists())
+        for rel_path in (
+            "built_in/contains.scala",
+            "built_in/io_ops.scala",
+            "built_in/iter_ops.scala",
+            "built_in/numeric_ops.scala",
+            "built_in/predicates.scala",
+            "built_in/scalar_ops.scala",
+            "built_in/sequence.scala",
+            "built_in/string_ops.scala",
+            "built_in/type_id.scala",
+            "built_in/zip_ops.scala",
+            "std/argparse.scala",
+            "std/glob.scala",
+            "std/json.scala",
+            "std/math.scala",
+            "std/os.scala",
+            "std/os_path.scala",
+            "std/pathlib.scala",
+            "std/random.scala",
+            "std/re.scala",
+            "std/sys.scala",
+            "std/time.scala",
+            "std/timeit.scala",
+            "utils/assertions.scala",
+            "utils/gif.scala",
+            "utils/image_runtime.scala",
+            "utils/png.scala",
+        ):
+            self.assertTrue((generated_root / rel_path).exists(), msg=rel_path)
         self.assertFalse(legacy_path.exists())
 
     def test_scala_generated_built_in_compare_lane_is_materialized(self) -> None:
