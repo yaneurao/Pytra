@@ -30,6 +30,11 @@ def _collect_contract_issues() -> list[str]:
         "suite_status_not_enough": "Suite PASS/FAIL status alone does not satisfy contract coverage without bundle ownership metadata.",
     }:
         issues.append("coverage 100% rules drifted")
+    if contract_mod.BACKEND_CONTRACT_COVERAGE_SUITE_ATTACHMENT_RULES != {
+        "direct_matrix_input": "Direct matrix-input suite families must declare bundle attachments or explicit unmapped bundle-candidate rows.",
+        "supporting_only": "Supporting-only suite families must declare explicit exclusion reasons and may not silently own coverage cells.",
+    }:
+        issues.append("coverage suite attachment rules drifted")
     if contract_mod.BACKEND_CONTRACT_COVERAGE_ROLE_SPLIT != {
         "support_matrix": "Canonical feature x backend support-state publication surface.",
         "coverage_matrix": "Separate bundle-based publication surface for feature x required_lane x backend contract coverage.",
@@ -39,6 +44,8 @@ def _collect_contract_issues() -> list[str]:
     manifest = contract_mod.build_backend_contract_coverage_contract_manifest()
     if manifest["bundle_order"] != list(inventory_mod.COVERAGE_BUNDLE_ORDER):
         issues.append("coverage contract manifest drifted from coverage bundle order")
+    if manifest["suite_attachment_rules"] != contract_mod.BACKEND_CONTRACT_COVERAGE_SUITE_ATTACHMENT_RULES:
+        issues.append("coverage contract manifest drifted from suite attachment rules")
     return issues
 
 

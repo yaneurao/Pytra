@@ -62,6 +62,14 @@ SUITE_FAMILY_ORDER: Final[tuple[str, ...]] = (
 )
 
 COVERAGE_ONLY_STATUS_ORDER: Final[tuple[str, ...]] = ("coverage_only_representative",)
+UNPUBLISHED_FIXTURE_STATUS_ORDER: Final[tuple[str, ...]] = (
+    "support_matrix_promotion_candidate",
+    "coverage_only_representative",
+)
+UNPUBLISHED_FIXTURE_TARGET_ORDER: Final[tuple[str, ...]] = (
+    "support_matrix",
+    "coverage_matrix_only",
+)
 LIVE_SUITE_ROLE_ORDER: Final[tuple[str, ...]] = ("direct_matrix_input", "supporting_only")
 
 SMOKE_TEST_PATH_BY_BACKEND: Final[dict[str, str]] = {
@@ -146,6 +154,7 @@ class UnpublishedMultiBackendFixtureEntry(TypedDict):
     fixture_rel: str
     fixture_stem: str
     status: str
+    target_surface: str
     observed_backends: tuple[str, ...]
     notes: str
 
@@ -348,11 +357,16 @@ COVERAGE_BUNDLES_V1: Final[tuple[CoverageBundleEntry, ...]] = (
         "suite_kind": "test_unit",
         "harness_kind": "unittest_discover",
         "source_paths": (
+            "test/unit/common/test_relative_import_semantics.py",
             "test/unit/backends/relative_import_native_path_smoke_support.py",
             "test/unit/backends/relative_import_jvm_package_smoke_support.py",
             "tools/check_relative_import_backend_coverage.py",
         ),
         "evidence_refs": (
+            {
+                "relpath": "test/unit/common/test_relative_import_semantics.py",
+                "needle": "class RelativeImportSemanticsTest(unittest.TestCase):",
+            },
             {
                 "relpath": "test/unit/backends/go/test_py2go_smoke.py",
                 "needle": "def test_cli_relative_import_native_path_bundle_scenarios_transpile_for_go(self) -> None:",
@@ -458,15 +472,35 @@ COVERAGE_ONLY_FIXTURE_ENTRIES_V1: Final[tuple[CoverageOnlyFixtureEntry, ...]] = 
 
 UNPUBLISHED_MULTI_BACKEND_FIXTURE_INVENTORY_V1: Final[
     tuple[UnpublishedMultiBackendFixtureEntry, ...]
-] = tuple(
+] = (
     {
-        "fixture_rel": row["fixture_rel"],
-        "fixture_stem": row["fixture_stem"],
-        "status": row["status"],
-        "observed_backends": tuple(item["backend"] for item in row["backend_evidence"]),
-        "notes": row["notes"],
-    }
-    for row in COVERAGE_ONLY_FIXTURE_ENTRIES_V1
+        "fixture_rel": "test/fixtures/typing/property_method_call.py",
+        "fixture_stem": "property_method_call",
+        "status": "support_matrix_promotion_candidate",
+        "target_surface": "support_matrix",
+        "observed_backends": tuple(
+            item["backend"]
+            for item in _build_coverage_only_backend_evidence("property_method_call")
+        ),
+        "notes": (
+            "Already exercised across every backend smoke/runtime lane and is the next"
+            " candidate to promote into the representative support matrix."
+        ),
+    },
+    {
+        "fixture_rel": "test/fixtures/typing/list_bool_index.py",
+        "fixture_stem": "list_bool_index",
+        "status": "coverage_only_representative",
+        "target_surface": "coverage_matrix_only",
+        "observed_backends": tuple(
+            item["backend"]
+            for item in _build_coverage_only_backend_evidence("list_bool_index")
+        ),
+        "notes": (
+            "Already exercised across every backend smoke/runtime lane, but should stay"
+            " coverage-only because it primarily locks runtime regression behavior."
+        ),
+    },
 )
 
 
@@ -483,6 +517,8 @@ BACKEND_CONTRACT_COVERAGE_HANDOFF_V1: Final[dict[str, object]] = {
     "harness_kind_order": HARNESS_KIND_ORDER,
     "taxonomy_harness_kind_order": TAXONOMY_HARNESS_KIND_ORDER,
     "coverage_only_status_order": COVERAGE_ONLY_STATUS_ORDER,
+    "unpublished_fixture_status_order": UNPUBLISHED_FIXTURE_STATUS_ORDER,
+    "unpublished_fixture_target_order": UNPUBLISHED_FIXTURE_TARGET_ORDER,
     "live_suite_role_order": LIVE_SUITE_ROLE_ORDER,
 }
 
@@ -518,6 +554,8 @@ def build_backend_contract_coverage_seed_manifest() -> dict[str, object]:
         "harness_kind_order": list(HARNESS_KIND_ORDER),
         "taxonomy_harness_kind_order": list(TAXONOMY_HARNESS_KIND_ORDER),
         "coverage_only_status_order": list(COVERAGE_ONLY_STATUS_ORDER),
+        "unpublished_fixture_status_order": list(UNPUBLISHED_FIXTURE_STATUS_ORDER),
+        "unpublished_fixture_target_order": list(UNPUBLISHED_FIXTURE_TARGET_ORDER),
         "live_suite_role_order": list(LIVE_SUITE_ROLE_ORDER),
         "bundle_order": list(BACKEND_CONTRACT_COVERAGE_HANDOFF_V1["bundle_order"]),
         "coverage_bundle_taxonomy": list(iter_coverage_bundle_taxonomy()),

@@ -58,6 +58,14 @@ class CheckBackendContractCoverageInventoryTest(unittest.TestCase):
                 "test/fixtures/typing/list_bool_index.py",
             ),
         )
+        self.assertEqual(
+            unpublished["test/fixtures/typing/property_method_call.py"]["status"],
+            "support_matrix_promotion_candidate",
+        )
+        self.assertEqual(
+            unpublished["test/fixtures/typing/property_method_call.py"]["target_surface"],
+            "support_matrix",
+        )
         self.assertIn(
             "cpp",
             unpublished["test/fixtures/typing/property_method_call.py"]["observed_backends"],
@@ -65,6 +73,10 @@ class CheckBackendContractCoverageInventoryTest(unittest.TestCase):
         self.assertIn(
             "kt",
             unpublished["test/fixtures/typing/list_bool_index.py"]["observed_backends"],
+        )
+        self.assertEqual(
+            unpublished["test/fixtures/typing/list_bool_index.py"]["target_surface"],
+            "coverage_matrix_only",
         )
 
     def test_seed_manifest_contains_expected_sections(self) -> None:
@@ -91,6 +103,14 @@ class CheckBackendContractCoverageInventoryTest(unittest.TestCase):
         self.assertEqual(len(manifest["coverage_bundle_taxonomy"]), 6)
         self.assertEqual(len(manifest["live_suite_families"]), 9)
         self.assertEqual(len(manifest["unpublished_multi_backend_fixtures"]), 2)
+        self.assertEqual(
+            manifest["unpublished_fixture_status_order"],
+            ["support_matrix_promotion_candidate", "coverage_only_representative"],
+        )
+        self.assertEqual(
+            manifest["unpublished_fixture_target_order"],
+            ["support_matrix", "coverage_matrix_only"],
+        )
 
 
 if __name__ == "__main__":

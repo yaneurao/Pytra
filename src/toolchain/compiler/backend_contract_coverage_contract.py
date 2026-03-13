@@ -36,6 +36,10 @@ BACKEND_CONTRACT_COVERAGE_100_RULES: Final[dict[str, str]] = {
     "bundle_or_rule_required": "Each cell must map to a coverage bundle or an explicit backend-specific/non-applicable rule.",
     "suite_status_not_enough": "Suite PASS/FAIL status alone does not satisfy contract coverage without bundle ownership metadata.",
 }
+BACKEND_CONTRACT_COVERAGE_SUITE_ATTACHMENT_RULES: Final[dict[str, str]] = {
+    "direct_matrix_input": "Direct matrix-input suite families must declare bundle attachments or explicit unmapped bundle-candidate rows.",
+    "supporting_only": "Supporting-only suite families must declare explicit exclusion reasons and may not silently own coverage cells.",
+}
 
 BACKEND_CONTRACT_COVERAGE_REQUIRED_DOC_NEEDLES: Final[dict[str, tuple[str, ...]]] = {
     "docs/ja/language/backend-parity-matrix.md": (
@@ -77,6 +81,7 @@ def build_backend_contract_coverage_contract_manifest() -> dict[str, object]:
         "coverage_matrix_status": BACKEND_CONTRACT_COVERAGE_MATRIX_STATUS,
         "coverage_requirement_keys": list(BACKEND_CONTRACT_COVERAGE_REQUIREMENT_KEYS),
         "coverage_100_rules": dict(BACKEND_CONTRACT_COVERAGE_100_RULES),
+        "suite_attachment_rules": dict(BACKEND_CONTRACT_COVERAGE_SUITE_ATTACHMENT_RULES),
         "bundle_order": list(coverage_inventory_mod.COVERAGE_BUNDLE_ORDER),
         "required_doc_needles": {
             path: list(needles)

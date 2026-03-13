@@ -27,6 +27,13 @@ class BackendContractCoverageContractTest(unittest.TestCase):
                 "backend_test_matrix": "Backend-owned suite-health publication surface that must stay distinct from contract coverage.",
             },
         )
+        self.assertEqual(
+            manifest["suite_attachment_rules"],
+            {
+                "direct_matrix_input": "Direct matrix-input suite families must declare bundle attachments or explicit unmapped bundle-candidate rows.",
+                "supporting_only": "Supporting-only suite families must declare explicit exclusion reasons and may not silently own coverage cells.",
+            },
+        )
 
 
 if __name__ == "__main__":

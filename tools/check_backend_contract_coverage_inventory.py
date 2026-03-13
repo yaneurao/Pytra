@@ -155,8 +155,12 @@ def _collect_unpublished_fixture_issues() -> list[str]:
         issues.append("unpublished multi-backend fixture inventory contains duplicates")
     expected_backend_order = inventory_mod.feature_backend_order()
     for row in unpublished:
-        if row["status"] not in inventory_mod.COVERAGE_ONLY_STATUS_ORDER:
+        if row["status"] not in inventory_mod.UNPUBLISHED_FIXTURE_STATUS_ORDER:
             issues.append(f"unknown unpublished fixture status: {row['fixture_rel']}: {row['status']}")
+        if row["target_surface"] not in inventory_mod.UNPUBLISHED_FIXTURE_TARGET_ORDER:
+            issues.append(
+                f"unknown unpublished fixture target surface: {row['fixture_rel']}: {row['target_surface']}"
+            )
         fixture_path = ROOT / row["fixture_rel"]
         if not fixture_path.exists():
             issues.append(f"missing unpublished fixture path: {row['fixture_rel']}")
@@ -192,6 +196,16 @@ def _collect_manifest_issues() -> list[str]:
         issues.append("coverage seed manifest taxonomy harness kind order drifted")
     if tuple(manifest.get("coverage_only_status_order", ())) != inventory_mod.COVERAGE_ONLY_STATUS_ORDER:
         issues.append("coverage seed manifest coverage-only status order drifted")
+    if (
+        tuple(manifest.get("unpublished_fixture_status_order", ()))
+        != inventory_mod.UNPUBLISHED_FIXTURE_STATUS_ORDER
+    ):
+        issues.append("coverage seed manifest unpublished-fixture status order drifted")
+    if (
+        tuple(manifest.get("unpublished_fixture_target_order", ()))
+        != inventory_mod.UNPUBLISHED_FIXTURE_TARGET_ORDER
+    ):
+        issues.append("coverage seed manifest unpublished-fixture target order drifted")
     if tuple(manifest.get("live_suite_role_order", ())) != inventory_mod.LIVE_SUITE_ROLE_ORDER:
         issues.append("coverage seed manifest live suite role order drifted")
     return issues
