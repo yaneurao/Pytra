@@ -175,9 +175,9 @@ def make_noncpp_build_plan(
             str(root / "src/runtime/cs/native/std/time_native.cs"),
             str(root / "src/runtime/cs/generated/std/math.cs"),
             str(root / "src/runtime/cs/generated/std/json.cs"),
+            str(root / "src/runtime/cs/generated/std/pathlib.cs"),
             str(root / "src/runtime/cs/generated/utils/png.cs"),
             str(root / "src/runtime/cs/generated/utils/gif.cs"),
-            str(root / "src/runtime/cs/native/std/pathlib.cs"),
         ]
         run_cmd = ["mono", str(exe_path)] if run_after_build else None
         return NonCppBuildPlan(build_cmd=build_cmd, run_cmd=run_cmd)

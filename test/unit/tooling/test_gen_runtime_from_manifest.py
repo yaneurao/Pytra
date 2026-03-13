@@ -356,6 +356,37 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("public static string dumps(object obj)", out)
         self.assertNotIn("public static class Program", out)
 
+    def test_rewrite_cs_std_pathlib_live_wrapper_exports_py_path_facade(self) -> None:
+        src = "\n".join(
+            [
+                "using Pytra.CsModule;",
+                "public class Path",
+                "{",
+                "    public Path __truediv__(string rhs) { return new Path(); }",
+                "    public Path parent() { return new Path(); }",
+                "    public string name() { return \"n\"; }",
+                "    public string stem() { return \"s\"; }",
+                "    public Path resolve() { return new Path(); }",
+                "    public bool exists() { return true; }",
+                "    public string read_text(string encoding = \"utf-8\") { return \"\"; }",
+                "    public long write_text(string text, string encoding = \"utf-8\") { return 0; }",
+                "    public System.Collections.Generic.List<Path> glob(string pattern) { return null; }",
+                "    public static Path cwd() { return new Path(); }",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_cs_std_pathlib_live_wrapper(src)
+        self.assertIn("namespace Pytra.CsModule", out)
+        self.assertIn("public class py_path", out)
+        self.assertIn("public static py_path operator /", out)
+        self.assertIn("public py_path parent()", out)
+        self.assertIn("public string name()", out)
+        self.assertIn("public string stem()", out)
+        self.assertIn('public string read_text(string encoding = "utf-8")', out)
+        self.assertIn('public long write_text(string text, string encoding = "utf-8")', out)
+        self.assertIn("public static py_path cwd()", out)
+        self.assertNotIn("public static class Program", out)
+
     def test_rewrite_kotlin_program_to_library_removes_empty_main(self) -> None:
         src = "\n".join(
             [

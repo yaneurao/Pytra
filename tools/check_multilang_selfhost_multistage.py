@@ -893,9 +893,9 @@ def _cs_compile(src_cs: Path, out_exe: Path) -> tuple[bool, str]:
         ROOT / "src" / "runtime" / "cs" / "native" / "std" / "time_native.cs",
         ROOT / "src" / "runtime" / "cs" / "generated" / "std" / "math.cs",
         ROOT / "src" / "runtime" / "cs" / "generated" / "std" / "json.cs",
+        ROOT / "src" / "runtime" / "cs" / "generated" / "std" / "pathlib.cs",
         ROOT / "src" / "runtime" / "cs" / "generated" / "utils" / "png.cs",
         ROOT / "src" / "runtime" / "cs" / "generated" / "utils" / "gif.cs",
-        ROOT / "src" / "runtime" / "cs" / "native" / "std" / "pathlib.cs",
     ]
     compile_cmd = ["mcs", "-langversion:latest", "-warn:0", "-out:" + str(out_exe), str(src_cs)]
     for runtime_file in runtime_files:

@@ -272,6 +272,23 @@ def _collect_csharp_lane_issues() -> list[str]:
                             issues.append(f"canonical generated json lane lost live wrapper shape: {needle}")
                     if "public static class Program" in generated_text:
                         issues.append("canonical generated json lane still contains Program class residue")
+                if module_name == "pathlib":
+                    if "namespace Pytra.CsModule" not in generated_text:
+                        issues.append("canonical generated pathlib lane lost the Pytra.CsModule namespace wrapper")
+                    for needle in (
+                        "public class py_path",
+                        "public static py_path operator /",
+                        "public py_path parent()",
+                        "public string name()",
+                        "public string stem()",
+                        'public string read_text(string encoding = "utf-8")',
+                        'public long write_text(string text, string encoding = "utf-8")',
+                        "public static py_path cwd()",
+                    ):
+                        if needle not in generated_text:
+                            issues.append(f"canonical generated pathlib lane lost live wrapper shape: {needle}")
+                    if "public static class Program" in generated_text:
+                        issues.append("canonical generated pathlib lane still contains Program class residue")
             if generated_rel not in manifest_text:
                 issues.append(f"manifest missing canonical C# std output path: {module_name}")
         else:
@@ -341,7 +358,7 @@ def _collect_csharp_lane_issues() -> list[str]:
             issues.append("C# live-generated candidate generated path drifted")
         if candidate_entry["native_rel"] != candidate["native_rel"]:
             issues.append("C# live-generated candidate native path drifted")
-    if tuple(candidate["deferred_native_canonical_modules"]) != ("pathlib",):
+    if tuple(candidate["deferred_native_canonical_modules"]) != ():
         issues.append("C# deferred native-canonical module set drifted")
     if tuple(candidate["deferred_no_runtime_modules"]) != (
         "random",

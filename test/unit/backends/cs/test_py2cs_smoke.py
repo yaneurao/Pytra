@@ -977,6 +977,17 @@ def f(x: object) -> bool:
         self.assertIn("root.mkdir(true, true);", cs)
         self.assertNotIn("unsupported", cs)
 
+    def test_generated_pathlib_runtime_owner_is_live_wrapper_shaped(self) -> None:
+        generated = (
+            ROOT / "src" / "runtime" / "cs" / "generated" / "std" / "pathlib.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("namespace Pytra.CsModule", generated)
+        self.assertIn("public class py_path", generated)
+        self.assertIn("public static py_path operator /", generated)
+        self.assertIn("public py_path parent()", generated)
+        self.assertIn("public static py_path cwd()", generated)
+        self.assertNotIn("public static class Program", generated)
+
     def test_representative_enum_extended_fixture_transpiles(self) -> None:
         fixture = find_fixture_case("enum_extended")
         east = load_east(fixture, parser_backend="self_hosted")
