@@ -5079,7 +5079,7 @@ print(front)
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             self.assertEqual(run.stdout.strip().splitlines(), ["False", "0", "1"])
 
-    def test_deque_endops_current_baseline_leaks_python_surface_into_cpp(self) -> None:
+    def test_deque_endops_appendleft_lowers_but_pop_still_leaks_python_surface_into_cpp(self) -> None:
         src = """from collections import deque
 
 q: deque[int] = deque()
@@ -5092,9 +5092,9 @@ print(back)
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn("q.appendleft(1);", cpp)
+        self.assertIn("q.push_front(int64(1));", cpp)
+        self.assertNotIn("q.appendleft(1);", cpp)
         self.assertIn("q.pop()", cpp)
-        self.assertNotIn("q.push_front(", cpp)
         self.assertNotIn("q.pop_back()", cpp)
 
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
