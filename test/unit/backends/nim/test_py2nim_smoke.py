@@ -178,6 +178,15 @@ class Py2NimSmokeTest(unittest.TestCase):
         src = (ROOT / "src" / "backends" / "nim" / "emitter" / "nim_native_emitter.py").read_text(encoding="utf-8")
         self.assertNotIn('owner == "math"', src)
         self.assertNotIn("owner == 'math'", src)
+        self.assertNotIn('"pytra.std.math"', src)
+        self.assertNotIn("'pytra.std.math'", src)
+
+    def test_nim_native_emitter_routes_math_symbols_via_runtime_metadata(self) -> None:
+        fixture = find_fixture_case("pytra_std_import_math")
+        east = load_east(fixture, parser_backend="self_hosted")
+        nim = transpile_to_nim_native(east)
+        self.assertIn("math.sqrt(float(81.0))", nim)
+        self.assertIn("floor(3.9)", nim)
 
     def test_nim_native_emitter_fail_closed_on_unresolved_stdlib_runtime_call(self) -> None:
         east = {

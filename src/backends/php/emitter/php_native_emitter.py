@@ -9,6 +9,7 @@ from backends.common.emitter.code_emitter import (
     reject_backend_typed_vararg_signatures,
 )
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
+from toolchain.frontends.runtime_symbol_index import lookup_runtime_symbol_extern_doc
 
 
 _PHP_KEYWORDS = {
@@ -505,8 +506,20 @@ def _runtime_symbol_name(expr: dict[str, Any]) -> str:
     return ""
 
 
-def _is_math_constant(expr: dict[str, Any]) -> bool:
-    if _runtime_module_id(expr) != "pytra.std.math":
+def _runtime_extern_kind(expr: dict[str, Any]) -> str:
+    runtime_module = _runtime_module_id(expr)
+    runtime_symbol = _runtime_symbol_name(expr)
+    if runtime_module == "" or runtime_symbol == "":
+        return ""
+    extern_doc = lookup_runtime_symbol_extern_doc(runtime_module, runtime_symbol)
+    extern_kind = extern_doc.get("kind")
+    if isinstance(extern_kind, str):
+        return extern_kind
+    return ""
+
+
+def _uses_zero_arg_runtime_value_getter(expr: dict[str, Any]) -> bool:
+    if _runtime_extern_kind(expr) != "value":
         return False
     return _runtime_symbol_name(expr) in {"pi", "e"}
 
@@ -558,7 +571,7 @@ def _render_call_via_runtime_call(
             return ""
 
     if runtime_call.find(".") >= 0:
-        if _is_math_constant(expr):
+        if _uses_zero_arg_runtime_value_getter(expr):
             return runtime_symbol + "()"
         rendered_math_args: list[str] = []
         i = 0
@@ -942,7 +955,7 @@ def _render_expr(expr: Any) -> str:
             if runtime_source == "resolved_runtime_call":
                 runtime_symbol = _resolved_runtime_symbol(runtime_call, runtime_source)
                 if runtime_symbol != "":
-                    if _is_math_constant(expr):
+                    if _uses_zero_arg_runtime_value_getter(expr):
                         return runtime_symbol + "()"
                     return runtime_symbol
             if semantic_tag.startswith("stdlib."):
