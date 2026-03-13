@@ -230,7 +230,7 @@ CompilerRootDocument load_east3_document_typed(
     pytra::std::pathlib::Path east_path = _temp_path(".east3.json");
     const ::std::string script =
         "import json, sys; "
-        "from toolchain.compiler.transpile_cli import load_east3_document_typed; "
+        "from toolchain.frontends import load_east3_document_typed; "
         "from toolchain.compiler.typed_boundary import export_compiler_root_document; "
         "from pytra.std.pathlib import Path; "
         "doc = load_east3_document_typed("

@@ -294,6 +294,14 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         )
         self.assertNotIn("pytra::std::json::JsonObj doc = root;", native_transpile)
         self.assertIn(
+            "from toolchain.frontends import load_east3_document_typed; ",
+            native_transpile,
+        )
+        self.assertNotIn(
+            "from toolchain.compiler.transpile_cli import load_east3_document_typed; ",
+            native_transpile,
+        )
+        self.assertIn(
             "from toolchain.compiler.typed_boundary import export_compiler_root_document; ",
             native_transpile,
         )
@@ -843,6 +851,14 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         host_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry.py").read_text(encoding="utf-8")
         static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
         shared_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_shared.py").read_text(encoding="utf-8")
+        frontends_init_src = (ROOT / "src" / "toolchain" / "frontends" / "__init__.py").read_text(encoding="utf-8")
+        python_frontend_src = (
+            ROOT / "src" / "toolchain" / "frontends" / "python_frontend.py"
+        ).read_text(encoding="utf-8")
+        selfhost_entry_src = (ROOT / "src" / "py2x-selfhost.py").read_text(encoding="utf-8")
+        runtime_index_src = (
+            ROOT / "src" / "toolchain" / "frontends" / "runtime_symbol_index.py"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("from toolchain.compiler.typed_boundary import backend_spec_target", py2x_src)
         self.assertIn("from toolchain.compiler.typed_boundary import compiler_root_module_id", py2x_src)
@@ -876,6 +892,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("from .python_frontend import build_module_east_map as _impl", frontends_init_src)
         self.assertIn("def build_module_east_map(", python_frontend_src)
         self.assertIn("return _build_module_east_map(", python_frontend_src)
+        self.assertIn("_FRONTEND_FACADE_RUNTIME_MODULE_BY_SYMBOL", runtime_index_src)
+        self.assertIn('"load_east3_document_typed": "toolchain.compiler.transpile_cli"', runtime_index_src)
 
         self.assertIn("from toolchain.compiler.typed_boundary import compiler_root_module_id", ir2lang_src)
         self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact", ir2lang_src)
