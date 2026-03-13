@@ -86,7 +86,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "rs:rs_perf_counter_runtime_wrapper",
             "cs:cs_std_native_owner_wrapper",
             "go:go_program_to_library",
-            "java:java_perf_counter_host_wrapper",
+            "java:java_std_native_owner_wrapper",
             "kotlin:kotlin_program_to_library",
             "scala:scala_program_to_library",
             "swift:swift_program_to_library",

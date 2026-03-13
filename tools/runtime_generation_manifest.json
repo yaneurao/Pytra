@@ -566,7 +566,7 @@
           "output": "src/runtime/go/generated/std/time.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/time.java", "postprocess": "java_perf_counter_host_wrapper" },
+        { "target": "java", "output": "src/runtime/java/generated/std/time.java", "postprocess": "java_std_native_owner_wrapper", "helper_name": "time" },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/time.kt",

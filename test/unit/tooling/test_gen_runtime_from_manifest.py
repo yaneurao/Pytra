@@ -481,7 +481,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertEqual(current, rendered)
         self.assertIn("\r", current)
 
-    def test_rewrite_java_perf_counter_host_wrapper_delegates_to_time_native(self) -> None:
+    def test_rewrite_java_std_native_owner_wrapper_delegates_time_to_time_native(self) -> None:
         src = "\n".join(
             [
                 "public final class time {",
@@ -491,7 +491,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "}",
             ]
         )
-        out = gen_mod.rewrite_java_perf_counter_host_wrapper(src)
+        out = gen_mod.rewrite_java_std_native_owner_wrapper(src, "time")
         self.assertIn("time_native.perf_counter()", out)
         self.assertNotIn("__t.perf_counter()", out)
         self.assertNotIn("System.nanoTime()", out)

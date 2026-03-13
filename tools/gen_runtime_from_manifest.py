@@ -1438,18 +1438,6 @@ pub fn pow(a: f64, b: f64) -> f64 {
 """
 
 
-def rewrite_java_perf_counter_host_wrapper(java_src: str) -> str:
-    rewritten = java_src.replace(
-        "return __t.perf_counter();",
-        "return time_native.perf_counter();",
-    )
-    if rewritten == java_src:
-        raise RuntimeError("generated Java std/time wrapper is missing perf_counter() delegation")
-    if "__t.perf_counter()" in rewritten or "System.nanoTime()" in rewritten:
-        raise RuntimeError("generated Java std/time wrapper still contains host-binding residue")
-    return rewritten
-
-
 def rewrite_java_std_native_owner_wrapper(java_src: str, helper_name: str) -> str:
     text = java_src
     native_owner = helper_name + "_native"
@@ -1467,6 +1455,8 @@ def rewrite_java_std_native_owner_wrapper(java_src: str, helper_name: str) -> st
         java_src,
     ):
         symbol_name = match.group(1)
+        if symbol_name == "main":
+            continue
         if symbol_name not in function_symbols:
             function_symbols.append(symbol_name)
     for symbol_name in value_symbols:
@@ -1476,11 +1466,23 @@ def rewrite_java_std_native_owner_wrapper(java_src: str, helper_name: str) -> st
             text,
         )
     for symbol_name in function_symbols:
-        text = text.replace(
-            f"return {helper_name}.{symbol_name}(",
+        text = re.sub(
+            rf"return [A-Za-z_][A-Za-z0-9_]*\.{re.escape(symbol_name)}\(",
             f"return {native_owner}.{symbol_name}(",
+            text,
         )
-    if "extern(" in text or f"return {helper_name}." in text or "Math." in text:
+    if "extern(" in text or re.search(
+        rf"return (?!{re.escape(native_owner)}\.)[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*\(",
+        text,
+    ):
+        raise RuntimeError(
+            "generated Java std/" + helper_name + " wrapper still contains extern/native owner residue"
+        )
+    if helper_name == "math" and "Math." in text:
+        raise RuntimeError(
+            "generated Java std/" + helper_name + " wrapper still contains extern/native owner residue"
+        )
+    if helper_name == "time" and "System.nanoTime()" in text:
         raise RuntimeError(
             "generated Java std/" + helper_name + " wrapper still contains extern/native owner residue"
         )
@@ -3569,8 +3571,6 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_rs_perf_counter_runtime_wrapper(generated)
     elif item.postprocess == "rs_std_math_live_wrapper":
         generated = rewrite_rs_std_math_live_wrapper(generated)
-    elif item.postprocess == "java_perf_counter_host_wrapper":
-        generated = rewrite_java_perf_counter_host_wrapper(generated)
     elif item.postprocess == "java_std_native_owner_wrapper":
         if item.helper_name == "":
             raise RuntimeError("missing helper_name for java_std_native_owner_wrapper: " + item.item_id)
