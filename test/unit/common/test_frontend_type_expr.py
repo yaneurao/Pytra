@@ -14,6 +14,7 @@ if str(ROOT / "src") not in sys.path:
 from src.toolchain.frontends.type_expr import parse_type_expr_text
 from src.toolchain.frontends.type_expr import summarize_type_text
 from src.toolchain.frontends.type_expr import sync_type_expr_mirrors
+from src.toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.east2 import normalize_east1_to_east2_document
 from src.toolchain.link.program_validator import validate_raw_east3_doc
 
@@ -307,6 +308,64 @@ class FrontendTypeExprTest(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, r"\$\.body\[0\]\.meta\.generated_by must be non-empty string"):
             validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m")
+
+    def test_validate_raw_east3_doc_ignores_auxiliary_meta_and_kind_keys(self) -> None:
+        span = {
+            "lineno": 1,
+            "end_lineno": 1,
+            "col_offset": 0,
+            "end_col_offset": 1,
+        }
+        doc = {
+            "kind": "Module",
+            "east_stage": 3,
+            "schema_version": 1,
+            "meta": {"dispatch_mode": "native"},
+            "body": [
+                {
+                    "kind": "Expr",
+                    "source_span": span,
+                    "meta": {
+                        "lifetime_analysis": {
+                            "def_use": {
+                                "defs": {
+                                    "meta": ["n1"],
+                                }
+                            }
+                        }
+                    },
+                    "arg_index": {"kind": 0},
+                    "value": {
+                        "kind": "Name",
+                        "id": "x",
+                        "resolved_type": "int64",
+                        "source_span": span,
+                    },
+                }
+            ],
+        }
+
+        out = validate_raw_east3_doc(doc, expected_dispatch_mode="native", module_id="m", require_source_spans=True)
+        self.assertEqual(out["body"][0]["meta"]["lifetime_analysis"]["def_use"]["defs"]["meta"], ["n1"])
+        self.assertEqual(out["body"][0]["arg_index"]["kind"], 0)
+
+    def test_load_east3_document_accepts_any_dict_items_fixture(self) -> None:
+        doc = load_east3_document(
+            ROOT / "test" / "fixtures" / "typing" / "any_dict_items.py",
+            parser_backend="self_hosted",
+            target_lang="rs",
+        )
+        self.assertEqual(doc.get("kind"), "Module")
+        self.assertGreaterEqual(len(doc.get("body", [])), 1)
+
+    def test_load_east3_document_accepts_sample18_mini_language_interpreter(self) -> None:
+        doc = load_east3_document(
+            ROOT / "sample" / "py" / "18_mini_language_interpreter.py",
+            parser_backend="self_hosted",
+            target_lang="cpp",
+        )
+        self.assertEqual(doc.get("kind"), "Module")
+        self.assertGreaterEqual(len(doc.get("body", [])), 1)
 
 
 if __name__ == "__main__":
