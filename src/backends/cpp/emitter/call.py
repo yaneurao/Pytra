@@ -556,11 +556,30 @@ class CppCallEmitter:
             arg0_node = arg_nodes_list[0]
         arg0_t_raw = self.get_expr_type(arg0_node)
         arg0_t = self.normalize_type_name(arg0_t_raw) if isinstance(arg0_t_raw, str) else ""
-        if "bytearray" in owner_types:
+        normalized_owner_types: list[str] = []
+        for owner_t in owner_types:
+            owner_t_norm = self.normalize_type_name(owner_t)
+            if owner_t_norm != "" and owner_t_norm not in normalized_owner_types:
+                normalized_owner_types.append(owner_t_norm)
+        inferred_owner_t = self.normalize_type_name(
+            self.infer_rendered_arg_type(
+                owner_expr,
+                normalized_owner_types[0] if len(normalized_owner_types) > 0 else "",
+                self.declared_var_types,
+            )
+        )
+        if self._contains_text(inferred_owner_t, "|"):
+            for part in self.split_union(inferred_owner_t):
+                part_norm = self.normalize_type_name(part)
+                if part_norm != "" and part_norm not in normalized_owner_types:
+                    normalized_owner_types.append(part_norm)
+        elif inferred_owner_t != "" and inferred_owner_t not in normalized_owner_types:
+            normalized_owner_types.append(inferred_owner_t)
+        if "bytearray" in normalized_owner_types:
             a0 = f"static_cast<uint8>(py_to<int64>({a0}))"
             return f"{owner_expr}.append({a0})"
         list_owner_t = ""
-        for t in owner_types:
+        for t in normalized_owner_types:
             if t.startswith("list[") and t.endswith("]"):
                 list_owner_t = t
                 break
@@ -587,8 +606,33 @@ class CppCallEmitter:
                     if not self.should_skip_same_type_cast(a0, inner_cpp_t):
                         a0 = f"{inner_cpp_t}({a0})"
             return f"{owner_expr}.append({a0})"
+        deque_owner_t = ""
+        for t in normalized_owner_types:
+            if t.startswith("deque[") and t.endswith("]"):
+                deque_owner_t = t
+                break
+        if deque_owner_t != "":
+            inner_t = deque_owner_t[6:-1].strip()
+            if inner_t == "uint8":
+                a0 = f"static_cast<uint8>(py_to<int64>({a0}))"
+            elif self.is_any_like_type(inner_t):
+                if not self.is_boxed_object_expr(a0):
+                    arg0_node_d = self.any_to_dict_or_empty(arg0_node)
+                    if len(arg0_node_d) > 0:
+                        a0 = self.render_expr(self._build_box_expr_node(arg0_node))
+                    else:
+                        a0 = f"make_object({a0})"
+            elif inner_t != "" and not self.is_any_like_type(inner_t):
+                inner_t_norm = self.normalize_type_name(inner_t)
+                if not (inner_t_norm == "bytes" and arg0_t == "bytes"):
+                    inner_cpp_t = self._cpp_type_text(inner_t)
+                    if inner_cpp_t.startswith("::std::tuple<") and a0.startswith("::std::make_tuple("):
+                        return f"{owner_expr}.push_back({a0})"
+                    if not self.should_skip_same_type_cast(a0, inner_cpp_t):
+                        a0 = f"{inner_cpp_t}({a0})"
+            return f"{owner_expr}.push_back({a0})"
         has_any_like_owner = False
-        for t in owner_types:
+        for t in normalized_owner_types:
             t_norm = self.normalize_type_name(t)
             if t_norm in {"", "unknown"} or self.is_any_like_type(t_norm):
                 has_any_like_owner = True
@@ -819,6 +863,13 @@ class CppCallEmitter:
         hook_object_rendered = self.hook_on_render_object_method(owner_t, owner_expr, attr, args)
         if isinstance(hook_object_rendered, str) and hook_object_rendered != "":
             return hook_object_rendered
+        if attr == "append" and len(args) == 1 and len(kw) == 0:
+            owner_types: list[str] = [owner_t]
+            if self._contains_text(owner_t, "|"):
+                owner_types = self.split_union(owner_t)
+            append_rendered = self._render_append_call_object_method(owner_types, owner_expr, args, arg_nodes)
+            if append_rendered is not None and append_rendered != "":
+                return append_rendered
         if owner_t.startswith("deque[") and owner_t.endswith("]"):
             if attr == "popleft" and len(args) == 0 and len(kw) == 0:
                 tmp_name = self.next_tmp("__deque_front")
