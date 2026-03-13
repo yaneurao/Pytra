@@ -156,13 +156,22 @@ REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] =
 )
 
 REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1: Final[tuple[str, ...]] = (
+    "std/argparse",
+    "std/glob",
     "std/json",
     "std/math",
+    "std/os",
+    "std/os_path",
     "std/pathlib",
+    "std/random",
+    "std/re",
+    "std/sys",
     "std/time",
+    "std/timeit",
 )
 
 REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1: Final[tuple[str, ...]] = (
+    "utils/assertions",
     "utils/gif",
     "utils/png",
 )
@@ -171,6 +180,16 @@ REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1: Final[tuple[str, ...]] = (
     REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
     + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
     + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
+)
+
+REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1: Final[tuple[str, ...]] = (
+    REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1
+)
+
+REMAINING_NONCPP_SCRIPT_FAMILY_MISSING_COMPARE_MODULES_V1: Final[tuple[str, ...]] = ()
+
+REMAINING_NONCPP_WAVE_A_IMAGE_RUNTIME_HELPER_ARTIFACT_MODULES_V1: Final[tuple[str, ...]] = (
+    "utils/image_runtime",
 )
 
 REMAINING_NONCPP_GO_JAVA_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
@@ -953,10 +972,19 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "built_in/string_ops.js",
             "built_in/type_id.js",
             "built_in/zip_ops.js",
+            "std/argparse.js",
+            "std/glob.js",
             "std/json.js",
             "std/math.js",
+            "std/os.js",
+            "std/os_path.js",
             "std/pathlib.js",
+            "std/random.js",
+            "std/re.js",
+            "std/sys.js",
             "std/time.js",
+            "std/timeit.js",
+            "utils/assertions.js",
             "utils/gif.js",
             "utils/png.js",
         ),
@@ -990,10 +1018,19 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "built_in/string_ops.ts",
             "built_in/type_id.ts",
             "built_in/zip_ops.ts",
+            "std/argparse.ts",
+            "std/glob.ts",
             "std/json.ts",
             "std/math.ts",
+            "std/os.ts",
+            "std/os_path.ts",
             "std/pathlib.ts",
+            "std/random.ts",
+            "std/re.ts",
+            "std/sys.ts",
             "std/time.ts",
+            "std/timeit.ts",
+            "utils/assertions.ts",
             "utils/gif.ts",
             "utils/png.ts",
         ),
@@ -1278,10 +1315,19 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/built_in/string_ops.js",
             "generated/built_in/type_id.js",
             "generated/built_in/zip_ops.js",
+            "generated/std/argparse.js",
+            "generated/std/glob.js",
             "generated/std/json.js",
             "generated/std/math.js",
+            "generated/std/os.js",
+            "generated/std/os_path.js",
             "generated/std/pathlib.js",
+            "generated/std/random.js",
+            "generated/std/re.js",
+            "generated/std/sys.js",
             "generated/std/time.js",
+            "generated/std/timeit.js",
+            "generated/utils/assertions.js",
             "generated/utils/gif.js",
             "generated/utils/png.js",
         ),
@@ -1315,10 +1361,19 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/built_in/string_ops.ts",
             "generated/built_in/type_id.ts",
             "generated/built_in/zip_ops.ts",
+            "generated/std/argparse.ts",
+            "generated/std/glob.ts",
             "generated/std/json.ts",
             "generated/std/math.ts",
+            "generated/std/os.ts",
+            "generated/std/os_path.ts",
             "generated/std/pathlib.ts",
+            "generated/std/random.ts",
+            "generated/std/re.ts",
+            "generated/std/sys.ts",
             "generated/std/time.ts",
+            "generated/std/timeit.ts",
+            "generated/utils/assertions.ts",
             "generated/utils/gif.ts",
             "generated/utils/png.ts",
         ),
@@ -1562,10 +1617,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     },
     {
         "backend": "js",
-        "generated_modules": (
-            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png")
-        ),
+        "generated_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
         "native_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
         "compat_modules": (
             "built_in/py_runtime",
@@ -1576,14 +1628,11 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             "utils/gif",
             "utils/png",
         ),
-        "blocked_modules": (),
+        "blocked_modules": REMAINING_NONCPP_SCRIPT_FAMILY_MISSING_COMPARE_MODULES_V1,
     },
     {
         "backend": "ts",
-        "generated_modules": (
-            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png")
-        ),
+        "generated_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
         "native_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
         "compat_modules": (
             "built_in/py_runtime",
@@ -1594,7 +1643,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             "utils/gif",
             "utils/png",
         ),
-        "blocked_modules": (),
+        "blocked_modules": REMAINING_NONCPP_SCRIPT_FAMILY_MISSING_COMPARE_MODULES_V1,
     },
     {
         "backend": "lua",
@@ -1650,13 +1699,13 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_BLOCKED_REASONS_V1: Final[
 ] = (
     {
         "backend": "js",
-        "missing_compare_lane_modules": (),
+        "missing_compare_lane_modules": REMAINING_NONCPP_SCRIPT_FAMILY_MISSING_COMPARE_MODULES_V1,
         "native_compare_residual_modules": (),
         "helper_shaped_compare_gap_modules": (),
     },
     {
         "backend": "ts",
-        "missing_compare_lane_modules": (),
+        "missing_compare_lane_modules": REMAINING_NONCPP_SCRIPT_FAMILY_MISSING_COMPARE_MODULES_V1,
         "native_compare_residual_modules": (),
         "helper_shaped_compare_gap_modules": (),
     },
@@ -1685,18 +1734,12 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_V1: Final[
 ] = (
     {
         "backend": "js",
-        "materialized_compare_modules": (
-            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png")
-        ),
+        "materialized_compare_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
         "helper_artifact_modules": (),
     },
     {
         "backend": "ts",
-        "materialized_compare_modules": (
-            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png")
-        ),
+        "materialized_compare_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
         "helper_artifact_modules": (),
     },
     {
@@ -1711,22 +1754,8 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_V1: Final[
     },
     {
         "backend": "php",
-        "materialized_compare_modules": (
-            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
-        ),
-        "helper_artifact_modules": (
-            "std/argparse",
-            "std/glob",
-            "std/os",
-            "std/os_path",
-            "std/random",
-            "std/re",
-            "std/sys",
-            "std/timeit",
-            "utils/assertions",
-        ),
+        "materialized_compare_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "helper_artifact_modules": (),
     },
 )
 
@@ -1963,124 +1992,33 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_V1: Final[
 ] = (
     {
         "backend": "go",
-        "materialized_compare_modules": (
-            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
-        ),
-        "helper_artifact_modules": (
-            "std/argparse",
-            "std/glob",
-            "std/os",
-            "std/os_path",
-            "std/random",
-            "std/re",
-            "std/sys",
-            "std/timeit",
-            "utils/assertions",
-        ),
+        "materialized_compare_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "helper_artifact_modules": (),
     },
     {
         "backend": "java",
-        "materialized_compare_modules": (
-            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-            + (
-                "utils/gif",
-                "utils/png",
-            )
-        ),
-        "helper_artifact_modules": (
-            "std/argparse",
-            "std/glob",
-            "std/os",
-            "std/os_path",
-            "std/random",
-            "std/re",
-            "std/sys",
-            "std/timeit",
-            "utils/assertions",
-        ),
+        "materialized_compare_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "helper_artifact_modules": (),
     },
     {
         "backend": "kotlin",
-        "materialized_compare_modules": (
-            REMAINING_NONCPP_KOTLIN_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-            + ("utils/gif", "utils/png")
-        ),
-        "helper_artifact_modules": (
-            "std/argparse",
-            "std/glob",
-            "std/os",
-            "std/os_path",
-            "std/random",
-            "std/re",
-            "std/sys",
-            "std/timeit",
-            "utils/assertions",
-            "utils/image_runtime",
-        ),
+        "materialized_compare_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "helper_artifact_modules": REMAINING_NONCPP_WAVE_A_IMAGE_RUNTIME_HELPER_ARTIFACT_MODULES_V1,
     },
     {
         "backend": "scala",
-        "materialized_compare_modules": (
-            REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-            + ("utils/gif", "utils/png")
-        ),
-        "helper_artifact_modules": (
-            "std/argparse",
-            "std/glob",
-            "std/os",
-            "std/os_path",
-            "std/random",
-            "std/re",
-            "std/sys",
-            "std/timeit",
-            "utils/assertions",
-            "utils/image_runtime",
-        ),
+        "materialized_compare_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "helper_artifact_modules": REMAINING_NONCPP_WAVE_A_IMAGE_RUNTIME_HELPER_ARTIFACT_MODULES_V1,
     },
     {
         "backend": "swift",
-        "materialized_compare_modules": (
-            REMAINING_NONCPP_SWIFT_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-            + ("utils/gif", "utils/png")
-        ),
-        "helper_artifact_modules": (
-            "std/argparse",
-            "std/glob",
-            "std/os",
-            "std/os_path",
-            "std/random",
-            "std/re",
-            "std/sys",
-            "std/timeit",
-            "utils/assertions",
-            "utils/image_runtime",
-        ),
+        "materialized_compare_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "helper_artifact_modules": REMAINING_NONCPP_WAVE_A_IMAGE_RUNTIME_HELPER_ARTIFACT_MODULES_V1,
     },
     {
         "backend": "nim",
-        "materialized_compare_modules": (
-            REMAINING_NONCPP_NIM_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-            + ("utils/gif", "utils/png")
-        ),
-        "helper_artifact_modules": (
-            "std/argparse",
-            "std/glob",
-            "std/os",
-            "std/os_path",
-            "std/random",
-            "std/re",
-            "std/sys",
-            "std/timeit",
-            "utils/assertions",
-            "utils/image_runtime",
-        ),
+        "materialized_compare_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "helper_artifact_modules": REMAINING_NONCPP_WAVE_A_IMAGE_RUNTIME_HELPER_ARTIFACT_MODULES_V1,
     },
 )
 

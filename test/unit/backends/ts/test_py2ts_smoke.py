@@ -277,6 +277,26 @@ def main() -> None:
         self.assertNotIn("./pytra/py_runtime.js", contains_text)
         self.assertNotIn("./pytra/py_runtime.js", sequence_text)
 
+    def test_ts_generated_std_baseline_source_guard_materializes_new_compare_modules(self) -> None:
+        runtime_root = ROOT / "src" / "runtime" / "ts" / "generated"
+        guarded_targets = {
+            runtime_root / "std" / "argparse.ts": ("class Namespace", "class ArgumentParser"),
+            runtime_root / "std" / "glob.ts": ("function glob(",),
+            runtime_root / "std" / "os.ts": ("function getcwd(",),
+            runtime_root / "std" / "os_path.ts": ("function basename(",),
+            runtime_root / "std" / "random.ts": ("function randint(",),
+            runtime_root / "std" / "re.ts": ("class Match", '"\\r"'),
+            runtime_root / "std" / "sys.ts": ("function write_stderr(",),
+            runtime_root / "std" / "timeit.ts": ("function default_timer(",),
+            runtime_root / "utils" / "assertions.ts": ("function py_assert_true(",),
+        }
+        for path, needles in guarded_targets.items():
+            with self.subTest(path=path.relative_to(ROOT).as_posix()):
+                text = path.read_text(encoding="utf-8")
+                self.assertIn("AUTO-GENERATED FILE. DO NOT EDIT.", text)
+                for needle in needles:
+                    self.assertIn(needle, text)
+
     def test_pathlib_runtime_symbol_uses_factory_and_property_access(self) -> None:
         fixture = find_fixture_case("math_path_runtime_ir")
         east = load_east(fixture, parser_backend="self_hosted")

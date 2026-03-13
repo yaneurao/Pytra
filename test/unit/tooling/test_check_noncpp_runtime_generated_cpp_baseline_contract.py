@@ -50,7 +50,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
         )
         self.assertEqual(
             contract_mod.iter_noncpp_runtime_generated_cpp_baseline_materialized_backends(),
-            ("cs", "go", "java", "rs", "swift", "nim", "kotlin", "scala", "php"),
+            ("cs", "go", "java", "rs", "swift", "nim", "kotlin", "scala", "js", "ts", "php"),
         )
 
     def test_legacy_state_buckets_match_runtime_contracts(self) -> None:
