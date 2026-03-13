@@ -132,12 +132,6 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "std/pathlib",
         "std/time",
     )},
-    {"backend": "java", "legacy_state": "blocked", "modules": (
-        "built_in/predicates",
-        "built_in/sequence",
-        "built_in/string_ops",
-        "built_in/type_id",
-    )},
     {"backend": "kotlin", "legacy_state": "blocked", "modules": (
         "built_in/io_ops",
         "built_in/numeric_ops",
@@ -148,8 +142,6 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "std/math",
         "std/pathlib",
         "std/time",
-        "utils/gif",
-        "utils/png",
     )},
     {"backend": "lua", "legacy_state": "blocked", "modules": (
         "built_in/contains",
@@ -179,8 +171,6 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "std/math",
         "std/pathlib",
         "std/time",
-        "utils/gif",
-        "utils/png",
     )},
     {
         "backend": "rs",
@@ -233,8 +223,6 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "std/math",
         "std/pathlib",
         "std/time",
-        "utils/gif",
-        "utils/png",
     )},
     {"backend": "swift", "legacy_state": "blocked", "modules": (
         "built_in/numeric_ops",
@@ -245,8 +233,6 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "std/math",
         "std/pathlib",
         "std/time",
-        "utils/gif",
-        "utils/png",
     )},
 )
 
@@ -256,7 +242,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1: Final[
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MATERIALIZED_BACKENDS_V1: Final[
     tuple[str, ...]
-] = ("cs", "rs")
+] = ("cs", "java", "rs")
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_POLICY_FILES_V1: Final[
     tuple[NonCppRuntimeGeneratedCppBaselineLegacyPolicyFileEntry, ...]

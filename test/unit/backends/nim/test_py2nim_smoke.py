@@ -239,14 +239,18 @@ class Py2NimSmokeTest(unittest.TestCase):
         runtime_path = ROOT / "src" / "runtime" / "nim" / "pytra" / "built_in" / "py_runtime.nim"
         native_runtime = ROOT / "src" / "runtime" / "nim" / "native" / "built_in" / "py_runtime.nim"
         generated_contains = ROOT / "src" / "runtime" / "nim" / "generated" / "built_in" / "contains.nim"
+        generated_gif = ROOT / "src" / "runtime" / "nim" / "generated" / "utils" / "gif.nim"
         generated_zip = ROOT / "src" / "runtime" / "nim" / "generated" / "built_in" / "zip_ops.nim"
         image_runtime = ROOT / "src" / "runtime" / "nim" / "generated" / "utils" / "image_runtime.nim"
+        generated_png = ROOT / "src" / "runtime" / "nim" / "generated" / "utils" / "png.nim"
         legacy_path = ROOT / "src" / "nim_module" / "py_runtime.nim"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(native_runtime.exists())
         self.assertTrue(generated_contains.exists())
+        self.assertTrue(generated_gif.exists())
         self.assertTrue(generated_zip.exists())
         self.assertTrue(image_runtime.exists())
+        self.assertTrue(generated_png.exists())
         self.assertFalse(legacy_path.exists())
 
     def test_nim_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:

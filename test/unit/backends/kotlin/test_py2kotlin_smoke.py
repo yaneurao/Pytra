@@ -371,12 +371,16 @@ class Py2KotlinSmokeTest(unittest.TestCase):
         runtime_path = ROOT / "src" / "runtime" / "kotlin" / "native" / "built_in" / "py_runtime.kt"
         generated_contains = ROOT / "src" / "runtime" / "kotlin" / "generated" / "built_in" / "contains.kt"
         generated_zip = ROOT / "src" / "runtime" / "kotlin" / "generated" / "built_in" / "zip_ops.kt"
+        generated_gif = ROOT / "src" / "runtime" / "kotlin" / "generated" / "utils" / "gif.kt"
         image_runtime = ROOT / "src" / "runtime" / "kotlin" / "generated" / "utils" / "image_runtime.kt"
+        generated_png = ROOT / "src" / "runtime" / "kotlin" / "generated" / "utils" / "png.kt"
         legacy_path = ROOT / "src" / "kotlin_module" / "py_runtime.kt"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(generated_contains.exists())
+        self.assertTrue(generated_gif.exists())
         self.assertTrue(generated_zip.exists())
         self.assertTrue(image_runtime.exists())
+        self.assertTrue(generated_png.exists())
         self.assertFalse(legacy_path.exists())
 
     def test_kotlin_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:

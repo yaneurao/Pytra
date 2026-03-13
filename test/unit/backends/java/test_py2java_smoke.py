@@ -380,27 +380,36 @@ class Py2JavaSmokeTest(unittest.TestCase):
 
     def test_java_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "java" / "native" / "built_in" / "PyRuntime.java"
-        built_in_contains = ROOT / "src" / "runtime" / "java" / "generated" / "built_in" / "contains.java"
-        built_in_zip = ROOT / "src" / "runtime" / "java" / "generated" / "built_in" / "zip_ops.java"
-        png_helper = ROOT / "src" / "runtime" / "java" / "generated" / "utils" / "png.java"
-        gif_helper = ROOT / "src" / "runtime" / "java" / "generated" / "utils" / "gif.java"
-        std_time = ROOT / "src" / "runtime" / "java" / "generated" / "std" / "time.java"
-        std_json = ROOT / "src" / "runtime" / "java" / "generated" / "std" / "json.java"
-        std_pathlib = ROOT / "src" / "runtime" / "java" / "generated" / "std" / "pathlib.java"
-        std_math = ROOT / "src" / "runtime" / "java" / "generated" / "std" / "math.java"
+        generated_root = ROOT / "src" / "runtime" / "java" / "generated"
         legacy_path = ROOT / "src" / "java_module" / "PyRuntime.java"
         self.assertTrue(runtime_path.exists())
-        self.assertTrue(built_in_contains.exists())
-        self.assertTrue(built_in_zip.exists())
-        self.assertTrue(png_helper.exists())
-        self.assertTrue(gif_helper.exists())
-        self.assertTrue(std_time.exists())
-        self.assertTrue(std_json.exists())
-        self.assertTrue(std_pathlib.exists())
-        self.assertTrue(std_math.exists())
+        for rel_path in (
+            "built_in/contains.java",
+            "built_in/predicates.java",
+            "built_in/sequence.java",
+            "built_in/string_ops.java",
+            "built_in/type_id.java",
+            "built_in/zip_ops.java",
+            "std/argparse.java",
+            "std/glob.java",
+            "std/json.java",
+            "std/math.java",
+            "std/os.java",
+            "std/os_path.java",
+            "std/pathlib.java",
+            "std/random.java",
+            "std/re.java",
+            "std/sys.java",
+            "std/time.java",
+            "std/timeit.java",
+            "utils/assertions.java",
+            "utils/gif.java",
+            "utils/png.java",
+        ):
+            self.assertTrue((generated_root / rel_path).exists(), msg=rel_path)
         self.assertFalse(legacy_path.exists())
-        self.assertIn("System.nanoTime()", std_time.read_text(encoding="utf-8"))
-        self.assertIn("Math.PI", std_math.read_text(encoding="utf-8"))
+        self.assertIn("System.nanoTime()", (generated_root / "std" / "time.java").read_text(encoding="utf-8"))
+        self.assertIn("Math.PI", (generated_root / "std" / "math.java").read_text(encoding="utf-8"))
 
     def test_java_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as td:

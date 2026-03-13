@@ -36,17 +36,17 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/utils/png.java" },
-        { "target": "swift", "output": "src/runtime/swift/generated/utils/png_helper.swift" },
-        { "target": "kotlin", "output": "src/runtime/kotlin/generated/utils/png_helper.kt" },
+        { "target": "swift", "output": "src/runtime/swift/generated/utils/png.swift" },
+        { "target": "kotlin", "output": "src/runtime/kotlin/generated/utils/png.kt" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/utils/png_helper.rb" },
         { "target": "lua", "output": "src/runtime/lua/generated/utils/png_helper.lua" },
-        { "target": "scala", "output": "src/runtime/scala/generated/utils/png_helper.scala" },
+        { "target": "scala", "output": "src/runtime/scala/generated/utils/png.scala" },
         {
           "target": "php",
           "output": "src/runtime/php/generated/utils/png.php",
           "postprocess": "php_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/utils/png_helper.nim" }
+        { "target": "nim", "output": "src/runtime/nim/generated/utils/png.nim" }
       ]
     },
     {
@@ -83,17 +83,17 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/utils/gif.java" },
-        { "target": "swift", "output": "src/runtime/swift/generated/utils/gif_helper.swift" },
-        { "target": "kotlin", "output": "src/runtime/kotlin/generated/utils/gif_helper.kt" },
+        { "target": "swift", "output": "src/runtime/swift/generated/utils/gif.swift" },
+        { "target": "kotlin", "output": "src/runtime/kotlin/generated/utils/gif.kt" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/utils/gif_helper.rb" },
         { "target": "lua", "output": "src/runtime/lua/generated/utils/gif_helper.lua" },
-        { "target": "scala", "output": "src/runtime/scala/generated/utils/gif_helper.scala" },
+        { "target": "scala", "output": "src/runtime/scala/generated/utils/gif.scala" },
         {
           "target": "php",
           "output": "src/runtime/php/generated/utils/gif.php",
           "postprocess": "php_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/utils/gif_helper.nim" }
+        { "target": "nim", "output": "src/runtime/nim/generated/utils/gif.nim" }
       ]
     },
     {
@@ -102,7 +102,8 @@
       "bucket": "utils",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/utils/assertions.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/utils/assertions.cs" }
+        { "target": "cs", "output": "src/runtime/cs/generated/utils/assertions.cs" },
+        { "target": "java", "output": "src/runtime/java/generated/utils/assertions.java" }
       ]
     },
     {
@@ -247,6 +248,7 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "predicates_helper"
         },
+        { "target": "java", "output": "src/runtime/java/generated/built_in/predicates.java" },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/predicates.kt",
@@ -303,6 +305,7 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "sequence_helper"
         },
+        { "target": "java", "output": "src/runtime/java/generated/built_in/sequence.java" },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/built_in/sequence.kt",
@@ -335,6 +338,7 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "string_ops_helper"
         },
+        { "target": "java", "output": "src/runtime/java/generated/built_in/string_ops.java" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/string_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/string_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/string_ops.php", "postprocess": "php_program_to_library" }
@@ -352,6 +356,7 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "type_id_helper"
         },
+        { "target": "java", "output": "src/runtime/java/generated/built_in/type_id.java" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/type_id.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/type_id.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/type_id.php", "postprocess": "php_program_to_library" }
@@ -454,7 +459,8 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/os.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/os.cs" }
+        { "target": "cs", "output": "src/runtime/cs/generated/std/os.cs" },
+        { "target": "java", "output": "src/runtime/java/generated/std/os.java" }
       ]
     },
     {
@@ -463,7 +469,8 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/os_path.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/os_path.cs" }
+        { "target": "cs", "output": "src/runtime/cs/generated/std/os_path.cs" },
+        { "target": "java", "output": "src/runtime/java/generated/std/os_path.java" }
       ]
     },
     {
@@ -472,7 +479,8 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/glob.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/glob.cs" }
+        { "target": "cs", "output": "src/runtime/cs/generated/std/glob.cs" },
+        { "target": "java", "output": "src/runtime/java/generated/std/glob.java" }
       ]
     },
     {
@@ -481,7 +489,8 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/argparse.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/argparse.cs" }
+        { "target": "cs", "output": "src/runtime/cs/generated/std/argparse.cs" },
+        { "target": "java", "output": "src/runtime/java/generated/std/argparse.java" }
       ]
     },
     {
@@ -490,7 +499,8 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/random.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/random.cs" }
+        { "target": "cs", "output": "src/runtime/cs/generated/std/random.cs" },
+        { "target": "java", "output": "src/runtime/java/generated/std/random.java" }
       ]
     },
     {
@@ -499,7 +509,8 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/re.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/re.cs" }
+        { "target": "cs", "output": "src/runtime/cs/generated/std/re.cs" },
+        { "target": "java", "output": "src/runtime/java/generated/std/re.java" }
       ]
     },
     {
@@ -508,7 +519,8 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/sys.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/sys.cs" }
+        { "target": "cs", "output": "src/runtime/cs/generated/std/sys.cs" },
+        { "target": "java", "output": "src/runtime/java/generated/std/sys.java" }
       ]
     },
     {
@@ -517,7 +529,8 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/timeit.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/timeit.cs" }
+        { "target": "cs", "output": "src/runtime/cs/generated/std/timeit.cs" },
+        { "target": "java", "output": "src/runtime/java/generated/std/timeit.java" }
       ]
     }
   ]

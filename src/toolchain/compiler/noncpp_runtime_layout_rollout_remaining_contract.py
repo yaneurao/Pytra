@@ -755,12 +755,25 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "built_in/io_ops.java",
             "built_in/iter_ops.java",
             "built_in/numeric_ops.java",
+            "built_in/predicates.java",
             "built_in/scalar_ops.java",
+            "built_in/sequence.java",
+            "built_in/string_ops.java",
+            "built_in/type_id.java",
             "built_in/zip_ops.java",
+            "std/argparse.java",
+            "std/glob.java",
             "std/json.java",
             "std/math.java",
+            "std/os.java",
+            "std/os_path.java",
             "std/pathlib.java",
+            "std/random.java",
+            "std/re.java",
+            "std/sys.java",
             "std/time.java",
+            "std/timeit.java",
+            "utils/assertions.java",
             "utils/gif.java",
             "utils/png.java",
         ),
@@ -775,9 +788,9 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "built_in/predicates.kt",
             "built_in/sequence.kt",
             "built_in/zip_ops.kt",
-            "utils/gif_helper.kt",
+            "utils/gif.kt",
             "utils/image_runtime.kt",
-            "utils/png_helper.kt",
+            "utils/png.kt",
         ),
         "pytra_files": ("built_in/py_runtime.kt",),
     },
@@ -790,9 +803,9 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "built_in/predicates.scala",
             "built_in/sequence.scala",
             "built_in/zip_ops.scala",
-            "utils/gif_helper.scala",
+            "utils/gif.scala",
             "utils/image_runtime.scala",
-            "utils/png_helper.scala",
+            "utils/png.scala",
         ),
         "pytra_files": ("built_in/py_runtime.scala",),
     },
@@ -806,9 +819,9 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "built_in/predicates.swift",
             "built_in/sequence.swift",
             "built_in/zip_ops.swift",
-            "utils/gif_helper.swift",
+            "utils/gif.swift",
             "utils/image_runtime.swift",
-            "utils/png_helper.swift",
+            "utils/png.swift",
         ),
         "pytra_files": ("built_in/py_runtime.swift",),
     },
@@ -821,9 +834,9 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "built_in/numeric_ops.nim",
             "built_in/predicates.nim",
             "built_in/zip_ops.nim",
-            "utils/gif_helper.nim",
+            "utils/gif.nim",
             "utils/image_runtime.nim",
-            "utils/png_helper.nim",
+            "utils/png.nim",
         ),
         "pytra_files": ("built_in/py_runtime.nim",),
     },
@@ -975,12 +988,25 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/built_in/io_ops.java",
             "generated/built_in/iter_ops.java",
             "generated/built_in/numeric_ops.java",
+            "generated/built_in/predicates.java",
             "generated/built_in/scalar_ops.java",
+            "generated/built_in/sequence.java",
+            "generated/built_in/string_ops.java",
+            "generated/built_in/type_id.java",
             "generated/built_in/zip_ops.java",
+            "generated/std/argparse.java",
+            "generated/std/glob.java",
             "generated/std/json.java",
             "generated/std/math.java",
+            "generated/std/os.java",
+            "generated/std/os_path.java",
             "generated/std/pathlib.java",
+            "generated/std/random.java",
+            "generated/std/re.java",
+            "generated/std/sys.java",
             "generated/std/time.java",
+            "generated/std/timeit.java",
+            "generated/utils/assertions.java",
             "generated/utils/gif.java",
             "generated/utils/png.java",
         ),
@@ -995,9 +1021,9 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/built_in/predicates.kt",
             "generated/built_in/sequence.kt",
             "generated/built_in/zip_ops.kt",
-            "generated/utils/gif_helper.kt",
+            "generated/utils/gif.kt",
             "generated/utils/image_runtime.kt",
-            "generated/utils/png_helper.kt",
+            "generated/utils/png.kt",
         ),
         "native_files": ("native/built_in/py_runtime.kt",),
         "compat_files": ("pytra/built_in/py_runtime.kt",),
@@ -1010,9 +1036,9 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/built_in/predicates.scala",
             "generated/built_in/sequence.scala",
             "generated/built_in/zip_ops.scala",
-            "generated/utils/gif_helper.scala",
+            "generated/utils/gif.scala",
             "generated/utils/image_runtime.scala",
-            "generated/utils/png_helper.scala",
+            "generated/utils/png.scala",
         ),
         "native_files": ("native/built_in/py_runtime.scala",),
         "compat_files": ("pytra/built_in/py_runtime.scala",),
@@ -1026,9 +1052,9 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/built_in/predicates.swift",
             "generated/built_in/sequence.swift",
             "generated/built_in/zip_ops.swift",
-            "generated/utils/gif_helper.swift",
+            "generated/utils/gif.swift",
             "generated/utils/image_runtime.swift",
-            "generated/utils/png_helper.swift",
+            "generated/utils/png.swift",
         ),
         "native_files": ("native/built_in/py_runtime.swift",),
         "compat_files": ("pytra/built_in/py_runtime.swift",),
@@ -1041,9 +1067,9 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/built_in/numeric_ops.nim",
             "generated/built_in/predicates.nim",
             "generated/built_in/zip_ops.nim",
-            "generated/utils/gif_helper.nim",
+            "generated/utils/gif.nim",
             "generated/utils/image_runtime.nim",
-            "generated/utils/png_helper.nim",
+            "generated/utils/png.nim",
         ),
         "native_files": ("native/built_in/py_runtime.nim",),
         "compat_files": ("pytra/built_in/py_runtime.nim",),
@@ -1190,74 +1216,79 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     {
         "backend": "java",
         "generated_modules": (
-            REMAINING_NONCPP_GO_JAVA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
             + (
+                "std/argparse",
+                "std/glob",
                 "std/json",
                 "std/math",
+                "std/os",
+                "std/os_path",
                 "std/pathlib",
+                "std/random",
+                "std/re",
+                "std/sys",
                 "std/time",
+                "std/timeit",
+                "utils/assertions",
                 "utils/gif",
                 "utils/png",
             )
         ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
-        "blocked_modules": REMAINING_NONCPP_GO_JAVA_BLOCKED_BUILT_IN_MODULES_V1,
+        "blocked_modules": (),
     },
     {
         "backend": "kotlin",
         "generated_modules": (
             REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("utils/gif_helper", "utils/image_runtime", "utils/png_helper")
+            + ("utils/gif", "utils/image_runtime", "utils/png")
         ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
         "blocked_modules": (
             REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1
             + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
         ),
     },
     {
         "backend": "scala",
         "generated_modules": (
             REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("utils/gif_helper", "utils/image_runtime", "utils/png_helper")
+            + ("utils/gif", "utils/image_runtime", "utils/png")
         ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
         "blocked_modules": (
             REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1
             + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
         ),
     },
     {
         "backend": "swift",
         "generated_modules": (
             REMAINING_NONCPP_SWIFT_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("utils/gif_helper", "utils/image_runtime", "utils/png_helper")
+            + ("utils/gif", "utils/image_runtime", "utils/png")
         ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
         "blocked_modules": (
             REMAINING_NONCPP_SWIFT_BLOCKED_BUILT_IN_MODULES_V1
             + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
         ),
     },
     {
         "backend": "nim",
         "generated_modules": (
             REMAINING_NONCPP_NIM_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("utils/gif_helper", "utils/image_runtime", "utils/png_helper")
+            + ("utils/gif", "utils/image_runtime", "utils/png")
         ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
         "blocked_modules": (
             REMAINING_NONCPP_NIM_BLOCKED_BUILT_IN_MODULES_V1
             + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_UTILS_MODULES_V1
         ),
     },
     {
@@ -1638,37 +1669,68 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_V1: Final[
     {
         "backend": "java",
         "materialized_compare_modules": (
-            REMAINING_NONCPP_GO_JAVA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
             + (
-                "std/json",
-                "std/math",
-                "std/pathlib",
-                "std/time",
                 "utils/gif",
                 "utils/png",
             )
         ),
-        "helper_artifact_modules": (),
+        "helper_artifact_modules": (
+            "std/argparse",
+            "std/glob",
+            "std/os",
+            "std/os_path",
+            "std/random",
+            "std/re",
+            "std/sys",
+            "std/timeit",
+            "utils/assertions",
+        ),
     },
     {
         "backend": "kotlin",
-        "materialized_compare_modules": REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
-        "helper_artifact_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "materialized_compare_modules": (
+            REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + (
+                "utils/gif",
+                "utils/png",
+            )
+        ),
+        "helper_artifact_modules": ("utils/image_runtime",),
     },
     {
         "backend": "scala",
-        "materialized_compare_modules": REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
-        "helper_artifact_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "materialized_compare_modules": (
+            REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + (
+                "utils/gif",
+                "utils/png",
+            )
+        ),
+        "helper_artifact_modules": ("utils/image_runtime",),
     },
     {
         "backend": "swift",
-        "materialized_compare_modules": REMAINING_NONCPP_SWIFT_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
-        "helper_artifact_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "materialized_compare_modules": (
+            REMAINING_NONCPP_SWIFT_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + (
+                "utils/gif",
+                "utils/png",
+            )
+        ),
+        "helper_artifact_modules": ("utils/image_runtime",),
     },
     {
         "backend": "nim",
-        "materialized_compare_modules": REMAINING_NONCPP_NIM_GENERATED_COMPARE_BUILT_IN_MODULES_V1,
-        "helper_artifact_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "materialized_compare_modules": (
+            REMAINING_NONCPP_NIM_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + (
+                "utils/gif",
+                "utils/png",
+            )
+        ),
+        "helper_artifact_modules": ("utils/image_runtime",),
     },
 )
 
@@ -1729,10 +1791,23 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
         "smoke_kind": "source_guard",
         "smoke_targets": (
             "built_in/contains.java",
+            "built_in/predicates.java",
+            "built_in/sequence.java",
+            "built_in/string_ops.java",
+            "built_in/type_id.java",
+            "std/argparse.java",
+            "std/glob.java",
             "std/json.java",
             "std/math.java",
+            "std/os.java",
+            "std/os_path.java",
             "std/pathlib.java",
+            "std/random.java",
+            "std/re.java",
+            "std/sys.java",
             "std/time.java",
+            "std/timeit.java",
+            "utils/assertions.java",
             "utils/gif.java",
             "utils/png.java",
         ),
@@ -1742,9 +1817,9 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
         "smoke_kind": "source_guard",
         "smoke_targets": (
             "built_in/contains.kt",
-            "utils/gif_helper.kt",
+            "utils/gif.kt",
             "utils/image_runtime.kt",
-            "utils/png_helper.kt",
+            "utils/png.kt",
         ),
     },
     {
@@ -1752,9 +1827,9 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
         "smoke_kind": "source_guard",
         "smoke_targets": (
             "built_in/contains.scala",
-            "utils/gif_helper.scala",
+            "utils/gif.scala",
             "utils/image_runtime.scala",
-            "utils/png_helper.scala",
+            "utils/png.scala",
         ),
     },
     {
@@ -1762,9 +1837,9 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
         "smoke_kind": "source_guard",
         "smoke_targets": (
             "built_in/contains.swift",
-            "utils/gif_helper.swift",
+            "utils/gif.swift",
             "utils/image_runtime.swift",
-            "utils/png_helper.swift",
+            "utils/png.swift",
         ),
     },
     {
@@ -1772,9 +1847,9 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
         "smoke_kind": "source_guard",
         "smoke_targets": (
             "built_in/contains.nim",
-            "utils/gif_helper.nim",
+            "utils/gif.nim",
             "utils/image_runtime.nim",
-            "utils/png_helper.nim",
+            "utils/png.nim",
         ),
     },
 )
@@ -1796,9 +1871,18 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1: Final[
         "backend": "java",
         "runtime_hook_files": (
             "runtime/java/native/built_in/PyRuntime.java",
+            "runtime/java/generated/utils/assertions.java",
             "runtime/java/generated/utils/png.java",
             "runtime/java/generated/utils/gif.java",
+            "runtime/java/generated/std/argparse.java",
+            "runtime/java/generated/std/glob.java",
+            "runtime/java/generated/std/os.java",
+            "runtime/java/generated/std/os_path.java",
+            "runtime/java/generated/std/random.java",
+            "runtime/java/generated/std/re.java",
+            "runtime/java/generated/std/sys.java",
             "runtime/java/generated/std/time.java",
+            "runtime/java/generated/std/timeit.java",
             "runtime/java/generated/std/json.java",
             "runtime/java/generated/std/pathlib.java",
             "runtime/java/generated/std/math.java",

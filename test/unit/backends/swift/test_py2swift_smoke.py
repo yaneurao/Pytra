@@ -323,13 +323,17 @@ def f(xs: list[int], ys: dict[str, int]) -> int:
     def test_swift_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "swift" / "native" / "built_in" / "py_runtime.swift"
         generated_contains = ROOT / "src" / "runtime" / "swift" / "generated" / "built_in" / "contains.swift"
+        generated_gif = ROOT / "src" / "runtime" / "swift" / "generated" / "utils" / "gif.swift"
         generated_zip = ROOT / "src" / "runtime" / "swift" / "generated" / "built_in" / "zip_ops.swift"
         image_runtime = ROOT / "src" / "runtime" / "swift" / "generated" / "utils" / "image_runtime.swift"
+        generated_png = ROOT / "src" / "runtime" / "swift" / "generated" / "utils" / "png.swift"
         legacy_path = ROOT / "src" / "swift_module" / "py_runtime.swift"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(generated_contains.exists())
+        self.assertTrue(generated_gif.exists())
         self.assertTrue(generated_zip.exists())
         self.assertTrue(image_runtime.exists())
+        self.assertTrue(generated_png.exists())
         self.assertFalse(legacy_path.exists())
 
     def test_swift_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:

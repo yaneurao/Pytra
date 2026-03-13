@@ -40,6 +40,7 @@ def _collect_cpp_generated_bucket_modules(bucket: str) -> tuple[str, ...]:
 def _generated_suffix_for_backend(backend: str) -> str:
     return {
         "cs": ".cs",
+        "java": ".java",
         "rs": ".rs",
     }[backend]
 
@@ -126,10 +127,21 @@ def _collect_runtime_layout_legacy_state_buckets() -> tuple[dict[str, object], .
 def _collect_helper_artifact_overlap_modules() -> tuple[str, ...]:
     baseline = set(contract_mod.iter_noncpp_runtime_generated_cpp_baseline_modules())
     overlap: set[str] = set()
+    def is_helper_shaped(module: str) -> bool:
+        stem = module.rsplit("/", 1)[-1]
+        return stem.endswith("_helper") or stem == "image_runtime"
     for entry in remaining_contract_mod.iter_remaining_noncpp_runtime_wave_a_generated_compare():
-        overlap.update(module for module in entry["helper_artifact_modules"] if module in baseline)
+        overlap.update(
+            module
+            for module in entry["helper_artifact_modules"]
+            if module in baseline and is_helper_shaped(module)
+        )
     for entry in remaining_contract_mod.iter_remaining_noncpp_runtime_wave_b_generated_compare():
-        overlap.update(module for module in entry["helper_artifact_modules"] if module in baseline)
+        overlap.update(
+            module
+            for module in entry["helper_artifact_modules"]
+            if module in baseline and is_helper_shaped(module)
+        )
     return tuple(sorted(overlap))
 
 
