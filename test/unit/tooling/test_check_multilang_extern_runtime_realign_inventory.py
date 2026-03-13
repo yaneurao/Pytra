@@ -63,7 +63,7 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
                 "scala:scala_program_to_library",
                 "swift:swift_program_to_library",
                 "js:js_std_native_owner_wrapper",
-                "ts:ts_std_math_live_wrapper",
+                "ts:ts_std_native_owner_wrapper",
                 "php:php_std_math_live_wrapper",
             ),
         )

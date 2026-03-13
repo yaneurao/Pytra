@@ -2200,45 +2200,70 @@ module.exports = { JsonObj, JsonArr, JsonValue, loads, loads_obj, loads_arr, dum
 """.lstrip()
 
 
-def rewrite_ts_std_math_live_wrapper(ts_src: str) -> str:
+def rewrite_ts_std_native_owner_wrapper(ts_src: str, helper_name: str) -> str:
     text = _strip_trailing_string_literal_expr(ts_src)
     text = text.replace('import { extern } from "./pytra/std.js";\n\n', "")
-    text = text.replace('"pytra.std.math: extern-marked math API with Python runtime fallback.";\n', "")
-    text = 'import * as math_native from "../../native/std/math_native";\n\n' + text
-    text = text.replace("let pi = extern(__m.pi);", "export const pi: number = math_native.pi;")
-    text = text.replace("let e = extern(__m.e);", "export const e: number = math_native.e;")
-    signature_replacements = {
-        "function sqrt(x) {": "export function sqrt(x: number): number {",
-        "function sin(x) {": "export function sin(x: number): number {",
-        "function cos(x) {": "export function cos(x: number): number {",
-        "function tan(x) {": "export function tan(x: number): number {",
-        "function exp(x) {": "export function exp(x: number): number {",
-        "function log(x) {": "export function log(x: number): number {",
-        "function log10(x) {": "export function log10(x: number): number {",
-        "function fabs(x) {": "export function fabs(x: number): number {",
-        "function floor(x) {": "export function floor(x: number): number {",
-        "function ceil(x) {": "export function ceil(x: number): number {",
-        "function pow(x, y) {": "export function pow(x: number, y: number): number {",
-    }
-    for before, after in signature_replacements.items():
-        text = text.replace(before, after)
-    replacements = {
-        "return __m.sqrt(x);": "return math_native.sqrt(x);",
-        "return __m.sin(x);": "return math_native.sin(x);",
-        "return __m.cos(x);": "return math_native.cos(x);",
-        "return __m.tan(x);": "return math_native.tan(x);",
-        "return __m.exp(x);": "return math_native.exp(x);",
-        "return __m.log(x);": "return math_native.log(x);",
-        "return __m.log10(x);": "return math_native.log10(x);",
-        "return __m.fabs(x);": "return math_native.fabs(x);",
-        "return __m.floor(x);": "return math_native.floor(x);",
-        "return __m.ceil(x);": "return math_native.ceil(x);",
-        "return __m.pow(x, y);": "return math_native.pow(x, y);",
-    }
-    for before, after in replacements.items():
-        text = text.replace(before, after)
-    if "extern(" in text or "__m." in text or "Math." in text:
-        raise RuntimeError("generated TS std/math wrapper still contains extern/math runtime residue")
+    text = re.sub(
+        rf'^"pytra\.std\.{re.escape(helper_name)}:.*";\n',
+        "",
+        text,
+        flags=re.MULTILINE,
+    )
+    native_owner = helper_name + "_native"
+    text = 'import * as ' + native_owner + ' from "../../native/std/' + native_owner + '";\n\n' + text
+    value_symbols: list[str] = []
+    for match in re.finditer(
+        r"let\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*extern\(__[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*\);",
+        ts_src,
+    ):
+        symbol_name = match.group(1)
+        if symbol_name not in value_symbols:
+            value_symbols.append(symbol_name)
+    function_symbols: list[str] = []
+    for match in re.finditer(r"(?m)^function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(", ts_src):
+        symbol_name = match.group(1)
+        if symbol_name not in function_symbols:
+            function_symbols.append(symbol_name)
+    for symbol_name in value_symbols:
+        replacement = "export const " + symbol_name
+        if helper_name == "math":
+            replacement += ": number"
+        replacement += " = " + native_owner + "." + symbol_name + ";"
+        text = re.sub(
+            rf"let\s+{re.escape(symbol_name)}\s*=\s*extern\(__[A-Za-z_][A-Za-z0-9_]*\.{re.escape(symbol_name)}\);",
+            replacement,
+            text,
+        )
+    for symbol_name in function_symbols:
+        if helper_name == "math":
+            text = re.sub(
+                rf"function\s+{re.escape(symbol_name)}\(([^)]*)\)\s*\{{",
+                lambda m: "export function "
+                + symbol_name
+                + "("
+                + ", ".join(
+                    part.strip() + ": number"
+                    for part in m.group(1).split(",")
+                    if part.strip() != ""
+                )
+                + "): number {",
+                text,
+            )
+        else:
+            text = re.sub(
+                rf"function\s+{re.escape(symbol_name)}\(([^)]*)\)\s*\{{",
+                r"export function " + symbol_name + r"(\1) {",
+                text,
+            )
+        text = re.sub(
+            rf"return __[A-Za-z_][A-Za-z0-9_]*\.{re.escape(symbol_name)}\(",
+            "return " + native_owner + "." + symbol_name + "(",
+            text,
+        )
+    if "extern(" in text or re.search(r"__[A-Za-z_][A-Za-z0-9_]*\.", text) or "Math." in text:
+        raise RuntimeError(
+            "generated TS std/" + helper_name + " wrapper still contains extern/native owner residue"
+        )
     return text.rstrip() + "\n"
 
 
@@ -3553,8 +3578,10 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_js_std_module_runtime_imports(generated, module_name="re")
     elif item.postprocess == "js_std_timeit_runtime_imports":
         generated = rewrite_js_std_module_runtime_imports(generated, module_name="timeit")
-    elif item.postprocess == "ts_std_math_live_wrapper":
-        generated = rewrite_ts_std_math_live_wrapper(generated)
+    elif item.postprocess == "ts_std_native_owner_wrapper":
+        if item.helper_name == "":
+            raise RuntimeError("missing helper_name for ts_std_native_owner_wrapper: " + item.item_id)
+        generated = rewrite_ts_std_native_owner_wrapper(generated, item.helper_name)
     elif item.postprocess == "ts_perf_counter_host_wrapper":
         generated = rewrite_ts_perf_counter_host_wrapper(generated)
     elif item.postprocess == "ts_std_sys_live_wrapper":
