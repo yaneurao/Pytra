@@ -119,9 +119,12 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertIsInstance(math_symbols, dict)
         self.assertEqual(math_symbols.get("pi", {}).get("kind"), "const")
         self.assertEqual(math_symbols.get("pi", {}).get("semantic_tag"), "stdlib.symbol.pi")
+        self.assertEqual(math_symbols.get("pi", {}).get("call_adapter_kind"), "math.value_getter")
         self.assertEqual(math_symbols.get("pi", {}).get("extern_v1"), {"schema_version": 1, "kind": "value"})
         self.assertEqual(math_symbols.get("e", {}).get("kind"), "const")
+        self.assertEqual(math_symbols.get("e", {}).get("call_adapter_kind"), "math.value_getter")
         self.assertEqual(math_symbols.get("sqrt", {}).get("semantic_tag"), "stdlib.fn.sqrt")
+        self.assertEqual(math_symbols.get("sqrt", {}).get("call_adapter_kind"), "math.float_args")
         self.assertEqual(math_symbols.get("sqrt", {}).get("extern_v1"), {"schema_version": 1, "kind": "function"})
         self.assertNotIn("tau", math_symbols)
         self.assertEqual(
@@ -447,6 +450,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertEqual(
             lookup_runtime_symbol_doc("math", "sqrt"),
             {
+                "call_adapter_kind": "math.float_args",
                 "dispatch": "function",
                 "extern_v1": {"kind": "function", "schema_version": 1},
                 "kind": "function",
@@ -456,6 +460,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertEqual(
             lookup_runtime_symbol_doc("math", "pi"),
             {
+                "call_adapter_kind": "math.value_getter",
                 "dispatch": "value",
                 "extern_v1": {"kind": "value", "schema_version": 1},
                 "kind": "const",
@@ -528,6 +533,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
                 "runtime_symbol": "sqrt",
                 "runtime_symbol_kind": "function",
                 "runtime_symbol_dispatch": "function",
+                "runtime_call_adapter_kind": "math.float_args",
                 "runtime_extern_kind": "function",
                 "runtime_semantic_tag": "stdlib.fn.sqrt",
             },
@@ -544,6 +550,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
                 "runtime_symbol": "pi",
                 "runtime_symbol_kind": "const",
                 "runtime_symbol_dispatch": "value",
+                "runtime_call_adapter_kind": "math.value_getter",
                 "runtime_extern_kind": "value",
                 "runtime_semantic_tag": "stdlib.symbol.pi",
             },

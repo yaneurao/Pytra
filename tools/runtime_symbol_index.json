@@ -799,6 +799,7 @@
       "source_py": "src/pytra/std/math.py",
       "symbols": {
         "ceil": {
+          "call_adapter_kind": "math.float_args",
           "dispatch": "function",
           "extern_v1": {
             "kind": "function",
@@ -808,6 +809,7 @@
           "semantic_tag": "stdlib.fn.ceil"
         },
         "cos": {
+          "call_adapter_kind": "math.float_args",
           "dispatch": "function",
           "extern_v1": {
             "kind": "function",
@@ -817,6 +819,7 @@
           "semantic_tag": "stdlib.fn.cos"
         },
         "e": {
+          "call_adapter_kind": "math.value_getter",
           "dispatch": "value",
           "extern_v1": {
             "kind": "value",
@@ -826,6 +829,7 @@
           "semantic_tag": "stdlib.symbol.e"
         },
         "exp": {
+          "call_adapter_kind": "math.float_args",
           "dispatch": "function",
           "extern_v1": {
             "kind": "function",
@@ -835,6 +839,7 @@
           "semantic_tag": "stdlib.fn.exp"
         },
         "fabs": {
+          "call_adapter_kind": "math.float_args",
           "dispatch": "function",
           "extern_v1": {
             "kind": "function",
@@ -844,6 +849,7 @@
           "semantic_tag": "stdlib.fn.fabs"
         },
         "floor": {
+          "call_adapter_kind": "math.float_args",
           "dispatch": "function",
           "extern_v1": {
             "kind": "function",
@@ -853,6 +859,7 @@
           "semantic_tag": "stdlib.fn.floor"
         },
         "log": {
+          "call_adapter_kind": "math.float_args",
           "dispatch": "function",
           "extern_v1": {
             "kind": "function",
@@ -862,6 +869,7 @@
           "semantic_tag": "stdlib.fn.log"
         },
         "log10": {
+          "call_adapter_kind": "math.float_args",
           "dispatch": "function",
           "extern_v1": {
             "kind": "function",
@@ -871,6 +879,7 @@
           "semantic_tag": "stdlib.fn.log10"
         },
         "pi": {
+          "call_adapter_kind": "math.value_getter",
           "dispatch": "value",
           "extern_v1": {
             "kind": "value",
@@ -880,6 +889,7 @@
           "semantic_tag": "stdlib.symbol.pi"
         },
         "pow": {
+          "call_adapter_kind": "math.float_args",
           "dispatch": "function",
           "extern_v1": {
             "kind": "function",
@@ -889,6 +899,7 @@
           "semantic_tag": "stdlib.fn.pow"
         },
         "sin": {
+          "call_adapter_kind": "math.float_args",
           "dispatch": "function",
           "extern_v1": {
             "kind": "function",
@@ -898,6 +909,7 @@
           "semantic_tag": "stdlib.fn.sin"
         },
         "sqrt": {
+          "call_adapter_kind": "math.float_args",
           "dispatch": "function",
           "extern_v1": {
             "kind": "function",
@@ -907,6 +919,7 @@
           "semantic_tag": "stdlib.fn.sqrt"
         },
         "tan": {
+          "call_adapter_kind": "math.float_args",
           "dispatch": "function",
           "extern_v1": {
             "kind": "function",

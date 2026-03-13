@@ -30,6 +30,19 @@ TOP_LEVEL_CLASS_RE = re.compile(r"^class\s+([A-Za-z_][A-Za-z0-9_]*)\b")
 TOP_LEVEL_ASSIGN_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*=")
 TOP_LEVEL_ANN_ASSIGN_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*.+?=\s*")
 SYMBOL_CALL_ADAPTER_KINDS: dict[tuple[str, str], str] = {
+    ("pytra.std.math", "ceil"): "math.float_args",
+    ("pytra.std.math", "cos"): "math.float_args",
+    ("pytra.std.math", "e"): "math.value_getter",
+    ("pytra.std.math", "exp"): "math.float_args",
+    ("pytra.std.math", "fabs"): "math.float_args",
+    ("pytra.std.math", "floor"): "math.float_args",
+    ("pytra.std.math", "log"): "math.float_args",
+    ("pytra.std.math", "log10"): "math.float_args",
+    ("pytra.std.math", "pi"): "math.value_getter",
+    ("pytra.std.math", "pow"): "math.float_args",
+    ("pytra.std.math", "sin"): "math.float_args",
+    ("pytra.std.math", "sqrt"): "math.float_args",
+    ("pytra.std.math", "tan"): "math.float_args",
     ("pytra.utils.gif", "save_gif"): "image.save_gif.keyword_defaults",
 }
 

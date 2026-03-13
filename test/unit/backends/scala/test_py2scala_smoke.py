@@ -294,13 +294,26 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         fixture = find_fixture_case("math_extended")
         east = load_east(fixture, parser_backend="self_hosted")
         scala = transpile_to_scala_native(east)
-        self.assertIn("scala.math.abs", scala)
-        self.assertNotIn("fabs(", scala)
+        self.assertIn("pyMathFabs(", scala)
+        self.assertNotIn("scala.math.abs", scala)
 
     def test_scala_emitter_source_has_no_source_math_special_case(self) -> None:
         src = (ROOT / "src" / "backends" / "scala" / "emitter" / "scala_native_emitter.py").read_text(encoding="utf-8")
         self.assertNotIn('module_name == "math"', src)
         self.assertNotIn("module_name == 'math'", src)
+        self.assertNotIn('runtime_module == "pytra.std.math"', src)
+        self.assertNotIn("runtime_module == 'pytra.std.math'", src)
+        self.assertNotIn("scala.math.", src)
+
+    def test_scala_native_emitter_backend_only_ir_fixture_resolves_math_and_path(self) -> None:
+        fixture = ROOT / "test" / "ir" / "java_math_path_runtime.east3.json"
+        east = json.loads(fixture.read_text(encoding="utf-8"))
+        scala = transpile_to_scala_native(east)
+        self.assertIn('var p: String = __pytra_path_new("tmp/a.txt")', scala)
+        self.assertIn("var q: String = __pytra_str(__pytra_path_parent(p))", scala)
+        self.assertIn("var n: String = __pytra_str(__pytra_path_name(p))", scala)
+        self.assertIn("var s: String = __pytra_str(__pytra_path_stem(p))", scala)
+        self.assertIn("var x: Double = pyMathSin(__pytra_float(pyMathPi()))", scala)
 
     def test_for_core_static_range_prefers_normalized_condition_expr(self) -> None:
         east = {
