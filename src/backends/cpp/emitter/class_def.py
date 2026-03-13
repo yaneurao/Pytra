@@ -179,10 +179,17 @@ class CppClassEmitter:
             return
         cls_name = str(name)
         gc_managed = cls_name in self.ref_classes
+        base_cpp = base
+        if base != "" and not is_enum_base:
+            base_cpp = self._resolve_local_class_base_cpp_name(base)
+            if base_cpp == "" or base_cpp == base:
+                base_cpp = self._strip_rc_wrapper(self._cpp_type_text(base))
+                if base_cpp == "":
+                    base_cpp = base
         bases: list[str] = []
         if base != "" and not is_enum_base:
-            bases.append(f"public {base}")
-        base_is_gc = base in self.ref_classes
+            bases.append(f"public {base_cpp}")
+        base_is_gc = self._type_is_ref_class(base)
         if gc_managed and not base_is_gc:
             bases.append("public PyObj")
         base_txt: str = ""
@@ -196,7 +203,7 @@ class CppClassEmitter:
         prev_fields = self.current_class_fields
         prev_static_fields = self.current_class_static_fields
         self.current_class_name = str(name)
-        self.current_class_base_name = str(base) if isinstance(base, str) else ""
+        self.current_class_base_name = base_cpp if isinstance(base_cpp, str) else ""
         self.current_class_fields.clear()
         for fk, fv in self.any_to_dict_or_empty(stmt.get("field_types")).items():
             if isinstance(fk, str):
@@ -322,7 +329,7 @@ class CppClassEmitter:
             emitted_fname = self.rename_if_reserved(fname, self.reserved_words, self.rename_prefix, self.renamed_symbols)
             self.emit(f"{self.cpp_signature_type(fty)} {emitted_fname};")
         if gc_managed:
-            base_type_id_expr = f"{base}::PYTRA_TYPE_ID" if base_is_gc else "PYTRA_TID_OBJECT"
+            base_type_id_expr = f"{base_cpp}::PYTRA_TYPE_ID" if base_is_gc else "PYTRA_TID_OBJECT"
             self.emit(f"PYTRA_DECLARE_CLASS_TYPE({base_type_id_expr});")
 
         if len(static_emit_names) > 0 or len(instance_fields_ordered) > 0 or gc_managed:

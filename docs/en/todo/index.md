@@ -31,12 +31,6 @@ Last updated: 2026-03-14
 
 ## Unfinished Tasks
 
-### P1
-
-1. [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01] Align header/symbol qualification plus parameter passing for imported bus types and make `bus_port_pkg` compile.
-Context: [docs/en/plans/p1-nes3-bus-port-pkg-cpp-support.md](../plans/p1-nes3-bus-port-pkg-cpp-support.md)
-- Progress memo: Not started.
-
 ### P2
 
 1. [ ] [ID: P2-CPP-LEGACY-CORE-COMPAT-RETIRE-01] Fully retire the deleted `src/runtime/cpp/core/**` compatibility surface from live-tree assumptions and reduce it to guard-only references.

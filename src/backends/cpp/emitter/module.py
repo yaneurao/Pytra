@@ -53,12 +53,366 @@ TOOLCHAIN_COMPILER_PREFIX_LEN = len(TOOLCHAIN_COMPILER_PREFIX)
 class CppModuleEmitter:
     """Import/include/namespace/module-init helpers extracted from CppEmitter."""
 
+    def _current_user_module_name(self) -> str:
+        """現在 emit 中の user module 名を返す。未解決時は空文字。"""
+        meta = dict_any_get_dict(self.doc, "meta")
+        module_id = dict_any_get_str(meta, "module_id")
+        if module_id != "":
+            return module_id
+        module_ns_map = getattr(self, "module_namespace_map", {})
+        if isinstance(module_ns_map, dict):
+            for module_name, namespace in module_ns_map.items():
+                if isinstance(module_name, str) and isinstance(namespace, str) and namespace == self.top_namespace:
+                    return module_name
+        return ""
+
+    def _resolve_relative_user_module_name(self, current_module_name: str, raw_module_name: str) -> str:
+        """相対 import 名を current module 基準の user module 名へ正規化する。"""
+        raw = raw_module_name.strip()
+        if raw == "" or not raw.startswith("."):
+            return raw
+        dot_count = 0
+        while dot_count < len(raw) and raw[dot_count] == ".":
+            dot_count += 1
+        tail = raw[dot_count:].strip(".")
+        current_parts = [part for part in current_module_name.split(".") if part != ""] if current_module_name != "" else []
+        package_parts = current_parts[:-1] if len(current_parts) > 0 else []
+        up_count = dot_count - 1
+        if up_count > 0:
+            if up_count >= len(package_parts):
+                package_parts = []
+            else:
+                package_parts = package_parts[: len(package_parts) - up_count]
+        if tail != "":
+            package_parts.extend([part for part in tail.split(".") if part != ""])
+        return ".".join(package_parts)
+
+    def _resolve_user_class_binding(
+        self,
+        module_name: str,
+        east_doc: dict[str, Any],
+        class_name: str,
+    ) -> tuple[str, str]:
+        """user module 内の class 参照を (module_name, class_name) へ解決する。"""
+        if class_name == "":
+            return "", ""
+        body = self.any_to_list(east_doc.get("body"))
+        for stmt_any in body:
+            stmt = stmt_any if isinstance(stmt_any, dict) else {}
+            if dict_any_get_str(stmt, "kind") != "ClassDef":
+                continue
+            if dict_any_get_str(stmt, "name") == class_name:
+                return module_name, class_name
+        meta = self.any_to_dict_or_empty(east_doc.get("meta"))
+        import_symbols = self.any_to_dict_or_empty(meta.get("import_symbols"))
+        imported = self.any_to_dict_or_empty(import_symbols.get(class_name))
+        imported_module = dict_any_get_str(imported, "module")
+        imported_name = dict_any_get_str(imported, "name")
+        if imported_module != "" and imported_name != "":
+            return self._resolve_relative_user_module_name(module_name, imported_module), imported_name
+        resolution = self.any_to_dict_or_empty(meta.get("import_resolution"))
+        bindings = self.any_to_dict_list(resolution.get("bindings"))
+        for binding in bindings:
+            local_name = dict_any_get_str(binding, "local_name")
+            export_name = dict_any_get_str(binding, "export_name")
+            if class_name not in {local_name, export_name}:
+                continue
+            target_module = dict_any_get_str(binding, "runtime_module_id")
+            if target_module == "":
+                target_module = dict_any_get_str(binding, "source_module_id")
+            if target_module == "":
+                target_module = dict_any_get_str(binding, "module_id")
+            target_name = dict_any_get_str(binding, "runtime_symbol")
+            if target_name == "":
+                target_name = dict_any_get_str(binding, "source_export_name")
+            if target_name == "":
+                target_name = export_name
+            if target_module == "" or target_name == "":
+                continue
+            return self._resolve_relative_user_module_name(module_name, target_module), target_name
+        return "", ""
+
+    def _build_user_class_index(self) -> dict[tuple[str, str], dict[str, Any]]:
+        """multi-file bundle 全体の user class metadata を構築する。"""
+        cached = getattr(self, "_user_class_index_cache", None)
+        if isinstance(cached, dict):
+            return cached
+        out: dict[tuple[str, str], dict[str, Any]] = {}
+        user_module_docs = getattr(self, "user_module_east_map", {})
+        if not isinstance(user_module_docs, dict):
+            self._user_class_index_cache = out
+            return out
+        for module_name_obj, east_any in user_module_docs.items():
+            if not isinstance(module_name_obj, str):
+                continue
+            module_name = module_name_obj
+            east_doc = east_any if isinstance(east_any, dict) else {}
+            if len(east_doc) == 0:
+                continue
+            ns = self._module_name_to_cpp_namespace(module_name)
+            body = self.any_to_list(east_doc.get("body"))
+            for stmt_any in body:
+                stmt = stmt_any if isinstance(stmt_any, dict) else {}
+                if dict_any_get_str(stmt, "kind") != "ClassDef":
+                    continue
+                class_name = dict_any_get_str(stmt, "name")
+                if class_name == "":
+                    continue
+                raw_base = dict_any_get_str(stmt, "base")
+                base_module = ""
+                base_name = ""
+                base_cpp_name = ""
+                if raw_base != "":
+                    base_module, base_name = self._resolve_user_class_binding(module_name, east_doc, raw_base)
+                    if base_module != "" and base_name != "":
+                        base_ns = self._module_name_to_cpp_namespace(base_module)
+                        base_cpp_name = f"{base_ns}::{base_name}" if base_ns != "" else base_name
+                methods = self.any_to_list(stmt.get("body"))
+                method_names: set[str] = set()
+                for method_any in methods:
+                    method_stmt = method_any if isinstance(method_any, dict) else {}
+                    if dict_any_get_str(method_stmt, "kind") != "FunctionDef":
+                        continue
+                    method_name = dict_any_get_str(method_stmt, "name")
+                    if method_name != "":
+                        method_names.add(method_name)
+                raw_hint = dict_any_get_str(stmt, "class_storage_hint", "ref")
+                if raw_hint not in {"value", "ref"}:
+                    raw_hint = "ref"
+                cpp_name = f"{ns}::{class_name}" if ns != "" else class_name
+                out[(module_name, class_name)] = {
+                    "module_name": module_name,
+                    "class_name": class_name,
+                    "cpp_name": cpp_name,
+                    "raw_storage_hint": raw_hint,
+                    "storage_hint": raw_hint,
+                    "base_module": base_module,
+                    "base_name": base_name,
+                    "base_cpp_name": base_cpp_name,
+                    "method_names": set(method_names),
+                }
+        ref_keys: set[tuple[str, str]] = set()
+        for key, doc in out.items():
+            if self.any_to_str(doc.get("raw_storage_hint")) == "ref":
+                ref_keys.add(key)
+        changed = True
+        while changed:
+            changed = False
+            for key, doc in out.items():
+                base_module = self.any_to_str(doc.get("base_module"))
+                base_name = self.any_to_str(doc.get("base_name"))
+                if base_module == "" or base_name == "":
+                    continue
+                base_key = (base_module, base_name)
+                if base_key not in out:
+                    continue
+                if key in ref_keys and base_key not in ref_keys:
+                    ref_keys.add(base_key)
+                    changed = True
+                if base_key in ref_keys and key not in ref_keys:
+                    ref_keys.add(key)
+                    changed = True
+        for key, doc in out.items():
+            doc["storage_hint"] = "ref" if key in ref_keys else self.any_to_str(doc.get("raw_storage_hint"))
+        self._user_class_index_cache = out
+        return out
+
+    def _effective_user_class_storage_hint(self, module_name: str, class_name: str, fallback: str) -> str:
+        """user class の実効 storage hint を返す。"""
+        doc = self._build_user_class_index().get((module_name, class_name))
+        if isinstance(doc, dict):
+            hint = self.any_to_str(doc.get("storage_hint"))
+            if hint in {"value", "ref"}:
+                return hint
+        return fallback if fallback in {"value", "ref"} else "ref"
+
+    def _global_user_virtual_methods_by_base_cpp_name(self) -> dict[str, set[str]]:
+        """cross-module 継承から base class 側で virtual にすべき method 集合を返す。"""
+        out: dict[str, set[str]] = {}
+        class_index = self._build_user_class_index()
+        for _, doc in class_index.items():
+            methods_any = doc.get("method_names")
+            methods = methods_any if isinstance(methods_any, set) else set()
+            if len(methods) == 0:
+                continue
+            seen: set[tuple[str, str]] = set()
+            base_module = self.any_to_str(doc.get("base_module"))
+            base_name = self.any_to_str(doc.get("base_name"))
+            while base_module != "" and base_name != "":
+                base_key = (base_module, base_name)
+                if base_key in seen or base_key not in class_index:
+                    break
+                seen.add(base_key)
+                base_doc = class_index.get(base_key, {})
+                base_methods_any = base_doc.get("method_names")
+                base_methods = base_methods_any if isinstance(base_methods_any, set) else set()
+                common = set()
+                for method_name in methods:
+                    if method_name in base_methods:
+                        common.add(method_name)
+                base_cpp_name = self.any_to_str(base_doc.get("cpp_name"))
+                if base_cpp_name != "" and len(common) > 0:
+                    cur = out.get(base_cpp_name)
+                    if not isinstance(cur, set):
+                        cur = set()
+                        out[base_cpp_name] = cur
+                    cur.update(common)
+                base_module = self.any_to_str(base_doc.get("base_module"))
+                base_name = self.any_to_str(base_doc.get("base_name"))
+        return out
+
+    def _global_user_nonconst_methods_by_base_cpp_name(self) -> dict[str, set[str]]:
+        """cross-module override が self mutation を持つ場合に base 側で const を外す method 集合を返す。"""
+        out: dict[str, set[str]] = {}
+        class_index = self._build_user_class_index()
+        user_module_docs = getattr(self, "user_module_east_map", {})
+        if not isinstance(user_module_docs, dict):
+            return out
+        for module_name_obj, east_any in user_module_docs.items():
+            if not isinstance(module_name_obj, str):
+                continue
+            module_name = module_name_obj
+            east_doc = east_any if isinstance(east_any, dict) else {}
+            if len(east_doc) == 0:
+                continue
+            body = self.any_to_list(east_doc.get("body"))
+            for stmt_any in body:
+                stmt = stmt_any if isinstance(stmt_any, dict) else {}
+                if dict_any_get_str(stmt, "kind") != "ClassDef":
+                    continue
+                class_name = dict_any_get_str(stmt, "name")
+                if class_name == "":
+                    continue
+                class_key = (module_name, class_name)
+                class_doc = class_index.get(class_key)
+                if not isinstance(class_doc, dict):
+                    continue
+                methods = self.any_to_list(stmt.get("body"))
+                mutating_methods: set[str] = set()
+                for method_any in methods:
+                    method_stmt = method_any if isinstance(method_any, dict) else {}
+                    if dict_any_get_str(method_stmt, "kind") != "FunctionDef":
+                        continue
+                    method_name = dict_any_get_str(method_stmt, "name")
+                    if method_name in {"", "__init__", "__del__"}:
+                        continue
+                    arg_order = [name for name in self.any_to_str_list(method_stmt.get("arg_order")) if name != ""]
+                    if "self" not in arg_order:
+                        continue
+                    if "self" in self._collect_mutated_params(self._dict_stmt_list(method_stmt.get("body")), arg_order):
+                        mutating_methods.add(method_name)
+                if len(mutating_methods) == 0:
+                    continue
+                seen: set[tuple[str, str]] = set()
+                base_module = self.any_to_str(class_doc.get("base_module"))
+                base_name = self.any_to_str(class_doc.get("base_name"))
+                while base_module != "" and base_name != "":
+                    base_key = (base_module, base_name)
+                    if base_key in seen or base_key not in class_index:
+                        break
+                    seen.add(base_key)
+                    base_doc = class_index.get(base_key, {})
+                    base_methods_any = base_doc.get("method_names")
+                    base_methods = base_methods_any if isinstance(base_methods_any, set) else set()
+                    common = set()
+                    for method_name in mutating_methods:
+                        if method_name in base_methods:
+                            common.add(method_name)
+                    base_cpp_name = self.any_to_str(base_doc.get("cpp_name"))
+                    if base_cpp_name != "" and len(common) > 0:
+                        cur = out.get(base_cpp_name)
+                        if not isinstance(cur, set):
+                            cur = set()
+                            out[base_cpp_name] = cur
+                        cur.update(common)
+                    base_module = self.any_to_str(base_doc.get("base_module"))
+                    base_name = self.any_to_str(base_doc.get("base_name"))
+        return out
+
+    def _class_key_for_cpp_name(self, cpp_name: str) -> str:
+        """canonical cpp_name を現在 emitter の class key へ写像する。"""
+        if cpp_name in self.class_method_names or cpp_name in self.class_names:
+            return cpp_name
+        ns = self.top_namespace.strip()
+        if ns != "":
+            prefix = ns + "::"
+            if cpp_name.startswith(prefix):
+                leaf = cpp_name[len(prefix) :]
+                if leaf in self.class_method_names or leaf in self.class_names:
+                    return leaf
+        return ""
+
+    def _resolve_local_class_base_cpp_name(self, base_name: str) -> str:
+        """現在 module の class base 名を emitted C++ 名へ解決する。"""
+        if base_name == "":
+            return ""
+        if base_name in self.class_names:
+            return base_name
+        imported = self._resolve_imported_symbol(base_name)
+        imported_module = self.any_dict_get_str(imported, "module", "")
+        imported_name = self.any_dict_get_str(imported, "name", "")
+        if imported_module != "" and imported_name != "":
+            imported_doc = self._module_class_doc(imported_module, imported_name)
+            cpp_name = self.any_to_str(imported_doc.get("cpp_name"))
+            if cpp_name != "":
+                return cpp_name
+        return base_name
+
+    def _normalize_user_class_signature_arg_type(
+        self,
+        module_name: str,
+        east_doc: dict[str, Any],
+        raw_type: str,
+    ) -> str:
+        """user class 引数型を function/method signature 用の canonical 形へ正規化する。"""
+        type_name = self.normalize_type_name(raw_type)
+        if type_name in {"", "unknown", "Any", "object", "None"}:
+            return type_name
+        target_module, target_class = self._resolve_user_class_binding(module_name, east_doc, type_name)
+        if target_module == "" or target_class == "":
+            return type_name
+        doc = self._build_user_class_index().get((target_module, target_class), {})
+        cpp_name = self.any_to_str(doc.get("cpp_name"))
+        if cpp_name == "":
+            return type_name
+        storage_hint = self.any_to_str(doc.get("storage_hint"))
+        cpp_t = f"rc<{cpp_name}>" if storage_hint == "ref" else cpp_name
+        if self._is_cpp_class_borrow_param_type(type_name, cpp_t):
+            return cpp_name
+        return cpp_t
+
     def _normalize_runtime_module_name(self, module_name: str) -> str:
         module_name_norm = module_name
         if module_name_norm.find(".") < 0:
             bare_src = RUNTIME_STD_SOURCE_ROOT / (module_name_norm.replace(".", "/") + ".py")
             if bare_src.exists():
                 return "pytra.std." + module_name_norm
+        return module_name_norm
+
+    def _resolve_class_doc_module_name(self, module_name: str, class_name: str) -> str:
+        """Class signature/doc lookup 用に import target module を正規化する。"""
+        module_name_norm = self._normalize_runtime_module_name(module_name)
+        if module_name_norm == "" or class_name == "":
+            return module_name_norm
+        resolved_module = resolve_import_binding_runtime_module(module_name_norm, class_name, "symbol")
+        if resolved_module != "":
+            return self._normalize_runtime_module_name(resolved_module)
+        user_module_docs = getattr(self, "user_module_east_map", {})
+        if isinstance(user_module_docs, dict) and len(user_module_docs) > 0:
+            if module_name_norm in user_module_docs:
+                return module_name_norm
+            stripped_module = module_name_norm.lstrip(".")
+            if stripped_module in user_module_docs:
+                return stripped_module
+            bare_module = stripped_module.split(".")[-1] if stripped_module != "" else ""
+            if bare_module != "":
+                if bare_module in user_module_docs:
+                    return bare_module
+                for candidate in user_module_docs.keys():
+                    if not isinstance(candidate, str):
+                        continue
+                    if candidate == bare_module or candidate.endswith("." + bare_module):
+                        return candidate
         return module_name_norm
 
     def _module_name_to_cpp_include(self, module_name: str) -> str:
@@ -298,6 +652,7 @@ class CppModuleEmitter:
             if class_name == "":
                 continue
             cpp_name = f"{ns}::{class_name}" if ns != "" else class_name
+            class_index_doc = self._build_user_class_index().get((module_name, class_name), {})
             methods = stmt.get("body")
             method_stmts = methods if isinstance(methods, list) else []
             method_arg_names: dict[str, list[str]] = {}
@@ -335,15 +690,24 @@ class CppModuleEmitter:
                     if not isinstance(raw_arg, str) or raw_arg == "self":
                         continue
                     ordered_names.append(raw_arg)
-                    ordered_types.append(self.normalize_type_name(self.any_to_str(arg_types_map.get(raw_arg))))
+                    ordered_types.append(
+                        self._normalize_user_class_signature_arg_type(
+                            module_name,
+                            east_doc,
+                            self.any_to_str(arg_types_map.get(raw_arg)),
+                        )
+                    )
                     if raw_arg in arg_defaults_map:
                         ordered_defaults[raw_arg] = arg_defaults_map.get(raw_arg)
                 method_arg_names[method_name] = ordered_names
                 method_arg_types[method_name] = ordered_types
                 method_arg_defaults[method_name] = ordered_defaults
+            raw_hint = dict_any_get_str(stmt, "class_storage_hint", "ref")
+            effective_hint = self._effective_user_class_storage_hint(module_name, class_name, raw_hint)
             out[class_name] = {
-                "storage_hint": dict_any_get_str(stmt, "class_storage_hint", "ref"),
+                "storage_hint": effective_hint,
                 "cpp_name": cpp_name,
+                "base_cpp_name": self.any_to_str(class_index_doc.get("base_cpp_name")),
                 "method_arg_names": method_arg_names,
                 "method_arg_types": method_arg_types,
                 "method_arg_defaults": method_arg_defaults,
@@ -475,6 +839,7 @@ class CppModuleEmitter:
         return {}
 
     def _imported_runtime_class_cpp_type(self, module_name: str, class_name: str) -> str:
+        module_name = self._resolve_class_doc_module_name(module_name, class_name)
         doc = self._module_class_doc(module_name, class_name)
         cpp_name = self.any_to_str(doc.get("cpp_name"))
         if cpp_name == "":
@@ -484,7 +849,20 @@ class CppModuleEmitter:
             return cpp_name
         return f"rc<{cpp_name}>"
 
+    def _resolve_imported_symbol_class_cpp_type(self, symbol_name: str) -> str:
+        """from-import 済み class symbol を runtime class の C++ 型へ解決する。"""
+        symbol_norm = self.normalize_type_name(symbol_name)
+        if symbol_norm == "":
+            return ""
+        imported = self._resolve_imported_symbol(symbol_norm)
+        module_name = self.any_dict_get_str(imported, "module", "")
+        class_name = self.any_dict_get_str(imported, "name", "")
+        if module_name == "" or class_name == "":
+            return ""
+        return self._imported_runtime_class_cpp_type(module_name, class_name)
+
     def _module_class_method_arg_names(self, module_name: str, class_name: str, method_name: str) -> list[str]:
+        module_name = self._resolve_class_doc_module_name(module_name, class_name)
         doc = self._module_class_doc(module_name, class_name)
         items = doc.get("method_arg_names")
         method_map = items if isinstance(items, dict) else {}
@@ -498,6 +876,7 @@ class CppModuleEmitter:
         return out
 
     def _module_class_method_arg_types(self, module_name: str, class_name: str, method_name: str) -> list[str]:
+        module_name = self._resolve_class_doc_module_name(module_name, class_name)
         doc = self._module_class_doc(module_name, class_name)
         items = doc.get("method_arg_types")
         method_map = items if isinstance(items, dict) else {}
@@ -511,6 +890,7 @@ class CppModuleEmitter:
         return out
 
     def _module_class_method_arg_defaults(self, module_name: str, class_name: str, method_name: str) -> dict[str, Any]:
+        module_name = self._resolve_class_doc_module_name(module_name, class_name)
         doc = self._module_class_doc(module_name, class_name)
         items = doc.get("method_arg_defaults")
         method_map = items if isinstance(items, dict) else {}
@@ -526,6 +906,7 @@ class CppModuleEmitter:
                 continue
             module_name = dict_any_get_str(sym, "module")
             class_name = dict_any_get_str(sym, "name")
+            module_name = self._resolve_class_doc_module_name(module_name, class_name)
             cpp_type = self._imported_runtime_class_cpp_type(module_name, class_name)
             if cpp_type == "":
                 continue
@@ -541,7 +922,11 @@ class CppModuleEmitter:
                 if isinstance(item, str) and item != "":
                     name_set.add(item)
             self.class_names.add(cpp_name)
-            if self.any_to_str(doc.get("storage_hint")) == "value":
+            storage_hint = self.any_to_str(doc.get("storage_hint"))
+            if storage_hint not in {"value", "ref"}:
+                storage_hint = "ref"
+            self.class_storage_hints[cpp_name] = storage_hint
+            if storage_hint == "value":
                 self.value_classes.add(cpp_name)
             else:
                 self.ref_classes.add(cpp_name)
@@ -550,6 +935,9 @@ class CppModuleEmitter:
             self.class_method_arg_types[cpp_name] = dict(doc.get("method_arg_types", {}))
             self.class_method_arg_defaults[cpp_name] = dict(doc.get("method_arg_defaults", {}))
             self.class_method_return_types[cpp_name] = dict(doc.get("method_returns", {}))
+            base_cpp_name = self.any_to_str(doc.get("base_cpp_name"))
+            if base_cpp_name != "":
+                self.class_base[cpp_name] = base_cpp_name
             field_types_raw = doc.get("field_types")
             field_types = field_types_raw if isinstance(field_types_raw, dict) else {}
             class_field_types: dict[str, str] = {}

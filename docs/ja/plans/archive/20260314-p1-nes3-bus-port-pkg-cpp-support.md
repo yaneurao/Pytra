@@ -1,6 +1,6 @@
 # P1: import した bus 型の header/symbol qualification と受け渡し lane を C++ multi-file contract に揃える
 
-最終更新: 2026-03-13
+最終更新: 2026-03-14
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P1-NES3-BUS-PORT-PKG-CPP-01`
@@ -39,10 +39,12 @@
 
 ## 分解
 
-- [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S1-01] current compile failure と cross-module bus type residual を focused regression / plan / TODO に固定する。
-- [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S2-01] imported bus type の header visibility / symbol qualification を C++ multi-file contract に合わせて修正する。
-- [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S2-02] base/derived bus passing lane を representative ownership contract に合わせて修正する。
-- [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S3-01] compile smoke と docs wording を shared residual dependency 付きの current contract に同期する。
+- [x] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S1-01] current compile failure と cross-module bus type residual を focused regression / plan / TODO に固定した。
+- [x] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S2-01] imported bus type の header visibility / symbol qualification を C++ multi-file contract に合わせて修正した。
+- [x] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S2-02] base/derived bus passing lane を representative ownership contract に合わせて修正した。
+- [x] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S3-01] compile smoke と docs wording を shared residual dependency 付きの current contract に同期した。
 
 決定ログ:
 - 2026-03-13: Pytra-NES3 bundle の中でも shared exception residual と cross-module bus type residual を分離して追えるよう、`NotImplementedError` task 依存付きの個別 P1 にした。
+- 2026-03-14: header builder が class block を持つ header で `py_runtime.h` を引くようにし、`PYTRA_DECLARE_CLASS_TYPE` / `PYTRA_TID_OBJECT` を使う imported interface header も self-contained compile を通るようにした。
+- 2026-03-14: imported user class の doc 解決、base qualification、borrow parameter 判定、`rc<Derived>` から `Base&` への call-site coercion、virtual/non-const propagation を揃え、`cpu.h` / `bus.h` / `bus_port.h` の header compile と `bus_port.cpp` / `cpu.cpp` / `bus.cpp` の compile を focused regression で固定した。

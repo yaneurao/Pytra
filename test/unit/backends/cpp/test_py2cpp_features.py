@@ -4566,30 +4566,58 @@ if __name__ == "__main__":
                 label="transpile pytra nes3 bus_port_pkg multi-file sample",
             )
             self.assertEqual(tr.returncode, 0, msg=tr.stderr)
+            generated_cpu_h = (out_dir / "include" / "cpu.h").read_text(encoding="utf-8")
+            generated_bus_h = (out_dir / "include" / "bus.h").read_text(encoding="utf-8")
             generated_bus_port = (out_dir / "src" / "bus_port.cpp").read_text(encoding="utf-8")
+            generated_bus = (out_dir / "src" / "bus.cpp").read_text(encoding="utf-8")
+            self.assertIn('#include "bus_port.h"', generated_cpu_h)
+            self.assertIn("int64 reset(pytra_mod_bus_port::BusPort& bus) const", generated_cpu_h)
+            self.assertIn("void poke(pytra_mod_bus_port::BusPort& bus) const", generated_cpu_h)
+            self.assertIn("return bus.read(0xFFFC);", generated_cpu_h)
+            self.assertIn("bus.write(0, 1);", generated_cpu_h)
+            self.assertIn("struct RAMBus : public pytra_mod_bus_port::BusPort {", generated_bus_h)
+            self.assertIn("int64 read(int64 address) const override", generated_bus_h)
+            self.assertIn("void write(int64 address, int64 value) override", generated_bus_h)
+            self.assertIn("cpu.poke(*bus);", generated_bus)
+            self.assertIn("return cpu.reset(*bus);", generated_bus)
             self.assertNotIn("throw NotImplementedError;", generated_bus_port)
             self.assertIn('throw NotImplementedError("NotImplementedError");', generated_bus_port)
-            comp = self._run_subprocess_with_timeout(
-                [
-                    "g++",
-                    "-std=c++20",
-                    "-O0",
-                    "-c",
-                    str(out_dir / "src" / "bus_port.cpp"),
-                    "-I",
-                    str(out_dir / "include"),
-                    "-I",
-                    "src",
-                    "-I",
-                    "src/runtime/cpp",
-                    "-o",
-                    str(out_dir / "bus_port.o"),
-                ],
-                cwd=ROOT,
-                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
-                label="compile pytra nes3 bus_port_pkg bus_port.cpp",
-            )
-            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+            header_cpu_src = out_dir / "header_cpu.cc"
+            header_cpu_src.write_text('#include "cpu.h"\nint main() { return 0; }\n', encoding="utf-8")
+            header_bus_src = out_dir / "header_bus.cc"
+            header_bus_src.write_text('#include "bus.h"\nint main() { return 0; }\n', encoding="utf-8")
+            header_bus_port_src = out_dir / "header_bus_port.cc"
+            header_bus_port_src.write_text('#include "bus_port.h"\nint main() { return 0; }\n', encoding="utf-8")
+            compile_targets = [
+                (out_dir / "src" / "bus_port.cpp", out_dir / "bus_port.o", "compile pytra nes3 bus_port_pkg bus_port.cpp"),
+                (out_dir / "src" / "cpu.cpp", out_dir / "cpu.o", "compile pytra nes3 bus_port_pkg cpu.cpp"),
+                (out_dir / "src" / "bus.cpp", out_dir / "bus.o", "compile pytra nes3 bus_port_pkg bus.cpp"),
+                (header_cpu_src, out_dir / "header_cpu.o", "compile pytra nes3 bus_port_pkg header cpu.h"),
+                (header_bus_src, out_dir / "header_bus.o", "compile pytra nes3 bus_port_pkg header bus.h"),
+                (header_bus_port_src, out_dir / "header_bus_port.o", "compile pytra nes3 bus_port_pkg header bus_port.h"),
+            ]
+            for source_path, object_path, label in compile_targets:
+                comp = self._run_subprocess_with_timeout(
+                    [
+                        "g++",
+                        "-std=c++20",
+                        "-O0",
+                        "-c",
+                        str(source_path),
+                        "-I",
+                        str(out_dir / "include"),
+                        "-I",
+                        "src",
+                        "-I",
+                        "src/runtime/cpp",
+                        "-o",
+                        str(object_path),
+                    ],
+                    cwd=ROOT,
+                    timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                    label=label,
+                )
+                self.assertEqual(comp.returncode, 0, msg=comp.stderr)
 
     def test_cli_multi_file_object_iter_helper_artifact_build_and_run(self) -> None:
         src_main = """def main() -> None:

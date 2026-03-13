@@ -1,6 +1,6 @@
 # P1: align header/symbol qualification and parameter passing for imported bus types with the C++ multi-file contract
 
-Last updated: 2026-03-13
+Last updated: 2026-03-14
 
 Related TODO:
 - `docs/ja/todo/index.md` `ID: P1-NES3-BUS-PORT-PKG-CPP-01`
@@ -39,10 +39,12 @@ Validation commands (planned):
 
 ## Breakdown
 
-- [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S1-01] Lock the current compile failure and cross-module bus-type residual in focused regressions, the plan, and TODO.
-- [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S2-01] Fix header visibility and symbol qualification for imported bus types to match the C++ multi-file contract.
-- [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S2-02] Align the base/derived bus passing lane with the representative ownership contract.
-- [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S3-01] Sync compile smoke and docs wording to the current contract with the shared-residual dependency recorded.
+- [x] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S1-01] Locked the current compile failure and cross-module bus-type residual in focused regressions, the plan, and TODO.
+- [x] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S2-01] Fixed header visibility and symbol qualification for imported bus types to match the C++ multi-file contract.
+- [x] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S2-02] Aligned the base/derived bus passing lane with the representative ownership contract.
+- [x] [ID: P1-NES3-BUS-PORT-PKG-CPP-01-S3-01] Synced compile smoke and docs wording to the current contract with the shared-residual dependency recorded.
 
 Decision log:
 - 2026-03-13: Opened as a separate P1 with an explicit dependency on the `NotImplementedError` task so the shared exception residual and the cross-module bus-type residual can be tracked independently.
+- 2026-03-14: Made the header builder pull `py_runtime.h` for headers with class blocks so imported interface headers that use `PYTRA_DECLARE_CLASS_TYPE` and `PYTRA_TID_OBJECT` pass self-contained compile checks.
+- 2026-03-14: Aligned imported user-class doc resolution, base qualification, borrow-parameter detection, `rc<Derived>` to `Base&` call-site coercion, and virtual/non-const propagation, then locked the `cpu.h` / `bus.h` / `bus_port.h` header compile plus `bus_port.cpp` / `cpu.cpp` / `bus.cpp` compile coverage in the focused regression.

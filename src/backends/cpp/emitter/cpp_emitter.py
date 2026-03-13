@@ -332,6 +332,47 @@ class CppEmitter(
                 return True
         return False
 
+    def _is_cpp_class_borrow_param_type(self, raw_t: str, cpp_t: str) -> bool:
+        """関数シグネチャで non-const borrow に寄せるべき user/runtime class 型か判定する。"""
+        t_norm = self.normalize_type_name(raw_t)
+        if t_norm in {"", "unknown"} or self.is_any_like_type(t_norm):
+            return False
+        for prefix in ("list[", "dict[", "set[", "tuple[", "deque[", "::std::optional<"):
+            if t_norm.startswith(prefix):
+                return False
+        if t_norm in {"str", "bytes", "bytearray"}:
+            return False
+        imported_cpp = self.normalize_type_name(self._resolve_imported_symbol_class_cpp_type(t_norm))
+        cpp_t_norm = imported_cpp if imported_cpp != "" else self.normalize_type_name(cpp_t)
+        if cpp_t_norm.startswith("rc<"):
+            return False
+        cpp_norm = self._strip_rc_wrapper(cpp_t_norm)
+        if cpp_norm in self.ref_classes:
+            return False
+        if imported_cpp != "":
+            return True
+        if cpp_norm in self.class_names or cpp_norm in self.value_classes:
+            return True
+        return False
+
+    def _is_current_function_cpp_class_borrow_name(self, expr_node: dict[str, Any]) -> bool:
+        """現在関数で borrow 署名に落とした class param 名か判定する。"""
+        if self._node_kind_from_dict(expr_node) != "Name":
+            return False
+        name = dict_any_get_str(expr_node, "id")
+        if name == "":
+            return False
+        borrow_names = getattr(self, "current_function_cpp_class_borrow_params", set())
+        return isinstance(borrow_names, set) and name in borrow_names
+
+    def _use_ref_class_member_arrow(self, expr_node: dict[str, Any], base_expr: str, owner_t: str) -> bool:
+        """ref class member access を `->` にするか判定する。"""
+        if not self._type_is_ref_class(owner_t):
+            return False
+        if self._is_current_function_cpp_class_borrow_name(expr_node):
+            return False
+        return not self._trim_ws(base_expr).startswith("*")
+
     def _class_has_property_getter(self, owner_t: str, attr: str) -> bool:
         """owner_t かその base に property getter が定義されているか返す。"""
         seen: set[str] = set()
@@ -1239,8 +1280,10 @@ class CppEmitter(
             for s in raw_body:
                 if isinstance(s, dict):
                     body.append(s)
+        self._prime_import_bindings_from_body(body)
         if self.enable_helper_artifact_lane:
             self._register_cpp_helper_artifacts_from_body(body)
+        current_module_name = self._current_user_module_name()
         for stmt in body:
             if self._node_kind_from_dict(stmt) == "ClassDef":
                 cls_name = self.any_dict_get_str(stmt, "name", "")
@@ -1288,7 +1331,13 @@ class CppEmitter(
                                     if n != "self":
                                         ordered_names.append(n)
                                         if n in arg_types:
-                                            ordered.append(self.any_to_str(arg_types.get(n)))
+                                            ordered.append(
+                                                self._normalize_user_class_signature_arg_type(
+                                                    current_module_name,
+                                                    self.doc,
+                                                    self.any_to_str(arg_types.get(n)),
+                                                )
+                                            )
                                         if n in arg_defaults:
                                             ordered_defaults[n] = arg_defaults.get(n)
                             marg[fn_name] = ordered
@@ -1313,8 +1362,11 @@ class CppEmitter(
                     self.class_field_types[cls_name] = cls_field_types
                     base_raw = stmt.get("base")
                     base = str(base_raw) if isinstance(base_raw, str) else ""
+                    if base != "":
+                        base = self._resolve_local_class_base_cpp_name(base)
                     self.class_base[cls_name] = base
                     hint = self.any_dict_get_str(stmt, "class_storage_hint", "ref")
+                    hint = self._effective_user_class_storage_hint(current_module_name, cls_name, hint)
                     self.class_storage_hints[cls_name] = hint if hint in {"value", "ref"} else "ref"
             elif self._node_kind_from_dict(stmt) == "FunctionDef":
                 fn_name = self.any_to_str(stmt.get("name"))
@@ -1331,7 +1383,13 @@ class CppEmitter(
                             n = str(raw_n)
                             if n in arg_types:
                                 arg_names_for_mutation.append(n)
-                                ordered.append(self.any_to_str(arg_types.get(n)))
+                                ordered.append(
+                                    self._normalize_user_class_signature_arg_type(
+                                        current_module_name,
+                                        self.doc,
+                                        self.any_to_str(arg_types.get(n)),
+                                    )
+                                )
                                 abi_modes.append(self._function_runtime_abi_arg_mode(stmt, n))
                     self.function_arg_types[fn_name] = ordered
                     self.function_arg_abi_modes[fn_name] = abi_modes
@@ -1361,6 +1419,7 @@ class CppEmitter(
                             self.extern_function_names.add(fn_name)
                             break
 
+        self._register_imported_runtime_class_metadata()
         self.ref_classes = {name for name, hint in self.class_storage_hints.items() if hint == "ref"}
         changed = True
         while changed:
@@ -1429,8 +1488,21 @@ class CppEmitter(
                     if m in self.class_method_names.get(base, set()):
                         self.class_method_virtual[base].add(m)
                     base = self.class_base.get(base, "")
-        self._prime_import_bindings_from_body(body)
-        self._register_imported_runtime_class_metadata()
+        for base_cpp_name, methods in self._global_user_virtual_methods_by_base_cpp_name().items():
+            class_key = self._class_key_for_cpp_name(base_cpp_name)
+            if class_key == "" or class_key not in self.class_method_virtual:
+                continue
+            self.class_method_virtual[class_key].update(methods)
+        self.class_method_force_nonconst = {cls: set() for cls in self.class_method_names}
+        for base_cpp_name, methods in self._global_user_nonconst_methods_by_base_cpp_name().items():
+            class_key = self._class_key_for_cpp_name(base_cpp_name)
+            if class_key == "":
+                continue
+            current = self.class_method_force_nonconst.get(class_key)
+            if not isinstance(current, set):
+                current = set()
+                self.class_method_force_nonconst[class_key] = current
+            current.update(methods)
 
         self.emit_module_leading_trivia()
         header_text: str = CPP_HEADER
@@ -2270,6 +2342,7 @@ class CppEmitter(
         arg_names: list[str] = []
         arg_names_for_mutation: list[str] = []
         ref_first_param_names: set[str] = set()
+        borrow_param_names: set[str] = set()
         raw_order = self.any_dict_get_list(stmt, "arg_order")
         for raw_n in raw_order:
             if isinstance(raw_n, str) and raw_n != "" and raw_n in arg_types:
@@ -2301,7 +2374,11 @@ class CppEmitter(
         for n in arg_names:
             t = self.any_to_str(arg_types.get(n))
             type_expr_obj = arg_type_exprs.get(n)
-            ct = self.cpp_signature_type(type_expr_obj if self._is_type_expr_payload(type_expr_obj) else t)
+            if self._is_type_expr_payload(type_expr_obj):
+                ct = self.cpp_signature_type(type_expr_obj)
+            else:
+                imported_cpp_type = self._resolve_imported_symbol_class_cpp_type(t)
+                ct = imported_cpp_type if imported_cpp_type != "" else self.cpp_signature_type(t)
             if self._is_pyobj_ref_first_list_type(t):
                 ref_first_param_names.add(n)
             emitted_n = self.rename_if_reserved(n, self.reserved_words, self.rename_prefix, self.renamed_symbols)
@@ -2310,17 +2387,29 @@ class CppEmitter(
             if usage != "mutable" and n in mutated_params:
                 usage = "mutable"
             by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
+            borrow_param = self._is_cpp_class_borrow_param_type(t, ct)
+            if borrow_param:
+                borrow_param_names.add(n)
+            borrow_ct = self._strip_rc_wrapper(ct) if borrow_param else ct
             param_txt = ""
             if by_ref and usage == "mutable":
-                use_object_param = ct == "object"
-                param_txt = f"{ct} {emitted_n}" if use_object_param else f"{ct}& {emitted_n}"
-                fn_sig_params.append(ct if use_object_param else f"{ct}&")
+                if ct.startswith("rc<") and not borrow_param:
+                    param_txt = f"const {ct}& {emitted_n}"
+                    fn_sig_params.append(f"const {ct}&")
+                else:
+                    use_object_param = borrow_ct == "object"
+                    param_txt = f"{borrow_ct} {emitted_n}" if use_object_param else f"{borrow_ct}& {emitted_n}"
+                    fn_sig_params.append(borrow_ct if use_object_param else f"{borrow_ct}&")
             elif by_ref:
-                param_txt = f"const {ct}& {emitted_n}"
-                fn_sig_params.append(f"const {ct}&")
+                if borrow_param:
+                    param_txt = f"{borrow_ct}& {emitted_n}"
+                    fn_sig_params.append(f"{borrow_ct}&")
+                else:
+                    param_txt = f"const {borrow_ct}& {emitted_n}"
+                    fn_sig_params.append(f"const {borrow_ct}&")
             else:
-                param_txt = f"{ct} {emitted_n}"
-                fn_sig_params.append(ct)
+                param_txt = f"{borrow_ct} {emitted_n}"
+                fn_sig_params.append(borrow_ct)
             if n in arg_defaults:
                 default_txt = self._render_param_default_expr(arg_defaults.get(n), t)
                 if default_txt != "":
@@ -2339,19 +2428,27 @@ class CppEmitter(
                 self.renamed_symbols,
             )
             by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
+            borrow_param = self._is_cpp_class_borrow_param_type(vararg_list_t, ct)
+            if borrow_param:
+                borrow_param_names.add(vararg_name)
+            borrow_ct = self._strip_rc_wrapper(ct) if borrow_param else ct
             usage = self.any_to_str(arg_usage.get(vararg_name))
             usage = usage if usage != "" else "readonly"
             if usage != "mutable" and vararg_name in mutated_params:
                 usage = "mutable"
             if by_ref and usage == "mutable":
-                param_txt = f"{ct} {emitted_vararg}" if ct == "object" else f"{ct}& {emitted_vararg}"
-                fn_sig_params.append(ct if ct == "object" else f"{ct}&")
+                param_txt = f"{borrow_ct} {emitted_vararg}" if borrow_ct == "object" else f"{borrow_ct}& {emitted_vararg}"
+                fn_sig_params.append(borrow_ct if borrow_ct == "object" else f"{borrow_ct}&")
             elif by_ref:
-                param_txt = f"const {ct}& {emitted_vararg}"
-                fn_sig_params.append(f"const {ct}&")
+                if borrow_param:
+                    param_txt = f"{borrow_ct}& {emitted_vararg}"
+                    fn_sig_params.append(f"{borrow_ct}&")
+                else:
+                    param_txt = f"const {borrow_ct}& {emitted_vararg}"
+                    fn_sig_params.append(f"const {borrow_ct}&")
             else:
-                param_txt = f"{ct} {emitted_vararg}"
-                fn_sig_params.append(ct)
+                param_txt = f"{borrow_ct} {emitted_vararg}"
+                fn_sig_params.append(borrow_ct)
             params.append(param_txt)
             fn_scope.add(vararg_name)
         params_txt = ", ".join(params)
@@ -2368,14 +2465,20 @@ class CppEmitter(
         prev_decl_types = self.declared_var_types
         prev_reassigned_names = self.current_function_reassigned_names
         prev_runtime_list_alias_names = self.current_function_pyobj_runtime_list_alias_names
+        prev_cpp_class_borrow_params = getattr(self, "current_function_cpp_class_borrow_params", set())
         assign_counts = self._collect_assigned_name_counts(body_stmts)
         self.current_function_reassigned_names = {name for name, count in assign_counts.items() if int(count) > 1}
         self.declared_var_types = {}
         self.current_function_pyobj_runtime_list_alias_names = set(prev_runtime_list_alias_names) | set(ref_first_param_names)
+        self.current_function_cpp_class_borrow_params = set(borrow_param_names)
         for an in arg_names:
             at = self.any_to_str(arg_types.get(an))
             if at != "":
-                self.declared_var_types[an] = self.normalize_type_name(at)
+                imported_cpp_type = self._resolve_imported_symbol_class_cpp_type(at)
+                if imported_cpp_type != "":
+                    self.declared_var_types[an] = self.normalize_type_name(imported_cpp_type)
+                else:
+                    self.declared_var_types[an] = self.normalize_type_name(at)
         if vararg_name != "" and vararg_list_t != "":
             self.declared_var_types[vararg_name] = vararg_list_t
         self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
@@ -2389,6 +2492,7 @@ class CppEmitter(
         self.declared_var_types = prev_decl_types
         self.current_function_reassigned_names = set(prev_reassigned_names)
         self.current_function_pyobj_runtime_list_alias_names = set(prev_runtime_list_alias_names)
+        self.current_function_cpp_class_borrow_params = set(prev_cpp_class_borrow_params)
         self.scope_stack.pop()
         self.indent -= 1
         self.emit("};")
@@ -3868,7 +3972,7 @@ class CppEmitter(
         if self._class_has_property_getter(bt, attr):
             if base == "self" or base == "*this":
                 return f"this->{emitted_attr}()"
-            if self._type_is_ref_class(bt):
+            if self._use_ref_class_member_arrow(base_node, base, bt):
                 return f"{base}->{emitted_attr}()"
             return f"{base}.{emitted_attr}()"
         base_module_name = self.any_dict_get_str(base_ctx, "module", "")
@@ -3942,7 +4046,7 @@ class CppEmitter(
             if not self.is_boxed_object_expr(base_obj):
                 base_obj = f"make_object({base_obj})"
             return f"obj_to_rc_or_raise<{owner_cls}>({base_obj}, \"{ctx}\")->{emitted_attr}"
-        if self._type_is_ref_class(bt):
+        if self._use_ref_class_member_arrow(base_node, base, bt):
             return f"{base}->{emitted_attr}"
         return f"{base}.{emitted_attr}"
 

@@ -21,6 +21,7 @@ Last updated: 2026-03-14
 - [2026-03-14 / P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01](../plans/archive/20260314-p1-nes3-list-default-factory-rc-list-cpp-support.md)
 - [2026-03-14 / P1-NES3-APU-CONST-PKG-CPP-01](../plans/archive/20260314-p1-nes3-apu-const-pkg-cpp-support.md)
 - [2026-03-14 / P1-NES3-PATH-ALIAS-PKG-CPP-01](../plans/archive/20260314-p1-nes3-path-alias-pkg-cpp-support.md)
+- [2026-03-14 / P1-NES3-BUS-PORT-PKG-CPP-01](../plans/archive/20260314-p1-nes3-bus-port-pkg-cpp-support.md)
 
 - [2026-03-13 / P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01](../plans/archive/20260313-p0-frontends-facade-py2x-entrypoints-import.md)
 - [2026-03-13 / P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01](../plans/archive/20260313-p0-cpp-transpile-cli-direct-header-contract.md)

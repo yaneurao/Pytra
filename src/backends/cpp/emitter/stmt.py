@@ -2089,6 +2089,7 @@ class CppStatementEmitter:
         value_list_params: set[str] = set()
         typed_list_str_params: set[str] = set()
         ref_first_param_names: set[str] = set()
+        borrow_param_names: set[str] = set()
         raw_order = self.any_dict_get_list(stmt, "arg_order")
         for raw_n in raw_order:
             if isinstance(raw_n, str) and raw_n != "":
@@ -2134,14 +2135,25 @@ class CppStatementEmitter:
             if usage != "mutable" and n in mutated_params:
                 usage = "mutable"
             by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
+            borrow_param = self._is_cpp_class_borrow_param_type(t, ct)
+            if borrow_param:
+                borrow_param_names.add(n)
+            borrow_ct = self._strip_rc_wrapper(ct) if borrow_param else ct
             if skip_self:
                 pass
             else:
-                param_txt = (
-                    (f"{ct} {emitted_n}" if ct == "object" else f"{ct}& {emitted_n}")
-                    if by_ref and usage == "mutable"
-                    else (f"const {ct}& {emitted_n}" if by_ref else f"{ct} {emitted_n}")
-                )
+                if by_ref and usage == "mutable":
+                    if ct.startswith("rc<") and not borrow_param:
+                        param_txt = f"const {ct}& {emitted_n}"
+                    else:
+                        param_txt = f"{borrow_ct} {emitted_n}" if borrow_ct == "object" else f"{borrow_ct}& {emitted_n}"
+                elif by_ref:
+                    if borrow_param:
+                        param_txt = f"{borrow_ct}& {emitted_n}"
+                    else:
+                        param_txt = f"const {borrow_ct}& {emitted_n}"
+                else:
+                    param_txt = f"{borrow_ct} {emitted_n}"
                 if ct.startswith("list<"):
                     value_list_params.add(n)
                 if n in arg_defaults:
@@ -2168,11 +2180,19 @@ class CppStatementEmitter:
             if usage != "mutable" and vararg_name in mutated_params:
                 usage = "mutable"
             by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
-            param_txt = (
-                (f"{ct} {emitted_vararg}" if ct == "object" else f"{ct}& {emitted_vararg}")
-                if by_ref and usage == "mutable"
-                else (f"const {ct}& {emitted_vararg}" if by_ref else f"{ct} {emitted_vararg}")
-            )
+            borrow_param = self._is_cpp_class_borrow_param_type(vararg_list_t, ct)
+            if borrow_param:
+                borrow_param_names.add(vararg_name)
+            borrow_ct = self._strip_rc_wrapper(ct) if borrow_param else ct
+            if by_ref and usage == "mutable":
+                param_txt = f"{borrow_ct} {emitted_vararg}" if borrow_ct == "object" else f"{borrow_ct}& {emitted_vararg}"
+            elif by_ref:
+                if borrow_param:
+                    param_txt = f"{borrow_ct}& {emitted_vararg}"
+                else:
+                    param_txt = f"const {borrow_ct}& {emitted_vararg}"
+            else:
+                param_txt = f"{borrow_ct} {emitted_vararg}"
             params.append(param_txt)
             fn_scope.add(vararg_name)
         if in_class and name == "__init__" and self.current_class_name is not None:
@@ -2187,6 +2207,20 @@ class CppStatementEmitter:
         else:
             param_sep = ", "
             params_txt = param_sep.join(params)
+            method_is_const = (
+                in_class
+                and self.current_class_name is not None
+                and "self" in arg_names
+                and name not in {"__init__", "__del__"}
+                and "self" not in mutated_params
+            )
+            if (
+                method_is_const
+                and in_class
+                and self.current_class_name is not None
+                and str(name) in getattr(self, "class_method_force_nonconst", {}).get(self.current_class_name, set())
+            ):
+                method_is_const = False
             if len(template_params) > 0:
                 template_parts = [f"class {param_name}" for param_name in template_params]
                 self.emit("template <" + ", ".join(template_parts) + ">")
@@ -2195,9 +2229,13 @@ class CppStatementEmitter:
                 func_suffix = ""
                 if name != "__del__":
                     if self._class_has_base_method(self.current_class_name, str(name)):
-                        func_suffix = " override"
+                        func_suffix = " const override" if method_is_const else " override"
                     elif str(name) in self.class_method_virtual.get(self.current_class_name, set()):
                         func_prefix = "virtual "
+                        if method_is_const:
+                            func_suffix = " const"
+                    elif method_is_const:
+                        func_suffix = " const"
                 self.emit(f"{func_prefix}{ret} {emitted_name}({params_txt}){func_suffix} {{")
             else:
                 self.emit_function_open(ret, str(emitted_name), params_txt)
@@ -2218,6 +2256,7 @@ class CppStatementEmitter:
         prev_typed_list_str_params = getattr(self, "current_function_typed_list_str_params", set())
         prev_typed_list_str_locals = getattr(self, "current_function_typed_list_str_locals", set())
         prev_reassigned_names = getattr(self, "current_function_reassigned_names", set())
+        prev_cpp_class_borrow_params = getattr(self, "current_function_cpp_class_borrow_params", set())
         prev_decl_types = self.declared_var_types
         empty_decl_types: dict[str, str] = {}
         self.declared_var_types = empty_decl_types
@@ -2225,6 +2264,7 @@ class CppStatementEmitter:
         self.current_function_non_escape_summary = dict(fn_non_escape_summary)
         self.current_function_stack_list_locals = set(stack_list_locals)
         self.current_function_pyobj_runtime_list_alias_names = set(runtime_list_alias_names) | set(ref_first_param_names)
+        self.current_function_cpp_class_borrow_params = set(borrow_param_names)
         self.current_function_value_list_params = set(value_list_params)
         self.current_function_value_list_locals = set()
         self.current_function_typed_list_str_params = set(typed_list_str_params)
@@ -2234,7 +2274,11 @@ class CppStatementEmitter:
             if not (in_class and i == 0 and an == "self"):
                 at = self.any_to_str(arg_types.get(an))
                 if at != "":
-                    self.declared_var_types[an] = self.normalize_type_name(at)
+                    imported_cpp_type = self._resolve_imported_symbol_class_cpp_type(at)
+                    if imported_cpp_type != "":
+                        self.declared_var_types[an] = self.normalize_type_name(imported_cpp_type)
+                    else:
+                        self.declared_var_types[an] = self.normalize_type_name(at)
         if vararg_name != "" and vararg_list_t != "":
             self.declared_var_types[vararg_name] = vararg_list_t
         self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
@@ -2267,6 +2311,7 @@ class CppStatementEmitter:
         self.current_function_typed_list_str_params = set(prev_typed_list_str_params)
         self.current_function_typed_list_str_locals = set(prev_typed_list_str_locals)
         self.current_function_reassigned_names = set(prev_reassigned_names)
+        self.current_function_cpp_class_borrow_params = set(prev_cpp_class_borrow_params)
         self.declared_var_types = prev_decl_types
         self.scope_stack.pop()
         self.indent -= 1

@@ -250,6 +250,7 @@ def build_cpp_header_from_east(
     class_names: set[str] = set()
     ref_classes: set[str] = set()
     pyobj_ref_lists = cpp_list_model == "pyobj"
+    import_include_symbol_map = _header_import_include_symbol_map(east_module)
 
     for st in body:
         if dict_any_get_str(st, "kind") == "ClassDef":
@@ -359,12 +360,19 @@ def build_cpp_header_from_east(
                     usage = dict_any_get_str(arg_usage, an, "readonly")
                     if usage != "mutable" and an in mutated_params:
                         usage = "mutable"
+                    borrow_cpp = _header_borrow_cpp_type(at, at_cpp, class_names, ref_classes)
                     if at_cpp in by_value_types:
-                        param_txt = at_cpp + " " + emitted_an
+                        param_txt = borrow_cpp + " " + emitted_an
                     elif usage == "mutable":
-                        param_txt = at_cpp + " " + emitted_an if at_cpp == "object" else at_cpp + "& " + emitted_an
+                        if at_cpp.startswith("rc<") and not _header_is_class_borrow_type(at, at_cpp, class_names, ref_classes):
+                            param_txt = "const " + at_cpp + "& " + emitted_an
+                        else:
+                            param_txt = borrow_cpp + " " + emitted_an if borrow_cpp == "object" else borrow_cpp + "& " + emitted_an
                     else:
-                        param_txt = "const " + at_cpp + "& " + emitted_an
+                        if _header_is_class_borrow_type(at, at_cpp, class_names, ref_classes):
+                            param_txt = borrow_cpp + "& " + emitted_an
+                        else:
+                            param_txt = "const " + borrow_cpp + "& " + emitted_an
                     if an in arg_defaults:
                         default_node = arg_defaults.get(an)
                         if isinstance(default_node, dict):
@@ -392,12 +400,19 @@ def build_cpp_header_from_east(
                     usage = dict_any_get_str(arg_usage, vararg_name, "readonly")
                     if usage != "mutable" and vararg_name in mutated_params:
                         usage = "mutable"
+                    borrow_cpp = _header_borrow_cpp_type(list_t, at_cpp, class_names, ref_classes)
                     if at_cpp in by_value_types:
-                        param_txt = at_cpp + " " + emitted_vararg
+                        param_txt = borrow_cpp + " " + emitted_vararg
                     elif usage == "mutable":
-                        param_txt = at_cpp + " " + emitted_vararg if at_cpp == "object" else at_cpp + "& " + emitted_vararg
+                        if at_cpp.startswith("rc<") and not _header_is_class_borrow_type(list_t, at_cpp, class_names, ref_classes):
+                            param_txt = "const " + at_cpp + "& " + emitted_vararg
+                        else:
+                            param_txt = borrow_cpp + " " + emitted_vararg if borrow_cpp == "object" else borrow_cpp + "& " + emitted_vararg
                     else:
-                        param_txt = "const " + at_cpp + "& " + emitted_vararg
+                        if _header_is_class_borrow_type(list_t, at_cpp, class_names, ref_classes):
+                            param_txt = borrow_cpp + "& " + emitted_vararg
+                        else:
+                            param_txt = "const " + borrow_cpp + "& " + emitted_vararg
                     parts.append(param_txt)
                 sep = ", "
                 fn_lines.append(ret_cpp + " " + name + "(" + sep.join(parts) + ");")
@@ -463,11 +478,24 @@ def build_cpp_header_from_east(
     if has_std_uset:
         includes.append("#include <unordered_set>")
     decl_text = join_str_list("\n", class_blocks + class_lines + var_lines + fn_lines)
-    include_lines = _extract_cpp_include_lines(cpp_text, output_path)
-    include_lines = _filter_cpp_include_lines_for_header(include_lines, decl_text, top_namespace)
+    raw_include_lines = _extract_cpp_include_lines(cpp_text, output_path)
+    include_lines = _filter_cpp_include_lines_for_header(raw_include_lines, decl_text, top_namespace)
     for include_line in include_lines:
         if include_line not in includes:
             includes.append(include_line)
+    for include_line in raw_include_lines:
+        if include_line in includes:
+            continue
+        if _header_decl_uses_imported_symbol_include(include_line, decl_text, import_include_symbol_map):
+            includes.append(include_line)
+    if _header_decl_uses_exception_support(decl_text):
+        exceptions_include = '#include "runtime/cpp/native/core/exceptions.h"'
+        if exceptions_include not in includes:
+            includes.append(exceptions_include)
+    if _header_decl_uses_class_type_support(decl_text):
+        runtime_include = '#include "runtime/cpp/native/core/py_runtime.h"'
+        if runtime_include not in includes:
+            includes.append(runtime_include)
 
     guard = _header_guard_from_path(str(output_path))
     lines: list[str] = []
@@ -954,6 +982,9 @@ def _header_decl_uses_include(include_line: str, decl_text: str, top_namespace: 
     stem = _strip_runtime_file_kind_suffix(stem)
     if stem == "":
         return True
+    user_ns_prefix = "pytra_mod_" + stem
+    if user_ns_prefix + "::" in decl_text or user_ns_prefix in decl_text:
+        return True
 
     # runtime/cpp/<bucket>/<module>.gen.h|ext.h または
     # runtime/cpp/{generated,native,pytra}/<bucket>/<module>.h -> namespace prefix を導出
@@ -993,6 +1024,134 @@ def _header_decl_uses_include(include_line: str, decl_text: str, top_namespace: 
 
     # fallback: file stem が識別子として現れるなら保持
     return _contains_identifier_token(decl_text, stem)
+
+
+def _header_module_local_include_name(module_name: str) -> str:
+    module_txt = module_name.strip().replace("\\", "/")
+    while module_txt.startswith("."):
+        module_txt = module_txt[1:]
+    if module_txt == "":
+        return ""
+    tail = module_txt.split(".")[-1]
+    if tail == "__init__":
+        return ""
+    return tail + ".h"
+
+
+def _header_import_include_symbol_map(east_module: dict[str, Any]) -> dict[str, set[str]]:
+    meta = dict_any_get_dict(east_module, "meta")
+    include_symbols: dict[str, set[str]] = {}
+    import_symbols = dict_any_get_dict(meta, "import_symbols")
+    for local_name, raw_sym in import_symbols.items():
+        if not isinstance(local_name, str) or local_name == "":
+            continue
+        sym = raw_sym if isinstance(raw_sym, dict) else {}
+        include_name = _header_module_local_include_name(dict_any_get_str(sym, "module"))
+        if include_name == "":
+            continue
+        bucket = include_symbols.get(include_name)
+        if not isinstance(bucket, set):
+            bucket = set()
+            include_symbols[include_name] = bucket
+        bucket.add(local_name)
+        export_name = dict_any_get_str(sym, "name")
+        if export_name != "":
+            bucket.add(export_name)
+    import_bindings = dict_any_get_dict_list(meta, "import_bindings")
+    for binding in import_bindings:
+        include_name = _header_module_local_include_name(dict_any_get_str(binding, "module_id"))
+        if include_name == "":
+            continue
+        bucket = include_symbols.get(include_name)
+        if not isinstance(bucket, set):
+            bucket = set()
+            include_symbols[include_name] = bucket
+        local_name = dict_any_get_str(binding, "local_name")
+        export_name = dict_any_get_str(binding, "export_name")
+        if local_name != "":
+            bucket.add(local_name)
+        if export_name != "":
+            bucket.add(export_name)
+    return include_symbols
+
+
+def _header_decl_uses_imported_symbol_include(
+    include_line: str,
+    decl_text: str,
+    include_symbol_map: dict[str, set[str]],
+) -> bool:
+    q0 = include_line.find("\"")
+    q1 = include_line.rfind("\"")
+    if q0 < 0 or q1 <= q0:
+        return False
+    inc_path = include_line[q0 + 1 : q1].replace("\\", "/")
+    include_name = inc_path.split("/")[-1]
+    symbols = include_symbol_map.get(include_name)
+    if not isinstance(symbols, set) or len(symbols) == 0:
+        return False
+    for symbol in symbols:
+        if _contains_identifier_token(decl_text, symbol):
+            return True
+    return False
+
+
+def _header_decl_uses_exception_support(decl_text: str) -> bool:
+    for exception_name in (
+        "ValueError",
+        "RuntimeError",
+        "NotImplementedError",
+        "TypeError",
+        "IndexError",
+        "KeyError",
+        "SystemExit",
+    ):
+        if _contains_identifier_token(decl_text, exception_name):
+            return True
+    return False
+
+
+def _header_decl_uses_class_type_support(decl_text: str) -> bool:
+    return "PYTRA_DECLARE_CLASS_TYPE(" in decl_text or _contains_identifier_token(decl_text, "PYTRA_TID_OBJECT")
+
+
+def _header_strip_rc_wrapper(cpp_type: str) -> str:
+    txt = cpp_type.strip()
+    if txt.startswith("rc<") and txt.endswith(">"):
+        inner = txt[3:-1].strip()
+        if inner != "":
+            return inner
+    return txt
+
+
+def _header_is_class_borrow_type(
+    east_type: str,
+    cpp_type: str,
+    class_names: set[str],
+    ref_classes: set[str],
+) -> bool:
+    type_norm = east_type.strip()
+    if type_norm in {"", "unknown", "Any", "object", "str", "bytes", "bytearray"}:
+        return False
+    for prefix in ("list[", "dict[", "set[", "tuple[", "deque[", "::std::optional<"):
+        if type_norm.startswith(prefix):
+            return False
+    if cpp_type.strip().startswith("rc<"):
+        return False
+    cpp_norm = _header_strip_rc_wrapper(cpp_type)
+    if cpp_norm in ref_classes:
+        return False
+    return cpp_norm in class_names
+
+
+def _header_borrow_cpp_type(
+    east_type: str,
+    cpp_type: str,
+    class_names: set[str],
+    ref_classes: set[str],
+) -> str:
+    if _header_is_class_borrow_type(east_type, cpp_type, class_names, ref_classes):
+        return _header_strip_rc_wrapper(cpp_type)
+    return cpp_type
 
 
 def _contains_identifier_token(text: str, token: str) -> bool:
@@ -1144,7 +1303,7 @@ def _brace_delta_ignoring_literals(line: str) -> int:
 def _header_runtime_types_include(used_types: set[str], has_class_blocks: bool) -> str:
     """生成ヘッダが必要とする最小 runtime 型ヘッダ名を返す。"""
     if has_class_blocks:
-        return "py_types.h"
+        return "py_runtime.h"
     scalar_markers = (
         "int8",
         "uint8",

@@ -307,6 +307,8 @@ class CppTypeBridgeEmitter:
         list_arg_adapter = self._render_pyobj_value_list_arg_adapter(arg_txt, arg_node, t_norm)
         if list_target_is_value and list_arg_adapter != arg_txt:
             return list_arg_adapter
+        if self._class_borrow_accepts_ref_handle(at, t_norm):
+            return self._render_class_borrow_arg(arg_txt)
         if self.is_any_like_type(t_norm):
             if self.is_boxed_object_expr(arg_txt):
                 return arg_txt
@@ -357,6 +359,87 @@ class CppTypeBridgeEmitter:
         if len(arg_node_dict) > 0:
             return self.render_expr(self._build_unbox_expr_node(arg_node, t_norm, f"call_arg:{t_norm}"))
         return self._coerce_any_expr_to_target(arg_txt, target_t, f"call_arg:{t_norm}")
+
+    def _render_class_borrow_arg(self, arg_txt: str) -> str:
+        """`rc<T>` を borrowed class parameter へ渡すときの参照式を返す。"""
+        if arg_txt.startswith("*"):
+            return arg_txt
+        return f"*{arg_txt}"
+
+    def _class_borrow_accepts_ref_handle(self, source_t: str, target_t: str) -> bool:
+        """`rc<Derived>` を `Base&` へ渡せる representative lane か判定する。"""
+        source_norm = self.normalize_type_name(source_t)
+        target_norm = self.normalize_type_name(target_t)
+        if source_norm in {"", "unknown"} or target_norm in {"", "unknown"}:
+            return False
+        if target_norm.startswith("rc<"):
+            return False
+        if not self._is_cpp_class_borrow_type(target_norm):
+            return False
+        if not self._type_is_ref_class(source_norm):
+            return False
+        return self._is_cpp_class_subtype(source_norm, target_norm)
+
+    def _is_cpp_class_borrow_type(self, type_name: str) -> bool:
+        """関数境界で borrowed class として扱う target 型か判定する。"""
+        type_norm = self.normalize_type_name(type_name)
+        if type_norm in {"", "unknown"} or self.is_any_like_type(type_norm):
+            return False
+        for prefix in (
+            "list[",
+            "dict[",
+            "set[",
+            "tuple[",
+            "deque[",
+            "iter[",
+            "iterator[",
+            "generator[",
+            "callable[",
+            "::std::optional<",
+        ):
+            if type_norm.startswith(prefix):
+                return False
+        if type_norm in {
+            "str",
+            "bytes",
+            "bytearray",
+            "int8",
+            "uint8",
+            "int16",
+            "uint16",
+            "int32",
+            "uint32",
+            "int64",
+            "uint64",
+            "float32",
+            "float64",
+            "bool",
+        }:
+            return False
+        for candidate in self._expand_runtime_class_candidates(type_norm):
+            stripped = self._strip_rc_wrapper(candidate)
+            if stripped in self.class_names or stripped in self.ref_classes or stripped in self.value_classes:
+                return True
+        return False
+
+    def _is_cpp_class_subtype(self, source_t: str, target_t: str) -> bool:
+        """source_t が target_t と同型か派生型なら True。"""
+        target_candidates = {
+            self._strip_rc_wrapper(candidate)
+            for candidate in self._expand_runtime_class_candidates(target_t)
+            if self._strip_rc_wrapper(candidate) != ""
+        }
+        if len(target_candidates) == 0:
+            return False
+        for source_candidate in self._expand_runtime_class_candidates(source_t):
+            current = self._strip_rc_wrapper(source_candidate)
+            seen: set[str] = set()
+            while current != "" and current not in seen:
+                if current in target_candidates:
+                    return True
+                seen.add(current)
+                current = self.class_base.get(current, "")
+        return False
 
     def _coerce_args_by_signature(
         self,
@@ -479,6 +562,9 @@ class CppTypeBridgeEmitter:
             return east_type
         if mapped != "":
             return mapped
+        imported_class_cpp_type = self._resolve_imported_symbol_class_cpp_type(east_type)
+        if imported_class_cpp_type != "":
+            return imported_class_cpp_type
         if east_type in {"Any", "object"}:
             return "object"
         if east_type.find("|") != -1:

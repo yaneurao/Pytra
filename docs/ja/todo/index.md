@@ -31,12 +31,6 @@
 
 ## 未完了タスク
 
-### P1
-
-1. [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01] import した bus 型の header/symbol qualification と受け渡し lane を揃え、`bus_port_pkg` を compile まで通す。
-文脈: [docs/ja/plans/p1-nes3-bus-port-pkg-cpp-support.md](../plans/p1-nes3-bus-port-pkg-cpp-support.md)
-- 進捗メモ: 未着手。
-
 ### P2
 
 1. [ ] [ID: P2-CPP-LEGACY-CORE-COMPAT-RETIRE-01] 削除済み `src/runtime/cpp/core/**` compat surface を live tree の現役前提から完全に外し、guard-only 参照へ整理する。
