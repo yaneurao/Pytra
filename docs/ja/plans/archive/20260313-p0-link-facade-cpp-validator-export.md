@@ -38,11 +38,12 @@
 - `git -C /workspace/Pytra diff --check`
 
 分解:
-- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01] `toolchain.link` package facade から `validate_cpp_backend_input_doc()` と `translate_cpp_backend_emit_error()` を正規 export し、`typed_boundary` / link test が submodule reach-through に依存しない状態へ揃える。
+- [x] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01] `toolchain.link` package facade から `validate_cpp_backend_input_doc()` と `translate_cpp_backend_emit_error()` を正規 export し、`typed_boundary` / link test が submodule reach-through に依存しない状態へ揃える。
 - [x] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S1-01] facade export を要求する focused regression / source contract を追加し、current package-surface gap を fail-fast に固定する。
 - [x] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S2-01] `toolchain.link.__init__` export と `typed_boundary` / link test import を facade 経由へ切り替え、targeted unit を green に戻す。
-- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S3-01] TODO / plan / decision log を同期して close 条件を固める。
+- [x] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S3-01] TODO / plan / decision log を同期して close 条件を固める。
 
 決定ログ:
 - 2026-03-13: TODO 空き後の follow-up P0 として、link package facade と実利用 import path のねじれを縮める task を起票した。対象は C++ backend validator helper 2 本に限定し、validator behavior 自体は変えない。
 - 2026-03-13: `S1-01/S2-01` では facade export の runtime regression を `test_program_loader.py` に、source contract を `test_py2x_entrypoints_contract.py` に置いた。実装は `toolchain.link.__init__` の再 export と `typed_boundary` import path の切替に限定し、`program_validator.py` の behavior には触れていない。
+- 2026-03-13: `S3-01` では active TODO / plan / archive を同期し、close 条件を「`toolchain.link` facade export、`typed_boundary` facade import、runtime regression と source contract が両方 green」に固定した。追加の export 拡大は次 task へ回す。

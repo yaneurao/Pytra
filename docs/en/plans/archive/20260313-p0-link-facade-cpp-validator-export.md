@@ -38,11 +38,12 @@ Verification commands:
 - `git -C /workspace/Pytra diff --check`
 
 Breakdown:
-- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01] Re-export `validate_cpp_backend_input_doc()` and `translate_cpp_backend_emit_error()` from the `toolchain.link` package facade so `typed_boundary` and link tests no longer depend on submodule reach-through.
+- [x] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01] Re-export `validate_cpp_backend_input_doc()` and `translate_cpp_backend_emit_error()` from the `toolchain.link` package facade so `typed_boundary` and link tests no longer depend on submodule reach-through.
 - [x] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S1-01] Add focused regression / source-contract coverage that requires the facade export and locks the current package-surface gap in fail-fast form.
 - [x] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S2-01] Switch `toolchain.link.__init__` exports plus `typed_boundary` / link-test imports over to the facade path and bring the targeted unit suite back to green.
-- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S3-01] Sync TODO / plan / decision log and lock the close condition.
+- [x] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S3-01] Sync TODO / plan / decision log and lock the close condition.
 
 Decision log:
 - 2026-03-13: Filed this as the next follow-up P0 after TODO became empty, with scope limited to shrinking the mismatch between the link package facade and the real import paths for the two C++ backend validator helpers. Validator behavior itself stays unchanged.
 - 2026-03-13: `S1-01/S2-01` split the contract in two places: a runtime regression in `test_program_loader.py` and a source contract in `test_py2x_entrypoints_contract.py`. The implementation itself stays narrow, limited to re-exporting from `toolchain.link.__init__` and switching `typed_boundary` to the facade path without changing `program_validator.py` behavior.
+- 2026-03-13: `S3-01` synchronized the active TODO, plan, and archive, and fixed the close condition as “the `toolchain.link` facade exports the helpers, `typed_boundary` imports through the facade, and both the runtime regression and source contract stay green.” Any wider export cleanup is left for a separate follow-up.
