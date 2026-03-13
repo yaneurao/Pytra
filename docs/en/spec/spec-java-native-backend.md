@@ -25,7 +25,7 @@ Target (native):
 
 - Default `py2java.py` path uses only Java native emitter and emits no `.js` sidecar.
 - Java output directly contains EAST3 logic (expressions/statements/control flow/classes).
-- Runtime dependency converges to Java runtime (`src/runtime/java/pytra/`), removing Node.js from the default path.
+- Runtime dependency converges to Java runtime (the canonical repo roots are `src/runtime/java/{generated,native}/`), removing Node.js from the default path.
 
 ## 3. Input EAST3 Node Responsibility
 
@@ -54,7 +54,7 @@ Native mode must never silently fallback to sidecar when input is unsupported.
 
 Generated Java from native mode may rely only on:
 
-- Java runtime APIs under `src/runtime/java/pytra/`;
+- Java runtime APIs under `src/runtime/java/{generated,native}/` (checked-in `src/runtime/java/pytra/**` is delete-target debt only);
 - JDK standard libraries (`java.lang`, `java.util`, etc.).
 
 Forbidden:

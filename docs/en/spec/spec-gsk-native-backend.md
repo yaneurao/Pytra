@@ -54,9 +54,9 @@ Native mode must never silently fallback to sidecar when input is unsupported.
 
 Native outputs may rely only on:
 
-- Go: `src/runtime/go/pytra/py_runtime.go` + Go standard library.
-- Swift: `src/runtime/swift/pytra/py_runtime.swift` + Swift standard library.
-- Kotlin: `src/runtime/kotlin/pytra/py_runtime.kt` + Kotlin/JVM standard library.
+- Go: `src/runtime/go/{generated,native}/` + Go standard library (checked-in `src/runtime/go/pytra/**` is delete-target debt only).
+- Swift: `src/runtime/swift/{generated,native}/` + Swift standard library (checked-in `src/runtime/swift/pytra/**` is delete-target debt only).
+- Kotlin: `src/runtime/kotlin/{generated,native}/` + Kotlin/JVM standard library (checked-in `src/runtime/kotlin/pytra/**` is delete-target debt only).
 
 Forbidden in default path:
 

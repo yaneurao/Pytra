@@ -90,7 +90,7 @@ Implementation policy:
 
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01] Remove checked-in `src/runtime/<lang>/pytra/**` from every non-C++ / non-C# backend and converge the permanent repo-owned runtime layout on `generated/native` only.
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01] Lock the current `pytra/**` inventory, references, delete blockers, and current->target mapping for the 12 target backends into plan / contract / checker form.
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] Switch active contracts / checkers / spec wording to `generated/native only` and make checked-in `pytra/**` re-entry fail fast.
+- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] Switch active contracts / checkers / spec wording to `generated/native only` and make checked-in `pytra/**` re-entry fail fast.
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-01] Resolve the remaining Rust (`rs`) `pytra/**` compat residual and remove repo-tree `pytra/**` assumptions from `py2rs`, selfhost, runtime guards, and smoke.
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-02] Switch the static family (`go/java/kotlin/scala/swift/nim`) registry / packaging / smoke / tooling to direct `generated/native` references and remove repo-tree `pytra/**` dependencies.
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-03] Physically delete checked-in `src/runtime/<lang>/pytra/**` for the static family and update allowlists / inventory / representative smoke to the deletion end state.
@@ -104,3 +104,4 @@ Decision log:
 - 2026-03-13: The active policy cancels the older assumption that non-C++ backends may keep checked-in `pytra/` as compat lanes. Public compatibility, if still needed, must move to output-side staging instead.
 - 2026-03-13: S1-02 first bundle aligned `spec-folder/spec-dev` with the `generated/native only` wording and made doc-policy drift fail fast in the checker.
 - 2026-03-13: S1-02 second bundle flipped the Rust active contract / layout-guard wording for `pytra` from `compat` to `delete-target debt`, and removed the assumption that checked-in `rs/pytra` is a live compat lane from `noncpp_runtime_layout_contract.py`, `check_rs_runtime_layout.py`, and the dedicated deshim blocker baseline.
+- 2026-03-13: S1-02 third bundle rewrote `spec-java-native-backend.md`, `spec-lua-native-backend.md`, and `spec-gsk-native-backend.md` to use `src/runtime/<lang>/{generated,native}/` as the live runtime roots, and widened the doc-policy checker to cover those active native-backend specs.
