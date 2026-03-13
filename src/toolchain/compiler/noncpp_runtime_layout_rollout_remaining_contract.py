@@ -206,20 +206,10 @@ REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]
 )
 
 REMAINING_NONCPP_SWIFT_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
-    "built_in/contains",
-    "built_in/io_ops",
-    "built_in/iter_ops",
-    "built_in/predicates",
-    "built_in/sequence",
-    "built_in/zip_ops",
+    REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
 )
 
-REMAINING_NONCPP_SWIFT_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
-    "built_in/numeric_ops",
-    "built_in/scalar_ops",
-    "built_in/string_ops",
-    "built_in/type_id",
-)
+REMAINING_NONCPP_SWIFT_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = ()
 
 REMAINING_NONCPP_NIM_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
     "built_in/contains",
@@ -407,6 +397,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/swift/generated/built_in/",
                 "ownership": "generated",
                 "rationale": "Swift compile-safe built_in compare artifacts live in generated/built_in after the S4 alignment bundle.",
+            },
+            {
+                "current_prefix": "src/runtime/swift/generated/std/",
+                "target_prefix": "src/runtime/swift/generated/std/",
+                "ownership": "generated",
+                "rationale": "Swift SoT-generated std compare artifacts now live in generated/std after the cpp-baseline materialization bundle.",
             },
             {
                 "current_prefix": "src/runtime/swift/pytra/built_in/py_runtime.swift",
@@ -839,9 +835,26 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "built_in/contains.swift",
             "built_in/io_ops.swift",
             "built_in/iter_ops.swift",
+            "built_in/numeric_ops.swift",
             "built_in/predicates.swift",
+            "built_in/scalar_ops.swift",
             "built_in/sequence.swift",
+            "built_in/string_ops.swift",
+            "built_in/type_id.swift",
             "built_in/zip_ops.swift",
+            "std/argparse.swift",
+            "std/glob.swift",
+            "std/json.swift",
+            "std/math.swift",
+            "std/os.swift",
+            "std/os_path.swift",
+            "std/pathlib.swift",
+            "std/random.swift",
+            "std/re.swift",
+            "std/sys.swift",
+            "std/time.swift",
+            "std/timeit.swift",
+            "utils/assertions.swift",
             "utils/gif.swift",
             "utils/image_runtime.swift",
             "utils/png.swift",
@@ -1089,9 +1102,26 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/built_in/contains.swift",
             "generated/built_in/io_ops.swift",
             "generated/built_in/iter_ops.swift",
+            "generated/built_in/numeric_ops.swift",
             "generated/built_in/predicates.swift",
+            "generated/built_in/scalar_ops.swift",
             "generated/built_in/sequence.swift",
+            "generated/built_in/string_ops.swift",
+            "generated/built_in/type_id.swift",
             "generated/built_in/zip_ops.swift",
+            "generated/std/argparse.swift",
+            "generated/std/glob.swift",
+            "generated/std/json.swift",
+            "generated/std/math.swift",
+            "generated/std/os.swift",
+            "generated/std/os_path.swift",
+            "generated/std/pathlib.swift",
+            "generated/std/random.swift",
+            "generated/std/re.swift",
+            "generated/std/sys.swift",
+            "generated/std/time.swift",
+            "generated/std/timeit.swift",
+            "generated/utils/assertions.swift",
             "generated/utils/gif.swift",
             "generated/utils/image_runtime.swift",
             "generated/utils/png.swift",
@@ -1322,14 +1352,28 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
         "backend": "swift",
         "generated_modules": (
             REMAINING_NONCPP_SWIFT_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("utils/gif", "utils/image_runtime", "utils/png")
+            + (
+                "std/argparse",
+                "std/glob",
+                "std/json",
+                "std/math",
+                "std/os",
+                "std/os_path",
+                "std/pathlib",
+                "std/random",
+                "std/re",
+                "std/sys",
+                "std/time",
+                "std/timeit",
+                "utils/assertions",
+                "utils/gif",
+                "utils/image_runtime",
+                "utils/png",
+            )
         ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
-        "blocked_modules": (
-            REMAINING_NONCPP_SWIFT_BLOCKED_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-        ),
+        "blocked_modules": REMAINING_NONCPP_SWIFT_BLOCKED_BUILT_IN_MODULES_V1,
     },
     {
         "backend": "nim",
@@ -1778,12 +1822,21 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_V1: Final[
         "backend": "swift",
         "materialized_compare_modules": (
             REMAINING_NONCPP_SWIFT_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + (
-                "utils/gif",
-                "utils/png",
-            )
+            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
+            + ("utils/gif", "utils/png")
         ),
-        "helper_artifact_modules": ("utils/image_runtime",),
+        "helper_artifact_modules": (
+            "std/argparse",
+            "std/glob",
+            "std/os",
+            "std/os_path",
+            "std/random",
+            "std/re",
+            "std/sys",
+            "std/timeit",
+            "utils/assertions",
+            "utils/image_runtime",
+        ),
     },
     {
         "backend": "nim",
@@ -1918,6 +1971,23 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
         "smoke_kind": "source_guard",
         "smoke_targets": (
             "built_in/contains.swift",
+            "built_in/numeric_ops.swift",
+            "built_in/scalar_ops.swift",
+            "built_in/string_ops.swift",
+            "built_in/type_id.swift",
+            "std/argparse.swift",
+            "std/glob.swift",
+            "std/json.swift",
+            "std/math.swift",
+            "std/os.swift",
+            "std/os_path.swift",
+            "std/pathlib.swift",
+            "std/random.swift",
+            "std/re.swift",
+            "std/sys.swift",
+            "std/time.swift",
+            "std/timeit.swift",
+            "utils/assertions.swift",
             "utils/gif.swift",
             "utils/image_runtime.swift",
             "utils/png.swift",

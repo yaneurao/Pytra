@@ -108,7 +108,12 @@
           "output": "src/runtime/go/generated/utils/assertions.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/utils/assertions.java" }
+        { "target": "java", "output": "src/runtime/java/generated/utils/assertions.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/utils/assertions.swift",
+          "postprocess": "swift_program_to_library"
+        }
       ]
     },
     {
@@ -235,6 +240,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/numeric_ops.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/built_in/numeric_ops.swift",
+          "postprocess": "swift_program_to_library"
+        },
         { "target": "nim", "output": "src/runtime/nim/generated/built_in/numeric_ops.nim" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/numeric_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/numeric_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
@@ -298,6 +308,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/scalar_ops.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/built_in/scalar_ops.swift",
+          "postprocess": "swift_program_to_library"
+        },
         { "target": "js", "output": "src/runtime/js/generated/built_in/scalar_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/scalar_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/scalar_ops.php", "postprocess": "php_program_to_library" }
@@ -359,6 +374,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/string_ops.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/built_in/string_ops.swift",
+          "postprocess": "swift_program_to_library"
+        },
         { "target": "js", "output": "src/runtime/js/generated/built_in/string_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/string_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/string_ops.php", "postprocess": "php_program_to_library" }
@@ -382,6 +402,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/type_id.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/built_in/type_id.swift",
+          "postprocess": "swift_program_to_library"
+        },
         { "target": "js", "output": "src/runtime/js/generated/built_in/type_id.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/type_id.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/type_id.php", "postprocess": "php_program_to_library" }
@@ -439,6 +464,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/std/time.java", "postprocess": "java_std_time_live_wrapper" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/std/time.swift",
+          "postprocess": "swift_program_to_library"
+        },
         { "target": "js", "output": "src/runtime/js/generated/std/time.js", "postprocess": "js_std_time_live_wrapper" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/time.ts", "postprocess": "ts_std_time_live_wrapper" },
         { "target": "php", "output": "src/runtime/php/generated/std/time.php", "postprocess": "php_std_time_live_wrapper" }
@@ -457,6 +487,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/std/json.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/std/json.swift",
+          "postprocess": "swift_program_to_library"
+        },
         { "target": "js", "output": "src/runtime/js/generated/std/json.js", "postprocess": "js_std_json_live_wrapper" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/json.ts", "postprocess": "ts_std_json_live_wrapper" },
         { "target": "php", "output": "src/runtime/php/generated/std/json.php", "postprocess": "php_std_json_live_wrapper" }
@@ -475,6 +510,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/std/pathlib.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/std/pathlib.swift",
+          "postprocess": "swift_program_to_library"
+        },
         { "target": "js", "output": "src/runtime/js/generated/std/pathlib.js", "postprocess": "js_std_pathlib_live_wrapper" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/pathlib.ts", "postprocess": "ts_std_pathlib_live_wrapper" },
         { "target": "php", "output": "src/runtime/php/generated/std/pathlib.php", "postprocess": "php_std_pathlib_live_wrapper" }
@@ -493,6 +533,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/std/math.java", "postprocess": "java_std_math_live_wrapper" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/std/math.swift",
+          "postprocess": "swift_program_to_library"
+        },
         { "target": "js", "output": "src/runtime/js/generated/std/math.js", "postprocess": "js_std_math_live_wrapper" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/math.ts", "postprocess": "ts_std_math_live_wrapper" },
         { "target": "php", "output": "src/runtime/php/generated/std/math.php", "postprocess": "php_std_math_live_wrapper" }
@@ -510,7 +555,12 @@
           "output": "src/runtime/go/generated/std/os.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/os.java" }
+        { "target": "java", "output": "src/runtime/java/generated/std/os.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/std/os.swift",
+          "postprocess": "swift_program_to_library"
+        }
       ]
     },
     {
@@ -525,7 +575,12 @@
           "output": "src/runtime/go/generated/std/os_path.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/os_path.java" }
+        { "target": "java", "output": "src/runtime/java/generated/std/os_path.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/std/os_path.swift",
+          "postprocess": "swift_program_to_library"
+        }
       ]
     },
     {
@@ -540,7 +595,12 @@
           "output": "src/runtime/go/generated/std/glob.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/glob.java" }
+        { "target": "java", "output": "src/runtime/java/generated/std/glob.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/std/glob.swift",
+          "postprocess": "swift_program_to_library"
+        }
       ]
     },
     {
@@ -555,7 +615,12 @@
           "output": "src/runtime/go/generated/std/argparse.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/argparse.java" }
+        { "target": "java", "output": "src/runtime/java/generated/std/argparse.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/std/argparse.swift",
+          "postprocess": "swift_program_to_library"
+        }
       ]
     },
     {
@@ -570,7 +635,12 @@
           "output": "src/runtime/go/generated/std/random.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/random.java" }
+        { "target": "java", "output": "src/runtime/java/generated/std/random.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/std/random.swift",
+          "postprocess": "swift_program_to_library"
+        }
       ]
     },
     {
@@ -585,7 +655,12 @@
           "output": "src/runtime/go/generated/std/re.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/re.java" }
+        { "target": "java", "output": "src/runtime/java/generated/std/re.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/std/re.swift",
+          "postprocess": "swift_program_to_library"
+        }
       ]
     },
     {
@@ -600,7 +675,12 @@
           "output": "src/runtime/go/generated/std/sys.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/sys.java" }
+        { "target": "java", "output": "src/runtime/java/generated/std/sys.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/std/sys.swift",
+          "postprocess": "swift_program_to_library"
+        }
       ]
     },
     {
@@ -615,7 +695,12 @@
           "output": "src/runtime/go/generated/std/timeit.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/timeit.java" }
+        { "target": "java", "output": "src/runtime/java/generated/std/timeit.java" },
+        {
+          "target": "swift",
+          "output": "src/runtime/swift/generated/std/timeit.swift",
+          "postprocess": "swift_program_to_library"
+        }
       ]
     }
   ]

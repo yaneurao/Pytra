@@ -322,18 +322,38 @@ def f(xs: list[int], ys: dict[str, int]) -> int:
 
     def test_swift_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "swift" / "native" / "built_in" / "py_runtime.swift"
-        generated_contains = ROOT / "src" / "runtime" / "swift" / "generated" / "built_in" / "contains.swift"
-        generated_gif = ROOT / "src" / "runtime" / "swift" / "generated" / "utils" / "gif.swift"
-        generated_zip = ROOT / "src" / "runtime" / "swift" / "generated" / "built_in" / "zip_ops.swift"
-        image_runtime = ROOT / "src" / "runtime" / "swift" / "generated" / "utils" / "image_runtime.swift"
-        generated_png = ROOT / "src" / "runtime" / "swift" / "generated" / "utils" / "png.swift"
+        generated_root = ROOT / "src" / "runtime" / "swift" / "generated"
         legacy_path = ROOT / "src" / "swift_module" / "py_runtime.swift"
         self.assertTrue(runtime_path.exists())
-        self.assertTrue(generated_contains.exists())
-        self.assertTrue(generated_gif.exists())
-        self.assertTrue(generated_zip.exists())
-        self.assertTrue(image_runtime.exists())
-        self.assertTrue(generated_png.exists())
+        for rel_path in (
+            "built_in/contains.swift",
+            "built_in/io_ops.swift",
+            "built_in/iter_ops.swift",
+            "built_in/numeric_ops.swift",
+            "built_in/predicates.swift",
+            "built_in/scalar_ops.swift",
+            "built_in/sequence.swift",
+            "built_in/string_ops.swift",
+            "built_in/type_id.swift",
+            "built_in/zip_ops.swift",
+            "std/argparse.swift",
+            "std/glob.swift",
+            "std/json.swift",
+            "std/math.swift",
+            "std/os.swift",
+            "std/os_path.swift",
+            "std/pathlib.swift",
+            "std/random.swift",
+            "std/re.swift",
+            "std/sys.swift",
+            "std/time.swift",
+            "std/timeit.swift",
+            "utils/assertions.swift",
+            "utils/gif.swift",
+            "utils/image_runtime.swift",
+            "utils/png.swift",
+        ):
+            self.assertTrue((generated_root / rel_path).exists(), msg=rel_path)
         self.assertFalse(legacy_path.exists())
 
     def test_swift_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:

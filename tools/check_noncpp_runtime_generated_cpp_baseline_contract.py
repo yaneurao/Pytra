@@ -43,6 +43,7 @@ def _generated_suffix_for_backend(backend: str) -> str:
         "go": ".go",
         "java": ".java",
         "rs": ".rs",
+        "swift": ".swift",
     }[backend]
 
 
