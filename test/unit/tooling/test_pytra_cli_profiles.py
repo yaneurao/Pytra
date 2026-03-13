@@ -81,7 +81,7 @@ class PytraCliProfilesTest(unittest.TestCase):
         )
         self.assertIsNotNone(plan.build_cmd)
         self.assertIn(str(ROOT / "src/runtime/cs/generated/std/time.cs"), plan.build_cmd)
-        self.assertIn(str(ROOT / "src/runtime/cs/native/built_in/time.cs"), plan.build_cmd)
+        self.assertIn(str(ROOT / "src/runtime/cs/native/std/time_native.cs"), plan.build_cmd)
         self.assertIn(str(ROOT / "src/runtime/cs/generated/std/math.cs"), plan.build_cmd)
         self.assertNotIn(str(ROOT / "src/runtime/cs/native/built_in/math.cs"), plan.build_cmd)
 

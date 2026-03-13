@@ -56,7 +56,6 @@ NONCPP_GENERATED_BUILTIN_MODULES_V1: Final[tuple[str, ...]] = (
 
 CS_NATIVE_BUILTIN_RESIDUAL_MODULES_V1: Final[tuple[str, ...]] = (
     "py_runtime",
-    "time",
 )
 
 RS_NATIVE_BUILTIN_RESIDUAL_MODULES_V1: Final[tuple[str, ...]] = ("py_runtime",)
@@ -116,14 +115,14 @@ CS_STD_LANE_OWNERSHIP_V1: Final[tuple[CsStdLaneOwnershipEntry, ...]] = (
         "canonical_lane": "generated/std",
         "generated_std_state": "canonical_generated",
         "generated_std_rel": "src/runtime/cs/generated/std/time.cs",
-        "native_rel": "src/runtime/cs/native/built_in/time.cs",
+        "native_rel": "src/runtime/cs/native/std/time_native.cs",
         "canonical_runtime_symbol": "Pytra.CsModule.time",
         "representative_fixture": "test/fixtures/imports/import_time_from.py",
         "smoke_guard_needles": (
             "def test_representative_time_import_fixture_transpiles",
             "Pytra.CsModule.time.perf_counter()",
         ),
-        "rationale": "generated/std/time.cs is the first live-generated C# std lane, while native/built_in/time.cs remains only as the backing seam referenced by the generated wrapper.",
+        "rationale": "generated/std/time.cs is the first live-generated C# std lane, while native/std/time_native.cs remains only as the backing seam referenced by the generated wrapper.",
     },
     {
         "module_name": "json",
@@ -258,7 +257,7 @@ CS_STD_FIRST_LIVE_GENERATED_CANDIDATE_V1: Final[CsStdFirstLiveGeneratedCandidate
     "module_name": "time",
     "current_canonical_lane": "generated/std",
     "generated_std_rel": "src/runtime/cs/generated/std/time.cs",
-    "native_rel": "src/runtime/cs/native/built_in/time.cs",
+    "native_rel": "src/runtime/cs/native/std/time_native.cs",
     "representative_fixture": "test/fixtures/imports/import_time_from.py",
     "smoke_guard_needles": (
         "def test_representative_time_import_fixture_transpiles",

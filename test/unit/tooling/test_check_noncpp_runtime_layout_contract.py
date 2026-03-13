@@ -71,7 +71,7 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
     def test_native_builtin_residual_sets_are_fixed(self) -> None:
         self.assertEqual(
             contract_mod.iter_cs_native_builtin_residual_modules(),
-            ("py_runtime", "time"),
+            ("py_runtime",),
         )
         self.assertEqual(
             contract_mod.iter_rs_native_builtin_residual_modules(),
@@ -134,14 +134,14 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
                 "canonical_lane": "generated/std",
                 "generated_std_state": "canonical_generated",
                 "generated_std_rel": "src/runtime/cs/generated/std/time.cs",
-                "native_rel": "src/runtime/cs/native/built_in/time.cs",
+                "native_rel": "src/runtime/cs/native/std/time_native.cs",
                 "canonical_runtime_symbol": "Pytra.CsModule.time",
                 "representative_fixture": "test/fixtures/imports/import_time_from.py",
                 "smoke_guard_needles": (
                     "def test_representative_time_import_fixture_transpiles",
                     "Pytra.CsModule.time.perf_counter()",
                 ),
-                "rationale": "generated/std/time.cs is the first live-generated C# std lane, while native/built_in/time.cs remains only as the backing seam referenced by the generated wrapper.",
+                "rationale": "generated/std/time.cs is the first live-generated C# std lane, while native/std/time_native.cs remains only as the backing seam referenced by the generated wrapper.",
             },
         )
         self.assertEqual(
@@ -226,7 +226,7 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
                 "module_name": "time",
                 "current_canonical_lane": "generated/std",
                 "generated_std_rel": "src/runtime/cs/generated/std/time.cs",
-                "native_rel": "src/runtime/cs/native/built_in/time.cs",
+                "native_rel": "src/runtime/cs/native/std/time_native.cs",
                 "representative_fixture": "test/fixtures/imports/import_time_from.py",
                 "smoke_guard_needles": (
                     "def test_representative_time_import_fixture_transpiles",

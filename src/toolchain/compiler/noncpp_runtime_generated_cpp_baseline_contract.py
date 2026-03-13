@@ -237,7 +237,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_BUILD_PROFILES_V1: Final[
         "runtime_refs": (
             "src/runtime/cs/native/built_in/py_runtime.cs",
             "src/runtime/cs/generated/std/time.cs",
-            "src/runtime/cs/native/built_in/time.cs",
+            "src/runtime/cs/native/std/time_native.cs",
             "src/runtime/cs/generated/std/math.cs",
             "src/runtime/cs/generated/utils/png.cs",
             "src/runtime/cs/generated/utils/gif.cs",

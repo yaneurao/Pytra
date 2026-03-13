@@ -156,7 +156,7 @@ def _collect_builtin_lane_issues() -> list[str]:
 
     for rel_path in (
         "src/runtime/cs/native/built_in/py_runtime.cs",
-        "src/runtime/cs/native/built_in/time.cs",
+        "src/runtime/cs/native/std/time_native.cs",
         "src/runtime/rs/native/built_in/py_runtime.rs",
     ):
         text = _load_text(ROOT / rel_path)

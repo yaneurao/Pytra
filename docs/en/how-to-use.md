@@ -462,7 +462,7 @@ Notes:
 python src/py2x.py --target cs test/fixtures/collections/iterable.py -o test/transpile/cs/iterable.cs
 mcs -out:test/transpile/obj/iterable.exe \
   test/transpile/cs/iterable.cs \
-  src/runtime/cs/native/built_in/py_runtime.cs src/runtime/cs/native/built_in/time.cs \
+  src/runtime/cs/native/built_in/py_runtime.cs src/runtime/cs/native/std/time_native.cs \
   src/runtime/cs/generated/utils/png.cs src/runtime/cs/generated/utils/gif.cs \
   src/runtime/cs/native/std/pathlib.cs src/runtime/cs/generated/std/time.cs
 mono test/transpile/obj/iterable.exe

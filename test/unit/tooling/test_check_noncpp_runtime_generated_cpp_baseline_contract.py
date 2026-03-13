@@ -83,7 +83,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                     "runtime_refs": (
                         "src/runtime/cs/native/built_in/py_runtime.cs",
                         "src/runtime/cs/generated/std/time.cs",
-                        "src/runtime/cs/native/built_in/time.cs",
+                        "src/runtime/cs/native/std/time_native.cs",
                         "src/runtime/cs/generated/std/math.cs",
                         "src/runtime/cs/generated/utils/png.cs",
                         "src/runtime/cs/generated/utils/gif.cs",
