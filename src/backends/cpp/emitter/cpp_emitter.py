@@ -3345,6 +3345,12 @@ class CppEmitter(
         list_t = self.normalize_type_name(self.get_expr_type(list_expr_node))
         if list_t in {"", "unknown"}:
             list_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
+        if list_t in {"", "unknown"}:
+            rendered = self.render_expr(list_expr_node)
+            list_t = self.normalize_type_name(self.infer_rendered_arg_type(rendered, list_t, self.declared_var_types))
+        if list_t in {"", "unknown"}:
+            rendered = self.render_expr(list_expr_node)
+            list_t = self.normalize_type_name(self.infer_rendered_arg_type(rendered, list_t, self.module_global_var_types))
         if not (list_t.startswith("list[") and list_t.endswith("]")):
             return False
         if self._uses_pyobj_runtime_list_expr(list_expr_node):
@@ -3377,6 +3383,12 @@ class CppEmitter(
         deque_t = self.normalize_type_name(self.get_expr_type(expr_node))
         if deque_t in {"", "unknown"}:
             deque_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
+        if deque_t in {"", "unknown"}:
+            rendered = self.render_expr(expr_node)
+            deque_t = self.normalize_type_name(self.infer_rendered_arg_type(rendered, deque_t, self.declared_var_types))
+        if deque_t in {"", "unknown"}:
+            rendered = self.render_expr(expr_node)
+            deque_t = self.normalize_type_name(self.infer_rendered_arg_type(rendered, deque_t, self.module_global_var_types))
         return deque_t.startswith("deque[") and deque_t.endswith("]")
 
     def _render_typed_list_len_compare_as_empty(self, expr: dict[str, Any]) -> str:
@@ -4101,6 +4113,27 @@ class CppEmitter(
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
             has_index = self.any_dict_has(expr_d, "index")
+            if self._typed_deque_fastpath_target(owner_node):
+                if not has_index:
+                    tmp_name = self.next_tmp("__deque_back")
+                    return (
+                        "([&]() { "
+                        f"auto {tmp_name} = {owner_expr}.back(); "
+                        f"{owner_expr}.pop_back(); "
+                        f"return {tmp_name}; "
+                        "}())"
+                    )
+                index_node = expr_d.get("index")
+                index_expr = self.render_expr(index_node)
+                if index_expr in {"", "/* none */"}:
+                    tmp_name = self.next_tmp("__deque_back")
+                    return (
+                        "([&]() { "
+                        f"auto {tmp_name} = {owner_expr}.back(); "
+                        f"{owner_expr}.pop_back(); "
+                        f"return {tmp_name}; "
+                        "}())"
+                    )
             if self._uses_pyobj_ref_first_list_ops(owner_node):
                 list_ref_expr = f"rc_list_ref({owner_expr})"
                 if not has_index:

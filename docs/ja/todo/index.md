@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01] `collections.deque` の `appendleft` / `pop` representative C++ lane を固定する。進捗: `S2-01` で `appendleft -> push_front` まで反映済み。残りは `pop -> back + pop_back`。文脈: [p0-collections-deque-cpp-endops-support.md](../plans/p0-collections-deque-cpp-endops-support.md)
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01] `collections.deque` の `appendleft` / `pop` representative C++ lane を固定する。進捗: `S2-02` で `appendleft` / `pop` を `push_front` / `back + pop_back` に upstream 済み。残りは build/run smoke と support wording の同期。文脈: [p0-collections-deque-cpp-endops-support.md](../plans/p0-collections-deque-cpp-endops-support.md)

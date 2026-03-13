@@ -612,25 +612,7 @@ class CppCallEmitter:
                 deque_owner_t = t
                 break
         if deque_owner_t != "":
-            inner_t = deque_owner_t[6:-1].strip()
-            if inner_t == "uint8":
-                a0 = f"static_cast<uint8>(py_to<int64>({a0}))"
-            elif self.is_any_like_type(inner_t):
-                if not self.is_boxed_object_expr(a0):
-                    arg0_node_d = self.any_to_dict_or_empty(arg0_node)
-                    if len(arg0_node_d) > 0:
-                        a0 = self.render_expr(self._build_box_expr_node(arg0_node))
-                    else:
-                        a0 = f"make_object({a0})"
-            elif inner_t != "" and not self.is_any_like_type(inner_t):
-                inner_t_norm = self.normalize_type_name(inner_t)
-                if not (inner_t_norm == "bytes" and arg0_t == "bytes"):
-                    inner_cpp_t = self._cpp_type_text(inner_t)
-                    if inner_cpp_t.startswith("::std::tuple<") and a0.startswith("::std::make_tuple("):
-                        return f"{owner_expr}.push_back({a0})"
-                    if not self.should_skip_same_type_cast(a0, inner_cpp_t):
-                        a0 = f"{inner_cpp_t}({a0})"
-            return f"{owner_expr}.push_back({a0})"
+            return self._render_typed_deque_push_call(deque_owner_t, owner_expr, a0, arg0_node, "push_back")
         has_any_like_owner = False
         for t in normalized_owner_types:
             t_norm = self.normalize_type_name(t)
@@ -647,6 +629,38 @@ class CppCallEmitter:
             list_ref_expr = self._render_pyobj_runtime_list_bridge_ref_for_op(owner_expr, "append")
             return f"py_list_append_mut({list_ref_expr}, {a0})"
         return None
+
+    def _render_typed_deque_push_call(
+        self,
+        deque_owner_t: str,
+        owner_expr: str,
+        value_expr: str,
+        value_node: Any,
+        push_method: str,
+    ) -> str:
+        """typed deque の要素追加を `push_front/back` へ lower する。"""
+        a0 = value_expr
+        arg0_t_raw = self.get_expr_type(value_node)
+        arg0_t = self.normalize_type_name(arg0_t_raw) if isinstance(arg0_t_raw, str) else ""
+        inner_t = deque_owner_t[6:-1].strip()
+        if inner_t == "uint8":
+            a0 = f"static_cast<uint8>(py_to<int64>({a0}))"
+        elif self.is_any_like_type(inner_t):
+            if not self.is_boxed_object_expr(a0):
+                arg0_node_d = self.any_to_dict_or_empty(value_node)
+                if len(arg0_node_d) > 0:
+                    a0 = self.render_expr(self._build_box_expr_node(value_node))
+                else:
+                    a0 = f"make_object({a0})"
+        elif inner_t != "" and not self.is_any_like_type(inner_t):
+            inner_t_norm = self.normalize_type_name(inner_t)
+            if not (inner_t_norm == "bytes" and arg0_t == "bytes"):
+                inner_cpp_t = self._cpp_type_text(inner_t)
+                if inner_cpp_t.startswith("::std::tuple<") and a0.startswith("::std::make_tuple("):
+                    return f"{owner_expr}.{push_method}({a0})"
+                if not self.should_skip_same_type_cast(a0, inner_cpp_t):
+                    a0 = f"{inner_cpp_t}({a0})"
+        return f"{owner_expr}.{push_method}({a0})"
 
     def _is_super_call_expr(self, node: Any) -> bool:
         """`super()` 呼び出し式か判定する。"""
@@ -859,6 +873,7 @@ class CppCallEmitter:
     ) -> str | None:
         """`Call(Attribute)` の object/class 系分岐（非 module）を処理する。"""
         owner_t = self.infer_rendered_arg_type(owner_expr, owner_t, self.declared_var_types)
+        owner_t = self.infer_rendered_arg_type(owner_expr, owner_t, self.module_global_var_types)
         owner_t = self.normalize_type_name(owner_t)
         hook_object_rendered = self.hook_on_render_object_method(owner_t, owner_expr, attr, args)
         if isinstance(hook_object_rendered, str) and hook_object_rendered != "":
@@ -871,6 +886,18 @@ class CppCallEmitter:
             if append_rendered is not None and append_rendered != "":
                 return append_rendered
         if owner_t.startswith("deque[") and owner_t.endswith("]"):
+            if attr == "appendleft" and len(args) == 1 and len(kw) == 0:
+                value_node = arg_nodes[0] if len(arg_nodes) > 0 else {}
+                return self._render_typed_deque_push_call(owner_t, owner_expr, args[0], value_node, "push_front")
+            if attr == "pop" and len(args) == 0 and len(kw) == 0:
+                tmp_name = self.next_tmp("__deque_back")
+                return (
+                    "([&]() { "
+                    f"auto {tmp_name} = {owner_expr}.back(); "
+                    f"{owner_expr}.pop_back(); "
+                    f"return {tmp_name}; "
+                    "}())"
+                )
             if attr == "popleft" and len(args) == 0 and len(kw) == 0:
                 tmp_name = self.next_tmp("__deque_front")
                 return (
