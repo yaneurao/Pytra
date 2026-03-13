@@ -4996,6 +4996,25 @@ class PadState:
             )
             self.assertEqual(comp.returncode, 0, msg=comp.stderr)
 
+    def test_deque_expr_method_current_baseline_leaks_python_surface_into_cpp(self) -> None:
+        src = """from collections import deque
+
+q: deque[int] = deque()
+q.append(1)
+front = q.popleft()
+print(bool(q))
+print(front)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "deque_expr_method_case.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertIn("q = deque();", cpp)
+        self.assertIn("q.append(1);", cpp)
+        self.assertIn("q.popleft()", cpp)
+        self.assertIn("py_to<bool>(q)", cpp)
+
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
         src = """from dataclasses import dataclass, field
 

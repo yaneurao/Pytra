@@ -31,4 +31,4 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 
-- There are currently no unfinished tasks. Add new tasks here once they are promoted.
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] Lock the representative C++ expression / method lane for `collections.deque`. Progress: `S1-01` added a baseline regression for the current invalid C++ surface. Context: [p0-collections-deque-cpp-expr-method-support.md](../plans/p0-collections-deque-cpp-expr-method-support.md)

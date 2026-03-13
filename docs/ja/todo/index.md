@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-- 現在未完了タスクはありません。新規 task を起票したらここへ追加します。
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] `collections.deque` の representative C++ expression / method lane を固定する。進捗: `S1-01` で current invalid C++ surface regression を追加済み。文脈: [p0-collections-deque-cpp-expr-method-support.md](../plans/p0-collections-deque-cpp-expr-method-support.md)
