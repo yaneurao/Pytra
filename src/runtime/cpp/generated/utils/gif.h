@@ -9,7 +9,7 @@
 
 namespace pytra::utils::gif {
 
-void _gif_append_list(rc<list<int64>>& dst, const rc<list<int64>>& src);
+void _gif_append_list(const rc<list<int64>>& dst, const rc<list<int64>>& src);
 rc<list<int64>> _gif_u16le(int64 v);
 bytes _lzw_encode(const bytes& data, int64 min_code_size = 8);
 bytes grayscale_palette();

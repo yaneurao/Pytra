@@ -12,9 +12,9 @@ namespace pytra::utils::gif {
 
     /* アニメーションGIFを書き出すための最小ヘルパー。 */
     
-    void _gif_append_list(rc<list<int64>>& dst, const rc<list<int64>>& src) {
+    void _gif_append_list(const rc<list<int64>>& dst, const rc<list<int64>>& src) {
         int64 i = 0;
-        int64 n = py_len(src);
+        int64 n = (rc_list_ref(src)).size();
         while (i < n) {
             py_list_append_mut(rc_list_ref(dst), py_at(src, py_to<int64>(i)));
             i++;
@@ -95,7 +95,7 @@ namespace pytra::utils::gif {
             for (uint8 v : fr) {
                 py_list_append_mut(rc_list_ref(fr_list), int64(v));
             }
-            if (py_len(fr_list) != width * height)
+            if ((rc_list_ref(fr_list)).size() != width * height)
                 throw ValueError("frame size mismatch");
             py_list_append_mut(rc_list_ref(frame_lists), rc_list_copy_value(fr_list));
         }

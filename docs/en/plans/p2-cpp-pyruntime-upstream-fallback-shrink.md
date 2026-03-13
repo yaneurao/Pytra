@@ -59,7 +59,7 @@ Validation commands (planned):
 
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-01] Inventory the current bulk in `py_runtime.h` plus residual callers across `sample/cpp`, `generated/**`, and the C++ emitter, and classify which fallback paths can move upstream.
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02] Freeze the boundary between `object-only compat` and `typed lane must not use` in docs/tooling as the shrink contract.
-- [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01] Improve typed list mutation, indexing, and tuple/list boxing emission so callers of `py_append(object&)` and `py_at(object, idx)` decrease.
+- [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01] Improve typed list mutation, indexing, and tuple/list boxing emission so callers of `py_append(object&)` and `py_at(object, idx)` decrease.
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02] Reduce object-bridge fallback in generated built_in/std runtime artifacts and representative samples, then refresh the baseline.
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-03] Collapse typed-path fallback in generic `make_object`, `py_to`, and dict-key coercion so it stays near real `Any/object` boundaries.
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S3-01] Sync regressions, checkers, docs, and the English mirror, and close the current `py_runtime.h` shrink contract.
@@ -73,3 +73,5 @@ Decision log:
 - 2026-03-14: The final handoff guard now includes the upstream fallback boundary checker/test so the active `P2` handoff references both the baseline inventory and the object-only versus typed-lane boundary contract.
 - 2026-03-14: As the first `S2-01` bundle, switched empty pyobj runtime list seeds from generic `make_object(list<object>{})` boxing to direct `object_new<PyListObj>(list<object>{})`, which removes the `cpp_emitter_boxed_list_seed_sites` bucket from the emitter residual inventory. The only remaining emitter-side typed-lane residual is now the `obj_to_list_ref_or_raise(` helper bucket.
 - 2026-03-14: As the second `S2-01` bundle, collapsed the inline `obj_to_list_ref_or_raise({boxed_value}, ...)` site in pyobj runtime list `extend` through the shared helper, reducing `cpp_emitter_object_list_bridge_sites` to the helper definition alone. The emitter-side residual is now helper-only even at the source-literal level.
+- 2026-03-14: `S2-01` is now considered complete because the emitter-side residual has collapsed to the helper-only boundary.
+- 2026-03-14: As the first `S2-02` bundle, regenerated `generated/built_in/iter_ops.cpp` via `src/py2x.py --target cpp src/pytra/built_in/iter_ops.py --emit-runtime-cpp` and `generated/utils/gif.{h,cpp}` via `src/py2x.py --target cpp src/pytra/utils/gif.py --emit-runtime-cpp`. That shrinks `generated_runtime_boxed_list_seed_sites` from `3 -> 1`, leaving only `bytes(make_object(list<object>{}))` in `generated/utils/gif.cpp`.

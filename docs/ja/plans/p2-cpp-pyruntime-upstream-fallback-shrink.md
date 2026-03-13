@@ -59,7 +59,7 @@
 
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-01] `py_runtime.h` の current bulk と `sample/cpp` / `generated/**` / C++ emitter の residual caller を inventory 化し、upstream へ押し戻せる fallback を分類する。
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02] `object-only compat` と `typed lane must not use` の境界を shrink contract として docs / tooling へ固定する。
-- [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01] typed list mutation / indexing / tuple-list boxing の emit を改善し、`py_append(object&)` と `py_at(object, idx)` の caller を削減する。
+- [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01] typed list mutation / indexing / tuple-list boxing の emit を改善し、`py_append(object&)` と `py_at(object, idx)` の caller を削減する。
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02] generated built_in/std runtime と representative sample の object-bridge fallback を減らし、baseline を更新する。
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-03] generic `make_object` / `py_to` / dict-key coercion の typed path fallback を縮退し、`Any/object` 境界へ寄せる。
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S3-01] regression / checker / docs / English mirror を同期し、`py_runtime.h` shrink の current contract を閉じる。
@@ -73,3 +73,5 @@
 - 2026-03-14: final handoff guard には upstream fallback boundary checker/test を追加し、active `P2` handoff が inventory baseline と boundary contract の両方を参照するようにした。
 - 2026-03-14: `S2-01` の first bundle として、empty pyobj runtime list literal の seed を generic `make_object(list<object>{})` から direct `object_new<PyListObj>(list<object>{})` へ切り替え、C++ emitter residual から `cpp_emitter_boxed_list_seed_sites` bucket を除去した。残る emitter-side typed-lane residual は `obj_to_list_ref_or_raise(` helper 1 bucket のみ。
 - 2026-03-14: `S2-01` の second bundle として、pyobj runtime list `extend` の inline `obj_to_list_ref_or_raise({boxed_value}, ...)` site を共通 helper 経由へ畳み、`cpp_emitter_object_list_bridge_sites` を helper 定義 1 箇所だけに縮めた。これで emitter-side residual は source literal としても helper-only になった。
+- 2026-03-14: `S2-01` は emitter 側 residual を helper-only まで縮退できたため完了扱いにした。
+- 2026-03-14: `S2-02` の first bundle として `src/py2x.py --target cpp src/pytra/built_in/iter_ops.py --emit-runtime-cpp` と `src/py2x.py --target cpp src/pytra/utils/gif.py --emit-runtime-cpp` の正規導線で `generated/built_in/iter_ops.cpp` と `generated/utils/gif.{h,cpp}` を再生成した。これで `generated_runtime_boxed_list_seed_sites` は `3 -> 1` まで縮退し、残りは `generated/utils/gif.cpp` の `bytes(make_object(list<object>{}))` のみになった。
