@@ -3310,7 +3310,10 @@ class CppEmitter(
                     if op0 in {"In", "NotIn"}:
                         found = f"py_contains({rhs}, {left})"
                         return f"!({found})" if op0 == "In" else found
-            return f"!({operand})"
+            cond = self._strip_outer_parens(self.render_cond(operand_obj))
+            if cond == "":
+                return "true"
+            return f"!({cond})"
         if op == "USub":
             operand_t0 = self.get_expr_type(operand_obj)
             operand_t = operand_t0 if isinstance(operand_t0, str) else ""

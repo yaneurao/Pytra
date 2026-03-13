@@ -17,6 +17,7 @@
 
 - [2026-03-14 / P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01](../plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md)
 - [2026-03-14 / P1-NES3-NOT-IMPLEMENTED-ERROR-CPP-01](../plans/archive/20260314-p1-nes3-not-implemented-error-cpp-support.md)
+- [2026-03-14 / P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01](../plans/archive/20260314-p1-nes3-bytes-member-truthiness-cpp-support.md)
 
 - [2026-03-13 / P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01](../plans/archive/20260313-p0-frontends-facade-py2x-entrypoints-import.md)
 - [2026-03-13 / P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01](../plans/archive/20260313-p0-cpp-transpile-cli-direct-header-contract.md)
@@ -197,7 +198,7 @@
 
 ## 日付別リンク
 
-- [2026-03-14](20260314.md)（2 セクション）
+- [2026-03-14](20260314.md)（3 セクション）
 
 - [2026-03-13](20260313.md)（21 セクション）
 

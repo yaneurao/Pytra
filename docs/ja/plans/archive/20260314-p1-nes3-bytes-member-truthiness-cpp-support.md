@@ -1,6 +1,6 @@
 # P1: `bytes` member truthiness の `!bytes` residual を C++ lane で止める
 
-最終更新: 2026-03-13
+最終更新: 2026-03-14
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01`
@@ -37,9 +37,11 @@
 
 ## 分解
 
-- [ ] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01-S1-01] member/attribute lane の current failure と residual scope を focused regression / plan / TODO に固定する。
-- [ ] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01-S2-01] member / attribute 経由の `bytes` truthiness を `len` ベースの C++ 条件式へ lower する。
-- [ ] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01-S3-01] compile smoke と docs wording を representative contract に同期する。
+- [x] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01-S1-01] member/attribute lane の current failure と residual scope を focused regression / plan / TODO に固定した。
+- [x] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01-S2-01] member / attribute 経由の `bytes` truthiness を `len` ベースの C++ 条件式へ lower した。
+- [x] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01-S3-01] compile smoke と docs wording を representative contract に同期した。
 
 決定ログ:
 - 2026-03-13: Pytra-NES3 repro は archived representative support の残差なので、member lane に限定した follow-up として切り出す。
+- 2026-03-14: `UnaryOp(Not)` の fallback を raw `render_expr` ではなく `render_cond` ベースへ寄せ、`if not self.chr_rom` も既存の `bytes` truthiness contract と同じ `py_len(...)` 経由へ揃えた。
+- 2026-03-14: focused regression `test_cli_pytra_nes3_cartridge_like_bytes_member_truthiness_syntax_checks` を追加し、`python3 src/py2x.py --target cpp --multi-file --output-dir /tmp/pytra_nes3_cartridge_like_py2x` と selfhosted `bash ./pytra ... --target cpp --output-dir /tmp/pytra_nes3_cartridge_like_selfhost` の両 lane で compile green を確認した。

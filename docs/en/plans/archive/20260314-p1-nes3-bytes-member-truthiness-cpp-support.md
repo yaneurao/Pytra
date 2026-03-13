@@ -1,6 +1,6 @@
 # P1: stop the `!bytes` residual for member-based `bytes` truthiness in the C++ lane
 
-Last updated: 2026-03-13
+Last updated: 2026-03-14
 
 Related TODO:
 - `docs/ja/todo/index.md` `ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01`
@@ -37,9 +37,11 @@ Validation commands (planned):
 
 ## Breakdown
 
-- [ ] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01-S1-01] Lock the current failure and residual scope for the member/attribute lane in focused regressions, the plan, and TODO.
-- [ ] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01-S2-01] Lower member/attribute-based `bytes` truthiness through a `len`-based C++ condition.
-- [ ] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01-S3-01] Sync compile smoke and docs wording to the representative contract.
+- [x] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01-S1-01] Locked the current failure and residual scope for the member/attribute lane in focused regressions, the plan, and TODO.
+- [x] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01-S2-01] Lowered member/attribute-based `bytes` truthiness through a `len`-based C++ condition.
+- [x] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01-S3-01] Synced compile smoke and docs wording to the representative contract.
 
 Decision log:
 - 2026-03-13: Split out as a follow-up limited to the member lane because the Pytra-NES3 repro is a residual beyond the archived representative support.
+- 2026-03-14: Routed the `UnaryOp(Not)` fallback through `render_cond` instead of raw `render_expr`, so `if not self.chr_rom` now joins the existing `bytes` truthiness contract via `py_len(...)`.
+- 2026-03-14: Added the focused regression `test_cli_pytra_nes3_cartridge_like_bytes_member_truthiness_syntax_checks` and verified compile-green behavior through both `python3 src/py2x.py --target cpp --multi-file --output-dir /tmp/pytra_nes3_cartridge_like_py2x` and the selfhosted `bash ./pytra ... --target cpp --output-dir /tmp/pytra_nes3_cartridge_like_selfhost` lane.
