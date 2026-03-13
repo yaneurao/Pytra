@@ -39,6 +39,13 @@ class NonCppRuntimeGeneratedCppBaselineSmokeEntry(TypedDict):
     required_tests: tuple[str, ...]
 
 
+class NonCppRuntimeGeneratedCppBaselineRuntimeFileInventoryEntry(TypedDict):
+    backend: str
+    generated_files: tuple[str, ...]
+    native_files: tuple[str, ...]
+    compat_files: tuple[str, ...]
+
+
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_BUCKET_ORDER_V1: Final[tuple[str, ...]] = (
     "built_in",
     "std",
@@ -120,17 +127,11 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "legacy_state": "compare_artifact",
         "modules": (
             "std/argparse",
-            "std/pathlib",
             "std/random",
             "std/re",
             "std/sys",
             "std/timeit",
         ),
-    },
-    {
-        "backend": "cs",
-        "legacy_state": "native_canonical",
-        "modules": ("std/pathlib",),
     },
     {
         "backend": "rs",
@@ -164,6 +165,79 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1: Final[
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MATERIALIZED_BACKENDS_V1: Final[
     tuple[str, ...]
 ] = ("cs", "go", "java", "rs", "swift", "nim", "kotlin", "scala", "js", "ts", "lua", "ruby", "php")
+
+NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
+    tuple[NonCppRuntimeGeneratedCppBaselineRuntimeFileInventoryEntry, ...]
+] = (
+    {
+        "backend": "cs",
+        "generated_files": (
+            "generated/built_in/contains.cs",
+            "generated/built_in/io_ops.cs",
+            "generated/built_in/iter_ops.cs",
+            "generated/built_in/numeric_ops.cs",
+            "generated/built_in/predicates.cs",
+            "generated/built_in/scalar_ops.cs",
+            "generated/built_in/sequence.cs",
+            "generated/built_in/string_ops.cs",
+            "generated/built_in/type_id.cs",
+            "generated/built_in/zip_ops.cs",
+            "generated/std/argparse.cs",
+            "generated/std/glob.cs",
+            "generated/std/json.cs",
+            "generated/std/math.cs",
+            "generated/std/os.cs",
+            "generated/std/os_path.cs",
+            "generated/std/pathlib.cs",
+            "generated/std/random.cs",
+            "generated/std/re.cs",
+            "generated/std/sys.cs",
+            "generated/std/time.cs",
+            "generated/std/timeit.cs",
+            "generated/utils/assertions.cs",
+            "generated/utils/gif.cs",
+            "generated/utils/png.cs",
+        ),
+        "native_files": (
+            "native/built_in/py_runtime.cs",
+            "native/std/time_native.cs",
+        ),
+        "compat_files": (),
+    },
+    {
+        "backend": "rs",
+        "generated_files": (
+            "generated/built_in/contains.rs",
+            "generated/built_in/io_ops.rs",
+            "generated/built_in/iter_ops.rs",
+            "generated/built_in/numeric_ops.rs",
+            "generated/built_in/predicates.rs",
+            "generated/built_in/scalar_ops.rs",
+            "generated/built_in/sequence.rs",
+            "generated/built_in/string_ops.rs",
+            "generated/built_in/type_id.rs",
+            "generated/built_in/zip_ops.rs",
+            "generated/std/argparse.rs",
+            "generated/std/glob.rs",
+            "generated/std/json.rs",
+            "generated/std/math.rs",
+            "generated/std/os.rs",
+            "generated/std/os_path.rs",
+            "generated/std/pathlib.rs",
+            "generated/std/random.rs",
+            "generated/std/re.rs",
+            "generated/std/sys.rs",
+            "generated/std/time.rs",
+            "generated/std/timeit.rs",
+            "generated/utils/assertions.rs",
+            "generated/utils/gif.rs",
+            "generated/utils/image_runtime.rs",
+            "generated/utils/png.rs",
+        ),
+        "native_files": ("native/built_in/py_runtime.rs",),
+        "compat_files": ("pytra/README.md", "pytra/built_in/py_runtime.rs"),
+    },
+)
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_POLICY_FILES_V1: Final[
     tuple[NonCppRuntimeGeneratedCppBaselineLegacyPolicyFileEntry, ...]
@@ -239,9 +313,9 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_BUILD_PROFILES_V1: Final[
             "src/runtime/cs/native/std/time_native.cs",
             "src/runtime/cs/generated/std/math.cs",
             "src/runtime/cs/generated/std/json.cs",
+            "src/runtime/cs/generated/std/pathlib.cs",
             "src/runtime/cs/generated/utils/png.cs",
             "src/runtime/cs/generated/utils/gif.cs",
-            "src/runtime/cs/native/std/pathlib.cs",
         ),
     },
     {
@@ -432,6 +506,12 @@ def iter_noncpp_runtime_generated_cpp_baseline_helper_artifact_overlap() -> tupl
 
 def iter_noncpp_runtime_generated_cpp_baseline_materialized_backends() -> tuple[str, ...]:
     return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MATERIALIZED_BACKENDS_V1
+
+
+def iter_noncpp_runtime_generated_cpp_baseline_local_runtime_file_inventory() -> tuple[
+    NonCppRuntimeGeneratedCppBaselineRuntimeFileInventoryEntry, ...
+]:
+    return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1
 
 
 def iter_noncpp_runtime_generated_cpp_baseline_legacy_policy_files() -> tuple[
