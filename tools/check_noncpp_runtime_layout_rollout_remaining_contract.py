@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Legacy rollout inventory checker for remaining non-C++ runtime layout state."""
+"""Legacy rollout inventory checker for remaining non-C++ runtime layout debt state."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -134,7 +134,7 @@ def _collect_contract_issues() -> list[str]:
             if ownership == "native" and target_root != "native":
                 issues.append(f"native lane target drifted: {backend}: {target_prefix}")
             if ownership == "compat" and target_root != "pytra":
-                issues.append(f"compat lane target drifted: {backend}: {target_prefix}")
+                issues.append(f"checked-in pytra debt lane drifted: {backend}: {target_prefix}")
 
             rationale = lane["rationale"].strip()
             if not rationale:

@@ -32,7 +32,7 @@
 ## 未完了タスク
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01] 非 C++ / 非 C# backend の checked-in `src/runtime/<lang>/pytra/**` を全廃し、repo 常設 runtime layout を `generated/native` のみに揃える。文脈: [p0-noncpp-runtime-pytra-deshim.md](../plans/p0-noncpp-runtime-pytra-deshim.md)
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01] 12 backend の current `pytra/**` directory/file inventory、delete blocker references、current->target mapping を plan / contract / checker / test で固定した。
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] active contract / checker / spec wording を `generated/native only` へ切り替え、checked-in `pytra/**` 再出現を fail-fast にする。進捗: third bundle で Rust user docs と doc-policy checker を `delete target debt` wording に同期した。`rollout_remaining_contract` の live `pytra` 語彙はまだ残っている。
+- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] active contract / checker / spec wording を `generated/native only` へ切り替え、checked-in `pytra/**` 再出現を fail-fast にする。進捗: fourth bundle で `rollout_remaining_contract` の `pytra` rationale / checker message を `delete-target debt` wording に寄せた。schema 上の `target_roots/compat_*` はまだ残っている。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-01] Rust (`rs`) の `pytra/**` compat 残差を解消し、`py2rs` / selfhost / runtime guard / smoke から repo-tree `pytra/**` 前提を外す。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-02] static family (`go/java/kotlin/scala/swift/nim`) の registry / packaging / smoke / tooling を `generated/native` 直参照へ切り替え、repo-tree `pytra/**` 依存をなくす。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-03] static family の checked-in `src/runtime/<lang>/pytra/**` を物理削除し、allowlist / inventory / representative smoke を deletion end state に同期する。
