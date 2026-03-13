@@ -113,6 +113,10 @@ RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1: Final[dict[str, object]] = {
         "docs/ja/plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md",
         "docs/en/plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md",
     ),
+    "backend_parity_docs": (
+        "docs/ja/language/backend-parity-matrix.md",
+        "docs/en/language/backend-parity-matrix.md",
+    ),
     "contract_inventory": (
         "src/toolchain/compiler/relative_wildcard_import_native_rollout_contract.py"
     ),
@@ -125,6 +129,10 @@ RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1: Final[dict[str, object]] = {
         "longtail_native_bundle",
     ),
     "backends": tuple(row["backend"] for row in RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1),
+    "focused_verification_lanes": tuple(
+        row["focused_verification_lane"]
+        for row in RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1
+    ),
     "current_contract_state": "transpile_smoke_locked",
     "current_fail_closed_lane": "backend_specific_fail_closed",
 }

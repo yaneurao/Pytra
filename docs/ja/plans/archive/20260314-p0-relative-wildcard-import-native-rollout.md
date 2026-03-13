@@ -1,6 +1,6 @@
 # P0: relative wildcard import native backend rollout
 
-最終更新: 2026-03-13
+最終更新: 2026-03-14
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01`
