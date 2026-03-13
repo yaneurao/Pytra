@@ -238,19 +238,39 @@ class Py2NimSmokeTest(unittest.TestCase):
     def test_nim_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "nim" / "pytra" / "built_in" / "py_runtime.nim"
         native_runtime = ROOT / "src" / "runtime" / "nim" / "native" / "built_in" / "py_runtime.nim"
-        generated_contains = ROOT / "src" / "runtime" / "nim" / "generated" / "built_in" / "contains.nim"
-        generated_gif = ROOT / "src" / "runtime" / "nim" / "generated" / "utils" / "gif.nim"
-        generated_zip = ROOT / "src" / "runtime" / "nim" / "generated" / "built_in" / "zip_ops.nim"
-        image_runtime = ROOT / "src" / "runtime" / "nim" / "generated" / "utils" / "image_runtime.nim"
-        generated_png = ROOT / "src" / "runtime" / "nim" / "generated" / "utils" / "png.nim"
+        generated_root = ROOT / "src" / "runtime" / "nim" / "generated"
         legacy_path = ROOT / "src" / "nim_module" / "py_runtime.nim"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(native_runtime.exists())
-        self.assertTrue(generated_contains.exists())
-        self.assertTrue(generated_gif.exists())
-        self.assertTrue(generated_zip.exists())
-        self.assertTrue(image_runtime.exists())
-        self.assertTrue(generated_png.exists())
+        for rel_path in (
+            "built_in/contains.nim",
+            "built_in/io_ops.nim",
+            "built_in/iter_ops.nim",
+            "built_in/numeric_ops.nim",
+            "built_in/predicates.nim",
+            "built_in/scalar_ops.nim",
+            "built_in/sequence.nim",
+            "built_in/string_ops.nim",
+            "built_in/type_id.nim",
+            "built_in/zip_ops.nim",
+            "std/argparse.nim",
+            "std/glob.nim",
+            "std/json.nim",
+            "std/math.nim",
+            "std/os.nim",
+            "std/os_path.nim",
+            "std/pathlib.nim",
+            "std/random.nim",
+            "std/re.nim",
+            "std/sys.nim",
+            "std/time.nim",
+            "std/timeit.nim",
+            "utils/assertions.nim",
+            "utils/gif.nim",
+            "utils/image_runtime.nim",
+            "utils/png.nim",
+        ):
+            self.assertTrue((generated_root / rel_path).exists(), msg=rel_path)
         self.assertFalse(legacy_path.exists())
 
     def test_nim_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:

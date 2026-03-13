@@ -2178,7 +2178,11 @@ def generate(plan: list[GenerationItem], *, check: bool, dry_run: bool) -> tuple
     for item in plan:
         out_path = ROOT / item.output_rel
         rendered = render_item(item)
-        current = out_path.read_text(encoding="utf-8") if out_path.exists() else None
+        if out_path.exists():
+            with out_path.open("r", encoding="utf-8", newline="") as handle:
+                current = handle.read()
+        else:
+            current = None
         changed = (current != rendered)
         checked += 1
         if dry_run:

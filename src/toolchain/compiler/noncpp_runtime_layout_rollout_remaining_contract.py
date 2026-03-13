@@ -212,20 +212,10 @@ REMAINING_NONCPP_SWIFT_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, .
 REMAINING_NONCPP_SWIFT_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = ()
 
 REMAINING_NONCPP_NIM_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
-    "built_in/contains",
-    "built_in/iter_ops",
-    "built_in/numeric_ops",
-    "built_in/predicates",
-    "built_in/zip_ops",
+    REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
 )
 
-REMAINING_NONCPP_NIM_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
-    "built_in/io_ops",
-    "built_in/scalar_ops",
-    "built_in/sequence",
-    "built_in/string_ops",
-    "built_in/type_id",
-)
+REMAINING_NONCPP_NIM_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = ()
 
 
 REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEntry, ...]] = (
@@ -436,6 +426,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/nim/generated/built_in/",
                 "ownership": "generated",
                 "rationale": "Nim compile-safe built_in compare artifacts live in generated/built_in after the S4 alignment bundle.",
+            },
+            {
+                "current_prefix": "src/runtime/nim/generated/std/",
+                "target_prefix": "src/runtime/nim/generated/std/",
+                "ownership": "generated",
+                "rationale": "Nim SoT-generated std compare artifacts now live in generated/std after the cpp-baseline materialization bundle.",
             },
             {
                 "current_prefix": "src/runtime/nim/pytra/built_in/py_runtime.nim",
@@ -866,10 +862,28 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
         "pytra_core_files": ("built_in/py_runtime.nim",),
         "pytra_gen_files": (
             "built_in/contains.nim",
+            "built_in/io_ops.nim",
             "built_in/iter_ops.nim",
             "built_in/numeric_ops.nim",
             "built_in/predicates.nim",
+            "built_in/scalar_ops.nim",
+            "built_in/sequence.nim",
+            "built_in/string_ops.nim",
+            "built_in/type_id.nim",
             "built_in/zip_ops.nim",
+            "std/argparse.nim",
+            "std/glob.nim",
+            "std/json.nim",
+            "std/math.nim",
+            "std/os.nim",
+            "std/os_path.nim",
+            "std/pathlib.nim",
+            "std/random.nim",
+            "std/re.nim",
+            "std/sys.nim",
+            "std/time.nim",
+            "std/timeit.nim",
+            "utils/assertions.nim",
             "utils/gif.nim",
             "utils/image_runtime.nim",
             "utils/png.nim",
@@ -1133,10 +1147,28 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
         "backend": "nim",
         "generated_files": (
             "generated/built_in/contains.nim",
+            "generated/built_in/io_ops.nim",
             "generated/built_in/iter_ops.nim",
             "generated/built_in/numeric_ops.nim",
             "generated/built_in/predicates.nim",
+            "generated/built_in/scalar_ops.nim",
+            "generated/built_in/sequence.nim",
+            "generated/built_in/string_ops.nim",
+            "generated/built_in/type_id.nim",
             "generated/built_in/zip_ops.nim",
+            "generated/std/argparse.nim",
+            "generated/std/glob.nim",
+            "generated/std/json.nim",
+            "generated/std/math.nim",
+            "generated/std/os.nim",
+            "generated/std/os_path.nim",
+            "generated/std/pathlib.nim",
+            "generated/std/random.nim",
+            "generated/std/re.nim",
+            "generated/std/sys.nim",
+            "generated/std/time.nim",
+            "generated/std/timeit.nim",
+            "generated/utils/assertions.nim",
             "generated/utils/gif.nim",
             "generated/utils/image_runtime.nim",
             "generated/utils/png.nim",
@@ -1379,14 +1411,28 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
         "backend": "nim",
         "generated_modules": (
             REMAINING_NONCPP_NIM_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("utils/gif", "utils/image_runtime", "utils/png")
+            + (
+                "std/argparse",
+                "std/glob",
+                "std/json",
+                "std/math",
+                "std/os",
+                "std/os_path",
+                "std/pathlib",
+                "std/random",
+                "std/re",
+                "std/sys",
+                "std/time",
+                "std/timeit",
+                "utils/assertions",
+                "utils/gif",
+                "utils/image_runtime",
+                "utils/png",
+            )
         ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
-        "blocked_modules": (
-            REMAINING_NONCPP_NIM_BLOCKED_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-        ),
+        "blocked_modules": REMAINING_NONCPP_NIM_BLOCKED_BUILT_IN_MODULES_V1,
     },
     {
         "backend": "js",
@@ -1842,12 +1888,21 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_V1: Final[
         "backend": "nim",
         "materialized_compare_modules": (
             REMAINING_NONCPP_NIM_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + (
-                "utils/gif",
-                "utils/png",
-            )
+            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
+            + ("utils/gif", "utils/png")
         ),
-        "helper_artifact_modules": ("utils/image_runtime",),
+        "helper_artifact_modules": (
+            "std/argparse",
+            "std/glob",
+            "std/os",
+            "std/os_path",
+            "std/random",
+            "std/re",
+            "std/sys",
+            "std/timeit",
+            "utils/assertions",
+            "utils/image_runtime",
+        ),
     },
 )
 
@@ -1998,6 +2053,24 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
         "smoke_kind": "source_guard",
         "smoke_targets": (
             "built_in/contains.nim",
+            "built_in/io_ops.nim",
+            "built_in/scalar_ops.nim",
+            "built_in/sequence.nim",
+            "built_in/string_ops.nim",
+            "built_in/type_id.nim",
+            "std/argparse.nim",
+            "std/glob.nim",
+            "std/json.nim",
+            "std/math.nim",
+            "std/os.nim",
+            "std/os_path.nim",
+            "std/pathlib.nim",
+            "std/random.nim",
+            "std/re.nim",
+            "std/sys.nim",
+            "std/time.nim",
+            "std/timeit.nim",
+            "utils/assertions.nim",
             "utils/gif.nim",
             "utils/image_runtime.nim",
             "utils/png.nim",

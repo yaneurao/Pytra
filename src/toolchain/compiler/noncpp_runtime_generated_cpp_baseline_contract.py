@@ -151,17 +151,6 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "utils/gif",
         "utils/png",
     )},
-    {"backend": "nim", "legacy_state": "blocked", "modules": (
-        "built_in/io_ops",
-        "built_in/scalar_ops",
-        "built_in/sequence",
-        "built_in/string_ops",
-        "built_in/type_id",
-        "std/json",
-        "std/math",
-        "std/pathlib",
-        "std/time",
-    )},
     {
         "backend": "rs",
         "legacy_state": "compare_artifact",
@@ -222,7 +211,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1: Final[
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MATERIALIZED_BACKENDS_V1: Final[
     tuple[str, ...]
-] = ("cs", "go", "java", "rs", "swift")
+] = ("cs", "go", "java", "rs", "swift", "nim")
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_POLICY_FILES_V1: Final[
     tuple[NonCppRuntimeGeneratedCppBaselineLegacyPolicyFileEntry, ...]
