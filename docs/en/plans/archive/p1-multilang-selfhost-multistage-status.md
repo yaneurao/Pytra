@@ -1,6 +1,6 @@
 # P1-MQ-05 Multistage Selfhost Status
 
-Measurement date: 2026-03-11
+Measurement date: 2026-03-13
 
 Command:
 
@@ -10,14 +10,14 @@ python3 tools/check_multilang_selfhost_multistage.py
 
 | lang | stage1 (self-transpile) | stage2 (self->self) | stage3 (sample) | category | note |
 |---|---|---|---|---|---|
-| rs | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
-| cs | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
-| js | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
-| ts | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
-| go | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
-| java | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
-| swift | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
-| kotlin | fail | skip | skip | stage1_transpile_fail | raise _make_east_build_error( |
+| rs | fail | skip | skip | stage1_transpile_fail | raise self._raise_expr_build_error( |
+| cs | fail | skip | skip | stage1_transpile_fail | raise self._raise_expr_build_error( |
+| js | fail | skip | skip | stage1_transpile_fail | raise self._raise_expr_build_error( |
+| ts | fail | skip | skip | stage1_transpile_fail | raise self._raise_expr_build_error( |
+| go | fail | skip | skip | stage1_transpile_fail | raise self._raise_expr_build_error( |
+| java | fail | skip | skip | stage1_transpile_fail | raise self._raise_expr_build_error( |
+| swift | fail | skip | skip | stage1_transpile_fail | raise self._raise_expr_build_error( |
+| kotlin | fail | skip | skip | stage1_transpile_fail | raise self._raise_expr_build_error( |
 
 Category definitions:
 - `preview_only`: stage1 is possible, but the generated transpiler is preview output.
