@@ -45,7 +45,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "scala:scala_program_to_library",
             "swift:swift_program_to_library",
             "js:js_std_native_owner_wrapper",
-            "ts:ts_std_math_live_wrapper",
+            "ts:ts_std_native_owner_wrapper",
             "php:php_std_math_live_wrapper",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/math.cpp",),

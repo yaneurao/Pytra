@@ -692,7 +692,7 @@
         },
         { "target": "nim", "output": "src/runtime/nim/generated/std/math.nim" },
         { "target": "js", "output": "src/runtime/js/generated/std/math.js", "postprocess": "js_std_native_owner_wrapper", "helper_name": "math" },
-        { "target": "ts", "output": "src/runtime/ts/generated/std/math.ts", "postprocess": "ts_std_math_live_wrapper" },
+        { "target": "ts", "output": "src/runtime/ts/generated/std/math.ts", "postprocess": "ts_std_native_owner_wrapper", "helper_name": "math" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/math.rb" },
         { "target": "lua", "output": "src/runtime/lua/generated/std/math.lua" },
         { "target": "php", "output": "src/runtime/php/generated/std/math.php", "postprocess": "php_std_math_live_wrapper" }

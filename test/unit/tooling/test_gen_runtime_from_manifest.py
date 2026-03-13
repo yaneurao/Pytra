@@ -556,7 +556,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("module.exports = {py_contains_str_object};", out)
         self.assertNotIn("./pytra/py_runtime.js", out)
 
-    def test_rewrite_ts_std_math_live_wrapper_delegates_to_math_native(self) -> None:
+    def test_rewrite_ts_std_native_owner_wrapper_delegates_math_to_math_native(self) -> None:
         src = "\n".join(
             [
                 'import { extern } from "./pytra/std.js";',
@@ -573,7 +573,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "let e = extern(__m.e);",
             ]
         )
-        out = gen_mod.rewrite_ts_std_math_live_wrapper(src)
+        out = gen_mod.rewrite_ts_std_native_owner_wrapper(src, "math")
         self.assertIn('import * as math_native from "../../native/std/math_native";', out)
         self.assertIn("export const pi: number = math_native.pi;", out)
         self.assertIn("export const e: number = math_native.e;", out)
