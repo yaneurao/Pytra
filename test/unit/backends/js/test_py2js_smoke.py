@@ -621,39 +621,58 @@ def main() -> None:
             pathlib_shim = (Path(td) / "pytra" / "std" / "pathlib.js").read_text(encoding="utf-8")
             self.assertIn("generated/std/pathlib.js", pathlib_shim)
 
-    def test_js_repo_delete_target_lane_resolves_runtime_helpers(self) -> None:
-        self.assertFalse((ROOT / "src" / "runtime" / "js" / "native" / "std" / "math.js").exists())
-        self.assertFalse((ROOT / "src" / "runtime" / "js" / "native" / "std" / "pathlib.js").exists())
-        self.assertFalse((ROOT / "src" / "runtime" / "js" / "native" / "std" / "time.js").exists())
-        proc = subprocess.run(
-            [
-                "node",
-                "-e",
-                (
-                    "const rt = require('./src/runtime/js/pytra/py_runtime.js');"
-                    "const json = require('./src/runtime/js/pytra/std/json.js');"
-                    "const math = require('./src/runtime/js/pytra/std/math.js');"
-                    "const pathlib = require('./src/runtime/js/pytra/std/pathlib.js');"
-                    "const time = require('./src/runtime/js/pytra/std/time.js');"
-                    "const png = require('./src/runtime/js/pytra/utils/png.js');"
-                    "const gif = require('./src/runtime/js/pytra/utils/gif.js');"
-                    "if (rt.pyBool([1]) !== true) throw new Error('pyBool');"
-                    "if (typeof json.loads_obj !== 'function') throw new Error('json');"
-                    "if (math.sqrt(9) !== 3) throw new Error('sqrt');"
-                    "const p = pathlib.Path('tmp/a.txt');"
-                    "if (String(p) !== 'tmp/a.txt') throw new Error('Path');"
-                    "if (!(time.perf_counter() > 0.0)) throw new Error('perf_counter');"
-                    "if (typeof png.write_rgb_png !== 'function') throw new Error('png');"
-                    "if (typeof gif.save_gif !== 'function') throw new Error('gif');"
-                    "console.log('js-delete-target-ok');"
-                ),
-            ],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-        )
-        self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
-        self.assertEqual(proc.stdout.strip(), "js-delete-target-ok")
+    def test_js_cli_generated_runtime_shims_resolve_runtime_helpers(self) -> None:
+        fixture = find_fixture_case("import_time_from")
+        with tempfile.TemporaryDirectory() as td:
+            out_js = Path(td) / "import_time_from.js"
+            env = dict(os.environ)
+            py_path = str(ROOT / "src")
+            old = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+            proc = subprocess.run(
+                [sys.executable, "src/py2x.py", "--target", "js", str(fixture), "-o", str(out_js)],
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            runtime_js = (Path(td) / "pytra" / "py_runtime.js").resolve()
+            json_js = (Path(td) / "pytra" / "std" / "json.js").resolve()
+            math_js = (Path(td) / "pytra" / "std" / "math.js").resolve()
+            pathlib_js = (Path(td) / "pytra" / "std" / "pathlib.js").resolve()
+            time_js = (Path(td) / "pytra" / "std" / "time.js").resolve()
+            png_js = (Path(td) / "pytra" / "utils" / "png.js").resolve()
+            gif_js = (Path(td) / "pytra" / "utils" / "gif.js").resolve()
+            proc = subprocess.run(
+                [
+                    "node",
+                    "-e",
+                    (
+                        f"const rt = require({str(runtime_js)!r});"
+                        f"const json = require({str(json_js)!r});"
+                        f"const math = require({str(math_js)!r});"
+                        f"const pathlib = require({str(pathlib_js)!r});"
+                        f"const time = require({str(time_js)!r});"
+                        f"const png = require({str(png_js)!r});"
+                        f"const gif = require({str(gif_js)!r});"
+                        "if (rt.pyBool([1]) !== true) throw new Error('pyBool');"
+                        "if (typeof json.loads_obj !== 'function') throw new Error('json');"
+                        "if (math.sqrt(9) !== 3) throw new Error('sqrt');"
+                        "const p = pathlib.Path('tmp/a.txt');"
+                        "if (String(p) !== 'tmp/a.txt') throw new Error('Path');"
+                        "if (!(time.perf_counter() > 0.0)) throw new Error('perf_counter');"
+                        "if (typeof png.write_rgb_png !== 'function') throw new Error('png');"
+                        "if (typeof gif.save_gif !== 'function') throw new Error('gif');"
+                        "console.log('js-output-shim-ok');"
+                    ),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            self.assertEqual(proc.stdout.strip(), "js-output-shim-ok")
 
     def test_js_generated_built_in_compare_lane_resolves_native_runtime(self) -> None:
         proc = subprocess.run(

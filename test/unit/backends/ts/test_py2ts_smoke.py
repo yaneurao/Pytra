@@ -217,52 +217,58 @@ def main() -> None:
             pathlib_shim = (Path(td) / "pytra" / "std" / "pathlib.js").read_text(encoding="utf-8")
             self.assertIn("generated/std/pathlib.js", pathlib_shim)
 
-    def test_ts_repo_delete_target_lane_reexports_runtime_helpers(self) -> None:
-        self.assertFalse((ROOT / "src" / "runtime" / "ts" / "native" / "std" / "math.ts").exists())
-        self.assertFalse((ROOT / "src" / "runtime" / "ts" / "native" / "std" / "pathlib.ts").exists())
-        self.assertFalse((ROOT / "src" / "runtime" / "ts" / "native" / "std" / "time.ts").exists())
-        delete_target_runtime = ROOT / "src" / "runtime" / "ts" / "pytra" / "py_runtime.ts"
-        delete_target_json = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "json.ts"
-        delete_target_math = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "math.ts"
-        delete_target_pathlib = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "pathlib.ts"
-        delete_target_time = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "time.ts"
-        delete_target_png = ROOT / "src" / "runtime" / "ts" / "pytra" / "utils" / "png.ts"
-        delete_target_gif = ROOT / "src" / "runtime" / "ts" / "pytra" / "utils" / "gif.ts"
-        self.assertTrue(delete_target_runtime.exists())
-        self.assertTrue(delete_target_json.exists())
-        self.assertTrue(delete_target_math.exists())
-        self.assertTrue(delete_target_pathlib.exists())
-        self.assertTrue(delete_target_time.exists())
-        self.assertTrue(delete_target_png.exists())
-        self.assertTrue(delete_target_gif.exists())
-        self.assertEqual(
-            delete_target_runtime.read_text(encoding="utf-8").strip(),
-            'export * from "../native/built_in/py_runtime";',
-        )
-        self.assertEqual(
-            delete_target_json.read_text(encoding="utf-8").strip(),
-            'export * from "../../generated/std/json";',
-        )
-        self.assertEqual(
-            delete_target_math.read_text(encoding="utf-8").strip(),
-            'export * from "../../generated/std/math";',
-        )
-        self.assertEqual(
-            delete_target_pathlib.read_text(encoding="utf-8").strip(),
-            'export * from "../../generated/std/pathlib";',
-        )
-        self.assertEqual(
-            delete_target_time.read_text(encoding="utf-8").strip(),
-            'export { perf_counter, perfCounter } from "../../generated/std/time";',
-        )
-        self.assertEqual(
-            delete_target_png.read_text(encoding="utf-8").strip(),
-            'export * from "../../generated/utils/png";',
-        )
-        self.assertEqual(
-            delete_target_gif.read_text(encoding="utf-8").strip(),
-            'export * from "../../generated/utils/gif";',
-        )
+    def test_ts_cli_generated_runtime_shims_resolve_runtime_helpers(self) -> None:
+        fixture = find_fixture_case("import_time_from")
+        with tempfile.TemporaryDirectory() as td:
+            out_ts = Path(td) / "import_time_from.ts"
+            env = dict(os.environ)
+            py_path = str(ROOT / "src")
+            old = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+            proc = subprocess.run(
+                [sys.executable, "src/py2x.py", "--target", "ts", str(fixture), "-o", str(out_ts)],
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            runtime_js = (Path(td) / "pytra" / "py_runtime.js").resolve()
+            json_js = (Path(td) / "pytra" / "std" / "json.js").resolve()
+            math_js = (Path(td) / "pytra" / "std" / "math.js").resolve()
+            pathlib_js = (Path(td) / "pytra" / "std" / "pathlib.js").resolve()
+            time_js = (Path(td) / "pytra" / "std" / "time.js").resolve()
+            png_js = (Path(td) / "pytra" / "utils" / "png.js").resolve()
+            gif_js = (Path(td) / "pytra" / "utils" / "gif.js").resolve()
+            proc = subprocess.run(
+                [
+                    "node",
+                    "-e",
+                    (
+                        f"const rt = require({str(runtime_js)!r});"
+                        f"const json = require({str(json_js)!r});"
+                        f"const math = require({str(math_js)!r});"
+                        f"const pathlib = require({str(pathlib_js)!r});"
+                        f"const time = require({str(time_js)!r});"
+                        f"const png = require({str(png_js)!r});"
+                        f"const gif = require({str(gif_js)!r});"
+                        "if (rt.pyBool([1]) !== true) throw new Error('pyBool');"
+                        "if (typeof json.loads_obj !== 'function') throw new Error('json');"
+                        "if (math.sqrt(9) !== 3) throw new Error('sqrt');"
+                        "const p = pathlib.Path('tmp/a.txt');"
+                        "if (String(p) !== 'tmp/a.txt') throw new Error('Path');"
+                        "if (!(time.perf_counter() > 0.0)) throw new Error('perf_counter');"
+                        "if (typeof png.write_rgb_png !== 'function') throw new Error('png');"
+                        "if (typeof gif.save_gif !== 'function') throw new Error('gif');"
+                        "console.log('ts-output-shim-ok');"
+                    ),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            self.assertEqual(proc.stdout.strip(), "ts-output-shim-ok")
 
     def test_ts_generated_built_in_compare_lane_rehomes_native_runtime_import(self) -> None:
         generated_contains = ROOT / "src" / "runtime" / "ts" / "generated" / "built_in" / "contains.ts"

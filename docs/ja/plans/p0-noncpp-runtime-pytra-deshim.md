@@ -9,7 +9,7 @@
 - 2026-03-13 時点で、checked-in tree には `src/runtime/{rs,go,java,kotlin,scala,swift,nim,js,ts,lua,ruby,php}/pytra/**` が残っている。
 - archive 済みの `20260313-p1-noncpp-runtime-layout-rollout-remaining.md` は、non-C++ backend の一部で `pytra/` を public shim / compatibility lane として残す前提で完了扱いになっている。
 - しかしユーザー指示はそれと異なり、C++ / C# を除く全 backend について checked-in `src/runtime/<lang>/pytra/**` をなくし、repo 常設 runtime layout を `generated/native` のみに限定するものだった。
-- 現在の JS/TS/PHP/Lua/Ruby 系の smoke / selfhost / packaging / contract は repo-tree `pytra/**` direct-load や compat shim inventory を前提に固定されており、この差が未解消のまま残っている。
+- 現在の PHP/Lua/Ruby 系の smoke / packaging / contract は repo-tree `pytra/**` direct-load や compat shim inventory を前提に固定されており、この差が未解消のまま残っている。
 - C# はすでに duplicate lane を delete target として空にしたが、Rust を含む他 backend はまだ `pytra/` directory 自体が checked-in tree に存在する。
 
 目的:
@@ -94,7 +94,7 @@
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-01] Rust (`rs`) の checked-in `src/runtime/rs/pytra/**` を削除し、`py2rs` / selfhost / runtime guard / smoke から repo-tree `pytra/**` 前提を外す。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-02] static family (`go/java/kotlin/scala/swift/nim`) の backend registry / packaging / smoke / tooling を `generated/native` 直参照へ揃え、checked-in `pytra/**` は deletion inventory としてのみ残す。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-03] static family の checked-in `src/runtime/<lang>/pytra/**` を物理削除し、allowlist / inventory / representative smoke を deletion end state に同期する。
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-01] JS/TS の import path / shim writer / selfhost / smoke を見直し、repo-tree `src/runtime/{js,ts}/pytra/**` direct-load と compat shim 契約を撤去する。
+- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-01] JS/TS の import path / shim writer / selfhost / smoke を見直し、repo-tree `src/runtime/{js,ts}/pytra/**` direct-load と compat shim 契約を撤去する。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-02] Lua/Ruby/PHP の packaging / runtime copy / loader contract を `generated/native` または output-side staging へ移し、repo-tree `pytra/**` 常設前提を撤去する。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-03] script family (`js/ts/lua/ruby/php`) の checked-in `src/runtime/<lang>/pytra/**` を物理削除し、representative smoke と contract baseline を deletion end state へ更新する。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S4-01] docs / TODO / archive 参照 / inventory を最終同期し、「非 C++ / 非 C# backend に checked-in `pytra/` は存在しない」状態で close する。
@@ -117,3 +117,4 @@
 - 2026-03-13: S2-02 で static family は `backend_registry_metadata.py` と representative smoke がすでに `generated/native` 直参照であることを前提に、`noncpp_runtime_layout_rollout_remaining_contract.py` から `pytra` current lane mapping を外した。checked-in `pytra/**` は `delete_target_files` / `delete_target_modules` の明示 inventory としてのみ残し、`noncpp_runtime_pytra_deshim_contract.py` の static-family `contract_allowlist` blocker も除去した。
 - 2026-03-13: S2-03 で `src/runtime/{go,java,kotlin,scala,swift,nim}/pytra/**` を物理削除し、`noncpp_runtime_pytra_deshim_contract.py` の current directory/file inventory を script family のみへ縮退させた。`noncpp_runtime_generated_cpp_baseline_contract.py` / `noncpp_runtime_layout_rollout_remaining_contract.py` の static-family delete-target inventory は空に揃え、`runtime_std_sot_allowlist.txt` の Go stale entry も除去した。
 - 2026-03-13: S2-03 では representative smoke の `runtime_source_path_is_migrated` 群を「`generated/native` は存在し、checked-in `pytra/**` は存在しない」という end state に強化した。あわせて active spec (`spec-java-native-backend.md`, `spec-gsk-native-backend.md`) の static-family runtime boundary から delete-target debt wording を外した。
+- 2026-03-13: S3-01 で JS/TS の repo-tree direct-load smoke を output-side generated shim smoke に置き換えた前提で、`noncpp_runtime_pytra_deshim_contract.py` から JS/TS blocker bucket と exact blocker baseline を除去した。checked-in `src/runtime/{js,ts}/pytra/**` は deletion inventory としてのみ残し、repo-tree direct-load / selfhost / compat-contract blocker は解消済みとする。

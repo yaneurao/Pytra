@@ -147,7 +147,7 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
         "current_dir": "src/runtime/js/pytra",
         "target_policy": "delete_target_after_script_output_staging",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
-        "blocker_buckets": ("direct_load_smoke", "runtime_shim_writer", "contract_allowlist", "selfhost_stage"),
+        "blocker_buckets": (),
     },
     {
         "backend": "ts",
@@ -155,7 +155,7 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
         "current_dir": "src/runtime/ts/pytra",
         "target_policy": "delete_target_after_script_output_staging",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
-        "blocker_buckets": ("runtime_shim_writer", "contract_allowlist"),
+        "blocker_buckets": (),
     },
     {
         "backend": "lua",
@@ -184,44 +184,6 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
 )
 
 NONCPP_PYTRA_DESHIM_BLOCKERS_V1: Final[tuple[NonCppPytraDeshimBlockerEntry, ...]] = (
-    {
-        "backend": "js",
-        "bucket": "runtime_shim_writer",
-        "path": "src/toolchain/compiler/js_runtime_shims.py",
-        "needles": ('"pytra/py_runtime.js"', '"pytra/std/pathlib.js"'),
-        "rationale": "JS runtime shim generation still writes repo-tree pytra import paths.",
-    },
-    {
-        "backend": "js",
-        "bucket": "direct_load_smoke",
-        "path": "test/unit/backends/js/test_py2js_smoke.py",
-        "needles": (
-            "./src/runtime/js/pytra/py_runtime.js",
-            "./src/runtime/js/pytra/std/json.js",
-        ),
-        "rationale": "JS smoke still directly loads checked-in runtime files under src/runtime/js/pytra.",
-    },
-    {
-        "backend": "js",
-        "bucket": "selfhost_stage",
-        "path": "tools/check_multilang_selfhost_stage1.py",
-        "needles": ('"pytra/py_runtime.js"', '"pytra/std/pathlib.js"'),
-        "rationale": "JS selfhost stage checks still enumerate pytra runtime staging files explicitly.",
-    },
-    {
-        "backend": "js",
-        "bucket": "selfhost_stage",
-        "path": "tools/check_multilang_selfhost_multistage.py",
-        "needles": ('"pytra/py_runtime.js"', '"pytra/std/pathlib.js"'),
-        "rationale": "JS multistage selfhost checks still enumerate pytra runtime staging files explicitly.",
-    },
-    {
-        "backend": "ts",
-        "bucket": "contract_allowlist",
-        "path": "src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py",
-        "needles": ('"current_prefix": "src/runtime/ts/pytra/py_runtime.ts"',),
-        "rationale": "TS current->target rollout mapping still includes the checked-in pytra lane.",
-    },
     {
         "backend": "lua",
         "bucket": "direct_load_smoke",

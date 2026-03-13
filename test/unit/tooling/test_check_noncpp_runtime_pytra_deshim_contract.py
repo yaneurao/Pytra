@@ -86,6 +86,8 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
 
     def test_blocker_baseline_contains_expected_categories(self) -> None:
         blockers = contract_mod.iter_noncpp_pytra_deshim_blockers()
+        self.assertFalse(any(entry["backend"] == "js" for entry in blockers))
+        self.assertFalse(any(entry["backend"] == "ts" for entry in blockers))
         self.assertNotIn(
             {
                 "backend": "rs",
@@ -104,11 +106,11 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
         )
         self.assertIn(
             {
-                "backend": "js",
+                "backend": "php",
                 "bucket": "runtime_shim_writer",
-                "path": "src/toolchain/compiler/js_runtime_shims.py",
-                "needles": ('"pytra/py_runtime.js"', '"pytra/std/pathlib.js"'),
-                "rationale": "JS runtime shim generation still writes repo-tree pytra import paths.",
+                "path": "tools/gen_runtime_from_manifest.py",
+                "needles": ("require_once __DIR__ . '/pytra/py_runtime.php';",),
+                "rationale": "PHP runtime generation still knows how to emit a repo-tree pytra shim include.",
             },
             blockers,
         )
@@ -187,19 +189,6 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
                     ),
                 },
             ),
-        )
-        self.assertIn(
-            {
-                "backend": "js",
-                "bucket": "direct_load_smoke",
-                "path": "test/unit/backends/js/test_py2js_smoke.py",
-                "needles": (
-                    "./src/runtime/js/pytra/py_runtime.js",
-                    "./src/runtime/js/pytra/std/json.js",
-                ),
-                "rationale": "JS smoke still directly loads checked-in runtime files under src/runtime/js/pytra.",
-            },
-            blockers,
         )
         self.assertIn(
             {
