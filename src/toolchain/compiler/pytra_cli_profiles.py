@@ -174,6 +174,7 @@ def make_noncpp_build_plan(
             str(root / "src/runtime/cs/generated/std/time.cs"),
             str(root / "src/runtime/cs/native/std/time_native.cs"),
             str(root / "src/runtime/cs/generated/std/math.cs"),
+            str(root / "src/runtime/cs/native/std/math_native.cs"),
             str(root / "src/runtime/cs/generated/std/json.cs"),
             str(root / "src/runtime/cs/generated/std/pathlib.cs"),
             str(root / "src/runtime/cs/generated/utils/png.cs"),

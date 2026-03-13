@@ -122,6 +122,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                         "src/runtime/cs/generated/std/time.cs",
                         "src/runtime/cs/native/std/time_native.cs",
                         "src/runtime/cs/generated/std/math.cs",
+                        "src/runtime/cs/native/std/math_native.cs",
                         "src/runtime/cs/generated/std/json.cs",
                         "src/runtime/cs/generated/std/pathlib.cs",
                         "src/runtime/cs/generated/utils/png.cs",

@@ -243,15 +243,15 @@ def _collect_csharp_lane_issues() -> list[str]:
                     if "public static class math" not in generated_text:
                         issues.append("canonical generated math lane lost the live helper class")
                     for needle in (
-                        "public const double pi = Math.PI;",
-                        "public const double e = Math.E;",
-                        "return Math.Sqrt(x);",
-                        "return Math.Log10(x);",
-                        "return Math.Ceiling(x);",
+                        "public static double pi { get { return math_native.pi; } }",
+                        "public static double e { get { return math_native.e; } }",
+                        "return math_native.sqrt(x);",
+                        "return math_native.log10(x);",
+                        "return math_native.ceil(x);",
                     ):
                         if needle not in generated_text:
                             issues.append(f"canonical generated math lane lost live wrapper shape: {needle}")
-                    if "__m." in generated_text or "py_extern(" in generated_text:
+                    if "__m." in generated_text or "py_extern(" in generated_text or "Math." in generated_text:
                         issues.append("canonical generated math lane still contains extern/runtime residue")
                 if module_name == "json":
                     if "namespace Pytra.CsModule" not in generated_text:

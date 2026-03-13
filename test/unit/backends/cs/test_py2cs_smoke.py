@@ -1034,12 +1034,13 @@ def f(x: object) -> bool:
         ).read_text(encoding="utf-8")
         self.assertIn("namespace Pytra.CsModule", generated)
         self.assertIn("public static class math", generated)
-        self.assertIn("public const double pi = Math.PI;", generated)
-        self.assertIn("public const double e = Math.E;", generated)
-        self.assertIn("return Math.Sqrt(x);", generated)
-        self.assertIn("return Math.Ceiling(x);", generated)
+        self.assertIn("public static double pi { get { return math_native.pi; } }", generated)
+        self.assertIn("public static double e { get { return math_native.e; } }", generated)
+        self.assertIn("return math_native.sqrt(x);", generated)
+        self.assertIn("return math_native.ceil(x);", generated)
         self.assertNotIn("public static class Program", generated)
         self.assertNotIn("__m.", generated)
+        self.assertNotIn("Math.", generated)
 
     def test_representative_re_extended_fixture_transpiles(self) -> None:
         fixture = find_fixture_case("re_extended")

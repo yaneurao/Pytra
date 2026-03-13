@@ -216,6 +216,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
         ),
         "native_files": (
             "native/built_in/py_runtime.cs",
+            "native/std/math_native.cs",
             "native/std/time_native.cs",
         ),
         "delete_target_files": (),
@@ -686,6 +687,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_BUILD_PROFILES_V1: Final[
             "src/runtime/cs/generated/std/time.cs",
             "src/runtime/cs/native/std/time_native.cs",
             "src/runtime/cs/generated/std/math.cs",
+            "src/runtime/cs/native/std/math_native.cs",
             "src/runtime/cs/generated/std/json.cs",
             "src/runtime/cs/generated/std/pathlib.cs",
             "src/runtime/cs/generated/utils/png.cs",

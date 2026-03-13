@@ -83,6 +83,7 @@ class PytraCliProfilesTest(unittest.TestCase):
         self.assertIn(str(ROOT / "src/runtime/cs/generated/std/time.cs"), plan.build_cmd)
         self.assertIn(str(ROOT / "src/runtime/cs/native/std/time_native.cs"), plan.build_cmd)
         self.assertIn(str(ROOT / "src/runtime/cs/generated/std/math.cs"), plan.build_cmd)
+        self.assertIn(str(ROOT / "src/runtime/cs/native/std/math_native.cs"), plan.build_cmd)
         self.assertIn(str(ROOT / "src/runtime/cs/generated/std/json.cs"), plan.build_cmd)
         self.assertIn(str(ROOT / "src/runtime/cs/generated/std/pathlib.cs"), plan.build_cmd)
         self.assertNotIn(str(ROOT / "src/runtime/cs/native/built_in/math.cs"), plan.build_cmd)

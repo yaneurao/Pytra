@@ -616,6 +616,7 @@ def _run_cs_stage2(stage1_out: Path, sample_py: Path, stage2_tmp_dir: Path) -> t
         ROOT / "src" / "runtime" / "cs" / "generated" / "std" / "time.cs",
         ROOT / "src" / "runtime" / "cs" / "native" / "std" / "time_native.cs",
         ROOT / "src" / "runtime" / "cs" / "generated" / "std" / "math.cs",
+        ROOT / "src" / "runtime" / "cs" / "native" / "std" / "math_native.cs",
         ROOT / "src" / "runtime" / "cs" / "generated" / "std" / "json.cs",
         ROOT / "src" / "runtime" / "cs" / "generated" / "std" / "pathlib.cs",
         ROOT / "src" / "runtime" / "cs" / "generated" / "utils" / "png.cs",

@@ -180,7 +180,10 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
             by_module["math"]["generated_std_state"],
             "canonical_generated",
         )
-        self.assertEqual(by_module["math"]["native_rel"], "")
+        self.assertEqual(
+            by_module["math"]["native_rel"],
+            "src/runtime/cs/native/std/math_native.cs",
+        )
         self.assertEqual(
             by_module["random"]["generated_std_state"],
             "compare_artifact",

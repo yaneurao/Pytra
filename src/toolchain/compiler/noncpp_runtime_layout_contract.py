@@ -151,14 +151,14 @@ CS_STD_LANE_OWNERSHIP_V1: Final[tuple[CsStdLaneOwnershipEntry, ...]] = (
         "canonical_lane": "generated/std",
         "generated_std_state": "canonical_generated",
         "generated_std_rel": "src/runtime/cs/generated/std/math.cs",
-        "native_rel": "",
+        "native_rel": "src/runtime/cs/native/std/math_native.cs",
         "canonical_runtime_symbol": "Pytra.CsModule.math",
         "representative_fixture": "test/fixtures/stdlib/pytra_std_import_math.py",
         "smoke_guard_needles": (
             "def test_representative_math_import_fixture_transpiles",
             "Pytra.CsModule.math.sqrt(81.0)",
         ),
-        "rationale": "generated/std/math.cs is now the live C# math owner and maps the extern-marked SoT surface directly onto System.Math without a handwritten native seam.",
+        "rationale": "generated/std/math.cs remains the live C# math owner, but its extern-marked surface now delegates to native/std/math_native.cs so host bindings stay out of generated code.",
     },
     {
         "module_name": "random",
