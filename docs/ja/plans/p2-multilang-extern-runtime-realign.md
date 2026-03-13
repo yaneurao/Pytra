@@ -57,5 +57,6 @@
 - 2026-03-13: ユーザー指摘により、`@extern` を backend shortcut として扱っていた現行非 C++ 設計を誤りと認め、全 target を対象に SoT/native-owner/generic-emitter へ戻す P2 task として起票した。
 - 2026-03-14: manifest/emitter の hardcode を直接剥がす前段として、`tools/gen_runtime_symbol_index.py` と `runtime_symbol_index.py` に `extern_contract_v1` / `extern_v1` を追加し、runtime SoT 上の `@extern` module/symbol を generic metadata として引ける状態にした。
 - 2026-03-14: C# は既存の `time_native` pattern に合わせ、`generated/std/math.cs` を `math_native` へ委譲する wrapper に戻し、`System.Math` 直書きを `src/runtime/cs/native/std/math_native.cs` へ押し込めた。
+- 2026-03-14: `math_native` seam に合わせて C# smoke、non-C++ runtime layout contract、generated-cpp baseline contract、CLI build profile、selfhost compile checker を同期し、`generated/std/math.cs` が native seam なしでは成立しない状態を消した。
 - 2026-03-14: 最初の realignment slice として、SoT に存在しない `tau` を C# `std/math` generated wrapper が勝手に追加していた挙動を止め、`pi/e` のみを source-of-truth とする状態へ戻した。
 - 2026-03-14: `S1-01` として `multilang_extern_runtime_realign_inventory.py` / checker / unit test を追加し、`std/math,time,os,os_path,sys,glob` と `built_in/io_ops,scalar_ops` の manifest postprocess・C++ native owner・non-C++ native seam・emitter hardcode・generated drift を current worktree 基準で固定した。C# `std/math` は `math_native.cs` seam を current non-C++ owner として inventory に含めた。
