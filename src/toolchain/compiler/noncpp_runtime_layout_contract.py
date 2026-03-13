@@ -83,13 +83,7 @@ CS_PYTRA_HANDWRITTEN_DUPLICATE_DELETE_TARGETS_V1: Final[tuple[str, ...]] = (
     "src/runtime/cs/pytra/std/pathlib.cs",
 )
 
-RS_PYTRA_DELETE_TARGETS_V1: Final[tuple[str, ...]] = (
-    "src/runtime/rs/pytra/README.md",
-    "src/runtime/rs/pytra/built_in/py_runtime.rs",
-    "src/runtime/rs/pytra/compiler/README.md",
-    "src/runtime/rs/pytra/std/README.md",
-    "src/runtime/rs/pytra/utils/README.md",
-)
+RS_PYTRA_DELETE_TARGETS_V1: Final[tuple[str, ...]] = ()
 
 
 CS_STD_GENERATED_STATE_ORDER: Final[tuple[str, ...]] = (

@@ -59,7 +59,6 @@ NONCPP_PYTRA_DESHIM_CURRENT_DIRS_V1: Final[tuple[str, ...]] = (
     "src/runtime/lua/pytra",
     "src/runtime/nim/pytra",
     "src/runtime/php/pytra",
-    "src/runtime/rs/pytra",
     "src/runtime/ruby/pytra",
     "src/runtime/scala/pytra",
     "src/runtime/swift/pytra",
@@ -84,11 +83,6 @@ NONCPP_PYTRA_DESHIM_CURRENT_FILES_V1: Final[tuple[str, ...]] = (
     "src/runtime/php/pytra/std/time.php",
     "src/runtime/php/pytra/utils/gif.php",
     "src/runtime/php/pytra/utils/png.php",
-    "src/runtime/rs/pytra/README.md",
-    "src/runtime/rs/pytra/built_in/py_runtime.rs",
-    "src/runtime/rs/pytra/compiler/README.md",
-    "src/runtime/rs/pytra/std/README.md",
-    "src/runtime/rs/pytra/utils/README.md",
     "src/runtime/ruby/pytra/built_in/py_runtime.rb",
     "src/runtime/scala/pytra/built_in/py_runtime.scala",
     "src/runtime/swift/pytra/built_in/py_runtime.swift",
@@ -106,10 +100,10 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
     {
         "backend": "rs",
         "family": "rust_cleanup",
-        "current_dir": "src/runtime/rs/pytra",
-        "target_policy": "delete_target_after_contract_cleanup",
+        "current_dir": "",
+        "target_policy": "delete_target_removed_after_rust_cleanup",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
-        "blocker_buckets": ("contract_allowlist",),
+        "blocker_buckets": (),
     },
     {
         "backend": "go",
@@ -286,14 +280,14 @@ NONCPP_PYTRA_DESHIM_BLOCKERS_V1: Final[tuple[NonCppPytraDeshimBlockerEntry, ...]
         "backend": "lua",
         "bucket": "direct_load_smoke",
         "path": "test/unit/backends/lua/test_py2lua_smoke.py",
-        "needles": ('compat_runtime = ROOT / "src" / "runtime" / "lua" / "pytra" / "built_in" / "py_runtime.lua"',),
+        "needles": ('delete_target_runtime = ROOT / "src" / "runtime" / "lua" / "pytra" / "built_in" / "py_runtime.lua"',),
         "rationale": "Lua compat smoke still directly loads the checked-in pytra runtime shim.",
     },
     {
         "backend": "ruby",
         "bucket": "direct_load_smoke",
         "path": "test/unit/backends/rb/test_py2rb_smoke.py",
-        "needles": ('compat_runtime = ROOT / "src" / "runtime" / "ruby" / "pytra" / "built_in" / "py_runtime.rb"',),
+        "needles": ('delete_target_runtime = ROOT / "src" / "runtime" / "ruby" / "pytra" / "built_in" / "py_runtime.rb"',),
         "rationale": "Ruby compat smoke still directly loads the checked-in pytra runtime shim.",
     },
     {
@@ -307,7 +301,7 @@ NONCPP_PYTRA_DESHIM_BLOCKERS_V1: Final[tuple[NonCppPytraDeshimBlockerEntry, ...]
         "backend": "php",
         "bucket": "direct_load_smoke",
         "path": "test/unit/backends/php/test_py2php_smoke.py",
-        "needles": ('compat_runtime_path = ROOT / "src" / "runtime" / "php" / "pytra" / "py_runtime.php"',),
+        "needles": ('delete_target_runtime_path = ROOT / "src" / "runtime" / "php" / "pytra" / "py_runtime.php"',),
         "rationale": "PHP compat smoke still directly loads the checked-in pytra runtime shim.",
     },
 )
@@ -330,27 +324,13 @@ NONCPP_PYTRA_DESHIM_DOC_POLICY_V1: Final[tuple[NonCppPytraDeshimDocPolicyEntry, 
     {
         "path": "docs/ja/spec/spec-dev.md",
         "needles": (
-            "`src/runtime/rs/pytra/` を runtime ownership root として扱ってはならない。",
             "non-C++ / non-C# backend の checked-in `src/runtime/<lang>/pytra/**` は delete target debt とする。",
         ),
     },
     {
         "path": "docs/en/spec/spec-dev.md",
         "needles": (
-            "`src/runtime/rs/pytra/` must not be treated as a live runtime ownership root.",
             "For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` is delete-target debt only.",
-        ),
-    },
-    {
-        "path": "docs/ja/tutorial/transpiler-cli.md",
-        "needles": (
-            "checked-in `src/runtime/rs/pytra/` は delete target debt であり、runtime ownership root として扱ってはいけません。",
-        ),
-    },
-    {
-        "path": "docs/en/how-to-use.md",
-        "needles": (
-            "Checked-in `src/runtime/rs/pytra/` is delete-target debt and must not be treated as a runtime ownership root.",
         ),
     },
     {

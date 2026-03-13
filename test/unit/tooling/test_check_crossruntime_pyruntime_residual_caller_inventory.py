@@ -99,7 +99,6 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
         self.assertEqual(
             {path for _, path in rs_bucket},
             {
-                "src/runtime/rs/pytra/built_in/py_runtime.rs",
                 "src/runtime/rs/native/built_in/py_runtime.rs",
             },
         )
@@ -171,7 +170,6 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
                         "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
                     },
                     "source_guard_paths": {
-                        "src/runtime/rs/pytra/built_in/py_runtime.rs",
                         "src/runtime/rs/native/built_in/py_runtime.rs",
                     },
                 },

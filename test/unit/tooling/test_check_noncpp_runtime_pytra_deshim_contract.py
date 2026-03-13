@@ -42,7 +42,6 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
                 "src/runtime/lua/pytra",
                 "src/runtime/nim/pytra",
                 "src/runtime/php/pytra",
-                "src/runtime/rs/pytra",
                 "src/runtime/ruby/pytra",
                 "src/runtime/scala/pytra",
                 "src/runtime/swift/pytra",
@@ -71,11 +70,6 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
                 "src/runtime/php/pytra/std/time.php",
                 "src/runtime/php/pytra/utils/gif.php",
                 "src/runtime/php/pytra/utils/png.php",
-                "src/runtime/rs/pytra/README.md",
-                "src/runtime/rs/pytra/built_in/py_runtime.rs",
-                "src/runtime/rs/pytra/compiler/README.md",
-                "src/runtime/rs/pytra/std/README.md",
-                "src/runtime/rs/pytra/utils/README.md",
                 "src/runtime/ruby/pytra/built_in/py_runtime.rb",
                 "src/runtime/scala/pytra/built_in/py_runtime.scala",
                 "src/runtime/swift/pytra/built_in/py_runtime.swift",
@@ -147,27 +141,13 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
                 {
                     "path": "docs/ja/spec/spec-dev.md",
                     "needles": (
-                        "`src/runtime/rs/pytra/` を runtime ownership root として扱ってはならない。",
                         "non-C++ / non-C# backend の checked-in `src/runtime/<lang>/pytra/**` は delete target debt とする。",
                     ),
                 },
                 {
                     "path": "docs/en/spec/spec-dev.md",
                     "needles": (
-                        "`src/runtime/rs/pytra/` must not be treated as a live runtime ownership root.",
                         "For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` is delete-target debt only.",
-                    ),
-                },
-                {
-                    "path": "docs/ja/tutorial/transpiler-cli.md",
-                    "needles": (
-                        "checked-in `src/runtime/rs/pytra/` は delete target debt であり、runtime ownership root として扱ってはいけません。",
-                    ),
-                },
-                {
-                    "path": "docs/en/how-to-use.md",
-                    "needles": (
-                        "Checked-in `src/runtime/rs/pytra/` is delete-target debt and must not be treated as a runtime ownership root.",
                     ),
                 },
                 {

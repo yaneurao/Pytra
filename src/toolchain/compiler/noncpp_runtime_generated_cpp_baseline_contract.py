@@ -315,7 +315,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.rs",
         ),
         "native_files": ("native/built_in/py_runtime.rs",),
-        "delete_target_files": ("pytra/README.md", "pytra/built_in/py_runtime.rs"),
+        "delete_target_files": (),
     },
     {
         "backend": "swift",

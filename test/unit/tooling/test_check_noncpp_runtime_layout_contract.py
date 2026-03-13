@@ -110,13 +110,7 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
         )
         self.assertEqual(
             contract_mod.iter_rs_pytra_delete_targets(),
-            (
-                "src/runtime/rs/pytra/README.md",
-                "src/runtime/rs/pytra/built_in/py_runtime.rs",
-                "src/runtime/rs/pytra/compiler/README.md",
-                "src/runtime/rs/pytra/std/README.md",
-                "src/runtime/rs/pytra/utils/README.md",
-            ),
+            (),
         )
         self.assertEqual(
             check_mod._collect_relative_files(check_mod.CS_PYTRA_ROOT, ".cs"),

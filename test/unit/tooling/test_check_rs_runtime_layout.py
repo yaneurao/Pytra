@@ -32,8 +32,8 @@ class CheckRsRuntimeLayoutTest(unittest.TestCase):
                 root / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs",
             ), patch.object(
                 layout_mod,
-                "DELETE_TARGET_RUNTIME",
-                root / "src" / "runtime" / "rs" / "pytra" / "built_in" / "py_runtime.rs",
+                "DELETE_TARGET_DIR",
+                root / "src" / "runtime" / "rs" / "pytra",
             ), patch(
                 "sys.stdout", new_callable=io.StringIO
             ) as stdout:
@@ -41,22 +41,36 @@ class CheckRsRuntimeLayoutTest(unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertIn("missing canonical Rust runtime file", stdout.getvalue())
 
-    def test_main_accepts_native_canonical_and_optional_delete_target_runtime(self) -> None:
+    def test_main_accepts_native_canonical_when_delete_target_is_absent(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             canonical = root / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs"
-            delete_target = root / "src" / "runtime" / "rs" / "pytra" / "built_in" / "py_runtime.rs"
             _write(canonical, "// native runtime\n")
-            _write(delete_target, "// delete-target runtime\n")
             with patch.object(layout_mod, "ROOT", root), patch.object(
                 layout_mod, "LEGACY_DIR", root / "src" / "rs_module"
             ), patch.object(layout_mod, "CANONICAL_RUNTIME", canonical), patch.object(
-                layout_mod, "DELETE_TARGET_RUNTIME", delete_target
+                layout_mod, "DELETE_TARGET_DIR", root / "src" / "runtime" / "rs" / "pytra"
             ), patch("sys.stdout", new_callable=io.StringIO) as stdout:
                 rc = layout_mod.main()
         self.assertEqual(rc, 0)
         self.assertIn("canonical runtime", stdout.getvalue())
         self.assertIn("delete-target runtime", stdout.getvalue())
+
+    def test_main_rejects_delete_target_pytra_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            canonical = root / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs"
+            delete_target_dir = root / "src" / "runtime" / "rs" / "pytra"
+            _write(canonical, "// native runtime\n")
+            _write(delete_target_dir / "built_in" / "py_runtime.rs", "// delete-target runtime\n")
+            with patch.object(layout_mod, "ROOT", root), patch.object(
+                layout_mod, "LEGACY_DIR", root / "src" / "rs_module"
+            ), patch.object(layout_mod, "CANONICAL_RUNTIME", canonical), patch.object(
+                layout_mod, "DELETE_TARGET_DIR", delete_target_dir
+            ), patch("sys.stdout", new_callable=io.StringIO) as stdout:
+                rc = layout_mod.main()
+        self.assertEqual(rc, 1)
+        self.assertIn("delete-target Rust pytra lane still exists", stdout.getvalue())
 
 
 if __name__ == "__main__":

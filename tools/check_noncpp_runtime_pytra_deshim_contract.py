@@ -70,7 +70,9 @@ def _collect_contract_issues() -> list[str]:
     backend_names = tuple(entry["backend"] for entry in contract_mod.iter_noncpp_pytra_deshim_backends())
     if backend_names != contract_mod.iter_noncpp_pytra_deshim_backend_order():
         issues.append("backend mapping order drifted")
-    backend_dir_set = tuple(sorted(entry["current_dir"] for entry in contract_mod.iter_noncpp_pytra_deshim_backends()))
+    backend_dir_set = tuple(
+        sorted(entry["current_dir"] for entry in contract_mod.iter_noncpp_pytra_deshim_backends() if entry["current_dir"] != "")
+    )
     if backend_dir_set != contract_mod.iter_noncpp_pytra_deshim_current_dirs():
         issues.append("backend mapping/current dir inventory drifted")
     for entry in contract_mod.iter_noncpp_pytra_deshim_backends():
