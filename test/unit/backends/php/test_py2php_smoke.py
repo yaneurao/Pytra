@@ -24,6 +24,7 @@ if str(ROOT / "test" / "unit" / "backends") not in sys.path:
 from backends.php.emitter import load_php_profile, transpile_to_php, transpile_to_php_native
 from toolchain.compiler.transpile_cli import load_east3_document
 from relative_import_longtail_smoke_support import (
+    transpile_relative_import_longtail_via_module_graph,
     transpile_relative_import_longtail_project,
     transpile_relative_import_longtail_expect_failure,
 )
@@ -379,6 +380,15 @@ class Py2PhpSmokeTest(unittest.TestCase):
         )
         self.assertIn("unsupported relative import form: wildcard import", err)
         self.assertIn("php native emitter", err)
+
+    def test_cli_relative_import_support_rollout_module_graph_wildcard_for_php(self) -> None:
+        php = transpile_relative_import_longtail_via_module_graph(
+            target="php",
+            import_form="from ..helper import *",
+            body_text="def call() -> int:\n    return f()\n",
+        )
+        self.assertIn("helper_f()", php)
+        self.assertNotIn("unsupported relative import form: wildcard import", php)
 
     def test_transpile_downcount_range_fixture_uses_descending_condition(self) -> None:
         fixture = find_fixture_case("range_downcount_len_minus1")

@@ -35,7 +35,7 @@
 
 - [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01] relative wildcard import native backend rollout
   文脈: [p0-relative-wildcard-import-native-rollout.md](../plans/p0-relative-wildcard-import-native-rollout.md)
-  進捗メモ: `S2-02` で `java/kotlin/scala` も module-graph bundle transpile smoke を green にし、single-file direct lane は wildcard を fail-closed のまま維持した。次は `lua/php/ruby` を揃える。
+  進捗メモ: `S2-03` で `lua/php/ruby` も module-graph bundle transpile smoke を green にし、single-file direct lane は wildcard を fail-closed のまま維持した。次は coverage / parity docs を final state に同期する。
 
 ### P1
 
@@ -67,4 +67,16 @@
 
 1. [ ] [ID: P2-CPP-LEGACY-CORE-COMPAT-RETIRE-01] 削除済み `src/runtime/cpp/core/**` compat surface を live tree の現役前提から完全に外し、guard-only 参照へ整理する。
 文脈: [docs/ja/plans/p2-cpp-legacy-core-compat-retire.md](../plans/p2-cpp-legacy-core-compat-retire.md)
+- 進捗メモ: 未着手。
+
+2. [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01] 全言語の `@extern` runtime/emitter 契約を見直し、generated rewrite ではなく native owner + generic extern metadata に揃える。
+文脈: [docs/ja/plans/p2-multilang-extern-runtime-realign.md](../plans/p2-multilang-extern-runtime-realign.md)
+- 進捗メモ: 未着手。
+
+3. [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01] bundle-based coverage matrix を導入し、`feature x lane x backend` の contract coverage 100% を support matrix と分離して固定する。
+文脈: [docs/ja/plans/p2-backend-contract-coverage-100.md](../plans/p2-backend-contract-coverage-100.md)
+- 進捗メモ: 未着手。
+
+4. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] `py_runtime.h` の typed fallback を EAST3 / C++ emitter / runtime SoT 側へ押し戻し、header を物理分割なしで縮める。
+文脈: [docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md](../plans/p2-cpp-pyruntime-upstream-fallback-shrink.md)
 - 進捗メモ: 未着手。

@@ -9,7 +9,7 @@ from backends.ruby.emitter import transpile_to_ruby_native
 from toolchain.compiler.relative_import_longtail_support_contract import (
     RELATIVE_IMPORT_LONGTAIL_SUPPORT_SCENARIOS_V1,
 )
-from toolchain.compiler.transpile_cli import load_east3_document
+from toolchain.compiler.transpile_cli import build_module_east_map, load_east3_document
 
 
 def relative_import_longtail_scenarios() -> dict[str, dict[str, object]]:
@@ -69,6 +69,52 @@ def transpile_relative_import_longtail_project(target: str, scenario_id: str) ->
         )
         east = _load_relative_import_longtail_east(entry_path, target)
         return emit(east)
+
+
+def transpile_relative_import_longtail_via_module_graph(
+    *,
+    target: str,
+    import_form: str,
+    body_text: str,
+) -> str:
+    emitters = {
+        "lua": transpile_to_lua_native,
+        "php": transpile_to_php_native,
+        "ruby": transpile_to_ruby_native,
+    }
+    emit = emitters[target]
+    with tempfile.TemporaryDirectory() as td:
+        entry_path = write_relative_import_longtail_project(
+            Path(td),
+            import_form=import_form,
+            body_text=body_text,
+        )
+
+        def _load(
+            input_path: Path,
+            parser_backend: str = "self_hosted",
+            east_stage: str = "3",
+            object_dispatch_mode: str = "native",
+        ) -> dict[str, object]:
+            if east_stage != "3":
+                raise RuntimeError("unsupported east_stage: " + east_stage)
+            doc3 = load_east3_document(
+                input_path,
+                parser_backend=parser_backend,
+                object_dispatch_mode=object_dispatch_mode,
+                target_lang=target,
+            )
+            return doc3 if isinstance(doc3, dict) else {}
+
+        module_map = build_module_east_map(
+            entry_path,
+            _load,
+            parser_backend="self_hosted",
+            east_stage="3",
+            object_dispatch_mode="native",
+        )
+        east = module_map.get(str(entry_path), {})
+        return emit(east if isinstance(east, dict) else {})
 
 
 def transpile_relative_import_longtail_expect_failure(

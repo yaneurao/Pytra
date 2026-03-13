@@ -44,6 +44,7 @@
 - 2026-03-13: `S1-01` / `S1-02` として rollout bundle、evidence lane、current fail-closed inventory を contract/checker/unit test で固定した。次は `go/nim/swift` の native-path bundle を green にする。
 - 2026-03-13: `go/nim/swift` は backend emitter だけを更新し、single-file `load_east3_document(...)` lane は fail-closed のまま、module-graph `build_module_east_map(...)` lane だけを wildcard-expanded `meta.import_symbols` 経由で green にした。次は `java/kotlin/scala` の package-project bundle を揃える。
 - 2026-03-13: `java/kotlin/scala` も single-file `load_east3_document(...)` lane は fail-closed を維持しつつ、module-graph `build_module_east_map(...)` lane では wildcard-expanded `meta.import_symbols` を使って representative package bundle を green にした。次は `lua/php/ruby` の long-tail bundle を揃える。
+- 2026-03-14: `lua/php/ruby` も single-file `load_east3_document(...)` lane は fail-closed を維持しつつ、module-graph `build_module_east_map(...)` lane では wildcard-expanded `meta.import_symbols` を使って representative long-tail bundle を green にした。残りは docs / parity sync だけになった。
 
 ## 分解
 
@@ -51,5 +52,5 @@
 - [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S1-02] current fail-closed backend inventory と evidence lane を contract / checker / unit test で固定する。
 - [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-01] `go/nim/swift` native-path bundle の relative wildcard import を representative smoke で green にする。
 - [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-02] `java/kotlin/scala` package-project bundle の relative wildcard import を representative smoke で green にする。
-- [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-03] `lua/php/ruby` long-tail native-emitter bundle の relative wildcard import を representative smoke で green にする。
+- [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-03] `lua/php/ruby` long-tail native-emitter bundle の relative wildcard import を representative smoke で green にする。
 - [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S3-01] backend coverage / parity docs / TODO を final state に同期して task を閉じる。
