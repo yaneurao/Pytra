@@ -100,6 +100,14 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
             by_id["std/math"]["noncpp_native_owner_paths"],
             ("src/runtime/cs/native/std/math_native.cs",),
         )
+        self.assertEqual(by_id["std/math"]["emitter_hardcode_needles"], ())
+
+    def test_time_inventory_has_no_module_specific_hardcodes(self) -> None:
+        by_id = {
+            row["module_id"]: row
+            for row in inventory_mod.iter_multilang_extern_runtime_realign_inventory()
+        }
+        self.assertEqual(by_id["std/time"]["emitter_hardcode_needles"], ())
 
     def test_io_ops_inventory_has_no_module_specific_hardcodes(self) -> None:
         by_id = {

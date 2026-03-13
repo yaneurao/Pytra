@@ -232,11 +232,13 @@ class Py2LuaSmokeTest(unittest.TestCase):
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py, parser_backend="self_hosted")
             lua = transpile_to_lua_native(east)
-        self.assertIn("local math = __pytra_math_module()", lua)
-        self.assertIn("local pi = __pytra_math_module().pi", lua)
-        self.assertIn("local sqrt = __pytra_math_module().sqrt", lua)
+        self.assertIn("local math = { ", lua)
+        self.assertIn("pi = pyMathPi()", lua)
+        self.assertIn("sin = pyMathSin", lua)
+        self.assertIn("sqrt = pyMathSqrt", lua)
         self.assertIn("return sqrt(pi)", lua)
         self.assertIn("return math.sin(pi)", lua)
+        self.assertNotIn("__pytra_math_module()", lua)
 
     def test_representative_property_method_call_fixture_transpiles(self) -> None:
         try:
