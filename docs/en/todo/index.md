@@ -31,4 +31,4 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01] Lock the representative C++ lane for `collections.deque.count()` / `remove()`. Progress: newly opened. First lock the current invalid C++ surface (`count`, `remove`) with a focused regression. Context: [p0-collections-deque-cpp-searchmut-support.md](../plans/p0-collections-deque-cpp-searchmut-support.md)
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01] Lock the representative C++ lane for `collections.deque.count()` / `remove()`. Progress: `S2-01` upstreamed `count(value)` to a `std::count`-based surface. The remaining work is `remove()` lowering and closeout. Context: [p0-collections-deque-cpp-searchmut-support.md](../plans/p0-collections-deque-cpp-searchmut-support.md)

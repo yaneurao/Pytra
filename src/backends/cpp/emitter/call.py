@@ -937,6 +937,10 @@ class CppCallEmitter:
             if append_rendered is not None and append_rendered != "":
                 return append_rendered
         if owner_t.startswith("deque[") and owner_t.endswith("]"):
+            if attr == "count" and len(args) == 1 and len(kw) == 0:
+                value_node = arg_nodes[0] if len(arg_nodes) > 0 else {}
+                count_expr = self._coerce_typed_deque_item_expr(owner_t, args[0], value_node)
+                return f"static_cast<int64>(::std::count({owner_expr}.begin(), {owner_expr}.end(), {count_expr}))"
             if attr == "reverse" and len(args) == 0 and len(kw) == 0:
                 return f"::std::reverse({owner_expr}.begin(), {owner_expr}.end())"
             if attr == "rotate" and len(kw) == 0 and len(args) <= 1:

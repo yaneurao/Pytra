@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01] `collections.deque.count()` / `remove()` representative C++ lane を固定する。進捗: 新規起票。まず current invalid C++ surface (`count`, `remove`) を focused regression で固定する。文脈: [p0-collections-deque-cpp-searchmut-support.md](../plans/p0-collections-deque-cpp-searchmut-support.md)
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01] `collections.deque.count()` / `remove()` representative C++ lane を固定する。進捗: `S2-01` で `count(value)` を `std::count`-based surface へ upstream 済み。残りは `remove()` lowering と closeout。文脈: [p0-collections-deque-cpp-searchmut-support.md](../plans/p0-collections-deque-cpp-searchmut-support.md)

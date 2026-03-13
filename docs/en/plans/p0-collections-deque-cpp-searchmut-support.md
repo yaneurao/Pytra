@@ -7,7 +7,7 @@ Related TODO:
 
 Background:
 - The representative C++ lane for `collections.deque` now covers the constructor, `append` / `appendleft`, `popleft` / `pop`, `extendleft(iterable)`, `reverse()`, `rotate()`, and `len` / truthiness on the `::std::deque<T>` surface.
-- However, `count(value)` and `remove(value)` still leak directly as `q.count(...)` / `q.remove(...)`, which are not valid C++ for `std::deque`.
+- `S1-01` locked the `q.count(...)` / `q.remove(...)` surface leak, and `S2-01` aligned `count(value)` to a `std::count`-based surface. Only `remove()` lowering and closeout remain.
 - `clear()`, `extend()`, `reverse()`, and `rotate()` already lower to valid C++ surfaces, so this task is intentionally limited to the remaining `count` / `remove` search-mutate subset.
 
 Goal:
@@ -27,7 +27,7 @@ Out of scope:
 - adding a new deque object hierarchy to the C++ runtime
 
 Acceptance criteria:
-- A focused regression locks the current invalid C++ surface (`q.count(...)`, `q.remove(...)`).
+- A focused regression locks the state where `count(value)` is aligned to a `std::count`-based surface and only the `remove(value)` leak remains.
 - In the representative C++ lane, `count()` lowers to a valid `std::count`-based surface.
 - In the representative C++ lane, `remove()` lowers to a first-hit erase surface.
 - Representative build/run smoke passes for `count` / `remove` fixtures.
@@ -41,11 +41,13 @@ Validation commands:
 
 Decision log:
 - 2026-03-13: `clear()`, `extend()`, `reverse()`, and `rotate()` already lower to valid C++, so the new task is limited to the `count` / `remove` subset only.
+- 2026-03-13: as `S1-01`, a focused regression now locks the current invalid `q.count(...)` / `q.remove(...)` surface in the TODO / plan.
+- 2026-03-13: as `S2-01`, typed deque-owner `count(value)` now lowers to a `std::count(begin, end, value)` surface. The focused regression is narrowed to the remaining `remove()` leak.
 
 ## Breakdown
 
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01] Lock the representative C++ lane for `collections.deque.count()` / `remove()`.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S1-01] Lock the current invalid C++ surface (`count`, `remove`) in focused regressions / TODO / plan.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S2-01] Lower `count(value)` to a valid `std::count`-based surface.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S1-01] Lock the current invalid C++ surface (`count`, `remove`) in focused regressions / TODO / plan.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S2-01] Lower `count(value)` to a valid `std::count`-based surface.
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S2-02] Lower `remove(value)` to a first-hit erase surface.
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S3-01] Sync build/run smoke and support wording, then close the task.
