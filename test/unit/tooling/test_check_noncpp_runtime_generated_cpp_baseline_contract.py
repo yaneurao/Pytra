@@ -85,10 +85,10 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                         "src/runtime/cs/generated/std/time.cs",
                         "src/runtime/cs/native/std/time_native.cs",
                         "src/runtime/cs/generated/std/math.cs",
+                        "src/runtime/cs/generated/std/json.cs",
                         "src/runtime/cs/generated/utils/png.cs",
                         "src/runtime/cs/generated/utils/gif.cs",
                         "src/runtime/cs/native/std/pathlib.cs",
-                        "src/runtime/cs/native/std/json.cs",
                     ),
                 },
                 {

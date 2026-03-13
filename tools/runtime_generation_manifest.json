@@ -596,7 +596,7 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/json.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/json.cs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/json.cs", "postprocess": "cs_std_json_live_wrapper" },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/json.go",

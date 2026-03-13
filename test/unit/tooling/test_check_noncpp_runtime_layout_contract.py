@@ -148,17 +148,17 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
             by_module["json"],
             {
                 "module_name": "json",
-                "canonical_lane": "native/std",
-                "generated_std_state": "compare_artifact",
+                "canonical_lane": "generated/std",
+                "generated_std_state": "canonical_generated",
                 "generated_std_rel": "src/runtime/cs/generated/std/json.cs",
-                "native_rel": "src/runtime/cs/native/std/json.cs",
+                "native_rel": "",
                 "canonical_runtime_symbol": "Pytra.CsModule.json",
                 "representative_fixture": "test/fixtures/stdlib/json_extended.py",
                 "smoke_guard_needles": (
                     "def test_representative_json_extended_fixture_transpiles",
                     "Pytra.CsModule.json.loads(s)",
                 ),
-                "rationale": "generated/std/json.cs now exists for compare, but the live C# runtime still compiles the handwritten native/std/json.cs ABI lane.",
+                "rationale": "generated/std/json.cs is now the live C# JSON owner and ships the wrapper-shaped `Pytra.CsModule.json` surface directly from generated code without a handwritten native/std owner.",
             },
         )
         self.assertEqual(
@@ -232,9 +232,9 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
                     "def test_representative_time_import_fixture_transpiles",
                     "Pytra.CsModule.time.perf_counter()",
                 ),
-                "deferred_native_canonical_modules": ("json", "pathlib"),
+                "deferred_native_canonical_modules": ("pathlib",),
                 "deferred_no_runtime_modules": ("random", "re", "argparse", "sys", "timeit", "enum"),
-                "rationale": "time remains the first live-generated C# std lane because its representative surface is only a `perf_counter()` wrapper, while `json/pathlib` still depend on heavier native canonical seams and the remaining std compare artifacts are not wired into the live runtime yet.",
+                "rationale": "time/math/json are now live-generated C# std lanes; `pathlib` remains the last heavier native canonical seam while the remaining std compare artifacts are not yet wired into the live runtime.",
             },
         )
 
