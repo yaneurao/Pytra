@@ -65,10 +65,10 @@ BACKEND_CONTRACT_COVERAGE_REQUIRED_DOC_NEEDLES: Final[dict[str, tuple[str, ...]]
         "Added `backend_contract_coverage_contract.py`, its checker, and a unit test to lock the role split between the support matrix, the future coverage matrix, and the backend test matrix, together with the definition of 100% contract coverage for `feature x required_lane x backend`.",
     ),
     "docs/ja/todo/index.md": (
-        "`S2-02` までで representative seed・coverage matrix seed・live suite family attachment を machine-readable checker に固定し、support matrix / future coverage matrix / backend test matrix の役割分担と、direct bundle attachment / supporting-only exclusion を docs/tooling contract に同期した。",
+        "`S2-03` までで unpublished multi-backend fixture の `support_matrix` 昇格候補 / `coverage_matrix_only` 維持を machine-readable seed と invariant へ固定し、`property_method_call` を promotion candidate、`list_bool_index` を coverage-only representative として分類した。",
     ),
     "docs/en/todo/index.md": (
-        "Through `S2-02`, locked machine-readable checkers for representative seeds, coverage-matrix seed ownership, and live suite-family attachments, and synced the role split between the support matrix, the future coverage matrix, and the backend test matrix plus the direct-bundle-attachment versus supporting-only-exclusion rules into docs/tooling contracts.",
+        "Through `S2-03`, locked unpublished multi-backend fixture classification into machine-readable seeds and invariants, with `property_method_call` marked as the next `support_matrix` promotion candidate and `list_bool_index` retained as a `coverage_matrix_only` representative.",
     ),
 }
 
