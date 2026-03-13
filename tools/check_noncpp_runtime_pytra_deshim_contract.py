@@ -107,11 +107,26 @@ def _collect_blocker_issues() -> list[str]:
     return issues
 
 
+def _collect_doc_policy_issues() -> list[str]:
+    issues: list[str] = []
+    for entry in contract_mod.iter_noncpp_pytra_deshim_doc_policy():
+        path = ROOT / entry["path"]
+        if not path.exists():
+            issues.append(f"missing doc policy path: {entry['path']}")
+            continue
+        text = _load_text(path)
+        for needle in entry["needles"]:
+            if needle not in text:
+                issues.append(f"missing doc policy needle: {entry['path']}: {needle}")
+    return issues
+
+
 def main() -> int:
     issues = [
         *_collect_contract_issues(),
         *_collect_inventory_issues(),
         *_collect_blocker_issues(),
+        *_collect_doc_policy_issues(),
     ]
     if issues:
         print("[FAIL] non-C++ pytra deshim contract drifted")

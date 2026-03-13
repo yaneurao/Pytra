@@ -104,3 +104,4 @@
 - 2026-03-13: 起票時点の observed checked-in `pytra/` directory は `rs`, `go`, `java`, `kotlin`, `scala`, `swift`, `nim`, `js`, `ts`, `lua`, `ruby`, `php` の 12 backend。C# は空 directory cleanup 済み、C++ は本 task の対象外とする。
 - 2026-03-13: この P0 では「repo 常設 shim の削除」を目的とし、public compatibility が必要でも output-side artifact として扱う。`src/runtime/<lang>/pytra/**` を薄い forwarder として温存する対応は不許可とする。
 - 2026-03-13: `P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01` で current `pytra/` directory/file inventory、backend mapping、delete blocker references を `noncpp_runtime_pytra_deshim_contract.py` / checker / unit test に固定した。まだ policy 切替は行わず、削除前の current state を明示する段階に留める。
+- 2026-03-13: S1-02 first bundle で `spec-folder/spec-dev` を `generated/native only` wording に合わせ、doc-policy drift を checker で fail-fast にした。

@@ -23,6 +23,8 @@ Algorithm details belong to other specs (`spec-dev.md`, `spec-east123.md`, `spec
 
 - Purpose: transpiler implementation, shared libraries, and target runtimes.
 - Allowed: `py2*.py`, `src/pytra/`, `src/runtime/<lang>/{generated,native}/`, `src/backends/`. Legacy `pytra-gen/pytra-core` is rollout debt only.
+- For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` is a delete target, not a compatibility lane.
+- The canonical repo layout allows only `src/runtime/<lang>/{generated,native}/` as live runtime roots.
 - Not allowed: logs, temporary outputs, process docs.
 
 ### 2.2 `test/`

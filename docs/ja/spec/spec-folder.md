@@ -28,6 +28,8 @@
   - `src/toolchain/`（変換プログラム本体）
   - `src/pytra/`（変換時参照ライブラリ正本）
   - `src/runtime/<lang>/{generated,native}/`（ターゲット言語ランタイム。未移行 backend の `pytra-gen/pytra-core` は一時 debt）
+  - 非 C++ / 非 C# backend の checked-in `src/runtime/<lang>/pytra/**` は互換 lane ではなく delete target とする。
+  - repo 正本 layout は `src/runtime/<lang>/{generated,native}/` のみを許可する。
   - `src/backends/`
 - 置かないもの:
   - 運用ログ、検証一時生成物、手順ドキュメント

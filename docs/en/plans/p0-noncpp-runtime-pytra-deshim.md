@@ -102,3 +102,4 @@ Implementation policy:
 Decision log:
 - 2026-03-13: `P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01` locked the current checked-in `pytra/` directory inventory, exact file inventory, and delete blocker references into a dedicated contract/checker/test so the current state is explicit before removal begins.
 - 2026-03-13: The active policy cancels the older assumption that non-C++ backends may keep checked-in `pytra/` as compat lanes. Public compatibility, if still needed, must move to output-side staging instead.
+- 2026-03-13: S1-02 first bundle aligned `spec-folder/spec-dev` with the `generated/native only` wording and made doc-policy drift fail fast in the checker.

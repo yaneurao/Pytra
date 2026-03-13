@@ -22,6 +22,11 @@ class NonCppPytraDeshimBlockerEntry(TypedDict):
     rationale: str
 
 
+class NonCppPytraDeshimDocPolicyEntry(TypedDict):
+    path: str
+    needles: tuple[str, ...]
+
+
 NONCPP_PYTRA_DESHIM_BACKEND_ORDER_V1: Final[tuple[str, ...]] = (
     "rs",
     "go",
@@ -314,6 +319,37 @@ NONCPP_PYTRA_DESHIM_BLOCKERS_V1: Final[tuple[NonCppPytraDeshimBlockerEntry, ...]
     },
 )
 
+NONCPP_PYTRA_DESHIM_DOC_POLICY_V1: Final[tuple[NonCppPytraDeshimDocPolicyEntry, ...]] = (
+    {
+        "path": "docs/ja/spec/spec-folder.md",
+        "needles": (
+            "非 C++ / 非 C# backend の checked-in `src/runtime/<lang>/pytra/**` は互換 lane ではなく delete target とする。",
+            "repo 正本 layout は `src/runtime/<lang>/{generated,native}/` のみを許可する。",
+        ),
+    },
+    {
+        "path": "docs/en/spec/spec-folder.md",
+        "needles": (
+            "For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` is a delete target, not a compatibility lane.",
+            "The canonical repo layout allows only `src/runtime/<lang>/{generated,native}/` as live runtime roots.",
+        ),
+    },
+    {
+        "path": "docs/ja/spec/spec-dev.md",
+        "needles": (
+            "`src/runtime/rs/pytra/` を runtime ownership root として扱ってはならない。",
+            "non-C++ / non-C# backend の checked-in `src/runtime/<lang>/pytra/**` は delete target debt とする。",
+        ),
+    },
+    {
+        "path": "docs/en/spec/spec-dev.md",
+        "needles": (
+            "`src/runtime/rs/pytra/` must not be treated as a live runtime ownership root.",
+            "For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` is delete-target debt only.",
+        ),
+    },
+)
+
 
 def iter_noncpp_pytra_deshim_backend_order() -> tuple[str, ...]:
     return NONCPP_PYTRA_DESHIM_BACKEND_ORDER_V1
@@ -337,3 +373,7 @@ def iter_noncpp_pytra_deshim_backends() -> tuple[NonCppPytraDeshimBackendEntry, 
 
 def iter_noncpp_pytra_deshim_blockers() -> tuple[NonCppPytraDeshimBlockerEntry, ...]:
     return NONCPP_PYTRA_DESHIM_BLOCKERS_V1
+
+
+def iter_noncpp_pytra_deshim_doc_policy() -> tuple[NonCppPytraDeshimDocPolicyEntry, ...]:
+    return NONCPP_PYTRA_DESHIM_DOC_POLICY_V1

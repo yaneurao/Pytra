@@ -16,6 +16,9 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
     def test_blocker_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_blocker_issues(), [])
 
+    def test_doc_policy_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_doc_policy_issues(), [])
+
     def test_backend_order_is_fixed(self) -> None:
         self.assertEqual(
             contract_mod.iter_noncpp_pytra_deshim_backend_order(),
@@ -110,6 +113,42 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
                 "rationale": "Rust still has an explicit compat allowlist in the live non-C++ runtime layout contract.",
             },
             blockers,
+        )
+
+    def test_doc_policy_baseline_contains_expected_entries(self) -> None:
+        blockers = contract_mod.iter_noncpp_pytra_deshim_blockers()
+        self.assertEqual(
+            contract_mod.iter_noncpp_pytra_deshim_doc_policy(),
+            (
+                {
+                    "path": "docs/ja/spec/spec-folder.md",
+                    "needles": (
+                        "非 C++ / 非 C# backend の checked-in `src/runtime/<lang>/pytra/**` は互換 lane ではなく delete target とする。",
+                        "repo 正本 layout は `src/runtime/<lang>/{generated,native}/` のみを許可する。",
+                    ),
+                },
+                {
+                    "path": "docs/en/spec/spec-folder.md",
+                    "needles": (
+                        "For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` is a delete target, not a compatibility lane.",
+                        "The canonical repo layout allows only `src/runtime/<lang>/{generated,native}/` as live runtime roots.",
+                    ),
+                },
+                {
+                    "path": "docs/ja/spec/spec-dev.md",
+                    "needles": (
+                        "`src/runtime/rs/pytra/` を runtime ownership root として扱ってはならない。",
+                        "non-C++ / non-C# backend の checked-in `src/runtime/<lang>/pytra/**` は delete target debt とする。",
+                    ),
+                },
+                {
+                    "path": "docs/en/spec/spec-dev.md",
+                    "needles": (
+                        "`src/runtime/rs/pytra/` must not be treated as a live runtime ownership root.",
+                        "For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` is delete-target debt only.",
+                    ),
+                },
+            ),
         )
         self.assertIn(
             {
