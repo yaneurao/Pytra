@@ -4420,6 +4420,34 @@ if __name__ == "__main__":
             )
             self.assertEqual(comp.returncode, 0, msg=comp.stderr)
 
+    def test_cli_pytra_nes3_list_default_factory_rc_list_syntax_checks(self) -> None:
+        src_py = ROOT / "materials" / "refs" / "from-Pytra-NES3" / "list_default_factory.py"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            out_cpp = work / "list_default_factory.cpp"
+            transpile(src_py, out_cpp)
+            cpp = out_cpp.read_text(encoding="utf-8")
+            self.assertIn("rc_list_from_value(py_repeat(", cpp)
+            self.assertNotIn("= [&]() {", cpp)
+            self.assertNotIn("return py_repeat(list<int64>(list<int64>{0}), 8); }()", cpp)
+            comp = self._run_subprocess_with_timeout(
+                [
+                    "g++",
+                    "-std=c++20",
+                    "-O0",
+                    "-I",
+                    "src",
+                    "-I",
+                    "src/runtime/cpp",
+                    "-fsyntax-only",
+                    str(out_cpp),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="syntax-check pytra nes3 list default_factory rc-list fixture",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+
     def test_cli_multi_file_pytra_nes3_bus_port_pkg_syntax_checks(self) -> None:
         src_py = ROOT / "materials" / "refs" / "from-Pytra-NES3" / "bus_port_pkg" / "bus.py"
         with tempfile.TemporaryDirectory() as tmpdir:

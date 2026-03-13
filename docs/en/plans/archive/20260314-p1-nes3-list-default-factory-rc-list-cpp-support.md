@@ -1,6 +1,6 @@
 # P1: align the `rc<list<T>>` lane for `field(default_factory=lambda: [0] * N)` in C++
 
-Last updated: 2026-03-13
+Last updated: 2026-03-14
 
 Related TODO:
 - `docs/ja/todo/index.md` `ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01`
@@ -38,9 +38,11 @@ Validation commands (planned):
 
 ## Breakdown
 
-- [ ] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01-S1-01] Lock the current compile failure and representative-subset boundary in focused regressions, the plan, and TODO.
-- [ ] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01-S2-01] Align `default_factory=lambda: [0] * N` for the `rc<list<T>>` lane with the correct constructor/member-init lowering.
-- [ ] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01-S3-01] Sync compile smoke and docs wording to the current subset contract.
+- [x] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01-S1-01] Locked the current compile failure and representative-subset boundary in focused regressions, the plan, and TODO.
+- [x] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01-S2-01] Aligned `default_factory=lambda: [0] * N` for the `rc<list<T>>` lane with the correct constructor/member-init lowering.
+- [x] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01-S3-01] Synced compile smoke and docs wording to the current subset contract.
 
 Decision log:
 - 2026-03-13: Split out as the next step after the archived representative `default_factory` support, limited to list factories on `rc<list<T>>`.
+- 2026-03-14: Routed dataclass field `default_factory` output through a helper that reshapes the rendered expression to the field type, and made zero-capture lambdas lower their body directly into `rc_list_from_value(...)`.
+- 2026-03-14: Added the focused regression `test_cli_pytra_nes3_list_default_factory_rc_list_syntax_checks` and verified compile-green behavior through both `python3 src/py2x.py --target cpp --multi-file --output-dir /tmp/pytra_nes3_list_default_factory_py2x` and the selfhosted `bash ./pytra ... --target cpp --output-dir /tmp/pytra_nes3_list_default_factory_selfhost` lane.

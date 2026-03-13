@@ -41,26 +41,60 @@ class CppClassEmitter:
         field_meta = self._dataclass_field_v1_meta(stmt)
         return self.any_to_dict_or_empty(field_meta.get("default_factory_expr"))
 
+    def _coerce_dataclass_field_default_value(self, field_type: str, value_node: Any, rendered_expr: str) -> str:
+        if rendered_expr == "":
+            return ""
+        target_t = self.normalize_type_name(field_type)
+        coerced = self._rewrite_nullopt_default_for_typed_target(rendered_expr, target_t)
+        coerced = self._rewrite_empty_collection_literal_for_typed_target(coerced, value_node, target_t)
+        if self._is_pyobj_ref_first_list_type(target_t):
+            return self._render_pyobj_alias_list_value(coerced, value_node, target_t)
+        if not self.is_any_like_type(target_t):
+            return coerced
+        if coerced in {"object{}", "object()"} or self.is_boxed_object_expr(coerced):
+            return coerced
+        return f"make_object({coerced})"
+
     def _render_dataclass_field_default_factory(self, field_type: str, factory_expr: dict[str, Any]) -> str:
         if not self._expr_node_has_payload(factory_expr):
             return ""
         kind = self._node_kind_from_dict(factory_expr)
         if kind == "Call":
-            return self.render_expr(factory_expr)
+            rendered = self.render_expr(factory_expr)
+            return self._coerce_dataclass_field_default_value(field_type, factory_expr, rendered)
+        if kind == "Lambda":
+            if len(self._dict_stmt_list(factory_expr.get("args"))) == 0:
+                body_node = factory_expr.get("body")
+                rendered = self.render_expr(body_node)
+                return self._coerce_dataclass_field_default_value(field_type, body_node, rendered)
         if kind == "Name":
             factory_name = self.any_dict_get_str(factory_expr, "id", "")
             if self.cpp_signature_type(field_type).startswith("rc<") and factory_name in self.ref_classes:
                 return f"::rc_new<{factory_name}>()"
             if factory_name in {"list", "dict", "set", "tuple", "str", "bytes", "bytearray", "deque"}:
+                if self._is_pyobj_ref_first_list_type(field_type) and factory_name == "list":
+                    value_expr = self._cpp_list_value_model_type_text(field_type) + "{}"
+                    return self._coerce_dataclass_field_default_value(
+                        field_type,
+                        {"kind": "List", "elements": [], "resolved_type": field_type},
+                        value_expr,
+                    )
                 return self.cpp_signature_type(field_type) + "{}"
         if kind == "Attribute":
             factory_name = self.any_dict_get_str(factory_expr, "attr", "")
             if factory_name in {"list", "dict", "set", "tuple", "str", "bytes", "bytearray", "deque"}:
+                if self._is_pyobj_ref_first_list_type(field_type) and factory_name == "list":
+                    value_expr = self._cpp_list_value_model_type_text(field_type) + "{}"
+                    return self._coerce_dataclass_field_default_value(
+                        field_type,
+                        {"kind": "List", "elements": [], "resolved_type": field_type},
+                        value_expr,
+                    )
                 return self.cpp_signature_type(field_type) + "{}"
         rendered = self.render_expr(factory_expr)
         if rendered == "":
             return ""
-        return rendered + "()"
+        return self._coerce_dataclass_field_default_value(field_type, factory_expr, rendered + "()")
 
     def emit_class(self, stmt: dict[str, Any]) -> None:
         """クラス定義ノードを C++ クラス/struct として出力する。"""

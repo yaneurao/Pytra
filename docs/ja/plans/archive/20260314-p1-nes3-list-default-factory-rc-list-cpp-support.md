@@ -1,6 +1,6 @@
 # P1: `field(default_factory=lambda: [0] * N)` の `rc<list<T>>` lane を C++ で整合させる
 
-最終更新: 2026-03-13
+最終更新: 2026-03-14
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01`
@@ -38,9 +38,11 @@
 
 ## 分解
 
-- [ ] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01-S1-01] current compile failure と representative subset 境界を focused regression / plan / TODO に固定する。
-- [ ] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01-S2-01] `rc<list<T>>` lane の `default_factory=lambda: [0] * N` を正しい ctor / member-init lowering へ揃える。
-- [ ] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01-S3-01] compile smoke と docs wording を current subset contract に同期する。
+- [x] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01-S1-01] current compile failure と representative subset 境界を focused regression / plan / TODO に固定した。
+- [x] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01-S2-01] `rc<list<T>>` lane の `default_factory=lambda: [0] * N` を正しい ctor / member-init lowering へ揃えた。
+- [x] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01-S3-01] compile smoke と docs wording を current subset contract に同期した。
 
 決定ログ:
 - 2026-03-13: archived `default_factory` representative supportの続きとして、`rc<list<T>>` list factory だけを個別に追う。
+- 2026-03-14: dataclass field default_factory は rendered expression を field type に再整形する helper を通すようにし、zero-capture lambda は body を直接 `rc_list_from_value(...)` へ寄せる方針にした。
+- 2026-03-14: focused regression `test_cli_pytra_nes3_list_default_factory_rc_list_syntax_checks` を追加し、`python3 src/py2x.py --target cpp --multi-file --output-dir /tmp/pytra_nes3_list_default_factory_py2x` と selfhosted `bash ./pytra ... --target cpp --output-dir /tmp/pytra_nes3_list_default_factory_selfhost` の両 lane で compile green を確認した。
