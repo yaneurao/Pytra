@@ -47,4 +47,4 @@
 決定ログ:
 - 2026-03-13: Pytra-NES3 bundle の中でも shared exception residual と cross-module bus type residual を分離して追えるよう、`NotImplementedError` task 依存付きの個別 P1 にした。
 - 2026-03-14: header builder が class block を持つ header で `py_runtime.h` を引くようにし、`PYTRA_DECLARE_CLASS_TYPE` / `PYTRA_TID_OBJECT` を使う imported interface header も self-contained compile を通るようにした。
-- 2026-03-14: imported user class の doc 解決、base qualification、borrow parameter 判定、`rc<Derived>` から `Base&` への call-site coercion、virtual/non-const propagation を揃え、`cpu.h` / `bus.h` / `bus_port.h` の header compile と `bus_port.cpp` / `cpu.cpp` / `bus.cpp` の compile を focused regression で固定した。
+- 2026-03-14: imported user class の doc 解決、base qualification、ref-class parameter を `const rc<Base>&` へ正規化する判定、handle pass の call-site lowering、virtual/non-const propagation を揃え、`cpu.h` / `bus.h` / `bus_port.h` の header compile と `bus_port.cpp` / `cpu.cpp` / `bus.cpp` の compile を focused regression で固定した。

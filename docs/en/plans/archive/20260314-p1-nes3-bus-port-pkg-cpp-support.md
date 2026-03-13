@@ -47,4 +47,4 @@ Validation commands (planned):
 Decision log:
 - 2026-03-13: Opened as a separate P1 with an explicit dependency on the `NotImplementedError` task so the shared exception residual and the cross-module bus-type residual can be tracked independently.
 - 2026-03-14: Made the header builder pull `py_runtime.h` for headers with class blocks so imported interface headers that use `PYTRA_DECLARE_CLASS_TYPE` and `PYTRA_TID_OBJECT` pass self-contained compile checks.
-- 2026-03-14: Aligned imported user-class doc resolution, base qualification, borrow-parameter detection, `rc<Derived>` to `Base&` call-site coercion, and virtual/non-const propagation, then locked the `cpu.h` / `bus.h` / `bus_port.h` header compile plus `bus_port.cpp` / `cpu.cpp` / `bus.cpp` compile coverage in the focused regression.
+- 2026-03-14: Aligned imported user-class doc resolution, base qualification, ref-class parameter normalization to `const rc<Base>&`, handle-passing call-site lowering, and virtual/non-const propagation, then locked the `cpu.h` / `bus.h` / `bus_port.h` header compile plus `bus_port.cpp` / `cpu.cpp` / `bus.cpp` compile coverage in the focused regression.

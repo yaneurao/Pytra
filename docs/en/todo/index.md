@@ -33,18 +33,14 @@ Last updated: 2026-03-14
 
 ### P2
 
-1. [ ] [ID: P2-CPP-LEGACY-CORE-COMPAT-RETIRE-01] Fully retire the deleted `src/runtime/cpp/core/**` compatibility surface from live-tree assumptions and reduce it to guard-only references.
-Context: [docs/en/plans/p2-cpp-legacy-core-compat-retire.md](../plans/p2-cpp-legacy-core-compat-retire.md)
-- Progress memo: Not started.
-
-2. [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01] Rework the `@extern` runtime/emitter contract across all languages so it uses native owners plus generic extern metadata instead of generated rewrites.
+1. [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01] Rework the `@extern` runtime/emitter contract across all languages so it uses native owners plus generic extern metadata instead of generated rewrites.
 Context: [docs/en/plans/p2-multilang-extern-runtime-realign.md](../plans/p2-multilang-extern-runtime-realign.md)
 - Progress memo: Not started.
 
-3. [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01] Introduce a bundle-based coverage matrix and fix `feature x lane x backend` contract coverage at 100% as a surface separate from the support matrix.
+2. [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01] Introduce a bundle-based coverage matrix and fix `feature x lane x backend` contract coverage at 100% as a surface separate from the support matrix.
 Context: [docs/en/plans/p2-backend-contract-coverage-100.md](../plans/p2-backend-contract-coverage-100.md)
 - Progress memo: Not started.
 
-4. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] Push typed fallback out of `py_runtime.h` and back into EAST3, the C++ emitter, and runtime SoT so the header shrinks without physical splitting.
+3. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] Push typed fallback out of `py_runtime.h` and back into EAST3, the C++ emitter, and runtime SoT so the header shrinks without physical splitting.
 Context: [docs/en/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md](../plans/p2-cpp-pyruntime-upstream-fallback-shrink.md)
 - Progress memo: Not started.

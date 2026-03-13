@@ -22,6 +22,7 @@
 - [2026-03-14 / P1-NES3-APU-CONST-PKG-CPP-01](../plans/archive/20260314-p1-nes3-apu-const-pkg-cpp-support.md)
 - [2026-03-14 / P1-NES3-PATH-ALIAS-PKG-CPP-01](../plans/archive/20260314-p1-nes3-path-alias-pkg-cpp-support.md)
 - [2026-03-14 / P1-NES3-BUS-PORT-PKG-CPP-01](../plans/archive/20260314-p1-nes3-bus-port-pkg-cpp-support.md)
+- [2026-03-14 / P2-CPP-LEGACY-CORE-COMPAT-RETIRE-01](../plans/archive/20260314-p2-cpp-legacy-core-compat-retire.md)
 
 - [2026-03-13 / P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01](../plans/archive/20260313-p0-frontends-facade-py2x-entrypoints-import.md)
 - [2026-03-13 / P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01](../plans/archive/20260313-p0-cpp-transpile-cli-direct-header-contract.md)
@@ -191,6 +192,7 @@
 - [2026-03-06 / P0-CPP-PYOBJ-RCLIST-ALIAS-01](../plans/archive/20260306-p0-cpp-pyobj-rc-list-alias.md)
 - [2026-03-06 / P0-CPP-PYRUNTIME-EXT-01](../plans/archive/20260306-p0-cpp-pyruntime-ext-slimming.md)
 - [2026-03-06 / P0-CPP-EXTERN-HDRONLY-01](../plans/archive/20260306-p0-cpp-extern-header-only-gen.md)
+- [2026-03-06 / P0-RUNTIME-ROOT-RESET-CPP-01](../plans/archive/20260306-p0-runtime-root-reset-cpp-parity.md)
 - [2026-02-23 / TG-DOCS-SYNC](../plans/archive/20260223-tg-docs-sync.md)
 - [2026-02-23 / TG-P0-BOXING](../plans/archive/20260223-tg-p0-boxing.md)
 - [2026-02-23 / TG-P2-MICROGPT-COMPAT](../plans/archive/20260223-tg-p2-microgpt-compat.md)

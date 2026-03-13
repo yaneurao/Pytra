@@ -4,6 +4,7 @@
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P0-RUNTIME-ROOT-RESET-CPP-01`
+- 2026-03-14: `P2-CPP-LEGACY-CORE-COMPAT-RETIRE-01` で stale-complete live plan から archive へ移管。
 
 背景:
 - ABI 境界を固定する前に runtime 実装を進めた結果、責務境界違反（emitter 側への実装漏れ）が再発してきた。
