@@ -391,17 +391,34 @@ class Py2GoSmokeTest(unittest.TestCase):
     def test_go_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "go" / "pytra" / "built_in" / "py_runtime.go"
         native_runtime = ROOT / "src" / "runtime" / "go" / "native" / "built_in" / "py_runtime.go"
-        built_in_contains = ROOT / "src" / "runtime" / "go" / "generated" / "built_in" / "contains.go"
-        built_in_zip = ROOT / "src" / "runtime" / "go" / "generated" / "built_in" / "zip_ops.go"
-        image_png = ROOT / "src" / "runtime" / "go" / "generated" / "utils" / "png.go"
-        image_gif = ROOT / "src" / "runtime" / "go" / "generated" / "utils" / "gif.go"
+        generated_root = ROOT / "src" / "runtime" / "go" / "generated"
         legacy_path = ROOT / "src" / "go_module" / "py_runtime.go"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(native_runtime.exists())
-        self.assertTrue(built_in_contains.exists())
-        self.assertTrue(built_in_zip.exists())
-        self.assertTrue(image_png.exists())
-        self.assertTrue(image_gif.exists())
+        for rel_path in (
+            "built_in/contains.go",
+            "built_in/predicates.go",
+            "built_in/sequence.go",
+            "built_in/string_ops.go",
+            "built_in/type_id.go",
+            "built_in/zip_ops.go",
+            "std/argparse.go",
+            "std/glob.go",
+            "std/json.go",
+            "std/math.go",
+            "std/os.go",
+            "std/os_path.go",
+            "std/pathlib.go",
+            "std/random.go",
+            "std/re.go",
+            "std/sys.go",
+            "std/time.go",
+            "std/timeit.go",
+            "utils/assertions.go",
+            "utils/gif.go",
+            "utils/png.go",
+        ):
+            self.assertTrue((generated_root / rel_path).exists(), msg=rel_path)
         self.assertFalse(legacy_path.exists())
 
     def test_go_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:

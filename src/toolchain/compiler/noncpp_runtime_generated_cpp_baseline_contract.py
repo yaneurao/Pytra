@@ -122,16 +122,6 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "legacy_state": "native_canonical",
         "modules": ("std/json", "std/math", "std/pathlib"),
     },
-    {"backend": "go", "legacy_state": "blocked", "modules": (
-        "built_in/predicates",
-        "built_in/sequence",
-        "built_in/string_ops",
-        "built_in/type_id",
-        "std/json",
-        "std/math",
-        "std/pathlib",
-        "std/time",
-    )},
     {"backend": "kotlin", "legacy_state": "blocked", "modules": (
         "built_in/io_ops",
         "built_in/numeric_ops",
@@ -242,7 +232,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1: Final[
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MATERIALIZED_BACKENDS_V1: Final[
     tuple[str, ...]
-] = ("cs", "java", "rs")
+] = ("cs", "go", "java", "rs")
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_POLICY_FILES_V1: Final[
     tuple[NonCppRuntimeGeneratedCppBaselineLegacyPolicyFileEntry, ...]

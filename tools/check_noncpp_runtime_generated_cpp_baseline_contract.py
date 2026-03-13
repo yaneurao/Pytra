@@ -40,6 +40,7 @@ def _collect_cpp_generated_bucket_modules(bucket: str) -> tuple[str, ...]:
 def _generated_suffix_for_backend(backend: str) -> str:
     return {
         "cs": ".cs",
+        "go": ".go",
         "java": ".java",
         "rs": ".rs",
     }[backend]

@@ -48,28 +48,45 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn(("std/time", "php", "src/runtime/php/generated/std/time.php"), pairs)
         self.assertIn(("std/argparse", "rs", "src/runtime/rs/generated/std/argparse.rs"), pairs)
         self.assertIn(("std/argparse", "cs", "src/runtime/cs/generated/std/argparse.cs"), pairs)
+        self.assertIn(("std/argparse", "go", "src/runtime/go/generated/std/argparse.go"), pairs)
         self.assertIn(("std/argparse", "java", "src/runtime/java/generated/std/argparse.java"), pairs)
+        self.assertIn(("std/glob", "go", "src/runtime/go/generated/std/glob.go"), pairs)
         self.assertIn(("std/glob", "java", "src/runtime/java/generated/std/glob.java"), pairs)
+        self.assertIn(("std/json", "go", "src/runtime/go/generated/std/json.go"), pairs)
+        self.assertIn(("std/math", "go", "src/runtime/go/generated/std/math.go"), pairs)
+        self.assertIn(("std/os", "go", "src/runtime/go/generated/std/os.go"), pairs)
         self.assertIn(("std/os", "java", "src/runtime/java/generated/std/os.java"), pairs)
+        self.assertIn(("std/os_path", "go", "src/runtime/go/generated/std/os_path.go"), pairs)
         self.assertIn(("std/os_path", "java", "src/runtime/java/generated/std/os_path.java"), pairs)
+        self.assertIn(("std/pathlib", "go", "src/runtime/go/generated/std/pathlib.go"), pairs)
         self.assertIn(("std/random", "rs", "src/runtime/rs/generated/std/random.rs"), pairs)
         self.assertIn(("std/random", "cs", "src/runtime/cs/generated/std/random.cs"), pairs)
+        self.assertIn(("std/random", "go", "src/runtime/go/generated/std/random.go"), pairs)
         self.assertIn(("std/random", "java", "src/runtime/java/generated/std/random.java"), pairs)
         self.assertIn(("std/re", "rs", "src/runtime/rs/generated/std/re.rs"), pairs)
         self.assertIn(("std/re", "cs", "src/runtime/cs/generated/std/re.cs"), pairs)
+        self.assertIn(("std/re", "go", "src/runtime/go/generated/std/re.go"), pairs)
         self.assertIn(("std/re", "java", "src/runtime/java/generated/std/re.java"), pairs)
         self.assertIn(("std/sys", "rs", "src/runtime/rs/generated/std/sys.rs"), pairs)
         self.assertIn(("std/sys", "cs", "src/runtime/cs/generated/std/sys.cs"), pairs)
+        self.assertIn(("std/sys", "go", "src/runtime/go/generated/std/sys.go"), pairs)
         self.assertIn(("std/sys", "java", "src/runtime/java/generated/std/sys.java"), pairs)
+        self.assertIn(("std/time", "go", "src/runtime/go/generated/std/time.go"), pairs)
         self.assertIn(("std/timeit", "rs", "src/runtime/rs/generated/std/timeit.rs"), pairs)
         self.assertIn(("std/timeit", "cs", "src/runtime/cs/generated/std/timeit.cs"), pairs)
+        self.assertIn(("std/timeit", "go", "src/runtime/go/generated/std/timeit.go"), pairs)
         self.assertIn(("std/timeit", "java", "src/runtime/java/generated/std/timeit.java"), pairs)
+        self.assertIn(("utils/assertions", "go", "src/runtime/go/generated/utils/assertions.go"), pairs)
         self.assertIn(("utils/assertions", "rs", "src/runtime/rs/generated/utils/assertions.rs"), pairs)
         self.assertIn(("utils/assertions", "cs", "src/runtime/cs/generated/utils/assertions.cs"), pairs)
         self.assertIn(("utils/assertions", "java", "src/runtime/java/generated/utils/assertions.java"), pairs)
+        self.assertIn(("built_in/predicates", "go", "src/runtime/go/generated/built_in/predicates.go"), pairs)
         self.assertIn(("built_in/predicates", "java", "src/runtime/java/generated/built_in/predicates.java"), pairs)
+        self.assertIn(("built_in/sequence", "go", "src/runtime/go/generated/built_in/sequence.go"), pairs)
         self.assertIn(("built_in/sequence", "java", "src/runtime/java/generated/built_in/sequence.java"), pairs)
+        self.assertIn(("built_in/string_ops", "go", "src/runtime/go/generated/built_in/string_ops.go"), pairs)
         self.assertIn(("built_in/string_ops", "java", "src/runtime/java/generated/built_in/string_ops.java"), pairs)
+        self.assertIn(("built_in/type_id", "go", "src/runtime/go/generated/built_in/type_id.go"), pairs)
         self.assertIn(("built_in/type_id", "java", "src/runtime/java/generated/built_in/type_id.java"), pairs)
 
     def test_built_in_manifest_covers_compare_targets_for_all_sot_modules(self) -> None:
@@ -96,7 +113,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
             ],
         )
         supported_by_target = {
-            "go": {"contains", "io_ops", "iter_ops", "numeric_ops", "scalar_ops", "zip_ops"},
+            "go": {"contains", "io_ops", "iter_ops", "numeric_ops", "predicates", "scalar_ops", "sequence", "string_ops", "type_id", "zip_ops"},
             "java": {"contains", "io_ops", "iter_ops", "numeric_ops", "predicates", "scalar_ops", "sequence", "string_ops", "type_id", "zip_ops"},
             "kotlin": {"contains", "iter_ops", "predicates", "sequence", "zip_ops"},
             "scala": {"contains", "iter_ops", "predicates", "sequence", "zip_ops"},

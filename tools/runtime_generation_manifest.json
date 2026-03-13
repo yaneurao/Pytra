@@ -103,6 +103,11 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/utils/assertions.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/utils/assertions.cs" },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/utils/assertions.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/utils/assertions.java" }
       ]
     },
@@ -248,6 +253,11 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "predicates_helper"
         },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/built_in/predicates.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/built_in/predicates.java" },
         {
           "target": "kotlin",
@@ -305,6 +315,11 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "sequence_helper"
         },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/built_in/sequence.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/built_in/sequence.java" },
         {
           "target": "kotlin",
@@ -338,6 +353,11 @@
           "postprocess": "cs_program_to_helper",
           "helper_name": "string_ops_helper"
         },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/built_in/string_ops.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/built_in/string_ops.java" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/string_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/string_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
@@ -355,6 +375,11 @@
           "output": "src/runtime/cs/generated/built_in/type_id.cs",
           "postprocess": "cs_program_to_helper",
           "helper_name": "type_id_helper"
+        },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/built_in/type_id.go",
+          "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/type_id.java" },
         { "target": "js", "output": "src/runtime/js/generated/built_in/type_id.js", "postprocess": "js_ts_built_in_cjs_module" },
@@ -408,6 +433,11 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/time.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/time.cs", "postprocess": "cs_std_time_live_wrapper" },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/std/time.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/std/time.java", "postprocess": "java_std_time_live_wrapper" },
         { "target": "js", "output": "src/runtime/js/generated/std/time.js", "postprocess": "js_std_time_live_wrapper" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/time.ts", "postprocess": "ts_std_time_live_wrapper" },
@@ -421,6 +451,11 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/json.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/json.cs" },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/std/json.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/std/json.java" },
         { "target": "js", "output": "src/runtime/js/generated/std/json.js", "postprocess": "js_std_json_live_wrapper" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/json.ts", "postprocess": "ts_std_json_live_wrapper" },
@@ -434,6 +469,11 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/pathlib.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/pathlib.cs" },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/std/pathlib.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/std/pathlib.java" },
         { "target": "js", "output": "src/runtime/js/generated/std/pathlib.js", "postprocess": "js_std_pathlib_live_wrapper" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/pathlib.ts", "postprocess": "ts_std_pathlib_live_wrapper" },
@@ -447,6 +487,11 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/math.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/math.cs" },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/std/math.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/std/math.java", "postprocess": "java_std_math_live_wrapper" },
         { "target": "js", "output": "src/runtime/js/generated/std/math.js", "postprocess": "js_std_math_live_wrapper" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/math.ts", "postprocess": "ts_std_math_live_wrapper" },
@@ -460,6 +505,11 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/os.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/os.cs" },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/std/os.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/std/os.java" }
       ]
     },
@@ -470,6 +520,11 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/os_path.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/os_path.cs" },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/std/os_path.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/std/os_path.java" }
       ]
     },
@@ -480,6 +535,11 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/glob.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/glob.cs" },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/std/glob.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/std/glob.java" }
       ]
     },
@@ -490,6 +550,11 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/argparse.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/argparse.cs" },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/std/argparse.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/std/argparse.java" }
       ]
     },
@@ -500,6 +565,11 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/random.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/random.cs" },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/std/random.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/std/random.java" }
       ]
     },
@@ -510,6 +580,11 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/re.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/re.cs" },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/std/re.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/std/re.java" }
       ]
     },
@@ -520,6 +595,11 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/sys.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/sys.cs" },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/std/sys.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/std/sys.java" }
       ]
     },
@@ -530,6 +610,11 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/timeit.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/timeit.cs" },
+        {
+          "target": "go",
+          "output": "src/runtime/go/generated/std/timeit.go",
+          "postprocess": "go_program_to_library"
+        },
         { "target": "java", "output": "src/runtime/java/generated/std/timeit.java" }
       ]
     }
