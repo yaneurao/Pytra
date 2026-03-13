@@ -120,7 +120,6 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "legacy_state": "compare_artifact",
         "modules": (
             "std/argparse",
-            "std/json",
             "std/pathlib",
             "std/random",
             "std/re",
@@ -131,7 +130,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
     {
         "backend": "cs",
         "legacy_state": "native_canonical",
-        "modules": ("std/json", "std/pathlib"),
+        "modules": ("std/pathlib",),
     },
     {
         "backend": "rs",
@@ -239,10 +238,10 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_BUILD_PROFILES_V1: Final[
             "src/runtime/cs/generated/std/time.cs",
             "src/runtime/cs/native/std/time_native.cs",
             "src/runtime/cs/generated/std/math.cs",
+            "src/runtime/cs/generated/std/json.cs",
             "src/runtime/cs/generated/utils/png.cs",
             "src/runtime/cs/generated/utils/gif.cs",
             "src/runtime/cs/native/std/pathlib.cs",
-            "src/runtime/cs/native/std/json.cs",
         ),
     },
     {

@@ -952,6 +952,16 @@ def f(x: object) -> bool:
         self.assertIn('string s1 = System.Convert.ToString(dumps("abc"));', cs)
         self.assertNotIn("unsupported", cs)
 
+    def test_generated_json_runtime_owner_is_live_wrapper_shaped(self) -> None:
+        generated = (
+            ROOT / "src" / "runtime" / "cs" / "generated" / "std" / "json.cs"
+        ).read_text(encoding="utf-8")
+        self.assertIn("namespace Pytra.CsModule", generated)
+        self.assertIn("public static class json", generated)
+        self.assertIn("public static object loads(string text)", generated)
+        self.assertIn("public static string dumps(object obj)", generated)
+        self.assertNotIn("public static class Program", generated)
+
     def test_representative_time_import_fixture_transpiles(self) -> None:
         fixture = find_fixture_case("import_time_from")
         east = load_east(fixture, parser_backend="self_hosted")

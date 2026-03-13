@@ -254,6 +254,24 @@ def _collect_csharp_lane_issues() -> list[str]:
                             issues.append(f"canonical generated math lane lost live wrapper shape: {needle}")
                     if "__m." in generated_text or "py_extern(" in generated_text:
                         issues.append("canonical generated math lane still contains extern/runtime residue")
+                if module_name == "json":
+                    if "namespace Pytra.CsModule" not in generated_text:
+                        issues.append("canonical generated json lane lost the Pytra.CsModule namespace wrapper")
+                    if "public static class json" not in generated_text:
+                        issues.append("canonical generated json lane lost the live helper class")
+                    for needle in (
+                        "public class JsonObj",
+                        "public class JsonArr",
+                        "public class JsonValue",
+                        "public static object loads(string text)",
+                        "public static JsonObj loads_obj(string text)",
+                        "public static JsonArr loads_arr(string text)",
+                        "public static string dumps(object obj)",
+                    ):
+                        if needle not in generated_text:
+                            issues.append(f"canonical generated json lane lost live wrapper shape: {needle}")
+                    if "public static class Program" in generated_text:
+                        issues.append("canonical generated json lane still contains Program class residue")
             if generated_rel not in manifest_text:
                 issues.append(f"manifest missing canonical C# std output path: {module_name}")
         else:
@@ -292,6 +310,8 @@ def _collect_csharp_lane_issues() -> list[str]:
                 issues.append(f"generated/std backing seam missing from C# build profile: {module_name}")
             if entry["canonical_runtime_symbol"] != "" and entry["canonical_runtime_symbol"] not in emitter_text and entry["canonical_runtime_symbol"] not in smoke_text:
                 issues.append(f"generated/std canonical runtime symbol not referenced: {module_name}")
+            if module_name == "json" and "Pytra.CsModule.json." not in emitter_text:
+                issues.append("json canonical emitter lane drifted from Pytra.CsModule.json")
         elif canonical_lane == "no_runtime_module":
             if native_rel != "":
                 issues.append(f"no_runtime_module must not set native path: {module_name}")
@@ -321,7 +341,7 @@ def _collect_csharp_lane_issues() -> list[str]:
             issues.append("C# live-generated candidate generated path drifted")
         if candidate_entry["native_rel"] != candidate["native_rel"]:
             issues.append("C# live-generated candidate native path drifted")
-    if tuple(candidate["deferred_native_canonical_modules"]) != ("json", "pathlib"):
+    if tuple(candidate["deferred_native_canonical_modules"]) != ("pathlib",):
         issues.append("C# deferred native-canonical module set drifted")
     if tuple(candidate["deferred_no_runtime_modules"]) != (
         "random",
