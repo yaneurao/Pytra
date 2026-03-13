@@ -104,7 +104,7 @@ class CheckCppPyRuntimeUpstreamFallbackInventoryTest(unittest.TestCase):
         )
         self.assertEqual(
             by_id["generated_runtime_generic_index_sites"]["expected_count"],
-            46,
+            44,
         )
         self.assertEqual(
             by_id["sample_cpp_generic_index_sites"]["expected_count"],

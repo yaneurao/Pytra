@@ -20,25 +20,19 @@ if (!function_exists('__pytra_len')) {
 }
 
 function py_any($values) {
-    $i = 0;
-    $n = __pytra_len($values);
-    while (($i < $n)) {
-        if (((bool)($values[$i]))) {
+    foreach ($values as $value) {
+        if (((bool)($value))) {
             return true;
         }
-        $i += 1;
     }
     return false;
 }
 
 function py_all($values) {
-    $i = 0;
-    $n = __pytra_len($values);
-    while (($i < $n)) {
-        if ((!((bool)($values[$i])))) {
+    foreach ($values as $value) {
+        if ((!((bool)($value)))) {
             return false;
         }
-        $i += 1;
     }
     return true;
 }

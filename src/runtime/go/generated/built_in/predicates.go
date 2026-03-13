@@ -6,25 +6,23 @@ package main
 
 
 func py_any(values *Any) bool {
-    var i int64 = int64(0)
-    var n int64 = __pytra_len(values)
-    for (i < n) {
-        if __pytra_truthy(__pytra_get_index(values, i)) {
+    __iter_0 := __pytra_as_list(values)
+    for __i_1 := int64(0); __i_1 < int64(len(__iter_0)); __i_1 += 1 {
+        value := __iter_0[__i_1]
+        if __pytra_truthy(value) {
             return __pytra_truthy(true)
         }
-        i += int64(1)
     }
     return __pytra_truthy(false)
 }
 
 func py_all(values *Any) bool {
-    var i int64 = int64(0)
-    var n int64 = __pytra_len(values)
-    for (i < n) {
-        if (!__pytra_truthy(__pytra_get_index(values, i))) {
+    __iter_0 := __pytra_as_list(values)
+    for __i_1 := int64(0); __i_1 < int64(len(__iter_0)); __i_1 += 1 {
+        value := __iter_0[__i_1]
+        if (!__pytra_truthy(value)) {
             return __pytra_truthy(false)
         }
-        i += int64(1)
     }
     return __pytra_truthy(true)
 }

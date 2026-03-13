@@ -4,20 +4,14 @@ from typing import Any
 
 
 def py_any(values: Any) -> bool:
-    i = 0
-    n = len(values)
-    while i < n:
-        if bool(values[i]):
+    for value in values:
+        if bool(value):
             return True
-        i += 1
     return False
 
 
 def py_all(values: Any) -> bool:
-    i = 0
-    n = len(values)
-    while i < n:
-        if not bool(values[i]):
+    for value in values:
+        if not bool(value):
             return False
-        i += 1
     return True

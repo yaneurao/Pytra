@@ -20,25 +20,19 @@ local function __pytra_obj_type_id(value)
 end
 
 function py_any(values)
-    local i = 0
-    local n = #(values)
-    while (i < n) do
-        if __pytra_truthy(values[(((i) < 0) and (#(values) + (i) + 1) or ((i) + 1))]) then
+    for _, value in ipairs(values) do
+        if __pytra_truthy(value) then
             return true
         end
-        i = i + 1
     end
     return false
 end
 
 function py_all(values)
-    local i = 0
-    local n = #(values)
-    while (i < n) do
-        if (not __pytra_truthy(values[(((i) < 0) and (#(values) + (i) + 1) or ((i) + 1))])) then
+    for _, value in ipairs(values) do
+        if (not __pytra_truthy(value)) then
             return false
         end
-        i = i + 1
     end
     return true
 end

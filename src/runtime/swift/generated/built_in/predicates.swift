@@ -6,25 +6,31 @@ import Foundation
 
 
 func py_any(_ values: Any) -> Bool {
-    var i: Int64 = Int64(0)
-    var n: Int64 = __pytra_int(__pytra_len(values))
-    while (__pytra_int(i) < __pytra_int(n)) {
-        if __pytra_truthy(__pytra_getIndex(values, i)) {
-            return true
+    do {
+        let __iter_0 = __pytra_as_list(values)
+        var __i_1: Int64 = 0
+        while __i_1 < Int64(__iter_0.count) {
+            let value = __iter_0[Int(__i_1)]
+            if __pytra_truthy(value) {
+                return true
+            }
+            __i_1 += 1
         }
-        i += Int64(1)
     }
     return false
 }
 
 func py_all(_ values: Any) -> Bool {
-    var i: Int64 = Int64(0)
-    var n: Int64 = __pytra_int(__pytra_len(values))
-    while (__pytra_int(i) < __pytra_int(n)) {
-        if (!__pytra_truthy(__pytra_getIndex(values, i))) {
-            return false
+    do {
+        let __iter_0 = __pytra_as_list(values)
+        var __i_1: Int64 = 0
+        while __i_1 < Int64(__iter_0.count) {
+            let value = __iter_0[Int(__i_1)]
+            if (!__pytra_truthy(value)) {
+                return false
+            }
+            __i_1 += 1
         }
-        i += Int64(1)
     }
     return true
 }

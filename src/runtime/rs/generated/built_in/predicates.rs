@@ -3,29 +3,23 @@
 // generated-by: tools/gen_runtime_from_manifest.py
 
 mod py_runtime;
-pub use crate::py_runtime::{math, pytra, time};
+pub use crate::py_runtime::{pytra};
 use crate::py_runtime::*;
 
 fn py_any(values: PyAny) -> bool {
-    let mut i = 0;
-    let n = (match &values { PyAny::Str(s) => s.len() as i64, PyAny::Dict(d) => d.len() as i64, PyAny::List(xs) => xs.len() as i64, PyAny::Set(xs) => xs.len() as i64, PyAny::None => 0, _ => 0 });
-    while i < n {
-        if py_any_to_bool(&values[((i) as usize)]) {
+    for value in values {
+        if py_any_to_bool(&value) {
             return true;
         }
-        i += 1;
     }
     return false;
 }
 
 fn py_all(values: PyAny) -> bool {
-    let mut i = 0;
-    let n = (match &values { PyAny::Str(s) => s.len() as i64, PyAny::Dict(d) => d.len() as i64, PyAny::List(xs) => xs.len() as i64, PyAny::Set(xs) => xs.len() as i64, PyAny::None => 0, _ => 0 });
-    while i < n {
-        if !(py_any_to_bool(&values[((i) as usize)])) {
+    for value in values {
+        if !(py_any_to_bool(&value)) {
             return false;
         }
-        i += 1;
     }
     return true;
 }

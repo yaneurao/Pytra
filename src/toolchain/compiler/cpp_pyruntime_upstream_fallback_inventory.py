@@ -249,7 +249,7 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_INVENTORY_V1: Final[
         "scope_rel": "src/runtime/cpp/generated",
         "matcher_kind": "regex",
         "needle": r"\bpy_at\([^\n]*py_to<int64>\(",
-        "expected_count": 46,
+        "expected_count": 44,
         "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02",
         "evidence_refs": (
             {
