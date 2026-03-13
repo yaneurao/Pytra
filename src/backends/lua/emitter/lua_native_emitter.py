@@ -243,26 +243,8 @@ def _is_math_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool
     }
 
 
-def _is_math_runtime_module(runtime_module_id: str) -> bool:
-    symbol_names = _runtime_module_symbol_names(runtime_module_id)
-    if "pi" not in symbol_names or "sqrt" not in symbol_names:
-        return False
-    for symbol_name in symbol_names:
-        if not _is_math_runtime_symbol(runtime_module_id, symbol_name):
-            return False
-    return True
-
-
 def _is_perf_counter_runtime_symbol(runtime_module_id: str, runtime_symbol: str) -> bool:
     return _runtime_symbol_semantic_tag(runtime_module_id, runtime_symbol) == "stdlib.fn.perf_counter"
-
-
-def _is_perf_counter_runtime_module(runtime_module_id: str) -> bool:
-    symbol_names = _runtime_module_symbol_names(runtime_module_id)
-    return symbol_names == ("perf_counter",) and _is_perf_counter_runtime_symbol(
-        runtime_module_id,
-        "perf_counter",
-    )
 
 
 def _pascal_symbol_name(name: str) -> str:
