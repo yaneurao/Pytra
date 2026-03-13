@@ -1,6 +1,15 @@
 from __future__ import annotations
 
+from pathlib import Path
+import sys
 import unittest
+
+
+ROOT = Path(__file__).resolve().parents[3]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
 
 from src.toolchain.compiler import multilang_extern_runtime_realign_contract as contract_mod
 from src.toolchain.frontends import extern_var
