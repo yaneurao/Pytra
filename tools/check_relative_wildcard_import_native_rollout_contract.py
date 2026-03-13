@@ -103,6 +103,12 @@ def validate_relative_wildcard_import_native_rollout_contract() -> None:
         raise SystemExit(
             "relative wildcard import native handoff contract state must stay transpile_smoke_locked"
         )
+    expected_plan_paths = (
+        "docs/ja/plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md",
+        "docs/en/plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md",
+    )
+    if tuple(RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["active_plan_paths"]) != expected_plan_paths:
+        raise SystemExit("relative wildcard import native archived plan paths drifted")
     for plan_path in RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["active_plan_paths"]:
         if not (ROOT / plan_path).is_file():
             raise SystemExit(f"missing relative wildcard import native plan: {plan_path}")

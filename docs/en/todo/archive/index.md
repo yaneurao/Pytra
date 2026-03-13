@@ -4,7 +4,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-13
+Last updated: 2026-03-14
 
 ## Operation Policy
 
@@ -14,6 +14,8 @@ Last updated: 2026-03-13
 - On the `docs/` side, `docs/ja/` remains the source of truth and translations are synchronized from it.
 
 ## Completed Plan Archive
+
+- [2026-03-14 / P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01](../plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md)
 
 - [2026-03-13 / P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01](../plans/archive/20260313-p0-frontends-facade-py2x-entrypoints-import.md)
 - [2026-03-13 / P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01](../plans/archive/20260313-p0-cpp-transpile-cli-direct-header-contract.md)
@@ -146,6 +148,7 @@ Last updated: 2026-03-13
 
 ## Date Links
 
+- [2026-03-14](20260314.md) (1 section)
 - [2026-03-13](20260313.md) (21 sections)
 
 - [2026-03-12](20260312.md) (28 sections)

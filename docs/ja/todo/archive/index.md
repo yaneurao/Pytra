@@ -4,7 +4,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-13
+最終更新: 2026-03-14
 
 ## 運用方針
 
@@ -14,6 +14,8 @@
 - `docs/` 側は `docs/ja/` を正として翻訳を同期します。
 
 ## 完了 plan アーカイブ
+
+- [2026-03-14 / P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01](../plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md)
 
 - [2026-03-13 / P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01](../plans/archive/20260313-p0-frontends-facade-py2x-entrypoints-import.md)
 - [2026-03-13 / P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01](../plans/archive/20260313-p0-cpp-transpile-cli-direct-header-contract.md)
@@ -193,6 +195,8 @@
 - [2026-03-06 / P4-MULTILANG-SH-01](../plans/archive/20260306-p4-multilang-selfhost-full-rollout.md)（ABI 確立後に再投入）
 
 ## 日付別リンク
+
+- [2026-03-14](20260314.md)（1 セクション）
 
 - [2026-03-13](20260313.md)（21 セクション）
 

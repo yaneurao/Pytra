@@ -79,6 +79,15 @@ class RelativeWildcardImportNativeRolloutContractTest(unittest.TestCase):
             "transpile_smoke_locked",
         )
 
+    def test_archived_plan_paths_are_fixed(self) -> None:
+        self.assertEqual(
+            tuple(RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["active_plan_paths"]),
+            (
+                "docs/ja/plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md",
+                "docs/en/plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md",
+            ),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

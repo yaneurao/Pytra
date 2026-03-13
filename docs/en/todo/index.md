@@ -31,12 +31,6 @@ Last updated: 2026-03-14
 
 ## Unfinished Tasks
 
-### P0
-
-- [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01] relative wildcard import native backend rollout
-  Context: [p0-relative-wildcard-import-native-rollout.md](../plans/p0-relative-wildcard-import-native-rollout.md)
-  Progress memo: `S2-03` makes `lua/php/ruby` green on the module-graph bundle transpile smoke lane while keeping the single-file direct lane fail-closed for wildcard imports. Next is syncing coverage / parity docs to the final state.
-
 ### P1
 
 1. [ ] [ID: P1-NES3-NOT-IMPLEMENTED-ERROR-CPP-01] Stop lowering `NotImplementedError` to an undefined C++ symbol and make `not_implemented_error.py` compile.

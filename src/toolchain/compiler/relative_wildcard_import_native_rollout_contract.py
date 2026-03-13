@@ -110,8 +110,8 @@ RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1: Final[list[dict[str, object]]] = [
 RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1: Final[dict[str, object]] = {
     "todo_id": "P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01",
     "active_plan_paths": (
-        "docs/ja/plans/p0-relative-wildcard-import-native-rollout.md",
-        "docs/en/plans/p0-relative-wildcard-import-native-rollout.md",
+        "docs/ja/plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md",
+        "docs/en/plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md",
     ),
     "contract_inventory": (
         "src/toolchain/compiler/relative_wildcard_import_native_rollout_contract.py"

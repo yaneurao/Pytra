@@ -31,12 +31,6 @@
 
 ## 未完了タスク
 
-### P0
-
-- [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01] relative wildcard import native backend rollout
-  文脈: [p0-relative-wildcard-import-native-rollout.md](../plans/p0-relative-wildcard-import-native-rollout.md)
-  進捗メモ: `S2-03` で `lua/php/ruby` も module-graph bundle transpile smoke を green にし、single-file direct lane は wildcard を fail-closed のまま維持した。次は coverage / parity docs を final state に同期する。
-
 ### P1
 
 1. [ ] [ID: P1-NES3-NOT-IMPLEMENTED-ERROR-CPP-01] `NotImplementedError` を C++ lane で未定義シンボルにせず、`not_implemented_error.py` を compile まで通す。
