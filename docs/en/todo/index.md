@@ -35,7 +35,7 @@ Last updated: 2026-03-14
 
 1. [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01] Rework the `@extern` runtime/emitter contract across all languages so it uses native owners plus generic extern metadata instead of generated rewrites.
 Context: [docs/en/plans/p2-multilang-extern-runtime-realign.md](../plans/p2-multilang-extern-runtime-realign.md)
-- Progress memo: Locked an inventory/checker for `std/math,time,os,os_path,sys,glob` and `built_in/io_ops,scalar_ops`, covering manifest postprocess targets, native owners, emitter hardcodes, and generated drift, with C# `std/math` now recorded behind the `math_native` seam.
+- Progress memo: Locked an inventory/checker for `std/math,time,os,os_path,sys,glob` and `built_in/io_ops,scalar_ops`, covering manifest postprocess targets, native owners, emitter hardcodes, and generated drift; the `S2-01` first bundle already genericized C# `std/time` to the `cs_std_native_owner_wrapper + time_native` seam.
 
 2. [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01] Introduce a bundle-based coverage matrix and fix `feature x lane x backend` contract coverage at 100% as a surface separate from the support matrix.
 Context: [docs/en/plans/p2-backend-contract-coverage-100.md](../plans/p2-backend-contract-coverage-100.md)
