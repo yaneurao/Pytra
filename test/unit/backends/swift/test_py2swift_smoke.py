@@ -321,9 +321,11 @@ def f(xs: list[int], ys: dict[str, int]) -> int:
         self.assertNotIn("from common.", src)
 
     def test_swift_runtime_source_path_is_migrated(self) -> None:
+        delete_target_runtime = ROOT / "src" / "runtime" / "swift" / "pytra" / "built_in" / "py_runtime.swift"
         runtime_path = ROOT / "src" / "runtime" / "swift" / "native" / "built_in" / "py_runtime.swift"
         generated_root = ROOT / "src" / "runtime" / "swift" / "generated"
         legacy_path = ROOT / "src" / "swift_module" / "py_runtime.swift"
+        self.assertFalse(delete_target_runtime.exists())
         self.assertTrue(runtime_path.exists())
         for rel_path in (
             "built_in/contains.swift",

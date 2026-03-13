@@ -236,11 +236,11 @@ class Py2NimSmokeTest(unittest.TestCase):
         self.assertIn("unresolved stdlib runtime", str(cm.exception))
 
     def test_nim_runtime_source_path_is_migrated(self) -> None:
-        runtime_path = ROOT / "src" / "runtime" / "nim" / "pytra" / "built_in" / "py_runtime.nim"
+        delete_target_runtime = ROOT / "src" / "runtime" / "nim" / "pytra" / "built_in" / "py_runtime.nim"
         native_runtime = ROOT / "src" / "runtime" / "nim" / "native" / "built_in" / "py_runtime.nim"
         generated_root = ROOT / "src" / "runtime" / "nim" / "generated"
         legacy_path = ROOT / "src" / "nim_module" / "py_runtime.nim"
-        self.assertTrue(runtime_path.exists())
+        self.assertFalse(delete_target_runtime.exists())
         self.assertTrue(native_runtime.exists())
         for rel_path in (
             "built_in/contains.nim",

@@ -52,22 +52,14 @@ NONCPP_PYTRA_DESHIM_BUCKET_ORDER_V1: Final[tuple[str, ...]] = (
 NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1: Final[tuple[str, ...]] = ("generated", "native")
 
 NONCPP_PYTRA_DESHIM_CURRENT_DIRS_V1: Final[tuple[str, ...]] = (
-    "src/runtime/go/pytra",
-    "src/runtime/java/pytra",
     "src/runtime/js/pytra",
-    "src/runtime/kotlin/pytra",
     "src/runtime/lua/pytra",
-    "src/runtime/nim/pytra",
     "src/runtime/php/pytra",
     "src/runtime/ruby/pytra",
-    "src/runtime/scala/pytra",
-    "src/runtime/swift/pytra",
     "src/runtime/ts/pytra",
 )
 
 NONCPP_PYTRA_DESHIM_CURRENT_FILES_V1: Final[tuple[str, ...]] = (
-    "src/runtime/go/pytra/built_in/py_runtime.go",
-    "src/runtime/java/pytra/built_in/PyRuntime.java",
     "src/runtime/js/pytra/README.md",
     "src/runtime/js/pytra/py_runtime.js",
     "src/runtime/js/pytra/std/json.js",
@@ -76,16 +68,12 @@ NONCPP_PYTRA_DESHIM_CURRENT_FILES_V1: Final[tuple[str, ...]] = (
     "src/runtime/js/pytra/std/time.js",
     "src/runtime/js/pytra/utils/gif.js",
     "src/runtime/js/pytra/utils/png.js",
-    "src/runtime/kotlin/pytra/built_in/py_runtime.kt",
     "src/runtime/lua/pytra/built_in/py_runtime.lua",
-    "src/runtime/nim/pytra/built_in/py_runtime.nim",
     "src/runtime/php/pytra/py_runtime.php",
     "src/runtime/php/pytra/std/time.php",
     "src/runtime/php/pytra/utils/gif.php",
     "src/runtime/php/pytra/utils/png.php",
     "src/runtime/ruby/pytra/built_in/py_runtime.rb",
-    "src/runtime/scala/pytra/built_in/py_runtime.scala",
-    "src/runtime/swift/pytra/built_in/py_runtime.swift",
     "src/runtime/ts/pytra/README.md",
     "src/runtime/ts/pytra/py_runtime.ts",
     "src/runtime/ts/pytra/std/json.ts",
@@ -108,48 +96,48 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
     {
         "backend": "go",
         "family": "static",
-        "current_dir": "src/runtime/go/pytra",
-        "target_policy": "delete_target_after_static_bundle",
+        "current_dir": "",
+        "target_policy": "delete_target_removed_after_static_cleanup",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
         "blocker_buckets": (),
     },
     {
         "backend": "java",
         "family": "static",
-        "current_dir": "src/runtime/java/pytra",
-        "target_policy": "delete_target_after_static_bundle",
+        "current_dir": "",
+        "target_policy": "delete_target_removed_after_static_cleanup",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
         "blocker_buckets": (),
     },
     {
         "backend": "kotlin",
         "family": "static",
-        "current_dir": "src/runtime/kotlin/pytra",
-        "target_policy": "delete_target_after_static_bundle",
+        "current_dir": "",
+        "target_policy": "delete_target_removed_after_static_cleanup",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
         "blocker_buckets": (),
     },
     {
         "backend": "scala",
         "family": "static",
-        "current_dir": "src/runtime/scala/pytra",
-        "target_policy": "delete_target_after_static_bundle",
+        "current_dir": "",
+        "target_policy": "delete_target_removed_after_static_cleanup",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
         "blocker_buckets": (),
     },
     {
         "backend": "swift",
         "family": "static",
-        "current_dir": "src/runtime/swift/pytra",
-        "target_policy": "delete_target_after_static_bundle",
+        "current_dir": "",
+        "target_policy": "delete_target_removed_after_static_cleanup",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
         "blocker_buckets": (),
     },
     {
         "backend": "nim",
         "family": "static",
-        "current_dir": "src/runtime/nim/pytra",
-        "target_policy": "delete_target_after_static_bundle",
+        "current_dir": "",
+        "target_policy": "delete_target_removed_after_static_cleanup",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
         "blocker_buckets": (),
     },
@@ -291,20 +279,20 @@ NONCPP_PYTRA_DESHIM_DOC_POLICY_V1: Final[tuple[NonCppPytraDeshimDocPolicyEntry, 
             "For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` is delete-target debt only.",
         ),
     },
-    {
-        "path": "docs/ja/spec/spec-java-native-backend.md",
-        "needles": (
-            "実行時依存は Java runtime（repo 正本は `src/runtime/java/{generated,native}/`）へ収束し",
-            "`src/runtime/java/{generated,native}/` 配下の Java runtime API（checked-in `src/runtime/java/pytra/**` は delete target debt）。",
-        ),
-    },
-    {
-        "path": "docs/en/spec/spec-java-native-backend.md",
-        "needles": (
-            "Runtime dependency converges to Java runtime (the canonical repo roots are `src/runtime/java/{generated,native}/`)",
-            "Java runtime APIs under `src/runtime/java/{generated,native}/` (checked-in `src/runtime/java/pytra/**` is delete-target debt only);",
-        ),
-    },
+        {
+            "path": "docs/ja/spec/spec-java-native-backend.md",
+            "needles": (
+                "実行時依存は Java runtime（repo 正本は `src/runtime/java/{generated,native}/`）へ収束し",
+                "`src/runtime/java/{generated,native}/` 配下の Java runtime API。",
+            ),
+        },
+        {
+            "path": "docs/en/spec/spec-java-native-backend.md",
+            "needles": (
+                "Runtime dependency converges to Java runtime (the canonical repo roots are `src/runtime/java/{generated,native}/`)",
+                "Java runtime APIs under `src/runtime/java/{generated,native}/`;",
+            ),
+        },
     {
         "path": "docs/ja/spec/spec-lua-native-backend.md",
         "needles": (
@@ -317,22 +305,22 @@ NONCPP_PYTRA_DESHIM_DOC_POLICY_V1: Final[tuple[NonCppPytraDeshimDocPolicyEntry, 
             "Lua runtime API under `src/runtime/lua/{generated,native}/` (checked-in `src/runtime/lua/pytra/**` is delete-target debt only)",
         ),
     },
-    {
-        "path": "docs/ja/spec/spec-gsk-native-backend.md",
-        "needles": (
-            "Go: `src/runtime/go/{generated,native}/` + Go 標準ライブラリ（checked-in `src/runtime/go/pytra/**` は delete target debt）。",
-            "Swift: `src/runtime/swift/{generated,native}/` + Swift 標準ライブラリ（checked-in `src/runtime/swift/pytra/**` は delete target debt）。",
-            "Kotlin: `src/runtime/kotlin/{generated,native}/` + Kotlin/JVM 標準ライブラリ（checked-in `src/runtime/kotlin/pytra/**` は delete target debt）。",
-        ),
-    },
-    {
-        "path": "docs/en/spec/spec-gsk-native-backend.md",
-        "needles": (
-            "Go: `src/runtime/go/{generated,native}/` + Go standard library (checked-in `src/runtime/go/pytra/**` is delete-target debt only).",
-            "Swift: `src/runtime/swift/{generated,native}/` + Swift standard library (checked-in `src/runtime/swift/pytra/**` is delete-target debt only).",
-            "Kotlin: `src/runtime/kotlin/{generated,native}/` + Kotlin/JVM standard library (checked-in `src/runtime/kotlin/pytra/**` is delete-target debt only).",
-        ),
-    },
+        {
+            "path": "docs/ja/spec/spec-gsk-native-backend.md",
+            "needles": (
+                "Go: `src/runtime/go/{generated,native}/` + Go 標準ライブラリ。",
+                "Swift: `src/runtime/swift/{generated,native}/` + Swift 標準ライブラリ。",
+                "Kotlin: `src/runtime/kotlin/{generated,native}/` + Kotlin/JVM 標準ライブラリ。",
+            ),
+        },
+        {
+            "path": "docs/en/spec/spec-gsk-native-backend.md",
+            "needles": (
+                "Go: `src/runtime/go/{generated,native}/` + Go standard library.",
+                "Swift: `src/runtime/swift/{generated,native}/` + Swift standard library.",
+                "Kotlin: `src/runtime/kotlin/{generated,native}/` + Kotlin/JVM standard library.",
+            ),
+        },
 )
 
 

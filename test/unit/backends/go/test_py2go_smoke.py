@@ -389,11 +389,11 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertNotIn("from common.", src)
 
     def test_go_runtime_source_path_is_migrated(self) -> None:
-        runtime_path = ROOT / "src" / "runtime" / "go" / "pytra" / "built_in" / "py_runtime.go"
+        delete_target_runtime = ROOT / "src" / "runtime" / "go" / "pytra" / "built_in" / "py_runtime.go"
         native_runtime = ROOT / "src" / "runtime" / "go" / "native" / "built_in" / "py_runtime.go"
         generated_root = ROOT / "src" / "runtime" / "go" / "generated"
         legacy_path = ROOT / "src" / "go_module" / "py_runtime.go"
-        self.assertTrue(runtime_path.exists())
+        self.assertFalse(delete_target_runtime.exists())
         self.assertTrue(native_runtime.exists())
         for rel_path in (
             "built_in/contains.go",

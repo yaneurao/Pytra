@@ -54,7 +54,7 @@ Native mode must never silently fallback to sidecar when input is unsupported.
 
 Generated Java from native mode may rely only on:
 
-- Java runtime APIs under `src/runtime/java/{generated,native}/` (checked-in `src/runtime/java/pytra/**` is delete-target debt only);
+- Java runtime APIs under `src/runtime/java/{generated,native}/`;
 - JDK standard libraries (`java.lang`, `java.util`, etc.).
 
 Forbidden:

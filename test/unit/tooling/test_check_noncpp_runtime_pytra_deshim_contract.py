@@ -35,16 +35,10 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
         self.assertEqual(
             contract_mod.iter_noncpp_pytra_deshim_current_dirs(),
             (
-                "src/runtime/go/pytra",
-                "src/runtime/java/pytra",
                 "src/runtime/js/pytra",
-                "src/runtime/kotlin/pytra",
                 "src/runtime/lua/pytra",
-                "src/runtime/nim/pytra",
                 "src/runtime/php/pytra",
                 "src/runtime/ruby/pytra",
-                "src/runtime/scala/pytra",
-                "src/runtime/swift/pytra",
                 "src/runtime/ts/pytra",
             ),
         )
@@ -53,8 +47,6 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
         self.assertEqual(
             contract_mod.iter_noncpp_pytra_deshim_current_files(),
             (
-                "src/runtime/go/pytra/built_in/py_runtime.go",
-                "src/runtime/java/pytra/built_in/PyRuntime.java",
                 "src/runtime/js/pytra/README.md",
                 "src/runtime/js/pytra/py_runtime.js",
                 "src/runtime/js/pytra/std/json.js",
@@ -63,16 +55,12 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
                 "src/runtime/js/pytra/std/time.js",
                 "src/runtime/js/pytra/utils/gif.js",
                 "src/runtime/js/pytra/utils/png.js",
-                "src/runtime/kotlin/pytra/built_in/py_runtime.kt",
                 "src/runtime/lua/pytra/built_in/py_runtime.lua",
-                "src/runtime/nim/pytra/built_in/py_runtime.nim",
                 "src/runtime/php/pytra/py_runtime.php",
                 "src/runtime/php/pytra/std/time.php",
                 "src/runtime/php/pytra/utils/gif.php",
                 "src/runtime/php/pytra/utils/png.php",
                 "src/runtime/ruby/pytra/built_in/py_runtime.rb",
-                "src/runtime/scala/pytra/built_in/py_runtime.scala",
-                "src/runtime/swift/pytra/built_in/py_runtime.swift",
                 "src/runtime/ts/pytra/README.md",
                 "src/runtime/ts/pytra/py_runtime.ts",
                 "src/runtime/ts/pytra/std/json.ts",
@@ -108,15 +96,11 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
             },
             blockers,
         )
-        self.assertNotIn(
-            {
-                "backend": "go",
-                "bucket": "contract_allowlist",
-                "path": "src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py",
-                "needles": ('"current_prefix": "src/runtime/go/pytra/built_in/py_runtime.go"',),
-                "rationale": "Go current->target rollout mapping still treats the checked-in pytra lane as a live current root.",
-            },
-            blockers,
+        self.assertFalse(
+            any(
+                entry["backend"] == "go" and entry["bucket"] == "contract_allowlist"
+                for entry in blockers
+            )
         )
         self.assertIn(
             {
@@ -164,14 +148,14 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
                     "path": "docs/ja/spec/spec-java-native-backend.md",
                     "needles": (
                         "実行時依存は Java runtime（repo 正本は `src/runtime/java/{generated,native}/`）へ収束し",
-                        "`src/runtime/java/{generated,native}/` 配下の Java runtime API（checked-in `src/runtime/java/pytra/**` は delete target debt）。",
+                        "`src/runtime/java/{generated,native}/` 配下の Java runtime API。",
                     ),
                 },
                 {
                     "path": "docs/en/spec/spec-java-native-backend.md",
                     "needles": (
                         "Runtime dependency converges to Java runtime (the canonical repo roots are `src/runtime/java/{generated,native}/`)",
-                        "Java runtime APIs under `src/runtime/java/{generated,native}/` (checked-in `src/runtime/java/pytra/**` is delete-target debt only);",
+                        "Java runtime APIs under `src/runtime/java/{generated,native}/`;",
                     ),
                 },
                 {
@@ -189,17 +173,17 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
                 {
                     "path": "docs/ja/spec/spec-gsk-native-backend.md",
                     "needles": (
-                        "Go: `src/runtime/go/{generated,native}/` + Go 標準ライブラリ（checked-in `src/runtime/go/pytra/**` は delete target debt）。",
-                        "Swift: `src/runtime/swift/{generated,native}/` + Swift 標準ライブラリ（checked-in `src/runtime/swift/pytra/**` は delete target debt）。",
-                        "Kotlin: `src/runtime/kotlin/{generated,native}/` + Kotlin/JVM 標準ライブラリ（checked-in `src/runtime/kotlin/pytra/**` は delete target debt）。",
+                        "Go: `src/runtime/go/{generated,native}/` + Go 標準ライブラリ。",
+                        "Swift: `src/runtime/swift/{generated,native}/` + Swift 標準ライブラリ。",
+                        "Kotlin: `src/runtime/kotlin/{generated,native}/` + Kotlin/JVM 標準ライブラリ。",
                     ),
                 },
                 {
                     "path": "docs/en/spec/spec-gsk-native-backend.md",
                     "needles": (
-                        "Go: `src/runtime/go/{generated,native}/` + Go standard library (checked-in `src/runtime/go/pytra/**` is delete-target debt only).",
-                        "Swift: `src/runtime/swift/{generated,native}/` + Swift standard library (checked-in `src/runtime/swift/pytra/**` is delete-target debt only).",
-                        "Kotlin: `src/runtime/kotlin/{generated,native}/` + Kotlin/JVM standard library (checked-in `src/runtime/kotlin/pytra/**` is delete-target debt only).",
+                        "Go: `src/runtime/go/{generated,native}/` + Go standard library.",
+                        "Swift: `src/runtime/swift/{generated,native}/` + Swift standard library.",
+                        "Kotlin: `src/runtime/kotlin/{generated,native}/` + Kotlin/JVM standard library.",
                     ),
                 },
             ),

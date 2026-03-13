@@ -761,7 +761,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "utils/gif.go",
             "utils/png.go",
         ),
-        "pytra_files": ("built_in/py_runtime.go",),
+        "pytra_files": (),
     },
     {
         "backend": "java",
@@ -793,7 +793,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "utils/gif.java",
             "utils/png.java",
         ),
-        "pytra_files": ("built_in/PyRuntime.java",),
+        "pytra_files": (),
     },
     {
         "backend": "kotlin",
@@ -826,7 +826,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "utils/image_runtime.kt",
             "utils/png.kt",
         ),
-        "pytra_files": ("built_in/py_runtime.kt",),
+        "pytra_files": (),
     },
     {
         "backend": "scala",
@@ -859,7 +859,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "utils/image_runtime.scala",
             "utils/png.scala",
         ),
-        "pytra_files": ("built_in/py_runtime.scala",),
+        "pytra_files": (),
     },
     {
         "backend": "swift",
@@ -892,7 +892,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "utils/image_runtime.swift",
             "utils/png.swift",
         ),
-        "pytra_files": ("built_in/py_runtime.swift",),
+        "pytra_files": (),
     },
     {
         "backend": "nim",
@@ -925,7 +925,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "utils/image_runtime.nim",
             "utils/png.nim",
         ),
-        "pytra_files": ("built_in/py_runtime.nim",),
+        "pytra_files": (),
     },
     {
         "backend": "js",
@@ -1092,7 +1092,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.go",
         ),
         "native_files": ("native/built_in/py_runtime.go",),
-        "delete_target_files": ("pytra/built_in/py_runtime.go",),
+        "delete_target_files": (),
     },
     {
         "backend": "java",
@@ -1124,7 +1124,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.java",
         ),
         "native_files": ("native/built_in/PyRuntime.java",),
-        "delete_target_files": ("pytra/built_in/PyRuntime.java",),
+        "delete_target_files": (),
     },
     {
         "backend": "kotlin",
@@ -1157,7 +1157,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.kt",
         ),
         "native_files": ("native/built_in/py_runtime.kt",),
-        "delete_target_files": ("pytra/built_in/py_runtime.kt",),
+        "delete_target_files": (),
     },
     {
         "backend": "scala",
@@ -1190,7 +1190,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.scala",
         ),
         "native_files": ("native/built_in/py_runtime.scala",),
-        "delete_target_files": ("pytra/built_in/py_runtime.scala",),
+        "delete_target_files": (),
     },
     {
         "backend": "swift",
@@ -1223,7 +1223,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.swift",
         ),
         "native_files": ("native/built_in/py_runtime.swift",),
-        "delete_target_files": ("pytra/built_in/py_runtime.swift",),
+        "delete_target_files": (),
     },
     {
         "backend": "nim",
@@ -1256,7 +1256,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.nim",
         ),
         "native_files": ("native/built_in/py_runtime.nim",),
-        "delete_target_files": ("pytra/built_in/py_runtime.nim",),
+        "delete_target_files": (),
     },
     {
         "backend": "js",
@@ -1416,7 +1416,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             )
         ),
         "native_modules": ("built_in/py_runtime",),
-        "delete_target_modules": ("built_in/py_runtime",),
+        "delete_target_modules": (),
         "blocked_modules": (),
     },
     {
@@ -1442,7 +1442,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             )
         ),
         "native_modules": ("built_in/py_runtime",),
-        "delete_target_modules": ("built_in/py_runtime",),
+        "delete_target_modules": (),
         "blocked_modules": (),
     },
     {
@@ -1469,7 +1469,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             )
         ),
         "native_modules": ("built_in/py_runtime",),
-        "delete_target_modules": ("built_in/py_runtime",),
+        "delete_target_modules": (),
         "blocked_modules": REMAINING_NONCPP_KOTLIN_BLOCKED_BUILT_IN_MODULES_V1,
     },
     {
@@ -1496,7 +1496,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             )
         ),
         "native_modules": ("built_in/py_runtime",),
-        "delete_target_modules": ("built_in/py_runtime",),
+        "delete_target_modules": (),
         "blocked_modules": REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1,
     },
     {
@@ -1523,7 +1523,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             )
         ),
         "native_modules": ("built_in/py_runtime",),
-        "delete_target_modules": ("built_in/py_runtime",),
+        "delete_target_modules": (),
         "blocked_modules": REMAINING_NONCPP_SWIFT_BLOCKED_BUILT_IN_MODULES_V1,
     },
     {
@@ -1550,7 +1550,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             )
         ),
         "native_modules": ("built_in/py_runtime",),
-        "delete_target_modules": ("built_in/py_runtime",),
+        "delete_target_modules": (),
         "blocked_modules": REMAINING_NONCPP_NIM_BLOCKED_BUILT_IN_MODULES_V1,
     },
     {

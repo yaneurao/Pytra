@@ -379,9 +379,11 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertNotIn("from common.", src)
 
     def test_java_runtime_source_path_is_migrated(self) -> None:
+        delete_target_runtime = ROOT / "src" / "runtime" / "java" / "pytra" / "built_in" / "PyRuntime.java"
         runtime_path = ROOT / "src" / "runtime" / "java" / "native" / "built_in" / "PyRuntime.java"
         generated_root = ROOT / "src" / "runtime" / "java" / "generated"
         legacy_path = ROOT / "src" / "java_module" / "PyRuntime.java"
+        self.assertFalse(delete_target_runtime.exists())
         self.assertTrue(runtime_path.exists())
         for rel_path in (
             "built_in/contains.java",

@@ -881,7 +881,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/gif.go",
                     "utils/png.go",
                 ),
-                "pytra_files": ("built_in/py_runtime.go",),
+                "pytra_files": (),
             },
         )
         self.assertEqual(
@@ -1168,7 +1168,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "generated/utils/png.go",
                 ),
                 "native_files": ("native/built_in/py_runtime.go",),
-                "delete_target_files": ("pytra/built_in/py_runtime.go",),
+                "delete_target_files": (),
             },
         )
         self.assertEqual(
@@ -1508,7 +1508,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/png",
                 ),
                 "native_modules": ("built_in/py_runtime",),
-                "delete_target_modules": ("built_in/py_runtime",),
+                "delete_target_modules": (),
                 "blocked_modules": (),
             },
         )
@@ -1576,7 +1576,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/png",
                 ),
                 "native_modules": ("built_in/py_runtime",),
-                "delete_target_modules": ("built_in/py_runtime",),
+                "delete_target_modules": (),
                 "blocked_modules": (),
             },
         )
@@ -1613,7 +1613,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/png",
                 ),
                 "native_modules": ("built_in/py_runtime",),
-                "delete_target_modules": ("built_in/py_runtime",),
+                "delete_target_modules": (),
                 "blocked_modules": (),
             },
         )
@@ -1650,7 +1650,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/png",
                 ),
                 "native_modules": ("built_in/py_runtime",),
-                "delete_target_modules": ("built_in/py_runtime",),
+                "delete_target_modules": (),
                 "blocked_modules": (),
             },
         )
@@ -1687,7 +1687,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/png",
                 ),
                 "native_modules": ("built_in/py_runtime",),
-                "delete_target_modules": ("built_in/py_runtime",),
+                "delete_target_modules": (),
                 "blocked_modules": (),
             },
         )

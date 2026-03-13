@@ -250,7 +250,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.go",
         ),
         "native_files": ("native/built_in/py_runtime.go",),
-        "delete_target_files": ("pytra/built_in/py_runtime.go",),
+        "delete_target_files": (),
     },
     {
         "backend": "java",
@@ -282,7 +282,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.java",
         ),
         "native_files": ("native/built_in/PyRuntime.java",),
-        "delete_target_files": ("pytra/built_in/PyRuntime.java",),
+        "delete_target_files": (),
     },
     {
         "backend": "rs",
@@ -348,7 +348,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.swift",
         ),
         "native_files": ("native/built_in/py_runtime.swift",),
-        "delete_target_files": ("pytra/built_in/py_runtime.swift",),
+        "delete_target_files": (),
     },
     {
         "backend": "nim",
@@ -381,7 +381,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.nim",
         ),
         "native_files": ("native/built_in/py_runtime.nim",),
-        "delete_target_files": ("pytra/built_in/py_runtime.nim",),
+        "delete_target_files": (),
     },
     {
         "backend": "kotlin",
@@ -414,7 +414,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.kt",
         ),
         "native_files": ("native/built_in/py_runtime.kt",),
-        "delete_target_files": ("pytra/built_in/py_runtime.kt",),
+        "delete_target_files": (),
     },
     {
         "backend": "scala",
@@ -447,7 +447,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.scala",
         ),
         "native_files": ("native/built_in/py_runtime.scala",),
-        "delete_target_files": ("pytra/built_in/py_runtime.scala",),
+        "delete_target_files": (),
     },
     {
         "backend": "js",
