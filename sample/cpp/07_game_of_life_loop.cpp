@@ -20,11 +20,11 @@ rc<list<list<int64>>> next_state(const rc<list<list<int64>>>& grid, int64 w, int
                     if ((dx != 0) || (dy != 0)) {
                         int64 nx = (x + dx + w) % w;
                         int64 ny = (y + dy + h) % h;
-                        cnt += py_at(py_at(grid, py_to<int64>(ny)), py_to<int64>(nx));
+                        cnt += py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(ny))), py_to<int64>(nx));
                     }
                 }
             }
-            int64 alive = py_at(py_at(grid, py_to<int64>(y)), py_to<int64>(x));
+            int64 alive = py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y))), py_to<int64>(x));
             if ((alive == 1) && ((cnt == 2) || (cnt == 3))) {
                 py_list_append_mut(rc_list_ref(row), 1);
             } else if ((alive == 0) && (cnt == 3)) {
@@ -44,7 +44,7 @@ bytes render(const rc<list<list<int64>>>& grid, int64 w, int64 h, int64 cell) {
     bytearray frame = bytearray(width * height);
     for (int64 y = 0; y < h; ++y) {
         for (int64 x = 0; x < w; ++x) {
-            int64 v = (py_at(py_at(grid, py_to<int64>(y)), py_to<int64>(x)) ? 255 : 0);
+            int64 v = (py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y))), py_to<int64>(x)) ? 255 : 0);
             for (int64 yy = 0; yy < cell; ++yy) {
                 int64 base = (y * cell + yy) * width + x * cell;
                 for (int64 xx = 0; xx < cell; ++xx)
@@ -71,7 +71,7 @@ void run_07_game_of_life_loop() {
         for (int64 x = 0; x < w; ++x) {
             int64 noise = (x * 37 + y * 73 + x * y % 19 + (x + y) % 11) % 97;
             if (noise < 3)
-                py_list_at_ref(py_at(grid, py_to<int64>(y)), py_to<int64>(x)) = 1;
+                py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y)), py_to<int64>(x)) = 1;
         }
     }
     // Place multiple well-known long-lived patterns.
@@ -87,28 +87,28 @@ void run_07_game_of_life_loop() {
             if (kind == 0) {
                 ph = (rc_list_ref(glider)).size();
                 for (int64 py = 0; py < ph; ++py) {
-                    pw = (py_at(glider, py_to<int64>(py))).size();
+                    pw = (py_list_at_ref(rc_list_ref(glider), py_to<int64>(py))).size();
                     for (int64 px = 0; px < pw; ++px) {
-                        if (py_at(py_at(glider, py_to<int64>(py)), py_to<int64>(px)) == 1)
-                            py_list_at_ref(py_at(grid, py_to<int64>((gy + py) % h)), py_to<int64>((gx + px) % w)) = 1;
+                        if (py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(glider), py_to<int64>(py))), py_to<int64>(px)) == 1)
+                            py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>((gy + py) % h)), py_to<int64>((gx + px) % w)) = 1;
                     }
                 }
             } else if (kind == 1) {
                 ph = (rc_list_ref(r_pentomino)).size();
                 for (int64 py = 0; py < ph; ++py) {
-                    pw = (py_at(r_pentomino, py_to<int64>(py))).size();
+                    pw = (py_list_at_ref(rc_list_ref(r_pentomino), py_to<int64>(py))).size();
                     for (int64 px = 0; px < pw; ++px) {
-                        if (py_at(py_at(r_pentomino, py_to<int64>(py)), py_to<int64>(px)) == 1)
-                            py_list_at_ref(py_at(grid, py_to<int64>((gy + py) % h)), py_to<int64>((gx + px) % w)) = 1;
+                        if (py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(r_pentomino), py_to<int64>(py))), py_to<int64>(px)) == 1)
+                            py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>((gy + py) % h)), py_to<int64>((gx + px) % w)) = 1;
                     }
                 }
             } else {
                 ph = (rc_list_ref(lwss)).size();
                 for (int64 py = 0; py < ph; ++py) {
-                    pw = (py_at(lwss, py_to<int64>(py))).size();
+                    pw = (py_list_at_ref(rc_list_ref(lwss), py_to<int64>(py))).size();
                     for (int64 px = 0; px < pw; ++px) {
-                        if (py_at(py_at(lwss, py_to<int64>(py)), py_to<int64>(px)) == 1)
-                            py_list_at_ref(py_at(grid, py_to<int64>((gy + py) % h)), py_to<int64>((gx + px) % w)) = 1;
+                        if (py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(lwss), py_to<int64>(py))), py_to<int64>(px)) == 1)
+                            py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>((gy + py) % h)), py_to<int64>((gx + px) % w)) = 1;
                     }
                 }
             }

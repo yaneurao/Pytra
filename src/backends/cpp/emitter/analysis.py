@@ -223,6 +223,63 @@ class CppAnalysisEmitter:
             for elem in elems:
                 self._mark_mutated_param_from_target(elem, params, out)
 
+    def _collect_self_method_calls(self, node: Any, out: set[str]) -> None:
+        """ノード配下の `self.method(...)` 呼び出し名を再帰収集する。"""
+        node_dict = self.any_to_dict_or_empty(node)
+        if len(node_dict) > 0:
+            if self._node_kind_from_dict(node_dict) == "Call":
+                fn = self.any_to_dict_or_empty(node_dict.get("func"))
+                if self._node_kind_from_dict(fn) == "Attribute":
+                    owner = self.any_to_dict_or_empty(fn.get("value"))
+                    if self._node_kind_from_dict(owner) == "Name":
+                        owner_name = self.any_to_str(owner.get("id"))
+                        if owner_name == "self":
+                            method_name = self.any_to_str(fn.get("attr"))
+                            if method_name != "":
+                                out.add(method_name)
+            for value in node_dict.values():
+                self._collect_self_method_calls(value, out)
+            return
+        node_list = self.any_to_list(node)
+        if len(node_list) > 0:
+            for item in node_list:
+                self._collect_self_method_calls(item, out)
+
+    def _collect_nonconst_method_names_in_class_body(self, class_body: list[dict[str, Any]]) -> set[str]:
+        """class body 内で non-const 扱いすべき method 名を closure で返す。"""
+        methods: dict[str, tuple[list[dict[str, Any]], list[str]]] = {}
+        direct_nonconst: set[str] = set()
+        call_graph: dict[str, set[str]] = {}
+        for method_stmt in class_body:
+            if self._node_kind_from_dict(method_stmt) != "FunctionDef":
+                continue
+            method_name = self.any_to_str(method_stmt.get("name"))
+            if method_name in {"", "__init__", "__del__"}:
+                continue
+            arg_order = [name for name in self.any_to_str_list(method_stmt.get("arg_order")) if name != ""]
+            if "self" not in arg_order:
+                continue
+            body_stmts = self._dict_stmt_list(method_stmt.get("body"))
+            methods[method_name] = (body_stmts, arg_order)
+            if "self" in self._collect_mutated_params(body_stmts, arg_order):
+                direct_nonconst.add(method_name)
+            callees: set[str] = set()
+            self._collect_self_method_calls(body_stmts, callees)
+            if method_name in callees:
+                callees.remove(method_name)
+            call_graph[method_name] = callees
+        nonconst = set(direct_nonconst)
+        changed = True
+        while changed:
+            changed = False
+            for method_name, callees in call_graph.items():
+                if method_name in nonconst:
+                    continue
+                if any(callee in nonconst for callee in callees):
+                    nonconst.add(method_name)
+                    changed = True
+        return nonconst
+
     def _collect_mutated_params_from_stmt(self, stmt: dict[str, Any], params: set[str], out: set[str]) -> None:
         """1文から「破壊的に使われる引数名」を再帰的に収集する。"""
         kind = self._node_kind_from_dict(stmt)
@@ -246,29 +303,27 @@ class CppAnalysisEmitter:
                 fn = self.any_to_dict_or_empty(call.get("func"))
                 if self._node_kind_from_dict(fn) == "Attribute":
                     owner = self.any_to_dict_or_empty(fn.get("value"))
-                    if self._node_kind_from_dict(owner) == "Name":
-                        nm = self.any_to_str(owner.get("id"))
-                        attr = self.any_to_str(fn.get("attr"))
-                        mutating_attrs = {
-                            "append",
-                            "extend",
-                            "insert",
-                            "pop",
-                            "clear",
-                            "remove",
-                            "discard",
-                            "add",
-                            "update",
-                            "setdefault",
-                            "sort",
-                            "reverse",
-                            "mkdir",
-                            "write",
-                            "write_text",
-                            "close",
-                        }
-                        if nm in params and attr in mutating_attrs:
-                            out.add(nm)
+                    attr = self.any_to_str(fn.get("attr"))
+                    mutating_attrs = {
+                        "append",
+                        "extend",
+                        "insert",
+                        "pop",
+                        "clear",
+                        "remove",
+                        "discard",
+                        "add",
+                        "update",
+                        "setdefault",
+                        "sort",
+                        "reverse",
+                        "mkdir",
+                        "write",
+                        "write_text",
+                        "close",
+                    }
+                    if attr in mutating_attrs:
+                        self._mark_mutated_param_from_target(owner, params, out)
                 elif self._node_kind_from_dict(fn) == "Name":
                     fn_name = self.any_to_str(fn.get("id"))
                     mutated_positions = getattr(self, "function_mutated_param_positions", {}).get(fn_name, set())

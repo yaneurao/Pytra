@@ -288,19 +288,9 @@ class CppModuleEmitter:
                 if not isinstance(class_doc, dict):
                     continue
                 methods = self.any_to_list(stmt.get("body"))
-                mutating_methods: set[str] = set()
-                for method_any in methods:
-                    method_stmt = method_any if isinstance(method_any, dict) else {}
-                    if dict_any_get_str(method_stmt, "kind") != "FunctionDef":
-                        continue
-                    method_name = dict_any_get_str(method_stmt, "name")
-                    if method_name in {"", "__init__", "__del__"}:
-                        continue
-                    arg_order = [name for name in self.any_to_str_list(method_stmt.get("arg_order")) if name != ""]
-                    if "self" not in arg_order:
-                        continue
-                    if "self" in self._collect_mutated_params(self._dict_stmt_list(method_stmt.get("body")), arg_order):
-                        mutating_methods.add(method_name)
+                mutating_methods = self._collect_nonconst_method_names_in_class_body(
+                    [method_any for method_any in methods if isinstance(method_any, dict)]
+                )
                 if len(mutating_methods) == 0:
                     continue
                 seen: set[tuple[str, str]] = set()

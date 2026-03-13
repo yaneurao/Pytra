@@ -1,8 +1,12 @@
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/built_in/iter_ops.h"
-#include "pytra/built_in/string_ops.h"
-#include "pytra/std/time.h"
+#include "generated/built_in/contains.h"
+#include "generated/built_in/io_ops.h"
+#include "generated/built_in/iter_ops.h"
+#include "generated/built_in/string_ops.h"
+#include "generated/std/time.h"
 
 struct Token {
     str kind;
@@ -63,7 +67,7 @@ rc<list<Token>> tokenize(const rc<list<str>>& lines) {
             }
             int64 single_tag = py_to<int64>(single_char_token_tags.get(ch, 0));
             if (single_tag > 0) {
-                py_list_append_mut(rc_list_ref(tokens), Token(py_at(single_char_token_kinds, py_to<int64>(single_tag - 1)), ch, i, 0));
+                py_list_append_mut(rc_list_ref(tokens), Token(py_list_at_ref(rc_list_ref(single_char_token_kinds), py_to<int64>(single_tag - 1)), ch, i, 0));
                 i++;
                 continue;
             }
@@ -95,7 +99,7 @@ rc<list<Token>> tokenize(const rc<list<str>>& lines) {
         }
         py_list_append_mut(rc_list_ref(tokens), Token("NEWLINE", "", n, 0));
     }
-    py_list_append_mut(rc_list_ref(tokens), Token("EOF", "", rc_list_ref(lines).size(), 0));
+    py_list_append_mut(rc_list_ref(tokens), Token("EOF", "", (rc_list_ref(lines)).size(), 0));
     return tokens;
 }
 
@@ -105,15 +109,15 @@ struct Parser : public PyObj {
     rc<list<Token>> tokens;
     PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
     
-    rc<list<ExprNode>> new_expr_nodes();
+    rc<list<ExprNode>> new_expr_nodes() const;
     Parser(const rc<list<Token>>& tokens);
-    Token current_token();
-    Token previous_token();
-    str peek_kind();
+    Token current_token() const;
+    Token previous_token() const;
+    str peek_kind() const;
     bool match(const str& kind);
     Token expect(const str& kind);
     void skip_newlines();
-    int64 add_expr(const ExprNode& node);
+    int64 add_expr(ExprNode& node);
     rc<list<StmtNode>> parse_program();
     StmtNode parse_stmt();
     int64 parse_expr();
@@ -123,7 +127,7 @@ struct Parser : public PyObj {
     int64 parse_primary();
 };
 
-    rc<list<ExprNode>> Parser::new_expr_nodes() {
+    rc<list<ExprNode>> Parser::new_expr_nodes() const {
         return rc_list_from_value(list<ExprNode>{});
     }
 
@@ -133,15 +137,15 @@ struct Parser : public PyObj {
         this->expr_nodes = this->new_expr_nodes();
     }
 
-    Token Parser::current_token() {
-        return py_at(this->tokens, py_to<int64>(this->pos));
+    Token Parser::current_token() const {
+        return py_list_at_ref(rc_list_ref(this->tokens), py_to<int64>(this->pos));
     }
 
-    Token Parser::previous_token() {
-        return py_at(this->tokens, py_to<int64>(this->pos - 1));
+    Token Parser::previous_token() const {
+        return py_list_at_ref(rc_list_ref(this->tokens), py_to<int64>(this->pos - 1));
     }
 
-    str Parser::peek_kind() {
+    str Parser::peek_kind() const {
         return this->current_token().kind;
     }
 
@@ -167,9 +171,9 @@ struct Parser : public PyObj {
         }
     }
 
-    int64 Parser::add_expr(const ExprNode& node) {
+    int64 Parser::add_expr(ExprNode& node) {
         py_list_append_mut(rc_list_ref(this->expr_nodes), node);
-        return rc_list_ref(this->expr_nodes).size() - 1;
+        return (rc_list_ref(this->expr_nodes)).size() - 1;
     }
 
     rc<list<StmtNode>> Parser::parse_program() {
@@ -267,14 +271,14 @@ struct Parser : public PyObj {
     }
 
 int64 eval_expr(int64 expr_index, const rc<list<ExprNode>>& expr_nodes, const dict<str, int64>& env) {
-    ExprNode node = py_at(expr_nodes, py_to<int64>(expr_index));
+    ExprNode node = py_list_at_ref(rc_list_ref(expr_nodes), py_to<int64>(expr_index));
     
     if (node.kind_tag == 1)
         return node.value;
     if (node.kind_tag == 2) {
         if (!(py_contains(env, node.name)))
             throw ::std::runtime_error("undefined variable: " + node.name);
-        return py_dict_get(env, node.name);
+        return ([&]() { auto&& __dict_2 = env; auto __dict_key_3 = node.name; return __dict_2.at(__dict_key_3); }());
     }
     if (node.kind_tag == 4)
         return -(eval_expr(node.left, expr_nodes, env));
@@ -373,9 +377,9 @@ void run_benchmark() {
     int64 checksum = execute(stmts, parser->expr_nodes, false);
     float64 elapsed = pytra::std::time::perf_counter() - start;
     
-    py_print("token_count:", rc_list_ref(tokens).size());
-    py_print("expr_count:", rc_list_ref(parser->expr_nodes).size());
-    py_print("stmt_count:", rc_list_ref(stmts).size());
+    py_print("token_count:", (rc_list_ref(tokens)).size());
+    py_print("expr_count:", (rc_list_ref(parser->expr_nodes)).size());
+    py_print("stmt_count:", (rc_list_ref(stmts)).size());
     py_print("checksum:", checksum);
     py_print("elapsed_sec:", elapsed);
 }

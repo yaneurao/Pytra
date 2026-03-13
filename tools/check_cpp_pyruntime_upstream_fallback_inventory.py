@@ -83,8 +83,12 @@ def _collect_inventory_issues() -> list[str]:
                 issues.append(
                     f"missing evidence needle: {inventory_id}: {rel}: {ref['needle']}"
                 )
-    if seen_buckets != set(inventory_mod.INVENTORY_BUCKET_ORDER):
-        issues.append("inventory buckets drifted from fixed upstream-fallback taxonomy")
+    bucket_order = set(inventory_mod.INVENTORY_BUCKET_ORDER)
+    if not seen_buckets <= bucket_order:
+        issues.append("inventory buckets escaped the fixed upstream-fallback taxonomy")
+    required_nonempty = {"header_bulk", "cpp_emitter_residual"}
+    if not required_nonempty <= seen_buckets:
+        issues.append("required upstream-fallback buckets became empty")
     return issues
 
 

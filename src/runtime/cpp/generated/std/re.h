@@ -5,13 +5,16 @@
 #ifndef PYTRA_GENERATED_STD_RE_H
 #define PYTRA_GENERATED_STD_RE_H
 
-#include "runtime/cpp/native/core/py_types.h"
+#include "runtime/cpp/native/core/py_runtime.h"
 
 #include <optional>
+#include "runtime/cpp/native/core/py_runtime.h"
 
 namespace pytra::std::re {
 
 struct Match;
+
+extern int64 S;
 
     struct Match : public PyObj {
         rc<list<str>> _groups;
@@ -19,10 +22,9 @@ struct Match;
         PYTRA_DECLARE_CLASS_TYPE(PYTRA_TID_OBJECT);
         
         Match(const str& text, const rc<list<str>>& groups);
-        str group(int64 idx = 0);
+        str group(int64 idx = 0) const;
     };
 
-extern int64 S;
 
 str group(const ::std::optional<rc<Match>>& m, int64 idx = 0);
 str strip_group(const ::std::optional<rc<Match>>& m, int64 idx = 0);

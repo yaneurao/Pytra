@@ -1494,6 +1494,17 @@ class CppEmitter(
                 continue
             self.class_method_virtual[class_key].update(methods)
         self.class_method_force_nonconst = {cls: set() for cls in self.class_method_names}
+        for stmt in body:
+            if dict_any_get_str(stmt, "kind") != "ClassDef":
+                continue
+            cls_name = dict_any_get_str(stmt, "name")
+            if cls_name == "":
+                continue
+            current = self.class_method_force_nonconst.get(cls_name)
+            if not isinstance(current, set):
+                current = set()
+                self.class_method_force_nonconst[cls_name] = current
+            current.update(self._collect_nonconst_method_names_in_class_body(self._dict_stmt_list(stmt.get("body"))))
         for base_cpp_name, methods in self._global_user_nonconst_methods_by_base_cpp_name().items():
             class_key = self._class_key_for_cpp_name(base_cpp_name)
             if class_key == "":
@@ -2696,7 +2707,7 @@ class CppEmitter(
                 and self._is_pyobj_value_model_list_type(self.normalize_type_name(val_ty))
             ):
                 return f"py_list_at_ref({val}, py_to<int64>({idx}))"
-            return f"py_at({val}, py_to<int64>({idx}))"
+            return self._render_pyobj_ref_first_list_index(val, f"py_to<int64>({idx})")
         if self.is_indexable_sequence_type(val_ty):
             if self.is_any_like_type(idx_t):
                 idx = f"py_to<int64>({idx})"
@@ -2718,6 +2729,10 @@ class CppEmitter(
         if self.bounds_check_mode == "debug":
             return f"py_at_bounds_debug({value_expr}, {index_expr})"
         return f"{value_expr}[{index_expr}]"
+
+    def _render_pyobj_ref_first_list_index(self, value_expr: str, index_expr: str) -> str:
+        """ref-first typed list index access stays on typed list helpers, not object compat."""
+        return f"py_list_at_ref(rc_list_ref({value_expr}), {index_expr})"
 
     def _coerce_dict_key_expr(self, owner_node: Any, key_expr: str, key_node: Any) -> str:
         """`dict[K, V]` 参照用の key 式を K に合わせて整形する。"""
@@ -3833,7 +3848,7 @@ class CppEmitter(
                 return f"py_at({val}, {idx})"
             return f"py_at({val}, py_to<int64>({idx}))"
         if self._uses_pyobj_ref_first_list_ops(expr.get("value")):
-            at_expr = f"py_at({val}, py_to<int64>({idx}))"
+            at_expr = self._render_pyobj_ref_first_list_index(val, f"py_to<int64>({idx})")
             return at_expr
         if (
             self._is_pyobj_runtime_list_type(val_ty)

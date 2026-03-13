@@ -16,11 +16,11 @@ namespace pytra::utils::png {
 RGB 8bit バッファを PNG ファイルとして保存する。
  */
     
-    void _png_append_list(rc<list<int64>>& dst, const rc<list<int64>>& src) {
+    void _png_append_list(const rc<list<int64>>& dst, const rc<list<int64>>& src) {
         int64 i = 0;
-        int64 n = py_len(src);
+        int64 n = (rc_list_ref(src)).size();
         while (i < n) {
-            py_list_append_mut(rc_list_ref(dst), py_at(src, py_to<int64>(i)));
+            py_list_append_mut(rc_list_ref(dst), py_list_at_ref(rc_list_ref(src), py_to<int64>(i)));
             i++;
         }
     }
@@ -68,7 +68,7 @@ RGB 8bit バッファを PNG ファイルとして保存する。
     rc<list<int64>> _zlib_deflate_store(const rc<list<int64>>& data) {
         rc<list<int64>> out = rc_list_from_value(list<int64>{});
         _png_append_list(out, rc_list_from_value(list<int64>{0x78, 0x01}));
-        int64 n = py_len(data);
+        int64 n = (rc_list_ref(data)).size();
         int64 pos = 0;
         while (pos < n) {
             int64 remain = n - pos;
@@ -80,7 +80,7 @@ RGB 8bit バッファを PNG ファイルとして保存する。
             int64 i = pos;
             int64 end = pos + chunk_len;
             while (i < end) {
-                py_list_append_mut(rc_list_ref(out), py_at(data, py_to<int64>(i)));
+                py_list_append_mut(rc_list_ref(out), py_list_at_ref(rc_list_ref(data), py_to<int64>(i)));
                 i++;
             }
             pos += chunk_len;
@@ -95,7 +95,7 @@ RGB 8bit バッファを PNG ファイルとして保存する。
         _png_append_list(crc_input, data);
         int64 crc = _crc32(crc_input) & 0xFFFFFFFF;
         rc<list<int64>> out = rc_list_from_value(list<int64>{});
-        _png_append_list(out, _png_u32be(py_len(data)));
+        _png_append_list(out, _png_u32be((rc_list_ref(data)).size()));
         _png_append_list(out, chunk_type);
         _png_append_list(out, data);
         _png_append_list(out, _png_u32be(crc));
@@ -108,8 +108,8 @@ RGB 8bit バッファを PNG ファイルとして保存する。
             py_list_append_mut(rc_list_ref(raw), int64(b));
         }
         int64 expected = width * height * 3;
-        if (py_len(raw) != expected)
-            throw ValueError("pixels length mismatch: got=" + ::std::to_string(py_len(raw)) + " expected=" + ::std::to_string(expected));
+        if ((rc_list_ref(raw)).size() != expected)
+            throw ValueError("pixels length mismatch: got=" + ::std::to_string((rc_list_ref(raw)).size()) + " expected=" + ::std::to_string(expected));
         rc<list<int64>> scanlines = rc_list_from_value(list<int64>{});
         int64 row_bytes = width * 3;
         int64 y = 0;
@@ -119,7 +119,7 @@ RGB 8bit バッファを PNG ファイルとして保存する。
             int64 end = start + row_bytes;
             int64 i = start;
             while (i < end) {
-                py_list_append_mut(rc_list_ref(scanlines), py_at(raw, py_to<int64>(i)));
+                py_list_append_mut(rc_list_ref(scanlines), py_list_at_ref(rc_list_ref(raw), py_to<int64>(i)));
                 i++;
             }
             y++;

@@ -31,12 +31,12 @@ namespace pytra::std::argparse {
             this->choices = choices;
             this->py_default = make_object(py_default);
             this->help_text = help_text;
-            this->is_optional = (py_len(names) > 0) && (py_startswith(py_at(names, py_to<int64>(0)), "-"));
+            this->is_optional = ((rc_list_ref(names)).size() > 0) && (py_startswith(py_list_at_ref(rc_list_ref(names), py_to<int64>(0)), "-"));
             if (this->is_optional) {
-                auto base = py_replace(py_at(names, py_to<int64>(-(1))).lstrip("-"), "-", "_");
+                auto base = py_replace(py_list_at_ref(rc_list_ref(names), py_to<int64>(-(1))).lstrip("-"), "-", "_");
                 this->dest = py_to_string(base);
             } else {
-                this->dest = py_at(names, py_to<int64>(0));
+                this->dest = py_list_at_ref(rc_list_ref(names), py_to<int64>(0));
             }
     }
     
@@ -62,13 +62,13 @@ namespace pytra::std::argparse {
             py_list_append_mut(rc_list_ref(this->_specs), spec);
     }
 
-    void ArgumentParser::_fail(const str& msg) {
+    void ArgumentParser::_fail(const str& msg) const {
             if (msg != "")
                 pytra::std::sys::write_stderr("error: " + msg + "\n");
             throw SystemExit(2);
     }
 
-    dict<str, object> ArgumentParser::parse_args(const object& argv) {
+    dict<str, object> ArgumentParser::parse_args(const object& argv) const {
             rc<list<str>> args;
             if (py_is_none(argv))
                 args = py_to<rc<list<str>>>(py_slice(py_runtime_argv(), 1, py_len(py_runtime_argv())));
@@ -102,36 +102,36 @@ namespace pytra::std::argparse {
             }
             int64 pos_i = 0;
             int64 i = 0;
-            while (i < py_len(args)) {
-                str tok = py_at(args, py_to<int64>(i));
+            while (i < (rc_list_ref(args)).size()) {
+                str tok = py_list_at_ref(rc_list_ref(args), py_to<int64>(i));
                 if (py_startswith(tok, "-")) {
                     if (!py_contains(by_name, tok))
                         this->_fail("unknown option: " + tok);
                     auto __idx_1 = ([&]() { auto&& __dict_2 = by_name; auto __dict_key_3 = tok; return __dict_2.at(__dict_key_3); }());
-                    _ArgSpec spec = py_at(specs_opt, py_to<int64>(__idx_1));
+                    _ArgSpec spec = py_list_at_ref(rc_list_ref(specs_opt), py_to<int64>(__idx_1));
                     if (spec.action == "store_true") {
                         values[spec.dest] = make_object(true);
                         i++;
                         continue;
                     }
-                    if (i + 1 >= py_len(args))
+                    if (i + 1 >= (rc_list_ref(args)).size())
                         this->_fail("missing value for option: " + tok);
-                    str val = py_at(args, py_to<int64>(i + 1));
-                    if ((py_len(spec.choices) > 0) && (!py_contains(spec.choices, val)))
+                    str val = py_list_at_ref(rc_list_ref(args), py_to<int64>(i + 1));
+                    if (((rc_list_ref(spec.choices)).size() > 0) && (!py_contains(spec.choices, val)))
                         this->_fail("invalid choice for " + tok + ": " + val);
                     values[spec.dest] = make_object(val);
                     i += 2;
                     continue;
                 }
-                if (pos_i >= py_len(specs_pos))
+                if (pos_i >= (rc_list_ref(specs_pos)).size())
                     this->_fail("unexpected extra argument: " + tok);
-                _ArgSpec spec = py_at(specs_pos, py_to<int64>(pos_i));
+                _ArgSpec spec = py_list_at_ref(rc_list_ref(specs_pos), py_to<int64>(pos_i));
                 values[spec.dest] = make_object(tok);
                 pos_i++;
                 i++;
             }
-            if (pos_i < py_len(specs_pos))
-                this->_fail("missing required argument: " + py_at(specs_pos, py_to<int64>(pos_i)).dest);
+            if (pos_i < (rc_list_ref(specs_pos)).size())
+                this->_fail("missing required argument: " + py_list_at_ref(rc_list_ref(specs_pos), py_to<int64>(pos_i)).dest);
             return values;
     }
     

@@ -5,7 +5,7 @@
 #ifndef PYTRA_GENERATED_STD_ARGPARSE_H
 #define PYTRA_GENERATED_STD_ARGPARSE_H
 
-#include "runtime/cpp/native/core/py_types.h"
+#include "runtime/cpp/native/core/py_runtime.h"
 
 namespace pytra::std::argparse {
 
@@ -37,8 +37,8 @@ struct ArgumentParser;
         
         ArgumentParser(const str& description = "");
         void add_argument(const str& name0, const str& name1 = "", const str& name2 = "", const str& name3 = "", const str& help = "", const str& action = "", const rc<list<str>>& choices = rc_list_from_value(list<str>{}), const object& py_default = object{});
-        void _fail(const str& msg);
-        dict<str, object> parse_args(const object& argv = object{});
+        void _fail(const str& msg) const;
+        dict<str, object> parse_args(const object& argv = object{}) const;
     };
 
 

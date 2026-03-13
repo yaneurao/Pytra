@@ -8,7 +8,7 @@
 背景:
 - `docs/ja/plans/archive/20260312-p5-cpp-pyruntime-residual-thin-seam-shrink.md` では、`py_runtime.h` の residual seam を `py_append(object& ...)` と shared `type_id` thin seam に分類し、縮退順だけを固定した。
 - しかし `src/runtime/cpp/native/core/py_runtime.h` 自体は 2026-03-14 時点で 1287 行あり、まだ object bridge 互換、generic `make_object` / `py_to`、typed collection fallback が大きな塊として残っている。
-- 現行 caller を見ると、`sample/cpp` の `py_append(` bucket は retire 済みで、`src/runtime/cpp/generated/**` 側も object-list bridge は除去できたが、generated / sample の両方に generic index bucket が残っている。
+- 現行 caller を見ると、`sample/cpp` の `py_append(` bucket と generic index bucket は retire 済みで、`src/runtime/cpp/generated/**` 側の object-list bridge と generic index bucket も除去できた。typed-lane residual は emitter helper-only まで縮退している。
 - `src/runtime/cpp/generated/core/README.md` が明示する通り、`generated/core` は `py_runtime.h` の肥大化逃がし用 bucket ではない。したがって、単なる物理分割ではなく、typed lane で upstream に押し戻せる fallback を減らす必要がある。
 
 目的:
@@ -60,7 +60,7 @@
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-01] `py_runtime.h` の current bulk と `sample/cpp` / `generated/**` / C++ emitter の residual caller を inventory 化し、upstream へ押し戻せる fallback を分類する。
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02] `object-only compat` と `typed lane must not use` の境界を shrink contract として docs / tooling へ固定する。
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01] typed list mutation / indexing / tuple-list boxing の emit を改善し、`py_append(object&)` と `py_at(object, idx)` の caller を削減する。
-- [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02] generated built_in/std runtime と representative sample の object-bridge fallback を減らし、baseline を更新する。
+- [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02] generated built_in/std runtime と representative sample の object-bridge fallback を減らし、baseline を更新する。
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-03] generic `make_object` / `py_to` / dict-key coercion の typed path fallback を縮退し、`Any/object` 境界へ寄せる。
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S3-01] regression / checker / docs / English mirror を同期し、`py_runtime.h` shrink の current contract を閉じる。
 
@@ -83,3 +83,4 @@
 - 2026-03-14: `S2-02` の seventh bundle として `list[object]` を C++ `pyobj` lane でも value-model list として扱えるようにし、`src/pytra/built_in/iter_ops.py` の戻り型を `list[object]` へ引き上げて `generated_runtime_object_list_bridge_sites` を retire した。typed-lane residual の bucket 数は emitter 1 / generated 1 / sample 1 になった。
 - 2026-03-14: `S2-02` の eighth bundle として `src/pytra/built_in/iter_ops.py` の object helper 本文自体を iterator lane に寄せ、`generated_runtime_generic_index_sites` baseline を `44 -> 42` に縮退させた。残件は `type_id`, `std/*`, `utils/png` に集中している。
 - 2026-03-14: `S2-02` の ninth bundle として `tools/check_crossruntime_pyruntime_residual_caller_inventory.py` と対応 unit test を current generated `py_runtime_value_*` thin seam へ同期し、`json.cpp` / `type_id.cpp` の generated C++ residual を `generated_cpp_shared_type_id_residual` 1 bucket に再分類した。stale `generated_cpp_object_bridge_residual` bucket は retire し、crossruntime residual caller checker を現行 generated caller 実態に揃えた。
+- 2026-03-14: `S2-02` の tenth bundle として C++ emitter の ref-first typed list subscript を `py_at(...py_to<int64>)` から `py_list_at_ref(rc_list_ref(...), ...)` へ切り替え、`type_id/json/argparse/random/re/png` の generated runtime と representative sample 6 本を正規導線で再生成した。これで `generated_runtime_generic_index_sites` と `sample_cpp_generic_index_sites` はともに 0 まで縮退して retire し、typed-lane residual は emitter helper 1 bucket のみになった。`S2-02` は完了。

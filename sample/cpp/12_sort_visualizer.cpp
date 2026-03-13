@@ -19,7 +19,7 @@ bytes render(const rc<list<int64>>& values, int64 w, int64 h) {
         int64 x1 = int64((py_to<float64>(i + 1)) * bar_w);
         if (x1 <= x0)
             x1 = x0 + 1;
-        int64 bh = int64((py_to<float64>(py_at(values, py_to<int64>(i))) / __hoisted_cast_1) * __hoisted_cast_2);
+        int64 bh = int64((py_to<float64>(py_list_at_ref(rc_list_ref(values), py_to<int64>(i))) / __hoisted_cast_1) * __hoisted_cast_2);
         int64 y = h - bh;
         auto __for_start_1 = y;
         for (int64 y = __for_start_1; y < h; ++y) {
@@ -48,8 +48,8 @@ void run_12_sort_visualizer() {
     for (int64 i = 0; i < n; ++i) {
         bool swapped = false;
         for (int64 j = 0; j < n - i - 1; ++j) {
-            if (py_at(values, py_to<int64>(j)) > py_at(values, py_to<int64>(j + 1))) {
-                ::std::swap(py_at(values, py_to<int64>(j)), py_at(values, py_to<int64>(j + 1)));
+            if (py_list_at_ref(rc_list_ref(values), py_to<int64>(j)) > py_list_at_ref(rc_list_ref(values), py_to<int64>(j + 1))) {
+                ::std::swap(py_list_at_ref(rc_list_ref(values), py_to<int64>(j)), py_list_at_ref(rc_list_ref(values), py_to<int64>(j + 1)));
                 swapped = true;
             }
             if (op % frame_stride == 0)

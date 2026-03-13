@@ -7,7 +7,6 @@
 #include "runtime/cpp/native/core/process_runtime.h"
 #include "runtime/cpp/native/core/scope_exit.h"
 
-#include "generated/built_in/contains.h"
 #include "generated/built_in/string_ops.h"
 
 namespace pytra::std::re {
@@ -22,12 +21,12 @@ namespace pytra::std::re {
             this->_groups = groups;
     }
 
-    str Match::group(int64 idx) {
+    str Match::group(int64 idx) const {
             if (idx == 0)
                 return this->_text;
-            if ((idx < 0) || (idx > py_len(this->_groups)))
+            if ((idx < 0) || (idx > (rc_list_ref(this->_groups)).size()))
                 throw IndexError("group index out of range");
-            return py_at(this->_groups, py_to<int64>(idx - 1));
+            return py_list_at_ref(rc_list_ref(this->_groups), py_to<int64>(idx - 1));
     }
     
     str group(const ::std::optional<rc<Match>>& m, int64 idx) {
@@ -40,7 +39,7 @@ namespace pytra::std::re {
     
     str strip_group(const ::std::optional<rc<Match>>& m, int64 idx) {
         /* group を取得して前後空白を除去する。 */
-        return py_strip(group(m, idx));
+        return py_strip(group(*m, idx));
     }
     
     bool _is_ident(const str& s) {
@@ -372,7 +371,7 @@ namespace pytra::std::re {
             if (!(py_startswith(rest, "==")))
                 return ::std::nullopt;
             rest = py_strip(py_slice(rest, 2, py_len(rest)));
-            if (py_contains(set<str>{"\"__main__\"", "'__main__'"}, rest))
+            if ((rest == "\"__main__\"") || (rest == "'__main__'"))
                 return ::rc_new<Match>(text, rc_list_from_value(list<str>{}));
             return ::std::nullopt;
         }
@@ -390,15 +389,15 @@ namespace pytra::std::re {
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_\\.]*)(?:\\s+as\\s+([A-Za-z_][A-Za-z0-9_]*))?$") {
             rc<list<str>> parts = rc_list_from_value(text.split(" as "));
-            if (py_len(parts) == 1) {
-                str name = py_strip(py_at(parts, py_to<int64>(0)));
+            if ((rc_list_ref(parts)).size() == 1) {
+                str name = py_strip(py_list_at_ref(rc_list_ref(parts), py_to<int64>(0)));
                 if (!(_is_dotted_ident(name)))
                     return ::std::nullopt;
                 return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ""}));
             }
-            if (py_len(parts) == 2) {
-                str name = py_strip(py_at(parts, py_to<int64>(0)));
-                str alias = py_strip(py_at(parts, py_to<int64>(1)));
+            if ((rc_list_ref(parts)).size() == 2) {
+                str name = py_strip(py_list_at_ref(rc_list_ref(parts), py_to<int64>(0)));
+                str alias = py_strip(py_list_at_ref(rc_list_ref(parts), py_to<int64>(1)));
                 if ((!(_is_dotted_ident(name))) || (!(_is_ident(alias))))
                     return ::std::nullopt;
                 return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, alias}));
@@ -420,15 +419,15 @@ namespace pytra::std::re {
         }
         if (pattern == "^([A-Za-z_][A-Za-z0-9_]*)(?:\\s+as\\s+([A-Za-z_][A-Za-z0-9_]*))?$") {
             rc<list<str>> parts = rc_list_from_value(text.split(" as "));
-            if (py_len(parts) == 1) {
-                str name = py_strip(py_at(parts, py_to<int64>(0)));
+            if ((rc_list_ref(parts)).size() == 1) {
+                str name = py_strip(py_list_at_ref(rc_list_ref(parts), py_to<int64>(0)));
                 if (!(_is_ident(name)))
                     return ::std::nullopt;
                 return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, ""}));
             }
-            if (py_len(parts) == 2) {
-                str name = py_strip(py_at(parts, py_to<int64>(0)));
-                str alias = py_strip(py_at(parts, py_to<int64>(1)));
+            if ((rc_list_ref(parts)).size() == 2) {
+                str name = py_strip(py_list_at_ref(rc_list_ref(parts), py_to<int64>(0)));
+                str alias = py_strip(py_list_at_ref(rc_list_ref(parts), py_to<int64>(1)));
                 if ((!(_is_ident(name))) || (!(_is_ident(alias))))
                     return ::std::nullopt;
                 return ::rc_new<Match>(text, rc_list_from_value(list<str>{name, alias}));

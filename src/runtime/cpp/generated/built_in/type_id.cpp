@@ -72,8 +72,8 @@ rc<list<int64>> _make_int_list_1(int64 a0) {
 
 bool _contains_int(const rc<list<int64>>& items, int64 value) {
     int64 i = 0;
-    while (i < py_len(items)) {
-        if (py_at(items, py_to<int64>(i)) == value)
+    while (i < (rc_list_ref(items)).size()) {
+        if (py_list_at_ref(rc_list_ref(items), py_to<int64>(i)) == value)
             return true;
         i++;
     }
@@ -83,8 +83,8 @@ bool _contains_int(const rc<list<int64>>& items, int64 value) {
 rc<list<int64>> _copy_int_list(const rc<list<int64>>& items) {
     rc<list<int64>> out = rc_list_from_value(list<int64>{});
     int64 i = 0;
-    while (i < py_len(items)) {
-        py_list_append_mut(rc_list_ref(out), py_at(items, py_to<int64>(i)));
+    while (i < (rc_list_ref(items)).size()) {
+        py_list_append_mut(rc_list_ref(out), py_list_at_ref(rc_list_ref(items), py_to<int64>(i)));
         i++;
     }
     return out;
@@ -93,13 +93,13 @@ rc<list<int64>> _copy_int_list(const rc<list<int64>>& items) {
 rc<list<int64>> _sorted_ints(const rc<list<int64>>& items) {
     rc<list<int64>> out = _copy_int_list(items);
     int64 i = 0;
-    while (i < py_len(out)) {
+    while (i < (rc_list_ref(out)).size()) {
         int64 j = i + 1;
-        while (j < py_len(out)) {
-            if (py_at(out, py_to<int64>(j)) < py_at(out, py_to<int64>(i))) {
-                int64 tmp = py_at(out, py_to<int64>(i));
-                py_at(out, py_to<int64>(i)) = py_at(out, py_to<int64>(j));
-                py_at(out, py_to<int64>(j)) = tmp;
+        while (j < (rc_list_ref(out)).size()) {
+            if (py_list_at_ref(rc_list_ref(out), py_to<int64>(j)) < py_list_at_ref(rc_list_ref(out), py_to<int64>(i))) {
+                int64 tmp = py_list_at_ref(rc_list_ref(out), py_to<int64>(i));
+                py_list_at_ref(rc_list_ref(out), py_to<int64>(i)) = py_list_at_ref(rc_list_ref(out), py_to<int64>(j));
+                py_list_at_ref(rc_list_ref(out), py_to<int64>(j)) = tmp;
             }
             j++;
         }
@@ -135,7 +135,7 @@ rc<list<int64>> _sorted_child_type_ids(int64 type_id) {
 rc<list<int64>> _collect_root_type_ids() {
     rc<list<int64>> roots = rc_list_from_value(list<int64>{});
     int64 i = 0;
-    while (i < py_len(_TYPE_IDS)) {
+    while (i < _TYPE_IDS.size()) {
         int64 tid = _TYPE_IDS[i];
         int64 base_tid = -(1);
         if (py_contains(_TYPE_BASE, tid))
@@ -153,8 +153,8 @@ int64 _assign_type_ranges_dfs(int64 type_id, int64 next_order) {
     int64 cur = next_order + 1;
     rc<list<int64>> children = _sorted_child_type_ids(type_id);
     int64 i = 0;
-    while (i < py_len(children)) {
-        cur = _assign_type_ranges_dfs(py_at(children, py_to<int64>(i)), cur);
+    while (i < (rc_list_ref(children)).size()) {
+        cur = _assign_type_ranges_dfs(py_list_at_ref(rc_list_ref(children), py_to<int64>(i)), cur);
         i++;
     }
     _TYPE_MAX[type_id] = cur - 1;
@@ -169,14 +169,14 @@ void _recompute_type_ranges() {
     int64 next_order = 0;
     rc<list<int64>> roots = _collect_root_type_ids();
     int64 i = 0;
-    while (i < py_len(roots)) {
-        next_order = _assign_type_ranges_dfs(py_at(roots, py_to<int64>(i)), next_order);
+    while (i < (rc_list_ref(roots)).size()) {
+        next_order = _assign_type_ranges_dfs(py_list_at_ref(rc_list_ref(roots), py_to<int64>(i)), next_order);
         i++;
     }
     rc<list<int64>> all_ids = _sorted_ints(rc_list_from_value(_TYPE_IDS));
     i = 0;
-    while (i < py_len(all_ids)) {
-        int64 tid = py_at(all_ids, py_to<int64>(i));
+    while (i < (rc_list_ref(all_ids)).size()) {
+        int64 tid = py_list_at_ref(rc_list_ref(all_ids), py_to<int64>(i));
         if (!py_contains(_TYPE_ORDER, tid))
             next_order = _assign_type_ranges_dfs(tid, next_order);
         i++;
@@ -207,7 +207,7 @@ void _ensure_builtins() {
         _TYPE_STATE[str("next_user_type_id")] = _tid_user_base();
     if (!py_contains(_TYPE_STATE, "ranges_dirty"))
         _TYPE_STATE[str("ranges_dirty")] = 1;
-    if (py_len(_TYPE_IDS) > 0)
+    if (_TYPE_IDS.size() > 0)
         return;
     _register_type_node(_tid_none(), -(1));
     _register_type_node(_tid_object(), -(1));

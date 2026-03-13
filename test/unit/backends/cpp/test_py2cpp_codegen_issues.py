@@ -474,7 +474,10 @@ def f() -> float:
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
         self.assertIn("int64 single_tag = py_to<int64>(single_char_token_tags.get(ch, 0));", cpp)
-        self.assertIn("py_at(single_char_token_kinds, py_to<int64>(single_tag - 1))", cpp)
+        self.assertIn(
+            "py_list_at_ref(rc_list_ref(single_char_token_kinds), py_to<int64>(single_tag - 1))",
+            cpp,
+        )
         self.assertNotIn('if (ch == "+")', cpp)
         self.assertNotIn('if (ch == "-")', cpp)
         self.assertNotIn('if (ch == "*")', cpp)
@@ -515,15 +518,24 @@ def f() -> float:
         self.assertIn("rc<list<ExprNode>> expr_nodes;", cpp)
         self.assertIn("this->tokens = tokens;", cpp)
         self.assertIn("this->expr_nodes = this->new_expr_nodes();", cpp)
-        self.assertIn("return py_at(this->tokens, py_to<int64>(this->pos));", cpp)
+        self.assertIn(
+            "return py_list_at_ref(rc_list_ref(this->tokens), py_to<int64>(this->pos));",
+            cpp,
+        )
         self.assertIn("py_list_append_mut(rc_list_ref(this->expr_nodes), node);", cpp)
         self.assertNotIn("list<Token> tokens;", cpp)
         self.assertNotIn("list<ExprNode> expr_nodes;", cpp)
         self.assertNotIn("this->tokens = rc_list_copy_value(tokens);", cpp)
         self.assertNotIn("this->expr_nodes = rc_list_copy_value(this->new_expr_nodes());", cpp)
         self.assertNotIn("return this->tokens[this->pos];", cpp)
-        self.assertNotIn('obj_to_rc_or_raise<Token>(py_at(this->tokens, py_to<int64>(this->pos)), "subscript:list")', cpp)
-        self.assertIn("ExprNode node = py_at(expr_nodes, py_to<int64>(expr_index));", cpp)
+        self.assertNotIn(
+            'obj_to_rc_or_raise<Token>(py_list_at_ref(rc_list_ref(this->tokens), py_to<int64>(this->pos)), "subscript:list")',
+            cpp,
+        )
+        self.assertIn(
+            "ExprNode node = py_list_at_ref(rc_list_ref(expr_nodes), py_to<int64>(expr_index));",
+            cpp,
+        )
         self.assertNotIn("const rc<ExprNode>& node = expr_nodes[expr_index];", cpp)
 
     def test_sample18_synthesized_ctors_use_init_list(self) -> None:
@@ -625,11 +637,17 @@ def f() -> float:
         self.assertNotIn("::std::tuple<int64, int64>(::std::make_tuple(", cpp)
         self.assertIn("auto __idx_", cpp)
         self.assertIn("= (x * 17 + y * 29 + py_len(stack) * 13) % py_len(candidates);", cpp)
-        self.assertIn("::std::tuple<int64, int64, int64, int64> sel = py_at(candidates, py_to<int64>(__idx_", cpp)
+        self.assertIn(
+            "::std::tuple<int64, int64, int64, int64> sel = py_list_at_ref(rc_list_ref(candidates), py_to<int64>(__idx_",
+            cpp,
+        )
         self.assertNotIn("candidates[__idx_", cpp)
         self.assertNotIn("int64(py_to<int64>(", cpp)
         self.assertNotIn("float64(py_to<float64>(", cpp)
-        self.assertIn("int64 v = (py_at(py_at(grid, py_to<int64>(y)), py_to<int64>(x)) == 0 ? 255 : 40);", cpp)
+        self.assertIn(
+            "int64 v = (py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y))), py_to<int64>(x)) == 0 ? 255 : 40);",
+            cpp,
+        )
         self.assertNotIn("object(py_at(grid, ", cpp)
         self.assertIn("py_list_append_mut(rc_list_ref(frames), capture(grid, cell_w, cell_h, scale));", cpp)
         self.assertNotIn("object grid = ", cpp)
@@ -1519,7 +1537,10 @@ def check(x: object) -> bool:
         self.assertIn("py_list_append_mut(rc_list_ref(xs), 3);", cpp)
         self.assertIn("py_list_extend_mut(rc_list_ref(xs), list<int64>{4, 5});", cpp)
         self.assertIn("auto v = py_list_pop_mut(rc_list_ref(xs));", cpp)
-        self.assertIn("int64 head = py_at(xs, py_to<int64>(0));", cpp)
+        self.assertIn(
+            "int64 head = py_list_at_ref(rc_list_ref(xs), py_to<int64>(0));",
+            cpp,
+        )
         self.assertIn("rc<list<int64>> seg = rc_list_from_value(py_slice(xs, 0, 2));", cpp)
 
     def test_pyobj_list_model_list_comprehension_returns_object(self) -> None:
@@ -1555,7 +1576,10 @@ def check(x: object) -> bool:
 
         self.assertIn("rc<list<int64>> ys = rc_list_from_value([&]() -> list<int64> {", cpp)
         self.assertIn("for (auto x : rc_list_ref(xs)) {", cpp)
-        self.assertIn("return py_at(ys, py_to<int64>(0));", cpp)
+        self.assertIn(
+            "return py_list_at_ref(rc_list_ref(ys), py_to<int64>(0));",
+            cpp,
+        )
 
     def test_transpile_to_cpp_accepts_cpp_list_model_override(self) -> None:
         src = """def sink(xs: list[int]) -> int:
@@ -1590,7 +1614,10 @@ def f() -> int:
             cpp = em.transpile()
 
         self.assertIn("void paint(rc<list<list<int64>>>& grid, int64 x, int64 y) {", cpp)
-        self.assertIn("py_list_at_ref(py_at(grid, py_to<int64>(y)), py_to<int64>(x)) = 1;", cpp)
+        self.assertIn(
+            "py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y)), py_to<int64>(x)) = 1;",
+            cpp,
+        )
         self.assertNotIn("py_set_at(", cpp)
 
     def test_pyobj_list_model_module_global_typed_list_subscript_assign_stays_direct(self) -> None:
@@ -1707,7 +1734,10 @@ def f(xs: list[int], ws: list[float]) -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("auto [x, y] = py_at(stack, py_to<int64>(-(1)));", cpp)
+        self.assertIn(
+            "auto [x, y] = py_list_at_ref(rc_list_ref(stack), py_to<int64>(-(1)));",
+            cpp,
+        )
         self.assertNotIn("auto __tuple_1 = py_at(stack, -1);", cpp)
         self.assertNotIn("::std::get<0>(__tuple_1)", cpp)
         self.assertNotIn("::std::get<1>(__tuple_1)", cpp)
@@ -1727,7 +1757,10 @@ def f(xs: list[int], ws: list[float]) -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("auto __tuple_1 = py_at(stack, py_to<int64>(-(1)));", cpp)
+        self.assertIn(
+            "auto __tuple_1 = py_list_at_ref(rc_list_ref(stack), py_to<int64>(-(1)));",
+            cpp,
+        )
         self.assertIn("x = ::std::get<0>(__tuple_1);", cpp)
         self.assertIn("y = ::std::get<1>(__tuple_1);", cpp)
         self.assertNotIn("auto [x, y] = py_at(stack, -1);", cpp)
@@ -1750,7 +1783,10 @@ def f(xs: list[int], ws: list[float]) -> int:
         self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
         self.assertIn("rc<list<int64>> ys = xs;", cpp)
         self.assertIn("py_list_append_mut(rc_list_ref(ys), 1);", cpp)
-        self.assertIn("return py_at(xs, py_to<int64>(0));", cpp)
+        self.assertIn(
+            "return py_list_at_ref(rc_list_ref(xs), py_to<int64>(0));",
+            cpp,
+        )
         self.assertNotIn("list<int64> ys = xs;", cpp)
 
     def test_pyobj_list_model_keeps_rc_handle_until_typed_call_boundary(self) -> None:
@@ -1819,7 +1855,10 @@ def f() -> str:
         self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
         self.assertIn("py_list_append_mut(rc_list_ref(xs), 1);", cpp)
         self.assertIn("py_list_append_mut(rc_list_ref(xs), 2);", cpp)
-        self.assertIn("int64 head = py_at(xs, py_to<int64>(0));", cpp)
+        self.assertIn(
+            "int64 head = py_list_at_ref(rc_list_ref(xs), py_to<int64>(0));",
+            cpp,
+        )
         self.assertNotIn("list<int64> xs = {};", cpp)
         self.assertNotIn("xs.append(int64(1));", cpp)
         self.assertNotIn("int64 head = xs[0];", cpp)
@@ -1839,8 +1878,14 @@ def f() -> str:
             cpp = em.transpile()
 
         self.assertIn("rc<list<list<int64>>> grid = py_to<rc<list<list<int64>>>>([&]() -> object {", cpp)
-        self.assertIn("py_list_at_ref(py_at(grid, py_to<int64>(y)), py_to<int64>(x)) = 1;", cpp)
-        self.assertIn("return py_at(py_at(grid, py_to<int64>(y)), py_to<int64>(x));", cpp)
+        self.assertIn(
+            "py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y)), py_to<int64>(x)) = 1;",
+            cpp,
+        )
+        self.assertIn(
+            "return py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y))), py_to<int64>(x));",
+            cpp,
+        )
         self.assertNotIn("rc_list_from_value([&]() -> object {", cpp)
 
     def test_pyobj_list_model_keeps_runtime_path_when_local_list_escapes(self) -> None:
@@ -1864,7 +1909,7 @@ def f() -> int:
         self.assertIn("py_list_append_mut(rc_list_ref(xs), 1);", cpp)
         self.assertIn("return sink(xs);", cpp)
 
-    def test_pyobj_list_model_call_subscript_uses_py_at(self) -> None:
+    def test_pyobj_list_model_call_subscript_uses_typed_list_helper(self) -> None:
         src = """def make() -> list[int]:
     xs: list[int] = []
     xs.append(1)
@@ -1881,7 +1926,10 @@ def f() -> int:
             em.cpp_list_model = "pyobj"
             cpp = em.transpile()
 
-        self.assertIn("return py_at(make(), py_to<int64>(0));", cpp)
+        self.assertIn(
+            "return py_list_at_ref(rc_list_ref(make()), py_to<int64>(0));",
+            cpp,
+        )
         self.assertNotIn("return make()[0];", cpp)
 
     def test_pyobj_list_model_typed_for_loop_uses_ref_first_iterable(self) -> None:

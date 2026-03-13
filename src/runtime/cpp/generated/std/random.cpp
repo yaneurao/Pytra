@@ -60,7 +60,7 @@ so it can be transpiled to target runtimes.
     - choices(population, weights)
     - choices(population, weights, k)
      */
-        int64 n = py_len(population);
+        int64 n = (rc_list_ref(population)).size();
         if (n <= 0)
             return rc_list_from_value(list<int64>{});
         int64 draws = k;
@@ -71,7 +71,7 @@ so it can be transpiled to target runtimes.
             py_list_append_mut(rc_list_ref(weight_vals), w);
         }
         rc<list<int64>> out = rc_list_from_value(list<int64>{});
-        if (py_len(weight_vals) == n) {
+        if ((rc_list_ref(weight_vals)).size() == n) {
             float64 total = 0.0;
             for (float64 w : rc_list_ref(weight_vals)) {
                 if (w > 0.0)
@@ -83,7 +83,7 @@ so it can be transpiled to target runtimes.
                     float64 acc = 0.0;
                     int64 picked_i = n - 1;
                     for (int64 i = 0; i < n; ++i) {
-                        float64 w = py_at(weight_vals, py_to<int64>(i));
+                        float64 w = py_list_at_ref(rc_list_ref(weight_vals), py_to<int64>(i));
                         if (w > 0.0)
                             acc += w;
                         if (r < acc) {
@@ -91,14 +91,14 @@ so it can be transpiled to target runtimes.
                             break;
                         }
                     }
-                    py_list_append_mut(rc_list_ref(out), py_at(population, py_to<int64>(picked_i)));
+                    py_list_append_mut(rc_list_ref(out), py_list_at_ref(rc_list_ref(population), py_to<int64>(picked_i)));
                 }
                 return out;
             }
         }
         rc_list_ref(out).reserve((draws <= 0) ? 0 : draws);
         for (int64 _ = 0; _ < draws; ++_)
-            py_list_append_mut(rc_list_ref(out), py_at(population, py_to<int64>(randint(0, n - 1))));
+            py_list_append_mut(rc_list_ref(out), py_list_at_ref(rc_list_ref(population), py_to<int64>(randint(0, n - 1))));
         return out;
     }
     
@@ -121,15 +121,15 @@ so it can be transpiled to target runtimes.
         return mu + sigma * z0;
     }
     
-    void shuffle(rc<list<int64>>& xs) {
+    void shuffle(const rc<list<int64>>& xs) {
         /* Shuffle list in place. */
-        int64 i = py_len(xs) - 1;
+        int64 i = (rc_list_ref(xs)).size() - 1;
         while (i > 0) {
             int64 j = randint(0, i);
             if (j != i) {
-                int64 tmp = py_at(xs, py_to<int64>(i));
-                py_at(xs, py_to<int64>(i)) = py_at(xs, py_to<int64>(j));
-                py_at(xs, py_to<int64>(j)) = tmp;
+                int64 tmp = py_list_at_ref(rc_list_ref(xs), py_to<int64>(i));
+                py_list_at_ref(rc_list_ref(xs), py_to<int64>(i)) = py_list_at_ref(rc_list_ref(xs), py_to<int64>(j));
+                py_list_at_ref(rc_list_ref(xs), py_to<int64>(j)) = tmp;
             }
             i--;
         }

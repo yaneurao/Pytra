@@ -288,7 +288,7 @@ def sin(x: float) -> float:
         self.assertIn("list<object> _json_array_items(const object& raw)", cpp_txt)
         self.assertIn("object _json_obj_require(const dict<str, object>& raw, const str& key)", cpp_txt)
         self.assertIn("return list<object>(raw);", cpp_txt)
-        self.assertIn("py_at(_json_array_items(this->raw), py_to<int64>(index))", cpp_txt)
+        self.assertIn("_json_array_items(make_object(this->raw))[index]", cpp_txt)
         self.assertIn("object value = make_object(_json_obj_require(this->raw, key));", cpp_txt)
         self.assertNotIn("JsonValue(py_dict_get(this->raw, key))", cpp_txt)
 

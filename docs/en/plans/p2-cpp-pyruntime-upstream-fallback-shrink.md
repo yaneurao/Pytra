@@ -8,7 +8,7 @@ Related TODO:
 Background:
 - `docs/ja/plans/archive/20260312-p5-cpp-pyruntime-residual-thin-seam-shrink.md` already classified the residual seams in `py_runtime.h` into `py_append(object& ...)` plus the shared `type_id` thin seam, but it only fixed the shrink order and did not execute the next reduction pass.
 - Even so, `src/runtime/cpp/native/core/py_runtime.h` is still 1287 lines as of 2026-03-14, with large blocks for object-bridge compatibility, generic `make_object` / `py_to`, and typed-collection fallback behavior.
-- The current callers still show the residual shape: the `sample/cpp` `py_append(` bucket is retired and the generated object-list bridge is gone, but both generated/runtime and sample code still retain generic-index buckets.
+- The current callers show that the `sample/cpp` `py_append(` bucket and generic-index bucket are retired, and the generated object-list bridge plus generic-index bucket are also gone. The typed-lane residual is now down to the emitter helper only.
 - As `src/runtime/cpp/generated/core/README.md` already states, `generated/core` must not become a dump bucket for `py_runtime.h` bloat. The next shrink therefore has to happen by pushing typed fallback behavior upstream, not by splitting the header.
 
 Objective:
@@ -60,7 +60,7 @@ Validation commands (planned):
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-01] Inventory the current bulk in `py_runtime.h` plus residual callers across `sample/cpp`, `generated/**`, and the C++ emitter, and classify which fallback paths can move upstream.
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02] Freeze the boundary between `object-only compat` and `typed lane must not use` in docs/tooling as the shrink contract.
 - [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01] Improve typed list mutation, indexing, and tuple/list boxing emission so callers of `py_append(object&)` and `py_at(object, idx)` decrease.
-- [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02] Reduce object-bridge fallback in generated built_in/std runtime artifacts and representative samples, then refresh the baseline.
+- [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02] Reduce object-bridge fallback in generated built_in/std runtime artifacts and representative samples, then refresh the baseline.
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-03] Collapse typed-path fallback in generic `make_object`, `py_to`, and dict-key coercion so it stays near real `Any/object` boundaries.
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S3-01] Sync regressions, checkers, docs, and the English mirror, and close the current `py_runtime.h` shrink contract.
 
@@ -83,3 +83,4 @@ Decision log:
 - 2026-03-14: As the seventh `S2-02` bundle, allowed `list[object]` to stay on the C++ `pyobj` value-model lane, lifted `src/pytra/built_in/iter_ops.py` to return `list[object]`, and retired `generated_runtime_object_list_bridge_sites`. The typed-lane residual buckets are now down to emitter 1 / generated 1 / sample 1.
 - 2026-03-14: As the eighth `S2-02` bundle, moved the object helper bodies in `src/pytra/built_in/iter_ops.py` onto the iterator lane itself, shrinking the `generated_runtime_generic_index_sites` baseline from `44 -> 42`. The remaining sites now concentrate in `type_id`, `std/*`, and `utils/png`.
 - 2026-03-14: As the ninth `S2-02` bundle, synchronized `tools/check_crossruntime_pyruntime_residual_caller_inventory.py` and its unit test to the current generated `py_runtime_value_*` thin seam, reclassifying the generated C++ residual around `json.cpp` and `type_id.cpp` into the single `generated_cpp_shared_type_id_residual` bucket. The stale `generated_cpp_object_bridge_residual` bucket is now retired and the crossruntime residual-caller checker matches the live generated caller shape.
+- 2026-03-14: As the tenth `S2-02` bundle, switched the C++ emitter's ref-first typed-list subscripts from `py_at(...py_to<int64>)` to `py_list_at_ref(rc_list_ref(...), ...)`, then regenerated `type_id/json/argparse/random/re/png` plus six representative C++ samples through the normal entrypoints. This retires both `generated_runtime_generic_index_sites` and `sample_cpp_generic_index_sites` at zero, leaving only the emitter helper bucket in the typed-lane residual inventory. `S2-02` is complete.

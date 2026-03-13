@@ -223,46 +223,6 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_INVENTORY_V1: Final[
         ),
         "notes": "Emitter now centralizes object-list bridge rendering in the helper definition only.",
     },
-    {
-        "inventory_id": "generated_runtime_generic_index_sites",
-        "bucket": "generated_runtime_residual",
-        "scope_rel": "src/runtime/cpp/generated",
-        "matcher_kind": "regex",
-        "needle": r"\bpy_at\([^\n]*py_to<int64>\(",
-        "expected_count": 42,
-        "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02",
-        "evidence_refs": (
-            {
-                "relpath": "src/runtime/cpp/generated/built_in/type_id.cpp",
-                "needle": "if (py_at(items, py_to<int64>(i)) == value)",
-            },
-            {
-                "relpath": "src/runtime/cpp/generated/std/json.cpp",
-                "needle": "return JsonValue(py_at(_json_array_items(this->raw), py_to<int64>(index)));",
-            },
-        ),
-        "notes": "Generated runtime still leans on generic index wrappers instead of direct typed indexing.",
-    },
-    {
-        "inventory_id": "sample_cpp_generic_index_sites",
-        "bucket": "sample_cpp_residual",
-        "scope_rel": "sample/cpp",
-        "matcher_kind": "regex",
-        "needle": r"\bpy_at\([^\n]*py_to<int64>\(",
-        "expected_count": 39,
-        "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02",
-        "evidence_refs": (
-            {
-                "relpath": "sample/cpp/07_game_of_life_loop.cpp",
-                "needle": "cnt += py_at(py_at(grid, py_to<int64>(ny)), py_to<int64>(nx));",
-            },
-            {
-                "relpath": "sample/cpp/18_mini_language_interpreter.cpp",
-                "needle": "ExprNode node = py_at(expr_nodes, py_to<int64>(expr_index));",
-            },
-        ),
-        "notes": "Representative C++ samples still keep generic index wrappers on typed lanes.",
-    },
 )
 
 

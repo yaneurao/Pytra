@@ -52,8 +52,6 @@ class CheckCppPyRuntimeUpstreamFallbackContractTest(unittest.TestCase):
             contract_mod.TYPED_LANE_MUST_NOT_USE_IDS,
             (
                 "cpp_emitter_object_list_bridge_sites",
-                "generated_runtime_generic_index_sites",
-                "sample_cpp_generic_index_sites",
             ),
         )
 

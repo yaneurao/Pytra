@@ -5,7 +5,7 @@
 #ifndef PYTRA_GENERATED_STD_JSON_H
 #define PYTRA_GENERATED_STD_JSON_H
 
-#include "runtime/cpp/native/core/py_types.h"
+#include "runtime/cpp/native/core/py_runtime.h"
 
 #include <tuple>
 #include <optional>
@@ -17,42 +17,46 @@ struct JsonArr;
 struct JsonValue;
 struct _JsonParser;
 
+extern str _EMPTY;
+extern str _COMMA_NL;
+extern str _HEX_DIGITS;
+
     struct JsonObj {
         dict<str, object> raw;
         
         JsonObj(const dict<str, object>& raw);
-        ::std::optional<JsonValue> get(const str& key);
-        ::std::optional<JsonObj> get_obj(const str& key);
-        ::std::optional<JsonArr> get_arr(const str& key);
-        ::std::optional<str> get_str(const str& key);
-        ::std::optional<int64> get_int(const str& key);
-        ::std::optional<float64> get_float(const str& key);
-        ::std::optional<bool> get_bool(const str& key);
+        ::std::optional<JsonValue> get(const str& key) const;
+        ::std::optional<JsonObj> get_obj(const str& key) const;
+        ::std::optional<JsonArr> get_arr(const str& key) const;
+        ::std::optional<str> get_str(const str& key) const;
+        ::std::optional<int64> get_int(const str& key) const;
+        ::std::optional<float64> get_float(const str& key) const;
+        ::std::optional<bool> get_bool(const str& key) const;
     };
 
     struct JsonArr {
-        object raw;
+        list<object> raw;
         
-        JsonArr(const object& raw);
-        ::std::optional<JsonValue> get(int64 index);
-        ::std::optional<JsonObj> get_obj(int64 index);
-        ::std::optional<JsonArr> get_arr(int64 index);
-        ::std::optional<str> get_str(int64 index);
-        ::std::optional<int64> get_int(int64 index);
-        ::std::optional<float64> get_float(int64 index);
-        ::std::optional<bool> get_bool(int64 index);
+        JsonArr(const list<object>& raw);
+        ::std::optional<JsonValue> get(int64 index) const;
+        ::std::optional<JsonObj> get_obj(int64 index) const;
+        ::std::optional<JsonArr> get_arr(int64 index) const;
+        ::std::optional<str> get_str(int64 index) const;
+        ::std::optional<int64> get_int(int64 index) const;
+        ::std::optional<float64> get_float(int64 index) const;
+        ::std::optional<bool> get_bool(int64 index) const;
     };
 
     struct JsonValue {
         object raw;
         
         JsonValue(const object& raw);
-        ::std::optional<JsonObj> as_obj();
-        ::std::optional<JsonArr> as_arr();
-        ::std::optional<str> as_str();
-        ::std::optional<int64> as_int();
-        ::std::optional<float64> as_float();
-        ::std::optional<bool> as_bool();
+        ::std::optional<JsonObj> as_obj() const;
+        ::std::optional<JsonArr> as_arr() const;
+        ::std::optional<str> as_str() const;
+        ::std::optional<int64> as_int() const;
+        ::std::optional<float64> as_float() const;
+        ::std::optional<bool> as_bool() const;
     };
 
     struct _JsonParser {
@@ -65,14 +69,11 @@ struct _JsonParser;
         void _skip_ws();
         object _parse_value();
         dict<str, object> _parse_object();
-        object _parse_array();
+        list<object> _parse_array();
         str _parse_string();
         object _parse_number();
     };
 
-extern str _EMPTY;
-extern str _COMMA_NL;
-extern str _HEX_DIGITS;
 
 bool _is_ws(const str& ch);
 bool _is_digit(const str& ch);
