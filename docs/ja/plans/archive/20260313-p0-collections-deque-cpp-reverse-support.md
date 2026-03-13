@@ -41,10 +41,11 @@
 - 2026-03-13: `clear()` / `extend()` はすでに valid C++ に落ちるため、新 task は `reverse()` のみに限定した。
 - 2026-03-13: `S1-01` として `q.reverse();` の current invalid C++ surface を focused regression / TODO / plan で固定した。
 - 2026-03-13: `S2-01` として typed deque owner の `reverse()` を `::std::reverse(begin, end)` へ lower した。残りは build/run smoke のみ。
+- 2026-03-13: `S3-01` として representative fixture の build/run smoke を追加し、`deque([1, 2, 3]).reverse()` の出力 `3 / 2 / 1` を固定した。これで task の受け入れ基準はすべて充足した。
 
 ## 分解
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01] `collections.deque.reverse()` representative C++ lane を固定する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01] `collections.deque.reverse()` representative C++ lane を固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01-S1-01] current invalid C++ surface (`q.reverse();`) を focused regression / TODO / plan で固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01-S2-01] `reverse()` を `::std::reverse(begin, end)` に lower する。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01-S3-01] build/run smoke と support wording を同期して close する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01-S3-01] build/run smoke と support wording を同期して close する。

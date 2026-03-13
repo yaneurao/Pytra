@@ -15,6 +15,7 @@ Last updated: 2026-03-13
 
 ## Completed Plan Archive
 
+- [2026-03-13 / P0-COLLECTIONS-DEQUE-CPP-REVERSE-01](../plans/archive/20260313-p0-collections-deque-cpp-reverse-support.md)
 - [2026-03-13 / P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01](../plans/archive/20260313-p0-collections-deque-cpp-iterable-support.md)
 - [2026-03-13 / P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01](../plans/archive/20260313-p0-collections-deque-cpp-endops-support.md)
 - [2026-03-13 / P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01](../plans/archive/20260313-p0-collections-deque-cpp-expr-method-support.md)
@@ -131,7 +132,7 @@ Last updated: 2026-03-13
 
 ## Date Links
 
-- [2026-03-13](20260313.md) (8 sections)
+- [2026-03-13](20260313.md) (9 sections)
 
 - [2026-03-12](20260312.md) (28 sections)
 - [2026-03-11](20260311.md) (25 sections)
