@@ -34,6 +34,7 @@ Last updated: 2026-03-13
 
 - [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01] Move the frontend imports in `py2x.py` / `py2x-selfhost.py` from `toolchain.compiler.transpile_cli` over to the `toolchain.frontends` facade so entrypoint consumers stop reaching through the compat shim.
   - Context: [docs/en/plans/p0-frontends-facade-py2x-entrypoints-import.md](../plans/p0-frontends-facade-py2x-entrypoints-import.md)
-- [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S1-01] Lock the stale import surface and close condition in the plan / TODO.
-- [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S2-01] Update the `toolchain.frontends` facade exports plus the entrypoint imports and bring the source contract / focused tests back to green.
+- [x] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S1-01] Lock the stale import surface and close condition in the plan / TODO.
+  - Progress note: Locked the current contract as “the canonical frontend lives under `toolchain.frontends`, while the entrypoints are the remaining external consumers still importing the `toolchain.compiler.transpile_cli` compat shim.”
+- [x] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S2-01] Update the `toolchain.frontends` facade exports plus the entrypoint imports and bring the source contract / focused tests back to green.
 - [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S3-01] Sync TODO / plan / archive and lock the close condition.

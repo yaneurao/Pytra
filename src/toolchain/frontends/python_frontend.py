@@ -10,6 +10,7 @@ from typing import Any
 from typing import Iterable
 
 from toolchain.frontends.transpile_cli import add_common_transpile_args as _add_common_transpile_args
+from toolchain.frontends.transpile_cli import build_module_east_map as _build_module_east_map
 from toolchain.frontends.transpile_cli import load_east3_document as _load_east3_document
 from toolchain.frontends.transpile_cli import load_east3_document_typed as _load_east3_document_typed
 from toolchain.frontends.transpile_cli import normalize_common_transpile_args as _normalize_common_transpile_args
@@ -98,4 +99,25 @@ def load_east3_document_typed(
         dump_east3_after_opt=dump_east3_after_opt,
         dump_east3_opt_trace=dump_east3_opt_trace,
         target_lang=target_lang,
+    )
+
+
+def build_module_east_map(
+    entry_path: Path,
+    load_east_fn: object,
+    parser_backend: str = "self_hosted",
+    east_stage: str = "2",
+    object_dispatch_mode: str = "",
+    runtime_std_source_root: Path = Path("src/pytra/std"),
+    runtime_utils_source_root: Path = Path("src/pytra/utils"),
+) -> dict[str, dict[str, object]]:
+    """Build module EAST map through the canonical frontend wrapper."""
+    return _build_module_east_map(
+        entry_path,
+        load_east_fn,
+        parser_backend=parser_backend,
+        east_stage=east_stage,
+        object_dispatch_mode=object_dispatch_mode,
+        runtime_std_source_root=runtime_std_source_root,
+        runtime_utils_source_root=runtime_utils_source_root,
     )

@@ -21,8 +21,10 @@ from toolchain.compiler.typed_boundary import compiler_root_module_id
 from toolchain.compiler.typed_boundary import coerce_module_artifact
 from toolchain.compiler.typed_boundary import export_compiler_root_document
 from toolchain.compiler.typed_boundary import export_program_artifact_any
-from toolchain.compiler.transpile_cli import add_common_transpile_args, build_module_east_map, load_east3_document_typed
 from toolchain.frontends.extern_var import validate_ambient_global_target_support
+from toolchain.frontends import add_common_transpile_args
+from toolchain.frontends import build_module_east_map
+from toolchain.frontends import load_east3_document_typed
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
 from toolchain.json_adapters import load_json_object_doc_or_none
 from toolchain.json_adapters import empty_json_object_doc

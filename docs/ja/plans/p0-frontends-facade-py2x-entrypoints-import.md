@@ -40,9 +40,10 @@
 
 分解:
 - [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01] `py2x.py` / `py2x-selfhost.py` の frontend import を `toolchain.compiler.transpile_cli` から `toolchain.frontends` facade へ揃え、entrypoint consumer が compat shim へ reach-through しない状態を固定する。
-- [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S1-01] stale import surface と close 条件を plan / TODO に固定する。
-- [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S2-01] `toolchain.frontends` facade export と entrypoint import を更新し、source contract / focused test を green に戻す。
+- [x] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S1-01] stale import surface と close 条件を plan / TODO に固定する。
+- [x] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S2-01] `toolchain.frontends` facade export と entrypoint import を更新し、source contract / focused test を green に戻す。
 - [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S3-01] TODO / plan / archive を同期して close 条件を固定する。
 
 決定ログ:
 - 2026-03-13: TODO 空き後の follow-up P0 として起票。scope は external entrypoint consumer に限定し、`toolchain.compiler.transpile_cli` compat shim の削除までは踏み込まない。
+- 2026-03-13: `S2-01` では `python_frontend.py` と `toolchain.frontends` facade に `build_module_east_map` を通し、`py2x.py` / `py2x-selfhost.py` の frontend import を facade へ切り替えた。source contract は `test_py2x_entrypoints_contract.py` に追加し、compat shim 直 import の再発を fail-fast にした。

@@ -34,6 +34,7 @@
 
 - [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01] `py2x.py` / `py2x-selfhost.py` の frontend import を `toolchain.compiler.transpile_cli` から `toolchain.frontends` facade へ揃え、entrypoint consumer が compat shim へ reach-through しない状態を固定する。
   - 文脈: [docs/ja/plans/p0-frontends-facade-py2x-entrypoints-import.md](../plans/p0-frontends-facade-py2x-entrypoints-import.md)
-- [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S1-01] stale import surface と close 条件を plan / TODO に固定する。
-- [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S2-01] `toolchain.frontends` facade export と entrypoint import を更新し、source contract / focused test を green に戻す。
+- [x] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S1-01] stale import surface と close 条件を plan / TODO に固定する。
+  - 進捗メモ: canonical frontend は `toolchain.frontends` にあり、entrypoint 側だけが `toolchain.compiler.transpile_cli` compat shim を掴んでいる、という current contract を固定した。
+- [x] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S2-01] `toolchain.frontends` facade export と entrypoint import を更新し、source contract / focused test を green に戻す。
 - [ ] [ID: P0-FRONTENDS-FACADE-PY2X-ENTRYPOINTS-IMPORT-01-S3-01] TODO / plan / archive を同期して close 条件を固定する。

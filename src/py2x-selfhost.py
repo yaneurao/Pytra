@@ -14,7 +14,7 @@ from toolchain.compiler.backend_registry_static import list_backend_targets
 from toolchain.compiler.backend_registry_static import lower_ir_typed
 from toolchain.compiler.backend_registry_static import optimize_ir_typed
 from toolchain.compiler.backend_registry_static import resolve_layer_options_typed
-from toolchain.compiler.transpile_cli import load_east3_document_typed
+from toolchain.frontends import load_east3_document_typed
 from pytra.std.pathlib import Path
 from pytra.std import sys
 

@@ -702,10 +702,15 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         runtime_index_src = (
             ROOT / "src" / "toolchain" / "frontends" / "runtime_symbol_index.py"
         ).read_text(encoding="utf-8")
+        frontends_init_src = (ROOT / "src" / "toolchain" / "frontends" / "__init__.py").read_text(encoding="utf-8")
+        python_frontend_src = (
+            ROOT / "src" / "toolchain" / "frontends" / "python_frontend.py"
+        ).read_text(encoding="utf-8")
         extern_var_src = (
             ROOT / "src" / "toolchain" / "frontends" / "extern_var.py"
         ).read_text(encoding="utf-8")
         py2x_src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
+        selfhost_entry_src = (ROOT / "src" / "py2x-selfhost.py").read_text(encoding="utf-8")
         ir2lang_src = (ROOT / "src" / "ir2lang.py").read_text(encoding="utf-8")
         sys_std_src = (ROOT / "src" / "pytra" / "std" / "sys.py").read_text(encoding="utf-8")
         prepare_src = (ROOT / "tools" / "prepare_selfhost_source.py").read_text(encoding="utf-8")
@@ -852,6 +857,9 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertIn("list(collect_program_modules_typed(module_carrier))", py2x_src)
         self.assertIn("spec_target = backend_spec_target(spec)", py2x_src)
         self.assertIn("fallback_target=spec_target", py2x_src)
+        self.assertIn("from toolchain.frontends import add_common_transpile_args", py2x_src)
+        self.assertIn("from toolchain.frontends import build_module_east_map", py2x_src)
+        self.assertIn("from toolchain.frontends import load_east3_document_typed", py2x_src)
         self.assertNotIn("def _module_id_from_east(", py2x_src)
         self.assertNotIn(").to_legacy_dict()", py2x_src)
         self.assertNotIn("program_artifact_any = program_artifact.to_legacy_dict()", py2x_src)
@@ -861,6 +869,13 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("hasattr(program_artifact, \"to_legacy_dict\")", py2x_src)
         self.assertNotIn("hasattr(item, \"to_legacy_dict\")", py2x_src)
         self.assertNotIn("getattr(linked_module, \"east_doc\"", py2x_src)
+        self.assertNotIn("from toolchain.compiler.transpile_cli import", py2x_src)
+        self.assertIn("from toolchain.frontends import load_east3_document_typed", selfhost_entry_src)
+        self.assertNotIn("from toolchain.compiler.transpile_cli import", selfhost_entry_src)
+        self.assertIn("def build_module_east_map(", frontends_init_src)
+        self.assertIn("from .python_frontend import build_module_east_map as _impl", frontends_init_src)
+        self.assertIn("def build_module_east_map(", python_frontend_src)
+        self.assertIn("return _build_module_east_map(", python_frontend_src)
 
         self.assertIn("from toolchain.compiler.typed_boundary import compiler_root_module_id", ir2lang_src)
         self.assertIn("from toolchain.compiler.typed_boundary import coerce_module_artifact", ir2lang_src)

@@ -33,9 +33,16 @@ def load_east3_document_typed(*args: Any, **kwargs: Any) -> Any:
     return _impl(*args, **kwargs)
 
 
+def build_module_east_map(*args: Any, **kwargs: Any) -> dict[str, dict[str, object]]:
+    from .python_frontend import build_module_east_map as _impl
+
+    return _impl(*args, **kwargs)
+
+
 __all__ = [
     "add_common_transpile_args",
     "normalize_common_transpile_args",
     "load_east3_document",
     "load_east3_document_typed",
+    "build_module_east_map",
 ]
