@@ -271,7 +271,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                 "backend": entry["backend"],
                 "generated_files": entry["generated_files"],
                 "native_files": entry["native_files"],
-                "compat_files": entry["compat_files"],
+                "delete_target_files": entry["delete_target_files"],
             }
             for entry in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_local_runtime_file_inventory()
         )

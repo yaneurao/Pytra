@@ -43,7 +43,7 @@ class NonCppRuntimeGeneratedCppBaselineRuntimeFileInventoryEntry(TypedDict):
     backend: str
     generated_files: tuple[str, ...]
     native_files: tuple[str, ...]
-    compat_files: tuple[str, ...]
+    delete_target_files: tuple[str, ...]
 
 
 class NonCppRuntimeGeneratedCppBaselineHelperArtifactInventoryEntry(TypedDict):
@@ -218,7 +218,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "native/built_in/py_runtime.cs",
             "native/std/time_native.cs",
         ),
-        "compat_files": (),
+        "delete_target_files": (),
     },
     {
         "backend": "go",
@@ -250,7 +250,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.go",
         ),
         "native_files": ("native/built_in/py_runtime.go",),
-        "compat_files": ("pytra/built_in/py_runtime.go",),
+        "delete_target_files": ("pytra/built_in/py_runtime.go",),
     },
     {
         "backend": "java",
@@ -282,7 +282,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.java",
         ),
         "native_files": ("native/built_in/PyRuntime.java",),
-        "compat_files": ("pytra/built_in/PyRuntime.java",),
+        "delete_target_files": ("pytra/built_in/PyRuntime.java",),
     },
     {
         "backend": "rs",
@@ -315,7 +315,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.rs",
         ),
         "native_files": ("native/built_in/py_runtime.rs",),
-        "compat_files": ("pytra/README.md", "pytra/built_in/py_runtime.rs"),
+        "delete_target_files": ("pytra/README.md", "pytra/built_in/py_runtime.rs"),
     },
     {
         "backend": "swift",
@@ -348,7 +348,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.swift",
         ),
         "native_files": ("native/built_in/py_runtime.swift",),
-        "compat_files": ("pytra/built_in/py_runtime.swift",),
+        "delete_target_files": ("pytra/built_in/py_runtime.swift",),
     },
     {
         "backend": "nim",
@@ -381,7 +381,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.nim",
         ),
         "native_files": ("native/built_in/py_runtime.nim",),
-        "compat_files": ("pytra/built_in/py_runtime.nim",),
+        "delete_target_files": ("pytra/built_in/py_runtime.nim",),
     },
     {
         "backend": "kotlin",
@@ -414,7 +414,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.kt",
         ),
         "native_files": ("native/built_in/py_runtime.kt",),
-        "compat_files": ("pytra/built_in/py_runtime.kt",),
+        "delete_target_files": ("pytra/built_in/py_runtime.kt",),
     },
     {
         "backend": "scala",
@@ -447,7 +447,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.scala",
         ),
         "native_files": ("native/built_in/py_runtime.scala",),
-        "compat_files": ("pytra/built_in/py_runtime.scala",),
+        "delete_target_files": ("pytra/built_in/py_runtime.scala",),
     },
     {
         "backend": "js",
@@ -479,7 +479,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.js",
         ),
         "native_files": ("native/built_in/py_runtime.js",),
-        "compat_files": (
+        "delete_target_files": (
             "pytra/README.md",
             "pytra/py_runtime.js",
             "pytra/std/json.js",
@@ -520,7 +520,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.ts",
         ),
         "native_files": ("native/built_in/py_runtime.ts",),
-        "compat_files": (
+        "delete_target_files": (
             "pytra/README.md",
             "pytra/py_runtime.ts",
             "pytra/std/json.ts",
@@ -562,7 +562,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.lua",
         ),
         "native_files": ("native/built_in/py_runtime.lua",),
-        "compat_files": ("pytra/built_in/py_runtime.lua",),
+        "delete_target_files": ("pytra/built_in/py_runtime.lua",),
     },
     {
         "backend": "ruby",
@@ -595,7 +595,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.rb",
         ),
         "native_files": ("native/built_in/py_runtime.rb",),
-        "compat_files": ("pytra/built_in/py_runtime.rb",),
+        "delete_target_files": ("pytra/built_in/py_runtime.rb",),
     },
     {
         "backend": "php",
@@ -627,7 +627,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.php",
         ),
         "native_files": ("native/built_in/py_runtime.php",),
-        "compat_files": (
+        "delete_target_files": (
             "pytra/py_runtime.php",
             "pytra/std/time.php",
             "pytra/utils/gif.php",

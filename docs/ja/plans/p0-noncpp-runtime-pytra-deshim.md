@@ -90,7 +90,7 @@
 
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01] 非 C++ / 非 C# backend の checked-in `src/runtime/<lang>/pytra/**` を全廃し、repo 常設 runtime layout を `generated/native` のみに揃える。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01] 対象 backend 12 言語の current `pytra/**` inventory、参照元、delete blocker を棚卸しし、current->target mapping を plan / contract に固定する。
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] active contract / checker / spec wording を `generated/native only` へ切り替え、対象 backend の checked-in `pytra/**` 再出現を fail-fast にする。
+- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] active contract / checker / spec wording を `generated/native only` へ切り替え、対象 backend の checked-in `pytra/**` 再出現を fail-fast にする。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-01] Rust (`rs`) の `pytra/**` compat 残差を解消し、`py2rs` / selfhost / runtime guard / smoke から repo-tree `pytra/**` 前提を外す。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-02] static family (`go/java/kotlin/scala/swift/nim`) の backend registry / packaging / smoke / tooling を `generated/native` 直参照へ切り替え、repo-tree `pytra/**` 依存をなくす。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-03] static family の checked-in `src/runtime/<lang>/pytra/**` を物理削除し、allowlist / inventory / representative smoke を deletion end state に同期する。
@@ -111,4 +111,5 @@
 - 2026-03-13: S1-02 fifth bundle で `noncpp_runtime_layout_rollout_remaining_contract.py` の lane ownership 値を `compat` から `delete_target` へ反転した。まだ schema field 名 `compat_*` と `target_roots=("generated","native","pytra")` が残るため、S1-02 は継続する。
 - 2026-03-13: S1-02 sixth bundle で `noncpp_runtime_layout_rollout_remaining_contract.py` の live `target_roots` を `("generated","native")` に縮め、checker も `delete_target` lane だけ `pytra/**` を許す形へ更新した。`compat_files` / `compat_modules` と wave-B helper/iterator の `compat` 命名はまだ残るため、S1-02 は継続する。
 - 2026-03-13: S1-02 seventh bundle で `noncpp_runtime_layout_rollout_remaining_contract.py` / checker / test の wave-B `compat` helper / iterator 命名を `delete_target` へ置換した。S1-02 の主残差は `noncpp_runtime_generated_cpp_baseline_contract.py` とその checker/test に残る `compat_files` 語彙になった。
+- 2026-03-13: S1-02 eighth bundle で `noncpp_runtime_generated_cpp_baseline_contract.py` / checker / test の `compat_files` 語彙も `delete_target_files` へ置換した。これで active contract / checker / spec 側の pytra-specific live `compat` wording は除去されたため、S1-02 を完了扱いにした。
 - 2026-03-13: S1-02 third bundle で `spec-java-native-backend.md` / `spec-lua-native-backend.md` / `spec-gsk-native-backend.md` の live runtime root wording を `src/runtime/<lang>/{generated,native}/` へ統一し、doc-policy checker が active native-backend spec まで監視するように広げた。
