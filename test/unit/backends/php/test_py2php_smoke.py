@@ -463,6 +463,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertNotIn('runtime_symbol == "pyMathE"', src)
         self.assertNotIn("runtime_symbol == 'pyMathPi'", src)
         self.assertNotIn("runtime_symbol == 'pyMathE'", src)
+        self.assertNotIn('if _runtime_module_id(expr) != "pytra.std.math":', src)
 
     def test_php_native_emitter_fail_closed_on_unresolved_stdlib_runtime_call(self) -> None:
         east = {

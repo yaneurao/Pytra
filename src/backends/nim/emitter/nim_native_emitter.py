@@ -10,8 +10,7 @@ from backends.common.emitter.code_emitter import (
 
 from typing import Any
 
-from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
-
+from toolchain.frontends.runtime_symbol_index import lookup_runtime_module_extern_contract
 
 _NIM_KEYWORDS = {
     "addr", "and", "as", "asm",
@@ -259,17 +258,6 @@ def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
     return "", ""
 
 
-def _runtime_module_id(expr: dict[str, Any]) -> str:
-    runtime_module_any = expr.get("runtime_module_id")
-    runtime_module = runtime_module_any if isinstance(runtime_module_any, str) else ""
-    if runtime_module == "":
-        runtime_call, _ = _resolved_runtime_call(expr)
-        dot = runtime_call.find(".")
-        if dot >= 0:
-            runtime_module = runtime_call[:dot].strip()
-    return canonical_runtime_module_id(runtime_module)
-
-
 def _runtime_symbol_name(expr: dict[str, Any]) -> str:
     runtime_symbol_any = expr.get("runtime_symbol")
     if isinstance(runtime_symbol_any, str):
@@ -281,14 +269,40 @@ def _runtime_symbol_name(expr: dict[str, Any]) -> str:
     return ""
 
 
-def _is_math_runtime(expr: dict[str, Any]) -> bool:
-    return _runtime_module_id(expr) == "pytra.std.math"
+def _runtime_semantic_tag(expr: dict[str, Any]) -> str:
+    semantic_tag_any = expr.get("semantic_tag")
+    if isinstance(semantic_tag_any, str):
+        return semantic_tag_any.strip()
+    return ""
+
+
+def _has_runtime_extern_module(expr: dict[str, Any]) -> bool:
+    runtime_module_any = expr.get("runtime_module_id")
+    runtime_module = runtime_module_any if isinstance(runtime_module_any, str) else ""
+    if runtime_module == "":
+        return False
+    return len(lookup_runtime_module_extern_contract(runtime_module)) > 0
+
+
+def _matches_math_symbol(expr: dict[str, Any], symbol: str, semantic_tag: str) -> bool:
+    if _runtime_symbol_name(expr) != symbol:
+        return False
+    if _runtime_semantic_tag(expr) == semantic_tag:
+        return True
+    if _has_runtime_extern_module(expr):
+        return True
+    runtime_call, _ = _resolved_runtime_call(expr)
+    return runtime_call.strip() == "math." + symbol
 
 
 def _is_math_constant(expr: dict[str, Any]) -> bool:
-    if not _is_math_runtime(expr):
-        return False
-    return _runtime_symbol_name(expr) in {"pi", "e"}
+    return _matches_math_symbol(expr, "pi", "stdlib.symbol.pi") or _matches_math_symbol(
+        expr, "e", "stdlib.symbol.e"
+    )
+
+
+def _is_math_sqrt_call(expr: dict[str, Any]) -> bool:
+    return _matches_math_symbol(expr, "sqrt", "stdlib.fn.sqrt")
 
 class NimNativeEmitter:
     def __init__(self, east_doc: dict[str, Any]) -> None:
@@ -1533,9 +1547,8 @@ class NimNativeEmitter:
         runtime_call, runtime_source = _resolved_runtime_call(expr)
         if semantic_tag.startswith("stdlib.") and semantic_tag != "stdlib.symbol.Path" and runtime_call == "":
             raise RuntimeError("nim native emitter: unresolved stdlib runtime call: " + semantic_tag)
-        if runtime_source == "resolved_runtime_call" and _is_math_runtime(expr):
-            if _runtime_symbol_name(expr) == "sqrt" and len(args) == 1:
-                return f"math.sqrt(float({args[0]}))"
+        if runtime_source == "resolved_runtime_call" and _is_math_sqrt_call(expr) and len(args) == 1:
+            return f"math.sqrt(float({args[0]}))"
         if isinstance(func, dict) and func.get("kind") == "Name":
             name = func.get("id")
             if name == "print":

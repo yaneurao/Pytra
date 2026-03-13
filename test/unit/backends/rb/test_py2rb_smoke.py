@@ -418,6 +418,7 @@ class Py2RbSmokeTest(unittest.TestCase):
         src = (ROOT / "src" / "backends" / "ruby" / "emitter" / "ruby_native_emitter.py").read_text(encoding="utf-8")
         self.assertNotIn("pyMathPi", src)
         self.assertNotIn("pyMathE", src)
+        self.assertNotIn('if _runtime_module_id(expr) != "pytra.std.math":', src)
 
     def test_fixture_is_instance_uses_ruby_is_a_checks(self) -> None:
         fixture = find_fixture_case("is_instance")
