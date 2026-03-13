@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-13 / P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01](../plans/archive/20260313-p0-collections-deque-cpp-searchmut-support.md)
 - [2026-03-13 / P0-COLLECTIONS-DEQUE-CPP-ROTATE-01](../plans/archive/20260313-p0-collections-deque-cpp-rotate-support.md)
 - [2026-03-13 / P0-COLLECTIONS-DEQUE-CPP-REVERSE-01](../plans/archive/20260313-p0-collections-deque-cpp-reverse-support.md)
 - [2026-03-13 / P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01](../plans/archive/20260313-p0-collections-deque-cpp-iterable-support.md)
@@ -181,7 +182,7 @@
 
 ## 日付別リンク
 
-- [2026-03-13](20260313.md)（10 セクション）
+- [2026-03-13](20260313.md)（11 セクション）
 
 - [2026-03-12](20260312.md)（28 セクション）
 - [2026-03-11](20260311.md)（25 セクション）

@@ -44,11 +44,12 @@ Decision log:
 - 2026-03-13: as `S1-01`, a focused regression now locks the current invalid `q.count(...)` / `q.remove(...)` surface in the TODO / plan.
 - 2026-03-13: as `S2-01`, typed deque-owner `count(value)` now lowers to a `std::count(begin, end, value)` surface. The focused regression is narrowed to the remaining `remove()` leak.
 - 2026-03-13: as `S2-02`, typed deque-owner `remove(value)` now lowers to a `std::find + erase` surface, and the not-found path throws `ValueError("deque.remove missing value")`. Only the build/run smoke remains.
+- 2026-03-13: as `S3-01`, a representative build/run smoke now locks the `count/remove` bundle output `2 / 2 / 1`. The task now satisfies every acceptance criterion.
 
 ## Breakdown
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01] Lock the representative C++ lane for `collections.deque.count()` / `remove()`.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01] Lock the representative C++ lane for `collections.deque.count()` / `remove()`.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S1-01] Lock the current invalid C++ surface (`count`, `remove`) in focused regressions / TODO / plan.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S2-01] Lower `count(value)` to a valid `std::count`-based surface.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S2-02] Lower `remove(value)` to a first-hit erase surface.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S3-01] Sync build/run smoke and support wording, then close the task.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S3-01] Sync build/run smoke and support wording, then close the task.

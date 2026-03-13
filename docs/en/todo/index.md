@@ -30,5 +30,3 @@ Last updated: 2026-03-13
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
-
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01] Lock the representative C++ lane for `collections.deque.count()` / `remove()`. Progress: `S2-02` upstreamed `count/remove` to STL algorithm surfaces. The remaining work is the representative smoke and closeout. Context: [p0-collections-deque-cpp-searchmut-support.md](../plans/p0-collections-deque-cpp-searchmut-support.md)
