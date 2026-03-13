@@ -31,4 +31,4 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01] Lock the representative C++ lane for `collections.deque` iterable construction / `extendleft`. Progress: `S1-01` added a baseline regression for the current invalid `deque(iterable)` / `extendleft(iterable)` surface. Next is constructor lowering. Context: [p0-collections-deque-cpp-iterable-support.md](../plans/p0-collections-deque-cpp-iterable-support.md)
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01] Lock the representative C++ lane for `collections.deque` iterable construction / `extendleft`. Progress: `S2-01` upstreamed `deque(iterable)` to a typed range constructor. The remaining work is `extendleft -> push_front` loop lowering. Context: [p0-collections-deque-cpp-iterable-support.md](../plans/p0-collections-deque-cpp-iterable-support.md)

@@ -5174,7 +5174,7 @@ print(untyped_back)
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             self.assertEqual(run.stdout.strip().splitlines(), ["1", "2"])
 
-    def test_deque_iterable_current_baseline_leaks_python_surface_into_cpp(self) -> None:
+    def test_deque_iterable_ctor_lowers_but_extendleft_still_leaks_python_surface_into_cpp(self) -> None:
         src = """from collections import deque
 
 q: deque[int] = deque([1, 2])
@@ -5186,9 +5186,10 @@ print(len(q))
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn("q = deque(list<int64>{1, 2});", cpp)
+        self.assertIn("return ::std::deque<int64>(", cpp)
+        self.assertNotIn("q = deque(list<int64>{1, 2});", cpp)
         self.assertIn("q.extendleft(list<int64>{3, 4});", cpp)
-        self.assertNotIn("::std::deque<int64>(list<int64>{1, 2}", cpp)
+        self.assertIn("::std::deque<int64>(", cpp)
         self.assertNotIn("push_front", cpp)
 
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:

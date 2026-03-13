@@ -2865,7 +2865,33 @@ class CppEmitter(
         if len(args) == 0:
             return f"{t}{{}}"
         if raw == "deque":
-            return None
+            if len(args) != 1:
+                return None
+            at0 = self.get_expr_type(first_arg)
+            at = self.normalize_type_name(at0) if isinstance(at0, str) else ""
+            if at in {"", "unknown"}:
+                at = self.normalize_type_name(self.infer_rendered_arg_type(args[0], at, self.declared_var_types))
+            if at in {"", "unknown"}:
+                at = self.normalize_type_name(self.infer_rendered_arg_type(args[0], at, self.module_global_var_types))
+            if not (
+                (at.startswith("list[") and at.endswith("]"))
+                or (at.startswith("tuple[") and at.endswith("]"))
+                or (at.startswith("set[") and at.endswith("]"))
+                or (at.startswith("deque[") and at.endswith("]"))
+            ):
+                return None
+            src_expr = self._trim_ws(args[0])
+            if src_expr == "":
+                return None
+            if self._is_identifier_expr(src_expr):
+                return f"{t}({src_expr}.begin(), {src_expr}.end())"
+            tmp_name = self.next_tmp("__deque_src")
+            return (
+                "([&]() { "
+                f"auto {tmp_name} = {src_expr}; "
+                f"return {t}({tmp_name}.begin(), {tmp_name}.end()); "
+                "}())"
+            )
         if len(args) != 1:
             return None
         at0 = self.get_expr_type(first_arg)
@@ -3488,6 +3514,51 @@ class CppEmitter(
             return ""
         return f"{self._cpp_type_text(target_norm)}{{}}"
 
+    def _render_single_arg_deque_ctor_for_target(self, value_node: Any, target_t: str) -> str:
+        """`deque(iterable)` を typed `::std::deque<T>` range ctor へ lower できる場合は返す。"""
+        target_norm = self.normalize_type_name(target_t)
+        if not (target_norm.startswith("deque[") and target_norm.endswith("]")):
+            return ""
+        value_d = self.any_to_dict_or_empty(value_node)
+        if self._node_kind_from_dict(value_d) != "Call":
+            return ""
+        fn = self.any_to_dict_or_empty(value_d.get("func"))
+        if self._node_kind_from_dict(fn) != "Name":
+            return ""
+        if self.any_dict_get_str(fn, "id", "") != "deque":
+            return ""
+        if len(self.any_to_list(value_d.get("keywords"))) != 0:
+            return ""
+        arg_nodes = self.any_to_list(value_d.get("args"))
+        if len(arg_nodes) != 1:
+            return ""
+        source_node = arg_nodes[0]
+        source_expr = self._trim_ws(self.render_expr(source_node))
+        if source_expr == "":
+            return ""
+        source_t = self.normalize_type_name(self.get_expr_type(source_node))
+        if source_t in {"", "unknown"}:
+            source_t = self.normalize_type_name(self.infer_rendered_arg_type(source_expr, source_t, self.declared_var_types))
+        if source_t in {"", "unknown"}:
+            source_t = self.normalize_type_name(self.infer_rendered_arg_type(source_expr, source_t, self.module_global_var_types))
+        if not (
+            (source_t.startswith("list[") and source_t.endswith("]"))
+            or (source_t.startswith("tuple[") and source_t.endswith("]"))
+            or (source_t.startswith("set[") and source_t.endswith("]"))
+            or (source_t.startswith("deque[") and source_t.endswith("]"))
+        ):
+            return ""
+        target_cpp_t = self._cpp_type_text(target_norm)
+        if self._is_identifier_expr(source_expr):
+            return f"{target_cpp_t}({source_expr}.begin(), {source_expr}.end())"
+        tmp_name = self.next_tmp("__deque_src")
+        return (
+            "([&]() { "
+            f"auto {tmp_name} = {source_expr}; "
+            f"return {target_cpp_t}({tmp_name}.begin(), {tmp_name}.end()); "
+            "}())"
+        )
+
     def _box_expr_for_any(self, expr_txt: str, source_node: Any) -> str:
         """Any/object 向けの boxing を必要時のみ適用する。"""
         if self.is_boxed_object_expr(expr_txt):
@@ -3917,6 +3988,9 @@ class CppEmitter(
         if target_t == "" or target_t == "unknown" or self.is_any_like_type(target_t):
             return value_expr
         deque_ctor_expr = self._render_zero_arg_deque_ctor_for_target(value_node, target_t)
+        if deque_ctor_expr != "":
+            return deque_ctor_expr
+        deque_ctor_expr = self._render_single_arg_deque_ctor_for_target(value_node, target_t)
         if deque_ctor_expr != "":
             return deque_ctor_expr
         if self._is_pyobj_ref_first_list_type(target_t):
