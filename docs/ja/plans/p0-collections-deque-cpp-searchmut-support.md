@@ -7,7 +7,7 @@
 
 背景:
 - `collections.deque` の representative C++ lane は、constructor、`append` / `appendleft`、`popleft` / `pop`、`extendleft(iterable)`、`reverse()`、`rotate()`、`len` / truthiness まで `::std::deque<T>` surface に揃った。
-- `S1-01` で `q.count(...)` / `q.remove(...)` の surface leak を固定し、`S2-01` で `count(value)` は `std::count`-based surface に揃った。残りは `remove()` lowering と closeout のみ。
+- `S1-01` で `q.count(...)` / `q.remove(...)` の surface leak を固定し、`S2-01` で `count(value)`、`S2-02` で `remove(value)` を STL algorithm surface に揃えた。残りは representative smoke と closeout のみ。
 - `clear()`、`extend()`、`reverse()`、`rotate()` はすでに valid C++ surface に落ちるため、この task は search / mutate gap の `count` / `remove` subset に限定する。
 
 目的:
@@ -27,7 +27,7 @@
 - C++ runtime に新しい deque object hierarchy を追加すること
 
 受け入れ基準:
-- focused regression で `count(value)` が `std::count`-based surface に揃い、`remove(value)` leak だけが残る状態を固定する。
+- focused regression で `count(value)` / `remove(value)` が STL algorithm surface に揃った状態を固定する。
 - representative C++ lane で `count()` は valid な `std::count`-based surface に lower される。
 - representative C++ lane で `remove()` は first-hit erase surface に lower される。
 - representative build/run smoke で `count` / `remove` の代表 fixture が通る。
@@ -43,11 +43,12 @@
 - 2026-03-13: `clear()`、`extend()`、`reverse()`、`rotate()` はすでに valid C++ に落ちるため、新 task は `count` / `remove` subset のみに限定した。
 - 2026-03-13: `S1-01` として `q.count(...)` / `q.remove(...)` の current invalid C++ surface を focused regression / TODO / plan で固定した。
 - 2026-03-13: `S2-01` として typed deque owner の `count(value)` を `std::count(begin, end, value)` surface へ lower した。focused regression は `remove()` leak のみへ narrowed した。
+- 2026-03-13: `S2-02` として typed deque owner の `remove(value)` を `std::find + erase` surface へ lower し、not-found は `ValueError("deque.remove missing value")` とした。残りは build/run smoke のみ。
 
 ## 分解
 
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01] `collections.deque.count()` / `remove()` representative C++ lane を固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S1-01] current invalid C++ surface (`count`, `remove`) を focused regression / TODO / plan で固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S2-01] `count(value)` を valid `std::count`-based surface に lower する。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S2-02] `remove(value)` を first-hit erase surface に lower する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S2-02] `remove(value)` を first-hit erase surface に lower する。
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01-S3-01] build/run smoke と support wording を同期して close する。

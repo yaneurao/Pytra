@@ -941,6 +941,18 @@ class CppCallEmitter:
                 value_node = arg_nodes[0] if len(arg_nodes) > 0 else {}
                 count_expr = self._coerce_typed_deque_item_expr(owner_t, args[0], value_node)
                 return f"static_cast<int64>(::std::count({owner_expr}.begin(), {owner_expr}.end(), {count_expr}))"
+            if attr == "remove" and len(args) == 1 and len(kw) == 0:
+                value_node = arg_nodes[0] if len(arg_nodes) > 0 else {}
+                remove_expr = self._coerce_typed_deque_item_expr(owner_t, args[0], value_node)
+                iter_tmp = self.next_tmp("__deque_it")
+                return (
+                    "([&]() -> decltype(nullptr) { "
+                    f"auto {iter_tmp} = ::std::find({owner_expr}.begin(), {owner_expr}.end(), {remove_expr}); "
+                    f"if ({iter_tmp} == {owner_expr}.end()) throw ValueError(\"deque.remove missing value\"); "
+                    f"{owner_expr}.erase({iter_tmp}); "
+                    "return nullptr; "
+                    "}())"
+                )
             if attr == "reverse" and len(args) == 0 and len(kw) == 0:
                 return f"::std::reverse({owner_expr}.begin(), {owner_expr}.end())"
             if attr == "rotate" and len(kw) == 0 and len(args) <= 1:
