@@ -88,8 +88,8 @@
 | `bytes_truthiness.py` | present | covered elsewhere | `test/fixtures/typing/bytes_truthiness.py` + C++ representative smoke |
 | `path_stringify.py` | present | covered elsewhere | `test/fixtures/stdlib/path_stringify.py` + C++ representative smoke |
 | `field_default_factory_rc_obj.py` | present | covered elsewhere | archived C++ representative lane (`field(default_factory=...)` on `rc<T>`) |
-| `property_method_call.py` | present | unresolved | this task |
-| `list_bool_index.py` | present | unresolved | this task |
+| `property_method_call.py` | present | promoted and green | `test/fixtures/typing/property_method_call.py` + representative smoke across all backends |
+| `list_bool_index.py` | present | promoted and green | `test/fixtures/typing/list_bool_index.py` + representative smoke across all backends |
 | `path_alias_pkg/entry.py` | missing | not triaged | out of scope until the bundle includes the file |
 
 ## representative semantics
@@ -118,7 +118,7 @@ source:
 
 ## 分解
 
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01] Pytra-NES2 repro を全 backend representative contract に昇格し、`property_method_call` と `list_bool_index` の test が全言語で通る状態を close 条件として固定する。
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01] Pytra-NES2 repro を全 backend representative contract に昇格し、`property_method_call` と `list_bool_index` の test が全言語で通る状態を close 条件として固定した。
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-01] `materials/refs/from-Pytra-NES2/` の current repro inventory を棚卸しし、既存対応済み case と未対応 case の対応表を plan / docs に固定する。
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-02] `property_method_call.py` と `list_bool_index.py` を `test/fixtures/` の representative fixture へ昇格し、期待 semantics を assertion 付きで固定する。
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-01] C++/C#/Rust/Go/Java/Kotlin/Scala/Swift/Nim の representative smoke に 2 fixture を追加し、C++ current compile-failure baseline と static family の transpile smoke を固定する。
@@ -126,7 +126,7 @@ source:
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-03] 全 backend 共通で「unsupported / preview_only / not_implemented へ逃がしたら fail」と分かる assertion / helper / checker を必要に応じて追加する。
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-01] `property_method_call` の全 backend green を達成し、docs / support wording / decision log を同期する。
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-02] `list_bool_index` の全 backend green を達成し、docs / support wording / decision log を同期する。
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S4-01] `materials/refs/from-Pytra-NES2` と repo fixture/test の対応を最終同期し、この repro bundle を「全 backend representative contract に昇格済み」として close する。
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S4-01] `materials/refs/from-Pytra-NES2` と repo fixture/test の対応を最終同期し、この repro bundle を「全 backend representative contract に昇格済み」として close した。
 
 決定ログ:
 - 2026-03-13: ユーザー指示に従い、未解消 2 件を C++ 局所 bugfix task として閉じる方針をやめ、まず全 backend representative test を追加してから実装修正へ進む P0 に切り替えた。
@@ -139,3 +139,4 @@ source:
 - 2026-03-13: `S2-03` として `test/unit/backends/representative_contract_support.py` に共通 denylist helper を追加し、全 backend representative smoke が `unsupported / preview_only / not_implemented` marker を含むと fail するようにした。C++ current baseline は compile stderr ではなく生成 C++ source 自体に対して helper を適用し、escape marker を含まない compile-failure baseline だけを許可した。
 - 2026-03-13: `S3-01` として C++ emitter に class-local `@property` getter track を追加し、attribute read を `this->mapper()` / `holder->mapper()` へ lower するように修正した。これで `property_method_call` は C++ も compile+run green になり、全 backend representative lane が green になったため、残件は `list_bool_index` のみとなった。
 - 2026-03-13: `S3-02` として C++ runtime の `list<T>` / `py_at` / `py_list_at_ref` を `list<T>::reference/const_reference` ベースにし、`make_object` に bool-convertible proxy fallback を追加した。これで `std::vector<bool>` proxy と `bool&` の衝突が消え、`list_bool_index` は C++ でも compile+run green になった。
+- 2026-03-13: `S4-01` として `materials/refs/from-Pytra-NES2` と repo fixture/test の最終対応を同期した。`bytes_truthiness` は `test/fixtures/typing/bytes_truthiness.py` と archived representative lane、`path_stringify` は `test/fixtures/stdlib/path_stringify.py` と archived representative lane、`field_default_factory_rc_obj` は archived dataclass representative lane、`property_method_call` / `list_bool_index` は `test/fixtures/typing/*` と全 backend representative smoke へそれぞれ昇格済みと確定した。`path_alias_pkg/entry.py` は bundle に現物がないため out-of-scope のまま close する。

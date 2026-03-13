@@ -15,6 +15,7 @@ Last updated: 2026-03-13
 
 ## Completed Plan Archive
 
+- [2026-03-13 / P0-PYTRA-NES2-CROSSBACKEND-REPRO-01](../plans/archive/20260313-p0-pytra-nes2-crossbackend-repro-contract.md)
 - [2026-03-13 / P0-COLLECTIONS-DEQUE-CPP-SEARCHMUT-01](../plans/archive/20260313-p0-collections-deque-cpp-searchmut-support.md)
 - [2026-03-13 / P0-COLLECTIONS-DEQUE-CPP-ROTATE-01](../plans/archive/20260313-p0-collections-deque-cpp-rotate-support.md)
 - [2026-03-13 / P0-COLLECTIONS-DEQUE-CPP-REVERSE-01](../plans/archive/20260313-p0-collections-deque-cpp-reverse-support.md)
@@ -135,7 +136,7 @@ Last updated: 2026-03-13
 
 ## Date Links
 
-- [2026-03-13](20260313.md) (12 sections)
+- [2026-03-13](20260313.md) (13 sections)
 
 - [2026-03-12](20260312.md) (28 sections)
 - [2026-03-11](20260311.md) (25 sections)
