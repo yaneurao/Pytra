@@ -30,4 +30,10 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-現在、未完了タスクはありません。
+### P0: C++ backend input validator の object-tree iterator 追従漏れを解消する
+
+- [ ] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01] `validate_cpp_backend_input_doc()` を `_iter_object_tree()` の `parent_key` 付き API に追従させ、typed boundary / backend input validation が tuple unpack error で止まらない状態へ戻す。
+  - 文脈: [docs/ja/plans/p0-cpp-backend-input-validator-itertree.md](../plans/p0-cpp-backend-input-validator-itertree.md)
+- [ ] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S1-01] minimal raw EAST3 module を使った focused regression を追加し、C++ backend input validator の current crash surface を fail-fast で固定する。
+- [ ] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S2-01] `validate_cpp_backend_input_doc()` を `parent_key` 付き object-tree iteration へ切り替え、既存 `ForCore` metadata guard を維持したまま targeted link test を green に戻す。
+- [ ] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S3-01] TODO / plan / decision log を同期して close 条件を固める。
