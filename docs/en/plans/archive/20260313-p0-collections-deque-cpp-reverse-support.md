@@ -41,10 +41,11 @@ Decision log:
 - 2026-03-13: `clear()` / `extend()` already lower to valid C++, so the new task is limited to `reverse()` only.
 - 2026-03-13: as `S1-01`, a focused regression now locks the current invalid `q.reverse();` surface in the TODO / plan.
 - 2026-03-13: as `S2-01`, typed deque-owner `reverse()` now lowers to `::std::reverse(begin, end)`. Only the build/run smoke remains.
+- 2026-03-13: as `S3-01`, a representative build/run smoke now locks the `deque([1, 2, 3]).reverse()` output `3 / 2 / 1`. The task now satisfies every acceptance criterion.
 
 ## Breakdown
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01] Lock the representative C++ lane for `collections.deque.reverse()`.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01] Lock the representative C++ lane for `collections.deque.reverse()`.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01-S1-01] Lock the current invalid C++ surface (`q.reverse();`) in focused regressions / TODO / plan.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01-S2-01] Lower `reverse()` to `::std::reverse(begin, end)`.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01-S3-01] Sync build/run smoke and support wording, then close the task.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01-S3-01] Sync build/run smoke and support wording, then close the task.
