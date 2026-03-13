@@ -234,9 +234,9 @@ class Py2PhpSmokeTest(unittest.TestCase):
         generated_png_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "png.php"
         code = "\n".join(
             [
-                f"require {generated_json_path.as_posix()!r};",
-                f"require {generated_pathlib_path.as_posix()!r};",
-                f"require {generated_png_path.as_posix()!r};",
+                f"require_once {generated_json_path.as_posix()!r};",
+                f"require_once {generated_pathlib_path.as_posix()!r};",
+                f"require_once {generated_png_path.as_posix()!r};",
                 "$doc = loads_obj('{\"name\":\"a.txt\",\"items\":[1,2],\"empty\":{}}');",
                 "echo ($doc instanceof JsonObj ? $doc->get_str('name') : 'json-missing'), PHP_EOL;",
                 "$items = $doc instanceof JsonObj ? $doc->get_arr('items') : null;",
