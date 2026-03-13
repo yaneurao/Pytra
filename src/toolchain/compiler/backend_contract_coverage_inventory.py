@@ -62,6 +62,9 @@ SUITE_FAMILY_ORDER: Final[tuple[str, ...]] = (
 )
 
 COVERAGE_ONLY_STATUS_ORDER: Final[tuple[str, ...]] = ("coverage_only_representative",)
+PROMOTION_CANDIDATE_STATUS_ORDER: Final[tuple[str, ...]] = (
+    "support_matrix_promotion_candidate",
+)
 UNPUBLISHED_FIXTURE_STATUS_ORDER: Final[tuple[str, ...]] = (
     "support_matrix_promotion_candidate",
     "coverage_only_representative",
@@ -150,11 +153,25 @@ class CoverageOnlyFixtureEntry(TypedDict):
     notes: str
 
 
+class PromotionCandidateFixtureEntry(TypedDict):
+    fixture_stem: str
+    fixture_rel: str
+    status: str
+    proposed_feature_id: str
+    proposed_category: str
+    proposed_title: str
+    backend_evidence: tuple[CoverageOnlyFixtureBackendEvidence, ...]
+    notes: str
+
+
 class UnpublishedMultiBackendFixtureEntry(TypedDict):
     fixture_rel: str
     fixture_stem: str
     status: str
     target_surface: str
+    proposed_feature_id: str
+    proposed_category: str
+    proposed_title: str
     observed_backends: tuple[str, ...]
     notes: str
 
@@ -448,23 +465,30 @@ def _build_coverage_only_backend_evidence(
 
 COVERAGE_ONLY_FIXTURE_ENTRIES_V1: Final[tuple[CoverageOnlyFixtureEntry, ...]] = (
     {
-        "fixture_stem": "property_method_call",
-        "fixture_rel": "test/fixtures/typing/property_method_call.py",
-        "status": "coverage_only_representative",
-        "backend_evidence": _build_coverage_only_backend_evidence("property_method_call"),
-        "notes": (
-            "Already covered across every backend smoke/runtime lane, but not yet "
-            "promoted into the support-matrix representative inventory."
-        ),
-    },
-    {
         "fixture_stem": "list_bool_index",
         "fixture_rel": "test/fixtures/typing/list_bool_index.py",
         "status": "coverage_only_representative",
         "backend_evidence": _build_coverage_only_backend_evidence("list_bool_index"),
         "notes": (
-            "Already covered across every backend smoke/runtime lane, but still "
-            "missing from the support-matrix representative inventory."
+            "Already exercised across every backend smoke/runtime lane, but should stay "
+            "coverage-only because it primarily locks typed-container regression behavior."
+        ),
+    },
+)
+
+
+PROMOTION_CANDIDATE_FIXTURE_ENTRIES_V1: Final[tuple[PromotionCandidateFixtureEntry, ...]] = (
+    {
+        "fixture_stem": "property_method_call",
+        "fixture_rel": "test/fixtures/typing/property_method_call.py",
+        "status": "support_matrix_promotion_candidate",
+        "proposed_feature_id": "syntax.oop.property_method_call",
+        "proposed_category": "syntax",
+        "proposed_title": "property access and method call",
+        "backend_evidence": _build_coverage_only_backend_evidence("property_method_call"),
+        "notes": (
+            "Already exercised across every backend smoke/runtime lane and fills the "
+            "current support-matrix gap around `@property` reads reused inside methods."
         ),
     },
 )
@@ -478,6 +502,9 @@ UNPUBLISHED_MULTI_BACKEND_FIXTURE_INVENTORY_V1: Final[
         "fixture_stem": "property_method_call",
         "status": "support_matrix_promotion_candidate",
         "target_surface": "support_matrix",
+        "proposed_feature_id": "syntax.oop.property_method_call",
+        "proposed_category": "syntax",
+        "proposed_title": "property access and method call",
         "observed_backends": tuple(
             item["backend"]
             for item in _build_coverage_only_backend_evidence("property_method_call")
@@ -492,6 +519,9 @@ UNPUBLISHED_MULTI_BACKEND_FIXTURE_INVENTORY_V1: Final[
         "fixture_stem": "list_bool_index",
         "status": "coverage_only_representative",
         "target_surface": "coverage_matrix_only",
+        "proposed_feature_id": "",
+        "proposed_category": "",
+        "proposed_title": "",
         "observed_backends": tuple(
             item["backend"]
             for item in _build_coverage_only_backend_evidence("list_bool_index")
@@ -517,6 +547,7 @@ BACKEND_CONTRACT_COVERAGE_HANDOFF_V1: Final[dict[str, object]] = {
     "harness_kind_order": HARNESS_KIND_ORDER,
     "taxonomy_harness_kind_order": TAXONOMY_HARNESS_KIND_ORDER,
     "coverage_only_status_order": COVERAGE_ONLY_STATUS_ORDER,
+    "promotion_candidate_status_order": PROMOTION_CANDIDATE_STATUS_ORDER,
     "unpublished_fixture_status_order": UNPUBLISHED_FIXTURE_STATUS_ORDER,
     "unpublished_fixture_target_order": UNPUBLISHED_FIXTURE_TARGET_ORDER,
     "live_suite_role_order": LIVE_SUITE_ROLE_ORDER,
@@ -539,6 +570,10 @@ def iter_backend_contract_coverage_only_fixtures() -> tuple[CoverageOnlyFixtureE
     return COVERAGE_ONLY_FIXTURE_ENTRIES_V1
 
 
+def iter_backend_contract_promotion_candidate_fixtures() -> tuple[PromotionCandidateFixtureEntry, ...]:
+    return PROMOTION_CANDIDATE_FIXTURE_ENTRIES_V1
+
+
 def iter_unpublished_multi_backend_fixture_inventory() -> tuple[UnpublishedMultiBackendFixtureEntry, ...]:
     return UNPUBLISHED_MULTI_BACKEND_FIXTURE_INVENTORY_V1
 
@@ -554,6 +589,7 @@ def build_backend_contract_coverage_seed_manifest() -> dict[str, object]:
         "harness_kind_order": list(HARNESS_KIND_ORDER),
         "taxonomy_harness_kind_order": list(TAXONOMY_HARNESS_KIND_ORDER),
         "coverage_only_status_order": list(COVERAGE_ONLY_STATUS_ORDER),
+        "promotion_candidate_status_order": list(PROMOTION_CANDIDATE_STATUS_ORDER),
         "unpublished_fixture_status_order": list(UNPUBLISHED_FIXTURE_STATUS_ORDER),
         "unpublished_fixture_target_order": list(UNPUBLISHED_FIXTURE_TARGET_ORDER),
         "live_suite_role_order": list(LIVE_SUITE_ROLE_ORDER),
@@ -562,6 +598,7 @@ def build_backend_contract_coverage_seed_manifest() -> dict[str, object]:
         "live_suite_families": list(iter_live_suite_family_inventory()),
         "coverage_bundles": list(iter_backend_contract_coverage_bundles()),
         "coverage_only_fixtures": list(iter_backend_contract_coverage_only_fixtures()),
+        "promotion_candidate_fixtures": list(iter_backend_contract_promotion_candidate_fixtures()),
         "unpublished_multi_backend_fixtures": list(
             iter_unpublished_multi_backend_fixture_inventory()
         ),

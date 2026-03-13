@@ -12,6 +12,7 @@ class CheckBackendContractCoverageInventoryTest(unittest.TestCase):
         self.assertEqual(check_mod._collect_bundle_issues(), [])
         self.assertEqual(check_mod._collect_live_suite_issues(), [])
         self.assertEqual(check_mod._collect_coverage_only_fixture_issues(), [])
+        self.assertEqual(check_mod._collect_promotion_candidate_issues(), [])
         self.assertEqual(check_mod._collect_unpublished_fixture_issues(), [])
         self.assertEqual(check_mod._collect_manifest_issues(), [])
 
@@ -47,6 +48,25 @@ class CheckBackendContractCoverageInventoryTest(unittest.TestCase):
         self.assertEqual(suites["unit_tooling"]["bundle_candidates"], ())
         self.assertEqual(suites["transpile_artifact"]["bundle_candidates"], ("runtime",))
 
+        self.assertEqual(
+            tuple(
+                entry["fixture_rel"]
+                for entry in inventory_mod.iter_backend_contract_coverage_only_fixtures()
+            ),
+            ("test/fixtures/typing/list_bool_index.py",),
+        )
+        self.assertEqual(
+            tuple(
+                entry["fixture_rel"]
+                for entry in inventory_mod.iter_backend_contract_promotion_candidate_fixtures()
+            ),
+            ("test/fixtures/typing/property_method_call.py",),
+        )
+        self.assertEqual(
+            inventory_mod.iter_backend_contract_promotion_candidate_fixtures()[0]["proposed_feature_id"],
+            "syntax.oop.property_method_call",
+        )
+
         unpublished = {
             entry["fixture_rel"]: entry
             for entry in inventory_mod.iter_unpublished_multi_backend_fixture_inventory()
@@ -70,9 +90,17 @@ class CheckBackendContractCoverageInventoryTest(unittest.TestCase):
             "cpp",
             unpublished["test/fixtures/typing/property_method_call.py"]["observed_backends"],
         )
+        self.assertEqual(
+            unpublished["test/fixtures/typing/property_method_call.py"]["proposed_feature_id"],
+            "syntax.oop.property_method_call",
+        )
         self.assertIn(
             "kt",
             unpublished["test/fixtures/typing/list_bool_index.py"]["observed_backends"],
+        )
+        self.assertEqual(
+            unpublished["test/fixtures/typing/list_bool_index.py"]["status"],
+            "coverage_only_representative",
         )
         self.assertEqual(
             unpublished["test/fixtures/typing/list_bool_index.py"]["target_surface"],
@@ -102,7 +130,13 @@ class CheckBackendContractCoverageInventoryTest(unittest.TestCase):
         )
         self.assertEqual(len(manifest["coverage_bundle_taxonomy"]), 6)
         self.assertEqual(len(manifest["live_suite_families"]), 9)
+        self.assertEqual(len(manifest["coverage_only_fixtures"]), 1)
+        self.assertEqual(len(manifest["promotion_candidate_fixtures"]), 1)
         self.assertEqual(len(manifest["unpublished_multi_backend_fixtures"]), 2)
+        self.assertEqual(
+            manifest["promotion_candidate_status_order"],
+            ["support_matrix_promotion_candidate"],
+        )
         self.assertEqual(
             manifest["unpublished_fixture_status_order"],
             ["support_matrix_promotion_candidate", "coverage_only_representative"],

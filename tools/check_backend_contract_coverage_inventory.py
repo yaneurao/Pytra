@@ -14,6 +14,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from toolchain.compiler import backend_contract_coverage_inventory as inventory_mod
+from toolchain.compiler import backend_feature_contract_inventory as feature_inventory_mod
 
 
 def _collect_seed_issues() -> list[str]:
@@ -147,6 +148,59 @@ def _collect_coverage_only_fixture_issues() -> list[str]:
     return issues
 
 
+def _collect_promotion_candidate_issues() -> list[str]:
+    issues: list[str] = []
+    support_fixtures = set(inventory_mod.SUPPORT_MATRIX_FIXTURES)
+    known_feature_ids = {
+        row["feature_id"] for row in feature_inventory_mod.iter_representative_feature_inventory()
+    }
+    promotion_candidates = inventory_mod.iter_backend_contract_promotion_candidate_fixtures()
+    if len({row["fixture_stem"] for row in promotion_candidates}) != len(promotion_candidates):
+        issues.append("promotion-candidate fixture stems contain duplicates")
+    for row in promotion_candidates:
+        if row["status"] not in inventory_mod.PROMOTION_CANDIDATE_STATUS_ORDER:
+            issues.append(
+                f"unknown promotion-candidate fixture status: {row['fixture_stem']}: {row['status']}"
+            )
+        fixture_path = ROOT / row["fixture_rel"]
+        if not fixture_path.exists():
+            issues.append(
+                f"promotion-candidate fixture path is missing: {row['fixture_stem']}: {row['fixture_rel']}"
+            )
+        if row["fixture_rel"] in support_fixtures:
+            issues.append(
+                f"promotion-candidate fixture was already promoted into support inventory: {row['fixture_rel']}"
+            )
+        if not row["proposed_feature_id"] or not row["proposed_category"] or not row["proposed_title"]:
+            issues.append(
+                f"promotion-candidate fixture must declare proposed support-matrix metadata: {row['fixture_stem']}"
+            )
+        if row["proposed_feature_id"] in known_feature_ids:
+            issues.append(
+                f"promotion-candidate proposed feature id already exists in support inventory: {row['proposed_feature_id']}"
+            )
+        backend_order = tuple(item["backend"] for item in row["backend_evidence"])
+        if backend_order != inventory_mod.feature_backend_order():
+            issues.append(
+                "promotion-candidate backend order drifted: "
+                f"{row['fixture_stem']}: {backend_order} != {inventory_mod.feature_backend_order()}"
+            )
+        for evidence in row["backend_evidence"]:
+            relpath = evidence["relpath"]
+            path = ROOT / relpath
+            if not path.exists():
+                issues.append(
+                    f"promotion-candidate evidence path is missing: {row['fixture_stem']}: {evidence['backend']}: {relpath}"
+                )
+                continue
+            if evidence["needle"] not in path.read_text(encoding="utf-8"):
+                issues.append(
+                    "promotion-candidate evidence needle is missing: "
+                    f"{row['fixture_stem']}: {evidence['backend']}: {relpath}: {evidence['needle']}"
+                )
+    return issues
+
+
 def _collect_unpublished_fixture_issues() -> list[str]:
     issues: list[str] = []
     support_fixtures = set(inventory_mod.SUPPORT_MATRIX_FIXTURES)
@@ -154,12 +208,22 @@ def _collect_unpublished_fixture_issues() -> list[str]:
     if len({row["fixture_rel"] for row in unpublished}) != len(unpublished):
         issues.append("unpublished multi-backend fixture inventory contains duplicates")
     expected_backend_order = inventory_mod.feature_backend_order()
+    expected_target_by_status = {
+        "support_matrix_promotion_candidate": "support_matrix",
+        "coverage_only_representative": "coverage_matrix_only",
+    }
     for row in unpublished:
         if row["status"] not in inventory_mod.UNPUBLISHED_FIXTURE_STATUS_ORDER:
             issues.append(f"unknown unpublished fixture status: {row['fixture_rel']}: {row['status']}")
         if row["target_surface"] not in inventory_mod.UNPUBLISHED_FIXTURE_TARGET_ORDER:
             issues.append(
                 f"unknown unpublished fixture target surface: {row['fixture_rel']}: {row['target_surface']}"
+            )
+        expected_target = expected_target_by_status.get(row["status"])
+        if expected_target is not None and row["target_surface"] != expected_target:
+            issues.append(
+                "unpublished fixture target surface drifted from status policy: "
+                f"{row['fixture_rel']}: {row['status']} -> {row['target_surface']} != {expected_target}"
             )
         fixture_path = ROOT / row["fixture_rel"]
         if not fixture_path.exists():
@@ -168,6 +232,24 @@ def _collect_unpublished_fixture_issues() -> list[str]:
             issues.append(
                 f"unpublished fixture was already promoted into support inventory: {row['fixture_rel']}"
             )
+        if row["status"] == "support_matrix_promotion_candidate":
+            if row["target_surface"] != "support_matrix":
+                issues.append(
+                    f"promotion candidate must target support_matrix: {row['fixture_rel']}"
+                )
+            if not row["proposed_feature_id"] or not row["proposed_category"] or not row["proposed_title"]:
+                issues.append(
+                    f"promotion candidate must declare proposed metadata in unpublished inventory: {row['fixture_rel']}"
+                )
+        if row["status"] == "coverage_only_representative":
+            if row["target_surface"] != "coverage_matrix_only":
+                issues.append(
+                    f"coverage-only representative must target coverage_matrix_only: {row['fixture_rel']}"
+                )
+            if row["proposed_feature_id"] or row["proposed_category"] or row["proposed_title"]:
+                issues.append(
+                    f"coverage-only representative must not declare proposed support-matrix metadata: {row['fixture_rel']}"
+                )
         if row["observed_backends"] != expected_backend_order:
             issues.append(
                 "unpublished fixture observed backend order drifted: "
@@ -197,6 +279,11 @@ def _collect_manifest_issues() -> list[str]:
     if tuple(manifest.get("coverage_only_status_order", ())) != inventory_mod.COVERAGE_ONLY_STATUS_ORDER:
         issues.append("coverage seed manifest coverage-only status order drifted")
     if (
+        tuple(manifest.get("promotion_candidate_status_order", ()))
+        != inventory_mod.PROMOTION_CANDIDATE_STATUS_ORDER
+    ):
+        issues.append("coverage seed manifest promotion-candidate status order drifted")
+    if (
         tuple(manifest.get("unpublished_fixture_status_order", ()))
         != inventory_mod.UNPUBLISHED_FIXTURE_STATUS_ORDER
     ):
@@ -217,6 +304,7 @@ def main() -> int:
         + _collect_bundle_issues()
         + _collect_live_suite_issues()
         + _collect_coverage_only_fixture_issues()
+        + _collect_promotion_candidate_issues()
         + _collect_unpublished_fixture_issues()
         + _collect_manifest_issues()
     )
