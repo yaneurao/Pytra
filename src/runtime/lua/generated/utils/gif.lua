@@ -34,7 +34,8 @@ end
 
 function _lzw_encode(data, min_code_size)
     if (#(data) == 0) then
-        return __pytra_bytes({  })
+        local empty = {  }
+        return __pytra_bytes(empty)
     end
     local clear_code = (1 << min_code_size)
     local end_code = (clear_code + 1)

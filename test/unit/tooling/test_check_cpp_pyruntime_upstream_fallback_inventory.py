@@ -103,12 +103,8 @@ class CheckCppPyRuntimeUpstreamFallbackInventoryTest(unittest.TestCase):
             2,
         )
         self.assertEqual(
-            by_id["generated_runtime_boxed_list_seed_sites"]["expected_count"],
-            1,
-        )
-        self.assertEqual(
             by_id["generated_runtime_generic_index_sites"]["expected_count"],
-            47,
+            46,
         )
         self.assertEqual(
             by_id["sample_cpp_py_append_sites"]["expected_count"],
@@ -125,6 +121,7 @@ class CheckCppPyRuntimeUpstreamFallbackInventoryTest(unittest.TestCase):
             for row in inventory_mod.iter_cpp_pyruntime_upstream_fallback_inventory()
         }
         self.assertNotIn("cpp_emitter_boxed_list_seed_sites", inventory_ids)
+        self.assertNotIn("generated_runtime_boxed_list_seed_sites", inventory_ids)
 
 
 if __name__ == "__main__":

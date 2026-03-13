@@ -22,7 +22,8 @@ public final class gif {
 
     public static java.util.ArrayList<Long> _lzw_encode(java.util.ArrayList<Long> data, long min_code_size) {
         if (((((long)(data.size()))) == (0L))) {
-            return PyRuntime.__pytra_bytearray(new java.util.ArrayList<Object>());
+            java.util.ArrayList<Long> empty = new java.util.ArrayList<Long>();
+            return PyRuntime.__pytra_bytearray(empty);
         }
         long clear_code = 1L << min_code_size;
         long end_code = clear_code + 1L;

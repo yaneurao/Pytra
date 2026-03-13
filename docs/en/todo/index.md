@@ -35,4 +35,4 @@ Last updated: 2026-03-14
 
 1. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] Push typed fallback out of `py_runtime.h` and back into EAST3, the C++ emitter, and runtime SoT so the header shrinks without physical splitting.
 Context: [docs/en/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md](../plans/p2-cpp-pyruntime-upstream-fallback-shrink.md)
-- Progress memo: The first `S2-02` bundle is done. `S2-01` is now complete with the emitter reduced to a helper-only residual, and regenerating `iter_ops/gif` shrinks the generated boxed-list seed bucket from `3 -> 1`. The typed-lane residuals are now 1 emitter bucket plus 3 generated-runtime buckets and 2 sample buckets. Next is shrinking the remaining generated/sample callers.
+- Progress memo: The second `S2-02` bundle is done. `S2-01` is complete with the emitter reduced to a helper-only residual, and regenerating `iter_ops/gif` plus upstreaming the typed empty-bytes lane retires the generated boxed-list seed bucket. The typed-lane residuals are now 1 emitter bucket plus 2 generated-runtime buckets and 2 sample buckets. Next is shrinking the remaining generated/sample callers.

@@ -33,7 +33,8 @@ function _gif_u16le(v) {
 
 function _lzw_encode(data, min_code_size) {
     if ((data).length === 0) {
-        return (Array.isArray(([])) ? ([]).slice() : Array.from(([])));
+        let empty = [];
+        return (Array.isArray((empty)) ? (empty).slice() : Array.from((empty)));
     }
     let clear_code = 1 << min_code_size;
     let end_code = clear_code + 1;

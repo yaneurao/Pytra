@@ -19,7 +19,8 @@ def _gif_u16le(v: int) -> list[int]:
 
 def _lzw_encode(data: bytes, min_code_size: int = 8) -> bytes:
     if len(data) == 0:
-        return bytes([])
+        empty: list[int] = []
+        return bytes(empty)
 
     clear_code = 1 << min_code_size
     end_code = clear_code + 1

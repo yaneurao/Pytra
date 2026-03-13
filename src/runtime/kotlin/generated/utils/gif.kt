@@ -19,7 +19,8 @@ fun _gif_u16le(v: Long): MutableList<Any?> {
 
 fun _lzw_encode(data: MutableList<Any?>, min_code_size: Long): MutableList<Any?> {
     if ((__pytra_int(__pytra_len(data)) == __pytra_int(0L))) {
-        return __pytra_bytes(mutableListOf<Any?>())
+        var empty: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
+        return __pytra_bytes(empty)
     }
     var clear_code: Long = (1L shl (min_code_size).toInt())
     var end_code: Long = (clear_code + 1L)

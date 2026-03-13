@@ -20,7 +20,8 @@ func _gif_u16le(v int64) []any {
 
 func _lzw_encode(data []any, min_code_size int64) []any {
     if (__pytra_len(data) == int64(0)) {
-        return __pytra_as_list(__pytra_bytes([]any{}))
+        var empty []any = __pytra_as_list([]any{})
+        return __pytra_as_list(__pytra_bytes(empty))
     }
     var clear_code int64 = (int64(1) << min_code_size)
     var end_code int64 = (clear_code + int64(1))

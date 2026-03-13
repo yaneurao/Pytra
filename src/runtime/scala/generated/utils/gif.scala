@@ -22,7 +22,8 @@ def _gif_u16le(v: Long): mutable.ArrayBuffer[Long] = {
 
 def _lzw_encode(data: mutable.ArrayBuffer[Long], min_code_size: Long): mutable.ArrayBuffer[Long] = {
     if (__pytra_len(data) == 0L) {
-        return __pytra_bytes(mutable.ArrayBuffer[Any]())
+        var empty: mutable.ArrayBuffer[Long] = __pytra_as_list(mutable.ArrayBuffer[Any]()).asInstanceOf[mutable.ArrayBuffer[Long]]
+        return __pytra_bytes(empty)
     }
     var clear_code: Long = 1L << min_code_size
     var end_code: Long = clear_code + 1L

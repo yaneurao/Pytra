@@ -658,6 +658,7 @@ int main() {
         self.assertNotIn("py_set_at(", random_cpp)
         self.assertNotIn("py_append(", re_cpp)
         self.assertNotIn("py_append(", gif_cpp)
+        self.assertNotIn("bytes(make_object(list<object>{}))", gif_cpp)
         self.assertNotIn("py_append(", png_cpp)
         self.assertNotIn("py_append(", sequence_cpp)
         self.assertNotIn("py_append(", string_ops_cpp)

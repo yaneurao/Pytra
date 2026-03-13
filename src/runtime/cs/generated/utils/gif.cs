@@ -32,7 +32,8 @@ namespace Pytra.CsModule
         public static List<byte> _lzw_encode(List<byte> data, long min_code_size = 8)
         {
             if (((data).Count) == (0)) {
-                return Pytra.CsModule.py_runtime.py_bytes(new System.Collections.Generic.List<object>());
+                System.Collections.Generic.List<long> empty = new System.Collections.Generic.List<long>();
+                return Pytra.CsModule.py_runtime.py_bytes(empty);
             }
             long clear_code = 1 << System.Convert.ToInt32(min_code_size);
             long end_code = clear_code + 1;

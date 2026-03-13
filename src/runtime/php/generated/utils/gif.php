@@ -34,7 +34,8 @@ function _gif_u16le($v) {
 
 function _lzw_encode($data, $min_code_size) {
     if ((__pytra_len($data) == 0)) {
-        return bytes([]);
+        $empty_ = [];
+        return bytes($empty_);
     }
     $clear_code = (1 << $min_code_size);
     $end_code = ($clear_code + 1);

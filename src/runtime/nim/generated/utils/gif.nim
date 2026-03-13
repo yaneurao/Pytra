@@ -25,9 +25,11 @@ proc vlzw_encode*(data: seq[uint8], min_code_size: int): seq[uint8] =
   var bit_count: int = 0
   var clear_code: int = 0
   var code_size: int = 0
+  var empty: seq[int] = @[]
   var end_code: int = 0
   if (data.len == 0):
-    return @[]
+    empty = @[]
+    return empty
   clear_code = (1 shl min_code_size)
   end_code = (clear_code + 1)
   code_size = (min_code_size + 1)

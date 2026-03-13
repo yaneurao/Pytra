@@ -244,28 +244,12 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_INVENTORY_V1: Final[
         "notes": "Generated iter runtime still appends through an object-list bridge.",
     },
     {
-        "inventory_id": "generated_runtime_boxed_list_seed_sites",
-        "bucket": "generated_runtime_residual",
-        "scope_rel": "src/runtime/cpp/generated",
-        "matcher_kind": "literal",
-        "needle": "make_object(list<object>{})",
-        "expected_count": 1,
-        "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02",
-        "evidence_refs": (
-            {
-                "relpath": "src/runtime/cpp/generated/utils/gif.cpp",
-                "needle": "return bytes(make_object(list<object>{}));",
-            },
-        ),
-        "notes": "Generated runtime boxed empty-list seeds are down to the remaining bytes-construction lane in gif.",
-    },
-    {
         "inventory_id": "generated_runtime_generic_index_sites",
         "bucket": "generated_runtime_residual",
         "scope_rel": "src/runtime/cpp/generated",
         "matcher_kind": "regex",
         "needle": r"\bpy_at\([^\n]*py_to<int64>\(",
-        "expected_count": 47,
+        "expected_count": 46,
         "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02",
         "evidence_refs": (
             {

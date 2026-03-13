@@ -3,7 +3,7 @@
 // generated-by: tools/gen_runtime_from_manifest.py
 
 mod py_runtime;
-pub use crate::py_runtime::{math, pytra, time};
+pub use crate::py_runtime::{pytra};
 use crate::py_runtime::*;
 
 use crate::pytra::std::abi;
@@ -23,7 +23,8 @@ fn _gif_u16le(v: i64) -> Vec<i64> {
 
 fn _lzw_encode(data: &Vec<u8>, min_code_size: i64) -> Vec<u8> {
     if data.len() as i64 == 0 {
-        return (vec![]).clone();
+        let empty: Vec<i64> = vec![];
+        return (empty).clone();
     }
     let clear_code = 1 << min_code_size;
     let end_code = clear_code + 1;
