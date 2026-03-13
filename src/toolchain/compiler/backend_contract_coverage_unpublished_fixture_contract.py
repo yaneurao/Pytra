@@ -8,10 +8,10 @@ from src.toolchain.compiler import backend_contract_coverage_inventory as covera
 
 
 UNPUBLISHED_FIXTURE_DOC_TARGETS: Final[dict[str, str]] = {
-    "plan_ja": "docs/ja/plans/p2-backend-contract-coverage-100.md",
-    "plan_en": "docs/en/plans/p2-backend-contract-coverage-100.md",
-    "todo_ja": "docs/ja/todo/index.md",
-    "todo_en": "docs/en/todo/index.md",
+    "plan_ja": "docs/ja/plans/archive/20260314-p2-backend-contract-coverage-100.md",
+    "plan_en": "docs/en/plans/archive/20260314-p2-backend-contract-coverage-100.md",
+    "todo_ja": "docs/ja/todo/archive/20260314.md",
+    "todo_en": "docs/en/todo/archive/20260314.md",
 }
 
 UNPUBLISHED_FIXTURE_STATUS_TO_TARGET: Final[dict[str, str]] = {
@@ -25,19 +25,19 @@ UNPUBLISHED_FIXTURE_CLASSIFICATION_RULES: Final[dict[str, str]] = {
 }
 
 UNPUBLISHED_FIXTURE_REQUIRED_DOC_NEEDLES: Final[dict[str, tuple[str, ...]]] = {
-    "docs/ja/plans/p2-backend-contract-coverage-100.md": (
+    "docs/ja/plans/archive/20260314-p2-backend-contract-coverage-100.md": (
         "- [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S2-03] multi-backend で既に使われている未掲載 fixture を、support-matrix 昇格候補と coverage-only representative に仕分ける。",
         "unpublished multi-backend fixture inventory に `target_surface` と `status -> target_surface` invariant を追加し、`property_method_call` は `support_matrix_promotion_candidate`、`list_bool_index` は `coverage_matrix_only` 維持の `coverage_only_representative` として固定した。",
     ),
-    "docs/en/plans/p2-backend-contract-coverage-100.md": (
+    "docs/en/plans/archive/20260314-p2-backend-contract-coverage-100.md": (
         "- [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S2-03] Classify already-used multi-backend fixtures that are missing from the support matrix into promotion candidates versus coverage-only representatives.",
         "Added `target_surface` plus a `status -> target_surface` invariant to the unpublished multi-backend fixture inventory. `property_method_call` is fixed as the next `support_matrix_promotion_candidate`, while `list_bool_index` stays a `coverage_only_representative` tied to the `coverage_matrix_only` surface so promotion candidates and regression-only fixtures are distinguishable in machine-readable seeds.",
     ),
-    "docs/ja/todo/index.md": (
-        "`S2-03` までで unpublished multi-backend fixture の `support_matrix` 昇格候補 / `coverage_matrix_only` 維持を machine-readable seed と invariant へ固定し、`property_method_call` を promotion candidate、`list_bool_index` を coverage-only representative として分類した。",
+    "docs/ja/todo/archive/20260314.md": (
+        "- 進捗メモ: end state は `backend-coverage-matrix.md` が bundle taxonomy / suite attachment / required-lane seed ownership / unpublished fixture classification を公開する canonical coverage surface になり、support matrix / backend test matrix からも cross-link され、exporter/checker で drift が fail-fast する状態。",
     ),
-    "docs/en/todo/index.md": (
-        "Through `S2-03`, locked unpublished multi-backend fixture classification into machine-readable seeds and invariants, with `property_method_call` marked as the next `support_matrix` promotion candidate and `list_bool_index` retained as a `coverage_matrix_only` representative.",
+    "docs/en/todo/archive/20260314.md": (
+        "- Progress memo: the end state is that `backend-coverage-matrix.md` publishes bundle taxonomy, suite attachments, required-lane seed ownership, and unpublished fixture classification as the canonical coverage surface, is cross-linked from the support matrix and backend test matrix, and fails fast on doc drift through the exporter/checker pair.",
     ),
 }
 

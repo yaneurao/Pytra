@@ -15,8 +15,8 @@ from src.toolchain.compiler import backend_contract_coverage_inventory as invent
 
 def _collect_contract_issues() -> list[str]:
     issues: list[str] = []
-    if contract_mod.BACKEND_CONTRACT_COVERAGE_MATRIX_STATUS != "planned_separate_surface":
-        issues.append("coverage matrix status drifted away from planned_separate_surface")
+    if contract_mod.BACKEND_CONTRACT_COVERAGE_MATRIX_STATUS != "published_seed_surface":
+        issues.append("coverage matrix status drifted away from published_seed_surface")
     if contract_mod.BACKEND_CONTRACT_COVERAGE_REQUIREMENT_KEYS != (
         "feature_id",
         "required_lane",

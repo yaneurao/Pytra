@@ -9,10 +9,10 @@ from src.toolchain.compiler import backend_feature_contract_inventory as feature
 
 BACKEND_CONTRACT_COVERAGE_TODO_ID: Final[str] = "P2-BACKEND-CONTRACT-COVERAGE-100-01"
 BACKEND_CONTRACT_COVERAGE_PLAN_JA: Final[str] = (
-    "docs/ja/plans/p2-backend-contract-coverage-100.md"
+    "docs/ja/plans/archive/20260314-p2-backend-contract-coverage-100.md"
 )
 BACKEND_CONTRACT_COVERAGE_PLAN_EN: Final[str] = (
-    "docs/en/plans/p2-backend-contract-coverage-100.md"
+    "docs/en/plans/archive/20260314-p2-backend-contract-coverage-100.md"
 )
 
 COVERAGE_BUNDLE_ORDER: Final[tuple[str, ...]] = (

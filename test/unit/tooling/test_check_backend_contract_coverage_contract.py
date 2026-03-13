@@ -14,7 +14,7 @@ class BackendContractCoverageContractTest(unittest.TestCase):
     def test_contract_manifest_is_fixed(self) -> None:
         manifest = contract_mod.build_backend_contract_coverage_contract_manifest()
         self.assertEqual(manifest["contract_version"], 1)
-        self.assertEqual(manifest["coverage_matrix_status"], "planned_separate_surface")
+        self.assertEqual(manifest["coverage_matrix_status"], "published_seed_surface")
         self.assertEqual(
             manifest["coverage_requirement_keys"],
             ["feature_id", "required_lane", "backend", "bundle_id_or_rule"],

@@ -12,8 +12,10 @@ BACKEND_CONTRACT_COVERAGE_HANDOFF_DOC_TARGETS: Final[dict[str, str]] = {
     "support_matrix_en": "docs/en/language/backend-parity-matrix.md",
     "backend_test_matrix_ja": "docs/ja/language/backend-test-matrix.md",
     "backend_test_matrix_en": "docs/en/language/backend-test-matrix.md",
-    "plan_ja": "docs/ja/plans/p2-backend-contract-coverage-100.md",
-    "plan_en": "docs/en/plans/p2-backend-contract-coverage-100.md",
+    "language_index_ja": "docs/ja/language/index.md",
+    "language_index_en": "docs/en/language/index.md",
+    "plan_ja": "docs/ja/plans/archive/20260314-p2-backend-contract-coverage-100.md",
+    "plan_en": "docs/en/plans/archive/20260314-p2-backend-contract-coverage-100.md",
 }
 
 BACKEND_CONTRACT_COVERAGE_HANDOFF_EXPORTS: Final[dict[str, str]] = {
@@ -49,11 +51,19 @@ BACKEND_CONTRACT_COVERAGE_HANDOFF_REQUIRED_DOC_NEEDLES: Final[dict[str, tuple[st
     "docs/en/language/backend-test-matrix.md": (
         "- For bundle-based coverage seed and ownership, use [backend-coverage-matrix.md](./backend-coverage-matrix.md).",
     ),
-    "docs/ja/plans/p2-backend-contract-coverage-100.md": (
-        "- [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S3-01] docs/export/checker/English mirror を同期し、新規 feature/suite の coverage 漏れを fail-fast にする。",
+    "docs/ja/language/index.md": (
+        "- feature × required_lane × backend の bundle-based coverage seed と ownership: [Backend Coverage Matrix](./backend-coverage-matrix.md)",
     ),
-    "docs/en/plans/p2-backend-contract-coverage-100.md": (
+    "docs/en/language/index.md": (
+        "- Bundle-based coverage seed and ownership for feature × required_lane × backend: [Backend Coverage Matrix](./backend-coverage-matrix.md)",
+    ),
+    "docs/ja/plans/archive/20260314-p2-backend-contract-coverage-100.md": (
+        "- [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S3-01] docs/export/checker/English mirror を同期し、新規 feature/suite の coverage 漏れを fail-fast にする。",
+        "`backend-coverage-matrix.md` の ja/en live surface、`export_backend_contract_coverage_docs.py`、`backend_contract_coverage_handoff_contract.py` / checker / unit test を追加し、coverage bundle taxonomy / suite attachment / required-lane seed ownership / unpublished fixture classification を exporter 管理の docs surface に同期した。",
+    ),
+    "docs/en/plans/archive/20260314-p2-backend-contract-coverage-100.md": (
         "- [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S3-01] Sync docs, exports, checkers, and the English mirror so new features/suites fail fast when coverage mapping is missing.",
+        "Added the live ja/en `backend-coverage-matrix.md` surface, `export_backend_contract_coverage_docs.py`, and `backend_contract_coverage_handoff_contract.py` plus its checker/unit test so coverage bundle taxonomy, suite attachments, required-lane seed ownership, and unpublished fixture classification stay synchronized through an exporter-managed docs surface.",
     ),
 }
 

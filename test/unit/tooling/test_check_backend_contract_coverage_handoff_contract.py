@@ -19,6 +19,8 @@ class BackendContractCoverageHandoffContractTest(unittest.TestCase):
         self.assertEqual(manifest["contract_version"], 1)
         self.assertIn("coverage_matrix_ja", manifest["doc_targets"])
         self.assertIn("coverage_matrix_en", manifest["doc_targets"])
+        self.assertIn("language_index_ja", manifest["doc_targets"])
+        self.assertIn("language_index_en", manifest["doc_targets"])
         self.assertEqual(
             manifest["exports"]["exporter"],
             "tools/export_backend_contract_coverage_docs.py",

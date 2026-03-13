@@ -8,14 +8,18 @@ from src.toolchain.compiler import backend_contract_coverage_inventory as covera
 
 
 BACKEND_CONTRACT_COVERAGE_DOC_TARGETS: Final[dict[str, str]] = {
+    "coverage_matrix_ja": "docs/ja/language/backend-coverage-matrix.md",
+    "coverage_matrix_en": "docs/en/language/backend-coverage-matrix.md",
+    "language_index_ja": "docs/ja/language/index.md",
+    "language_index_en": "docs/en/language/index.md",
     "support_matrix_ja": "docs/ja/language/backend-parity-matrix.md",
     "support_matrix_en": "docs/en/language/backend-parity-matrix.md",
     "backend_test_matrix_ja": "docs/ja/language/backend-test-matrix.md",
     "backend_test_matrix_en": "docs/en/language/backend-test-matrix.md",
-    "plan_ja": "docs/ja/plans/p2-backend-contract-coverage-100.md",
-    "plan_en": "docs/en/plans/p2-backend-contract-coverage-100.md",
-    "todo_ja": "docs/ja/todo/index.md",
-    "todo_en": "docs/en/todo/index.md",
+    "plan_ja": "docs/ja/plans/archive/20260314-p2-backend-contract-coverage-100.md",
+    "plan_en": "docs/en/plans/archive/20260314-p2-backend-contract-coverage-100.md",
+    "todo_ja": "docs/ja/todo/archive/20260314.md",
+    "todo_en": "docs/en/todo/archive/20260314.md",
 }
 
 BACKEND_CONTRACT_COVERAGE_ROLE_SPLIT: Final[dict[str, str]] = {
@@ -24,7 +28,7 @@ BACKEND_CONTRACT_COVERAGE_ROLE_SPLIT: Final[dict[str, str]] = {
     "backend_test_matrix": "Backend-owned suite-health publication surface that must stay distinct from contract coverage.",
 }
 
-BACKEND_CONTRACT_COVERAGE_MATRIX_STATUS: Final[str] = "planned_separate_surface"
+BACKEND_CONTRACT_COVERAGE_MATRIX_STATUS: Final[str] = "published_seed_surface"
 BACKEND_CONTRACT_COVERAGE_REQUIREMENT_KEYS: Final[tuple[str, ...]] = (
     "feature_id",
     "required_lane",
@@ -42,33 +46,47 @@ BACKEND_CONTRACT_COVERAGE_SUITE_ATTACHMENT_RULES: Final[dict[str, str]] = {
 }
 
 BACKEND_CONTRACT_COVERAGE_REQUIRED_DOC_NEEDLES: Final[dict[str, tuple[str, ...]]] = {
+    "docs/ja/language/backend-coverage-matrix.md": (
+        "このページは、bundle-based verification coverage を公開する canonical publish target です。",
+        "- このページは `feature x required_lane x backend` の contract coverage seed と、その bundle/rule ownership を公開する。",
+    ),
+    "docs/en/language/backend-coverage-matrix.md": (
+        "This page is the canonical publish target for bundle-based verification coverage.",
+        "- This page publishes the `feature x required_lane x backend` contract-coverage seed together with its bundle/rule ownership.",
+    ),
+    "docs/ja/language/index.md": (
+        "- feature × required_lane × backend の bundle-based coverage seed と ownership: [Backend Coverage Matrix](./backend-coverage-matrix.md)",
+    ),
+    "docs/en/language/index.md": (
+        "- Bundle-based coverage seed and ownership for feature × required_lane × backend: [Backend Coverage Matrix](./backend-coverage-matrix.md)",
+    ),
     "docs/ja/language/backend-parity-matrix.md": (
         "このページは support matrix の canonical publish target であり、bundle-based coverage matrix そのものではありません。",
-        "将来の coverage matrix は `feature x required_lane x backend` の contract coverage を別 surface として公開し、`backend-test-matrix.md` は backend-owned suite health の publish target に留めます。",
+        "`feature x required_lane x backend` の contract coverage seed と ownership は [backend-coverage-matrix.md](./backend-coverage-matrix.md) を別 surface として公開し、`backend-test-matrix.md` は backend-owned suite health の publish target に留めます。",
     ),
     "docs/en/language/backend-parity-matrix.md": (
         "This page is the canonical support-matrix publish target, not the bundle-based coverage matrix itself.",
-        "The future coverage matrix will publish `feature x required_lane x backend` contract coverage on a separate surface, while `backend-test-matrix.md` remains the backend-owned suite-health publish target.",
+        "[backend-coverage-matrix.md](./backend-coverage-matrix.md) publishes the `feature x required_lane x backend` contract-coverage seed and ownership on the separate coverage surface, while `backend-test-matrix.md` remains the backend-owned suite-health publish target.",
     ),
     "docs/ja/language/backend-test-matrix.md": (
-        "このページは backend-owned suite health の publish target であり、将来の bundle-based coverage matrix の代替ではありません。",
+        "このページは backend-owned suite health の publish target であり、[backend-coverage-matrix.md](./backend-coverage-matrix.md) の代替ではありません。",
     ),
     "docs/en/language/backend-test-matrix.md": (
-        "This page is the publish target for backend-owned suite health and is not a substitute for the future bundle-based coverage matrix.",
+        "This page is the publish target for backend-owned suite health and is not a substitute for [backend-coverage-matrix.md](./backend-coverage-matrix.md).",
     ),
-    "docs/ja/plans/p2-backend-contract-coverage-100.md": (
+    "docs/ja/plans/archive/20260314-p2-backend-contract-coverage-100.md": (
         "- [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S1-02] support matrix と coverage matrix の役割分担、および contract coverage 100% の定義を docs / tooling contract に固定する。",
         "`backend_contract_coverage_contract.py` / checker / unit test を追加し、support matrix / future coverage matrix / backend test matrix の役割分担と `feature x required_lane x backend` contract coverage 100% の定義を tooling contract に固定した。",
     ),
-    "docs/en/plans/p2-backend-contract-coverage-100.md": (
+    "docs/en/plans/archive/20260314-p2-backend-contract-coverage-100.md": (
         "- [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S1-02] Freeze the role split between the support matrix and the coverage matrix, together with the definition of 100% contract coverage, in docs/tooling contracts.",
         "Added `backend_contract_coverage_contract.py`, its checker, and a unit test to lock the role split between the support matrix, the future coverage matrix, and the backend test matrix, together with the definition of 100% contract coverage for `feature x required_lane x backend`.",
     ),
-    "docs/ja/todo/index.md": (
-        "`S3-01` までで coverage docs/export/checker/English mirror を live surface に同期し、`backend-coverage-matrix.md` を canonical coverage publish target として exporter 管理下へ置いた。",
+    "docs/ja/todo/archive/20260314.md": (
+        "- 進捗メモ: end state は `backend-coverage-matrix.md` が bundle taxonomy / suite attachment / required-lane seed ownership / unpublished fixture classification を公開する canonical coverage surface になり、support matrix / backend test matrix からも cross-link され、exporter/checker で drift が fail-fast する状態。",
     ),
-    "docs/en/todo/index.md": (
-        "Through `S3-01`, synchronized coverage docs, exports, checkers, and the English mirror onto the live surface, putting `backend-coverage-matrix.md` under exporter-managed publication as the canonical coverage target.",
+    "docs/en/todo/archive/20260314.md": (
+        "- Progress memo: the end state is that `backend-coverage-matrix.md` publishes bundle taxonomy, suite attachments, required-lane seed ownership, and unpublished fixture classification as the canonical coverage surface, is cross-linked from the support matrix and backend test matrix, and fails fast on doc drift through the exporter/checker pair.",
     ),
 }
 

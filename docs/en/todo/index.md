@@ -33,10 +33,6 @@ Last updated: 2026-03-14
 
 ### P2
 
-1. [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01] Introduce a bundle-based coverage matrix and fix `feature x lane x backend` contract coverage at 100% as a surface separate from the support matrix.
-Context: [docs/en/plans/p2-backend-contract-coverage-100.md](../plans/p2-backend-contract-coverage-100.md)
-- Progress memo: Through `S3-01`, synchronized coverage docs, exports, checkers, and the English mirror onto the live surface, putting `backend-coverage-matrix.md` under exporter-managed publication as the canonical coverage target.
-
-2. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] Push typed fallback out of `py_runtime.h` and back into EAST3, the C++ emitter, and runtime SoT so the header shrinks without physical splitting.
+1. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] Push typed fallback out of `py_runtime.h` and back into EAST3, the C++ emitter, and runtime SoT so the header shrinks without physical splitting.
 Context: [docs/en/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md](../plans/p2-cpp-pyruntime-upstream-fallback-shrink.md)
 - Progress memo: Not started.

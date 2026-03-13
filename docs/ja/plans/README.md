@@ -10,7 +10,6 @@
 - `stale-complete` は live の `p*-*.md` で、TODO 未登録、checklist 完了、かつ live status/report sink でもないものとする。これは `plans/` 直下へ残さず archive へ移す。
 
 2026-03-14 時点の active live plan:
-- `p2-backend-contract-coverage-100.md`
 - `p2-cpp-pyruntime-upstream-fallback-shrink.md`
 
 ## ルール
