@@ -6,6 +6,7 @@ from toolchain.compiler.transpile_cli import (
     looks_like_runtime_function_name,
     make_user_error,
 )
+from toolchain.frontends.runtime_symbol_index import resolve_import_binding_runtime_module
 
 
 _PYOBJ_RUNTIME_LIST_BRIDGE_CONTEXTS = {
@@ -21,6 +22,22 @@ _PYOBJ_RUNTIME_LIST_BRIDGE_CONTEXTS = {
 
 class CppCallEmitter:
     """Runtime-call / import / cast-related helpers split out from CppEmitter."""
+
+    def _resolve_imported_symbol_cpp_target(self, module_name: str, symbol_name: str) -> tuple[str, str]:
+        """Return the C++ target module/namespace for an imported symbol.
+
+        This re-resolves frontend facade imports through the runtime symbol index so
+        single-module transpile paths still reach the canonical runtime namespace.
+        """
+        target_module = module_name
+        if module_name != "" and symbol_name != "":
+            resolved_module = resolve_import_binding_runtime_module(module_name, symbol_name, "symbol")
+            if resolved_module != "":
+                target_module = resolved_module
+        target_ns = self.module_namespace_map.get(target_module, "")
+        if target_ns == "" and target_module != "":
+            target_ns = self._module_name_to_cpp_namespace(target_module)
+        return target_module, target_ns
 
     def _render_pyobj_runtime_list_bridge_ref(self, owner_expr: str, ctx: str) -> str:
         """Render the low-level object-list bridge used by pyobj runtime list fallbacks."""
@@ -91,12 +108,13 @@ class CppCallEmitter:
         """`Call(Name)` で import 済みシンボルを解決し、必要なら直接呼び出しへ変換する。"""
         raw = raw_name
         imported_module = ""
-        has_import_context = raw != "" and not self.is_declared(raw)
+        has_import_context = raw != "" and not self.is_locally_declared(raw)
         if has_import_context:
             resolved = self._resolve_imported_symbol(raw)
             imported_module = self.any_dict_get_str(resolved, "module", "")
             if imported_module != "":
                 raw = self.any_dict_get_str(resolved, "name", "") or raw
+                imported_module, _ = self._resolve_imported_symbol_cpp_target(imported_module, raw)
         has_import_target = raw != "" and imported_module != ""
         if not has_import_target:
             return None, raw
@@ -168,11 +186,8 @@ class CppCallEmitter:
             if raw.startswith("py_assert_"):
                 call_args = self._coerce_py_assert_args(raw, call_args, call_arg_nodes)
             return f"{mapped_runtime_txt}({join_str_list(', ', call_args)})", raw
-        has_namespace_map = imported_module in self.module_namespace_map
-        target_ns = ""
-        if has_namespace_map:
-            target_ns = self.module_namespace_map[imported_module]
-        if has_namespace_map and target_ns != "":
+        _, target_ns = self._resolve_imported_symbol_cpp_target(imported_module, raw)
+        if target_ns != "":
             call_args = self.merge_call_args(args, kw)
             call_arg_nodes = self.merge_call_arg_nodes(arg_nodes, kw_nodes)
             module_arg_names = self._module_function_arg_names(imported_module, raw)
