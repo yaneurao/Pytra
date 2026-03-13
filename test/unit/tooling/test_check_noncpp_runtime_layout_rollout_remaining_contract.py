@@ -50,6 +50,14 @@ SCRIPT_FAMILY_MISSING_COMPARE_MODULES = ()
 
 WAVE_A_IMAGE_RUNTIME_HELPER_ARTIFACTS = ("utils/image_runtime",)
 
+RUBY_GENERATED_MODULES = (
+    SCRIPT_FAMILY_COMPARE_BUILT_IN
+    + SCRIPT_FAMILY_COMPARE_STD
+    + ("utils/assertions", "utils/gif", "utils/image_runtime", "utils/png")
+)
+RUBY_GENERATED_FILES = tuple(f"{module}.rb" for module in RUBY_GENERATED_MODULES)
+RUBY_TARGET_GENERATED_FILES = tuple(f"generated/{path}" for path in RUBY_GENERATED_FILES)
+
 
 class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_contract_issues_are_empty(self) -> None:
@@ -610,6 +618,16 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     ),
                 },
                 {
+                    "backend": "ruby",
+                    "smoke_kind": "source_guard",
+                    "smoke_targets": (
+                        "built_in/type_id.rb",
+                        "std/argparse.rb",
+                        "std/json.rb",
+                        "utils/assertions.rb",
+                    ),
+                },
+                {
                     "backend": "php",
                     "smoke_kind": "direct_load",
                     "smoke_targets": (
@@ -1101,6 +1119,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "utils/png.ts",
             ),
         )
+        self.assertEqual(by_backend["ruby"]["pytra_gen_files"], RUBY_GENERATED_FILES)
 
     def test_target_inventory_is_fixed(self) -> None:
         by_backend = {
@@ -1399,6 +1418,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "generated/utils/png.ts",
             ),
         )
+        self.assertEqual(by_backend["ruby"]["generated_files"], RUBY_TARGET_GENERATED_FILES)
         self.assertEqual(
             by_backend["php"],
             {
@@ -1731,7 +1751,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "ruby",
                     "missing_compare_lane_modules": (),
                     "native_compare_residual_modules": (),
-                    "helper_shaped_compare_gap_modules": SCRIPT_FAMILY_COMPARE_BASELINE,
+                    "helper_shaped_compare_gap_modules": (),
                 },
                 "php": {
                     "backend": "php",
@@ -1771,12 +1791,8 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 },
                 "ruby": {
                     "backend": "ruby",
-                    "materialized_compare_modules": (),
-                    "helper_artifact_modules": (
-                        "utils/gif_helper",
-                        "utils/image_runtime",
-                        "utils/png_helper",
-                    ),
+                    "materialized_compare_modules": SCRIPT_FAMILY_COMPARE_BASELINE,
+                    "helper_artifact_modules": WAVE_A_IMAGE_RUNTIME_HELPER_ARTIFACTS,
                 },
                 "php": {
                     "backend": "php",

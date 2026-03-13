@@ -200,6 +200,41 @@ class Py2RbSmokeTest(unittest.TestCase):
         self.assertTrue(image_runtime.exists())
         self.assertFalse(legacy_path.exists())
 
+    def test_ruby_generated_std_baseline_source_guard_materializes_new_compare_modules(self) -> None:
+        runtime_root = ROOT / "src" / "runtime" / "ruby" / "generated"
+        guarded_targets = {
+            runtime_root / "built_in" / "type_id.rb": ("def py_tid_runtime_type_id(",),
+            runtime_root / "std" / "argparse.rb": ("class ArgSpec", "class ArgumentParser"),
+            runtime_root / "std" / "json.rb": ("class JsonObj", "class JsonParser"),
+            runtime_root / "std" / "time.rb": ("def perf_counter(",),
+            runtime_root / "utils" / "assertions.rb": ("def py_assert_true(",),
+            runtime_root / "utils" / "gif.rb": ("def save_gif(",),
+            runtime_root / "utils" / "png.rb": ("def write_rgb_png(",),
+        }
+        for path, needles in guarded_targets.items():
+            with self.subTest(path=path.relative_to(ROOT).as_posix()):
+                text = path.read_text(encoding="utf-8")
+                self.assertIn("AUTO-GENERATED FILE. DO NOT EDIT.", text)
+                for needle in needles:
+                    self.assertIn(needle, text)
+        self.assertFalse((runtime_root / "utils" / "gif_helper.rb").exists())
+        self.assertFalse((runtime_root / "utils" / "png_helper.rb").exists())
+        for lint_path in (
+            runtime_root / "built_in" / "type_id.rb",
+            runtime_root / "std" / "argparse.rb",
+            runtime_root / "std" / "json.rb",
+            runtime_root / "utils" / "assertions.rb",
+        ):
+            with self.subTest(lint_path=lint_path.relative_to(ROOT).as_posix()):
+                proc = subprocess.run(
+                    ["ruby", "-c", str(lint_path)],
+                    cwd=ROOT,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+
     def test_ruby_repo_compat_lane_resolves_runtime_helpers(self) -> None:
         compat_runtime = ROOT / "src" / "runtime" / "ruby" / "pytra" / "built_in" / "py_runtime.rb"
         code = "\n".join(

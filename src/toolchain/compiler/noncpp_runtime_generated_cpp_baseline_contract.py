@@ -150,11 +150,6 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "legacy_state": "native_canonical",
         "modules": ("std/math", "std/time"),
     },
-    {
-        "backend": "ruby",
-        "legacy_state": "blocked",
-        "modules": NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MODULES_V1,
-    },
 )
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1: Final[
@@ -163,7 +158,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1: Final[
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MATERIALIZED_BACKENDS_V1: Final[
     tuple[str, ...]
-] = ("cs", "go", "java", "rs", "swift", "nim", "kotlin", "scala", "js", "ts", "php")
+] = ("cs", "go", "java", "rs", "swift", "nim", "kotlin", "scala", "js", "ts", "ruby", "php")
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_POLICY_FILES_V1: Final[
     tuple[NonCppRuntimeGeneratedCppBaselineLegacyPolicyFileEntry, ...]

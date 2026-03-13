@@ -53,6 +53,7 @@ _RUBY_KEYWORDS = {
 }
 
 _CLASS_NAMES: set[str] = set()
+_CLASS_NAME_MAP: dict[str, str] = {}
 _FUNCTION_NAMES: set[str] = set()
 _RELATIVE_IMPORT_MODULE_ALIASES: dict[str, str] = {}
 _RELATIVE_IMPORT_SYMBOL_ALIASES: dict[str, str] = {}
@@ -339,6 +340,14 @@ def _snake_to_pascal(name: str) -> str:
             out.append(part[0].upper() + part[1:])
         i += 1
     return "".join(out)
+
+
+def _safe_class_ident(name: Any, fallback: str) -> str:
+    ident = _safe_ident(name, fallback).lstrip("_")
+    if ident == "":
+        ident = fallback
+    rendered = _snake_to_pascal(ident)
+    return rendered if rendered != "" else fallback
 
 
 def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
@@ -633,6 +642,9 @@ def _render_name_expr(expr: dict[str, Any]) -> str:
     if raw == "self":
         return "self"
     ident = _safe_ident(raw, "value")
+    class_name = _CLASS_NAME_MAP.get(ident)
+    if class_name is not None:
+        return class_name
     mapped = _RELATIVE_IMPORT_SYMBOL_ALIASES.get(ident)
     if isinstance(mapped, str) and mapped != "":
         return mapped
@@ -660,8 +672,9 @@ def _render_isinstance_check(lhs: str, typ: Any) -> str:
             return lhs + ".is_a?(Array)"
         if name == "dict":
             return lhs + ".is_a?(Hash)"
-        if name in _CLASS_NAMES:
-            return lhs + ".is_a?(" + name + ")"
+        rendered_class = _CLASS_NAME_MAP.get(name, name)
+        if rendered_class in _CLASS_NAMES:
+            return lhs + ".is_a?(" + rendered_class + ")"
         return "false"
     if typ.get("kind") == "Tuple":
         elems_any = typ.get("elements")
@@ -1685,9 +1698,14 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
 
 
 def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
-    class_name = _safe_ident(cls.get("name"), "PytraClass")
+    class_key = _safe_ident(cls.get("name"), "PytraClass")
+    class_name = _CLASS_NAME_MAP.get(class_key, _safe_class_ident(cls.get("name"), "PytraClass"))
     base_any = cls.get("base")
-    base_name = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
+    if isinstance(base_any, str):
+        base_key = _safe_ident(base_any, "")
+        base_name = _CLASS_NAME_MAP.get(base_key, _safe_class_ident(base_any, ""))
+    else:
+        base_name = ""
     head = indent + "class " + class_name
     if base_name != "":
         head += " < " + base_name
@@ -1786,6 +1804,8 @@ def transpile_to_ruby_native(east_doc: dict[str, Any]) -> str:
 
     global _CLASS_NAMES
     _CLASS_NAMES = set()
+    global _CLASS_NAME_MAP
+    _CLASS_NAME_MAP = {}
     global _FUNCTION_NAMES
     _FUNCTION_NAMES = set()
     global _RELATIVE_IMPORT_MODULE_ALIASES
@@ -1795,7 +1815,11 @@ def transpile_to_ruby_native(east_doc: dict[str, Any]) -> str:
 
     i = 0
     while i < len(classes):
-        _CLASS_NAMES.add(_safe_ident(classes[i].get("name"), "PytraClass"))
+        raw_name = classes[i].get("name")
+        class_key = _safe_ident(raw_name, "PytraClass")
+        class_name = _safe_class_ident(raw_name, "PytraClass")
+        _CLASS_NAME_MAP[class_key] = class_name
+        _CLASS_NAMES.add(class_name)
         i += 1
     i = 0
     while i < len(functions):

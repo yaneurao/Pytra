@@ -192,6 +192,20 @@ REMAINING_NONCPP_WAVE_A_IMAGE_RUNTIME_HELPER_ARTIFACT_MODULES_V1: Final[tuple[st
     "utils/image_runtime",
 )
 
+REMAINING_NONCPP_RUBY_GENERATED_MODULES_V1: Final[tuple[str, ...]] = (
+    REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+    + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
+    + ("utils/assertions", "utils/gif", "utils/image_runtime", "utils/png")
+)
+
+REMAINING_NONCPP_RUBY_CURRENT_GENERATED_FILES_V1: Final[tuple[str, ...]] = tuple(
+    f"{module}.rb" for module in REMAINING_NONCPP_RUBY_GENERATED_MODULES_V1
+)
+
+REMAINING_NONCPP_RUBY_TARGET_GENERATED_FILES_V1: Final[tuple[str, ...]] = tuple(
+    f"generated/{module}.rb" for module in REMAINING_NONCPP_RUBY_GENERATED_MODULES_V1
+)
+
 REMAINING_NONCPP_GO_JAVA_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
     "built_in/contains",
     "built_in/io_ops",
@@ -683,10 +697,10 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "rationale": "Ruby handwritten runtime substrate already lives in native/built_in after the Wave B path cutover.",
             },
             {
-                "current_prefix": "src/runtime/ruby/generated/utils/",
-                "target_prefix": "src/runtime/ruby/generated/utils/",
+                "current_prefix": "src/runtime/ruby/generated/",
+                "target_prefix": "src/runtime/ruby/generated/",
                 "ownership": "generated",
-                "rationale": "Ruby image helpers already live in generated/utils after the Wave B path cutover.",
+                "rationale": "Ruby compare artifacts now live across generated/built_in, generated/std, and generated/utils after the baseline materialization bundle.",
             },
             {
                 "current_prefix": "src/runtime/ruby/pytra/built_in/py_runtime.rb",
@@ -1058,11 +1072,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     {
         "backend": "ruby",
         "pytra_core_files": ("built_in/py_runtime.rb",),
-        "pytra_gen_files": (
-            "utils/gif_helper.rb",
-            "utils/image_runtime.rb",
-            "utils/png_helper.rb",
-        ),
+        "pytra_gen_files": REMAINING_NONCPP_RUBY_CURRENT_GENERATED_FILES_V1,
         "pytra_files": ("built_in/py_runtime.rb",),
     },
     {
@@ -1406,11 +1416,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
     },
     {
         "backend": "ruby",
-        "generated_files": (
-            "generated/utils/gif_helper.rb",
-            "generated/utils/image_runtime.rb",
-            "generated/utils/png_helper.rb",
-        ),
+        "generated_files": REMAINING_NONCPP_RUBY_TARGET_GENERATED_FILES_V1,
         "native_files": ("native/built_in/py_runtime.rb",),
         "compat_files": ("pytra/built_in/py_runtime.rb",),
     },
@@ -1654,10 +1660,10 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     },
     {
         "backend": "ruby",
-        "generated_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "generated_modules": REMAINING_NONCPP_RUBY_GENERATED_MODULES_V1,
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
-        "blocked_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "blocked_modules": (),
     },
     {
         "backend": "php",
@@ -1719,7 +1725,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_BLOCKED_REASONS_V1: Final[
         "backend": "ruby",
         "missing_compare_lane_modules": (),
         "native_compare_residual_modules": (),
-        "helper_shaped_compare_gap_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "helper_shaped_compare_gap_modules": (),
     },
     {
         "backend": "php",
@@ -1749,8 +1755,8 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_V1: Final[
     },
     {
         "backend": "ruby",
-        "materialized_compare_modules": (),
-        "helper_artifact_modules": ("utils/gif_helper", "utils/image_runtime", "utils/png_helper"),
+        "materialized_compare_modules": REMAINING_NONCPP_GENERATED_COMPARE_BASELINE_V1,
+        "helper_artifact_modules": REMAINING_NONCPP_WAVE_A_IMAGE_RUNTIME_HELPER_ARTIFACT_MODULES_V1,
     },
     {
         "backend": "php",
@@ -1973,6 +1979,16 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_SMOKE_V1: Final[
         "smoke_targets": (
             "built_in/contains.ts",
             "built_in/sequence.ts",
+        ),
+    },
+    {
+        "backend": "ruby",
+        "smoke_kind": "source_guard",
+        "smoke_targets": (
+            "built_in/type_id.rb",
+            "std/argparse.rb",
+            "std/json.rb",
+            "utils/assertions.rb",
         ),
     },
     {

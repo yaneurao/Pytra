@@ -605,7 +605,7 @@ def _collect_wave_b_generated_compare_smoke_issues() -> list[str]:
         for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_generated_compare()
     }
     entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_generated_compare_smoke()
-    if tuple(entry["backend"] for entry in entries) != ("js", "ts", "php"):
+    if tuple(entry["backend"] for entry in entries) != ("js", "ts", "ruby", "php"):
         issues.append("wave-b generated compare smoke order drifted")
     for entry in entries:
         backend = entry["backend"]
@@ -635,9 +635,9 @@ def _collect_wave_b_generated_compare_smoke_issues() -> list[str]:
         smoke_modules.discard(None)
         if not smoke_modules.issubset(allowed_modules):
             issues.append(f"wave-b generated compare smoke escaped compare modules: {backend}")
-        if backend == "ts" and smoke_kind != "source_guard":
-            issues.append("wave-b generated compare smoke kind drifted: ts")
-        if backend != "ts" and smoke_kind != "direct_load":
+        if backend in {"ts", "ruby"} and smoke_kind != "source_guard":
+            issues.append(f"wave-b generated compare smoke kind drifted: {backend}")
+        if backend not in {"ts", "ruby"} and smoke_kind != "direct_load":
             issues.append(f"wave-b generated compare smoke kind drifted: {backend}")
     return issues
 
