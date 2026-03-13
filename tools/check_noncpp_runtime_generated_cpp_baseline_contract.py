@@ -109,7 +109,7 @@ def _collect_backend_runtime_file_inventory(backend: str) -> dict[str, object]:
             if path.is_file()
         )
     )
-    compat_files = tuple(
+    delete_target_files = tuple(
         sorted(
             str(path.relative_to(base)).replace("\\", "/")
             for path in (base / "pytra").glob("**/*")
@@ -124,7 +124,7 @@ def _collect_backend_runtime_file_inventory(backend: str) -> dict[str, object]:
         "backend": backend,
         "generated_files": generated_files,
         "native_files": native_files,
-        "compat_files": compat_files,
+        "delete_target_files": delete_target_files,
     }
 
 
@@ -134,7 +134,7 @@ def _collect_expected_runtime_file_inventory() -> tuple[dict[str, object], ...]:
             "backend": entry["backend"],
             "generated_files": entry["generated_files"],
             "native_files": entry["native_files"],
-            "compat_files": entry["compat_files"],
+            "delete_target_files": entry["delete_target_files"],
         }
         for entry in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_local_runtime_file_inventory()
     )
