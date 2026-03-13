@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 function __pytra_require_runtime_file(string $packaged_rel, string $repo_rel): void {
     $candidates = [
+        __DIR__ . '/' . $repo_rel,
         __DIR__ . '/' . $packaged_rel,
         dirname(__DIR__, 2) . '/pytra/' . $repo_rel,
     ];

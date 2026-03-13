@@ -163,7 +163,7 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
         "current_dir": "src/runtime/lua/pytra",
         "target_policy": "delete_target_after_script_output_staging",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
-        "blocker_buckets": ("direct_load_smoke", "contract_allowlist"),
+        "blocker_buckets": (),
     },
     {
         "backend": "ruby",
@@ -171,7 +171,7 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
         "current_dir": "src/runtime/ruby/pytra",
         "target_policy": "delete_target_after_script_output_staging",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
-        "blocker_buckets": ("direct_load_smoke", "contract_allowlist"),
+        "blocker_buckets": (),
     },
     {
         "backend": "php",
@@ -179,40 +179,11 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
         "current_dir": "src/runtime/php/pytra",
         "target_policy": "delete_target_after_script_output_staging",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
-        "blocker_buckets": ("direct_load_smoke", "runtime_shim_writer", "contract_allowlist"),
+        "blocker_buckets": (),
     },
 )
 
-NONCPP_PYTRA_DESHIM_BLOCKERS_V1: Final[tuple[NonCppPytraDeshimBlockerEntry, ...]] = (
-    {
-        "backend": "lua",
-        "bucket": "direct_load_smoke",
-        "path": "test/unit/backends/lua/test_py2lua_smoke.py",
-        "needles": ('delete_target_runtime = ROOT / "src" / "runtime" / "lua" / "pytra" / "built_in" / "py_runtime.lua"',),
-        "rationale": "Lua compat smoke still directly loads the checked-in pytra runtime shim.",
-    },
-    {
-        "backend": "ruby",
-        "bucket": "direct_load_smoke",
-        "path": "test/unit/backends/rb/test_py2rb_smoke.py",
-        "needles": ('delete_target_runtime = ROOT / "src" / "runtime" / "ruby" / "pytra" / "built_in" / "py_runtime.rb"',),
-        "rationale": "Ruby compat smoke still directly loads the checked-in pytra runtime shim.",
-    },
-    {
-        "backend": "php",
-        "bucket": "runtime_shim_writer",
-        "path": "tools/gen_runtime_from_manifest.py",
-        "needles": ("require_once __DIR__ . '/pytra/py_runtime.php';",),
-        "rationale": "PHP runtime generation still knows how to emit a repo-tree pytra shim include.",
-    },
-    {
-        "backend": "php",
-        "bucket": "direct_load_smoke",
-        "path": "test/unit/backends/php/test_py2php_smoke.py",
-        "needles": ('delete_target_runtime_path = ROOT / "src" / "runtime" / "php" / "pytra" / "py_runtime.php"',),
-        "rationale": "PHP compat smoke still directly loads the checked-in pytra runtime shim.",
-    },
-)
+NONCPP_PYTRA_DESHIM_BLOCKERS_V1: Final[tuple[NonCppPytraDeshimBlockerEntry, ...]] = ()
 
 NONCPP_PYTRA_DESHIM_DOC_POLICY_V1: Final[tuple[NonCppPytraDeshimDocPolicyEntry, ...]] = (
     {

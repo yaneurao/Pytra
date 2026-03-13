@@ -235,23 +235,39 @@ class Py2RbSmokeTest(unittest.TestCase):
                 )
                 self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
-    def test_ruby_repo_delete_target_lane_resolves_runtime_helpers(self) -> None:
-        delete_target_runtime = ROOT / "src" / "runtime" / "ruby" / "pytra" / "built_in" / "py_runtime.rb"
-        code = "\n".join(
-            [
-                f"load {delete_target_runtime.as_posix()!r}",
-                "puts(__pytra_truthy([1]) ? 'ruby-ok' : 'ruby-missing')",
-            ]
-        )
-        proc = subprocess.run(
-            ["ruby", "-e", code],
-            cwd=ROOT,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertEqual(proc.stdout, "ruby-ok\n")
+    def test_ruby_cli_staged_runtime_lane_resolves_runtime_helpers(self) -> None:
+        fixture = find_fixture_case("add")
+        with tempfile.TemporaryDirectory() as td:
+            out_rb = Path(td) / "add.rb"
+            env = dict(os.environ)
+            py_path = str(ROOT / "src")
+            old = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+            proc = subprocess.run(
+                [sys.executable, "src/py2x.py", "--target", "ruby", str(fixture), "-o", str(out_rb)],
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            staged_runtime = (Path(td) / "py_runtime.rb").resolve()
+            self.assertTrue(staged_runtime.exists())
+            code = "\n".join(
+                [
+                    f"load {staged_runtime.as_posix()!r}",
+                    "puts(__pytra_truthy([1]) ? 'ruby-ok' : 'ruby-missing')",
+                ]
+            )
+            proc = subprocess.run(
+                ["ruby", "-e", code],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertEqual(proc.stdout, "ruby-ok\n")
 
     def test_generated_add_fixture_executes_when_ruby_available(self) -> None:
         if shutil.which("ruby") is None:

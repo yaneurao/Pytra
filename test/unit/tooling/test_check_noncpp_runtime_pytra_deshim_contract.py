@@ -86,6 +86,7 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
 
     def test_blocker_baseline_contains_expected_categories(self) -> None:
         blockers = contract_mod.iter_noncpp_pytra_deshim_blockers()
+        self.assertEqual(blockers, ())
         self.assertFalse(any(entry["backend"] == "js" for entry in blockers))
         self.assertFalse(any(entry["backend"] == "ts" for entry in blockers))
         self.assertNotIn(
@@ -104,19 +105,7 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
                 for entry in blockers
             )
         )
-        self.assertIn(
-            {
-                "backend": "php",
-                "bucket": "runtime_shim_writer",
-                "path": "tools/gen_runtime_from_manifest.py",
-                "needles": ("require_once __DIR__ . '/pytra/py_runtime.php';",),
-                "rationale": "PHP runtime generation still knows how to emit a repo-tree pytra shim include.",
-            },
-            blockers,
-        )
-
     def test_doc_policy_baseline_contains_expected_entries(self) -> None:
-        blockers = contract_mod.iter_noncpp_pytra_deshim_blockers()
         self.assertEqual(
             contract_mod.iter_noncpp_pytra_deshim_doc_policy(),
             (
@@ -190,17 +179,5 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
                 },
             ),
         )
-        self.assertIn(
-            {
-                "backend": "php",
-                "bucket": "runtime_shim_writer",
-                "path": "tools/gen_runtime_from_manifest.py",
-                "needles": ("require_once __DIR__ . '/pytra/py_runtime.php';",),
-                "rationale": "PHP runtime generation still knows how to emit a repo-tree pytra shim include.",
-            },
-            blockers,
-        )
-
-
 if __name__ == "__main__":
     unittest.main()

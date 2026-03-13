@@ -124,24 +124,40 @@ class Py2LuaSmokeTest(unittest.TestCase):
                 )
                 self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
-    def test_lua_repo_delete_target_lane_resolves_runtime_helpers(self) -> None:
-        delete_target_runtime = ROOT / "src" / "runtime" / "lua" / "pytra" / "built_in" / "py_runtime.lua"
-        code = "\n".join(
-            [
-                f"dofile({delete_target_runtime.as_posix()!r})",
-                "io.write((__pytra_truthy({1}) and 'lua-ok' or 'lua-missing') .. '\\n')",
-            ]
-        )
-        proc = subprocess.run(
-            ["lua", "-"],
-            cwd=ROOT,
-            input=code,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertEqual(proc.stdout, "lua-ok\n")
+    def test_lua_cli_staged_runtime_lane_resolves_runtime_helpers(self) -> None:
+        fixture = find_fixture_case("add")
+        with tempfile.TemporaryDirectory() as td:
+            out_lua = Path(td) / "add.lua"
+            env = dict(os.environ)
+            py_path = str(ROOT / "src")
+            old = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+            proc = subprocess.run(
+                [sys.executable, "src/py2x.py", "--target", "lua", str(fixture), "-o", str(out_lua)],
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            staged_runtime = (Path(td) / "py_runtime.lua").resolve()
+            self.assertTrue(staged_runtime.exists())
+            code = "\n".join(
+                [
+                    f"dofile({staged_runtime.as_posix()!r})",
+                    "io.write((__pytra_truthy({1}) and 'lua-ok' or 'lua-missing') .. '\\n')",
+                ]
+            )
+            proc = subprocess.run(
+                ["lua", "-"],
+                cwd=ROOT,
+                input=code,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertEqual(proc.stdout, "lua-ok\n")
 
     def test_bitwise_invert_basic_uses_lua_invert_operator(self) -> None:
         fixture = find_fixture_case("bitwise_invert_basic")

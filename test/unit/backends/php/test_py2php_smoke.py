@@ -279,32 +279,54 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertEqual(proc.stdout, "contains-ok\npredicates-ok\nsequence-ok\n")
 
-    def test_php_repo_public_delete_target_lane_resolves_remaining_shims(self) -> None:
-        delete_target_runtime_path = ROOT / "src" / "runtime" / "php" / "pytra" / "py_runtime.php"
-        delete_target_time_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "time.php"
-        delete_target_png_path = ROOT / "src" / "runtime" / "php" / "pytra" / "utils" / "png.php"
-        delete_target_gif_path = ROOT / "src" / "runtime" / "php" / "pytra" / "utils" / "gif.php"
-        code = "\n".join(
-            [
-                f"require_once {delete_target_runtime_path.as_posix()!r};",
-                f"require_once {delete_target_time_path.as_posix()!r};",
-                f"require_once {delete_target_png_path.as_posix()!r};",
-                f"require_once {delete_target_gif_path.as_posix()!r};",
-                "echo __pytra_truthy([1]) ? 'truthy-ok' : 'truthy-missing', PHP_EOL;",
-                "echo (perf_counter() > 0.0) ? 'time-ok' : 'time-missing', PHP_EOL;",
-                "echo function_exists('__pytra_write_rgb_png') ? 'png-ok' : 'png-missing', PHP_EOL;",
-                "echo function_exists('__pytra_save_gif') ? 'gif-ok' : 'gif-missing', PHP_EOL;",
-            ]
-        )
-        proc = subprocess.run(
-            ["php", "-r", code],
-            cwd=ROOT,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertEqual(proc.stdout, "truthy-ok\ntime-ok\npng-ok\ngif-ok\n")
+    def test_php_cli_staged_runtime_lane_resolves_remaining_shims(self) -> None:
+        fixture = find_fixture_case("add")
+        with tempfile.TemporaryDirectory() as td:
+            out_php = Path(td) / "add.php"
+            env = dict(os.environ)
+            py_path = str(ROOT / "src")
+            old = env.get("PYTHONPATH", "")
+            env["PYTHONPATH"] = py_path if old == "" else py_path + os.pathsep + old
+            proc = subprocess.run(
+                [sys.executable, "src/py2x.py", "--target", "php", str(fixture), "-o", str(out_php)],
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
+            staged_runtime_path = (Path(td) / "pytra" / "py_runtime.php").resolve()
+            staged_time_path = (Path(td) / "pytra" / "std" / "time.php").resolve()
+            staged_png_path = (Path(td) / "pytra" / "utils" / "png.php").resolve()
+            staged_gif_path = (Path(td) / "pytra" / "utils" / "gif.php").resolve()
+            for staged_path in (
+                staged_runtime_path,
+                staged_time_path,
+                staged_png_path,
+                staged_gif_path,
+            ):
+                self.assertTrue(staged_path.exists(), staged_path.as_posix())
+            code = "\n".join(
+                [
+                    f"require_once {staged_runtime_path.as_posix()!r};",
+                    f"require_once {staged_time_path.as_posix()!r};",
+                    f"require_once {staged_png_path.as_posix()!r};",
+                    f"require_once {staged_gif_path.as_posix()!r};",
+                    "echo __pytra_truthy([1]) ? 'truthy-ok' : 'truthy-missing', PHP_EOL;",
+                    "echo (perf_counter() > 0.0) ? 'time-ok' : 'time-missing', PHP_EOL;",
+                    "echo function_exists('write_rgb_png') ? 'png-ok' : 'png-missing', PHP_EOL;",
+                    "echo function_exists('save_gif') ? 'gif-ok' : 'gif-missing', PHP_EOL;",
+                ]
+            )
+            proc = subprocess.run(
+                ["php", "-r", code],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertEqual(proc.stdout, "truthy-ok\ntime-ok\npng-ok\ngif-ok\n")
 
     def test_transpile_dict_items_fixture_uses_foreach_key_value(self) -> None:
         fixture = find_fixture_case("dict_get_items")

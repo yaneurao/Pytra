@@ -95,7 +95,7 @@
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-02] static family (`go/java/kotlin/scala/swift/nim`) の backend registry / packaging / smoke / tooling を `generated/native` 直参照へ揃え、checked-in `pytra/**` は deletion inventory としてのみ残す。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-03] static family の checked-in `src/runtime/<lang>/pytra/**` を物理削除し、allowlist / inventory / representative smoke を deletion end state に同期する。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-01] JS/TS の import path / shim writer / selfhost / smoke を見直し、repo-tree `src/runtime/{js,ts}/pytra/**` direct-load と compat shim 契約を撤去する。
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-02] Lua/Ruby/PHP の packaging / runtime copy / loader contract を `generated/native` または output-side staging へ移し、repo-tree `pytra/**` 常設前提を撤去する。
+- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-02] Lua/Ruby/PHP の packaging / runtime copy / loader contract を `generated/native` または output-side staging へ移し、repo-tree `pytra/**` 常設前提を撤去する。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-03] script family (`js/ts/lua/ruby/php`) の checked-in `src/runtime/<lang>/pytra/**` を物理削除し、representative smoke と contract baseline を deletion end state へ更新する。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S4-01] docs / TODO / archive 参照 / inventory を最終同期し、「非 C++ / 非 C# backend に checked-in `pytra/` は存在しない」状態で close する。
 
@@ -118,3 +118,4 @@
 - 2026-03-13: S2-03 で `src/runtime/{go,java,kotlin,scala,swift,nim}/pytra/**` を物理削除し、`noncpp_runtime_pytra_deshim_contract.py` の current directory/file inventory を script family のみへ縮退させた。`noncpp_runtime_generated_cpp_baseline_contract.py` / `noncpp_runtime_layout_rollout_remaining_contract.py` の static-family delete-target inventory は空に揃え、`runtime_std_sot_allowlist.txt` の Go stale entry も除去した。
 - 2026-03-13: S2-03 では representative smoke の `runtime_source_path_is_migrated` 群を「`generated/native` は存在し、checked-in `pytra/**` は存在しない」という end state に強化した。あわせて active spec (`spec-java-native-backend.md`, `spec-gsk-native-backend.md`) の static-family runtime boundary から delete-target debt wording を外した。
 - 2026-03-13: S3-01 で JS/TS の repo-tree direct-load smoke を output-side generated shim smoke に置き換えた前提で、`noncpp_runtime_pytra_deshim_contract.py` から JS/TS blocker bucket と exact blocker baseline を除去した。checked-in `src/runtime/{js,ts}/pytra/**` は deletion inventory としてのみ残し、repo-tree direct-load / selfhost / compat-contract blocker は解消済みとする。
+- 2026-03-13: S3-02 で Lua/Ruby/PHP の repo-tree direct-load smoke を output-side staging smoke に置き換え、`noncpp_runtime_pytra_deshim_contract.py` から script-family blocker baseline を全廃した。PHP の `require_once __DIR__ . '/pytra/py_runtime.php';` は repo-tree 前提ではなく output-side staging rewrite とみなし、runtime shim writer blocker から外す。
