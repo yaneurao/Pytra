@@ -286,6 +286,7 @@ class CppCallEmitter:
             "perf_counter",
             "Exception",
             "RuntimeError",
+            "NotImplementedError",
             "open",
             "iter",
             "next",

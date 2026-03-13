@@ -538,7 +538,7 @@ def _sh_infer_known_name_call_return_type(
         return "bytes"
     if fn_name == "bytearray":
         return "bytearray"
-    if fn_name in {"Exception", "RuntimeError"}:
+    if fn_name in {"Exception", "RuntimeError", "NotImplementedError"}:
         return "Exception"
     return ""
 

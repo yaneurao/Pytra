@@ -14,7 +14,6 @@ This folder stores long-term plans, design drafts, and investigation notes.
 - `stale-complete` means live `p*-*.md` files that are no longer referenced by TODO, have every checklist item complete, and are not live status/report sinks. These should be moved out of live `plans/`.
 
 Active live plans as of 2026-03-14:
-- `p1-nes3-not-implemented-error-cpp-support.md`
 - `p1-nes3-bytes-member-truthiness-cpp-support.md`
 - `p1-nes3-list-default-factory-rc-list-cpp-support.md`
 - `p1-nes3-path-alias-pkg-cpp-support.md`

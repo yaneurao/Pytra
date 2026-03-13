@@ -120,6 +120,7 @@ def load_cpp_type_map(profile: dict[str, Any] = {}) -> dict[str, str]:
         "bytearray": "bytearray",
         "Path": "pytra::std::pathlib::Path",
         "Exception": "::std::runtime_error",
+        "NotImplementedError": "::std::runtime_error",
         "SystemExit": "SystemExit",
         "Any": "object",
         "object": "object",

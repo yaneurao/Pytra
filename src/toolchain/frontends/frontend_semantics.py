@@ -30,6 +30,7 @@ _BUILTIN_SEMANTIC_TAGS: dict[str, str] = {
     "open": "io.open",
     "Exception": "error.raise_ctor",
     "RuntimeError": "error.raise_ctor",
+    "NotImplementedError": "error.raise_ctor",
     "isinstance": "type.isinstance",
     "issubclass": "type.issubclass",
 }

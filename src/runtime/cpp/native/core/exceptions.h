@@ -6,6 +6,7 @@
 
 using ValueError = ::std::runtime_error;
 using RuntimeError = ::std::runtime_error;
+using NotImplementedError = ::std::runtime_error;
 using TypeError = ::std::runtime_error;
 using IndexError = ::std::runtime_error;
 using KeyError = ::std::runtime_error;
