@@ -1,8 +1,12 @@
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/std/math.h"
-#include "pytra/std/time.h"
-#include "pytra/utils/gif.h"
+#include "generated/built_in/io_ops.h"
+#include "generated/built_in/numeric_ops.h"
+#include "generated/std/math.h"
+#include "generated/std/time.h"
+#include "generated/utils/gif.h"
 
 // 16: Sample that ray-traces chaotic rotation of glass sculptures and outputs a GIF.
 
@@ -296,7 +300,7 @@ void run_16_glass_sculpture_chaos() {
     rc<list<bytes>> frames = rc_list_from_value(list<bytes>{});
     rc_list_ref(frames).reserve((frames_n <= 0) ? 0 : frames_n);
     for (int64 i = 0; i < frames_n; ++i)
-        py_append(frames, render_frame(width, height, i, frames_n));
+        py_list_append_mut(rc_list_ref(frames), render_frame(width, height, i, frames_n));
     pytra::utils::gif::save_gif(out_path, width, height, rc_list_ref(frames), palette_332(), 6, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);

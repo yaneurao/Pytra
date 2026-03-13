@@ -1,7 +1,10 @@
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/std/time.h"
-#include "pytra/utils/gif.h"
+#include "generated/built_in/io_ops.h"
+#include "generated/std/time.h"
+#include "generated/utils/gif.h"
 
 // 05: Sample that outputs a Mandelbrot zoom as an animated GIF.
 
@@ -47,7 +50,7 @@ void run_05_mandelbrot_zoom() {
     float64 scale = base_scale;
     rc_list_ref(frames).reserve((frame_count <= 0) ? 0 : frame_count);
     for (int64 _ = 0; _ < frame_count; ++_) {
-        py_append(frames, render_frame(width, height, center_x, center_y, scale, max_iter));
+        py_list_append_mut(rc_list_ref(frames), render_frame(width, height, center_x, center_y, scale, max_iter));
         scale *= zoom_per_frame;
     }
     pytra::utils::gif::save_gif(out_path, width, height, rc_list_ref(frames), pytra::utils::gif::grayscale_palette(), 5, 0);

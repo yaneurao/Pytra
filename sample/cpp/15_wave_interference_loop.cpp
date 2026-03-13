@@ -1,8 +1,11 @@
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/std/math.h"
-#include "pytra/std/time.h"
-#include "pytra/utils/gif.h"
+#include "generated/built_in/io_ops.h"
+#include "generated/std/math.h"
+#include "generated/std/time.h"
+#include "generated/utils/gif.h"
 
 // 15: Sample that renders wave interference animation and writes a GIF.
 
@@ -24,7 +27,7 @@ void run_15_wave_interference_loop() {
                 int64 dx = x - 160;
                 int64 dy = y - 120;
                 float64 v = pytra::std::math::sin((py_to<float64>(x) + py_to<float64>(t) * 1.5) * 0.045) + pytra::std::math::sin((py_to<float64>(y) - py_to<float64>(t) * 1.2) * 0.04) + pytra::std::math::sin((py_to<float64>(x + y)) * 0.02 + phase) + pytra::std::math::sin(pytra::std::math::sqrt(dx * dx + dy * dy) * 0.08 - phase * 1.3);
-                int64 c = int64((v + 4.0) * 255.0 * 0.125);
+                int64 c = int64((v + 4.0) * (255.0 / 8.0));
                 if (c < 0)
                     c = 0;
                 if (c > 255)
@@ -32,7 +35,7 @@ void run_15_wave_interference_loop() {
                 frame[row_base + x] = c;
             }
         }
-        py_append(frames, frame);
+        py_list_append_mut(rc_list_ref(frames), frame);
     }
     pytra::utils::gif::save_gif(out_path, w, h, rc_list_ref(frames), pytra::utils::gif::grayscale_palette(), 4, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

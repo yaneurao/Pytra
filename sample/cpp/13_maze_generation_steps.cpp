@@ -1,8 +1,11 @@
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/built_in/sequence.h"
-#include "pytra/std/time.h"
-#include "pytra/utils/gif.h"
+#include "generated/built_in/io_ops.h"
+#include "generated/built_in/sequence.h"
+#include "generated/std/time.h"
+#include "generated/utils/gif.h"
 
 // 13: Sample that outputs DFS maze-generation progress as a GIF.
 
@@ -49,35 +52,35 @@ void run_13_maze_generation_steps() {
             int64 ny = y + dy;
             if ((nx >= 1) && (nx < cell_w - 1) && (ny >= 1) && (ny < cell_h - 1) && (py_at(py_at(grid, py_to<int64>(ny)), py_to<int64>(nx)) == 1)) {
                 if (dx == 2) {
-                    py_append(candidates, ::std::make_tuple(nx, ny, x + 1, y));
+                    py_list_append_mut(rc_list_ref(candidates), ::std::make_tuple(nx, ny, x + 1, y));
                 } else if (dx == -(2)) {
-                    py_append(candidates, ::std::make_tuple(nx, ny, x - 1, y));
+                    py_list_append_mut(rc_list_ref(candidates), ::std::make_tuple(nx, ny, x - 1, y));
                 } else if (dy == 2) {
-                    py_append(candidates, ::std::make_tuple(nx, ny, x, y + 1));
+                    py_list_append_mut(rc_list_ref(candidates), ::std::make_tuple(nx, ny, x, y + 1));
                 } else {
-                    py_append(candidates, ::std::make_tuple(nx, ny, x, y - 1));
+                    py_list_append_mut(rc_list_ref(candidates), ::std::make_tuple(nx, ny, x, y - 1));
                 }
             }
         }
         if ((rc_list_ref(candidates)).empty()) {
-            py_pop(stack);
+            py_list_pop_mut(rc_list_ref(stack));
         } else {
-            auto __idx_3 = (x * 17 + y * 29 + py_len(stack) * 13) % py_len(candidates);
+            auto __idx_3 = (x * 17 + y * 29 + (rc_list_ref(stack)).size() * 13) % (rc_list_ref(candidates)).size();
             ::std::tuple<int64, int64, int64, int64> sel = py_at(candidates, py_to<int64>(__idx_3));
             auto [nx, ny, wx, wy] = sel;
             py_list_at_ref(py_at(grid, py_to<int64>(wy)), py_to<int64>(wx)) = 0;
             py_list_at_ref(py_at(grid, py_to<int64>(ny)), py_to<int64>(nx)) = 0;
-            py_append(stack, ::std::make_tuple(nx, ny));
+            py_list_append_mut(rc_list_ref(stack), ::std::make_tuple(nx, ny));
         }
         if (step % capture_every == 0)
-            py_append(frames, capture(grid, cell_w, cell_h, scale));
+            py_list_append_mut(rc_list_ref(frames), capture(grid, cell_w, cell_h, scale));
         step++;
     }
-    py_append(frames, capture(grid, cell_w, cell_h, scale));
+    py_list_append_mut(rc_list_ref(frames), capture(grid, cell_w, cell_h, scale));
     pytra::utils::gif::save_gif(out_path, cell_w * scale, cell_h * scale, rc_list_ref(frames), pytra::utils::gif::grayscale_palette(), 4, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
-    py_print("frames:", py_len(frames));
+    py_print("frames:", (rc_list_ref(frames)).size());
     py_print("elapsed_sec:", elapsed);
 }
 

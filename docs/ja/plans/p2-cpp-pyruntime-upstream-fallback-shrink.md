@@ -8,7 +8,7 @@
 背景:
 - `docs/ja/plans/archive/20260312-p5-cpp-pyruntime-residual-thin-seam-shrink.md` では、`py_runtime.h` の residual seam を `py_append(object& ...)` と shared `type_id` thin seam に分類し、縮退順だけを固定した。
 - しかし `src/runtime/cpp/native/core/py_runtime.h` 自体は 2026-03-14 時点で 1287 行あり、まだ object bridge 互換、generic `make_object` / `py_to`、typed collection fallback が大きな塊として残っている。
-- 現行 caller を見ると、`sample/cpp` には `py_append(` が 34 箇所残り、`src/runtime/cpp/generated/**` にも `py_at(values, py_to<int64>(i))`、`obj_to_list_ref_or_raise(out, "append")` のような object-bridge 依存が残っている。
+- 現行 caller を見ると、`sample/cpp` の `py_append(` bucket は retire 済みだが、`src/runtime/cpp/generated/**` には `py_at(values, py_to<int64>(i))`、`obj_to_list_ref_or_raise(out, "append")` のような object-bridge 依存が残り、sample 側にも generic index bucket が残っている。
 - `src/runtime/cpp/generated/core/README.md` が明示する通り、`generated/core` は `py_runtime.h` の肥大化逃がし用 bucket ではない。したがって、単なる物理分割ではなく、typed lane で upstream に押し戻せる fallback を減らす必要がある。
 
 目的:
@@ -77,3 +77,5 @@
 - 2026-03-14: `S2-02` の first bundle として `src/py2x.py --target cpp src/pytra/built_in/iter_ops.py --emit-runtime-cpp` と `src/py2x.py --target cpp src/pytra/utils/gif.py --emit-runtime-cpp` の正規導線で `generated/built_in/iter_ops.cpp` と `generated/utils/gif.{h,cpp}` を再生成した。これで `generated_runtime_boxed_list_seed_sites` は `3 -> 1` まで縮退し、残りは `generated/utils/gif.cpp` の `bytes(make_object(list<object>{}))` のみになった。
 - 2026-03-14: `S2-02` の second bundle として `src/pytra/utils/gif.py` の empty `bytes` seed を typed `list[int]` へ upstream し、`generated/utils/gif.cpp` の最後の `bytes(make_object(list<object>{}))` site を retire した。これで typed-lane residual は emitter 1 / generated 2 / sample 2 bucket になり、`generated_runtime_boxed_list_seed_sites` は inventory / contract から除去した。
 - 2026-03-14: `S2-02` の third bundle として representative sample の `07_game_of_life_loop` と `12_sort_visualizer` を direct typed append / size lane へ再生成し、`sample_cpp_py_append_sites` baseline を `41 -> 34` に更新した。`18_mini_language_interpreter` は別の sample/emitter regression を露呈したためこの bundle からは除外し、sample 側の残 bucket は可視化 sample 群と `18_mini_language_interpreter` の parser/benchmark helper に集中している。
+- 2026-03-14: `S2-02` の fourth bundle として `18_mini_language_interpreter` の token/parser/benchmark helper を direct typed append / size lane に寄せ、`sample_cpp_py_append_sites` baseline を `34 -> 7` に更新した。sample 側の残 bucket は `13_maze_generation_steps` の tuple/frame helper lane に集中している。
+- 2026-03-14: `S2-02` の fifth bundle として `sample/cpp` の最後の `py_append(` residual を retire し、`sample_cpp_py_append_sites` を inventory から除去した。sample 側の typed residual は `py_at(...py_to<int64>)` の generic index bucket だけになった。

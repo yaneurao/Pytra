@@ -1,8 +1,12 @@
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/std/math.h"
-#include "pytra/std/time.h"
-#include "pytra/utils/gif.h"
+#include "generated/built_in/io_ops.h"
+#include "generated/built_in/numeric_ops.h"
+#include "generated/std/math.h"
+#include "generated/std/time.h"
+#include "generated/utils/gif.h"
 
 // 11: Sample that outputs Lissajous-motion particles as a GIF.
 
@@ -12,9 +16,9 @@ bytes color_palette() {
         int64 r = i;
         int64 g = i * 3 % 256;
         int64 b = 255 - i;
-        p.append(r);
-        p.append(g);
-        p.append(b);
+        p.append(static_cast<uint8>(py_to<int64>(r)));
+        p.append(static_cast<uint8>(py_to<int64>(g)));
+        p.append(static_cast<uint8>(py_to<int64>(b)));
     }
     return p;
 }
@@ -56,7 +60,7 @@ void run_11_lissajous_particles() {
                 }
             }
         }
-        py_append(frames, frame);
+        py_list_append_mut(rc_list_ref(frames), frame);
     }
     pytra::utils::gif::save_gif(out_path, w, h, rc_list_ref(frames), color_palette(), 3, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

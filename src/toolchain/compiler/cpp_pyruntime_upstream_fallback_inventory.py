@@ -264,30 +264,6 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_INVENTORY_V1: Final[
         "notes": "Generated runtime still leans on generic index wrappers instead of direct typed indexing.",
     },
     {
-        "inventory_id": "sample_cpp_py_append_sites",
-        "bucket": "sample_cpp_residual",
-        "scope_rel": "sample/cpp",
-        "matcher_kind": "regex",
-        "needle": r"\bpy_append\(",
-        "expected_count": 34,
-        "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02",
-        "evidence_refs": (
-            {
-                "relpath": "sample/cpp/13_maze_generation_steps.cpp",
-                "needle": "py_append(candidates, ::std::make_tuple(nx, ny, x + 1, y));",
-            },
-            {
-                "relpath": "sample/cpp/14_raymarching_light_cycle.cpp",
-                "needle": "py_append(frames, frame);",
-            },
-            {
-                "relpath": "sample/cpp/15_wave_interference_loop.cpp",
-                "needle": "py_append(frames, frame);",
-            },
-        ),
-        "notes": "Remaining sample append residuals now concentrate in visualization-heavy samples and parser helper code.",
-    },
-    {
         "inventory_id": "sample_cpp_generic_index_sites",
         "bucket": "sample_cpp_residual",
         "scope_rel": "sample/cpp",

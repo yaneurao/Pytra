@@ -1,8 +1,12 @@
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/std/math.h"
-#include "pytra/std/time.h"
-#include "pytra/utils/gif.h"
+#include "generated/built_in/io_ops.h"
+#include "generated/built_in/numeric_ops.h"
+#include "generated/std/math.h"
+#include "generated/std/time.h"
+#include "generated/utils/gif.h"
 
 // 14: Sample that outputs a moving-light scene in a simple raymarching style as a GIF.
 
@@ -12,9 +16,9 @@ bytes palette() {
         int64 r = ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(int64(py_to<float64>(20) + py_to<float64>(i) * 0.9)));
         int64 g = ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(int64(py_to<float64>(10) + py_to<float64>(i) * 0.7)));
         int64 b = ::std::min<int64>(static_cast<int64>(255), static_cast<int64>(30 + i));
-        p.append(r);
-        p.append(g);
-        p.append(b);
+        p.append(static_cast<uint8>(py_to<int64>(r)));
+        p.append(static_cast<uint8>(py_to<int64>(g)));
+        p.append(static_cast<uint8>(py_to<int64>(b)));
     }
     return p;
 }
@@ -63,7 +67,7 @@ void run_14_raymarching_light_cycle() {
                 frame[row_base + x] = scene(px, py, light_x, light_y);
             }
         }
-        py_append(frames, frame);
+        py_list_append_mut(rc_list_ref(frames), frame);
     }
     pytra::utils::gif::save_gif(out_path, w, h, rc_list_ref(frames), palette(), 3, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;

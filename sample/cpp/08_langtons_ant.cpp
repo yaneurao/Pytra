@@ -1,8 +1,11 @@
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/built_in/sequence.h"
-#include "pytra/std/time.h"
-#include "pytra/utils/gif.h"
+#include "generated/built_in/io_ops.h"
+#include "generated/built_in/sequence.h"
+#include "generated/std/time.h"
+#include "generated/utils/gif.h"
 
 // 08: Sample that outputs Langton's Ant trajectories as a GIF.
 
@@ -50,12 +53,12 @@ void run_08_langtons_ant() {
             x = (x - 1 + w) % w;
         }
         if (i % capture_every == 0)
-            py_append(frames, capture(grid, w, h));
+            py_list_append_mut(rc_list_ref(frames), capture(grid, w, h));
     }
     pytra::utils::gif::save_gif(out_path, w, h, rc_list_ref(frames), pytra::utils::gif::grayscale_palette(), 5, 0);
     float64 elapsed = pytra::std::time::perf_counter() - start;
     py_print("output:", out_path);
-    py_print("frames:", py_len(frames));
+    py_print("frames:", (rc_list_ref(frames)).size());
     py_print("elapsed_sec:", elapsed);
 }
 
