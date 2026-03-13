@@ -937,6 +937,8 @@ class CppCallEmitter:
             if append_rendered is not None and append_rendered != "":
                 return append_rendered
         if owner_t.startswith("deque[") and owner_t.endswith("]"):
+            if attr == "reverse" and len(args) == 0 and len(kw) == 0:
+                return f"::std::reverse({owner_expr}.begin(), {owner_expr}.end())"
             if attr == "extendleft" and len(args) == 1 and len(kw) == 0:
                 value_node = arg_nodes[0] if len(arg_nodes) > 0 else {}
                 rendered = self._render_typed_deque_extendleft_call(owner_t, owner_expr, args[0], value_node)

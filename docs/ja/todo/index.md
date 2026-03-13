@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01] `collections.deque.reverse()` representative C++ lane を固定する。進捗: 新規起票。まず current invalid C++ surface (`q.reverse();`) を focused regression で固定する。文脈: [p0-collections-deque-cpp-reverse-support.md](../plans/p0-collections-deque-cpp-reverse-support.md)
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01] `collections.deque.reverse()` representative C++ lane を固定する。進捗: `S2-01` で `reverse()` を `::std::reverse(begin, end)` へ upstream 済み。残りは representative smoke と closeout。文脈: [p0-collections-deque-cpp-reverse-support.md](../plans/p0-collections-deque-cpp-reverse-support.md)

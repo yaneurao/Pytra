@@ -31,4 +31,4 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01] Lock the representative C++ lane for `collections.deque.reverse()`. Progress: newly opened. First lock the current invalid C++ surface (`q.reverse();`) with a focused regression. Context: [p0-collections-deque-cpp-reverse-support.md](../plans/p0-collections-deque-cpp-reverse-support.md)
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01] Lock the representative C++ lane for `collections.deque.reverse()`. Progress: `S2-01` upstreamed `reverse()` to `::std::reverse(begin, end)`. The remaining work is the representative smoke and closeout. Context: [p0-collections-deque-cpp-reverse-support.md](../plans/p0-collections-deque-cpp-reverse-support.md)
