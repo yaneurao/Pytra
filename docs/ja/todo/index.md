@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] `collections.deque` の representative C++ expression / method lane を固定する。進捗: `S2-02` で `append` を `push_back` に upstream し、`deque()` / `bool(q)` / `len(q)` / `append` / `popleft` の representative lowering は揃った。残りは build/run smoke と support wording の同期。文脈: [p0-collections-deque-cpp-expr-method-support.md](../plans/p0-collections-deque-cpp-expr-method-support.md)
+現時点で未完了タスクはありません。

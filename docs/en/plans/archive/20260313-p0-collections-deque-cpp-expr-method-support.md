@@ -51,11 +51,12 @@ Decision log:
 - 2026-03-13: as `S2-01`, `deque()` now lowers to `::std::deque<T>{}`, `bool(q)` to `!q.empty()`, and `len(q)` to `q.size()`. The remaining invalid Python surface is limited to `append` / `popleft`.
 - 2026-03-13: `popleft()` was already lowering through the existing attr-call lane into a `front + pop_front` lambda, so after the `S2-01` regression refresh the only remaining invalid Python surface is `append`.
 - 2026-03-13: as `S2-02`, typed `deque[T].append(...)` now lowers to `push_back(...)`. The representative lowering is now aligned for `deque()` / `bool(q)` / `len(q)` / `append` / `popleft`, and only build/run smoke plus support wording remain.
+- 2026-03-13: as `S3-01`, a representative build/run smoke now locks the `False / 0 / 1` output. All acceptance criteria for this task are now satisfied.
 
 ## Breakdown
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] Lock the representative C++ expression / method lane for `collections.deque`.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] Lock the representative C++ expression / method lane for `collections.deque`.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S1-01] Lock the current invalid C++ surface in focused regressions / TODO / plan.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S2-01] Align `deque()` expressions and `len/truthiness` with representative C++ lowering.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S2-02] Align the `append` method subset with representative C++ lowering and keep the `popleft` representative regression green.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S3-01] Sync build/run smoke and support wording, then close the task.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S3-01] Sync build/run smoke and support wording, then close the task.

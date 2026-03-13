@@ -5023,6 +5023,62 @@ print(front)
         self.assertIn("q.size()", cpp)
         self.assertNotIn("py_len(q)", cpp)
 
+    def test_deque_expr_method_builds_and_runs_in_cpp_representative_lane(self) -> None:
+        src = """from collections import deque
+
+q: deque[int] = deque()
+q.append(1)
+front = q.popleft()
+print(bool(q))
+print(len(q))
+print(front)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src_py = work / "deque_expr_method_case.py"
+            out_cpp = work / "deque_expr_method_case.cpp"
+            out_exe = work / "deque_expr_method_case.out"
+            manifest = work / "manifest.json"
+            src_py.write_text(src, encoding="utf-8")
+            transpile(src_py, out_cpp)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "include_dir": str(work),
+                        "modules": [
+                            {
+                                "source": str(out_cpp),
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            comp = self._run_subprocess_with_timeout(
+                [
+                    "python3",
+                    "tools/build_multi_cpp.py",
+                    str(manifest),
+                    "-o",
+                    str(out_exe),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="compile deque expr method representative lane",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+            run = self._run_subprocess_with_timeout(
+                [str(out_exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run deque expr method representative lane",
+            )
+            self.assertEqual(run.returncode, 0, msg=run.stderr)
+            self.assertEqual(run.stdout.strip().splitlines(), ["False", "0", "1"])
+
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
         src = """from dataclasses import dataclass, field
 

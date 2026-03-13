@@ -51,11 +51,12 @@
 - 2026-03-13: `S2-01` として `deque()` を `::std::deque<T>{}`、`bool(q)` を `!q.empty()`、`len(q)` を `q.size()` へ upstream した。残る Python surface leak は `append` / `popleft` に限定された。
 - 2026-03-13: `popleft()` は既存の attr-call lowering ですでに `front + pop_front` lambda に落ちていたため、`S2-01` の regression 更新後の残件は `append` のみになった。
 - 2026-03-13: `S2-02` として typed `deque[T]` の `append` を `push_back` へ upstream した。representative lowering は `deque()` / `bool(q)` / `len(q)` / `append` / `popleft` の 5 要素で揃い、残りは build/run smoke と support wording だけになった。
+- 2026-03-13: `S3-01` として representative fixture の build/run smoke を追加し、`False / 0 / 1` の出力を固定した。これで task の受け入れ基準はすべて充足した。
 
 ## 分解
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] `collections.deque` representative C++ expression / method lane を固定する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] `collections.deque` representative C++ expression / method lane を固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S1-01] current invalid C++ surface を focused regression / TODO / plan で固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S2-01] `deque()` expression と `len/truthiness` を representative C++ lowering に揃える。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S2-02] `append` method subset を representative C++ lowering に揃え、`popleft` representative lane の regression を維持する。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S3-01] build/run smoke と support wording を同期して close する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S3-01] build/run smoke と support wording を同期して close する。

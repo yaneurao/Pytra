@@ -31,4 +31,4 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] Lock the representative C++ expression / method lane for `collections.deque`. Progress: `S2-02` upstreamed `append` to `push_back`, so the representative lowering for `deque()` / `bool(q)` / `len(q)` / `append` / `popleft` is aligned. The remaining work is build/run smoke and support wording sync. Context: [p0-collections-deque-cpp-expr-method-support.md](../plans/p0-collections-deque-cpp-expr-method-support.md)
+There are no unfinished tasks right now.
