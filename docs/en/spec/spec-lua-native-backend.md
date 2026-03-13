@@ -40,7 +40,7 @@ If unsupported input is received, fail immediately without escaping to a compati
 
 Runtime boundaries for generated Lua code are limited to the following in principle.
 
-- Lua runtime API under `src/runtime/lua/pytra/` (after introduction)
+- Lua runtime API under `src/runtime/lua/{generated,native}/` (checked-in `src/runtime/lua/pytra/**` is delete-target debt only)
 - Lua standard library (`math` / `string` / `table`, etc.)
 
 Prohibited:

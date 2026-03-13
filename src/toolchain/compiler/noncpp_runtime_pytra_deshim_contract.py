@@ -341,6 +341,48 @@ NONCPP_PYTRA_DESHIM_DOC_POLICY_V1: Final[tuple[NonCppPytraDeshimDocPolicyEntry, 
             "For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` is delete-target debt only.",
         ),
     },
+    {
+        "path": "docs/ja/spec/spec-java-native-backend.md",
+        "needles": (
+            "実行時依存は Java runtime（repo 正本は `src/runtime/java/{generated,native}/`）へ収束し",
+            "`src/runtime/java/{generated,native}/` 配下の Java runtime API（checked-in `src/runtime/java/pytra/**` は delete target debt）。",
+        ),
+    },
+    {
+        "path": "docs/en/spec/spec-java-native-backend.md",
+        "needles": (
+            "Runtime dependency converges to Java runtime (the canonical repo roots are `src/runtime/java/{generated,native}/`)",
+            "Java runtime APIs under `src/runtime/java/{generated,native}/` (checked-in `src/runtime/java/pytra/**` is delete-target debt only);",
+        ),
+    },
+    {
+        "path": "docs/ja/spec/spec-lua-native-backend.md",
+        "needles": (
+            "`src/runtime/lua/{generated,native}/` 配下の Lua runtime API（checked-in `src/runtime/lua/pytra/**` は delete target debt）",
+        ),
+    },
+    {
+        "path": "docs/en/spec/spec-lua-native-backend.md",
+        "needles": (
+            "Lua runtime API under `src/runtime/lua/{generated,native}/` (checked-in `src/runtime/lua/pytra/**` is delete-target debt only)",
+        ),
+    },
+    {
+        "path": "docs/ja/spec/spec-gsk-native-backend.md",
+        "needles": (
+            "Go: `src/runtime/go/{generated,native}/` + Go 標準ライブラリ（checked-in `src/runtime/go/pytra/**` は delete target debt）。",
+            "Swift: `src/runtime/swift/{generated,native}/` + Swift 標準ライブラリ（checked-in `src/runtime/swift/pytra/**` は delete target debt）。",
+            "Kotlin: `src/runtime/kotlin/{generated,native}/` + Kotlin/JVM 標準ライブラリ（checked-in `src/runtime/kotlin/pytra/**` は delete target debt）。",
+        ),
+    },
+    {
+        "path": "docs/en/spec/spec-gsk-native-backend.md",
+        "needles": (
+            "Go: `src/runtime/go/{generated,native}/` + Go standard library (checked-in `src/runtime/go/pytra/**` is delete-target debt only).",
+            "Swift: `src/runtime/swift/{generated,native}/` + Swift standard library (checked-in `src/runtime/swift/pytra/**` is delete-target debt only).",
+            "Kotlin: `src/runtime/kotlin/{generated,native}/` + Kotlin/JVM standard library (checked-in `src/runtime/kotlin/pytra/**` is delete-target debt only).",
+        ),
+    },
 )
 
 

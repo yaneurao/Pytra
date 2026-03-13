@@ -90,7 +90,7 @@
 
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01] 非 C++ / 非 C# backend の checked-in `src/runtime/<lang>/pytra/**` を全廃し、repo 常設 runtime layout を `generated/native` のみに揃える。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01] 対象 backend 12 言語の current `pytra/**` inventory、参照元、delete blocker を棚卸しし、current->target mapping を plan / contract に固定する。
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] active contract / checker / spec wording を `generated/native only` へ切り替え、対象 backend の checked-in `pytra/**` 再出現を fail-fast にする。
+- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] active contract / checker / spec wording を `generated/native only` へ切り替え、対象 backend の checked-in `pytra/**` 再出現を fail-fast にする。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-01] Rust (`rs`) の `pytra/**` compat 残差を解消し、`py2rs` / selfhost / runtime guard / smoke から repo-tree `pytra/**` 前提を外す。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-02] static family (`go/java/kotlin/scala/swift/nim`) の backend registry / packaging / smoke / tooling を `generated/native` 直参照へ切り替え、repo-tree `pytra/**` 依存をなくす。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-03] static family の checked-in `src/runtime/<lang>/pytra/**` を物理削除し、allowlist / inventory / representative smoke を deletion end state に同期する。
@@ -106,3 +106,4 @@
 - 2026-03-13: `P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01` で current `pytra/` directory/file inventory、backend mapping、delete blocker references を `noncpp_runtime_pytra_deshim_contract.py` / checker / unit test に固定した。まだ policy 切替は行わず、削除前の current state を明示する段階に留める。
 - 2026-03-13: S1-02 first bundle で `spec-folder/spec-dev` を `generated/native only` wording に合わせ、doc-policy drift を checker で fail-fast にした。
 - 2026-03-13: S1-02 second bundle で Rust active contract / layout guard の `pytra` 語彙を `compat` から `delete-target debt` へ切り替え、`noncpp_runtime_layout_contract.py` / `check_rs_runtime_layout.py` / dedicated deshim blocker baseline から「checked-in `rs/pytra` は live compat lane」という前提を外した。
+- 2026-03-13: S1-02 third bundle で `spec-java-native-backend.md` / `spec-lua-native-backend.md` / `spec-gsk-native-backend.md` の live runtime root wording を `src/runtime/<lang>/{generated,native}/` へ統一し、doc-policy checker が active native-backend spec まで監視するように広げた。
