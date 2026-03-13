@@ -223,11 +223,11 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
     def test_future_followup_baseline_is_fixed(self) -> None:
         self.assertEqual(
             inventory_mod.FUTURE_FOLLOWUP_TASK_ID,
-            "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01",
+            "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01",
         )
         self.assertEqual(
             inventory_mod.FUTURE_FOLLOWUP_PLAN_PATH,
-            "docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md",
+            "docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md",
         )
         self.assertEqual(
             inventory_mod.FUTURE_FOLLOWUP_BASELINE_BUCKETS,
@@ -302,7 +302,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             inventory_mod.FUTURE_HANDOFF_TARGETS,
             {
                 "cpp_header_shrink": {
-                    "plan_path": "docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md",
+                    "plan_path": "docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md",
                     "trigger_bucket": "cpp_emitter_shared_type_id_residual",
                     "handoff_when": "future_reducible subset stays limited to py_runtime_value_type_id and representative/source guard drift is empty",
                 },
@@ -385,7 +385,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
     def test_shared_type_id_classification_contract_is_fixed(self) -> None:
         self.assertEqual(
             inventory_mod.SHARED_TYPE_ID_CLASSIFICATION_TASK_ID,
-            "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02",
+            "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02",
         )
         self.assertEqual(
             inventory_mod.SHARED_TYPE_ID_CLASSIFICATION_ORDER,

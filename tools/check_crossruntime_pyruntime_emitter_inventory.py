@@ -268,8 +268,8 @@ REPRESENTATIVE_LANE_MANIFEST = {
     },
 }
 
-FUTURE_FOLLOWUP_TASK_ID = "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01"
-FUTURE_FOLLOWUP_PLAN_PATH = "docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md"
+FUTURE_FOLLOWUP_TASK_ID = "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01"
+FUTURE_FOLLOWUP_PLAN_PATH = "docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md"
 
 FUTURE_FOLLOWUP_BASELINE_BUCKETS = (
     "cpp_emitter_shared_type_id_residual",
@@ -298,7 +298,7 @@ FUTURE_SOURCE_GUARD_PATHS = {
 
 FUTURE_HANDOFF_TARGETS = {
     "cpp_header_shrink": {
-        "plan_path": "docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md",
+        "plan_path": "docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md",
         "trigger_bucket": "cpp_emitter_shared_type_id_residual",
         "handoff_when": "future_reducible subset stays limited to py_runtime_value_type_id and representative/source guard drift is empty",
     },
@@ -353,7 +353,7 @@ FUTURE_CROSSRUNTIME_MUTATION_CLASSIFICATION = {
 }
 
 SHARED_TYPE_ID_CLASSIFICATION_TASK_ID = (
-    "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02"
+    "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02"
 )
 
 SHARED_TYPE_ID_CLASSIFICATION_ORDER = (
@@ -609,7 +609,7 @@ def _collect_cpp_future_shared_type_id_classification_issues() -> list[str]:
 def _collect_shared_type_id_classification_issues() -> list[str]:
     issues: list[str] = []
     if SHARED_TYPE_ID_CLASSIFICATION_TASK_ID != (
-        "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02"
+        "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02"
     ):
         issues.append("shared type-id classification task id drifted")
     if SHARED_TYPE_ID_CLASSIFICATION_ORDER != (

@@ -15,8 +15,8 @@ from tools import check_cpp_pyruntime_header_surface as header_surface
 from tools import check_crossruntime_pyruntime_emitter_inventory as emitter_inventory
 
 
-ACTIVE_TASK_ID = "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01"
-ACTIVE_PLAN_PATH = "docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md"
+ACTIVE_TASK_ID = "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01"
+ACTIVE_PLAN_PATH = "docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md"
 
 OBJECT_BRIDGE_MUTATION_CLASSIFICATION = {
     "header_residual": {

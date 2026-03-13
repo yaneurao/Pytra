@@ -56,21 +56,23 @@ class CheckCppPyRuntimeHeaderSurfaceTest(unittest.TestCase):
     def test_followup_residual_caller_handoff_is_documented(self) -> None:
         self.assertEqual(
             surface_mod.FOLLOWUP_TASK_ID,
-            "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01",
+            "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01",
         )
         self.assertEqual(
             surface_mod.FOLLOWUP_PLAN_PATH,
-            "docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md",
+            "docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md",
         )
 
     def test_bundle_order_is_locked_to_active_final_shrink(self) -> None:
         self.assertEqual(
             surface_mod.BUNDLE_ORDER,
             (
-                "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S1-01",
-                "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-01",
-                "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02",
-                "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S3-01",
+                "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-01",
+                "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02",
+                "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01",
+                "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02",
+                "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-03",
+                "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S3-01",
             ),
         )
 

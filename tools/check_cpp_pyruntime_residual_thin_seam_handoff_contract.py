@@ -13,21 +13,25 @@ if str(ROOT) not in sys.path:
 from tools import check_cpp_pyruntime_contract_inventory as contract_mod
 from tools import check_cpp_pyruntime_header_surface as header_mod
 from tools import check_cpp_pyruntime_residual_thin_seam_contract as seam_mod
+from tools import check_cpp_pyruntime_upstream_fallback_inventory as fallback_mod
 from tools import check_crossruntime_pyruntime_emitter_inventory as emitter_mod
 
-ACTIVE_TASK_ID = "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01"
-ACTIVE_PLAN_PATH = "docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md"
+ACTIVE_TASK_ID = "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01"
+ACTIVE_PLAN_PATH = "docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md"
 
 BUNDLE_ORDER = (
-    "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S1-01",
-    "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-01",
-    "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02",
-    "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S3-01",
+    "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-01",
+    "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02",
+    "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01",
+    "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02",
+    "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-03",
+    "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S3-01",
 )
 
 REPRESENTATIVE_CHECKS = (
     "tools/check_cpp_pyruntime_header_surface.py",
     "tools/check_cpp_pyruntime_contract_inventory.py",
+    "tools/check_cpp_pyruntime_upstream_fallback_inventory.py",
     "tools/check_crossruntime_pyruntime_emitter_inventory.py",
     "tools/check_cpp_pyruntime_residual_thin_seam_contract.py",
 )
@@ -35,6 +39,7 @@ REPRESENTATIVE_CHECKS = (
 REPRESENTATIVE_TEST_FILES = (
     "test/unit/tooling/test_check_cpp_pyruntime_header_surface.py",
     "test/unit/tooling/test_check_cpp_pyruntime_contract_inventory.py",
+    "test/unit/tooling/test_check_cpp_pyruntime_upstream_fallback_inventory.py",
     "test/unit/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py",
     "test/unit/tooling/test_check_cpp_pyruntime_residual_thin_seam_contract.py",
 )
@@ -43,7 +48,7 @@ REPRESENTATIVE_TEST_FILES = (
 def _collect_handoff_issues() -> list[str]:
     issues: list[str] = []
     if not (ROOT / ACTIVE_PLAN_PATH).exists():
-        issues.append(f"active p5 plan missing: {ACTIVE_PLAN_PATH}")
+        issues.append(f"active p2 plan missing: {ACTIVE_PLAN_PATH}")
     if header_mod.FOLLOWUP_TASK_ID != ACTIVE_TASK_ID:
         issues.append("header surface follow-up task drifted")
     if header_mod.FOLLOWUP_PLAN_PATH != ACTIVE_PLAN_PATH:
@@ -60,6 +65,12 @@ def _collect_handoff_issues() -> list[str]:
         issues.append("header surface handoff issues are not empty")
     if contract_mod._collect_inventory_issues():
         issues.append("contract inventory issues are not empty")
+    if fallback_mod._collect_inventory_issues():
+        issues.append("upstream fallback inventory issues are not empty")
+    if fallback_mod._collect_inventory_count_issues():
+        issues.append("upstream fallback inventory counts are not empty")
+    if fallback_mod._collect_header_line_issues():
+        issues.append("upstream fallback header line baseline drifted")
     if seam_mod._collect_issues():
         issues.append("residual thin-seam classification issues are not empty")
     if emitter_mod._collect_future_followup_issues():

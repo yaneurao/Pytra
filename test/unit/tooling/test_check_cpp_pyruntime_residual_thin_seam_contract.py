@@ -74,11 +74,11 @@ class CheckCppPyRuntimeResidualThinSeamContractTest(unittest.TestCase):
     def test_active_task_identity_is_fixed(self) -> None:
         self.assertEqual(
             contract_mod.ACTIVE_TASK_ID,
-            "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01",
+            "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01",
         )
         self.assertEqual(
             contract_mod.ACTIVE_PLAN_PATH,
-            "docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md",
+            "docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md",
         )
 
 

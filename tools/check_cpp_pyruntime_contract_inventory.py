@@ -28,6 +28,7 @@ SYMBOL_PATTERNS = {
 TRACKED_SUFFIXES = {".py", ".cpp", ".h", ".rs", ".cs"}
 EXCLUDED_PATHS = {
     "src/runtime/cpp/native/core/py_runtime.h",
+    "src/toolchain/compiler/cpp_pyruntime_upstream_fallback_inventory.py",
 }
 
 EXPECTED_BUCKETS = {
@@ -42,6 +43,10 @@ EXPECTED_BUCKETS = {
         ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
         ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
         ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
+        ("py_runtime_value_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"),
+        ("py_runtime_value_isinstance", "src/runtime/cpp/generated/built_in/type_id.cpp"),
+        ("py_runtime_value_isinstance", "src/runtime/cpp/generated/compiler/transpile_cli.cpp"),
+        ("py_runtime_value_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
         ("py_runtime_value_type_id", "src/backends/cs/emitter/cs_emitter.py"),
         ("py_runtime_value_isinstance", "src/backends/cs/emitter/cs_emitter.py"),
         ("py_runtime_type_id_is_subtype", "src/backends/cs/emitter/cs_emitter.py"),
@@ -50,7 +55,6 @@ EXPECTED_BUCKETS = {
         ("py_runtime_value_isinstance", "src/backends/rs/emitter/rs_emitter.py"),
         ("py_runtime_type_id_is_subtype", "src/backends/rs/emitter/rs_emitter.py"),
         ("py_runtime_type_id_issubclass", "src/backends/rs/emitter/rs_emitter.py"),
-        ("py_runtime_object_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
         ("py_runtime_object_isinstance", "src/runtime/cpp/native/compiler/backend_registry_static.cpp"),
         ("py_runtime_object_isinstance", "src/runtime/cpp/native/compiler/transpile_cli.cpp"),
         ("py_runtime_value_type_id", "src/runtime/cs/native/built_in/py_runtime.cs"),
@@ -67,6 +71,7 @@ EXPECTED_BUCKETS = {
         ("py_runtime_value_type_id", "src/runtime/rs/generated/built_in/type_id.rs"),
         ("py_runtime_value_isinstance", "src/runtime/rs/generated/built_in/type_id.rs"),
         ("py_runtime_type_id_is_subtype", "src/runtime/rs/generated/built_in/type_id.rs"),
+        ("py_runtime_value_isinstance", "src/runtime/rs/generated/std/json.rs"),
     },
 }
 

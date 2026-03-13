@@ -42,6 +42,8 @@ Validation commands (planned):
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_cpp_runtime_iterable.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_east3_cpp_bridge.py'`
 - `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_codegen_issues.py'`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/tooling -p 'test_check_cpp_pyruntime_upstream_fallback_inventory.py'`
+- `python3 tools/check_cpp_pyruntime_upstream_fallback_inventory.py`
 - `python3 tools/check_cpp_pyruntime_header_surface.py`
 - `git diff --check`
 
@@ -55,7 +57,7 @@ Validation commands (planned):
 
 ## Breakdown
 
-- [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-01] Inventory the current bulk in `py_runtime.h` plus residual callers across `sample/cpp`, `generated/**`, and the C++ emitter, and classify which fallback paths can move upstream.
+- [x] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-01] Inventory the current bulk in `py_runtime.h` plus residual callers across `sample/cpp`, `generated/**`, and the C++ emitter, and classify which fallback paths can move upstream.
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02] Freeze the boundary between `object-only compat` and `typed lane must not use` in docs/tooling as the shrink contract.
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01] Improve typed list mutation, indexing, and tuple/list boxing emission so callers of `py_append(object&)` and `py_at(object, idx)` decrease.
 - [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02] Reduce object-bridge fallback in generated built_in/std runtime artifacts and representative samples, then refresh the baseline.
@@ -64,3 +66,6 @@ Validation commands (planned):
 
 Decision log:
 - 2026-03-14: Opened as a P2 task after the runtime audit confirmed that `py_runtime.h` can still shrink, but the next gain must come from pushing typed fallback upstream into EAST3, the emitter, and runtime SoT rather than physically splitting the header.
+- 2026-03-14: The residual thin-seam checker stack still pointed at the archived `P5` plan as its active follow-up, so this `P2` was rebased as the current owner and the locked bundle order was synchronized to the active `S1-01..S3-01` shrink contract.
+- 2026-03-14: Completed `S1-01` by adding `src/toolchain/compiler/cpp_pyruntime_upstream_fallback_inventory.py` and `tools/check_cpp_pyruntime_upstream_fallback_inventory.py`, locking 9 header bulk anchors, 2 C++ emitter residual categories, 3 generated runtime residual categories, and 2 sample residual categories in a machine-readable inventory plus unit test.
+- 2026-03-14: The 2026-03-14 baseline is fixed as 1287 lines in `src/runtime/cpp/native/core/py_runtime.h`, 5 header `py_to<*>(...object...)` call sites, 2 `obj_to_list_ref_or_raise(` plus 3 `make_object(list<object>{})` sites under `src/backends/cpp/emitter/**`, 2 `obj_to_list_ref_or_raise(` plus 3 `make_object(list<object>{})` plus 47 `py_at(...py_to<int64>)` sites under `src/runtime/cpp/generated/**`, and 41 `py_append(` plus 39 `py_at(...py_to<int64>)` sites under `sample/cpp/**`.

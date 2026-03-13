@@ -80,8 +80,25 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
                 for symbol, _ in cpp_emitter_entries
             )
         )
-        cpp_runtime_entries = {
-            entry for entry in shared if entry[1].startswith("src/runtime/cpp/")
+        cpp_generated_entries = {
+            entry
+            for entry in shared
+            if entry[1].startswith("src/runtime/cpp/generated/")
+        }
+        self.assertTrue(
+            all(
+                symbol
+                in {
+                    "py_runtime_value_type_id",
+                    "py_runtime_value_isinstance",
+                }
+                for symbol, _ in cpp_generated_entries
+            )
+        )
+        cpp_native_entries = {
+            entry
+            for entry in shared
+            if entry[1].startswith("src/runtime/cpp/native/")
         }
         self.assertTrue(
             all(
@@ -89,7 +106,7 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
                 in {
                     "py_runtime_object_isinstance",
                 }
-                for symbol, _ in cpp_runtime_entries
+                for symbol, _ in cpp_native_entries
             )
         )
         cross_runtime_mutations = {
@@ -111,11 +128,21 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
             shared,
         )
 
-    def test_shared_runtime_contract_excludes_generated_type_id_cpp(self) -> None:
+    def test_shared_runtime_contract_uses_generated_type_id_cpp_value_contracts(self) -> None:
         shared = inventory_mod.EXPECTED_BUCKETS["shared_runtime_contract"]
         self.assertNotIn(("py_runtime_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"), shared)
         self.assertNotIn(("py_isinstance", "src/runtime/cpp/generated/built_in/type_id.cpp"), shared)
-        self.assertIn(("py_runtime_object_isinstance", "src/runtime/cpp/generated/std/json.cpp"), shared)
+        self.assertIn(("py_runtime_value_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"), shared)
+        self.assertIn(("py_runtime_value_isinstance", "src/runtime/cpp/generated/built_in/type_id.cpp"), shared)
+        self.assertIn(("py_runtime_value_isinstance", "src/runtime/cpp/generated/std/json.cpp"), shared)
+        self.assertIn(("py_runtime_value_isinstance", "src/runtime/cpp/generated/compiler/transpile_cli.cpp"), shared)
+        self.assertIn(("py_runtime_value_isinstance", "src/runtime/rs/generated/std/json.rs"), shared)
+
+    def test_inventory_scan_ignores_upstream_fallback_inventory_module(self) -> None:
+        self.assertIn(
+            "src/toolchain/compiler/cpp_pyruntime_upstream_fallback_inventory.py",
+            inventory_mod.EXCLUDED_PATHS,
+        )
 
 
 if __name__ == "__main__":

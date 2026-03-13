@@ -16,19 +16,21 @@ class CheckCppPyRuntimeResidualThinSeamHandoffContractTest(unittest.TestCase):
     def test_handoff_contract_is_fixed(self) -> None:
         self.assertEqual(
             handoff_mod.ACTIVE_TASK_ID,
-            "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01",
+            "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01",
         )
         self.assertEqual(
             handoff_mod.ACTIVE_PLAN_PATH,
-            "docs/ja/plans/p5-cpp-pyruntime-residual-thin-seam-shrink.md",
+            "docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md",
         )
         self.assertEqual(
             handoff_mod.BUNDLE_ORDER,
             (
-                "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S1-01",
-                "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-01",
-                "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S2-02",
-                "P5-CPP-PYRUNTIME-RESIDUAL-THIN-SEAM-SHRINK-01-S3-01",
+                "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-01",
+                "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S1-02",
+                "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01",
+                "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02",
+                "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-03",
+                "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S3-01",
             ),
         )
         self.assertEqual(
@@ -36,6 +38,7 @@ class CheckCppPyRuntimeResidualThinSeamHandoffContractTest(unittest.TestCase):
             (
                 "tools/check_cpp_pyruntime_header_surface.py",
                 "tools/check_cpp_pyruntime_contract_inventory.py",
+                "tools/check_cpp_pyruntime_upstream_fallback_inventory.py",
                 "tools/check_crossruntime_pyruntime_emitter_inventory.py",
                 "tools/check_cpp_pyruntime_residual_thin_seam_contract.py",
             ),
@@ -45,6 +48,7 @@ class CheckCppPyRuntimeResidualThinSeamHandoffContractTest(unittest.TestCase):
             (
                 "test/unit/tooling/test_check_cpp_pyruntime_header_surface.py",
                 "test/unit/tooling/test_check_cpp_pyruntime_contract_inventory.py",
+                "test/unit/tooling/test_check_cpp_pyruntime_upstream_fallback_inventory.py",
                 "test/unit/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py",
                 "test/unit/tooling/test_check_cpp_pyruntime_residual_thin_seam_contract.py",
             ),
