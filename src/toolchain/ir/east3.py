@@ -8,7 +8,6 @@ from toolchain.ir.east3_optimizer import render_east3_opt_trace
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_template import validate_template_module
 from toolchain.frontends.type_expr import sync_type_expr_mirrors
-from toolchain.link.program_validator import validate_raw_east3_doc
 from pytra.std import json
 from pytra.std.pathlib import Path
 from typing import Any
@@ -86,6 +85,24 @@ def _normalize_legacy_source_spans(value: object) -> None:
             _normalize_legacy_source_spans(child)
 
 
+def _validate_raw_east3_via_link(
+    doc: dict[str, object],
+    *,
+    expected_dispatch_mode: str,
+    module_id: str,
+    require_source_spans: bool = False,
+) -> dict[str, object]:
+    # Use the public link facade without reintroducing a link<->ir import cycle at module init time.
+    from toolchain.link import validate_raw_east3_doc
+
+    return validate_raw_east3_doc(
+        doc,
+        expected_dispatch_mode=expected_dispatch_mode,
+        module_id=module_id,
+        require_source_spans=require_source_spans,
+    )
+
+
 def load_east3_document(
     input_path: Path,
     parser_backend: str = "self_hosted",
@@ -107,7 +124,7 @@ def load_east3_document(
         east2_doc: dict[str, object] = east2_any
         east3_doc = lower_east2_to_east3_document(east2_doc, object_dispatch_mode=object_dispatch_mode)
         _normalize_legacy_source_spans(east3_doc)
-        east3_doc = validate_raw_east3_doc(
+        east3_doc = _validate_raw_east3_via_link(
             east3_doc,
             expected_dispatch_mode=_resolve_dispatch_mode(east3_doc, object_dispatch_mode),
             module_id=_module_id_from_doc_or_path(east3_doc, input_path),
@@ -133,7 +150,7 @@ def load_east3_document(
             trace_path.write_text(render_east3_opt_trace(report), encoding="utf-8")
         sync_type_expr_mirrors(optimized_doc)
         _normalize_legacy_source_spans(optimized_doc)
-        optimized_doc = validate_raw_east3_doc(
+        optimized_doc = _validate_raw_east3_via_link(
             optimized_doc,
             expected_dispatch_mode=_resolve_dispatch_mode(optimized_doc, object_dispatch_mode),
             module_id=_module_id_from_doc_or_path(optimized_doc, input_path),

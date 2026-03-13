@@ -34,6 +34,7 @@ Last updated: 2026-03-13
 
 - [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01] Move `validate_raw_east3_doc` imports in `toolchain.ir.east3` and the focused tests over to the `toolchain.link` facade so external consumers stop reaching through `toolchain.link.program_validator` directly.
   - Context: [docs/en/plans/p0-link-facade-raw-east3-import.md](../plans/p0-link-facade-raw-east3-import.md)
-- [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S1-01] Add focused regression / source-contract coverage that requires the facade import and locks the current reach-through surface in fail-fast form.
-- [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S2-01] Switch `toolchain.ir.east3` plus the focused test imports over to the facade path and bring the targeted unit suite back to green.
+- [x] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S1-01] Add focused regression / source-contract coverage that requires the facade import and locks the current reach-through surface in fail-fast form.
+  - Progress note: Added a facade-import source contract for `toolchain.ir.east3` in `test_py2x_entrypoints_contract.py` and moved `test_frontend_type_expr.py` onto the facade export as a focused runtime regression.
+- [x] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S2-01] Switch `toolchain.ir.east3` plus the focused test imports over to the facade path and bring the targeted unit suite back to green.
 - [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S3-01] Sync TODO / plan / decision log and lock the close condition.

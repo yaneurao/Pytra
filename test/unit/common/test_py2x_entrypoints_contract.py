@@ -686,6 +686,7 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         frontend_transpile_src = (
             ROOT / "src" / "toolchain" / "frontends" / "transpile_cli.py"
         ).read_text(encoding="utf-8")
+        east3_src = (ROOT / "src" / "toolchain" / "ir" / "east3.py").read_text(encoding="utf-8")
         east_io_src = (ROOT / "src" / "toolchain" / "ir" / "east_io.py").read_text(encoding="utf-8")
         link_loader_src = (ROOT / "src" / "toolchain" / "link" / "program_loader.py").read_text(encoding="utf-8")
         link_manifest_src = (
@@ -757,6 +758,8 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("root.raw_module_doc.get(\"meta\", {})", typed_boundary_src)
         self.assertIn("from toolchain.json_adapters import load_json_object_doc", frontend_transpile_src)
         self.assertIn("from toolchain.json_adapters import unwrap_east_root_json_doc", frontend_transpile_src)
+        self.assertIn("from toolchain.link import validate_raw_east3_doc", east3_src)
+        self.assertNotIn("from toolchain.link.program_validator import validate_raw_east3_doc", east3_src)
         self.assertIn("from toolchain.json_adapters import load_json_object_doc", east_io_src)
         self.assertIn("from toolchain.json_adapters import coerce_json_object_dict", link_loader_src)
         self.assertIn("from toolchain.json_adapters import coerce_json_object_doc", program_validator_src)
