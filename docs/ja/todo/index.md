@@ -30,11 +30,3 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-### P0: `transpile_cli` typed C++ contract を direct ownership header/source に揃える
-
-- [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01] `transpile_cli` typed C++ contract を checked-in `cpp/pytra` wrapper 前提から外し、`generated/native` direct ownership header/source に揃える。
-  - 文脈: [docs/ja/plans/p0-cpp-transpile-cli-direct-header-contract.md](../plans/p0-cpp-transpile-cli-direct-header-contract.md)
-- [x] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S1-01] stale contract surface と close 条件を plan / TODO に固定する。
-  - 進捗メモ: live tree は `generated/compiler/transpile_cli.{h,cpp}` を owner にし、checked-in `cpp/pytra/compiler/transpile_cli.h` は既に削除済み、という current contract を plan に固定した。
-- [x] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S2-01] focused contract test を live tree に合わせて更新し、targeted test を green に戻す。
-- [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S3-01] TODO / plan / archive を同期して close 条件を固定する。
