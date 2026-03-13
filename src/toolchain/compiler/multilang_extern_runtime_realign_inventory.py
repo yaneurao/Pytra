@@ -17,6 +17,10 @@ MODULE_ORDER: Final[tuple[str, ...]] = (
 )
 
 BUCKET_ORDER: Final[tuple[str, ...]] = ("stdlib", "built_in")
+NONCPP_OWNERSHIP_MODE_ORDER: Final[tuple[str, ...]] = (
+    "native_owner",
+    "generated_compare_only",
+)
 
 
 class ExternRuntimeRealignEntry(TypedDict):
@@ -25,7 +29,9 @@ class ExternRuntimeRealignEntry(TypedDict):
     source_rel: str
     manifest_postprocess_targets: tuple[str, ...]
     cpp_native_owner_paths: tuple[str, ...]
+    noncpp_ownership_mode: str
     noncpp_native_owner_paths: tuple[str, ...]
+    accepted_generated_compare_residual_targets: tuple[str, ...]
     emitter_hardcode_needles: tuple[tuple[str, str], ...]
     generated_drift_needles: tuple[tuple[str, str], ...]
     representative_smoke_needles: tuple[tuple[str, str], ...]
@@ -37,7 +43,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "bucket": "stdlib",
         "source_rel": "src/pytra/std/math.py",
         "manifest_postprocess_targets": (
-            "rs:rs_math_runtime_wrapper",
+            "rs:rs_std_native_owner_wrapper",
             "cs:cs_std_native_owner_wrapper",
             "go:go_program_to_library",
             "java:java_std_native_owner_wrapper",
@@ -49,13 +55,16 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "php:php_std_native_owner_wrapper",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/math.cpp",),
+        "noncpp_ownership_mode": "native_owner",
         "noncpp_native_owner_paths": (
+            "src/runtime/rs/native/std/math_native.rs",
             "src/runtime/cs/native/std/math_native.cs",
             "src/runtime/java/native/std/math_native.java",
             "src/runtime/js/native/std/math_native.js",
             "src/runtime/ts/native/std/math_native.ts",
             "src/runtime/php/native/std/math_native.php",
         ),
+        "accepted_generated_compare_residual_targets": ("nim",),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (
             ("src/runtime/nim/generated/std/math.nim", "Python runtime fallback."),
@@ -88,7 +97,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "bucket": "stdlib",
         "source_rel": "src/pytra/std/time.py",
         "manifest_postprocess_targets": (
-            "rs:rs_perf_counter_runtime_wrapper",
+            "rs:rs_std_native_owner_wrapper",
             "cs:cs_std_native_owner_wrapper",
             "go:go_program_to_library",
             "java:java_std_native_owner_wrapper",
@@ -100,13 +109,16 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "php:php_std_native_owner_wrapper",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/time.cpp",),
+        "noncpp_ownership_mode": "native_owner",
         "noncpp_native_owner_paths": (
+            "src/runtime/rs/native/std/time_native.rs",
             "src/runtime/cs/native/std/time_native.cs",
             "src/runtime/java/native/std/time_native.java",
             "src/runtime/js/native/std/time_native.js",
             "src/runtime/ts/native/std/time_native.ts",
             "src/runtime/php/native/std/time_native.php",
         ),
+        "accepted_generated_compare_residual_targets": ("nim",),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (
             ("src/runtime/nim/generated/std/time.nim", "Python runtime fallback."),
@@ -144,7 +156,9 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "php:php_program_to_library",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/os.cpp",),
+        "noncpp_ownership_mode": "generated_compare_only",
         "noncpp_native_owner_paths": (),
+        "accepted_generated_compare_residual_targets": ("rs",),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (
             ("src/runtime/rs/generated/std/os.rs", "Python runtime fallback."),
@@ -174,7 +188,9 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "php:php_program_to_library",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/os_path.cpp",),
+        "noncpp_ownership_mode": "generated_compare_only",
         "noncpp_native_owner_paths": (),
+        "accepted_generated_compare_residual_targets": ("rs",),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (
             ("src/runtime/rs/generated/std/os_path.rs", "Python runtime fallback."),
@@ -204,10 +220,12 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "php:php_program_to_library",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/sys.cpp",),
+        "noncpp_ownership_mode": "native_owner",
         "noncpp_native_owner_paths": (
             "src/runtime/js/native/std/sys_native.js",
             "src/runtime/ts/native/std/sys_native.ts",
         ),
+        "accepted_generated_compare_residual_targets": (),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (),
         "representative_smoke_needles": (
@@ -243,7 +261,9 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "php:php_program_to_library",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/glob.cpp",),
+        "noncpp_ownership_mode": "generated_compare_only",
         "noncpp_native_owner_paths": (),
+        "accepted_generated_compare_residual_targets": ("rs",),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (
             ("src/runtime/rs/generated/std/glob.rs", "Python runtime fallback."),
@@ -274,7 +294,9 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "php:php_program_to_library",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/built_in/io_ops.h",),
+        "noncpp_ownership_mode": "generated_compare_only",
         "noncpp_native_owner_paths": (),
+        "accepted_generated_compare_residual_targets": (),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (),
         "representative_smoke_needles": (
@@ -303,7 +325,9 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "php:php_program_to_library",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/built_in/scalar_ops.h",),
+        "noncpp_ownership_mode": "generated_compare_only",
         "noncpp_native_owner_paths": (),
+        "accepted_generated_compare_residual_targets": (),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (),
         "representative_smoke_needles": (

@@ -43,6 +43,12 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
     def test_bucket_order_is_fixed(self) -> None:
         self.assertEqual(inventory_mod.BUCKET_ORDER, ("stdlib", "built_in"))
 
+    def test_noncpp_ownership_mode_order_is_fixed(self) -> None:
+        self.assertEqual(
+            inventory_mod.NONCPP_OWNERSHIP_MODE_ORDER,
+            ("native_owner", "generated_compare_only"),
+        )
+
     def test_inventory_ids_match_fixed_order(self) -> None:
         self.assertEqual(
             tuple(row["module_id"] for row in inventory_mod.iter_multilang_extern_runtime_realign_inventory()),
@@ -55,7 +61,7 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         self.assertEqual(
             row["manifest_postprocess_targets"],
             (
-                "rs:rs_math_runtime_wrapper",
+                "rs:rs_std_native_owner_wrapper",
                 "cs:cs_std_native_owner_wrapper",
                 "go:go_program_to_library",
                 "java:java_std_native_owner_wrapper",
@@ -71,6 +77,7 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         self.assertEqual(
             row["noncpp_native_owner_paths"],
             (
+                "src/runtime/rs/native/std/math_native.rs",
                 "src/runtime/cs/native/std/math_native.cs",
                 "src/runtime/java/native/std/math_native.java",
                 "src/runtime/js/native/std/math_native.js",
@@ -78,6 +85,8 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
                 "src/runtime/php/native/std/math_native.php",
             ),
         )
+        self.assertEqual(row["noncpp_ownership_mode"], "native_owner")
+        self.assertEqual(row["accepted_generated_compare_residual_targets"], ("nim",))
         self.assertEqual(
             row["representative_smoke_needles"],
             (
@@ -112,7 +121,7 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         self.assertEqual(
             by_id["std/time"]["manifest_postprocess_targets"],
             (
-                "rs:rs_perf_counter_runtime_wrapper",
+                "rs:rs_std_native_owner_wrapper",
                 "cs:cs_std_native_owner_wrapper",
                 "go:go_program_to_library",
                 "java:java_std_native_owner_wrapper",
@@ -127,6 +136,7 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         self.assertEqual(
             by_id["std/time"]["noncpp_native_owner_paths"],
             (
+                "src/runtime/rs/native/std/time_native.rs",
                 "src/runtime/cs/native/std/time_native.cs",
                 "src/runtime/java/native/std/time_native.java",
                 "src/runtime/js/native/std/time_native.js",
@@ -134,6 +144,8 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
                 "src/runtime/php/native/std/time_native.php",
             ),
         )
+        self.assertEqual(by_id["std/time"]["noncpp_ownership_mode"], "native_owner")
+        self.assertEqual(by_id["std/time"]["accepted_generated_compare_residual_targets"], ("nim",))
         self.assertEqual(
             by_id["std/time"]["representative_smoke_needles"],
             (
@@ -164,6 +176,7 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         self.assertEqual(
             by_id["std/math"]["noncpp_native_owner_paths"],
             (
+                "src/runtime/rs/native/std/math_native.rs",
                 "src/runtime/cs/native/std/math_native.cs",
                 "src/runtime/java/native/std/math_native.java",
                 "src/runtime/js/native/std/math_native.js",
@@ -171,7 +184,24 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
                 "src/runtime/php/native/std/math_native.php",
             ),
         )
+        self.assertEqual(by_id["std/math"]["noncpp_ownership_mode"], "native_owner")
         self.assertEqual(by_id["std/math"]["emitter_hardcode_needles"], ())
+
+    def test_compare_only_rows_and_residual_targets_are_fixed(self) -> None:
+        by_id = {
+            row["module_id"]: row
+            for row in inventory_mod.iter_multilang_extern_runtime_realign_inventory()
+        }
+        self.assertEqual(by_id["std/os"]["noncpp_ownership_mode"], "generated_compare_only")
+        self.assertEqual(by_id["std/os"]["accepted_generated_compare_residual_targets"], ("rs",))
+        self.assertEqual(by_id["std/os_path"]["noncpp_ownership_mode"], "generated_compare_only")
+        self.assertEqual(by_id["std/os_path"]["accepted_generated_compare_residual_targets"], ("rs",))
+        self.assertEqual(by_id["std/glob"]["noncpp_ownership_mode"], "generated_compare_only")
+        self.assertEqual(by_id["std/glob"]["accepted_generated_compare_residual_targets"], ("rs",))
+        self.assertEqual(by_id["built_in/io_ops"]["noncpp_ownership_mode"], "generated_compare_only")
+        self.assertEqual(by_id["built_in/io_ops"]["accepted_generated_compare_residual_targets"], ())
+        self.assertEqual(by_id["built_in/scalar_ops"]["noncpp_ownership_mode"], "generated_compare_only")
+        self.assertEqual(by_id["built_in/scalar_ops"]["accepted_generated_compare_residual_targets"], ())
 
     def test_time_inventory_has_no_module_specific_hardcodes(self) -> None:
         by_id = {
@@ -223,6 +253,8 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
                 "src/runtime/ts/native/std/sys_native.ts",
             ),
         )
+        self.assertEqual(by_id["std/sys"]["noncpp_ownership_mode"], "native_owner")
+        self.assertEqual(by_id["std/sys"]["accepted_generated_compare_residual_targets"], ())
         self.assertEqual(by_id["std/sys"]["generated_drift_needles"], ())
 
     def test_io_ops_inventory_has_no_module_specific_hardcodes(self) -> None:

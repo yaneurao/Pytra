@@ -48,8 +48,8 @@
 
 - [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-01] runtime SoT 上の `@extern` module と、generated rewrite / emitter hardcode / native owner の current inventory を全 target で棚卸しする。
 - [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-02] `@extern` を「宣言のみ」「native owner 実装」「ambient extern は別系統」に分けた cross-target contract を spec / plan に固定する。
-- [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-01] `tools/runtime_generation_manifest.json` と `tools/gen_runtime_from_manifest.py` から module-specific extern rewrite を除去し、generated lane を declaration/wrapper-only に揃える。
-- [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-02] 各 target の `src/runtime/<lang>/native/**` に extern-backed canonical owner を整備し、runtime symbol index / layout contract を同期する。
+- [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-01] `tools/runtime_generation_manifest.json` と `tools/gen_runtime_from_manifest.py` から module-specific extern rewrite を除去し、generated lane を declaration/wrapper-only に揃える。
+- [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-02] 各 target の `src/runtime/<lang>/native/**` に extern-backed canonical owner を整備し、runtime symbol index / layout contract を同期する。
 - [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-03] 各 backend emitter の `pytra.std.math` など module-specific extern hardcode を撤去し、generic extern/runtime metadata 経由へ移す。
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S3-01] representative runtime artifact / smoke / docs / contract inventory を current extern ownership contract に同期して task を閉じる。
 
@@ -90,3 +90,4 @@
 - 2026-03-14: `S2-01` の追加 bundle として、`std/math` に残っていた `rs_std_math_live_wrapper` を `rs_math_runtime_wrapper` に改名し、PHP 側は `php_std_native_owner_wrapper + helper_name=math` へ統合した。manifest・generator・inventory・unit test の postprocess 名を generic math runtime seam に揃えた。
 - 2026-03-14: PHP `std/math` でも native seam を実体化し、`generated/std/math.php` から `pyMath*` 直結を除去して `src/runtime/php/native/std/math_native.php` へ forward する wrapper に戻した。`log10` の欠落 helper も native seam 側で埋め、staged runtime metadata、Wave B rollout/baseline contract、inventory、PHP smoke、`check_py2x_profiles.json` を `math_native.php` 前提へ同期した。
 - 2026-03-14: 同じ `S2-01` の追加 slice として、JS/TS `std/time` の manifest postprocess 名も `js_perf_counter_host_wrapper` / `ts_perf_counter_host_wrapper` から `js|ts_std_native_owner_wrapper + helper_name=time` に統合した。generic owner-wrapper 側に `perfCounter` alias と TS `number` 戻り値注釈を吸収し、artifact 形状を維持したまま module-specific wrapper 名を外した。
+- 2026-03-14: `S2-01/S2-02` の close bundle として inventory に `noncpp_ownership_mode` と `accepted_generated_compare_residual_targets` を追加し、`std/math,time,sys` は live native owner、`std/os,os_path,glob` と `built_in/io_ops,scalar_ops` は accepted generated-compare residual として checker 化した。これで manifest/generator の module-specific rewrite 除去と native-owner/current residual policy が同じ inventory 上で明示された。

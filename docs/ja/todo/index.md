@@ -35,7 +35,7 @@
 
 1. [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01] 全言語の `@extern` runtime/emitter 契約を見直し、generated rewrite ではなく native owner + generic extern metadata に揃える。
 文脈: [docs/ja/plans/p2-multilang-extern-runtime-realign.md](../plans/p2-multilang-extern-runtime-realign.md)
-- 進捗メモ: `std/math,time,os,os_path,sys,glob` と `built_in/io_ops,scalar_ops` の manifest postprocess・native owner・emitter hardcode・generated drift inventory/checker を固定し、`S2-03` までで emitter hardcode inventory は全 row green。`S3-01` first bundle として representative smoke inventory/checker を追加し、`std/math/time` と `std/os/os_path/sys/glob` / `io_ops/scalar_ops` の current evidence path を contract へ固定した。追加で JS/TS `std/math,time,sys` は generated wrapper から host binding 直書きを除き、`native/std/*_native` seam と rollout/baseline contract へ同期した。さらに C#/JS/TS `std/math` と JS/TS `std/time`、Java `std/time` の manifest postprocess を generic owner-wrapper helper へ寄せ、Java `std/time` / `std/math` と PHP `std/time` / `std/math` も generated wrapper から `native/std/*_native` seam へ切り替え、残っていた `rs/php std_math_live_wrapper` も generic owner-wrapper 名へ揃えた。
+- 進捗メモ: `S2-02` までで `std/math,time,sys` は non-C++ native owner live、`std/os,os_path,glob` と `built_in/io_ops,scalar_ops` は accepted generated-compare residual として ownership を明文化し、manifest postprocess / native owner / emitter hardcode / residual target inventory を checker へ固定した。`S3-01` first bundle として representative smoke inventory/checker も追加済み。
 
 2. [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01] bundle-based coverage matrix を導入し、`feature x lane x backend` の contract coverage 100% を support matrix と分離して固定する。
 文脈: [docs/ja/plans/p2-backend-contract-coverage-100.md](../plans/p2-backend-contract-coverage-100.md)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 import sys
 
 
@@ -10,6 +11,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.toolchain.compiler import multilang_extern_runtime_realign_inventory as inventory_mod
+
+
+_GENERATED_RUNTIME_TARGET_RE = re.compile(r"src/runtime/([^/]+)/generated/")
 
 
 def _load_manifest_by_id() -> dict[str, dict[str, object]]:
@@ -33,6 +37,9 @@ def _collect_inventory_issues() -> list[str]:
         if bucket not in inventory_mod.BUCKET_ORDER:
             issues.append(f"unknown bucket: {module_id}: {bucket}")
         buckets.add(bucket)
+        ownership_mode = row["noncpp_ownership_mode"]
+        if ownership_mode not in inventory_mod.NONCPP_OWNERSHIP_MODE_ORDER:
+            issues.append(f"unknown noncpp ownership mode: {module_id}: {ownership_mode}")
         if not (ROOT / row["source_rel"]).exists():
             issues.append(f"missing source path: {module_id}: {row['source_rel']}")
     if buckets != set(inventory_mod.BUCKET_ORDER):
@@ -67,6 +74,11 @@ def _collect_native_owner_issues() -> list[str]:
         module_id = row["module_id"]
         if not row["cpp_native_owner_paths"]:
             issues.append(f"cpp native owner missing from inventory: {module_id}")
+        ownership_mode = row["noncpp_ownership_mode"]
+        if ownership_mode == "native_owner" and not row["noncpp_native_owner_paths"]:
+            issues.append(f"noncpp native owner paths missing: {module_id}")
+        if ownership_mode == "generated_compare_only" and row["noncpp_native_owner_paths"]:
+            issues.append(f"generated-compare-only row gained native owner paths: {module_id}")
         for rel in row["cpp_native_owner_paths"] + row["noncpp_native_owner_paths"]:
             if not (ROOT / rel).exists():
                 issues.append(f"missing native owner path: {module_id}: {rel}")
@@ -92,14 +104,24 @@ def _collect_generated_drift_issues() -> list[str]:
     issues: list[str] = []
     for row in inventory_mod.iter_multilang_extern_runtime_realign_inventory():
         module_id = row["module_id"]
+        actual_targets: list[str] = []
         for rel, needle in row["generated_drift_needles"]:
             path = ROOT / rel
             if not path.exists():
                 issues.append(f"missing generated drift path: {module_id}: {rel}")
                 continue
+            match = _GENERATED_RUNTIME_TARGET_RE.search(rel)
+            if match is None:
+                issues.append(f"generated drift path is outside generated runtime layout: {module_id}: {rel}")
+            else:
+                actual_targets.append(match.group(1))
             text = path.read_text(encoding="utf-8")
             if needle not in text:
                 issues.append(f"missing generated drift needle: {module_id}: {rel}: {needle}")
+        if tuple(actual_targets) != row["accepted_generated_compare_residual_targets"]:
+            issues.append(
+                f"generated residual target drifted: {module_id}: {tuple(actual_targets)} != {row['accepted_generated_compare_residual_targets']}"
+            )
     return issues
 
 
