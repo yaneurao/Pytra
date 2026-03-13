@@ -51,9 +51,11 @@
 ## 分解
 
 - [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01] raw EAST3 validator の node-shape 誤判定を解消し、auxiliary map の `meta` / `kind` key で false positive を出さない。
-- [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S1-01] `any_dict_items` / `18_mini_language_interpreter` と synthetic auxiliary-map case を regression test と plan に固定する。
-- [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S2-01] raw EAST3 validator を node-shaped dict 限定へ狭め、actual node fail-closed を維持する。
+- [x] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S1-01] `any_dict_items` / `18_mini_language_interpreter` と synthetic auxiliary-map case を regression test と plan に固定する。
+- [x] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S2-01] raw EAST3 validator を node-shaped dict 限定へ狭め、actual node fail-closed を維持する。
 - [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S2-02] targeted backend transpile verification と TODO/decision log を同期し、matrix 上の validator-origin failure を close state へ寄せる。
 
 決定ログ:
 - 2026-03-13: TODO が空になったため、新しい P0 seed として backend test matrix の current red から frontend common cause を選んだ。`any_dict_items` と `18_mini_language_interpreter` の raw EAST3 validator false positive を優先する。
+- 2026-03-13: `S1-01` で `test_frontend_type_expr.py` に synthetic auxiliary-map regression と actual fixture/sample load regression を追加した。`defs["meta"]` と `arg_index["kind"]` が false positive にならないことを raw validator unit と real input load の両方で固定した。
+- 2026-03-13: `S2-01` で `program_validator.py` の object walk に `parent_key` を通し、body/value/target など node container 配下または node hint key を持つ dict だけを EAST3 node と見なすようにした。`py2x --target rs/java/ruby any_dict_items` と `py2x --target scala/cpp 18_mini_language_interpreter` は raw validator で止まらず出力まで進むことを確認した。

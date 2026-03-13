@@ -43,16 +43,81 @@ _CPP_BACKEND_MISSING_METADATA_ERROR_MARKERS: tuple[str, ...] = (
     "cpp emitter: invalid generator return",
 )
 
+_RAW_EAST3_NODE_CONTAINER_KEYS: frozenset[str] = frozenset(
+    {
+        "annotation",
+        "args",
+        "bases",
+        "body",
+        "comparators",
+        "decorator_list",
+        "elts",
+        "finalbody",
+        "func",
+        "handlers",
+        "ifs",
+        "iter",
+        "keywords",
+        "left",
+        "operand",
+        "optional_vars",
+        "orelse",
+        "returns",
+        "right",
+        "slice",
+        "target",
+        "targets",
+        "test",
+        "value",
+        "values",
+    }
+)
 
-def _iter_object_tree(value: object, path: str) -> object:
+_RAW_EAST3_NODE_HINT_KEYS: frozenset[str] = frozenset(
+    {
+        "annotation",
+        "args",
+        "bases",
+        "body",
+        "comparators",
+        "decl_type",
+        "elts",
+        "func",
+        "id",
+        "iter",
+        "name",
+        "optional_vars",
+        "resolved_type",
+        "return_type",
+        "source_span",
+        "target",
+        "targets",
+        "test",
+        "value",
+    }
+)
+
+
+def _iter_object_tree(value: object, path: str, *, parent_key: str | None = None) -> object:
     if isinstance(value, dict):
-        yield (path, value)
+        yield (path, parent_key, value)
         for key, child in value.items():
-            yield from _iter_object_tree(child, path + "." + str(key))
+            yield from _iter_object_tree(child, path + "." + str(key), parent_key=str(key))
         return
     if isinstance(value, list):
         for idx, child in enumerate(value):
-            yield from _iter_object_tree(child, path + "[" + str(idx) + "]")
+            yield from _iter_object_tree(child, path + "[" + str(idx) + "]", parent_key=parent_key)
+
+
+def _looks_like_raw_east3_node(obj: dict[str, object], *, path: str, parent_key: str | None) -> bool:
+    if path == "$":
+        return True
+    if any(key in obj for key in _RAW_EAST3_NODE_HINT_KEYS):
+        return True
+    meta = obj.get("meta")
+    if isinstance(meta, dict) and "generated_by" in meta and "kind" in obj:
+        return True
+    return parent_key in _RAW_EAST3_NODE_CONTAINER_KEYS and "kind" in obj
 
 
 def _validate_source_span_shape(span_any: object, label: str) -> None:
@@ -77,8 +142,10 @@ def _validate_raw_east3_invariants(
     module_id: str,
     require_source_spans: bool,
 ) -> None:
-    for path, obj in _iter_object_tree(raw_doc, "$"):
+    for path, parent_key, obj in _iter_object_tree(raw_doc, "$"):
         if not isinstance(obj, dict):
+            continue
+        if not _looks_like_raw_east3_node(obj, path=path, parent_key=parent_key):
             continue
         kind = obj.get("kind")
         if kind is not None and (not isinstance(kind, str) or kind.strip() == ""):

@@ -31,8 +31,8 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 - [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01] Fix raw EAST3 validator node-shape misclassification so auxiliary `meta` / `kind` keys do not produce false positives. Context: [p0-raw-east3-node-shape-validator.md](../plans/p0-raw-east3-node-shape-validator.md)
-- [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S1-01] Lock `any_dict_items` / `18_mini_language_interpreter` plus a synthetic auxiliary-map case into regression tests and the plan.
-- [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S2-01] Narrow raw EAST3 validation to node-shaped dicts while preserving fail-closed behavior for actual nodes.
+- [x] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S1-01] Lock `any_dict_items` / `18_mini_language_interpreter` plus a synthetic auxiliary-map case into regression tests and the plan.
+- [x] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S2-01] Narrow raw EAST3 validation to node-shaped dicts while preserving fail-closed behavior for actual nodes.
 - [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S2-02] Sync targeted backend transpile verification plus the TODO / decision log and reduce validator-origin matrix failures.
 
 ### P0: Pytra-NES representative C++ mini repro contract
