@@ -19,7 +19,7 @@ from src.toolchain.compiler import noncpp_runtime_layout_rollout_remaining_contr
 
 _VALID_OWNERSHIP = ("native", "generated", "delete_target")
 _VALID_TARGET_ROOTS = ("generated", "native")
-_VALID_WAVE_B_COMPAT_SMOKE_KINDS = ("direct_load", "source_reexport")
+_VALID_WAVE_B_DELETE_TARGET_SMOKE_KINDS = ("direct_load", "source_reexport")
 _VALID_WAVE_B_GENERATED_COMPARE_SMOKE_KINDS = ("direct_load", "source_guard")
 _VALID_WAVE_A_GENERATED_COMPARE_SMOKE_KINDS = ("build_run_smoke", "source_guard")
 _VALID_WAVE_A_GENERATED_SMOKE_KINDS = ("source_guard",)
@@ -493,7 +493,7 @@ def _collect_wave_b_native_residual_file_issues() -> list[str]:
     return issues
 
 
-def _collect_wave_b_compat_issues() -> list[str]:
+def _collect_wave_b_delete_target_issues() -> list[str]:
     issues: list[str] = []
     module_buckets = {
         entry["backend"]: entry
@@ -507,90 +507,90 @@ def _collect_wave_b_compat_issues() -> list[str]:
         entry["backend"]: entry
         for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_native_residuals()
     }
-    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_compat()
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target()
     if tuple(entry["backend"] for entry in entries) != ("js", "ts", "lua", "ruby", "php"):
-        issues.append("wave-b compat order drifted")
+        issues.append("wave-b delete-target order drifted")
     for entry in entries:
         backend = entry["backend"]
         bucket = module_buckets.get(backend)
         if bucket is None or backend not in generated_compare or backend not in native_residuals:
-            issues.append(f"wave-b compat backend drifted: {backend}")
+            issues.append(f"wave-b delete-target backend drifted: {backend}")
             continue
         substrate = set(entry["substrate_shim_modules"])
         compare_shims = set(entry["generated_compare_shim_modules"])
         if substrate & compare_shims:
-            issues.append(f"wave-b compat overlap drifted: {backend}")
+            issues.append(f"wave-b delete-target overlap drifted: {backend}")
         if substrate | compare_shims != set(bucket["delete_target_modules"]):
-            issues.append(f"wave-b compat coverage drifted: {backend}")
+            issues.append(f"wave-b delete-target coverage drifted: {backend}")
         if not compare_shims.issubset(set(generated_compare[backend]["materialized_compare_modules"])):
-            issues.append(f"wave-b compat compare shim escaped generated compare set: {backend}")
+            issues.append(f"wave-b delete-target compare shim escaped generated compare set: {backend}")
         if not substrate.issubset(set(native_residuals[backend]["substrate_modules"])):
-            issues.append(f"wave-b compat substrate escaped native residuals: {backend}")
+            issues.append(f"wave-b delete-target substrate escaped native residuals: {backend}")
     return issues
 
 
-def _collect_wave_b_compat_file_issues() -> list[str]:
+def _collect_wave_b_delete_target_file_issues() -> list[str]:
     issues: list[str] = []
     target_inventory = {
         entry["backend"]: entry
         for entry in contract_mod.iter_remaining_noncpp_runtime_target_inventory()
     }
-    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_compat_files()
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target_files()
     if tuple(entry["backend"] for entry in entries) != ("js", "ts", "lua", "ruby", "php"):
-        issues.append("wave-b compat file order drifted")
+        issues.append("wave-b delete-target file order drifted")
     for entry in entries:
         backend = entry["backend"]
         substrate = set(entry["substrate_shim_files"])
         compare_shims = set(entry["generated_compare_shim_files"])
         ancillary = set(entry["ancillary_files"])
         if substrate & compare_shims:
-            issues.append(f"wave-b compat file overlap drifted: {backend}: substrate/generated")
+            issues.append(f"wave-b delete-target file overlap drifted: {backend}: substrate/generated")
         if substrate & ancillary:
-            issues.append(f"wave-b compat file overlap drifted: {backend}: substrate/ancillary")
+            issues.append(f"wave-b delete-target file overlap drifted: {backend}: substrate/ancillary")
         if compare_shims & ancillary:
-            issues.append(f"wave-b compat file overlap drifted: {backend}: generated/ancillary")
+            issues.append(f"wave-b delete-target file overlap drifted: {backend}: generated/ancillary")
         actual_files = {
             path.removeprefix("pytra/")
             for path in target_inventory[backend]["delete_target_files"]
         }
         if substrate | compare_shims | ancillary != actual_files:
-            issues.append(f"wave-b compat file inventory drifted: {backend}")
+            issues.append(f"wave-b delete-target file inventory drifted: {backend}")
     return issues
 
 
-def _collect_wave_b_compat_smoke_issues() -> list[str]:
+def _collect_wave_b_delete_target_smoke_issues() -> list[str]:
     issues: list[str] = []
     delete_target_files = {
         entry["backend"]: entry
-        for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_compat_files()
+        for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target_files()
     }
-    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_compat_smoke()
+    entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target_smoke()
     if tuple(entry["backend"] for entry in entries) != ("js", "ts", "lua", "ruby", "php"):
-        issues.append("wave-b compat smoke order drifted")
+        issues.append("wave-b delete-target smoke order drifted")
     for entry in entries:
         backend = entry["backend"]
         smoke_kind = entry["smoke_kind"]
-        if smoke_kind not in _VALID_WAVE_B_COMPAT_SMOKE_KINDS:
-            issues.append(f"wave-b compat smoke kind drifted: {backend}")
+        if smoke_kind not in _VALID_WAVE_B_DELETE_TARGET_SMOKE_KINDS:
+            issues.append(f"wave-b delete-target smoke kind drifted: {backend}")
             continue
         files_entry = delete_target_files.get(backend)
         if files_entry is None:
-            issues.append(f"wave-b compat smoke backend drifted: {backend}")
+            issues.append(f"wave-b delete-target smoke backend drifted: {backend}")
             continue
         allowed_targets = set(files_entry["substrate_shim_files"]).union(
             files_entry["generated_compare_shim_files"]
         )
         smoke_targets = set(entry["smoke_targets"])
         if not smoke_targets:
-            issues.append(f"wave-b compat smoke targets drifted: {backend}")
+            issues.append(f"wave-b delete-target smoke targets drifted: {backend}")
         if not smoke_targets.issubset(allowed_targets):
-            issues.append(f"wave-b compat smoke escaped compat shim files: {backend}")
+            issues.append(f"wave-b delete-target smoke escaped delete-target shim files: {backend}")
         if smoke_targets != allowed_targets:
-            issues.append(f"wave-b compat smoke coverage drifted: {backend}")
+            issues.append(f"wave-b delete-target smoke coverage drifted: {backend}")
         if backend == "ts" and smoke_kind != "source_reexport":
-            issues.append("wave-b compat smoke kind drifted: ts")
+            issues.append("wave-b delete-target smoke kind drifted: ts")
         if backend != "ts" and smoke_kind != "direct_load":
-            issues.append(f"wave-b compat smoke kind drifted: {backend}")
+            issues.append(f"wave-b delete-target smoke kind drifted: {backend}")
     return issues
 
 
@@ -854,9 +854,9 @@ def main() -> int:
     issues.extend(_collect_wave_b_generated_compare_issues())
     issues.extend(_collect_wave_b_native_residual_issues())
     issues.extend(_collect_wave_b_native_residual_file_issues())
-    issues.extend(_collect_wave_b_compat_issues())
-    issues.extend(_collect_wave_b_compat_file_issues())
-    issues.extend(_collect_wave_b_compat_smoke_issues())
+    issues.extend(_collect_wave_b_delete_target_issues())
+    issues.extend(_collect_wave_b_delete_target_file_issues())
+    issues.extend(_collect_wave_b_delete_target_smoke_issues())
     issues.extend(_collect_wave_b_generated_compare_smoke_issues())
     issues.extend(_collect_wave_a_generated_compare_issues())
     issues.extend(_collect_wave_a_generated_compare_smoke_issues())

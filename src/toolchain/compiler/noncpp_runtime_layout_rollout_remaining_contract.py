@@ -68,20 +68,20 @@ class RemainingRuntimeWaveBNativeResidualFileEntry(TypedDict):
     compare_residual_files: tuple[str, ...]
 
 
-class RemainingRuntimeWaveBCompatEntry(TypedDict):
+class RemainingRuntimeWaveBDeleteTargetEntry(TypedDict):
     backend: str
     substrate_shim_modules: tuple[str, ...]
     generated_compare_shim_modules: tuple[str, ...]
 
 
-class RemainingRuntimeWaveBCompatFileEntry(TypedDict):
+class RemainingRuntimeWaveBDeleteTargetFileEntry(TypedDict):
     backend: str
     substrate_shim_files: tuple[str, ...]
     generated_compare_shim_files: tuple[str, ...]
     ancillary_files: tuple[str, ...]
 
 
-class RemainingRuntimeWaveBCompatSmokeEntry(TypedDict):
+class RemainingRuntimeWaveBDeleteTargetSmokeEntry(TypedDict):
     backend: str
     smoke_kind: str
     smoke_targets: tuple[str, ...]
@@ -1797,7 +1797,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUAL_FILES_V1: Final[
 
 
 REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_V1: Final[
-    tuple[RemainingRuntimeWaveBCompatEntry, ...]
+    tuple[RemainingRuntimeWaveBDeleteTargetEntry, ...]
 ] = (
     {
         "backend": "js",
@@ -1828,7 +1828,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_V1: Final[
 
 
 REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_FILES_V1: Final[
-    tuple[RemainingRuntimeWaveBCompatFileEntry, ...]
+    tuple[RemainingRuntimeWaveBDeleteTargetFileEntry, ...]
 ] = (
     {
         "backend": "js",
@@ -1878,7 +1878,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_FILES_V1: Final[
 
 
 REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_SMOKE_V1: Final[
-    tuple[RemainingRuntimeWaveBCompatSmokeEntry, ...]
+    tuple[RemainingRuntimeWaveBDeleteTargetSmokeEntry, ...]
 ] = (
     {
         "backend": "js",
@@ -2401,15 +2401,15 @@ def iter_remaining_noncpp_runtime_wave_b_native_residual_files() -> tuple[Remain
     return REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUAL_FILES_V1
 
 
-def iter_remaining_noncpp_runtime_wave_b_compat() -> tuple[RemainingRuntimeWaveBCompatEntry, ...]:
+def iter_remaining_noncpp_runtime_wave_b_delete_target() -> tuple[RemainingRuntimeWaveBDeleteTargetEntry, ...]:
     return REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_V1
 
 
-def iter_remaining_noncpp_runtime_wave_b_compat_files() -> tuple[RemainingRuntimeWaveBCompatFileEntry, ...]:
+def iter_remaining_noncpp_runtime_wave_b_delete_target_files() -> tuple[RemainingRuntimeWaveBDeleteTargetFileEntry, ...]:
     return REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_FILES_V1
 
 
-def iter_remaining_noncpp_runtime_wave_b_compat_smoke() -> tuple[RemainingRuntimeWaveBCompatSmokeEntry, ...]:
+def iter_remaining_noncpp_runtime_wave_b_delete_target_smoke() -> tuple[RemainingRuntimeWaveBDeleteTargetSmokeEntry, ...]:
     return REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_SMOKE_V1
 
 

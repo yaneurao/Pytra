@@ -98,14 +98,14 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_wave_b_native_residual_file_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_b_native_residual_file_issues(), [])
 
-    def test_wave_b_compat_issues_are_empty(self) -> None:
-        self.assertEqual(check_mod._collect_wave_b_compat_issues(), [])
+    def test_wave_b_delete_target_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_b_delete_target_issues(), [])
 
-    def test_wave_b_compat_file_issues_are_empty(self) -> None:
-        self.assertEqual(check_mod._collect_wave_b_compat_file_issues(), [])
+    def test_wave_b_delete_target_file_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_b_delete_target_file_issues(), [])
 
-    def test_wave_b_compat_smoke_issues_are_empty(self) -> None:
-        self.assertEqual(check_mod._collect_wave_b_compat_smoke_issues(), [])
+    def test_wave_b_delete_target_smoke_issues_are_empty(self) -> None:
+        self.assertEqual(check_mod._collect_wave_b_delete_target_smoke_issues(), [])
 
     def test_wave_b_generated_compare_smoke_issues_are_empty(self) -> None:
         self.assertEqual(check_mod._collect_wave_b_generated_compare_smoke_issues(), [])
@@ -551,9 +551,9 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             },
         )
 
-    def test_wave_b_compat_smoke_inventory_is_fixed(self) -> None:
+    def test_wave_b_delete_target_smoke_inventory_is_fixed(self) -> None:
         self.assertEqual(
-            contract_mod.iter_remaining_noncpp_runtime_wave_b_compat_smoke(),
+            contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target_smoke(),
             (
                 {
                     "backend": "js",
@@ -1890,10 +1890,10 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             },
         )
 
-    def test_wave_b_compat_modules_are_fixed(self) -> None:
+    def test_wave_b_delete_target_modules_are_fixed(self) -> None:
         by_backend = {
             entry["backend"]: entry
-            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_compat()
+            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target()
         }
         self.assertEqual(
             by_backend,
@@ -1940,10 +1940,10 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             },
         )
 
-    def test_wave_b_compat_files_are_fixed(self) -> None:
+    def test_wave_b_delete_target_files_are_fixed(self) -> None:
         by_backend = {
             entry["backend"]: entry
-            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_compat_files()
+            for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target_files()
         }
         self.assertEqual(
             by_backend,
