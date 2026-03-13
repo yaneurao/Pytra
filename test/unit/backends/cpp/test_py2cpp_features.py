@@ -5411,6 +5411,27 @@ print(q_neg.popleft())
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             self.assertEqual(run.stdout.strip().splitlines(), ["3", "3", "2"])
 
+    def test_deque_searchmut_still_leaks_python_surface_into_cpp(self) -> None:
+        src = """from collections import deque
+
+q: deque[int] = deque([1, 2, 1])
+print(q.count(1))
+q.remove(1)
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "deque_searchmut_case.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertRegex(
+            cpp,
+            r"return ::std::deque<int64>\(__deque_src_\d*\.begin\(\), __deque_src_\d*\.end\(\)\);",
+        )
+        self.assertIn("q.count(1)", cpp)
+        self.assertIn("q.remove(1);", cpp)
+        self.assertNotIn("::std::count(", cpp)
+        self.assertNotIn(".erase(", cpp)
+
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
         src = """from dataclasses import dataclass, field
 
