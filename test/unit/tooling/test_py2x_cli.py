@@ -16,7 +16,7 @@ if str(ROOT / "src") not in sys.path:
 
 import src.py2x as py2x_mod
 import src.toolchain.compiler.typed_boundary as typed_boundary
-from src.toolchain.link.program_model import LinkedProgramModule
+from src.toolchain.link import LinkedProgramModule
 
 
 class _TypedDocStub:
