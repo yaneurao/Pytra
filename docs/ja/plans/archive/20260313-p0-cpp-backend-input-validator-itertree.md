@@ -3,7 +3,7 @@
 最終更新: 2026-03-13
 
 関連 TODO:
-- `docs/ja/todo/index.md` の `ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01`
+- `docs/ja/todo/archive/20260313.md` の `ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01`
 
 背景:
 - `src/toolchain/link/program_validator.py` の `_iter_object_tree()` は raw object tree 走査時に `parent_key` も返す API に拡張された。
@@ -36,11 +36,12 @@
 - `git -C /workspace/Pytra diff --check`
 
 分解:
-- [ ] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01] `validate_cpp_backend_input_doc()` を `_iter_object_tree()` の `parent_key` 付き API に追従させ、typed boundary / backend input validation が tuple unpack error で止まらない状態へ戻す。
+- [x] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01] `validate_cpp_backend_input_doc()` を `_iter_object_tree()` の `parent_key` 付き API に追従させ、typed boundary / backend input validation が tuple unpack error で止まらない状態へ戻す。
 - [x] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S1-01] minimal raw EAST3 module を使った focused regression を追加し、C++ backend input validator の current crash surface を fail-fast で固定する。
 - [x] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S2-01] `validate_cpp_backend_input_doc()` を `parent_key` 付き object-tree iteration へ切り替え、既存 `ForCore` metadata guard を維持したまま targeted link test を green に戻す。
-- [ ] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S3-01] TODO / plan / decision log を同期して close 条件を固める。
+- [x] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S3-01] TODO / plan / decision log を同期して close 条件を固める。
 
 決定ログ:
 - 2026-03-13: TODO 空き後の新しい P0 として、既存の converter core 破綻を優先する。対象は `_iter_object_tree()` signature 変更に追従し忘れた `validate_cpp_backend_input_doc()` に限定し、raw EAST3 validator 全体の再設計へは広げない。
 - 2026-03-13: `S1-01/S2-01` では link-stage focused regression を `test_program_loader.py` に置き、minimal `Module` input を `validate_cpp_backend_input_doc()` へ直渡しする形で crash surface を固定した。実装側は `_iter_object_tree()` から `parent_key` を受け取るだけに留め、`ForCore.iter_plan` validation と error wording は変えない。
+- 2026-03-13: `S3-01` で live TODO / archive / archived plan を同期し、close 条件を「minimal `Module` input が tuple unpack error で止まらず、focused link regression と TODO priority check が green」で固定した。実装 commit は既存の `program_validator.py` fix をそのまま採用し、追加の validator behavior 変更は入れていない。

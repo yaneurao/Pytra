@@ -16,6 +16,7 @@ Last updated: 2026-03-13
 ## Completed Plan Archive
 
 - [2026-03-13 / P0-PYTRA-NES-CPP-MINI-REPRO-01](../plans/archive/20260313-p0-pytra-nes-cpp-mini-repro-contract.md)
+- [2026-03-13 / P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01](../plans/archive/20260313-p0-cpp-backend-input-validator-itertree.md)
 - [2026-03-13 / P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01](../plans/archive/20260313-p0-raw-east3-node-shape-validator.md)
 - [2026-03-13 / P0-NONCPP-RUNTIME-PYTRA-DESHIM-01](../plans/archive/20260313-p0-noncpp-runtime-pytra-deshim.md)
 - [2026-03-13 / P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01](../plans/archive/20260313-p0-noncpp-runtime-generated-cpp-baseline.md)

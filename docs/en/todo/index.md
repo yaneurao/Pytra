@@ -30,11 +30,3 @@ Last updated: 2026-03-13
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
-### P0: fix the C++ backend input validator drift against the object-tree iterator API
-
-- [ ] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01] Bring `validate_cpp_backend_input_doc()` in sync with the `_iter_object_tree()` API that now yields `parent_key`, so typed-boundary / backend-input validation no longer stops on a tuple-unpack error.
-  - Context: [docs/en/plans/p0-cpp-backend-input-validator-itertree.md](../plans/p0-cpp-backend-input-validator-itertree.md)
-- [x] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S1-01] Add a focused regression around a minimal raw EAST3 module and lock the current C++ backend-input crash surface in fail-fast form.
-  - Progress note: Added a direct-validation regression in `test_program_loader.py` for a minimal `Module` input so `validate_cpp_backend_input_doc()` can no longer fail on a tuple-unpack error before it reaches the backend-specific guards.
-- [x] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S2-01] Switch `validate_cpp_backend_input_doc()` to the `parent_key`-aware object-tree iteration while preserving the existing `ForCore` metadata guards, then bring the targeted link tests back to green.
-- [ ] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S3-01] Sync TODO / plan / decision log and lock the close condition.
