@@ -8,7 +8,7 @@
 背景:
 - `deque[T]` の type annotation と dataclass field lane は representative C++ contract として既に固定済みで、Pytra-NES の `timestamps: deque[float] = field(init=False, repr=False)` 自体は unblock 済み。
 - ただし plain expression / method lane はまだ Python surface をそのまま C++ へ漏らしている。
-- current baseline では `deque()` が `q = deque();`、`append` が `q.append(1);`、`popleft` が `q.popleft();`、truthiness が `py_to<bool>(q)` として出ており、`::std::deque<T>` に対する valid C++ になっていない。
+- current baseline では `deque()` が `q = deque();`、`append` が `q.append(1);`、`popleft` が `q.popleft();`、truthiness が `py_to<bool>(q)`、`len` が `py_len(q)` として出ており、`::std::deque<T>` に対する valid C++ になっていない。
 - Pytra-NES の次の実用 blocker は queue operation であり、`deque` API 全面互換ではなく representative subset を先に固定するのが妥当。
 
 目的:
@@ -29,7 +29,7 @@
 - C++ runtime に `PyDequeObj` のような新 object hierarchy を追加すること
 
 受け入れ基準:
-- baseline regression で current invalid C++ surface (`deque()`, `.append`, `.popleft`, `py_to<bool>(deque)`) を固定する。
+- baseline regression で current invalid C++ surface (`deque()`, `.append`, `.popleft`, `py_to<bool>(deque)`, `py_len(deque)`) を固定する。
 - representative C++ lane で `deque()` が `::std::deque<T>{}` に lower される。
 - representative C++ lane で `append` は `push_back`、`popleft` は `front + pop_front` 相当へ lower される。
 - representative C++ lane で `len(deque)` と truthiness が valid C++ (`.size()`, `!empty()`) に lower される。
@@ -47,7 +47,7 @@
 - 2026-03-13: `dataclasses.field(...)` と `deque[T]` annotation lane は close 済みのため、新 task は queue operation の representative subset に限定する。
 - 2026-03-13: first-pass subset は Pytra-NES の queue need に合わせて `deque()`, `append`, `popleft`, `len`, truthiness の 5 要素に絞る。`appendleft` 以降は後段に回す。
 - 2026-03-13: baseline は compile failure を直接固定せず、C++ source に Python surface が漏れていることを regression で固定する。compiler error text 依存を避けるため。
-- 2026-03-13: `S1-01` として `q = deque();`, `q.append(1);`, `q.popleft();`, `py_to<bool>(q)` を focused regression で固定した。
+- 2026-03-13: `S1-01` として `q = deque();`, `q.append(1);`, `q.popleft();`, `py_to<bool>(q)`, `py_len(q)` を focused regression で固定した。
 
 ## 分解
 

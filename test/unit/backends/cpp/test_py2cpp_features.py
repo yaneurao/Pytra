@@ -5003,6 +5003,7 @@ q: deque[int] = deque()
 q.append(1)
 front = q.popleft()
 print(bool(q))
+print(len(q))
 print(front)
 """
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -5014,6 +5015,7 @@ print(front)
         self.assertIn("q.append(1);", cpp)
         self.assertIn("q.popleft()", cpp)
         self.assertIn("py_to<bool>(q)", cpp)
+        self.assertIn("py_len(q)", cpp)
 
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
         src = """from dataclasses import dataclass, field

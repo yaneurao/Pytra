@@ -8,7 +8,7 @@ Related TODO:
 Background:
 - The representative C++ contract for `deque[T]` type annotations and dataclass-field lanes is already fixed, so the original Pytra-NES blocker around `timestamps: deque[float] = field(init=False, repr=False)` itself is no longer blocked.
 - However, the plain expression / method lane still leaks Python surface directly into emitted C++.
-- In the current baseline, `deque()` is emitted as `q = deque();`, `append` as `q.append(1);`, `popleft` as `q.popleft();`, and truthiness as `py_to<bool>(q)`, which is not valid C++ for `::std::deque<T>`.
+- In the current baseline, `deque()` is emitted as `q = deque();`, `append` as `q.append(1);`, `popleft` as `q.popleft();`, truthiness as `py_to<bool>(q)`, and `len` as `py_len(q)`, which is not valid C++ for `::std::deque<T>`.
 - The next practical Pytra-NES blocker is queue operations, so the right move is to lock a representative subset first instead of aiming for full `deque` compatibility.
 
 Goal:
@@ -29,7 +29,7 @@ Out of scope:
 - adding a new C++ runtime object hierarchy such as `PyDequeObj`
 
 Acceptance criteria:
-- A baseline regression locks the current invalid C++ surface (`deque()`, `.append`, `.popleft`, `py_to<bool>(deque)`).
+- A baseline regression locks the current invalid C++ surface (`deque()`, `.append`, `.popleft`, `py_to<bool>(deque)`, `py_len(deque)`).
 - In the representative C++ lane, `deque()` lowers to `::std::deque<T>{}`.
 - In the representative C++ lane, `append` lowers to `push_back` and `popleft` lowers to a `front + pop_front` equivalent.
 - In the representative C++ lane, `len(deque)` and truthiness lower to valid C++ (`.size()`, `!empty()`).
@@ -47,7 +47,7 @@ Decision log:
 - 2026-03-13: since `dataclasses.field(...)` and the `deque[T]` annotation lane are already closed, this new task is limited to the representative queue-operation subset.
 - 2026-03-13: the first-pass subset is restricted to `deque()`, `append`, `popleft`, `len`, and truthiness, matching the immediate Pytra-NES need. `appendleft` and beyond are deferred.
 - 2026-03-13: the baseline is locked via C++ source regressions instead of direct compile-failure assertions, to avoid compiler-error-text brittleness.
-- 2026-03-13: as `S1-01`, a focused regression now locks `q = deque();`, `q.append(1);`, `q.popleft();`, and `py_to<bool>(q)` as the current invalid C++ surface.
+- 2026-03-13: as `S1-01`, a focused regression now locks `q = deque();`, `q.append(1);`, `q.popleft();`, `py_to<bool>(q)`, and `py_len(q)` as the current invalid C++ surface.
 
 ## Breakdown
 
