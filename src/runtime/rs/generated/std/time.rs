@@ -3,5 +3,5 @@
 // generated-by: tools/gen_runtime_from_manifest.py
 
 pub fn perf_counter() -> f64 {
-    crate::py_runtime::perf_counter()
+    super::time_native::perf_counter()
 }

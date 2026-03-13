@@ -415,14 +415,46 @@ class Py2RsSmokeTest(unittest.TestCase):
         runtime_src = (ROOT / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs").read_text(
             encoding="utf-8"
         )
+        self.assertIn('#[path = "time_native.rs"]', runtime_src)
+        self.assertIn("pub mod time_native;", runtime_src)
         self.assertIn('#[path = "time.rs"]', runtime_src)
         self.assertIn("pub mod time;", runtime_src)
+        self.assertIn('#[path = "math_native.rs"]', runtime_src)
+        self.assertIn("pub mod math_native;", runtime_src)
         self.assertIn('#[path = "math.rs"]', runtime_src)
         self.assertIn("pub mod math;", runtime_src)
         self.assertIn("pub mod pytra {", runtime_src)
         self.assertIn("pub mod std {", runtime_src)
         self.assertIn("pub use super::super::time;", runtime_src)
         self.assertIn("pub use super::super::math;", runtime_src)
+
+    def test_generated_time_runtime_owner_is_live_wrapper_shaped(self) -> None:
+        generated = (ROOT / "src" / "runtime" / "rs" / "generated" / "std" / "time.rs").read_text(
+            encoding="utf-8"
+        )
+        native = (ROOT / "src" / "runtime" / "rs" / "native" / "std" / "time_native.rs").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("super::time_native::perf_counter()", generated)
+        self.assertNotIn("crate::py_runtime::perf_counter()", generated)
+        self.assertNotIn("Instant", generated)
+        self.assertIn("use std::time::Instant;", native)
+        self.assertIn("pub fn perf_counter() -> f64 {", native)
+
+    def test_generated_math_runtime_owner_is_live_wrapper_shaped(self) -> None:
+        generated = (ROOT / "src" / "runtime" / "rs" / "generated" / "std" / "math.rs").read_text(
+            encoding="utf-8"
+        )
+        native = (ROOT / "src" / "runtime" / "rs" / "native" / "std" / "math_native.rs").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("pub use super::math_native::{e, pi, ToF64};", generated)
+        self.assertIn("super::math_native::sqrt(v)", generated)
+        self.assertIn("super::math_native::pow(a, b)", generated)
+        self.assertNotIn("::std::f64::consts::PI", generated)
+        self.assertIn("pub const pi: f64 = ::std::f64::consts::PI;", native)
+        self.assertIn("pub fn sqrt<T: ToF64>(v: T) -> f64 {", native)
+        self.assertIn("pub fn pow(a: f64, b: f64) -> f64 {", native)
 
     def test_generated_time_and_math_runtime_hook_modules_compile_with_scaffold(self) -> None:
         if shutil.which("rustc") is None:
@@ -431,6 +463,8 @@ class Py2RsSmokeTest(unittest.TestCase):
             tmp = Path(td)
             files = (
                 (ROOT / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs", "py_runtime.rs"),
+                (ROOT / "src" / "runtime" / "rs" / "native" / "std" / "time_native.rs", "time_native.rs"),
+                (ROOT / "src" / "runtime" / "rs" / "native" / "std" / "math_native.rs", "math_native.rs"),
                 (ROOT / "src" / "runtime" / "rs" / "generated" / "std" / "time.rs", "time.rs"),
                 (ROOT / "src" / "runtime" / "rs" / "generated" / "std" / "math.rs", "math.rs"),
                 (ROOT / "src" / "runtime" / "rs" / "generated" / "utils" / "image_runtime.rs", "image_runtime.rs"),

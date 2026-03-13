@@ -368,8 +368,11 @@ def _collect_csharp_lane_issues() -> list[str]:
         "enum",
     ):
         issues.append("C# deferred no-runtime-module set drifted")
-    if 'return "Pytra.CsModule.math"' not in emitter_text:
-        issues.append("math module alias target drifted from Pytra.CsModule.math")
+    if (
+        "extern_owner = self._extern_runtime_module_owner(module_name)" not in emitter_text
+        or "return extern_owner" not in emitter_text
+    ):
+        issues.append("math module alias target drifted from extern runtime owner resolution")
     if 'return "Pytra.CsModule.py_path"' not in emitter_text:
         issues.append("pathlib symbol alias target drifted from Pytra.CsModule.py_path")
     return issues
@@ -428,18 +431,19 @@ def _collect_rust_lane_issues() -> list[str]:
                 if module_name == "time":
                     if "pub fn perf_counter() -> f64 {" not in generated_text:
                         issues.append("canonical generated Rust time lane lost the perf_counter wrapper")
-                    if "crate::py_runtime::perf_counter()" not in generated_text:
-                        issues.append("canonical generated Rust time lane no longer targets the runtime scaffold seam")
+                    if "super::time_native::perf_counter()" not in generated_text:
+                        issues.append("canonical generated Rust time lane no longer targets the native backing seam")
                     if "__t." in generated_text or "py_extern(" in generated_text:
                         issues.append("canonical generated Rust time lane still contains extern/runtime residue")
                 if module_name == "math":
                     for needle in (
-                        "pub const pi: f64 = ::std::f64::consts::PI;",
-                        "pub const e: f64 = ::std::f64::consts::E;",
-                        "pub trait ToF64 {",
+                        "pub use super::math_native::{e, pi, ToF64};",
                         "pub fn sqrt<T: ToF64>(v: T) -> f64 {",
+                        "super::math_native::sqrt(v)",
                         "pub fn floor<T: ToF64>(v: T) -> f64 {",
+                        "super::math_native::floor(v)",
                         "pub fn pow(a: f64, b: f64) -> f64 {",
+                        "super::math_native::pow(a, b)",
                     ):
                         if needle not in generated_text:
                             issues.append(f"canonical generated Rust math lane lost live wrapper shape: {needle}")

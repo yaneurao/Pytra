@@ -9,7 +9,6 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path as StdPath, PathBuf};
 use std::sync::Once;
-use std::time::Instant;
 use std::{collections::BTreeMap, collections::BTreeSet, collections::HashMap, collections::HashSet};
 
 pub trait PyStringify {
@@ -1005,17 +1004,14 @@ impl std::ops::Div<&str> for PyPath {
 mod image_runtime;
 pub use self::image_runtime::{py_grayscale_palette, py_save_gif, py_write_rgb_png};
 
-pub fn perf_counter() -> f64 {
-    static INIT: Once = Once::new();
-    static mut START: Option<Instant> = None;
-    INIT.call_once(|| unsafe {
-        START = Some(Instant::now());
-    });
-    unsafe { START.as_ref().expect("perf counter start must be initialized").elapsed().as_secs_f64() }
-}
+#[path = "time_native.rs"]
+pub mod time_native;
 
 #[path = "time.rs"]
 pub mod time;
+
+#[path = "math_native.rs"]
+pub mod math_native;
 
 #[path = "math.rs"]
 pub mod math;

@@ -387,7 +387,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("public static py_path cwd()", out)
         self.assertNotIn("public static class Program", out)
 
-    def test_rewrite_rs_perf_counter_runtime_wrapper_targets_runtime_perf_counter(self) -> None:
+    def test_rewrite_rs_std_native_owner_wrapper_delegates_time_to_time_native(self) -> None:
         src = "\n".join(
             [
                 "// AUTO-GENERATED FILE. DO NOT EDIT.",
@@ -399,12 +399,12 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "}",
             ]
         )
-        out = gen_mod.rewrite_rs_perf_counter_runtime_wrapper(src)
+        out = gen_mod.rewrite_rs_std_native_owner_wrapper(src, "time")
         self.assertIn("pub fn perf_counter() -> f64 {", out)
-        self.assertIn("crate::py_runtime::perf_counter()", out)
+        self.assertIn("super::time_native::perf_counter()", out)
         self.assertNotIn("__t.perf_counter()", out)
 
-    def test_rewrite_rs_math_runtime_wrapper_exports_std_math_facade(self) -> None:
+    def test_rewrite_rs_std_native_owner_wrapper_delegates_math_to_math_native(self) -> None:
         src = "\n".join(
             [
                 "// AUTO-GENERATED FILE. DO NOT EDIT.",
@@ -416,12 +416,11 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "}",
             ]
         )
-        out = gen_mod.rewrite_rs_math_runtime_wrapper(src)
-        self.assertIn("pub const pi: f64 = ::std::f64::consts::PI;", out)
-        self.assertIn("pub const e: f64 = ::std::f64::consts::E;", out)
-        self.assertIn("pub trait ToF64 {", out)
+        out = gen_mod.rewrite_rs_std_native_owner_wrapper(src, "math")
+        self.assertIn("pub use super::math_native::{e, pi, ToF64};", out)
         self.assertIn("pub fn sqrt<T: ToF64>(v: T) -> f64 {", out)
-        self.assertIn("pub fn pow(a: f64, b: f64) -> f64 {", out)
+        self.assertIn("super::math_native::sqrt(v)", out)
+        self.assertIn("super::math_native::pow(a, b)", out)
         self.assertNotIn("__m.", out)
 
     def test_rewrite_kotlin_program_to_library_removes_empty_main(self) -> None:

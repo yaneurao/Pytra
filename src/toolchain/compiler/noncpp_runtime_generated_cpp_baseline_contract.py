@@ -319,7 +319,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/image_runtime.rs",
             "generated/utils/png.rs",
         ),
-        "native_files": ("native/built_in/py_runtime.rs",),
+        "native_files": ("native/built_in/py_runtime.rs", "native/std/math_native.rs", "native/std/time_native.rs"),
         "delete_target_files": (),
     },
     {

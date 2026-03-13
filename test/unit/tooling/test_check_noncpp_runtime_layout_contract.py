@@ -255,19 +255,19 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
                 "canonical_lane": "generated/std",
                 "generated_std_state": "canonical_generated",
                 "generated_std_rel": "src/runtime/rs/generated/std/time.rs",
-                "native_rel": "src/runtime/rs/native/built_in/py_runtime.rs",
+                "native_rel": "src/runtime/rs/native/std/time_native.rs",
                 "canonical_runtime_symbol": "#[path = \"time.rs\"]",
                 "representative_fixture": "test/fixtures/imports/import_time_from.py",
                 "smoke_guard_needles": (
                     "def test_runtime_scaffold_exposes_pytra_std_time_and_math",
                 ),
-                "rationale": "generated/std/time.rs is now the live Rust time owner, and py_runtime.rs only stages it as a substrate-backed path module while preserving the existing perf_counter seam.",
+                "rationale": "generated/std/time.rs remains the live Rust time owner, but its extern-marked surface now delegates through native/std/time_native.rs so the host perf-counter binding no longer lives in py_runtime.rs.",
             },
         )
         self.assertEqual(by_module["math"]["canonical_lane"], "generated/std")
         self.assertEqual(by_module["math"]["generated_std_state"], "canonical_generated")
         self.assertEqual(by_module["math"]["generated_std_rel"], "src/runtime/rs/generated/std/math.rs")
-        self.assertEqual(by_module["math"]["native_rel"], "src/runtime/rs/native/built_in/py_runtime.rs")
+        self.assertEqual(by_module["math"]["native_rel"], "src/runtime/rs/native/std/math_native.rs")
         self.assertEqual(by_module["math"]["canonical_runtime_symbol"], '#[path = "math.rs"]')
         self.assertEqual(by_module["pathlib"]["canonical_lane"], "no_runtime_module")
         self.assertEqual(by_module["pathlib"]["generated_std_state"], "compare_artifact")
