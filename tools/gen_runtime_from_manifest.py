@@ -1305,7 +1305,7 @@ namespace Pytra.CsModule
 """
 
 
-def rewrite_rs_std_time_live_wrapper(rs_src: str) -> str:
+def rewrite_rs_perf_counter_runtime_wrapper(rs_src: str) -> str:
     del rs_src
     return """pub fn perf_counter() -> f64 {
     crate::py_runtime::perf_counter()
@@ -1440,7 +1440,7 @@ pub fn pow(a: f64, b: f64) -> f64 {
 """
 
 
-def rewrite_java_std_time_live_wrapper(java_src: str) -> str:
+def rewrite_java_perf_counter_host_wrapper(java_src: str) -> str:
     return java_src.replace(
         "return __t.perf_counter();",
         "return (double) System.nanoTime() / 1_000_000_000.0;",
@@ -1617,7 +1617,7 @@ def rewrite_js_std_module_runtime_imports(js_src: str, *, module_name: str) -> s
     return rewrite_js_program_to_cjs_module(text)
 
 
-def rewrite_js_std_time_live_wrapper(js_src: str) -> str:
+def rewrite_js_perf_counter_host_wrapper(js_src: str) -> str:
     text = _strip_trailing_string_literal_expr(js_src)
     text = text.replace(
         "return __t.perf_counter();",
@@ -2210,7 +2210,7 @@ def rewrite_ts_std_math_live_wrapper(ts_src: str) -> str:
     return text.rstrip() + "\n"
 
 
-def rewrite_ts_std_time_live_wrapper(ts_src: str) -> str:
+def rewrite_ts_perf_counter_host_wrapper(ts_src: str) -> str:
     text = _strip_trailing_string_literal_expr(ts_src)
     text = text.replace(
         "function perf_counter() {",
@@ -2930,7 +2930,7 @@ def rewrite_php_program_to_library(php_src: str) -> str:
     return text.rstrip() + "\n"
 
 
-def rewrite_php_std_time_live_wrapper(php_src: str) -> str:
+def rewrite_php_perf_counter_host_wrapper(php_src: str) -> str:
     lines = _strip_trailing_string_literal_expr(php_src).splitlines()
     lines = _remove_block_by_signature(lines, re.compile(r"^function\s+__pytra_main\s*\("))
     out: list[str] = []
@@ -3492,18 +3492,18 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_cs_std_json_live_wrapper(generated)
     elif item.postprocess == "cs_std_pathlib_live_wrapper":
         generated = rewrite_cs_std_pathlib_live_wrapper(generated)
-    elif item.postprocess == "rs_std_time_live_wrapper":
-        generated = rewrite_rs_std_time_live_wrapper(generated)
+    elif item.postprocess == "rs_perf_counter_runtime_wrapper":
+        generated = rewrite_rs_perf_counter_runtime_wrapper(generated)
     elif item.postprocess == "rs_std_math_live_wrapper":
         generated = rewrite_rs_std_math_live_wrapper(generated)
-    elif item.postprocess == "java_std_time_live_wrapper":
-        generated = rewrite_java_std_time_live_wrapper(generated)
+    elif item.postprocess == "java_perf_counter_host_wrapper":
+        generated = rewrite_java_perf_counter_host_wrapper(generated)
     elif item.postprocess == "java_std_math_live_wrapper":
         generated = rewrite_java_std_math_live_wrapper(generated)
     elif item.postprocess == "js_std_math_live_wrapper":
         generated = rewrite_js_std_math_live_wrapper(generated)
-    elif item.postprocess == "js_std_time_live_wrapper":
-        generated = rewrite_js_std_time_live_wrapper(generated)
+    elif item.postprocess == "js_perf_counter_host_wrapper":
+        generated = rewrite_js_perf_counter_host_wrapper(generated)
     elif item.postprocess == "js_std_sys_live_wrapper":
         generated = rewrite_js_std_sys_live_wrapper(generated)
     elif item.postprocess == "js_std_pathlib_live_wrapper":
@@ -3520,8 +3520,8 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_js_std_module_runtime_imports(generated, module_name="timeit")
     elif item.postprocess == "ts_std_math_live_wrapper":
         generated = rewrite_ts_std_math_live_wrapper(generated)
-    elif item.postprocess == "ts_std_time_live_wrapper":
-        generated = rewrite_ts_std_time_live_wrapper(generated)
+    elif item.postprocess == "ts_perf_counter_host_wrapper":
+        generated = rewrite_ts_perf_counter_host_wrapper(generated)
     elif item.postprocess == "ts_std_sys_live_wrapper":
         generated = rewrite_ts_std_sys_live_wrapper(generated)
     elif item.postprocess == "ts_std_pathlib_live_wrapper":
@@ -3548,8 +3548,8 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_scala_program_to_library(generated)
     elif item.postprocess == "swift_program_to_library":
         generated = rewrite_swift_program_to_library(generated)
-    elif item.postprocess == "php_std_time_live_wrapper":
-        generated = rewrite_php_std_time_live_wrapper(generated)
+    elif item.postprocess == "php_perf_counter_host_wrapper":
+        generated = rewrite_php_perf_counter_host_wrapper(generated)
     elif item.postprocess == "php_std_math_live_wrapper":
         generated = rewrite_php_std_math_live_wrapper(generated)
     elif item.postprocess == "php_std_pathlib_live_wrapper":

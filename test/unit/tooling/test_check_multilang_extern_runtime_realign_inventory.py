@@ -71,9 +71,20 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
             row["module_id"]: row
             for row in inventory_mod.iter_multilang_extern_runtime_realign_inventory()
         }
-        self.assertIn(
-            "cs:cs_std_native_owner_wrapper",
+        self.assertEqual(
             by_id["std/time"]["manifest_postprocess_targets"],
+            (
+                "rs:rs_perf_counter_runtime_wrapper",
+                "cs:cs_std_native_owner_wrapper",
+                "go:go_program_to_library",
+                "java:java_perf_counter_host_wrapper",
+                "kotlin:kotlin_program_to_library",
+                "scala:scala_program_to_library",
+                "swift:swift_program_to_library",
+                "js:js_perf_counter_host_wrapper",
+                "ts:ts_perf_counter_host_wrapper",
+                "php:php_perf_counter_host_wrapper",
+            ),
         )
         self.assertEqual(
             by_id["std/time"]["noncpp_native_owner_paths"],

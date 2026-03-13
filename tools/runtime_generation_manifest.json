@@ -559,14 +559,14 @@
       "source": "src/pytra/std/time.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/time.rs", "postprocess": "rs_std_time_live_wrapper" },
+        { "target": "rs", "output": "src/runtime/rs/generated/std/time.rs", "postprocess": "rs_perf_counter_runtime_wrapper" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/time.cs", "postprocess": "cs_std_native_owner_wrapper", "helper_name": "time" },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/time.go",
           "postprocess": "go_program_to_library"
         },
-        { "target": "java", "output": "src/runtime/java/generated/std/time.java", "postprocess": "java_std_time_live_wrapper" },
+        { "target": "java", "output": "src/runtime/java/generated/std/time.java", "postprocess": "java_perf_counter_host_wrapper" },
         {
           "target": "kotlin",
           "output": "src/runtime/kotlin/generated/std/time.kt",
@@ -583,11 +583,11 @@
           "postprocess": "swift_program_to_library"
         },
         { "target": "nim", "output": "src/runtime/nim/generated/std/time.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/std/time.js", "postprocess": "js_std_time_live_wrapper" },
-        { "target": "ts", "output": "src/runtime/ts/generated/std/time.ts", "postprocess": "ts_std_time_live_wrapper" },
+        { "target": "js", "output": "src/runtime/js/generated/std/time.js", "postprocess": "js_perf_counter_host_wrapper" },
+        { "target": "ts", "output": "src/runtime/ts/generated/std/time.ts", "postprocess": "ts_perf_counter_host_wrapper" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/time.rb" },
         { "target": "lua", "output": "src/runtime/lua/generated/std/time.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/std/time.php", "postprocess": "php_std_time_live_wrapper" }
+        { "target": "php", "output": "src/runtime/php/generated/std/time.php", "postprocess": "php_perf_counter_host_wrapper" }
       ]
     },
     {

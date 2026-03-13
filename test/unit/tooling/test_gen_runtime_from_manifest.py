@@ -387,7 +387,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("public static py_path cwd()", out)
         self.assertNotIn("public static class Program", out)
 
-    def test_rewrite_rs_std_time_live_wrapper_targets_runtime_perf_counter(self) -> None:
+    def test_rewrite_rs_perf_counter_runtime_wrapper_targets_runtime_perf_counter(self) -> None:
         src = "\n".join(
             [
                 "// AUTO-GENERATED FILE. DO NOT EDIT.",
@@ -399,7 +399,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "}",
             ]
         )
-        out = gen_mod.rewrite_rs_std_time_live_wrapper(src)
+        out = gen_mod.rewrite_rs_perf_counter_runtime_wrapper(src)
         self.assertIn("pub fn perf_counter() -> f64 {", out)
         self.assertIn("crate::py_runtime::perf_counter()", out)
         self.assertNotIn("__t.perf_counter()", out)
@@ -481,7 +481,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertEqual(current, rendered)
         self.assertIn("\r", current)
 
-    def test_rewrite_java_std_time_live_wrapper_inlines_system_nanotime(self) -> None:
+    def test_rewrite_java_perf_counter_host_wrapper_inlines_system_nanotime(self) -> None:
         src = "\n".join(
             [
                 "public final class time {",
@@ -491,7 +491,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "}",
             ]
         )
-        out = gen_mod.rewrite_java_std_time_live_wrapper(src)
+        out = gen_mod.rewrite_java_perf_counter_host_wrapper(src)
         self.assertIn("System.nanoTime()", out)
         self.assertNotIn("__t.perf_counter()", out)
 
@@ -580,7 +580,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertNotIn("__m.", out)
         self.assertNotIn("extern(", out)
 
-    def test_rewrite_js_std_time_live_wrapper_inlines_hrtime_and_alias(self) -> None:
+    def test_rewrite_js_perf_counter_host_wrapper_inlines_hrtime_and_alias(self) -> None:
         src = "\n".join(
             [
                 "function perf_counter() {",
@@ -590,7 +590,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "\"pytra.std.time: extern-marked time API with Python runtime fallback.\";",
             ]
         )
-        out = gen_mod.rewrite_js_std_time_live_wrapper(src)
+        out = gen_mod.rewrite_js_perf_counter_host_wrapper(src)
         self.assertIn("process.hrtime.bigint()", out)
         self.assertIn("const perfCounter = perf_counter;", out)
         self.assertIn("module.exports = {perf_counter, perfCounter};", out)
@@ -645,7 +645,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return JSON.parse(String(text));", out)
         self.assertIn("module.exports = { JsonObj, JsonArr, JsonValue, loads, loads_obj, loads_arr, dumps };", out)
 
-    def test_rewrite_ts_std_time_live_wrapper_exports_perf_counter(self) -> None:
+    def test_rewrite_ts_perf_counter_host_wrapper_exports_perf_counter(self) -> None:
         src = "\n".join(
             [
                 "function perf_counter() {",
@@ -655,7 +655,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "\"pytra.std.time: extern-marked time API with Python runtime fallback.\";",
             ]
         )
-        out = gen_mod.rewrite_ts_std_time_live_wrapper(src)
+        out = gen_mod.rewrite_ts_perf_counter_host_wrapper(src)
         self.assertIn("export function perf_counter(): number {", out)
         self.assertIn("process.hrtime.bigint()", out)
         self.assertIn("export const perfCounter = perf_counter;", out)
@@ -709,7 +709,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return JSON.parse(String(text));", out)
         self.assertIn("export function dumps(", out)
 
-    def test_rewrite_php_std_time_live_wrapper_inlines_microtime(self) -> None:
+    def test_rewrite_php_perf_counter_host_wrapper_inlines_microtime(self) -> None:
         src = "\n".join(
             [
                 "<?php",
@@ -727,7 +727,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "__pytra_main();",
             ]
         )
-        out = gen_mod.rewrite_php_std_time_live_wrapper(src)
+        out = gen_mod.rewrite_php_perf_counter_host_wrapper(src)
         self.assertIn("function perf_counter(): float {", out)
         self.assertIn("return microtime(true);", out)
         self.assertNotIn("/pytra/py_runtime.php", out)
