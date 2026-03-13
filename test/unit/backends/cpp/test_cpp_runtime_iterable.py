@@ -332,6 +332,63 @@ int main() {
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             self.assertIn("runtime iterable ok", run.stdout)
 
+    def test_runtime_bool_list_proxy_helpers(self) -> None:
+        cpp_src = r'''
+#include "runtime/cpp/native/core/py_runtime.h"
+
+#include <cassert>
+#include <iostream>
+
+int main() {
+    rc<list<bool>> typed_bool = rc_list_from_value(list<bool>{true, false, true});
+    assert(py_len(typed_bool) == 3);
+    assert(py_at(typed_bool, 0));
+    assert(!py_at(typed_bool, 1));
+    py_at(typed_bool, 1) = true;
+    assert(py_at(typed_bool, 1));
+    object boxed = make_object(py_at(typed_bool, 1));
+    assert(py_to<bool>(boxed));
+    py_list_set_at_mut(rc_list_ref(typed_bool), 2, false);
+    assert(!py_at(typed_bool, 2));
+    std::cout << "runtime bool list ok" << std::endl;
+    return 0;
+}
+'''
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src = work / "runtime_bool_list.cpp"
+            exe = work / "runtime_bool_list.out"
+            src.write_text(cpp_src, encoding="utf-8")
+
+            comp = self._run(
+                [
+                    "g++",
+                    "-std=c++20",
+                    "-O2",
+                    "-I",
+                    "src",
+                    "-I",
+                    "src/runtime/cpp",
+                    str(src),
+                    *CPP_RUNTIME_SRCS,
+                    "-o",
+                    str(exe),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="compile runtime bool list smoke",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+
+            run = self._run(
+                [str(exe)],
+                cwd=work,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run runtime bool list smoke",
+            )
+            self.assertEqual(run.returncode, 0, msg=run.stderr)
+            self.assertIn("runtime bool list ok", run.stdout)
+
     def test_runtime_list_overload_inventory(self) -> None:
         process_native = (ROOT / "src/runtime/cpp/native/core/process_runtime.h").read_text(encoding="utf-8")
         scope_exit_native = (ROOT / "src/runtime/cpp/native/core/scope_exit.h").read_text(encoding="utf-8")
@@ -570,7 +627,7 @@ int main() {
         self.assertNotIn("static inline float64 operator-(const ::std::any& lhs, const ::std::any& rhs)", runtime_header)
         self.assertNotIn("static inline float64 operator*(const ::std::any& lhs, const ::std::any& rhs)", runtime_header)
         self.assertNotIn("static inline float64 operator/(const ::std::any& lhs, const ::std::any& rhs)", runtime_header)
-        self.assertIn("static inline const T& py_at(const list<T>& v, int64 idx)", runtime_header)
+        self.assertIn("static inline typename list<T>::const_reference py_at(const list<T>& v, int64 idx)", runtime_header)
         self.assertNotIn("static inline void py_append(list<T>& v, const U& item)", runtime_header)
         self.assertNotIn("static inline void py_append(rc<list<T>>& v, const U& item)", runtime_header)
         self.assertIn("static inline void py_append(object& v, const U& item)", runtime_header)

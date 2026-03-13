@@ -123,7 +123,7 @@ Target semantics:
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-02] Add those fixtures to representative smoke for JS/TS/Lua/Ruby/PHP and lock the script-family representative transpile contract.
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-03] Add common assertion/helper/checker support as needed so `unsupported`, `preview_only`, or `not_implemented` counts as a failure.
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-01] Make `property_method_call` green in every backend and sync docs / support wording / decision log.
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-02] Make `list_bool_index` green in every backend and sync docs / support wording / decision log.
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-02] Make `list_bool_index` green in every backend and sync docs / support wording / decision log.
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S4-01] Sync the final mapping between `materials/refs/from-Pytra-NES2` and repo fixtures/tests and close the bundle as fully promoted.
 
 Decision log:
@@ -136,3 +136,4 @@ Decision log:
 - 2026-03-13: `S2-02` wired `property_method_call` / `list_bool_index` into representative transpile smoke for `js/ts/lua/ruby/php`, fixing Wave B at the transpile-contract level without allowing unsupported / preview escapes.
 - 2026-03-13: `S2-03` added a shared denylist helper under `test/unit/backends/representative_contract_support.py` so every representative smoke fails if the emitted source contains `unsupported / preview_only / not_implemented` markers. The C++ current baselines now apply the helper to generated C++ source itself before checking the expected compile failure.
 - 2026-03-13: `S3-01` added class-local `@property` getter tracking to the C++ emitter so attribute reads lower to `this->mapper()` / `holder->mapper()` instead of member-function objects. With that change, `property_method_call` is compile+run green on C++ too, so every backend representative lane is now green and only `list_bool_index` remains unresolved.
+- 2026-03-13: `S3-02` switched the C++ runtime `list<T>` / `py_at` / `py_list_at_ref` surface to `list<T>::reference/const_reference` and added a bool-convertible proxy fallback to `make_object`. That removed the `std::vector<bool>` proxy vs `bool&` collision and made `list_bool_index` compile+run green on C++ too.

@@ -4797,18 +4797,11 @@ if __name__ == "__main__":
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
 
-    def test_list_bool_index_current_cpp_baseline_fails_to_compile(self) -> None:
-        cpp, comp = self._compile_fixture("list_bool_index")
-        assert_no_representative_escape(
-            self,
-            cpp,
-            backend="cpp",
-            fixture="list_bool_index",
-        )
-        self.assertNotEqual(comp.returncode, 0)
-        self.assertIn("py_list_at_ref", comp.stderr)
-        self.assertIn("cannot bind non-const lvalue reference of type ‘bool&’", comp.stderr)
-        self.assertIn("operator[]", comp.stderr)
+    def test_list_bool_index_runtime(self) -> None:
+        out = self._compile_and_run_fixture("list_bool_index")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
 
     def test_dataclass_field_call_no_longer_leaks_into_cpp_runtime_expr(self) -> None:
         src = """from dataclasses import dataclass, field

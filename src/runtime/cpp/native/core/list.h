@@ -14,6 +14,8 @@ public:
     using value_type = T;
     using iterator = typename ::std::vector<T>::iterator;
     using const_iterator = typename ::std::vector<T>::const_iterator;
+    using reference = typename ::std::vector<T>::reference;
+    using const_reference = typename ::std::vector<T>::const_reference;
 
     list() = default;
     list(::std::initializer_list<T> init) : pytra::gc::RcObject(), data_(init) {}
@@ -123,20 +125,20 @@ public:
     void resize(::std::size_t n) { data_.resize(n); }
     void resize(::std::size_t n, const T& value) { data_.resize(n, value); }
 
-    T& operator[](::std::size_t i) { return data_[i]; }
-    const T& operator[](::std::size_t i) const { return data_[i]; }
-    T& at(::std::size_t i) { return data_.at(i); }
-    const T& at(::std::size_t i) const { return data_.at(i); }
-    T& front() { return data_.front(); }
-    const T& front() const { return data_.front(); }
-    T& back() { return data_.back(); }
-    const T& back() const { return data_.back(); }
+    reference operator[](::std::size_t i) { return data_[i]; }
+    const_reference operator[](::std::size_t i) const { return data_[i]; }
+    reference at(::std::size_t i) { return data_.at(i); }
+    const_reference at(::std::size_t i) const { return data_.at(i); }
+    reference front() { return data_.front(); }
+    const_reference front() const { return data_.front(); }
+    reference back() { return data_.back(); }
+    const_reference back() const { return data_.back(); }
 
     void push_back(const T& value) { data_.push_back(value); }
     void push_back(T&& value) { data_.push_back(::std::move(value)); }
 
     template <class... Args>
-    T& emplace_back(Args&&... args) {
+    reference emplace_back(Args&&... args) {
         return data_.emplace_back(::std::forward<Args>(args)...);
     }
 

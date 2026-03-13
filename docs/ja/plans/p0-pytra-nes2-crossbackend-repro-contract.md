@@ -125,7 +125,7 @@ source:
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-02] JS/TS/Lua/Ruby/PHP の representative smoke に 2 fixture を追加し、script family の representative transpile contract を固定する。
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-03] 全 backend 共通で「unsupported / preview_only / not_implemented へ逃がしたら fail」と分かる assertion / helper / checker を必要に応じて追加する。
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-01] `property_method_call` の全 backend green を達成し、docs / support wording / decision log を同期する。
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-02] `list_bool_index` の全 backend green を達成し、docs / support wording / decision log を同期する。
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-02] `list_bool_index` の全 backend green を達成し、docs / support wording / decision log を同期する。
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S4-01] `materials/refs/from-Pytra-NES2` と repo fixture/test の対応を最終同期し、この repro bundle を「全 backend representative contract に昇格済み」として close する。
 
 決定ログ:
@@ -138,3 +138,4 @@ source:
 - 2026-03-13: `S2-02` として `property_method_call` / `list_bool_index` を `js/ts/lua/ruby/php` representative transpile smoke へ接続し、Wave B でも unsupported / preview に逃がさず少なくとも transpile surface を通す contract を固定した。
 - 2026-03-13: `S2-03` として `test/unit/backends/representative_contract_support.py` に共通 denylist helper を追加し、全 backend representative smoke が `unsupported / preview_only / not_implemented` marker を含むと fail するようにした。C++ current baseline は compile stderr ではなく生成 C++ source 自体に対して helper を適用し、escape marker を含まない compile-failure baseline だけを許可した。
 - 2026-03-13: `S3-01` として C++ emitter に class-local `@property` getter track を追加し、attribute read を `this->mapper()` / `holder->mapper()` へ lower するように修正した。これで `property_method_call` は C++ も compile+run green になり、全 backend representative lane が green になったため、残件は `list_bool_index` のみとなった。
+- 2026-03-13: `S3-02` として C++ runtime の `list<T>` / `py_at` / `py_list_at_ref` を `list<T>::reference/const_reference` ベースにし、`make_object` に bool-convertible proxy fallback を追加した。これで `std::vector<bool>` proxy と `bool&` の衝突が消え、`list_bool_index` は C++ でも compile+run green になった。

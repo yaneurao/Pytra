@@ -416,6 +416,8 @@ static inline object make_object(const T& v) {
         return object_new<PyFloatObj>(static_cast<float64>(v));
     } else if constexpr (::std::is_same_v<T, bool>) {
         return object_new<PyBoolObj>(v);
+    } else if constexpr (!::std::is_integral_v<T> && !::std::is_floating_point_v<T> && ::std::is_convertible_v<T, bool>) {
+        return object_new<PyBoolObj>(static_cast<bool>(v));
     } else if constexpr (::std::is_convertible_v<T, str>) {
         return object_new<PyStrObj>(str(v));
     } else {
@@ -786,13 +788,13 @@ static inline int64 py_list_normalize_index_or_raise(const list<T>& values, int6
 }
 
 template <class T>
-static inline T& py_list_at_ref(list<T>& values, int64 idx) {
+static inline typename list<T>::reference py_list_at_ref(list<T>& values, int64 idx) {
     const int64 pos = py_list_normalize_index_or_raise(values, idx, "list index out of range");
     return values[static_cast<::std::size_t>(pos)];
 }
 
 template <class T>
-static inline const T& py_list_at_ref(const list<T>& values, int64 idx) {
+static inline typename list<T>::const_reference py_list_at_ref(const list<T>& values, int64 idx) {
     const int64 pos = py_list_normalize_index_or_raise(values, idx, "list index out of range");
     return values[static_cast<::std::size_t>(pos)];
 }
@@ -901,17 +903,17 @@ static inline str py_slice(const str& v, int64 lo, int64 up) {
 }
 
 template <class T>
-static inline const T& py_at(const list<T>& v, int64 idx) {
+static inline typename list<T>::const_reference py_at(const list<T>& v, int64 idx) {
     return py_list_at_ref(v, idx);
 }
 
 template <class T>
-static inline T& py_at(rc<list<T>>& v, int64 idx) {
+static inline typename list<T>::reference py_at(rc<list<T>>& v, int64 idx) {
     return py_list_at_ref(rc_list_ref(v), idx);
 }
 
 template <class T>
-static inline const T& py_at(const rc<list<T>>& v, int64 idx) {
+static inline typename list<T>::const_reference py_at(const rc<list<T>>& v, int64 idx) {
     return py_list_at_ref(rc_list_ref(v), idx);
 }
 
