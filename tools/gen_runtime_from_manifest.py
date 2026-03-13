@@ -268,26 +268,26 @@ def rewrite_cs_std_math_live_wrapper(cs_src: str) -> str:
     text = text.replace(
         "    public static class math\n    {\n",
         "    public static class math\n    {\n"
-        "        public const double pi = Math.PI;\n"
-        "        public const double e = Math.E;\n\n",
+        "        public static double pi { get { return math_native.pi; } }\n"
+        "        public static double e { get { return math_native.e; } }\n\n",
         1,
     )
     replacements = {
-        "return __m.sqrt(x);": "return Math.Sqrt(x);",
-        "return __m.sin(x);": "return Math.Sin(x);",
-        "return __m.cos(x);": "return Math.Cos(x);",
-        "return __m.tan(x);": "return Math.Tan(x);",
-        "return __m.exp(x);": "return Math.Exp(x);",
-        "return __m.log(x);": "return Math.Log(x);",
-        "return __m.log10(x);": "return Math.Log10(x);",
-        "return __m.fabs(x);": "return Math.Abs(x);",
-        "return __m.floor(x);": "return Math.Floor(x);",
-        "return __m.ceil(x);": "return Math.Ceiling(x);",
-        "return __m.pow(x, y);": "return Math.Pow(x, y);",
+        "return __m.sqrt(x);": "return math_native.sqrt(x);",
+        "return __m.sin(x);": "return math_native.sin(x);",
+        "return __m.cos(x);": "return math_native.cos(x);",
+        "return __m.tan(x);": "return math_native.tan(x);",
+        "return __m.exp(x);": "return math_native.exp(x);",
+        "return __m.log(x);": "return math_native.log(x);",
+        "return __m.log10(x);": "return math_native.log10(x);",
+        "return __m.fabs(x);": "return math_native.fabs(x);",
+        "return __m.floor(x);": "return math_native.floor(x);",
+        "return __m.ceil(x);": "return math_native.ceil(x);",
+        "return __m.pow(x, y);": "return math_native.pow(x, y);",
     }
     for before, after in replacements.items():
         text = text.replace(before, after)
-    if "__m." in text or "py_extern(" in text:
+    if "__m." in text or "py_extern(" in text or "Math." in text:
         raise RuntimeError("generated C# std/math wrapper still contains extern/math runtime residue")
     return text
 

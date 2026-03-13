@@ -46,7 +46,7 @@
 
 ## 分解
 
-- [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-01] runtime SoT 上の `@extern` module と、generated rewrite / emitter hardcode / native owner の current inventory を全 target で棚卸しする。
+- [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-01] runtime SoT 上の `@extern` module と、generated rewrite / emitter hardcode / native owner の current inventory を全 target で棚卸しする。
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-02] `@extern` を「宣言のみ」「native owner 実装」「ambient extern は別系統」に分けた cross-target contract を spec / plan に固定する。
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-01] `tools/runtime_generation_manifest.json` と `tools/gen_runtime_from_manifest.py` から module-specific extern rewrite を除去し、generated lane を declaration/wrapper-only に揃える。
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-02] 各 target の `src/runtime/<lang>/native/**` に extern-backed canonical owner を整備し、runtime symbol index / layout contract を同期する。
@@ -56,4 +56,6 @@
 決定ログ:
 - 2026-03-13: ユーザー指摘により、`@extern` を backend shortcut として扱っていた現行非 C++ 設計を誤りと認め、全 target を対象に SoT/native-owner/generic-emitter へ戻す P2 task として起票した。
 - 2026-03-14: manifest/emitter の hardcode を直接剥がす前段として、`tools/gen_runtime_symbol_index.py` と `runtime_symbol_index.py` に `extern_contract_v1` / `extern_v1` を追加し、runtime SoT 上の `@extern` module/symbol を generic metadata として引ける状態にした。
+- 2026-03-14: C# は既存の `time_native` pattern に合わせ、`generated/std/math.cs` を `math_native` へ委譲する wrapper に戻し、`System.Math` 直書きを `src/runtime/cs/native/std/math_native.cs` へ押し込めた。
 - 2026-03-14: 最初の realignment slice として、SoT に存在しない `tau` を C# `std/math` generated wrapper が勝手に追加していた挙動を止め、`pi/e` のみを source-of-truth とする状態へ戻した。
+- 2026-03-14: `S1-01` として `multilang_extern_runtime_realign_inventory.py` / checker / unit test を追加し、`std/math,time,os,os_path,sys,glob` と `built_in/io_ops,scalar_ops` の manifest postprocess・C++ native owner・non-C++ native seam・emitter hardcode・generated drift を current worktree 基準で固定した。C# `std/math` は `math_native.cs` seam を current non-C++ owner として inventory に含めた。

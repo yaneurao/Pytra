@@ -305,7 +305,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return time_native.perf_counter();", out)
         self.assertNotIn("return __t.perf_counter();", out)
 
-    def test_rewrite_cs_std_math_live_wrapper_uses_system_math(self) -> None:
+    def test_rewrite_cs_std_math_live_wrapper_delegates_to_math_native(self) -> None:
         src = "\n".join(
             [
                 "using Pytra.CsModule;",
@@ -320,12 +320,13 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         out = gen_mod.rewrite_cs_std_math_live_wrapper(src)
         self.assertIn("namespace Pytra.CsModule", out)
         self.assertIn("public static class math", out)
-        self.assertIn("public const double pi = Math.PI;", out)
-        self.assertIn("public const double e = Math.E;", out)
-        self.assertIn("return Math.Sqrt(x);", out)
-        self.assertIn("return Math.Ceiling(x);", out)
+        self.assertIn("public static double pi { get { return math_native.pi; } }", out)
+        self.assertIn("public static double e { get { return math_native.e; } }", out)
+        self.assertIn("return math_native.sqrt(x);", out)
+        self.assertIn("return math_native.ceil(x);", out)
         self.assertNotIn("__m.", out)
         self.assertNotIn("py_extern(", out)
+        self.assertNotIn("Math.", out)
 
     def test_rewrite_cs_std_json_live_wrapper_exports_json_facade(self) -> None:
         src = "\n".join(

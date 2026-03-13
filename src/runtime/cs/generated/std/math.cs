@@ -14,62 +14,62 @@ namespace Pytra.CsModule
 {
     public static class math
     {
-        public const double pi = Math.PI;
-        public const double e = Math.E;
+        public static double pi { get { return math_native.pi; } }
+        public static double e { get { return math_native.e; } }
 
         public static double sqrt(double x)
         {
-            return Math.Sqrt(x);
+            return math_native.sqrt(x);
         }
 
         public static double sin(double x)
         {
-            return Math.Sin(x);
+            return math_native.sin(x);
         }
 
         public static double cos(double x)
         {
-            return Math.Cos(x);
+            return math_native.cos(x);
         }
 
         public static double tan(double x)
         {
-            return Math.Tan(x);
+            return math_native.tan(x);
         }
 
         public static double exp(double x)
         {
-            return Math.Exp(x);
+            return math_native.exp(x);
         }
 
         public static double log(double x)
         {
-            return Math.Log(x);
+            return math_native.log(x);
         }
 
         public static double log10(double x)
         {
-            return Math.Log10(x);
+            return math_native.log10(x);
         }
 
         public static double fabs(double x)
         {
-            return Math.Abs(x);
+            return math_native.fabs(x);
         }
 
         public static double floor(double x)
         {
-            return Math.Floor(x);
+            return math_native.floor(x);
         }
 
         public static double ceil(double x)
         {
-            return Math.Ceiling(x);
+            return math_native.ceil(x);
         }
 
         public static double pow(double x, double y)
         {
-            return Math.Pow(x, y);
+            return math_native.pow(x, y);
         }
 
     }
