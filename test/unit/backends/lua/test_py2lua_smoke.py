@@ -85,9 +85,11 @@ class Py2LuaSmokeTest(unittest.TestCase):
     def test_lua_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "lua" / "native" / "built_in" / "py_runtime.lua"
         image_runtime = ROOT / "src" / "runtime" / "lua" / "generated" / "utils" / "image_runtime.lua"
+        delete_target_path = ROOT / "src" / "runtime" / "lua" / "pytra"
         legacy_path = ROOT / "src" / "runtime" / "lua" / "pytra-core"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(image_runtime.exists())
+        self.assertFalse(delete_target_path.exists())
         self.assertFalse(legacy_path.exists())
 
     def test_lua_generated_std_baseline_source_guard_materializes_new_compare_modules(self) -> None:

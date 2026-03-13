@@ -217,6 +217,7 @@ def main() -> None:
     def test_ts_cli_staged_runtime_bundle_resolves_runtime_helpers(self) -> None:
         fixture = find_fixture_case("import_time_from")
         with tempfile.TemporaryDirectory() as td:
+            self.assertFalse((ROOT / "src" / "runtime" / "ts" / "pytra").exists())
             out_ts = Path(td) / "import_time_from.ts"
             env = dict(os.environ)
             py_path = str(ROOT / "src")

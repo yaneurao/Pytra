@@ -38,5 +38,5 @@
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-03] static family の checked-in `src/runtime/<lang>/pytra/**` を物理削除し、allowlist / inventory / representative smoke を deletion end state に同期した。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-01] JS/TS の import path / shim writer / selfhost / smoke を見直し、repo-tree `src/runtime/{js,ts}/pytra/**` direct-load と compat shim 契約を撤去する。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-02] Lua/Ruby/PHP の packaging / runtime copy / loader contract を `generated/native` または output-side staging へ移し、repo-tree `pytra/**` 常設前提を撤去する。
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-03] script family (`js/ts/lua/ruby/php`) の checked-in `src/runtime/<lang>/pytra/**` を物理削除し、representative smoke と contract baseline を deletion end state へ更新する。
+- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-03] script family (`js/ts/lua/ruby/php`) の checked-in `src/runtime/<lang>/pytra/**` を物理削除し、representative smoke と contract baseline を deletion end state へ更新する。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S4-01] docs / TODO / archive 参照 / inventory を最終同期し、「非 C++ / 非 C# backend に checked-in `pytra/` は存在しない」状態で close する。

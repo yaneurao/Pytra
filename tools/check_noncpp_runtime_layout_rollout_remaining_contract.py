@@ -511,7 +511,7 @@ def _collect_wave_b_delete_target_issues() -> list[str]:
         for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_native_residuals()
     }
     entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target()
-    if tuple(entry["backend"] for entry in entries) != ("js", "ts", "lua", "ruby", "php"):
+    if tuple(entry["backend"] for entry in entries) != ():
         issues.append("wave-b delete-target order drifted")
     for entry in entries:
         backend = entry["backend"]
@@ -539,7 +539,7 @@ def _collect_wave_b_delete_target_file_issues() -> list[str]:
         for entry in contract_mod.iter_remaining_noncpp_runtime_target_inventory()
     }
     entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target_files()
-    if tuple(entry["backend"] for entry in entries) != ("js", "ts", "lua", "ruby", "php"):
+    if tuple(entry["backend"] for entry in entries) != ():
         issues.append("wave-b delete-target file order drifted")
     for entry in entries:
         backend = entry["backend"]
@@ -568,7 +568,7 @@ def _collect_wave_b_delete_target_smoke_issues() -> list[str]:
         for entry in contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target_files()
     }
     entries = contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target_smoke()
-    if tuple(entry["backend"] for entry in entries) != ("lua", "ruby", "php"):
+    if tuple(entry["backend"] for entry in entries) != ():
         issues.append("wave-b delete-target smoke order drifted")
     for entry in entries:
         backend = entry["backend"]

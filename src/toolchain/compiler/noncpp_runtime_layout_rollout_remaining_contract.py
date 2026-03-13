@@ -530,7 +530,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "backend": "lua",
         "family": "script",
         "runtime_hook_key": "lua",
-        "current_roots": ("generated", "native", "pytra"),
+        "current_roots": ("generated", "native"),
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
@@ -545,19 +545,13 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "ownership": "generated",
                 "rationale": "Lua compare artifacts now live across generated/built_in, generated/std, and generated/utils after the baseline materialization bundle.",
             },
-            {
-                "current_prefix": "src/runtime/lua/pytra/built_in/py_runtime.lua",
-                "target_prefix": "src/runtime/lua/pytra/built_in/py_runtime.lua",
-                "ownership": "delete_target",
-                "rationale": "Lua still keeps a checked-in pytra delete-target shim under pytra/built_in until the script-family deshim bundle removes it.",
-            },
         ),
     },
     {
         "backend": "ruby",
         "family": "script",
         "runtime_hook_key": "ruby",
-        "current_roots": ("generated", "native", "pytra"),
+        "current_roots": ("generated", "native"),
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
@@ -572,19 +566,13 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "ownership": "generated",
                 "rationale": "Ruby compare artifacts now live across generated/built_in, generated/std, and generated/utils after the baseline materialization bundle.",
             },
-            {
-                "current_prefix": "src/runtime/ruby/pytra/built_in/py_runtime.rb",
-                "target_prefix": "src/runtime/ruby/pytra/built_in/py_runtime.rb",
-                "ownership": "delete_target",
-                "rationale": "Ruby still keeps a checked-in pytra delete-target shim under pytra/built_in until the script-family deshim bundle removes it.",
-            },
         ),
     },
     {
         "backend": "php",
         "family": "script",
         "runtime_hook_key": "php",
-        "current_roots": ("generated", "native", "pytra"),
+        "current_roots": ("generated", "native"),
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
@@ -610,24 +598,6 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/php/generated/std/",
                 "ownership": "generated",
                 "rationale": "PHP live-generated std compare artifacts live in generated/std once the Wave B std lanes are materialized.",
-            },
-            {
-                "current_prefix": "src/runtime/php/pytra/py_runtime.php",
-                "target_prefix": "src/runtime/php/pytra/py_runtime.php",
-                "ownership": "delete_target",
-                "rationale": "PHP still keeps a checked-in root-level pytra delete-target shim for require_once compatibility until output-side staging replaces it.",
-            },
-            {
-                "current_prefix": "src/runtime/php/pytra/std/",
-                "target_prefix": "src/runtime/php/pytra/std/",
-                "ownership": "delete_target",
-                "rationale": "PHP already exposes std shims in bucketed form and keeps that public shape.",
-            },
-            {
-                "current_prefix": "src/runtime/php/pytra/utils/",
-                "target_prefix": "src/runtime/php/pytra/utils/",
-                "ownership": "delete_target",
-                "rationale": "PHP still keeps checked-in pytra utils delete-target shims in bucketed pytra/utils paths until output-side staging replaces them.",
             },
         ),
     },
@@ -861,16 +831,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "utils/gif.js",
             "utils/png.js",
         ),
-        "pytra_files": (
-            "README.md",
-            "py_runtime.js",
-            "std/json.js",
-            "std/math.js",
-            "std/pathlib.js",
-            "std/time.js",
-            "utils/gif.js",
-            "utils/png.js",
-        ),
+        "pytra_files": (),
     },
     {
         "backend": "ts",
@@ -902,28 +863,19 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "utils/gif.ts",
             "utils/png.ts",
         ),
-        "pytra_files": (
-            "README.md",
-            "py_runtime.ts",
-            "std/json.ts",
-            "std/math.ts",
-            "std/pathlib.ts",
-            "std/time.ts",
-            "utils/gif.ts",
-            "utils/png.ts",
-        ),
+        "pytra_files": (),
     },
     {
         "backend": "lua",
         "pytra_core_files": ("built_in/py_runtime.lua",),
         "pytra_gen_files": REMAINING_NONCPP_LUA_CURRENT_GENERATED_FILES_V1,
-        "pytra_files": ("built_in/py_runtime.lua",),
+        "pytra_files": (),
     },
     {
         "backend": "ruby",
         "pytra_core_files": ("built_in/py_runtime.rb",),
         "pytra_gen_files": REMAINING_NONCPP_RUBY_CURRENT_GENERATED_FILES_V1,
-        "pytra_files": ("built_in/py_runtime.rb",),
+        "pytra_files": (),
     },
     {
         "backend": "php",
@@ -955,12 +907,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
             "utils/gif.php",
             "utils/png.php",
         ),
-        "pytra_files": (
-            "py_runtime.php",
-            "std/time.php",
-            "utils/gif.php",
-            "utils/png.php",
-        ),
+        "pytra_files": (),
     },
 )
 
@@ -1192,16 +1139,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.js",
         ),
         "native_files": ("native/built_in/py_runtime.js",),
-        "delete_target_files": (
-            "pytra/README.md",
-            "pytra/py_runtime.js",
-            "pytra/std/json.js",
-            "pytra/std/math.js",
-            "pytra/std/pathlib.js",
-            "pytra/std/time.js",
-            "pytra/utils/gif.js",
-            "pytra/utils/png.js",
-        ),
+        "delete_target_files": (),
     },
     {
         "backend": "ts",
@@ -1233,28 +1171,19 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.ts",
         ),
         "native_files": ("native/built_in/py_runtime.ts",),
-        "delete_target_files": (
-            "pytra/README.md",
-            "pytra/py_runtime.ts",
-            "pytra/std/json.ts",
-            "pytra/std/math.ts",
-            "pytra/std/pathlib.ts",
-            "pytra/std/time.ts",
-            "pytra/utils/gif.ts",
-            "pytra/utils/png.ts",
-        ),
+        "delete_target_files": (),
     },
     {
         "backend": "lua",
         "generated_files": REMAINING_NONCPP_LUA_TARGET_GENERATED_FILES_V1,
         "native_files": ("native/built_in/py_runtime.lua",),
-        "delete_target_files": ("pytra/built_in/py_runtime.lua",),
+        "delete_target_files": (),
     },
     {
         "backend": "ruby",
         "generated_files": REMAINING_NONCPP_RUBY_TARGET_GENERATED_FILES_V1,
         "native_files": ("native/built_in/py_runtime.rb",),
-        "delete_target_files": ("pytra/built_in/py_runtime.rb",),
+        "delete_target_files": (),
     },
     {
         "backend": "php",
@@ -1286,12 +1215,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/png.php",
         ),
         "native_files": ("native/built_in/py_runtime.php",),
-        "delete_target_files": (
-            "pytra/py_runtime.php",
-            "pytra/std/time.php",
-            "pytra/utils/gif.php",
-            "pytra/utils/png.php",
-        ),
+        "delete_target_files": (),
     },
 )
 
@@ -1461,44 +1385,28 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
         "backend": "js",
         "generated_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
         "native_modules": ("built_in/py_runtime",),
-        "delete_target_modules": (
-            "built_in/py_runtime",
-            "std/json",
-            "std/math",
-            "std/pathlib",
-            "std/time",
-            "utils/gif",
-            "utils/png",
-        ),
+        "delete_target_modules": (),
         "blocked_modules": REMAINING_NONCPP_SCRIPT_FAMILY_MISSING_COMPARE_MODULES_V1,
     },
     {
         "backend": "ts",
         "generated_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
         "native_modules": ("built_in/py_runtime",),
-        "delete_target_modules": (
-            "built_in/py_runtime",
-            "std/json",
-            "std/math",
-            "std/pathlib",
-            "std/time",
-            "utils/gif",
-            "utils/png",
-        ),
+        "delete_target_modules": (),
         "blocked_modules": REMAINING_NONCPP_SCRIPT_FAMILY_MISSING_COMPARE_MODULES_V1,
     },
     {
         "backend": "lua",
         "generated_modules": REMAINING_NONCPP_LUA_GENERATED_MODULES_V1,
         "native_modules": ("built_in/py_runtime",),
-        "delete_target_modules": ("built_in/py_runtime",),
+        "delete_target_modules": (),
         "blocked_modules": (),
     },
     {
         "backend": "ruby",
         "generated_modules": REMAINING_NONCPP_RUBY_GENERATED_MODULES_V1,
         "native_modules": ("built_in/py_runtime",),
-        "delete_target_modules": ("built_in/py_runtime",),
+        "delete_target_modules": (),
         "blocked_modules": (),
     },
     {
@@ -1531,7 +1439,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             "utils/png",
         ),
         "native_modules": ("built_in/py_runtime",),
-        "delete_target_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
+        "delete_target_modules": (),
         "blocked_modules": (),
     },
 )
@@ -1666,109 +1574,17 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUAL_FILES_V1: Final[
 
 REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_V1: Final[
     tuple[RemainingRuntimeWaveBDeleteTargetEntry, ...]
-] = (
-    {
-        "backend": "js",
-        "substrate_shim_modules": ("built_in/py_runtime",),
-        "generated_compare_shim_modules": ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
-    },
-    {
-        "backend": "ts",
-        "substrate_shim_modules": ("built_in/py_runtime",),
-        "generated_compare_shim_modules": ("std/json", "std/math", "std/pathlib", "std/time", "utils/gif", "utils/png"),
-    },
-    {
-        "backend": "lua",
-        "substrate_shim_modules": ("built_in/py_runtime",),
-        "generated_compare_shim_modules": (),
-    },
-    {
-        "backend": "ruby",
-        "substrate_shim_modules": ("built_in/py_runtime",),
-        "generated_compare_shim_modules": (),
-    },
-    {
-        "backend": "php",
-        "substrate_shim_modules": ("built_in/py_runtime",),
-        "generated_compare_shim_modules": ("std/time", "utils/gif", "utils/png"),
-    },
-)
+] = ()
 
 
 REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_FILES_V1: Final[
     tuple[RemainingRuntimeWaveBDeleteTargetFileEntry, ...]
-] = (
-    {
-        "backend": "js",
-        "substrate_shim_files": ("py_runtime.js",),
-        "generated_compare_shim_files": (
-            "std/json.js",
-            "std/math.js",
-            "std/pathlib.js",
-            "std/time.js",
-            "utils/gif.js",
-            "utils/png.js",
-        ),
-        "ancillary_files": ("README.md",),
-    },
-    {
-        "backend": "ts",
-        "substrate_shim_files": ("py_runtime.ts",),
-        "generated_compare_shim_files": (
-            "std/json.ts",
-            "std/math.ts",
-            "std/pathlib.ts",
-            "std/time.ts",
-            "utils/gif.ts",
-            "utils/png.ts",
-        ),
-        "ancillary_files": ("README.md",),
-    },
-    {
-        "backend": "lua",
-        "substrate_shim_files": ("built_in/py_runtime.lua",),
-        "generated_compare_shim_files": (),
-        "ancillary_files": (),
-    },
-    {
-        "backend": "ruby",
-        "substrate_shim_files": ("built_in/py_runtime.rb",),
-        "generated_compare_shim_files": (),
-        "ancillary_files": (),
-    },
-    {
-        "backend": "php",
-        "substrate_shim_files": ("py_runtime.php",),
-        "generated_compare_shim_files": ("std/time.php", "utils/gif.php", "utils/png.php"),
-        "ancillary_files": (),
-    },
-)
+] = ()
 
 
 REMAINING_NONCPP_RUNTIME_WAVE_B_COMPAT_SMOKE_V1: Final[
     tuple[RemainingRuntimeWaveBDeleteTargetSmokeEntry, ...]
-] = (
-    {
-        "backend": "lua",
-        "smoke_kind": "direct_load",
-        "smoke_targets": ("built_in/py_runtime.lua",),
-    },
-    {
-        "backend": "ruby",
-        "smoke_kind": "direct_load",
-        "smoke_targets": ("built_in/py_runtime.rb",),
-    },
-    {
-        "backend": "php",
-        "smoke_kind": "direct_load",
-        "smoke_targets": (
-            "py_runtime.php",
-            "std/time.php",
-            "utils/gif.php",
-            "utils/png.php",
-        ),
-    },
-)
+] = ()
 
 
 REMAINING_NONCPP_RUNTIME_WAVE_B_GENERATED_COMPARE_SMOKE_V1: Final[

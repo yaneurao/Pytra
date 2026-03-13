@@ -195,9 +195,11 @@ class Py2RbSmokeTest(unittest.TestCase):
     def test_ruby_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "ruby" / "native" / "built_in" / "py_runtime.rb"
         image_runtime = ROOT / "src" / "runtime" / "ruby" / "generated" / "utils" / "image_runtime.rb"
+        delete_target_path = ROOT / "src" / "runtime" / "ruby" / "pytra"
         legacy_path = ROOT / "src" / "ruby_module" / "py_runtime.rb"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(image_runtime.exists())
+        self.assertFalse(delete_target_path.exists())
         self.assertFalse(legacy_path.exists())
 
     def test_ruby_generated_std_baseline_source_guard_materializes_new_compare_modules(self) -> None:

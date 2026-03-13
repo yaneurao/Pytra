@@ -156,7 +156,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
         assertions_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "assertions.php"
         png_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "png.php"
         gif_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "gif.php"
-        delete_target_time_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "time.php"
+        delete_target_path = ROOT / "src" / "runtime" / "php" / "pytra"
         legacy_path = ROOT / "src" / "runtime" / "php" / "pytra-core"
         self.assertTrue(runtime_path.exists())
         self.assertTrue(generated_contains_path.exists())
@@ -177,7 +177,11 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertTrue(assertions_path.exists())
         self.assertTrue(png_path.exists())
         self.assertTrue(gif_path.exists())
-        self.assertTrue(delete_target_time_path.exists())
+        self.assertFalse(delete_target_path.exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "py_runtime.php").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "time.php").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "utils" / "gif.php").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "utils" / "png.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "argparse.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "glob.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "math.php").exists())
@@ -224,7 +228,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
                 )
                 self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
-    def test_php_repo_generated_and_delete_target_lanes_resolve_native_substrate(self) -> None:
+    def test_php_repo_generated_lanes_resolve_native_substrate(self) -> None:
         generated_json_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "json.php"
         generated_pathlib_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "pathlib.php"
         generated_png_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "png.php"

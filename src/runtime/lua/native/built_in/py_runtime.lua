@@ -1,5 +1,5 @@
 -- Auto-generated canonical Lua runtime for Pytra native backend.
--- Source of truth: src/runtime/lua/pytra/built_in/py_runtime.lua
+-- Source of truth: src/runtime/lua/native/built_in/py_runtime.lua
 
 local __pytra_runtime_source = debug.getinfo(1, "S").source
 local __pytra_runtime_dir = ""

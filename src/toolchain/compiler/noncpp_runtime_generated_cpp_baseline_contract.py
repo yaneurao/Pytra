@@ -479,16 +479,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.js",
         ),
         "native_files": ("native/built_in/py_runtime.js",),
-        "delete_target_files": (
-            "pytra/README.md",
-            "pytra/py_runtime.js",
-            "pytra/std/json.js",
-            "pytra/std/math.js",
-            "pytra/std/pathlib.js",
-            "pytra/std/time.js",
-            "pytra/utils/gif.js",
-            "pytra/utils/png.js",
-        ),
+        "delete_target_files": (),
     },
     {
         "backend": "ts",
@@ -520,16 +511,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.ts",
         ),
         "native_files": ("native/built_in/py_runtime.ts",),
-        "delete_target_files": (
-            "pytra/README.md",
-            "pytra/py_runtime.ts",
-            "pytra/std/json.ts",
-            "pytra/std/math.ts",
-            "pytra/std/pathlib.ts",
-            "pytra/std/time.ts",
-            "pytra/utils/gif.ts",
-            "pytra/utils/png.ts",
-        ),
+        "delete_target_files": (),
     },
     {
         "backend": "lua",
@@ -562,7 +544,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.lua",
         ),
         "native_files": ("native/built_in/py_runtime.lua",),
-        "delete_target_files": ("pytra/built_in/py_runtime.lua",),
+        "delete_target_files": (),
     },
     {
         "backend": "ruby",
@@ -595,7 +577,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.rb",
         ),
         "native_files": ("native/built_in/py_runtime.rb",),
-        "delete_target_files": ("pytra/built_in/py_runtime.rb",),
+        "delete_target_files": (),
     },
     {
         "backend": "php",
@@ -627,12 +609,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/png.php",
         ),
         "native_files": ("native/built_in/py_runtime.php",),
-        "delete_target_files": (
-            "pytra/py_runtime.php",
-            "pytra/std/time.php",
-            "pytra/utils/gif.php",
-            "pytra/utils/png.php",
-        ),
+        "delete_target_files": (),
     },
 )
 
@@ -832,7 +809,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
         "backend": "js",
         "test_path": "test/unit/backends/js/test_py2js_smoke.py",
         "required_tests": (
-            "test_js_repo_delete_target_lane_resolves_runtime_helpers",
+            "test_js_cli_staged_runtime_bundle_resolves_runtime_helpers",
             "test_js_generated_built_in_compare_lane_resolves_native_runtime",
         ),
     },
@@ -840,7 +817,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
         "backend": "ts",
         "test_path": "test/unit/backends/ts/test_py2ts_smoke.py",
         "required_tests": (
-            "test_ts_repo_delete_target_lane_reexports_runtime_helpers",
+            "test_ts_cli_staged_runtime_bundle_resolves_runtime_helpers",
             "test_ts_generated_built_in_compare_lane_rehomes_native_runtime_import",
         ),
     },
@@ -849,7 +826,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
         "test_path": "test/unit/backends/lua/test_py2lua_smoke.py",
         "required_tests": (
             "test_lua_runtime_source_path_is_migrated",
-            "test_lua_repo_delete_target_lane_resolves_runtime_helpers",
+            "test_lua_cli_staged_runtime_lane_resolves_runtime_helpers",
         ),
     },
     {
@@ -857,7 +834,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
         "test_path": "test/unit/backends/rb/test_py2rb_smoke.py",
         "required_tests": (
             "test_ruby_runtime_source_path_is_migrated",
-            "test_ruby_repo_delete_target_lane_resolves_runtime_helpers",
+            "test_ruby_cli_staged_runtime_lane_resolves_runtime_helpers",
         ),
     },
     {
@@ -865,9 +842,9 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
         "test_path": "test/unit/backends/php/test_py2php_smoke.py",
         "required_tests": (
             "test_php_runtime_source_path_is_migrated",
-            "test_php_repo_generated_and_delete_target_lanes_resolve_native_substrate",
+            "test_php_repo_generated_lanes_resolve_native_substrate",
             "test_php_generated_built_in_compare_lane_resolves_native_runtime",
-            "test_php_repo_public_delete_target_lane_resolves_remaining_shims",
+            "test_php_cli_staged_runtime_lane_resolves_remaining_shims",
         ),
     },
 )

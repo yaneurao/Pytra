@@ -1,11 +1,10 @@
 <?php
 declare(strict_types=1);
 
-function __pytra_require_runtime_file(string $packaged_rel, string $repo_rel): void {
+function __pytra_require_runtime_file(string $staged_rel, string $repo_rel): void {
     $candidates = [
+        __DIR__ . '/' . $staged_rel,
         __DIR__ . '/' . $repo_rel,
-        __DIR__ . '/' . $packaged_rel,
-        dirname(__DIR__, 2) . '/pytra/' . $repo_rel,
     ];
     foreach ($candidates as $candidate) {
         if (is_file($candidate)) {
@@ -16,9 +15,9 @@ function __pytra_require_runtime_file(string $packaged_rel, string $repo_rel): v
     throw new RuntimeException('runtime dependency not found: ' . $repo_rel);
 }
 
-__pytra_require_runtime_file('../../pytra/utils/png.php', 'utils/png.php');
-__pytra_require_runtime_file('../../pytra/utils/gif.php', 'utils/gif.php');
-__pytra_require_runtime_file('../../pytra/std/time.php', 'std/time.php');
+__pytra_require_runtime_file('utils/png.php', '../../generated/utils/png.php');
+__pytra_require_runtime_file('utils/gif.php', '../../generated/utils/gif.php');
+__pytra_require_runtime_file('std/time.php', '../../generated/std/time.php');
 
 function __pytra_print(...$args): void {
     if (count($args) === 0) {

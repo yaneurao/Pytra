@@ -51,38 +51,9 @@ NONCPP_PYTRA_DESHIM_BUCKET_ORDER_V1: Final[tuple[str, ...]] = (
 
 NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1: Final[tuple[str, ...]] = ("generated", "native")
 
-NONCPP_PYTRA_DESHIM_CURRENT_DIRS_V1: Final[tuple[str, ...]] = (
-    "src/runtime/js/pytra",
-    "src/runtime/lua/pytra",
-    "src/runtime/php/pytra",
-    "src/runtime/ruby/pytra",
-    "src/runtime/ts/pytra",
-)
+NONCPP_PYTRA_DESHIM_CURRENT_DIRS_V1: Final[tuple[str, ...]] = ()
 
-NONCPP_PYTRA_DESHIM_CURRENT_FILES_V1: Final[tuple[str, ...]] = (
-    "src/runtime/js/pytra/README.md",
-    "src/runtime/js/pytra/py_runtime.js",
-    "src/runtime/js/pytra/std/json.js",
-    "src/runtime/js/pytra/std/math.js",
-    "src/runtime/js/pytra/std/pathlib.js",
-    "src/runtime/js/pytra/std/time.js",
-    "src/runtime/js/pytra/utils/gif.js",
-    "src/runtime/js/pytra/utils/png.js",
-    "src/runtime/lua/pytra/built_in/py_runtime.lua",
-    "src/runtime/php/pytra/py_runtime.php",
-    "src/runtime/php/pytra/std/time.php",
-    "src/runtime/php/pytra/utils/gif.php",
-    "src/runtime/php/pytra/utils/png.php",
-    "src/runtime/ruby/pytra/built_in/py_runtime.rb",
-    "src/runtime/ts/pytra/README.md",
-    "src/runtime/ts/pytra/py_runtime.ts",
-    "src/runtime/ts/pytra/std/json.ts",
-    "src/runtime/ts/pytra/std/math.ts",
-    "src/runtime/ts/pytra/std/pathlib.ts",
-    "src/runtime/ts/pytra/std/time.ts",
-    "src/runtime/ts/pytra/utils/gif.ts",
-    "src/runtime/ts/pytra/utils/png.ts",
-)
+NONCPP_PYTRA_DESHIM_CURRENT_FILES_V1: Final[tuple[str, ...]] = ()
 
 NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]] = (
     {
@@ -144,40 +115,40 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
     {
         "backend": "js",
         "family": "script",
-        "current_dir": "src/runtime/js/pytra",
-        "target_policy": "delete_target_after_script_output_staging",
+        "current_dir": "",
+        "target_policy": "delete_target_removed_after_script_cleanup",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
         "blocker_buckets": (),
     },
     {
         "backend": "ts",
         "family": "script",
-        "current_dir": "src/runtime/ts/pytra",
-        "target_policy": "delete_target_after_script_output_staging",
+        "current_dir": "",
+        "target_policy": "delete_target_removed_after_script_cleanup",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
         "blocker_buckets": (),
     },
     {
         "backend": "lua",
         "family": "script",
-        "current_dir": "src/runtime/lua/pytra",
-        "target_policy": "delete_target_after_script_output_staging",
+        "current_dir": "",
+        "target_policy": "delete_target_removed_after_script_cleanup",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
         "blocker_buckets": (),
     },
     {
         "backend": "ruby",
         "family": "script",
-        "current_dir": "src/runtime/ruby/pytra",
-        "target_policy": "delete_target_after_script_output_staging",
+        "current_dir": "",
+        "target_policy": "delete_target_removed_after_script_cleanup",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
         "blocker_buckets": (),
     },
     {
         "backend": "php",
         "family": "script",
-        "current_dir": "src/runtime/php/pytra",
-        "target_policy": "delete_target_after_script_output_staging",
+        "current_dir": "",
+        "target_policy": "delete_target_removed_after_script_cleanup",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
         "blocker_buckets": (),
     },

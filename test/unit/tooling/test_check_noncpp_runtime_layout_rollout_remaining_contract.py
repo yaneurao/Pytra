@@ -554,28 +554,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
     def test_wave_b_delete_target_smoke_inventory_is_fixed(self) -> None:
         self.assertEqual(
             contract_mod.iter_remaining_noncpp_runtime_wave_b_delete_target_smoke(),
-            (
-                {
-                    "backend": "lua",
-                    "smoke_kind": "direct_load",
-                    "smoke_targets": ("built_in/py_runtime.lua",),
-                },
-                {
-                    "backend": "ruby",
-                    "smoke_kind": "direct_load",
-                    "smoke_targets": ("built_in/py_runtime.rb",),
-                },
-                {
-                    "backend": "php",
-                    "smoke_kind": "direct_load",
-                    "smoke_targets": (
-                        "py_runtime.php",
-                        "std/time.php",
-                        "utils/gif.php",
-                        "utils/png.php",
-                    ),
-                },
-            ),
+            (),
         )
 
     def test_wave_b_generated_compare_smoke_inventory_is_fixed(self) -> None:
@@ -1352,16 +1331,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["js"]["delete_target_files"],
-            (
-                "pytra/README.md",
-                "pytra/py_runtime.js",
-                "pytra/std/json.js",
-                "pytra/std/math.js",
-                "pytra/std/pathlib.js",
-                "pytra/std/time.js",
-                "pytra/utils/gif.js",
-                "pytra/utils/png.js",
-            ),
+            (),
         )
         self.assertEqual(
             by_backend["ts"]["generated_files"],
@@ -1427,12 +1397,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "generated/utils/png.php",
                 ),
                 "native_files": ("native/built_in/py_runtime.php",),
-                "delete_target_files": (
-                    "pytra/py_runtime.php",
-                    "pytra/std/time.php",
-                    "pytra/utils/gif.php",
-                    "pytra/utils/png.php",
-                ),
+                "delete_target_files": (),
             },
         )
 
@@ -1692,7 +1657,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/png",
                 ),
                 "native_modules": ("built_in/py_runtime",),
-                "delete_target_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
+                "delete_target_modules": (),
                 "blocked_modules": (),
             },
         )
@@ -1853,47 +1818,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         }
         self.assertEqual(
             by_backend,
-            {
-                "js": {
-                    "backend": "js",
-                    "substrate_shim_modules": ("built_in/py_runtime",),
-                    "generated_compare_shim_modules": (
-                        "std/json",
-                        "std/math",
-                        "std/pathlib",
-                        "std/time",
-                        "utils/gif",
-                        "utils/png",
-                    ),
-                },
-                "ts": {
-                    "backend": "ts",
-                    "substrate_shim_modules": ("built_in/py_runtime",),
-                    "generated_compare_shim_modules": (
-                        "std/json",
-                        "std/math",
-                        "std/pathlib",
-                        "std/time",
-                        "utils/gif",
-                        "utils/png",
-                    ),
-                },
-                "lua": {
-                    "backend": "lua",
-                    "substrate_shim_modules": ("built_in/py_runtime",),
-                    "generated_compare_shim_modules": (),
-                },
-                "ruby": {
-                    "backend": "ruby",
-                    "substrate_shim_modules": ("built_in/py_runtime",),
-                    "generated_compare_shim_modules": (),
-                },
-                "php": {
-                    "backend": "php",
-                    "substrate_shim_modules": ("built_in/py_runtime",),
-                    "generated_compare_shim_modules": ("std/time", "utils/gif", "utils/png"),
-                },
-            },
+            {},
         )
 
     def test_wave_b_delete_target_files_are_fixed(self) -> None:
@@ -1903,52 +1828,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         }
         self.assertEqual(
             by_backend,
-            {
-                "js": {
-                    "backend": "js",
-                    "substrate_shim_files": ("py_runtime.js",),
-                    "generated_compare_shim_files": (
-                        "std/json.js",
-                        "std/math.js",
-                        "std/pathlib.js",
-                        "std/time.js",
-                        "utils/gif.js",
-                        "utils/png.js",
-                    ),
-                    "ancillary_files": ("README.md",),
-                },
-                "ts": {
-                    "backend": "ts",
-                    "substrate_shim_files": ("py_runtime.ts",),
-                    "generated_compare_shim_files": (
-                        "std/json.ts",
-                        "std/math.ts",
-                        "std/pathlib.ts",
-                        "std/time.ts",
-                        "utils/gif.ts",
-                        "utils/png.ts",
-                    ),
-                    "ancillary_files": ("README.md",),
-                },
-                "lua": {
-                    "backend": "lua",
-                    "substrate_shim_files": ("built_in/py_runtime.lua",),
-                    "generated_compare_shim_files": (),
-                    "ancillary_files": (),
-                },
-                "ruby": {
-                    "backend": "ruby",
-                    "substrate_shim_files": ("built_in/py_runtime.rb",),
-                    "generated_compare_shim_files": (),
-                    "ancillary_files": (),
-                },
-                "php": {
-                    "backend": "php",
-                    "substrate_shim_files": ("py_runtime.php",),
-                    "generated_compare_shim_files": ("std/time.php", "utils/gif.php", "utils/png.php"),
-                    "ancillary_files": (),
-                },
-            },
+            {},
         )
 
 

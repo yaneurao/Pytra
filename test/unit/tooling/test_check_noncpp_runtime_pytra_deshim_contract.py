@@ -34,42 +34,13 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
     def test_current_directory_inventory_is_fixed(self) -> None:
         self.assertEqual(
             contract_mod.iter_noncpp_pytra_deshim_current_dirs(),
-            (
-                "src/runtime/js/pytra",
-                "src/runtime/lua/pytra",
-                "src/runtime/php/pytra",
-                "src/runtime/ruby/pytra",
-                "src/runtime/ts/pytra",
-            ),
+            (),
         )
 
     def test_current_file_inventory_is_fixed(self) -> None:
         self.assertEqual(
             contract_mod.iter_noncpp_pytra_deshim_current_files(),
-            (
-                "src/runtime/js/pytra/README.md",
-                "src/runtime/js/pytra/py_runtime.js",
-                "src/runtime/js/pytra/std/json.js",
-                "src/runtime/js/pytra/std/math.js",
-                "src/runtime/js/pytra/std/pathlib.js",
-                "src/runtime/js/pytra/std/time.js",
-                "src/runtime/js/pytra/utils/gif.js",
-                "src/runtime/js/pytra/utils/png.js",
-                "src/runtime/lua/pytra/built_in/py_runtime.lua",
-                "src/runtime/php/pytra/py_runtime.php",
-                "src/runtime/php/pytra/std/time.php",
-                "src/runtime/php/pytra/utils/gif.php",
-                "src/runtime/php/pytra/utils/png.php",
-                "src/runtime/ruby/pytra/built_in/py_runtime.rb",
-                "src/runtime/ts/pytra/README.md",
-                "src/runtime/ts/pytra/py_runtime.ts",
-                "src/runtime/ts/pytra/std/json.ts",
-                "src/runtime/ts/pytra/std/math.ts",
-                "src/runtime/ts/pytra/std/pathlib.ts",
-                "src/runtime/ts/pytra/std/time.ts",
-                "src/runtime/ts/pytra/utils/gif.ts",
-                "src/runtime/ts/pytra/utils/png.ts",
-            ),
+            (),
         )
 
     def test_backend_mapping_inventory_is_fixed(self) -> None:
