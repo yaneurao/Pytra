@@ -30,5 +30,3 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01] `collections.deque.rotate()` representative C++ lane を固定する。進捗: `S2-01` で `rotate()` / `rotate(n)` を `::std::rotate(...)` bundle へ upstream 済み。残りは representative smoke と closeout。文脈: [p0-collections-deque-cpp-rotate-support.md](../plans/p0-collections-deque-cpp-rotate-support.md)

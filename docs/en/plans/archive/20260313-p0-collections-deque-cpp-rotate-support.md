@@ -42,10 +42,11 @@ Decision log:
 - 2026-03-13: `clear()`, `extend()`, and `reverse()` already lower to valid C++, so the new task is limited to the `rotate` subset only.
 - 2026-03-13: as `S1-01`, a focused regression now locks the current invalid `q.rotate()`, `q.rotate(1)`, and `q.rotate(-1)` surface in the TODO / plan.
 - 2026-03-13: as `S2-01`, typed deque-owner `rotate()` / `rotate(n)` now lower to normalized-step `::std::rotate(...)` bundles. Only the build/run smoke remains.
+- 2026-03-13: as `S3-01`, a representative build/run smoke now locks the default / positive / negative rotate output `3 / 3 / 2`. The task now satisfies every acceptance criterion.
 
 ## Breakdown
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01] Lock the representative C++ lane for `collections.deque.rotate()`.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01] Lock the representative C++ lane for `collections.deque.rotate()`.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S1-01] Lock the current invalid C++ surface (`rotate()`, `rotate(1)`, `rotate(-1)`) in focused regressions / TODO / plan.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S2-01] Lower `rotate()` / `rotate(n)` to valid `::std::rotate(...)` bundles.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S3-01] Sync build/run smoke and support wording, then close the task.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S3-01] Sync build/run smoke and support wording, then close the task.

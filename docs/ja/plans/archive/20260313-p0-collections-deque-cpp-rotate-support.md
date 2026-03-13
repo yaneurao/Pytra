@@ -42,10 +42,11 @@
 - 2026-03-13: `clear()`、`extend()`、`reverse()` はすでに valid C++ に落ちるため、新 task は `rotate` subset のみに限定した。
 - 2026-03-13: `S1-01` として `q.rotate()`, `q.rotate(1)`, `q.rotate(-1)` の current invalid C++ surface を focused regression / TODO / plan で固定した。
 - 2026-03-13: `S2-01` として typed deque owner の `rotate()` / `rotate(n)` を normalized step + `::std::rotate(...)` bundle へ lower した。残りは build/run smoke のみ。
+- 2026-03-13: `S3-01` として representative fixture の build/run smoke を追加し、default / positive / negative rotate の出力 `3 / 3 / 2` を固定した。これで task の受け入れ基準はすべて充足した。
 
 ## 分解
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01] `collections.deque.rotate()` representative C++ lane を固定する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01] `collections.deque.rotate()` representative C++ lane を固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S1-01] current invalid C++ surface (`rotate()`, `rotate(1)`, `rotate(-1)`) を focused regression / TODO / plan で固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S2-01] `rotate()` / `rotate(n)` を valid `::std::rotate(...)` bundle に lower する。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S3-01] build/run smoke と support wording を同期して close する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S3-01] build/run smoke と support wording を同期して close する。
