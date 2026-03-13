@@ -79,6 +79,73 @@ def _collect_backend_generated_modules(backend: str, bucket: str) -> tuple[str, 
     return tuple(sorted(path.stem for path in base.iterdir() if path.is_file() and path.suffix == suffix))
 
 
+def _collect_backend_runtime_file_inventory(backend: str) -> dict[str, object]:
+    base = ROOT / "src" / "runtime" / backend
+    suffix = _generated_suffix_for_backend(backend)
+    generated_files = tuple(
+        sorted(
+            str(path.relative_to(base)).replace("\\", "/")
+            for path in (base / "generated").glob(f"**/*{suffix}")
+            if path.is_file()
+        )
+    )
+    native_files = tuple(
+        sorted(
+            str(path.relative_to(base)).replace("\\", "/")
+            for path in (base / "native").glob(f"**/*{suffix}")
+            if path.is_file()
+        )
+    )
+    compat_files = tuple(
+        sorted(
+            str(path.relative_to(base)).replace("\\", "/")
+            for path in (base / "pytra").glob("**/*")
+            if path.is_file()
+            and (
+                path.suffix == suffix
+                or str(path.relative_to(base)).replace("\\", "/") == "pytra/README.md"
+            )
+        )
+    )
+    return {
+        "backend": backend,
+        "generated_files": generated_files,
+        "native_files": native_files,
+        "compat_files": compat_files,
+    }
+
+
+def _collect_expected_runtime_file_inventory() -> tuple[dict[str, object], ...]:
+    local_entries = {
+        entry["backend"]: {
+            "backend": entry["backend"],
+            "generated_files": entry["generated_files"],
+            "native_files": entry["native_files"],
+            "compat_files": entry["compat_files"],
+        }
+        for entry in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_local_runtime_file_inventory()
+    }
+    merged: list[dict[str, object]] = []
+    for backend in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_materialized_backends():
+        if backend in local_entries:
+            merged.append(local_entries[backend])
+            continue
+        remaining_entry = next(
+            entry
+            for entry in remaining_contract_mod.iter_remaining_noncpp_runtime_target_inventory()
+            if entry["backend"] == backend
+        )
+        merged.append(
+            {
+                "backend": backend,
+                "generated_files": remaining_entry["generated_files"],
+                "native_files": remaining_entry["native_files"],
+                "compat_files": remaining_entry["compat_files"],
+            }
+        )
+    return tuple(merged)
+
+
 def _collect_runtime_layout_legacy_state_buckets() -> tuple[dict[str, object], ...]:
     baseline = set(contract_mod.iter_noncpp_runtime_generated_cpp_baseline_modules())
     buckets: dict[tuple[str, str], set[str]] = {}
@@ -304,6 +371,17 @@ def _collect_contract_issues() -> list[str]:
         issues.append(
             "generated-first build profile inventory drifted: "
             f"expected={expected_build_profiles!r} actual={actual_build_profiles!r}"
+        )
+
+    actual_runtime_file_inventory = tuple(
+        _collect_backend_runtime_file_inventory(backend)
+        for backend in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_materialized_backends()
+    )
+    expected_runtime_file_inventory = _collect_expected_runtime_file_inventory()
+    if actual_runtime_file_inventory != expected_runtime_file_inventory:
+        issues.append(
+            "generated-first runtime file inventory drifted: "
+            f"expected={expected_runtime_file_inventory!r} actual={actual_runtime_file_inventory!r}"
         )
 
     return issues

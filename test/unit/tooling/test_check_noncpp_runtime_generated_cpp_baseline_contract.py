@@ -52,6 +52,79 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
             contract_mod.iter_noncpp_runtime_generated_cpp_baseline_materialized_backends(),
             ("cs", "go", "java", "rs", "swift", "nim", "kotlin", "scala", "js", "ts", "lua", "ruby", "php"),
         )
+        self.assertEqual(
+            contract_mod.iter_noncpp_runtime_generated_cpp_baseline_local_runtime_file_inventory(),
+            (
+                {
+                    "backend": "cs",
+                    "generated_files": (
+                        "generated/built_in/contains.cs",
+                        "generated/built_in/io_ops.cs",
+                        "generated/built_in/iter_ops.cs",
+                        "generated/built_in/numeric_ops.cs",
+                        "generated/built_in/predicates.cs",
+                        "generated/built_in/scalar_ops.cs",
+                        "generated/built_in/sequence.cs",
+                        "generated/built_in/string_ops.cs",
+                        "generated/built_in/type_id.cs",
+                        "generated/built_in/zip_ops.cs",
+                        "generated/std/argparse.cs",
+                        "generated/std/glob.cs",
+                        "generated/std/json.cs",
+                        "generated/std/math.cs",
+                        "generated/std/os.cs",
+                        "generated/std/os_path.cs",
+                        "generated/std/pathlib.cs",
+                        "generated/std/random.cs",
+                        "generated/std/re.cs",
+                        "generated/std/sys.cs",
+                        "generated/std/time.cs",
+                        "generated/std/timeit.cs",
+                        "generated/utils/assertions.cs",
+                        "generated/utils/gif.cs",
+                        "generated/utils/png.cs",
+                    ),
+                    "native_files": (
+                        "native/built_in/py_runtime.cs",
+                        "native/std/time_native.cs",
+                    ),
+                    "compat_files": (),
+                },
+                {
+                    "backend": "rs",
+                    "generated_files": (
+                        "generated/built_in/contains.rs",
+                        "generated/built_in/io_ops.rs",
+                        "generated/built_in/iter_ops.rs",
+                        "generated/built_in/numeric_ops.rs",
+                        "generated/built_in/predicates.rs",
+                        "generated/built_in/scalar_ops.rs",
+                        "generated/built_in/sequence.rs",
+                        "generated/built_in/string_ops.rs",
+                        "generated/built_in/type_id.rs",
+                        "generated/built_in/zip_ops.rs",
+                        "generated/std/argparse.rs",
+                        "generated/std/glob.rs",
+                        "generated/std/json.rs",
+                        "generated/std/math.rs",
+                        "generated/std/os.rs",
+                        "generated/std/os_path.rs",
+                        "generated/std/pathlib.rs",
+                        "generated/std/random.rs",
+                        "generated/std/re.rs",
+                        "generated/std/sys.rs",
+                        "generated/std/time.rs",
+                        "generated/std/timeit.rs",
+                        "generated/utils/assertions.rs",
+                        "generated/utils/gif.rs",
+                        "generated/utils/image_runtime.rs",
+                        "generated/utils/png.rs",
+                    ),
+                    "native_files": ("native/built_in/py_runtime.rs",),
+                    "compat_files": ("pytra/README.md", "pytra/built_in/py_runtime.rs"),
+                },
+            ),
+        )
 
     def test_legacy_state_buckets_match_runtime_contracts(self) -> None:
         self.assertEqual(
@@ -86,9 +159,9 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                         "src/runtime/cs/native/std/time_native.cs",
                         "src/runtime/cs/generated/std/math.cs",
                         "src/runtime/cs/generated/std/json.cs",
+                        "src/runtime/cs/generated/std/pathlib.cs",
                         "src/runtime/cs/generated/utils/png.cs",
                         "src/runtime/cs/generated/utils/gif.cs",
-                        "src/runtime/cs/native/std/pathlib.cs",
                     ),
                 },
                 {
@@ -227,3 +300,32 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
             ),
         )
         self.assertEqual(check_mod._collect_smoke_issues(), [])
+
+    def test_runtime_file_inventory_is_fixed(self) -> None:
+        local_entries = {
+            entry["backend"]: entry
+            for entry in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_local_runtime_file_inventory()
+        }
+        remaining_entries = {
+            entry["backend"]: {
+                "backend": entry["backend"],
+                "generated_files": entry["generated_files"],
+                "native_files": entry["native_files"],
+                "compat_files": entry["compat_files"],
+            }
+            for entry in check_mod.remaining_contract_mod.iter_remaining_noncpp_runtime_target_inventory()
+        }
+        self.assertEqual(
+            check_mod._collect_expected_runtime_file_inventory(),
+            tuple(
+                local_entries[backend] if backend in local_entries else remaining_entries[backend]
+                for backend in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_materialized_backends()
+            ),
+        )
+        self.assertEqual(
+            tuple(
+                check_mod._collect_backend_runtime_file_inventory(backend)
+                for backend in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_materialized_backends()
+            ),
+            check_mod._collect_expected_runtime_file_inventory(),
+        )
