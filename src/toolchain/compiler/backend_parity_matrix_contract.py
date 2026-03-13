@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from html import escape
 from typing import Final, TypedDict
 
 from src.toolchain.compiler import backend_conformance_summary_handoff_contract as conformance_summary_mod
@@ -133,23 +132,23 @@ PARITY_MATRIX_DOC_TABLE_HEADERS: Final[tuple[str, ...]] = (
     "fixture",
     *PARITY_MATRIX_BACKEND_ORDER,
 )
-PARITY_MATRIX_DOC_CELL_CLASS_BY_STATE: Final[dict[str, str]] = {
-    "supported": "supported-transpile",
-    "fail_closed": "fail-closed",
-    "not_started": "not-started",
-    "experimental": "experimental",
-}
 PARITY_MATRIX_DOC_CELL_LABEL_BY_STATE: Final[dict[str, str]] = {
     "supported": "TS",
     "fail_closed": "FC",
     "not_started": "NS",
     "experimental": "EX",
 }
-PARITY_MATRIX_DOC_CELL_CLASS_BY_EVIDENCE: Final[dict[str, str]] = {
-    "build_run_smoke": "supported-build",
-}
 PARITY_MATRIX_DOC_CELL_LABEL_BY_EVIDENCE: Final[dict[str, str]] = {
     "build_run_smoke": "BR",
+}
+PARITY_MATRIX_DOC_CELL_ICON_BY_STATE: Final[dict[str, str]] = {
+    "supported": "\U0001F7E6",
+    "fail_closed": "\U0001F7E5",
+    "not_started": "\u2B1C",
+    "experimental": "\U0001F7E8",
+}
+PARITY_MATRIX_DOC_CELL_ICON_BY_EVIDENCE: Final[dict[str, str]] = {
+    "build_run_smoke": "\U0001F7E9",
 }
 
 
@@ -489,58 +488,45 @@ def iter_representative_parity_matrix_rows() -> tuple[RepresentativeParityMatrix
     return REPRESENTATIVE_PARITY_MATRIX_ROWS
 
 
+def _escape_markdown_table_text(text: str) -> str:
+    return text.replace("|", "\\|")
+
+
 def _render_backend_parity_matrix_doc_cell(cell: BackendParityMatrixCellSeed) -> str:
     state = cell["support_state"]
     evidence = cell["evidence_kind"]
-    css_class = PARITY_MATRIX_DOC_CELL_CLASS_BY_EVIDENCE.get(
+    icon = PARITY_MATRIX_DOC_CELL_ICON_BY_EVIDENCE.get(
         evidence,
-        PARITY_MATRIX_DOC_CELL_CLASS_BY_STATE[state],
+        PARITY_MATRIX_DOC_CELL_ICON_BY_STATE[state],
     )
     label = PARITY_MATRIX_DOC_CELL_LABEL_BY_EVIDENCE.get(
         evidence,
         PARITY_MATRIX_DOC_CELL_LABEL_BY_STATE[state],
     )
-    title = escape(f"{state} / {evidence}")
-    return f'        <td class="cell {css_class}" title="{title}"><code>{label}</code></td>'
+    return f"{icon} `{label}`"
 
 
 def build_backend_parity_matrix_html_table() -> str:
-    lines = [
-        '<div class="backend-parity-grid-wrap">',
-        '  <table class="backend-parity-grid">',
-        '    <thead>',
-        '      <tr>',
-        *[f"        <th>{escape(header)}</th>" for header in PARITY_MATRIX_DOC_TABLE_HEADERS],
-        '      </tr>',
-        '    </thead>',
-        '    <tbody>',
-    ]
-    for entry in iter_representative_parity_matrix_rows():
-        cells_by_backend = {cell["backend"]: cell for cell in entry["backend_cells"]}
-        lines.extend(
-            (
-                '      <tr>',
-                f'        <td class="feature">{escape(entry["feature_id"])}</td>',
-                f'        <td class="fixture">{escape(entry["representative_fixture"])}</td>',
-                *[
-                    _render_backend_parity_matrix_doc_cell(cells_by_backend[backend])
-                    for backend in PARITY_MATRIX_BACKEND_ORDER
-                ],
-                '      </tr>',
-            )
-        )
-    lines.extend(
-        (
-            '    </tbody>',
-            '  </table>',
-            '</div>',
-        )
-    )
-    return "\n".join(lines)
+    return build_backend_parity_matrix_markdown_table()
 
 
 def build_backend_parity_matrix_markdown_table() -> str:
-    return build_backend_parity_matrix_html_table()
+    lines = [
+        "| " + " | ".join(PARITY_MATRIX_DOC_TABLE_HEADERS) + " |",
+        "| " + " | ".join(["---"] * len(PARITY_MATRIX_DOC_TABLE_HEADERS)) + " |",
+    ]
+    for entry in iter_representative_parity_matrix_rows():
+        cells_by_backend = {cell["backend"]: cell for cell in entry["backend_cells"]}
+        row = [
+            _escape_markdown_table_text(entry["feature_id"]),
+            _escape_markdown_table_text(entry["representative_fixture"]),
+            *[
+                _render_backend_parity_matrix_doc_cell(cells_by_backend[backend])
+                for backend in PARITY_MATRIX_BACKEND_ORDER
+            ],
+        ]
+        lines.append("| " + " | ".join(row) + " |")
+    return "\n".join(lines)
 
 
 def build_backend_parity_matrix_manifest() -> dict[str, object]:

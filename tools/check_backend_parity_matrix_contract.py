@@ -446,7 +446,7 @@ def _collect_contract_issues() -> list[str]:
 
 def _collect_docs_issues() -> list[str]:
     issues: list[str] = []
-    expected_table = contract_mod.build_backend_parity_matrix_html_table()
+    expected_table = contract_mod.build_backend_parity_matrix_markdown_table()
     for path in DOC_TARGETS:
         text = path.read_text(encoding="utf-8")
         if contract_mod.PARITY_MATRIX_DOC_TABLE_BEGIN_MARKER not in text:

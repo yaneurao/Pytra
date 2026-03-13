@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
-import html
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -279,21 +278,21 @@ def _run_suite(backend: BackendSpec, suite: SuiteSpec, timeout_sec: int) -> Suit
     )
 
 
-def _cell_class(status: str) -> str:
-    return {
-        "pass": "pass",
-        "fail": "fail",
-        "toolchain_missing": "toolchain",
-        "timeout": "timeout",
-    }[status]
-
-
 def _cell_label(status: str) -> str:
     return {
         "pass": "PASS",
         "fail": "FAIL",
         "toolchain_missing": "TM",
         "timeout": "TO",
+    }[status]
+
+
+def _cell_icon(status: str) -> str:
+    return {
+        "pass": "🟩",
+        "fail": "🟥",
+        "toolchain_missing": "🟨",
+        "timeout": "🟪",
     }[status]
 
 
@@ -310,29 +309,19 @@ def _discover_module_patterns() -> dict[str, tuple[str, ...]]:
 def _render_matrix(results: dict[tuple[str, str], SuiteResult]) -> str:
     lines: list[str] = []
     lines.append(BEGIN_MARKER)
-    lines.append('<div class="backend-test-grid-wrap">')
-    lines.append('  <table class="backend-test-grid">')
-    lines.append("    <thead>")
-    lines.append("      <tr>")
-    lines.append("        <th>suite</th>")
+    lines.append("")
+    header = ["suite"]
     for backend in BACKENDS:
-        lines.append(f"        <th>{backend.label}</th>")
-    lines.append("      </tr>")
-    lines.append("    </thead>")
-    lines.append("    <tbody>")
+        header.append(backend.label)
+    lines.append("| " + " | ".join(header) + " |")
+    lines.append("| " + " | ".join(["---"] * len(header)) + " |")
     for suite in SUMMARY_SUITES:
-        lines.append("      <tr>")
-        lines.append(f'        <td class="suite">{html.escape(suite.label)}</td>')
+        row = [suite.label]
         for backend in BACKENDS:
             result = results[(backend.key, suite.key)]
-            title = f"{result.status} / {result.detail} / {result.duration_sec:.1f}s"
-            lines.append(
-                f'        <td class="cell {_cell_class(result.status)}" title="{html.escape(title)}"><code>{_cell_label(result.status)}</code></td>'
-            )
-        lines.append("      </tr>")
-    lines.append("    </tbody>")
-    lines.append("  </table>")
-    lines.append("</div>")
+            row.append(f"{_cell_icon(result.status)} `{_cell_label(result.status)}`")
+        lines.append("| " + " | ".join(row) + " |")
+    lines.append("")
     lines.append(END_MARKER)
     return "\n".join(lines)
 

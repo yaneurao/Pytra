@@ -890,10 +890,10 @@ class CheckBackendParityMatrixContractTest(unittest.TestCase):
                 },
             ],
         )
-        self.assertIn("<th>cpp</th>", contract_mod.build_backend_parity_matrix_html_table())
+        self.assertIn("| feature_id | fixture | cpp |", contract_mod.build_backend_parity_matrix_markdown_table())
         self.assertIn(
-            '<td class="cell supported-build" title="supported / build_run_smoke"><code>BR</code></td>',
-            contract_mod.build_backend_parity_matrix_html_table(),
+            "🟩 `BR`",
+            contract_mod.build_backend_parity_matrix_markdown_table(),
         )
 
 
