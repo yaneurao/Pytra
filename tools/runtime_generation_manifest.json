@@ -39,7 +39,7 @@
         { "target": "swift", "output": "src/runtime/swift/generated/utils/png.swift" },
         { "target": "kotlin", "output": "src/runtime/kotlin/generated/utils/png.kt" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/utils/png.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/utils/png_helper.lua" },
+        { "target": "lua", "output": "src/runtime/lua/generated/utils/png.lua" },
         { "target": "scala", "output": "src/runtime/scala/generated/utils/png.scala" },
         {
           "target": "php",
@@ -86,7 +86,7 @@
         { "target": "swift", "output": "src/runtime/swift/generated/utils/gif.swift" },
         { "target": "kotlin", "output": "src/runtime/kotlin/generated/utils/gif.kt" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/utils/gif.rb" },
-        { "target": "lua", "output": "src/runtime/lua/generated/utils/gif_helper.lua" },
+        { "target": "lua", "output": "src/runtime/lua/generated/utils/gif.lua" },
         { "target": "scala", "output": "src/runtime/scala/generated/utils/gif.scala" },
         {
           "target": "php",
@@ -126,6 +126,7 @@
           "postprocess": "scala_program_to_library"
         },
         { "target": "ruby", "output": "src/runtime/ruby/generated/utils/assertions.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/utils/assertions.lua" },
         {
           "target": "js",
           "output": "src/runtime/js/generated/utils/assertions.js",
@@ -180,6 +181,7 @@
         { "target": "js", "output": "src/runtime/js/generated/built_in/contains.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/contains.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/contains.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/built_in/contains.lua" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/contains.php", "postprocess": "php_program_to_library" }
       ]
     },
@@ -220,6 +222,7 @@
         { "target": "js", "output": "src/runtime/js/generated/built_in/io_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/io_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/io_ops.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/built_in/io_ops.lua" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/io_ops.php", "postprocess": "php_program_to_library" }
       ]
     },
@@ -260,6 +263,7 @@
         { "target": "js", "output": "src/runtime/js/generated/built_in/iter_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/iter_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/iter_ops.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/built_in/iter_ops.lua" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/iter_ops.php", "postprocess": "php_program_to_library" }
       ]
     },
@@ -300,6 +304,7 @@
         { "target": "js", "output": "src/runtime/js/generated/built_in/numeric_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/numeric_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/numeric_ops.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/built_in/numeric_ops.lua" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/numeric_ops.php", "postprocess": "php_program_to_library" }
       ]
     },
@@ -340,6 +345,7 @@
         { "target": "js", "output": "src/runtime/js/generated/built_in/predicates.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/predicates.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/predicates.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/built_in/predicates.lua" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/predicates.php", "postprocess": "php_program_to_library" }
       ]
     },
@@ -380,6 +386,7 @@
         { "target": "js", "output": "src/runtime/js/generated/built_in/scalar_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/scalar_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/scalar_ops.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/built_in/scalar_ops.lua" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/scalar_ops.php", "postprocess": "php_program_to_library" }
       ]
     },
@@ -420,6 +427,7 @@
         { "target": "js", "output": "src/runtime/js/generated/built_in/sequence.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/sequence.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/sequence.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/built_in/sequence.lua" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/sequence.php", "postprocess": "php_program_to_library" }
       ]
     },
@@ -460,6 +468,7 @@
         { "target": "js", "output": "src/runtime/js/generated/built_in/string_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/string_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/string_ops.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/built_in/string_ops.lua" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/string_ops.php", "postprocess": "php_program_to_library" }
       ]
     },
@@ -500,6 +509,7 @@
         { "target": "js", "output": "src/runtime/js/generated/built_in/type_id.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/type_id.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/type_id.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/built_in/type_id.lua" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/type_id.php", "postprocess": "php_program_to_library" }
       ]
     },
@@ -540,6 +550,7 @@
         { "target": "js", "output": "src/runtime/js/generated/built_in/zip_ops.js", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ts", "output": "src/runtime/ts/generated/built_in/zip_ops.ts", "postprocess": "js_ts_built_in_cjs_module" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/built_in/zip_ops.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/built_in/zip_ops.lua" },
         { "target": "php", "output": "src/runtime/php/generated/built_in/zip_ops.php", "postprocess": "php_program_to_library" }
       ]
     },
@@ -575,6 +586,7 @@
         { "target": "js", "output": "src/runtime/js/generated/std/time.js", "postprocess": "js_std_time_live_wrapper" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/time.ts", "postprocess": "ts_std_time_live_wrapper" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/time.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/std/time.lua" },
         { "target": "php", "output": "src/runtime/php/generated/std/time.php", "postprocess": "php_std_time_live_wrapper" }
       ]
     },
@@ -610,6 +622,7 @@
         { "target": "js", "output": "src/runtime/js/generated/std/json.js", "postprocess": "js_std_json_live_wrapper" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/json.ts", "postprocess": "ts_std_json_live_wrapper" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/json.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/std/json.lua" },
         { "target": "php", "output": "src/runtime/php/generated/std/json.php", "postprocess": "php_std_json_live_wrapper" }
       ]
     },
@@ -645,6 +658,7 @@
         { "target": "js", "output": "src/runtime/js/generated/std/pathlib.js", "postprocess": "js_std_pathlib_live_wrapper" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/pathlib.ts", "postprocess": "ts_std_pathlib_live_wrapper" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/pathlib.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/std/pathlib.lua" },
         { "target": "php", "output": "src/runtime/php/generated/std/pathlib.php", "postprocess": "php_std_pathlib_live_wrapper" }
       ]
     },
@@ -680,6 +694,7 @@
         { "target": "js", "output": "src/runtime/js/generated/std/math.js", "postprocess": "js_std_math_live_wrapper" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/math.ts", "postprocess": "ts_std_math_live_wrapper" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/math.rb" },
+        { "target": "lua", "output": "src/runtime/lua/generated/std/math.lua" },
         { "target": "php", "output": "src/runtime/php/generated/std/math.php", "postprocess": "php_std_math_live_wrapper" }
       ]
     },
@@ -722,6 +737,7 @@
           "output": "src/runtime/ts/generated/std/os.ts",
           "postprocess": "js_program_to_cjs_module"
         },
+        { "target": "lua", "output": "src/runtime/lua/generated/std/os.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/os.rb" },
         {
           "target": "php",
@@ -769,6 +785,7 @@
           "output": "src/runtime/ts/generated/std/os_path.ts",
           "postprocess": "js_program_to_cjs_module"
         },
+        { "target": "lua", "output": "src/runtime/lua/generated/std/os_path.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/os_path.rb" },
         {
           "target": "php",
@@ -816,6 +833,7 @@
           "output": "src/runtime/ts/generated/std/glob.ts",
           "postprocess": "js_program_to_cjs_module"
         },
+        { "target": "lua", "output": "src/runtime/lua/generated/std/glob.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/glob.rb" },
         {
           "target": "php",
@@ -863,6 +881,7 @@
           "output": "src/runtime/ts/generated/std/argparse.ts",
           "postprocess": "js_program_to_cjs_module"
         },
+        { "target": "lua", "output": "src/runtime/lua/generated/std/argparse.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/argparse.rb" },
         {
           "target": "php",
@@ -910,6 +929,7 @@
           "output": "src/runtime/ts/generated/std/random.ts",
           "postprocess": "js_program_to_cjs_module"
         },
+        { "target": "lua", "output": "src/runtime/lua/generated/std/random.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/random.rb" },
         {
           "target": "php",
@@ -957,6 +977,7 @@
           "output": "src/runtime/ts/generated/std/re.ts",
           "postprocess": "js_program_to_cjs_module"
         },
+        { "target": "lua", "output": "src/runtime/lua/generated/std/re.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/re.rb" },
         {
           "target": "php",
@@ -1004,6 +1025,7 @@
           "output": "src/runtime/ts/generated/std/sys.ts",
           "postprocess": "js_program_to_cjs_module"
         },
+        { "target": "lua", "output": "src/runtime/lua/generated/std/sys.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/sys.rb" },
         {
           "target": "php",
@@ -1051,6 +1073,7 @@
           "output": "src/runtime/ts/generated/std/timeit.ts",
           "postprocess": "js_program_to_cjs_module"
         },
+        { "target": "lua", "output": "src/runtime/lua/generated/std/timeit.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/timeit.rb" },
         {
           "target": "php",

@@ -4,7 +4,21 @@
 
 dofile((debug.getinfo(1, "S").source:sub(2):match("^(.*[\\/])") or "") .. "py_runtime.lua")
 
-"PNG 書き出しユーティリティ（Python実行用）。\n\nこのモジュールは sample/py のスクリプトから利用し、\nRGB 8bit バッファを PNG ファイルとして保存する。\n"
+local function __pytra_obj_type_id(value)
+    if type(value) ~= "table" then
+        return nil
+    end
+    local tagged = rawget(value, "PYTRA_TYPE_ID")
+    if tagged ~= nil then
+        return tagged
+    end
+    local mt = getmetatable(value)
+    if type(mt) == "table" then
+        return rawget(mt, "PYTRA_TYPE_ID")
+    end
+    return nil
+end
+
 function _png_append_list(dst, src)
     local i = 0
     local n = #(src)

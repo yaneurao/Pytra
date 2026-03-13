@@ -756,11 +756,11 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("f.close()", out)
         self.assertNotIn("# unsupported stmt: Try", out)
 
-    def test_run_py2x_lua_gif_helper_ignores_compile_time_std_imports(self) -> None:
+    def test_run_py2x_lua_gif_canonical_name_ignores_compile_time_std_imports(self) -> None:
         out = gen_mod.run_py2x(
             "lua",
             "src/pytra/utils/gif.py",
-            "src/runtime/lua/generated/utils/gif_helper.lua",
+            "src/runtime/lua/generated/utils/gif.lua",
         )
         self.assertIn("function grayscale_palette()", out)
         self.assertIn("function save_gif(", out)
@@ -772,7 +772,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         item_ids = gen_mod.resolve_item_ids("all", items)
         plan = gen_mod.build_generation_plan(items, targets, item_ids)
         checked, updated = gen_mod.generate(plan, check=True, dry_run=False)
-        self.assertEqual(checked, 102)
+        self.assertEqual(checked, 125)
         self.assertEqual(updated, 0)
 
 

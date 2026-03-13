@@ -119,6 +119,8 @@ def _collect_relative_import_name_aliases(body: list[Any]) -> dict[str, str]:
 def _lua_string(text: str) -> str:
     out = text.replace("\\", "\\\\")
     out = out.replace('"', '\\"')
+    out = out.replace("\t", "\\t")
+    out = out.replace("\r", "\\r")
     out = out.replace("\n", "\\n")
     return '"' + out + '"'
 
@@ -171,6 +173,47 @@ def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
         return "local " + alias_txt + " = { Enum = {}, IntEnum = {}, IntFlag = {} }"
     if mod == "pytra.std.argparse":
         return "local " + alias_txt + " = { ArgumentParser = function(...) return {} end }"
+    if mod == "pytra.std.glob":
+        return "local " + alias_txt + " = { glob = function(_pattern) return {} end }"
+    if mod == "pytra.std.os":
+        return (
+            "local "
+            + alias_txt
+            + " = { "
+            + "getcwd = function() return '.' end, "
+            + "mkdir = function(_p) end, "
+            + "makedirs = function(_p, _exist_ok) end "
+            + "}"
+        )
+    if mod == "pytra.std.os_path":
+        return (
+            "local "
+            + alias_txt
+            + " = { "
+            + "join = function(a, b) return tostring(a) .. '/' .. tostring(b) end, "
+            + "dirname = function(_p) return '' end, "
+            + "basename = function(p) return tostring(p) end, "
+            + "splitext = function(p) return { tostring(p), '' } end, "
+            + "abspath = function(p) return tostring(p) end, "
+            + "exists = function(_p) return false end "
+            + "}"
+        )
+    if mod == "pytra.std.sys":
+        return (
+            "local "
+            + alias_txt
+            + " = { "
+            + "argv = (arg or {}), "
+            + "path = {}, "
+            + "stderr = { write = function(text) io.stderr:write(text) end }, "
+            + "stdout = { write = function(text) io.write(text) end }, "
+            + "exit = function(code) os.exit(tonumber(code) or 0) end, "
+            + "set_argv = function(_values) end, "
+            + "set_path = function(_values) end, "
+            + "write_stderr = function(text) io.stderr:write(text) end, "
+            + "write_stdout = function(text) io.write(text) end "
+            + "}"
+        )
     if mod == "pytra.std.re":
         return "local " + alias_txt + " = { sub = function(_pattern, _repl, text, _flags) return text end }"
     if mod == "pytra.std.math":
@@ -196,6 +239,46 @@ def _runtime_symbol_alias_line(alias_txt: str, runtime_module_id: str, runtime_s
         return ""
     if mod == "pytra.std.argparse" and sym == "ArgumentParser":
         return "local " + alias_txt + " = function(...) return {} end"
+    if mod == "pytra.std.glob" and sym == "glob":
+        return "local " + alias_txt + " = function(_pattern) return {} end"
+    if mod == "pytra.std.os":
+        if sym == "getcwd":
+            return "local " + alias_txt + " = function() return '.' end"
+        if sym == "mkdir" or sym == "makedirs":
+            return "local " + alias_txt + " = function(_p, _exist_ok) end"
+        return ""
+    if mod == "pytra.std.os_path":
+        if sym == "join":
+            return "local " + alias_txt + " = function(a, b) return tostring(a) .. '/' .. tostring(b) end"
+        if sym == "dirname":
+            return "local " + alias_txt + " = function(_p) return '' end"
+        if sym == "basename":
+            return "local " + alias_txt + " = function(p) return tostring(p) end"
+        if sym == "splitext":
+            return "local " + alias_txt + " = function(p) return { tostring(p), '' } end"
+        if sym == "abspath":
+            return "local " + alias_txt + " = function(p) return tostring(p) end"
+        if sym == "exists":
+            return "local " + alias_txt + " = function(_p) return false end"
+        return ""
+    if mod == "pytra.std.sys":
+        if sym == "argv":
+            return "local " + alias_txt + " = (arg or {})"
+        if sym == "path":
+            return "local " + alias_txt + " = {}"
+        if sym == "stderr":
+            return "local " + alias_txt + " = { write = function(text) io.stderr:write(text) end }"
+        if sym == "stdout":
+            return "local " + alias_txt + " = { write = function(text) io.write(text) end }"
+        if sym == "exit":
+            return "local " + alias_txt + " = function(code) os.exit(tonumber(code) or 0) end"
+        if sym == "set_argv" or sym == "set_path":
+            return "local " + alias_txt + " = function(_values) end"
+        if sym == "write_stderr":
+            return "local " + alias_txt + " = function(text) io.stderr:write(text) end"
+        if sym == "write_stdout":
+            return "local " + alias_txt + " = function(text) io.write(text) end"
+        return ""
     if mod == "pytra.std.re" and sym == "sub":
         return "local " + alias_txt + " = function(_pattern, _repl, text, _flags) return text end"
     if mod == "pytra.std.math":
@@ -406,16 +489,15 @@ class LuaNativeEmitter:
             return True
         if kind == "Constant" and isinstance(node_any.get("value"), str):
             return True
-        resolved = node_any.get("resolved_type")
-        if isinstance(resolved, str):
-            if (
-                resolved == "str"
-                or resolved.startswith("list[")
-                or resolved.startswith("tuple[")
-                or resolved.startswith("dict[")
-                or resolved.startswith("set[")
-            ):
-                return True
+        resolved = self._lookup_expr_type(node_any)
+        if (
+            resolved == "str"
+            or resolved.startswith("list[")
+            or resolved.startswith("tuple[")
+            or resolved.startswith("dict[")
+            or resolved.startswith("set[")
+        ):
+            return True
         return False
 
     def _render_cond_expr(self, test_any: Any) -> str:
@@ -429,8 +511,53 @@ class LuaNativeEmitter:
             return False
         if node_any.get("kind") == "Constant" and isinstance(node_any.get("value"), str):
             return True
+        return self._lookup_expr_type(node_any) == "str"
+
+    def _lookup_expr_type(self, node_any: Any) -> str:
+        if not isinstance(node_any, dict):
+            return ""
         resolved = node_any.get("resolved_type")
-        return isinstance(resolved, str) and resolved == "str"
+        if isinstance(resolved, str) and resolved != "":
+            return resolved
+        kind = node_any.get("kind")
+        if kind == "Name":
+            safe_name = _safe_ident(node_any.get("id"), "")
+            if safe_name != "":
+                mapped = self._current_type_map().get(safe_name)
+                if isinstance(mapped, str) and mapped != "":
+                    return mapped
+        if kind == "Constant":
+            value = node_any.get("value")
+            if isinstance(value, bool):
+                return "bool"
+            if isinstance(value, int):
+                return "int"
+            if isinstance(value, float):
+                return "float"
+            if isinstance(value, str):
+                return "str"
+        if kind in {"List", "Tuple"}:
+            return "list[Any]"
+        if kind == "Dict":
+            return "dict[Any,Any]"
+        if kind == "Set":
+            return "set[Any]"
+        return ""
+
+    def _infer_decl_type_from_expr(self, node_any: Any) -> str:
+        inferred = self._lookup_expr_type(node_any)
+        if inferred == "":
+            return ""
+        if inferred in {"bool", "int", "float", "str"}:
+            return inferred
+        if (
+            inferred.startswith("list[")
+            or inferred.startswith("tuple[")
+            or inferred.startswith("dict[")
+            or inferred.startswith("set[")
+        ):
+            return inferred
+        return ""
 
     def transpile(self) -> str:
         module_comments = self._module_leading_comment_lines(prefix="-- ")
@@ -441,6 +568,7 @@ class LuaNativeEmitter:
         main_guard = self._dict_list(self.east_doc.get("main_guard_body"))
         self._scan_module_symbols(body)
         self._emit_imports(body)
+        self._emit_obj_type_id_helper()
         if len(self.class_names) > 0:
             self._emit_isinstance_helper()
         for stmt in body:
@@ -459,6 +587,15 @@ class LuaNativeEmitter:
             if isinstance(item, dict):
                 out.append(item)
         return out
+
+    def _block_has_return_stmt(self, body_any: Any) -> bool:
+        body = self._dict_list(body_any)
+        i = 0
+        while i < len(body):
+            if body[i].get("kind") == "Return":
+                return True
+            i += 1
+        return False
 
     def _module_leading_comment_lines(self, prefix: str) -> list[str]:
         trivia = self._dict_list(self.east_doc.get("module_leading_trivia"))
@@ -952,6 +1089,31 @@ class LuaNativeEmitter:
         self._emit_line("end")
         self._emit_line("")
 
+    def _emit_obj_type_id_helper(self) -> None:
+        self._emit_line("local function __pytra_obj_type_id(value)")
+        self.indent += 1
+        self._emit_line('if type(value) ~= "table" then')
+        self.indent += 1
+        self._emit_line("return nil")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line('local tagged = rawget(value, "PYTRA_TYPE_ID")')
+        self._emit_line("if tagged ~= nil then")
+        self.indent += 1
+        self._emit_line("return tagged")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("local mt = getmetatable(value)")
+        self._emit_line('if type(mt) == "table" then')
+        self.indent += 1
+        self._emit_line('return rawget(mt, "PYTRA_TYPE_ID")')
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("return nil")
+        self.indent -= 1
+        self._emit_line("end")
+        self._emit_line("")
+
     def _emit_stmt(self, stmt: dict[str, Any]) -> None:
         self._emit_leading_trivia(stmt, prefix="-- ")
         kind = stmt.get("kind")
@@ -980,6 +1142,8 @@ class LuaNativeEmitter:
                     anno_any = stmt.get("annotation")
                     if isinstance(anno_any, str):
                         decl_type = anno_any.strip()
+                if decl_type == "":
+                    decl_type = self._infer_decl_type_from_expr(value_node)
                 if value_node is None and bool(stmt.get("declare")):
                     if decl_type in _NIL_FREE_DECL_TYPES:
                         if decl_type != "":
@@ -1018,6 +1182,8 @@ class LuaNativeEmitter:
                     if decl_type == "":
                         mapped_decl = self._current_type_map().get(target_name)
                         decl_type = mapped_decl.strip() if isinstance(mapped_decl, str) else ""
+                    if decl_type == "":
+                        decl_type = self._infer_decl_type_from_expr(stmt.get("value"))
                     materialized = self._materialize_container_value_from_ref(
                         stmt.get("value"),
                         target_name=target_name,
@@ -1025,7 +1191,7 @@ class LuaNativeEmitter:
                     )
                     if materialized is not None:
                         value = materialized
-                    if isinstance(decl_type_any, str) and decl_type != "":
+                    if decl_type != "":
                         self._current_type_map()[target_name] = decl_type
                     if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
                         self._current_local_vars().add(target_name)
@@ -1047,6 +1213,8 @@ class LuaNativeEmitter:
                     if decl_type == "":
                         mapped_decl = self._current_type_map().get(target_name)
                         decl_type = mapped_decl.strip() if isinstance(mapped_decl, str) else ""
+                    if decl_type == "":
+                        decl_type = self._infer_decl_type_from_expr(stmt.get("value"))
                     materialized = self._materialize_container_value_from_ref(
                         stmt.get("value"),
                         target_name=target_name,
@@ -1054,7 +1222,7 @@ class LuaNativeEmitter:
                     )
                     if materialized is not None:
                         value = materialized
-                    if isinstance(decl_type_any, str) and decl_type != "":
+                    if decl_type != "":
                         self._current_type_map()[target_name] = decl_type
                     if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
                         self._current_local_vars().add(target_name)
@@ -1067,13 +1235,22 @@ class LuaNativeEmitter:
             target = self._render_target(stmt.get("target"))
             op = str(stmt.get("op"))
             value = self._render_expr(stmt.get("value"))
-            self._emit_line(target + " = " + target + " " + _binop_symbol(op) + " " + value)
+            op_token = _binop_symbol(op)
+            if op == "Add":
+                target_type = self._lookup_expr_type(stmt.get("target"))
+                value_type = self._lookup_expr_type(stmt.get("value"))
+                if target_type == "str" or value_type == "str":
+                    op_token = ".."
+            self._emit_line(target + " = " + target + " " + op_token + " " + value)
             return
         if kind == "Swap":
             self._emit_swap(stmt)
             return
         if kind == "Expr":
             value_any = stmt.get("value")
+            if isinstance(value_any, dict) and value_any.get("kind") == "Constant":
+                if isinstance(value_any.get("value"), str):
+                    return
             if isinstance(value_any, dict) and value_any.get("kind") == "Name":
                 loop_kw = str(value_any.get("id"))
                 if loop_kw == "break":
@@ -1111,6 +1288,8 @@ class LuaNativeEmitter:
             while i < len(body):
                 self._emit_stmt(body[i])
                 i += 1
+            if self._block_has_return_stmt(body):
+                return
             handlers_any = stmt.get("handlers")
             handlers = handlers_any if isinstance(handlers_any, list) else []
             i = 0
@@ -1712,6 +1891,10 @@ class LuaNativeEmitter:
                 if expected in self.class_names:
                     return "__pytra_isinstance(" + value + ", " + expected + ")"
             return "false"
+        if kind == "IsSubtype" or kind == "IsSubclass":
+            actual = self._render_expr(expr_any.get("actual_type_id"))
+            expected = self._render_expr(expr_any.get("expected_type_id"))
+            return "py_tid_is_subtype(" + actual + ", " + expected + ")"
         if kind == "IfExp":
             test = self._render_expr(expr_any.get("test"))
             body = self._render_expr(expr_any.get("body"))
@@ -1747,6 +1930,8 @@ class LuaNativeEmitter:
             return self._render_expr(expr_any.get("value"))
         if kind == "Unbox":
             return self._render_expr(expr_any.get("value"))
+        if kind == "ObjTypeId":
+            return "__pytra_obj_type_id(" + self._render_expr(expr_any.get("value")) + ")"
         if kind == "ObjStr":
             return "tostring(" + self._render_expr(expr_any.get("value")) + ")"
         if kind == "ObjBool":
@@ -1860,9 +2045,7 @@ class LuaNativeEmitter:
                                 return self.current_class_base_name + "." + attr + "(self)"
                             return self.current_class_base_name + "." + attr + "(self, " + ", ".join(rendered_args) + ")"
             owner = self._render_expr(owner_node)
-            owner_type = ""
-            if isinstance(owner_node, dict) and isinstance(owner_node.get("resolved_type"), str):
-                owner_type = owner_node.get("resolved_type") or ""
+            owner_type = self._lookup_expr_type(owner_node)
             if isinstance(owner_node, dict) and owner_node.get("kind") == "Name":
                 owner_name = _safe_ident(owner_node.get("id"), "")
                 if owner_name in self.imported_modules:
@@ -1882,13 +2065,75 @@ class LuaNativeEmitter:
                     + default
                     + ")"
                 )
-            if owner_type == "str" or attr in {"isdigit", "isalpha", "isalnum"}:
+            if owner_type == "str" or attr in {
+                "isdigit",
+                "isalpha",
+                "isalnum",
+                "isspace",
+                "strip",
+                "lstrip",
+                "rstrip",
+                "startswith",
+                "endswith",
+                "join",
+                "find",
+                "rfind",
+                "replace",
+                "split",
+                "splitlines",
+            }:
                 if attr == "isdigit":
                     return "__pytra_str_isdigit(" + owner + ")"
                 if attr == "isalpha":
                     return "__pytra_str_isalpha(" + owner + ")"
                 if attr == "isalnum":
                     return "__pytra_str_isalnum(" + owner + ")"
+                if attr == "isspace":
+                    return (
+                        "(("
+                        + owner
+                        + ' == " ") or ('
+                        + owner
+                        + ' == "\\t") or ('
+                        + owner
+                        + ' == "\\n") or ('
+                        + owner
+                        + ' == "\\r"))'
+                    )
+                if attr == "strip":
+                    if len(rendered_args) == 0:
+                        return "py_strip(" + owner + ")"
+                    return "py_strip_chars(" + owner + ", " + rendered_args[0] + ")"
+                if attr == "lstrip":
+                    if len(rendered_args) == 0:
+                        return "py_lstrip(" + owner + ")"
+                    return "py_lstrip_chars(" + owner + ", " + rendered_args[0] + ")"
+                if attr == "rstrip":
+                    if len(rendered_args) == 0:
+                        return "py_rstrip(" + owner + ")"
+                    return "py_rstrip_chars(" + owner + ", " + rendered_args[0] + ")"
+                if attr == "startswith" and len(rendered_args) >= 1:
+                    return "py_startswith(" + owner + ", " + rendered_args[0] + ")"
+                if attr == "endswith" and len(rendered_args) >= 1:
+                    return "py_endswith(" + owner + ", " + rendered_args[0] + ")"
+                if attr == "join" and len(rendered_args) >= 1:
+                    return "py_join(" + owner + ", " + rendered_args[0] + ")"
+                if attr == "find" and len(rendered_args) >= 1:
+                    if len(rendered_args) >= 3:
+                        return "py_find_window(" + owner + ", " + rendered_args[0] + ", " + rendered_args[1] + ", " + rendered_args[2] + ")"
+                    return "py_find(" + owner + ", " + rendered_args[0] + ")"
+                if attr == "rfind" and len(rendered_args) >= 1:
+                    if len(rendered_args) >= 3:
+                        return "py_rfind_window(" + owner + ", " + rendered_args[0] + ", " + rendered_args[1] + ", " + rendered_args[2] + ")"
+                    return "py_rfind(" + owner + ", " + rendered_args[0] + ")"
+                if attr == "replace" and len(rendered_args) >= 2:
+                    return "py_replace(" + owner + ", " + rendered_args[0] + ", " + rendered_args[1] + ")"
+                if attr == "split":
+                    sep = rendered_args[0] if len(rendered_args) >= 1 else '" "'
+                    maxsplit = rendered_args[1] if len(rendered_args) >= 2 else "-1"
+                    return "py_split(" + owner + ", " + sep + ", " + maxsplit + ")"
+                if attr == "splitlines":
+                    return "py_splitlines(" + owner + ")"
             if attr == "append" and len(rendered_args) == 1:
                 return "table.insert(" + owner + ", " + rendered_args[0] + ")"
             if attr == "pop":

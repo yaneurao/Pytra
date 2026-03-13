@@ -50,6 +50,14 @@ SCRIPT_FAMILY_MISSING_COMPARE_MODULES = ()
 
 WAVE_A_IMAGE_RUNTIME_HELPER_ARTIFACTS = ("utils/image_runtime",)
 
+LUA_GENERATED_MODULES = (
+    SCRIPT_FAMILY_COMPARE_BUILT_IN
+    + SCRIPT_FAMILY_COMPARE_STD
+    + ("utils/assertions", "utils/gif", "utils/image_runtime", "utils/png")
+)
+LUA_GENERATED_FILES = tuple(f"{module}.lua" for module in LUA_GENERATED_MODULES)
+LUA_TARGET_GENERATED_FILES = tuple(f"generated/{path}" for path in LUA_GENERATED_FILES)
+
 RUBY_GENERATED_MODULES = (
     SCRIPT_FAMILY_COMPARE_BUILT_IN
     + SCRIPT_FAMILY_COMPARE_STD
@@ -618,6 +626,16 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     ),
                 },
                 {
+                    "backend": "lua",
+                    "smoke_kind": "source_guard",
+                    "smoke_targets": (
+                        "built_in/type_id.lua",
+                        "std/argparse.lua",
+                        "std/re.lua",
+                        "utils/assertions.lua",
+                    ),
+                },
+                {
                     "backend": "ruby",
                     "smoke_kind": "source_guard",
                     "smoke_targets": (
@@ -1119,6 +1137,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "utils/png.ts",
             ),
         )
+        self.assertEqual(by_backend["lua"]["pytra_gen_files"], LUA_GENERATED_FILES)
         self.assertEqual(by_backend["ruby"]["pytra_gen_files"], RUBY_GENERATED_FILES)
 
     def test_target_inventory_is_fixed(self) -> None:
@@ -1418,6 +1437,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "generated/utils/png.ts",
             ),
         )
+        self.assertEqual(by_backend["lua"]["generated_files"], LUA_TARGET_GENERATED_FILES)
         self.assertEqual(by_backend["ruby"]["generated_files"], RUBY_TARGET_GENERATED_FILES)
         self.assertEqual(
             by_backend["php"],
@@ -1745,7 +1765,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "backend": "lua",
                     "missing_compare_lane_modules": (),
                     "native_compare_residual_modules": (),
-                    "helper_shaped_compare_gap_modules": SCRIPT_FAMILY_COMPARE_BASELINE,
+                    "helper_shaped_compare_gap_modules": (),
                 },
                 "ruby": {
                     "backend": "ruby",
@@ -1782,12 +1802,8 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 },
                 "lua": {
                     "backend": "lua",
-                    "materialized_compare_modules": (),
-                    "helper_artifact_modules": (
-                        "utils/gif_helper",
-                        "utils/image_runtime",
-                        "utils/png_helper",
-                    ),
+                    "materialized_compare_modules": SCRIPT_FAMILY_COMPARE_BASELINE,
+                    "helper_artifact_modules": WAVE_A_IMAGE_RUNTIME_HELPER_ARTIFACTS,
                 },
                 "ruby": {
                     "backend": "ruby",

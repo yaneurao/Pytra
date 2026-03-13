@@ -44,6 +44,7 @@ def _generated_suffix_for_backend(backend: str) -> str:
         "java": ".java",
         "js": ".js",
         "kotlin": ".kt",
+        "lua": ".lua",
         "nim": ".nim",
         "php": ".php",
         "ruby": ".rb",

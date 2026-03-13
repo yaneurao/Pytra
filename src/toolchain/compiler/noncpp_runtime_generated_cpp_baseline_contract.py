@@ -123,11 +123,6 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "modules": ("std/json", "std/math", "std/pathlib"),
     },
     {
-        "backend": "lua",
-        "legacy_state": "blocked",
-        "modules": NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MODULES_V1,
-    },
-    {
         "backend": "rs",
         "legacy_state": "compare_artifact",
         "modules": (
@@ -158,7 +153,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1: Final[
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MATERIALIZED_BACKENDS_V1: Final[
     tuple[str, ...]
-] = ("cs", "go", "java", "rs", "swift", "nim", "kotlin", "scala", "js", "ts", "ruby", "php")
+] = ("cs", "go", "java", "rs", "swift", "nim", "kotlin", "scala", "js", "ts", "lua", "ruby", "php")
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_POLICY_FILES_V1: Final[
     tuple[NonCppRuntimeGeneratedCppBaselineLegacyPolicyFileEntry, ...]

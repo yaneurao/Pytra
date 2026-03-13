@@ -4,7 +4,21 @@
 
 dofile((debug.getinfo(1, "S").source:sub(2):match("^(.*[\\/])") or "") .. "py_runtime.lua")
 
-"アニメーションGIFを書き出すための最小ヘルパー。"
+local function __pytra_obj_type_id(value)
+    if type(value) ~= "table" then
+        return nil
+    end
+    local tagged = rawget(value, "PYTRA_TYPE_ID")
+    if tagged ~= nil then
+        return tagged
+    end
+    local mt = getmetatable(value)
+    if type(mt) == "table" then
+        return rawget(mt, "PYTRA_TYPE_ID")
+    end
+    return nil
+end
+
 function _gif_append_list(dst, src)
     local i = 0
     local n = #(src)

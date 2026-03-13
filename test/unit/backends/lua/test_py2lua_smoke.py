@@ -90,6 +90,40 @@ class Py2LuaSmokeTest(unittest.TestCase):
         self.assertTrue(image_runtime.exists())
         self.assertFalse(legacy_path.exists())
 
+    def test_lua_generated_std_baseline_source_guard_materializes_new_compare_modules(self) -> None:
+        runtime_root = ROOT / "src" / "runtime" / "lua" / "generated"
+        guarded_targets = {
+            runtime_root / "built_in" / "type_id.lua": ("function py_tid_runtime_type_id(",),
+            runtime_root / "std" / "argparse.lua": ("ArgumentParser = {}", "function ArgumentParser:parse_args("),
+            runtime_root / "std" / "re.lua": ("function match(", "function sub("),
+            runtime_root / "utils" / "assertions.lua": ("function py_assert_true(", "function py_assert_eq("),
+            runtime_root / "utils" / "gif.lua": ("function save_gif(",),
+            runtime_root / "utils" / "png.lua": ("function write_rgb_png(",),
+        }
+        for path, needles in guarded_targets.items():
+            with self.subTest(path=path.relative_to(ROOT).as_posix()):
+                text = path.read_text(encoding="utf-8")
+                self.assertIn("AUTO-GENERATED FILE. DO NOT EDIT.", text)
+                for needle in needles:
+                    self.assertIn(needle, text)
+        self.assertFalse((runtime_root / "utils" / "gif_helper.lua").exists())
+        self.assertFalse((runtime_root / "utils" / "png_helper.lua").exists())
+        for lint_path in (
+            runtime_root / "built_in" / "type_id.lua",
+            runtime_root / "std" / "argparse.lua",
+            runtime_root / "std" / "re.lua",
+            runtime_root / "utils" / "assertions.lua",
+        ):
+            with self.subTest(lint_path=lint_path.relative_to(ROOT).as_posix()):
+                proc = subprocess.run(
+                    ["luac", "-p", str(lint_path)],
+                    cwd=ROOT,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+
     def test_lua_repo_compat_lane_resolves_runtime_helpers(self) -> None:
         compat_runtime = ROOT / "src" / "runtime" / "lua" / "pytra" / "built_in" / "py_runtime.lua"
         code = "\n".join(

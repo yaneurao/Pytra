@@ -2,13 +2,9 @@
 # key format: <repo-relative-path>:<reason>
 
 src/runtime/kotlin/generated/utils/image_runtime.kt:non_passthrough_name
-src/runtime/lua/generated/utils/gif_helper.lua:non_passthrough_name
 src/runtime/lua/generated/utils/image_runtime.lua:non_passthrough_name
-src/runtime/lua/generated/utils/png_helper.lua:non_passthrough_name
 src/runtime/nim/generated/utils/image_runtime.nim:non_passthrough_name
 src/runtime/rs/generated/utils/image_runtime.rs:non_passthrough_name
-src/runtime/ruby/generated/utils/gif_helper.rb:non_passthrough_name
 src/runtime/ruby/generated/utils/image_runtime.rb:non_passthrough_name
-src/runtime/ruby/generated/utils/png_helper.rb:non_passthrough_name
 src/runtime/scala/generated/utils/image_runtime.scala:non_passthrough_name
 src/runtime/swift/generated/utils/image_runtime.swift:non_passthrough_name
