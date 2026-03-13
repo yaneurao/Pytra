@@ -38,6 +38,7 @@ class CheckCppPyRuntimeResidualThinSeamHandoffContractTest(unittest.TestCase):
             (
                 "tools/check_cpp_pyruntime_header_surface.py",
                 "tools/check_cpp_pyruntime_contract_inventory.py",
+                "tools/check_cpp_pyruntime_upstream_fallback_contract.py",
                 "tools/check_cpp_pyruntime_upstream_fallback_inventory.py",
                 "tools/check_crossruntime_pyruntime_emitter_inventory.py",
                 "tools/check_cpp_pyruntime_residual_thin_seam_contract.py",
@@ -48,6 +49,7 @@ class CheckCppPyRuntimeResidualThinSeamHandoffContractTest(unittest.TestCase):
             (
                 "test/unit/tooling/test_check_cpp_pyruntime_header_surface.py",
                 "test/unit/tooling/test_check_cpp_pyruntime_contract_inventory.py",
+                "test/unit/tooling/test_check_cpp_pyruntime_upstream_fallback_contract.py",
                 "test/unit/tooling/test_check_cpp_pyruntime_upstream_fallback_inventory.py",
                 "test/unit/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py",
                 "test/unit/tooling/test_check_cpp_pyruntime_residual_thin_seam_contract.py",

@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
 from tools import check_cpp_pyruntime_contract_inventory as contract_mod
 from tools import check_cpp_pyruntime_header_surface as header_mod
 from tools import check_cpp_pyruntime_residual_thin_seam_contract as seam_mod
+from tools import check_cpp_pyruntime_upstream_fallback_contract as boundary_mod
 from tools import check_cpp_pyruntime_upstream_fallback_inventory as fallback_mod
 from tools import check_crossruntime_pyruntime_emitter_inventory as emitter_mod
 
@@ -31,6 +32,7 @@ BUNDLE_ORDER = (
 REPRESENTATIVE_CHECKS = (
     "tools/check_cpp_pyruntime_header_surface.py",
     "tools/check_cpp_pyruntime_contract_inventory.py",
+    "tools/check_cpp_pyruntime_upstream_fallback_contract.py",
     "tools/check_cpp_pyruntime_upstream_fallback_inventory.py",
     "tools/check_crossruntime_pyruntime_emitter_inventory.py",
     "tools/check_cpp_pyruntime_residual_thin_seam_contract.py",
@@ -39,6 +41,7 @@ REPRESENTATIVE_CHECKS = (
 REPRESENTATIVE_TEST_FILES = (
     "test/unit/tooling/test_check_cpp_pyruntime_header_surface.py",
     "test/unit/tooling/test_check_cpp_pyruntime_contract_inventory.py",
+    "test/unit/tooling/test_check_cpp_pyruntime_upstream_fallback_contract.py",
     "test/unit/tooling/test_check_cpp_pyruntime_upstream_fallback_inventory.py",
     "test/unit/tooling/test_check_crossruntime_pyruntime_emitter_inventory.py",
     "test/unit/tooling/test_check_cpp_pyruntime_residual_thin_seam_contract.py",
@@ -65,6 +68,10 @@ def _collect_handoff_issues() -> list[str]:
         issues.append("header surface handoff issues are not empty")
     if contract_mod._collect_inventory_issues():
         issues.append("contract inventory issues are not empty")
+    if boundary_mod._collect_partition_issues():
+        issues.append("upstream fallback boundary partition issues are not empty")
+    if boundary_mod._collect_boundary_guard_issues():
+        issues.append("upstream fallback boundary guard issues are not empty")
     if fallback_mod._collect_inventory_issues():
         issues.append("upstream fallback inventory issues are not empty")
     if fallback_mod._collect_inventory_count_issues():
