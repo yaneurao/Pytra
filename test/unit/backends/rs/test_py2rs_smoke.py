@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -414,10 +415,59 @@ class Py2RsSmokeTest(unittest.TestCase):
         runtime_src = (ROOT / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs").read_text(
             encoding="utf-8"
         )
+        self.assertIn('#[path = "time.rs"]', runtime_src)
+        self.assertIn("pub mod time;", runtime_src)
+        self.assertIn('#[path = "math.rs"]', runtime_src)
+        self.assertIn("pub mod math;", runtime_src)
         self.assertIn("pub mod pytra {", runtime_src)
         self.assertIn("pub mod std {", runtime_src)
         self.assertIn("pub use super::super::time;", runtime_src)
         self.assertIn("pub use super::super::math;", runtime_src)
+
+    def test_generated_time_and_math_runtime_hook_modules_compile_with_scaffold(self) -> None:
+        if shutil.which("rustc") is None:
+            self.skipTest("rustc not found")
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            files = (
+                (ROOT / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs", "py_runtime.rs"),
+                (ROOT / "src" / "runtime" / "rs" / "generated" / "std" / "time.rs", "time.rs"),
+                (ROOT / "src" / "runtime" / "rs" / "generated" / "std" / "math.rs", "math.rs"),
+                (ROOT / "src" / "runtime" / "rs" / "generated" / "utils" / "image_runtime.rs", "image_runtime.rs"),
+            )
+            for src, dst_name in files:
+                (tmp / dst_name).write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+            main_rs = tmp / "main.rs"
+            main_rs.write_text(
+                "\n".join(
+                    [
+                        "mod py_runtime;",
+                        "use crate::py_runtime::{math, time};",
+                        "",
+                        "fn main() {",
+                        "    let sqrt_value = math::sqrt(81_i64);",
+                        "    let floor_value = math::floor(3.9_f64);",
+                        "    let perf_value = time::perf_counter();",
+                        "    assert!((sqrt_value - 9.0).abs() < 0.000_001);",
+                        "    assert!((floor_value - 3.0).abs() < 0.000_001);",
+                        "    assert!(math::pi > 3.14);",
+                        "    assert!(math::e > 2.71);",
+                        "    assert!(perf_value >= 0.0);",
+                        '    println!("rs-runtime-ok");',
+                        "}",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            proc = subprocess.run(
+                ["bash", "-lc", "rustc main.rs -O -o main.out && ./main.out"],
+                cwd=tmp,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(proc.returncode, 0, msg=proc.stderr)
+        self.assertIn("rs-runtime-ok", proc.stdout)
 
     def test_runtime_import_resolution_skips_redundant_root_math_use(self) -> None:
         with tempfile.TemporaryDirectory() as td:

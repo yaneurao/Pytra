@@ -387,6 +387,43 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("public static py_path cwd()", out)
         self.assertNotIn("public static class Program", out)
 
+    def test_rewrite_rs_std_time_live_wrapper_targets_runtime_perf_counter(self) -> None:
+        src = "\n".join(
+            [
+                "// AUTO-GENERATED FILE. DO NOT EDIT.",
+                "// source: src/pytra/std/time.py",
+                "// generated-by: tools/gen_runtime_from_manifest.py",
+                "",
+                "fn perf_counter() -> f64 {",
+                "    return __t.perf_counter();",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_rs_std_time_live_wrapper(src)
+        self.assertIn("pub fn perf_counter() -> f64 {", out)
+        self.assertIn("crate::py_runtime::perf_counter()", out)
+        self.assertNotIn("__t.perf_counter()", out)
+
+    def test_rewrite_rs_std_math_live_wrapper_exports_std_math_facade(self) -> None:
+        src = "\n".join(
+            [
+                "// AUTO-GENERATED FILE. DO NOT EDIT.",
+                "// source: src/pytra/std/math.py",
+                "// generated-by: tools/gen_runtime_from_manifest.py",
+                "",
+                "fn sqrt(x: f64) -> f64 {",
+                "    return __m.sqrt(x);",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_rs_std_math_live_wrapper(src)
+        self.assertIn("pub const pi: f64 = ::std::f64::consts::PI;", out)
+        self.assertIn("pub const e: f64 = ::std::f64::consts::E;", out)
+        self.assertIn("pub trait ToF64 {", out)
+        self.assertIn("pub fn sqrt<T: ToF64>(v: T) -> f64 {", out)
+        self.assertIn("pub fn pow(a: f64, b: f64) -> f64 {", out)
+        self.assertNotIn("__m.", out)
+
     def test_rewrite_kotlin_program_to_library_removes_empty_main(self) -> None:
         src = "\n".join(
             [

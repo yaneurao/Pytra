@@ -271,30 +271,30 @@ CS_STD_FIRST_LIVE_GENERATED_CANDIDATE_V1: Final[CsStdFirstLiveGeneratedCandidate
 RS_STD_LANE_OWNERSHIP_V1: Final[tuple[RsStdLaneOwnershipEntry, ...]] = (
     {
         "module_name": "time",
-        "canonical_lane": "native/built_in",
-        "generated_std_state": "compare_artifact",
+        "canonical_lane": "generated/std",
+        "generated_std_state": "canonical_generated",
         "generated_std_rel": "src/runtime/rs/generated/std/time.rs",
         "native_rel": "src/runtime/rs/native/built_in/py_runtime.rs",
-        "canonical_runtime_symbol": "pub use super::super::time;",
+        "canonical_runtime_symbol": "#[path = \"time.rs\"]",
         "representative_fixture": "test/fixtures/imports/import_time_from.py",
         "smoke_guard_needles": (
             "def test_runtime_scaffold_exposes_pytra_std_time_and_math",
         ),
-        "rationale": "generated/std/time.rs exists for compare, but the live Rust runtime still comes from the native built_in scaffold re-export in py_runtime.rs.",
+        "rationale": "generated/std/time.rs is now the live Rust time owner, and py_runtime.rs only stages it as a substrate-backed path module while preserving the existing perf_counter seam.",
     },
     {
         "module_name": "math",
-        "canonical_lane": "native/built_in",
-        "generated_std_state": "compare_artifact",
+        "canonical_lane": "generated/std",
+        "generated_std_state": "canonical_generated",
         "generated_std_rel": "src/runtime/rs/generated/std/math.rs",
         "native_rel": "src/runtime/rs/native/built_in/py_runtime.rs",
-        "canonical_runtime_symbol": "pub use super::super::math;",
+        "canonical_runtime_symbol": "#[path = \"math.rs\"]",
         "representative_fixture": "test/fixtures/stdlib/pytra_std_import_math.py",
         "smoke_guard_needles": (
             "def test_imports_emit_use_lines",
             "use crate::pytra::std::math::floor;",
         ),
-        "rationale": "generated/std/math.rs exists for compare, but the live Rust runtime still comes from the native built_in scaffold re-export in py_runtime.rs.",
+        "rationale": "generated/std/math.rs is now the live Rust math owner, and py_runtime.rs only re-exports it as a staged path module while the generated wrapper maps directly onto Rust std math primitives.",
     },
     {
         "module_name": "pathlib",

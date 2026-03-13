@@ -71,6 +71,8 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
         "kind": "copy_files",
         "files": [
             ("runtime/rs/native/built_in/py_runtime.rs", "py_runtime.rs"),
+            ("runtime/rs/generated/std/time.rs", "time.rs"),
+            ("runtime/rs/generated/std/math.rs", "math.rs"),
             ("runtime/rs/generated/utils/image_runtime.rs", "image_runtime.rs"),
         ],
     },

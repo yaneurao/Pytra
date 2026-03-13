@@ -2,58 +2,125 @@
 // source: src/pytra/std/math.py
 // generated-by: tools/gen_runtime_from_manifest.py
 
-mod py_runtime;
-pub use crate::py_runtime::{math, pytra, time};
-use crate::py_runtime::*;
+pub const pi: f64 = ::std::f64::consts::PI;
+pub const e: f64 = ::std::f64::consts::E;
 
-use crate::pytra::std::extern;
-
-fn sqrt(x: f64) -> f64 {
-    return __m.sqrt(x);
+pub trait ToF64 {
+    fn to_f64(self) -> f64;
 }
 
-fn sin(x: f64) -> f64 {
-    return __m.sin(x);
+impl ToF64 for f64 {
+    fn to_f64(self) -> f64 {
+        self
+    }
 }
 
-fn cos(x: f64) -> f64 {
-    return __m.cos(x);
+impl ToF64 for f32 {
+    fn to_f64(self) -> f64 {
+        self as f64
+    }
 }
 
-fn tan(x: f64) -> f64 {
-    return __m.tan(x);
+impl ToF64 for i64 {
+    fn to_f64(self) -> f64 {
+        self as f64
+    }
 }
 
-fn exp(x: f64) -> f64 {
-    return __m.exp(x);
+impl ToF64 for i32 {
+    fn to_f64(self) -> f64 {
+        self as f64
+    }
 }
 
-fn log(x: f64) -> f64 {
-    return __m.log(x);
+impl ToF64 for i16 {
+    fn to_f64(self) -> f64 {
+        self as f64
+    }
 }
 
-fn log10(x: f64) -> f64 {
-    return __m.log10(x);
+impl ToF64 for i8 {
+    fn to_f64(self) -> f64 {
+        self as f64
+    }
 }
 
-fn fabs(x: f64) -> f64 {
-    return __m.fabs(x);
+impl ToF64 for u64 {
+    fn to_f64(self) -> f64 {
+        self as f64
+    }
 }
 
-fn floor(x: f64) -> f64 {
-    return __m.floor(x);
+impl ToF64 for u32 {
+    fn to_f64(self) -> f64 {
+        self as f64
+    }
 }
 
-fn ceil(x: f64) -> f64 {
-    return __m.ceil(x);
+impl ToF64 for u16 {
+    fn to_f64(self) -> f64 {
+        self as f64
+    }
 }
 
-fn pow(x: f64, y: f64) -> f64 {
-    return __m.pow(x, y);
+impl ToF64 for u8 {
+    fn to_f64(self) -> f64 {
+        self as f64
+    }
 }
 
-fn main() {
-    ("pytra.std.math: extern-marked math API with Python runtime fallback.").to_string();
-    let pi: f64 = py_any_to_f64(&(py_extern(__m.pi)));
-    let e: f64 = py_any_to_f64(&(py_extern(__m.e)));
+impl ToF64 for usize {
+    fn to_f64(self) -> f64 {
+        self as f64
+    }
+}
+
+impl ToF64 for isize {
+    fn to_f64(self) -> f64 {
+        self as f64
+    }
+}
+
+pub fn sin<T: ToF64>(v: T) -> f64 {
+    v.to_f64().sin()
+}
+
+pub fn cos<T: ToF64>(v: T) -> f64 {
+    v.to_f64().cos()
+}
+
+pub fn tan<T: ToF64>(v: T) -> f64 {
+    v.to_f64().tan()
+}
+
+pub fn sqrt<T: ToF64>(v: T) -> f64 {
+    v.to_f64().sqrt()
+}
+
+pub fn exp<T: ToF64>(v: T) -> f64 {
+    v.to_f64().exp()
+}
+
+pub fn log<T: ToF64>(v: T) -> f64 {
+    v.to_f64().ln()
+}
+
+pub fn log10<T: ToF64>(v: T) -> f64 {
+    v.to_f64().log10()
+}
+
+pub fn fabs<T: ToF64>(v: T) -> f64 {
+    v.to_f64().abs()
+}
+
+pub fn floor<T: ToF64>(v: T) -> f64 {
+    v.to_f64().floor()
+}
+
+pub fn ceil<T: ToF64>(v: T) -> f64 {
+    v.to_f64().ceil()
+}
+
+pub fn pow(a: f64, b: f64) -> f64 {
+    a.powf(b)
 }
