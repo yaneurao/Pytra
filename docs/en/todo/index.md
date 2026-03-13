@@ -30,3 +30,10 @@ Last updated: 2026-03-13
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+### P0: promote the C++ backend validator helpers onto the `toolchain.link` facade
+
+- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01] Re-export `validate_cpp_backend_input_doc()` and `translate_cpp_backend_emit_error()` from the `toolchain.link` package facade so `typed_boundary` and link tests no longer depend on submodule reach-through.
+  - Context: [docs/en/plans/p0-link-facade-cpp-validator-export.md](../plans/p0-link-facade-cpp-validator-export.md)
+- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S1-01] Add focused regression / source-contract coverage that requires the facade export and locks the current package-surface gap in fail-fast form.
+- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S2-01] Switch `toolchain.link.__init__` exports plus `typed_boundary` / link-test imports over to the facade path and bring the targeted unit suite back to green.
+- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S3-01] Sync TODO / plan / decision log and lock the close condition.

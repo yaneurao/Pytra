@@ -30,3 +30,10 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
+### P0: `toolchain.link` facade に C++ backend validator helper を昇格する
+
+- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01] `toolchain.link` package facade から `validate_cpp_backend_input_doc()` と `translate_cpp_backend_emit_error()` を正規 export し、`typed_boundary` / link test が submodule reach-through に依存しない状態へ揃える。
+  - 文脈: [docs/ja/plans/p0-link-facade-cpp-validator-export.md](../plans/p0-link-facade-cpp-validator-export.md)
+- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S1-01] facade export を要求する focused regression / source contract を追加し、current package-surface gap を fail-fast に固定する。
+- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S2-01] `toolchain.link.__init__` export と `typed_boundary` / link test import を facade 経由へ切り替え、targeted unit を green に戻す。
+- [ ] [ID: P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01-S3-01] TODO / plan / decision log を同期して close 条件を固める。
