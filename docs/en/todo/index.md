@@ -30,3 +30,5 @@ Last updated: 2026-03-13
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-REVERSE-01] Lock the representative C++ lane for `collections.deque.reverse()`. Progress: newly opened. First lock the current invalid C++ surface (`q.reverse();`) with a focused regression. Context: [p0-collections-deque-cpp-reverse-support.md](../plans/p0-collections-deque-cpp-reverse-support.md)
