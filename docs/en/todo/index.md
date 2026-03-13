@@ -33,11 +33,7 @@ Last updated: 2026-03-14
 
 ### P1
 
-1. [ ] [ID: P1-NES3-APU-CONST-PKG-CPP-01] Align header ordering and reference lanes for imported classes that use module constants and make `apu_const_pkg` compile.
-Context: [docs/en/plans/p1-nes3-apu-const-pkg-cpp-support.md](../plans/p1-nes3-apu-const-pkg-cpp-support.md)
-- Progress memo: Not started.
-
-2. [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01] Align header/symbol qualification plus parameter passing for imported bus types and make `bus_port_pkg` compile.
+1. [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01] Align header/symbol qualification plus parameter passing for imported bus types and make `bus_port_pkg` compile.
 Context: [docs/en/plans/p1-nes3-bus-port-pkg-cpp-support.md](../plans/p1-nes3-bus-port-pkg-cpp-support.md)
 - Progress memo: Not started.
 

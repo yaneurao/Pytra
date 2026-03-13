@@ -1733,7 +1733,25 @@ class CppEmitter(
             fn_name = self.any_to_str(fn_node.get("id"))
             if fn_name == "":
                 return ""
-            return self.normalize_type_name(self.function_return_types.get(fn_name, ""))
+            imported = self._resolve_imported_symbol(fn_name)
+            imported_module = self.any_dict_get_str(imported, "module", "")
+            imported_name = self.any_dict_get_str(imported, "name", "")
+            if imported_module != "" and imported_name != "":
+                imported_cpp_t = self._imported_runtime_class_cpp_type(imported_module, imported_name)
+                imported_cpp_t = self.normalize_type_name(imported_cpp_t)
+                if imported_cpp_t != "":
+                    return imported_cpp_t
+            mapped_t = self.normalize_type_name(self.type_map.get(fn_name, ""))
+            if mapped_t != "":
+                return mapped_t
+            ret_t = self.normalize_type_name(self.function_return_types.get(fn_name, ""))
+            if ret_t != "":
+                return ret_t
+            if fn_name in self.ref_classes:
+                return f"rc<{fn_name}>"
+            if fn_name in self.class_names:
+                return fn_name
+            return ""
         if fn_kind != "Attribute":
             return ""
         owner_node = self.any_to_dict_or_empty(fn_node.get("value"))

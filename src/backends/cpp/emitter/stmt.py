@@ -727,6 +727,11 @@ class CppStatementEmitter:
                 if numeric_picked != "":
                     picked = numeric_picked
                     logical_picked = picked
+            if picked in {"", "unknown", "Any", "object"} and isinstance(value, dict):
+                call_picked = self.normalize_type_name(self._infer_call_expr_type(value))
+                if call_picked not in {"", "unknown"}:
+                    picked = call_picked
+                    logical_picked = picked
             runtime_alias_target = self._is_pyobj_ref_first_list_target_expr(target_obj, logical_picked)
             if runtime_alias_target:
                 logical_picked = d0 if d0 != "" else (d1 if d1 != "" else d2)

@@ -494,13 +494,15 @@ def build_cpp_header_from_east(
         lines.append(class_line)
     if len(class_lines) > 0:
         lines.append("")
+    for var_line in var_lines:
+        lines.append(var_line)
+    if len(var_lines) > 0 and len(class_blocks) > 0:
+        lines.append("")
     for class_block in class_blocks:
         for part_line in class_block.splitlines():
             lines.append(part_line)
         lines.append("")
-    for var_line in var_lines:
-        lines.append(var_line)
-    if len(var_lines) > 0 and len(fn_lines) > 0:
+    if (len(var_lines) > 0 or len(class_blocks) > 0) and len(fn_lines) > 0:
         lines.append("")
     for fn_line in fn_lines:
         lines.append(fn_line)
