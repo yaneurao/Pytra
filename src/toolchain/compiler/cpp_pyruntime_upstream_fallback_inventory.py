@@ -273,10 +273,6 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_INVENTORY_V1: Final[
         "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02",
         "evidence_refs": (
             {
-                "relpath": "sample/cpp/18_mini_language_interpreter.cpp",
-                "needle": 'py_append(tokens, Token("NUMBER", text, start, py_to_int64(text)));',
-            },
-            {
                 "relpath": "sample/cpp/13_maze_generation_steps.cpp",
                 "needle": "py_append(candidates, ::std::make_tuple(nx, ny, x + 1, y));",
             },
@@ -284,8 +280,12 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_INVENTORY_V1: Final[
                 "relpath": "sample/cpp/14_raymarching_light_cycle.cpp",
                 "needle": "py_append(frames, frame);",
             },
+            {
+                "relpath": "sample/cpp/15_wave_interference_loop.cpp",
+                "needle": "py_append(frames, frame);",
+            },
         ),
-        "notes": "Representative C++ samples still emit generic append wrappers heavily even on typed lists.",
+        "notes": "Remaining sample append residuals now concentrate in visualization-heavy samples and parser helper code.",
     },
     {
         "inventory_id": "sample_cpp_generic_index_sites",
