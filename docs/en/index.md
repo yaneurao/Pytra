@@ -11,6 +11,7 @@ The related documents are listed below in the order they are most frequently ref
 - Check implemented / unimplemented / out-of-scope items: [Implementation Status Notes](plans/pytra-wip.md)
 - Check the canonical nominal ADT v1 surface and staged rollout: [nominal ADT v1 Guide](language/nominal-adt-v1.md)
 - Check feature × backend support-state publication and rollout handoff: [Backend Parity Matrix](language/backend-parity-matrix.md)
+- Check measured green state of backend-owned test suites: [Backend Test Matrix](language/backend-test-matrix.md)
 - Check `py2cpp` feature coverage (with test evidence): [py2cpp Support Matrix](language/cpp/spec-support.md)
 - Browse sample list and overview: [Sample Code Guide](../../sample/readme.md)
 - Review specs, constraints, architecture, and operational rules: [Specification Index](spec/index.md)

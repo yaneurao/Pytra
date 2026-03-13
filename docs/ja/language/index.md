@@ -10,5 +10,6 @@
 - 共通 language feature:
   - nominal ADT v1 の canonical surface と staged rollout: [nominal ADT v1 ガイド](./nominal-adt-v1.md)
   - feature × backend の support state と rollout handoff: [Backend Parity Matrix](./backend-parity-matrix.md)
+  - backend-owned test suite の実測 green 状態: [Backend Test Matrix](./backend-test-matrix.md)
 - C++:
   - サポート状況（テスト根拠つき）: [py2cpp サポートマトリクス](./cpp/spec-support.md)

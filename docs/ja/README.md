@@ -54,6 +54,7 @@
 
 - 過去ニュース: [docs/ja/news/index.md](news/index.md)
 - backend parity の現行 support state: [language/backend-parity-matrix.md](language/backend-parity-matrix.md)
+- backend test の現行 green state: [language/backend-test-matrix.md](language/backend-test-matrix.md)
 
 
 ## 特徴
