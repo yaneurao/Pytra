@@ -15,7 +15,6 @@ if str(SRC_ROOT) not in sys.path:
 from src.toolchain.compiler import (  # noqa: E402
     noncpp_runtime_generated_cpp_baseline_contract as contract_mod,
     noncpp_runtime_layout_contract as layout_contract_mod,
-    noncpp_runtime_layout_rollout_remaining_contract as remaining_contract_mod,
     pytra_cli_profiles as cli_profiles_mod,
 )
 
@@ -192,13 +191,6 @@ def _collect_runtime_layout_legacy_state_buckets() -> tuple[dict[str, object], .
             if canonical_lane.startswith("native/"):
                 add(backend, "native_canonical", (module,))
 
-    for entry in remaining_contract_mod.iter_remaining_noncpp_runtime_module_buckets():
-        add(entry["backend"], "blocked", entry["blocked_modules"])
-    for entry in remaining_contract_mod.iter_remaining_noncpp_runtime_wave_a_native_residuals():
-        add(entry["backend"], "native_canonical", entry["compare_residual_modules"])
-    for entry in remaining_contract_mod.iter_remaining_noncpp_runtime_wave_b_native_residuals():
-        add(entry["backend"], "native_canonical", entry["compare_residual_modules"])
-
     return tuple(
         {
             "backend": backend,
@@ -218,16 +210,12 @@ def _collect_runtime_layout_legacy_state_buckets() -> tuple[dict[str, object], .
 def _collect_helper_artifact_overlap_modules() -> tuple[str, ...]:
     baseline = set(contract_mod.iter_noncpp_runtime_generated_cpp_baseline_modules())
     overlap: set[str] = set()
+
     def is_helper_shaped(module: str) -> bool:
         stem = module.rsplit("/", 1)[-1]
         return stem.endswith("_helper") or stem == "image_runtime"
-    for entry in remaining_contract_mod.iter_remaining_noncpp_runtime_wave_a_generated_compare():
-        overlap.update(
-            module
-            for module in entry["helper_artifact_modules"]
-            if module in baseline and is_helper_shaped(module)
-        )
-    for entry in remaining_contract_mod.iter_remaining_noncpp_runtime_wave_b_generated_compare():
+
+    for entry in _collect_helper_artifact_inventory():
         overlap.update(
             module
             for module in entry["helper_artifact_modules"]
@@ -252,22 +240,10 @@ def _collect_helper_artifact_inventory() -> tuple[dict[str, object], ...]:
 
 
 def _collect_remaining_helper_artifact_inventory() -> tuple[dict[str, object], ...]:
-    inventory_by_backend = {
-        backend: set()
-        for backend in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_materialized_backends()
-        if backend != "cs"
-    }
-    for entry in remaining_contract_mod.iter_remaining_noncpp_runtime_wave_a_generated_compare():
-        inventory_by_backend[entry["backend"]].update(entry["helper_artifact_modules"])
-    for entry in remaining_contract_mod.iter_remaining_noncpp_runtime_wave_b_generated_compare():
-        inventory_by_backend[entry["backend"]].update(entry["helper_artifact_modules"])
-    inventory_by_backend.setdefault("rs", set()).add("utils/image_runtime")
     return tuple(
-        {
-            "backend": backend,
-            "helper_artifact_modules": tuple(sorted(modules)),
-        }
-        for backend, modules in inventory_by_backend.items()
+        entry
+        for entry in contract_mod.iter_noncpp_runtime_generated_cpp_baseline_helper_artifact_inventory()
+        if entry["backend"] != "cs"
     )
 
 

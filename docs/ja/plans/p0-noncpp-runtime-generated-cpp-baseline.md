@@ -147,7 +147,7 @@
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S2-02] static family (`go/java/kotlin/scala/swift/nim`) の generated `built_in/std/utils` baseline を full set に引き上げ、helper-shaped naming を canonical basename に寄せる。
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S2-03] script family (`js/ts/lua/ruby/php`) の generated `built_in/std/utils` baseline を full set に引き上げ、generated-first wiring と package/export を同期する。
 - [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S3-01] backend build profile / selfhost / smoke / runtime copy contract を generated-first に切り替え、baseline module の `native` owner を substrate seam へ縮退する。
-- [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S3-02] full file-compare contract checker を追加し、各 backend の generated module set が baseline と一致すること、helper alias や native-owned baseline module が存在しないことを fail-fast 化する。
+- [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S3-02] full file-compare contract checker を追加し、各 backend の generated module set が baseline と一致すること、helper alias や native-owned baseline module が存在しないことを fail-fast 化した。
 - [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S4-01] docs / TODO / inventory / archive note を同期し、`P0-NONCPP-RUNTIME-PYTRA-DESHIM-01` を後続 prerequisite 解消済みとして扱える状態にする。
 
 決定ログ:
@@ -177,3 +177,4 @@
 - 2026-03-13: `S3-01` second bundle として C# `time` の backing seam を `src/runtime/cs/native/built_in/time.cs` から `src/runtime/cs/native/std/time_native.cs` へ移し、`generated/std/time.cs` を参照する build profile / layout contract / generated baseline contract / docs を `std` vocabulary に揃えた。これで `math` と `time` はどちらも generated-first + `native/std` substrate seam で整列し、残る C# native canonical debt は `json/pathlib` に絞られた。
 - 2026-03-13: `S3-02` second bundle として baseline contract に backend 別 `helper_artifact_modules` inventory を追加し、actual `generated/**` tree から baseline 外 module を抽出して exact-match させる checker を入れた。これにより `rs` と `kotlin/scala/swift/nim/lua/ruby` の `utils/image_runtime` だけが許容 extra artifact として明示化され、out-of-baseline generated drift は fail-fast になる。
 - 2026-03-13: `S3-02` third bundle として exact runtime file inventory の expected source をこの contract の `local_runtime_file_inventory` のみに寄せ、checker / unit test から `remaining rollout` contract への merge 依存を外した。これで full file-compare の正本はこの plan/contract 側だけに閉じた。
+- 2026-03-13: `S3-02` fourth bundle として generated baseline checker に残っていた `remaining rollout` contract 依存を除去し、`legacy_state_buckets` は live `rs/cs` layout contract だけから再構成、helper overlap は actual helper inventory から算出、`remaining_helper_inventory` は baseline contract の allowlist をそのまま正本として参照する形へ整理した。これで `S3-02` の full file-compare checker は `noncpp_runtime_generated_cpp_baseline_contract.py` と live tree だけで閉じた。
