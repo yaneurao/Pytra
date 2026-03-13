@@ -20,7 +20,9 @@ from toolchain.frontends import runtime_symbol_index as runtime_index_mod
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
 from toolchain.frontends.runtime_symbol_index import clear_runtime_symbol_index_cache
 from toolchain.frontends.runtime_symbol_index import lookup_cpp_namespace_for_runtime_module
+from toolchain.frontends.runtime_symbol_index import lookup_runtime_module_extern_contract
 from toolchain.frontends.runtime_symbol_index import lookup_runtime_symbol_doc
+from toolchain.frontends.runtime_symbol_index import lookup_runtime_symbol_extern_doc
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_runtime_module
 from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
 from toolchain.frontends.runtime_symbol_index import lookup_target_module_primary_compiler_header
@@ -117,8 +119,38 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
         self.assertIsInstance(math_symbols, dict)
         self.assertEqual(math_symbols.get("pi", {}).get("kind"), "const")
         self.assertEqual(math_symbols.get("pi", {}).get("semantic_tag"), "stdlib.symbol.pi")
+        self.assertEqual(math_symbols.get("pi", {}).get("extern_v1"), {"schema_version": 1, "kind": "value"})
         self.assertEqual(math_symbols.get("e", {}).get("kind"), "const")
         self.assertEqual(math_symbols.get("sqrt", {}).get("semantic_tag"), "stdlib.fn.sqrt")
+        self.assertEqual(math_symbols.get("sqrt", {}).get("extern_v1"), {"schema_version": 1, "kind": "function"})
+        self.assertNotIn("tau", math_symbols)
+        self.assertEqual(
+            math_mod.get("extern_contract_v1"),
+            {
+                "schema_version": 1,
+                "function_symbols": [
+                    "ceil",
+                    "cos",
+                    "exp",
+                    "fabs",
+                    "floor",
+                    "log",
+                    "log10",
+                    "pow",
+                    "sin",
+                    "sqrt",
+                    "tan",
+                ],
+                "value_symbols": ["e", "pi"],
+            },
+        )
+
+        sys_mod = modules.get("pytra.std.sys")
+        self.assertIsInstance(sys_mod, dict)
+        sys_symbols = sys_mod.get("symbols")
+        self.assertIsInstance(sys_symbols, dict)
+        self.assertEqual(sys_symbols.get("stdout", {}).get("extern_v1"), {"schema_version": 1, "kind": "value"})
+        self.assertEqual(sys_symbols.get("exit", {}).get("extern_v1"), {"schema_version": 1, "kind": "function"})
 
         pathlib_mod = modules.get("pytra.std.pathlib")
         self.assertIsInstance(pathlib_mod, dict)
@@ -416,6 +448,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             lookup_runtime_symbol_doc("math", "sqrt"),
             {
                 "dispatch": "function",
+                "extern_v1": {"kind": "function", "schema_version": 1},
                 "kind": "function",
                 "semantic_tag": "stdlib.fn.sqrt",
             },
@@ -424,6 +457,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             lookup_runtime_symbol_doc("math", "pi"),
             {
                 "dispatch": "value",
+                "extern_v1": {"kind": "value", "schema_version": 1},
                 "kind": "const",
                 "semantic_tag": "stdlib.symbol.pi",
             },
@@ -438,6 +472,37 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
             },
         )
         self.assertEqual(lookup_runtime_symbol_doc("math", "missing"), {})
+
+    def test_lookup_runtime_extern_contract_helpers(self) -> None:
+        self.assertEqual(
+            lookup_runtime_module_extern_contract("math"),
+            {
+                "schema_version": 1,
+                "function_symbols": [
+                    "ceil",
+                    "cos",
+                    "exp",
+                    "fabs",
+                    "floor",
+                    "log",
+                    "log10",
+                    "pow",
+                    "sin",
+                    "sqrt",
+                    "tan",
+                ],
+                "value_symbols": ["e", "pi"],
+            },
+        )
+        self.assertEqual(
+            lookup_runtime_symbol_extern_doc("math", "sqrt"),
+            {"schema_version": 1, "kind": "function"},
+        )
+        self.assertEqual(
+            lookup_runtime_symbol_extern_doc("pytra.std.sys", "stdout"),
+            {"schema_version": 1, "kind": "value"},
+        )
+        self.assertEqual(lookup_runtime_symbol_extern_doc("pytra.utils.gif", "save_gif"), {})
 
     def test_resolve_import_binding_doc_returns_canonical_runtime_metadata(self) -> None:
         self.assertEqual(
@@ -463,6 +528,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
                 "runtime_symbol": "sqrt",
                 "runtime_symbol_kind": "function",
                 "runtime_symbol_dispatch": "function",
+                "runtime_extern_kind": "function",
                 "runtime_semantic_tag": "stdlib.fn.sqrt",
             },
         )
@@ -478,6 +544,7 @@ class RuntimeSymbolIndexTest(unittest.TestCase):
                 "runtime_symbol": "pi",
                 "runtime_symbol_kind": "const",
                 "runtime_symbol_dispatch": "value",
+                "runtime_extern_kind": "value",
                 "runtime_semantic_tag": "stdlib.symbol.pi",
             },
         )

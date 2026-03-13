@@ -70,6 +70,14 @@ def lookup_runtime_module_symbols(module_id: str) -> dict[str, Any]:
     return symbols
 
 
+def lookup_runtime_module_extern_contract(module_id: str) -> dict[str, Any]:
+    mod = lookup_runtime_module_doc(canonical_runtime_module_id(module_id.strip()))
+    extern_contract = mod.get("extern_contract_v1")
+    if not isinstance(extern_contract, dict):
+        return {}
+    return extern_contract
+
+
 def lookup_runtime_symbol_doc(module_id: str, symbol_name: str) -> dict[str, Any]:
     mod = canonical_runtime_module_id(module_id.strip())
     if mod == "":
@@ -79,6 +87,14 @@ def lookup_runtime_symbol_doc(module_id: str, symbol_name: str) -> dict[str, Any
     if not isinstance(symbol, dict):
         return {}
     return symbol
+
+
+def lookup_runtime_symbol_extern_doc(module_id: str, symbol_name: str) -> dict[str, Any]:
+    symbol_doc = lookup_runtime_symbol_doc(module_id, symbol_name)
+    extern_doc = symbol_doc.get("extern_v1")
+    if not isinstance(extern_doc, dict):
+        return {}
+    return extern_doc
 
 
 def lookup_runtime_call_adapter_kind(module_id: str, symbol_name: str) -> str:
@@ -131,6 +147,11 @@ def resolve_import_binding_doc(module_id: str, export_name: str, binding_kind: s
     adapter_kind = symbol_doc.get("call_adapter_kind")
     if isinstance(adapter_kind, str) and adapter_kind != "":
         out["runtime_call_adapter_kind"] = adapter_kind
+    extern_doc = symbol_doc.get("extern_v1")
+    if isinstance(extern_doc, dict):
+        extern_kind = extern_doc.get("kind")
+        if isinstance(extern_kind, str) and extern_kind != "":
+            out["runtime_extern_kind"] = extern_kind
     return out
 
 

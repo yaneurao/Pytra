@@ -55,4 +55,5 @@ Validation commands (planned):
 
 Decision log:
 - 2026-03-13: Opened after the user called out the current non-C++ design as incorrect. The task resets all targets to the SoT/native-owner/generic-emitter split instead of backend shortcuts for `@extern`.
+- 2026-03-14: Added `extern_contract_v1` / `extern_v1` to `tools/gen_runtime_symbol_index.py` and `runtime_symbol_index.py` as a prerequisite slice, so runtime-SoT `@extern` modules and symbols can be queried through generic metadata before the manifest/emitter hardcodes are removed.
 - 2026-03-14: As the first realignment slice, stopped the C# `std/math` generated wrapper from inventing a `tau` symbol that does not exist in the SoT, restoring `pi/e` as the only source-defined exported constants.

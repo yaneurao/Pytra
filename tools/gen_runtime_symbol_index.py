@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import sys
@@ -110,6 +111,102 @@ def _scan_top_level_symbols(path: Path) -> dict[str, dict[str, str]]:
             if name not in out:
                 out[name] = {"kind": "const", "dispatch": "value"}
     return out
+
+
+def _ast_expr_head(expr: ast.AST | None) -> str:
+    if isinstance(expr, ast.Name):
+        return expr.id
+    if isinstance(expr, ast.Attribute):
+        owner = _ast_expr_head(expr.value)
+        if owner != "":
+            return owner + "." + expr.attr
+    return ""
+
+
+def _is_runtime_extern_head(
+    expr: ast.AST | None,
+    *,
+    extern_local_names: set[str],
+    extern_module_aliases: set[str],
+) -> bool:
+    head = _ast_expr_head(expr)
+    if head == "":
+        return False
+    if head in extern_local_names:
+        return True
+    for module_alias in extern_module_aliases:
+        if head == module_alias + ".extern":
+            return True
+    return False
+
+
+def _top_level_assigned_name(stmt: ast.stmt) -> str:
+    if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name):
+        return stmt.target.id
+    if isinstance(stmt, ast.Assign) and len(stmt.targets) == 1 and isinstance(stmt.targets[0], ast.Name):
+        return stmt.targets[0].id
+    return ""
+
+
+def _scan_runtime_extern_contract(path: Path) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    try:
+        source = path.read_text(encoding="utf-8")
+        tree = ast.parse(source)
+    except Exception:
+        return {}, {}
+    extern_local_names: set[str] = set()
+    extern_module_aliases: set[str] = set()
+    for stmt in tree.body:
+        if isinstance(stmt, ast.ImportFrom) and stmt.module == "pytra.std":
+            for alias in stmt.names:
+                if alias.name == "extern":
+                    local_name = alias.asname if isinstance(alias.asname, str) and alias.asname != "" else alias.name
+                    if local_name != "":
+                        extern_local_names.add(local_name)
+        if isinstance(stmt, ast.Import):
+            for alias in stmt.names:
+                if alias.name != "pytra.std":
+                    continue
+                local_name = alias.asname if isinstance(alias.asname, str) and alias.asname != "" else alias.name
+                if local_name != "":
+                    extern_module_aliases.add(local_name)
+    symbol_docs: dict[str, dict[str, Any]] = {}
+    function_symbols: list[str] = []
+    value_symbols: list[str] = []
+    for stmt in tree.body:
+        if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if any(
+                _is_runtime_extern_head(
+                    decorator,
+                    extern_local_names=extern_local_names,
+                    extern_module_aliases=extern_module_aliases,
+                )
+                for decorator in stmt.decorator_list
+            ):
+                symbol_docs[stmt.name] = {"schema_version": 1, "kind": "function"}
+                function_symbols.append(stmt.name)
+            continue
+        assigned_name = _top_level_assigned_name(stmt)
+        if assigned_name == "":
+            continue
+        value_expr = stmt.value if isinstance(stmt, (ast.Assign, ast.AnnAssign)) else None
+        if isinstance(value_expr, ast.Call) and _is_runtime_extern_head(
+            value_expr.func,
+            extern_local_names=extern_local_names,
+            extern_module_aliases=extern_module_aliases,
+        ):
+            symbol_docs[assigned_name] = {"schema_version": 1, "kind": "value"}
+            value_symbols.append(assigned_name)
+    if len(symbol_docs) == 0:
+        return {}, {}
+    return (
+        symbol_docs,
+        {
+            "schema_version": 1,
+            "function_symbols": sorted(function_symbols),
+            "value_symbols": sorted(value_symbols),
+        },
+    )
 
 
 def _annotate_runtime_symbol_semantic_tags(
@@ -410,11 +507,18 @@ def build_runtime_symbol_index() -> dict[str, Any]:
         for path in sorted(root.rglob("*.py")):
             module_id = _module_id_for_source(prefix, root, path)
             tail = _module_tail(module_id, group)
+            symbols = _annotate_runtime_symbol_semantic_tags(module_id, _scan_top_level_symbols(path))
+            extern_symbol_docs, extern_contract_doc = _scan_runtime_extern_contract(path)
+            for symbol_name, extern_doc in extern_symbol_docs.items():
+                if symbol_name in symbols:
+                    symbols[symbol_name]["extern_v1"] = extern_doc
             modules[module_id] = {
                 "source_py": _path_to_rel_txt(path),
                 "runtime_group": group,
-                "symbols": _annotate_runtime_symbol_semantic_tags(module_id, _scan_top_level_symbols(path)),
+                "symbols": symbols,
             }
+            if len(extern_contract_doc) > 0:
+                modules[module_id]["extern_contract_v1"] = extern_contract_doc
             for lang in langs:
                 artifact = _target_module_artifacts(lang, group, tail)
                 if artifact is None:

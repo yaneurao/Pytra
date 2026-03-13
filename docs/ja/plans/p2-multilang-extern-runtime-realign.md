@@ -55,4 +55,5 @@
 
 決定ログ:
 - 2026-03-13: ユーザー指摘により、`@extern` を backend shortcut として扱っていた現行非 C++ 設計を誤りと認め、全 target を対象に SoT/native-owner/generic-emitter へ戻す P2 task として起票した。
+- 2026-03-14: manifest/emitter の hardcode を直接剥がす前段として、`tools/gen_runtime_symbol_index.py` と `runtime_symbol_index.py` に `extern_contract_v1` / `extern_v1` を追加し、runtime SoT 上の `@extern` module/symbol を generic metadata として引ける状態にした。
 - 2026-03-14: 最初の realignment slice として、SoT に存在しない `tau` を C# `std/math` generated wrapper が勝手に追加していた挙動を止め、`pi/e` のみを source-of-truth とする状態へ戻した。

@@ -33,11 +33,22 @@
       }
     },
     "pytra.built_in.io_ops": {
+      "extern_contract_v1": {
+        "function_symbols": [
+          "py_print"
+        ],
+        "schema_version": 1,
+        "value_symbols": []
+      },
       "runtime_group": "built_in",
       "source_py": "src/pytra/built_in/io_ops.py",
       "symbols": {
         "py_print": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.py_print"
         }
@@ -97,21 +108,42 @@
       }
     },
     "pytra.built_in.scalar_ops": {
+      "extern_contract_v1": {
+        "function_symbols": [
+          "py_chr",
+          "py_ord",
+          "py_to_int64_base"
+        ],
+        "schema_version": 1,
+        "value_symbols": []
+      },
       "runtime_group": "built_in",
       "source_py": "src/pytra/built_in/scalar_ops.py",
       "symbols": {
         "py_chr": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.py_chr"
         },
         "py_ord": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.py_ord"
         },
         "py_to_int64_base": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.py_to_int64_base"
         }
@@ -590,11 +622,22 @@
       }
     },
     "pytra.std.glob": {
+      "extern_contract_v1": {
+        "function_symbols": [
+          "glob"
+        ],
+        "schema_version": 1,
+        "value_symbols": []
+      },
       "runtime_group": "std",
       "source_py": "src/pytra/std/glob.py",
       "symbols": {
         "glob": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.glob"
         }
@@ -732,128 +775,257 @@
       }
     },
     "pytra.std.math": {
+      "extern_contract_v1": {
+        "function_symbols": [
+          "ceil",
+          "cos",
+          "exp",
+          "fabs",
+          "floor",
+          "log",
+          "log10",
+          "pow",
+          "sin",
+          "sqrt",
+          "tan"
+        ],
+        "schema_version": 1,
+        "value_symbols": [
+          "e",
+          "pi"
+        ]
+      },
       "runtime_group": "std",
       "source_py": "src/pytra/std/math.py",
       "symbols": {
         "ceil": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.ceil"
         },
         "cos": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.cos"
         },
         "e": {
           "dispatch": "value",
+          "extern_v1": {
+            "kind": "value",
+            "schema_version": 1
+          },
           "kind": "const",
           "semantic_tag": "stdlib.symbol.e"
         },
         "exp": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.exp"
         },
         "fabs": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.fabs"
         },
         "floor": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.floor"
         },
         "log": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.log"
         },
         "log10": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.log10"
         },
         "pi": {
           "dispatch": "value",
+          "extern_v1": {
+            "kind": "value",
+            "schema_version": 1
+          },
           "kind": "const",
           "semantic_tag": "stdlib.symbol.pi"
         },
         "pow": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.pow"
         },
         "sin": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.sin"
         },
         "sqrt": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.sqrt"
         },
         "tan": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.tan"
         }
       }
     },
     "pytra.std.os": {
+      "extern_contract_v1": {
+        "function_symbols": [
+          "getcwd",
+          "makedirs",
+          "mkdir"
+        ],
+        "schema_version": 1,
+        "value_symbols": []
+      },
       "runtime_group": "std",
       "source_py": "src/pytra/std/os.py",
       "symbols": {
         "getcwd": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.getcwd"
         },
         "makedirs": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.makedirs"
         },
         "mkdir": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.mkdir"
         }
       }
     },
     "pytra.std.os_path": {
+      "extern_contract_v1": {
+        "function_symbols": [
+          "abspath",
+          "basename",
+          "dirname",
+          "exists",
+          "join",
+          "splitext"
+        ],
+        "schema_version": 1,
+        "value_symbols": []
+      },
       "runtime_group": "std",
       "source_py": "src/pytra/std/os_path.py",
       "symbols": {
         "abspath": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.abspath"
         },
         "basename": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.basename"
         },
         "dirname": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.dirname"
         },
         "exists": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.exists"
         },
         "join": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.join"
         },
         "splitext": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.splitext"
         }
@@ -993,51 +1165,103 @@
       }
     },
     "pytra.std.sys": {
+      "extern_contract_v1": {
+        "function_symbols": [
+          "exit",
+          "set_argv",
+          "set_path",
+          "write_stderr",
+          "write_stdout"
+        ],
+        "schema_version": 1,
+        "value_symbols": [
+          "argv",
+          "path",
+          "stderr",
+          "stdout"
+        ]
+      },
       "runtime_group": "std",
       "source_py": "src/pytra/std/sys.py",
       "symbols": {
         "argv": {
           "dispatch": "value",
+          "extern_v1": {
+            "kind": "value",
+            "schema_version": 1
+          },
           "kind": "const",
           "semantic_tag": "stdlib.symbol.argv"
         },
         "exit": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.exit"
         },
         "path": {
           "dispatch": "value",
+          "extern_v1": {
+            "kind": "value",
+            "schema_version": 1
+          },
           "kind": "const",
           "semantic_tag": "stdlib.symbol.path"
         },
         "set_argv": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.set_argv"
         },
         "set_path": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.set_path"
         },
         "stderr": {
           "dispatch": "value",
+          "extern_v1": {
+            "kind": "value",
+            "schema_version": 1
+          },
           "kind": "const",
           "semantic_tag": "stdlib.symbol.stderr"
         },
         "stdout": {
           "dispatch": "value",
+          "extern_v1": {
+            "kind": "value",
+            "schema_version": 1
+          },
           "kind": "const",
           "semantic_tag": "stdlib.symbol.stdout"
         },
         "write_stderr": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.write_stderr"
         },
         "write_stdout": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.write_stdout"
         }
@@ -1055,11 +1279,22 @@
       }
     },
     "pytra.std.time": {
+      "extern_contract_v1": {
+        "function_symbols": [
+          "perf_counter"
+        ],
+        "schema_version": 1,
+        "value_symbols": []
+      },
       "runtime_group": "std",
       "source_py": "src/pytra/std/time.py",
       "symbols": {
         "perf_counter": {
           "dispatch": "function",
+          "extern_v1": {
+            "kind": "function",
+            "schema_version": 1
+          },
           "kind": "function",
           "semantic_tag": "stdlib.fn.perf_counter"
         }
