@@ -30,10 +30,18 @@ Last updated: 2026-03-13
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+### P0: align `LinkedProgramModule` imports to the `toolchain.link` facade
+
+- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01] Align the `LinkedProgramModule` import in `test_py2x_cli.py` to the `src.toolchain.link` facade so the tooling consumer no longer reaches through `program_model` directly.
+  - Context: [docs/en/plans/p0-link-facade-linked-program-module-import.md](../plans/p0-link-facade-linked-program-module-import.md)
+- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S1-01] Add the facade-import source contract plus TODO/plan baseline.
+- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S2-01] Switch the `test_py2x_cli.py` import to the facade path and bring the focused unit suite back to green.
+- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S3-01] Sync TODO / plan / archive and lock the close condition.
 ### P0: align the `transpile_cli` typed C++ contract to the direct-ownership header/source layout
 
 - [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01] Remove the checked-in `cpp/pytra` wrapper assumption from the `transpile_cli` typed C++ contract and align it to the `generated/native` direct-ownership header/source layout.
   - Context: [docs/en/plans/p0-cpp-transpile-cli-direct-header-contract.md](../plans/p0-cpp-transpile-cli-direct-header-contract.md)
-- [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S1-01] Lock the stale contract surface and close condition in the plan / TODO.
-- [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S2-01] Update the focused contract test to match the live tree and bring the targeted test back to green.
+- [x] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S1-01] Lock the stale contract surface and close condition in the plan / TODO.
+  - Progress note: Locked the current contract in the plan as “`generated/compiler/transpile_cli.{h,cpp}` are the live owners, while checked-in `cpp/pytra/compiler/transpile_cli.h` is already deleted.”
+- [x] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S2-01] Update the focused contract test to match the live tree and bring the targeted test back to green.
 - [ ] [ID: P0-CPP-TRANSPILE-CLI-DIRECT-HEADER-CONTRACT-01-S3-01] Sync TODO / plan / archive and lock the close condition.

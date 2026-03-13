@@ -817,18 +817,20 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         generated_header = (
             ROOT / "src" / "runtime" / "cpp" / "generated" / "compiler" / "transpile_cli.h"
         ).read_text(encoding="utf-8")
-        public_header = (
-            ROOT / "src" / "runtime" / "cpp" / "pytra" / "compiler" / "transpile_cli.h"
-        ).read_text(encoding="utf-8")
         generated_cpp = ROOT / "src" / "runtime" / "cpp" / "generated" / "compiler" / "transpile_cli.cpp"
+        generated_cpp_src = generated_cpp.read_text(encoding="utf-8")
+        legacy_public_header = ROOT / "src" / "runtime" / "cpp" / "pytra" / "compiler" / "transpile_cli.h"
 
         self.assertIn("return _front.load_east3_document_typed(", shim_src)
         self.assertNotIn("return coerce_compiler_root_document(", shim_src)
 
-        self.assertFalse(generated_cpp.exists())
+        self.assertFalse(legacy_public_header.exists())
+        self.assertTrue(generated_cpp.exists())
         self.assertIn('#include "runtime/cpp/native/compiler/transpile_cli.h"', generated_header)
-        self.assertIn('#include "runtime/cpp/generated/compiler/transpile_cli.h"', public_header)
-        self.assertNotIn('#include "runtime/cpp/native/compiler/transpile_cli.h"', public_header)
+        self.assertNotIn('#include "runtime/cpp/pytra/compiler/transpile_cli.h"', generated_header)
+        self.assertIn('#include "runtime/cpp/generated/compiler/transpile_cli.h"', generated_cpp_src)
+        self.assertIn("CompilerRootDocument load_east3_document_typed(", generated_cpp_src)
+        self.assertNotIn('#include "runtime/cpp/pytra/compiler/transpile_cli.h"', generated_cpp_src)
 
     def test_typed_backend_specs_preserve_legacy_metadata(self) -> None:
         py2x_src = (ROOT / "src" / "py2x.py").read_text(encoding="utf-8")
@@ -885,6 +887,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
         self.assertNotIn("hasattr(module_artifact, \"to_legacy_dict\")", ir2lang_src)
         self.assertNotIn("module_artifact.to_legacy_dict()", ir2lang_src)
         self.assertNotIn("program_artifact.to_legacy_dict()", ir2lang_src)
+
+        py2x_cli_src = (ROOT / "test" / "unit" / "tooling" / "test_py2x_cli.py").read_text(encoding="utf-8")
+        self.assertIn("from src.toolchain.link import LinkedProgramModule", py2x_cli_src)
+        self.assertNotIn("from src.toolchain.link.program_model import LinkedProgramModule", py2x_cli_src)
 
         self.assertIn("from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any", host_src)
         self.assertIn("from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any", static_src)
