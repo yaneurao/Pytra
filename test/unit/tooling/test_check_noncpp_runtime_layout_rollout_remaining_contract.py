@@ -1032,7 +1032,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["js"]["pytra_core_files"],
-            ("built_in/py_runtime.js", "std/math_native.js"),
+            ("built_in/py_runtime.js", "std/math_native.js", "std/time_native.js"),
         )
         self.assertEqual(
             by_backend["php"]["pytra_gen_files"],
@@ -1096,7 +1096,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["ts"]["pytra_core_files"],
-            ("built_in/py_runtime.ts", "std/math_native.ts"),
+            ("built_in/py_runtime.ts", "std/math_native.ts", "std/time_native.ts"),
         )
         self.assertEqual(by_backend["lua"]["pytra_gen_files"], LUA_GENERATED_FILES)
         self.assertEqual(by_backend["ruby"]["pytra_gen_files"], RUBY_GENERATED_FILES)
@@ -1357,7 +1357,11 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["js"]["native_files"],
-            ("native/built_in/py_runtime.js", "native/std/math_native.js"),
+            (
+                "native/built_in/py_runtime.js",
+                "native/std/math_native.js",
+                "native/std/time_native.js",
+            ),
         )
         self.assertEqual(
             by_backend["js"]["delete_target_files"],
@@ -1395,7 +1399,11 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["ts"]["native_files"],
-            ("native/built_in/py_runtime.ts", "native/std/math_native.ts"),
+            (
+                "native/built_in/py_runtime.ts",
+                "native/std/math_native.ts",
+                "native/std/time_native.ts",
+            ),
         )
         self.assertEqual(by_backend["lua"]["generated_files"], LUA_TARGET_GENERATED_FILES)
         self.assertEqual(by_backend["ruby"]["generated_files"], RUBY_TARGET_GENERATED_FILES)
@@ -1657,11 +1665,11 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["js"]["native_modules"],
-            ("built_in/py_runtime", "std/math_native"),
+            ("built_in/py_runtime", "std/math_native", "std/time_native"),
         )
         self.assertEqual(
             by_backend["ts"]["native_modules"],
-            ("built_in/py_runtime", "std/math_native"),
+            ("built_in/py_runtime", "std/math_native", "std/time_native"),
         )
         self.assertEqual(
             by_backend["js"]["blocked_modules"],
@@ -1792,12 +1800,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "js": {
                     "backend": "js",
                     "substrate_modules": ("built_in/py_runtime",),
-                    "compare_residual_modules": ("std/math_native",),
+                    "compare_residual_modules": ("std/math_native", "std/time_native"),
                 },
                 "ts": {
                     "backend": "ts",
                     "substrate_modules": ("built_in/py_runtime",),
-                    "compare_residual_modules": ("std/math_native",),
+                    "compare_residual_modules": ("std/math_native", "std/time_native"),
                 },
                 "lua": {
                     "backend": "lua",
@@ -1828,12 +1836,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "js": {
                     "backend": "js",
                     "substrate_files": ("built_in/py_runtime.js",),
-                    "compare_residual_files": ("std/math_native.js",),
+                    "compare_residual_files": ("std/math_native.js", "std/time_native.js"),
                 },
                 "ts": {
                     "backend": "ts",
                     "substrate_files": ("built_in/py_runtime.ts",),
-                    "compare_residual_files": ("std/math_native.ts",),
+                    "compare_residual_files": ("std/math_native.ts", "std/time_native.ts"),
                 },
                 "lua": {
                     "backend": "lua",

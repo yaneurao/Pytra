@@ -584,7 +584,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertNotIn("extern(", out)
         self.assertNotIn("Math.", out)
 
-    def test_rewrite_js_perf_counter_host_wrapper_inlines_hrtime_and_alias(self) -> None:
+    def test_rewrite_js_perf_counter_host_wrapper_delegates_to_time_native(self) -> None:
         src = "\n".join(
             [
                 "function perf_counter() {",
@@ -595,10 +595,12 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
             ]
         )
         out = gen_mod.rewrite_js_perf_counter_host_wrapper(src)
-        self.assertIn("process.hrtime.bigint()", out)
+        self.assertIn('const time_native = require("../../native/std/time_native.js");', out)
+        self.assertIn("return time_native.perf_counter();", out)
         self.assertIn("const perfCounter = perf_counter;", out)
         self.assertIn("module.exports = {perf_counter, perfCounter};", out)
         self.assertNotIn("__t.perf_counter()", out)
+        self.assertNotIn("process.hrtime.bigint()", out)
 
     def test_rewrite_js_std_pathlib_live_wrapper_exports_factory_with_property_getters(self) -> None:
         src = "\n".join(
@@ -649,7 +651,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return JSON.parse(String(text));", out)
         self.assertIn("module.exports = { JsonObj, JsonArr, JsonValue, loads, loads_obj, loads_arr, dumps };", out)
 
-    def test_rewrite_ts_perf_counter_host_wrapper_exports_perf_counter(self) -> None:
+    def test_rewrite_ts_perf_counter_host_wrapper_delegates_to_time_native(self) -> None:
         src = "\n".join(
             [
                 "function perf_counter() {",
@@ -660,9 +662,11 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
             ]
         )
         out = gen_mod.rewrite_ts_perf_counter_host_wrapper(src)
+        self.assertIn('import * as time_native from "../../native/std/time_native";', out)
         self.assertIn("export function perf_counter(): number {", out)
-        self.assertIn("process.hrtime.bigint()", out)
+        self.assertIn("return time_native.perf_counter();", out)
         self.assertIn("export const perfCounter = perf_counter;", out)
+        self.assertNotIn("process.hrtime.bigint()", out)
         self.assertNotIn("__t.perf_counter()", out)
 
     def test_rewrite_ts_std_pathlib_live_wrapper_exports_factory_with_property_getters(self) -> None:

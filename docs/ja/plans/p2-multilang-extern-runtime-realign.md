@@ -79,3 +79,4 @@
 - 2026-03-14: `S2-03` を docs へ反映し、emitter hardcode inventory が全 row green になった状態を plan/todo に同期した。
 - 2026-03-14: `S3-01` first bundle として inventory に `representative_smoke_needles` を追加し、`std/math/time` は C#/Go/Java/Rust、`std/os/os_path/sys/glob` は Lua/JS/TS/PHP、`built_in/io_ops/scalar_ops` は Go/Kotlin/Scala/Swift の smoke evidence へ固定した。
 - 2026-03-14: JS/TS `std/math` では generated wrapper から `Math.*` / `Math.PI` の host binding を除き、`src/runtime/js|ts/native/std/math_native.*` を canonical seam として追加した。あわせて baseline/rollout contract と JS/TS smoke を同期し、generated lane が native owner だけを見る形へ戻した。
+- 2026-03-14: JS/TS `std/time` でも同じ分離を適用し、`generated/std/time.{js,ts}` から `process.hrtime.bigint()` を除去して `src/runtime/js|ts/native/std/time_native.*` へ委譲する wrapper に戻した。inventory / rollout contract / baseline contract / JS/TS smoke も time seam 前提へ同期した。

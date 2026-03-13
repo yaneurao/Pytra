@@ -482,6 +482,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
         "native_files": (
             "native/built_in/py_runtime.js",
             "native/std/math_native.js",
+            "native/std/time_native.js",
         ),
         "delete_target_files": (),
     },
@@ -517,6 +518,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
         "native_files": (
             "native/built_in/py_runtime.ts",
             "native/std/math_native.ts",
+            "native/std/time_native.ts",
         ),
         "delete_target_files": (),
     },

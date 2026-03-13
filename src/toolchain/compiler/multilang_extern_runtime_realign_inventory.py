@@ -90,11 +90,13 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "php:php_perf_counter_host_wrapper",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/time.cpp",),
-        "noncpp_native_owner_paths": ("src/runtime/cs/native/std/time_native.cs",),
+        "noncpp_native_owner_paths": (
+            "src/runtime/cs/native/std/time_native.cs",
+            "src/runtime/js/native/std/time_native.js",
+            "src/runtime/ts/native/std/time_native.ts",
+        ),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (
-            ("src/runtime/js/generated/std/time.js", "process.hrtime.bigint"),
-            ("src/runtime/ts/generated/std/time.ts", "process.hrtime.bigint"),
             ("src/runtime/nim/generated/std/time.nim", "Python runtime fallback."),
         ),
         "representative_smoke_needles": (

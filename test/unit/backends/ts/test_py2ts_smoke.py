@@ -318,6 +318,19 @@ def main() -> None:
         self.assertIn("return Math.sqrt(x);", native)
         self.assertIn("export const pi: number = Math.PI;", native)
 
+    def test_ts_generated_time_runtime_wrapper_delegates_to_native_owner(self) -> None:
+        generated = (ROOT / "src" / "runtime" / "ts" / "generated" / "std" / "time.ts").read_text(
+            encoding="utf-8"
+        )
+        native = (ROOT / "src" / "runtime" / "ts" / "native" / "std" / "time_native.ts").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('import * as time_native from "../../native/std/time_native";', generated)
+        self.assertIn("return time_native.perf_counter();", generated)
+        self.assertNotIn("process.hrtime.bigint()", generated)
+        self.assertIn("process.hrtime.bigint()", native)
+        self.assertIn("export const perfCounter = perf_counter;", native)
+
     def test_pathlib_runtime_symbol_uses_factory_and_property_access(self) -> None:
         fixture = find_fixture_case("math_path_runtime_ir")
         east = load_east(fixture, parser_backend="self_hosted")

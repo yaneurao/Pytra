@@ -1620,12 +1620,15 @@ def rewrite_js_std_module_runtime_imports(js_src: str, *, module_name: str) -> s
 
 def rewrite_js_perf_counter_host_wrapper(js_src: str) -> str:
     text = _strip_trailing_string_literal_expr(js_src)
+    text = 'const time_native = require("../../native/std/time_native.js");\n\n' + text
     text = text.replace(
         "return __t.perf_counter();",
-        "return Number(process.hrtime.bigint()) / 1_000_000_000;",
+        "return time_native.perf_counter();",
     ).rstrip()
     if "function perf_counter(" not in text:
         raise RuntimeError("generated JS std/time wrapper is missing perf_counter()")
+    if "__t.perf_counter()" in text or "process.hrtime.bigint()" in text:
+        raise RuntimeError("generated JS std/time wrapper still contains host-binding residue")
     return text + "\n\nconst perfCounter = perf_counter;\nmodule.exports = {perf_counter, perfCounter};\n"
 
 
@@ -2214,6 +2217,7 @@ def rewrite_ts_std_math_live_wrapper(ts_src: str) -> str:
 
 def rewrite_ts_perf_counter_host_wrapper(ts_src: str) -> str:
     text = _strip_trailing_string_literal_expr(ts_src)
+    text = 'import * as time_native from "../../native/std/time_native";\n\n' + text
     text = text.replace(
         "function perf_counter() {",
         "export function perf_counter(): number {",
@@ -2221,10 +2225,12 @@ def rewrite_ts_perf_counter_host_wrapper(ts_src: str) -> str:
     )
     text = text.replace(
         "return __t.perf_counter();",
-        "return Number(process.hrtime.bigint()) / 1_000_000_000;",
+        "return time_native.perf_counter();",
     ).rstrip()
     if "export function perf_counter(): number {" not in text:
         raise RuntimeError("generated TS std/time wrapper is missing perf_counter()")
+    if "__t.perf_counter()" in text or "process.hrtime.bigint()" in text:
+        raise RuntimeError("generated TS std/time wrapper still contains host-binding residue")
     return text + "\n\nexport const perfCounter = perf_counter;\n"
 
 

@@ -2,8 +2,10 @@
 // source: src/pytra/std/time.py
 // generated-by: tools/gen_runtime_from_manifest.py
 
+const time_native = require("../../native/std/time_native.js");
+
 function perf_counter() {
-    return Number(process.hrtime.bigint()) / 1_000_000_000;
+    return time_native.perf_counter();
 }
 
 const perfCounter = perf_counter;

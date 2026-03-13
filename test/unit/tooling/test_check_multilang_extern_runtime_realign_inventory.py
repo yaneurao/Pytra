@@ -108,7 +108,11 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         )
         self.assertEqual(
             by_id["std/time"]["noncpp_native_owner_paths"],
-            ("src/runtime/cs/native/std/time_native.cs",),
+            (
+                "src/runtime/cs/native/std/time_native.cs",
+                "src/runtime/js/native/std/time_native.js",
+                "src/runtime/ts/native/std/time_native.ts",
+            ),
         )
         self.assertEqual(
             by_id["std/time"]["representative_smoke_needles"],

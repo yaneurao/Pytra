@@ -743,6 +743,19 @@ def main() -> None:
         self.assertIn("return Math.sqrt(x);", native)
         self.assertIn("const pi = Math.PI;", native)
 
+    def test_js_generated_time_runtime_wrapper_delegates_to_native_owner(self) -> None:
+        generated = (ROOT / "src" / "runtime" / "js" / "generated" / "std" / "time.js").read_text(
+            encoding="utf-8"
+        )
+        native = (ROOT / "src" / "runtime" / "js" / "native" / "std" / "time_native.js").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('require("../../native/std/time_native.js")', generated)
+        self.assertIn("return time_native.perf_counter();", generated)
+        self.assertNotIn("process.hrtime.bigint()", generated)
+        self.assertIn("process.hrtime.bigint()", native)
+        self.assertIn("module.exports = {perf_counter, perfCounter};", native)
+
     def test_pathlib_runtime_symbol_uses_factory_and_property_access(self) -> None:
         fixture = find_fixture_case("math_path_runtime_ir")
         east = load_east(fixture, parser_backend="self_hosted")
