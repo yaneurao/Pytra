@@ -343,14 +343,14 @@ class CppEmitter(
         if t_norm in {"str", "bytes", "bytearray"}:
             return False
         imported_cpp = self.normalize_type_name(self._resolve_imported_symbol_class_cpp_type(t_norm))
-        cpp_t_norm = imported_cpp if imported_cpp != "" else self.normalize_type_name(cpp_t)
+        if imported_cpp != "":
+            return True
+        cpp_t_norm = self.normalize_type_name(cpp_t)
         if cpp_t_norm.startswith("rc<"):
             return False
         cpp_norm = self._strip_rc_wrapper(cpp_t_norm)
         if cpp_norm in self.ref_classes:
             return False
-        if imported_cpp != "":
-            return True
         if cpp_norm in self.class_names or cpp_norm in self.value_classes:
             return True
         return False
