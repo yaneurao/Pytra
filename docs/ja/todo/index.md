@@ -34,7 +34,7 @@
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01] 12 backend の current `pytra/**` directory/file inventory、delete blocker references、current->target mapping を plan / contract / checker / test で固定した。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] active contract / checker / spec wording を `generated/native only` へ切り替え、checked-in `pytra/**` 再出現を fail-fast にした。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-01] Rust (`rs`) の checked-in `src/runtime/rs/pytra/**` を削除し、`py2rs` / selfhost / runtime guard / smoke から repo-tree `pytra/**` 前提を外した。
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-02] static family (`go/java/kotlin/scala/swift/nim`) の registry / packaging / smoke / tooling を `generated/native` 直参照へ切り替え、repo-tree `pytra/**` 依存をなくす。
+- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-02] static family (`go/java/kotlin/scala/swift/nim`) の registry / packaging / smoke / tooling を `generated/native` 直参照へ揃え、checked-in `pytra/**` は deletion inventory としてのみ残る状態にした。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-03] static family の checked-in `src/runtime/<lang>/pytra/**` を物理削除し、allowlist / inventory / representative smoke を deletion end state に同期する。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-01] JS/TS の import path / shim writer / selfhost / smoke を見直し、repo-tree `src/runtime/{js,ts}/pytra/**` direct-load と compat shim 契約を撤去する。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-02] Lua/Ruby/PHP の packaging / runtime copy / loader contract を `generated/native` または output-side staging へ移し、repo-tree `pytra/**` 常設前提を撤去する。
