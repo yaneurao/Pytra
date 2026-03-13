@@ -45,7 +45,6 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
             inventory_mod.CATEGORY_BUCKETS["object_bridge_compat"],
             {
                 "native_wrapper_object_bridge_residual",
-                "generated_cpp_object_bridge_residual",
             },
         )
 
@@ -69,26 +68,21 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
             },
         )
 
-    def test_generated_cpp_buckets_are_split_by_contract_type(self) -> None:
-        self.assertEqual(
-            inventory_mod.EXPECTED_BUCKETS["generated_cpp_object_bridge_residual"],
-            {
-                ("py_runtime_object_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
-                ("py_append", "src/runtime/cpp/generated/built_in/iter_ops.cpp"),
-            },
-        )
+    def test_generated_cpp_bucket_is_value_thin_contract_only(self) -> None:
         self.assertEqual(
             inventory_mod.EXPECTED_BUCKETS["generated_cpp_shared_type_id_residual"],
             {
-                ("py_runtime_object_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"),
+                ("py_runtime_value_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
+                ("py_runtime_value_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"),
+                ("py_runtime_value_isinstance", "src/runtime/cpp/generated/built_in/type_id.cpp"),
             },
         )
         self.assertEqual(
             inventory_mod.GENERATED_CPP_MUST_REMAIN,
             {
-                ("py_runtime_object_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
-                ("py_append", "src/runtime/cpp/generated/built_in/iter_ops.cpp"),
-                ("py_runtime_object_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"),
+                ("py_runtime_value_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
+                ("py_runtime_value_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"),
+                ("py_runtime_value_isinstance", "src/runtime/cpp/generated/built_in/type_id.cpp"),
             },
         )
         self.assertEqual(inventory_mod.GENERATED_CPP_REDELEGATABLE, set())
@@ -145,22 +139,13 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
                         "src/runtime/cpp/native/compiler/backend_registry_static.cpp",
                     },
                 },
-                "generated_cpp_object_bridge_residual": {
-                    "smoke_file": "test/unit/backends/cpp/test_cpp_runtime_iterable.py",
-                    "smoke_tests": {
-                        "test_runtime_list_overload_inventory",
-                    },
-                    "source_guard_paths": {
-                        "src/runtime/cpp/generated/std/json.cpp",
-                        "src/runtime/cpp/generated/built_in/iter_ops.cpp",
-                    },
-                },
                 "generated_cpp_shared_type_id_residual": {
                     "smoke_file": "test/unit/backends/cpp/test_cpp_runtime_iterable.py",
                     "smoke_tests": {
                         "test_runtime_list_overload_inventory",
                     },
                     "source_guard_paths": {
+                        "src/runtime/cpp/generated/std/json.cpp",
                         "src/runtime/cpp/generated/built_in/type_id.cpp",
                     },
                 },

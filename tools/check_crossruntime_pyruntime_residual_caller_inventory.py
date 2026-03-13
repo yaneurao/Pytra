@@ -18,13 +18,11 @@ PATH_SYMBOLS = {
         "py_runtime_object_isinstance",
     },
     "src/runtime/cpp/generated/std/json.cpp": {
-        "py_runtime_object_isinstance",
+        "py_runtime_value_isinstance",
     },
     "src/runtime/cpp/generated/built_in/type_id.cpp": {
-        "py_runtime_object_type_id",
-    },
-    "src/runtime/cpp/generated/built_in/iter_ops.cpp": {
-        "py_append",
+        "py_runtime_value_type_id",
+        "py_runtime_value_isinstance",
     },
     "src/runtime/rs/native/built_in/py_runtime.rs": {
         "py_runtime_type_id_is_subtype",
@@ -50,12 +48,10 @@ EXPECTED_BUCKETS = {
         ("py_runtime_object_isinstance", "src/runtime/cpp/native/compiler/transpile_cli.cpp"),
         ("py_runtime_object_isinstance", "src/runtime/cpp/native/compiler/backend_registry_static.cpp"),
     },
-    "generated_cpp_object_bridge_residual": {
-        ("py_runtime_object_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
-        ("py_append", "src/runtime/cpp/generated/built_in/iter_ops.cpp"),
-    },
     "generated_cpp_shared_type_id_residual": {
-        ("py_runtime_object_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"),
+        ("py_runtime_value_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
+        ("py_runtime_value_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"),
+        ("py_runtime_value_isinstance", "src/runtime/cpp/generated/built_in/type_id.cpp"),
     },
     "rs_runtime_builtin_shared_type_id_residual": {
         ("py_runtime_type_id_is_subtype", "src/runtime/rs/native/built_in/py_runtime.rs"),
@@ -74,7 +70,6 @@ EXPECTED_BUCKETS = {
 CATEGORY_BUCKETS = {
     "object_bridge_compat": {
         "native_wrapper_object_bridge_residual",
-        "generated_cpp_object_bridge_residual",
     },
     "shared_type_id_contract": {
         "generated_cpp_shared_type_id_residual",
@@ -85,8 +80,7 @@ CATEGORY_BUCKETS = {
 
 TARGET_END_STATE = {
     "native_wrapper_object_bridge_residual": "native_decode_helpers_only",
-    "generated_cpp_object_bridge_residual": "generated_runtime_object_bridge_only_until_jsonvalue_rework",
-    "generated_cpp_shared_type_id_residual": "generated_type_id_bridge_only",
+    "generated_cpp_shared_type_id_residual": "generated_value_thin_type_id_bridge_only",
     "rs_runtime_builtin_shared_type_id_residual": "runtime_builtin_thin_type_id_surface_only",
     "cs_runtime_builtin_shared_type_id_residual": "runtime_builtin_thin_type_id_surface_only",
 }
@@ -99,13 +93,11 @@ SOURCE_GUARD_REQUIRED_SUBSTRINGS = {
         "py_runtime_object_isinstance",
     },
     "src/runtime/cpp/generated/std/json.cpp": {
-        "py_runtime_object_isinstance",
+        "py_runtime_value_isinstance",
     },
     "src/runtime/cpp/generated/built_in/type_id.cpp": {
-        "py_runtime_object_type_id",
-    },
-    "src/runtime/cpp/generated/built_in/iter_ops.cpp": {
-        'obj_to_list_ref_or_raise(out, "py_append")',
+        "py_runtime_value_type_id",
+        "py_runtime_value_isinstance",
     },
     "src/runtime/rs/native/built_in/py_runtime.rs": {
         "pub fn py_runtime_value_type_id",
@@ -129,6 +121,13 @@ SOURCE_GUARD_FORBIDDEN_SUBSTRINGS = {
     "src/runtime/cpp/native/compiler/backend_registry_static.cpp": {
         "py_runtime_type_id(",
         "py_isinstance(",
+    },
+    "src/runtime/cpp/generated/std/json.cpp": {
+        "py_runtime_object_isinstance(",
+    },
+    "src/runtime/cpp/generated/built_in/type_id.cpp": {
+        "py_runtime_object_type_id(",
+        "py_runtime_object_isinstance(",
     },
     "src/runtime/rs/native/built_in/py_runtime.rs": {
         "pub fn py_runtime_type_id<",
@@ -167,9 +166,9 @@ SMOKE_LANE_REQUIRED_SUBSTRINGS = {
 }
 
 GENERATED_CPP_MUST_REMAIN = {
-    ("py_runtime_object_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
-    ("py_append", "src/runtime/cpp/generated/built_in/iter_ops.cpp"),
-    ("py_runtime_object_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"),
+    ("py_runtime_value_isinstance", "src/runtime/cpp/generated/std/json.cpp"),
+    ("py_runtime_value_type_id", "src/runtime/cpp/generated/built_in/type_id.cpp"),
+    ("py_runtime_value_isinstance", "src/runtime/cpp/generated/built_in/type_id.cpp"),
 }
 
 GENERATED_CPP_REDELEGATABLE = set()
@@ -185,22 +184,13 @@ REPRESENTATIVE_BUCKET_MANIFEST = {
             "src/runtime/cpp/native/compiler/backend_registry_static.cpp",
         },
     },
-    "generated_cpp_object_bridge_residual": {
-        "smoke_file": "test/unit/backends/cpp/test_cpp_runtime_iterable.py",
-        "smoke_tests": {
-            "test_runtime_list_overload_inventory",
-        },
-        "source_guard_paths": {
-            "src/runtime/cpp/generated/std/json.cpp",
-            "src/runtime/cpp/generated/built_in/iter_ops.cpp",
-        },
-    },
     "generated_cpp_shared_type_id_residual": {
         "smoke_file": "test/unit/backends/cpp/test_cpp_runtime_iterable.py",
         "smoke_tests": {
             "test_runtime_list_overload_inventory",
         },
         "source_guard_paths": {
+            "src/runtime/cpp/generated/std/json.cpp",
             "src/runtime/cpp/generated/built_in/type_id.cpp",
         },
     },
@@ -294,10 +284,7 @@ def _collect_category_issues() -> list[str]:
 
 def _collect_generated_cpp_policy_issues() -> list[str]:
     issues: list[str] = []
-    generated_pairs = (
-        EXPECTED_BUCKETS["generated_cpp_object_bridge_residual"]
-        | EXPECTED_BUCKETS["generated_cpp_shared_type_id_residual"]
-    )
+    generated_pairs = EXPECTED_BUCKETS["generated_cpp_shared_type_id_residual"]
     if GENERATED_CPP_MUST_REMAIN | GENERATED_CPP_REDELEGATABLE != generated_pairs:
         issues.append("generated cpp policy buckets do not cover the same pairs as generated cpp residual buckets")
     overlap = GENERATED_CPP_MUST_REMAIN & GENERATED_CPP_REDELEGATABLE
