@@ -16,144 +16,17 @@ This page is the publish target that visualizes how green each backend-owned `te
 
 - Refresh this page with [`tools/export_backend_test_matrix.py`](/workspace/Pytra/tools/export_backend_test_matrix.py).
 - The target scope is backend-owned suites under `test/unit/backends/<backend>/` plus the shared smoke equivalent of `test/unit/backends/test_py2starred_smoke.py`.
-- States are displayed as `PASS` / `FAIL` / `TM` (`toolchain_missing`) / `TO` (`timeout`).
-
-<style>
-  .backend-test-grid-wrap { overflow-x: auto; margin: 1rem 0; }
-  .backend-test-grid {
-    border-collapse: collapse;
-    table-layout: fixed;
-    min-width: 1200px;
-    font-size: 0.82rem;
-    line-height: 1.25;
-  }
-  .backend-test-grid th,
-  .backend-test-grid td {
-    border: 1px solid #cbd5e1;
-    padding: 0.45rem 0.35rem;
-    text-align: center;
-    vertical-align: middle;
-  }
-  .backend-test-grid th {
-    background: #e2e8f0;
-    color: #111827;
-    font-weight: 700;
-  }
-  .backend-test-grid .suite {
-    background: #ffffff;
-    color: #111827;
-    text-align: left;
-    white-space: nowrap;
-    font-weight: 700;
-  }
-  .backend-test-grid .cell { font-weight: 700; min-width: 3.8rem; }
-  .backend-test-grid .cell code { background: transparent; color: inherit; padding: 0; font-weight: 700; }
-  .backend-test-grid .pass { background: #166534; color: #ffffff; }
-  .backend-test-grid .fail { background: #fee2e2; color: #991b1b; }
-  .backend-test-grid .toolchain { background: #fef3c7; color: #92400e; }
-  .backend-test-grid .timeout { background: #e9d5ff; color: #6b21a8; }
-  .backend-test-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 0.75rem 0 1rem;
-  }
-  .backend-test-legend span {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.2rem 0.5rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 999px;
-    font-size: 0.82rem;
-  }
-  .backend-test-legend code { background: transparent; padding: 0; font-weight: 700; }
-</style>
-
-<div class="backend-test-legend">
-  <span><code>PASS</code> suite green</span>
-  <span><code>FAIL</code> suite failed</span>
-  <span><code>TM</code> toolchain missing / binary not found</span>
-  <span><code>TO</code> timeout</span>
-</div>
+- States are displayed as `🟩 PASS` / `🟥 FAIL` / `🟨 TM` (`toolchain_missing`) / `🟪 TO` (`timeout`).
+- GitHub markdown rendering sanitizes `<style>` and inline style attributes, so this page uses a plain table that remains readable without CSS.
 
 <!-- BEGIN BACKEND TEST MATRIX TABLE -->
-<div class="backend-test-grid-wrap">
-  <table class="backend-test-grid">
-    <thead>
-      <tr>
-        <th>suite</th>
-        <th>cpp</th>
-        <th>rs</th>
-        <th>cs</th>
-        <th>js</th>
-        <th>ts</th>
-        <th>go</th>
-        <th>java</th>
-        <th>swift</th>
-        <th>kt</th>
-        <th>rb</th>
-        <th>lua</th>
-        <th>scala</th>
-        <th>php</th>
-        <th>nim</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="suite">Primary Smoke</td>
-        <td class="cell pass" title="pass / test_py2cpp_smoke.py / 3.3s"><code>PASS</code></td>
-        <td class="cell fail" title="fail / RuntimeError: raw EAST3 $.body[1].meta.lifetime_analysis.def_use.defs.meta must be an object: any_dict_items / 6.5s"><code>FAIL</code></td>
-        <td class="cell pass" title="pass / test_py2cs_smoke.py / 6.6s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2js_smoke.py / 8.7s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2ts_smoke.py / 8.3s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2go_smoke.py / 3.5s"><code>PASS</code></td>
-        <td class="cell fail" title="fail / RuntimeError: raw EAST3 $.body[4].meta.lifetime_analysis.def_use.defs.kind must be non-empty string: 07_game_of_life_loop / 4.2s"><code>FAIL</code></td>
-        <td class="cell pass" title="pass / test_py2swift_smoke.py / 5.3s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2kotlin_smoke.py / 7.4s"><code>PASS</code></td>
-        <td class="cell fail" title="fail / RuntimeError: raw EAST3 $.body[4].meta.lifetime_analysis.def_use.defs.kind must be non-empty string: 07_game_of_life_loop / 5.7s"><code>FAIL</code></td>
-        <td class="cell pass" title="pass / test_py2lua_smoke.py / 3.6s"><code>PASS</code></td>
-        <td class="cell fail" title="fail / RuntimeError: raw EAST3 $.body[5].body[5].arg_index.kind must be non-empty string: 18_mini_language_interpreter / 3.5s"><code>FAIL</code></td>
-        <td class="cell pass" title="pass / test_py2php_smoke.py / 3.7s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2nim_smoke.py / 3.9s"><code>PASS</code></td>
-      </tr>
-      <tr>
-        <td class="suite">Backend Dir Discover</td>
-        <td class="cell timeout" title="timeout / timeout after 300s / 300.0s"><code>TO</code></td>
-        <td class="cell fail" title="fail / RuntimeError: raw EAST3 $.body[1].meta.lifetime_analysis.def_use.defs.meta must be an object: any_dict_items / 7.0s"><code>FAIL</code></td>
-        <td class="cell pass" title="pass / all backend-owned modules / 6.9s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / all backend-owned modules / 8.3s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / all backend-owned modules / 8.2s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / all backend-owned modules / 3.4s"><code>PASS</code></td>
-        <td class="cell fail" title="fail / RuntimeError: raw EAST3 $.body[4].meta.lifetime_analysis.def_use.defs.kind must be non-empty string: 07_game_of_life_loop / 4.1s"><code>FAIL</code></td>
-        <td class="cell pass" title="pass / all backend-owned modules / 3.7s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / all backend-owned modules / 6.7s"><code>PASS</code></td>
-        <td class="cell fail" title="fail / RuntimeError: raw EAST3 $.body[4].meta.lifetime_analysis.def_use.defs.kind must be non-empty string: 07_game_of_life_loop / 5.2s"><code>FAIL</code></td>
-        <td class="cell pass" title="pass / all backend-owned modules / 3.6s"><code>PASS</code></td>
-        <td class="cell fail" title="fail / RuntimeError: raw EAST3 $.body[5].body[5].arg_index.kind must be non-empty string: 18_mini_language_interpreter / 3.7s"><code>FAIL</code></td>
-        <td class="cell pass" title="pass / all backend-owned modules / 3.7s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / all backend-owned modules / 3.8s"><code>PASS</code></td>
-      </tr>
-      <tr>
-        <td class="suite">Shared Starred Smoke</td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.9s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.4s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.4s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.1s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.1s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.3s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.2s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.2s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.3s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.1s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.2s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.4s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.1s"><code>PASS</code></td>
-        <td class="cell pass" title="pass / test_py2starred_smoke.py equivalent / 1.0s"><code>PASS</code></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+
+| suite | cpp | rs | cs | js | ts | go | java | swift | kt | rb | lua | scala | php | nim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Primary Smoke | 🟩 `PASS` | 🟥 `FAIL` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟥 `FAIL` | 🟩 `PASS` | 🟩 `PASS` | 🟥 `FAIL` | 🟩 `PASS` | 🟥 `FAIL` | 🟩 `PASS` | 🟩 `PASS` |
+| Backend Dir Discover | 🟪 `TO` | 🟥 `FAIL` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟥 `FAIL` | 🟩 `PASS` | 🟩 `PASS` | 🟥 `FAIL` | 🟩 `PASS` | 🟥 `FAIL` | 🟩 `PASS` | 🟩 `PASS` |
+| Shared Starred Smoke | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` | 🟩 `PASS` |
+
 <!-- END BACKEND TEST MATRIX TABLE -->
 
 <!-- BEGIN BACKEND TEST MATRIX DETAILS -->
