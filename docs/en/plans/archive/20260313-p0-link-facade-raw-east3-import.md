@@ -36,11 +36,12 @@ Verification commands:
 - `git -C /workspace/Pytra diff --check`
 
 Breakdown:
-- [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01] Move `validate_raw_east3_doc` imports in `toolchain.ir.east3` and the focused tests over to the `toolchain.link` facade so external consumers stop reaching through `toolchain.link.program_validator` directly.
+- [x] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01] Move `validate_raw_east3_doc` imports in `toolchain.ir.east3` and the focused tests over to the `toolchain.link` facade so external consumers stop reaching through `toolchain.link.program_validator` directly.
 - [x] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S1-01] Add focused regression / source-contract coverage that requires the facade import and locks the current reach-through surface in fail-fast form.
 - [x] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S2-01] Switch `toolchain.ir.east3` plus the focused test imports over to the facade path and bring the targeted unit suite back to green.
-- [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S3-01] Sync TODO / plan / decision log and lock the close condition.
+- [x] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S3-01] Sync TODO / plan / decision log and lock the close condition.
 
 Decision log:
 - 2026-03-13: Filed this follow-up P0 after TODO became empty, keeping scope limited to the external `validate_raw_east3_doc` consumers. The task deliberately avoids reorganizing the internal imports inside `toolchain.link` itself.
 - 2026-03-13: `S1-01/S2-01` switched `toolchain.ir.east3` to the facade path while avoiding a module-init cycle via the local helper `_validate_raw_east3_via_link()`. The runtime regression lives in `test_frontend_type_expr.py`, and the source contract lives in `test_py2x_entrypoints_contract.py`.
+- 2026-03-13: `S3-01` synchronized the active TODO, plan, and archive, and fixed the close condition as “`toolchain.ir.east3` resolves `validate_raw_east3_doc` through the `toolchain.link` facade while both `test_frontend_type_expr.py` and `test_py2x_entrypoints_contract.py` stay green.” Using the local helper to avoid the module-init cycle is accepted as the end state for this task.
