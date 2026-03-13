@@ -86,8 +86,8 @@ Implementation policy:
 | `bytes_truthiness.py` | present | covered elsewhere | `test/fixtures/typing/bytes_truthiness.py` + C++ representative smoke |
 | `path_stringify.py` | present | covered elsewhere | `test/fixtures/stdlib/path_stringify.py` + C++ representative smoke |
 | `field_default_factory_rc_obj.py` | present | covered elsewhere | archived C++ representative lane (`field(default_factory=...)` on `rc<T>`) |
-| `property_method_call.py` | present | unresolved | this task |
-| `list_bool_index.py` | present | unresolved | this task |
+| `property_method_call.py` | present | promoted and green | `test/fixtures/typing/property_method_call.py` + representative smoke across all backends |
+| `list_bool_index.py` | present | promoted and green | `test/fixtures/typing/list_bool_index.py` + representative smoke across all backends |
 | `path_alias_pkg/entry.py` | missing | not triaged | out of scope until the bundle includes the file |
 
 ## Representative semantics
@@ -116,7 +116,7 @@ Target semantics:
 
 ## Breakdown
 
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01] Promote the Pytra-NES2 repros into a representative cross-backend contract and keep `property_method_call` and `list_bool_index` green in every target backend before close.
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01] Promote the Pytra-NES2 repros into a representative cross-backend contract and keep `property_method_call` and `list_bool_index` green in every target backend before close.
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-01] Inventory the current repro bundle under `materials/refs/from-Pytra-NES2/` and lock the map of already-covered vs unresolved cases into the plan/docs.
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-02] Promote `property_method_call.py` and `list_bool_index.py` into representative fixtures under `test/fixtures/`, with assertion-backed semantics.
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-01] Add those fixtures to representative smoke for C++/C#/Rust/Go/Java/Kotlin/Scala/Swift/Nim and lock the C++ compile-failure baseline plus the static-family transpile smoke.
@@ -124,7 +124,7 @@ Target semantics:
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-03] Add common assertion/helper/checker support as needed so `unsupported`, `preview_only`, or `not_implemented` counts as a failure.
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-01] Make `property_method_call` green in every backend and sync docs / support wording / decision log.
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-02] Make `list_bool_index` green in every backend and sync docs / support wording / decision log.
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S4-01] Sync the final mapping between `materials/refs/from-Pytra-NES2` and repo fixtures/tests and close the bundle as fully promoted.
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S4-01] Sync the final mapping between `materials/refs/from-Pytra-NES2` and repo fixtures/tests and close the bundle as fully promoted.
 
 Decision log:
 - 2026-03-13: Following the user instruction, the plan was changed from “close the two unresolved cases as C++ local bugfix tasks” to “add representative tests for all backends first, then fix implementations”.
@@ -137,3 +137,4 @@ Decision log:
 - 2026-03-13: `S2-03` added a shared denylist helper under `test/unit/backends/representative_contract_support.py` so every representative smoke fails if the emitted source contains `unsupported / preview_only / not_implemented` markers. The C++ current baselines now apply the helper to generated C++ source itself before checking the expected compile failure.
 - 2026-03-13: `S3-01` added class-local `@property` getter tracking to the C++ emitter so attribute reads lower to `this->mapper()` / `holder->mapper()` instead of member-function objects. With that change, `property_method_call` is compile+run green on C++ too, so every backend representative lane is now green and only `list_bool_index` remains unresolved.
 - 2026-03-13: `S3-02` switched the C++ runtime `list<T>` / `py_at` / `py_list_at_ref` surface to `list<T>::reference/const_reference` and added a bool-convertible proxy fallback to `make_object`. That removed the `std::vector<bool>` proxy vs `bool&` collision and made `list_bool_index` compile+run green on C++ too.
+- 2026-03-13: `S4-01` synced the final mapping between `materials/refs/from-Pytra-NES2` and repo fixtures/tests. `bytes_truthiness` is covered by `test/fixtures/typing/bytes_truthiness.py` plus the archived representative lane, `path_stringify` by `test/fixtures/stdlib/path_stringify.py` plus its archived representative lane, `field_default_factory_rc_obj` by the archived dataclass representative lane, and `property_method_call` / `list_bool_index` by `test/fixtures/typing/*` plus representative smoke across every backend. `path_alias_pkg/entry.py` remains out of scope because the file is still absent from the bundle.
