@@ -31,4 +31,4 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 
-There are no unfinished tasks right now.
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ENDOPS-01] Lock the representative C++ lane for `collections.deque` `appendleft` / `pop`. Progress: `S1-01` added a baseline regression for the current invalid `q.appendleft(1);` / `q.pop()` surface. Next is `appendleft -> push_front`. Context: [p0-collections-deque-cpp-endops-support.md](../plans/p0-collections-deque-cpp-endops-support.md)
