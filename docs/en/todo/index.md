@@ -30,3 +30,10 @@ Last updated: 2026-03-13
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+### P0: align external `validate_raw_east3_doc` imports to the `toolchain.link` facade
+
+- [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01] Move `validate_raw_east3_doc` imports in `toolchain.ir.east3` and the focused tests over to the `toolchain.link` facade so external consumers stop reaching through `toolchain.link.program_validator` directly.
+  - Context: [docs/en/plans/p0-link-facade-raw-east3-import.md](../plans/p0-link-facade-raw-east3-import.md)
+- [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S1-01] Add focused regression / source-contract coverage that requires the facade import and locks the current reach-through surface in fail-fast form.
+- [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S2-01] Switch `toolchain.ir.east3` plus the focused test imports over to the facade path and bring the targeted unit suite back to green.
+- [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S3-01] Sync TODO / plan / decision log and lock the close condition.
