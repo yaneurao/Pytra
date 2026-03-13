@@ -510,12 +510,6 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "rationale": "JS handwritten built-in runtime already lives in native/built_in after the Wave B path cutover.",
             },
             {
-                "current_prefix": "src/runtime/js/native/std/",
-                "target_prefix": "src/runtime/js/native/std/",
-                "ownership": "native",
-                "rationale": "JS handwritten std runtime already lives in native/std after the Wave B path cutover.",
-            },
-            {
                 "current_prefix": "src/runtime/js/generated/utils/",
                 "target_prefix": "src/runtime/js/generated/utils/",
                 "ownership": "generated",
@@ -595,12 +589,6 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/ts/native/built_in/",
                 "ownership": "native",
                 "rationale": "TS handwritten built-in runtime already lives in native/built_in after the Wave B path cutover.",
-            },
-            {
-                "current_prefix": "src/runtime/ts/native/std/",
-                "target_prefix": "src/runtime/ts/native/std/",
-                "ownership": "native",
-                "rationale": "TS handwritten std runtime already lives in native/std after the Wave B path cutover.",
             },
             {
                 "current_prefix": "src/runtime/ts/generated/utils/",
@@ -736,12 +724,6 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/php/native/built_in/py_runtime.php",
                 "ownership": "native",
                 "rationale": "PHP handwritten core runtime already lives in native/built_in after the Wave B path cutover.",
-            },
-            {
-                "current_prefix": "src/runtime/php/native/std/",
-                "target_prefix": "src/runtime/php/native/std/",
-                "ownership": "native",
-                "rationale": "PHP handwritten std seams already live in native/std after the Wave B path cutover.",
             },
             {
                 "current_prefix": "src/runtime/php/generated/utils/",
@@ -983,12 +965,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     },
     {
         "backend": "js",
-        "pytra_core_files": (
-            "built_in/py_runtime.js",
-            "std/math.js",
-            "std/pathlib.js",
-            "std/time.js",
-        ),
+        "pytra_core_files": ("built_in/py_runtime.js",),
         "pytra_gen_files": (
             "built_in/contains.js",
             "built_in/io_ops.js",
@@ -1029,12 +1006,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     },
     {
         "backend": "ts",
-        "pytra_core_files": (
-            "built_in/py_runtime.ts",
-            "std/math.ts",
-            "std/pathlib.ts",
-            "std/time.ts",
-        ),
+        "pytra_core_files": ("built_in/py_runtime.ts",),
         "pytra_gen_files": (
             "built_in/contains.ts",
             "built_in/io_ops.ts",
@@ -1087,7 +1059,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     },
     {
         "backend": "php",
-        "pytra_core_files": ("built_in/py_runtime.php", "std/time.php"),
+        "pytra_core_files": ("built_in/py_runtime.php",),
         "pytra_gen_files": (
             "built_in/contains.php",
             "built_in/io_ops.php",
@@ -1351,12 +1323,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/gif.js",
             "generated/utils/png.js",
         ),
-        "native_files": (
-            "native/built_in/py_runtime.js",
-            "native/std/math.js",
-            "native/std/pathlib.js",
-            "native/std/time.js",
-        ),
+        "native_files": ("native/built_in/py_runtime.js",),
         "compat_files": (
             "pytra/README.md",
             "pytra/py_runtime.js",
@@ -1397,12 +1364,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/gif.ts",
             "generated/utils/png.ts",
         ),
-        "native_files": (
-            "native/built_in/py_runtime.ts",
-            "native/std/math.ts",
-            "native/std/pathlib.ts",
-            "native/std/time.ts",
-        ),
+        "native_files": ("native/built_in/py_runtime.ts",),
         "compat_files": (
             "pytra/README.md",
             "pytra/py_runtime.ts",
@@ -1455,7 +1417,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/gif.php",
             "generated/utils/png.php",
         ),
-        "native_files": ("native/built_in/py_runtime.php", "native/std/time.php"),
+        "native_files": ("native/built_in/py_runtime.php",),
         "compat_files": (
             "pytra/py_runtime.php",
             "pytra/std/time.php",
@@ -1630,7 +1592,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     {
         "backend": "js",
         "generated_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
-        "native_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
+        "native_modules": ("built_in/py_runtime",),
         "compat_modules": (
             "built_in/py_runtime",
             "std/json",
@@ -1645,7 +1607,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     {
         "backend": "ts",
         "generated_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
-        "native_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
+        "native_modules": ("built_in/py_runtime",),
         "compat_modules": (
             "built_in/py_runtime",
             "std/json",
@@ -1700,7 +1662,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             "utils/gif",
             "utils/png",
         ),
-        "native_modules": ("built_in/py_runtime", "std/time"),
+        "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
         "blocked_modules": (),
     },
@@ -1777,12 +1739,12 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUALS_V1: Final[
 ] = (
     {
         "backend": "js",
-        "substrate_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
+        "substrate_modules": ("built_in/py_runtime",),
         "compare_residual_modules": (),
     },
     {
         "backend": "ts",
-        "substrate_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
+        "substrate_modules": ("built_in/py_runtime",),
         "compare_residual_modules": (),
     },
     {
@@ -1797,7 +1759,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUALS_V1: Final[
     },
     {
         "backend": "php",
-        "substrate_modules": ("built_in/py_runtime", "std/time"),
+        "substrate_modules": ("built_in/py_runtime",),
         "compare_residual_modules": (),
     },
 )
@@ -1808,12 +1770,12 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUAL_FILES_V1: Final[
 ] = (
     {
         "backend": "js",
-        "substrate_files": ("built_in/py_runtime.js", "std/math.js", "std/pathlib.js", "std/time.js"),
+        "substrate_files": ("built_in/py_runtime.js",),
         "compare_residual_files": (),
     },
     {
         "backend": "ts",
-        "substrate_files": ("built_in/py_runtime.ts", "std/math.ts", "std/pathlib.ts", "std/time.ts"),
+        "substrate_files": ("built_in/py_runtime.ts",),
         "compare_residual_files": (),
     },
     {
@@ -1828,7 +1790,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUAL_FILES_V1: Final[
     },
     {
         "backend": "php",
-        "substrate_files": ("built_in/py_runtime.php", "std/time.php"),
+        "substrate_files": ("built_in/py_runtime.php",),
         "compare_residual_files": (),
     },
 )

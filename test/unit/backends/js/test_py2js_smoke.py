@@ -622,6 +622,9 @@ def main() -> None:
             self.assertIn("generated/std/pathlib.js", pathlib_shim)
 
     def test_js_repo_compat_lane_resolves_runtime_helpers(self) -> None:
+        self.assertFalse((ROOT / "src" / "runtime" / "js" / "native" / "std" / "math.js").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "js" / "native" / "std" / "pathlib.js").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "js" / "native" / "std" / "time.js").exists())
         proc = subprocess.run(
             [
                 "node",

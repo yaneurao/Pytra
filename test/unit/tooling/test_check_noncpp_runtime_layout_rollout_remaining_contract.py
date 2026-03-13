@@ -1470,7 +1470,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "generated/utils/gif.php",
                     "generated/utils/png.php",
                 ),
-                "native_files": ("native/built_in/py_runtime.php", "native/std/time.php"),
+                "native_files": ("native/built_in/py_runtime.php",),
                 "compat_files": (
                     "pytra/py_runtime.php",
                     "pytra/std/time.php",
@@ -1735,7 +1735,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/gif",
                     "utils/png",
                 ),
-                "native_modules": ("built_in/py_runtime", "std/time"),
+                "native_modules": ("built_in/py_runtime",),
                 "compat_modules": ("built_in/py_runtime", "std/time", "utils/gif", "utils/png"),
                 "blocked_modules": (),
             },
@@ -1828,12 +1828,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             {
                 "js": {
                     "backend": "js",
-                    "substrate_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
+                    "substrate_modules": ("built_in/py_runtime",),
                     "compare_residual_modules": (),
                 },
                 "ts": {
                     "backend": "ts",
-                    "substrate_modules": ("built_in/py_runtime", "std/math", "std/pathlib", "std/time"),
+                    "substrate_modules": ("built_in/py_runtime",),
                     "compare_residual_modules": (),
                 },
                 "lua": {
@@ -1848,7 +1848,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 },
                 "php": {
                     "backend": "php",
-                    "substrate_modules": ("built_in/py_runtime", "std/time"),
+                    "substrate_modules": ("built_in/py_runtime",),
                     "compare_residual_modules": (),
                 },
             },
@@ -1864,12 +1864,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             {
                 "js": {
                     "backend": "js",
-                    "substrate_files": ("built_in/py_runtime.js", "std/math.js", "std/pathlib.js", "std/time.js"),
+                    "substrate_files": ("built_in/py_runtime.js",),
                     "compare_residual_files": (),
                 },
                 "ts": {
                     "backend": "ts",
-                    "substrate_files": ("built_in/py_runtime.ts", "std/math.ts", "std/pathlib.ts", "std/time.ts"),
+                    "substrate_files": ("built_in/py_runtime.ts",),
                     "compare_residual_files": (),
                 },
                 "lua": {
@@ -1884,7 +1884,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 },
                 "php": {
                     "backend": "php",
-                    "substrate_files": ("built_in/py_runtime.php", "std/time.php"),
+                    "substrate_files": ("built_in/py_runtime.php",),
                     "compare_residual_files": (),
                 },
             },

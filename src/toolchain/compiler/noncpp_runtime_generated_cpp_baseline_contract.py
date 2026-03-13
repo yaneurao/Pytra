@@ -478,12 +478,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/gif.js",
             "generated/utils/png.js",
         ),
-        "native_files": (
-            "native/built_in/py_runtime.js",
-            "native/std/math.js",
-            "native/std/pathlib.js",
-            "native/std/time.js",
-        ),
+        "native_files": ("native/built_in/py_runtime.js",),
         "compat_files": (
             "pytra/README.md",
             "pytra/py_runtime.js",
@@ -524,12 +519,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/gif.ts",
             "generated/utils/png.ts",
         ),
-        "native_files": (
-            "native/built_in/py_runtime.ts",
-            "native/std/math.ts",
-            "native/std/pathlib.ts",
-            "native/std/time.ts",
-        ),
+        "native_files": ("native/built_in/py_runtime.ts",),
         "compat_files": (
             "pytra/README.md",
             "pytra/py_runtime.ts",
@@ -636,7 +626,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/gif.php",
             "generated/utils/png.php",
         ),
-        "native_files": ("native/built_in/py_runtime.php", "native/std/time.php"),
+        "native_files": ("native/built_in/py_runtime.php",),
         "compat_files": (
             "pytra/py_runtime.php",
             "pytra/std/time.php",

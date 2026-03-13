@@ -150,7 +150,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
         generated_random_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "random.php"
         generated_re_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "re.php"
         generated_sys_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "sys.php"
-        time_path = ROOT / "src" / "runtime" / "php" / "native" / "std" / "time.php"
+        native_time_path = ROOT / "src" / "runtime" / "php" / "native" / "std" / "time.php"
         generated_time_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "time.php"
         generated_timeit_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "timeit.php"
         assertions_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "assertions.php"
@@ -171,7 +171,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertTrue(generated_random_path.exists())
         self.assertTrue(generated_re_path.exists())
         self.assertTrue(generated_sys_path.exists())
-        self.assertTrue(time_path.exists())
+        self.assertFalse(native_time_path.exists())
         self.assertTrue(generated_time_path.exists())
         self.assertTrue(generated_timeit_path.exists())
         self.assertTrue(assertions_path.exists())

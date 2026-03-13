@@ -218,6 +218,9 @@ def main() -> None:
             self.assertIn("generated/std/pathlib.js", pathlib_shim)
 
     def test_ts_repo_compat_lane_reexports_runtime_helpers(self) -> None:
+        self.assertFalse((ROOT / "src" / "runtime" / "ts" / "native" / "std" / "math.ts").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "ts" / "native" / "std" / "pathlib.ts").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "ts" / "native" / "std" / "time.ts").exists())
         compat_runtime = ROOT / "src" / "runtime" / "ts" / "pytra" / "py_runtime.ts"
         compat_json = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "json.ts"
         compat_math = ROOT / "src" / "runtime" / "ts" / "pytra" / "std" / "math.ts"
