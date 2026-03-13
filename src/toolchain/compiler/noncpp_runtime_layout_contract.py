@@ -83,7 +83,7 @@ CS_PYTRA_HANDWRITTEN_DUPLICATE_DELETE_TARGETS_V1: Final[tuple[str, ...]] = (
     "src/runtime/cs/pytra/std/pathlib.cs",
 )
 
-RS_PYTRA_COMPAT_ALLOWLIST_V1: Final[tuple[str, ...]] = (
+RS_PYTRA_DELETE_TARGETS_V1: Final[tuple[str, ...]] = (
     "src/runtime/rs/pytra/README.md",
     "src/runtime/rs/pytra/built_in/py_runtime.rs",
     "src/runtime/rs/pytra/compiler/README.md",
@@ -480,5 +480,5 @@ def iter_cs_pytra_handwritten_duplicate_delete_targets() -> tuple[str, ...]:
     return CS_PYTRA_HANDWRITTEN_DUPLICATE_DELETE_TARGETS_V1
 
 
-def iter_rs_pytra_compat_allowlist() -> tuple[str, ...]:
-    return RS_PYTRA_COMPAT_ALLOWLIST_V1
+def iter_rs_pytra_delete_targets() -> tuple[str, ...]:
+    return RS_PYTRA_DELETE_TARGETS_V1

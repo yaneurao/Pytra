@@ -105,3 +105,4 @@
 - 2026-03-13: この P0 では「repo 常設 shim の削除」を目的とし、public compatibility が必要でも output-side artifact として扱う。`src/runtime/<lang>/pytra/**` を薄い forwarder として温存する対応は不許可とする。
 - 2026-03-13: `P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01` で current `pytra/` directory/file inventory、backend mapping、delete blocker references を `noncpp_runtime_pytra_deshim_contract.py` / checker / unit test に固定した。まだ policy 切替は行わず、削除前の current state を明示する段階に留める。
 - 2026-03-13: S1-02 first bundle で `spec-folder/spec-dev` を `generated/native only` wording に合わせ、doc-policy drift を checker で fail-fast にした。
+- 2026-03-13: S1-02 second bundle で Rust active contract / layout guard の `pytra` 語彙を `compat` から `delete-target debt` へ切り替え、`noncpp_runtime_layout_contract.py` / `check_rs_runtime_layout.py` / dedicated deshim blocker baseline から「checked-in `rs/pytra` は live compat lane」という前提を外した。

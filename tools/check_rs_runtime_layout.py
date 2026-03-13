@@ -3,8 +3,8 @@
 
 Policy:
 - Canonical handwritten runtime for Rust lives under `src/runtime/rs/native/**`.
-- `src/runtime/rs/pytra/**` may remain only as a compatibility lane and must not be
-  treated as the ownership source of truth.
+- `src/runtime/rs/pytra/**` is delete-target debt and must not be treated as a live
+  compatibility lane or ownership source of truth.
 - `src/rs_module/` is deprecated and must not contain source files.
 """
 
@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LEGACY_DIR = ROOT / "src" / "rs_module"
 CANONICAL_RUNTIME = ROOT / "src" / "runtime" / "rs" / "native" / "built_in" / "py_runtime.rs"
-COMPAT_RUNTIME = ROOT / "src" / "runtime" / "rs" / "pytra" / "built_in" / "py_runtime.rs"
+DELETE_TARGET_RUNTIME = ROOT / "src" / "runtime" / "rs" / "pytra" / "built_in" / "py_runtime.rs"
 
 
 def _collect_files(base: Path) -> list[Path]:
@@ -47,10 +47,10 @@ def main() -> int:
     print("[OK] rs runtime layout guard passed")
     print("  legacy: src/rs_module has no source files")
     print(f"  canonical runtime: {CANONICAL_RUNTIME.relative_to(ROOT)}")
-    if COMPAT_RUNTIME.exists():
-        print(f"  compat runtime: {COMPAT_RUNTIME.relative_to(ROOT)}")
+    if DELETE_TARGET_RUNTIME.exists():
+        print(f"  delete-target runtime: {DELETE_TARGET_RUNTIME.relative_to(ROOT)}")
     else:
-        print("  compat runtime: absent")
+        print("  delete-target runtime: absent")
     return 0
 
 

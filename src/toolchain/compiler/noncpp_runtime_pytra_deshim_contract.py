@@ -203,13 +203,6 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
 
 NONCPP_PYTRA_DESHIM_BLOCKERS_V1: Final[tuple[NonCppPytraDeshimBlockerEntry, ...]] = (
     {
-        "backend": "rs",
-        "bucket": "contract_allowlist",
-        "path": "src/toolchain/compiler/noncpp_runtime_layout_contract.py",
-        "needles": ("RS_PYTRA_COMPAT_ALLOWLIST_V1", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
-        "rationale": "Rust still has an explicit compat allowlist in the live non-C++ runtime layout contract.",
-    },
-    {
         "backend": "go",
         "bucket": "contract_allowlist",
         "path": "src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py",

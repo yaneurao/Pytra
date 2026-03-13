@@ -109,7 +109,7 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
             ),
         )
         self.assertEqual(
-            contract_mod.iter_rs_pytra_compat_allowlist(),
+            contract_mod.iter_rs_pytra_delete_targets(),
             (
                 "src/runtime/rs/pytra/README.md",
                 "src/runtime/rs/pytra/built_in/py_runtime.rs",

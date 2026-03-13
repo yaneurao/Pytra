@@ -104,13 +104,23 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
 
     def test_blocker_baseline_contains_expected_categories(self) -> None:
         blockers = contract_mod.iter_noncpp_pytra_deshim_blockers()
-        self.assertIn(
+        self.assertNotIn(
             {
                 "backend": "rs",
                 "bucket": "contract_allowlist",
                 "path": "src/toolchain/compiler/noncpp_runtime_layout_contract.py",
                 "needles": ("RS_PYTRA_COMPAT_ALLOWLIST_V1", "src/runtime/rs/pytra/built_in/py_runtime.rs"),
                 "rationale": "Rust still has an explicit compat allowlist in the live non-C++ runtime layout contract.",
+            },
+            blockers,
+        )
+        self.assertIn(
+            {
+                "backend": "go",
+                "bucket": "contract_allowlist",
+                "path": "src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py",
+                "needles": ('"current_prefix": "src/runtime/go/pytra/built_in/py_runtime.go"',),
+                "rationale": "Go current->target rollout mapping still treats the checked-in pytra lane as a live current root.",
             },
             blockers,
         )

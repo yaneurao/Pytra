@@ -172,9 +172,9 @@ def _collect_builtin_lane_issues() -> list[str]:
         issues.append("C# build profile leaked duplicate pytra lane")
 
     if _collect_relative_files_by_suffixes(RS_PYTRA_ROOT, (".md", ".rs")) != tuple(
-        rel.replace("src/runtime/rs/pytra/", "", 1) for rel in contract_mod.iter_rs_pytra_compat_allowlist()
+        rel.replace("src/runtime/rs/pytra/", "", 1) for rel in contract_mod.iter_rs_pytra_delete_targets()
     ):
-        issues.append("Rust pytra compat allowlist drifted")
+        issues.append("Rust pytra delete-target inventory drifted")
 
     return issues
 
