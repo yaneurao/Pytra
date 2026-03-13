@@ -68,8 +68,8 @@
 
 - [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S1-01] 既存 representative inventory と `test/unit` / `test/ir` / `test/integration` / `test/transpile` の live suite を棚卸しし、coverage bundle 候補を分類する。
 - [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S1-02] support matrix と coverage matrix の役割分担、および contract coverage 100% の定義を docs / tooling contract に固定する。
-- [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S2-01] coverage bundle taxonomy と machine-readable manifest/checker を導入し、`feature x lane x backend` の bundle 所属を検証可能にする。
-- [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S2-02] `test/unit`, `test/ir`, `test/integration`, `test/transpile` を coverage bundle へ接続し、未接続 suite を明示的に洗い出す。
+- [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S2-01] coverage bundle taxonomy と machine-readable manifest/checker を導入し、`feature x lane x backend` の bundle 所属を検証可能にする。
+- [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S2-02] `test/unit`, `test/ir`, `test/integration`, `test/transpile` を coverage bundle へ接続し、未接続 suite を明示的に洗い出す。
 - [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S2-03] multi-backend で既に使われている未掲載 fixture を、support-matrix 昇格候補と coverage-only representative に仕分ける。
 - [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S3-01] docs/export/checker/English mirror を同期し、新規 feature/suite の coverage 漏れを fail-fast にする。
 
@@ -77,3 +77,5 @@
 - 2026-03-14: `backend-parity-matrix` が representative support claim であって suite inventory ではないことを確認し、bundle-based coverage matrix を別建てして contract coverage 100% を定義する P2 task として起票した。
 - 2026-03-14: `backend_contract_coverage_inventory.py` / checker / unit test を追加し、representative inventory seed、coverage bundle taxonomy、live suite family inventory、未掲載 multi-backend fixture seed（`property_method_call`, `list_bool_index`）を first-pass の machine-readable inventory として固定した。`test/unit/link|selfhost|tooling` は supporting-only、`test/unit/common|backends|ir`, `test/ir`, `test/integration`, `test/transpile` は direct matrix input 候補として分類する。
 - 2026-03-14: `backend_contract_coverage_contract.py` / checker / unit test を追加し、support matrix / future coverage matrix / backend test matrix の役割分担と `feature x required_lane x backend` contract coverage 100% の定義を tooling contract に固定した。`docs/ja|en/language/backend-parity-matrix.md` と `backend-test-matrix.md` にも同じ wording を入れ、suite health と contract coverage を混同しない状態を doc needle で検証する。
+- 2026-03-14: `backend_contract_coverage_matrix_contract.py` / checker / unit test を追加し、representative feature の `required_lane x backend` seed ownership を machine-readable に固定した。`parse/east/east3_lowering/emit` は bundle owner、`runtime` は `case_runtime_followup` / `module_runtime_strategy_followup` rule として seed 化し、bundle 未接続 lane を explicit rule 付きで可視化する。
+- 2026-03-14: `backend_contract_coverage_suite_attachment_contract.py` / checker / unit test を追加し、live suite family ごとの bundle attachment / explicit exclusion を machine-readable に固定した。`unit_common`, `unit_backends`, `unit_ir`, `ir_fixture`, `integration`, `transpile_artifact` は direct bundle attachment、`unit_link`, `unit_selfhost`, `unit_tooling` は supporting-only exclusion reason を必須にして、未接続 suite を checker で可視化する。

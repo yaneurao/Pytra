@@ -16,6 +16,30 @@ if str(SRC) not in sys.path:
 from toolchain.compiler import backend_contract_coverage_inventory as inventory_mod
 
 
+def _collect_seed_issues() -> list[str]:
+    issues: list[str] = []
+    taxonomy = inventory_mod.iter_coverage_bundle_taxonomy()
+    taxonomy_ids = tuple(entry["bundle_id"] for entry in taxonomy)
+    if taxonomy_ids != inventory_mod.COVERAGE_BUNDLE_ORDER:
+        issues.append("coverage bundle taxonomy order drifted from the fixed seed inventory")
+    if len(set(taxonomy_ids)) != len(taxonomy_ids):
+        issues.append("coverage bundle taxonomy ids contain duplicates")
+    for entry in taxonomy:
+        for source_root in entry["source_roots"]:
+            if not (ROOT / source_root).exists():
+                issues.append(f"missing coverage taxonomy source root: {entry['bundle_id']}: {source_root}")
+        if len(set(entry["suite_ids"])) != len(entry["suite_ids"]):
+            issues.append(f"duplicate suite ids in coverage taxonomy: {entry['bundle_id']}")
+        if len(set(entry["harness_kinds"])) != len(entry["harness_kinds"]):
+            issues.append(f"duplicate harness kinds in coverage taxonomy: {entry['bundle_id']}")
+        for harness_kind in entry["harness_kinds"]:
+            if harness_kind not in inventory_mod.TAXONOMY_HARNESS_KIND_ORDER:
+                issues.append(
+                    f"unknown taxonomy harness kind: {entry['bundle_id']}: {harness_kind}"
+                )
+    return issues
+
+
 def _collect_bundle_issues() -> list[str]:
     issues: list[str] = []
     bundles = inventory_mod.iter_backend_contract_coverage_bundles()
@@ -23,7 +47,7 @@ def _collect_bundle_issues() -> list[str]:
     if bundle_ids != inventory_mod.BACKEND_CONTRACT_COVERAGE_HANDOFF_V1["bundle_order"]:
         issues.append("coverage bundle order drifted from the fixed seed inventory")
     bundle_kinds = tuple(bundle["bundle_kind"] for bundle in bundles)
-    if bundle_kinds != inventory_mod.BUNDLE_KIND_ORDER:
+    if bundle_kinds != inventory_mod.COVERAGE_BUNDLE_ORDER:
         issues.append("coverage bundle kinds drifted from the fixed taxonomy")
     if len(set(bundle_ids)) != len(bundle_ids):
         issues.append("coverage bundle ids contain duplicates")
@@ -52,6 +76,41 @@ def _collect_bundle_issues() -> list[str]:
     return issues
 
 
+def _collect_live_suite_issues() -> list[str]:
+    issues: list[str] = []
+    suites = inventory_mod.iter_live_suite_family_inventory()
+    suite_ids = tuple(entry["suite_id"] for entry in suites)
+    if suite_ids != inventory_mod.SUITE_FAMILY_ORDER:
+        issues.append("live suite family order drifted from the fixed seed inventory")
+    if len(set(suite_ids)) != len(suite_ids):
+        issues.append("live suite ids contain duplicates")
+    allowed_bundle_ids = set(inventory_mod.COVERAGE_BUNDLE_ORDER)
+    for entry in suites:
+        if entry["suite_kind"] not in inventory_mod.SUITE_KIND_ORDER:
+            issues.append(f"unknown live suite kind: {entry['suite_id']}: {entry['suite_kind']}")
+        if entry["coverage_role"] not in inventory_mod.LIVE_SUITE_ROLE_ORDER:
+            issues.append(
+                f"unknown live suite coverage role: {entry['suite_id']}: {entry['coverage_role']}"
+            )
+        for source_root in entry["source_roots"]:
+            if not (ROOT / source_root).exists():
+                issues.append(f"missing live suite source root: {entry['suite_id']}: {source_root}")
+        for bundle_id in entry["bundle_candidates"]:
+            if bundle_id not in allowed_bundle_ids:
+                issues.append(
+                    f"unknown live suite bundle candidate: {entry['suite_id']}: {bundle_id}"
+                )
+        if entry["coverage_role"] == "supporting_only" and entry["bundle_candidates"]:
+            issues.append(
+                f"supporting-only suite must not declare bundle candidates: {entry['suite_id']}"
+            )
+        if entry["coverage_role"] == "direct_matrix_input" and not entry["bundle_candidates"]:
+            issues.append(
+                f"direct matrix input suite must declare bundle candidates: {entry['suite_id']}"
+            )
+    return issues
+
+
 def _collect_coverage_only_fixture_issues() -> list[str]:
     issues: list[str] = []
     support_fixtures = set(inventory_mod.SUPPORT_MATRIX_FIXTURES)
@@ -67,9 +126,10 @@ def _collect_coverage_only_fixture_issues() -> list[str]:
         if row["fixture_rel"] in support_fixtures:
             issues.append(f"coverage-only fixture was already promoted into support inventory: {row['fixture_rel']}")
         backend_order = tuple(item["backend"] for item in row["backend_evidence"])
-        if backend_order != feature_backend_order():
+        if backend_order != inventory_mod.feature_backend_order():
             issues.append(
-                f"coverage-only backend order drifted: {row['fixture_stem']}: {backend_order} != {feature_backend_order()}"
+                "coverage-only backend order drifted: "
+                f"{row['fixture_stem']}: {backend_order} != {inventory_mod.feature_backend_order()}"
             )
         for evidence in row["backend_evidence"]:
             relpath = evidence["relpath"]
@@ -87,8 +147,29 @@ def _collect_coverage_only_fixture_issues() -> list[str]:
     return issues
 
 
-def feature_backend_order() -> tuple[str, ...]:
-    return tuple(inventory_mod.SMOKE_TEST_PATH_BY_BACKEND.keys())
+def _collect_unpublished_fixture_issues() -> list[str]:
+    issues: list[str] = []
+    support_fixtures = set(inventory_mod.SUPPORT_MATRIX_FIXTURES)
+    unpublished = inventory_mod.iter_unpublished_multi_backend_fixture_inventory()
+    if len({row["fixture_rel"] for row in unpublished}) != len(unpublished):
+        issues.append("unpublished multi-backend fixture inventory contains duplicates")
+    expected_backend_order = inventory_mod.feature_backend_order()
+    for row in unpublished:
+        if row["status"] not in inventory_mod.COVERAGE_ONLY_STATUS_ORDER:
+            issues.append(f"unknown unpublished fixture status: {row['fixture_rel']}: {row['status']}")
+        fixture_path = ROOT / row["fixture_rel"]
+        if not fixture_path.exists():
+            issues.append(f"missing unpublished fixture path: {row['fixture_rel']}")
+        if row["fixture_rel"] in support_fixtures:
+            issues.append(
+                f"unpublished fixture was already promoted into support inventory: {row['fixture_rel']}"
+            )
+        if row["observed_backends"] != expected_backend_order:
+            issues.append(
+                "unpublished fixture observed backend order drifted: "
+                f"{row['fixture_rel']}: {row['observed_backends']} != {expected_backend_order}"
+            )
+    return issues
 
 
 def _collect_manifest_issues() -> list[str]:
@@ -96,19 +177,35 @@ def _collect_manifest_issues() -> list[str]:
     manifest = inventory_mod.build_backend_contract_coverage_seed_manifest()
     if manifest.get("inventory_version") != 1:
         issues.append("coverage seed manifest version must stay at 1")
-    if tuple(manifest.get("bundle_kind_order", ())) != inventory_mod.BUNDLE_KIND_ORDER:
-        issues.append("coverage seed manifest bundle kind order drifted")
+    if tuple(manifest.get("coverage_bundle_order", ())) != inventory_mod.COVERAGE_BUNDLE_ORDER:
+        issues.append("coverage seed manifest bundle order drifted")
+    if tuple(manifest.get("suite_family_order", ())) != inventory_mod.SUITE_FAMILY_ORDER:
+        issues.append("coverage seed manifest suite family order drifted")
     if tuple(manifest.get("suite_kind_order", ())) != inventory_mod.SUITE_KIND_ORDER:
         issues.append("coverage seed manifest suite kind order drifted")
     if tuple(manifest.get("harness_kind_order", ())) != inventory_mod.HARNESS_KIND_ORDER:
         issues.append("coverage seed manifest harness kind order drifted")
+    if (
+        tuple(manifest.get("taxonomy_harness_kind_order", ()))
+        != inventory_mod.TAXONOMY_HARNESS_KIND_ORDER
+    ):
+        issues.append("coverage seed manifest taxonomy harness kind order drifted")
     if tuple(manifest.get("coverage_only_status_order", ())) != inventory_mod.COVERAGE_ONLY_STATUS_ORDER:
         issues.append("coverage seed manifest coverage-only status order drifted")
+    if tuple(manifest.get("live_suite_role_order", ())) != inventory_mod.LIVE_SUITE_ROLE_ORDER:
+        issues.append("coverage seed manifest live suite role order drifted")
     return issues
 
 
 def main() -> int:
-    issues = _collect_bundle_issues() + _collect_coverage_only_fixture_issues() + _collect_manifest_issues()
+    issues = (
+        _collect_seed_issues()
+        + _collect_bundle_issues()
+        + _collect_live_suite_issues()
+        + _collect_coverage_only_fixture_issues()
+        + _collect_unpublished_fixture_issues()
+        + _collect_manifest_issues()
+    )
     if issues:
         for issue in issues:
             print(f"[NG] {issue}")

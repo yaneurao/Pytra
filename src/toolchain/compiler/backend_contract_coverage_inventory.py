@@ -1,4 +1,4 @@
-"""Seed inventory for bundle-based backend contract coverage tracking."""
+"""Machine-readable seed inventory for bundle-based backend contract coverage."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ BACKEND_CONTRACT_COVERAGE_PLAN_EN: Final[str] = (
     "docs/en/plans/p2-backend-contract-coverage-100.md"
 )
 
-BUNDLE_KIND_ORDER: Final[tuple[str, ...]] = (
+COVERAGE_BUNDLE_ORDER: Final[tuple[str, ...]] = (
     "frontend",
     "emit",
     "runtime",
@@ -38,7 +38,31 @@ HARNESS_KIND_ORDER: Final[tuple[str, ...]] = (
     "native_compile_run",
 )
 
+TAXONOMY_HARNESS_KIND_ORDER: Final[tuple[str, ...]] = (
+    "frontend_parse_diagnostic",
+    "east_document_compare",
+    "east3_document_compare",
+    "backend_emit_compare",
+    "runtime_parity_compare",
+    "package_graph_transpile",
+    "ir_json_emit_compare",
+    "native_compile_run",
+)
+
+SUITE_FAMILY_ORDER: Final[tuple[str, ...]] = (
+    "unit_common",
+    "unit_backends",
+    "unit_ir",
+    "unit_link",
+    "unit_selfhost",
+    "unit_tooling",
+    "ir_fixture",
+    "integration",
+    "transpile_artifact",
+)
+
 COVERAGE_ONLY_STATUS_ORDER: Final[tuple[str, ...]] = ("coverage_only_representative",)
+LIVE_SUITE_ROLE_ORDER: Final[tuple[str, ...]] = ("direct_matrix_input", "supporting_only")
 
 SMOKE_TEST_PATH_BY_BACKEND: Final[dict[str, str]] = {
     "cpp": "test/unit/backends/cpp/test_py2cpp_features.py",
@@ -63,7 +87,12 @@ CPP_RUNTIME_NEEDLE_BY_FIXTURE_STEM: Final[dict[str, str]] = {
 }
 
 SUPPORT_MATRIX_FIXTURES: Final[tuple[str, ...]] = tuple(
-    sorted({row["representative_fixture"] for row in feature_inventory_mod.iter_representative_fixture_mapping()})
+    sorted(
+        {
+            row["representative_fixture"]
+            for row in feature_inventory_mod.iter_representative_fixture_mapping()
+        }
+    )
 )
 
 
@@ -82,6 +111,23 @@ class CoverageBundleEntry(TypedDict):
     notes: str
 
 
+class CoverageBundleTaxonomyEntry(TypedDict):
+    bundle_id: str
+    source_roots: tuple[str, ...]
+    suite_ids: tuple[str, ...]
+    harness_kinds: tuple[str, ...]
+    notes: str
+
+
+class LiveSuiteFamilyEntry(TypedDict):
+    suite_id: str
+    suite_kind: str
+    source_roots: tuple[str, ...]
+    coverage_role: str
+    bundle_candidates: tuple[str, ...]
+    notes: str
+
+
 class CoverageOnlyFixtureBackendEvidence(TypedDict):
     backend: str
     relpath: str
@@ -96,16 +142,155 @@ class CoverageOnlyFixtureEntry(TypedDict):
     notes: str
 
 
+class UnpublishedMultiBackendFixtureEntry(TypedDict):
+    fixture_rel: str
+    fixture_stem: str
+    status: str
+    observed_backends: tuple[str, ...]
+    notes: str
+
+
+def feature_backend_order() -> tuple[str, ...]:
+    return tuple(SMOKE_TEST_PATH_BY_BACKEND)
+
+
+COVERAGE_BUNDLE_TAXONOMY_V1: Final[tuple[CoverageBundleTaxonomyEntry, ...]] = (
+    {
+        "bundle_id": "frontend",
+        "source_roots": ("test/unit/common", "test/unit/ir"),
+        "suite_ids": ("unit_common", "unit_ir"),
+        "harness_kinds": (
+            "frontend_parse_diagnostic",
+            "east_document_compare",
+            "east3_document_compare",
+        ),
+        "notes": "Parse/EAST/EAST3-lowering ownership for contract coverage.",
+    },
+    {
+        "bundle_id": "emit",
+        "source_roots": ("test/unit/backends", "test/unit/common/test_py2x_smoke_common.py"),
+        "suite_ids": ("unit_backends", "unit_common"),
+        "harness_kinds": ("backend_emit_compare",),
+        "notes": "Backend emitter smoke and compare coverage.",
+    },
+    {
+        "bundle_id": "runtime",
+        "source_roots": ("test/transpile", "tools/runtime_parity_check.py"),
+        "suite_ids": ("transpile_artifact",),
+        "harness_kinds": ("runtime_parity_compare",),
+        "notes": "Representative runtime parity and staged artifact coverage.",
+    },
+    {
+        "bundle_id": "import_package",
+        "source_roots": (
+            "test/unit/backends/relative_import_native_path_smoke_support.py",
+            "test/unit/backends/relative_import_jvm_package_smoke_support.py",
+            "tools/check_relative_import_backend_coverage.py",
+        ),
+        "suite_ids": ("unit_backends", "unit_common"),
+        "harness_kinds": ("package_graph_transpile",),
+        "notes": "Relative import, package layout, and module-graph coverage.",
+    },
+    {
+        "bundle_id": "ir2lang",
+        "source_roots": ("test/ir", "tools/check_ir2lang_smoke.py"),
+        "suite_ids": ("ir_fixture",),
+        "harness_kinds": ("ir_json_emit_compare",),
+        "notes": "Frontend-independent EAST3(JSON) to backend smoke coverage.",
+    },
+    {
+        "bundle_id": "integration",
+        "source_roots": ("test/integration",),
+        "suite_ids": ("integration",),
+        "harness_kinds": ("native_compile_run",),
+        "notes": "Backend-specific execution/runtime integration coverage.",
+    },
+)
+
+
+LIVE_SUITE_FAMILY_INVENTORY_V1: Final[tuple[LiveSuiteFamilyEntry, ...]] = (
+    {
+        "suite_id": "unit_common",
+        "suite_kind": "test_unit",
+        "source_roots": ("test/unit/common",),
+        "coverage_role": "direct_matrix_input",
+        "bundle_candidates": ("frontend", "emit", "import_package"),
+        "notes": "Shared frontend/backend smoke helpers and CLI-facing tests.",
+    },
+    {
+        "suite_id": "unit_backends",
+        "suite_kind": "test_unit",
+        "source_roots": ("test/unit/backends",),
+        "coverage_role": "direct_matrix_input",
+        "bundle_candidates": ("emit", "runtime", "import_package"),
+        "notes": "Representative backend smoke and backend-specific checks.",
+    },
+    {
+        "suite_id": "unit_ir",
+        "suite_kind": "test_unit",
+        "source_roots": ("test/unit/ir",),
+        "coverage_role": "direct_matrix_input",
+        "bundle_candidates": ("frontend",),
+        "notes": "Parser/EAST/EAST3-lowering contracts.",
+    },
+    {
+        "suite_id": "unit_link",
+        "suite_kind": "test_unit",
+        "source_roots": ("test/unit/link",),
+        "coverage_role": "supporting_only",
+        "bundle_candidates": (),
+        "notes": "Linker-only validation that supports coverage bundles indirectly.",
+    },
+    {
+        "suite_id": "unit_selfhost",
+        "suite_kind": "test_unit",
+        "source_roots": ("test/unit/selfhost",),
+        "coverage_role": "supporting_only",
+        "bundle_candidates": (),
+        "notes": "Selfhost preparation/build helpers, not a direct matrix source.",
+    },
+    {
+        "suite_id": "unit_tooling",
+        "suite_kind": "test_unit",
+        "source_roots": ("test/unit/tooling",),
+        "coverage_role": "supporting_only",
+        "bundle_candidates": (),
+        "notes": "Tooling/checker tests that police bundle inventories.",
+    },
+    {
+        "suite_id": "ir_fixture",
+        "suite_kind": "test_ir",
+        "source_roots": ("test/ir",),
+        "coverage_role": "direct_matrix_input",
+        "bundle_candidates": ("ir2lang",),
+        "notes": "Frontend-independent IR-to-backend smoke fixtures.",
+    },
+    {
+        "suite_id": "integration",
+        "suite_kind": "test_integration",
+        "source_roots": ("test/integration",),
+        "coverage_role": "direct_matrix_input",
+        "bundle_candidates": ("integration",),
+        "notes": "Backend-specific execution/runtime integration suites.",
+    },
+    {
+        "suite_id": "transpile_artifact",
+        "suite_kind": "test_transpile",
+        "source_roots": ("test/transpile",),
+        "coverage_role": "direct_matrix_input",
+        "bundle_candidates": ("runtime",),
+        "notes": "Artifact and parity-driven staged runtime verification.",
+    },
+)
+
+
 COVERAGE_BUNDLES_V1: Final[tuple[CoverageBundleEntry, ...]] = (
     {
         "bundle_id": "frontend_unit_contract_bundle",
         "bundle_kind": "frontend",
         "suite_kind": "test_unit",
         "harness_kind": "unittest_discover",
-        "source_paths": (
-            "test/unit/ir",
-            "test/unit/common",
-        ),
+        "source_paths": ("test/unit/ir", "test/unit/common"),
         "evidence_refs": (
             {
                 "relpath": "test/unit/ir/test_east_core_parser_behavior_runtime.py",
@@ -116,7 +301,7 @@ COVERAGE_BUNDLES_V1: Final[tuple[CoverageBundleEntry, ...]] = (
                 "needle": "class East2ToEast3SourceContractTest(unittest.TestCase):",
             },
         ),
-        "notes": "Frontend bundle owns parse/east/east3-lowering contract evidence from unit tests under test/unit/ir.",
+        "notes": "Frontend bundle owns parse/EAST/EAST3-lowering unit-test evidence.",
     },
     {
         "bundle_id": "emit_backend_smoke_bundle",
@@ -137,17 +322,14 @@ COVERAGE_BUNDLES_V1: Final[tuple[CoverageBundleEntry, ...]] = (
                 "needle": "def test_representative_property_method_call_fixture_transpiles(self) -> None:",
             },
         ),
-        "notes": "Emit bundle owns backend transpile smoke and compare-oriented representative fixture coverage.",
+        "notes": "Emit bundle owns backend transpile smoke and compare coverage.",
     },
     {
         "bundle_id": "runtime_parity_bundle",
         "bundle_kind": "runtime",
         "suite_kind": "test_transpile",
         "harness_kind": "runtime_parity_cli",
-        "source_paths": (
-            "tools/runtime_parity_check.py",
-            "test/transpile",
-        ),
+        "source_paths": ("tools/runtime_parity_check.py", "test/transpile"),
         "evidence_refs": (
             {
                 "relpath": "test/unit/tooling/test_runtime_parity_check_cli.py",
@@ -155,10 +337,10 @@ COVERAGE_BUNDLES_V1: Final[tuple[CoverageBundleEntry, ...]] = (
             },
             {
                 "relpath": "tools/runtime_parity_check.py",
-                "needle": "return f\"test/transpile/{target}/{case_stem}\"",
+                "needle": 'return f"test/transpile/{target}/{case_stem}"',
             },
         ),
-        "notes": "Runtime bundle owns staged sample/runtime parity verification driven from tools/runtime_parity_check.py and test/transpile artifacts.",
+        "notes": "Runtime bundle owns staged sample/runtime parity verification.",
     },
     {
         "bundle_id": "import_package_bundle",
@@ -181,20 +363,17 @@ COVERAGE_BUNDLES_V1: Final[tuple[CoverageBundleEntry, ...]] = (
             },
             {
                 "relpath": "tools/check_relative_import_backend_coverage.py",
-                "needle": "print(\"[OK] relative import backend coverage inventory passed\")",
+                "needle": 'print("[OK] relative import backend coverage inventory passed")',
             },
         ),
-        "notes": "Import/package bundle owns relative-import, package-layout, and module-graph smoke/checker coverage.",
+        "notes": "Import/package bundle owns relative-import and package-layout smoke.",
     },
     {
         "bundle_id": "ir2lang_smoke_bundle",
         "bundle_kind": "ir2lang",
         "suite_kind": "test_ir",
         "harness_kind": "checker_cli",
-        "source_paths": (
-            "test/ir",
-            "tools/check_ir2lang_smoke.py",
-        ),
+        "source_paths": ("test/ir", "tools/check_ir2lang_smoke.py"),
         "evidence_refs": (
             {
                 "relpath": "test/ir/README.md",
@@ -202,19 +381,17 @@ COVERAGE_BUNDLES_V1: Final[tuple[CoverageBundleEntry, ...]] = (
             },
             {
                 "relpath": "tools/check_ir2lang_smoke.py",
-                "needle": "description=\"Run ir2lang smoke checks from fixed EAST3 fixtures\"",
+                "needle": 'description="Run ir2lang smoke checks from fixed EAST3 fixtures"',
             },
         ),
-        "notes": "ir2lang bundle owns frontend-independent EAST3(JSON) to backend smoke coverage.",
+        "notes": "ir2lang bundle owns backend-only EAST3(JSON) smoke coverage.",
     },
     {
         "bundle_id": "integration_gc_bundle",
         "bundle_kind": "integration",
         "suite_kind": "test_integration",
         "harness_kind": "native_compile_run",
-        "source_paths": (
-            "test/integration",
-        ),
+        "source_paths": ("test/integration",),
         "evidence_refs": (
             {
                 "relpath": "test/integration/test_gc.cpp",
@@ -222,10 +399,10 @@ COVERAGE_BUNDLES_V1: Final[tuple[CoverageBundleEntry, ...]] = (
             },
             {
                 "relpath": "test/integration/test_gc.cpp",
-                "needle": "std::cout << \"test_gc: all tests passed\" << std::endl;",
+                "needle": 'std::cout << "test_gc: all tests passed" << std::endl;',
             },
         ),
-        "notes": "Integration bundle owns backend-specific native runtime execution coverage such as GC/reference-count integration.",
+        "notes": "Integration bundle owns backend-specific native runtime execution coverage.",
     },
 )
 
@@ -234,7 +411,7 @@ def _build_coverage_only_backend_evidence(
     fixture_stem: str,
 ) -> tuple[CoverageOnlyFixtureBackendEvidence, ...]:
     evidence: list[CoverageOnlyFixtureBackendEvidence] = []
-    for backend in feature_inventory_mod.SUPPORT_MATRIX_BACKEND_ORDER:
+    for backend in feature_backend_order():
         relpath = SMOKE_TEST_PATH_BY_BACKEND[backend]
         if backend == "cpp":
             evidence.append(
@@ -261,15 +438,35 @@ COVERAGE_ONLY_FIXTURE_ENTRIES_V1: Final[tuple[CoverageOnlyFixtureEntry, ...]] = 
         "fixture_rel": "test/fixtures/typing/property_method_call.py",
         "status": "coverage_only_representative",
         "backend_evidence": _build_coverage_only_backend_evidence("property_method_call"),
-        "notes": "Already covered across every backend smoke/runtime lane, but not yet promoted into the support-matrix representative inventory.",
+        "notes": (
+            "Already covered across every backend smoke/runtime lane, but not yet "
+            "promoted into the support-matrix representative inventory."
+        ),
     },
     {
         "fixture_stem": "list_bool_index",
         "fixture_rel": "test/fixtures/typing/list_bool_index.py",
         "status": "coverage_only_representative",
         "backend_evidence": _build_coverage_only_backend_evidence("list_bool_index"),
-        "notes": "Already covered across every backend smoke/runtime lane, but still missing from the support-matrix representative inventory.",
+        "notes": (
+            "Already covered across every backend smoke/runtime lane, but still "
+            "missing from the support-matrix representative inventory."
+        ),
     },
+)
+
+
+UNPUBLISHED_MULTI_BACKEND_FIXTURE_INVENTORY_V1: Final[
+    tuple[UnpublishedMultiBackendFixtureEntry, ...]
+] = tuple(
+    {
+        "fixture_rel": row["fixture_rel"],
+        "fixture_stem": row["fixture_stem"],
+        "status": row["status"],
+        "observed_backends": tuple(item["backend"] for item in row["backend_evidence"]),
+        "notes": row["notes"],
+    }
+    for row in COVERAGE_ONLY_FIXTURE_ENTRIES_V1
 )
 
 
@@ -280,11 +477,22 @@ BACKEND_CONTRACT_COVERAGE_HANDOFF_V1: Final[dict[str, object]] = {
         BACKEND_CONTRACT_COVERAGE_PLAN_EN,
     ),
     "bundle_order": tuple(bundle["bundle_id"] for bundle in COVERAGE_BUNDLES_V1),
-    "bundle_kind_order": BUNDLE_KIND_ORDER,
+    "coverage_bundle_order": COVERAGE_BUNDLE_ORDER,
+    "suite_family_order": SUITE_FAMILY_ORDER,
     "suite_kind_order": SUITE_KIND_ORDER,
     "harness_kind_order": HARNESS_KIND_ORDER,
+    "taxonomy_harness_kind_order": TAXONOMY_HARNESS_KIND_ORDER,
     "coverage_only_status_order": COVERAGE_ONLY_STATUS_ORDER,
+    "live_suite_role_order": LIVE_SUITE_ROLE_ORDER,
 }
+
+
+def iter_coverage_bundle_taxonomy() -> tuple[CoverageBundleTaxonomyEntry, ...]:
+    return COVERAGE_BUNDLE_TAXONOMY_V1
+
+
+def iter_live_suite_family_inventory() -> tuple[LiveSuiteFamilyEntry, ...]:
+    return LIVE_SUITE_FAMILY_INVENTORY_V1
 
 
 def iter_backend_contract_coverage_bundles() -> tuple[CoverageBundleEntry, ...]:
@@ -295,16 +503,28 @@ def iter_backend_contract_coverage_only_fixtures() -> tuple[CoverageOnlyFixtureE
     return COVERAGE_ONLY_FIXTURE_ENTRIES_V1
 
 
+def iter_unpublished_multi_backend_fixture_inventory() -> tuple[UnpublishedMultiBackendFixtureEntry, ...]:
+    return UNPUBLISHED_MULTI_BACKEND_FIXTURE_INVENTORY_V1
+
+
 def build_backend_contract_coverage_seed_manifest() -> dict[str, object]:
     return {
         "inventory_version": 1,
         "todo_id": BACKEND_CONTRACT_COVERAGE_HANDOFF_V1["todo_id"],
         "plan_paths": list(BACKEND_CONTRACT_COVERAGE_HANDOFF_V1["plan_paths"]),
-        "bundle_kind_order": list(BUNDLE_KIND_ORDER),
+        "coverage_bundle_order": list(COVERAGE_BUNDLE_ORDER),
+        "suite_family_order": list(SUITE_FAMILY_ORDER),
         "suite_kind_order": list(SUITE_KIND_ORDER),
         "harness_kind_order": list(HARNESS_KIND_ORDER),
+        "taxonomy_harness_kind_order": list(TAXONOMY_HARNESS_KIND_ORDER),
         "coverage_only_status_order": list(COVERAGE_ONLY_STATUS_ORDER),
+        "live_suite_role_order": list(LIVE_SUITE_ROLE_ORDER),
         "bundle_order": list(BACKEND_CONTRACT_COVERAGE_HANDOFF_V1["bundle_order"]),
+        "coverage_bundle_taxonomy": list(iter_coverage_bundle_taxonomy()),
+        "live_suite_families": list(iter_live_suite_family_inventory()),
         "coverage_bundles": list(iter_backend_contract_coverage_bundles()),
         "coverage_only_fixtures": list(iter_backend_contract_coverage_only_fixtures()),
+        "unpublished_multi_backend_fixtures": list(
+            iter_unpublished_multi_backend_fixture_inventory()
+        ),
     }

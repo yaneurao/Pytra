@@ -35,7 +35,7 @@
 
 1. [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01] bundle-based coverage matrix を導入し、`feature x lane x backend` の contract coverage 100% を support matrix と分離して固定する。
 文脈: [docs/ja/plans/p2-backend-contract-coverage-100.md](../plans/p2-backend-contract-coverage-100.md)
-- 進捗メモ: `S1-02` までで representative seed と live suite family inventory を machine-readable checker に固定し、support matrix / future coverage matrix / backend test matrix の役割分担と contract coverage 100% 定義も docs/tooling contract に同期した。
+- 進捗メモ: `S2-02` までで representative seed・coverage matrix seed・live suite family attachment を machine-readable checker に固定し、support matrix / future coverage matrix / backend test matrix の役割分担と、direct bundle attachment / supporting-only exclusion を docs/tooling contract に同期した。
 
 2. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] `py_runtime.h` の typed fallback を EAST3 / C++ emitter / runtime SoT 側へ押し戻し、header を物理分割なしで縮める。
 文脈: [docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md](../plans/p2-cpp-pyruntime-upstream-fallback-shrink.md)

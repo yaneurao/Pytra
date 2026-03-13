@@ -35,7 +35,7 @@ Last updated: 2026-03-14
 
 1. [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01] Introduce a bundle-based coverage matrix and fix `feature x lane x backend` contract coverage at 100% as a surface separate from the support matrix.
 Context: [docs/en/plans/p2-backend-contract-coverage-100.md](../plans/p2-backend-contract-coverage-100.md)
-- Progress memo: Through `S1-02`, locked machine-readable inventory/checkers for representative seeds and live suite families, and synced the role split between the support matrix, the future coverage matrix, and the backend test matrix plus the definition of 100% contract coverage into docs/tooling contracts.
+- Progress memo: Through `S2-02`, locked machine-readable checkers for representative seeds, coverage-matrix seed ownership, and live suite-family attachments, and synced the role split between the support matrix, the future coverage matrix, and the backend test matrix plus the direct-bundle-attachment versus supporting-only-exclusion rules into docs/tooling contracts.
 
 2. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] Push typed fallback out of `py_runtime.h` and back into EAST3, the C++ emitter, and runtime SoT so the header shrinks without physical splitting.
 Context: [docs/en/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md](../plans/p2-cpp-pyruntime-upstream-fallback-shrink.md)
