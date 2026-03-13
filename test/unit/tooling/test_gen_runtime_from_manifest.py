@@ -328,6 +328,34 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertNotIn("__m.", out)
         self.assertNotIn("py_extern(", out)
 
+    def test_rewrite_cs_std_json_live_wrapper_exports_json_facade(self) -> None:
+        src = "\n".join(
+            [
+                "using Pytra.CsModule;",
+                "public static class Program",
+                "{",
+                "    public class JsonObj { }",
+                "    public class JsonArr { }",
+                "    public class JsonValue { }",
+                "    public static object loads(string text) { return text; }",
+                "    public static JsonObj loads_obj(string text) { return null; }",
+                "    public static JsonArr loads_arr(string text) { return null; }",
+                "    public static string dumps(object obj) { return obj.ToString(); }",
+                "}",
+            ]
+        )
+        out = gen_mod.rewrite_cs_std_json_live_wrapper(src)
+        self.assertIn("namespace Pytra.CsModule", out)
+        self.assertIn("public class JsonObj", out)
+        self.assertIn("public class JsonArr", out)
+        self.assertIn("public class JsonValue", out)
+        self.assertIn("public static class json", out)
+        self.assertIn("public static object loads(string text)", out)
+        self.assertIn("public static JsonObj loads_obj(string text)", out)
+        self.assertIn("public static JsonArr loads_arr(string text)", out)
+        self.assertIn("public static string dumps(object obj)", out)
+        self.assertNotIn("public static class Program", out)
+
     def test_rewrite_kotlin_program_to_library_removes_empty_main(self) -> None:
         src = "\n".join(
             [
