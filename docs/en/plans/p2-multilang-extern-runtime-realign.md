@@ -46,7 +46,7 @@ Validation commands (planned):
 
 ## Breakdown
 
-- [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-01] Inventory every runtime-SoT `@extern` module plus the current generated rewrites, emitter hardcodes, and native owners across all targets.
+- [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-01] Inventory every runtime-SoT `@extern` module plus the current generated rewrites, emitter hardcodes, and native owners across all targets.
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-02] Lock the cross-target contract in spec/plan so `@extern` means declaration-only, native owners provide implementations, and ambient externs stay a separate category.
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-01] Remove module-specific extern rewrites from `tools/runtime_generation_manifest.json` and `tools/gen_runtime_from_manifest.py`, and align generated lanes to declaration/wrapper-only output.
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-02] Establish canonical extern-backed owners under `src/runtime/<lang>/native/**` for each target and synchronize the runtime symbol index plus layout contracts.
@@ -58,3 +58,4 @@ Decision log:
 - 2026-03-14: Added `extern_contract_v1` / `extern_v1` to `tools/gen_runtime_symbol_index.py` and `runtime_symbol_index.py` as a prerequisite slice, so runtime-SoT `@extern` modules and symbols can be queried through generic metadata before the manifest/emitter hardcodes are removed.
 - 2026-03-14: For C#, matched the existing `time_native` pattern by turning `generated/std/math.cs` back into a wrapper over `math_native`, and moved the direct `System.Math` bindings into `src/runtime/cs/native/std/math_native.cs`.
 - 2026-03-14: As the first realignment slice, stopped the C# `std/math` generated wrapper from inventing a `tau` symbol that does not exist in the SoT, restoring `pi/e` as the only source-defined exported constants.
+- 2026-03-14: Added `multilang_extern_runtime_realign_inventory.py`, its checker, and unit tests for `S1-01`, locking the current manifest postprocess targets, C++ native owners, non-C++ native seams, emitter hardcodes, and generated drift for `std/math,time,os,os_path,sys,glob` plus `built_in/io_ops,scalar_ops`. The C# `std/math` inventory now records `math_native.cs` as the current non-C++ owner seam.
