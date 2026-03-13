@@ -12,6 +12,10 @@ def normalize_rendered_runtime_args(
     defaults = default_values if isinstance(default_values, dict) else {}
     if adapter_kind == "":
         return list(rendered_args)
+    if adapter_kind in {"math.float_args", "math.value_getter"}:
+        if rendered_keywords:
+            raise RuntimeError(error_prefix + ": unsupported runtime keywords for adapter: " + adapter_kind)
+        return list(rendered_args)
     if adapter_kind != "image.save_gif.keyword_defaults":
         raise RuntimeError(error_prefix + ": unsupported runtime adapter kind: " + adapter_kind)
     if len(rendered_args) < 5 or len(rendered_args) > 7:
@@ -31,4 +35,3 @@ def normalize_rendered_runtime_args(
             continue
         raise RuntimeError(error_prefix + ": unsupported save_gif keyword: " + kw_name)
     return rendered_args[:5] + [delay_expr, loop_expr]
-

@@ -1008,8 +1008,8 @@ def f(x: object) -> bool:
         fixture = find_fixture_case("sys_extended")
         east = load_east(fixture, parser_backend="self_hosted")
         cs = transpile_to_csharp(east)
-        self.assertIn('sys.set_argv(new System.Collections.Generic.List<string> { "a", "b" });', cs)
-        self.assertIn('sys.set_path(new System.Collections.Generic.List<string> { "x" });', cs)
+        self.assertIn('sys.set_argv(new System.Collections.Generic.List<str> { "a", "b" });', cs)
+        self.assertIn('sys.set_path(new System.Collections.Generic.List<str> { "x" });', cs)
         self.assertNotIn("unsupported", cs)
 
     def test_representative_random_timeit_traceback_fixture_transpiles(self) -> None:

@@ -15,6 +15,27 @@ from src.toolchain.frontends.runtime_call_adapters import normalize_rendered_run
 
 
 class RuntimeCallAdaptersTest(unittest.TestCase):
+    def test_math_float_args_adapter_passes_positional_args_through(self) -> None:
+        self.assertEqual(
+            normalize_rendered_runtime_args(
+                "math.float_args",
+                ["x", "y"],
+                [],
+                error_prefix="test",
+            ),
+            ["x", "y"],
+        )
+
+    def test_math_value_getter_adapter_rejects_keywords(self) -> None:
+        with self.assertRaises(RuntimeError) as cm:
+            normalize_rendered_runtime_args(
+                "math.value_getter",
+                [],
+                [("unused", "1")],
+                error_prefix="test",
+            )
+        self.assertIn("unsupported runtime keywords for adapter", str(cm.exception))
+
     def test_save_gif_adapter_applies_defaults_and_keyword_order(self) -> None:
         self.assertEqual(
             normalize_rendered_runtime_args(
