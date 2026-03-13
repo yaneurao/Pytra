@@ -31,4 +31,13 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 
-There are currently no open tasks.
+- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01] Remove checked-in `src/runtime/<lang>/pytra/**` from every non-C++ / non-C# backend and converge the permanent repo-owned runtime layout on `generated/native` only. Context: [p0-noncpp-runtime-pytra-deshim.md](../plans/p0-noncpp-runtime-pytra-deshim.md)
+- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01] Locked the current 12-backend `pytra/**` directory/file inventory, delete blocker references, and current->target mapping in plan / contract / checker / test form.
+- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] Switch active contracts / checkers / spec wording to `generated/native only` and make checked-in `pytra/**` re-entry fail fast.
+- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-01] Resolve the Rust (`rs`) `pytra/**` compat residual and remove repo-tree `pytra/**` assumptions from `py2rs`, selfhost, runtime guards, and smoke.
+- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-02] Switch the static family (`go/java/kotlin/scala/swift/nim`) registry / packaging / smoke / tooling to direct `generated/native` references and remove repo-tree `pytra/**` dependencies.
+- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-03] Physically delete checked-in `src/runtime/<lang>/pytra/**` for the static family and sync allowlists / inventory / representative smoke to the deletion end state.
+- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-01] Rework JS/TS import paths, shim writers, selfhost, and smoke so repo-tree `src/runtime/{js,ts}/pytra/**` direct-load and compat contracts disappear.
+- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-02] Move Lua/Ruby/PHP packaging / runtime copy / loader contracts to `generated/native` or output-side staging and remove checked-in `pytra/**` assumptions.
+- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-03] Physically delete checked-in `src/runtime/<lang>/pytra/**` for the script family and update representative smoke plus contract baselines to the deletion end state.
+- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S4-01] Sync docs / TODO / archive references / inventory and close with the invariant that no checked-in non-C++ / non-C# backend owns `pytra/`.
