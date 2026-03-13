@@ -123,6 +123,12 @@ class CppCallEmitter:
             if imported_class_cpp_type.startswith("rc<"):
                 return f"::rc_new<{ctor_cpp_name}>({join_str_list(', ', ctor_args)})", raw
             return f"{ctor_cpp_name}({join_str_list(', ', ctor_args)})", raw
+        if imported_module == "collections" and raw == "deque":
+            call_args = self.merge_call_args(args, kw)
+            if len(call_args) == 0 and len(kw) == 0:
+                rendered = self._render_collection_constructor_call("deque", expr, call_args, expr)
+                if rendered is not None and rendered != "":
+                    return rendered, raw
         runtime_module_id = self.any_dict_get_str(expr, "runtime_module_id", "")
         runtime_symbol = self.any_dict_get_str(expr, "runtime_symbol", "")
         if runtime_module_id != "" and runtime_symbol == raw:
@@ -808,9 +814,21 @@ class CppCallEmitter:
         kw_nodes: list[Any],
     ) -> str | None:
         """`Call(Attribute)` の object/class 系分岐（非 module）を処理する。"""
+        owner_t = self.infer_rendered_arg_type(owner_expr, owner_t, self.declared_var_types)
+        owner_t = self.normalize_type_name(owner_t)
         hook_object_rendered = self.hook_on_render_object_method(owner_t, owner_expr, attr, args)
         if isinstance(hook_object_rendered, str) and hook_object_rendered != "":
             return hook_object_rendered
+        if owner_t.startswith("deque[") and owner_t.endswith("]"):
+            if attr == "popleft" and len(args) == 0 and len(kw) == 0:
+                tmp_name = self.next_tmp("__deque_front")
+                return (
+                    "([&]() { "
+                    f"auto {tmp_name} = {owner_expr}.front(); "
+                    f"{owner_expr}.pop_front(); "
+                    f"return {tmp_name}; "
+                    "}())"
+                )
         hook_class_rendered = self.hook_on_render_class_method(owner_t, attr, fn, args, kw, arg_nodes)
         if isinstance(hook_class_rendered, str) and hook_class_rendered != "":
             return hook_class_rendered

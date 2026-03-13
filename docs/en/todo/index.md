@@ -31,4 +31,4 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] Lock the representative C++ expression / method lane for `collections.deque`. Progress: `S1-01` added a baseline regression for the current invalid C++ surface. Context: [p0-collections-deque-cpp-expr-method-support.md](../plans/p0-collections-deque-cpp-expr-method-support.md)
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] Lock the representative C++ expression / method lane for `collections.deque`. Progress: `S2-01` upstreamed `deque()` / `bool(q)` / `len(q)` to `::std::deque<T>{}` / `!empty()` / `.size()`. `popleft` is already green through the existing lowering, and only `append` remains. Context: [p0-collections-deque-cpp-expr-method-support.md](../plans/p0-collections-deque-cpp-expr-method-support.md)

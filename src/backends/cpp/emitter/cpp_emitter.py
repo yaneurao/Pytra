@@ -3358,6 +3358,25 @@ class CppEmitter(
             return f"{base}.empty()"
         return f"({base}).empty()"
 
+    def _render_container_size_expr(self, container_expr: str) -> str:
+        """コンテナ式を `.size()` 参照へ変換する。"""
+        base = self._trim_ws(container_expr)
+        if base == "":
+            return ""
+        if self._is_identifier_expr(base):
+            return f"{base}.size()"
+        return f"({base}).size()"
+
+    def _typed_deque_fastpath_target(self, expr_node: Any) -> bool:
+        """typed deque fastpath を適用可能な式かを判定する。"""
+        node = self.any_to_dict_or_empty(expr_node)
+        if len(node) == 0:
+            return False
+        deque_t = self.normalize_type_name(self.get_expr_type(expr_node))
+        if deque_t in {"", "unknown"}:
+            deque_t = self.normalize_type_name(self.any_dict_get_str(node, "resolved_type", ""))
+        return deque_t.startswith("deque[") and deque_t.endswith("]")
+
     def _render_typed_list_len_compare_as_empty(self, expr: dict[str, Any]) -> str:
         """`py_len(list) ==/!= 0` を `list.empty()` へ縮退する。"""
         ops = self.any_to_str_list(expr.get("ops"))
@@ -3403,6 +3422,46 @@ class CppEmitter(
         if empty_expr == "":
             return ""
         return f"!({empty_expr})"
+
+    def _render_typed_deque_truthy_cond(self, expr_node: Any) -> str:
+        """typed deque の truthy 条件を `!deque.empty()` へ縮退する。"""
+        if not self._typed_deque_fastpath_target(expr_node):
+            return ""
+        body = self._strip_outer_parens(self.render_expr(expr_node))
+        if body == "":
+            return ""
+        empty_expr = self._render_container_empty_expr(body)
+        if empty_expr == "":
+            return ""
+        return f"!({empty_expr})"
+
+    def _render_typed_deque_len_expr(self, expr_node: Any) -> str:
+        """typed deque の `len(...)` を `.size()` へ縮退する。"""
+        if not self._typed_deque_fastpath_target(expr_node):
+            return ""
+        body = self._strip_outer_parens(self.render_expr(expr_node))
+        if body == "":
+            return ""
+        return self._render_container_size_expr(body)
+
+    def _render_zero_arg_deque_ctor_for_target(self, value_node: Any, target_t: str) -> str:
+        """`deque()` を `::std::deque<T>{}` へ直接 lower できる場合は返す。"""
+        target_norm = self.normalize_type_name(target_t)
+        if not (target_norm.startswith("deque[") and target_norm.endswith("]")):
+            return ""
+        value_d = self.any_to_dict_or_empty(value_node)
+        if self._node_kind_from_dict(value_d) != "Call":
+            return ""
+        fn = self.any_to_dict_or_empty(value_d.get("func"))
+        if self._node_kind_from_dict(fn) != "Name":
+            return ""
+        if self.any_dict_get_str(fn, "id", "") != "deque":
+            return ""
+        if len(self.any_to_list(value_d.get("args"))) != 0:
+            return ""
+        if len(self.any_to_list(value_d.get("keywords"))) != 0:
+            return ""
+        return f"{self._cpp_type_text(target_norm)}{{}}"
 
     def _box_expr_for_any(self, expr_txt: str, source_node: Any) -> str:
         """Any/object 向けの boxing を必要時のみ適用する。"""
@@ -3832,6 +3891,9 @@ class CppEmitter(
             target_t = self.normalize_type_name(self.any_to_str(expr_d.get("resolved_type")))
         if target_t == "" or target_t == "unknown" or self.is_any_like_type(target_t):
             return value_expr
+        deque_ctor_expr = self._render_zero_arg_deque_ctor_for_target(value_node, target_t)
+        if deque_ctor_expr != "":
+            return deque_ctor_expr
         if self._is_pyobj_ref_first_list_type(target_t):
             if self._uses_pyobj_ref_first_list_lvalue_expr(value_node) or self._call_expr_returns_known_pyobj_list_handle(
                 value_node
@@ -3860,12 +3922,20 @@ class CppEmitter(
 
     def _render_expr_kind_obj_bool(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
-        value_expr = self.render_expr(expr_d.get("value"))
+        value_node = expr_d.get("value")
+        deque_truthy = self._render_typed_deque_truthy_cond(value_node)
+        if deque_truthy != "":
+            return deque_truthy
+        value_expr = self.render_expr(value_node)
         return f"py_to<bool>({value_expr})"
 
     def _render_expr_kind_obj_len(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
-        value_expr = self.render_expr(expr_d.get("value"))
+        value_node = expr_d.get("value")
+        deque_len = self._render_typed_deque_len_expr(value_node)
+        if deque_len != "":
+            return deque_len
+        value_expr = self.render_expr(value_node)
         return f"py_len({value_expr})"
 
     def _render_expr_kind_obj_str(self, expr: Any, expr_d: dict[str, Any]) -> str:
@@ -3926,6 +3996,9 @@ class CppEmitter(
             typed_list_cond = self._render_typed_list_truthy_cond(expr)
             if typed_list_cond != "":
                 return typed_list_cond
+            typed_deque_cond = self._render_typed_deque_truthy_cond(expr)
+            if typed_deque_cond != "":
+                return typed_deque_cond
             return super().render_cond(expr)
         body_raw = self.render_expr(expr)
         body = self._strip_outer_parens(body_raw)
