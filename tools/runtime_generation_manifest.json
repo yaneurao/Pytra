@@ -114,7 +114,12 @@
           "output": "src/runtime/swift/generated/utils/assertions.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/utils/assertions.nim" }
+        { "target": "nim", "output": "src/runtime/nim/generated/utils/assertions.nim" },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/utils/assertions.kt",
+          "postprocess": "kotlin_program_to_library"
+        }
       ]
     },
     {
@@ -174,6 +179,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/io_ops.java" },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/built_in/io_ops.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
         {
           "target": "swift",
           "output": "src/runtime/swift/generated/built_in/io_ops.swift",
@@ -243,6 +253,11 @@
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/numeric_ops.java" },
         {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/built_in/numeric_ops.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/built_in/numeric_ops.swift",
           "postprocess": "swift_program_to_library"
@@ -310,6 +325,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/scalar_ops.java" },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/built_in/scalar_ops.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
         {
           "target": "swift",
           "output": "src/runtime/swift/generated/built_in/scalar_ops.swift",
@@ -379,6 +399,11 @@
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/string_ops.java" },
         {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/built_in/string_ops.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/built_in/string_ops.swift",
           "postprocess": "swift_program_to_library"
@@ -407,6 +432,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/built_in/type_id.java" },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/built_in/type_id.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
         {
           "target": "swift",
           "output": "src/runtime/swift/generated/built_in/type_id.swift",
@@ -471,6 +501,11 @@
         },
         { "target": "java", "output": "src/runtime/java/generated/std/time.java", "postprocess": "java_std_time_live_wrapper" },
         {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/std/time.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/time.swift",
           "postprocess": "swift_program_to_library"
@@ -494,6 +529,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/std/json.java" },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/std/json.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
         {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/json.swift",
@@ -519,6 +559,11 @@
         },
         { "target": "java", "output": "src/runtime/java/generated/std/pathlib.java" },
         {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/std/pathlib.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/pathlib.swift",
           "postprocess": "swift_program_to_library"
@@ -542,6 +587,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/std/math.java", "postprocess": "java_std_math_live_wrapper" },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/std/math.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
         {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/math.swift",
@@ -567,6 +617,11 @@
         },
         { "target": "java", "output": "src/runtime/java/generated/std/os.java" },
         {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/std/os.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/os.swift",
           "postprocess": "swift_program_to_library"
@@ -587,6 +642,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/std/os_path.java" },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/std/os_path.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
         {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/os_path.swift",
@@ -609,6 +669,11 @@
         },
         { "target": "java", "output": "src/runtime/java/generated/std/glob.java" },
         {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/std/glob.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/glob.swift",
           "postprocess": "swift_program_to_library"
@@ -629,6 +694,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/std/argparse.java" },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/std/argparse.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
         {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/argparse.swift",
@@ -651,6 +721,11 @@
         },
         { "target": "java", "output": "src/runtime/java/generated/std/random.java" },
         {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/std/random.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/random.swift",
           "postprocess": "swift_program_to_library"
@@ -671,6 +746,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/std/re.java" },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/std/re.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
         {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/re.swift",
@@ -693,6 +773,11 @@
         },
         { "target": "java", "output": "src/runtime/java/generated/std/sys.java" },
         {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/std/sys.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
+        {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/sys.swift",
           "postprocess": "swift_program_to_library"
@@ -713,6 +798,11 @@
           "postprocess": "go_program_to_library"
         },
         { "target": "java", "output": "src/runtime/java/generated/std/timeit.java" },
+        {
+          "target": "kotlin",
+          "output": "src/runtime/kotlin/generated/std/timeit.kt",
+          "postprocess": "kotlin_program_to_library"
+        },
         {
           "target": "swift",
           "output": "src/runtime/swift/generated/std/timeit.swift",

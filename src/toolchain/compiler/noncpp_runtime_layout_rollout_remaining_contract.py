@@ -205,6 +205,12 @@ REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]
     "built_in/type_id",
 )
 
+REMAINING_NONCPP_KOTLIN_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
+    REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+)
+
+REMAINING_NONCPP_KOTLIN_BLOCKED_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = ()
+
 REMAINING_NONCPP_SWIFT_GENERATED_COMPARE_BUILT_IN_MODULES_V1: Final[tuple[str, ...]] = (
     REMAINING_NONCPP_GENERATED_COMPARE_BUILT_IN_MODULES_V1
 )
@@ -321,6 +327,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/kotlin/generated/built_in/",
                 "ownership": "generated",
                 "rationale": "Kotlin compile-safe built_in compare artifacts live in generated/built_in after the S4 alignment bundle.",
+            },
+            {
+                "current_prefix": "src/runtime/kotlin/generated/std/",
+                "target_prefix": "src/runtime/kotlin/generated/std/",
+                "ownership": "generated",
+                "rationale": "Kotlin SoT-generated std compare artifacts now live in generated/std after the cpp-baseline materialization bundle.",
             },
             {
                 "current_prefix": "src/runtime/kotlin/pytra/built_in/py_runtime.kt",
@@ -799,10 +811,28 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
         "pytra_core_files": ("built_in/py_runtime.kt",),
         "pytra_gen_files": (
             "built_in/contains.kt",
+            "built_in/io_ops.kt",
             "built_in/iter_ops.kt",
+            "built_in/numeric_ops.kt",
             "built_in/predicates.kt",
+            "built_in/scalar_ops.kt",
             "built_in/sequence.kt",
+            "built_in/string_ops.kt",
+            "built_in/type_id.kt",
             "built_in/zip_ops.kt",
+            "std/argparse.kt",
+            "std/glob.kt",
+            "std/json.kt",
+            "std/math.kt",
+            "std/os.kt",
+            "std/os_path.kt",
+            "std/pathlib.kt",
+            "std/random.kt",
+            "std/re.kt",
+            "std/sys.kt",
+            "std/time.kt",
+            "std/timeit.kt",
+            "utils/assertions.kt",
             "utils/gif.kt",
             "utils/image_runtime.kt",
             "utils/png.kt",
@@ -1084,10 +1114,28 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
         "backend": "kotlin",
         "generated_files": (
             "generated/built_in/contains.kt",
+            "generated/built_in/io_ops.kt",
             "generated/built_in/iter_ops.kt",
+            "generated/built_in/numeric_ops.kt",
             "generated/built_in/predicates.kt",
+            "generated/built_in/scalar_ops.kt",
             "generated/built_in/sequence.kt",
+            "generated/built_in/string_ops.kt",
+            "generated/built_in/type_id.kt",
             "generated/built_in/zip_ops.kt",
+            "generated/std/argparse.kt",
+            "generated/std/glob.kt",
+            "generated/std/json.kt",
+            "generated/std/math.kt",
+            "generated/std/os.kt",
+            "generated/std/os_path.kt",
+            "generated/std/pathlib.kt",
+            "generated/std/random.kt",
+            "generated/std/re.kt",
+            "generated/std/sys.kt",
+            "generated/std/time.kt",
+            "generated/std/timeit.kt",
+            "generated/utils/assertions.kt",
             "generated/utils/gif.kt",
             "generated/utils/image_runtime.kt",
             "generated/utils/png.kt",
@@ -1357,15 +1405,29 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     {
         "backend": "kotlin",
         "generated_modules": (
-            REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + ("utils/gif", "utils/image_runtime", "utils/png")
+            REMAINING_NONCPP_KOTLIN_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + (
+                "std/argparse",
+                "std/glob",
+                "std/json",
+                "std/math",
+                "std/os",
+                "std/os_path",
+                "std/pathlib",
+                "std/random",
+                "std/re",
+                "std/sys",
+                "std/time",
+                "std/timeit",
+                "utils/assertions",
+                "utils/gif",
+                "utils/image_runtime",
+                "utils/png",
+            )
         ),
         "native_modules": ("built_in/py_runtime",),
         "compat_modules": ("built_in/py_runtime",),
-        "blocked_modules": (
-            REMAINING_NONCPP_KOTLIN_SCALA_BLOCKED_BUILT_IN_MODULES_V1
-            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
-        ),
+        "blocked_modules": REMAINING_NONCPP_KOTLIN_BLOCKED_BUILT_IN_MODULES_V1,
     },
     {
         "backend": "scala",
@@ -1845,13 +1907,22 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_COMPARE_V1: Final[
     {
         "backend": "kotlin",
         "materialized_compare_modules": (
-            REMAINING_NONCPP_KOTLIN_SCALA_GENERATED_COMPARE_BUILT_IN_MODULES_V1
-            + (
-                "utils/gif",
-                "utils/png",
-            )
+            REMAINING_NONCPP_KOTLIN_GENERATED_COMPARE_BUILT_IN_MODULES_V1
+            + REMAINING_NONCPP_GENERATED_COMPARE_STD_MODULES_V1
+            + ("utils/gif", "utils/png")
         ),
-        "helper_artifact_modules": ("utils/image_runtime",),
+        "helper_artifact_modules": (
+            "std/argparse",
+            "std/glob",
+            "std/os",
+            "std/os_path",
+            "std/random",
+            "std/re",
+            "std/sys",
+            "std/timeit",
+            "utils/assertions",
+            "utils/image_runtime",
+        ),
     },
     {
         "backend": "scala",
@@ -2006,6 +2077,24 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_GENERATED_SMOKE_V1: Final[
         "smoke_kind": "source_guard",
         "smoke_targets": (
             "built_in/contains.kt",
+            "built_in/io_ops.kt",
+            "built_in/numeric_ops.kt",
+            "built_in/scalar_ops.kt",
+            "built_in/string_ops.kt",
+            "built_in/type_id.kt",
+            "std/argparse.kt",
+            "std/glob.kt",
+            "std/json.kt",
+            "std/math.kt",
+            "std/os.kt",
+            "std/os_path.kt",
+            "std/pathlib.kt",
+            "std/random.kt",
+            "std/re.kt",
+            "std/sys.kt",
+            "std/time.kt",
+            "std/timeit.kt",
+            "utils/assertions.kt",
             "utils/gif.kt",
             "utils/image_runtime.kt",
             "utils/png.kt",

@@ -369,18 +369,38 @@ class Py2KotlinSmokeTest(unittest.TestCase):
 
     def test_kotlin_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "kotlin" / "native" / "built_in" / "py_runtime.kt"
-        generated_contains = ROOT / "src" / "runtime" / "kotlin" / "generated" / "built_in" / "contains.kt"
-        generated_zip = ROOT / "src" / "runtime" / "kotlin" / "generated" / "built_in" / "zip_ops.kt"
-        generated_gif = ROOT / "src" / "runtime" / "kotlin" / "generated" / "utils" / "gif.kt"
-        image_runtime = ROOT / "src" / "runtime" / "kotlin" / "generated" / "utils" / "image_runtime.kt"
-        generated_png = ROOT / "src" / "runtime" / "kotlin" / "generated" / "utils" / "png.kt"
+        generated_root = ROOT / "src" / "runtime" / "kotlin" / "generated"
         legacy_path = ROOT / "src" / "kotlin_module" / "py_runtime.kt"
         self.assertTrue(runtime_path.exists())
-        self.assertTrue(generated_contains.exists())
-        self.assertTrue(generated_gif.exists())
-        self.assertTrue(generated_zip.exists())
-        self.assertTrue(image_runtime.exists())
-        self.assertTrue(generated_png.exists())
+        for rel_path in (
+            "built_in/contains.kt",
+            "built_in/io_ops.kt",
+            "built_in/iter_ops.kt",
+            "built_in/numeric_ops.kt",
+            "built_in/predicates.kt",
+            "built_in/scalar_ops.kt",
+            "built_in/sequence.kt",
+            "built_in/string_ops.kt",
+            "built_in/type_id.kt",
+            "built_in/zip_ops.kt",
+            "std/argparse.kt",
+            "std/glob.kt",
+            "std/json.kt",
+            "std/math.kt",
+            "std/os.kt",
+            "std/os_path.kt",
+            "std/pathlib.kt",
+            "std/random.kt",
+            "std/re.kt",
+            "std/sys.kt",
+            "std/time.kt",
+            "std/timeit.kt",
+            "utils/assertions.kt",
+            "utils/gif.kt",
+            "utils/image_runtime.kt",
+            "utils/png.kt",
+        ):
+            self.assertTrue((generated_root / rel_path).exists(), msg=rel_path)
         self.assertFalse(legacy_path.exists())
 
     def test_kotlin_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:
