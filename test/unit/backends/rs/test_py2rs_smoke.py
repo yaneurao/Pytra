@@ -921,6 +921,22 @@ def f(x: Any) -> bool:
         self.assertIn("p.parse_args(", rust)
         self.assertNotIn("unsupported", rust)
 
+    def test_representative_sys_extended_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("sys_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn('pytra::std::sys::set_argv((vec![("a").to_string(), ("b").to_string()]).clone());', rust)
+        self.assertIn('pytra::std::sys::set_path((vec![("x").to_string()]).clone());', rust)
+        self.assertNotIn("unsupported", rust)
+
+    def test_representative_random_timeit_traceback_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("random_timeit_traceback_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        self.assertIn("use crate::pytra::std::timeit::default_timer as timer;", rust)
+        self.assertIn("let v2: i64 = py_any_to_i64(&pytra::std::random::randint(1, 3));", rust)
+        self.assertNotIn("unsupported", rust)
+
     def test_representative_re_extended_fixture_transpiles(self) -> None:
         fixture = find_fixture_case("re_extended")
         east = load_east(fixture, parser_backend="self_hosted")

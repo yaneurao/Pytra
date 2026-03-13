@@ -22,13 +22,13 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
     def test_csharp_module_order_is_fixed(self) -> None:
         self.assertEqual(
             tuple(entry["module_name"] for entry in contract_mod.iter_cs_std_lane_ownership()),
-            ("time", "json", "pathlib", "math", "re", "argparse", "enum"),
+            ("time", "json", "pathlib", "math", "random", "re", "argparse", "sys", "timeit", "enum"),
         )
 
     def test_rust_module_order_is_fixed(self) -> None:
         self.assertEqual(
             tuple(entry["module_name"] for entry in contract_mod.iter_rs_std_lane_ownership()),
-            ("time", "math", "pathlib", "os", "os_path", "glob", "json", "re", "argparse", "enum"),
+            ("time", "math", "pathlib", "os", "os_path", "glob", "json", "random", "re", "argparse", "sys", "timeit", "enum"),
         )
 
     def test_generated_state_taxonomy_is_fixed(self) -> None:
@@ -149,8 +149,8 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
             {
                 "module_name": "json",
                 "canonical_lane": "native/std",
-                "generated_std_state": "blocked",
-                "generated_std_rel": "",
+                "generated_std_state": "compare_artifact",
+                "generated_std_rel": "src/runtime/cs/generated/std/json.cs",
                 "native_rel": "src/runtime/cs/native/std/json.cs",
                 "canonical_runtime_symbol": "Pytra.CsModule.json",
                 "representative_fixture": "test/fixtures/stdlib/json_extended.py",
@@ -158,7 +158,7 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
                     "def test_representative_json_extended_fixture_transpiles",
                     "Pytra.CsModule.json.loads(s)",
                 ),
-                "rationale": "json.py cannot yet generate the C# runtime lane because the current ABI/object contract is still handwritten.",
+                "rationale": "generated/std/json.cs now exists for compare, but the live C# runtime still compiles the handwritten native/std/json.cs ABI lane.",
             },
         )
         self.assertEqual(
@@ -178,12 +178,40 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
             "compare_artifact",
         )
         self.assertEqual(
+            by_module["random"]["generated_std_state"],
+            "compare_artifact",
+        )
+        self.assertEqual(
             by_module["re"]["canonical_lane"],
             "no_runtime_module",
         )
         self.assertEqual(
+            by_module["re"]["generated_std_state"],
+            "compare_artifact",
+        )
+        self.assertEqual(
             by_module["argparse"]["canonical_lane"],
             "no_runtime_module",
+        )
+        self.assertEqual(
+            by_module["argparse"]["generated_std_state"],
+            "compare_artifact",
+        )
+        self.assertEqual(
+            by_module["sys"]["canonical_lane"],
+            "no_runtime_module",
+        )
+        self.assertEqual(
+            by_module["sys"]["generated_std_state"],
+            "compare_artifact",
+        )
+        self.assertEqual(
+            by_module["timeit"]["canonical_lane"],
+            "no_runtime_module",
+        )
+        self.assertEqual(
+            by_module["timeit"]["generated_std_state"],
+            "compare_artifact",
         )
         self.assertEqual(
             by_module["enum"]["canonical_lane"],
@@ -204,8 +232,8 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
                     "Pytra.CsModule.time.perf_counter()",
                 ),
                 "deferred_native_canonical_modules": ("json", "pathlib", "math"),
-                "deferred_no_runtime_modules": ("re", "argparse", "enum"),
-                "rationale": "time is the first live-generated C# std lane because its representative surface is a single `perf_counter()` wrapper, while `json` remains blocked and `pathlib/math` still depend on heavier native canonical seams.",
+                "deferred_no_runtime_modules": ("random", "re", "argparse", "sys", "timeit", "enum"),
+                "rationale": "time is the first live-generated C# std lane because its representative surface is a single `perf_counter()` wrapper, while `json/pathlib/math` still depend on heavier native canonical seams and the remaining std compare artifacts are not wired into the live runtime yet.",
             },
         )
 
@@ -236,9 +264,14 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
         self.assertEqual(by_module["os"]["generated_std_state"], "compare_artifact")
         self.assertEqual(by_module["os_path"]["generated_std_state"], "compare_artifact")
         self.assertEqual(by_module["glob"]["generated_std_state"], "compare_artifact")
-        self.assertEqual(by_module["json"]["generated_std_state"], "blocked")
+        self.assertEqual(by_module["json"]["generated_std_state"], "compare_artifact")
+        self.assertEqual(by_module["random"]["generated_std_state"], "compare_artifact")
         self.assertEqual(by_module["re"]["canonical_lane"], "no_runtime_module")
+        self.assertEqual(by_module["re"]["generated_std_state"], "compare_artifact")
         self.assertEqual(by_module["argparse"]["canonical_lane"], "no_runtime_module")
+        self.assertEqual(by_module["argparse"]["generated_std_state"], "compare_artifact")
+        self.assertEqual(by_module["sys"]["generated_std_state"], "compare_artifact")
+        self.assertEqual(by_module["timeit"]["generated_std_state"], "compare_artifact")
         self.assertEqual(by_module["enum"]["canonical_lane"], "no_runtime_module")
 
 

@@ -64,7 +64,18 @@ def _collect_contract_issues() -> list[str]:
     issues: list[str] = []
     cs_entries = contract_mod.iter_cs_std_lane_ownership()
     cs_module_names = tuple(entry["module_name"] for entry in cs_entries)
-    if cs_module_names != ("time", "json", "pathlib", "math", "re", "argparse", "enum"):
+    if cs_module_names != (
+        "time",
+        "json",
+        "pathlib",
+        "math",
+        "random",
+        "re",
+        "argparse",
+        "sys",
+        "timeit",
+        "enum",
+    ):
         issues.append("cs std lane ownership module order drifted")
     rs_entries = contract_mod.iter_rs_std_lane_ownership()
     rs_module_names = tuple(entry["module_name"] for entry in rs_entries)
@@ -76,8 +87,11 @@ def _collect_contract_issues() -> list[str]:
         "os_path",
         "glob",
         "json",
+        "random",
         "re",
         "argparse",
+        "sys",
+        "timeit",
         "enum",
     ):
         issues.append("rs std lane ownership module order drifted")
@@ -269,8 +283,12 @@ def _collect_csharp_lane_issues() -> list[str]:
                 issues.append(f"no_runtime_module must not set native path: {module_name}")
             generated_runtime_rel = f"src/runtime/cs/generated/std/{module_name}.cs"
             native_runtime_rel = f"src/runtime/cs/native/std/{module_name}.cs"
-            if generated_runtime_rel in build_profile_text or (ROOT / generated_runtime_rel).exists():
-                issues.append(f"{module_name} unexpectedly owns a generated/std runtime module")
+            if generated_state == "no_runtime_module":
+                if generated_runtime_rel in build_profile_text or (ROOT / generated_runtime_rel).exists():
+                    issues.append(f"{module_name} unexpectedly owns a generated/std runtime module")
+            else:
+                if generated_runtime_rel in build_profile_text:
+                    issues.append(f"generated compare artifact leaked into C# build profile: {module_name}")
             if native_runtime_rel in build_profile_text or (ROOT / native_runtime_rel).exists():
                 issues.append(f"{module_name} unexpectedly owns a native/std runtime module")
         else:
@@ -291,7 +309,14 @@ def _collect_csharp_lane_issues() -> list[str]:
             issues.append("C# live-generated candidate native path drifted")
     if tuple(candidate["deferred_native_canonical_modules"]) != ("json", "pathlib", "math"):
         issues.append("C# deferred native-canonical module set drifted")
-    if tuple(candidate["deferred_no_runtime_modules"]) != ("re", "argparse", "enum"):
+    if tuple(candidate["deferred_no_runtime_modules"]) != (
+        "random",
+        "re",
+        "argparse",
+        "sys",
+        "timeit",
+        "enum",
+    ):
         issues.append("C# deferred no-runtime-module set drifted")
     if 'return "Pytra.CsModule.math"' not in emitter_text:
         issues.append("math module alias target drifted from Pytra.CsModule.math")

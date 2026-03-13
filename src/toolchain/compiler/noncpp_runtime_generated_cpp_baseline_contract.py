@@ -103,16 +103,19 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_FORBIDDEN_LEGACY_STATES_V1: Final[
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
     tuple[NonCppRuntimeGeneratedCppBaselineLegacyStateEntry, ...]
 ] = (
-    {"backend": "cs", "legacy_state": "blocked", "modules": ("std/json",)},
     {
         "backend": "cs",
         "legacy_state": "compare_artifact",
-        "modules": ("std/math", "std/pathlib"),
-    },
-    {
-        "backend": "cs",
-        "legacy_state": "no_runtime_module",
-        "modules": ("std/argparse", "std/re"),
+        "modules": (
+            "std/argparse",
+            "std/json",
+            "std/math",
+            "std/pathlib",
+            "std/random",
+            "std/re",
+            "std/sys",
+            "std/timeit",
+        ),
     },
     {
         "backend": "cs",
@@ -179,16 +182,23 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "utils/gif",
         "utils/png",
     )},
-    {"backend": "rs", "legacy_state": "blocked", "modules": ("std/json",)},
     {
         "backend": "rs",
         "legacy_state": "compare_artifact",
-        "modules": ("std/glob", "std/math", "std/os", "std/os_path", "std/pathlib", "std/time"),
-    },
-    {
-        "backend": "rs",
-        "legacy_state": "no_runtime_module",
-        "modules": ("std/argparse", "std/re"),
+        "modules": (
+            "std/argparse",
+            "std/glob",
+            "std/json",
+            "std/math",
+            "std/os",
+            "std/os_path",
+            "std/pathlib",
+            "std/random",
+            "std/re",
+            "std/sys",
+            "std/time",
+            "std/timeit",
+        ),
     },
     {
         "backend": "rs",

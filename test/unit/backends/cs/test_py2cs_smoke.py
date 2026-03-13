@@ -983,6 +983,22 @@ def f(x: object) -> bool:
         self.assertIn("p.parse_args(", cs)
         self.assertNotIn("unsupported", cs)
 
+    def test_representative_sys_extended_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("sys_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn('sys.set_argv(new System.Collections.Generic.List<string> { "a", "b" });', cs)
+        self.assertIn('sys.set_path(new System.Collections.Generic.List<string> { "x" });', cs)
+        self.assertNotIn("unsupported", cs)
+
+    def test_representative_random_timeit_traceback_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("random_timeit_traceback_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("using timer = Pytra.CsModule.default_timer;", cs)
+        self.assertIn("long v2 = System.Convert.ToInt64(random.randint(1, 3));", cs)
+        self.assertNotIn("unsupported", cs)
+
     def test_representative_math_import_fixture_transpiles(self) -> None:
         fixture = find_fixture_case("pytra_std_import_math")
         east = load_east(fixture, parser_backend="self_hosted")

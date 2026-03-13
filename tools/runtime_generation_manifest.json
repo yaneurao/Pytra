@@ -97,6 +97,15 @@
       ]
     },
     {
+      "id": "utils/assertions",
+      "source": "src/pytra/utils/assertions.py",
+      "bucket": "utils",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/utils/assertions.rs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/utils/assertions.cs" }
+      ]
+    },
+    {
       "id": "built_in/contains",
       "source": "src/pytra/built_in/contains.py",
       "bucket": "built_in",
@@ -405,6 +414,8 @@
       "source": "src/pytra/std/json.py",
       "bucket": "std",
       "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/std/json.rs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/json.cs" },
         { "target": "java", "output": "src/runtime/java/generated/std/json.java" },
         { "target": "js", "output": "src/runtime/js/generated/std/json.js", "postprocess": "js_std_json_live_wrapper" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/json.ts", "postprocess": "ts_std_json_live_wrapper" },
@@ -462,6 +473,51 @@
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/glob.rs" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/glob.cs" }
+      ]
+    },
+    {
+      "id": "std/argparse",
+      "source": "src/pytra/std/argparse.py",
+      "bucket": "std",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/std/argparse.rs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/argparse.cs" }
+      ]
+    },
+    {
+      "id": "std/random",
+      "source": "src/pytra/std/random.py",
+      "bucket": "std",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/std/random.rs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/random.cs" }
+      ]
+    },
+    {
+      "id": "std/re",
+      "source": "src/pytra/std/re.py",
+      "bucket": "std",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/std/re.rs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/re.cs" }
+      ]
+    },
+    {
+      "id": "std/sys",
+      "source": "src/pytra/std/sys.py",
+      "bucket": "std",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/std/sys.rs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/sys.cs" }
+      ]
+    },
+    {
+      "id": "std/timeit",
+      "source": "src/pytra/std/timeit.py",
+      "bucket": "std",
+      "targets": [
+        { "target": "rs", "output": "src/runtime/rs/generated/std/timeit.rs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/timeit.cs" }
       ]
     }
   ]

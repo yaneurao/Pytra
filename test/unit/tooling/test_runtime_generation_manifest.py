@@ -21,10 +21,16 @@ class RuntimeGenerationManifestTest(unittest.TestCase):
         ids = {str(item.get("id")) for item in items if isinstance(item, dict)}
         self.assertIn("utils/png", ids)
         self.assertIn("utils/gif", ids)
+        self.assertIn("utils/assertions", ids)
         self.assertIn("std/time", ids)
         self.assertIn("std/json", ids)
         self.assertIn("std/pathlib", ids)
         self.assertIn("std/math", ids)
+        self.assertIn("std/argparse", ids)
+        self.assertIn("std/random", ids)
+        self.assertIn("std/re", ids)
+        self.assertIn("std/sys", ids)
+        self.assertIn("std/timeit", ids)
 
     def test_manifest_outputs_are_unique(self) -> None:
         doc = self._load_manifest()

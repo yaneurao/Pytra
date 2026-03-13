@@ -156,3 +156,4 @@
 - 2026-03-13: `P0-NONCPP-RUNTIME-PYTRA-DESHIM-01` は follow-up とし、本 task 完了前に `checked-in pytra` 削除だけを先行させない方針を明記する。
 - 2026-03-13: `S1-01` として `noncpp_runtime_generated_cpp_baseline_contract.py` / checker / unit test を追加し、live `cpp/generated/{built_in,std,utils}` tree と exact-match する 25-module baseline を source of truth に固定した。
 - 2026-03-13: `S1-02` として baseline module 上の legacy state (`blocked / compare_artifact / no_runtime_module / native canonical`) を compact debt inventory に固定し、helper-artifact が baseline module と交差しないことも checker で保証した。以後これらは rollout 完了条件ではなく migration debt としてのみ扱う。
+- 2026-03-13: `S2-01` first bundle として `tools/runtime_generation_manifest.json` に `rs/cs` の `std/{argparse,json,random,re,sys,timeit}` と `utils/assertions` target を追加し、generated artifact を materialize した。併せて `noncpp_runtime_layout_contract.py` / smoke / unit test を更新し、`json` の `blocked` と `argparse/re` の `no_runtime_module` を compare-artifact debt まで前進させた。
