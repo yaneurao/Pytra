@@ -140,7 +140,7 @@
 
 ## 分解
 
-- [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01] non-C++ runtime generated lane を `cpp/generated/{built_in,std,utils}` の canonical module baseline に揃え、baseline module は各 backend の `generated/` を canonical owner にする。
+- [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01] non-C++ runtime generated lane を `cpp/generated/{built_in,std,utils}` の canonical module baseline に揃え、baseline module は各 backend の `generated/` を canonical owner にする。
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S1-01] `cpp/generated/{built_in,std,utils}` から canonical baseline module set を実データで抽出し、plan / contract / checker の正本として固定する。
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S1-02] 既存の `blocked / compare_artifact / no_runtime_module / helper_artifact / native canonical` 例外を baseline module には使えない契約へ切り替え、old rollout wording を active policy から外す。
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S2-01] `rs/cs` の missing generated std/utils baseline（`json`, `assertions`, `argparse`, `random`, `re`, `sys`, `timeit` を含む）を SoT から materialize し、representative smoke / manifest / layout checker が green になるところまで揃えた。
@@ -148,7 +148,7 @@
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S2-03] script family (`js/ts/lua/ruby/php`) の generated `built_in/std/utils` baseline を full set に引き上げ、generated-first wiring と package/export を同期する。
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S3-01] backend build profile / selfhost / smoke / runtime copy contract を generated-first に切り替え、baseline module の `native` owner を substrate seam へ縮退する。
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S3-02] full file-compare contract checker を追加し、各 backend の generated module set が baseline と一致すること、helper alias や native-owned baseline module が存在しないことを fail-fast 化した。
-- [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S4-01] docs / TODO / inventory / archive note を同期し、`P0-NONCPP-RUNTIME-PYTRA-DESHIM-01` を後続 prerequisite 解消済みとして扱える状態にする。
+- [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S4-01] docs / TODO / inventory / archive note を同期し、`P0-NONCPP-RUNTIME-PYTRA-DESHIM-01` を後続 prerequisite 解消済みとして扱える状態にする。
 
 決定ログ:
 - 2026-03-13: ユーザー指示に従い、「`generated/native` vocabulary を導入しただけの limited compare rollout」は不十分と判断し、`cpp/generated` baseline への full generated parity を新規 P0 として起票する。
@@ -180,3 +180,4 @@
 - 2026-03-13: `S3-02` second bundle として baseline contract に backend 別 `helper_artifact_modules` inventory を追加し、actual `generated/**` tree から baseline 外 module を抽出して exact-match させる checker を入れた。これにより `rs` と `kotlin/scala/swift/nim/lua/ruby` の `utils/image_runtime` だけが許容 extra artifact として明示化され、out-of-baseline generated drift は fail-fast になる。
 - 2026-03-13: `S3-02` third bundle として exact runtime file inventory の expected source をこの contract の `local_runtime_file_inventory` のみに寄せ、checker / unit test から `remaining rollout` contract への merge 依存を外した。これで full file-compare の正本はこの plan/contract 側だけに閉じた。
 - 2026-03-13: `S3-02` fourth bundle として generated baseline checker に残っていた `remaining rollout` contract 依存を除去し、`legacy_state_buckets` は live `rs/cs` layout contract だけから再構成、helper overlap は actual helper inventory から算出、`remaining_helper_inventory` は baseline contract の allowlist をそのまま正本として参照する形へ整理した。これで `S3-02` の full file-compare checker は `noncpp_runtime_generated_cpp_baseline_contract.py` と live tree だけで閉じた。
+- 2026-03-13: `S4-01` として plan を `docs/ja/plans/archive/20260313-p0-noncpp-runtime-generated-cpp-baseline.md` へ移し、active TODO から親 P0 を外して archive history に記録した。close 後の最上位 follow-up は `P0-NONCPP-RUNTIME-PYTRA-DESHIM-01` だけである。

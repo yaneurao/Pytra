@@ -141,7 +141,7 @@ Target:
 
 ## Breakdown
 
-- [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01] Align non-C++ generated runtime lanes to the canonical `cpp/generated/{built_in,std,utils}` module baseline and make `generated/` the canonical owner for baseline modules.
+- [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01] Align non-C++ generated runtime lanes to the canonical `cpp/generated/{built_in,std,utils}` module baseline and make `generated/` the canonical owner for baseline modules.
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S1-01] Extract the canonical baseline module set from `cpp/generated/{built_in,std,utils}` and lock it as the source of truth in plan / contract / checker form.
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S1-02] Replace the old `blocked / compare_artifact / no_runtime_module / helper_artifact / native canonical` exceptions with a contract that forbids those states for baseline modules and remove the old rollout wording from active policy.
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S2-01] Materialize the missing generated std/utils baseline for `rs/cs` (including `json`, `assertions`, `argparse`, `random`, `re`, `sys`, `timeit`) and bring the representative smoke / manifest / layout-checker bundle to green.
@@ -149,7 +149,7 @@ Target:
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S2-03] Raise the script family (`js/ts/lua/ruby/php`) generated `built_in/std/utils` lanes to the full baseline and switch package/export wiring to generated-first.
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S3-01] Switch backend build profile / selfhost / smoke / runtime copy contracts to generated-first and shrink baseline `native` owners down to substrate seams.
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S3-02] Add a full file-compare contract checker that fails fast if any backend diverges from the baseline module set or still owns baseline modules through helper aliases / native files.
-- [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S4-01] Sync docs / TODO / inventory / archive notes and leave `P0-NONCPP-RUNTIME-PYTRA-DESHIM-01` as a follow-up with prerequisites resolved.
+- [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S4-01] Sync docs / TODO / inventory / archive notes and leave `P0-NONCPP-RUNTIME-PYTRA-DESHIM-01` as a follow-up with prerequisites resolved.
 
 Decision log:
 - 2026-03-13: Following the user instruction, we concluded that “limited compare rollout with `generated/native` vocabulary” is insufficient and re-opened the work as a new `P0` for full `cpp/generated` baseline parity.
@@ -180,3 +180,4 @@ Decision log:
 - 2026-03-13: The second `S3-02` bundle added a backend-by-backend `helper_artifact_modules` inventory to the baseline contract and taught the checker to extract out-of-baseline modules directly from the live `generated/**` trees. That pins `utils/image_runtime` as the only allowed extra artifact on `rs` and `kotlin/scala/swift/nim/lua/ruby`, so any other generated drift now fails fast.
 - 2026-03-13: The third `S3-02` bundle localized the exact runtime file inventory to this contract's `local_runtime_file_inventory` source and removed the checker / unit-test merge dependency on the remaining-rollout contract. The full file-compare source of truth now lives entirely inside this plan/contract pair.
 - 2026-03-13: The fourth `S3-02` bundle removed the last generated-baseline checker dependency on the remaining-rollout contract. `legacy_state_buckets` are now reconstructed only from the live `rs/cs` layout contracts, helper overlap is derived from the actual helper inventory, and `remaining_helper_inventory` now reads directly from the baseline contract allowlist. With that, the `S3-02` full file-compare checker is closed over `noncpp_runtime_generated_cpp_baseline_contract.py` plus the live runtime tree only.
+- 2026-03-13: `S4-01` moved this plan to `docs/en/plans/archive/20260313-p0-noncpp-runtime-generated-cpp-baseline.md`, removed the parent P0 from the active TODO, and recorded the completed state in the archive history. The only remaining top-level follow-up after closure is `P0-NONCPP-RUNTIME-PYTRA-DESHIM-01`.
