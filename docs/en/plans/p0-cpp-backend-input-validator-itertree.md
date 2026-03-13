@@ -37,9 +37,10 @@ Verification commands:
 
 Breakdown:
 - [ ] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01] Bring `validate_cpp_backend_input_doc()` in sync with the `_iter_object_tree()` API that now yields `parent_key`, so typed-boundary / backend-input validation no longer stops on tuple-unpack errors.
-- [ ] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S1-01] Add a focused regression around a minimal raw EAST3 module and lock the current C++ backend-input crash surface in fail-fast form.
-- [ ] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S2-01] Switch `validate_cpp_backend_input_doc()` to the `parent_key`-aware object-tree iteration while preserving the existing `ForCore` metadata guard, then bring the targeted link test back to green.
+- [x] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S1-01] Add a focused regression around a minimal raw EAST3 module and lock the current C++ backend-input crash surface in fail-fast form.
+- [x] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S2-01] Switch `validate_cpp_backend_input_doc()` to the `parent_key`-aware object-tree iteration while preserving the existing `ForCore` metadata guard, then bring the targeted link test back to green.
 - [ ] [ID: P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01-S3-01] Sync TODO / plan / decision log and lock the close condition.
 
 Decision log:
 - 2026-03-13: Filed this as the next P0 after TODO became empty, keeping the scope narrowly on the converter-core regression where `validate_cpp_backend_input_doc()` failed to follow the `_iter_object_tree()` signature change instead of reopening raw-EAST3 validation as a whole.
+- 2026-03-13: `S1-01/S2-01` placed a focused link-stage regression in `test_program_loader.py` by feeding a minimal `Module` input directly into `validate_cpp_backend_input_doc()`. The implementation change is intentionally narrow: accept `parent_key` from `_iter_object_tree()` and keep the existing `ForCore.iter_plan` validation and error wording intact.
