@@ -30,11 +30,6 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-- [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01] raw EAST3 validator の node-shape 誤判定を解消し、auxiliary map の `meta` / `kind` key で false positive を出さない。文脈: [p0-raw-east3-node-shape-validator.md](../plans/p0-raw-east3-node-shape-validator.md)
-- [x] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S1-01] `any_dict_items` / `18_mini_language_interpreter` と synthetic auxiliary-map case を regression test と plan に固定した。
-- [x] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S2-01] raw EAST3 validator を node-shaped dict 限定へ狭め、actual node fail-closed を維持した。
-- [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S2-02] targeted backend transpile verification と TODO/decision log を同期し、matrix 上の validator-origin failure を close state へ寄せる。
-
 ### P0: Pytra-NES representative C++ mini repro contract
 
 - [ ] [ID: P0-PYTRA-NES-CPP-MINI-REPRO-01] Pytra-NES の representative な multi-file package（括弧付き sibling relative import + `dataclass` + `deque[float]` field + `deque` method）を C++ representative lane で build/run まで固定する。

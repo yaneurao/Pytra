@@ -50,12 +50,13 @@ Implementation policy:
 
 ## Breakdown
 
-- [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01] Fix raw EAST3 validator node-shape misclassification so auxiliary `meta` / `kind` keys do not produce false positives.
+- [x] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01] Fix raw EAST3 validator node-shape misclassification so auxiliary `meta` / `kind` keys do not produce false positives.
 - [x] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S1-01] Lock `any_dict_items` / `18_mini_language_interpreter` and a synthetic auxiliary-map case into regression tests and the plan.
 - [x] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S2-01] Narrow raw EAST3 validation to node-shaped dicts while preserving fail-closed behavior for actual nodes.
-- [ ] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S2-02] Sync targeted backend transpile verification plus the TODO / decision log and reduce the validator-origin matrix failures.
+- [x] [ID: P0-RAW-EAST3-NODE-SHAPE-VALIDATOR-01-S2-02] Sync targeted backend transpile verification plus the TODO / decision log and reduce the validator-origin matrix failures.
 
 Decision log:
 - 2026-03-13: After the active TODO became empty, a new P0 seed was chosen from the current backend test matrix red cells. The raw EAST3 validator false positives on `any_dict_items` and `18_mini_language_interpreter` are the first target because they are shared frontend failures, not backend-local issues.
 - 2026-03-13: `S1-01` added a synthetic auxiliary-map regression plus actual fixture/sample load regressions to `test_frontend_type_expr.py`, locking the fact that `defs["meta"]` and `arg_index["kind"]` must not trigger raw-validator false positives.
 - 2026-03-13: `S2-01` threaded `parent_key` through the object walk in `program_validator.py` and limited EAST3 node validation to dicts that sit under node containers such as `body/value/target` or carry node hint keys. `py2x --target rs/java/ruby any_dict_items` and `py2x --target scala/cpp 18_mini_language_interpreter` now reach output generation instead of stopping in raw validation.
+- 2026-03-13: `S2-02` synchronized the targeted transpile verification with the TODO/decision log and treated the matrix-visible failures as closed from the raw-validator side. Any remaining red cells after this point belong to downstream backend-specific issues, not node-shape misclassification.
