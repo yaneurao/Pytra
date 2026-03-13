@@ -1,6 +1,6 @@
 # P2: realign the `@extern` runtime/emitter contract across all languages
 
-Last updated: 2026-03-13
+Last updated: 2026-03-14
 
 Related TODO:
 - `docs/ja/todo/index.md` `ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01`
@@ -55,3 +55,4 @@ Validation commands (planned):
 
 Decision log:
 - 2026-03-13: Opened after the user called out the current non-C++ design as incorrect. The task resets all targets to the SoT/native-owner/generic-emitter split instead of backend shortcuts for `@extern`.
+- 2026-03-14: As the first realignment slice, stopped the C# `std/math` generated wrapper from inventing a `tau` symbol that does not exist in the SoT, restoring `pi/e` as the only source-defined exported constants.

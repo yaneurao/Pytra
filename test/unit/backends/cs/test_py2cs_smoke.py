@@ -1036,7 +1036,6 @@ def f(x: object) -> bool:
         self.assertIn("public static class math", generated)
         self.assertIn("public const double pi = Math.PI;", generated)
         self.assertIn("public const double e = Math.E;", generated)
-        self.assertIn("public const double tau = Math.PI * 2.0;", generated)
         self.assertIn("return Math.Sqrt(x);", generated)
         self.assertIn("return Math.Ceiling(x);", generated)
         self.assertNotIn("public static class Program", generated)

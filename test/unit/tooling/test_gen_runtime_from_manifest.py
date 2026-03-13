@@ -322,7 +322,6 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("public static class math", out)
         self.assertIn("public const double pi = Math.PI;", out)
         self.assertIn("public const double e = Math.E;", out)
-        self.assertIn("public const double tau = Math.PI * 2.0;", out)
         self.assertIn("return Math.Sqrt(x);", out)
         self.assertIn("return Math.Ceiling(x);", out)
         self.assertNotIn("__m.", out)

@@ -269,8 +269,7 @@ def rewrite_cs_std_math_live_wrapper(cs_src: str) -> str:
         "    public static class math\n    {\n",
         "    public static class math\n    {\n"
         "        public const double pi = Math.PI;\n"
-        "        public const double e = Math.E;\n"
-        "        public const double tau = Math.PI * 2.0;\n\n",
+        "        public const double e = Math.E;\n\n",
         1,
     )
     replacements = {
