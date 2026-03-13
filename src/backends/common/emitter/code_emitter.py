@@ -2385,6 +2385,12 @@ class CodeEmitter:
                         self.import_modules[local_name] = module_id
                 elif binding_kind == "symbol":
                     if resolved_binding_kind == "module":
+                        export_name = runtime_symbol
+                        if export_name == "":
+                            export_name = self.any_to_str(ent.get("export_name"))
+                        if runtime_module_id != "" and export_name != "":
+                            self._add_symbol_binding(local_name, module_id, export_name)
+                            continue
                         if local_name != "" and module_id != "":
                             self.import_modules[local_name] = module_id
                         continue

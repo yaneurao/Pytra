@@ -10,6 +10,13 @@ from toolchain.json_adapters import load_json_object_doc
 ROOT = Path(__file__).resolve().parents[3]
 INDEX_PATH = ROOT / "tools" / "runtime_symbol_index.json"
 _CACHE: dict[str, Any] | None = None
+_FRONTEND_FACADE_RUNTIME_MODULE_BY_SYMBOL: dict[str, str] = {
+    "add_common_transpile_args": "toolchain.compiler.transpile_cli",
+    "build_module_east_map": "toolchain.compiler.transpile_cli",
+    "load_east3_document": "toolchain.compiler.transpile_cli",
+    "load_east3_document_typed": "toolchain.compiler.transpile_cli",
+    "normalize_common_transpile_args": "toolchain.compiler.transpile_cli",
+}
 
 
 def _load_index() -> dict[str, Any]:
@@ -141,7 +148,18 @@ def canonical_runtime_module_id(module_id: str) -> str:
     return module_id
 
 
+def _resolve_frontend_facade_runtime_module(module_id: str, export_name: str, binding_kind: str) -> str:
+    source_module = module_id.strip()
+    source_export = export_name.strip()
+    if source_module != "toolchain.frontends" or binding_kind != "symbol":
+        return ""
+    return _FRONTEND_FACADE_RUNTIME_MODULE_BY_SYMBOL.get(source_export, "")
+
+
 def resolve_import_binding_runtime_module(module_id: str, export_name: str, binding_kind: str) -> str:
+    facade_module = _resolve_frontend_facade_runtime_module(module_id, export_name, binding_kind)
+    if facade_module != "":
+        return facade_module
     mod = canonical_runtime_module_id(module_id.strip())
     if mod == "":
         return ""
