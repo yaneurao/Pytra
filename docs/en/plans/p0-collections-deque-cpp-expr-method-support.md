@@ -48,11 +48,13 @@ Decision log:
 - 2026-03-13: the first-pass subset is restricted to `deque()`, `append`, `popleft`, `len`, and truthiness, matching the immediate Pytra-NES need. `appendleft` and beyond are deferred.
 - 2026-03-13: the baseline is locked via C++ source regressions instead of direct compile-failure assertions, to avoid compiler-error-text brittleness.
 - 2026-03-13: as `S1-01`, a focused regression now locks `q = deque();`, `q.append(1);`, `q.popleft();`, `py_to<bool>(q)`, and `py_len(q)` as the current invalid C++ surface.
+- 2026-03-13: as `S2-01`, `deque()` now lowers to `::std::deque<T>{}`, `bool(q)` to `!q.empty()`, and `len(q)` to `q.size()`. The remaining invalid Python surface is limited to `append` / `popleft`.
+- 2026-03-13: `popleft()` was already lowering through the existing attr-call lane into a `front + pop_front` lambda, so after the `S2-01` regression refresh the only remaining invalid Python surface is `append`.
 
 ## Breakdown
 
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] Lock the representative C++ expression / method lane for `collections.deque`.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S1-01] Lock the current invalid C++ surface in focused regressions / TODO / plan.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S2-01] Align `deque()` expressions and `len/truthiness` with representative C++ lowering.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S2-02] Align the `append` / `popleft` representative method subset with C++ lowering.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S2-01] Align `deque()` expressions and `len/truthiness` with representative C++ lowering.
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S2-02] Align the `append` method subset with representative C++ lowering and keep the `popleft` representative regression green.
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S3-01] Sync build/run smoke and support wording, then close the task.

@@ -4996,7 +4996,7 @@ class PadState:
             )
             self.assertEqual(comp.returncode, 0, msg=comp.stderr)
 
-    def test_deque_expr_method_current_baseline_leaks_python_surface_into_cpp(self) -> None:
+    def test_deque_expr_len_truthiness_lower_to_std_deque_cpp_surface(self) -> None:
         src = """from collections import deque
 
 q: deque[int] = deque()
@@ -5011,11 +5011,16 @@ print(front)
             src_py.write_text(src, encoding="utf-8")
             east = load_east(src_py)
             cpp = transpile_to_cpp(east)
-        self.assertIn("q = deque();", cpp)
+        self.assertIn("::std::deque<int64> q;", cpp)
+        self.assertIn("q = ::std::deque<int64>{};", cpp)
+        self.assertNotIn("q = deque();", cpp)
         self.assertIn("q.append(1);", cpp)
-        self.assertIn("q.popleft()", cpp)
-        self.assertIn("py_to<bool>(q)", cpp)
-        self.assertIn("py_len(q)", cpp)
+        self.assertNotIn("q.popleft()", cpp)
+        self.assertIn("q.pop_front()", cpp)
+        self.assertIn("!(q.empty())", cpp)
+        self.assertNotIn("py_to<bool>(q)", cpp)
+        self.assertIn("q.size()", cpp)
+        self.assertNotIn("py_len(q)", cpp)
 
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
         src = """from dataclasses import dataclass, field

@@ -48,11 +48,13 @@
 - 2026-03-13: first-pass subset は Pytra-NES の queue need に合わせて `deque()`, `append`, `popleft`, `len`, truthiness の 5 要素に絞る。`appendleft` 以降は後段に回す。
 - 2026-03-13: baseline は compile failure を直接固定せず、C++ source に Python surface が漏れていることを regression で固定する。compiler error text 依存を避けるため。
 - 2026-03-13: `S1-01` として `q = deque();`, `q.append(1);`, `q.popleft();`, `py_to<bool>(q)`, `py_len(q)` を focused regression で固定した。
+- 2026-03-13: `S2-01` として `deque()` を `::std::deque<T>{}`、`bool(q)` を `!q.empty()`、`len(q)` を `q.size()` へ upstream した。残る Python surface leak は `append` / `popleft` に限定された。
+- 2026-03-13: `popleft()` は既存の attr-call lowering ですでに `front + pop_front` lambda に落ちていたため、`S2-01` の regression 更新後の残件は `append` のみになった。
 
 ## 分解
 
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] `collections.deque` representative C++ expression / method lane を固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S1-01] current invalid C++ surface を focused regression / TODO / plan で固定する。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S2-01] `deque()` expression と `len/truthiness` を representative C++ lowering に揃える。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S2-02] `append` / `popleft` method subset を representative C++ lowering に揃える。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S2-01] `deque()` expression と `len/truthiness` を representative C++ lowering に揃える。
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S2-02] `append` method subset を representative C++ lowering に揃え、`popleft` representative lane の regression を維持する。
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01-S3-01] build/run smoke と support wording を同期して close する。

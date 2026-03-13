@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] `collections.deque` の representative C++ expression / method lane を固定する。進捗: `S1-01` で current invalid C++ surface regression を追加済み。文脈: [p0-collections-deque-cpp-expr-method-support.md](../plans/p0-collections-deque-cpp-expr-method-support.md)
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-EXPR-METHOD-01] `collections.deque` の representative C++ expression / method lane を固定する。進捗: `S2-01` で `deque()` / `bool(q)` / `len(q)` を `::std::deque<T>{}` / `!empty()` / `.size()` に upstream 済み。`popleft` は既存 lowering で green、残りは `append`。文脈: [p0-collections-deque-cpp-expr-method-support.md](../plans/p0-collections-deque-cpp-expr-method-support.md)
