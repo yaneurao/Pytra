@@ -30,3 +30,5 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
+
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01] `collections.deque.copy()` / `index()` representative C++ lane を固定する。進捗: 新規起票。まず current invalid C++ surface (`copy`, `index`) を focused regression で固定する。文脈: [p0-collections-deque-cpp-copyindex-support.md](../plans/p0-collections-deque-cpp-copyindex-support.md)

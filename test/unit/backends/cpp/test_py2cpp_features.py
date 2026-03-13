@@ -5488,6 +5488,27 @@ print(q.count(1))
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             self.assertEqual(run.stdout.strip().splitlines(), ["2", "2", "1"])
 
+    def test_deque_copyindex_still_leaks_python_surface_into_cpp(self) -> None:
+        src = """from collections import deque
+
+q: deque[int] = deque([1, 2, 1])
+r = q.copy()
+print(len(r))
+print(q.index(1))
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "deque_copyindex_case.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertRegex(
+            cpp,
+            r"return ::std::deque<int64>\(__deque_src_\d*\.begin\(\), __deque_src_\d*\.end\(\)\);",
+        )
+        self.assertIn("q.copy()", cpp)
+        self.assertIn("q.index(1)", cpp)
+        self.assertNotIn("::std::distance(", cpp)
+
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
         src = """from dataclasses import dataclass, field
 
