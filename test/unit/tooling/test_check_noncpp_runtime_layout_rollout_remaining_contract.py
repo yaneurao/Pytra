@@ -703,7 +703,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             {
                 "current_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
                 "target_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
-                "ownership": "compat",
+                "ownership": "delete_target",
                 "rationale": "Go still keeps a checked-in pytra delete-target shim under pytra/built_in until the static-family deshim bundle removes it.",
             },
             by_backend["go"],
@@ -793,7 +793,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             {
                 "current_prefix": "src/runtime/js/pytra/std/time.js",
                 "target_prefix": "src/runtime/js/pytra/std/time.js",
-                "ownership": "compat",
+                "ownership": "delete_target",
                 "rationale": "JS still keeps checked-in pytra std delete-target shims in bucketed pytra/std paths until output-side staging replaces them.",
             },
             by_backend["js"],

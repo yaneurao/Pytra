@@ -17,7 +17,7 @@ from src.toolchain.compiler import backend_registry_metadata
 from src.toolchain.compiler import noncpp_runtime_layout_rollout_remaining_contract as contract_mod
 
 
-_VALID_OWNERSHIP = ("native", "generated", "compat")
+_VALID_OWNERSHIP = ("native", "generated", "delete_target")
 _VALID_TARGET_ROOTS = ("generated", "native", "pytra")
 _VALID_WAVE_B_COMPAT_SMOKE_KINDS = ("direct_load", "source_reexport")
 _VALID_WAVE_B_GENERATED_COMPARE_SMOKE_KINDS = ("direct_load", "source_guard")
@@ -133,7 +133,7 @@ def _collect_contract_issues() -> list[str]:
                 issues.append(f"generated lane target drifted: {backend}: {target_prefix}")
             if ownership == "native" and target_root != "native":
                 issues.append(f"native lane target drifted: {backend}: {target_prefix}")
-            if ownership == "compat" and target_root != "pytra":
+            if ownership == "delete_target" and target_root != "pytra":
                 issues.append(f"checked-in pytra debt lane drifted: {backend}: {target_prefix}")
 
             rationale = lane["rationale"].strip()
@@ -184,7 +184,7 @@ def _collect_current_inventory_issues() -> list[str]:
             path.removeprefix("native/") for path in expanded["native"]
         )
         expected_compat = tuple(
-            path.removeprefix("pytra/") for path in expanded["compat"]
+            path.removeprefix("pytra/") for path in expanded["delete_target"]
         )
         if (
             expected_generated == actual_generated
@@ -210,7 +210,7 @@ def _expand_target_inventory_for_backend(backend: str) -> dict[str, tuple[str, .
         entry for entry in contract_mod.iter_remaining_noncpp_runtime_current_inventory() if entry["backend"] == backend
     )
     lane_root_by_key = _inventory_root_by_key(backend)
-    expanded: dict[str, list[str]] = {"generated": [], "native": [], "compat": []}
+    expanded: dict[str, list[str]] = {"generated": [], "native": [], "delete_target": []}
     lane_mappings = tuple(
         sorted(layout_entry["lane_mappings"], key=lambda lane: len(lane["current_prefix"]), reverse=True)
     )
@@ -274,11 +274,11 @@ def _collect_target_module_buckets_for_backend(backend: str) -> dict[str, tuple[
     target_inventory = next(
         entry for entry in contract_mod.iter_remaining_noncpp_runtime_target_inventory() if entry["backend"] == backend
     )
-    buckets: dict[str, set[str]] = {"generated": set(), "native": set(), "compat": set()}
+    buckets: dict[str, set[str]] = {"generated": set(), "native": set(), "delete_target": set()}
     for ownership, inventory_key in (
         ("generated", "generated_files"),
         ("native", "native_files"),
-        ("compat", "compat_files"),
+        ("delete_target", "compat_files"),
     ):
         for rel_path in target_inventory[inventory_key]:
             label = _normalize_target_module_label(rel_path)
@@ -303,7 +303,7 @@ def _collect_target_inventory_issues() -> list[str]:
             issues.append(f"generated target inventory drifted: {backend}")
         if expanded["native"] != entry["native_files"]:
             issues.append(f"native target inventory drifted: {backend}")
-        if expanded["compat"] != entry["compat_files"]:
+        if expanded["delete_target"] != entry["compat_files"]:
             issues.append(f"compat target inventory drifted: {backend}")
     return issues
 
@@ -345,7 +345,7 @@ def _collect_module_bucket_issues() -> list[str]:
             issues.append(f"generated module bucket drifted: {backend}")
         if actual["native"] != entry["native_modules"]:
             issues.append(f"native module bucket drifted: {backend}")
-        if actual["compat"] != entry["compat_modules"]:
+        if actual["delete_target"] != entry["compat_modules"]:
             issues.append(f"compat module bucket drifted: {backend}")
         blocked = set(entry["blocked_modules"])
         if not blocked.issubset(compare_baseline):
