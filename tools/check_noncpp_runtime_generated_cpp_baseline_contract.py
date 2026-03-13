@@ -42,12 +42,14 @@ def _generated_suffix_for_backend(backend: str) -> str:
         "cs": ".cs",
         "go": ".go",
         "java": ".java",
+        "js": ".js",
         "kotlin": ".kt",
         "nim": ".nim",
         "php": ".php",
         "rs": ".rs",
         "scala": ".scala",
         "swift": ".swift",
+        "ts": ".ts",
     }[backend]
 
 
@@ -69,6 +71,7 @@ def _collect_runtime_layout_legacy_state_buckets() -> tuple[dict[str, object], .
                 "cs",
                 "go",
                 "java",
+                "js",
                 "kotlin",
                 "lua",
                 "nim",
@@ -77,6 +80,7 @@ def _collect_runtime_layout_legacy_state_buckets() -> tuple[dict[str, object], .
                 "ruby",
                 "scala",
                 "swift",
+                "ts",
             )
         )
     }

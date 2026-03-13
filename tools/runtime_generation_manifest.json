@@ -126,6 +126,16 @@
           "postprocess": "scala_program_to_library"
         },
         {
+          "target": "js",
+          "output": "src/runtime/js/generated/utils/assertions.js",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/utils/assertions.ts",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
           "target": "php",
           "output": "src/runtime/php/generated/utils/assertions.php",
           "postprocess": "php_program_to_library"
@@ -688,6 +698,16 @@
         },
         { "target": "nim", "output": "src/runtime/nim/generated/std/os.nim" },
         {
+          "target": "js",
+          "output": "src/runtime/js/generated/std/os.js",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/std/os.ts",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
           "target": "php",
           "output": "src/runtime/php/generated/std/os.php",
           "postprocess": "php_program_to_library"
@@ -723,6 +743,16 @@
           "postprocess": "swift_program_to_library"
         },
         { "target": "nim", "output": "src/runtime/nim/generated/std/os_path.nim" },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/std/os_path.js",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/std/os_path.ts",
+          "postprocess": "js_program_to_cjs_module"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/std/os_path.php",
@@ -760,6 +790,16 @@
         },
         { "target": "nim", "output": "src/runtime/nim/generated/std/glob.nim" },
         {
+          "target": "js",
+          "output": "src/runtime/js/generated/std/glob.js",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/std/glob.ts",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
           "target": "php",
           "output": "src/runtime/php/generated/std/glob.php",
           "postprocess": "php_program_to_library"
@@ -795,6 +835,16 @@
           "postprocess": "swift_program_to_library"
         },
         { "target": "nim", "output": "src/runtime/nim/generated/std/argparse.nim" },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/std/argparse.js",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/std/argparse.ts",
+          "postprocess": "js_program_to_cjs_module"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/std/argparse.php",
@@ -832,6 +882,16 @@
         },
         { "target": "nim", "output": "src/runtime/nim/generated/std/random.nim" },
         {
+          "target": "js",
+          "output": "src/runtime/js/generated/std/random.js",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/std/random.ts",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
           "target": "php",
           "output": "src/runtime/php/generated/std/random.php",
           "postprocess": "php_program_to_library"
@@ -867,6 +927,16 @@
           "postprocess": "swift_program_to_library"
         },
         { "target": "nim", "output": "src/runtime/nim/generated/std/re.nim" },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/std/re.js",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/std/re.ts",
+          "postprocess": "js_program_to_cjs_module"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/std/re.php",
@@ -904,6 +974,16 @@
         },
         { "target": "nim", "output": "src/runtime/nim/generated/std/sys.nim" },
         {
+          "target": "js",
+          "output": "src/runtime/js/generated/std/sys.js",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/std/sys.ts",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
           "target": "php",
           "output": "src/runtime/php/generated/std/sys.php",
           "postprocess": "php_program_to_library"
@@ -939,6 +1019,16 @@
           "postprocess": "swift_program_to_library"
         },
         { "target": "nim", "output": "src/runtime/nim/generated/std/timeit.nim" },
+        {
+          "target": "js",
+          "output": "src/runtime/js/generated/std/timeit.js",
+          "postprocess": "js_program_to_cjs_module"
+        },
+        {
+          "target": "ts",
+          "output": "src/runtime/ts/generated/std/timeit.ts",
+          "postprocess": "js_program_to_cjs_module"
+        },
         {
           "target": "php",
           "output": "src/runtime/php/generated/std/timeit.php",

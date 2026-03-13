@@ -122,24 +122,11 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "legacy_state": "native_canonical",
         "modules": ("std/json", "std/math", "std/pathlib"),
     },
-    {"backend": "lua", "legacy_state": "blocked", "modules": (
-        "built_in/contains",
-        "built_in/io_ops",
-        "built_in/iter_ops",
-        "built_in/numeric_ops",
-        "built_in/predicates",
-        "built_in/scalar_ops",
-        "built_in/sequence",
-        "built_in/string_ops",
-        "built_in/type_id",
-        "built_in/zip_ops",
-        "std/json",
-        "std/math",
-        "std/pathlib",
-        "std/time",
-        "utils/gif",
-        "utils/png",
-    )},
+    {
+        "backend": "lua",
+        "legacy_state": "blocked",
+        "modules": NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MODULES_V1,
+    },
     {
         "backend": "rs",
         "legacy_state": "compare_artifact",
@@ -163,24 +150,11 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
         "legacy_state": "native_canonical",
         "modules": ("std/math", "std/time"),
     },
-    {"backend": "ruby", "legacy_state": "blocked", "modules": (
-        "built_in/contains",
-        "built_in/io_ops",
-        "built_in/iter_ops",
-        "built_in/numeric_ops",
-        "built_in/predicates",
-        "built_in/scalar_ops",
-        "built_in/sequence",
-        "built_in/string_ops",
-        "built_in/type_id",
-        "built_in/zip_ops",
-        "std/json",
-        "std/math",
-        "std/pathlib",
-        "std/time",
-        "utils/gif",
-        "utils/png",
-    )},
+    {
+        "backend": "ruby",
+        "legacy_state": "blocked",
+        "modules": NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MODULES_V1,
+    },
 )
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1: Final[
@@ -189,7 +163,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1: Final[
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MATERIALIZED_BACKENDS_V1: Final[
     tuple[str, ...]
-] = ("cs", "go", "java", "rs", "swift", "nim", "kotlin", "scala", "php")
+] = ("cs", "go", "java", "rs", "swift", "nim", "kotlin", "scala", "js", "ts", "php")
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_POLICY_FILES_V1: Final[
     tuple[NonCppRuntimeGeneratedCppBaselineLegacyPolicyFileEntry, ...]

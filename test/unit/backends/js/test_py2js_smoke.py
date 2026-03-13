@@ -675,6 +675,40 @@ def main() -> None:
         self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
         self.assertEqual(proc.stdout.strip(), "js-built-in-ok")
 
+    def test_js_generated_std_baseline_source_guard_materializes_new_compare_modules(self) -> None:
+        runtime_root = ROOT / "src" / "runtime" / "js" / "generated"
+        guarded_targets = {
+            runtime_root / "std" / "argparse.js": ("class Namespace", "class ArgumentParser"),
+            runtime_root / "std" / "glob.js": ("function glob(",),
+            runtime_root / "std" / "os.js": ("function getcwd(",),
+            runtime_root / "std" / "os_path.js": ("function basename(",),
+            runtime_root / "std" / "random.js": ("function randint(",),
+            runtime_root / "std" / "re.js": ("class Match", '"\\r"'),
+            runtime_root / "std" / "sys.js": ("function write_stderr(",),
+            runtime_root / "std" / "timeit.js": ("function default_timer(",),
+            runtime_root / "utils" / "assertions.js": ("function py_assert_true(",),
+        }
+        for path, needles in guarded_targets.items():
+            with self.subTest(path=path.relative_to(ROOT).as_posix()):
+                text = path.read_text(encoding="utf-8")
+                self.assertIn("AUTO-GENERATED FILE. DO NOT EDIT.", text)
+                for needle in needles:
+                    self.assertIn(needle, text)
+        for lint_path in (
+            runtime_root / "std" / "argparse.js",
+            runtime_root / "std" / "re.js",
+            runtime_root / "utils" / "assertions.js",
+        ):
+            with self.subTest(lint_path=lint_path.relative_to(ROOT).as_posix()):
+                proc = subprocess.run(
+                    ["node", "--check", str(lint_path)],
+                    cwd=ROOT,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+
     def test_pathlib_runtime_symbol_uses_factory_and_property_access(self) -> None:
         fixture = find_fixture_case("math_path_runtime_ir")
         east = load_east(fixture, parser_backend="self_hosted")

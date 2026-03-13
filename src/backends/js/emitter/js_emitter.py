@@ -1478,6 +1478,22 @@ class JsEmitter(CodeEmitter):
                 return non_str
             val = self.any_to_str(expr_d.get("value"))
             return self.quote_string_literal(val)
+        if kind == "JoinedStr":
+            values = self.any_to_list(expr_d.get("values"))
+            if len(values) == 0:
+                return '""'
+            parts: list[str] = []
+            for item in values:
+                item_d = self.any_to_dict_or_empty(item)
+                item_kind = self.any_dict_get_str(item_d, "kind", "")
+                if item_kind == "Constant" and isinstance(item_d.get("value"), str):
+                    parts.append(self.render_expr(item_d))
+                    continue
+                if item_kind == "FormattedValue":
+                    parts.append("String(" + self.render_expr(item_d.get("value")) + ")")
+                    continue
+                parts.append("String(" + self.render_expr(item_d) + ")")
+            return "(" + " + ".join(parts) + ")"
         if kind == "Attribute":
             owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
             owner_expr = self.render_expr(owner_node)
