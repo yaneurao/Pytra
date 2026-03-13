@@ -28,6 +28,7 @@ from comment_fidelity import assert_no_generated_comments, assert_sample01_modul
 from relative_import_native_path_smoke_support import (
     relative_import_native_path_expected_rewrite,
     relative_import_native_path_scenarios,
+    transpile_relative_import_native_path_via_module_graph,
     write_relative_import_native_path_project,
 )
 
@@ -116,7 +117,16 @@ class Py2GoSmokeTest(unittest.TestCase):
                 self.assertIn(positive, go)
                 self.assertNotIn(forbidden, go)
 
-    def test_cli_relative_import_native_path_bundle_fail_closed_for_wildcard_on_go(self) -> None:
+    def test_cli_relative_import_native_path_bundle_supports_wildcard_on_go(self) -> None:
+        go = transpile_relative_import_native_path_via_module_graph(
+            target="go",
+            import_form="from ..helper import *",
+            body_text="def call() -> int:\n    return f() + X\n",
+        )
+        self.assertIn("helper.f()", go)
+        self.assertIn("helper.X", go)
+
+    def test_direct_relative_import_native_path_bundle_stays_fail_closed_for_wildcard_on_go(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             entry_path = write_relative_import_native_path_project(
                 Path(td),

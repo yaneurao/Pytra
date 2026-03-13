@@ -42,12 +42,13 @@ Verification:
 Decision log:
 - 2026-03-13: With TODO empty, this was opened as a `P0` follow-up close to the current Pytra-NES import blockers. The first step is to lock the exact fail-closed backend inventory, then move in backend bundles.
 - 2026-03-13: `S1-01` / `S1-02` fixed the rollout bundles, evidence lanes, and current fail-closed inventory in a contract/checker/unit-test trio. The next step is to make the `go/nim/swift` native-path bundle green.
+- 2026-03-13: `go/nim/swift` now rely on backend-only emitter changes: the single-file `load_east3_document(...)` lane stays fail-closed, while the module-graph `build_module_east_map(...)` lane goes green via wildcard-expanded `meta.import_symbols`. Next is the `java/kotlin/scala` package-project bundle.
 
 ## Breakdown
 
 - [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S1-01] Lock the rollout order and representative backend bundles in the plan / TODO.
 - [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S1-02] Lock the current fail-closed backend inventory and evidence lanes with a contract / checker / unit test.
-- [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-01] Make the `go/nim/swift` native-path bundle green for representative relative wildcard imports.
+- [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-01] Make the `go/nim/swift` native-path bundle green for representative relative wildcard imports.
 - [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-02] Make the `java/kotlin/scala` package-project bundle green for representative relative wildcard imports.
 - [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-03] Make the `lua/php/ruby` long-tail native-emitter bundle green for representative relative wildcard imports.
 - [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S3-01] Sync backend coverage / parity docs / TODO to the final state and close the task.

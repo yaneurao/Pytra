@@ -30,3 +30,41 @@ Last updated: 2026-03-13
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
+
+### P0
+
+- [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01] relative wildcard import native backend rollout
+  Context: [p0-relative-wildcard-import-native-rollout.md](../plans/p0-relative-wildcard-import-native-rollout.md)
+  Progress memo: `S2-01` lifts `go/nim/swift` to module-graph transpile smoke; next is making the `java/kotlin/scala` package bundle green.
+
+### P1
+
+1. [ ] [ID: P1-NES3-NOT-IMPLEMENTED-ERROR-CPP-01] Stop lowering `NotImplementedError` to an undefined C++ symbol and make `not_implemented_error.py` compile.
+Context: [docs/en/plans/p1-nes3-not-implemented-error-cpp-support.md](../plans/p1-nes3-not-implemented-error-cpp-support.md)
+- Progress memo: Not started.
+
+2. [ ] [ID: P1-NES3-BYTES-MEMBER-TRUTHINESS-CPP-01] Remove the `!bytes` residual for member-based `bytes` truthiness and make `cartridge_like.py` compile.
+Context: [docs/en/plans/p1-nes3-bytes-member-truthiness-cpp-support.md](../plans/p1-nes3-bytes-member-truthiness-cpp-support.md)
+- Progress memo: Not started.
+
+3. [ ] [ID: P1-NES3-LIST-DEFAULT-FACTORY-RC-LIST-CPP-01] Align the `rc<list<T>>` lane for `field(default_factory=lambda: [0] * N)` and make `list_default_factory.py` compile.
+Context: [docs/en/plans/p1-nes3-list-default-factory-rc-list-cpp-support.md](../plans/p1-nes3-list-default-factory-rc-list-cpp-support.md)
+- Progress memo: Not started.
+
+4. [ ] [ID: P1-NES3-PATH-ALIAS-PKG-CPP-01] Align cross-module `pytra.std.pathlib.Path` alias reuse with the C++ multi-file contract and make `path_alias_pkg` compile.
+Context: [docs/en/plans/p1-nes3-path-alias-pkg-cpp-support.md](../plans/p1-nes3-path-alias-pkg-cpp-support.md)
+- Progress memo: Not started.
+
+5. [ ] [ID: P1-NES3-APU-CONST-PKG-CPP-01] Align header ordering and reference lanes for imported classes that use module constants and make `apu_const_pkg` compile.
+Context: [docs/en/plans/p1-nes3-apu-const-pkg-cpp-support.md](../plans/p1-nes3-apu-const-pkg-cpp-support.md)
+- Progress memo: Not started.
+
+6. [ ] [ID: P1-NES3-BUS-PORT-PKG-CPP-01] Align header/symbol qualification plus parameter passing for imported bus types and make `bus_port_pkg` compile.
+Context: [docs/en/plans/p1-nes3-bus-port-pkg-cpp-support.md](../plans/p1-nes3-bus-port-pkg-cpp-support.md)
+- Progress memo: Not started.
+
+### P2
+
+1. [ ] [ID: P2-CPP-LEGACY-CORE-COMPAT-RETIRE-01] Fully retire the deleted `src/runtime/cpp/core/**` compatibility surface from live-tree assumptions and reduce it to guard-only references.
+Context: [docs/en/plans/p2-cpp-legacy-core-compat-retire.md](../plans/p2-cpp-legacy-core-compat-retire.md)
+- Progress memo: Not started.

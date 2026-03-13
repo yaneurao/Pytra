@@ -26,6 +26,7 @@ from toolchain.compiler.transpile_cli import load_east3_document
 from relative_import_native_path_smoke_support import (
     relative_import_native_path_expected_rewrite,
     relative_import_native_path_scenarios,
+    transpile_relative_import_native_path_via_module_graph,
     write_relative_import_native_path_project,
 )
 
@@ -110,7 +111,16 @@ class Py2NimSmokeTest(unittest.TestCase):
                 self.assertIn(positive, nim)
                 self.assertNotIn(forbidden, nim)
 
-    def test_cli_relative_import_native_path_bundle_fail_closed_for_wildcard_on_nim(self) -> None:
+    def test_cli_relative_import_native_path_bundle_supports_wildcard_on_nim(self) -> None:
+        nim = transpile_relative_import_native_path_via_module_graph(
+            target="nim",
+            import_form="from ..helper import *",
+            body_text="def call() -> int:\n    return f() + X\n",
+        )
+        self.assertIn("helper.f()", nim)
+        self.assertIn("helper.X", nim)
+
+    def test_direct_relative_import_native_path_bundle_stays_fail_closed_for_wildcard_on_nim(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             entry_path = write_relative_import_native_path_project(
                 Path(td),

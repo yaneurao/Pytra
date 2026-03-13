@@ -34,10 +34,27 @@ class RelativeWildcardImportNativeRolloutContractTest(unittest.TestCase):
         )
 
     def test_all_native_backends_start_fail_closed(self) -> None:
+        state_by_backend = {
+            row["backend"]: row["current_contract_state"]
+            for row in RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1
+        }
+        self.assertEqual(
+            state_by_backend,
+            {
+                "go": "transpile_smoke_locked",
+                "java": "fail_closed_locked",
+                "kotlin": "fail_closed_locked",
+                "lua": "fail_closed_locked",
+                "nim": "transpile_smoke_locked",
+                "php": "fail_closed_locked",
+                "ruby": "fail_closed_locked",
+                "scala": "fail_closed_locked",
+                "swift": "transpile_smoke_locked",
+            },
+        )
         self.assertTrue(
             all(
-                row["current_contract_state"] == "fail_closed_locked"
-                and row["fail_closed_lane"] == "backend_specific_fail_closed"
+                row["fail_closed_lane"] == "backend_specific_fail_closed"
                 for row in RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1
             )
         )
@@ -46,6 +63,20 @@ class RelativeWildcardImportNativeRolloutContractTest(unittest.TestCase):
         self.assertEqual(
             RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["bundle_order"],
             EXPECTED_BUNDLE_ORDER,
+        )
+
+    def test_current_bundle_state_tracks_native_path_rollout(self) -> None:
+        self.assertEqual(
+            RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["current_bundle_id"],
+            "native_path_bundle",
+        )
+        self.assertEqual(
+            RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["current_bundle_state"],
+            "transpile_smoke_locked",
+        )
+        self.assertEqual(
+            RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["current_contract_state"],
+            "transpile_smoke_locked",
         )
 
 

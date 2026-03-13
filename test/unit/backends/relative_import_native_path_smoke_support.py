@@ -10,7 +10,7 @@ from backends.swift.emitter import transpile_to_swift_native
 from toolchain.compiler.relative_import_native_path_bundle_contract import (
     RELATIVE_IMPORT_NATIVE_PATH_BUNDLE_SCENARIOS_V1,
 )
-from toolchain.compiler.transpile_cli import load_east3_document
+from toolchain.frontends.transpile_cli import build_module_east_map, load_east3_document
 
 
 def relative_import_native_path_scenarios() -> dict[str, dict[str, object]]:
@@ -37,7 +37,7 @@ def write_relative_import_native_path_project(
             if not init_py.exists():
                 init_py.write_text("", encoding="utf-8")
             current = current.parent
-    helper_path.write_text("def f() -> int:\n    return 7\n", encoding="utf-8")
+    helper_path.write_text("X = 3\ndef f() -> int:\n    return 7\n", encoding="utf-8")
     entry_path.write_text(f"{import_form}\n\n{body_text}", encoding="utf-8")
     return entry_path
 
@@ -110,6 +110,53 @@ def transpile_relative_import_native_path_expect_failure(
         except Exception as exc:
             return str(exc)
     raise AssertionError(f"expected failure for {target} relative-import project")
+
+
+def transpile_relative_import_native_path_via_module_graph(
+    *,
+    target: str,
+    import_form: str,
+    body_text: str,
+) -> str:
+    emitters = {
+        "go": transpile_to_go_native,
+        "nim": transpile_to_nim_native,
+        "swift": transpile_to_swift_native,
+    }
+    emit = emitters[target]
+    with tempfile.TemporaryDirectory() as td:
+        td_path = Path(td)
+        entry_path = write_relative_import_native_path_project(
+            td_path,
+            import_form=import_form,
+            body_text=body_text,
+        )
+
+        def _load(
+            input_path: Path,
+            parser_backend: str = "self_hosted",
+            east_stage: str = "3",
+            object_dispatch_mode: str = "native",
+        ) -> dict[str, object]:
+            if east_stage != "3":
+                raise RuntimeError("unsupported east_stage: " + east_stage)
+            doc3 = load_east3_document(
+                input_path,
+                parser_backend=parser_backend,
+                object_dispatch_mode=object_dispatch_mode,
+                target_lang=target,
+            )
+            return doc3 if isinstance(doc3, dict) else {}
+
+        module_map = build_module_east_map(
+            entry_path,
+            _load,
+            parser_backend="self_hosted",
+            east_stage="3",
+            object_dispatch_mode="native",
+        )
+        east = module_map.get(str(entry_path), {})
+        return emit(east if isinstance(east, dict) else {})
 
 
 def relative_import_native_path_expected_rewrite(

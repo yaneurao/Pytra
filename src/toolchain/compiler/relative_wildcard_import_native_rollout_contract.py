@@ -16,8 +16,8 @@ RELATIVE_WILDCARD_IMPORT_NATIVE_CPP_BASELINE_V1: Final[dict[str, object]] = {
 RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1: Final[list[dict[str, object]]] = [
     {
         "backend": "go",
-        "current_contract_state": "fail_closed_locked",
-        "current_evidence_lane": "native_emitter_function_body_transpile",
+        "current_contract_state": "transpile_smoke_locked",
+        "current_evidence_lane": "module_graph_bundle_transpile",
         "verification_lane": "relative_wildcard_import_native_rollout",
         "focused_verification_lane": "go_relative_wildcard_import_rollout_smoke",
         "fail_closed_lane": "backend_specific_fail_closed",
@@ -56,8 +56,8 @@ RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1: Final[list[dict[str, object]]] = [
     },
     {
         "backend": "nim",
-        "current_contract_state": "fail_closed_locked",
-        "current_evidence_lane": "native_emitter_function_body_transpile",
+        "current_contract_state": "transpile_smoke_locked",
+        "current_evidence_lane": "module_graph_bundle_transpile",
         "verification_lane": "relative_wildcard_import_native_rollout",
         "focused_verification_lane": "nim_relative_wildcard_import_rollout_smoke",
         "fail_closed_lane": "backend_specific_fail_closed",
@@ -96,8 +96,8 @@ RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1: Final[list[dict[str, object]]] = [
     },
     {
         "backend": "swift",
-        "current_contract_state": "fail_closed_locked",
-        "current_evidence_lane": "native_emitter_function_body_transpile",
+        "current_contract_state": "transpile_smoke_locked",
+        "current_evidence_lane": "module_graph_bundle_transpile",
         "verification_lane": "relative_wildcard_import_native_rollout",
         "focused_verification_lane": "swift_relative_wildcard_import_rollout_smoke",
         "fail_closed_lane": "backend_specific_fail_closed",
@@ -117,14 +117,14 @@ RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1: Final[dict[str, object]] = {
         "src/toolchain/compiler/relative_wildcard_import_native_rollout_contract.py"
     ),
     "contract_checker": "tools/check_relative_wildcard_import_native_rollout_contract.py",
-    "current_bundle_id": "baseline_fail_closed_inventory",
-    "current_bundle_state": "fail_closed_locked",
+    "current_bundle_id": "native_path_bundle",
+    "current_bundle_state": "transpile_smoke_locked",
     "bundle_order": (
         "native_path_bundle",
         "jvm_package_bundle",
         "longtail_native_bundle",
     ),
     "backends": tuple(row["backend"] for row in RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1),
-    "current_contract_state": "fail_closed_locked",
+    "current_contract_state": "transpile_smoke_locked",
     "current_fail_closed_lane": "backend_specific_fail_closed",
 }

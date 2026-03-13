@@ -42,12 +42,13 @@
 決定ログ:
 - 2026-03-13: TODO が空のため、Pytra-NES 系の import blocker に近い follow-up として relative wildcard import native rollout を `P0` で起票した。最初は current fail-closed inventory を exact に固定し、bundle 単位で rollout する。
 - 2026-03-13: `S1-01` / `S1-02` として rollout bundle、evidence lane、current fail-closed inventory を contract/checker/unit test で固定した。次は `go/nim/swift` の native-path bundle を green にする。
+- 2026-03-13: `go/nim/swift` は backend emitter だけを更新し、single-file `load_east3_document(...)` lane は fail-closed のまま、module-graph `build_module_east_map(...)` lane だけを wildcard-expanded `meta.import_symbols` 経由で green にした。次は `java/kotlin/scala` の package-project bundle を揃える。
 
 ## 分解
 
 - [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S1-01] plan / TODO に rollout 順と representative backend bundle を固定する。
 - [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S1-02] current fail-closed backend inventory と evidence lane を contract / checker / unit test で固定する。
-- [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-01] `go/nim/swift` native-path bundle の relative wildcard import を representative smoke で green にする。
+- [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-01] `go/nim/swift` native-path bundle の relative wildcard import を representative smoke で green にする。
 - [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-02] `java/kotlin/scala` package-project bundle の relative wildcard import を representative smoke で green にする。
 - [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-03] `lua/php/ruby` long-tail native-emitter bundle の relative wildcard import を representative smoke で green にする。
 - [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S3-01] backend coverage / parity docs / TODO を final state に同期して task を閉じる。
