@@ -8,7 +8,7 @@ public final class time {
 
 
     public static double perf_counter() {
-        return (double) System.nanoTime() / 1_000_000_000.0;
+        return time_native.perf_counter();
     }
 
     public static void main(String[] args) {

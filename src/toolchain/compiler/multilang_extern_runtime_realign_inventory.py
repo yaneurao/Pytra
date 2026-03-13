@@ -38,13 +38,13 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "source_rel": "src/pytra/std/math.py",
         "manifest_postprocess_targets": (
             "rs:rs_std_math_live_wrapper",
-            "cs:cs_std_math_live_wrapper",
+            "cs:cs_std_native_owner_wrapper",
             "go:go_program_to_library",
             "java:java_std_math_live_wrapper",
             "kotlin:kotlin_program_to_library",
             "scala:scala_program_to_library",
             "swift:swift_program_to_library",
-            "js:js_std_math_live_wrapper",
+            "js:js_std_native_owner_wrapper",
             "ts:ts_std_math_live_wrapper",
             "php:php_std_math_live_wrapper",
         ),
@@ -92,6 +92,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/time.cpp",),
         "noncpp_native_owner_paths": (
             "src/runtime/cs/native/std/time_native.cs",
+            "src/runtime/java/native/std/time_native.java",
             "src/runtime/js/native/std/time_native.js",
             "src/runtime/ts/native/std/time_native.ts",
         ),

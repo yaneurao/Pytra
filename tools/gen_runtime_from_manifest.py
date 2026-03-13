@@ -261,45 +261,43 @@ def rewrite_cs_program_to_helper(cs_src: str, helper_name: str) -> str:
 def rewrite_cs_std_native_owner_wrapper(cs_src: str, helper_name: str) -> str:
     text = rewrite_cs_program_to_helper(cs_src, helper_name)
     native_owner = helper_name + "_native"
+    value_symbols: list[str] = []
+    for match in re.finditer(
+        r"(?:py_extern|extern)\(__[A-Za-z_][A-Za-z0-9_]*\.([A-Za-z_][A-Za-z0-9_]*)\)",
+        cs_src,
+    ):
+        symbol_name = match.group(1)
+        if symbol_name not in value_symbols:
+            value_symbols.append(symbol_name)
+    if len(value_symbols) > 0:
+        class_header = "    public static class " + helper_name + "\n    {\n"
+        property_lines: list[str] = []
+        for symbol_name in value_symbols:
+            property_lines.append(
+                "        public static double "
+                + symbol_name
+                + " { get { return "
+                + native_owner
+                + "."
+                + symbol_name
+                + "; } }"
+            )
+        if len(property_lines) > 0:
+            text = text.replace(class_header, class_header + "\n".join(property_lines) + "\n\n", 1)
     rewritten = re.sub(
         r"return __[A-Za-z_][A-Za-z0-9_]*\.",
         "return " + native_owner + ".",
         text,
     )
-    if rewritten == text:
+    if rewritten == text and len(value_symbols) == 0:
         raise RuntimeError(
             "generated C# std/" + helper_name + " wrapper is missing extern return delegation"
         )
+    if "py_extern(" in rewritten or re.search(r"__[A-Za-z_][A-Za-z0-9_]*\.", rewritten):
+        raise RuntimeError(
+            "generated C# std/" + helper_name + " wrapper still contains extern/native owner residue"
+        )
     return rewritten
-
-
-def rewrite_cs_std_math_live_wrapper(cs_src: str) -> str:
-    text = rewrite_cs_program_to_helper(cs_src, "math")
-    text = text.replace(
-        "    public static class math\n    {\n",
-        "    public static class math\n    {\n"
-        "        public static double pi { get { return math_native.pi; } }\n"
-        "        public static double e { get { return math_native.e; } }\n\n",
-        1,
-    )
-    replacements = {
-        "return __m.sqrt(x);": "return math_native.sqrt(x);",
-        "return __m.sin(x);": "return math_native.sin(x);",
-        "return __m.cos(x);": "return math_native.cos(x);",
-        "return __m.tan(x);": "return math_native.tan(x);",
-        "return __m.exp(x);": "return math_native.exp(x);",
-        "return __m.log(x);": "return math_native.log(x);",
-        "return __m.log10(x);": "return math_native.log10(x);",
-        "return __m.fabs(x);": "return math_native.fabs(x);",
-        "return __m.floor(x);": "return math_native.floor(x);",
-        "return __m.ceil(x);": "return math_native.ceil(x);",
-        "return __m.pow(x, y);": "return math_native.pow(x, y);",
-    }
-    for before, after in replacements.items():
-        text = text.replace(before, after)
-    if "__m." in text or "py_extern(" in text or "Math." in text:
-        raise RuntimeError("generated C# std/math wrapper still contains extern/math runtime residue")
-    return text
 
 
 def rewrite_cs_std_json_live_wrapper(cs_src: str) -> str:
@@ -1441,10 +1439,15 @@ pub fn pow(a: f64, b: f64) -> f64 {
 
 
 def rewrite_java_perf_counter_host_wrapper(java_src: str) -> str:
-    return java_src.replace(
+    rewritten = java_src.replace(
         "return __t.perf_counter();",
-        "return (double) System.nanoTime() / 1_000_000_000.0;",
+        "return time_native.perf_counter();",
     )
+    if rewritten == java_src:
+        raise RuntimeError("generated Java std/time wrapper is missing perf_counter() delegation")
+    if "__t.perf_counter()" in rewritten or "System.nanoTime()" in rewritten:
+        raise RuntimeError("generated Java std/time wrapper still contains host-binding residue")
+    return rewritten
 
 
 def rewrite_java_std_math_live_wrapper(java_src: str) -> str:
@@ -1469,31 +1472,55 @@ def rewrite_java_std_math_live_wrapper(java_src: str) -> str:
     return text
 
 
-def rewrite_js_std_math_live_wrapper(js_src: str) -> str:
+def rewrite_js_std_native_owner_wrapper(js_src: str, helper_name: str) -> str:
     text = _strip_trailing_string_literal_expr(js_src)
     text = text.replace('import { extern } from "./pytra/std.js";\n\n', "")
-    text = text.replace('"pytra.std.math: extern-marked math API with Python runtime fallback.";\n', "")
-    text = "const math_native = require(\"../../native/std/math_native.js\");\n\n" + text
-    text = text.replace("let pi = extern(__m.pi);", "const pi = math_native.pi;")
-    text = text.replace("let e = extern(__m.e);", "const e = math_native.e;")
-    replacements = {
-        "return __m.sqrt(x);": "return math_native.sqrt(x);",
-        "return __m.sin(x);": "return math_native.sin(x);",
-        "return __m.cos(x);": "return math_native.cos(x);",
-        "return __m.tan(x);": "return math_native.tan(x);",
-        "return __m.exp(x);": "return math_native.exp(x);",
-        "return __m.log(x);": "return math_native.log(x);",
-        "return __m.log10(x);": "return math_native.log10(x);",
-        "return __m.fabs(x);": "return math_native.fabs(x);",
-        "return __m.floor(x);": "return math_native.floor(x);",
-        "return __m.ceil(x);": "return math_native.ceil(x);",
-        "return __m.pow(x, y);": "return math_native.pow(x, y);",
-    }
-    for before, after in replacements.items():
-        text = text.replace(before, after)
-    if "extern(" in text or "__m." in text or "Math." in text:
-        raise RuntimeError("generated JS std/math wrapper still contains extern/math runtime residue")
-    return text.rstrip() + "\n\nmodule.exports = { pi, e, sin, cos, tan, sqrt, exp, log, log10, fabs, floor, ceil, pow };\n"
+    text = re.sub(
+        rf'^"pytra\.std\.{re.escape(helper_name)}:.*";\n',
+        "",
+        text,
+        flags=re.MULTILINE,
+    )
+    native_owner = helper_name + "_native"
+    text = (
+        'const '
+        + native_owner
+        + ' = require("../../native/std/'
+        + native_owner
+        + '.js");\n\n'
+        + text
+    )
+    value_symbols: list[str] = []
+    for match in re.finditer(
+        r"let\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*extern\(__[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*\);",
+        js_src,
+    ):
+        symbol_name = match.group(1)
+        if symbol_name not in value_symbols:
+            value_symbols.append(symbol_name)
+    function_symbols: list[str] = []
+    for match in re.finditer(r"(?m)^function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(", js_src):
+        symbol_name = match.group(1)
+        if symbol_name not in function_symbols:
+            function_symbols.append(symbol_name)
+    for symbol_name in value_symbols:
+        text = re.sub(
+            rf"let\s+{re.escape(symbol_name)}\s*=\s*extern\(__[A-Za-z_][A-Za-z0-9_]*\.{re.escape(symbol_name)}\);",
+            "const " + symbol_name + " = " + native_owner + "." + symbol_name + ";",
+            text,
+        )
+    for symbol_name in function_symbols:
+        text = re.sub(
+            rf"return __[A-Za-z_][A-Za-z0-9_]*\.{re.escape(symbol_name)}\(",
+            "return " + native_owner + "." + symbol_name + "(",
+            text,
+        )
+    if "extern(" in text or re.search(r"__[A-Za-z_][A-Za-z0-9_]*\.", text) or "Math." in text:
+        raise RuntimeError(
+            "generated JS std/" + helper_name + " wrapper still contains extern/native owner residue"
+        )
+    export_names = value_symbols + function_symbols
+    return text.rstrip() + "\n\nmodule.exports = { " + ", ".join(export_names) + " };\n"
 
 
 def _strip_trailing_string_literal_expr(text: str) -> str:
@@ -3494,8 +3521,6 @@ def render_item(item: GenerationItem) -> str:
         if item.helper_name == "":
             raise RuntimeError("missing helper_name for cs_std_native_owner_wrapper: " + item.item_id)
         generated = rewrite_cs_std_native_owner_wrapper(generated, item.helper_name)
-    elif item.postprocess == "cs_std_math_live_wrapper":
-        generated = rewrite_cs_std_math_live_wrapper(generated)
     elif item.postprocess == "cs_std_json_live_wrapper":
         generated = rewrite_cs_std_json_live_wrapper(generated)
     elif item.postprocess == "cs_std_pathlib_live_wrapper":
@@ -3508,8 +3533,10 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_java_perf_counter_host_wrapper(generated)
     elif item.postprocess == "java_std_math_live_wrapper":
         generated = rewrite_java_std_math_live_wrapper(generated)
-    elif item.postprocess == "js_std_math_live_wrapper":
-        generated = rewrite_js_std_math_live_wrapper(generated)
+    elif item.postprocess == "js_std_native_owner_wrapper":
+        if item.helper_name == "":
+            raise RuntimeError("missing helper_name for js_std_native_owner_wrapper: " + item.item_id)
+        generated = rewrite_js_std_native_owner_wrapper(generated, item.helper_name)
     elif item.postprocess == "js_perf_counter_host_wrapper":
         generated = rewrite_js_perf_counter_host_wrapper(generated)
     elif item.postprocess == "js_std_sys_live_wrapper":

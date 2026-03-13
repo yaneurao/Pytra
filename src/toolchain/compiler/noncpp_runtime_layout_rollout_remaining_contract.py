@@ -309,6 +309,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "rationale": "Java handwritten runtime helpers already live in native/built_in after the Wave A path cutover.",
             },
             {
+                "current_prefix": "src/runtime/java/native/std/",
+                "target_prefix": "src/runtime/java/native/std/",
+                "ownership": "native",
+                "rationale": "Java extern-backed std seam owners live in native/std once generated wrappers stop carrying host bindings directly.",
+            },
+            {
                 "current_prefix": "src/runtime/java/generated/built_in/",
                 "target_prefix": "src/runtime/java/generated/built_in/",
                 "ownership": "generated",
@@ -651,7 +657,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     },
     {
         "backend": "java",
-        "pytra_core_files": ("built_in/PyRuntime.java",),
+        "pytra_core_files": ("built_in/PyRuntime.java", "std/time_native.java"),
         "pytra_gen_files": (
             "built_in/contains.java",
             "built_in/io_ops.java",
@@ -986,7 +992,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/gif.java",
             "generated/utils/png.java",
         ),
-        "native_files": ("native/built_in/PyRuntime.java",),
+        "native_files": ("native/built_in/PyRuntime.java", "native/std/time_native.java"),
         "delete_target_files": (),
     },
     {
@@ -1289,7 +1295,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
                 "utils/png",
             )
         ),
-        "native_modules": ("built_in/py_runtime",),
+        "native_modules": ("built_in/py_runtime", "std/time_native"),
         "delete_target_modules": (),
         "blocked_modules": (),
     },
@@ -1919,6 +1925,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_HOOK_SOURCES_V1: Final[
         "backend": "java",
         "runtime_hook_files": (
             "runtime/java/native/built_in/PyRuntime.java",
+            "runtime/java/native/std/time_native.java",
             "runtime/java/generated/utils/assertions.java",
             "runtime/java/generated/utils/png.java",
             "runtime/java/generated/utils/gif.java",
@@ -1978,7 +1985,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_NATIVE_RESIDUALS_V1: Final[
     {
         "backend": "java",
         "substrate_modules": ("built_in/py_runtime",),
-        "compare_residual_modules": (),
+        "compare_residual_modules": ("std/time_native",),
     },
     {
         "backend": "kotlin",
@@ -2014,7 +2021,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_A_NATIVE_RESIDUAL_FILES_V1: Final[
     {
         "backend": "java",
         "substrate_files": ("built_in/PyRuntime.java",),
-        "compare_residual_files": (),
+        "compare_residual_files": ("std/time_native.java",),
     },
     {
         "backend": "kotlin",

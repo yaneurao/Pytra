@@ -51,4 +51,4 @@ function pow(x, y) {
 const pi = math_native.pi;
 const e = math_native.e;
 
-module.exports = { pi, e, sin, cos, tan, sqrt, exp, log, log10, fabs, floor, ceil, pow };
+module.exports = { pi, e, sqrt, sin, cos, tan, exp, log, log10, fabs, floor, ceil, pow };

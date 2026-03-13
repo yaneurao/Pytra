@@ -395,10 +395,12 @@ class Py2JavaSmokeTest(unittest.TestCase):
     def test_java_runtime_source_path_is_migrated(self) -> None:
         delete_target_runtime = ROOT / "src" / "runtime" / "java" / "pytra" / "built_in" / "PyRuntime.java"
         runtime_path = ROOT / "src" / "runtime" / "java" / "native" / "built_in" / "PyRuntime.java"
+        native_time_path = ROOT / "src" / "runtime" / "java" / "native" / "std" / "time_native.java"
         generated_root = ROOT / "src" / "runtime" / "java" / "generated"
         legacy_path = ROOT / "src" / "java_module" / "PyRuntime.java"
         self.assertFalse(delete_target_runtime.exists())
         self.assertTrue(runtime_path.exists())
+        self.assertTrue(native_time_path.exists())
         for rel_path in (
             "built_in/contains.java",
             "built_in/predicates.java",
@@ -424,7 +426,11 @@ class Py2JavaSmokeTest(unittest.TestCase):
         ):
             self.assertTrue((generated_root / rel_path).exists(), msg=rel_path)
         self.assertFalse(legacy_path.exists())
-        self.assertIn("System.nanoTime()", (generated_root / "std" / "time.java").read_text(encoding="utf-8"))
+        generated_time = (generated_root / "std" / "time.java").read_text(encoding="utf-8")
+        native_time = native_time_path.read_text(encoding="utf-8")
+        self.assertIn("return time_native.perf_counter();", generated_time)
+        self.assertNotIn("System.nanoTime()", generated_time)
+        self.assertIn("System.nanoTime()", native_time)
         self.assertIn("Math.PI", (generated_root / "std" / "math.java").read_text(encoding="utf-8"))
 
     def test_java_generated_built_in_compare_lane_compiles_with_runtime_bundle(self) -> None:

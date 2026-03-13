@@ -305,7 +305,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return time_native.perf_counter();", out)
         self.assertNotIn("return __t.perf_counter();", out)
 
-    def test_rewrite_cs_std_math_live_wrapper_delegates_to_math_native(self) -> None:
+    def test_rewrite_cs_std_native_owner_wrapper_delegates_math_to_math_native(self) -> None:
         src = "\n".join(
             [
                 "using Pytra.CsModule;",
@@ -313,11 +313,11 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "{",
                 "    public static double sqrt(double x) { return __m.sqrt(x); }",
                 "    public static double ceil(double x) { return __m.ceil(x); }",
-                "    public static void Main(string[] args) { double pi = System.Convert.ToDouble(py_extern(__m.pi)); }",
+                "    public static void Main(string[] args) { double pi = System.Convert.ToDouble(py_extern(__m.pi)); double e = System.Convert.ToDouble(py_extern(__m.e)); }",
                 "}",
             ]
         )
-        out = gen_mod.rewrite_cs_std_math_live_wrapper(src)
+        out = gen_mod.rewrite_cs_std_native_owner_wrapper(src, "math")
         self.assertIn("namespace Pytra.CsModule", out)
         self.assertIn("public static class math", out)
         self.assertIn("public static double pi { get { return math_native.pi; } }", out)
@@ -481,7 +481,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertEqual(current, rendered)
         self.assertIn("\r", current)
 
-    def test_rewrite_java_perf_counter_host_wrapper_inlines_system_nanotime(self) -> None:
+    def test_rewrite_java_perf_counter_host_wrapper_delegates_to_time_native(self) -> None:
         src = "\n".join(
             [
                 "public final class time {",
@@ -492,8 +492,9 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
             ]
         )
         out = gen_mod.rewrite_java_perf_counter_host_wrapper(src)
-        self.assertIn("System.nanoTime()", out)
+        self.assertIn("time_native.perf_counter()", out)
         self.assertNotIn("__t.perf_counter()", out)
+        self.assertNotIn("System.nanoTime()", out)
 
     def test_rewrite_java_std_math_live_wrapper_inlines_java_math(self) -> None:
         src = "\n".join(
@@ -511,7 +512,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return Math.pow(x, y);", out)
         self.assertNotIn("extern(math.pi)", out)
 
-    def test_rewrite_js_std_math_live_wrapper_delegates_to_math_native(self) -> None:
+    def test_rewrite_js_std_native_owner_wrapper_delegates_math_to_math_native(self) -> None:
         src = "\n".join(
             [
                 'import { extern } from "./pytra/std.js";',
@@ -528,13 +529,13 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "let e = extern(__m.e);",
             ]
         )
-        out = gen_mod.rewrite_js_std_math_live_wrapper(src)
+        out = gen_mod.rewrite_js_std_native_owner_wrapper(src, "math")
         self.assertIn('const math_native = require("../../native/std/math_native.js");', out)
         self.assertIn("const pi = math_native.pi;", out)
         self.assertIn("const e = math_native.e;", out)
         self.assertIn("return math_native.sin(x);", out)
         self.assertIn("return math_native.pow(x, y);", out)
-        self.assertIn("module.exports = { pi, e, sin, cos, tan, sqrt, exp, log, log10, fabs, floor, ceil, pow };", out)
+        self.assertIn("module.exports = { pi, e, sin, pow };", out)
         self.assertNotIn("__m.", out)
         self.assertNotIn("extern(", out)
         self.assertNotIn("Math.", out)

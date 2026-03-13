@@ -282,7 +282,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/gif.java",
             "generated/utils/png.java",
         ),
-        "native_files": ("native/built_in/PyRuntime.java",),
+        "native_files": ("native/built_in/PyRuntime.java", "native/std/time_native.java"),
         "delete_target_files": (),
     },
     {

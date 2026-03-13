@@ -17,57 +17,57 @@ namespace Pytra.CsModule
         public static double pi { get { return math_native.pi; } }
         public static double e { get { return math_native.e; } }
 
-        public static double sqrt(double x)
+        public static float64 sqrt(float64 x)
         {
             return math_native.sqrt(x);
         }
 
-        public static double sin(double x)
+        public static float64 sin(float64 x)
         {
             return math_native.sin(x);
         }
 
-        public static double cos(double x)
+        public static float64 cos(float64 x)
         {
             return math_native.cos(x);
         }
 
-        public static double tan(double x)
+        public static float64 tan(float64 x)
         {
             return math_native.tan(x);
         }
 
-        public static double exp(double x)
+        public static float64 exp(float64 x)
         {
             return math_native.exp(x);
         }
 
-        public static double log(double x)
+        public static float64 log(float64 x)
         {
             return math_native.log(x);
         }
 
-        public static double log10(double x)
+        public static float64 log10(float64 x)
         {
             return math_native.log10(x);
         }
 
-        public static double fabs(double x)
+        public static float64 fabs(float64 x)
         {
             return math_native.fabs(x);
         }
 
-        public static double floor(double x)
+        public static float64 floor(float64 x)
         {
             return math_native.floor(x);
         }
 
-        public static double ceil(double x)
+        public static float64 ceil(float64 x)
         {
             return math_native.ceil(x);
         }
 
-        public static double pow(double x, double y)
+        public static float64 pow(float64 x, float64 y)
         {
             return math_native.pow(x, y);
         }

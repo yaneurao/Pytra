@@ -668,7 +668,7 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/math.rs", "postprocess": "rs_std_math_live_wrapper" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/math.cs", "postprocess": "cs_std_math_live_wrapper" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/math.cs", "postprocess": "cs_std_native_owner_wrapper", "helper_name": "math" },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/math.go",
@@ -691,7 +691,7 @@
           "postprocess": "swift_program_to_library"
         },
         { "target": "nim", "output": "src/runtime/nim/generated/std/math.nim" },
-        { "target": "js", "output": "src/runtime/js/generated/std/math.js", "postprocess": "js_std_math_live_wrapper" },
+        { "target": "js", "output": "src/runtime/js/generated/std/math.js", "postprocess": "js_std_native_owner_wrapper", "helper_name": "math" },
         { "target": "ts", "output": "src/runtime/ts/generated/std/math.ts", "postprocess": "ts_std_math_live_wrapper" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/math.rb" },
         { "target": "lua", "output": "src/runtime/lua/generated/std/math.lua" },
