@@ -6,21 +6,26 @@
 
 fun py_reversed_object(values: Any?): MutableList<Any?> {
     var out: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
-    var i: Long = (__pytra_len(values) - 1L)
-    while ((__pytra_int(i) >= __pytra_int(0L))) {
-        out.add(__pytra_get_index(values, i))
-        i -= 1L
+    val __iter_0 = __pytra_as_list(values)
+    var __i_1: Long = 0L
+    while (__i_1 < __iter_0.size.toLong()) {
+        val value = __iter_0[__i_1.toInt()]
+        out.add(value)
+        __i_1 += 1L
     }
-    return out
+    return __pytra_as_list(reversed(out))
 }
 
 fun py_enumerate_object(values: Any?, start: Long): MutableList<Any?> {
     var out: MutableList<Any?> = __pytra_as_list(mutableListOf<Any?>())
-    var i: Long = 0L
-    var n: Long = __pytra_int(__pytra_len(values))
-    while ((__pytra_int(i) < __pytra_int(n))) {
-        out.add(mutableListOf((start + i), __pytra_get_index(values, i)))
+    var i: Long = start
+    val __iter_0 = __pytra_as_list(values)
+    var __i_1: Long = 0L
+    while (__i_1 < __iter_0.size.toLong()) {
+        val value = __iter_0[__i_1.toInt()]
+        out.add(mutableListOf(i, value))
         i += 1L
+        __i_1 += 1L
     }
     return out
 }

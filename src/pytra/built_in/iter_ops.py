@@ -3,18 +3,15 @@
 
 def py_reversed_object(values: object) -> list[object]:
     out: list[object] = []
-    i = len(values) - 1
-    while i >= 0:
-        out.append(values[i])
-        i -= 1
-    return out
+    for value in values:
+        out.append(value)
+    return reversed(out)
 
 
 def py_enumerate_object(values: object, start: int = 0) -> list[object]:
     out: list[object] = []
-    i = 0
-    n = len(values)
-    while i < n:
-        out.append([start + i, values[i]])
+    i = start
+    for value in values:
+        out.append([i, value])
         i += 1
     return out

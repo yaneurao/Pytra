@@ -7,20 +7,17 @@ require_relative "py_runtime"
 
 def py_reversed_object(values)
   out = []
-  i = (__pytra_len(values) - 1)
-  while i >= 0
-    out.append(__pytra_get_index(values, i))
-    i -= 1
+  for value in __pytra_as_list(values)
+    out.append(value)
   end
-  return out
+  return reversed(out)
 end
 
 def py_enumerate_object(values, start)
   out = []
-  i = 0
-  n = __pytra_len(values)
-  while i < n
-    out.append([start + i, __pytra_get_index(values, i)])
+  i = start
+  for value in __pytra_as_list(values)
+    out.append([i, value])
     i += 1
   end
   return out

@@ -21,20 +21,17 @@ if (!function_exists('__pytra_len')) {
 
 function py_reversed_object($values) {
     $out = [];
-    $i = (__pytra_len($values) - 1);
-    while (($i >= 0)) {
-        $out[] = $values[$i];
-        $i -= 1;
+    foreach ($values as $value) {
+        $out[] = $value;
     }
-    return $out;
+    return reversed($out);
 }
 
 function py_enumerate_object($values, $start) {
     $out = [];
-    $i = 0;
-    $n = __pytra_len($values);
-    while (($i < $n)) {
-        $out[] = [($start + $i), $values[$i]];
+    $i = $start;
+    foreach ($values as $value) {
+        $out[] = [$i, $value];
         $i += 1;
     }
     return $out;

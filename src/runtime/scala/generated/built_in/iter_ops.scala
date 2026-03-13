@@ -9,21 +9,26 @@ import java.nio.file.{Files, Paths}
 
 def py_reversed_object(values: Any): mutable.ArrayBuffer[Any] = {
     var out: mutable.ArrayBuffer[Any] = __pytra_as_list(mutable.ArrayBuffer[Any]())
-    var i: Long = (__pytra_len(values) - 1L)
-    while (i >= 0L) {
-        out.append(__pytra_get_index(values, i))
-        i -= 1L
+    val __iter_0 = __pytra_as_list(values)
+    var __i_1: Long = 0L
+    while (__i_1 < __iter_0.size.toLong) {
+        val value = __iter_0(__i_1.toInt)
+        out.append(value)
+        __i_1 += 1L
     }
-    return out
+    return __pytra_as_list(reversed(out))
 }
 
 def py_enumerate_object(values: Any, start: Long): mutable.ArrayBuffer[Any] = {
     var out: mutable.ArrayBuffer[Any] = __pytra_as_list(mutable.ArrayBuffer[Any]())
-    var i: Long = 0L
-    var n: Long = __pytra_int(__pytra_len(values))
-    while (i < n) {
-        out.append(mutable.ArrayBuffer[Any](start + i, __pytra_get_index(values, i)))
+    var i: Long = start
+    val __iter_0 = __pytra_as_list(values)
+    var __i_1: Long = 0L
+    while (__i_1 < __iter_0.size.toLong) {
+        val value = __iter_0(__i_1.toInt)
+        out.append(mutable.ArrayBuffer[Any](i, value))
         i += 1L
+        __i_1 += 1L
     }
     return out
 }

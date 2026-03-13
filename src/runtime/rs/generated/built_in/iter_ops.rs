@@ -8,20 +8,17 @@ use crate::py_runtime::*;
 
 fn py_reversed_object(values: PyAny) -> Vec<PyAny> {
     let mut out: Vec<PyAny> = vec![];
-    let mut i = (match &values { PyAny::Str(s) => s.len() as i64, PyAny::Dict(d) => d.len() as i64, PyAny::List(xs) => xs.len() as i64, PyAny::Set(xs) => xs.len() as i64, PyAny::None => 0, _ => 0 }) - 1;
-    while i >= 0 {
-        out.push(values[((if ((i) as i64) < 0 { (values.len() as i64 + ((i) as i64)) } else { ((i) as i64) }) as usize)]);
-        i -= 1;
+    for value in values {
+        out.push(value);
     }
-    return out;
+    return reversed((out).clone());
 }
 
 fn py_enumerate_object(values: PyAny, start: i64) -> Vec<PyAny> {
     let mut out: Vec<PyAny> = vec![];
-    let mut i = 0;
-    let n = (match &values { PyAny::Str(s) => s.len() as i64, PyAny::Dict(d) => d.len() as i64, PyAny::List(xs) => xs.len() as i64, PyAny::Set(xs) => xs.len() as i64, PyAny::None => 0, _ => 0 });
-    while i < n {
-        out.push(vec![start + i, values[((i) as usize)]]);
+    let mut i = start;
+    for value in values {
+        out.push(vec![i, value]);
         i += 1;
     }
     return out;

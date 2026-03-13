@@ -7,20 +7,21 @@ package main
 
 func py_reversed_object(values any) []any {
     var out []any = __pytra_as_list([]any{})
-    var i int64 = (__pytra_len(values) - int64(1))
-    for (i >= int64(0)) {
-        out = append(out, __pytra_get_index(values, i))
-        i -= int64(1)
+    __iter_0 := __pytra_as_list(values)
+    for __i_1 := int64(0); __i_1 < int64(len(__iter_0)); __i_1 += 1 {
+        value := __iter_0[__i_1]
+        out = append(out, value)
     }
-    return __pytra_as_list(out)
+    return __pytra_as_list(reversed(out))
 }
 
 func py_enumerate_object(values any, start int64) []any {
     var out []any = __pytra_as_list([]any{})
-    var i int64 = int64(0)
-    var n int64 = __pytra_len(values)
-    for (i < n) {
-        out = append(out, []any{(start + i), __pytra_get_index(values, i)})
+    var i int64 = start
+    __iter_0 := __pytra_as_list(values)
+    for __i_1 := int64(0); __i_1 < int64(len(__iter_0)); __i_1 += 1 {
+        value := __iter_0[__i_1]
+        out = append(out, []any{i, value})
         i += int64(1)
     }
     return __pytra_as_list(out)

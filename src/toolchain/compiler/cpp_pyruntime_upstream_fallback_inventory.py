@@ -229,12 +229,12 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_INVENTORY_V1: Final[
         "scope_rel": "src/runtime/cpp/generated",
         "matcher_kind": "regex",
         "needle": r"\bpy_at\([^\n]*py_to<int64>\(",
-        "expected_count": 44,
+        "expected_count": 42,
         "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02",
         "evidence_refs": (
             {
-                "relpath": "src/runtime/cpp/generated/built_in/iter_ops.cpp",
-                "needle": "make_object(py_at(values, py_to<int64>(i)))",
+                "relpath": "src/runtime/cpp/generated/built_in/type_id.cpp",
+                "needle": "if (py_at(items, py_to<int64>(i)) == value)",
             },
             {
                 "relpath": "src/runtime/cpp/generated/std/json.cpp",
