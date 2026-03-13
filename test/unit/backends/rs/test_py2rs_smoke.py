@@ -485,6 +485,22 @@ class Py2RsSmokeTest(unittest.TestCase):
         self.assertNotIn("use crate::pytra::std::math;", rust)
         self.assertIn("pytra::std::math::sqrt(4.0)", rust)
 
+    def test_runtime_import_resolution_skips_redundant_root_time_use(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            src_py = Path(td) / "runtime_imports_root_time.py"
+            src_py.write_text(
+                "import time\n"
+                "\n"
+                "def main() -> None:\n"
+                "    print(time.perf_counter())\n",
+                encoding="utf-8",
+            )
+            east = load_east(src_py, parser_backend="self_hosted")
+            rust = transpile_to_rust(east)
+
+        self.assertNotIn("use crate::pytra::std::time;", rust)
+        self.assertIn("pytra::std::time::perf_counter()", rust)
+
     def test_for_core_downcount_range_uses_descending_condition(self) -> None:
         fixture = find_fixture_case("range_downcount_len_minus1")
         east = load_east(fixture, parser_backend="self_hosted")

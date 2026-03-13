@@ -85,7 +85,6 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "noncpp_native_owner_paths": ("src/runtime/cs/native/std/time_native.cs",),
         "emitter_hardcode_needles": (
             ("src/backends/lua/emitter/lua_native_emitter.py", 'if mod == "pytra.std.time":'),
-            ("src/backends/rs/emitter/rs_emitter.py", 'if module_name not in {"pytra.std.math", "pytra.std.time"}:'),
         ),
         "generated_drift_needles": (
             ("src/runtime/js/generated/std/time.js", "process.hrtime.bigint"),

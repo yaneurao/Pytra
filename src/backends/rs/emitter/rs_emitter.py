@@ -10,9 +10,18 @@ from backends.common.emitter.code_emitter import (
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
     reject_backend_typed_vararg_signatures,
 )
+from toolchain.compiler.noncpp_runtime_layout_contract import iter_rs_std_lane_ownership
 from toolchain.compiler.transpile_cli import make_user_error
 from toolchain.frontends.type_expr import type_expr_to_string
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
+
+
+_RS_PY_RUNTIME_REEXPORT_STD_MODULES: tuple[str, ...] = tuple(
+    entry["module_name"]
+    for entry in iter_rs_std_lane_ownership()
+    if entry["native_rel"] == "src/runtime/rs/native/built_in/py_runtime.rs"
+    and entry["canonical_runtime_symbol"] != ""
+)
 
 
 def load_rs_profile() -> dict[str, Any]:
@@ -1829,9 +1838,14 @@ class RustEmitter(CodeEmitter):
         return leaf == "gif" or leaf == "png"
 
     def _should_skip_module_use_line(self, module_id: str, local_name: str) -> bool:
-        """互換 prelude と衝突する `use crate::pytra::std::{math,time};` を抑止する。"""
+        """互換 prelude と衝突する runtime prelude re-export module `use` を抑止する。"""
         module_name = canonical_runtime_module_id(module_id.strip())
-        if module_name not in {"pytra.std.math", "pytra.std.time"}:
+        if module_name == "":
+            return False
+        leaf = self._last_dotted_name(module_name)
+        if module_name != "pytra.std." + leaf:
+            return False
+        if leaf not in _RS_PY_RUNTIME_REEXPORT_STD_MODULES:
             return False
         leaf = self._last_dotted_name(module_name)
         return local_name == "" or local_name == leaf
@@ -2060,7 +2074,9 @@ class RustEmitter(CodeEmitter):
     def _emit_runtime_prelude(self) -> None:
         """外部 runtime 参照の基本宣言を出力する。"""
         self.emit("mod py_runtime;")
-        self.emit("pub use crate::py_runtime::{math, pytra, time};")
+        prelude_exports = sorted(_RS_PY_RUNTIME_REEXPORT_STD_MODULES)
+        prelude_exports.insert(1 if len(prelude_exports) > 0 else 0, "pytra")
+        self.emit("pub use crate::py_runtime::{" + ", ".join(prelude_exports) + "};")
         self.emit("use crate::py_runtime::*;")
 
     def _emit_type_info_registration_helper(self) -> None:
