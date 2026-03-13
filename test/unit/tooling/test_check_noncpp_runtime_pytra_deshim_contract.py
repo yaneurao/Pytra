@@ -108,13 +108,23 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
             },
             blockers,
         )
-        self.assertIn(
+        self.assertNotIn(
             {
                 "backend": "go",
                 "bucket": "contract_allowlist",
                 "path": "src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py",
                 "needles": ('"current_prefix": "src/runtime/go/pytra/built_in/py_runtime.go"',),
                 "rationale": "Go current->target rollout mapping still treats the checked-in pytra lane as a live current root.",
+            },
+            blockers,
+        )
+        self.assertIn(
+            {
+                "backend": "js",
+                "bucket": "runtime_shim_writer",
+                "path": "src/toolchain/compiler/js_runtime_shims.py",
+                "needles": ('"pytra/py_runtime.js"', '"pytra/std/pathlib.js"'),
+                "rationale": "JS runtime shim generation still writes repo-tree pytra import paths.",
             },
             blockers,
         )

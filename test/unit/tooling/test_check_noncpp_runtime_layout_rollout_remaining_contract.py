@@ -701,15 +701,6 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertIn(
             {
-                "current_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
-                "target_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
-                "ownership": "delete_target",
-                "rationale": "Go still keeps a checked-in pytra delete-target shim under pytra/built_in until the static-family deshim bundle removes it.",
-            },
-            by_backend["go"],
-        )
-        self.assertIn(
-            {
                 "current_prefix": "src/runtime/java/generated/built_in/",
                 "target_prefix": "src/runtime/java/generated/built_in/",
                 "ownership": "generated",

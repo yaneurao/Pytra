@@ -111,7 +111,7 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
         "current_dir": "src/runtime/go/pytra",
         "target_policy": "delete_target_after_static_bundle",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
-        "blocker_buckets": ("contract_allowlist",),
+        "blocker_buckets": (),
     },
     {
         "backend": "java",
@@ -119,7 +119,7 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
         "current_dir": "src/runtime/java/pytra",
         "target_policy": "delete_target_after_static_bundle",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
-        "blocker_buckets": ("contract_allowlist",),
+        "blocker_buckets": (),
     },
     {
         "backend": "kotlin",
@@ -127,7 +127,7 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
         "current_dir": "src/runtime/kotlin/pytra",
         "target_policy": "delete_target_after_static_bundle",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
-        "blocker_buckets": ("contract_allowlist",),
+        "blocker_buckets": (),
     },
     {
         "backend": "scala",
@@ -135,7 +135,7 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
         "current_dir": "src/runtime/scala/pytra",
         "target_policy": "delete_target_after_static_bundle",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
-        "blocker_buckets": ("contract_allowlist",),
+        "blocker_buckets": (),
     },
     {
         "backend": "swift",
@@ -143,7 +143,7 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
         "current_dir": "src/runtime/swift/pytra",
         "target_policy": "delete_target_after_static_bundle",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
-        "blocker_buckets": ("contract_allowlist",),
+        "blocker_buckets": (),
     },
     {
         "backend": "nim",
@@ -151,7 +151,7 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
         "current_dir": "src/runtime/nim/pytra",
         "target_policy": "delete_target_after_static_bundle",
         "target_roots": NONCPP_PYTRA_DESHIM_TARGET_ROOTS_V1,
-        "blocker_buckets": ("contract_allowlist",),
+        "blocker_buckets": (),
     },
     {
         "backend": "js",
@@ -196,48 +196,6 @@ NONCPP_PYTRA_DESHIM_BACKENDS_V1: Final[tuple[NonCppPytraDeshimBackendEntry, ...]
 )
 
 NONCPP_PYTRA_DESHIM_BLOCKERS_V1: Final[tuple[NonCppPytraDeshimBlockerEntry, ...]] = (
-    {
-        "backend": "go",
-        "bucket": "contract_allowlist",
-        "path": "src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py",
-        "needles": ('"current_prefix": "src/runtime/go/pytra/built_in/py_runtime.go"',),
-        "rationale": "Go current->target rollout mapping still treats the checked-in pytra lane as a live current root.",
-    },
-    {
-        "backend": "java",
-        "bucket": "contract_allowlist",
-        "path": "src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py",
-        "needles": ('"current_prefix": "src/runtime/java/pytra/built_in/"',),
-        "rationale": "Java current->target rollout mapping still includes the checked-in pytra lane.",
-    },
-    {
-        "backend": "kotlin",
-        "bucket": "contract_allowlist",
-        "path": "src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py",
-        "needles": ('"current_prefix": "src/runtime/kotlin/pytra/built_in/py_runtime.kt"',),
-        "rationale": "Kotlin current->target rollout mapping still includes the checked-in pytra lane.",
-    },
-    {
-        "backend": "scala",
-        "bucket": "contract_allowlist",
-        "path": "src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py",
-        "needles": ('"current_prefix": "src/runtime/scala/pytra/built_in/py_runtime.scala"',),
-        "rationale": "Scala current->target rollout mapping still includes the checked-in pytra lane.",
-    },
-    {
-        "backend": "swift",
-        "bucket": "contract_allowlist",
-        "path": "src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py",
-        "needles": ('"current_prefix": "src/runtime/swift/pytra/built_in/py_runtime.swift"',),
-        "rationale": "Swift current->target rollout mapping still includes the checked-in pytra lane.",
-    },
-    {
-        "backend": "nim",
-        "bucket": "contract_allowlist",
-        "path": "src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py",
-        "needles": ('"current_prefix": "src/runtime/nim/pytra/built_in/py_runtime.nim"',),
-        "rationale": "Nim current->target rollout mapping still includes the checked-in pytra lane.",
-    },
     {
         "backend": "js",
         "bucket": "runtime_shim_writer",

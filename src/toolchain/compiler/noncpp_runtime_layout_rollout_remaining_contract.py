@@ -266,7 +266,7 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
         "backend": "go",
         "family": "static",
         "runtime_hook_key": "go",
-        "current_roots": ("generated", "native", "pytra"),
+        "current_roots": ("generated", "native"),
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
@@ -293,19 +293,13 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "ownership": "generated",
                 "rationale": "Go SoT-generated std compare artifacts now live in generated/std after the cpp-baseline materialization bundle.",
             },
-            {
-                "current_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
-                "target_prefix": "src/runtime/go/pytra/built_in/py_runtime.go",
-                "ownership": "delete_target",
-                "rationale": "Go still keeps a checked-in pytra delete-target shim under pytra/built_in until the static-family deshim bundle removes it.",
-            },
         ),
     },
     {
         "backend": "java",
         "family": "static",
         "runtime_hook_key": "java",
-        "current_roots": ("generated", "native", "pytra"),
+        "current_roots": ("generated", "native"),
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
@@ -332,19 +326,13 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "ownership": "generated",
                 "rationale": "Java image helpers already live in the canonical generated/utils lane after the Wave A path cutover.",
             },
-            {
-                "current_prefix": "src/runtime/java/pytra/built_in/",
-                "target_prefix": "src/runtime/java/pytra/built_in/",
-                "ownership": "delete_target",
-                "rationale": "Java still keeps checked-in pytra delete-target shims under pytra/built_in until the static-family deshim bundle removes them.",
-            },
         ),
     },
     {
         "backend": "kotlin",
         "family": "static",
         "runtime_hook_key": "kotlin",
-        "current_roots": ("generated", "native", "pytra"),
+        "current_roots": ("generated", "native"),
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
@@ -371,19 +359,13 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "ownership": "generated",
                 "rationale": "Kotlin SoT-generated std compare artifacts now live in generated/std after the cpp-baseline materialization bundle.",
             },
-            {
-                "current_prefix": "src/runtime/kotlin/pytra/built_in/py_runtime.kt",
-                "target_prefix": "src/runtime/kotlin/pytra/built_in/py_runtime.kt",
-                "ownership": "delete_target",
-                "rationale": "Kotlin still keeps a checked-in pytra delete-target shim under pytra/built_in until the static-family deshim bundle removes it.",
-            },
         ),
     },
     {
         "backend": "scala",
         "family": "static",
         "runtime_hook_key": "scala",
-        "current_roots": ("generated", "native", "pytra"),
+        "current_roots": ("generated", "native"),
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
@@ -410,19 +392,13 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "ownership": "generated",
                 "rationale": "Scala SoT-generated std compare artifacts now live in generated/std after the cpp-baseline materialization bundle.",
             },
-            {
-                "current_prefix": "src/runtime/scala/pytra/built_in/py_runtime.scala",
-                "target_prefix": "src/runtime/scala/pytra/built_in/py_runtime.scala",
-                "ownership": "delete_target",
-                "rationale": "Scala still keeps a checked-in pytra delete-target shim under pytra/built_in until the static-family deshim bundle removes it.",
-            },
         ),
     },
     {
         "backend": "swift",
         "family": "static",
         "runtime_hook_key": "swift",
-        "current_roots": ("generated", "native", "pytra"),
+        "current_roots": ("generated", "native"),
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
@@ -449,19 +425,13 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "ownership": "generated",
                 "rationale": "Swift SoT-generated std compare artifacts now live in generated/std after the cpp-baseline materialization bundle.",
             },
-            {
-                "current_prefix": "src/runtime/swift/pytra/built_in/py_runtime.swift",
-                "target_prefix": "src/runtime/swift/pytra/built_in/py_runtime.swift",
-                "ownership": "delete_target",
-                "rationale": "Swift still keeps a checked-in pytra delete-target shim under pytra/built_in until the static-family deshim bundle removes it.",
-            },
         ),
     },
     {
         "backend": "nim",
         "family": "static",
         "runtime_hook_key": "nim",
-        "current_roots": ("generated", "native", "pytra"),
+        "current_roots": ("generated", "native"),
         "target_roots": ("generated", "native"),
         "lane_mappings": (
             {
@@ -487,12 +457,6 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "target_prefix": "src/runtime/nim/generated/std/",
                 "ownership": "generated",
                 "rationale": "Nim SoT-generated std compare artifacts now live in generated/std after the cpp-baseline materialization bundle.",
-            },
-            {
-                "current_prefix": "src/runtime/nim/pytra/built_in/py_runtime.nim",
-                "target_prefix": "src/runtime/nim/pytra/built_in/py_runtime.nim",
-                "ownership": "delete_target",
-                "rationale": "Nim still keeps a checked-in pytra delete-target shim under pytra/built_in until the static-family deshim bundle removes it.",
             },
         ),
     },

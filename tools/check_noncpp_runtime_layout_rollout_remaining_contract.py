@@ -52,7 +52,7 @@ def _inventory_root_by_key(backend: str) -> dict[str, str]:
         entry for entry in contract_mod.iter_remaining_noncpp_runtime_layout() if entry["backend"] == backend
     )
     current_roots = set(layout_entry["current_roots"])
-    if {"generated", "native", "pytra"}.issubset(current_roots):
+    if {"generated", "native"}.issubset(current_roots):
         return {
             "pytra_core_files": "native",
             "pytra_gen_files": "generated",
@@ -223,6 +223,9 @@ def _expand_target_inventory_for_backend(backend: str) -> dict[str, tuple[str, .
                     matched_lane = lane
                     break
             if matched_lane is None:
+                if root_name == "pytra":
+                    expanded["delete_target"].append(f"pytra/{rel_path}")
+                    continue
                 raise AssertionError(f"unmatched current runtime path: {current_path}")
             target_path = current_path.replace(
                 matched_lane["current_prefix"],
