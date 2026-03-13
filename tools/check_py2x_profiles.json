@@ -655,6 +655,7 @@
         "pytra/py_runtime.php",
         "pytra/utils/png.php",
         "pytra/utils/gif.php",
+        "pytra/std/math_native.php",
         "pytra/std/time.php",
         "pytra/std/time_native.php"
       ],

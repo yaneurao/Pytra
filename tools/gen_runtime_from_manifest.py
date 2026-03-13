@@ -3098,76 +3098,113 @@ def rewrite_php_program_to_library(php_src: str) -> str:
     return text.rstrip() + "\n"
 
 
-def rewrite_php_perf_counter_native_wrapper(php_src: str) -> str:
-    lines = _strip_trailing_string_literal_expr(php_src).splitlines()
-    lines = _remove_block_by_signature(lines, re.compile(r"^function\s+__pytra_main\s*\("))
-    out: list[str] = []
-    for line in lines:
-        if line.strip() == "require_once __DIR__ . '/pytra/py_runtime.php';":
-            continue
-        if line.strip() == "__pytra_main();":
-            continue
-        out.append(line)
-    text = "\n".join(out)
-    native_require = "\n".join(
+def _php_generated_std_native_require_block(
+    helper_name: str,
+    *,
+    required_symbol: str,
+) -> str:
+    native_file = helper_name + "_native.php"
+    return "\n".join(
         [
-            "$__pytra_time_native_candidates = [",
-            "    __DIR__ . '/time_native.php',",
-            "    dirname(__DIR__, 2) . '/native/std/time_native.php',",
+            "$__pytra_" + helper_name + "_native_candidates = [",
+            "    __DIR__ . '/" + native_file + "',",
+            "    dirname(__DIR__, 2) . '/native/std/" + native_file + "',",
             "];",
-            "foreach ($__pytra_time_native_candidates as $__pytra_time_native_path) {",
-            "    if (is_file($__pytra_time_native_path)) {",
-            "        require_once $__pytra_time_native_path;",
+            "foreach ($__pytra_" + helper_name + "_native_candidates as $__pytra_" + helper_name + "_native_path) {",
+            "    if (is_file($__pytra_" + helper_name + "_native_path)) {",
+            "        require_once $__pytra_" + helper_name + "_native_path;",
             "        break;",
             "    }",
             "}",
-            "if (!function_exists('__pytra_time_perf_counter')) {",
-            "    throw new RuntimeException('time_native.php not found for generated PHP runtime lane');",
+            "if (!function_exists('" + required_symbol + "')) {",
+            "    throw new RuntimeException('" + native_file + " not found for generated PHP runtime lane');",
             "}",
             "",
         ]
     )
-    text = text.replace("declare(strict_types=1);\n\n", "declare(strict_types=1);\n\n" + native_require, 1)
-    text = text.replace("function perf_counter() {", "function perf_counter(): float {")
-    text = text.replace("return $__t->perf_counter();", "return __pytra_time_perf_counter();")
-    if "function perf_counter(): float {" not in text:
-        raise RuntimeError("generated PHP std/time wrapper is missing perf_counter()")
-    if "__pytra_time_perf_counter()" not in text:
-        raise RuntimeError("generated PHP std/time wrapper is missing native seam delegation")
-    if "microtime(true)" in text:
-        raise RuntimeError("generated PHP std/time wrapper still contains host-binding residue")
-    return text.rstrip() + "\n"
 
 
-def rewrite_php_math_runtime_wrapper(php_src: str) -> str:
-    text = rewrite_php_program_to_library(php_src)
-    runtime_require = _php_generated_runtime_require_block().rstrip()
-    text = text.replace(
-        runtime_require,
-        runtime_require + "\n\n$pi = pyMathPi();\n$e = pyMathE();",
-        1,
-    )
-    signature_replacements = {
-        "function sqrt($x) {": "function sqrt($x): float {",
-        "function sin($x) {": "function sin($x): float {",
-        "function cos($x) {": "function cos($x): float {",
-        "function tan($x) {": "function tan($x): float {",
-        "function exp($x) {": "function exp($x): float {",
-        "function log($x) {": "function log($x): float {",
-        "function log10($x) {": "function log10($x): float {",
-        "function fabs($x) {": "function fabs($x): float {",
-        "function floor($x) {": "function floor($x): float {",
-        "function ceil($x) {": "function ceil($x): float {",
-        "function pow($x, $y) {": "function pow($x, $y): float {",
-    }
-    for before, after in signature_replacements.items():
-        text = text.replace(before, after)
-    if "pyMathPi()" not in text or "pyMathE()" not in text:
-        raise RuntimeError("generated PHP std/math wrapper is missing pi/e helpers")
-    if "__pytra_main" in text:
-        raise RuntimeError("generated PHP std/math wrapper still contains main stub")
-    return text.rstrip() + "\n"
-
+def rewrite_php_std_native_owner_wrapper(php_src: str, helper_name: str) -> str:
+    if helper_name == "time":
+        lines = _strip_trailing_string_literal_expr(php_src).splitlines()
+        lines = _remove_block_by_signature(lines, re.compile(r"^function\s+__pytra_main\s*\("))
+        out: list[str] = []
+        for line in lines:
+            if line.strip() == "require_once __DIR__ . '/pytra/py_runtime.php';":
+                continue
+            if line.strip() == "__pytra_main();":
+                continue
+            out.append(line)
+        text = "\n".join(out)
+        native_require = _php_generated_std_native_require_block(
+            "time",
+            required_symbol="__pytra_time_perf_counter",
+        )
+        text = text.replace("declare(strict_types=1);\n\n", "declare(strict_types=1);\n\n" + native_require, 1)
+        text = text.replace("function perf_counter() {", "function perf_counter(): float {")
+        text = text.replace("return $__t->perf_counter();", "return __pytra_time_perf_counter();")
+        if "function perf_counter(): float {" not in text:
+            raise RuntimeError("generated PHP std/time wrapper is missing perf_counter()")
+        if "__pytra_time_perf_counter()" not in text:
+            raise RuntimeError("generated PHP std/time wrapper is missing native seam delegation")
+        if "microtime(true)" in text:
+            raise RuntimeError("generated PHP std/time wrapper still contains host-binding residue")
+        return text.rstrip() + "\n"
+    if helper_name == "math":
+        text = rewrite_php_program_to_library(php_src)
+        runtime_require = _php_generated_runtime_require_block().rstrip()
+        native_require = _php_generated_std_native_require_block(
+            "math",
+            required_symbol="__pytra_math_pi",
+        ).rstrip()
+        text = text.replace(
+            runtime_require,
+            native_require,
+            1,
+        )
+        text = text.replace(
+            native_require,
+            native_require + "\n\n$pi = __pytra_math_pi();\n$e = __pytra_math_e();",
+            1,
+        )
+        signature_replacements = {
+            "function sqrt($x) {": "function sqrt($x): float {",
+            "function sin($x) {": "function sin($x): float {",
+            "function cos($x) {": "function cos($x): float {",
+            "function tan($x) {": "function tan($x): float {",
+            "function exp($x) {": "function exp($x): float {",
+            "function log($x) {": "function log($x): float {",
+            "function log10($x) {": "function log10($x): float {",
+            "function fabs($x) {": "function fabs($x): float {",
+            "function floor($x) {": "function floor($x): float {",
+            "function ceil($x) {": "function ceil($x): float {",
+            "function pow($x, $y) {": "function pow($x, $y): float {",
+        }
+        for before, after in signature_replacements.items():
+            text = text.replace(before, after)
+        body_replacements = {
+            "return pyMathSqrt($x);": "return __pytra_math_sqrt($x);",
+            "return pyMathSin($x);": "return __pytra_math_sin($x);",
+            "return pyMathCos($x);": "return __pytra_math_cos($x);",
+            "return pyMathTan($x);": "return __pytra_math_tan($x);",
+            "return pyMathExp($x);": "return __pytra_math_exp($x);",
+            "return pyMathLog($x);": "return __pytra_math_log($x);",
+            "return pyMathLog10($x);": "return __pytra_math_log10($x);",
+            "return pyMathFabs($x);": "return __pytra_math_fabs($x);",
+            "return pyMathFloor($x);": "return __pytra_math_floor($x);",
+            "return pyMathCeil($x);": "return __pytra_math_ceil($x);",
+            "return pyMathPow($x, $y);": "return __pytra_math_pow($x, $y);",
+        }
+        for before, after in body_replacements.items():
+            text = text.replace(before, after)
+        if "$pi = __pytra_math_pi();" not in text or "$e = __pytra_math_e();" not in text:
+            raise RuntimeError("generated PHP std/math wrapper is missing pi/e helpers")
+        if "__pytra_main" in text:
+            raise RuntimeError("generated PHP std/math wrapper still contains main stub")
+        if "pyMath" in text or "py_runtime.php" in text:
+            raise RuntimeError("generated PHP std/math wrapper still contains built_in runtime residue")
+        return text.rstrip() + "\n"
+    raise RuntimeError("unsupported helper_name for php_std_native_owner_wrapper: " + helper_name)
 
 def rewrite_php_std_pathlib_live_wrapper(php_src: str) -> str:
     required_fragments = (
@@ -3737,10 +3774,10 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_scala_program_to_library(generated)
     elif item.postprocess == "swift_program_to_library":
         generated = rewrite_swift_program_to_library(generated)
-    elif item.postprocess == "php_perf_counter_native_wrapper":
-        generated = rewrite_php_perf_counter_native_wrapper(generated)
-    elif item.postprocess == "php_math_runtime_wrapper":
-        generated = rewrite_php_math_runtime_wrapper(generated)
+    elif item.postprocess == "php_std_native_owner_wrapper":
+        if item.helper_name == "":
+            raise RuntimeError("missing helper_name for php_std_native_owner_wrapper: " + item.item_id)
+        generated = rewrite_php_std_native_owner_wrapper(generated, item.helper_name)
     elif item.postprocess == "php_std_pathlib_live_wrapper":
         generated = rewrite_php_std_pathlib_live_wrapper(generated)
     elif item.postprocess == "php_std_json_live_wrapper":

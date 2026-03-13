@@ -257,6 +257,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                     "test_path": "test/unit/backends/php/test_py2php_smoke.py",
                     "required_tests": (
                         "test_php_runtime_source_path_is_migrated",
+                        "test_php_generated_math_runtime_owner_is_live_wrapper_shaped",
                         "test_php_generated_time_runtime_owner_is_live_wrapper_shaped",
                         "test_php_repo_generated_lanes_resolve_native_substrate",
                         "test_php_generated_built_in_compare_lane_resolves_native_runtime",

@@ -46,7 +46,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "swift:swift_program_to_library",
             "js:js_std_native_owner_wrapper",
             "ts:ts_std_native_owner_wrapper",
-            "php:php_math_runtime_wrapper",
+            "php:php_std_native_owner_wrapper",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/math.cpp",),
         "noncpp_native_owner_paths": (
@@ -54,6 +54,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "src/runtime/java/native/std/math_native.java",
             "src/runtime/js/native/std/math_native.js",
             "src/runtime/ts/native/std/math_native.ts",
+            "src/runtime/php/native/std/math_native.php",
         ),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (
@@ -71,6 +72,10 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             (
                 "test/unit/backends/java/test_py2java_smoke.py",
                 "def test_java_generated_math_runtime_owner_is_live_wrapper_shaped",
+            ),
+            (
+                "test/unit/backends/php/test_py2php_smoke.py",
+                "def test_php_generated_math_runtime_owner_is_live_wrapper_shaped",
             ),
             (
                 "test/unit/backends/rs/test_py2rs_smoke.py",
@@ -92,7 +97,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "swift:swift_program_to_library",
             "js:js_std_native_owner_wrapper",
             "ts:ts_std_native_owner_wrapper",
-            "php:php_perf_counter_native_wrapper",
+            "php:php_std_native_owner_wrapper",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/time.cpp",),
         "noncpp_native_owner_paths": (

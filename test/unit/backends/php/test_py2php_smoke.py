@@ -139,6 +139,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
 
     def test_php_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "php" / "native" / "built_in" / "py_runtime.php"
+        native_math_path = ROOT / "src" / "runtime" / "php" / "native" / "std" / "math_native.php"
         native_time_path = ROOT / "src" / "runtime" / "php" / "native" / "std" / "time_native.php"
         generated_contains_path = ROOT / "src" / "runtime" / "php" / "generated" / "built_in" / "contains.php"
         generated_sequence_path = ROOT / "src" / "runtime" / "php" / "generated" / "built_in" / "sequence.php"
@@ -166,6 +167,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertTrue(generated_glob_path.exists())
         self.assertTrue(generated_json_path.exists())
         self.assertTrue(generated_math_path.exists())
+        self.assertTrue(native_math_path.exists())
         self.assertTrue(generated_os_path.exists())
         self.assertTrue(generated_os_path_path.exists())
         self.assertTrue(generated_pathlib_path.exists())
@@ -186,6 +188,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "argparse.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "glob.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "math.php").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "math_native.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "os.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "os_path.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "pathlib.php").exists())
@@ -195,6 +198,25 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "timeit.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "utils" / "assertions.php").exists())
         self.assertFalse(legacy_path.exists())
+
+    def test_php_generated_math_runtime_owner_is_live_wrapper_shaped(self) -> None:
+        generated_math_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "math.php"
+        native_math_path = ROOT / "src" / "runtime" / "php" / "native" / "std" / "math_native.php"
+        generated = generated_math_path.read_text(encoding="utf-8")
+        native = native_math_path.read_text(encoding="utf-8")
+        self.assertIn("math_native.php", generated)
+        self.assertIn("$pi = __pytra_math_pi();", generated)
+        self.assertIn("$e = __pytra_math_e();", generated)
+        self.assertLess(generated.index("math_native.php"), generated.index("$pi = __pytra_math_pi();"))
+        self.assertIn("return __pytra_math_sqrt($x);", generated)
+        self.assertIn("return __pytra_math_log10($x);", generated)
+        self.assertIn("return __pytra_math_pow($x, $y);", generated)
+        self.assertNotIn("pyMath", generated)
+        self.assertIn("function __pytra_math_pi(): float", native)
+        self.assertIn("function __pytra_math_log10($value): float", native)
+        self.assertIn("function __pytra_math_pow($left, $right): float", native)
+        self.assertIn("return sqrt(__pytra_math_float($value));", native)
+        self.assertIn("return log10(__pytra_math_float($value));", native)
 
     def test_php_generated_time_runtime_owner_is_live_wrapper_shaped(self) -> None:
         generated_time_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "time.php"
@@ -312,12 +334,14 @@ class Py2PhpSmokeTest(unittest.TestCase):
             )
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
             staged_runtime_path = (Path(td) / "pytra" / "py_runtime.php").resolve()
+            staged_math_native_path = (Path(td) / "pytra" / "std" / "math_native.php").resolve()
             staged_time_path = (Path(td) / "pytra" / "std" / "time.php").resolve()
             staged_time_native_path = (Path(td) / "pytra" / "std" / "time_native.php").resolve()
             staged_png_path = (Path(td) / "pytra" / "utils" / "png.php").resolve()
             staged_gif_path = (Path(td) / "pytra" / "utils" / "gif.php").resolve()
             for staged_path in (
                 staged_runtime_path,
+                staged_math_native_path,
                 staged_time_path,
                 staged_time_native_path,
                 staged_png_path,

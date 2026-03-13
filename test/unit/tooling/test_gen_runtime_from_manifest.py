@@ -804,7 +804,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return JSON.parse(String(text));", out)
         self.assertIn("export function dumps(", out)
 
-    def test_rewrite_php_perf_counter_native_wrapper_delegates_to_time_native(self) -> None:
+    def test_rewrite_php_std_native_owner_wrapper_delegates_time_to_time_native(self) -> None:
         src = "\n".join(
             [
                 "<?php",
@@ -822,7 +822,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "__pytra_main();",
             ]
         )
-        out = gen_mod.rewrite_php_perf_counter_native_wrapper(src)
+        out = gen_mod.rewrite_php_std_native_owner_wrapper(src, "time")
         self.assertIn("function perf_counter(): float {", out)
         self.assertIn("time_native.php", out)
         self.assertIn("return __pytra_time_perf_counter();", out)
@@ -854,7 +854,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("function_exists('__pytra_len')", out)
         self.assertNotIn("__pytra_main();", out)
 
-    def test_rewrite_php_math_runtime_wrapper_exports_pi_and_e(self) -> None:
+    def test_rewrite_php_std_native_owner_wrapper_delegates_math_to_math_native(self) -> None:
         src = "\n".join(
             [
                 "<?php",
@@ -870,19 +870,28 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "    return pyMathPow($x, $y);",
                 "}",
                 "",
+                "function log10($x) {",
+                "    return pyMathLog10($x);",
+                "}",
+                "",
                 "function __pytra_main(): void {",
                 "}",
                 "",
                 "__pytra_main();",
             ]
         )
-        out = gen_mod.rewrite_php_math_runtime_wrapper(src)
-        self.assertIn("dirname(__DIR__) . '/py_runtime.php'", out)
-        self.assertIn("dirname(__DIR__, 2) . '/native/built_in/py_runtime.php'", out)
-        self.assertIn("$pi = pyMathPi();", out)
-        self.assertIn("$e = pyMathE();", out)
+        out = gen_mod.rewrite_php_std_native_owner_wrapper(src, "math")
+        self.assertIn("__DIR__ . '/math_native.php'", out)
+        self.assertIn("dirname(__DIR__, 2) . '/native/std/math_native.php'", out)
+        self.assertIn("$pi = __pytra_math_pi();", out)
+        self.assertIn("$e = __pytra_math_e();", out)
+        self.assertLess(out.index("math_native.php"), out.index("$pi = __pytra_math_pi();"))
         self.assertIn("function sqrt($x): float {", out)
         self.assertIn("function pow($x, $y): float {", out)
+        self.assertIn("return __pytra_math_sqrt($x);", out)
+        self.assertIn("return __pytra_math_log10($x);", out)
+        self.assertIn("return __pytra_math_pow($x, $y);", out)
+        self.assertNotIn("pyMath", out)
         self.assertNotIn("__pytra_main", out)
 
     def test_rewrite_php_std_pathlib_live_wrapper_guards_path_redefinition(self) -> None:

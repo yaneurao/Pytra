@@ -5,63 +5,63 @@
 
 declare(strict_types=1);
 
-$__pytra_runtime_candidates = [
-    dirname(__DIR__) . '/py_runtime.php',
-    dirname(__DIR__, 2) . '/native/built_in/py_runtime.php',
+$__pytra_math_native_candidates = [
+    __DIR__ . '/math_native.php',
+    dirname(__DIR__, 2) . '/native/std/math_native.php',
 ];
-foreach ($__pytra_runtime_candidates as $__pytra_runtime_path) {
-    if (is_file($__pytra_runtime_path)) {
-        require_once $__pytra_runtime_path;
+foreach ($__pytra_math_native_candidates as $__pytra_math_native_path) {
+    if (is_file($__pytra_math_native_path)) {
+        require_once $__pytra_math_native_path;
         break;
     }
 }
-if (!function_exists('__pytra_len')) {
-    throw new RuntimeException('py_runtime.php not found for generated PHP runtime lane');
+if (!function_exists('__pytra_math_pi')) {
+    throw new RuntimeException('math_native.php not found for generated PHP runtime lane');
 }
 
-$pi = pyMathPi();
-$e = pyMathE();
+$pi = __pytra_math_pi();
+$e = __pytra_math_e();
 
 function sqrt($x): float {
-    return pyMathSqrt($x);
+    return __pytra_math_sqrt($x);
 }
 
 function sin($x): float {
-    return pyMathSin($x);
+    return __pytra_math_sin($x);
 }
 
 function cos($x): float {
-    return pyMathCos($x);
+    return __pytra_math_cos($x);
 }
 
 function tan($x): float {
-    return pyMathTan($x);
+    return __pytra_math_tan($x);
 }
 
 function exp($x): float {
-    return pyMathExp($x);
+    return __pytra_math_exp($x);
 }
 
 function log($x): float {
-    return pyMathLog($x);
+    return __pytra_math_log($x);
 }
 
 function log10($x): float {
-    return pyMathLog10($x);
+    return __pytra_math_log10($x);
 }
 
 function fabs($x): float {
-    return pyMathFabs($x);
+    return __pytra_math_fabs($x);
 }
 
 function floor($x): float {
-    return pyMathFloor($x);
+    return __pytra_math_floor($x);
 }
 
 function ceil($x): float {
-    return pyMathCeil($x);
+    return __pytra_math_ceil($x);
 }
 
 function pow($x, $y): float {
-    return pyMathPow($x, $y);
+    return __pytra_math_pow($x, $y);
 }

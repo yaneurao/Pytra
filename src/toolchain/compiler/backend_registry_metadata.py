@@ -146,6 +146,7 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
         "kind": "php_runtime",
         "files": [
             ("native/built_in/py_runtime.php", "py_runtime.php"),
+            ("native/std/math_native.php", "std/math_native.php"),
             ("native/std/time_native.php", "std/time_native.php"),
             ("generated/std/json.php", "std/json.php"),
             ("generated/std/math.php", "std/math.php"),

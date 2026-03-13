@@ -903,7 +903,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     },
     {
         "backend": "php",
-        "pytra_core_files": ("built_in/py_runtime.php", "std/time_native.php"),
+        "pytra_core_files": ("built_in/py_runtime.php", "std/math_native.php", "std/time_native.php"),
         "pytra_gen_files": (
             "built_in/contains.php",
             "built_in/io_ops.php",
@@ -1252,7 +1252,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/gif.php",
             "generated/utils/png.php",
         ),
-        "native_files": ("native/built_in/py_runtime.php", "native/std/time_native.php"),
+        "native_files": ("native/built_in/py_runtime.php", "native/std/math_native.php", "native/std/time_native.php"),
         "delete_target_files": (),
     },
 )
@@ -1476,7 +1476,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             "utils/gif",
             "utils/png",
         ),
-        "native_modules": ("built_in/py_runtime", "std/time_native"),
+        "native_modules": ("built_in/py_runtime", "std/math_native", "std/time_native"),
         "delete_target_modules": (),
         "blocked_modules": (),
     },
@@ -1574,7 +1574,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUALS_V1: Final[
     {
         "backend": "php",
         "substrate_modules": ("built_in/py_runtime",),
-        "compare_residual_modules": ("std/time_native",),
+        "compare_residual_modules": ("std/math_native", "std/time_native"),
     },
 )
 
@@ -1605,7 +1605,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUAL_FILES_V1: Final[
     {
         "backend": "php",
         "substrate_files": ("built_in/py_runtime.php",),
-        "compare_residual_files": ("std/time_native.php",),
+        "compare_residual_files": ("std/math_native.php", "std/time_native.php"),
     },
 )
 

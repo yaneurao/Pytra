@@ -1454,7 +1454,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "generated/utils/gif.php",
                     "generated/utils/png.php",
                 ),
-                "native_files": ("native/built_in/py_runtime.php", "native/std/time_native.php"),
+                "native_files": ("native/built_in/py_runtime.php", "native/std/math_native.php", "native/std/time_native.php"),
                 "delete_target_files": (),
             },
         )
@@ -1726,7 +1726,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/gif",
                     "utils/png",
                 ),
-                "native_modules": ("built_in/py_runtime", "std/time_native"),
+                "native_modules": ("built_in/py_runtime", "std/math_native", "std/time_native"),
                 "delete_target_modules": (),
                 "blocked_modules": (),
             },
@@ -1840,7 +1840,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "php": {
                     "backend": "php",
                     "substrate_modules": ("built_in/py_runtime",),
-                    "compare_residual_modules": ("std/time_native",),
+                    "compare_residual_modules": ("std/math_native", "std/time_native"),
                 },
             },
         )
@@ -1876,7 +1876,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "php": {
                     "backend": "php",
                     "substrate_files": ("built_in/py_runtime.php",),
-                    "compare_residual_files": ("std/time_native.php",),
+                    "compare_residual_files": ("std/math_native.php", "std/time_native.php"),
                 },
             },
         )
