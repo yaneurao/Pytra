@@ -1,8 +1,11 @@
-#include "runtime/cpp/core/py_runtime.h"
+#include "runtime/cpp/native/core/py_runtime.h"
+#include "runtime/cpp/native/core/process_runtime.h"
+#include "runtime/cpp/native/core/scope_exit.h"
 
-#include "pytra/built_in/sequence.h"
-#include "pytra/std/time.h"
-#include "pytra/utils/gif.h"
+#include "generated/built_in/io_ops.h"
+#include "generated/built_in/sequence.h"
+#include "generated/std/time.h"
+#include "generated/utils/gif.h"
 
 // 07: Sample that outputs Game of Life evolution as a GIF.
 
@@ -23,14 +26,14 @@ rc<list<list<int64>>> next_state(const rc<list<list<int64>>>& grid, int64 w, int
             }
             int64 alive = py_at(py_at(grid, py_to<int64>(y)), py_to<int64>(x));
             if ((alive == 1) && ((cnt == 2) || (cnt == 3))) {
-                py_append(row, 1);
+                py_list_append_mut(rc_list_ref(row), 1);
             } else if ((alive == 0) && (cnt == 3)) {
-                py_append(row, 1);
+                py_list_append_mut(rc_list_ref(row), 1);
             } else {
-                py_append(row, 0);
+                py_list_append_mut(rc_list_ref(row), 0);
             }
         }
-        py_append(nxt, rc_list_copy_value(row));
+        py_list_append_mut(rc_list_ref(nxt), rc_list_copy_value(row));
     }
     return nxt;
 }
@@ -82,27 +85,27 @@ void run_07_game_of_life_loop() {
             int64 ph;
             int64 pw;
             if (kind == 0) {
-                ph = py_len(glider);
+                ph = (rc_list_ref(glider)).size();
                 for (int64 py = 0; py < ph; ++py) {
-                    pw = py_len(py_at(glider, py_to<int64>(py)));
+                    pw = (py_at(glider, py_to<int64>(py))).size();
                     for (int64 px = 0; px < pw; ++px) {
                         if (py_at(py_at(glider, py_to<int64>(py)), py_to<int64>(px)) == 1)
                             py_list_at_ref(py_at(grid, py_to<int64>((gy + py) % h)), py_to<int64>((gx + px) % w)) = 1;
                     }
                 }
             } else if (kind == 1) {
-                ph = py_len(r_pentomino);
+                ph = (rc_list_ref(r_pentomino)).size();
                 for (int64 py = 0; py < ph; ++py) {
-                    pw = py_len(py_at(r_pentomino, py_to<int64>(py)));
+                    pw = (py_at(r_pentomino, py_to<int64>(py))).size();
                     for (int64 px = 0; px < pw; ++px) {
                         if (py_at(py_at(r_pentomino, py_to<int64>(py)), py_to<int64>(px)) == 1)
                             py_list_at_ref(py_at(grid, py_to<int64>((gy + py) % h)), py_to<int64>((gx + px) % w)) = 1;
                     }
                 }
             } else {
-                ph = py_len(lwss);
+                ph = (rc_list_ref(lwss)).size();
                 for (int64 py = 0; py < ph; ++py) {
-                    pw = py_len(py_at(lwss, py_to<int64>(py)));
+                    pw = (py_at(lwss, py_to<int64>(py))).size();
                     for (int64 px = 0; px < pw; ++px) {
                         if (py_at(py_at(lwss, py_to<int64>(py)), py_to<int64>(px)) == 1)
                             py_list_at_ref(py_at(grid, py_to<int64>((gy + py) % h)), py_to<int64>((gx + px) % w)) = 1;
@@ -114,7 +117,7 @@ void run_07_game_of_life_loop() {
     rc<list<bytes>> frames = rc_list_from_value(list<bytes>{});
     rc_list_ref(frames).reserve((steps <= 0) ? 0 : steps);
     for (int64 _ = 0; _ < steps; ++_) {
-        py_append(frames, render(grid, w, h, cell));
+        py_list_append_mut(rc_list_ref(frames), render(grid, w, h, cell));
         grid = next_state(grid, w, h);
     }
     pytra::utils::gif::save_gif(out_path, w * cell, h * cell, rc_list_ref(frames), pytra::utils::gif::grayscale_palette(), 4, 0);

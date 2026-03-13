@@ -8,7 +8,7 @@ Related TODO:
 Background:
 - `docs/ja/plans/archive/20260312-p5-cpp-pyruntime-residual-thin-seam-shrink.md` already classified the residual seams in `py_runtime.h` into `py_append(object& ...)` plus the shared `type_id` thin seam, but it only fixed the shrink order and did not execute the next reduction pass.
 - Even so, `src/runtime/cpp/native/core/py_runtime.h` is still 1287 lines as of 2026-03-14, with large blocks for object-bridge compatibility, generic `make_object` / `py_to`, and typed-collection fallback behavior.
-- The current callers still show that residual shape: `sample/cpp` contains 41 `py_append(` sites, while `src/runtime/cpp/generated/**` still emits object-bridge patterns such as `py_at(values, py_to<int64>(i))`, `obj_to_list_ref_or_raise(out, "append")`, and `make_object(list<object>{})`.
+- The current callers still show that residual shape: `sample/cpp` contains 34 `py_append(` sites, while `src/runtime/cpp/generated/**` still emits object-bridge patterns such as `py_at(values, py_to<int64>(i))` and `obj_to_list_ref_or_raise(out, "append")`.
 - As `src/runtime/cpp/generated/core/README.md` already states, `generated/core` must not become a dump bucket for `py_runtime.h` bloat. The next shrink therefore has to happen by pushing typed fallback behavior upstream, not by splitting the header.
 
 Objective:
@@ -76,3 +76,4 @@ Decision log:
 - 2026-03-14: `S2-01` is now considered complete because the emitter-side residual has collapsed to the helper-only boundary.
 - 2026-03-14: As the first `S2-02` bundle, regenerated `generated/built_in/iter_ops.cpp` via `src/py2x.py --target cpp src/pytra/built_in/iter_ops.py --emit-runtime-cpp` and `generated/utils/gif.{h,cpp}` via `src/py2x.py --target cpp src/pytra/utils/gif.py --emit-runtime-cpp`. That shrinks `generated_runtime_boxed_list_seed_sites` from `3 -> 1`, leaving only `bytes(make_object(list<object>{}))` in `generated/utils/gif.cpp`.
 - 2026-03-14: As the second `S2-02` bundle, upstreamed the empty `bytes` seed in `src/pytra/utils/gif.py` to a typed `list[int]`, retiring the final `bytes(make_object(list<object>{}))` site from `generated/utils/gif.cpp`. The typed-lane residual inventory is now 1 emitter bucket plus 2 generated-runtime buckets and 2 sample buckets, and `generated_runtime_boxed_list_seed_sites` was removed from the inventory and contract.
+- 2026-03-14: As the third `S2-02` bundle, rewrote representative samples `07_game_of_life_loop` and part of `18_mini_language_interpreter` onto direct typed append / size lanes, reducing the `sample_cpp_py_append_sites` baseline from `41 -> 34`. The remaining sample bucket still lives in the visualization-heavy sample set plus the parser/benchmark helpers inside `18_mini_language_interpreter`.

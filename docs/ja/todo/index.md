@@ -35,4 +35,4 @@
 
 1. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] `py_runtime.h` の typed fallback を EAST3 / C++ emitter / runtime SoT 側へ押し戻し、header を物理分割なしで縮める。
 文脈: [docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md](../plans/p2-cpp-pyruntime-upstream-fallback-shrink.md)
-- 進捗メモ: `S2-02` second bundle まで完了。`S2-01` は emitter helper-only まで縮退して完了し、generated `iter_ops/gif` 再生成と typed empty-bytes lane の upstream 化で boxed-list seed bucket は retire 済み。typed-lane residual は emitter 1 / generated 2 / sample 2 bucket。next は generated/sample caller の削減。
+- 進捗メモ: `S2-02` third bundle まで完了。`S2-01` は emitter helper-only まで縮退して完了し、generated `iter_ops/gif` 再生成と typed empty-bytes lane の upstream 化で boxed-list seed bucket は retire 済み。sample `py_append` baseline は `41 -> 34` に縮退。typed-lane residual は emitter 1 / generated 2 / sample 2 bucket。next は generated caller と残 sample append bucket の削減。

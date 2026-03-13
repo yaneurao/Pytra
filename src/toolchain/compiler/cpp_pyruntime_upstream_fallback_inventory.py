@@ -269,20 +269,20 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_INVENTORY_V1: Final[
         "scope_rel": "sample/cpp",
         "matcher_kind": "regex",
         "needle": r"\bpy_append\(",
-        "expected_count": 41,
+        "expected_count": 34,
         "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02",
         "evidence_refs": (
             {
-                "relpath": "sample/cpp/07_game_of_life_loop.cpp",
-                "needle": "py_append(row, 1);",
-            },
-            {
-                "relpath": "sample/cpp/12_sort_visualizer.cpp",
-                "needle": "py_append(values, (i * 37 + 19) % n);",
-            },
-            {
                 "relpath": "sample/cpp/18_mini_language_interpreter.cpp",
-                "needle": 'py_append(tokens, Token("EOF", "", py_len(lines), 0));',
+                "needle": 'py_append(tokens, Token("NUMBER", text, start, py_to_int64(text)));',
+            },
+            {
+                "relpath": "sample/cpp/13_maze_generation_steps.cpp",
+                "needle": "py_append(candidates, ::std::make_tuple(nx, ny, x + 1, y));",
+            },
+            {
+                "relpath": "sample/cpp/14_raymarching_light_cycle.cpp",
+                "needle": "py_append(frames, frame);",
             },
         ),
         "notes": "Representative C++ samples still emit generic append wrappers heavily even on typed lists.",
