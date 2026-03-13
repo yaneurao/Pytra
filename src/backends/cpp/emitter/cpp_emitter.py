@@ -228,6 +228,7 @@ class CppEmitter(
         self.class_method_arg_names: dict[str, dict[str, list[str]]] = {}
         self.class_method_arg_defaults: dict[str, dict[str, dict[str, Any]]] = {}
         self.class_method_return_types: dict[str, dict[str, str]] = {}
+        self.class_property_names: dict[str, set[str]] = {}
         self.class_base: dict[str, str] = {}
         self.class_names: set[str] = set()
         self.class_storage_hints: dict[str, str] = {}
@@ -329,6 +330,18 @@ class CppEmitter(
         for candidate in self._expand_runtime_class_candidates(owner_t):
             if candidate in self.ref_classes:
                 return True
+        return False
+
+    def _class_has_property_getter(self, owner_t: str, attr: str) -> bool:
+        """owner_t かその base に property getter が定義されているか返す。"""
+        seen: set[str] = set()
+        for candidate in self._expand_runtime_class_candidates(owner_t):
+            cur = candidate
+            while cur != "" and cur not in seen:
+                seen.add(cur)
+                if attr in self.class_property_names.get(cur, set()):
+                    return True
+                cur = self.class_base.get(cur, "")
         return False
 
     def is_declared(self, name: str) -> bool:
@@ -1224,6 +1237,7 @@ class CppEmitter(
                     marg_names: dict[str, list[str]] = {}
                     mdefaults: dict[str, dict[str, Any]] = {}
                     mret: dict[str, str] = {}
+                    props: set[str] = set()
                     class_body: list[dict[str, Any]] = []
                     raw_class_body = self.any_dict_get_list(stmt, "body")
                     if isinstance(raw_class_body, list):
@@ -1234,6 +1248,18 @@ class CppEmitter(
                         if self._node_kind_from_dict(s) == "FunctionDef":
                             fn_name = self.any_dict_get_str(s, "name", "")
                             mset.add(fn_name)
+                            decorators = self.any_to_list(s.get("decorators"))
+                            for decorator in decorators:
+                                if not isinstance(decorator, str):
+                                    continue
+                                head = decorator.strip()
+                                if head == "":
+                                    continue
+                                if "(" in head:
+                                    head = head.split("(", 1)[0].strip()
+                                if head.split(".")[-1] == "property":
+                                    props.add(fn_name)
+                                    break
                             mret[fn_name] = self.normalize_type_name(self.any_to_str(s.get("return_type")))
                             arg_types = self.any_to_dict_or_empty(s.get("arg_types"))
                             arg_defaults = self.any_to_dict_or_empty(s.get("arg_defaults"))
@@ -1258,6 +1284,7 @@ class CppEmitter(
                     self.class_method_arg_names[cls_name] = marg_names
                     self.class_method_arg_defaults[cls_name] = mdefaults
                     self.class_method_return_types[cls_name] = mret
+                    self.class_property_names[cls_name] = props
                     field_types = self.any_to_dict_or_empty(stmt.get("field_types"))
                     for raw_attr, raw_ft in field_types.items():
                         if not isinstance(raw_attr, str):
@@ -3752,6 +3779,7 @@ class CppEmitter(
         base_node = self.any_to_dict_or_empty(base_ctx.get("node"))
         base_kind = self._node_kind_from_dict(base_node)
         attr = self.attr_name(expr_d)
+        bt = self.get_expr_type(expr_d.get("value"))
         emitted_attr = self.rename_if_reserved(attr, self.reserved_words, self.rename_prefix, self.renamed_symbols)
         if self.any_dict_get_str(expr_d, "lowered_kind", "") == "NominalAdtProjection":
             projection_meta = self.any_to_dict_or_empty(expr_d.get("nominal_adt_projection_v1"))
@@ -3773,9 +3801,20 @@ class CppEmitter(
         if base == "self" or base == "*this":
             if self.current_class_name is not None and attr in self.current_class_static_fields:
                 return f"{self.current_class_name}::{emitted_attr}"
+            if (
+                self.current_class_name is not None
+                and attr in self.class_property_names.get(self.current_class_name, set())
+            ):
+                return f"this->{emitted_attr}()"
             return f"this->{emitted_attr}"
         if base in self.class_base or base in self.class_method_names:
             return f"{base}::{emitted_attr}"
+        if self._class_has_property_getter(bt, attr):
+            if base == "self" or base == "*this":
+                return f"this->{emitted_attr}()"
+            if self._type_is_ref_class(bt):
+                return f"{base}->{emitted_attr}()"
+            return f"{base}.{emitted_attr}()"
         base_module_name = self.any_dict_get_str(base_ctx, "module", "")
         if base_module_name != "":
             mapped = self._lookup_module_attr_runtime_call(base_module_name, attr)
@@ -3797,9 +3836,19 @@ class CppEmitter(
                 and base_name in self.import_symbol_modules
             ):
                 raise self._make_missing_symbol_import_error(base_name, attr)
-        bt = self.get_expr_type(expr_d.get("value"))
         if bt in {"Path", "pytra::std::pathlib::Path"} and attr in {"name", "stem", "parent"}:
             return f"{base}.{emitted_attr}()"
+        if (
+            self.current_class_name is not None
+            and attr in self.class_property_names.get(self.current_class_name, set())
+            and (
+                base == "self"
+                or base == "*this"
+                or bt in {"", "unknown"}
+                or self.is_any_like_type(bt)
+            )
+        ):
+            return f"this->{emitted_attr}()"
         if (
             self.current_class_name is not None
             and attr in self.current_class_fields

@@ -45,6 +45,12 @@ from src.backends.cpp.cli import (
     resolve_module_name,
     transpile_to_cpp,
 )
+try:
+    from test.unit.backends.representative_contract_support import (
+        assert_no_representative_escape,
+    )
+except ModuleNotFoundError:
+    from representative_contract_support import assert_no_representative_escape
 
 def find_fixture_case(stem: str) -> Path:
     matches = sorted((ROOT / "test" / "fixtures").rglob(f"{stem}.py"))
@@ -3495,6 +3501,46 @@ if __name__ == "__main__":
                 if leaked_png.exists():
                     leaked_png.unlink()
 
+    def _compile_fixture(self, stem: str) -> tuple[str, subprocess.CompletedProcess[str]]:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src_py = find_fixture_case(stem)
+            out_cpp = work / f"{stem}.cpp"
+            out_exe = work / f"{stem}.out"
+            manifest = work / "manifest.json"
+            (work / "out").mkdir(parents=True, exist_ok=True)
+            print(f"  [fixture:{stem}] transpile", flush=True)
+            transpile(src_py, out_cpp)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "include_dir": str(work),
+                        "modules": [
+                            {
+                                "source": str(out_cpp),
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            print(f"  [fixture:{stem}] compile", flush=True)
+            return out_cpp.read_text(encoding="utf-8"), self._run_subprocess_with_timeout(
+                [
+                    "python3",
+                    "tools/build_multi_cpp.py",
+                    str(manifest),
+                    "-o",
+                    str(out_exe),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label=f"compile fixture {stem}",
+            )
+
     def _transpile_and_syntax_check_fixture(self, stem: str) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             work = Path(tmpdir)
@@ -4744,6 +4790,25 @@ if __name__ == "__main__":
         lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
         self.assertGreater(len(lines), 0)
         self.assertEqual(lines[-1], "True")
+
+    def test_property_method_call_runtime(self) -> None:
+        out = self._compile_and_run_fixture("property_method_call")
+        lines = [ln.strip() for ln in out.splitlines() if ln.strip() != ""]
+        self.assertGreater(len(lines), 0)
+        self.assertEqual(lines[-1], "True")
+
+    def test_list_bool_index_current_cpp_baseline_fails_to_compile(self) -> None:
+        cpp, comp = self._compile_fixture("list_bool_index")
+        assert_no_representative_escape(
+            self,
+            cpp,
+            backend="cpp",
+            fixture="list_bool_index",
+        )
+        self.assertNotEqual(comp.returncode, 0)
+        self.assertIn("py_list_at_ref", comp.stderr)
+        self.assertIn("cannot bind non-const lvalue reference of type ‘bool&’", comp.stderr)
+        self.assertIn("operator[]", comp.stderr)
 
     def test_dataclass_field_call_no_longer_leaks_into_cpp_runtime_expr(self) -> None:
         src = """from dataclasses import dataclass, field

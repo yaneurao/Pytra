@@ -469,6 +469,32 @@ class Py2JavaSmokeTest(unittest.TestCase):
         self.assertNotIn('"perf_counter"', src)
         self.assertNotIn("_RESOLVED_RUNTIME_HELPERS", src)
 
+    def test_representative_property_method_call_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("property_method_call")
+        east = load_east(fixture, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        assert_no_representative_escape(self, java, backend="java", fixture="property_method_call")
+
+    def test_representative_list_bool_index_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("list_bool_index")
+        east = load_east(fixture, parser_backend="self_hosted")
+        java = transpile_to_java_native(east, class_name="Main")
+        assert_no_representative_escape(self, java, backend="java", fixture="list_bool_index")
+
 
 if __name__ == "__main__":
     unittest.main()

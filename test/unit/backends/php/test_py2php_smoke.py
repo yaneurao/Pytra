@@ -110,6 +110,32 @@ class Py2PhpSmokeTest(unittest.TestCase):
                 php = transpile_to_php_native(east)
                 self.assertTrue(php.strip())
 
+    def test_representative_property_method_call_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("property_method_call")
+        east = load_east(fixture, parser_backend="self_hosted")
+        php = transpile_to_php_native(east)
+        assert_no_representative_escape(self, php, backend="php", fixture="property_method_call")
+
+    def test_representative_list_bool_index_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("list_bool_index")
+        east = load_east(fixture, parser_backend="self_hosted")
+        php = transpile_to_php_native(east)
+        assert_no_representative_escape(self, php, backend="php", fixture="list_bool_index")
+
     def test_php_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "php" / "native" / "built_in" / "py_runtime.php"
         generated_contains_path = ROOT / "src" / "runtime" / "php" / "generated" / "built_in" / "contains.php"

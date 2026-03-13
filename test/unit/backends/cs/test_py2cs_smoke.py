@@ -998,6 +998,32 @@ def f(x: object) -> bool:
         self.assertIn('string py_out = System.Convert.ToString(sub("\\\\s+", " ", "a   b\\tc"));', cs)
         self.assertNotIn("unsupported", cs)
 
+    def test_representative_property_method_call_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("property_method_call")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        assert_no_representative_escape(self, cs, backend="cs", fixture="property_method_call")
+
+    def test_representative_list_bool_index_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("list_bool_index")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        assert_no_representative_escape(self, cs, backend="cs", fixture="list_bool_index")
+
     def test_path_alias_constructor_and_parent_are_lowered(self) -> None:
         src = """from pytra.std.pathlib import Path
 

@@ -442,6 +442,32 @@ class Py2GoSmokeTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
         self.assertEqual(proc.stdout.strip(), "go-built-in-ok")
 
+    def test_representative_property_method_call_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("property_method_call")
+        east = load_east(fixture, parser_backend="self_hosted")
+        go = transpile_to_go_native(east)
+        assert_no_representative_escape(self, go, backend="go", fixture="property_method_call")
+
+    def test_representative_list_bool_index_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("list_bool_index")
+        east = load_east(fixture, parser_backend="self_hosted")
+        go = transpile_to_go_native(east)
+        assert_no_representative_escape(self, go, backend="go", fixture="list_bool_index")
+
 
 if __name__ == "__main__":
     unittest.main()

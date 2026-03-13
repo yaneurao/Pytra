@@ -376,6 +376,32 @@ def f(xs: list[int], ys: dict[str, int]) -> int:
             self.assertEqual(run_proc.returncode, 0, run_proc.stderr)
             self.assertEqual(run_proc.stdout.strip(), "swift-built-in-ok")
 
+    def test_representative_property_method_call_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("property_method_call")
+        east = load_east(fixture, parser_backend="self_hosted")
+        swift = transpile_to_swift_native(east)
+        assert_no_representative_escape(self, swift, backend="swift", fixture="property_method_call")
+
+    def test_representative_list_bool_index_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("list_bool_index")
+        east = load_east(fixture, parser_backend="self_hosted")
+        swift = transpile_to_swift_native(east)
+        assert_no_representative_escape(self, swift, backend="swift", fixture="list_bool_index")
+
 
 if __name__ == "__main__":
     unittest.main()

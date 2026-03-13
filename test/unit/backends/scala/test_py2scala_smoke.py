@@ -359,6 +359,32 @@ class Py2ScalaSmokeTest(unittest.TestCase):
         self.assertIn("def py_contains_str_object(values: Any, key: Any): Boolean = {", text)
         self.assertNotIn("def main(args: Array[String]): Unit = {", text)
 
+    def test_representative_property_method_call_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("property_method_call")
+        east = load_east(fixture, parser_backend="self_hosted")
+        scala = transpile_to_scala_native(east)
+        assert_no_representative_escape(self, scala, backend="scala", fixture="property_method_call")
+
+    def test_representative_list_bool_index_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("list_bool_index")
+        east = load_east(fixture, parser_backend="self_hosted")
+        scala = transpile_to_scala_native(east)
+        assert_no_representative_escape(self, scala, backend="scala", fixture="list_bool_index")
+
 
 if __name__ == "__main__":
     unittest.main()

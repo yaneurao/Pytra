@@ -119,10 +119,10 @@ Target semantics:
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01] Promote the Pytra-NES2 repros into a representative cross-backend contract and keep `property_method_call` and `list_bool_index` green in every target backend before close.
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-01] Inventory the current repro bundle under `materials/refs/from-Pytra-NES2/` and lock the map of already-covered vs unresolved cases into the plan/docs.
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-02] Promote `property_method_call.py` and `list_bool_index.py` into representative fixtures under `test/fixtures/`, with assertion-backed semantics.
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-01] Add those fixtures to representative smoke for C++/C#/Rust/Go/Java/Kotlin/Scala/Swift/Nim and lock the initial failures.
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-02] Add those fixtures to representative smoke for JS/TS/Lua/Ruby/PHP and lock the transpile/run contract.
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-03] Add common assertion/helper/checker support as needed so `unsupported`, `preview_only`, or `not_implemented` counts as a failure.
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-01] Make `property_method_call` green in every backend and sync docs / support wording / decision log.
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-01] Add those fixtures to representative smoke for C++/C#/Rust/Go/Java/Kotlin/Scala/Swift/Nim and lock the C++ compile-failure baseline plus the static-family transpile smoke.
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-02] Add those fixtures to representative smoke for JS/TS/Lua/Ruby/PHP and lock the script-family representative transpile contract.
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-03] Add common assertion/helper/checker support as needed so `unsupported`, `preview_only`, or `not_implemented` counts as a failure.
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-01] Make `property_method_call` green in every backend and sync docs / support wording / decision log.
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-02] Make `list_bool_index` green in every backend and sync docs / support wording / decision log.
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S4-01] Sync the final mapping between `materials/refs/from-Pytra-NES2` and repo fixtures/tests and close the bundle as fully promoted.
 
@@ -132,3 +132,7 @@ Decision log:
 - 2026-03-13: `path_alias_pkg/entry.py` is listed in the README but missing from the current bundle, so it remains out of scope until the file is actually present.
 - 2026-03-13: `S1-01` locked a README-entry table covering current bundle presence, current repo status, representative-lane mapping, and the one missing-file case.
 - 2026-03-13: `S1-02` added `test/fixtures/typing/property_method_call.py` and `test/fixtures/typing/list_bool_index.py`, locking the `@property` value-read/stringify semantics and the `list[bool]` read-write-reread semantics with assertions.
+- 2026-03-13: `S2-01` wired `property_method_call` / `list_bool_index` into the current C++ compile-failure baseline plus representative transpile smoke for `cs/rs/go/java/kotlin/scala/swift/nim`. `property_method_call` currently fails because property reads leak as member-function references, and `list_bool_index` currently fails because `std::vector<bool>` proxy semantics collide with the `bool&` expectation.
+- 2026-03-13: `S2-02` wired `property_method_call` / `list_bool_index` into representative transpile smoke for `js/ts/lua/ruby/php`, fixing Wave B at the transpile-contract level without allowing unsupported / preview escapes.
+- 2026-03-13: `S2-03` added a shared denylist helper under `test/unit/backends/representative_contract_support.py` so every representative smoke fails if the emitted source contains `unsupported / preview_only / not_implemented` markers. The C++ current baselines now apply the helper to generated C++ source itself before checking the expected compile failure.
+- 2026-03-13: `S3-01` added class-local `@property` getter tracking to the C++ emitter so attribute reads lower to `this->mapper()` / `holder->mapper()` instead of member-function objects. With that change, `property_method_call` is compile+run green on C++ too, so every backend representative lane is now green and only `list_bool_index` remains unresolved.

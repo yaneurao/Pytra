@@ -121,10 +121,10 @@ source:
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01] Pytra-NES2 repro を全 backend representative contract に昇格し、`property_method_call` と `list_bool_index` の test が全言語で通る状態を close 条件として固定する。
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-01] `materials/refs/from-Pytra-NES2/` の current repro inventory を棚卸しし、既存対応済み case と未対応 case の対応表を plan / docs に固定する。
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-02] `property_method_call.py` と `list_bool_index.py` を `test/fixtures/` の representative fixture へ昇格し、期待 semantics を assertion 付きで固定する。
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-01] C++/C#/Rust/Go/Java/Kotlin/Scala/Swift/Nim の representative smoke に 2 fixture を追加し、compile/run または backend 標準 smoke で失敗を固定する。
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-02] JS/TS/Lua/Ruby/PHP の representative smoke に 2 fixture を追加し、transpile/run contract を固定する。
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-03] 全 backend 共通で「unsupported / preview_only / not_implemented へ逃がしたら fail」と分かる assertion / helper / checker を必要に応じて追加する。
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-01] `property_method_call` の全 backend green を達成し、docs / support wording / decision log を同期する。
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-01] C++/C#/Rust/Go/Java/Kotlin/Scala/Swift/Nim の representative smoke に 2 fixture を追加し、C++ current compile-failure baseline と static family の transpile smoke を固定する。
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-02] JS/TS/Lua/Ruby/PHP の representative smoke に 2 fixture を追加し、script family の representative transpile contract を固定する。
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-03] 全 backend 共通で「unsupported / preview_only / not_implemented へ逃がしたら fail」と分かる assertion / helper / checker を必要に応じて追加する。
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-01] `property_method_call` の全 backend green を達成し、docs / support wording / decision log を同期する。
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S3-02] `list_bool_index` の全 backend green を達成し、docs / support wording / decision log を同期する。
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S4-01] `materials/refs/from-Pytra-NES2` と repo fixture/test の対応を最終同期し、この repro bundle を「全 backend representative contract に昇格済み」として close する。
 
@@ -134,3 +134,7 @@ source:
 - 2026-03-13: README 記載の `path_alias_pkg/entry.py` は current bundle に現物がないため、この task の対象から外し、別途 bundle 補完が来たときに再評価する。
 - 2026-03-13: `S1-01` として README entry ごとの current bundle / current repo status / representative lane を table 化し、既存 3 件、未解消 2 件、missing 1 件を plan 正本に固定した。
 - 2026-03-13: `S1-02` として `test/fixtures/typing/property_method_call.py` と `test/fixtures/typing/list_bool_index.py` を追加し、`@property` value read / stringify と `list[bool]` read-write-reread semantics を assertion 付きで固定した。
+- 2026-03-13: `S2-01` として `property_method_call` / `list_bool_index` を `cpp` current compile-failure baseline と `cs/rs/go/java/kotlin/scala/swift/nim` representative transpile smoke へ接続した。`property_method_call` は property read が member-function pointer 扱いになって compile error、`list_bool_index` は `std::vector<bool>` proxy が `bool&` と衝突する compile error を current baseline として固定した。
+- 2026-03-13: `S2-02` として `property_method_call` / `list_bool_index` を `js/ts/lua/ruby/php` representative transpile smoke へ接続し、Wave B でも unsupported / preview に逃がさず少なくとも transpile surface を通す contract を固定した。
+- 2026-03-13: `S2-03` として `test/unit/backends/representative_contract_support.py` に共通 denylist helper を追加し、全 backend representative smoke が `unsupported / preview_only / not_implemented` marker を含むと fail するようにした。C++ current baseline は compile stderr ではなく生成 C++ source 自体に対して helper を適用し、escape marker を含まない compile-failure baseline だけを許可した。
+- 2026-03-13: `S3-01` として C++ emitter に class-local `@property` getter track を追加し、attribute read を `this->mapper()` / `holder->mapper()` へ lower するように修正した。これで `property_method_call` は C++ も compile+run green になり、全 backend representative lane が green になったため、残件は `list_bool_index` のみとなった。

@@ -165,6 +165,32 @@ class Py2LuaSmokeTest(unittest.TestCase):
                 lua = transpile_to_lua_native(east)
                 self.assertTrue(lua.strip())
 
+    def test_representative_property_method_call_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("property_method_call")
+        east = load_east(fixture, parser_backend="self_hosted")
+        lua = transpile_to_lua_native(east)
+        assert_no_representative_escape(self, lua, backend="lua", fixture="property_method_call")
+
+    def test_representative_list_bool_index_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("list_bool_index")
+        east = load_east(fixture, parser_backend="self_hosted")
+        lua = transpile_to_lua_native(east)
+        assert_no_representative_escape(self, lua, backend="lua", fixture="list_bool_index")
+
     def test_cli_relative_import_support_rollout_scenarios_transpile_for_lua(self) -> None:
         for scenario_id in ("parent_module_alias", "parent_symbol_alias"):
             with self.subTest(scenario_id=scenario_id):

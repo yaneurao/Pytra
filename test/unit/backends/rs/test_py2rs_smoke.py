@@ -928,6 +928,32 @@ def f(x: Any) -> bool:
         self.assertIn("use crate::pytra::std::re::sub;", rust)
         self.assertNotIn("unsupported", rust)
 
+    def test_representative_property_method_call_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("property_method_call")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        assert_no_representative_escape(self, rust, backend="rs", fixture="property_method_call")
+
+    def test_representative_list_bool_index_fixture_transpiles(self) -> None:
+        try:
+            from test.unit.backends.representative_contract_support import (
+                assert_no_representative_escape,
+            )
+        except ModuleNotFoundError:
+            from representative_contract_support import assert_no_representative_escape
+
+        fixture = find_fixture_case("list_bool_index")
+        east = load_east(fixture, parser_backend="self_hosted")
+        rust = transpile_to_rust(east)
+        assert_no_representative_escape(self, rust, backend="rs", fixture="list_bool_index")
+
     def test_transpile_rejects_general_union_type_expr_in_annassign(self) -> None:
         east = {
             "kind": "Module",
