@@ -419,7 +419,7 @@ rustc -O test/transpile/rs/iterable.rs -o test/transpile/obj/iterable_rs.out
 ```
 
 Notes:
-- Place corresponding runtime implementations for Python modules used by input code under the canonical `src/runtime/rs/{native,generated}/` lanes. `src/runtime/rs/pytra/` remains a compatibility lane only.
+- Place corresponding runtime implementations for Python modules used by input code under the canonical `src/runtime/rs/{native,generated}/` lanes. Checked-in `src/runtime/rs/pytra/` is delete-target debt and must not be treated as a runtime ownership root.
 
 </details>
 

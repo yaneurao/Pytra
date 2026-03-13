@@ -342,6 +342,18 @@ NONCPP_PYTRA_DESHIM_DOC_POLICY_V1: Final[tuple[NonCppPytraDeshimDocPolicyEntry, 
         ),
     },
     {
+        "path": "docs/ja/tutorial/transpiler-cli.md",
+        "needles": (
+            "checked-in `src/runtime/rs/pytra/` は delete target debt であり、runtime ownership root として扱ってはいけません。",
+        ),
+    },
+    {
+        "path": "docs/en/how-to-use.md",
+        "needles": (
+            "Checked-in `src/runtime/rs/pytra/` is delete-target debt and must not be treated as a runtime ownership root.",
+        ),
+    },
+    {
         "path": "docs/ja/spec/spec-java-native-backend.md",
         "needles": (
             "実行時依存は Java runtime（repo 正本は `src/runtime/java/{generated,native}/`）へ収束し",
