@@ -35,6 +35,17 @@ EXPECTED_BUNDLE_ORDER = (
     "jvm_package_bundle",
     "longtail_native_bundle",
 )
+EXPECTED_FOCUSED_VERIFICATION_LANES = (
+    "go_relative_wildcard_import_rollout_smoke",
+    "java_relative_wildcard_import_rollout_smoke",
+    "kotlin_relative_wildcard_import_rollout_smoke",
+    "lua_relative_wildcard_import_rollout_smoke",
+    "nim_relative_wildcard_import_rollout_smoke",
+    "php_relative_wildcard_import_rollout_smoke",
+    "ruby_relative_wildcard_import_rollout_smoke",
+    "scala_relative_wildcard_import_rollout_smoke",
+    "swift_relative_wildcard_import_rollout_smoke",
+)
 
 
 def validate_relative_wildcard_import_native_rollout_contract() -> None:
@@ -109,9 +120,41 @@ def validate_relative_wildcard_import_native_rollout_contract() -> None:
     )
     if tuple(RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["active_plan_paths"]) != expected_plan_paths:
         raise SystemExit("relative wildcard import native archived plan paths drifted")
+    if (
+        tuple(RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["focused_verification_lanes"])
+        != EXPECTED_FOCUSED_VERIFICATION_LANES
+    ):
+        raise SystemExit(
+            "relative wildcard import native focused verification lane list drifted"
+        )
     for plan_path in RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["active_plan_paths"]:
         if not (ROOT / plan_path).is_file():
             raise SystemExit(f"missing relative wildcard import native plan: {plan_path}")
+    for doc_path in RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["backend_parity_docs"]:
+        doc_text = (ROOT / doc_path).read_text(encoding="utf-8")
+        if "## Current Relative-Wildcard-Import Coverage" not in doc_text:
+            raise SystemExit(
+                "relative wildcard import backend parity docs must publish the wildcard coverage section: "
+                f"{doc_path}"
+            )
+        for required in (
+            "module_graph_bundle_transpile",
+            "backend_specific_fail_closed",
+            "native_path_bundle",
+            "jvm_package_bundle",
+            "longtail_native_bundle",
+        ):
+            if required not in doc_text:
+                raise SystemExit(
+                    "relative wildcard import backend parity docs drifted from the final bundle handoff: "
+                    f"{doc_path} missing {required}"
+                )
+        for lane in EXPECTED_FOCUSED_VERIFICATION_LANES:
+            if lane not in doc_text:
+                raise SystemExit(
+                    "relative wildcard import backend parity docs must mention the focused rollout lanes: "
+                    f"{doc_path} missing {lane}"
+                )
 
 
 if __name__ == "__main__":

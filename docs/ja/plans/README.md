@@ -10,7 +10,6 @@
 - `stale-complete` は live の `p*-*.md` で、TODO 未登録、checklist 完了、かつ live status/report sink でもないものとする。これは `plans/` 直下へ残さず archive へ移す。
 
 2026-03-14 時点の active live plan:
-- `p0-relative-wildcard-import-native-rollout.md`
 - `p1-nes3-not-implemented-error-cpp-support.md`
 - `p1-nes3-bytes-member-truthiness-cpp-support.md`
 - `p1-nes3-list-default-factory-rc-list-cpp-support.md`

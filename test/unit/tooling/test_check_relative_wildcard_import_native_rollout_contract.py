@@ -8,6 +8,7 @@ from toolchain.compiler.relative_wildcard_import_native_rollout_contract import 
 from tools.check_relative_wildcard_import_native_rollout_contract import (
     EXPECTED_BACKENDS,
     EXPECTED_BUNDLE_ORDER,
+    EXPECTED_FOCUSED_VERIFICATION_LANES,
     validate_relative_wildcard_import_native_rollout_contract,
 )
 
@@ -86,6 +87,19 @@ class RelativeWildcardImportNativeRolloutContractTest(unittest.TestCase):
                 "docs/ja/plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md",
                 "docs/en/plans/archive/20260314-p0-relative-wildcard-import-native-rollout.md",
             ),
+        )
+
+    def test_parity_doc_handoff_is_fixed(self) -> None:
+        self.assertEqual(
+            RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["backend_parity_docs"],
+            (
+                "docs/ja/language/backend-parity-matrix.md",
+                "docs/en/language/backend-parity-matrix.md",
+            ),
+        )
+        self.assertEqual(
+            RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["focused_verification_lanes"],
+            EXPECTED_FOCUSED_VERIFICATION_LANES,
         )
 
 
