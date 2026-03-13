@@ -1490,6 +1490,8 @@ def rewrite_java_std_native_owner_wrapper(java_src: str, helper_name: str) -> st
 
 
 def rewrite_js_std_native_owner_wrapper(js_src: str, helper_name: str) -> str:
+    if helper_name == "sys":
+        return rewrite_js_std_sys_native_owner_wrapper(js_src)
     text = _strip_trailing_string_literal_expr(js_src)
     text = text.replace('import { extern } from "./pytra/std.js";\n\n', "")
     text = re.sub(
@@ -1532,7 +1534,12 @@ def rewrite_js_std_native_owner_wrapper(js_src: str, helper_name: str) -> str:
             "return " + native_owner + "." + symbol_name + "(",
             text,
         )
-    if "extern(" in text or re.search(r"__[A-Za-z_][A-Za-z0-9_]*\.", text) or "Math." in text:
+    if (
+        "extern(" in text
+        or re.search(r"__[A-Za-z_][A-Za-z0-9_]*\.", text)
+        or "Math." in text
+        or "process." in text
+    ):
         raise RuntimeError(
             "generated JS std/" + helper_name + " wrapper still contains extern/native owner residue"
         )
@@ -1550,6 +1557,54 @@ def _strip_trailing_string_literal_expr(text: str) -> str:
     if len(lines) == 0:
         return ""
     return "\n".join(lines) + ("\n" if text.endswith("\n") else "")
+
+
+def rewrite_js_std_sys_native_owner_wrapper(js_src: str) -> str:
+    required_fragments = (
+        "function exit(code) {",
+        "function set_argv(values) {",
+        "function set_path(values) {",
+        "function write_stderr(text) {",
+        "function write_stdout(text) {",
+        "let argv = extern(__s.argv);",
+        "let path = extern(__s.path);",
+        "let stderr = extern(__s.stderr);",
+        "let stdout = extern(__s.stdout);",
+    )
+    for fragment in required_fragments:
+        if fragment not in js_src:
+            raise RuntimeError("generated JS std/sys wrapper is missing: " + fragment)
+    return """
+const sys_native = require("../../native/std/sys_native.js");
+
+function exit(code) {
+    return sys_native.exit(code);
+}
+
+function set_argv(values) {
+    return sys_native.set_argv(values);
+}
+
+function set_path(values) {
+    return sys_native.set_path(values);
+}
+
+function write_stderr(text) {
+    return sys_native.write_stderr(text);
+}
+
+function write_stdout(text) {
+    return sys_native.write_stdout(text);
+}
+
+const sys = sys_native.sys;
+const argv = sys_native.argv;
+const path = sys_native.path;
+const stderr = sys_native.stderr;
+const stdout = sys_native.stdout;
+
+module.exports = { sys, argv, path, stderr, stdout, exit, set_argv, set_path, write_stderr, write_stdout };
+""".lstrip()
 
 
 def _remove_block_by_signature(lines: list[str], signature_re: re.Pattern[str]) -> list[str]:
@@ -2218,6 +2273,8 @@ module.exports = { JsonObj, JsonArr, JsonValue, loads, loads_obj, loads_arr, dum
 
 
 def rewrite_ts_std_native_owner_wrapper(ts_src: str, helper_name: str) -> str:
+    if helper_name == "sys":
+        return rewrite_ts_std_sys_native_owner_wrapper(ts_src)
     text = _strip_trailing_string_literal_expr(ts_src)
     text = text.replace('import { extern } from "./pytra/std.js";\n\n', "")
     text = re.sub(
@@ -2277,7 +2334,12 @@ def rewrite_ts_std_native_owner_wrapper(ts_src: str, helper_name: str) -> str:
             "return " + native_owner + "." + symbol_name + "(",
             text,
         )
-    if "extern(" in text or re.search(r"__[A-Za-z_][A-Za-z0-9_]*\.", text) or "Math." in text:
+    if (
+        "extern(" in text
+        or re.search(r"__[A-Za-z_][A-Za-z0-9_]*\.", text)
+        or "Math." in text
+        or "process." in text
+    ):
         raise RuntimeError(
             "generated TS std/" + helper_name + " wrapper still contains extern/native owner residue"
         )
@@ -2301,6 +2363,52 @@ def rewrite_ts_perf_counter_host_wrapper(ts_src: str) -> str:
     if "__t.perf_counter()" in text or "process.hrtime.bigint()" in text:
         raise RuntimeError("generated TS std/time wrapper still contains host-binding residue")
     return text + "\n\nexport const perfCounter = perf_counter;\n"
+
+
+def rewrite_ts_std_sys_native_owner_wrapper(ts_src: str) -> str:
+    required_fragments = (
+        "function exit(code) {",
+        "function set_argv(values) {",
+        "function set_path(values) {",
+        "function write_stderr(text) {",
+        "function write_stdout(text) {",
+        "let argv = extern(__s.argv);",
+        "let path = extern(__s.path);",
+        "let stderr = extern(__s.stderr);",
+        "let stdout = extern(__s.stdout);",
+    )
+    for fragment in required_fragments:
+        if fragment not in ts_src:
+            raise RuntimeError("generated TS std/sys wrapper is missing: " + fragment)
+    return """
+import * as sys_native from "../../native/std/sys_native";
+
+export const sys = sys_native.sys;
+export const argv = sys_native.argv;
+export const path = sys_native.path;
+export const stderr = sys_native.stderr;
+export const stdout = sys_native.stdout;
+
+export function exit(code: number = 0): never {
+    return sys_native.exit(code);
+}
+
+export function set_argv(values: unknown): void {
+    return sys_native.set_argv(values);
+}
+
+export function set_path(values: unknown): void {
+    return sys_native.set_path(values);
+}
+
+export function write_stderr(text: unknown): void {
+    return sys_native.write_stderr(text);
+}
+
+export function write_stdout(text: unknown): void {
+    return sys_native.write_stdout(text);
+}
+""".lstrip()
 
 
 def rewrite_ts_std_sys_live_wrapper(ts_src: str) -> str:
@@ -3007,7 +3115,7 @@ def rewrite_php_program_to_library(php_src: str) -> str:
     return text.rstrip() + "\n"
 
 
-def rewrite_php_perf_counter_host_wrapper(php_src: str) -> str:
+def rewrite_php_perf_counter_native_wrapper(php_src: str) -> str:
     lines = _strip_trailing_string_literal_expr(php_src).splitlines()
     lines = _remove_block_by_signature(lines, re.compile(r"^function\s+__pytra_main\s*\("))
     out: list[str] = []
@@ -3018,10 +3126,33 @@ def rewrite_php_perf_counter_host_wrapper(php_src: str) -> str:
             continue
         out.append(line)
     text = "\n".join(out)
+    native_require = "\n".join(
+        [
+            "$__pytra_time_native_candidates = [",
+            "    __DIR__ . '/time_native.php',",
+            "    dirname(__DIR__, 2) . '/native/std/time_native.php',",
+            "];",
+            "foreach ($__pytra_time_native_candidates as $__pytra_time_native_path) {",
+            "    if (is_file($__pytra_time_native_path)) {",
+            "        require_once $__pytra_time_native_path;",
+            "        break;",
+            "    }",
+            "}",
+            "if (!function_exists('__pytra_time_perf_counter')) {",
+            "    throw new RuntimeException('time_native.php not found for generated PHP runtime lane');",
+            "}",
+            "",
+        ]
+    )
+    text = text.replace("declare(strict_types=1);\n\n", "declare(strict_types=1);\n\n" + native_require, 1)
     text = text.replace("function perf_counter() {", "function perf_counter(): float {")
-    text = text.replace("return $__t->perf_counter();", "return microtime(true);")
+    text = text.replace("return $__t->perf_counter();", "return __pytra_time_perf_counter();")
     if "function perf_counter(): float {" not in text:
         raise RuntimeError("generated PHP std/time wrapper is missing perf_counter()")
+    if "__pytra_time_perf_counter()" not in text:
+        raise RuntimeError("generated PHP std/time wrapper is missing native seam delegation")
+    if "microtime(true)" in text:
+        raise RuntimeError("generated PHP std/time wrapper still contains host-binding residue")
     return text.rstrip() + "\n"
 
 
@@ -3627,8 +3758,8 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_scala_program_to_library(generated)
     elif item.postprocess == "swift_program_to_library":
         generated = rewrite_swift_program_to_library(generated)
-    elif item.postprocess == "php_perf_counter_host_wrapper":
-        generated = rewrite_php_perf_counter_host_wrapper(generated)
+    elif item.postprocess == "php_perf_counter_native_wrapper":
+        generated = rewrite_php_perf_counter_native_wrapper(generated)
     elif item.postprocess == "php_std_math_live_wrapper":
         generated = rewrite_php_std_math_live_wrapper(generated)
     elif item.postprocess == "php_std_pathlib_live_wrapper":

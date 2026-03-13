@@ -1038,7 +1038,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["js"]["pytra_core_files"],
-            ("built_in/py_runtime.js", "std/math_native.js", "std/time_native.js"),
+            ("built_in/py_runtime.js", "std/math_native.js", "std/sys_native.js", "std/time_native.js"),
         )
         self.assertEqual(
             by_backend["php"]["pytra_gen_files"],
@@ -1102,7 +1102,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["ts"]["pytra_core_files"],
-            ("built_in/py_runtime.ts", "std/math_native.ts", "std/time_native.ts"),
+            ("built_in/py_runtime.ts", "std/math_native.ts", "std/sys_native.ts", "std/time_native.ts"),
         )
         self.assertEqual(by_backend["lua"]["pytra_gen_files"], LUA_GENERATED_FILES)
         self.assertEqual(by_backend["ruby"]["pytra_gen_files"], RUBY_GENERATED_FILES)
@@ -1374,6 +1374,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             (
                 "native/built_in/py_runtime.js",
                 "native/std/math_native.js",
+                "native/std/sys_native.js",
                 "native/std/time_native.js",
             ),
         )
@@ -1416,6 +1417,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
             (
                 "native/built_in/py_runtime.ts",
                 "native/std/math_native.ts",
+                "native/std/sys_native.ts",
                 "native/std/time_native.ts",
             ),
         )
@@ -1452,7 +1454,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "generated/utils/gif.php",
                     "generated/utils/png.php",
                 ),
-                "native_files": ("native/built_in/py_runtime.php",),
+                "native_files": ("native/built_in/py_runtime.php", "native/std/time_native.php"),
                 "delete_target_files": (),
             },
         )
@@ -1683,11 +1685,11 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
         )
         self.assertEqual(
             by_backend["js"]["native_modules"],
-            ("built_in/py_runtime", "std/math_native", "std/time_native"),
+            ("built_in/py_runtime", "std/math_native", "std/sys_native", "std/time_native"),
         )
         self.assertEqual(
             by_backend["ts"]["native_modules"],
-            ("built_in/py_runtime", "std/math_native", "std/time_native"),
+            ("built_in/py_runtime", "std/math_native", "std/sys_native", "std/time_native"),
         )
         self.assertEqual(
             by_backend["js"]["blocked_modules"],
@@ -1724,7 +1726,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                     "utils/gif",
                     "utils/png",
                 ),
-                "native_modules": ("built_in/py_runtime",),
+                "native_modules": ("built_in/py_runtime", "std/time_native"),
                 "delete_target_modules": (),
                 "blocked_modules": (),
             },
@@ -1818,12 +1820,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "js": {
                     "backend": "js",
                     "substrate_modules": ("built_in/py_runtime",),
-                    "compare_residual_modules": ("std/math_native", "std/time_native"),
+                    "compare_residual_modules": ("std/math_native", "std/sys_native", "std/time_native"),
                 },
                 "ts": {
                     "backend": "ts",
                     "substrate_modules": ("built_in/py_runtime",),
-                    "compare_residual_modules": ("std/math_native", "std/time_native"),
+                    "compare_residual_modules": ("std/math_native", "std/sys_native", "std/time_native"),
                 },
                 "lua": {
                     "backend": "lua",
@@ -1838,7 +1840,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "php": {
                     "backend": "php",
                     "substrate_modules": ("built_in/py_runtime",),
-                    "compare_residual_modules": (),
+                    "compare_residual_modules": ("std/time_native",),
                 },
             },
         )
@@ -1854,12 +1856,12 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "js": {
                     "backend": "js",
                     "substrate_files": ("built_in/py_runtime.js",),
-                    "compare_residual_files": ("std/math_native.js", "std/time_native.js"),
+                    "compare_residual_files": ("std/math_native.js", "std/sys_native.js", "std/time_native.js"),
                 },
                 "ts": {
                     "backend": "ts",
                     "substrate_files": ("built_in/py_runtime.ts",),
-                    "compare_residual_files": ("std/math_native.ts", "std/time_native.ts"),
+                    "compare_residual_files": ("std/math_native.ts", "std/sys_native.ts", "std/time_native.ts"),
                 },
                 "lua": {
                     "backend": "lua",
@@ -1874,7 +1876,7 @@ class CheckNonCppRuntimeLayoutRolloutRemainingContractTest(unittest.TestCase):
                 "php": {
                     "backend": "php",
                     "substrate_files": ("built_in/py_runtime.php",),
-                    "compare_residual_files": (),
+                    "compare_residual_files": ("std/time_native.php",),
                 },
             },
         )

@@ -331,6 +331,21 @@ def main() -> None:
         self.assertIn("process.hrtime.bigint()", native)
         self.assertIn("export const perfCounter = perf_counter;", native)
 
+    def test_ts_generated_sys_runtime_wrapper_delegates_to_native_owner(self) -> None:
+        generated = (ROOT / "src" / "runtime" / "ts" / "generated" / "std" / "sys.ts").read_text(
+            encoding="utf-8"
+        )
+        native = (ROOT / "src" / "runtime" / "ts" / "native" / "std" / "sys_native.ts").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('import * as sys_native from "../../native/std/sys_native";', generated)
+        self.assertIn("export const argv = sys_native.argv;", generated)
+        self.assertIn("return sys_native.exit(code);", generated)
+        self.assertNotIn("process.argv", generated)
+        self.assertNotIn("process.stderr", generated)
+        self.assertIn("Array.from(process.argv", native)
+        self.assertIn("stderr: process.stderr", native)
+
     def test_pathlib_runtime_symbol_uses_factory_and_property_access(self) -> None:
         fixture = find_fixture_case("math_path_runtime_ir")
         east = load_east(fixture, parser_backend="self_hosted")

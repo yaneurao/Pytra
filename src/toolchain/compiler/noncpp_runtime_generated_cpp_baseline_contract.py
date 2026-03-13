@@ -486,6 +486,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
         "native_files": (
             "native/built_in/py_runtime.js",
             "native/std/math_native.js",
+            "native/std/sys_native.js",
             "native/std/time_native.js",
         ),
         "delete_target_files": (),
@@ -522,6 +523,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
         "native_files": (
             "native/built_in/py_runtime.ts",
             "native/std/math_native.ts",
+            "native/std/sys_native.ts",
             "native/std/time_native.ts",
         ),
         "delete_target_files": (),
@@ -621,7 +623,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
             "generated/utils/gif.php",
             "generated/utils/png.php",
         ),
-        "native_files": ("native/built_in/py_runtime.php",),
+        "native_files": ("native/built_in/py_runtime.php", "native/std/time_native.php"),
         "delete_target_files": (),
     },
 )
@@ -856,6 +858,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_SMOKE_INVENTORY_V1: Final[
         "test_path": "test/unit/backends/php/test_py2php_smoke.py",
         "required_tests": (
             "test_php_runtime_source_path_is_migrated",
+            "test_php_generated_time_runtime_owner_is_live_wrapper_shaped",
             "test_php_repo_generated_lanes_resolve_native_substrate",
             "test_php_generated_built_in_compare_lane_resolves_native_runtime",
             "test_php_cli_staged_runtime_lane_resolves_remaining_shims",

@@ -2,39 +2,32 @@
 // source: src/pytra/std/sys.py
 // generated-by: tools/gen_runtime_from_manifest.py
 
-const sys = {
-    argv: Array.from(process.argv),
-    path: [],
-    stderr: process.stderr,
-    stdout: process.stdout,
-    exit(code = 0) {
-        process.exit(Number(code) || 0);
-    },
-};
+const sys_native = require("../../native/std/sys_native.js");
 
 function exit(code) {
-    sys.exit(code);
+    return sys_native.exit(code);
 }
 
 function set_argv(values) {
-    sys.argv = Array.isArray(values) ? Array.from(values, (value) => String(value)) : [];
+    return sys_native.set_argv(values);
 }
 
 function set_path(values) {
-    sys.path = Array.isArray(values) ? Array.from(values, (value) => String(value)) : [];
+    return sys_native.set_path(values);
 }
 
 function write_stderr(text) {
-    process.stderr.write(String(text));
+    return sys_native.write_stderr(text);
 }
 
 function write_stdout(text) {
-    process.stdout.write(String(text));
+    return sys_native.write_stdout(text);
 }
 
-sys.set_argv = set_argv;
-sys.set_path = set_path;
-sys.write_stderr = write_stderr;
-sys.write_stdout = write_stdout;
+const sys = sys_native.sys;
+const argv = sys_native.argv;
+const path = sys_native.path;
+const stderr = sys_native.stderr;
+const stdout = sys_native.stdout;
 
-module.exports = { sys, argv: sys.argv, path: sys.path, stderr: sys.stderr, stdout: sys.stdout, exit, set_argv, set_path, write_stderr, write_stdout };
+module.exports = { sys, argv, path, stderr, stdout, exit, set_argv, set_path, write_stderr, write_stdout };

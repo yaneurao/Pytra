@@ -756,6 +756,21 @@ def main() -> None:
         self.assertIn("process.hrtime.bigint()", native)
         self.assertIn("module.exports = {perf_counter, perfCounter};", native)
 
+    def test_js_generated_sys_runtime_wrapper_delegates_to_native_owner(self) -> None:
+        generated = (ROOT / "src" / "runtime" / "js" / "generated" / "std" / "sys.js").read_text(
+            encoding="utf-8"
+        )
+        native = (ROOT / "src" / "runtime" / "js" / "native" / "std" / "sys_native.js").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('require("../../native/std/sys_native.js")', generated)
+        self.assertIn("const argv = sys_native.argv;", generated)
+        self.assertIn("return sys_native.exit(code);", generated)
+        self.assertNotIn("process.argv", generated)
+        self.assertNotIn("process.stderr", generated)
+        self.assertIn("Array.from(process.argv", native)
+        self.assertIn("stderr: process.stderr", native)
+
     def test_pathlib_runtime_symbol_uses_factory_and_property_access(self) -> None:
         fixture = find_fixture_case("math_path_runtime_ir")
         east = load_east(fixture, parser_backend="self_hosted")

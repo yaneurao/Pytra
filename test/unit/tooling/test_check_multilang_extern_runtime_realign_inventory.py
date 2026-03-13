@@ -116,7 +116,7 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
                 "swift:swift_program_to_library",
                 "js:js_perf_counter_host_wrapper",
                 "ts:ts_perf_counter_host_wrapper",
-                "php:php_perf_counter_host_wrapper",
+                "php:php_perf_counter_native_wrapper",
             ),
         )
         self.assertEqual(
@@ -126,6 +126,7 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
                 "src/runtime/java/native/std/time_native.java",
                 "src/runtime/js/native/std/time_native.js",
                 "src/runtime/ts/native/std/time_native.ts",
+                "src/runtime/php/native/std/time_native.php",
             ),
         )
         self.assertEqual(
@@ -138,6 +139,10 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
                 (
                     "test/unit/backends/java/test_py2java_smoke.py",
                     "def test_java_native_emitter_routes_perf_counter_via_runtime_helper",
+                ),
+                (
+                    "test/unit/backends/php/test_py2php_smoke.py",
+                    "def test_php_generated_time_runtime_owner_is_live_wrapper_shaped",
                 ),
                 (
                     "test/unit/backends/rs/test_py2rs_smoke.py",
@@ -187,6 +192,32 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         self.assertEqual(by_id["std/os_path"]["emitter_hardcode_needles"], ())
         self.assertEqual(by_id["std/sys"]["emitter_hardcode_needles"], ())
         self.assertEqual(by_id["std/glob"]["emitter_hardcode_needles"], ())
+
+    def test_sys_inventory_uses_js_ts_native_owner_wrappers(self) -> None:
+        by_id = {
+            row["module_id"]: row
+            for row in inventory_mod.iter_multilang_extern_runtime_realign_inventory()
+        }
+        self.assertEqual(
+            by_id["std/sys"]["manifest_postprocess_targets"],
+            (
+                "go:go_program_to_library",
+                "kotlin:kotlin_program_to_library",
+                "scala:scala_program_to_library",
+                "swift:swift_program_to_library",
+                "js:js_std_native_owner_wrapper",
+                "ts:ts_std_native_owner_wrapper",
+                "php:php_program_to_library",
+            ),
+        )
+        self.assertEqual(
+            by_id["std/sys"]["noncpp_native_owner_paths"],
+            (
+                "src/runtime/js/native/std/sys_native.js",
+                "src/runtime/ts/native/std/sys_native.ts",
+            ),
+        )
+        self.assertEqual(by_id["std/sys"]["generated_drift_needles"], ())
 
     def test_io_ops_inventory_has_no_module_specific_hardcodes(self) -> None:
         by_id = {

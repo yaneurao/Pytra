@@ -92,7 +92,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "swift:swift_program_to_library",
             "js:js_perf_counter_host_wrapper",
             "ts:ts_perf_counter_host_wrapper",
-            "php:php_perf_counter_host_wrapper",
+            "php:php_perf_counter_native_wrapper",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/time.cpp",),
         "noncpp_native_owner_paths": (
@@ -100,6 +100,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "src/runtime/java/native/std/time_native.java",
             "src/runtime/js/native/std/time_native.js",
             "src/runtime/ts/native/std/time_native.ts",
+            "src/runtime/php/native/std/time_native.php",
         ),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (
@@ -113,6 +114,10 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             (
                 "test/unit/backends/java/test_py2java_smoke.py",
                 "def test_java_native_emitter_routes_perf_counter_via_runtime_helper",
+            ),
+            (
+                "test/unit/backends/php/test_py2php_smoke.py",
+                "def test_php_generated_time_runtime_owner_is_live_wrapper_shaped",
             ),
             (
                 "test/unit/backends/rs/test_py2rs_smoke.py",
@@ -189,21 +194,29 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "kotlin:kotlin_program_to_library",
             "scala:scala_program_to_library",
             "swift:swift_program_to_library",
-            "js:js_std_sys_live_wrapper",
-            "ts:ts_std_sys_live_wrapper",
+            "js:js_std_native_owner_wrapper",
+            "ts:ts_std_native_owner_wrapper",
             "php:php_program_to_library",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/sys.cpp",),
-        "noncpp_native_owner_paths": (),
-        "emitter_hardcode_needles": (),
-        "generated_drift_needles": (
-            ("src/runtime/js/generated/std/sys.js", "process.argv"),
-            ("src/runtime/ts/generated/std/sys.ts", "process.argv"),
+        "noncpp_native_owner_paths": (
+            "src/runtime/js/native/std/sys_native.js",
+            "src/runtime/ts/native/std/sys_native.ts",
         ),
+        "emitter_hardcode_needles": (),
+        "generated_drift_needles": (),
         "representative_smoke_needles": (
             (
                 "test/unit/backends/cs/test_py2cs_smoke.py",
                 "def test_representative_sys_extended_fixture_transpiles",
+            ),
+            (
+                "test/unit/backends/js/test_py2js_smoke.py",
+                "def test_js_generated_sys_runtime_wrapper_delegates_to_native_owner",
+            ),
+            (
+                "test/unit/backends/ts/test_py2ts_smoke.py",
+                "def test_ts_generated_sys_runtime_wrapper_delegates_to_native_owner",
             ),
             (
                 "test/unit/backends/lua/test_py2lua_smoke.py",

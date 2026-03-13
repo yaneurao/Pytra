@@ -587,7 +587,7 @@
         { "target": "ts", "output": "src/runtime/ts/generated/std/time.ts", "postprocess": "ts_perf_counter_host_wrapper" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/time.rb" },
         { "target": "lua", "output": "src/runtime/lua/generated/std/time.lua" },
-        { "target": "php", "output": "src/runtime/php/generated/std/time.php", "postprocess": "php_perf_counter_host_wrapper" }
+        { "target": "php", "output": "src/runtime/php/generated/std/time.php", "postprocess": "php_perf_counter_native_wrapper" }
       ]
     },
     {
@@ -1018,12 +1018,14 @@
         {
           "target": "js",
           "output": "src/runtime/js/generated/std/sys.js",
-          "postprocess": "js_std_sys_live_wrapper"
+          "postprocess": "js_std_native_owner_wrapper",
+          "helper_name": "sys"
         },
         {
           "target": "ts",
           "output": "src/runtime/ts/generated/std/sys.ts",
-          "postprocess": "ts_std_sys_live_wrapper"
+          "postprocess": "ts_std_native_owner_wrapper",
+          "helper_name": "sys"
         },
         { "target": "lua", "output": "src/runtime/lua/generated/std/sys.lua" },
         { "target": "ruby", "output": "src/runtime/ruby/generated/std/sys.rb" },

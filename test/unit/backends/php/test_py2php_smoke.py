@@ -139,6 +139,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
 
     def test_php_runtime_source_path_is_migrated(self) -> None:
         runtime_path = ROOT / "src" / "runtime" / "php" / "native" / "built_in" / "py_runtime.php"
+        native_time_path = ROOT / "src" / "runtime" / "php" / "native" / "std" / "time_native.php"
         generated_contains_path = ROOT / "src" / "runtime" / "php" / "generated" / "built_in" / "contains.php"
         generated_sequence_path = ROOT / "src" / "runtime" / "php" / "generated" / "built_in" / "sequence.php"
         generated_argparse_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "argparse.php"
@@ -151,7 +152,6 @@ class Py2PhpSmokeTest(unittest.TestCase):
         generated_random_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "random.php"
         generated_re_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "re.php"
         generated_sys_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "sys.php"
-        native_time_path = ROOT / "src" / "runtime" / "php" / "native" / "std" / "time.php"
         generated_time_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "time.php"
         generated_timeit_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "timeit.php"
         assertions_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "assertions.php"
@@ -172,7 +172,7 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertTrue(generated_random_path.exists())
         self.assertTrue(generated_re_path.exists())
         self.assertTrue(generated_sys_path.exists())
-        self.assertFalse(native_time_path.exists())
+        self.assertTrue(native_time_path.exists())
         self.assertTrue(generated_time_path.exists())
         self.assertTrue(generated_timeit_path.exists())
         self.assertTrue(assertions_path.exists())
@@ -195,6 +195,17 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "timeit.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "utils" / "assertions.php").exists())
         self.assertFalse(legacy_path.exists())
+
+    def test_php_generated_time_runtime_owner_is_live_wrapper_shaped(self) -> None:
+        generated_time_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "time.php"
+        native_time_path = ROOT / "src" / "runtime" / "php" / "native" / "std" / "time_native.php"
+        generated = generated_time_path.read_text(encoding="utf-8")
+        native = native_time_path.read_text(encoding="utf-8")
+        self.assertIn("time_native.php", generated)
+        self.assertIn("return __pytra_time_perf_counter();", generated)
+        self.assertNotIn("microtime(true)", generated)
+        self.assertIn("function __pytra_time_perf_counter(): float", native)
+        self.assertIn("return microtime(true);", native)
 
     def test_php_generated_std_baseline_source_guard_materializes_new_compare_modules(self) -> None:
         runtime_root = ROOT / "src" / "runtime" / "php" / "generated"
@@ -302,11 +313,13 @@ class Py2PhpSmokeTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, msg=f"{proc.stdout}\n{proc.stderr}")
             staged_runtime_path = (Path(td) / "pytra" / "py_runtime.php").resolve()
             staged_time_path = (Path(td) / "pytra" / "std" / "time.php").resolve()
+            staged_time_native_path = (Path(td) / "pytra" / "std" / "time_native.php").resolve()
             staged_png_path = (Path(td) / "pytra" / "utils" / "png.php").resolve()
             staged_gif_path = (Path(td) / "pytra" / "utils" / "gif.php").resolve()
             for staged_path in (
                 staged_runtime_path,
                 staged_time_path,
+                staged_time_native_path,
                 staged_png_path,
                 staged_gif_path,
             ):

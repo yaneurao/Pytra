@@ -541,6 +541,49 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertNotIn("extern(", out)
         self.assertNotIn("Math.", out)
 
+    def test_rewrite_js_std_native_owner_wrapper_delegates_sys_to_sys_native(self) -> None:
+        src = "\n".join(
+            [
+                'import { extern } from "./pytra/std.js";',
+                "",
+                "function exit(code) {",
+                "    __s.exit(code);",
+                "}",
+                "function set_argv(values) {",
+                "    argv.clear();",
+                "    for (const v of values) {",
+                "        argv.append(v);",
+                "    }",
+                "}",
+                "function set_path(values) {",
+                "    path.clear();",
+                "}",
+                "function write_stderr(text) {",
+                "    __s.stderr.write(text);",
+                "}",
+                "function write_stdout(text) {",
+                "    __s.stdout.write(text);",
+                "}",
+                "",
+                '"pytra.std.sys: extern-marked sys API with Python runtime fallback.";',
+                "let argv = extern(__s.argv);",
+                "let path = extern(__s.path);",
+                "let stderr = extern(__s.stderr);",
+                "let stdout = extern(__s.stdout);",
+            ]
+        )
+        out = gen_mod.rewrite_js_std_native_owner_wrapper(src, "sys")
+        self.assertIn('const sys_native = require("../../native/std/sys_native.js");', out)
+        self.assertIn("const argv = sys_native.argv;", out)
+        self.assertIn("const stderr = sys_native.stderr;", out)
+        self.assertIn("return sys_native.exit(code);", out)
+        self.assertIn("return sys_native.set_argv(values);", out)
+        self.assertIn("return sys_native.write_stderr(text);", out)
+        self.assertIn("module.exports = { sys, argv, path, stderr, stdout, exit, set_argv, set_path, write_stderr, write_stdout };", out)
+        self.assertNotIn("extern(", out)
+        self.assertNotIn("__s.", out)
+        self.assertNotIn("process.", out)
+
     def test_rewrite_js_ts_built_in_cjs_module_rehomes_runtime_import(self) -> None:
         src = "\n".join(
             [
@@ -585,6 +628,48 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertNotIn("__m.", out)
         self.assertNotIn("extern(", out)
         self.assertNotIn("Math.", out)
+
+    def test_rewrite_ts_std_native_owner_wrapper_delegates_sys_to_sys_native(self) -> None:
+        src = "\n".join(
+            [
+                'import { extern } from "./pytra/std.js";',
+                "",
+                "function exit(code) {",
+                "    __s.exit(code);",
+                "}",
+                "function set_argv(values) {",
+                "    argv.clear();",
+                "    for (const v of values) {",
+                "        argv.append(v);",
+                "    }",
+                "}",
+                "function set_path(values) {",
+                "    path.clear();",
+                "}",
+                "function write_stderr(text) {",
+                "    __s.stderr.write(text);",
+                "}",
+                "function write_stdout(text) {",
+                "    __s.stdout.write(text);",
+                "}",
+                "",
+                '"pytra.std.sys: extern-marked sys API with Python runtime fallback.";',
+                "let argv = extern(__s.argv);",
+                "let path = extern(__s.path);",
+                "let stderr = extern(__s.stderr);",
+                "let stdout = extern(__s.stdout);",
+            ]
+        )
+        out = gen_mod.rewrite_ts_std_native_owner_wrapper(src, "sys")
+        self.assertIn('import * as sys_native from "../../native/std/sys_native";', out)
+        self.assertIn("export const argv = sys_native.argv;", out)
+        self.assertIn("export const stderr = sys_native.stderr;", out)
+        self.assertIn("return sys_native.exit(code);", out)
+        self.assertIn("return sys_native.set_argv(values);", out)
+        self.assertIn("return sys_native.write_stderr(text);", out)
+        self.assertNotIn("extern(", out)
+        self.assertNotIn("__s.", out)
+        self.assertNotIn("process.", out)
 
     def test_rewrite_js_perf_counter_host_wrapper_delegates_to_time_native(self) -> None:
         src = "\n".join(
@@ -719,7 +804,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return JSON.parse(String(text));", out)
         self.assertIn("export function dumps(", out)
 
-    def test_rewrite_php_perf_counter_host_wrapper_inlines_microtime(self) -> None:
+    def test_rewrite_php_perf_counter_native_wrapper_delegates_to_time_native(self) -> None:
         src = "\n".join(
             [
                 "<?php",
@@ -737,11 +822,13 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "__pytra_main();",
             ]
         )
-        out = gen_mod.rewrite_php_perf_counter_host_wrapper(src)
+        out = gen_mod.rewrite_php_perf_counter_native_wrapper(src)
         self.assertIn("function perf_counter(): float {", out)
-        self.assertIn("return microtime(true);", out)
+        self.assertIn("time_native.php", out)
+        self.assertIn("return __pytra_time_perf_counter();", out)
         self.assertNotIn("/pytra/py_runtime.php", out)
         self.assertNotIn("__pytra_main();", out)
+        self.assertNotIn("microtime(true)", out)
 
     def test_rewrite_php_program_to_library_prefers_packaged_root_and_falls_back_to_repo_native(self) -> None:
         src = "\n".join(

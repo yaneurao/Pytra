@@ -600,6 +600,12 @@ REMAINING_NONCPP_RUNTIME_LAYOUT_V1: Final[tuple[RemainingRuntimeBackendMappingEn
                 "rationale": "PHP handwritten core runtime already lives in native/built_in after the Wave B path cutover.",
             },
             {
+                "current_prefix": "src/runtime/php/native/std/",
+                "target_prefix": "src/runtime/php/native/std/",
+                "ownership": "native",
+                "rationale": "PHP extern-backed std seams now live under native/std once generated wrappers delegate to native owners.",
+            },
+            {
                 "current_prefix": "src/runtime/php/generated/utils/",
                 "target_prefix": "src/runtime/php/generated/utils/",
                 "ownership": "generated",
@@ -821,7 +827,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     },
     {
         "backend": "js",
-        "pytra_core_files": ("built_in/py_runtime.js", "std/math_native.js", "std/time_native.js"),
+        "pytra_core_files": ("built_in/py_runtime.js", "std/math_native.js", "std/sys_native.js", "std/time_native.js"),
         "pytra_gen_files": (
             "built_in/contains.js",
             "built_in/io_ops.js",
@@ -853,7 +859,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     },
     {
         "backend": "ts",
-        "pytra_core_files": ("built_in/py_runtime.ts", "std/math_native.ts", "std/time_native.ts"),
+        "pytra_core_files": ("built_in/py_runtime.ts", "std/math_native.ts", "std/sys_native.ts", "std/time_native.ts"),
         "pytra_gen_files": (
             "built_in/contains.ts",
             "built_in/io_ops.ts",
@@ -897,7 +903,7 @@ REMAINING_NONCPP_RUNTIME_CURRENT_INVENTORY_V1: Final[tuple[RemainingRuntimeCurre
     },
     {
         "backend": "php",
-        "pytra_core_files": ("built_in/py_runtime.php",),
+        "pytra_core_files": ("built_in/py_runtime.php", "std/time_native.php"),
         "pytra_gen_files": (
             "built_in/contains.php",
             "built_in/io_ops.php",
@@ -1163,6 +1169,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
         "native_files": (
             "native/built_in/py_runtime.js",
             "native/std/math_native.js",
+            "native/std/sys_native.js",
             "native/std/time_native.js",
         ),
         "delete_target_files": (),
@@ -1199,6 +1206,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
         "native_files": (
             "native/built_in/py_runtime.ts",
             "native/std/math_native.ts",
+            "native/std/sys_native.ts",
             "native/std/time_native.ts",
         ),
         "delete_target_files": (),
@@ -1244,7 +1252,7 @@ REMAINING_NONCPP_RUNTIME_TARGET_INVENTORY_V1: Final[tuple[RemainingRuntimeTarget
             "generated/utils/gif.php",
             "generated/utils/png.php",
         ),
-        "native_files": ("native/built_in/py_runtime.php",),
+        "native_files": ("native/built_in/py_runtime.php", "native/std/time_native.php"),
         "delete_target_files": (),
     },
 )
@@ -1414,14 +1422,14 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
     {
         "backend": "js",
         "generated_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
-        "native_modules": ("built_in/py_runtime", "std/math_native", "std/time_native"),
+        "native_modules": ("built_in/py_runtime", "std/math_native", "std/sys_native", "std/time_native"),
         "delete_target_modules": (),
         "blocked_modules": REMAINING_NONCPP_SCRIPT_FAMILY_MISSING_COMPARE_MODULES_V1,
     },
     {
         "backend": "ts",
         "generated_modules": REMAINING_NONCPP_SCRIPT_FAMILY_PARTIAL_GENERATED_COMPARE_MODULES_V1,
-        "native_modules": ("built_in/py_runtime", "std/math_native", "std/time_native"),
+        "native_modules": ("built_in/py_runtime", "std/math_native", "std/sys_native", "std/time_native"),
         "delete_target_modules": (),
         "blocked_modules": REMAINING_NONCPP_SCRIPT_FAMILY_MISSING_COMPARE_MODULES_V1,
     },
@@ -1468,7 +1476,7 @@ REMAINING_NONCPP_RUNTIME_MODULE_BUCKETS_V1: Final[tuple[RemainingRuntimeModuleBu
             "utils/gif",
             "utils/png",
         ),
-        "native_modules": ("built_in/py_runtime",),
+        "native_modules": ("built_in/py_runtime", "std/time_native"),
         "delete_target_modules": (),
         "blocked_modules": (),
     },
@@ -1546,12 +1554,12 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUALS_V1: Final[
     {
         "backend": "js",
         "substrate_modules": ("built_in/py_runtime",),
-        "compare_residual_modules": ("std/math_native", "std/time_native"),
+        "compare_residual_modules": ("std/math_native", "std/sys_native", "std/time_native"),
     },
     {
         "backend": "ts",
         "substrate_modules": ("built_in/py_runtime",),
-        "compare_residual_modules": ("std/math_native", "std/time_native"),
+        "compare_residual_modules": ("std/math_native", "std/sys_native", "std/time_native"),
     },
     {
         "backend": "lua",
@@ -1566,7 +1574,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUALS_V1: Final[
     {
         "backend": "php",
         "substrate_modules": ("built_in/py_runtime",),
-        "compare_residual_modules": (),
+        "compare_residual_modules": ("std/time_native",),
     },
 )
 
@@ -1577,12 +1585,12 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUAL_FILES_V1: Final[
     {
         "backend": "js",
         "substrate_files": ("built_in/py_runtime.js",),
-        "compare_residual_files": ("std/math_native.js", "std/time_native.js"),
+        "compare_residual_files": ("std/math_native.js", "std/sys_native.js", "std/time_native.js"),
     },
     {
         "backend": "ts",
         "substrate_files": ("built_in/py_runtime.ts",),
-        "compare_residual_files": ("std/math_native.ts", "std/time_native.ts"),
+        "compare_residual_files": ("std/math_native.ts", "std/sys_native.ts", "std/time_native.ts"),
     },
     {
         "backend": "lua",
@@ -1597,7 +1605,7 @@ REMAINING_NONCPP_RUNTIME_WAVE_B_NATIVE_RESIDUAL_FILES_V1: Final[
     {
         "backend": "php",
         "substrate_files": ("built_in/py_runtime.php",),
-        "compare_residual_files": (),
+        "compare_residual_files": ("std/time_native.php",),
     },
 )
 
