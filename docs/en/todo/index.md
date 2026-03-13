@@ -30,13 +30,3 @@ Last updated: 2026-03-13
 - `docs/ja/todo/archive/index.md` keeps only the index, and the history body is stored by date in `docs/ja/todo/archive/YYYYMMDD.md`.
 
 ## Unfinished Tasks
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01] Remove checked-in `src/runtime/<lang>/pytra/**` from every non-C++ / non-C# backend and converge the permanent repo-owned runtime layout on `generated/native` only. Context: [p0-noncpp-runtime-pytra-deshim.md](../plans/p0-noncpp-runtime-pytra-deshim.md)
-- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01] Locked the current 12-backend `pytra/**` directory/file inventory, delete blocker references, and current->target mapping in plan / contract / checker / test form.
-- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] Switched active contracts / checkers / spec wording to `generated/native only` and made checked-in `pytra/**` re-entry fail fast.
-- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-01] Deleted checked-in `src/runtime/rs/pytra/**` for Rust (`rs`) and removed repo-tree `pytra/**` assumptions from `py2rs`, selfhost, runtime guards, and smoke.
-- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-02] Aligned the static family (`go/java/kotlin/scala/swift/nim`) registry / packaging / smoke / tooling on direct `generated/native` references so checked-in `pytra/**` remains only as deletion inventory.
-- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-03] Physically deleted checked-in `src/runtime/<lang>/pytra/**` for the static family and synced allowlists / inventory / representative smoke to the deletion end state.
-- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-01] Rework JS/TS import paths, shim writers, selfhost, and smoke so repo-tree `src/runtime/{js,ts}/pytra/**` direct-load and compat contracts disappear.
-- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-02] Move Lua/Ruby/PHP packaging / runtime copy / loader contracts to `generated/native` or output-side staging and remove checked-in `pytra/**` assumptions.
-- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-03] Physically delete checked-in `src/runtime/<lang>/pytra/**` for the script family and update representative smoke plus contract baselines to the deletion end state.
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S4-01] Sync docs / TODO / archive references / inventory and close with the invariant that no checked-in non-C++ / non-C# backend owns `pytra/`.

@@ -88,7 +88,7 @@ Implementation policy:
 
 ## Breakdown
 
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01] Remove checked-in `src/runtime/<lang>/pytra/**` from every non-C++ / non-C# backend and converge the permanent repo-owned runtime layout on `generated/native` only.
+- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01] Remove checked-in `src/runtime/<lang>/pytra/**` from every non-C++ / non-C# backend and converge the permanent repo-owned runtime layout on `generated/native` only.
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01] Lock the current `pytra/**` inventory, references, delete blockers, and current->target mapping for the 12 target backends into plan / contract / checker form.
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] Switched active contracts / checkers / spec wording to `generated/native only` and made checked-in `pytra/**` re-entry fail fast.
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-01] Delete checked-in `src/runtime/rs/pytra/**` for Rust (`rs`) and remove repo-tree `pytra/**` assumptions from `py2rs`, selfhost, runtime guards, and smoke.
@@ -97,7 +97,7 @@ Implementation policy:
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-01] Rework JS/TS import paths, shim writers, selfhost, and smoke so repo-tree `src/runtime/{js,ts}/pytra/**` direct-load and compat contracts disappear.
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-02] Move Lua/Ruby/PHP packaging / runtime copy / loader contracts to `generated/native` or output-side staging and remove checked-in `pytra/**` assumptions.
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-03] Physically delete checked-in `src/runtime/<lang>/pytra/**` for the script family and update representative smoke plus contract baselines to the deletion end state.
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S4-01] Sync docs / TODO / archive references / inventory and close with the invariant that no checked-in non-C++ / non-C# backend owns `pytra/`.
+- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S4-01] Sync docs / TODO / archive references / inventory and close with the invariant that no checked-in non-C++ / non-C# backend owns `pytra/`.
 
 Decision log:
 - 2026-03-13: `P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01` locked the current checked-in `pytra/` directory inventory, exact file inventory, and delete blocker references into a dedicated contract/checker/test so the current state is explicit before removal begins.
@@ -118,3 +118,4 @@ Decision log:
 - 2026-03-13: S3-01 removed the JS/TS blocker buckets and exact blocker baseline from `noncpp_runtime_pytra_deshim_contract.py` after switching the repo-tree direct-load smoke to output-side generated shim smoke. Checked-in `src/runtime/{js,ts}/pytra/**` now remains only as deletion inventory; repo-tree direct-load / selfhost / compat-contract blockers are considered resolved.
 - 2026-03-13: S3-02 replaced the Lua/Ruby/PHP repo-tree direct-load smoke with output-side staging smoke and removed the remaining script-family blocker baseline from `noncpp_runtime_pytra_deshim_contract.py`. The PHP `require_once __DIR__ . '/pytra/py_runtime.php';` rewrite is treated as output-side staging, not a repo-tree blocker.
 - 2026-03-13: S3-03 physically deleted `src/runtime/{js,ts,lua,ruby,php}/pytra/**`, collapsed the current directory/file inventory in `noncpp_runtime_pytra_deshim_contract.py` to empty, and set the script-family delete-target inventory to empty in both `noncpp_runtime_layout_rollout_remaining_contract.py` and `noncpp_runtime_generated_cpp_baseline_contract.py`. Representative smoke now asserts the deletion end state directly by requiring output-side staged runtime helpers while confirming the checked-in repo-tree `pytra/**` is absent.
+- 2026-03-13: S4-01 aligned the active tutorial/spec wording to the final invariant and moved the plan/TODO entry into the archive. The checked-in tree now keeps `pytra/` only under `src/runtime/cpp/pytra`, and no non-C++ / non-C# backend retains a repo-owned `pytra/**` lane.

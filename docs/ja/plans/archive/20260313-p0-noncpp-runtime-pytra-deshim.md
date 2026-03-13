@@ -88,7 +88,7 @@
 
 ## 分解
 
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01] 非 C++ / 非 C# backend の checked-in `src/runtime/<lang>/pytra/**` を全廃し、repo 常設 runtime layout を `generated/native` のみに揃える。
+- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01] 非 C++ / 非 C# backend の checked-in `src/runtime/<lang>/pytra/**` を全廃し、repo 常設 runtime layout を `generated/native` のみに揃える。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01] 対象 backend 12 言語の current `pytra/**` inventory、参照元、delete blocker を棚卸しし、current->target mapping を plan / contract に固定する。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] active contract / checker / spec wording を `generated/native only` へ切り替え、対象 backend の checked-in `pytra/**` 再出現を fail-fast にする。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S2-01] Rust (`rs`) の checked-in `src/runtime/rs/pytra/**` を削除し、`py2rs` / selfhost / runtime guard / smoke から repo-tree `pytra/**` 前提を外す。
@@ -97,7 +97,7 @@
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-01] JS/TS の import path / shim writer / selfhost / smoke を見直し、repo-tree `src/runtime/{js,ts}/pytra/**` direct-load と compat shim 契約を撤去する。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-02] Lua/Ruby/PHP の packaging / runtime copy / loader contract を `generated/native` または output-side staging へ移し、repo-tree `pytra/**` 常設前提を撤去する。
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S3-03] script family (`js/ts/lua/ruby/php`) の checked-in `src/runtime/<lang>/pytra/**` を物理削除し、representative smoke と contract baseline を deletion end state へ更新する。
-- [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S4-01] docs / TODO / archive 参照 / inventory を最終同期し、「非 C++ / 非 C# backend に checked-in `pytra/` は存在しない」状態で close する。
+- [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S4-01] docs / TODO / archive 参照 / inventory を最終同期し、「非 C++ / 非 C# backend に checked-in `pytra/` は存在しない」状態で close する。
 
 決定ログ:
 - 2026-03-13: ユーザー指示に従い、archive 側 P1 が許容していた「non-C++ backend の `pytra/` compat lane 維持」は active policy から取り消し、新規 P0 として `checked-in pytra 全廃` を起票する。
@@ -120,3 +120,4 @@
 - 2026-03-13: S3-01 で JS/TS の repo-tree direct-load smoke を output-side generated shim smoke に置き換えた前提で、`noncpp_runtime_pytra_deshim_contract.py` から JS/TS blocker bucket と exact blocker baseline を除去した。checked-in `src/runtime/{js,ts}/pytra/**` は deletion inventory としてのみ残し、repo-tree direct-load / selfhost / compat-contract blocker は解消済みとする。
 - 2026-03-13: S3-02 で Lua/Ruby/PHP の repo-tree direct-load smoke を output-side staging smoke に置き換え、`noncpp_runtime_pytra_deshim_contract.py` から script-family blocker baseline を全廃した。PHP の `require_once __DIR__ . '/pytra/py_runtime.php';` は repo-tree 前提ではなく output-side staging rewrite とみなし、runtime shim writer blocker から外す。
 - 2026-03-13: S3-03 で `src/runtime/{js,ts,lua,ruby,php}/pytra/**` を物理削除し、`noncpp_runtime_pytra_deshim_contract.py` の current directory/file inventory を空へ縮退させた。`noncpp_runtime_layout_rollout_remaining_contract.py` / `noncpp_runtime_generated_cpp_baseline_contract.py` の script-family delete-target inventory も空に揃え、representative smoke は repo-tree `pytra/**` 不在を確認する deletion end state に同期した。
+- 2026-03-13: S4-01 で active tutorial/spec wording を final invariant に合わせ、plan/TODO を archive へ移した。checked-in tree の `pytra/` directory は `src/runtime/cpp/pytra` のみで、non-C++ / non-C# backend に repo-owned `pytra/**` は残さない状態を close とする。

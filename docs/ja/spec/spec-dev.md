@@ -703,7 +703,7 @@ migration note:
 - `src/py2rs.py` は CLI + 入出力の薄いオーケストレータに限定する。
 - Rust 固有の出力処理は `src/backends/rs/emitter/rs_emitter.py`（`RustEmitter`）へ分離する。
 - `src/py2rs.py` は `src/backends/common/` / `src/rs_module/` に依存しない（runtime 正本は `src/runtime/rs/{native,generated}/`）。
-- non-C++ / non-C# backend の checked-in `src/runtime/<lang>/pytra/**` は delete target debt とする。
+- non-C++ / non-C# backend の checked-in `src/runtime/<lang>/pytra/**` は存在してはならない。
 - 言語固有差分は `src/backends/rs/profiles/` と `src/backends/rs/` に分離する。
 - 変換可否のスモーク確認は `tools/check_py2rs_transpile.py` を正本とする。
 - `--east-stage` の既定は `3`、`--east-stage 2` は移行互換モード（警告付き）として扱う。

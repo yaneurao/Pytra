@@ -160,7 +160,7 @@ php test/transpile/php/iterable.php
 
 補足:
 - `py2x.py --target php` は EAST3 から PHP native emitter（`src/backends/php/emitter/php_native_emitter.py`）で直接コード生成します。
-- runtime は `src/runtime/php/pytra/` を正本とし、生成時に `test/transpile/php/pytra/**` へ同期コピーされます。
+- runtime helper の正本は `src/runtime/php/{generated,native}/` にあり、変換時は必要な helper だけを `test/transpile/php/` 側へ stage します。
 - 変換回帰は `python3 tools/check_py2php_transpile.py` で確認できます。
 - parity 導線は `python3 tools/runtime_parity_check.py --case-root sample --targets php` で実行できます（toolchain 未導入環境では `toolchain_missing` として記録されます）。
 

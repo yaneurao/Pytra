@@ -449,7 +449,7 @@ php test/transpile/php/iterable.php
 
 Notes:
 - `py2x.py --target php` generates PHP source directly from EAST3 via the native emitter (`src/backends/php/emitter/php_native_emitter.py`).
-- Runtime helpers are managed under `src/runtime/php/pytra/` and copied into `test/transpile/php/pytra/**` when transpiling.
+- Canonical PHP runtime helpers live under `src/runtime/php/{generated,native}/`, and transpilation stages only the required helper files into `test/transpile/php/`.
 - Check transpile regressions with `python3 tools/check_py2php_transpile.py`.
 - Run parity entry flow with `python3 tools/runtime_parity_check.py --case-root sample --targets php` (environments without PHP toolchain are recorded as `toolchain_missing`).
 
@@ -482,7 +482,7 @@ node test/transpile/js/iterable.js
 ```
 
 Notes:
-- If input uses `import`, corresponding runtime implementations under `src/runtime/js/pytra/` are required.
+- If input uses `import`, `py2x.py` stages the required runtime bundle from `src/runtime/js/{generated,native}/` into `runtime/js/**` next to the generated output.
 
 </details>
 
@@ -495,7 +495,7 @@ npx tsx test/transpile/ts/iterable.ts
 ```
 
 Notes:
-- If input uses `import`, corresponding runtime implementations under `src/runtime/ts/pytra/` are required.
+- If input uses `import`, `py2x.py` stages the shared JS runtime bundle from `src/runtime/js/{generated,native}/` into `runtime/js/**` next to the generated output.
 
 </details>
 

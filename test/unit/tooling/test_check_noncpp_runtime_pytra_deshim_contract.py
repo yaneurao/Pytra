@@ -83,27 +83,27 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
                 {
                     "path": "docs/ja/spec/spec-folder.md",
                     "needles": (
-                        "非 C++ / 非 C# backend の checked-in `src/runtime/<lang>/pytra/**` は互換 lane ではなく delete target とする。",
+                        "非 C++ / 非 C# backend の checked-in `src/runtime/<lang>/pytra/**` は存在してはならず、再出現は contract fail とする。",
                         "repo 正本 layout は `src/runtime/<lang>/{generated,native}/` のみを許可する。",
                     ),
                 },
                 {
                     "path": "docs/en/spec/spec-folder.md",
                     "needles": (
-                        "For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` is a delete target, not a compatibility lane.",
+                        "For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` must not exist; any re-entry is a contract failure.",
                         "The canonical repo layout allows only `src/runtime/<lang>/{generated,native}/` as live runtime roots.",
                     ),
                 },
                 {
                     "path": "docs/ja/spec/spec-dev.md",
                     "needles": (
-                        "non-C++ / non-C# backend の checked-in `src/runtime/<lang>/pytra/**` は delete target debt とする。",
+                        "non-C++ / non-C# backend の checked-in `src/runtime/<lang>/pytra/**` は存在してはならない。",
                     ),
                 },
                 {
                     "path": "docs/en/spec/spec-dev.md",
                     "needles": (
-                        "For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` is delete-target debt only.",
+                        "For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` must not exist.",
                     ),
                 },
                 {
@@ -123,13 +123,13 @@ class CheckNonCppRuntimePytraDeshimContractTest(unittest.TestCase):
                 {
                     "path": "docs/ja/spec/spec-lua-native-backend.md",
                     "needles": (
-                        "`src/runtime/lua/{generated,native}/` 配下の Lua runtime API（checked-in `src/runtime/lua/pytra/**` は delete target debt）",
+                        "`src/runtime/lua/{generated,native}/` 配下の Lua runtime API（checked-in repo tree に `src/runtime/lua/pytra/**` は存在しない）",
                     ),
                 },
                 {
                     "path": "docs/en/spec/spec-lua-native-backend.md",
                     "needles": (
-                        "Lua runtime API under `src/runtime/lua/{generated,native}/` (checked-in `src/runtime/lua/pytra/**` is delete-target debt only)",
+                        "Lua runtime API under `src/runtime/lua/{generated,native}/` (the checked-in repo tree no longer keeps `src/runtime/lua/pytra/**`)",
                     ),
                 },
                 {

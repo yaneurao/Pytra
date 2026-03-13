@@ -40,7 +40,7 @@ Lua native emitter は以下を満たす EAST3 ドキュメントのみを受理
 
 Lua 生成コードの runtime 境界は、原則として次に限定する。
 
-- `src/runtime/lua/{generated,native}/` 配下の Lua runtime API（checked-in `src/runtime/lua/pytra/**` は delete target debt）
+- `src/runtime/lua/{generated,native}/` 配下の Lua runtime API（checked-in repo tree に `src/runtime/lua/pytra/**` は存在しない）
 - Lua 標準ライブラリ（`math` / `string` / `table` など）
 
 禁止事項:
