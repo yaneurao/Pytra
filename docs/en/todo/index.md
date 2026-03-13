@@ -34,8 +34,10 @@ Last updated: 2026-03-13
 
 - [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01] Align the `LinkedProgramModule` import in `test_py2x_cli.py` to the `src.toolchain.link` facade so the tooling consumer no longer reaches through `program_model` directly.
   - Context: [docs/en/plans/p0-link-facade-linked-program-module-import.md](../plans/p0-link-facade-linked-program-module-import.md)
-- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S1-01] Add the facade-import source contract plus TODO/plan baseline.
-- [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S2-01] Switch the `test_py2x_cli.py` import to the facade path and bring the focused unit suite back to green.
+- [x] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S1-01] Add the facade-import source contract plus TODO/plan baseline.
+  - Progress note: Added a source contract in `test_py2x_entrypoints_contract.py` that requires the facade import in `test_py2x_cli.py`.
+- [x] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S2-01] Switch the `test_py2x_cli.py` import to the facade path and bring the focused unit suite back to green.
+  - Progress note: Switched the `LinkedProgramModule` import in `test_py2x_cli.py` over to the `src.toolchain.link` facade.
 - [ ] [ID: P0-LINK-FACADE-LINKED-PROGRAM-MODULE-IMPORT-01-S3-01] Sync TODO / plan / archive and lock the close condition.
 ### P0: align the `transpile_cli` typed C++ contract to the direct-ownership header/source layout
 
