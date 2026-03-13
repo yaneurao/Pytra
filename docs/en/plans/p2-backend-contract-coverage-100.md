@@ -66,7 +66,7 @@ Validation commands (planned):
 
 ## Breakdown
 
-- [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S1-01] Inventory the live representative contracts plus `test/unit`, `test/ir`, `test/integration`, and `test/transpile`, and classify candidate coverage bundles.
+- [x] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S1-01] Inventory the live representative contracts plus `test/unit`, `test/ir`, `test/integration`, and `test/transpile`, and classify candidate coverage bundles.
 - [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S1-02] Freeze the role split between the support matrix and the coverage matrix, together with the definition of 100% contract coverage, in docs/tooling contracts.
 - [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S2-01] Introduce the coverage bundle taxonomy plus a machine-readable manifest/checker so `feature x lane x backend` bundle ownership becomes verifiable.
 - [ ] [ID: P2-BACKEND-CONTRACT-COVERAGE-100-01-S2-02] Connect `test/unit`, `test/ir`, `test/integration`, and `test/transpile` to the coverage bundles and make unmapped suites explicit.
@@ -75,3 +75,4 @@ Validation commands (planned):
 
 Decision log:
 - 2026-03-14: Opened after confirming that `backend-parity-matrix` is a representative support-claim page rather than a full suite inventory, so bundle-based coverage tracking needs to exist as a separate canonical surface.
+- 2026-03-14: Added `backend_contract_coverage_inventory.py`, its checker, and a unit test to lock a first-pass machine-readable inventory for representative seed sources, coverage-bundle taxonomy, live suite families, and unpublished multi-backend fixture seeds (`property_method_call`, `list_bool_index`). `test/unit/link|selfhost|tooling` are currently classified as supporting-only, while `test/unit/common|backends|ir`, `test/ir`, `test/integration`, and `test/transpile` are classified as direct matrix-input candidates.
