@@ -162,12 +162,21 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
             },
         )
         self.assertEqual(
-            by_module["pathlib"]["canonical_lane"],
-            "native/std",
-        )
-        self.assertEqual(
-            by_module["pathlib"]["generated_std_state"],
-            "compare_artifact",
+            by_module["pathlib"],
+            {
+                "module_name": "pathlib",
+                "canonical_lane": "generated/std",
+                "generated_std_state": "canonical_generated",
+                "generated_std_rel": "src/runtime/cs/generated/std/pathlib.cs",
+                "native_rel": "",
+                "canonical_runtime_symbol": "Pytra.CsModule.py_path",
+                "representative_fixture": "test/fixtures/stdlib/pathlib_extended.py",
+                "smoke_guard_needles": (
+                    "def test_representative_pathlib_extended_fixture_transpiles",
+                    "using Path = Pytra.CsModule.py_path;",
+                ),
+                "rationale": "generated/std/pathlib.cs is now the live C# pathlib owner and ships the wrapper-shaped `Pytra.CsModule.py_path` surface directly from generated code without a handwritten native/std owner.",
+            },
         )
         self.assertEqual(
             by_module["math"]["canonical_lane"],
@@ -232,9 +241,9 @@ class CheckNonCppRuntimeLayoutContractTest(unittest.TestCase):
                     "def test_representative_time_import_fixture_transpiles",
                     "Pytra.CsModule.time.perf_counter()",
                 ),
-                "deferred_native_canonical_modules": ("pathlib",),
+                "deferred_native_canonical_modules": (),
                 "deferred_no_runtime_modules": ("random", "re", "argparse", "sys", "timeit", "enum"),
-                "rationale": "time/math/json are now live-generated C# std lanes; `pathlib` remains the last heavier native canonical seam while the remaining std compare artifacts are not yet wired into the live runtime.",
+                "rationale": "time/math/json/pathlib are now live-generated C# std lanes; the remaining C# std migration debt is limited to no-runtime representative modules that still transpile without dedicated runtime owners.",
             },
         )
 

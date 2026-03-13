@@ -2,163 +2,163 @@
 // source: src/pytra/std/pathlib.py
 // generated-by: tools/gen_runtime_from_manifest.py
 
+
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Any = System.Object;
-using int64 = System.Int64;
-using float64 = System.Double;
-using str = System.String;
-using Pytra.CsModule;
-using py_glob = Pytra.CsModule;
-using path = Pytra.CsModule;
+using System.IO;
+using System.Text;
 
-public class Path
+namespace Pytra.CsModule
 {
-    public static readonly long PYTRA_TYPE_ID = Pytra.CsModule.py_runtime.py_register_class_type(Pytra.CsModule.py_runtime.PYTRA_TID_OBJECT);
-    public string _value;
-    
-    public Path(string value)
+    public class py_path
     {
-        this._value = value;
-    }
-    
-    public string __str__()
-    {
-        return this._value;
-    }
-    
-    public string __repr__()
-    {
-        return "Path(" + this._value + ")";
-    }
-    
-    public string __fspath__()
-    {
-        return this._value;
-    }
-    
-    public Path __truediv__(string rhs)
-    {
-        return new Path(path.join(this._value, rhs));
-    }
-    
-    public Path parent()
-    {
-        var parent_txt = path.dirname(this._value);
-        if ((parent_txt) == ("")) {
-            parent_txt = ".";
-        }
-        return new Path(parent_txt);
-    }
-    
-    public System.Collections.Generic.List<Path> parents()
-    {
-        System.Collections.Generic.List<Path> py_out = new System.Collections.Generic.List<Path>();
-        string current = System.Convert.ToString(path.dirname(this._value));
-        while (true) {
-            if ((current) == ("")) {
-                current = ".";
-            }
-            py_out.Add(new Path(current));
-            string next_current = System.Convert.ToString(path.dirname(current));
-            if ((next_current) == ("")) {
-                next_current = ".";
-            }
-            if ((next_current) == (current)) {
-                break;
-            }
-            current = next_current;
-        }
-        return py_out;
-    }
-    
-    public string name()
-    {
-        return path.basename(this._value);
-    }
-    
-    public string suffix()
-    {
-        var __tmp_1 = path.splitext(path.basename(this._value));
-        var _ = __tmp_1.Item1;
-        var ext = __tmp_1.Item2;
-        return ext;
-    }
-    
-    public string stem()
-    {
-        var __tmp_2 = path.splitext(path.basename(this._value));
-        var root = __tmp_2.Item1;
-        var _ = __tmp_2.Item2;
-        return root;
-    }
-    
-    public Path resolve()
-    {
-        return new Path(path.abspath(this._value));
-    }
-    
-    public bool exists()
-    {
-        return path.exists(this._value);
-    }
-    
-    public void mkdir(bool parents = false, bool exist_ok = false)
-    {
-        if (parents) {
-            os.makedirs(this._value, exist_ok);
-            return;
-        }
-        if ((exist_ok) && (path.exists(this._value))) {
-            return;
-        }
-        os.mkdir(this._value);
-    }
-    
-    public string read_text(string encoding = "utf-8")
-    {
-        PyFile f = Pytra.CsModule.py_runtime.open(this._value, "r");
-        try
-        {
-            return f.read();
-        } finally {
-            f.close();
-        }
-    return default(string);
-    }
-    
-    public long write_text(string text, string encoding = "utf-8")
-    {
-        PyFile f = Pytra.CsModule.py_runtime.open(this._value, "w");
-        try
-        {
-            return f.write(text);
-        } finally {
-            f.close();
-        }
-    return default(long);
-    }
-    
-    public System.Collections.Generic.List<Path> glob(string pattern)
-    {
-        System.Collections.Generic.List<string> paths = py_glob.glob(path.join(this._value, pattern));
-        System.Collections.Generic.List<Path> py_out = new System.Collections.Generic.List<Path>();
-        foreach (var p in paths) {
-            py_out.Add(new Path(p));
-        }
-        return py_out;
-    }
-    
-    public static Path cwd()
-    {
-        return new Path(os.getcwd());
-    }
-}
+        public static readonly long PYTRA_TYPE_ID = py_runtime.py_register_class_type(py_runtime.PYTRA_TID_OBJECT);
+        private readonly string _value;
 
-public static class Program
-{
-    public static void Main(string[] args)
-    {
+        public py_path(string value)
+        {
+            _value = value ?? string.Empty;
+        }
+
+        private static string NormalizeParentText(string value)
+        {
+            return string.IsNullOrEmpty(value) ? "." : value;
+        }
+
+        private static Encoding ResolveEncoding(string encoding)
+        {
+            if (string.IsNullOrEmpty(encoding) || encoding == "utf-8")
+            {
+                return new UTF8Encoding(false);
+            }
+            return Encoding.GetEncoding(encoding);
+        }
+
+        public string __str__()
+        {
+            return _value;
+        }
+
+        public string __repr__()
+        {
+            return "Path(" + _value + ")";
+        }
+
+        public string __fspath__()
+        {
+            return _value;
+        }
+
+        public static py_path operator /(py_path lhs, string rhs)
+        {
+            string basePath = lhs == null ? string.Empty : lhs._value;
+            return new py_path(Path.Combine(basePath, rhs ?? string.Empty));
+        }
+
+        public py_path __truediv__(string rhs)
+        {
+            return this / rhs;
+        }
+
+        public py_path parent()
+        {
+            return new py_path(NormalizeParentText(Path.GetDirectoryName(_value)));
+        }
+
+        public List<py_path> parents()
+        {
+            List<py_path> py_out = new List<py_path>();
+            string current = NormalizeParentText(Path.GetDirectoryName(_value));
+            while (true)
+            {
+                py_out.Add(new py_path(current));
+                string nextCurrent = NormalizeParentText(Path.GetDirectoryName(current));
+                if (nextCurrent == current)
+                {
+                    break;
+                }
+                current = nextCurrent;
+            }
+            return py_out;
+        }
+
+        public string name()
+        {
+            return Path.GetFileName(_value) ?? string.Empty;
+        }
+
+        public string suffix()
+        {
+            return Path.GetExtension(name()) ?? string.Empty;
+        }
+
+        public string stem()
+        {
+            return Path.GetFileNameWithoutExtension(name()) ?? string.Empty;
+        }
+
+        public py_path resolve()
+        {
+            string target = string.IsNullOrEmpty(_value) ? "." : _value;
+            return new py_path(Path.GetFullPath(target));
+        }
+
+        public bool exists()
+        {
+            return File.Exists(_value) || Directory.Exists(_value);
+        }
+
+        public void mkdir(bool parents = false, bool exist_ok = false)
+        {
+            try
+            {
+                Directory.CreateDirectory(_value);
+            }
+            catch
+            {
+                if (!exist_ok)
+                {
+                    throw;
+                }
+            }
+        }
+
+        public string read_text(string encoding = "utf-8")
+        {
+            return File.ReadAllText(_value, ResolveEncoding(encoding));
+        }
+
+        public long write_text(string text, string encoding = "utf-8")
+        {
+            string body = text ?? string.Empty;
+            File.WriteAllText(_value, body, ResolveEncoding(encoding));
+            return Convert.ToInt64(body.Length);
+        }
+
+        public List<py_path> glob(string pattern)
+        {
+            List<py_path> py_out = new List<py_path>();
+            string baseDir = string.IsNullOrEmpty(_value) ? "." : _value;
+            if (!Directory.Exists(baseDir))
+            {
+                return py_out;
+            }
+            string searchPattern = string.IsNullOrEmpty(pattern) ? "*" : pattern;
+            foreach (string item in Directory.GetFileSystemEntries(baseDir, searchPattern))
+            {
+                py_out.Add(new py_path(item));
+            }
+            return py_out;
+        }
+
+        public static py_path cwd()
+        {
+            return new py_path(Directory.GetCurrentDirectory());
+        }
+
+        public override string ToString()
+        {
+            return _value;
+        }
     }
 }

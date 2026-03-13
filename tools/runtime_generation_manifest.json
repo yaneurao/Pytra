@@ -632,7 +632,7 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/pathlib.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/pathlib.cs" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/pathlib.cs", "postprocess": "cs_std_pathlib_live_wrapper" },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/pathlib.go",
