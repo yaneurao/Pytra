@@ -7,7 +7,7 @@
 
 背景:
 - `collections.deque` の representative C++ lane は、constructor、`append` / `appendleft`、`popleft` / `pop`、`extendleft(iterable)`、`reverse()`、`len` / truthiness まで `::std::deque<T>` surface に揃った。
-- ただし `rotate()` / `rotate(n)` はまだ `q.rotate(...)` としてそのまま漏れており、`std::deque` に対する valid C++ になっていない。
+- `S1-01` で `q.rotate(...)` の surface leak を固定し、`S2-01` で `rotate()` / `rotate(n)` は valid な `::std::rotate(...)` bundle に揃った。残りは representative smoke と closeout のみ。
 - `clear()`、`extend()`、`reverse()` はすでに valid C++ surface に落ちるため、この task は invalid surface が残る `rotate` subset に限定する。
 
 目的:
@@ -27,7 +27,7 @@
 - C++ runtime に新しい deque object hierarchy を追加すること
 
 受け入れ基準:
-- focused regression で current invalid C++ surface (`q.rotate()`, `q.rotate(1)`, `q.rotate(-1)`) を固定する。
+- focused regression で `rotate()` / `rotate(n)` が valid な `::std::rotate(...)` bundle に揃った状態を固定する。
 - representative C++ lane で `rotate()` / `rotate(n)` は valid な `::std::rotate(...)` bundle に lower される。
 - representative build/run smoke で positive / negative / default rotate の代表 fixture が通る。
 - docs / TODO の ja/en mirror に support scope と非対象が反映される。
@@ -40,10 +40,12 @@
 
 決定ログ:
 - 2026-03-13: `clear()`、`extend()`、`reverse()` はすでに valid C++ に落ちるため、新 task は `rotate` subset のみに限定した。
+- 2026-03-13: `S1-01` として `q.rotate()`, `q.rotate(1)`, `q.rotate(-1)` の current invalid C++ surface を focused regression / TODO / plan で固定した。
+- 2026-03-13: `S2-01` として typed deque owner の `rotate()` / `rotate(n)` を normalized step + `::std::rotate(...)` bundle へ lower した。残りは build/run smoke のみ。
 
 ## 分解
 
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01] `collections.deque.rotate()` representative C++ lane を固定する。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S1-01] current invalid C++ surface (`rotate()`, `rotate(1)`, `rotate(-1)`) を focused regression / TODO / plan で固定する。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S2-01] `rotate()` / `rotate(n)` を valid `::std::rotate(...)` bundle に lower する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S1-01] current invalid C++ surface (`rotate()`, `rotate(1)`, `rotate(-1)`) を focused regression / TODO / plan で固定する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S2-01] `rotate()` / `rotate(n)` を valid `::std::rotate(...)` bundle に lower する。
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S3-01] build/run smoke と support wording を同期して close する。

@@ -5329,7 +5329,7 @@ print(q.popleft())
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             self.assertEqual(run.stdout.strip().splitlines(), ["3", "2", "1"])
 
-    def test_deque_rotate_still_leaks_python_surface_into_cpp(self) -> None:
+    def test_deque_rotate_lowers_to_std_rotate_cpp_surface(self) -> None:
         src = """from collections import deque
 
 q: deque[int] = deque([1, 2, 3])
@@ -5347,10 +5347,10 @@ print(q.popleft())
             cpp,
             r"return ::std::deque<int64>\(__deque_src_\d*\.begin\(\), __deque_src_\d*\.end\(\)\);",
         )
-        self.assertIn("q.rotate();", cpp)
-        self.assertIn("q.rotate(1);", cpp)
-        self.assertIn("q.rotate(-(1));", cpp)
-        self.assertNotIn("::std::rotate(", cpp)
+        self.assertEqual(cpp.count("::std::rotate("), 3)
+        self.assertNotIn("q.rotate();", cpp)
+        self.assertNotIn("q.rotate(1);", cpp)
+        self.assertNotIn("q.rotate(-(1));", cpp)
 
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
         src = """from dataclasses import dataclass, field

@@ -939,6 +939,28 @@ class CppCallEmitter:
         if owner_t.startswith("deque[") and owner_t.endswith("]"):
             if attr == "reverse" and len(args) == 0 and len(kw) == 0:
                 return f"::std::reverse({owner_expr}.begin(), {owner_expr}.end())"
+            if attr == "rotate" and len(kw) == 0 and len(args) <= 1:
+                rotate_expr = "1"
+                if len(args) == 1:
+                    rotate_expr = args[0]
+                rotate_tmp = self.next_tmp("__deque_rotate")
+                size_tmp = self.next_tmp("__deque_size")
+                cut_tmp = self.next_tmp("__deque_cut")
+                return (
+                    "([&]() -> decltype(nullptr) { "
+                    f"if (!{owner_expr}.empty()) {{ "
+                    f"int64 {rotate_tmp} = static_cast<int64>({rotate_expr}); "
+                    f"int64 {size_tmp} = static_cast<int64>({owner_expr}.size()); "
+                    f"{rotate_tmp} %= {size_tmp}; "
+                    f"if ({rotate_tmp} < 0) {rotate_tmp} += {size_tmp}; "
+                    f"if ({rotate_tmp} != 0) {{ "
+                    f"auto {cut_tmp} = {owner_expr}.begin() + ({size_tmp} - {rotate_tmp}); "
+                    f"::std::rotate({owner_expr}.begin(), {cut_tmp}, {owner_expr}.end()); "
+                    "} "
+                    "} "
+                    "return nullptr; "
+                    "}())"
+                )
             if attr == "extendleft" and len(args) == 1 and len(kw) == 0:
                 value_node = arg_nodes[0] if len(arg_nodes) > 0 else {}
                 rendered = self._render_typed_deque_extendleft_call(owner_t, owner_expr, args[0], value_node)

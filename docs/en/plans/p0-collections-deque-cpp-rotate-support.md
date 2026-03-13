@@ -7,7 +7,7 @@ Related TODO:
 
 Background:
 - The representative C++ lane for `collections.deque` now covers the constructor, `append` / `appendleft`, `popleft` / `pop`, `extendleft(iterable)`, `reverse()`, and `len` / truthiness on the `::std::deque<T>` surface.
-- However, `rotate()` / `rotate(n)` still leak directly as `q.rotate(...)`, which is not valid C++ for `std::deque`.
+- `S1-01` locked the `q.rotate(...)` surface leak, and `S2-01` aligned `rotate()` / `rotate(n)` to valid `::std::rotate(...)` bundles. Only the representative smoke and closeout remain.
 - `clear()`, `extend()`, and `reverse()` already lower to valid C++ surfaces, so this task is intentionally limited to the remaining invalid `rotate` subset.
 
 Goal:
@@ -27,7 +27,7 @@ Out of scope:
 - adding a new deque object hierarchy to the C++ runtime
 
 Acceptance criteria:
-- A focused regression locks the current invalid C++ surface (`q.rotate()`, `q.rotate(1)`, `q.rotate(-1)`).
+- A focused regression locks the aligned `rotate()` / `rotate(n)` surface after it lowers to valid `::std::rotate(...)` bundles.
 - In the representative C++ lane, `rotate()` / `rotate(n)` lower to valid `::std::rotate(...)` bundles.
 - Representative build/run smoke passes for default / positive / negative rotate fixtures.
 - The ja/en docs and TODO mirrors reflect the support scope and exclusions.
@@ -40,10 +40,12 @@ Validation commands:
 
 Decision log:
 - 2026-03-13: `clear()`, `extend()`, and `reverse()` already lower to valid C++, so the new task is limited to the `rotate` subset only.
+- 2026-03-13: as `S1-01`, a focused regression now locks the current invalid `q.rotate()`, `q.rotate(1)`, and `q.rotate(-1)` surface in the TODO / plan.
+- 2026-03-13: as `S2-01`, typed deque-owner `rotate()` / `rotate(n)` now lower to normalized-step `::std::rotate(...)` bundles. Only the build/run smoke remains.
 
 ## Breakdown
 
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01] Lock the representative C++ lane for `collections.deque.rotate()`.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S1-01] Lock the current invalid C++ surface (`rotate()`, `rotate(1)`, `rotate(-1)`) in focused regressions / TODO / plan.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S2-01] Lower `rotate()` / `rotate(n)` to valid `::std::rotate(...)` bundles.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S1-01] Lock the current invalid C++ surface (`rotate()`, `rotate(1)`, `rotate(-1)`) in focused regressions / TODO / plan.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S2-01] Lower `rotate()` / `rotate(n)` to valid `::std::rotate(...)` bundles.
 - [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ROTATE-01-S3-01] Sync build/run smoke and support wording, then close the task.
