@@ -15,6 +15,7 @@
 
 ## 完了 plan アーカイブ
 
+- [2026-03-13 / P0-LINK-FACADE-RAW-EAST3-IMPORT-01](../plans/archive/20260313-p0-link-facade-raw-east3-import.md)
 - [2026-03-13 / P0-LINK-FACADE-CPP-VALIDATOR-EXPORT-01](../plans/archive/20260313-p0-link-facade-cpp-validator-export.md)
 - [2026-03-13 / P0-PYTRA-NES-CPP-MINI-REPRO-01](../plans/archive/20260313-p0-pytra-nes-cpp-mini-repro-contract.md)
 - [2026-03-13 / P0-CPP-BACKEND-INPUT-VALIDATOR-ITERTREE-01](../plans/archive/20260313-p0-cpp-backend-input-validator-itertree.md)
@@ -190,7 +191,7 @@
 
 ## 日付別リンク
 
-- [2026-03-13](20260313.md)（17 セクション）
+- [2026-03-13](20260313.md)（18 セクション）
 
 - [2026-03-12](20260312.md)（28 セクション）
 - [2026-03-11](20260311.md)（25 セクション）

@@ -30,11 +30,3 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-### P0: `validate_raw_east3_doc` の external import を `toolchain.link` facade に揃える
-
-- [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01] `toolchain.ir.east3` と focused test からの `validate_raw_east3_doc` import を `toolchain.link` facade 経由へ揃え、external consumer が `toolchain.link.program_validator` へ直接 reach-through しない状態を固定する。
-  - 文脈: [docs/ja/plans/p0-link-facade-raw-east3-import.md](../plans/p0-link-facade-raw-east3-import.md)
-- [x] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S1-01] facade import を要求する focused regression / source contract を追加し、current reach-through import surface を fail-fast に固定する。
-  - 進捗メモ: `test_py2x_entrypoints_contract.py` に `toolchain.ir.east3` の facade import source contract を追加し、`test_frontend_type_expr.py` も facade export を使う focused runtime regression に揃えた。
-- [x] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S2-01] `toolchain.ir.east3` と focused test の import を facade 経由へ切り替え、targeted unit を green に戻す。
-- [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S3-01] TODO / plan / decision log を同期して close 条件を固める。

@@ -36,11 +36,12 @@
 - `git -C /workspace/Pytra diff --check`
 
 分解:
-- [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01] `toolchain.ir.east3` と focused test からの `validate_raw_east3_doc` import を `toolchain.link` facade 経由へ揃え、external consumer が `toolchain.link.program_validator` へ直接 reach-through しない状態を固定する。
+- [x] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01] `toolchain.ir.east3` と focused test からの `validate_raw_east3_doc` import を `toolchain.link` facade 経由へ揃え、external consumer が `toolchain.link.program_validator` へ直接 reach-through しない状態を固定する。
 - [x] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S1-01] facade import を要求する focused regression / source contract を追加し、current reach-through import surface を fail-fast に固定する。
 - [x] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S2-01] `toolchain.ir.east3` と focused test の import を facade 経由へ切り替え、targeted unit を green に戻す。
-- [ ] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S3-01] TODO / plan / decision log を同期して close 条件を固める。
+- [x] [ID: P0-LINK-FACADE-RAW-EAST3-IMPORT-01-S3-01] TODO / plan / decision log を同期して close 条件を固める。
 
 決定ログ:
 - 2026-03-13: TODO 空き後の follow-up P0 として、`validate_raw_east3_doc` の external consumer に残る reach-through import を縮退する task を起票した。`toolchain.link` 内部の import graph には踏み込まず、external surface の統一に限定する。
 - 2026-03-13: `S1-01/S2-01` では `toolchain.ir.east3` を facade import へ切り替えつつ、module-init cycle を避けるため local helper `_validate_raw_east3_via_link()` を置いた。runtime regression は `test_frontend_type_expr.py`、source contract は `test_py2x_entrypoints_contract.py` に固定した。
+- 2026-03-13: `S3-01` では active TODO / plan / archive を同期し、close 条件を「`toolchain.ir.east3` が `toolchain.link` facade から `validate_raw_east3_doc` を引き、`test_frontend_type_expr.py` と `test_py2x_entrypoints_contract.py` が両方 green」に固定した。module-init cycle を避ける local helper 方式はこの task の accepted end state とする。
