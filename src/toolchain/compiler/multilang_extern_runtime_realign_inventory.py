@@ -96,9 +96,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/os.cpp",),
         "noncpp_native_owner_paths": (),
-        "emitter_hardcode_needles": (
-            ("src/backends/lua/emitter/lua_native_emitter.py", 'if mod == "pytra.std.os":'),
-        ),
+        "emitter_hardcode_needles": (),
         "generated_drift_needles": (
             ("src/runtime/rs/generated/std/os.rs", "Python runtime fallback."),
         ),
@@ -118,9 +116,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/os_path.cpp",),
         "noncpp_native_owner_paths": (),
-        "emitter_hardcode_needles": (
-            ("src/backends/lua/emitter/lua_native_emitter.py", 'if mod == "pytra.std.os_path":'),
-        ),
+        "emitter_hardcode_needles": (),
         "generated_drift_needles": (
             ("src/runtime/rs/generated/std/os_path.rs", "Python runtime fallback."),
         ),
@@ -140,9 +136,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/sys.cpp",),
         "noncpp_native_owner_paths": (),
-        "emitter_hardcode_needles": (
-            ("src/backends/lua/emitter/lua_native_emitter.py", 'if mod == "pytra.std.sys":'),
-        ),
+        "emitter_hardcode_needles": (),
         "generated_drift_needles": (
             ("src/runtime/js/generated/std/sys.js", "process.argv"),
             ("src/runtime/ts/generated/std/sys.ts", "process.argv"),
@@ -163,9 +157,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/glob.cpp",),
         "noncpp_native_owner_paths": (),
-        "emitter_hardcode_needles": (
-            ("src/backends/lua/emitter/lua_native_emitter.py", 'if mod == "pytra.std.glob":'),
-        ),
+        "emitter_hardcode_needles": (),
         "generated_drift_needles": (
             ("src/runtime/rs/generated/std/glob.rs", "Python runtime fallback."),
         ),

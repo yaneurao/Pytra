@@ -109,6 +109,25 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         }
         self.assertEqual(by_id["std/time"]["emitter_hardcode_needles"], ())
 
+    def test_lua_stdlib_inventory_has_no_module_specific_hardcodes(self) -> None:
+        by_id = {
+            row["module_id"]: row
+            for row in inventory_mod.iter_multilang_extern_runtime_realign_inventory()
+        }
+        for module_id in ("std/os", "std/os_path", "std/sys", "std/glob"):
+            with self.subTest(module_id=module_id):
+                self.assertEqual(by_id[module_id]["emitter_hardcode_needles"], ())
+
+    def test_lua_stdlib_inventory_rows_have_no_module_specific_hardcodes(self) -> None:
+        by_id = {
+            row["module_id"]: row
+            for row in inventory_mod.iter_multilang_extern_runtime_realign_inventory()
+        }
+        self.assertEqual(by_id["std/os"]["emitter_hardcode_needles"], ())
+        self.assertEqual(by_id["std/os_path"]["emitter_hardcode_needles"], ())
+        self.assertEqual(by_id["std/sys"]["emitter_hardcode_needles"], ())
+        self.assertEqual(by_id["std/glob"]["emitter_hardcode_needles"], ())
+
     def test_io_ops_inventory_has_no_module_specific_hardcodes(self) -> None:
         by_id = {
             row["module_id"]: row
