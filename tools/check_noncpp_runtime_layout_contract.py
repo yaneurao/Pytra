@@ -417,6 +417,37 @@ def _collect_rust_lane_issues() -> list[str]:
                 issues.append(f"no_runtime_module must not set generated path: rs:{module_name}")
             if f"src/runtime/rs/generated/std/{module_name}.rs" in manifest_text:
                 issues.append(f"no_runtime_module unexpectedly owns an rs generated std target: {module_name}")
+        elif generated_state == "canonical_generated":
+            if generated_rel == "":
+                issues.append(f"canonical_generated lane missing generated path: rs:{module_name}")
+            elif not (ROOT / generated_rel).exists():
+                issues.append(f"missing canonical generated artifact: rs:{module_name}: {generated_rel}")
+            else:
+                generated_text = _load_text(ROOT / generated_rel)
+                if "generated-by: tools/gen_runtime_from_manifest.py" not in generated_text:
+                    issues.append(f"canonical generated artifact missing marker: rs:{module_name}: {generated_rel}")
+                if module_name == "time":
+                    if "pub fn perf_counter() -> f64 {" not in generated_text:
+                        issues.append("canonical generated Rust time lane lost the perf_counter wrapper")
+                    if "crate::py_runtime::perf_counter()" not in generated_text:
+                        issues.append("canonical generated Rust time lane no longer targets the runtime scaffold seam")
+                    if "__t." in generated_text or "py_extern(" in generated_text:
+                        issues.append("canonical generated Rust time lane still contains extern/runtime residue")
+                if module_name == "math":
+                    for needle in (
+                        "pub const pi: f64 = ::std::f64::consts::PI;",
+                        "pub const e: f64 = ::std::f64::consts::E;",
+                        "pub trait ToF64 {",
+                        "pub fn sqrt<T: ToF64>(v: T) -> f64 {",
+                        "pub fn floor<T: ToF64>(v: T) -> f64 {",
+                        "pub fn pow(a: f64, b: f64) -> f64 {",
+                    ):
+                        if needle not in generated_text:
+                            issues.append(f"canonical generated Rust math lane lost live wrapper shape: {needle}")
+                    if "__m." in generated_text or "py_extern(" in generated_text:
+                        issues.append("canonical generated Rust math lane still contains extern/runtime residue")
+            if generated_rel not in manifest_text:
+                issues.append(f"manifest missing canonical Rust std output path: {module_name}")
         else:
             issues.append(f"unknown Rust generated state: {module_name}: {generated_state}")
 
@@ -431,6 +462,21 @@ def _collect_rust_lane_issues() -> list[str]:
                 issues.append(f"generated compare artifact leaked into Rust runtime hook: {module_name}")
             if entry["canonical_runtime_symbol"] not in runtime_scaffold_text:
                 issues.append(f"Rust scaffold missing canonical runtime symbol: {module_name}")
+        elif canonical_lane == "generated/std":
+            if generated_rel == "":
+                issues.append(f"generated/std lane missing generated path: rs:{module_name}")
+            elif generated_rel.replace("src/", "") not in backend_registry_text:
+                issues.append(f"generated/std lane missing from Rust runtime hook: {module_name}")
+            if native_rel == "":
+                issues.append(f"generated/std lane missing native substrate path: rs:{module_name}")
+            elif native_rel.replace("src/", "") not in backend_registry_text:
+                issues.append(f"generated/std substrate missing from Rust runtime hook: {module_name}")
+            if entry["canonical_runtime_symbol"] not in runtime_scaffold_text:
+                issues.append(f"Rust scaffold missing generated/std runtime symbol: {module_name}")
+            if module_name == "time" and "pub use super::super::time;" not in runtime_scaffold_text:
+                issues.append("Rust scaffold lost the pytra::std::time re-export")
+            if module_name == "math" and "pub use super::super::math;" not in runtime_scaffold_text:
+                issues.append("Rust scaffold lost the pytra::std::math re-export")
         elif canonical_lane == "no_runtime_module":
             if native_rel != "":
                 issues.append(f"no_runtime_module must not set native path: rs:{module_name}")

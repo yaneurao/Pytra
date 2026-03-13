@@ -145,21 +145,14 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
             "std/argparse",
             "std/glob",
             "std/json",
-            "std/math",
             "std/os",
             "std/os_path",
             "std/pathlib",
             "std/random",
             "std/re",
             "std/sys",
-            "std/time",
             "std/timeit",
         ),
-    },
-    {
-        "backend": "rs",
-        "legacy_state": "native_canonical",
-        "modules": ("std/math", "std/time"),
     },
 )
 

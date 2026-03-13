@@ -559,7 +559,7 @@
       "source": "src/pytra/std/time.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/time.rs" },
+        { "target": "rs", "output": "src/runtime/rs/generated/std/time.rs", "postprocess": "rs_std_time_live_wrapper" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/time.cs", "postprocess": "cs_std_time_live_wrapper" },
         {
           "target": "go",
@@ -667,7 +667,7 @@
       "source": "src/pytra/std/math.py",
       "bucket": "std",
       "targets": [
-        { "target": "rs", "output": "src/runtime/rs/generated/std/math.rs" },
+        { "target": "rs", "output": "src/runtime/rs/generated/std/math.rs", "postprocess": "rs_std_math_live_wrapper" },
         { "target": "cs", "output": "src/runtime/cs/generated/std/math.cs", "postprocess": "cs_std_math_live_wrapper" },
         {
           "target": "go",
