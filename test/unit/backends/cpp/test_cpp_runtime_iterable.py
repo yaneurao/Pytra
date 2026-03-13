@@ -664,11 +664,11 @@ int main() {
         self.assertNotIn("py_append(", string_ops_cpp)
         self.assertNotIn("py_append(", zip_ops_header)
         self.assertNotIn("py_append(out,", iter_ops_cpp)
-        self.assertIn("object out = object_new<PyListObj>(list<object>{});", iter_ops_cpp)
+        self.assertIn("list<object> out = list<object>{};", iter_ops_cpp)
         self.assertIn("out.append(this->_parse_value());", json_cpp)
-        self.assertIn('py_list_append_mut(obj_to_list_ref_or_raise(out, "append"), make_object(py_at(values, py_to<int64>(i))));', iter_ops_cpp)
+        self.assertIn("out.append(make_object(py_at(values, py_to<int64>(i))));", iter_ops_cpp)
         self.assertIn(
-            'py_list_append_mut(obj_to_list_ref_or_raise(out, "append"), make_object(list<object>{make_object(start + i), make_object(py_at(values, py_to<int64>(i)))}));',
+            "out.append(make_object(list<object>{make_object(start + i), make_object(py_at(values, py_to<int64>(i)))}));",
             iter_ops_cpp,
         )
         self.assertNotIn("static inline bool operator==(const ::std::any& lhs, const char* rhs)", runtime_header)

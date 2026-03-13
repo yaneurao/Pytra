@@ -8,7 +8,7 @@ Related TODO:
 Background:
 - `docs/ja/plans/archive/20260312-p5-cpp-pyruntime-residual-thin-seam-shrink.md` already classified the residual seams in `py_runtime.h` into `py_append(object& ...)` plus the shared `type_id` thin seam, but it only fixed the shrink order and did not execute the next reduction pass.
 - Even so, `src/runtime/cpp/native/core/py_runtime.h` is still 1287 lines as of 2026-03-14, with large blocks for object-bridge compatibility, generic `make_object` / `py_to`, and typed-collection fallback behavior.
-- The current callers still show the residual shape: the `sample/cpp` `py_append(` bucket is now retired, but `src/runtime/cpp/generated/**` still emits object-bridge patterns such as `py_at(values, py_to<int64>(i))` and `obj_to_list_ref_or_raise(out, "append")`, and the samples still retain a generic-index bucket.
+- The current callers still show the residual shape: the `sample/cpp` `py_append(` bucket is retired and the generated object-list bridge is gone, but both generated/runtime and sample code still retain generic-index buckets.
 - As `src/runtime/cpp/generated/core/README.md` already states, `generated/core` must not become a dump bucket for `py_runtime.h` bloat. The next shrink therefore has to happen by pushing typed fallback behavior upstream, not by splitting the header.
 
 Objective:
@@ -80,3 +80,4 @@ Decision log:
 - 2026-03-14: As the fourth `S2-02` bundle, moved the token/parser/benchmark helpers in `18_mini_language_interpreter` onto direct typed append / size lanes, reducing the `sample_cpp_py_append_sites` baseline from `34 -> 7`. The remaining sample bucket now concentrates in the tuple/frame helper lane inside `13_maze_generation_steps`.
 - 2026-03-14: As the fifth `S2-02` bundle, retired the last `py_append(` residuals from `sample/cpp` and removed `sample_cpp_py_append_sites` from the inventory. The sample-side typed residual now consists only of the generic-index `py_at(...py_to<int64>)` bucket.
 - 2026-03-14: As the sixth `S2-02` bundle, rewrote `src/pytra/built_in/predicates.py` from object indexing loops onto the iterator lane, shrinking the `generated_runtime_generic_index_sites` baseline from `46 -> 44`. The remaining sites now concentrate in `iter_ops`, `type_id`, `std/*`, and `utils/png`.
+- 2026-03-14: As the seventh `S2-02` bundle, allowed `list[object]` to stay on the C++ `pyobj` value-model lane, lifted `src/pytra/built_in/iter_ops.py` to return `list[object]`, and retired `generated_runtime_object_list_bridge_sites`. The typed-lane residual buckets are now down to emitter 1 / generated 1 / sample 1.

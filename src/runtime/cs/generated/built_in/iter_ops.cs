@@ -14,7 +14,7 @@ namespace Pytra.CsModule
 {
     public static class iter_ops_helper
     {
-        public static object py_reversed_object(object values)
+        public static System.Collections.Generic.List<object> py_reversed_object(object values)
         {
             System.Collections.Generic.List<object> py_out = new System.Collections.Generic.List<object>();
             long i = (values).Count() - 1;
@@ -25,7 +25,7 @@ namespace Pytra.CsModule
             return py_out;
         }
 
-        public static object py_enumerate_object(object values, long start = 0)
+        public static System.Collections.Generic.List<object> py_enumerate_object(object values, long start = 0)
         {
             System.Collections.Generic.List<object> py_out = new System.Collections.Generic.List<object>();
             long i = 0;

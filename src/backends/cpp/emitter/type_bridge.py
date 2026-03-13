@@ -113,6 +113,8 @@ class CppTypeBridgeEmitter:
         if len(list_inner) != 1:
             return False
         elem_t = self.normalize_type_name(list_inner[0])
+        if elem_t == "object":
+            return True
         if not self._is_concrete_type_for_typed_list(elem_t):
             return False
         return True
@@ -143,6 +145,8 @@ class CppTypeBridgeEmitter:
         if len(list_inner) != 1:
             return True
         elem_t = self.normalize_type_name(list_inner[0])
+        if elem_t == "object":
+            return False
         # list[RefClass] は pyobj モデルでも typed container へ寄せる。
         if elem_t in self.ref_classes:
             return False

@@ -10,23 +10,23 @@
 
 /* Pure-Python source-of-truth for object-based iterator helpers. */
 
-object py_reversed_object(const object& values) {
-    object out = object_new<PyListObj>(list<object>{});
+list<object> py_reversed_object(const object& values) {
+    list<object> out = list<object>{};
     int64 i = py_len(values) - 1;
     while (i >= 0) {
-        py_list_append_mut(obj_to_list_ref_or_raise(out, "append"), make_object(py_at(values, py_to<int64>(i))));
+        out.append(make_object(py_at(values, py_to<int64>(i))));
         i--;
     }
-    return make_object(out);
+    return out;
 }
 
-object py_enumerate_object(const object& values, int64 start) {
-    object out = object_new<PyListObj>(list<object>{});
+list<object> py_enumerate_object(const object& values, int64 start) {
+    list<object> out = list<object>{};
     int64 i = 0;
     int64 n = py_len(values);
     while (i < n) {
-        py_list_append_mut(obj_to_list_ref_or_raise(out, "append"), make_object(list<object>{make_object(start + i), make_object(py_at(values, py_to<int64>(i)))}));
+        out.append(make_object(list<object>{make_object(start + i), make_object(py_at(values, py_to<int64>(i)))}));
         i++;
     }
-    return make_object(out);
+    return out;
 }

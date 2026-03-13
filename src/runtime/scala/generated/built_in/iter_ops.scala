@@ -7,7 +7,7 @@ import scala.util.boundary, boundary.break
 import java.nio.file.{Files, Paths}
 
 
-def py_reversed_object(values: Any): Any = {
+def py_reversed_object(values: Any): mutable.ArrayBuffer[Any] = {
     var out: mutable.ArrayBuffer[Any] = __pytra_as_list(mutable.ArrayBuffer[Any]())
     var i: Long = (__pytra_len(values) - 1L)
     while (i >= 0L) {
@@ -17,7 +17,7 @@ def py_reversed_object(values: Any): Any = {
     return out
 }
 
-def py_enumerate_object(values: Any, start: Long): Any = {
+def py_enumerate_object(values: Any, start: Long): mutable.ArrayBuffer[Any] = {
     var out: mutable.ArrayBuffer[Any] = __pytra_as_list(mutable.ArrayBuffer[Any]())
     var i: Long = 0L
     var n: Long = __pytra_int(__pytra_len(values))

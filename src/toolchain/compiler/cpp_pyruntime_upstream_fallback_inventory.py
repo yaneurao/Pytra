@@ -224,26 +224,6 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_INVENTORY_V1: Final[
         "notes": "Emitter now centralizes object-list bridge rendering in the helper definition only.",
     },
     {
-        "inventory_id": "generated_runtime_object_list_bridge_sites",
-        "bucket": "generated_runtime_residual",
-        "scope_rel": "src/runtime/cpp/generated",
-        "matcher_kind": "literal",
-        "needle": "obj_to_list_ref_or_raise(",
-        "expected_count": 2,
-        "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-02",
-        "evidence_refs": (
-            {
-                "relpath": "src/runtime/cpp/generated/built_in/iter_ops.cpp",
-                "needle": 'py_list_append_mut(obj_to_list_ref_or_raise(out, "append"), make_object(py_at(values, py_to<int64>(i))));',
-            },
-            {
-                "relpath": "src/runtime/cpp/generated/built_in/iter_ops.cpp",
-                "needle": 'py_list_append_mut(obj_to_list_ref_or_raise(out, "append"), make_object(list<object>{make_object(start + i), make_object(py_at(values, py_to<int64>(i)))}));',
-            },
-        ),
-        "notes": "Generated iter runtime still appends through an object-list bridge.",
-    },
-    {
         "inventory_id": "generated_runtime_generic_index_sites",
         "bucket": "generated_runtime_residual",
         "scope_rel": "src/runtime/cpp/generated",

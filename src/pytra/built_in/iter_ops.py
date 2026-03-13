@@ -1,7 +1,7 @@
 """Pure-Python source-of-truth for object-based iterator helpers."""
 
 
-def py_reversed_object(values: object) -> object:
+def py_reversed_object(values: object) -> list[object]:
     out: list[object] = []
     i = len(values) - 1
     while i >= 0:
@@ -10,7 +10,7 @@ def py_reversed_object(values: object) -> object:
     return out
 
 
-def py_enumerate_object(values: object, start: int = 0) -> object:
+def py_enumerate_object(values: object, start: int = 0) -> list[object]:
     out: list[object] = []
     i = 0
     n = len(values)

@@ -7,8 +7,8 @@
 
 #include "runtime/cpp/native/core/py_types.h"
 
-object py_reversed_object(const object& values);
-object py_enumerate_object(const object& values, int64 start = 0);
+list<object> py_reversed_object(const object& values);
+list<object> py_enumerate_object(const object& values, int64 start = 0);
 
 #include "runtime/cpp/native/built_in/iter_ops.h"
 

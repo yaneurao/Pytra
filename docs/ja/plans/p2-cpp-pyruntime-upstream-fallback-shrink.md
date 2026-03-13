@@ -8,7 +8,7 @@
 背景:
 - `docs/ja/plans/archive/20260312-p5-cpp-pyruntime-residual-thin-seam-shrink.md` では、`py_runtime.h` の residual seam を `py_append(object& ...)` と shared `type_id` thin seam に分類し、縮退順だけを固定した。
 - しかし `src/runtime/cpp/native/core/py_runtime.h` 自体は 2026-03-14 時点で 1287 行あり、まだ object bridge 互換、generic `make_object` / `py_to`、typed collection fallback が大きな塊として残っている。
-- 現行 caller を見ると、`sample/cpp` の `py_append(` bucket は retire 済みだが、`src/runtime/cpp/generated/**` には `py_at(values, py_to<int64>(i))`、`obj_to_list_ref_or_raise(out, "append")` のような object-bridge 依存が残り、sample 側にも generic index bucket が残っている。
+- 現行 caller を見ると、`sample/cpp` の `py_append(` bucket は retire 済みで、`src/runtime/cpp/generated/**` 側も object-list bridge は除去できたが、generated / sample の両方に generic index bucket が残っている。
 - `src/runtime/cpp/generated/core/README.md` が明示する通り、`generated/core` は `py_runtime.h` の肥大化逃がし用 bucket ではない。したがって、単なる物理分割ではなく、typed lane で upstream に押し戻せる fallback を減らす必要がある。
 
 目的:
@@ -80,3 +80,4 @@
 - 2026-03-14: `S2-02` の fourth bundle として `18_mini_language_interpreter` の token/parser/benchmark helper を direct typed append / size lane に寄せ、`sample_cpp_py_append_sites` baseline を `34 -> 7` に更新した。sample 側の残 bucket は `13_maze_generation_steps` の tuple/frame helper lane に集中している。
 - 2026-03-14: `S2-02` の fifth bundle として `sample/cpp` の最後の `py_append(` residual を retire し、`sample_cpp_py_append_sites` を inventory から除去した。sample 側の typed residual は `py_at(...py_to<int64>)` の generic index bucket だけになった。
 - 2026-03-14: `S2-02` の sixth bundle として `src/pytra/built_in/predicates.py` を object index loop から iterator lane へ寄せ、`generated_runtime_generic_index_sites` baseline を `46 -> 44` に縮退させた。残件は `iter_ops`, `type_id`, `std/*`, `utils/png` に集中している。
+- 2026-03-14: `S2-02` の seventh bundle として `list[object]` を C++ `pyobj` lane でも value-model list として扱えるようにし、`src/pytra/built_in/iter_ops.py` の戻り型を `list[object]` へ引き上げて `generated_runtime_object_list_bridge_sites` を retire した。typed-lane residual の bucket 数は emitter 1 / generated 1 / sample 1 になった。

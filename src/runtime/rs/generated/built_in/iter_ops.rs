@@ -3,10 +3,10 @@
 // generated-by: tools/gen_runtime_from_manifest.py
 
 mod py_runtime;
-pub use crate::py_runtime::{math, pytra, time};
+pub use crate::py_runtime::{pytra};
 use crate::py_runtime::*;
 
-fn py_reversed_object(values: PyAny) -> PyAny {
+fn py_reversed_object(values: PyAny) -> Vec<PyAny> {
     let mut out: Vec<PyAny> = vec![];
     let mut i = (match &values { PyAny::Str(s) => s.len() as i64, PyAny::Dict(d) => d.len() as i64, PyAny::List(xs) => xs.len() as i64, PyAny::Set(xs) => xs.len() as i64, PyAny::None => 0, _ => 0 }) - 1;
     while i >= 0 {
@@ -16,7 +16,7 @@ fn py_reversed_object(values: PyAny) -> PyAny {
     return out;
 }
 
-fn py_enumerate_object(values: PyAny, start: i64) -> PyAny {
+fn py_enumerate_object(values: PyAny, start: i64) -> Vec<PyAny> {
     let mut out: Vec<PyAny> = vec![];
     let mut i = 0;
     let n = (match &values { PyAny::Str(s) => s.len() as i64, PyAny::Dict(d) => d.len() as i64, PyAny::List(xs) => xs.len() as i64, PyAny::Set(xs) => xs.len() as i64, PyAny::None => 0, _ => 0 });

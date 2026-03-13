@@ -7,7 +7,7 @@ public final class iter_ops {
     }
 
 
-    public static Object py_reversed_object(Object values) {
+    public static java.util.ArrayList<Object> py_reversed_object(Object values) {
         java.util.ArrayList<Object> out = new java.util.ArrayList<Object>();
         long i = PyRuntime.__pytra_len(values) - 1L;
         while (((i) >= (0L))) {
@@ -17,7 +17,7 @@ public final class iter_ops {
         return out;
     }
 
-    public static Object py_enumerate_object(Object values, long start) {
+    public static java.util.ArrayList<Object> py_enumerate_object(Object values, long start) {
         java.util.ArrayList<Object> out = new java.util.ArrayList<Object>();
         long i = 0L;
         long n = PyRuntime.__pytra_len(values);
