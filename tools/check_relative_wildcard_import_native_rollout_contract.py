@@ -52,7 +52,7 @@ def validate_relative_wildcard_import_native_rollout_contract() -> None:
             "relative wildcard import native backend inventory drifted: "
             f"expected={EXPECTED_BACKENDS}, got={seen}"
         )
-    transpile_bundle = {"go", "java", "kotlin", "nim", "scala", "swift"}
+    transpile_bundle = {"go", "java", "kotlin", "lua", "nim", "php", "ruby", "scala", "swift"}
     for row in RELATIVE_WILDCARD_IMPORT_NATIVE_BACKENDS_V1:
         expected_state = (
             "transpile_smoke_locked"
@@ -97,8 +97,8 @@ def validate_relative_wildcard_import_native_rollout_contract() -> None:
         != "backend_specific_fail_closed"
     ):
         raise SystemExit("relative wildcard import native fail-closed lane drifted")
-    if RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["current_bundle_id"] != "jvm_package_bundle":
-        raise SystemExit("relative wildcard import native current bundle id must stay jvm_package_bundle")
+    if RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["current_bundle_id"] != "longtail_native_bundle":
+        raise SystemExit("relative wildcard import native current bundle id must stay longtail_native_bundle")
     if RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["current_contract_state"] != "transpile_smoke_locked":
         raise SystemExit(
             "relative wildcard import native handoff contract state must stay transpile_smoke_locked"

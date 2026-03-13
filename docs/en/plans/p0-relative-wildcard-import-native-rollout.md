@@ -44,6 +44,7 @@ Decision log:
 - 2026-03-13: `S1-01` / `S1-02` fixed the rollout bundles, evidence lanes, and current fail-closed inventory in a contract/checker/unit-test trio. The next step is to make the `go/nim/swift` native-path bundle green.
 - 2026-03-13: `go/nim/swift` now rely on backend-only emitter changes: the single-file `load_east3_document(...)` lane stays fail-closed, while the module-graph `build_module_east_map(...)` lane goes green via wildcard-expanded `meta.import_symbols`. Next is the `java/kotlin/scala` package-project bundle.
 - 2026-03-13: `java/kotlin/scala` now also keep the single-file `load_east3_document(...)` lane fail-closed, while the module-graph `build_module_east_map(...)` lane goes green for the representative package bundle through wildcard-expanded `meta.import_symbols`. Next is the `lua/php/ruby` long-tail bundle.
+- 2026-03-14: `lua/php/ruby` also keep the single-file `load_east3_document(...)` lane fail-closed, while the module-graph `build_module_east_map(...)` lane now goes green for the representative long-tail bundle through wildcard-expanded `meta.import_symbols`. Only docs / parity sync remain.
 
 ## Breakdown
 
@@ -51,5 +52,5 @@ Decision log:
 - [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S1-02] Lock the current fail-closed backend inventory and evidence lanes with a contract / checker / unit test.
 - [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-01] Make the `go/nim/swift` native-path bundle green for representative relative wildcard imports.
 - [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-02] Make the `java/kotlin/scala` package-project bundle green for representative relative wildcard imports.
-- [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-03] Make the `lua/php/ruby` long-tail native-emitter bundle green for representative relative wildcard imports.
+- [x] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S2-03] Make the `lua/php/ruby` long-tail native-emitter bundle green for representative relative wildcard imports.
 - [ ] [ID: P0-RELATIVE-WILDCARD-IMPORT-NATIVE-01-S3-01] Sync backend coverage / parity docs / TODO to the final state and close the task.

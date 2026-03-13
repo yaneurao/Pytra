@@ -44,10 +44,10 @@ class RelativeWildcardImportNativeRolloutContractTest(unittest.TestCase):
                 "go": "transpile_smoke_locked",
                 "java": "transpile_smoke_locked",
                 "kotlin": "transpile_smoke_locked",
-                "lua": "fail_closed_locked",
+                "lua": "transpile_smoke_locked",
                 "nim": "transpile_smoke_locked",
-                "php": "fail_closed_locked",
-                "ruby": "fail_closed_locked",
+                "php": "transpile_smoke_locked",
+                "ruby": "transpile_smoke_locked",
                 "scala": "transpile_smoke_locked",
                 "swift": "transpile_smoke_locked",
             },
@@ -68,7 +68,7 @@ class RelativeWildcardImportNativeRolloutContractTest(unittest.TestCase):
     def test_current_bundle_state_tracks_native_path_rollout(self) -> None:
         self.assertEqual(
             RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["current_bundle_id"],
-            "jvm_package_bundle",
+            "longtail_native_bundle",
         )
         self.assertEqual(
             RELATIVE_WILDCARD_IMPORT_NATIVE_HANDOFF_V1["current_bundle_state"],

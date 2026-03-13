@@ -27,6 +27,7 @@ from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 from relative_import_longtail_smoke_support import (
+    transpile_relative_import_longtail_via_module_graph,
     transpile_relative_import_longtail_project,
     transpile_relative_import_longtail_expect_failure,
 )
@@ -179,6 +180,15 @@ class Py2RbSmokeTest(unittest.TestCase):
         )
         self.assertIn("unsupported relative import form: wildcard import", err)
         self.assertIn("ruby native emitter", err)
+
+    def test_cli_relative_import_support_rollout_module_graph_wildcard_for_ruby(self) -> None:
+        ruby = transpile_relative_import_longtail_via_module_graph(
+            target="ruby",
+            import_form="from ..helper import *",
+            body_text="def call() -> int:\n    return f()\n",
+        )
+        self.assertIn("helper_f()", ruby)
+        self.assertNotIn("unsupported relative import form: wildcard import", ruby)
 
     def test_module_leading_comments_are_emitted(self) -> None:
         sample = ROOT / "sample" / "py" / "01_mandelbrot.py"

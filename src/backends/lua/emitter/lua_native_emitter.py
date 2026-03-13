@@ -71,8 +71,11 @@ def _relative_import_module_path(module_id: str) -> str:
     return ".".join(parts)
 
 
-def _collect_relative_import_name_aliases(body: list[Any]) -> dict[str, str]:
+def _collect_relative_import_name_aliases(east_doc: dict[str, Any]) -> dict[str, str]:
     aliases: dict[str, str] = {}
+    body_any = east_doc.get("body")
+    body = body_any if isinstance(body_any, list) else []
+    wildcard_modules: dict[str, str] = {}
     i = 0
     while i < len(body):
         stmt = body[i]
@@ -101,9 +104,11 @@ def _collect_relative_import_name_aliases(body: list[Any]) -> dict[str, str]:
                 j += 1
                 continue
             if name == "*":
-                raise RuntimeError(
-                    "lua native emitter: unsupported relative import form: wildcard import"
-                )
+                wildcard_module = module_path if module_path != "" else _relative_import_module_path(module_id)
+                if wildcard_module != "":
+                    wildcard_modules[wildcard_module] = wildcard_module
+                j += 1
+                continue
             asname_any = ent.get("asname")
             local_name = asname_any if isinstance(asname_any, str) and asname_any != "" else name
             local_rendered = _safe_ident(local_name, "value")
@@ -113,6 +118,39 @@ def _collect_relative_import_name_aliases(body: list[Any]) -> dict[str, str]:
             )
             j += 1
         i += 1
+    if len(wildcard_modules) == 0:
+        return aliases
+    meta_any = east_doc.get("meta")
+    meta = meta_any if isinstance(meta_any, dict) else {}
+    import_symbols_any = meta.get("import_symbols")
+    import_symbols = import_symbols_any if isinstance(import_symbols_any, dict) else {}
+    wildcard_resolved: dict[str, bool] = {module_id: False for module_id in wildcard_modules}
+    for local_name_any, binding_any in import_symbols.items():
+        if not isinstance(local_name_any, str) or local_name_any == "":
+            continue
+        if not isinstance(binding_any, dict):
+            continue
+        binding_module_any = binding_any.get("module")
+        binding_symbol_any = binding_any.get("name")
+        binding_module = (
+            _relative_import_module_path(binding_module_any)
+            if isinstance(binding_module_any, str)
+            else ""
+        )
+        binding_symbol = binding_symbol_any if isinstance(binding_symbol_any, str) else ""
+        if binding_module not in wildcard_resolved or binding_symbol == "":
+            continue
+        local_rendered = _safe_ident(local_name_any, "value")
+        target_name = _safe_ident(binding_symbol, "value")
+        aliases[local_rendered] = (
+            target_name if binding_module == "" else binding_module + "." + target_name
+        )
+        wildcard_resolved[binding_module] = True
+    unresolved = [module_id for module_id, resolved in wildcard_resolved.items() if not resolved]
+    if len(unresolved) > 0:
+        raise RuntimeError(
+            "lua native emitter: unsupported relative import form: wildcard import"
+        )
     return aliases
 
 
@@ -737,7 +775,7 @@ class LuaNativeEmitter:
         self.class_names = set()
         self.imported_modules = set()
         self.function_names = set()
-        self.relative_import_name_aliases = _collect_relative_import_name_aliases(body)
+        self.relative_import_name_aliases = _collect_relative_import_name_aliases(self.east_doc)
         for stmt in body:
             kind = stmt.get("kind")
             if kind == "ClassDef":
@@ -2162,5 +2200,4 @@ def transpile_to_lua_native(east_doc: dict[str, Any]) -> str:
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Lua backend")
     reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Lua backend")
     body_any = east_doc.get("body") if isinstance(east_doc, dict) else None
-    _reject_unsupported_relative_import_forms(body_any)
     return LuaNativeEmitter(east_doc).transpile()

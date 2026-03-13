@@ -30,6 +30,7 @@ from comment_fidelity import assert_no_generated_comments
 from relative_import_longtail_smoke_support import (
     relative_import_longtail_expected_rewrite,
     relative_import_longtail_scenarios,
+    transpile_relative_import_longtail_via_module_graph,
     transpile_relative_import_longtail_project,
     transpile_relative_import_longtail_expect_failure,
 )
@@ -267,6 +268,15 @@ class Py2LuaSmokeTest(unittest.TestCase):
         )
         self.assertIn("unsupported relative import form: wildcard import", err)
         self.assertIn("lua native emitter", err)
+
+    def test_cli_relative_import_support_rollout_module_graph_wildcard_for_lua(self) -> None:
+        lua = transpile_relative_import_longtail_via_module_graph(
+            target="lua",
+            import_form="from ..helper import *",
+            body_text="def call() -> int:\n    return f()\n",
+        )
+        self.assertIn("helper.f()", lua)
+        self.assertNotIn("unsupported relative import form: wildcard import", lua)
 
     def test_module_leading_comments_are_emitted(self) -> None:
         with tempfile.TemporaryDirectory() as td:
