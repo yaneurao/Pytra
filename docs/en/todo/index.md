@@ -31,4 +31,4 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 
-There are no unfinished tasks right now.
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01] Lock the representative C++ lane for `collections.deque` iterable construction / `extendleft`. Progress: `S1-01` added a baseline regression for the current invalid `deque(iterable)` / `extendleft(iterable)` surface. Next is constructor lowering. Context: [p0-collections-deque-cpp-iterable-support.md](../plans/p0-collections-deque-cpp-iterable-support.md)

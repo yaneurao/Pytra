@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-現時点で未完了タスクはありません。
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01] `collections.deque` iterable constructor / `extendleft` representative C++ lane を固定する。進捗: `S1-01` で `deque(iterable)` / `extendleft(iterable)` の current invalid C++ surface regression を追加済み。次は constructor lowering。文脈: [p0-collections-deque-cpp-iterable-support.md](../plans/p0-collections-deque-cpp-iterable-support.md)

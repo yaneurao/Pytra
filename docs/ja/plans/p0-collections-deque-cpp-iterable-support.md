@@ -1,0 +1,51 @@
+# P0: `collections.deque` iterable constructor / extendleft representative C++ support
+
+最終更新: 2026-03-13
+
+関連 TODO:
+- `docs/ja/todo/index.md` の `ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01`
+
+背景:
+- `collections.deque` の representative C++ lane は、zero-arg constructor、`append` / `appendleft`、`popleft` / `pop`、`len` / truthiness まで揃った。
+- ただし iterable-based surface はまだ未完了で、`deque([1, 2])` は `q = deque(list<int64>{1, 2});`、`extendleft([3, 4])` は `q.extendleft(list<int64>{3, 4});` として出力される。
+- `extend([...])` はすでに `insert(end, begin, end)` へ lower されるため、この task は invalid C++ surface が残る constructor / left-extend bundle に絞る。
+
+目的:
+- representative C++ lane で iterable-based `collections.deque` surface を `::std::deque<T>` に揃える。
+- 直前までの end-op/task と合わせて、実用上必要な `deque` subset を file-level regression と smoke で固定する。
+
+対象:
+- single-arg `deque(iterable)` constructor
+- `extendleft(iterable)` representative lowering
+- focused regression / smoke / docs / TODO の同期
+
+非対象:
+- `deque` 全 API (`rotate`, `maxlen`, arbitrary insert/remove, iterator invalidation semantics など)
+- 全 backend への同時 rollout
+- `collections` module 全体の redesign
+- C++ runtime に新しい deque object hierarchy を追加すること
+
+受け入れ基準:
+- baseline regression で current invalid C++ surface (`deque(iterable)`, `extendleft(iterable)`) を固定する。
+- representative C++ lane で `deque(iterable)` は valid `::std::deque<T>` constructor surface に lower される。
+- representative C++ lane で `extendleft(iterable)` は valid C++ loop / `push_front` bundle に lower される。
+- build/run smoke で representative fixture が通る。
+- docs / TODO の ja/en mirror に support scope と非対象が反映される。
+
+確認コマンド:
+- `python3 tools/check_todo_priority.py`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k deque_iterable`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/selfhost -p 'test_prepare_selfhost_source.py'`
+- `git diff --check`
+
+決定ログ:
+- 2026-03-13: iterable-based `deque` surface のうち、`extend` はすでに valid C++ に落ちるため、新 task は `deque(iterable)` と `extendleft(iterable)` に限定した。
+- 2026-03-13: `S1-01` として `q = deque(list<int64>{...});` と `q.extendleft(...)` の current invalid C++ surface を focused regression で固定した。
+
+## 分解
+
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01] `collections.deque` iterable constructor / `extendleft` representative C++ lane を固定する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S1-01] current invalid C++ surface (`deque(iterable)`, `extendleft(iterable)`) を focused regression / TODO / plan で固定する。
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S2-01] `deque(iterable)` を valid `::std::deque<T>` constructor surface に lower する。
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S2-02] `extendleft(iterable)` を `push_front` loop bundle に lower する。
+- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S3-01] build/run smoke と support wording を同期して close する。
