@@ -258,9 +258,19 @@ def rewrite_cs_program_to_helper(cs_src: str, helper_name: str) -> str:
     return text.replace("Program.", helper_name + ".")
 
 
-def rewrite_cs_std_time_live_wrapper(cs_src: str) -> str:
-    text = rewrite_cs_program_to_helper(cs_src, "time")
-    return text.replace("return __t.perf_counter();", "return time_native.perf_counter();")
+def rewrite_cs_std_native_owner_wrapper(cs_src: str, helper_name: str) -> str:
+    text = rewrite_cs_program_to_helper(cs_src, helper_name)
+    native_owner = helper_name + "_native"
+    rewritten = re.sub(
+        r"return __[A-Za-z_][A-Za-z0-9_]*\.",
+        "return " + native_owner + ".",
+        text,
+    )
+    if rewritten == text:
+        raise RuntimeError(
+            "generated C# std/" + helper_name + " wrapper is missing extern return delegation"
+        )
+    return rewritten
 
 
 def rewrite_cs_std_math_live_wrapper(cs_src: str) -> str:
@@ -3472,8 +3482,10 @@ def render_item(item: GenerationItem) -> str:
         if item.helper_name == "":
             raise RuntimeError("missing helper_name for cs_program_to_helper: " + item.item_id)
         generated = rewrite_cs_program_to_helper(generated, item.helper_name)
-    elif item.postprocess == "cs_std_time_live_wrapper":
-        generated = rewrite_cs_std_time_live_wrapper(generated)
+    elif item.postprocess == "cs_std_native_owner_wrapper":
+        if item.helper_name == "":
+            raise RuntimeError("missing helper_name for cs_std_native_owner_wrapper: " + item.item_id)
+        generated = rewrite_cs_std_native_owner_wrapper(generated, item.helper_name)
     elif item.postprocess == "cs_std_math_live_wrapper":
         generated = rewrite_cs_std_math_live_wrapper(generated)
     elif item.postprocess == "cs_std_json_live_wrapper":

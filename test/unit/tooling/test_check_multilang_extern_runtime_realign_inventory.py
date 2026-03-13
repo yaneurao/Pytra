@@ -71,6 +71,10 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
             row["module_id"]: row
             for row in inventory_mod.iter_multilang_extern_runtime_realign_inventory()
         }
+        self.assertIn(
+            "cs:cs_std_native_owner_wrapper",
+            by_id["std/time"]["manifest_postprocess_targets"],
+        )
         self.assertEqual(
             by_id["std/time"]["noncpp_native_owner_paths"],
             ("src/runtime/cs/native/std/time_native.cs",),

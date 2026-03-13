@@ -560,7 +560,7 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/time.rs", "postprocess": "rs_std_time_live_wrapper" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/time.cs", "postprocess": "cs_std_time_live_wrapper" },
+        { "target": "cs", "output": "src/runtime/cs/generated/std/time.cs", "postprocess": "cs_std_native_owner_wrapper", "helper_name": "time" },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/time.go",
