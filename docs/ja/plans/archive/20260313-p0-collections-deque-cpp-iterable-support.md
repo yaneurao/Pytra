@@ -43,11 +43,12 @@
 - 2026-03-13: `S1-01` として `q = deque(list<int64>{...});` と `q.extendleft(...)` の current invalid C++ surface を focused regression で固定した。
 - 2026-03-13: `S2-01` として `deque(iterable)` を typed `::std::deque<T>(begin, end)` range ctor へ lower した。focused regression は残る `extendleft` leak だけへ narrowed した。
 - 2026-03-13: `S2-02` として `extendleft(iterable)` を snapshot + `push_front` loop bundle へ lower した。typed `deque` owner の iterable surface は representative C++ lane で `std::deque` に揃った。
+- 2026-03-13: `S3-01` として representative fixture の build/run smoke を追加し、`deque([1, 2]) + extendleft([3, 4])` の出力 `4 / 3 / 1 / 2` を固定した。これで task の受け入れ基準はすべて充足した。
 
 ## 分解
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01] `collections.deque` iterable constructor / `extendleft` representative C++ lane を固定する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01] `collections.deque` iterable constructor / `extendleft` representative C++ lane を固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S1-01] current invalid C++ surface (`deque(iterable)`, `extendleft(iterable)`) を focused regression / TODO / plan で固定する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S2-01] `deque(iterable)` を valid `::std::deque<T>` constructor surface に lower する。
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S2-02] `extendleft(iterable)` を `push_front` loop bundle に lower する。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S3-01] build/run smoke と support wording を同期して close する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S3-01] build/run smoke と support wording を同期して close する。

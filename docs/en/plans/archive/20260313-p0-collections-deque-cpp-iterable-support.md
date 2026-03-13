@@ -43,11 +43,12 @@ Decision log:
 - 2026-03-13: as `S1-01`, a focused regression now locks the current invalid `q = deque(list<int64>{...});` and `q.extendleft(...)` surface.
 - 2026-03-13: as `S2-01`, `deque(iterable)` now lowers to a typed `::std::deque<T>(begin, end)` range constructor. The focused regression is narrowed to the remaining `extendleft` leak.
 - 2026-03-13: as `S2-02`, `extendleft(iterable)` now lowers to a snapshot + `push_front` loop bundle. The iterable surface on typed `deque` owners is now aligned to `std::deque` in the representative C++ lane.
+- 2026-03-13: as `S3-01`, a representative build/run smoke now locks the `deque([1, 2]) + extendleft([3, 4])` output `4 / 3 / 1 / 2`. The task now satisfies every acceptance criterion.
 
 ## Breakdown
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01] Lock the representative C++ lane for `collections.deque` iterable construction / `extendleft`.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01] Lock the representative C++ lane for `collections.deque` iterable construction / `extendleft`.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S1-01] Lock the current invalid C++ surface (`deque(iterable)`, `extendleft(iterable)`) in focused regressions / TODO / plan.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S2-01] Lower `deque(iterable)` to a valid `::std::deque<T>` constructor surface.
 - [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S2-02] Lower `extendleft(iterable)` to a `push_front` loop bundle.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S3-01] Sync build/run smoke and support wording, then close the task.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-ITERABLE-01-S3-01] Sync build/run smoke and support wording, then close the task.
