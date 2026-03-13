@@ -90,6 +90,13 @@ def extern(fn):
 
 - Argumented forms such as `@extern(...)` are not supported.
 - An extern marker on a variable uses `name = extern(expr)`.
+- `name: Any = extern()` declares an ambient global with the same symbol name.
+- `name: Any = extern("symbol")` declares an ambient global under a different symbol name.
+- `name: T = extern(expr)` keeps the existing host-fallback / runtime-hook initializer behavior.
+- Ambient-global variable declarations are allowed only on the JS/TS backends in v1 and must be compile errors on other backends.
+- runtime-SoT `@extern` is declaration-only metadata and does not identify the target implementation owner.
+- runtime layout / manifest / runtime symbol index define the native implementation owner.
+- ambient-global `extern()` / `extern("symbol")` is a separate category from runtime `@extern`.
 
 ### 3.2 Meaning
 
@@ -103,6 +110,20 @@ For an `@extern` function, Pytra determines:
 Even if actual arguments are represented with internal types at the call site, the transpiler adapts them to the ABI types before calling the external function.
 
 For Python-runtime compatibility, an `@extern` function may still have a Python-executable body, for example `return __m.sin(x)`. The transpiler never adopts that body as the target implementation; it lowers the function into an external-symbol call instead.
+
+Variable `extern(...)` forms are handled separately from function `@extern`.
+
+- `extern(expr)` keeps `expr` as the Python-runtime fallback / host-only initializer.
+- `extern()` declares an ambient global under the same variable name, without a Python fallback.
+- `extern("symbol")` declares an ambient global under the given symbol name, without a Python fallback.
+
+JS/TS lower ambient-global variable declarations as import-free symbols and allow raw property access / method call / call-expression lowering only for bindings explicitly marked as ambient globals, not as a general `Any/object` relaxation.
+
+runtime-SoT `@extern` stays declaration-only metadata.
+
+- `extern_contract_v1` / `extern_v1` describe only the declared symbol shape and must not encode native ownership.
+- runtime layout / manifest / runtime symbol index determine the native implementation owner.
+- ambient-global `extern()` / `extern("symbol")` is separate from runtime-SoT `@extern` and must not participate in owner resolution.
 
 ### 3.3 Host-Only Import Rule (`as __name`)
 
@@ -267,6 +288,9 @@ Meaning:
   - override the ABI form at the call boundary
 - with neither
   - follow the normal internal-representation rules and backend default lowering
+- runtime-SoT `@extern` is declaration-only metadata and does not identify the target implementation owner.
+- runtime layout / manifest / runtime symbol index define the native implementation owner.
+- ambient-global `extern()` / `extern("symbol")` is a separate category from runtime `@extern`.
 
 #### 3.4.6 Why `str.join` Needs It
 

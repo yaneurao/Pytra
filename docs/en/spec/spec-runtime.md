@@ -205,6 +205,8 @@ Required:
 - parent modules reference them by module import
 - calls stay as module function calls
 - if native implementation is required, declare it with `@extern` in SoT and place the implementation in the matching companion layer
+- `extern_contract_v1` / `extern_v1` must stay declaration-only metadata and must not encode the native implementation owner.
+- Ambient-global `extern()` / `extern("symbol")` is separate from runtime-SoT `@extern` and must not participate in runtime symbol index ownership decisions.
 
 ## 0.67 Internal Representation Policy for Mutable Types
 
@@ -229,6 +231,7 @@ Backends may read:
 
 - `runtime_module_id`
 - `runtime_symbol`
+- declaration-only `extern_contract_v1` / `extern_v1`
 - `semantic_tag`
 - `runtime_call`
 - `resolved_runtime_call`
@@ -273,3 +276,8 @@ The same responsibility split should be rolled out to every runtime language.
 - baseline modules may not use `blocked`, `compare_artifact`, `no_runtime_module`, `helper_artifact`, or `native canonical` as a close condition
 - the blocked/native/helper descriptions kept in `src/toolchain/compiler/noncpp_runtime_layout_contract.py` and `src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py` are legacy inventory, not the active end-state policy
 - `pytra-gen/pytra-core` and checked-in `pytra/**` remain compatibility-debt inventory, not the final layout
+
+### 0.72 Runtime `@extern` Ownership Metadata
+
+- `extern_contract_v1` / `extern_v1` must stay declaration-only metadata and must not encode the native implementation owner.
+- Ambient-global `extern()` / `extern("symbol")` is separate from runtime-SoT `@extern` and must not participate in runtime symbol index ownership decisions.

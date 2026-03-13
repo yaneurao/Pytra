@@ -47,11 +47,13 @@ Validation commands (planned):
 ## Breakdown
 
 - [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-01] Inventory every runtime-SoT `@extern` module plus the current generated rewrites, emitter hardcodes, and native owners across all targets.
-- [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-02] Lock the cross-target contract in spec/plan so `@extern` means declaration-only, native owners provide implementations, and ambient externs stay a separate category.
+- [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-02] Lock the cross-target contract in spec/plan so `@extern` means declaration-only, native owners provide implementations, and ambient externs stay a separate category.
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-01] Remove module-specific extern rewrites from `tools/runtime_generation_manifest.json` and `tools/gen_runtime_from_manifest.py`, and align generated lanes to declaration/wrapper-only output.
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-02] Establish canonical extern-backed owners under `src/runtime/<lang>/native/**` for each target and synchronize the runtime symbol index plus layout contracts.
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-03] Remove backend-emitter hardcodes such as `pytra.std.math` and move them to generic extern/runtime metadata.
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S3-01] Sync representative runtime artifacts, smoke tests, docs, and contract inventories to the current extern-ownership contract and close the task.
+
+For `S1-02`, add a contract/checker/spec wording that fixes runtime-SoT `@extern` as declaration-only metadata, native ownership to runtime layout / manifest / runtime symbol index, and ambient-global `extern()` as a separate category.
 
 Decision log:
 - 2026-03-13: Opened after the user called out the current non-C++ design as incorrect. The task resets all targets to the SoT/native-owner/generic-emitter split instead of backend shortcuts for `@extern`.
@@ -61,3 +63,4 @@ Decision log:
 - 2026-03-14: As the first realignment slice, stopped the C# `std/math` generated wrapper from inventing a `tau` symbol that does not exist in the SoT, restoring `pi/e` as the only source-defined exported constants.
 - 2026-03-14: Added `multilang_extern_runtime_realign_inventory.py`, its checker, and unit tests for `S1-01`, locking the current manifest postprocess targets, C++ native owners, non-C++ native seams, emitter hardcodes, and generated drift for `std/math,time,os,os_path,sys,glob` plus `built_in/io_ops,scalar_ops`. The C# `std/math` inventory now records `math_native.cs` as the current non-C++ owner seam.
 - 2026-03-14: In the C# emitter, switched `std/math` and `std/time` owner resolution to generic extern metadata from `CodeEmitter.get_import_resolution_bindings()` / `lookup_import_resolution_binding()` plus `iter_cs_std_lane_ownership()`, reducing one more layer of direct `pytra.std.math` / `pytra.std.time` string hardcodes.
+- 2026-03-14: For `S1-02`, add a contract/checker/spec wording that fixes runtime-SoT `@extern` as declaration-only metadata, native ownership to runtime layout / manifest / runtime symbol index, and ambient-global `extern()` as a separate category.

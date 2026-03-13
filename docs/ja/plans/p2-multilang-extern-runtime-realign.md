@@ -47,11 +47,13 @@
 ## 分解
 
 - [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-01] runtime SoT 上の `@extern` module と、generated rewrite / emitter hardcode / native owner の current inventory を全 target で棚卸しする。
-- [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-02] `@extern` を「宣言のみ」「native owner 実装」「ambient extern は別系統」に分けた cross-target contract を spec / plan に固定する。
+- [x] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S1-02] `@extern` を「宣言のみ」「native owner 実装」「ambient extern は別系統」に分けた cross-target contract を spec / plan に固定する。
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-01] `tools/runtime_generation_manifest.json` と `tools/gen_runtime_from_manifest.py` から module-specific extern rewrite を除去し、generated lane を declaration/wrapper-only に揃える。
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-02] 各 target の `src/runtime/<lang>/native/**` に extern-backed canonical owner を整備し、runtime symbol index / layout contract を同期する。
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S2-03] 各 backend emitter の `pytra.std.math` など module-specific extern hardcode を撤去し、generic extern/runtime metadata 経由へ移す。
 - [ ] [ID: P2-MULTILANG-EXTERN-RUNTIME-REALIGN-01-S3-01] representative runtime artifact / smoke / docs / contract inventory を current extern ownership contract に同期して task を閉じる。
+
+`S1-02` として、runtime SoT `@extern` を declaration-only、native owner 実装を runtime layout / manifest / runtime symbol index、ambient global `extern()` を別系統に固定する contract/checker/spec wording を追加した。
 
 決定ログ:
 - 2026-03-13: ユーザー指摘により、`@extern` を backend shortcut として扱っていた現行非 C++ 設計を誤りと認め、全 target を対象に SoT/native-owner/generic-emitter へ戻す P2 task として起票した。
@@ -61,3 +63,4 @@
 - 2026-03-14: 最初の realignment slice として、SoT に存在しない `tau` を C# `std/math` generated wrapper が勝手に追加していた挙動を止め、`pi/e` のみを source-of-truth とする状態へ戻した。
 - 2026-03-14: `S1-01` として `multilang_extern_runtime_realign_inventory.py` / checker / unit test を追加し、`std/math,time,os,os_path,sys,glob` と `built_in/io_ops,scalar_ops` の manifest postprocess・C++ native owner・non-C++ native seam・emitter hardcode・generated drift を current worktree 基準で固定した。C# `std/math` は `math_native.cs` seam を current non-C++ owner として inventory に含めた。
 - 2026-03-14: C# emitter では `CodeEmitter.get_import_resolution_bindings()` / `lookup_import_resolution_binding()` から得る canonical extern metadata と `iter_cs_std_lane_ownership()` を使って `std/math` / `std/time` owner 解決を generic 化し、`pytra.std.math` / `pytra.std.time` 文字列 hardcode への依存を 1 段減らした。
+- 2026-03-14: `S1-02` として、runtime SoT `@extern` を declaration-only、native owner 実装を runtime layout / manifest / runtime symbol index、ambient global `extern()` を別系統に固定する contract/checker/spec wording を追加した。

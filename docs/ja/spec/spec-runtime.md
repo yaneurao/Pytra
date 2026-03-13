@@ -353,6 +353,8 @@ backend lowering 方針:
   - 例: `path.join(...)`
 - native 実装が必要な関数は、SoT 側で `@extern` 宣言し、runtime 側では対応する companion 層に実体を置く。
   - C++ module runtime では `native/`
+- `extern_contract_v1` / `extern_v1` は declaration-only metadata として扱い、native owner 実装の所在を表してはならない。
+- ambient global 変数宣言の `extern()` / `extern("symbol")` は runtime SoT `@extern` とは別系統であり、runtime symbol index の native owner 決定へ混ぜてはならない。
 
 禁止:
 
@@ -401,6 +403,7 @@ backend が解釈してよい runtime metadata:
 
 - `runtime_module_id`
 - `runtime_symbol`
+- declaration-only `extern_contract_v1` / `extern_v1`
 - `semantic_tag`
 - `runtime_call`
 - `resolved_runtime_call`
@@ -488,3 +491,8 @@ C++ runtime は次を正規配置とする。
 - `pytra-gen/pytra-core` や checked-in `pytra/**` は互換 debt inventory であり、最終形ではない。
 
 各言語 backend は、SoT 由来コードを canonical generated lane に生成し、必要最小限の handwritten companion だけを native lane へ置く。
+
+### 0.72 Runtime `@extern` Ownership Metadata
+
+- `extern_contract_v1` / `extern_v1` は declaration-only metadata として扱い、native owner 実装の所在を表してはならない。
+- ambient global 変数宣言の `extern()` / `extern("symbol")` は runtime SoT `@extern` とは別系統であり、runtime symbol index の native owner 決定へ混ぜてはならない。
