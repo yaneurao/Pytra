@@ -30,11 +30,4 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
-### P0: Pytra-NES representative C++ mini repro contract
-
-- [ ] [ID: P0-PYTRA-NES-CPP-MINI-REPRO-01] Pytra-NES の representative な multi-file package（括弧付き sibling relative import + `dataclass` + `deque[float]` field + `deque` method）を C++ representative lane で build/run まで固定する。
-  - 文脈: [docs/ja/plans/p0-pytra-nes-cpp-mini-repro-contract.md](../plans/p0-pytra-nes-cpp-mini-repro-contract.md)
-- [x] [ID: P0-PYTRA-NES-CPP-MINI-REPRO-01-S1-01] representative package smoke を追加し、`from .controller import (...)` と `timestamps: deque[float] = field(init=False, repr=False)` を併用する C++ multi-file build/run baseline を固定した。
-  - 進捗メモ: `controller.py` / `pad_state.py` / `ppu.py` の 3 module package を `test_py2cpp_features.py` に追加し、`pad_state.h` へ `::std::deque<float64>` が出て `field(...)` が漏れず、実行結果が `3 / 1.5 / 1` になることを smoke 化した。
-- [ ] [ID: P0-PYTRA-NES-CPP-MINI-REPRO-01-S2-01] smoke で露出した generated include / class layout / method lowering の drift を source guard 化し、Pytra-NES representative lane の regression を fail-fast にする。
-- [ ] [ID: P0-PYTRA-NES-CPP-MINI-REPRO-01-S3-01] TODO / plan / support docs を representative Pytra-NES mini repro contract に同期し、close する。
+現在、未完了タスクはありません。
