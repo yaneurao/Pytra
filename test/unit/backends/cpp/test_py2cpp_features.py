@@ -5329,6 +5329,29 @@ print(q.popleft())
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             self.assertEqual(run.stdout.strip().splitlines(), ["3", "2", "1"])
 
+    def test_deque_rotate_still_leaks_python_surface_into_cpp(self) -> None:
+        src = """from collections import deque
+
+q: deque[int] = deque([1, 2, 3])
+q.rotate()
+q.rotate(1)
+q.rotate(-1)
+print(q.popleft())
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src_py = Path(tmpdir) / "deque_rotate_case.py"
+            src_py.write_text(src, encoding="utf-8")
+            east = load_east(src_py)
+            cpp = transpile_to_cpp(east)
+        self.assertRegex(
+            cpp,
+            r"return ::std::deque<int64>\(__deque_src_\d*\.begin\(\), __deque_src_\d*\.end\(\)\);",
+        )
+        self.assertIn("q.rotate();", cpp)
+        self.assertIn("q.rotate(1);", cpp)
+        self.assertIn("q.rotate(-(1));", cpp)
+        self.assertNotIn("::std::rotate(", cpp)
+
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
         src = """from dataclasses import dataclass, field
 
