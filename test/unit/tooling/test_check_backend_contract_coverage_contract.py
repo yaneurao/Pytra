@@ -2,45 +2,30 @@ from __future__ import annotations
 
 import unittest
 
-from toolchain.compiler import backend_contract_coverage_contract as contract_mod
-from tools import check_backend_contract_coverage_contract as check_mod
+from src.toolchain.compiler import backend_contract_coverage_contract as contract_mod
+from tools import check_backend_contract_coverage_contract as checker
 
 
-class CheckBackendContractCoverageContractTest(unittest.TestCase):
-    def test_manifest_issues_are_empty(self) -> None:
-        self.assertEqual(check_mod._collect_manifest_issues(), [])
+class BackendContractCoverageContractTest(unittest.TestCase):
+    def test_contract_checker_is_clean(self) -> None:
+        self.assertEqual(checker._collect_contract_issues(), [])
+        self.assertEqual(checker._collect_doc_issues(), [])
 
-    def test_doc_wiring_issues_are_empty(self) -> None:
-        self.assertEqual(check_mod._collect_doc_wiring_issues(), [])
-
-    def test_plan_wiring_issues_are_empty(self) -> None:
-        self.assertEqual(check_mod._collect_plan_wiring_issues(), [])
-
-    def test_role_order_is_fixed(self) -> None:
-        self.assertEqual(
-            contract_mod.ROLE_ORDER,
-            (
-                "support_matrix",
-                "coverage_matrix",
-                "coverage_100_definition",
-                "backend_test_matrix",
-                "backend_specific_integration",
-            ),
-        )
-
-    def test_manifest_wiring_is_fixed(self) -> None:
+    def test_contract_manifest_is_fixed(self) -> None:
         manifest = contract_mod.build_backend_contract_coverage_contract_manifest()
-        self.assertEqual(manifest["contract_status"], "docs_tooling_locked")
-        self.assertEqual(
-            manifest["backend_test_matrix_doc_paths"],
-            (
-                "docs/ja/language/backend-test-matrix.md",
-                "docs/en/language/backend-test-matrix.md",
-            ),
-        )
+        self.assertEqual(manifest["contract_version"], 1)
+        self.assertEqual(manifest["coverage_matrix_status"], "planned_separate_surface")
         self.assertEqual(
             manifest["coverage_requirement_keys"],
-            ("feature_id", "required_lane", "backend", "bundle_id_or_rule"),
+            ["feature_id", "required_lane", "backend", "bundle_id_or_rule"],
+        )
+        self.assertEqual(
+            manifest["role_split"],
+            {
+                "support_matrix": "Canonical feature x backend support-state publication surface.",
+                "coverage_matrix": "Separate bundle-based publication surface for feature x required_lane x backend contract coverage.",
+                "backend_test_matrix": "Backend-owned suite-health publication surface that must stay distinct from contract coverage.",
+            },
         )
 
 
