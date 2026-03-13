@@ -6,6 +6,12 @@
 
 This page is the canonical publish target for feature × backend support-state reporting.
 
+## Support Matrix vs Coverage Surface
+
+- This page is the canonical support-matrix publish target, not the bundle-based coverage matrix itself.
+- The future coverage matrix will publish `feature x required_lane x backend` contract coverage on a separate surface, while `backend-test-matrix.md` remains the backend-owned suite-health publish target.
+- Coverage at 100% is defined as contract coverage for `feature x required_lane x backend`, not line or branch coverage.
+
 ## Canonical Source and Drill-Down
 
 - Treat this page as the canonical source, and keep the C++ table as a drill-down at [./cpp/spec-support.md](./cpp/spec-support.md).

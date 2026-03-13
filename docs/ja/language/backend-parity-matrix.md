@@ -6,6 +6,12 @@
 
 このページは、feature × backend の support state を公開する canonical publish target です。
 
+## Support Matrix と Coverage Surface の分離
+
+- このページは support matrix の canonical publish target であり、bundle-based coverage matrix そのものではありません。
+- 将来の coverage matrix は `feature x required_lane x backend` の contract coverage を別 surface として公開し、`backend-test-matrix.md` は backend-owned suite health の publish target に留めます。
+- coverage 100% の定義は line/branch coverage ではなく、`feature x required_lane x backend` ごとの contract coverage です。
+
 ## Canonical Source と Drill-Down
 
 - このページを正本とし、C++ 専用の詳細表は drill-down として [./cpp/spec-support.md](./cpp/spec-support.md) に置きます。
