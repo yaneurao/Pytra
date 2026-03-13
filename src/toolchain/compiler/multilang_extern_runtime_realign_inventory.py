@@ -49,9 +49,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/math.cpp",),
         "noncpp_native_owner_paths": ("src/runtime/cs/native/std/math_native.cs",),
-        "emitter_hardcode_needles": (
-            ("src/backends/lua/emitter/lua_native_emitter.py", 'if mod == "pytra.std.math":'),
-        ),
+        "emitter_hardcode_needles": (),
         "generated_drift_needles": (
             ("src/runtime/js/generated/std/math.js", "Math.PI"),
             ("src/runtime/ts/generated/std/math.ts", "Math.PI"),
@@ -76,9 +74,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/time.cpp",),
         "noncpp_native_owner_paths": ("src/runtime/cs/native/std/time_native.cs",),
-        "emitter_hardcode_needles": (
-            ("src/backends/lua/emitter/lua_native_emitter.py", 'if mod == "pytra.std.time":'),
-        ),
+        "emitter_hardcode_needles": (),
         "generated_drift_needles": (
             ("src/runtime/js/generated/std/time.js", "process.hrtime.bigint"),
             ("src/runtime/ts/generated/std/time.ts", "process.hrtime.bigint"),
