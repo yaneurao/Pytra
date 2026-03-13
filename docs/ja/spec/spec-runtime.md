@@ -482,7 +482,9 @@ C++ runtime は次を正規配置とする。
 この分類と命名規則は C++ 専用ではなく、全言語 runtime へ広げる。
 
 - canonical target layout は `src/runtime/<lang>/generated/**` と `src/runtime/<lang>/native/**` である。
-- rollout 済み backend（現行: `cpp`, `rs`, `cs`）は、この `generated/native` ownership を正本として使う。
-- 未移行 backend は一時的に `pytra-gen/pytra-core` を残してよいが、これは P1 rollout debt であり最終形ではない。
+- non-C++ runtime の baseline end state は、`cpp/generated/{built_in,std,utils}` の module set を基準に `generated = baseline` を満たすこととする。
+- baseline module に対して `blocked` / `compare_artifact` / `no_runtime_module` / `helper_artifact` / `native canonical` を close 条件として使ってはならない。
+- `src/toolchain/compiler/noncpp_runtime_layout_contract.py` と `src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py` が保持する blocked/native/helper の記述は legacy inventory であり、active end-state policy ではない。
+- `pytra-gen/pytra-core` や checked-in `pytra/**` は互換 debt inventory であり、最終形ではない。
 
 各言語 backend は、SoT 由来コードを canonical generated lane に生成し、必要最小限の handwritten companion だけを native lane へ置く。

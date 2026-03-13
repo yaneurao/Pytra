@@ -10,6 +10,23 @@ class NonCppRuntimeGeneratedCppBaselineBucketEntry(TypedDict):
     modules: tuple[str, ...]
 
 
+class NonCppRuntimeGeneratedCppBaselineLegacyStateEntry(TypedDict):
+    backend: str
+    legacy_state: str
+    modules: tuple[str, ...]
+
+
+class NonCppRuntimeGeneratedCppBaselineLegacyPolicyFileEntry(TypedDict):
+    path: str
+    required_needle: str
+
+
+class NonCppRuntimeGeneratedCppBaselineActivePolicyDocEntry(TypedDict):
+    path: str
+    required_needles: tuple[str, ...]
+    forbidden_needles: tuple[str, ...]
+
+
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_BUCKET_ORDER_V1: Final[tuple[str, ...]] = (
     "built_in",
     "std",
@@ -73,6 +90,222 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MODULES_V1: Final[tuple[str, ...]] = tuple
     for module in entry["modules"]
 )
 
+NONCPP_RUNTIME_GENERATED_CPP_BASELINE_FORBIDDEN_LEGACY_STATES_V1: Final[
+    tuple[str, ...]
+] = (
+    "blocked",
+    "compare_artifact",
+    "no_runtime_module",
+    "native_canonical",
+    "helper_artifact",
+)
+
+NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1: Final[
+    tuple[NonCppRuntimeGeneratedCppBaselineLegacyStateEntry, ...]
+] = (
+    {"backend": "cs", "legacy_state": "blocked", "modules": ("std/json",)},
+    {
+        "backend": "cs",
+        "legacy_state": "compare_artifact",
+        "modules": ("std/math", "std/pathlib"),
+    },
+    {
+        "backend": "cs",
+        "legacy_state": "no_runtime_module",
+        "modules": ("std/argparse", "std/re"),
+    },
+    {
+        "backend": "cs",
+        "legacy_state": "native_canonical",
+        "modules": ("std/json", "std/math", "std/pathlib"),
+    },
+    {"backend": "go", "legacy_state": "blocked", "modules": (
+        "built_in/predicates",
+        "built_in/sequence",
+        "built_in/string_ops",
+        "built_in/type_id",
+        "std/json",
+        "std/math",
+        "std/pathlib",
+        "std/time",
+    )},
+    {"backend": "java", "legacy_state": "blocked", "modules": (
+        "built_in/predicates",
+        "built_in/sequence",
+        "built_in/string_ops",
+        "built_in/type_id",
+    )},
+    {"backend": "kotlin", "legacy_state": "blocked", "modules": (
+        "built_in/io_ops",
+        "built_in/numeric_ops",
+        "built_in/scalar_ops",
+        "built_in/string_ops",
+        "built_in/type_id",
+        "std/json",
+        "std/math",
+        "std/pathlib",
+        "std/time",
+        "utils/gif",
+        "utils/png",
+    )},
+    {"backend": "lua", "legacy_state": "blocked", "modules": (
+        "built_in/contains",
+        "built_in/io_ops",
+        "built_in/iter_ops",
+        "built_in/numeric_ops",
+        "built_in/predicates",
+        "built_in/scalar_ops",
+        "built_in/sequence",
+        "built_in/string_ops",
+        "built_in/type_id",
+        "built_in/zip_ops",
+        "std/json",
+        "std/math",
+        "std/pathlib",
+        "std/time",
+        "utils/gif",
+        "utils/png",
+    )},
+    {"backend": "nim", "legacy_state": "blocked", "modules": (
+        "built_in/io_ops",
+        "built_in/scalar_ops",
+        "built_in/sequence",
+        "built_in/string_ops",
+        "built_in/type_id",
+        "std/json",
+        "std/math",
+        "std/pathlib",
+        "std/time",
+        "utils/gif",
+        "utils/png",
+    )},
+    {"backend": "rs", "legacy_state": "blocked", "modules": ("std/json",)},
+    {
+        "backend": "rs",
+        "legacy_state": "compare_artifact",
+        "modules": ("std/glob", "std/math", "std/os", "std/os_path", "std/pathlib", "std/time"),
+    },
+    {
+        "backend": "rs",
+        "legacy_state": "no_runtime_module",
+        "modules": ("std/argparse", "std/re"),
+    },
+    {
+        "backend": "rs",
+        "legacy_state": "native_canonical",
+        "modules": ("std/math", "std/time"),
+    },
+    {"backend": "ruby", "legacy_state": "blocked", "modules": (
+        "built_in/contains",
+        "built_in/io_ops",
+        "built_in/iter_ops",
+        "built_in/numeric_ops",
+        "built_in/predicates",
+        "built_in/scalar_ops",
+        "built_in/sequence",
+        "built_in/string_ops",
+        "built_in/type_id",
+        "built_in/zip_ops",
+        "std/json",
+        "std/math",
+        "std/pathlib",
+        "std/time",
+        "utils/gif",
+        "utils/png",
+    )},
+    {"backend": "scala", "legacy_state": "blocked", "modules": (
+        "built_in/io_ops",
+        "built_in/numeric_ops",
+        "built_in/scalar_ops",
+        "built_in/string_ops",
+        "built_in/type_id",
+        "std/json",
+        "std/math",
+        "std/pathlib",
+        "std/time",
+        "utils/gif",
+        "utils/png",
+    )},
+    {"backend": "swift", "legacy_state": "blocked", "modules": (
+        "built_in/numeric_ops",
+        "built_in/scalar_ops",
+        "built_in/string_ops",
+        "built_in/type_id",
+        "std/json",
+        "std/math",
+        "std/pathlib",
+        "std/time",
+        "utils/gif",
+        "utils/png",
+    )},
+)
+
+NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1: Final[
+    tuple[str, ...]
+] = ()
+
+NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_POLICY_FILES_V1: Final[
+    tuple[NonCppRuntimeGeneratedCppBaselineLegacyPolicyFileEntry, ...]
+] = (
+    {
+        "path": "src/toolchain/compiler/noncpp_runtime_layout_contract.py",
+        "required_needle": "Legacy",
+    },
+    {
+        "path": "src/toolchain/compiler/noncpp_runtime_layout_rollout_remaining_contract.py",
+        "required_needle": "Legacy",
+    },
+    {
+        "path": "tools/check_noncpp_runtime_layout_contract.py",
+        "required_needle": "Legacy",
+    },
+    {
+        "path": "tools/check_noncpp_runtime_layout_rollout_remaining_contract.py",
+        "required_needle": "Legacy",
+    },
+)
+
+NONCPP_RUNTIME_GENERATED_CPP_BASELINE_ACTIVE_POLICY_DOCS_V1: Final[
+    tuple[NonCppRuntimeGeneratedCppBaselineActivePolicyDocEntry, ...]
+] = (
+    {
+        "path": "docs/ja/spec/spec-runtime.md",
+        "required_needles": (
+            "`generated = baseline`",
+            "legacy inventory",
+        ),
+        "forbidden_needles": (
+            "rollout 済み backend（現行: `cpp`, `rs`, `cs`）",
+        ),
+    },
+    {
+        "path": "docs/en/spec/spec-runtime.md",
+        "required_needles": (
+            "`generated = baseline`",
+            "legacy inventory",
+        ),
+        "forbidden_needles": (
+            "backends that already completed the rollout (`cpp`, `rs`, `cs`)",
+        ),
+    },
+    {
+        "path": "docs/ja/spec/spec-tools.md",
+        "required_needles": (
+            "tools/check_noncpp_runtime_generated_cpp_baseline_contract.py",
+            "tools/export_backend_test_matrix.py",
+        ),
+        "forbidden_needles": (),
+    },
+    {
+        "path": "docs/en/spec/spec-tools.md",
+        "required_needles": (
+            "tools/check_noncpp_runtime_generated_cpp_baseline_contract.py",
+            "tools/export_backend_test_matrix.py",
+        ),
+        "forbidden_needles": (),
+    },
+)
+
 
 def iter_noncpp_runtime_generated_cpp_baseline_bucket_order() -> tuple[str, ...]:
     return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_BUCKET_ORDER_V1
@@ -87,3 +320,28 @@ def iter_noncpp_runtime_generated_cpp_baseline_buckets() -> tuple[
 def iter_noncpp_runtime_generated_cpp_baseline_modules() -> tuple[str, ...]:
     return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MODULES_V1
 
+
+def iter_noncpp_runtime_generated_cpp_baseline_forbidden_legacy_states() -> tuple[str, ...]:
+    return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_FORBIDDEN_LEGACY_STATES_V1
+
+
+def iter_noncpp_runtime_generated_cpp_baseline_legacy_state_buckets() -> tuple[
+    NonCppRuntimeGeneratedCppBaselineLegacyStateEntry, ...
+]:
+    return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_STATE_BUCKETS_V1
+
+
+def iter_noncpp_runtime_generated_cpp_baseline_helper_artifact_overlap() -> tuple[str, ...]:
+    return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1
+
+
+def iter_noncpp_runtime_generated_cpp_baseline_legacy_policy_files() -> tuple[
+    NonCppRuntimeGeneratedCppBaselineLegacyPolicyFileEntry, ...
+]:
+    return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_POLICY_FILES_V1
+
+
+def iter_noncpp_runtime_generated_cpp_baseline_active_policy_docs() -> tuple[
+    NonCppRuntimeGeneratedCppBaselineActivePolicyDocEntry, ...
+]:
+    return NONCPP_RUNTIME_GENERATED_CPP_BASELINE_ACTIVE_POLICY_DOCS_V1

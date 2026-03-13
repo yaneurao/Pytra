@@ -31,7 +31,7 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01] non-C++ runtime generated lane を `cpp/generated/{built_in,std,utils}` baseline に揃える。進捗: `S1-01` として live `cpp/generated` tree から 25 module の canonical baseline を抽出し、専用 contract / checker / unit test で固定した。次は old rollout 例外を baseline module では許容しない active policy へ切り替える。文脈: [p0-noncpp-runtime-generated-cpp-baseline.md](../plans/p0-noncpp-runtime-generated-cpp-baseline.md)
+- [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01] non-C++ runtime generated lane を `cpp/generated/{built_in,std,utils}` baseline に揃える。進捗: `S1-02` までで live baseline 25 module と baseline 上の legacy exception debt inventory を contract / checker / unit test で固定した。次は `rs/cs` の missing generated std/utils baseline を materialize して `native canonical` / `no_runtime_module` 例外を解消する。文脈: [p0-noncpp-runtime-generated-cpp-baseline.md](../plans/p0-noncpp-runtime-generated-cpp-baseline.md)
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01] 非 C++ / 非 C# backend の checked-in `src/runtime/<lang>/pytra/**` を全廃し、repo 常設 runtime layout を `generated/native` のみに揃える。文脈: [p0-noncpp-runtime-pytra-deshim.md](../plans/p0-noncpp-runtime-pytra-deshim.md)
 - [x] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-01] 12 backend の current `pytra/**` directory/file inventory、delete blocker references、current->target mapping を plan / contract / checker / test で固定した。
 - [ ] [ID: P0-NONCPP-RUNTIME-PYTRA-DESHIM-01-S1-02] active contract / checker / spec wording を `generated/native only` へ切り替え、checked-in `pytra/**` 再出現を fail-fast にする。進捗: first bundle で `spec-folder/spec-dev` wording と doc-policy checker を同期した。

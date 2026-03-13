@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Legacy inventory checker for rs/cs generated/native ownership prior to baseline parity."""
 from __future__ import annotations
 
 from pathlib import Path

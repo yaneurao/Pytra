@@ -142,7 +142,7 @@
 
 - [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01] non-C++ runtime generated lane を `cpp/generated/{built_in,std,utils}` の canonical module baseline に揃え、baseline module は各 backend の `generated/` を canonical owner にする。
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S1-01] `cpp/generated/{built_in,std,utils}` から canonical baseline module set を実データで抽出し、plan / contract / checker の正本として固定する。
-- [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S1-02] 既存の `blocked / compare_artifact / no_runtime_module / helper_artifact / native canonical` 例外を baseline module には使えない契約へ切り替え、old rollout wording を active policy から外す。
+- [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S1-02] 既存の `blocked / compare_artifact / no_runtime_module / helper_artifact / native canonical` 例外を baseline module には使えない契約へ切り替え、old rollout wording を active policy から外す。
 - [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S2-01] `rs/cs` の missing generated std/utils baseline（`json`, `assertions`, `argparse`, `random`, `re`, `sys`, `timeit` を含む）を SoT から materialize し、`native canonical` 例外を解消する。
 - [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S2-02] static family (`go/java/kotlin/scala/swift/nim`) の generated `built_in/std/utils` baseline を full set に引き上げ、helper-shaped naming を canonical basename に寄せる。
 - [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S2-03] script family (`js/ts/lua/ruby/php`) の generated `built_in/std/utils` baseline を full set に引き上げ、generated-first wiring と package/export を同期する。
@@ -155,3 +155,4 @@
 - 2026-03-13: canonical generated baseline は `cpp/generated/{built_in,std,utils}` の actual module basename 25 件とし、`compiler/core` は C++ 固有 lane として除外する。
 - 2026-03-13: `P0-NONCPP-RUNTIME-PYTRA-DESHIM-01` は follow-up とし、本 task 完了前に `checked-in pytra` 削除だけを先行させない方針を明記する。
 - 2026-03-13: `S1-01` として `noncpp_runtime_generated_cpp_baseline_contract.py` / checker / unit test を追加し、live `cpp/generated/{built_in,std,utils}` tree と exact-match する 25-module baseline を source of truth に固定した。
+- 2026-03-13: `S1-02` として baseline module 上の legacy state (`blocked / compare_artifact / no_runtime_module / native canonical`) を compact debt inventory に固定し、helper-artifact が baseline module と交差しないことも checker で保証した。以後これらは rollout 完了条件ではなく migration debt としてのみ扱う。

@@ -1,4 +1,4 @@
-"""Current->target runtime layout mapping for remaining non-C++ backends."""
+"""Legacy rollout inventory for remaining non-C++ backends before cpp-generated baseline parity."""
 
 from __future__ import annotations
 

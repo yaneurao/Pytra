@@ -1,4 +1,4 @@
-"""Contracts for non-C++ runtime generated/native lane ownership."""
+"""Legacy rs/cs runtime generated/native inventory before cpp-generated baseline parity."""
 
 from __future__ import annotations
 

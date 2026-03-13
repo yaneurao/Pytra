@@ -143,7 +143,7 @@ Target:
 
 - [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01] Align non-C++ generated runtime lanes to the canonical `cpp/generated/{built_in,std,utils}` module baseline and make `generated/` the canonical owner for baseline modules.
 - [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S1-01] Extract the canonical baseline module set from `cpp/generated/{built_in,std,utils}` and lock it as the source of truth in plan / contract / checker form.
-- [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S1-02] Replace the old `blocked / compare_artifact / no_runtime_module / helper_artifact / native canonical` exceptions with a contract that forbids those states for baseline modules and remove the old rollout wording from active policy.
+- [x] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S1-02] Replace the old `blocked / compare_artifact / no_runtime_module / helper_artifact / native canonical` exceptions with a contract that forbids those states for baseline modules and remove the old rollout wording from active policy.
 - [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S2-01] Materialize the missing generated std/utils baseline for `rs/cs` (including `json`, `assertions`, `argparse`, `random`, `re`, `sys`, `timeit`) and remove `native canonical` exceptions.
 - [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S2-02] Raise the static family (`go/java/kotlin/scala/swift/nim`) generated `built_in/std/utils` lanes to the full baseline and rename helper-shaped outputs to canonical basenames.
 - [ ] [ID: P0-NONCPP-RUNTIME-GENERATED-CPP-BASELINE-01-S2-03] Raise the script family (`js/ts/lua/ruby/php`) generated `built_in/std/utils` lanes to the full baseline and switch package/export wiring to generated-first.
@@ -155,4 +155,4 @@ Decision log:
 - 2026-03-13: Following the user instruction, we concluded that “limited compare rollout with `generated/native` vocabulary” is insufficient and re-opened the work as a new `P0` for full `cpp/generated` baseline parity.
 - 2026-03-13: The canonical generated baseline is fixed to the actual 25-module basename set under `cpp/generated/{built_in,std,utils}`, excluding C++-specific `compiler/core`.
 - 2026-03-13: `S1-01` added a dedicated contract/checker/test that exact-matches the live `cpp/generated/{built_in,std,utils}` tree against the locked 25-module baseline.
-
+- 2026-03-13: `S1-02` locked the baseline-module legacy states (`blocked / compare_artifact / no_runtime_module / native canonical`) as compact migration-debt inventory and added a checker that guarantees helper-artifact aliases never overlap the canonical baseline.

@@ -161,6 +161,10 @@ Failure contract:
 - `tools/check_noncpp_backend_health.py`
   - Purpose: aggregate the non-C++ backend health gate after linked-program rollout by family, exposing `primary_failure`, `toolchain_missing`, and broken/green family status in one command
   - Main options: `--family`, `--targets`, `--skip-parity`, `--summary-json`
+- `tools/check_noncpp_runtime_generated_cpp_baseline_contract.py`
+  - Purpose: verify the 25-module baseline derived from `cpp/generated/{built_in,std,utils}` together with the legacy-rollout inventory and active runtime-policy wording
+- `tools/export_backend_test_matrix.py`
+  - Purpose: run `test/unit/backends/**` plus the shared starred smoke and refresh the JA/EN backend test matrix docs
 - `tools/check_scala_parity.py`
   - Purpose: run sample parity plus the positive fixture manifest for Scala3 as one canonical route
 

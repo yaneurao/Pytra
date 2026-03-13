@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Legacy rollout inventory checker for remaining non-C++ runtime layout state."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -353,7 +354,7 @@ def _collect_module_bucket_issues() -> list[str]:
             issues.append(f"blocked/generated overlap drifted: {backend}")
         covered = set(entry["generated_modules"]).intersection(compare_baseline)
         if covered.union(blocked) != compare_baseline:
-            issues.append(f"generated compare baseline coverage drifted: {backend}")
+            issues.append(f"legacy generated+blocked compare baseline coverage drifted: {backend}")
     return issues
 
 
@@ -430,7 +431,7 @@ def _collect_wave_b_generated_compare_issues() -> list[str]:
             issues.append(f"wave-b materialized compare modules drifted: {backend}")
         expected_helper_artifacts = generated_modules.difference(compare_baseline)
         if helper_artifact_modules != expected_helper_artifacts:
-            issues.append(f"wave-b helper artifact modules drifted: {backend}")
+            issues.append(f"wave-b legacy helper artifact modules drifted: {backend}")
         if materialized_modules & blocked_modules:
             issues.append(f"wave-b materialized compare overlaps blocked bucket: {backend}")
         if helper_artifact_modules & blocked_modules:
@@ -716,7 +717,7 @@ def _collect_wave_a_generated_compare_issues() -> list[str]:
             issues.append(f"wave-a materialized compare modules drifted: {backend}")
         expected_helper_artifacts = generated_modules.difference(compare_baseline)
         if helper_artifact_modules != expected_helper_artifacts:
-            issues.append(f"wave-a helper artifact modules drifted: {backend}")
+            issues.append(f"wave-a legacy helper artifact modules drifted: {backend}")
         if materialized_modules & blocked_modules:
             issues.append(f"wave-a materialized compare overlaps blocked bucket: {backend}")
         if helper_artifact_modules & blocked_modules:
