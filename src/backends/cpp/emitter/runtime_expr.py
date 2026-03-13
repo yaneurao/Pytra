@@ -77,7 +77,14 @@ class CppRuntimeExprEmitter:
                     print_args.append(self.render_expr(arg_node))
             return f"py_print({join_str_list(', ', print_args)})"
         if op == "len":
-            value_expr = self.render_expr(expr_d.get("value"))
+            value_node = expr_d.get("value")
+            typed_list_len = self._render_typed_list_len_expr(value_node)
+            if typed_list_len != "":
+                return typed_list_len
+            typed_deque_len = self._render_typed_deque_len_expr(value_node)
+            if typed_deque_len != "":
+                return typed_deque_len
+            value_expr = self.render_expr(value_node)
             return f"py_len({value_expr})"
         if op == "to_string":
             return self.render_to_string(expr_d.get("value"))

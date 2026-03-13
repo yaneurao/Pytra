@@ -2837,7 +2837,7 @@ class CppEmitter(
         first_arg: Any,
     ) -> str | None:
         """`set/list/dict` コンストラクタ呼び出しの型依存分岐を共通化する。"""
-        if raw not in {"set", "list", "dict"}:
+        if raw not in {"set", "list", "dict", "deque"}:
             return None
         resolved_t = self.normalize_type_name(self.any_to_str(expr.get("resolved_type")))
         if resolved_t in {"", "unknown"}:
@@ -2864,6 +2864,8 @@ class CppEmitter(
             t = self._cpp_list_value_model_type_text(resolved_t)
         if len(args) == 0:
             return f"{t}{{}}"
+        if raw == "deque":
+            return None
         if len(args) != 1:
             return None
         at0 = self.get_expr_type(first_arg)
@@ -3423,6 +3425,17 @@ class CppEmitter(
             return ""
         return f"!({empty_expr})"
 
+    def _render_typed_list_len_expr(self, expr_node: Any) -> str:
+        """typed list の `len(...)` を `.size()` へ縮退する。"""
+        if not self._typed_list_empty_fastpath_target(expr_node):
+            return ""
+        body = self._strip_outer_parens(self.render_expr(expr_node))
+        if body == "":
+            return ""
+        if self._uses_pyobj_ref_first_list_lvalue_expr(expr_node):
+            body = f"rc_list_ref({body})"
+        return self._render_container_size_expr(body)
+
     def _render_typed_deque_truthy_cond(self, expr_node: Any) -> str:
         """typed deque の truthy 条件を `!deque.empty()` へ縮退する。"""
         if not self._typed_deque_fastpath_target(expr_node):
@@ -3932,6 +3945,9 @@ class CppEmitter(
     def _render_expr_kind_obj_len(self, expr: Any, expr_d: dict[str, Any]) -> str:
         _ = expr
         value_node = expr_d.get("value")
+        list_len = self._render_typed_list_len_expr(value_node)
+        if list_len != "":
+            return list_len
         deque_len = self._render_typed_deque_len_expr(value_node)
         if deque_len != "":
             return deque_len
