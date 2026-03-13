@@ -120,7 +120,7 @@ source:
 
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01] Pytra-NES2 repro を全 backend representative contract に昇格し、`property_method_call` と `list_bool_index` の test が全言語で通る状態を close 条件として固定する。
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-01] `materials/refs/from-Pytra-NES2/` の current repro inventory を棚卸しし、既存対応済み case と未対応 case の対応表を plan / docs に固定する。
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-02] `property_method_call.py` と `list_bool_index.py` を `test/fixtures/` の representative fixture へ昇格し、期待 semantics を assertion 付きで固定する。
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-02] `property_method_call.py` と `list_bool_index.py` を `test/fixtures/` の representative fixture へ昇格し、期待 semantics を assertion 付きで固定する。
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-01] C++/C#/Rust/Go/Java/Kotlin/Scala/Swift/Nim の representative smoke に 2 fixture を追加し、compile/run または backend 標準 smoke で失敗を固定する。
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-02] JS/TS/Lua/Ruby/PHP の representative smoke に 2 fixture を追加し、transpile/run contract を固定する。
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-03] 全 backend 共通で「unsupported / preview_only / not_implemented へ逃がしたら fail」と分かる assertion / helper / checker を必要に応じて追加する。
@@ -133,3 +133,4 @@ source:
 - 2026-03-13: current repro bundle のうち `bytes_truthiness`, `path_stringify`, `field_default_factory_rc_obj` は既存 fixture / smoke に取り込まれている一方、`property_method_call` と `list_bool_index` は current repo で未解消と判定した。
 - 2026-03-13: README 記載の `path_alias_pkg/entry.py` は current bundle に現物がないため、この task の対象から外し、別途 bundle 補完が来たときに再評価する。
 - 2026-03-13: `S1-01` として README entry ごとの current bundle / current repo status / representative lane を table 化し、既存 3 件、未解消 2 件、missing 1 件を plan 正本に固定した。
+- 2026-03-13: `S1-02` として `test/fixtures/typing/property_method_call.py` と `test/fixtures/typing/list_bool_index.py` を追加し、`@property` value read / stringify と `list[bool]` read-write-reread semantics を assertion 付きで固定した。

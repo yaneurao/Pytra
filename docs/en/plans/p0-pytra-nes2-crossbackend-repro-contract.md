@@ -118,7 +118,7 @@ Target semantics:
 
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01] Promote the Pytra-NES2 repros into a representative cross-backend contract and keep `property_method_call` and `list_bool_index` green in every target backend before close.
 - [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-01] Inventory the current repro bundle under `materials/refs/from-Pytra-NES2/` and lock the map of already-covered vs unresolved cases into the plan/docs.
-- [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-02] Promote `property_method_call.py` and `list_bool_index.py` into representative fixtures under `test/fixtures/`, with assertion-backed semantics.
+- [x] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S1-02] Promote `property_method_call.py` and `list_bool_index.py` into representative fixtures under `test/fixtures/`, with assertion-backed semantics.
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-01] Add those fixtures to representative smoke for C++/C#/Rust/Go/Java/Kotlin/Scala/Swift/Nim and lock the initial failures.
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-02] Add those fixtures to representative smoke for JS/TS/Lua/Ruby/PHP and lock the transpile/run contract.
 - [ ] [ID: P0-PYTRA-NES2-CROSSBACKEND-REPRO-01-S2-03] Add common assertion/helper/checker support as needed so `unsupported`, `preview_only`, or `not_implemented` counts as a failure.
@@ -131,3 +131,4 @@ Decision log:
 - 2026-03-13: Current local inspection concluded that `bytes_truthiness`, `path_stringify`, and `field_default_factory_rc_obj` are already absorbed into existing fixture/smoke lanes, while `property_method_call` and `list_bool_index` remain unresolved.
 - 2026-03-13: `path_alias_pkg/entry.py` is listed in the README but missing from the current bundle, so it remains out of scope until the file is actually present.
 - 2026-03-13: `S1-01` locked a README-entry table covering current bundle presence, current repo status, representative-lane mapping, and the one missing-file case.
+- 2026-03-13: `S1-02` added `test/fixtures/typing/property_method_call.py` and `test/fixtures/typing/list_bool_index.py`, locking the `@property` value-read/stringify semantics and the `list[bool]` read-write-reread semantics with assertions.
