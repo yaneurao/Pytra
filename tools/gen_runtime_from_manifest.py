@@ -1311,7 +1311,7 @@ def rewrite_rs_perf_counter_runtime_wrapper(rs_src: str) -> str:
 """
 
 
-def rewrite_rs_std_math_live_wrapper(rs_src: str) -> str:
+def rewrite_rs_math_runtime_wrapper(rs_src: str) -> str:
     del rs_src
     return """pub const pi: f64 = ::std::f64::consts::PI;
 pub const e: f64 = ::std::f64::consts::E;
@@ -1544,7 +1544,14 @@ def rewrite_js_std_native_owner_wrapper(js_src: str, helper_name: str) -> str:
             "generated JS std/" + helper_name + " wrapper still contains extern/native owner residue"
         )
     export_names = value_symbols + function_symbols
-    return text.rstrip() + "\n\nmodule.exports = { " + ", ".join(export_names) + " };\n"
+    alias_lines: list[str] = []
+    if helper_name == "time" and "perf_counter" in function_symbols:
+        alias_lines.append("const perfCounter = perf_counter;")
+        export_names.append("perfCounter")
+    body = text.rstrip()
+    if len(alias_lines) > 0:
+        body += "\n\n" + "\n".join(alias_lines)
+    return body + "\nmodule.exports = { " + ", ".join(export_names) + " };\n"
 
 
 def _strip_trailing_string_literal_expr(text: str) -> str:
@@ -1715,20 +1722,6 @@ def rewrite_js_std_module_runtime_imports(js_src: str, *, module_name: str) -> s
     if "./pytra/" in text or "./runtime/js/" in text:
         raise RuntimeError("generated JS std/" + module_name + " wrapper still points at staged runtime paths")
     return rewrite_js_program_to_cjs_module(text)
-
-
-def rewrite_js_perf_counter_host_wrapper(js_src: str) -> str:
-    text = _strip_trailing_string_literal_expr(js_src)
-    text = 'const time_native = require("../../native/std/time_native.js");\n\n' + text
-    text = text.replace(
-        "return __t.perf_counter();",
-        "return time_native.perf_counter();",
-    ).rstrip()
-    if "function perf_counter(" not in text:
-        raise RuntimeError("generated JS std/time wrapper is missing perf_counter()")
-    if "__t.perf_counter()" in text or "process.hrtime.bigint()" in text:
-        raise RuntimeError("generated JS std/time wrapper still contains host-binding residue")
-    return text + "\n\nconst perfCounter = perf_counter;\nmodule.exports = {perf_counter, perfCounter};\n"
 
 
 def rewrite_js_std_sys_live_wrapper(js_src: str) -> str:
@@ -2323,6 +2316,12 @@ def rewrite_ts_std_native_owner_wrapper(ts_src: str, helper_name: str) -> str:
                 + "): number {",
                 text,
             )
+        elif helper_name == "time" and symbol_name == "perf_counter":
+            text = re.sub(
+                rf"function\s+{re.escape(symbol_name)}\(([^)]*)\)\s*\{{",
+                "export function perf_counter(): number {",
+                text,
+            )
         else:
             text = re.sub(
                 rf"function\s+{re.escape(symbol_name)}\(([^)]*)\)\s*\{{",
@@ -2343,26 +2342,10 @@ def rewrite_ts_std_native_owner_wrapper(ts_src: str, helper_name: str) -> str:
         raise RuntimeError(
             "generated TS std/" + helper_name + " wrapper still contains extern/native owner residue"
         )
+    if helper_name == "time" and "perf_counter" in function_symbols:
+        text = text.rstrip() + "\n\nexport const perfCounter = perf_counter;\n"
+        return text
     return text.rstrip() + "\n"
-
-
-def rewrite_ts_perf_counter_host_wrapper(ts_src: str) -> str:
-    text = _strip_trailing_string_literal_expr(ts_src)
-    text = 'import * as time_native from "../../native/std/time_native";\n\n' + text
-    text = text.replace(
-        "function perf_counter() {",
-        "export function perf_counter(): number {",
-        1,
-    )
-    text = text.replace(
-        "return __t.perf_counter();",
-        "return time_native.perf_counter();",
-    ).rstrip()
-    if "export function perf_counter(): number {" not in text:
-        raise RuntimeError("generated TS std/time wrapper is missing perf_counter()")
-    if "__t.perf_counter()" in text or "process.hrtime.bigint()" in text:
-        raise RuntimeError("generated TS std/time wrapper still contains host-binding residue")
-    return text + "\n\nexport const perfCounter = perf_counter;\n"
 
 
 def rewrite_ts_std_sys_native_owner_wrapper(ts_src: str) -> str:
@@ -3156,7 +3139,7 @@ def rewrite_php_perf_counter_native_wrapper(php_src: str) -> str:
     return text.rstrip() + "\n"
 
 
-def rewrite_php_std_math_live_wrapper(php_src: str) -> str:
+def rewrite_php_math_runtime_wrapper(php_src: str) -> str:
     text = rewrite_php_program_to_library(php_src)
     runtime_require = _php_generated_runtime_require_block().rstrip()
     text = text.replace(
@@ -3700,8 +3683,8 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_cs_std_pathlib_live_wrapper(generated)
     elif item.postprocess == "rs_perf_counter_runtime_wrapper":
         generated = rewrite_rs_perf_counter_runtime_wrapper(generated)
-    elif item.postprocess == "rs_std_math_live_wrapper":
-        generated = rewrite_rs_std_math_live_wrapper(generated)
+    elif item.postprocess == "rs_math_runtime_wrapper":
+        generated = rewrite_rs_math_runtime_wrapper(generated)
     elif item.postprocess == "java_std_native_owner_wrapper":
         if item.helper_name == "":
             raise RuntimeError("missing helper_name for java_std_native_owner_wrapper: " + item.item_id)
@@ -3710,8 +3693,6 @@ def render_item(item: GenerationItem) -> str:
         if item.helper_name == "":
             raise RuntimeError("missing helper_name for js_std_native_owner_wrapper: " + item.item_id)
         generated = rewrite_js_std_native_owner_wrapper(generated, item.helper_name)
-    elif item.postprocess == "js_perf_counter_host_wrapper":
-        generated = rewrite_js_perf_counter_host_wrapper(generated)
     elif item.postprocess == "js_std_sys_live_wrapper":
         generated = rewrite_js_std_sys_live_wrapper(generated)
     elif item.postprocess == "js_std_pathlib_live_wrapper":
@@ -3730,8 +3711,6 @@ def render_item(item: GenerationItem) -> str:
         if item.helper_name == "":
             raise RuntimeError("missing helper_name for ts_std_native_owner_wrapper: " + item.item_id)
         generated = rewrite_ts_std_native_owner_wrapper(generated, item.helper_name)
-    elif item.postprocess == "ts_perf_counter_host_wrapper":
-        generated = rewrite_ts_perf_counter_host_wrapper(generated)
     elif item.postprocess == "ts_std_sys_live_wrapper":
         generated = rewrite_ts_std_sys_live_wrapper(generated)
     elif item.postprocess == "ts_std_pathlib_live_wrapper":
@@ -3760,8 +3739,8 @@ def render_item(item: GenerationItem) -> str:
         generated = rewrite_swift_program_to_library(generated)
     elif item.postprocess == "php_perf_counter_native_wrapper":
         generated = rewrite_php_perf_counter_native_wrapper(generated)
-    elif item.postprocess == "php_std_math_live_wrapper":
-        generated = rewrite_php_std_math_live_wrapper(generated)
+    elif item.postprocess == "php_math_runtime_wrapper":
+        generated = rewrite_php_math_runtime_wrapper(generated)
     elif item.postprocess == "php_std_pathlib_live_wrapper":
         generated = rewrite_php_std_pathlib_live_wrapper(generated)
     elif item.postprocess == "php_std_json_live_wrapper":

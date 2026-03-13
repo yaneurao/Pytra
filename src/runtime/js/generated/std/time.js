@@ -9,4 +9,4 @@ function perf_counter() {
 }
 
 const perfCounter = perf_counter;
-module.exports = {perf_counter, perfCounter};
+module.exports = { perf_counter, perfCounter };

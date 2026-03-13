@@ -37,7 +37,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "bucket": "stdlib",
         "source_rel": "src/pytra/std/math.py",
         "manifest_postprocess_targets": (
-            "rs:rs_std_math_live_wrapper",
+            "rs:rs_math_runtime_wrapper",
             "cs:cs_std_native_owner_wrapper",
             "go:go_program_to_library",
             "java:java_std_native_owner_wrapper",
@@ -46,7 +46,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "swift:swift_program_to_library",
             "js:js_std_native_owner_wrapper",
             "ts:ts_std_native_owner_wrapper",
-            "php:php_std_math_live_wrapper",
+            "php:php_math_runtime_wrapper",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/math.cpp",),
         "noncpp_native_owner_paths": (
@@ -90,8 +90,8 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "kotlin:kotlin_program_to_library",
             "scala:scala_program_to_library",
             "swift:swift_program_to_library",
-            "js:js_perf_counter_host_wrapper",
-            "ts:ts_perf_counter_host_wrapper",
+            "js:js_std_native_owner_wrapper",
+            "ts:ts_std_native_owner_wrapper",
             "php:php_perf_counter_native_wrapper",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/time.cpp",),

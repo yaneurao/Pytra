@@ -404,7 +404,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("crate::py_runtime::perf_counter()", out)
         self.assertNotIn("__t.perf_counter()", out)
 
-    def test_rewrite_rs_std_math_live_wrapper_exports_std_math_facade(self) -> None:
+    def test_rewrite_rs_math_runtime_wrapper_exports_std_math_facade(self) -> None:
         src = "\n".join(
             [
                 "// AUTO-GENERATED FILE. DO NOT EDIT.",
@@ -416,7 +416,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "}",
             ]
         )
-        out = gen_mod.rewrite_rs_std_math_live_wrapper(src)
+        out = gen_mod.rewrite_rs_math_runtime_wrapper(src)
         self.assertIn("pub const pi: f64 = ::std::f64::consts::PI;", out)
         self.assertIn("pub const e: f64 = ::std::f64::consts::E;", out)
         self.assertIn("pub trait ToF64 {", out)
@@ -671,7 +671,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertNotIn("__s.", out)
         self.assertNotIn("process.", out)
 
-    def test_rewrite_js_perf_counter_host_wrapper_delegates_to_time_native(self) -> None:
+    def test_rewrite_js_std_native_owner_wrapper_delegates_time_to_time_native(self) -> None:
         src = "\n".join(
             [
                 "function perf_counter() {",
@@ -681,11 +681,11 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "\"pytra.std.time: extern-marked time API with Python runtime fallback.\";",
             ]
         )
-        out = gen_mod.rewrite_js_perf_counter_host_wrapper(src)
+        out = gen_mod.rewrite_js_std_native_owner_wrapper(src, "time")
         self.assertIn('const time_native = require("../../native/std/time_native.js");', out)
         self.assertIn("return time_native.perf_counter();", out)
         self.assertIn("const perfCounter = perf_counter;", out)
-        self.assertIn("module.exports = {perf_counter, perfCounter};", out)
+        self.assertIn("module.exports = { perf_counter, perfCounter };", out)
         self.assertNotIn("__t.perf_counter()", out)
         self.assertNotIn("process.hrtime.bigint()", out)
 
@@ -738,7 +738,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("return JSON.parse(String(text));", out)
         self.assertIn("module.exports = { JsonObj, JsonArr, JsonValue, loads, loads_obj, loads_arr, dumps };", out)
 
-    def test_rewrite_ts_perf_counter_host_wrapper_delegates_to_time_native(self) -> None:
+    def test_rewrite_ts_std_native_owner_wrapper_delegates_time_to_time_native(self) -> None:
         src = "\n".join(
             [
                 "function perf_counter() {",
@@ -748,7 +748,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "\"pytra.std.time: extern-marked time API with Python runtime fallback.\";",
             ]
         )
-        out = gen_mod.rewrite_ts_perf_counter_host_wrapper(src)
+        out = gen_mod.rewrite_ts_std_native_owner_wrapper(src, "time")
         self.assertIn('import * as time_native from "../../native/std/time_native";', out)
         self.assertIn("export function perf_counter(): number {", out)
         self.assertIn("return time_native.perf_counter();", out)
@@ -854,7 +854,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
         self.assertIn("function_exists('__pytra_len')", out)
         self.assertNotIn("__pytra_main();", out)
 
-    def test_rewrite_php_std_math_live_wrapper_exports_pi_and_e(self) -> None:
+    def test_rewrite_php_math_runtime_wrapper_exports_pi_and_e(self) -> None:
         src = "\n".join(
             [
                 "<?php",
@@ -876,7 +876,7 @@ class GenRuntimeFromManifestTest(unittest.TestCase):
                 "__pytra_main();",
             ]
         )
-        out = gen_mod.rewrite_php_std_math_live_wrapper(src)
+        out = gen_mod.rewrite_php_math_runtime_wrapper(src)
         self.assertIn("dirname(__DIR__) . '/py_runtime.php'", out)
         self.assertIn("dirname(__DIR__, 2) . '/native/built_in/py_runtime.php'", out)
         self.assertIn("$pi = pyMathPi();", out)

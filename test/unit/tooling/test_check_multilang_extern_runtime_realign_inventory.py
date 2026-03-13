@@ -55,7 +55,7 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         self.assertEqual(
             row["manifest_postprocess_targets"],
             (
-                "rs:rs_std_math_live_wrapper",
+                "rs:rs_math_runtime_wrapper",
                 "cs:cs_std_native_owner_wrapper",
                 "go:go_program_to_library",
                 "java:java_std_native_owner_wrapper",
@@ -64,7 +64,7 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
                 "swift:swift_program_to_library",
                 "js:js_std_native_owner_wrapper",
                 "ts:ts_std_native_owner_wrapper",
-                "php:php_std_math_live_wrapper",
+                "php:php_math_runtime_wrapper",
             ),
         )
         self.assertEqual(row["cpp_native_owner_paths"], ("src/runtime/cpp/native/std/math.cpp",))
@@ -114,8 +114,8 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
                 "kotlin:kotlin_program_to_library",
                 "scala:scala_program_to_library",
                 "swift:swift_program_to_library",
-                "js:js_perf_counter_host_wrapper",
-                "ts:ts_perf_counter_host_wrapper",
+                "js:js_std_native_owner_wrapper",
+                "ts:ts_std_native_owner_wrapper",
                 "php:php_perf_counter_native_wrapper",
             ),
         )
