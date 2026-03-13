@@ -139,7 +139,7 @@ def _safe_ident(name: Any, fallback: str) -> str:
         out = fallback
     if out[0].isdigit():
         out = "_" + out
-    if out in _PHP_KEYWORDS:
+    if out.lower() in _PHP_KEYWORDS:
         out = out + "_"
     return out
 
@@ -250,6 +250,7 @@ def _collect_relative_import_symbol_aliases(body: list[Any]) -> dict[str, str]:
 def _php_string_literal(text: str) -> str:
     out = text.replace("\\", "\\\\")
     out = out.replace("\"", "\\\"")
+    out = out.replace("\r", "\\r")
     out = out.replace("\n", "\\n")
     return '"' + out + '"'
 

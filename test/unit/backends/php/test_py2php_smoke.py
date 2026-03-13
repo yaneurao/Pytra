@@ -140,11 +140,20 @@ class Py2PhpSmokeTest(unittest.TestCase):
         runtime_path = ROOT / "src" / "runtime" / "php" / "native" / "built_in" / "py_runtime.php"
         generated_contains_path = ROOT / "src" / "runtime" / "php" / "generated" / "built_in" / "contains.php"
         generated_sequence_path = ROOT / "src" / "runtime" / "php" / "generated" / "built_in" / "sequence.php"
+        generated_argparse_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "argparse.php"
+        generated_glob_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "glob.php"
         generated_json_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "json.php"
         generated_math_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "math.php"
+        generated_os_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "os.php"
+        generated_os_path_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "os_path.php"
         generated_pathlib_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "pathlib.php"
+        generated_random_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "random.php"
+        generated_re_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "re.php"
+        generated_sys_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "sys.php"
         time_path = ROOT / "src" / "runtime" / "php" / "native" / "std" / "time.php"
         generated_time_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "time.php"
+        generated_timeit_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "timeit.php"
+        assertions_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "assertions.php"
         png_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "png.php"
         gif_path = ROOT / "src" / "runtime" / "php" / "generated" / "utils" / "gif.php"
         compat_time_path = ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "time.php"
@@ -152,17 +161,68 @@ class Py2PhpSmokeTest(unittest.TestCase):
         self.assertTrue(runtime_path.exists())
         self.assertTrue(generated_contains_path.exists())
         self.assertTrue(generated_sequence_path.exists())
+        self.assertTrue(generated_argparse_path.exists())
+        self.assertTrue(generated_glob_path.exists())
         self.assertTrue(generated_json_path.exists())
         self.assertTrue(generated_math_path.exists())
+        self.assertTrue(generated_os_path.exists())
+        self.assertTrue(generated_os_path_path.exists())
         self.assertTrue(generated_pathlib_path.exists())
+        self.assertTrue(generated_random_path.exists())
+        self.assertTrue(generated_re_path.exists())
+        self.assertTrue(generated_sys_path.exists())
         self.assertTrue(time_path.exists())
         self.assertTrue(generated_time_path.exists())
+        self.assertTrue(generated_timeit_path.exists())
+        self.assertTrue(assertions_path.exists())
         self.assertTrue(png_path.exists())
         self.assertTrue(gif_path.exists())
         self.assertTrue(compat_time_path.exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "argparse.php").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "glob.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "math.php").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "os.php").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "os_path.php").exists())
         self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "pathlib.php").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "random.php").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "re.php").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "sys.php").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "std" / "timeit.php").exists())
+        self.assertFalse((ROOT / "src" / "runtime" / "php" / "pytra" / "utils" / "assertions.php").exists())
         self.assertFalse(legacy_path.exists())
+
+    def test_php_generated_std_baseline_source_guard_materializes_new_compare_modules(self) -> None:
+        runtime_root = ROOT / "src" / "runtime" / "php" / "generated"
+        guarded_targets = {
+            runtime_root / "std" / "argparse.php": ("class Namespace_", "class ArgumentParser"),
+            runtime_root / "std" / "glob.php": ("function glob(",),
+            runtime_root / "std" / "os.php": ("function getcwd(",),
+            runtime_root / "std" / "os_path.php": ("function basename(",),
+            runtime_root / "std" / "random.php": ("function randint(",),
+            runtime_root / "std" / "re.php": ("class Match_", '"\\r"'),
+            runtime_root / "std" / "sys.php": ("function write_stderr(",),
+            runtime_root / "std" / "timeit.php": ("function default_timer(",),
+            runtime_root / "utils" / "assertions.php": ("function py_assert_true(",),
+        }
+        for path, needles in guarded_targets.items():
+            with self.subTest(path=path.relative_to(ROOT).as_posix()):
+                text = path.read_text(encoding="utf-8")
+                self.assertIn("AUTO-GENERATED FILE. DO NOT EDIT.", text)
+                for needle in needles:
+                    self.assertIn(needle, text)
+        for lint_path in (
+            runtime_root / "std" / "argparse.php",
+            runtime_root / "std" / "re.php",
+        ):
+            with self.subTest(lint_path=lint_path.relative_to(ROOT).as_posix()):
+                proc = subprocess.run(
+                    ["php", "-l", str(lint_path)],
+                    cwd=ROOT,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
 
     def test_php_repo_generated_and_compat_lanes_resolve_native_substrate(self) -> None:
         generated_json_path = ROOT / "src" / "runtime" / "php" / "generated" / "std" / "json.php"

@@ -124,6 +124,11 @@
           "target": "scala",
           "output": "src/runtime/scala/generated/utils/assertions.scala",
           "postprocess": "scala_program_to_library"
+        },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/utils/assertions.php",
+          "postprocess": "php_program_to_library"
         }
       ]
     },
@@ -681,7 +686,12 @@
           "output": "src/runtime/swift/generated/std/os.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/os.nim" }
+        { "target": "nim", "output": "src/runtime/nim/generated/std/os.nim" },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/std/os.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -712,7 +722,12 @@
           "output": "src/runtime/swift/generated/std/os_path.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/os_path.nim" }
+        { "target": "nim", "output": "src/runtime/nim/generated/std/os_path.nim" },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/std/os_path.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -743,7 +758,12 @@
           "output": "src/runtime/swift/generated/std/glob.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/glob.nim" }
+        { "target": "nim", "output": "src/runtime/nim/generated/std/glob.nim" },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/std/glob.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -774,7 +794,12 @@
           "output": "src/runtime/swift/generated/std/argparse.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/argparse.nim" }
+        { "target": "nim", "output": "src/runtime/nim/generated/std/argparse.nim" },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/std/argparse.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -805,7 +830,12 @@
           "output": "src/runtime/swift/generated/std/random.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/random.nim" }
+        { "target": "nim", "output": "src/runtime/nim/generated/std/random.nim" },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/std/random.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -836,7 +866,12 @@
           "output": "src/runtime/swift/generated/std/re.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/re.nim" }
+        { "target": "nim", "output": "src/runtime/nim/generated/std/re.nim" },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/std/re.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -867,7 +902,12 @@
           "output": "src/runtime/swift/generated/std/sys.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/sys.nim" }
+        { "target": "nim", "output": "src/runtime/nim/generated/std/sys.nim" },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/std/sys.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     },
     {
@@ -898,7 +938,12 @@
           "output": "src/runtime/swift/generated/std/timeit.swift",
           "postprocess": "swift_program_to_library"
         },
-        { "target": "nim", "output": "src/runtime/nim/generated/std/timeit.nim" }
+        { "target": "nim", "output": "src/runtime/nim/generated/std/timeit.nim" },
+        {
+          "target": "php",
+          "output": "src/runtime/php/generated/std/timeit.php",
+          "postprocess": "php_program_to_library"
+        }
       ]
     }
   ]

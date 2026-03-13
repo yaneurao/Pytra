@@ -189,7 +189,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_HELPER_ARTIFACT_OVERLAP_V1: Final[
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_MATERIALIZED_BACKENDS_V1: Final[
     tuple[str, ...]
-] = ("cs", "go", "java", "rs", "swift", "nim", "kotlin", "scala")
+] = ("cs", "go", "java", "rs", "swift", "nim", "kotlin", "scala", "php")
 
 NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LEGACY_POLICY_FILES_V1: Final[
     tuple[NonCppRuntimeGeneratedCppBaselineLegacyPolicyFileEntry, ...]

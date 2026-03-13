@@ -20,8 +20,7 @@ if (!function_exists('__pytra_len')) {
 }
 
 function _is_space($ch) {
-    return (($ch == " ") || ($ch == "	") || ($ch == "\n") || ($ch == "
-"));
+    return (($ch == " ") || ($ch == "	") || ($ch == "\n") || ($ch == "\r"));
 }
 
 function _contains_char($chars, $ch) {
@@ -101,11 +100,9 @@ function py_splitlines($s) {
     $i = 0;
     while (($i < $n)) {
         $ch = $s[$i];
-        if ((($ch == "\n") || ($ch == "
-"))) {
+        if ((($ch == "\n") || ($ch == "\r"))) {
             $out[] = __pytra_str_slice($s, $start, $i);
-            if ((($ch == "
-") && (($i + 1) < $n) && ($s[($i + 1)] == "\n"))) {
+            if ((($ch == "\r") && (($i + 1) < $n) && ($s[($i + 1)] == "\n"))) {
                 $i += 1;
             }
             $i += 1;
@@ -119,8 +116,7 @@ function py_splitlines($s) {
     } else {
         if (($n > 0)) {
             $last = $s[($n - 1)];
-            if ((($last == "\n") || ($last == "
-"))) {
+            if ((($last == "\n") || ($last == "\r"))) {
                 $out[] = "";
             }
         }
