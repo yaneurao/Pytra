@@ -210,6 +210,8 @@ class Py2SwiftSmokeTest(unittest.TestCase):
         src = (ROOT / "src" / "backends" / "swift" / "emitter" / "swift_native_emitter.py").read_text(encoding="utf-8")
         self.assertNotIn('owner == "math"', src)
         self.assertNotIn("owner == 'math'", src)
+        self.assertNotIn('"pytra.std.math"', src)
+        self.assertNotIn("'pytra.std.math'", src)
         self.assertNotIn('runtime_symbol.startswith("pyMath")', src)
         self.assertNotIn("runtime_symbol.startswith('pyMath')", src)
         self.assertNotIn('runtime_symbol == "pyMathPi"', src)

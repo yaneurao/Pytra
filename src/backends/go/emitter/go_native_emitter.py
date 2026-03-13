@@ -11,6 +11,7 @@ from backends.common.emitter.code_emitter import (
 )
 from toolchain.frontends.runtime_call_adapters import normalize_rendered_runtime_args
 from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
+from toolchain.frontends.runtime_symbol_index import lookup_runtime_module_extern_contract
 
 
 _GO_KEYWORDS = {
@@ -760,14 +761,57 @@ def _runtime_symbol_name(expr: dict[str, Any]) -> str:
     return ""
 
 
+_GO_MATH_RUNTIME_SYMBOLS = {
+    "pi",
+    "e",
+    "sin",
+    "cos",
+    "tan",
+    "sqrt",
+    "exp",
+    "log",
+    "log10",
+    "fabs",
+    "floor",
+    "ceil",
+    "pow",
+}
+
+
+def _has_runtime_extern_module(expr: dict[str, Any]) -> bool:
+    runtime_module_any = expr.get("runtime_module_id")
+    runtime_module = runtime_module_any if isinstance(runtime_module_any, str) else ""
+    if runtime_module == "":
+        return False
+    return len(lookup_runtime_module_extern_contract(runtime_module)) > 0
+
+
+def _matches_math_symbol(expr: dict[str, Any], symbol: str, semantic_tag: str) -> bool:
+    if _runtime_symbol_name(expr) != symbol:
+        return False
+    semantic_tag_any = expr.get("semantic_tag")
+    if isinstance(semantic_tag_any, str) and semantic_tag_any == semantic_tag:
+        return True
+    if _has_runtime_extern_module(expr):
+        return True
+    runtime_call, _ = _resolved_runtime_call(expr)
+    return runtime_call.strip() == "math." + symbol
+
+
 def _is_math_runtime(expr: dict[str, Any]) -> bool:
-    return _runtime_module_id(expr) == "pytra.std.math"
+    symbol = _runtime_symbol_name(expr)
+    if symbol not in _GO_MATH_RUNTIME_SYMBOLS:
+        return False
+    if _has_runtime_extern_module(expr):
+        return True
+    runtime_call, _ = _resolved_runtime_call(expr)
+    return runtime_call.strip() == "math." + symbol
 
 
 def _is_math_constant(expr: dict[str, Any]) -> bool:
-    if not _is_math_runtime(expr):
-        return False
-    return _runtime_symbol_name(expr) in {"pi", "e"}
+    return _matches_math_symbol(expr, "pi", "stdlib.symbol.pi") or _matches_math_symbol(
+        expr, "e", "stdlib.symbol.e"
+    )
 
 
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
