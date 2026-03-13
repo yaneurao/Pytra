@@ -44,8 +44,11 @@ Decision log:
 
 ## Breakdown
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01] Lock the representative C++ lane for `collections.deque.copy()` / `index()`.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S1-01] Lock the current invalid C++ surface (`copy`, `index`) in focused regressions / TODO / plan.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S2-01] Lower `copy()` to a valid deque copy-construction surface.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S2-02] Lower `index(value)` to a valid search / distance surface.
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S3-01] Sync build/run smoke and support wording, then close the task.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01] Lock the representative C++ lane for `collections.deque.copy()` / `index()`.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S1-01] Lock the current invalid C++ surface (`copy`, `index`) in focused regressions / TODO / plan.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S2-01] Lower `copy()` to a valid deque copy-construction surface.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S2-02] Lower `index(value)` to a valid search / distance surface.
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S3-01] Sync build/run smoke and support wording, then close the task.
+
+- 2026-03-13: `copy()` now lowers to explicit `::std::deque<T>(src)` copy-construction inside a single-evaluation lambda, and `index(value)` now lowers to `std::find + iterator difference + ValueError("deque.index missing value")`.
+- 2026-03-13: The representative build/run smoke is locked on the typed lane `r: deque[int] = q.copy()` with output `3 / 2 / 0`. Plain local inference (`r = q.copy()`) is split out into a follow-up task.

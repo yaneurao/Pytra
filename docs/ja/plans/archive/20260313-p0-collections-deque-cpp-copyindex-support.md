@@ -44,8 +44,11 @@
 
 ## 分解
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01] `collections.deque.copy()` / `index()` representative C++ lane を固定する。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S1-01] current invalid C++ surface (`copy`, `index`) を focused regression / TODO / plan で固定する。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S2-01] `copy()` を valid な deque copy-construction surface に lower する。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S2-02] `index(value)` を search / distance surface に lower する。
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S3-01] build/run smoke と support wording を同期して close する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01] `collections.deque.copy()` / `index()` representative C++ lane を固定する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S1-01] current invalid C++ surface (`copy`, `index`) を focused regression / TODO / plan で固定する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S2-01] `copy()` を valid な deque copy-construction surface に lower する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S2-02] `index(value)` を search / distance surface に lower する。
+- [x] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01-S3-01] build/run smoke と support wording を同期して close する。
+
+- 2026-03-13: `copy()` は single-evaluation lambda 内での explicit `::std::deque<T>(src)` copy-construction に lower し、`index(value)` は `std::find + iterator差分 + ValueError("deque.index missing value")` に統一した。
+- 2026-03-13: representative build/run smoke は `r: deque[int] = q.copy()` の typed lane で `3 / 2 / 0` を固定した。plain local inference (`r = q.copy()`) は別 task へ分離する。

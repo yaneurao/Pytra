@@ -643,6 +643,41 @@ class CppCallEmitter:
         coerced_expr = self._coerce_typed_deque_item_expr(deque_owner_t, value_expr, value_node)
         return f"{owner_expr}.{push_method}({coerced_expr})"
 
+    def _render_typed_deque_copy_call(
+        self,
+        deque_owner_t: str,
+        owner_expr: str,
+    ) -> str:
+        """typed deque の `copy()` を copy-construction surface へ lower する。"""
+        owner_cpp_t = self._cpp_type_text(deque_owner_t)
+        source_tmp = self.next_tmp("__deque_src")
+        return (
+            f"([&]() -> {owner_cpp_t} {{ "
+            f"auto&& {source_tmp} = {owner_expr}; "
+            f"return {owner_cpp_t}({source_tmp}); "
+            "}())"
+        )
+
+    def _render_typed_deque_index_call(
+        self,
+        deque_owner_t: str,
+        owner_expr: str,
+        value_expr: str,
+        value_node: Any,
+    ) -> str:
+        """typed deque の `index(value)` を `find + iterator差分` へ lower する。"""
+        index_expr = self._coerce_typed_deque_item_expr(deque_owner_t, value_expr, value_node)
+        source_tmp = self.next_tmp("__deque_src")
+        iter_tmp = self.next_tmp("__deque_it")
+        return (
+            "([&]() -> int64 { "
+            f"auto&& {source_tmp} = {owner_expr}; "
+            f"auto {iter_tmp} = ::std::find({source_tmp}.begin(), {source_tmp}.end(), {index_expr}); "
+            f"if ({iter_tmp} == {source_tmp}.end()) throw ValueError(\"deque.index missing value\"); "
+            f"return static_cast<int64>({iter_tmp} - {source_tmp}.begin()); "
+            "}())"
+        )
+
     def _coerce_typed_deque_item_expr(
         self,
         deque_owner_t: str,
@@ -937,10 +972,15 @@ class CppCallEmitter:
             if append_rendered is not None and append_rendered != "":
                 return append_rendered
         if owner_t.startswith("deque[") and owner_t.endswith("]"):
+            if attr == "copy" and len(args) == 0 and len(kw) == 0:
+                return self._render_typed_deque_copy_call(owner_t, owner_expr)
             if attr == "count" and len(args) == 1 and len(kw) == 0:
                 value_node = arg_nodes[0] if len(arg_nodes) > 0 else {}
                 count_expr = self._coerce_typed_deque_item_expr(owner_t, args[0], value_node)
                 return f"static_cast<int64>(::std::count({owner_expr}.begin(), {owner_expr}.end(), {count_expr}))"
+            if attr == "index" and len(args) == 1 and len(kw) == 0:
+                value_node = arg_nodes[0] if len(arg_nodes) > 0 else {}
+                return self._render_typed_deque_index_call(owner_t, owner_expr, args[0], value_node)
             if attr == "remove" and len(args) == 1 and len(kw) == 0:
                 value_node = arg_nodes[0] if len(arg_nodes) > 0 else {}
                 remove_expr = self._coerce_typed_deque_item_expr(owner_t, args[0], value_node)

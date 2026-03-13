@@ -31,4 +31,4 @@
 
 ## 未完了タスク
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01] `collections.deque.copy()` / `index()` representative C++ lane を固定する。進捗: 新規起票。まず current invalid C++ surface (`copy`, `index`) を focused regression で固定する。文脈: [p0-collections-deque-cpp-copyindex-support.md](../plans/p0-collections-deque-cpp-copyindex-support.md)
+現在、未完了タスクはありません。

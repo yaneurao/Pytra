@@ -31,4 +31,4 @@ Last updated: 2026-03-13
 
 ## Unfinished Tasks
 
-- [ ] [ID: P0-COLLECTIONS-DEQUE-CPP-COPYINDEX-01] Lock the representative C++ lane for `collections.deque.copy()` / `index()`. Progress: newly opened. First lock the current invalid C++ surface (`copy`, `index`) with a focused regression. Context: [p0-collections-deque-cpp-copyindex-support.md](../plans/p0-collections-deque-cpp-copyindex-support.md)
+There are currently no open tasks.

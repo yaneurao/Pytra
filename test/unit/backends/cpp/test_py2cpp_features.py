@@ -5488,7 +5488,7 @@ print(q.count(1))
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             self.assertEqual(run.stdout.strip().splitlines(), ["2", "2", "1"])
 
-    def test_deque_copyindex_still_leaks_python_surface_into_cpp(self) -> None:
+    def test_deque_copyindex_lowers_to_std_cpp_surface(self) -> None:
         src = """from collections import deque
 
 q: deque[int] = deque([1, 2, 1])
@@ -5505,9 +5505,77 @@ print(q.index(1))
             cpp,
             r"return ::std::deque<int64>\(__deque_src_\d*\.begin\(\), __deque_src_\d*\.end\(\)\);",
         )
-        self.assertIn("q.copy()", cpp)
-        self.assertIn("q.index(1)", cpp)
-        self.assertNotIn("::std::distance(", cpp)
+        self.assertRegex(
+            cpp,
+            r"return ::std::deque<int64>\(__deque_src_\d+\);",
+        )
+        self.assertNotIn("q.copy()", cpp)
+        self.assertRegex(
+            cpp,
+            r"::std::find\(__deque_src_\d+\.begin\(\), __deque_src_\d+\.end\(\), int64\(1\)\)",
+        )
+        self.assertIn("deque.index missing value", cpp)
+        self.assertNotIn("q.index(1)", cpp)
+        self.assertRegex(
+            cpp,
+            r"return static_cast<int64>\(__deque_it_\d+ - __deque_src_\d+\.begin\(\)\);",
+        )
+
+    def test_deque_copyindex_builds_and_runs_in_cpp_representative_lane(self) -> None:
+        src = """from collections import deque
+
+q: deque[int] = deque([1, 2, 1])
+r: deque[int] = q.copy()
+q.pop()
+print(len(r))
+print(len(q))
+print(q.index(1))
+"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src_py = work / "deque_copyindex_case.py"
+            out_cpp = work / "deque_copyindex_case.cpp"
+            out_exe = work / "deque_copyindex_case.out"
+            manifest = work / "manifest.json"
+            src_py.write_text(src, encoding="utf-8")
+            transpile(src_py, out_cpp)
+            manifest.write_text(
+                json.dumps(
+                    {
+                        "include_dir": str(work),
+                        "modules": [
+                            {
+                                "source": str(out_cpp),
+                            }
+                        ],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            comp = self._run_subprocess_with_timeout(
+                [
+                    "python3",
+                    "tools/build_multi_cpp.py",
+                    str(manifest),
+                    "-o",
+                    str(out_exe),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="compile deque copyindex representative lane",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+            run = self._run_subprocess_with_timeout(
+                [str(out_exe)],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run deque copyindex representative lane",
+            )
+            self.assertEqual(run.returncode, 0, msg=run.stderr)
+            self.assertEqual(run.stdout.strip().splitlines(), ["3", "2", "0"])
 
     def test_dataclass_field_default_and_factory_drive_ctor_defaults(self) -> None:
         src = """from dataclasses import dataclass, field
