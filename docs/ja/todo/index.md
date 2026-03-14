@@ -35,4 +35,4 @@
 
 1. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] `py_runtime.h` の typed fallback を EAST3 / C++ emitter / runtime SoT 側へ押し戻し、header を物理分割なしで縮める。
 文脈: [docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md](../plans/p2-cpp-pyruntime-upstream-fallback-shrink.md)
-- 進捗メモ: `S2-02` tenth bundle まで完了。`S2-01` は emitter helper-only まで縮退して完了し、generated `iter_ops/gif` 再生成と typed empty-bytes lane の upstream 化で boxed-list seed bucket は retire 済み。sample `py_append` bucket と generated/sample generic-index bucket も retire 済みで、C++ emitter の ref-first typed list subscript を `py_list_at_ref(rc_list_ref(...), ...)` へ寄せたことで typed-lane residual は emitter helper 1 bucket のみになった。next は `S2-03` として generic `make_object` / `py_to` / dict-key coercion の typed path fallback 縮退。
+- 進捗メモ: `S2-03` first bundle まで完了。`char* -> typed value` を `py_coerce_cstr_typed_value()` に寄せたことで `list` append/set と `dict` key coercion の reboxing fallback を retire し、header の `py_to<...>(...object...)` residual は unsupported-target guard 1 件だけになった。next は generic `make_object` / `py_to` 本体の typed path fallback 縮退。

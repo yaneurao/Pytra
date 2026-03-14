@@ -799,18 +799,44 @@ static inline typename list<T>::const_reference py_list_at_ref(const list<T>& va
     return values[static_cast<::std::size_t>(pos)];
 }
 
+template <class T>
+struct py_is_cstr_like : ::std::bool_constant<
+    ::std::is_pointer_v<::std::decay_t<T>>
+    && ::std::is_same_v<
+        ::std::remove_cv_t<::std::remove_pointer_t<::std::decay_t<T>>>,
+        char>> {};
+
+template <class T>
+static inline T py_coerce_cstr_typed_value(const char* value) {
+    if constexpr (::std::is_same_v<T, str>) {
+        return str(value);
+    } else if constexpr (::std::is_same_v<T, object>) {
+        return make_object(str(value));
+    } else if constexpr (::std::is_same_v<T, bool>) {
+        return str(value).size() != 0;
+    } else if constexpr (::std::is_integral_v<T> && !::std::is_same_v<T, bool>) {
+        return static_cast<T>(py_to_int64(str(value)));
+    } else if constexpr (::std::is_floating_point_v<T>) {
+        return static_cast<T>(py_to_float64(str(value)));
+    } else if constexpr (::std::is_convertible_v<const char*, T>) {
+        return static_cast<T>(value);
+    } else if constexpr (::std::is_constructible_v<T, const char*>) {
+        return T(value);
+    } else if constexpr (::std::is_convertible_v<str, T>) {
+        return static_cast<T>(str(value));
+    } else if constexpr (::std::is_constructible_v<T, str>) {
+        return T(str(value));
+    } else {
+        static_assert(!::std::is_same_v<T, T>, "py_coerce_cstr_typed_value<T>: unsupported target type");
+    }
+}
+
 template <class T, class U>
 static inline void py_list_append_mut(list<T>& values, const U& item) {
     if constexpr (::std::is_same_v<U, object>) {
         values.append(py_to<T>(item));
-    } else if constexpr (::std::is_same_v<U, const char*>) {
-        if constexpr (::std::is_same_v<T, str>) {
-            values.append(str(item));
-        } else if constexpr (::std::is_convertible_v<const char*, T>) {
-            values.append(static_cast<T>(item));
-        } else {
-            values.append(py_to<T>(make_object(str(item))));
-        }
+    } else if constexpr (py_is_cstr_like<U>::value) {
+        values.append(py_coerce_cstr_typed_value<T>(item));
     } else if constexpr (::std::is_same_v<T, U>) {
         values.append(item);
     } else if constexpr (::std::is_convertible_v<U, T>) {
@@ -826,14 +852,8 @@ static inline void py_list_set_at_mut(list<T>& values, I idx, const U& item) {
     pos = py_list_normalize_index_or_raise(values, pos, "list index out of range");
     if constexpr (::std::is_same_v<U, object>) {
         values[static_cast<::std::size_t>(pos)] = py_to<T>(item);
-    } else if constexpr (::std::is_same_v<U, const char*>) {
-        if constexpr (::std::is_same_v<T, str>) {
-            values[static_cast<::std::size_t>(pos)] = str(item);
-        } else if constexpr (::std::is_convertible_v<const char*, T>) {
-            values[static_cast<::std::size_t>(pos)] = static_cast<T>(item);
-        } else {
-            values[static_cast<::std::size_t>(pos)] = py_to<T>(make_object(str(item)));
-        }
+    } else if constexpr (py_is_cstr_like<U>::value) {
+        values[static_cast<::std::size_t>(pos)] = py_coerce_cstr_typed_value<T>(item);
     } else if constexpr (::std::is_same_v<T, U>) {
         values[static_cast<::std::size_t>(pos)] = item;
     } else if constexpr (::std::is_convertible_v<U, T>) {
@@ -969,14 +989,8 @@ static inline V& py_at(dict<K, V>& d, const Q& key) {
             } else {
                 return K(key);
             }
-        } else if constexpr (::std::is_same_v<Q, const char*> || ::std::is_same_v<Q, char*>) {
-            if constexpr (::std::is_same_v<K, str>) {
-                return str(key);
-            } else if constexpr (::std::is_convertible_v<const char*, K>) {
-                return static_cast<K>(key);
-            } else {
-                return py_to<K>(make_object(str(key)));
-            }
+        } else if constexpr (py_is_cstr_like<Q>::value) {
+            return py_coerce_cstr_typed_value<K>(key);
         } else if constexpr (::std::is_same_v<K, Q>) {
             return key;
         } else if constexpr (::std::is_convertible_v<Q, K>) {
@@ -1006,14 +1020,8 @@ static inline const V& py_at(const dict<K, V>& d, const Q& key) {
             } else {
                 return K(key);
             }
-        } else if constexpr (::std::is_same_v<Q, const char*> || ::std::is_same_v<Q, char*>) {
-            if constexpr (::std::is_same_v<K, str>) {
-                return str(key);
-            } else if constexpr (::std::is_convertible_v<const char*, K>) {
-                return static_cast<K>(key);
-            } else {
-                return py_to<K>(make_object(str(key)));
-            }
+        } else if constexpr (py_is_cstr_like<Q>::value) {
+            return py_coerce_cstr_typed_value<K>(key);
         } else if constexpr (::std::is_same_v<K, Q>) {
             return key;
         } else if constexpr (::std::is_convertible_v<Q, K>) {

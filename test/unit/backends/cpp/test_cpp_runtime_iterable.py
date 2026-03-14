@@ -389,6 +389,65 @@ int main() {
             self.assertEqual(run.returncode, 0, msg=run.stderr)
             self.assertIn("runtime bool list ok", run.stdout)
 
+    def test_runtime_cstr_typed_coercion_helpers(self) -> None:
+        cpp_src = r'''
+#include "runtime/cpp/native/core/py_runtime.h"
+
+#include <cassert>
+#include <iostream>
+
+int main() {
+    list<int64> values{};
+    py_list_append_mut(values, "7");
+    py_list_set_at_mut(values, 0, "8");
+    assert(values.size() == 1);
+    assert(values[0] == 8);
+
+    dict<int64, str> typed_dict{};
+    typed_dict[8] = "eight";
+    assert(py_at(typed_dict, "8") == "eight");
+    const dict<int64, str> typed_dict_const = typed_dict;
+    assert(py_at(typed_dict_const, "8") == "eight");
+
+    std::cout << "runtime cstr typed coercion ok" << std::endl;
+    return 0;
+}
+'''
+        with tempfile.TemporaryDirectory() as tmpdir:
+            work = Path(tmpdir)
+            src = work / "runtime_cstr_typed_coercion.cpp"
+            exe = work / "runtime_cstr_typed_coercion.out"
+            src.write_text(cpp_src, encoding="utf-8")
+
+            comp = self._run(
+                [
+                    "g++",
+                    "-std=c++20",
+                    "-O2",
+                    "-I",
+                    "src",
+                    "-I",
+                    "src/runtime/cpp",
+                    str(src),
+                    *CPP_RUNTIME_SRCS,
+                    "-o",
+                    str(exe),
+                ],
+                cwd=ROOT,
+                timeout_sec=PYTRA_TEST_COMPILE_TIMEOUT_SEC,
+                label="compile runtime cstr typed coercion smoke",
+            )
+            self.assertEqual(comp.returncode, 0, msg=comp.stderr)
+
+            run = self._run(
+                [str(exe)],
+                cwd=work,
+                timeout_sec=PYTRA_TEST_RUN_TIMEOUT_SEC,
+                label="run runtime cstr typed coercion smoke",
+            )
+            self.assertEqual(run.returncode, 0, msg=run.stderr)
+            self.assertIn("runtime cstr typed coercion ok", run.stdout)
+
     def test_runtime_list_overload_inventory(self) -> None:
         process_native = (ROOT / "src/runtime/cpp/native/core/process_runtime.h").read_text(encoding="utf-8")
         scope_exit_native = (ROOT / "src/runtime/cpp/native/core/scope_exit.h").read_text(encoding="utf-8")
@@ -497,6 +556,8 @@ int main() {
         self.assertNotIn("static inline T py_list_item_cast(const object& item)", runtime_header)
         self.assertNotIn("static inline T py_list_item_cast(const char* item)", runtime_header)
         self.assertNotIn("static inline T py_list_item_cast(const U& item)", runtime_header)
+        self.assertNotIn("make_object(str(item))", runtime_header)
+        self.assertNotIn("make_object(str(key))", runtime_header)
         self.assertNotIn("static inline V py_dict_value_cast(const object& value)", runtime_header)
         self.assertNotIn("static inline V py_dict_value_cast(const char* value)", runtime_header)
         self.assertNotIn("static inline V py_dict_value_cast(const U& value)", runtime_header)
@@ -628,6 +689,7 @@ int main() {
         self.assertNotIn("static inline float64 operator*(const ::std::any& lhs, const ::std::any& rhs)", runtime_header)
         self.assertNotIn("static inline float64 operator/(const ::std::any& lhs, const ::std::any& rhs)", runtime_header)
         self.assertIn("static inline typename list<T>::const_reference py_at(const list<T>& v, int64 idx)", runtime_header)
+        self.assertIn("static inline T py_coerce_cstr_typed_value(const char* value) {", runtime_header)
         self.assertNotIn("static inline void py_append(list<T>& v, const U& item)", runtime_header)
         self.assertNotIn("static inline void py_append(rc<list<T>>& v, const U& item)", runtime_header)
         self.assertIn("static inline void py_append(object& v, const U& item)", runtime_header)

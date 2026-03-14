@@ -21,7 +21,7 @@ class CheckCppPyRuntimeUpstreamFallbackInventoryTest(unittest.TestCase):
 
     def test_header_line_baseline_is_fixed(self) -> None:
         self.assertEqual(check_mod._collect_header_line_issues(), [])
-        self.assertEqual(inventory_mod.HEADER_LINE_BASELINE, 1287)
+        self.assertEqual(inventory_mod.HEADER_LINE_BASELINE, 1295)
 
     def test_inventory_bucket_order_is_fixed(self) -> None:
         self.assertEqual(
@@ -82,11 +82,7 @@ class CheckCppPyRuntimeUpstreamFallbackInventoryTest(unittest.TestCase):
         )
         self.assertEqual(
             by_id["header_object_py_to_call_sites"]["expected_count"],
-            5,
-        )
-        self.assertEqual(
-            by_id["header_dict_key_charptr_object_coercion"]["expected_count"],
-            2,
+            1,
         )
 
     def test_caller_baselines_are_fixed(self) -> None:
@@ -110,6 +106,7 @@ class CheckCppPyRuntimeUpstreamFallbackInventoryTest(unittest.TestCase):
         self.assertNotIn("generated_runtime_boxed_list_seed_sites", inventory_ids)
         self.assertNotIn("generated_runtime_object_list_bridge_sites", inventory_ids)
         self.assertNotIn("sample_cpp_py_append_sites", inventory_ids)
+        self.assertNotIn("header_dict_key_charptr_object_coercion", inventory_ids)
 
 
 if __name__ == "__main__":

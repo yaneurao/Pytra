@@ -33,7 +33,6 @@ ANY_OBJECT_BOUNDARY_HEADER_IDS: Final[tuple[str, ...]] = (
     "header_generic_make_object_fallback",
     "header_generic_py_to_object_fallback",
     "header_object_py_to_call_sites",
-    "header_dict_key_charptr_object_coercion",
 )
 
 TYPED_LANE_MUST_NOT_USE_IDS: Final[tuple[str, ...]] = (

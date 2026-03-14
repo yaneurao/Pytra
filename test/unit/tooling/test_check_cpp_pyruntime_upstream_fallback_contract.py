@@ -45,7 +45,6 @@ class CheckCppPyRuntimeUpstreamFallbackContractTest(unittest.TestCase):
                 "header_generic_make_object_fallback",
                 "header_generic_py_to_object_fallback",
                 "header_object_py_to_call_sites",
-                "header_dict_key_charptr_object_coercion",
             ),
         )
         self.assertEqual(

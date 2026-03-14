@@ -15,7 +15,7 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_PLAN_EN: Final[str] = (
     "docs/en/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md"
 )
 
-HEADER_LINE_BASELINE: Final[int] = 1287
+HEADER_LINE_BASELINE: Final[int] = 1295
 
 INVENTORY_BUCKET_ORDER: Final[tuple[str, ...]] = (
     "header_bulk",
@@ -177,35 +177,15 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_INVENTORY_V1: Final[
         "scope_rel": "src/runtime/cpp/native/core/py_runtime.h",
         "matcher_kind": "regex",
         "needle": r"py_to<[^>]+>\([^\n]*object",
-        "expected_count": 5,
+        "expected_count": 1,
         "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-03",
         "evidence_refs": (
             {
                 "relpath": "src/runtime/cpp/native/core/py_runtime.h",
-                "needle": "values.append(py_to<T>(item));",
-            },
-            {
-                "relpath": "src/runtime/cpp/native/core/py_runtime.h",
-                "needle": "return py_to<K>(make_object(str(key)));",
+                "needle": 'static_assert(!::std::is_same_v<T, T>, "py_to<T>(object): unsupported target type");',
             },
         ),
-        "notes": "Object-backed py_to call sites show where generic unboxing still re-enters inside the header.",
-    },
-    {
-        "inventory_id": "header_dict_key_charptr_object_coercion",
-        "bucket": "header_bulk",
-        "scope_rel": "src/runtime/cpp/native/core/py_runtime.h",
-        "matcher_kind": "literal",
-        "needle": "return py_to<K>(make_object(str(key)));",
-        "expected_count": 2,
-        "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-03",
-        "evidence_refs": (
-            {
-                "relpath": "src/runtime/cpp/native/core/py_runtime.h",
-                "needle": "return py_to<K>(make_object(str(key)));",
-            },
-        ),
-        "notes": "Dict key coercion still boxes through object in both const and mutable py_at(dict, key) paths.",
+        "notes": "After retiring the char* reboxing helpers, only the generic unsupported-target guard still matches the object py_to regex inside the header.",
     },
     {
         "inventory_id": "cpp_emitter_object_list_bridge_sites",
