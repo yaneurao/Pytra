@@ -216,6 +216,7 @@ NONCPP_RUNTIME_GENERATED_CPP_BASELINE_LOCAL_RUNTIME_FILE_INVENTORY_V1: Final[
         ),
         "native_files": (
             "native/built_in/py_runtime.cs",
+            "native/std/glob_native.cs",
             "native/std/math_native.cs",
             "native/std/time_native.cs",
         ),

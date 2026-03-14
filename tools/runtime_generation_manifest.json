@@ -800,7 +800,12 @@
       "bucket": "std",
       "targets": [
         { "target": "rs", "output": "src/runtime/rs/generated/std/glob.rs" },
-        { "target": "cs", "output": "src/runtime/cs/generated/std/glob.cs" },
+        {
+          "target": "cs",
+          "output": "src/runtime/cs/generated/std/glob.cs",
+          "postprocess": "cs_std_native_owner_wrapper",
+          "helper_name": "glob"
+        },
         {
           "target": "go",
           "output": "src/runtime/go/generated/std/glob.go",

@@ -9,16 +9,15 @@ using Any = System.Object;
 using int64 = System.Int64;
 using float64 = System.Double;
 using str = System.String;
-using Pytra.CsModule;
 
-public static class Program
+namespace Pytra.CsModule
 {
-    public static System.Collections.Generic.List<string> glob(string pattern)
+    public static class glob
     {
-        return __glob.glob(pattern);
-    }
-    
-    public static void Main(string[] args)
-    {
+        public static System.Collections.Generic.List<str> glob(str pattern)
+        {
+            return glob_native.glob(pattern);
+        }
+
     }
 }

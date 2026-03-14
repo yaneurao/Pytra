@@ -252,6 +252,7 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
         "bucket": "stdlib",
         "source_rel": "src/pytra/std/glob.py",
         "manifest_postprocess_targets": (
+            "cs:cs_std_native_owner_wrapper",
             "go:go_program_to_library",
             "kotlin:kotlin_program_to_library",
             "scala:scala_program_to_library",
@@ -261,8 +262,8 @@ MULTILANG_EXTERN_RUNTIME_REALIGN_INVENTORY_V1: Final[tuple[ExternRuntimeRealignE
             "php:php_program_to_library",
         ),
         "cpp_native_owner_paths": ("src/runtime/cpp/native/std/glob.cpp",),
-        "noncpp_ownership_mode": "generated_compare_only",
-        "noncpp_native_owner_paths": (),
+        "noncpp_ownership_mode": "native_owner",
+        "noncpp_native_owner_paths": ("src/runtime/cs/native/std/glob_native.cs",),
         "accepted_generated_compare_residual_targets": ("rs",),
         "emitter_hardcode_needles": (),
         "generated_drift_needles": (
