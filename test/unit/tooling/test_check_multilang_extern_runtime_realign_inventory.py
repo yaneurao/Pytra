@@ -196,7 +196,7 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
         self.assertEqual(by_id["std/os"]["accepted_generated_compare_residual_targets"], ("rs",))
         self.assertEqual(by_id["std/os_path"]["noncpp_ownership_mode"], "generated_compare_only")
         self.assertEqual(by_id["std/os_path"]["accepted_generated_compare_residual_targets"], ("rs",))
-        self.assertEqual(by_id["std/glob"]["noncpp_ownership_mode"], "generated_compare_only")
+        self.assertEqual(by_id["std/glob"]["noncpp_ownership_mode"], "native_owner")
         self.assertEqual(by_id["std/glob"]["accepted_generated_compare_residual_targets"], ("rs",))
         self.assertEqual(by_id["built_in/io_ops"]["noncpp_ownership_mode"], "generated_compare_only")
         self.assertEqual(by_id["built_in/io_ops"]["accepted_generated_compare_residual_targets"], ())
