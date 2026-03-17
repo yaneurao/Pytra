@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-17（S3-01 完了）
+最終更新: 2026-03-17（S3-02 完了）
 
 ## 文脈運用ルール
 
@@ -43,3 +43,4 @@
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S2-02] 完了: stdlib の `Any` 移行。`enum.py`（`object`/具体型に変換）、`argparse.py`（`str | bool | None` に変換）、`json.py`（`dumps(obj: object)`）。`AnyAnnotationProhibitionPass` による検証 PASS。
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S2-03] 完了: `Any` 禁止ドキュメント整備。`docs/ja/spec/spec-any-prohibition.md` 新規作成。移行手順・エラーガイド・パス有効化方法を記載。
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S3-01] 完了: `json.py` 内部表現を `_JsonVal` closed 型へ移行。`JsonObj.raw: dict[str,_JsonVal]`、`_jv_to_object`/`_object_to_jv` を `json_adapters.py` に追加。decode boundary ガード 8 ファイル対応済み。
+  - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S3-02] 完了: `assertions.py` の `object` 除去。`_eq_any` / `py_assert_eq` 引数型を `str | int | float | bool | None` へ変更。`py_assert_stdout fn: object`（callable stub）・`enum.py`（S4）・`sys.py`（S5-01）は後続フェーズで対応。

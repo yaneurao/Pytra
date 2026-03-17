@@ -1,6 +1,6 @@
 # P5: `Any` アノテーション禁止と `object`/`PyObj` フリーランタイムへの移行
 
-最終更新: 2026-03-17（S3-01 完了）
+最終更新: 2026-03-17（S3-02 完了）
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P5-ANY-ELIM-OBJECT-FREE-01`
@@ -92,7 +92,7 @@
   - `_parse_value` / `_dump_json_value` など内部で `object` を往来する経路を、`JsonValue` 型（enum または クラス階層）に置き換える。
   - `loads` / `loads_obj` / `loads_arr` の公開 API parity を維持する。
 
-- [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S3-02] その他 stdlib / utils の `object` 内部使用を除去する。
+- [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S3-02] その他 stdlib / utils の `object` 内部使用を除去する。
   - S1-04 で列挙した残りモジュールを順次移行する。
 
 ### S4: クラス多態性の `PyObj` 依存除去
@@ -284,4 +284,15 @@
   - `shared` バージョン `0.116 → 0.117`（`json.py` 変更）。`py2x.py` 変更で全非 cpp バックエンドバージョンも bump。
   - IR ユニットテスト 3 件: `json.loads()` が `JsonValue` 返しになったため、テストを `object` 型引数直接渡しに変更。
   - pre-existing 失敗（`check_py2cpp_boundary.py` 等）以外の非退行なし。
+
+- 2026-03-17 [S3-02 完了]: `assertions.py` の `object` 型除去。
+
+  **変更内容:**
+  - `_eq_any(actual: str | int | float | bool | None, expected: str | int | float | bool | None)`
+  - `py_assert_eq(actual: str | int | float | bool | None, expected: str | int | float | bool | None, label: str = "")`
+  - `py_assert_stdout(fn: object)` — `fn` は呼び出されない stub のため保留。
+  - `enum.py` の `object` 使用（metaclass/value/`__eq__`）は S4 で設計変更時に対応。
+  - `sys.py` の `stderr: object / stdout: object` は S5-01（extern 透過化）で対応。
+  - `shared` バージョン `0.117 → 0.118`（`src/pytra/` 変更）。
+  - pre-existing 失敗以外の非退行なし。
 
