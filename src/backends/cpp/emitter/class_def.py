@@ -191,7 +191,7 @@ class CppClassEmitter:
             bases.append(f"public {base_cpp}")
         base_is_gc = self._type_is_ref_class(base)
         if gc_managed and not base_is_gc:
-            bases.append("public PyObj")
+            bases.append("public RcObject")
         base_txt: str = ""
         if len(bases) > 0:
             sep = ", "

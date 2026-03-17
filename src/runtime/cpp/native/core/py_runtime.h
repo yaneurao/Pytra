@@ -1249,6 +1249,15 @@ static inline bool py_runtime_value_isinstance(const T& value, uint32 expected_t
     return py_runtime_object_isinstance(make_object(value), expected_type_id);
 }
 
+// Specialization for user-defined ref classes that inherit RcObject directly (not via PyObj).
+// Avoids boxing through make_object; uses the virtual py_type_id() on the RcObject base.
+template <class T, ::std::enable_if_t<
+    ::std::is_base_of_v<RcObject, T> && !::std::is_base_of_v<PyObj, T>, int> = 0>
+static inline bool py_runtime_value_isinstance(const rc<T>& value, uint32 expected_type_id) {
+    if (!value) return expected_type_id == PYTRA_TID_NONE;
+    return py_runtime_type_id_is_subtype(value->py_type_id(), expected_type_id);
+}
+
 template <class T, ::std::enable_if_t<::std::is_arithmetic_v<T>, int> = 0>
 static inline auto operator-(const rc<T>& v) -> decltype(v->__neg__()) {
     return v->__neg__();

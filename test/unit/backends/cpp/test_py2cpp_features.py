@@ -4520,7 +4520,7 @@ if __name__ == "__main__":
             obj_dir.mkdir(parents=True, exist_ok=True)
             generated_header = (out_dir / "include" / "apu.h").read_text(encoding="utf-8")
             generated_user = (out_dir / "src" / "user.cpp").read_text(encoding="utf-8")
-            self.assertLess(generated_header.index("extern list<int64> LENGTH_TABLE;"), generated_header.index("struct PulseChannel : public PyObj {"))
+            self.assertLess(generated_header.index("extern list<int64> LENGTH_TABLE;"), generated_header.index("struct PulseChannel : public RcObject {"))
             self.assertIn("channel->write_timer_high(8);", generated_user)
             self.assertIn("return channel->sample();", generated_user)
             for source_name in ("apu.cpp", "user.cpp"):
@@ -4735,7 +4735,7 @@ if __name__ == "__main__":
             case34_cpp = work / "case34.cpp"
             transpile(case34_py, case34_cpp)
             case34_txt = case34_cpp.read_text(encoding="utf-8")
-            self.assertIn("struct Tracked : public PyObj {", case34_txt)
+            self.assertIn("struct Tracked : public RcObject {", case34_txt)
             self.assertIn("rc<Tracked> a = ", case34_txt)
             self.assertIn("rc_new<Tracked>(\"A\")", case34_txt)
             self.assertIn("a = b;", case34_txt)

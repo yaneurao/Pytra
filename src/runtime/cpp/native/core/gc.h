@@ -43,6 +43,8 @@ public:
 
     virtual void rc_release_refs();
 
+    virtual uint32_t py_type_id() const noexcept { return 0; }
+
 private:
     template <class U>
     friend class RcHandle;
