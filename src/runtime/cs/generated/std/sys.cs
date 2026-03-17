@@ -9,46 +9,38 @@ using Any = System.Object;
 using int64 = System.Int64;
 using float64 = System.Double;
 using str = System.String;
-using Pytra.CsModule;
 
-public static class Program
+namespace Pytra.CsModule
 {
-    public static void exit(long code = 0)
+    public static class sys
     {
-        __s.exit(code);
-    }
-    
-    public static void set_argv(System.Collections.Generic.List<string> values)
-    {
-        argv.clear();
-        foreach (var v in values) {
-            argv.append(v);
+        public static System.Collections.Generic.List<str> argv { get { return sys_native.argv; } }
+        public static System.Collections.Generic.List<str> path { get { return sys_native.path; } }
+
+        public static void exit(int64 code = 0)
+        {
+            sys_native.exit(code);
         }
-    }
-    
-    public static void set_path(System.Collections.Generic.List<string> values)
-    {
-        path.clear();
-        foreach (var v in values) {
-            path.append(v);
+
+        public static void set_argv(System.Collections.Generic.List<str> values)
+        {
+            sys_native.set_argv(values);
         }
-    }
-    
-    public static void write_stderr(string text)
-    {
-        __s.stderr.write(text);
-    }
-    
-    public static void write_stdout(string text)
-    {
-        __s.stdout.write(text);
-    }
-    
-    public static void Main(string[] args)
-    {
-            System.Collections.Generic.List<string> argv = py_extern(__s.argv);
-            System.Collections.Generic.List<string> path = py_extern(__s.path);
-            var stderr = py_extern(__s.stderr);
-            var stdout = py_extern(__s.stdout);
+
+        public static void set_path(System.Collections.Generic.List<str> values)
+        {
+            sys_native.set_path(values);
+        }
+
+        public static void write_stderr(str text)
+        {
+            sys_native.write_stderr(text);
+        }
+
+        public static void write_stdout(str text)
+        {
+            sys_native.write_stdout(text);
+        }
+
     }
 }

@@ -72,6 +72,8 @@ def _collect_contract_issues() -> list[str]:
         "random",
         "re",
         "argparse",
+        "os",
+        "os_path",
         "sys",
         "timeit",
         "enum",

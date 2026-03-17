@@ -9,26 +9,25 @@ using Any = System.Object;
 using int64 = System.Int64;
 using float64 = System.Double;
 using str = System.String;
-using Pytra.CsModule;
 
-public static class Program
+namespace Pytra.CsModule
 {
-    public static string getcwd()
+    public static class os
     {
-        return __os.getcwd();
-    }
-    
-    public static void mkdir(string p)
-    {
-        __os.mkdir(p);
-    }
-    
-    public static void makedirs(string p, bool exist_ok = false)
-    {
-        __os.makedirs(p, exist_ok);
-    }
-    
-    public static void Main(string[] args)
-    {
+        public static str getcwd()
+        {
+            return os_native.getcwd();
+        }
+
+        public static void mkdir(str p)
+        {
+            os_native.mkdir(p);
+        }
+
+        public static void makedirs(str p, bool exist_ok = false)
+        {
+            os_native.makedirs(p, exist_ok);
+        }
+
     }
 }

@@ -89,6 +89,31 @@ Examples:
 - `src/runtime/cpp/generated/std/math.h`
 - `src/runtime/cpp/native/core/py_runtime.h`
 
+### 0.6n Native File Naming Convention for Non-C++ Languages
+
+For languages other than C++ (C#, Java, Rust, Go, Kotlin, Swift, etc.), `native/` files follow this convention:
+
+- Native file name: `<name>_native.<ext>`
+- Native class/module name: `<name>_native` (file name and class name must match)
+
+Rationale:
+
+- In C++, `generated/` and `native/` use **same-named files** (e.g., `math.h` / `math.cpp`), with the directory alone distinguishing ownership. This works because the linker/include system unifies same-named symbols.
+- In non-C++ languages, `generated/std/os.cs` and `native/std/os.cs` would both appear in the same build, making them **indistinguishable by filename alone** (with potential class name collision risk in C#).
+- Applying `_native` suffix to both file name and class name satisfies each language's convention of **file name = class name** while clearly distinguishing from the generated side.
+
+Examples (C#):
+
+- `src/runtime/cs/generated/std/os.cs` → `public static class os` (generated, from SoT)
+- `src/runtime/cs/native/std/os_native.cs` → `public static class os_native` (native, host API implementation)
+
+Mandatory rules:
+
+- Non-C++ `native/std/<name>_native.<ext>` acts as a thin wrapper delegated to by the corresponding `generated/std/<name>.<ext>`.
+- The canonical form is: `generated/` delegates to `native/` (calling `<name>_native.<method>()`). Reverse dependencies are not allowed.
+- The `native/` side must not duplicate SoT-level logic. Limit it to minimal host API binding code.
+- Compiler optimization (inlining) eliminates delegation overhead at runtime. Single-file approaches via mix-in or partial class are not used.
+
 ### 0.60 Current C++ Module Runtime Layout
 
 The checked-in C++ runtime uses this ownership layout:

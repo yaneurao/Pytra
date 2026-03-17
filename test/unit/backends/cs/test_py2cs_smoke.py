@@ -1008,9 +1008,30 @@ def f(x: object) -> bool:
         fixture = find_fixture_case("sys_extended")
         east = load_east(fixture, parser_backend="self_hosted")
         cs = transpile_to_csharp(east)
-        self.assertIn('sys.set_argv(new System.Collections.Generic.List<str> { "a", "b" });', cs)
-        self.assertIn('sys.set_path(new System.Collections.Generic.List<str> { "x" });', cs)
+        self.assertIn('sys.set_argv(new System.Collections.Generic.List<string> { "a", "b" });', cs)
+        self.assertIn('sys.set_path(new System.Collections.Generic.List<string> { "x" });', cs)
+        self.assertIn("using sys = Pytra.CsModule.sys;", cs)
         self.assertNotIn("unsupported", cs)
+
+    def test_representative_os_glob_extended_fixture_transpiles(self) -> None:
+        fixture = find_fixture_case("os_glob_extended")
+        east = load_east(fixture, parser_backend="self_hosted")
+        cs = transpile_to_csharp(east)
+        self.assertIn("using os = Pytra.CsModule.os;", cs)
+        self.assertNotIn("unsupported", cs)
+
+    def test_representative_os_path_transpiles(self) -> None:
+        import tempfile
+        src = "from pytra.std import os_path\ndef run() -> str:\n    return os_path.join('a', 'b')\n"
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(src)
+            tmp = Path(f.name)
+        try:
+            east = load_east(tmp, parser_backend="self_hosted")
+            cs = transpile_to_csharp(east)
+            self.assertIn("using os_path = Pytra.CsModule.os_path;", cs)
+        finally:
+            tmp.unlink(missing_ok=True)
 
     def test_representative_random_timeit_traceback_fixture_transpiles(self) -> None:
         fixture = find_fixture_case("random_timeit_traceback_extended")
