@@ -8,8 +8,8 @@ import sys as __s
 
 argv: list[str] = extern(__s.argv)
 path: list[str] = extern(__s.path)
-stderr: object = extern(__s.stderr)
-stdout: object = extern(__s.stdout)
+stderr = extern(__s.stderr)
+stdout = extern(__s.stdout)
 
 
 @extern

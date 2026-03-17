@@ -21,8 +21,8 @@ end
 
 local argv = extern(__s.argv)
 local path = extern(__s.path)
-local stderr = extern(__s.stderr)
-local stdout = extern(__s.stdout)
+stderr = extern(__s.stderr)
+stdout = extern(__s.stdout)
 function exit(code)
     __s:exit(code)
 end

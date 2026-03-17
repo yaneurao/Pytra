@@ -9,8 +9,8 @@ import std/os, std/times, std/tables, std/strutils, std/math, std/sequtils
 discard "pytra.std.sys: extern-marked sys API with Python runtime fallback."
 var argv: seq[string] = extern(v_s.argv)
 var path: seq[string] = extern(v_s.path)
-var stderr: auto = extern(v_s.stderr)
-var stdout: auto = extern(v_s.stdout)
+var stderr = extern(v_s.stderr)
+var stdout = extern(v_s.stdout)
 proc exit*(code: int) =
   v_s.exit(code)
 

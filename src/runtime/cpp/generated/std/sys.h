@@ -11,8 +11,6 @@ namespace pytra::std::sys {
 
 extern list<str> argv;
 extern list<str> path;
-extern object stderr;
-extern object stdout;
 
 void exit(int64 code = 0);
 void set_argv(const rc<list<str>>& values);

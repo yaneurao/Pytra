@@ -52,7 +52,7 @@ def _sh_collect_extern_var_metadata(
     import_symbol_bindings: dict[str, dict[str, str]],
 ) -> dict[str, Any] | None:
     """`name: Any = extern(...)` から ambient global metadata を抽出する。"""
-    if annotation != "Any":
+    if annotation not in {"Any", "object", ""}:
         return None
     if not isinstance(value_expr, dict) or str(value_expr.get("kind", "")) != "Call":
         return None
