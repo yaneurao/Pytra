@@ -1,6 +1,6 @@
 # P5: `Any` アノテーション禁止と `object`/`PyObj` フリーランタイムへの移行
 
-最終更新: 2026-03-18（S4-02 完了）
+最終更新: 2026-03-18（S4 全完了）
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P5-ANY-ELIM-OBJECT-FREE-01`
@@ -105,7 +105,7 @@
   - emitter の型描画で `list[Base]` → `list<rc<Base>>` となるよう `type_bridge` を更新する。
   - `pyobj` list モデル（P1-LIST-PYOBJ-MIG-01 で導入）との関係を整理し、`list<object>` 経路を除去する。
 
-- [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S4-03] `isinstance` を `PyObj` なしで実装する。
+- [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S4-03] `isinstance` を `PyObj` なしで実装する。
   - ユーザー定義クラスの `type_id` を静的定数として生成し、C++ 側で `py_runtime_value_isinstance` を `PyObj` に依存しない形に置き換える。
   - `dynamic_cast` または `type_id` 比較のいずれかを選択し、仕様として固定する。
 
@@ -313,4 +313,12 @@
   - `list[Base]` → `list<rc<Base>>` emit は `type_bridge.py` の `_cpp_type_text` 汎用パスですでに正しく動作していた（ref_classes in → `rc<ClassName>` 返す）。
   - cpp バージョン `0.578 → 0.579`。
   - pre-existing 失敗以外の非退行なし。
+
+- 2026-03-18 [S4-03 完了]: isinstance の PyObj 非依存実装確定（S4-01 で実装済み）。
+
+  **方式決定:**
+  - `dynamic_cast` ではなく **type_id 比較** を採用。
+  - `py_runtime_value_isinstance(const rc<T>& value, uint32)` 特殊化（T : RcObject && !T : PyObj）が `value->py_type_id()` を呼び、`py_runtime_type_id_is_subtype` でサブタイプ判定する。
+  - `PYTRA_DECLARE_CLASS_TYPE` マクロはそのまま維持（`py_type_id() override` が RcObject 仮想に対して正しく動作）。
+  - 継承チェーンのサブタイプ判定は既存の `py_type_id_registry` を使用。
 

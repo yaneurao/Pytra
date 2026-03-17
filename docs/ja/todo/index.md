@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-18（S4-02 完了）
+最終更新: 2026-03-18（S4 全完了）
 
 ## 文脈運用ルール
 
@@ -46,3 +46,4 @@
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S3-02] 完了: `assertions.py` の `object` 除去。`_eq_any` / `py_assert_eq` 引数型を `str | int | float | bool | None` へ変更。`py_assert_stdout fn: object`（callable stub）・`enum.py`（S4）・`sys.py`（S5-01）は後続フェーズで対応。
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S4-01] 完了: ユーザー定義 ref クラス基底を `PyObj` → `RcObject` に変更。emitter・`gc.h`（py_type_id() 仮想追加）・`py_runtime.h`（rc<T> isinstance 特殊化）を更新。
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S4-02] 完了: `obj_to_rc<T>` の `static_assert` を `PyObj` → `RcObject` に緩和。`list[Base]` → `list<rc<Base>>` emit はすでに正しく動作していた。
+  - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S4-03] 完了: S4-01 で実装済み（`py_runtime_value_isinstance` の `rc<T>` 特殊化で `py_type_id()` 仮想比較を使用、type_id 比較方式に固定）。
