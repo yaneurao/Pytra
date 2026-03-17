@@ -287,16 +287,8 @@ class CppAnalysisEmitter:
         if kind in {"Assign", "AnnAssign", "AugAssign"}:
             self._mark_mutated_param_from_target(stmt.get("target"), params, out)
         elif kind == "Swap":
-            lhs = self.any_to_dict_or_empty(stmt.get("lhs"))
-            rhs = self.any_to_dict_or_empty(stmt.get("rhs"))
-            if self._node_kind_from_dict(lhs) == "Name":
-                ln = self.any_to_str(lhs.get("id"))
-                if ln in params:
-                    out.add(ln)
-            if self._node_kind_from_dict(rhs) == "Name":
-                rn = self.any_to_str(rhs.get("id"))
-                if rn in params:
-                    out.add(rn)
+            self._mark_mutated_param_from_target(stmt.get("lhs"), params, out)
+            self._mark_mutated_param_from_target(stmt.get("rhs"), params, out)
         elif kind == "Expr":
             call = self.any_to_dict_or_empty(stmt.get("value"))
             if self._node_kind_from_dict(call) == "Call":

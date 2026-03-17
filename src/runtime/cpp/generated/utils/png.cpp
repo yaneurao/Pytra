@@ -16,7 +16,7 @@ namespace pytra::utils::png {
 RGB 8bit バッファを PNG ファイルとして保存する。
  */
     
-    void _png_append_list(const rc<list<int64>>& dst, const rc<list<int64>>& src) {
+    void _png_append_list(rc<list<int64>>& dst, const rc<list<int64>>& src) {
         int64 i = 0;
         int64 n = (rc_list_ref(src)).size();
         while (i < n) {

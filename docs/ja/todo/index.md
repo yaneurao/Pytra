@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-14
+最終更新: 2026-03-17
 
 ## 文脈運用ルール
 
@@ -35,4 +35,4 @@
 
 1. [ ] [ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01] `py_runtime.h` の typed fallback を EAST3 / C++ emitter / runtime SoT 側へ押し戻し、header を物理分割なしで縮める。
 文脈: [docs/ja/plans/p2-cpp-pyruntime-upstream-fallback-shrink.md](../plans/p2-cpp-pyruntime-upstream-fallback-shrink.md)
-- 進捗メモ: `S2-03` first bundle まで完了。`char* -> typed value` を `py_coerce_cstr_typed_value()` に寄せたことで `list` append/set と `dict` key coercion の reboxing fallback を retire し、header の `py_to<...>(...object...)` residual は unsupported-target guard 1 件だけになった。next は generic `make_object` / `py_to` 本体の typed path fallback 縮退。
+- 進捗メモ: `S2-03` second bundle 完了。emitter の const メソッド修飾・nested list rvalue の不要 rc_list_ref 除去・collection literal boxing を object_new に統一し、test を同期。generic `make_object<T>` の `str -> bool` 誤変換バグ（dict key iteration 壊れ）を `is_convertible_v<T, str>` guard で修正。next は `S3-01` regression / checker / docs / English mirror 同期。

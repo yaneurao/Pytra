@@ -636,7 +636,10 @@ def f() -> float:
         self.assertNotIn("::std::tuple<int64, int64, int64, int64>(::std::make_tuple(", cpp)
         self.assertNotIn("::std::tuple<int64, int64>(::std::make_tuple(", cpp)
         self.assertIn("auto __idx_", cpp)
-        self.assertIn("= (x * 17 + y * 29 + py_len(stack) * 13) % py_len(candidates);", cpp)
+        self.assertIn(
+            "= (x * 17 + y * 29 + (rc_list_ref(stack)).size() * 13) % (rc_list_ref(candidates)).size();",
+            cpp,
+        )
         self.assertIn(
             "::std::tuple<int64, int64, int64, int64> sel = py_list_at_ref(rc_list_ref(candidates), py_to<int64>(__idx_",
             cpp,
@@ -645,7 +648,7 @@ def f() -> float:
         self.assertNotIn("int64(py_to<int64>(", cpp)
         self.assertNotIn("float64(py_to<float64>(", cpp)
         self.assertIn(
-            "int64 v = (py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y))), py_to<int64>(x)) == 0 ? 255 : 40);",
+            "int64 v = (py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y)), py_to<int64>(x)) == 0 ? 255 : 40);",
             cpp,
         )
         self.assertNotIn("object(py_at(grid, ", cpp)
@@ -1401,10 +1404,10 @@ def check(x: object) -> bool:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("virtual int64 inc(int64 x) {", cpp)
-        self.assertIn("int64 inc(int64 x) override {", cpp)
-        self.assertIn("int64 base_only(int64 x) {", cpp)
-        self.assertNotIn("virtual int64 inc(int64 x) override {", cpp)
+        self.assertIn("virtual int64 inc(int64 x) const {", cpp)
+        self.assertIn("int64 inc(int64 x) const override {", cpp)
+        self.assertIn("int64 base_only(int64 x) const {", cpp)
+        self.assertNotIn("virtual int64 inc(int64 x) const override {", cpp)
 
     def test_inherited_method_call_from_base_ref_is_rendered_as_virtual_member_call(self) -> None:
         src = """class Base:\n    def inc(self, x: int) -> int:\n        return x + 1\n\nclass Child(Base):\n    def inc(self, x: int) -> int:\n        return x + 2\n\ndef use_base(b: Base) -> int:\n    return b.inc(3)\n"""
@@ -1466,8 +1469,8 @@ def check(x: object) -> bool:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("virtual int64 f(int64 x) {", cpp)
-        self.assertIn("int64 f(int64 x) override {", cpp)
+        self.assertIn("virtual int64 f(int64 x) const {", cpp)
+        self.assertIn("int64 f(int64 x) const override {", cpp)
         self.assertIn("return Base::f(*this, x) + 1;", cpp)
         self.assertNotRegex(cpp, r"type_id\(\)\s*(==|!=|<=|>=|<|>)")
         self.assertNotRegex(cpp, r"switch\s*\([^)]*type_id\(")
@@ -1480,8 +1483,8 @@ def check(x: object) -> bool:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("virtual int64 f(int64 x) {", cpp)
-        self.assertIn("int64 f(int64 x) override {", cpp)
+        self.assertIn("virtual int64 f(int64 x) const {", cpp)
+        self.assertIn("int64 f(int64 x) const override {", cpp)
         self.assertIn("return Base::f(x) + 1;", cpp)
         self.assertNotIn("super().f(", cpp)
         self.assertNotRegex(cpp, r"type_id\(\)\s*(==|!=|<=|>=|<|>)")
@@ -1512,8 +1515,8 @@ def check(x: object) -> bool:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("virtual int64 inc(int64 x) {", cpp)
-        self.assertNotIn("virtual int64 unused(int64 x) {", cpp)
+        self.assertIn("virtual int64 inc(int64 x) const {", cpp)
+        self.assertNotIn("virtual int64 unused(int64 x) const {", cpp)
 
     def test_pyobj_list_model_uses_runtime_list_ops(self) -> None:
         src = """def f() -> int:
@@ -1883,7 +1886,7 @@ def f() -> str:
             cpp,
         )
         self.assertIn(
-            "return py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y))), py_to<int64>(x));",
+            "return py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y)), py_to<int64>(x));",
             cpp,
         )
         self.assertNotIn("rc_list_from_value([&]() -> object {", cpp)
@@ -2059,7 +2062,7 @@ def f() -> list[int]:
 
         self.assertIn("rc<list<int64>> xs = rc_list_from_value(list<int64>{});", cpp)
         self.assertIn("py_list_append_mut(rc_list_ref(xs), 1);", cpp)
-        self.assertIn("int64 n = py_len(xs);", cpp)
+        self.assertIn("int64 n = (rc_list_ref(xs)).size();", cpp)
 
     def test_pyobj_list_model_does_not_stack_lower_when_external_attr_call_consumes_list(self) -> None:
         src = """from ext_module import consume

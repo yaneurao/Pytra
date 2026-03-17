@@ -416,7 +416,7 @@ static inline object make_object(const T& v) {
         return object_new<PyFloatObj>(static_cast<float64>(v));
     } else if constexpr (::std::is_same_v<T, bool>) {
         return object_new<PyBoolObj>(v);
-    } else if constexpr (!::std::is_integral_v<T> && !::std::is_floating_point_v<T> && ::std::is_convertible_v<T, bool>) {
+    } else if constexpr (!::std::is_integral_v<T> && !::std::is_floating_point_v<T> && !::std::is_convertible_v<T, str> && ::std::is_convertible_v<T, bool>) {
         return object_new<PyBoolObj>(static_cast<bool>(v));
     } else if constexpr (::std::is_convertible_v<T, str>) {
         return object_new<PyStrObj>(str(v));

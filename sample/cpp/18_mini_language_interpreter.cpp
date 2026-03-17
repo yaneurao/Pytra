@@ -14,7 +14,7 @@ struct Token {
     int64 pos;
     int64 number_value;
     
-    Token(str kind, str text, int64 pos, int64 number_value) : kind(kind), text(text), pos(pos), number_value(number_value);
+    Token(str kind, str text, int64 pos, int64 number_value);
     
 };
 
@@ -31,7 +31,7 @@ struct ExprNode {
     int64 kind_tag;
     int64 op_tag;
     
-    ExprNode(str kind, int64 value, str name, str op, int64 left, int64 right, int64 kind_tag, int64 op_tag) : kind(kind), value(value), name(name), op(op), left(left), right(right), kind_tag(kind_tag), op_tag(op_tag);
+    ExprNode(str kind, int64 value, str name, str op, int64 left, int64 right, int64 kind_tag, int64 op_tag);
     
 };
 
@@ -44,7 +44,7 @@ struct StmtNode {
     int64 expr_index;
     int64 kind_tag;
     
-    StmtNode(str kind, str name, int64 expr_index, int64 kind_tag) : kind(kind), name(name), expr_index(expr_index), kind_tag(kind_tag);
+    StmtNode(str kind, str name, int64 expr_index, int64 kind_tag);
     
 };
 
@@ -117,7 +117,7 @@ struct Parser : public PyObj {
     bool match(const str& kind);
     Token expect(const str& kind);
     void skip_newlines();
-    int64 add_expr(ExprNode& node);
+    int64 add_expr(const ExprNode& node);
     rc<list<StmtNode>> parse_program();
     StmtNode parse_stmt();
     int64 parse_expr();
@@ -171,7 +171,7 @@ struct Parser : public PyObj {
         }
     }
 
-    int64 Parser::add_expr(ExprNode& node) {
+    int64 Parser::add_expr(const ExprNode& node) {
         py_list_append_mut(rc_list_ref(this->expr_nodes), node);
         return (rc_list_ref(this->expr_nodes)).size() - 1;
     }

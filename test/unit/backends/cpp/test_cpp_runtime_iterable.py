@@ -731,7 +731,7 @@ int main() {
         self.assertIn("out.append(value);", iter_ops_cpp)
         self.assertIn("return py_reversed(out);", iter_ops_cpp)
         self.assertIn(
-            "out.append(make_object(list<object>{make_object(i), value}));",
+            "out.append(make_object(::std::make_tuple(i, value)));",
             iter_ops_cpp,
         )
         self.assertNotIn("py_at(values, py_to<int64>(i))", iter_ops_cpp)

@@ -121,7 +121,7 @@ so it can be transpiled to target runtimes.
         return mu + sigma * z0;
     }
     
-    void shuffle(const rc<list<int64>>& xs) {
+    void shuffle(rc<list<int64>>& xs) {
         /* Shuffle list in place. */
         int64 i = (rc_list_ref(xs)).size() - 1;
         while (i > 0) {

@@ -12,6 +12,6 @@ def py_enumerate_object(values: object, start: int = 0) -> list[object]:
     out: list[object] = []
     i = start
     for value in values:
-        out.append([i, value])
+        out.append((i, value))
         i += 1
     return out

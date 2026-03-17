@@ -1,6 +1,6 @@
 # P2: C++ `py_runtime.h` の upstream fallback shrink
 
-最終更新: 2026-03-14
+最終更新: 2026-03-17
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01`
@@ -85,3 +85,4 @@
 - 2026-03-14: `S2-02` の ninth bundle として `tools/check_crossruntime_pyruntime_residual_caller_inventory.py` と対応 unit test を current generated `py_runtime_value_*` thin seam へ同期し、`json.cpp` / `type_id.cpp` の generated C++ residual を `generated_cpp_shared_type_id_residual` 1 bucket に再分類した。stale `generated_cpp_object_bridge_residual` bucket は retire し、crossruntime residual caller checker を現行 generated caller 実態に揃えた。
 - 2026-03-14: `S2-02` の tenth bundle として C++ emitter の ref-first typed list subscript を `py_at(...py_to<int64>)` から `py_list_at_ref(rc_list_ref(...), ...)` へ切り替え、`type_id/json/argparse/random/re/png` の generated runtime と representative sample 6 本を正規導線で再生成した。これで `generated_runtime_generic_index_sites` と `sample_cpp_generic_index_sites` はともに 0 まで縮退して retire し、typed-lane residual は emitter helper 1 bucket のみになった。`S2-02` は完了。
 - 2026-03-14: `S2-03` の first bundle として `py_runtime.h` に `py_coerce_cstr_typed_value()` を追加し、`list` append/set と `dict` key の `const char*` lane を `py_to<T>(make_object(str(...)))` から narrow helper へ寄せた。これで `header_dict_key_charptr_object_coercion` bucket は retire し、header の `py_to<...>(...object...)` residual は unsupported-target guard 1 件だけになった。
+- 2026-03-17: `S2-03` の second bundle として emitter 側 const メソッド修飾（non-mutating method に `const` qualifier）、nested list rvalue の不要な `rc_list_ref` 除去（`py_list_at_ref` の中間結果に不要な rc_list_ref を除去）、collection literal boxing を `make_object(list<object>{})` から `object_new<PyListObj>()` に統一し、test を同期した。また generic `make_object<T>` テンプレートの `str -> bool` 誤変換バグ（`str::operator bool()` で `is_convertible_v<str, bool>` が真になり dict key が PyBoolObj になる問題）を `!is_convertible_v<T, str>` guard で修正した。これで `test_cpp_runtime_iterable.py` の `test_runtime_iterable_protocol_helpers` も通るようになった。

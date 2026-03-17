@@ -14,7 +14,7 @@ bytes capture(const rc<list<list<int64>>>& grid, int64 w, int64 h) {
     for (int64 y = 0; y < h; ++y) {
         int64 row_base = y * w;
         for (int64 x = 0; x < w; ++x)
-            frame[row_base + x] = (py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y))), py_to<int64>(x)) ? 255 : 0);
+            frame[row_base + x] = (py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y)), py_to<int64>(x)) ? 255 : 0);
     }
     return frame;
 }
@@ -36,7 +36,7 @@ void run_08_langtons_ant() {
     rc<list<bytes>> frames = rc_list_from_value(list<bytes>{});
     
     for (int64 i = 0; i < steps_total; ++i) {
-        if (py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y))), py_to<int64>(x)) == 0) {
+        if (py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y)), py_to<int64>(x)) == 0) {
             d = (d + 1) % 4;
             py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y)), py_to<int64>(x)) = 1;
         } else {

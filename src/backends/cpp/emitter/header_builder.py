@@ -95,16 +95,8 @@ def _header_collect_mutated_params_from_stmt(
     if kind in {"Assign", "AnnAssign", "AugAssign"}:
         _header_mark_mutated_param_from_target(stmt.get("target"), params, out)
     elif kind == "Swap":
-        lhs = stmt.get("lhs")
-        rhs = stmt.get("rhs")
-        if isinstance(lhs, dict) and _header_node_kind_from_dict(lhs) == "Name":
-            ln = lhs.get("id")
-            if isinstance(ln, str) and ln in params:
-                out.add(ln)
-        if isinstance(rhs, dict) and _header_node_kind_from_dict(rhs) == "Name":
-            rn = rhs.get("id")
-            if isinstance(rn, str) and rn in params:
-                out.add(rn)
+        _header_mark_mutated_param_from_target(stmt.get("lhs"), params, out)
+        _header_mark_mutated_param_from_target(stmt.get("rhs"), params, out)
     elif kind == "Expr":
         call = stmt.get("value")
         if isinstance(call, dict) and _header_node_kind_from_dict(call) == "Call":
@@ -365,12 +357,12 @@ def build_cpp_header_from_east(
                         param_txt = borrow_cpp + " " + emitted_an
                     elif usage == "mutable":
                         if at_cpp.startswith("rc<") and not _header_is_class_borrow_type(at, at_cpp, class_names, ref_classes):
-                            param_txt = "const " + at_cpp + "& " + emitted_an
+                            param_txt = at_cpp + "& " + emitted_an
                         else:
                             param_txt = borrow_cpp + " " + emitted_an if borrow_cpp == "object" else borrow_cpp + "& " + emitted_an
                     else:
                         if _header_is_class_borrow_type(at, at_cpp, class_names, ref_classes):
-                            param_txt = borrow_cpp + "& " + emitted_an
+                            param_txt = "const " + borrow_cpp + "& " + emitted_an
                         else:
                             param_txt = "const " + borrow_cpp + "& " + emitted_an
                     if an in arg_defaults:
@@ -405,12 +397,12 @@ def build_cpp_header_from_east(
                         param_txt = borrow_cpp + " " + emitted_vararg
                     elif usage == "mutable":
                         if at_cpp.startswith("rc<") and not _header_is_class_borrow_type(list_t, at_cpp, class_names, ref_classes):
-                            param_txt = "const " + at_cpp + "& " + emitted_vararg
+                            param_txt = at_cpp + "& " + emitted_vararg
                         else:
                             param_txt = borrow_cpp + " " + emitted_vararg if borrow_cpp == "object" else borrow_cpp + "& " + emitted_vararg
                     else:
                         if _header_is_class_borrow_type(list_t, at_cpp, class_names, ref_classes):
-                            param_txt = borrow_cpp + "& " + emitted_vararg
+                            param_txt = "const " + borrow_cpp + "& " + emitted_vararg
                         else:
                             param_txt = "const " + borrow_cpp + "& " + emitted_vararg
                     parts.append(param_txt)
@@ -691,7 +683,29 @@ def _method_decl_signature(first_line: str) -> str:
     pos = prefix.rfind("{")
     if pos < 0:
         return ""
-    return prefix[:pos].rstrip() + ";"
+    sig = prefix[:pos].rstrip()
+    paren_depth = 0
+    closing_paren = -1
+    saw_open = False
+    i = 0
+    while i < len(sig):
+        ch = sig[i]
+        if ch == "(":
+            paren_depth += 1
+            saw_open = True
+        elif ch == ")":
+            if paren_depth > 0:
+                paren_depth -= 1
+                if saw_open and paren_depth == 0:
+                    closing_paren = i
+                    break
+        i += 1
+    if closing_paren >= 0:
+        tail = sig[closing_paren + 1 :]
+        colon_pos = tail.find(":")
+        if colon_pos >= 0:
+            sig = sig[: closing_paren + 1]
+    return sig.rstrip() + ";"
 
 
 def _remove_method_decl_only_keywords(sig: str) -> str:

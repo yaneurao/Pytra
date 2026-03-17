@@ -9,7 +9,7 @@
 
 namespace pytra::utils::png {
 
-void _png_append_list(const rc<list<int64>>& dst, const rc<list<int64>>& src);
+void _png_append_list(rc<list<int64>>& dst, const rc<list<int64>>& src);
 int64 _crc32(const rc<list<int64>>& data);
 int64 _adler32(const rc<list<int64>>& data);
 rc<list<int64>> _png_u16le(int64 v);

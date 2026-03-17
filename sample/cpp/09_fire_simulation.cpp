@@ -52,10 +52,10 @@ void run_09_fire_simulation() {
         }
         for (int64 y = 1; y < h; ++y) {
             for (int64 x = 0; x < w; ++x) {
-                int64 a = py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(y))), py_to<int64>(x));
-                int64 b = py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(y))), py_to<int64>((x - 1 + w) % w));
-                int64 c = py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(y))), py_to<int64>((x + 1) % w));
-                int64 d = py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>((y + 1) % h))), py_to<int64>(x));
+                int64 a = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(y)), py_to<int64>(x));
+                int64 b = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(y)), py_to<int64>((x - 1 + w) % w));
+                int64 c = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(y)), py_to<int64>((x + 1) % w));
+                int64 d = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>((y + 1) % h)), py_to<int64>(x));
                 int64 v = (a + b + c + d) / 4;
                 int64 cool = 1 + (x + y + t) % 3;
                 int64 nv = v - cool;
@@ -66,7 +66,7 @@ void run_09_fire_simulation() {
         for (int64 yy = 0; yy < h; ++yy) {
             int64 row_base = yy * w;
             for (int64 xx = 0; xx < w; ++xx)
-                frame[row_base + xx] = py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(yy))), py_to<int64>(xx));
+                frame[row_base + xx] = py_list_at_ref(py_list_at_ref(rc_list_ref(heat), py_to<int64>(yy)), py_to<int64>(xx));
         }
         py_list_append_mut(rc_list_ref(frames), frame);
     }

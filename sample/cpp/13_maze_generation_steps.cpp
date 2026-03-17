@@ -15,7 +15,7 @@ bytes capture(const rc<list<list<int64>>>& grid, int64 w, int64 h, int64 scale) 
     bytearray frame = bytearray(width * height);
     for (int64 y = 0; y < h; ++y) {
         for (int64 x = 0; x < w; ++x) {
-            int64 v = (py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y))), py_to<int64>(x)) == 0 ? 255 : 40);
+            int64 v = (py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(y)), py_to<int64>(x)) == 0 ? 255 : 40);
             for (int64 yy = 0; yy < scale; ++yy) {
                 int64 base = (y * scale + yy) * width + x * scale;
                 for (int64 xx = 0; xx < scale; ++xx)
@@ -50,7 +50,7 @@ void run_13_maze_generation_steps() {
             auto [dx, dy] = py_list_at_ref(rc_list_ref(dirs), py_to<int64>(k));
             int64 nx = x + dx;
             int64 ny = y + dy;
-            if ((nx >= 1) && (nx < cell_w - 1) && (ny >= 1) && (ny < cell_h - 1) && (py_list_at_ref(rc_list_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(ny))), py_to<int64>(nx)) == 1)) {
+            if ((nx >= 1) && (nx < cell_w - 1) && (ny >= 1) && (ny < cell_h - 1) && (py_list_at_ref(py_list_at_ref(rc_list_ref(grid), py_to<int64>(ny)), py_to<int64>(nx)) == 1)) {
                 if (dx == 2) {
                     py_list_append_mut(rc_list_ref(candidates), ::std::make_tuple(nx, ny, x + 1, y));
                 } else if (dx == -(2)) {

@@ -3,7 +3,7 @@
 // generated-by: tools/gen_runtime_from_manifest.py
 
 mod py_runtime;
-pub use crate::py_runtime::{math, pytra, time};
+pub use crate::py_runtime::{pytra};
 use crate::py_runtime::*;
 
 fn py_register_generated_type_info() {

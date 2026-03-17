@@ -52,18 +52,12 @@ class CppCollectionExprEmitter:
         sep = ", "
         items = sep.join(parts)
         if pyobj_runtime_list_mode:
-            value_list_t = "list<object>"
-            if ctor_elem != "" and not ctor_mixed:
-                value_list_t = f"list<{ctor_elem}>"
-            elif elem_t not in {"", "unknown", "None"} and not self.is_any_like_type(elem_t):
-                value_list_t = f"list<{self._cpp_type_text(elem_t)}>"
-            if value_list_t == "list<object>":
-                boxed_parts: list[str] = []
-                for i, e in enumerate(elements):
-                    rv = parts[i] if i < len(parts) else ""
-                    boxed_parts.append(self._box_expr_for_any(rv, e))
-                items = sep.join(boxed_parts)
-            return f"make_object({value_list_t}{{{items}}})"
+            boxed_parts: list[str] = []
+            for i, e in enumerate(elements):
+                rv = parts[i] if i < len(parts) else ""
+                boxed_parts.append(self._box_expr_for_any(rv, e))
+            items = sep.join(boxed_parts)
+            return f"object_new<PyListObj>(list<object>{{{items}}})"
         return f"{t}{{{items}}}"
 
     def _render_expr_kind_tuple(self, expr: Any, expr_d: dict[str, Any]) -> str:

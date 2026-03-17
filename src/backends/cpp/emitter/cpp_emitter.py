@@ -2405,16 +2405,16 @@ class CppEmitter(
             param_txt = ""
             if by_ref and usage == "mutable":
                 if ct.startswith("rc<") and not borrow_param:
-                    param_txt = f"const {ct}& {emitted_n}"
-                    fn_sig_params.append(f"const {ct}&")
+                    param_txt = f"{ct}& {emitted_n}"
+                    fn_sig_params.append(f"{ct}&")
                 else:
                     use_object_param = borrow_ct == "object"
                     param_txt = f"{borrow_ct} {emitted_n}" if use_object_param else f"{borrow_ct}& {emitted_n}"
                     fn_sig_params.append(borrow_ct if use_object_param else f"{borrow_ct}&")
             elif by_ref:
                 if borrow_param:
-                    param_txt = f"{borrow_ct}& {emitted_n}"
-                    fn_sig_params.append(f"{borrow_ct}&")
+                    param_txt = f"const {borrow_ct}& {emitted_n}"
+                    fn_sig_params.append(f"const {borrow_ct}&")
                 else:
                     param_txt = f"const {borrow_ct}& {emitted_n}"
                     fn_sig_params.append(f"const {borrow_ct}&")
@@ -2452,8 +2452,8 @@ class CppEmitter(
                 fn_sig_params.append(borrow_ct if borrow_ct == "object" else f"{borrow_ct}&")
             elif by_ref:
                 if borrow_param:
-                    param_txt = f"{borrow_ct}& {emitted_vararg}"
-                    fn_sig_params.append(f"{borrow_ct}&")
+                    param_txt = f"const {borrow_ct}& {emitted_vararg}"
+                    fn_sig_params.append(f"const {borrow_ct}&")
                 else:
                     param_txt = f"const {borrow_ct}& {emitted_vararg}"
                     fn_sig_params.append(f"const {borrow_ct}&")
@@ -2707,7 +2707,7 @@ class CppEmitter(
                 and self._is_pyobj_value_model_list_type(self.normalize_type_name(val_ty))
             ):
                 return f"py_list_at_ref({val}, py_to<int64>({idx}))"
-            return self._render_pyobj_ref_first_list_index(val, f"py_to<int64>({idx})")
+            return self._render_pyobj_ref_first_list_index(expr.get("value"), val, f"py_to<int64>({idx})")
         if self.is_indexable_sequence_type(val_ty):
             if self.is_any_like_type(idx_t):
                 idx = f"py_to<int64>({idx})"
@@ -2730,9 +2730,15 @@ class CppEmitter(
             return f"py_at_bounds_debug({value_expr}, {index_expr})"
         return f"{value_expr}[{index_expr}]"
 
-    def _render_pyobj_ref_first_list_index(self, value_expr: str, index_expr: str) -> str:
+    def _render_pyobj_ref_first_list_index(self, value_node: Any, value_expr: str, index_expr: str) -> str:
         """ref-first typed list index access stays on typed list helpers, not object compat."""
-        return f"py_list_at_ref(rc_list_ref({value_expr}), {index_expr})"
+        owner_expr = value_expr
+        if (
+            self._uses_pyobj_ref_first_list_lvalue_expr(value_node)
+            or self._call_expr_returns_known_pyobj_list_handle(value_node)
+        ):
+            owner_expr = f"rc_list_ref({value_expr})"
+        return f"py_list_at_ref({owner_expr}, {index_expr})"
 
     def _coerce_dict_key_expr(self, owner_node: Any, key_expr: str, key_node: Any) -> str:
         """`dict[K, V]` 参照用の key 式を K に合わせて整形する。"""
@@ -3056,8 +3062,8 @@ class CppEmitter(
                 if at.startswith("list["):
                     return args[0]
                 if at in {"Any", "object"}:
-                    return f"make_object(list<object>({args[0]}))"
-                return f"make_object(list<object>({args[0]}))"
+                    return f"object_new<PyListObj>(list<object>({args[0]}))"
+                return f"object_new<PyListObj>(list<object>({args[0]}))"
         t = self.cpp_type(expr.get("resolved_type"))
         if raw == "list" and self._is_pyobj_value_model_list_type(resolved_t):
             t = self._cpp_list_value_model_type_text(resolved_t)
@@ -3848,7 +3854,7 @@ class CppEmitter(
                 return f"py_at({val}, {idx})"
             return f"py_at({val}, py_to<int64>({idx}))"
         if self._uses_pyobj_ref_first_list_ops(expr.get("value")):
-            at_expr = self._render_pyobj_ref_first_list_index(val, f"py_to<int64>({idx})")
+            at_expr = self._render_pyobj_ref_first_list_index(expr.get("value"), val, f"py_to<int64>({idx})")
             return at_expr
         if (
             self._is_pyobj_runtime_list_type(val_ty)

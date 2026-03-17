@@ -515,7 +515,7 @@ class East3CppBridgeTest(unittest.TestCase):
         emitter.emit_stmt(stmt)
         text = "\n".join(emitter.lines)
         self.assertIn("for (::std::tuple<int64, str> __itobj", text)
-        self.assertIn("py_enumerate_list_as<str>(lines)", text)
+        self.assertIn("py_enumerate(lines)", text)
         self.assertNotIn("py_to_str_list_from_object(lines)", text)
         self.assertNotIn("for (object __itobj", text)
         self.assertNotIn("py_dyn_range(", text)
@@ -1048,7 +1048,7 @@ class East3CppBridgeTest(unittest.TestCase):
 
         self.assertNotIn("obj_to_list_ref_or_raise", cpp)
         self.assertNotIn("py_set_at(", cpp)
-        self.assertIn("py_at(xs, py_to<int64>(i)) = v;", cpp)
+        self.assertIn("py_list_at_ref(rc_list_ref(xs), py_to<int64>(i)) = v;", cpp)
 
     def test_render_expr_dispatch_routes_collection_literal_handlers(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -2274,7 +2274,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
 
         self.assertEqual(emitter.render_expr(print_node), 'py_print(1, "x")')
-        self.assertEqual(emitter.render_expr(len_node), "py_len(xs)")
+        self.assertEqual(emitter.render_expr(len_node), "xs.size()")
         self.assertEqual(emitter.render_expr(to_string_node), "::std::to_string(1)")
         self.assertEqual(emitter.render_expr(int_base_node), 'py_to_int64_base("10", py_to<int64>(16))')
         self.assertEqual(emitter.render_expr(static_cast_node), 'py_to_int64("10")')
@@ -2592,7 +2592,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
 
         self.assertEqual(emitter.render_expr(print_expr), 'py_print(1, "x")')
-        self.assertEqual(emitter.render_expr(len_expr), "py_len(xs)")
+        self.assertEqual(emitter.render_expr(len_expr), "xs.size()")
         self.assertEqual(emitter.render_expr(to_string_expr), "::std::to_string(1)")
         self.assertEqual(emitter.render_expr(int_base_expr), 'py_to_int64_base("10", py_to<int64>(16))')
         self.assertEqual(

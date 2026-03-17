@@ -2144,12 +2144,12 @@ class CppStatementEmitter:
             else:
                 if by_ref and usage == "mutable":
                     if ct.startswith("rc<") and not borrow_param:
-                        param_txt = f"const {ct}& {emitted_n}"
+                        param_txt = f"{ct}& {emitted_n}"
                     else:
                         param_txt = f"{borrow_ct} {emitted_n}" if borrow_ct == "object" else f"{borrow_ct}& {emitted_n}"
                 elif by_ref:
                     if borrow_param:
-                        param_txt = f"{borrow_ct}& {emitted_n}"
+                        param_txt = f"const {borrow_ct}& {emitted_n}"
                     else:
                         param_txt = f"const {borrow_ct}& {emitted_n}"
                 else:
@@ -2188,7 +2188,7 @@ class CppStatementEmitter:
                 param_txt = f"{borrow_ct} {emitted_vararg}" if borrow_ct == "object" else f"{borrow_ct}& {emitted_vararg}"
             elif by_ref:
                 if borrow_param:
-                    param_txt = f"{borrow_ct}& {emitted_vararg}"
+                    param_txt = f"const {borrow_ct}& {emitted_vararg}"
                 else:
                     param_txt = f"const {borrow_ct}& {emitted_vararg}"
             else:

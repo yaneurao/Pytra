@@ -34,7 +34,7 @@ list<object> py_enumerate_object(const object& values, int64 start) {
             ::std::optional<object> __next_4 = ([&]() -> ::std::optional<object> { object __iter = __iter_obj_3; if (!__iter) throw TypeError("NoneType is not an iterator"); return __iter->py_next_or_stop(); }());
             if (!__next_4.has_value()) break;
             object value = *__next_4;
-            out.append(make_object(list<object>{make_object(i), value}));
+            out.append(make_object(::std::make_tuple(i, value)));
             i++;
         }
     }
