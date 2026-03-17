@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-17
+最終更新: 2026-03-17（S1-01 完了）
 
 ## 文脈運用ルール
 
@@ -35,3 +35,4 @@
 
 1. [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01] `Any` アノテーションを禁止し、C++ ランタイムから `object`/`PyObj` 階層を除去する。`extern` 未知型は C++ テンプレート透過、クラス多態性は `rc<Base>` へ、stdlib 内部 `object` は closed 型へ置き換え。
 文脈: [docs/ja/plans/p5-any-elimination-object-free.md](../plans/p5-any-elimination-object-free.md)
+  - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S1-01] 完了: `Any`/`object` 全量調査。std: `json.py`(S3)、`enum.py`/`argparse.py`(S2)、`sys.py`(S5)、`assertions.py`(S2)。emitter: `is_any_like_type`×80+、`make_object`×22、`"public PyObj"` 自動挿入(S4)。決定ログに分類・フェーズ割当記録済み。

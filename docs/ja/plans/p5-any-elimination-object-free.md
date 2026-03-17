@@ -1,6 +1,6 @@
 # P5: `Any` アノテーション禁止と `object`/`PyObj` フリーランタイムへの移行
 
-最終更新: 2026-03-17
+最終更新: 2026-03-17（S1-01 決定ログ追記）
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P5-ANY-ELIM-OBJECT-FREE-01`
@@ -55,7 +55,7 @@
 
 ### S1: 棚卸しと設計仕様固定
 
-- [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S1-01] `Any` / `object` の全量使用箇所を調査・分類する。
+- [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S1-01] `Any` / `object` の全量使用箇所を調査・分類する。
   - transpile-target Python（`src/pytra/std/`, `src/pytra/utils/`, `src/toolchain/`）での `Any` / `object` 使用箇所。
   - C++ emitter が `object` 型を生成するトリガー条件の全列挙。
   - 結果を決定ログに固定し、phase ごとの除去対象を確定する。
@@ -149,3 +149,40 @@
 ## 決定ログ
 
 - 2026-03-17: ユーザーとの設計議論の結果、「transpiler が型確定を要求する設計なら `object`/`PyObj` は不要」という結論に達した。`Any` 禁止 → `extern` template 透過 → クラス多態性を `rc<Base>` へ → stdlib closed 型化 → `PyObj` 除去、という段階的移行を P5 として起票した。
+
+- 2026-03-17 [S1-01 完了]: `Any` / `object` 全量調査。
+
+  **transpile-target Python の `Any`/`object` 使用箇所（フェーズ割当付き）:**
+
+  | ファイル | `Any` 箇所数 | `object` 箇所数 | 除去フェーズ |
+  |---|---|---|---|
+  | `src/pytra/std/json.py` | 1（L545 `dumps` 引数） | 20+（JSON値往来の全経路） | S3-01（closed 型化） |
+  | `src/pytra/std/enum.py` | 10+（metaclass/value/演算子） | 0 | S2-02（stdlib Any 移行） |
+  | `src/pytra/std/argparse.py` | 8+（引数値全般） | 0 | S2-02 |
+  | `src/pytra/std/sys.py` | 0 | 2（`stderr`/`stdout` extern 宣言） | S5-01（extern 透過化） |
+  | `src/pytra/utils/assertions.py` | 0 | 3（汎用等値比較） | S2-02 or S4 設計後 |
+  | `src/toolchain/`（100+ ファイル） | 多数（`dict[str, Any]`/汎用引数） | 少数（`json_adapters.py` 等） | S2-01 禁止パス後に移行 |
+
+  **C++ emitter の `object`/`PyObj` 生成トリガー:**
+
+  | パターン | 場所 | 除去フェーズ |
+  |---|---|---|
+  | `is_any_like_type()` 中央ディスパッチ（80+ 呼び出し） | `src/backends/common/emitter/code_emitter.py` | S6 |
+  | `make_object(...)` 生成（22 箇所） | `call.py` / `type_bridge.py` / `cpp_emitter.py` / `stmt.py` / `collection_expr.py` 等 | S6-02 |
+  | `"public PyObj"` 基底クラス自動挿入 | `class_def.py:194` | S4-01 |
+  | `"object"` C++ 型として emit | `type_bridge.py` / `header_builder.py` / `cpp_emitter.py` / `collection_expr.py` | S6-01/02 |
+  | `_is_any_like_type()` ローカル関数 | `optimizer/passes/runtime_fastpath_pass.py:20` | S6 |
+  | `resolved_type: "object"` Box ノード生成 | `type_bridge.py:162` | S6-02 |
+  | `PYTRA_TID_OBJECT` type-id dispatch | `cpp_emitter.py:3209` | S4-03 / S6 |
+  | `dict<str, object>` / `list<object>` / `set<object>` | `collection_expr.py` / `header_builder.py` 等多数 | S3 / S6 |
+
+  **`json.py` 除去設計方針（S3-01 先取り確認）:**
+  - `_parse_value()` → `dict[str, object]` / `list[object]` を往来するのは JSON の再帰構造のため。`JsonValue = str | int | float | bool | None | list["JsonValue"] | dict[str, "JsonValue"]` 形式の再帰 union 型に置き換え可能。
+  - `_dump_json_value(v: object, ...)` → `_dump_json_value(v: JsonValue, ...)` に変更。
+  - 公開 API `loads` / `loads_obj` / `loads_arr` / `dumps` の型シグネチャも `JsonValue` に合わせて更新。
+
+  **`enum.py` 除去設計方針（S2-02 先取り確認）:**
+  - `value: Any` は実際には `int | str` 等の具体型で十分。`IntEnum` では `int`、`StrEnum` があれば `str`。metaclass 操作は transpiler が特殊扱いするため、`Any` は型チェックパスの例外リストに登録する方針も選択肢。
+
+  **`sys.py` extern 設計（S5-01 先取り確認）:**
+  - `stderr: object = extern(...)` は `extern` 型を `object` に落とすのではなく、C++ template 透過（`auto` / `decltype(stderr)` 等）に変えるべき。S5-01 で設計を固定する。

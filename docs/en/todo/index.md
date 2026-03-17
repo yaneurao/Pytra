@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-17
+Last updated: 2026-03-17 (S1-01 complete)
 
 ## Context Operation Rules
 
@@ -35,3 +35,4 @@ Last updated: 2026-03-17
 
 1. [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01] Prohibit `Any` annotations and remove the `object`/`PyObj` hierarchy from the C++ runtime. Replace `extern` unknown types with C++ template transparency, class polymorphism with `rc<Base>`, and stdlib internal `object` with closed types.
 Context: [docs/ja/plans/p5-any-elimination-object-free.md](../../ja/plans/p5-any-elimination-object-free.md)
+  - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S1-01] Done: Full audit of `Any`/`object` usage. std: `json.py`(S3), `enum.py`/`argparse.py`(S2), `sys.py`(S5), `assertions.py`(S2). Emitter: `is_any_like_type`×80+, `make_object`×22, `"public PyObj"` auto-insertion (S4). Findings with phase assignments recorded in decision log.
