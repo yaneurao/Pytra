@@ -1,6 +1,6 @@
 # P5: `Any` アノテーション禁止と `object`/`PyObj` フリーランタイムへの移行
 
-最終更新: 2026-03-18（S6-03 完了）
+最終更新: 2026-03-18（S7-03 完了・全サブタスク完了）
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P5-ANY-ELIM-OBJECT-FREE-01`
@@ -133,7 +133,7 @@
 
 - [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S7-01] 全 fixture / sample で transpile / compile / run / parity の非退行を確認する。
 - [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S7-02] selfhost ビルドおよび selfhost diff で非退行を確認する。
-- [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S7-03] `docs/ja/spec/` / `README.md` / `docs/en/` ミラーを新設計に同期する。
+- [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S7-03] `docs/ja/spec/` / `README.md` / `docs/en/` ミラーを新設計に同期する。
 
 ---
 
@@ -375,4 +375,12 @@
   **S7-02 結果:**
   - `check_selfhost_cpp_diff.py`: mismatches=0 / known_diffs=0 / skipped=0 → PASS。
   - `check_selfhost_direct_compile.py`: failures=0 → PASS。
+
+- 2026-03-18 [S7-03 完了]: ドキュメント同期。
+
+  **変更内容:**
+  - `docs/en/todo/index.md`: S2-03 以降の全サブタスク（S3-01〜S7-02）を英語で追記。
+  - `docs/ja/spec/spec-any-prohibition.md`: PyObj 除去完了（S6）を反映したノート追加。`object = rc<RcObject>` に再定義済みの旨を記載。
+  - `docs/en/spec/spec-any-prohibition.md`: 新規作成（日本語版からの翻訳）。
+  - `docs/ja/spec/spec-boxing.md` / `docs/en/spec/spec-boxing.md`: 廃止済みノート追加（P5-S6 で PyObj boxing 除去済み）。
 

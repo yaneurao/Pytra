@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-18（S7-02 完了）
+最終更新: 2026-03-18（S7-03 完了・P5-ANY-ELIM-OBJECT-FREE-01 全完了）
 
 ## 文脈運用ルール
 
@@ -53,3 +53,4 @@
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S6-03] 完了: `cpp_list_model=pyobj` テスト削除、boxing テスト削除。`list.h`/`dict.h`/`set.h` の `object` 変換演算子を除去。319件実行、pre-existing 以外の非退行なし。
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S7-01] 完了: S6 起因 regression を修正。`py_assert_*` を template 化、`contains`/`iter_ops` の dead object 関数を除去。fixture 3/3・sample 18/18 pass。
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S7-02] 完了: selfhost diff / direct compile 非退行確認 (mismatches=0, failures=0)。
+  - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S7-03] 完了: `docs/en/todo/index.md` に S3-01〜S7-02 進捗を追加。`spec-any-prohibition.md`（ja/en）更新。`spec-boxing.md`（ja/en）に廃止済みノート追加。
