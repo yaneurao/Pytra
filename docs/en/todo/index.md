@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-18 (P5/P6 py_runtime.h shrink / multi-language support tasks added)
+Last updated: 2026-03-18 (P5-CPP-PY-IS-TYPE-DEAD-CODE-REMOVE-01 added)
 
 ## Context Operation Rules
 
@@ -31,11 +31,19 @@ Last updated: 2026-03-18 (P5/P6 py_runtime.h shrink / multi-language support tas
 
 ## Unfinished Tasks
 
-### P5: FloorDiv / Mod EAST3 IR Node
+### P5: py_runtime.h Shrink
+
+#### P5-1: Remove py_is_type Dead Code
+
+Context: [docs/ja/plans/p5-cpp-py-is-type-dead-code-remove.md](../../ja/plans/p5-cpp-py-is-type-dead-code-remove.md)
+
+1. [ ] [ID: P5-CPP-PY-IS-TYPE-DEAD-CODE-REMOVE-01] Remove `py_is_dict` / `py_is_list` / `py_is_set` / `py_is_str` / `py_is_bool` / `py_is_int` / `py_is_float` from `py_runtime.h`. The emitter has already migrated to the `PYTRA_TID_*` + `py_runtime_value_isinstance` system; these functions are dead code.
+
+#### P5-2: FloorDiv / Mod EAST3 IR Node
 
 Context: [docs/ja/plans/p5-east3-floordiv-mod-node.md](../../ja/plans/p5-east3-floordiv-mod-node.md)
 
-1. [ ] [ID: P5-EAST3-FLOORDIV-MOD-NODE-01] Convert `py_floordiv` / `py_mod` to C++ inline emit via EAST3 IR nodes and remove from `py_runtime.h`. Lays the groundwork for each language backend to generate floor-division and modulo natively.
+2. [ ] [ID: P5-EAST3-FLOORDIV-MOD-NODE-01] Convert `py_floordiv` / `py_mod` to C++ inline emit via EAST3 IR nodes and remove from `py_runtime.h`. Lays the groundwork for each language backend to generate floor-division and modulo natively.
 
 ### P6: py_runtime.h Shrink / Multi-language Support
 
