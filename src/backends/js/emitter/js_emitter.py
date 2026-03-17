@@ -7,6 +7,7 @@ from pytra.std.pathlib import Path
 from typing import Any
 
 from backends.js.hooks.js_hooks import build_js_hooks
+from toolchain.json_adapters import export_json_object_dict
 from backends.common.emitter.code_emitter import (
     CodeEmitter,
     reject_backend_homogeneous_tuple_ellipsis_type_exprs,
@@ -28,7 +29,7 @@ def _load_json_dict(path: Path) -> dict[str, Any]:
     except Exception:
         return {}
     if raw_obj is not None:
-        return dict(raw_obj.raw)
+        return export_json_object_dict(raw_obj)
     return {}
 
 

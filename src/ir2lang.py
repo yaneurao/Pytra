@@ -117,7 +117,7 @@ def _load_json_root(input_path: Path) -> json.JsonObj:
     if input_path.exists() is False:
         _fatal("input not found: " + str(input_path))
     try:
-        payload = load_json_object_doc_or_none(input_path)
+        payload = json.loads_obj(input_path.read_text(encoding="utf-8"))
     except Exception as ex:
         _fatal("failed to parse json: " + str(ex))
     if payload is not None:

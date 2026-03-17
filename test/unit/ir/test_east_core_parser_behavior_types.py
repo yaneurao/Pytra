@@ -63,37 +63,27 @@ def head(xs: tuple[int, ...]) -> int:
             },
         )
 
-    def test_sum_on_json_object_is_rejected_by_decode_first_guard(self) -> None:
+    def test_sum_on_object_is_rejected_by_decode_first_guard(self) -> None:
         src = """
-from pytra.std import json
-
-def f(text: str) -> int:
-    value = json.loads(text)
+def f(value: object) -> int:
     return sum(value)
 """
         with self.assertRaises(RuntimeError) as cm:
             convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
         self.assertIn("sum() does not accept object/Any values", str(cm.exception))
 
-    def test_zip_on_json_values_is_rejected_by_decode_first_guard(self) -> None:
+    def test_zip_on_object_values_is_rejected_by_decode_first_guard(self) -> None:
         src = """
-from pytra.std import json
-
-def f(lhs_text: str, rhs_text: str) -> None:
-    lhs = json.loads(lhs_text)
-    rhs = json.loads(rhs_text)
+def f(lhs: object, rhs: object) -> None:
     _ = zip(lhs, rhs)
 """
         with self.assertRaises(RuntimeError) as cm:
             convert_source_to_east_with_backend(src, "<mem>", parser_backend="self_hosted")
         self.assertIn("zip() does not accept object/Any values", str(cm.exception))
 
-    def test_dict_keys_on_json_object_is_rejected_by_decode_first_guard(self) -> None:
+    def test_dict_keys_on_object_is_rejected_by_decode_first_guard(self) -> None:
         src = """
-from pytra.std import json
-
-def f(text: str) -> None:
-    value = json.loads(text)
+def f(value: object) -> None:
     _ = value.keys()
 """
         with self.assertRaises(RuntimeError) as cm:

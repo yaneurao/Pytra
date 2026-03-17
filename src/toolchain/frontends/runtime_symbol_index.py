@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from pytra.std import json
 from toolchain.json_adapters import export_json_object_dict
-from toolchain.json_adapters import load_json_object_doc
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -24,7 +24,7 @@ def _load_index() -> dict[str, Any]:
     if isinstance(_CACHE, dict):
         return _CACHE
     try:
-        obj = load_json_object_doc(INDEX_PATH, label="runtime_symbol_index")
+        obj = json.loads_obj(INDEX_PATH.read_text(encoding="utf-8"))
     except Exception:
         obj = None
     if obj is None:

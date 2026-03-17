@@ -9,6 +9,15 @@ _EMPTY: str = ""
 _COMMA_NL: str = ",\n"
 _HEX_DIGITS: str = "0123456789abcdef"
 
+# Tag constants for _JsonVal
+_JV_NULL: int = 0
+_JV_BOOL: int = 1
+_JV_INT: int = 2
+_JV_FLOAT: int = 3
+_JV_STR: int = 4
+_JV_ARR: int = 5
+_JV_OBJ: int = 6
+
 
 def _is_ws(ch: str) -> bool:
     return ch == " " or ch == "\t" or ch == "\r" or ch == "\n"
@@ -62,23 +71,6 @@ def _hex4(code: int) -> str:
     return p0 + p1 + p2 + p3
 
 
-@abi(ret="value")
-def _json_array_items(raw: object) -> list[object]:
-    return list(raw)
-
-
-@abi(ret="value")
-def _json_new_array() -> list[object]:
-    return list()
-
-
-def _json_obj_require(raw: dict[str, object], key: str) -> object:
-    for k, value in raw.items():
-        if k == key:
-            return value
-    raise ValueError("json object key not found: " + key)
-
-
 def _json_indent_value(indent: int | None) -> int:
     if indent is None:
         raise ValueError("json indent is required")
@@ -86,144 +78,193 @@ def _json_indent_value(indent: int | None) -> int:
     return indent_i
 
 
-class JsonObj:
-    raw: dict[str, object]
+class _JsonVal:
+    tag: int
+    bool_val: bool
+    int_val: int
+    float_val: float
+    str_val: str
+    arr_val: list["_JsonVal"]
+    obj_val: dict[str, "_JsonVal"]
 
-    def __init__(self, raw: dict[str, object]) -> None:
+    def __init__(
+        self,
+        tag: int,
+        bool_val: bool,
+        int_val: int,
+        float_val: float,
+        str_val: str,
+        arr_val: list["_JsonVal"],
+        obj_val: dict[str, "_JsonVal"],
+    ) -> None:
+        self.tag = tag
+        self.bool_val = bool_val
+        self.int_val = int_val
+        self.float_val = float_val
+        self.str_val = str_val
+        self.arr_val = arr_val
+        self.obj_val = obj_val
+
+
+def _jv_null() -> _JsonVal:
+    return _JsonVal(_JV_NULL, False, 0, 0.0, "", [], {})
+
+
+def _jv_bool(v: bool) -> _JsonVal:
+    return _JsonVal(_JV_BOOL, v, 0, 0.0, "", [], {})
+
+
+def _jv_int(v: int) -> _JsonVal:
+    return _JsonVal(_JV_INT, False, v, 0.0, "", [], {})
+
+
+def _jv_float(v: float) -> _JsonVal:
+    return _JsonVal(_JV_FLOAT, False, 0, v, "", [], {})
+
+
+def _jv_str(v: str) -> _JsonVal:
+    return _JsonVal(_JV_STR, False, 0, 0.0, v, [], {})
+
+
+def _jv_arr(v: list[_JsonVal]) -> _JsonVal:
+    return _JsonVal(_JV_ARR, False, 0, 0.0, "", v, {})
+
+
+def _jv_obj(v: dict[str, _JsonVal]) -> _JsonVal:
+    return _JsonVal(_JV_OBJ, False, 0, 0.0, "", [], v)
+
+
+def _jv_obj_require(raw: dict[str, _JsonVal], key: str) -> _JsonVal:
+    for k, value in raw.items():
+        if k == key:
+            return value
+    raise ValueError("json object key not found: " + key)
+
+
+class JsonObj:
+    raw: dict[str, _JsonVal]
+
+    def __init__(self, raw: dict[str, _JsonVal]) -> None:
         self.raw = raw
 
-    def get(self, key: str) -> JsonValue | None:
+    def get(self, key: str) -> "JsonValue | None":
         if key not in self.raw:
             return None
-        value = _json_obj_require(self.raw, key)
-        return JsonValue(value)
+        return JsonValue(_jv_obj_require(self.raw, key))
 
-    def get_obj(self, key: str) -> JsonObj | None:
+    def get_obj(self, key: str) -> "JsonObj | None":
         if key not in self.raw:
             return None
-        value = _json_obj_require(self.raw, key)
-        return JsonValue(value).as_obj()
+        return JsonValue(_jv_obj_require(self.raw, key)).as_obj()
 
-    def get_arr(self, key: str) -> JsonArr | None:
+    def get_arr(self, key: str) -> "JsonArr | None":
         if key not in self.raw:
             return None
-        value = _json_obj_require(self.raw, key)
-        return JsonValue(value).as_arr()
+        return JsonValue(_jv_obj_require(self.raw, key)).as_arr()
 
     def get_str(self, key: str) -> str | None:
         if key not in self.raw:
             return None
-        value = _json_obj_require(self.raw, key)
-        return JsonValue(value).as_str()
+        return JsonValue(_jv_obj_require(self.raw, key)).as_str()
 
     def get_int(self, key: str) -> int | None:
         if key not in self.raw:
             return None
-        value = _json_obj_require(self.raw, key)
-        return JsonValue(value).as_int()
+        return JsonValue(_jv_obj_require(self.raw, key)).as_int()
 
     def get_float(self, key: str) -> float | None:
         if key not in self.raw:
             return None
-        value = _json_obj_require(self.raw, key)
-        return JsonValue(value).as_float()
+        return JsonValue(_jv_obj_require(self.raw, key)).as_float()
 
     def get_bool(self, key: str) -> bool | None:
         if key not in self.raw:
             return None
-        value = _json_obj_require(self.raw, key)
-        return JsonValue(value).as_bool()
+        return JsonValue(_jv_obj_require(self.raw, key)).as_bool()
 
 
 class JsonArr:
-    raw: list[object]
+    raw: list[_JsonVal]
 
-    def __init__(self, raw: list[object]) -> None:
+    def __init__(self, raw: list[_JsonVal]) -> None:
         self.raw = raw
 
-    def get(self, index: int) -> JsonValue | None:
-        if index < 0 or index >= len(_json_array_items(self.raw)):
+    def get(self, index: int) -> "JsonValue | None":
+        if index < 0 or index >= len(self.raw):
             return None
-        return JsonValue(_json_array_items(self.raw)[index])
+        return JsonValue(self.raw[index])
 
-    def get_obj(self, index: int) -> JsonObj | None:
-        if index < 0 or index >= len(_json_array_items(self.raw)):
+    def get_obj(self, index: int) -> "JsonObj | None":
+        if index < 0 or index >= len(self.raw):
             return None
-        return JsonValue(_json_array_items(self.raw)[index]).as_obj()
+        return JsonValue(self.raw[index]).as_obj()
 
-    def get_arr(self, index: int) -> JsonArr | None:
-        if index < 0 or index >= len(_json_array_items(self.raw)):
+    def get_arr(self, index: int) -> "JsonArr | None":
+        if index < 0 or index >= len(self.raw):
             return None
-        return JsonValue(_json_array_items(self.raw)[index]).as_arr()
+        return JsonValue(self.raw[index]).as_arr()
 
     def get_str(self, index: int) -> str | None:
-        if index < 0 or index >= len(_json_array_items(self.raw)):
+        if index < 0 or index >= len(self.raw):
             return None
-        return JsonValue(_json_array_items(self.raw)[index]).as_str()
+        return JsonValue(self.raw[index]).as_str()
 
     def get_int(self, index: int) -> int | None:
-        if index < 0 or index >= len(_json_array_items(self.raw)):
+        if index < 0 or index >= len(self.raw):
             return None
-        return JsonValue(_json_array_items(self.raw)[index]).as_int()
+        return JsonValue(self.raw[index]).as_int()
 
     def get_float(self, index: int) -> float | None:
-        if index < 0 or index >= len(_json_array_items(self.raw)):
+        if index < 0 or index >= len(self.raw):
             return None
-        return JsonValue(_json_array_items(self.raw)[index]).as_float()
+        return JsonValue(self.raw[index]).as_float()
 
     def get_bool(self, index: int) -> bool | None:
-        if index < 0 or index >= len(_json_array_items(self.raw)):
+        if index < 0 or index >= len(self.raw):
             return None
-        return JsonValue(_json_array_items(self.raw)[index]).as_bool()
+        return JsonValue(self.raw[index]).as_bool()
 
 
 class JsonValue:
-    raw: object
+    raw: _JsonVal
 
-    def __init__(self, raw: object) -> None:
+    def __init__(self, raw: _JsonVal) -> None:
         self.raw = raw
 
     def as_obj(self) -> JsonObj | None:
         raw = self.raw
-        if isinstance(raw, dict):
-            raw_obj: dict[str, object] = dict(raw)
-            return JsonObj(raw_obj)
+        if raw.tag == _JV_OBJ:
+            return JsonObj(raw.obj_val)
         return None
 
     def as_arr(self) -> JsonArr | None:
         raw = self.raw
-        if isinstance(raw, list):
-            raw_arr: list[object] = list(raw)
-            return JsonArr(raw_arr)
+        if raw.tag == _JV_ARR:
+            return JsonArr(raw.arr_val)
         return None
 
     def as_str(self) -> str | None:
         raw = self.raw
-        if isinstance(raw, str):
-            return raw
+        if raw.tag == _JV_STR:
+            return raw.str_val
         return None
 
     def as_int(self) -> int | None:
         raw = self.raw
-        if isinstance(raw, bool):
-            return None
-        if isinstance(raw, int):
-            raw_i: int = int(raw)
-            return raw_i
+        if raw.tag == _JV_INT:
+            return raw.int_val
         return None
 
     def as_float(self) -> float | None:
         raw = self.raw
-        if isinstance(raw, float):
-            raw_f: float = float(raw)
-            return raw_f
+        if raw.tag == _JV_FLOAT:
+            return raw.float_val
         return None
 
     def as_bool(self) -> bool | None:
         raw = self.raw
-        if isinstance(raw, bool):
-            raw_b: bool = bool(raw)
-            return raw_b
+        if raw.tag == _JV_BOOL:
+            return raw.bool_val
         return None
 
 
@@ -237,7 +278,7 @@ class _JsonParser:
         self.n = len(text)
         self.i = 0
 
-    def parse(self) -> object:
+    def parse(self) -> _JsonVal:
         self._skip_ws()
         out = self._parse_value()
         self._skip_ws()
@@ -249,29 +290,29 @@ class _JsonParser:
         while self.i < self.n and _is_ws(self.text[self.i]):
             self.i += 1
 
-    def _parse_value(self) -> object:
+    def _parse_value(self) -> _JsonVal:
         if self.i >= self.n:
             raise ValueError("invalid json: unexpected end")
         ch = self.text[self.i]
         if ch == "{":
-            return self._parse_object()
+            return _jv_obj(self._parse_object())
         if ch == "[":
-            return self._parse_array()
+            return _jv_arr(self._parse_array())
         if ch == '"':
-            return self._parse_string()
+            return _jv_str(self._parse_string())
         if ch == "t" and self.text[self.i : self.i + 4] == "true":
             self.i += 4
-            return True
+            return _jv_bool(True)
         if ch == "f" and self.text[self.i : self.i + 5] == "false":
             self.i += 5
-            return False
+            return _jv_bool(False)
         if ch == "n" and self.text[self.i : self.i + 4] == "null":
             self.i += 4
-            return None
+            return _jv_null()
         return self._parse_number()
 
-    def _parse_object(self) -> dict[str, object]:
-        out: dict[str, object] = {}
+    def _parse_object(self) -> dict[str, _JsonVal]:
+        out: dict[str, _JsonVal] = {}
         self.i += 1
         self._skip_ws()
         if self.i < self.n and self.text[self.i] == "}":
@@ -298,8 +339,8 @@ class _JsonParser:
             if ch != ",":
                 raise ValueError("invalid json object separator")
 
-    def _parse_array(self) -> list[object]:
-        out = _json_new_array()
+    def _parse_array(self) -> list[_JsonVal]:
+        out: list[_JsonVal] = []
         self.i += 1
         self._skip_ws()
         if self.i < self.n and self.text[self.i] == "]":
@@ -361,7 +402,7 @@ class _JsonParser:
                 out_chars.append(ch)
         raise ValueError("unterminated json string")
 
-    def _parse_number(self) -> object:
+    def _parse_number(self) -> _JsonVal:
         start = self.i
         if self.text[self.i] == "-":
             self.i += 1
@@ -398,28 +439,26 @@ class _JsonParser:
         token = self.text[start : self.i]
         if is_float:
             num_f: float = float(token)
-            return num_f
+            return _jv_float(num_f)
         num_i: int = int(token)
-        return num_i
+        return _jv_int(num_i)
 
 
-def loads(text: str) -> object:
-    return _JsonParser(text).parse()
+def loads(text: str) -> JsonValue:
+    return JsonValue(_JsonParser(text).parse())
 
 
 def loads_obj(text: str) -> JsonObj | None:
-    value = _JsonParser(text).parse()
-    if isinstance(value, dict):
-        raw_obj: dict[str, object] = dict(value)
-        return JsonObj(raw_obj)
+    val = _JsonParser(text).parse()
+    if val.tag == _JV_OBJ:
+        return JsonObj(val.obj_val)
     return None
 
 
 def loads_arr(text: str) -> JsonArr | None:
-    value = _JsonParser(text).parse()
-    if isinstance(value, list):
-        raw_arr: list[object] = list(value)
-        return JsonArr(raw_arr)
+    val = _JsonParser(text).parse()
+    if val.tag == _JV_ARR:
+        return JsonArr(val.arr_val)
     return None
 
 

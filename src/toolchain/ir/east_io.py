@@ -8,8 +8,8 @@ from typing import Any
 from toolchain.frontends.type_expr import sync_type_expr_mirrors
 from toolchain.ir.core_entrypoints import EastBuildError, convert_path, convert_source_to_east_with_backend
 from toolchain.json_adapters import export_json_object_dict
-from toolchain.json_adapters import load_json_object_doc
 from toolchain.json_adapters import unwrap_east_root_json_doc
+from pytra.std import json
 from pytra.std.pathlib import Path
 
 
@@ -101,7 +101,13 @@ def extract_module_leading_trivia(source: str) -> list[dict[str, Any]]:
 def load_east_from_path(input_path: Path, *, parser_backend: str = "self_hosted") -> dict[str, Any]:
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
     if input_path.suffix == ".json":
-        payload = load_json_object_doc(input_path, label="EAST JSON")
+        payload = json.loads_obj(input_path.read_text(encoding="utf-8"))
+        if payload is None:
+            raise UserFacingError(
+                category="input_invalid",
+                summary="Invalid EAST JSON: root must be an object.",
+                details=["expected: {'ok': true, 'east': {...}} or {'kind': 'Module', ...}"],
+            )
         if payload.get_bool("ok") is False:
             raise UserFacingError(
                 category="east_error",

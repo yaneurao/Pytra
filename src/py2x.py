@@ -142,7 +142,7 @@ def _has_flag(argv: list[str], flag: str) -> bool:
 
 def _load_json_root(path: Path) -> json.JsonObj:
     try:
-        payload = load_json_object_doc_or_none(path)
+        payload = json.loads_obj(path.read_text(encoding="utf-8"))
     except Exception:
         return empty_json_object_doc()
     if payload is None:

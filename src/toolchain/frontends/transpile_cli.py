@@ -52,9 +52,9 @@ from toolchain.frontends.relative_import_normalization import rewrite_relative_i
 from toolchain.frontends.type_expr import normalize_type_text
 from toolchain.frontends.type_expr import parse_type_expr_text
 from toolchain.json_adapters import export_json_object_dict
-from toolchain.json_adapters import load_json_object_doc
 from toolchain.json_adapters import unwrap_east_root_json_doc
 from pytra.std import argparse
+from pytra.std import json
 from pytra.std import os
 from pytra.std import sys
 from pytra.std.pathlib import Path
@@ -438,7 +438,13 @@ def load_east_document(input_path: Path, parser_backend: str = "self_hosted") ->
     """入力ファイル（.py/.json）を読み取り EAST Module dict を返す。"""
     input_txt = str(input_path)
     if input_txt.endswith(".json"):
-        payload = load_json_object_doc(input_path, label="EAST JSON")
+        payload = json.loads_obj(input_path.read_text(encoding="utf-8"))
+        if payload is None:
+            raise make_user_error(
+                "input_invalid",
+                "Invalid EAST JSON format.",
+                ["expected: {'ok': true, 'east': {...}} or {'kind': 'Module', ...}"],
+            )
         east_doc = unwrap_east_root_json_doc(payload)
         if east_doc is not None:
             return normalize_east1_to_east2_document(

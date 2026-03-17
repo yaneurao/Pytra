@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+from pytra.std import json
 from pytra.std.pathlib import Path
 from typing import Any
 
 from toolchain.json_adapters import coerce_json_object_dict
-from toolchain.json_adapters import load_json_object_doc
 from toolchain.link.link_manifest_io import load_link_input_doc
 from toolchain.link.program_model import LinkedProgram
 from toolchain.link.program_model import LinkedProgramModule
@@ -15,7 +15,10 @@ from toolchain.link.program_validator import validate_raw_east3_doc
 
 
 def _load_raw_east3(path: Path) -> dict[str, object]:
-    return coerce_json_object_dict(load_json_object_doc(path, label="raw EAST3"), label="raw EAST3")
+    obj = json.loads_obj(path.read_text(encoding="utf-8"))
+    if obj is None:
+        raise RuntimeError("raw EAST3 root must be an object: " + str(path))
+    return coerce_json_object_dict(obj, label="raw EAST3")
 
 
 def _module_id_from_east_or_path(east_doc: dict[str, object], source_path: Path) -> str:
