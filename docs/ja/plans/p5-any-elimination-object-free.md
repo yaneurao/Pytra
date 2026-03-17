@@ -1,6 +1,6 @@
 # P5: `Any` アノテーション禁止と `object`/`PyObj` フリーランタイムへの移行
 
-最終更新: 2026-03-17（S3-02 完了）
+最終更新: 2026-03-18（S4-01 完了）
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P5-ANY-ELIM-OBJECT-FREE-01`
@@ -97,7 +97,7 @@
 
 ### S4: クラス多態性の `PyObj` 依存除去
 
-- [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S4-01] ユーザー定義クラスが `PyObj` を継承しなくてよい emitter 設計を実装する。
+- [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S4-01] ユーザー定義クラスが `PyObj` を継承しなくてよい emitter 設計を実装する。
   - GC 管理は `rc<UserClass>` で行い、`PyObj` 基底を経由しない。
   - `class_def.py` の `bases.append("public PyObj")` 自動挿入ロジックを廃止する。
 
@@ -295,4 +295,14 @@
   - `sys.py` の `stderr: object / stdout: object` は S5-01（extern 透過化）で対応。
   - `shared` バージョン `0.117 → 0.118`（`src/pytra/` 変更）。
   - pre-existing 失敗以外の非退行なし。
+
+- 2026-03-18 [S4-01 完了]: ユーザー定義 ref クラス基底 `PyObj` → `RcObject` 変更。
+
+  **変更内容:**
+  - `class_def.py`: `bases.append("public PyObj")` → `bases.append("public RcObject")`（gc_managed かつ base_is_gc でない場合）。
+  - `gc.h`: `RcObject` に `virtual uint32_t py_type_id() const noexcept { return 0; }` を追加。`PYTRA_DECLARE_CLASS_TYPE` マクロの `override` が `RcObject` 仮想に対して機能するようになった。
+  - `py_runtime.h`: `rc<T>` の `py_runtime_value_isinstance` 特殊化を追加（`T : RcObject && !T : PyObj`）。`make_object` を経由せず `value->py_type_id()` から直接 subtype 判定する。
+  - ユニットテスト（`test_py2cpp_features.py`）の `public PyObj` アサーションを `public RcObject` に更新。
+  - cpp バージョン `0.577 → 0.578`。
+  - pre-existing 失敗以外の非退行なし（C++ codegen 124 件 pass）。
 
