@@ -1,6 +1,6 @@
 # P5: `Any` アノテーション禁止と `object`/`PyObj` フリーランタイムへの移行
 
-最終更新: 2026-03-17（S2-01 AnyAnnotationProhibitionPass 実装完了）
+最終更新: 2026-03-17（S2-02 stdlib Any 移行完了）
 
 関連 TODO:
 - `docs/ja/todo/index.md` の `ID: P5-ANY-ELIM-OBJECT-FREE-01`
@@ -79,7 +79,7 @@
   - `typing` import（annotation-only no-op）は除外し、型として実際に使用された `Any` のみを対象とする。
   - エラーメッセージに「`Any` の代わりに使うべき型」のヒントを含める。
 
-- [ ] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S2-02] `Any` を使っている stdlib / utils の内部コードを移行する。
+- [x] [ID: P5-ANY-ELIM-OBJECT-FREE-01-S2-02] `Any` を使っている stdlib / utils の内部コードを移行する。
   - `src/pytra/std/json.py` の `_dump_json_value(v: object, ...)` 等を具体的な union 型 or 専用型へ変更する。
   - その他の stdlib / utils で `Any` / `object` を使っている関数を列挙して順次置き換える。
 
@@ -242,3 +242,24 @@
   - `src/toolchain/compiler/east_parts/east3_opt_passes/any_annotation_prohibition_pass.py` にシムを追加。
   - **デフォルトでは `build_local_only_passes()` に含めない**。stdlib（`enum.py`, `argparse.py` 等）が `Any` を使用中のため、S2-02 での stdlib 移行完了後に有効化する。明示的に `--east3-opt-pass +AnyAnnotationProhibitionPass` で有効化可能。
   - ユニットテスト 20 件（`test/unit/ir/test_east3_any_annotation_prohibition_pass.py`）全件 pass。pre-existing 失敗以外の非退行なし。
+
+- 2026-03-17 [S2-02 完了]: stdlib の `Any` アノテーション移行。
+
+  **変更ファイルと内容:**
+  - `src/pytra/std/enum.py`: `Any` を `object` または具体型に置き換え。`import typing.Any` 削除。
+    - `EnumMeta.__new__(bases: tuple[object, ...], ns: dict[str, object])`
+    - `member_map: dict[str, object]`、`value_map: dict[object, object]`
+    - `EnumMeta.__call__(value: object)`
+    - `Enum._value2member_map_: dict[object, "Enum"]`、`Enum._from_value(value: object)`
+    - `Enum.value -> object`、`Enum.__eq__(other: object)`
+    - `IntEnum._from_value(value: int)` — int に具体化
+    - `IntFlag.__or__/__and__/__xor__(other: int)` — int に具体化
+  - `src/pytra/std/argparse.py`: `Any` を `str | bool | None` に置き換え。`import typing.Any` 削除。
+    - `Namespace.values: dict[str, str | bool | None]`、`__init__(values: dict[str, str | bool | None] | None = None)`
+    - `_ArgSpec.default: str | bool | None`
+    - `add_argument(default: str | bool | None = None)`
+    - `parse_args(argv: list[str] | None = None) -> dict[str, str | bool | None]`
+    - ローカル変数 `values: dict[str, str | bool | None] = {}`
+  - `src/pytra/std/json.py`: `dumps(obj: Any, ...)` → `dumps(obj: object, ...)`。`import typing.Any` 削除。
+  - **検証**: `AnyAnnotationProhibitionPass` を `argparse.py`、`json.py` に対して実行し、検出なし（PASS）を確認。`enum.py` は multiple inheritance による pre-existing パースエラーのため EAST3 生成不可だが、ソース上の `Any` は除去済み。
+  - pre-existing 失敗以外の非退行なし（全 C++ codegen 124件 pass、IR 352件 pass）。

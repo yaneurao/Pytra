@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-17 (S2-01 complete)
+Last updated: 2026-03-17 (S2-02 complete)
 
 ## Context Operation Rules
 
@@ -40,3 +40,4 @@ Context: [docs/ja/plans/p5-any-elimination-object-free.md](../../ja/plans/p5-any
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S1-03] Done: Class polymorphism `rc<Base>` design spec fixed. `public PyObj` → `public RcObject` migration, `type_id` comparison for `isinstance`, direct `list<rc<Base>>` emit strategy. Recorded in decision log.
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S1-04] Done: JSON/stdlib replacement design spec fixed. `JsonValue` recursive union type strategy, `assertions.py`/`json_adapters.py` phase assignments. Recorded in decision log.
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S2-01] Done: `AnyAnnotationProhibitionPass` implemented. Checks `FunctionDef.arg_types`/`return_type` and `AnnAssign.annotation`; raises `RuntimeError` on `Any` detection. Disabled by default until stdlib migration (S2-02); enable via `--east3-opt-pass +AnyAnnotationProhibitionPass`. 20 unit tests pass.
+  - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S2-02] Done: stdlib `Any` migration. `enum.py` (`object`/concrete types), `argparse.py` (`str | bool | None`), `json.py` (`dumps(obj: object)`). `AnyAnnotationProhibitionPass` verification PASS on argparse.py and json.py.

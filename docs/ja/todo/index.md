@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-17（S2-01 完了）
+最終更新: 2026-03-17（S2-02 完了）
 
 ## 文脈運用ルール
 
@@ -40,3 +40,4 @@
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S1-03] 完了: クラス多態性 rc<Base> 設計仕様固定。`public PyObj` → `public RcObject` 変更方針、type_id 比較での `isinstance` 実装、`list<rc<Base>>` への直接 emit 方針を決定ログに記録。
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S1-04] 完了: JSON/stdlib 置き換え設計仕様固定。`JsonValue` 再帰 union 型方針、`assertions.py`/`json_adapters.py` 対応フェーズを決定ログに記録。
   - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S2-01] 完了: `AnyAnnotationProhibitionPass` 新規実装。`FunctionDef.arg_types`/`return_type` と `AnnAssign.annotation` を検査し `Any` 検出時に `RuntimeError` raise。デフォルト無効（stdlib 移行後に有効化）。ユニットテスト 20 件 pass。
+  - [ID: P5-ANY-ELIM-OBJECT-FREE-01-S2-02] 完了: stdlib の `Any` 移行。`enum.py`（`object`/具体型に変換）、`argparse.py`（`str | bool | None` に変換）、`json.py`（`dumps(obj: object)`）。`AnyAnnotationProhibitionPass` による検証 PASS。

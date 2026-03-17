@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 
 class EnumMeta(type):
     """Collect enum members at class creation and bind instances."""
 
-    def __new__(mcls, name: str, bases: tuple[type[Any], ...], ns: dict[str, Any]):
+    def __new__(mcls, name: str, bases: tuple[object, ...], ns: dict[str, object]):
         cls = super().__new__(mcls, name, bases, ns)
-        member_map: dict[str, Any] = {}
-        value_map: dict[Any, Any] = {}
+        member_map: dict[str, object] = {}
+        value_map: dict[object, object] = {}
 
         for k, v in list(ns.items()):
             if k.startswith("_"):
@@ -32,7 +30,7 @@ class EnumMeta(type):
     def __iter__(cls):
         return iter(cls._member_map_.values())
 
-    def __call__(cls, value: Any):
+    def __call__(cls, value: object):
         if value in cls._value2member_map_:
             return cls._value2member_map_[value]
         raise ValueError(f"{cls.__name__}: unknown value {value!r}")
@@ -40,10 +38,10 @@ class EnumMeta(type):
 
 class Enum(metaclass=EnumMeta):
     _member_map_: dict[str, "Enum"] = {}
-    _value2member_map_: dict[Any, "Enum"] = {}
+    _value2member_map_: dict[object, "Enum"] = {}
 
     @classmethod
-    def _from_value(cls, value: Any, name: str = "") -> "Enum":
+    def _from_value(cls, value: object, name: str = "") -> "Enum":
         obj = object.__new__(cls)
         obj._name_ = name
         obj._value_ = value
@@ -54,7 +52,7 @@ class Enum(metaclass=EnumMeta):
         return self._name_
 
     @property
-    def value(self) -> Any:
+    def value(self) -> object:
         return self._value_
 
     def __repr__(self) -> str:
@@ -63,7 +61,7 @@ class Enum(metaclass=EnumMeta):
     def __str__(self) -> str:
         return self.__repr__()
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, self.__class__) and self._value_ == other._value_
 
     def __hash__(self) -> int:
@@ -72,7 +70,7 @@ class Enum(metaclass=EnumMeta):
 
 class IntEnum(int, Enum):
     @classmethod
-    def _from_value(cls, value: Any, name: str = "") -> "IntEnum":
+    def _from_value(cls, value: int, name: str = "") -> "IntEnum":
         iv = int(value)
         obj = int.__new__(cls, iv)
         obj._name_ = name
@@ -93,13 +91,13 @@ class IntFlag(IntEnum):
         obj._value_ = iv
         return obj
 
-    def __or__(self, other: Any) -> "IntFlag":
+    def __or__(self, other: int) -> "IntFlag":
         return self.__class__._coerce_or_make(int(self) | int(other))
 
-    def __and__(self, other: Any) -> "IntFlag":
+    def __and__(self, other: int) -> "IntFlag":
         return self.__class__._coerce_or_make(int(self) & int(other))
 
-    def __xor__(self, other: Any) -> "IntFlag":
+    def __xor__(self, other: int) -> "IntFlag":
         return self.__class__._coerce_or_make(int(self) ^ int(other))
 
     def __invert__(self) -> "IntFlag":

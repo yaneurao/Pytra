@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 from pytra.std import sys
-from typing import Any
 
 
 class Namespace:
     """Simple argparse.Namespace compatible container."""
 
-    values: dict[str, Any]
+    values: dict[str, str | bool | None]
 
-    def __init__(self, values: Any = None) -> None:
+    def __init__(self, values: dict[str, str | bool | None] | None = None) -> None:
         if values is None:
             self.values = {}
             return
@@ -22,7 +21,7 @@ class _ArgSpec:
     names: list[str]
     action: str
     choices: list[str]
-    default: Any
+    default: str | bool | None
     help_text: str
     is_optional: bool
     dest: str
@@ -33,7 +32,7 @@ class _ArgSpec:
         *,
         action: str = "",
         choices: list[str] = [],
-        default: Any = None,
+        default: str | bool | None = None,
         help_text: str = "",
     ) -> None:
         self.names = names
@@ -68,7 +67,7 @@ class ArgumentParser:
         help: str = "",
         action: str = "",
         choices: list[str] = [],
-        default: Any = None,
+        default: str | bool | None = None,
     ) -> None:
         names: list[str] = []
         if name0 != "":
@@ -89,7 +88,7 @@ class ArgumentParser:
             sys.write_stderr(f"error: {msg}\n")
         raise SystemExit(2)
 
-    def parse_args(self, argv: Any = None) -> dict[str, Any]:
+    def parse_args(self, argv: list[str] | None = None) -> dict[str, str | bool | None]:
         args: list[str]
         if argv is None:
             args = sys.argv[1:]
@@ -110,7 +109,7 @@ class ArgumentParser:
                 by_name[n] = spec_i
             spec_i += 1
 
-        values: dict[str, Any] = {}
+        values: dict[str, str | bool | None] = {}
         for s in self._specs:
             if s.action == "store_true":
                 values[s.dest] = bool(s.default) if s.default is not None else False
