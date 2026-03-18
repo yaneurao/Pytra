@@ -80,6 +80,7 @@ class CppBuiltinRuntimeEmitter:
             "set.discard",
             "set.remove",
             "set.clear",
+            "dict.clear",
             "dict.get",
             "dict.pop",
             "dict.items",
@@ -247,9 +248,19 @@ class CppBuiltinRuntimeEmitter:
         is_dict_items = self._builtin_runtime_binding_matches(expr, "pytra.core.dict", "dict.items", "dict.items")
         is_dict_keys = self._builtin_runtime_binding_matches(expr, "pytra.core.dict", "dict.keys", "dict.keys")
         is_dict_values = self._builtin_runtime_binding_matches(expr, "pytra.core.dict", "dict.values", "dict.values")
-        if not (is_dict_get or is_dict_pop or is_dict_items or is_dict_keys or is_dict_values):
+        is_dict_clear = runtime_call == "dict.clear" or self._builtin_runtime_binding_matches(expr, "pytra.core.dict", "dict.clear", "dict.clear")
+        if not (is_dict_get or is_dict_pop or is_dict_items or is_dict_keys or is_dict_values or is_dict_clear):
             return None
         owner_node = self._builtin_runtime_owner_node(expr, runtime_call)
+        if is_dict_clear:
+            clear_node: dict[str, Any] = {
+                "kind": "DictClear",
+                "owner": owner_node,
+                "resolved_type": "None",
+                "borrow_kind": "value",
+                "casts": [],
+            }
+            return self.render_expr(clear_node)
         owner_t = self.get_expr_type(owner_node)
         if is_dict_get:
             owner_value_t = ""

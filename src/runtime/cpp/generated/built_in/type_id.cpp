@@ -73,7 +73,7 @@ rc<list<int64>> _make_int_list_1(int64 a0) {
 bool _contains_int(const rc<list<int64>>& items, int64 value) {
     int64 i = 0;
     while (i < (rc_list_ref(items)).size()) {
-        if (py_list_at_ref(rc_list_ref(items), py_to<int64>(i)) == value)
+        if (py_list_at_ref(rc_list_ref(items), i) == value)
             return true;
         i++;
     }
@@ -84,7 +84,7 @@ rc<list<int64>> _copy_int_list(const rc<list<int64>>& items) {
     rc<list<int64>> out = rc_list_from_value(list<int64>{});
     int64 i = 0;
     while (i < (rc_list_ref(items)).size()) {
-        rc_list_ref(out).append(py_list_at_ref(rc_list_ref(items), py_to<int64>(i)));
+        rc_list_ref(out).append(py_list_at_ref(rc_list_ref(items), i));
         i++;
     }
     return out;
@@ -96,10 +96,10 @@ rc<list<int64>> _sorted_ints(const rc<list<int64>>& items) {
     while (i < (rc_list_ref(out)).size()) {
         int64 j = i + 1;
         while (j < (rc_list_ref(out)).size()) {
-            if (py_list_at_ref(rc_list_ref(out), py_to<int64>(j)) < py_list_at_ref(rc_list_ref(out), py_to<int64>(i))) {
-                int64 tmp = py_list_at_ref(rc_list_ref(out), py_to<int64>(i));
-                py_list_at_ref(rc_list_ref(out), py_to<int64>(i)) = py_list_at_ref(rc_list_ref(out), py_to<int64>(j));
-                py_list_at_ref(rc_list_ref(out), py_to<int64>(j)) = tmp;
+            if (py_list_at_ref(rc_list_ref(out), j) < py_list_at_ref(rc_list_ref(out), i)) {
+                int64 tmp = py_list_at_ref(rc_list_ref(out), i);
+                py_list_at_ref(rc_list_ref(out), i) = py_list_at_ref(rc_list_ref(out), j);
+                py_list_at_ref(rc_list_ref(out), j) = tmp;
             }
             j++;
         }
@@ -154,7 +154,7 @@ int64 _assign_type_ranges_dfs(int64 type_id, int64 next_order) {
     rc<list<int64>> children = _sorted_child_type_ids(type_id);
     int64 i = 0;
     while (i < (rc_list_ref(children)).size()) {
-        cur = _assign_type_ranges_dfs(py_list_at_ref(rc_list_ref(children), py_to<int64>(i)), cur);
+        cur = _assign_type_ranges_dfs(py_list_at_ref(rc_list_ref(children), i), cur);
         i++;
     }
     _TYPE_MAX[type_id] = cur - 1;
@@ -170,13 +170,13 @@ void _recompute_type_ranges() {
     rc<list<int64>> roots = _collect_root_type_ids();
     int64 i = 0;
     while (i < (rc_list_ref(roots)).size()) {
-        next_order = _assign_type_ranges_dfs(py_list_at_ref(rc_list_ref(roots), py_to<int64>(i)), next_order);
+        next_order = _assign_type_ranges_dfs(py_list_at_ref(rc_list_ref(roots), i), next_order);
         i++;
     }
     rc<list<int64>> all_ids = _sorted_ints(rc_list_from_value(_TYPE_IDS));
     i = 0;
     while (i < (rc_list_ref(all_ids)).size()) {
-        int64 tid = py_list_at_ref(rc_list_ref(all_ids), py_to<int64>(i));
+        int64 tid = py_list_at_ref(rc_list_ref(all_ids), i);
         if (!py_contains(_TYPE_ORDER, tid))
             next_order = _assign_type_ranges_dfs(tid, next_order);
         i++;
@@ -281,7 +281,7 @@ int64 _try_runtime_tagged_type_id(const object& value) {
 int64 py_tid_runtime_type_id(const object& value) {
     /* Resolve runtime type_id for a Python value. */
     _ensure_builtins();
-    if (py_is_none(value))
+    if (false)
         return _tid_none();
     if (py_runtime_value_isinstance(value, PYTRA_TID_BOOL))
         return _tid_bool();

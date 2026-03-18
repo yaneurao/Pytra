@@ -162,6 +162,7 @@ _OWNER_METHOD_RUNTIME_CALLS: dict[str, dict[str, str]] = {
         "items": "dict.items",
         "keys": "dict.keys",
         "values": "dict.values",
+        "clear": "dict.clear",
     },
     "unknown": {
         "append": "list.append",
@@ -222,6 +223,7 @@ _OWNER_METHOD_RUNTIME_BINDINGS: dict[str, dict[str, tuple[str, str]]] = {
         "items": ("pytra.core.dict", "dict.items"),
         "keys": ("pytra.core.dict", "dict.keys"),
         "values": ("pytra.core.dict", "dict.values"),
+        "clear": ("pytra.core.dict", "dict.clear"),
     },
     "unknown": {
         "append": ("pytra.core.list", "list.append"),

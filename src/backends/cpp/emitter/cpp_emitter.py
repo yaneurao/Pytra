@@ -4622,6 +4622,10 @@ class CppEmitter(
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)
             return f"{owner_expr}.clear()"
+        if kind == "DictClear":
+            owner_node = expr_d.get("owner")
+            owner_expr = self.render_expr(owner_node)
+            return f"{owner_expr}.clear()"
         if kind == "DictItems":
             owner_node = expr_d.get("owner")
             owner_expr = self.render_expr(owner_node)

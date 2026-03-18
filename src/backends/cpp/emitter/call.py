@@ -325,7 +325,7 @@ class CppCallEmitter:
                 return True
             if t.startswith("set[") and method in ["add", "discard", "remove", "clear"]:
                 return True
-            if t.startswith("dict[") and method in ["get", "pop", "items", "keys", "values"]:
+            if t.startswith("dict[") and method in ["get", "pop", "items", "keys", "values", "clear"]:
                 return True
         return False
 
@@ -900,9 +900,14 @@ class CppCallEmitter:
         """runtime SoT のみ、未 lower の builtin method を BuiltinCall 経路へ戻す。"""
         if len(kw_nodes) != 0:
             return None
-        src = self.any_dict_get_str(self.doc, "source_path", "")
+        src_val = self.doc.get("source_path")
+        if src_val is None:
+            # source_path キー自体が存在しない（テスト doc 等）: fallback を許可しない。
+            return None
+        src = self.any_to_str(src_val)
         if not (
-            src.startswith("src/pytra/std/")
+            src == ""  # リンク済み doc（global optimizer が source_path を "" にセットする）
+            or src.startswith("src/pytra/std/")
             or src.startswith("src/pytra/utils/")
             or src.startswith("src/pytra/built_in/")
             or src.startswith("src/toolchain/compiler/")
@@ -914,7 +919,7 @@ class CppCallEmitter:
             runtime_call = "list." + attr
         elif owner_norm.startswith("set[") and attr in {"add", "discard", "remove", "clear"}:
             runtime_call = "set." + attr
-        elif owner_norm.startswith("dict[") and attr in {"get", "pop", "items", "keys", "values"}:
+        elif owner_norm.startswith("dict[") and attr in {"get", "pop", "items", "keys", "values", "clear"}:
             runtime_call = "dict." + attr
         if runtime_call == "":
             return None
