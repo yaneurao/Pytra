@@ -147,7 +147,7 @@
 
 文脈: [docs/ja/plans/p6-cpp-any-union-object-fallback.md](../plans/p6-cpp-any-union-object-fallback.md)
 
-9. [ ] [ID: P6-CPP-ANY-UNION-OBJECT-FALLBACK-01] `int | Any` 等の動的ユニオン・Any-like 二項演算でサイレントに `object` を返す箇所（type_bridge.py L591, cpp_emitter.py L471/L2082）を排除する。
+9. [x] [ID: P6-CPP-ANY-UNION-OBJECT-FALLBACK-01] `int | Any` 等の動的ユニオン・Any-like 二項演算でサイレントに `object` を返す箇所（type_bridge.py L591, cpp_emitter.py L471/L2082）を排除する。
 
 #### P6-8: unknown / 空文字型の object フォールバック排除
 

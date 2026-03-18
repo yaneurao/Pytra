@@ -42,3 +42,4 @@ C++ emitter が以下の3箇所で `object` にサイレントフォールバッ
 ## 決定ログ
 
 - 2026-03-18: object 排除方針の下、カテゴリ A フォールバックとして特定。
+- 2026-03-18: 実装完了。(1) type_bridge.py: Any 混入 2+ 型ユニオンで ValueError（Any 単体は object 維持）。(2) cpp_emitter.py: Any-like 二項演算で object に隠さず空文字を返し resolved_type にフォールバック。241 test pass。

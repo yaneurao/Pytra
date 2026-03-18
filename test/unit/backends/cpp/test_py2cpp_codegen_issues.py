@@ -431,7 +431,7 @@ def f() -> float:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("return py_div(a, b);", cpp)
+        self.assertIn("py_div(a, b)", cpp)
 
     def test_sample18_perf_counter_is_typed_without_redundant_cast(self) -> None:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"

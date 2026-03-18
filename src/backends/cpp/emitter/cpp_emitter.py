@@ -473,7 +473,7 @@ class CppEmitter(
             left_t = self.normalize_type_name(self.get_expr_type(node_for_base.get("left")))
             right_t = self.normalize_type_name(self.get_expr_type(node_for_base.get("right")))
             if self.is_any_like_type(left_t) or self.is_any_like_type(right_t):
-                return "object"
+                return ""  # Any-like 二項演算は resolved_type にフォールバック（object に隠さない）
         if t not in {"", "unknown"}:
             return t
         if kind == "Name":

@@ -625,7 +625,9 @@ class CppTypeBridgeEmitter:
                             has_any_like = True
                             break
                     if has_any_like:
-                        return "object"
+                        if len(non_none) == 1:
+                            return "object"
+                        raise ValueError(f"unsupported Any-containing union for C++ emit: {east_type}")
                 if has_none and len(non_none) == 1:
                     return f"::std::optional<{self._cpp_type_text(non_none[0], pyobj_ref_lists=pyobj_ref_lists)}>"
                 if (not has_none) and len(non_none) == 1:
