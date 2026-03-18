@@ -6116,10 +6116,13 @@ def head(xs: tuple[int, ...]) -> int:
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
         self.assertIn("struct Scalar {", cpp)
-        self.assertIn("enum Tag { TAG_INT64, TAG_FLOAT64 }", cpp)
+        self.assertIn("uint32 tag;", cpp)
+        self.assertIn("PYTRA_TID_INT", cpp)
+        self.assertIn("PYTRA_TID_FLOAT", cpp)
         self.assertIn("const Scalar&", cpp)
-        self.assertNotIn("::std::variant<int64, float64> add_scalars", cpp)
+        self.assertNotIn("::std::variant", cpp)
         self.assertNotIn("using Scalar", cpp)
+        self.assertNotIn("enum Tag", cpp)
 
 
 if __name__ == "__main__":

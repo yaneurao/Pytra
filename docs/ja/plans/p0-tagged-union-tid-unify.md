@@ -123,3 +123,6 @@ json.py を `type JsonVal = None | bool | int | float | str | list[JsonVal] | di
 - 2026-03-18: ユーザー提案。tagged union の tag を PYTRA_TID と統一し、isinstance を1つの仕組みで実現する方針を決定。
   DFS オーダーベースの type_id レンジ方式が既に実装済みであり、tagged union メンバがクラス型の場合も
   継承関係を尊重した isinstance が自然に動作する。P0 として起票。
+- 2026-03-18: 実装完了。ステップ 1-3 を実装。tag を `uint32` + `PYTRA_TID_*` に変更。isinstance を `v.tag == PYTRA_TID_XXX` に変換。
+  if-stmt 内の isinstance ガードで型ナローイング（変数アクセスをフィールドアクセスに自動変換）を実装。
+  json.py の書き直しは次タスクとして分離（isinstance + ナローイングが使える状態になった）。242 test pass。

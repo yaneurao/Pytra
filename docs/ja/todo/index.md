@@ -43,7 +43,7 @@
 
 文脈: [docs/ja/plans/p0-tagged-union-tid-unify.md](../plans/p0-tagged-union-tid-unify.md)
 
-2. [ ] [ID: P0-TAGGED-UNION-TID-UNIFY-01] tagged struct の tag をローカル enum から `uint32` (PYTRA_TID) に変更し、isinstance を既存の type_id レンジ方式で統一する。isinstance ガード内の型ナローイング（フィールドアクセス自動挿入）を実装し、json.py を `type JsonVal = ...` で書き直して動作確認する。
+2. [x] [ID: P0-TAGGED-UNION-TID-UNIFY-01] tagged struct の tag をローカル enum から `uint32` (PYTRA_TID) に変更し、isinstance を既存の type_id レンジ方式で統一する。isinstance ガード内の型ナローイング（フィールドアクセス自動挿入）を実装し、json.py を `type JsonVal = ...` で書き直して動作確認する。
 
 ### P1: 言語機能追加
 

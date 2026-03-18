@@ -14,15 +14,14 @@ struct _ArgSpec;
 struct ArgumentParser;
 
 struct ArgValue {
-    enum Tag { TAG_STR, TAG_BOOL, TAG_NONE };
-    Tag tag;
+    uint32 tag;
     str str_val;
     bool bool_val;
 
-    ArgValue() : tag(TAG_NONE) {}
-    ArgValue(const str& v) : tag(TAG_STR), str_val(v) {}
-    ArgValue(Tag, bool v) : tag(TAG_BOOL), bool_val(v) {}
-    ArgValue(::std::monostate) : tag(TAG_NONE) {}
+    ArgValue() : tag(PYTRA_TID_NONE) {}
+    ArgValue(const str& v) : tag(PYTRA_TID_STR), str_val(v) {}
+    ArgValue(const bool& v) : tag(PYTRA_TID_BOOL), bool_val(v) {}
+    ArgValue(::std::monostate) : tag(PYTRA_TID_NONE) {}
 };
 
 
