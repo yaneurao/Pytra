@@ -1,9 +1,7 @@
 # 13: Sample that outputs DFS maze-generation progress as a GIF.
 
 from __future__ import annotations
-
 from pytra.std.time import perf_counter
-
 from pytra.utils.gif import grayscale_palette, save_gif
 
 

@@ -1,10 +1,8 @@
 # 11: Sample that outputs Lissajous-motion particles as a GIF.
 
 from __future__ import annotations
-
 from pytra.std import math
 from pytra.std.time import perf_counter
-
 from pytra.utils.gif import save_gif
 
 

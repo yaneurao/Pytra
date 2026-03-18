@@ -160,12 +160,8 @@ def runtime_module_exists(module_id: str) -> bool:
 
 
 def canonical_runtime_module_id(module_id: str) -> str:
-    if runtime_module_exists(module_id):
-        return module_id
-    if "." not in module_id:
-        mapped = "pytra.std." + module_id
-        if runtime_module_exists(mapped):
-            return mapped
+    # Python 標準モジュール名の暗黙リマップは廃止。
+    # pytra.* 経由の import のみを受け付ける。
     return module_id
 
 

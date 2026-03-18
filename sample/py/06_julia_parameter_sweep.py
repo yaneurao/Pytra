@@ -1,10 +1,8 @@
 # 06: Sample that sweeps Julia-set parameters and outputs a GIF.
 
 from __future__ import annotations
-
 from pytra.std import math
 from pytra.std.time import perf_counter
-
 from pytra.utils.gif import save_gif
 
 

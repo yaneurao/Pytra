@@ -1,9 +1,7 @@
 # 04: Sample that renders an orbit-trap Julia set and writes a PNG image.
 
 from __future__ import annotations
-
 from pytra.std.time import perf_counter
-
 from pytra.utils import png
 
 

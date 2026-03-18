@@ -1,9 +1,7 @@
 # 08: Sample that outputs Langton's Ant trajectories as a GIF.
 
 from __future__ import annotations
-
 from pytra.std.time import perf_counter
-
 from pytra.utils.gif import grayscale_palette, save_gif
 
 
