@@ -4,9 +4,7 @@
 #include "runtime/cpp/native/core/py_runtime.h"
 
 #include "runtime/cpp/generated/std/pathlib.h"
-#include "runtime/cpp/native/core/process_runtime.h"
 #include "runtime/cpp/native/core/scope_exit.h"
-
 #include "generated/std/glob.h"
 #include "generated/std/os.h"
 #include "generated/std/os_path.h"
@@ -16,8 +14,11 @@ namespace pytra::std::pathlib {
     /* Pure Python Path helper compatible with a subset of pathlib.Path. */
     
 
-    Path::Path(const str& value) {
-            this->_value = value;
+    Path::Path(const ::std::variant<str, Path>& value) {
+            if (false)
+                this->_value = value._value;
+            else
+                this->_value = value;
     }
 
     str Path::__str__() const {
@@ -32,7 +33,9 @@ namespace pytra::std::pathlib {
             return this->_value;
     }
 
-    Path Path::__truediv__(const str& rhs) const {
+    Path Path::__truediv__(const ::std::variant<str, Path>& rhs) const {
+            if (false)
+                return Path(pytra::std::os_path::join(this->_value, rhs._value));
             return Path(pytra::std::os_path::join(this->_value, rhs));
     }
 
