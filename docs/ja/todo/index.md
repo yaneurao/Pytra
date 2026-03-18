@@ -31,34 +31,9 @@
 
 ## 未完了タスク
 
-### P0: 緊急修正
-
-#### P0-1: パーサーの型エイリアス展開を抑止
-
-文脈: [docs/ja/plans/p0-type-alias-no-expand.md](../plans/p0-type-alias-no-expand.md)
-
-1. [x] [ID: P0-TYPE-ALIAS-NO-EXPAND-01] EAST1 パーサーが型エイリアスを展開しないようにする。
-
-#### P0-4: json.py 書き直し（4ステップ）
-
-文脈: [docs/ja/plans/p0-json-rewrite-steps.md](../plans/p0-json-rewrite-steps.md)
-
-2. [x] [ID: P0-JSON-REWRITE-S1-01] S1 完了。
-3. [x] [ID: P0-JSON-REWRITE-S2-01] S2 完了。
-4. [x] [ID: P0-JSON-REWRITE-S3-01] S3 完了。
-5. [x] [ID: P0-JSON-REWRITE-S4-01] S4 完了。json_adapters.py も更新。
-
-### P1: ランタイム構造変更
-
-#### P1-1: runtime ディレクトリ構造変更（.east 統一 + 手書き分離）
-
-文脈: [docs/ja/plans/p1-runtime-layout-restructure.md](../plans/p1-runtime-layout-restructure.md)
-
-1. [x] [ID: P1-RUNTIME-LAYOUT-RESTRUCTURE-01] .east 生成完了（26モジュール）。native/ 移動・旧 generated/ 削除は P2 で実施。 `runtime/generated/` に `.east` を言語非依存で配置し、`runtime/cpp/` は手書きコードのみにする。言語ごとの `generated/` を廃止。P2 の前提。
-
 ### P2: compile / link パイプライン分離
 
-#### P2-1: compile / link 2段パイプライン
+#### P2-1: compile / link 2段パイプライン完成
 
 文脈: [docs/ja/plans/p2-compile-link-pipeline.md](../plans/p2-compile-link-pipeline.md)
 
@@ -76,4 +51,4 @@
 
 文脈: [docs/ja/plans/p7-selfhost-native-compiler-elim.md](../plans/p7-selfhost-native-compiler-elim.md)
 
-1. [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01] `src/runtime/cpp/native/compiler/` を完全削除し、selfhost バイナリがホスト Python をシェルアウトなしで動作できるようにする。
+1. [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01] `src/runtime/cpp/compiler/` を完全削除し、selfhost バイナリが compile → link パイプライン経由で動作できるようにする。

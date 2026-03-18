@@ -80,6 +80,7 @@ Pytra は、型注釈付き Python コードを複数言語へ変換するトラ
   - `from pytra.enum import Enum, IntEnum, IntFlag` — `enum` の代わり
   - `from pytra.dataclasses import dataclass, field` — `dataclasses` の代わり
   - `from pytra.types import int64, uint8` — Pytra 固有スカラー型
+  - `from pytra.std.collections import deque` — `collections.deque` の代わり
   - `from pytra.std.math import sqrt` — `math` 等の実行時モジュール
   - `pytra.typing` / `pytra.enum` / `pytra.dataclasses` / `pytra.types` は言語機能の補助モジュールであり、変換器はこれらの import を無視します（パーサーが `cast` / `Enum` / `dataclass` / `int64` 等を既に認識しているため）。Python 実行時は標準モジュールを re-export するため、そのまま動作します。
   - `pytra.std.*` は実行時ライブラリであり、変換器は依存解決・ヘッダ生成に使用します。

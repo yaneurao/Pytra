@@ -27,7 +27,8 @@
   - `py2*.py` エントリ
   - `src/toolchain/`（変換プログラム本体）
   - `src/pytra/`（変換時参照ライブラリ正本）
-  - `src/runtime/<lang>/{generated,native}/`（ターゲット言語ランタイム。未移行 backend の `pytra-gen/pytra-core` は一時 debt）
+  - `src/runtime/generated/`（`.east` ファイル。言語非依存の中間表現。link 時に各ターゲット言語に変換）
+  - `src/runtime/<lang>/`（ターゲット言語固有の手書きランタイムコード。`native/` 階層は廃止済み）
   - 非 C++ / 非 C# backend の checked-in `src/runtime/<lang>/pytra/**` は存在してはならず、再出現は contract fail とする。
   - repo 正本 layout は `src/runtime/<lang>/{generated,native}/` のみを許可する。
   - `src/backends/`
