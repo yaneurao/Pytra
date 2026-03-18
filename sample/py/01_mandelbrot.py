@@ -1,7 +1,7 @@
 # 01: Sample that outputs the Mandelbrot set as a PNG image.
 # Syntax is kept straightforward with future transpilation in mind.
 
-from time import perf_counter
+from pytra.std.time import perf_counter
 from pytra.utils import png
 
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from time import perf_counter
+from pytra.std.time import perf_counter
 
 from pytra.utils import png
 

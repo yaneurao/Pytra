@@ -1,7 +1,7 @@
 # 17: Sample that scans a large grid using integer arithmetic only and computes a checksum.
 # It avoids floating-point error effects, making cross-language comparisons easier.
 
-from time import perf_counter
+from pytra.std.time import perf_counter
 
 
 def run_integer_grid_checksum(width: int, height: int, seed: int) -> int:

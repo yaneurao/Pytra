@@ -1,7 +1,6 @@
 #include "runtime/cpp/native/core/py_runtime.h"
 #include "runtime/cpp/native/core/process_runtime.h"
 #include "runtime/cpp/native/core/scope_exit.h"
-
 #include "generated/built_in/contains.h"
 #include "generated/built_in/io_ops.h"
 #include "generated/built_in/iter_ops.h"

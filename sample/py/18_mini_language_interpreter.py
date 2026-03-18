@@ -1,5 +1,5 @@
 from pytra.dataclasses import dataclass
-from time import perf_counter
+from pytra.std.time import perf_counter
 
 
 # Tokens for lexical analysis.

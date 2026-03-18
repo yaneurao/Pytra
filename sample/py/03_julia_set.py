@@ -1,7 +1,7 @@
 # 03: Sample that outputs a Julia set as a PNG image.
 # Implemented with simple loop-centric logic for transpilation compatibility.
 
-from time import perf_counter
+from pytra.std.time import perf_counter
 from pytra.utils import png
 
 

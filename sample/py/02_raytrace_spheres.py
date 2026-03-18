@@ -1,9 +1,9 @@
 # 02: Sample that runs a mini sphere-only ray tracer and outputs a PNG image.
 # Dependencies are kept minimal (time only) for transpilation compatibility.
 
-import math
+from pytra.std import math
 from pytra.utils import png
-from time import perf_counter
+from pytra.std.time import perf_counter
 
 
 def clamp01(v: float) -> float:
