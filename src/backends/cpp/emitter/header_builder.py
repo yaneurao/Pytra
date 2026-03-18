@@ -235,8 +235,10 @@ def build_cpp_header_from_east(
     class_block_names = _extract_class_names_from_blocks(class_blocks)
 
     class_lines: list[str] = []
+    alias_lines: list[str] = []
     fn_lines: list[str] = []
     var_lines: list[str] = []
+    cpp_to_alias: dict[str, str] = {}
     used_types: set[str] = set()
     seen_classes: set[str] = set()
     class_names: set[str] = set()
@@ -408,6 +410,14 @@ def build_cpp_header_from_east(
                     parts.append(param_txt)
                 sep = ", "
                 fn_lines.append(ret_cpp + " " + name + "(" + sep.join(parts) + ");")
+        elif kind == "TypeAlias":
+            alias_name = dict_any_get_str(st, "name")
+            type_expr = dict_any_get_str(st, "type_expr")
+            if alias_name != "" and type_expr != "":
+                cpp_t = _header_cpp_type_from_east(type_expr, ref_classes, class_names)
+                used_types.add(cpp_t)
+                alias_lines.append("using " + alias_name + " = " + cpp_t + ";")
+                cpp_to_alias[cpp_t] = alias_name
         elif kind in {"Assign", "AnnAssign"}:
             name = stmt_target_name(st)
             if name == "":
@@ -469,7 +479,18 @@ def build_cpp_header_from_east(
         includes.append("#include <unordered_map>")
     if has_std_uset:
         includes.append("#include <unordered_set>")
-    decl_text = join_str_list("\n", class_blocks + class_lines + var_lines + fn_lines)
+    if len(cpp_to_alias) > 0:
+        sorted_keys = sorted(cpp_to_alias.keys(), key=len, reverse=True)
+        def _apply_alias_subs(lines: list[str]) -> list[str]:
+            result: list[str] = []
+            for line in lines:
+                for cpp_t in sorted_keys:
+                    line = line.replace(cpp_t, cpp_to_alias[cpp_t])
+                result.append(line)
+            return result
+        fn_lines = _apply_alias_subs(fn_lines)
+        var_lines = _apply_alias_subs(var_lines)
+    decl_text = join_str_list("\n", class_blocks + class_lines + alias_lines + var_lines + fn_lines)
     raw_include_lines = _extract_cpp_include_lines(cpp_text, output_path)
     include_lines = _filter_cpp_include_lines_for_header(raw_include_lines, decl_text, top_namespace)
     for include_line in include_lines:
@@ -513,6 +534,10 @@ def build_cpp_header_from_east(
     for class_line in class_lines:
         lines.append(class_line)
     if len(class_lines) > 0:
+        lines.append("")
+    for alias_line in alias_lines:
+        lines.append(alias_line)
+    if len(alias_lines) > 0:
         lines.append("")
     for var_line in var_lines:
         lines.append(var_line)

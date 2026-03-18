@@ -461,6 +461,20 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
             return None
         return Match(text, [name, expr])
 
+    # ^type\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$
+    if pattern == r"^type\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$":
+        if not text.startswith("type "):
+            return None
+        rest: str = text[5:].strip()
+        eq: int = rest.find("=")
+        if eq < 0:
+            return None
+        name: str = rest[:eq].strip()
+        rhs: str = rest[eq + 1 :].strip()
+        if not _is_ident(name) or rhs == "":
+            return None
+        return Match(text, [name, rhs])
+
     raise ValueError(f"unsupported regex pattern in pytra.std.re: {pattern}")
 
 

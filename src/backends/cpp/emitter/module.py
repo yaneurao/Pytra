@@ -1106,7 +1106,7 @@ class CppModuleEmitter:
     def _is_module_definition_stmt(self, stmt: dict[str, Any]) -> bool:
         """トップレベルで namespace 直下に置ける定義文かを返す。"""
         kind = self._node_kind_from_dict(stmt)
-        return kind in {"ClassDef", "FunctionDef", "Import", "ImportFrom"}
+        return kind in {"ClassDef", "FunctionDef", "Import", "ImportFrom", "TypeAlias"}
 
     def _is_module_noop_stmt(self, stmt: dict[str, Any]) -> bool:
         """トップレベル runtime を汚さない no-op 文かを返す。"""

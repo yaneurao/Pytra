@@ -5,8 +5,35 @@ from toolchain.compiler.transpile_cli import dict_any_get_str, join_str_list, ma
 from toolchain.frontends.type_expr import type_expr_to_string
 
 
+# Pairs (src_t, dst_t) where C++ performs implicit widening conversion — no explicit cast needed.
+_SAFE_WIDENING_PAIRS: set[tuple[str, str]] = {
+    ("bool", "int8"), ("bool", "uint8"), ("bool", "int16"), ("bool", "uint16"),
+    ("bool", "int32"), ("bool", "uint32"), ("bool", "int64"), ("bool", "uint64"),
+    ("bool", "float32"), ("bool", "float64"),
+    ("int8", "int16"), ("int8", "int32"), ("int8", "int64"),
+    ("int8", "float32"), ("int8", "float64"),
+    ("uint8", "uint16"), ("uint8", "uint32"), ("uint8", "uint64"),
+    ("uint8", "int16"), ("uint8", "int32"), ("uint8", "int64"),
+    ("uint8", "float32"), ("uint8", "float64"),
+    ("int16", "int32"), ("int16", "int64"),
+    ("int16", "float32"), ("int16", "float64"),
+    ("uint16", "uint32"), ("uint16", "uint64"),
+    ("uint16", "int32"), ("uint16", "int64"),
+    ("uint16", "float32"), ("uint16", "float64"),
+    ("int32", "int64"), ("int32", "float64"),
+    ("uint32", "uint64"), ("uint32", "int64"), ("uint32", "float64"),
+    ("float32", "float64"),
+}
+
+
 class CppTypeBridgeEmitter:
     """Type conversion and Any-boundary helpers extracted from CppEmitter."""
+
+    def _is_safe_widening_cast(self, src_t: str, dst_t: str) -> bool:
+        """src_t → dst_t が C++ 暗黙変換で安全に行われる widening cast かを返す。同型は False。"""
+        if src_t in {"", "unknown"} or dst_t in {"", "unknown"}:
+            return False
+        return (src_t, dst_t) in _SAFE_WIDENING_PAIRS
 
     def _homogeneous_tuple_ellipsis_item_type(self, east_type: str) -> str:
         """`tuple[T, ...]` の要素型を返す。該当しない場合は空文字。"""
@@ -230,22 +257,22 @@ class CppTypeBridgeEmitter:
             return f'obj_to_rc_or_raise<{ref_inner}>({expr_txt}, "{ctx_safe}")'
         if t_norm in {"float32", "float64"}:
             if t_norm == "float64" and (
-                expr_txt.startswith("static_cast<float64>(")
+                expr_txt.startswith("float64(")
+                or expr_txt.startswith("static_cast<float64>(")
                 or expr_txt.startswith("py_to<float64>(")
                 or expr_txt.startswith("py_to_float64(")
             ):
                 return expr_txt
-            return f"static_cast<float64>({expr_txt})"
+            return f"{t_norm}({expr_txt})"
         if t_norm in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
             if t_norm == "int64" and (
-                expr_txt.startswith("static_cast<int64>(")
+                expr_txt.startswith("int64(")
+                or expr_txt.startswith("static_cast<int64>(")
                 or expr_txt.startswith("py_to<int64>(")
                 or expr_txt.startswith("py_to_int64(")
             ):
                 return expr_txt
-            if t_norm == "int64":
-                return f"static_cast<int64>({expr_txt})"
-            return f"{t_norm}(static_cast<int64>({expr_txt}))"
+            return f"{t_norm}({expr_txt})"
         if t_norm == "bool":
             return f"py_to<bool>({expr_txt})"
         if t_norm == "str":
@@ -564,6 +591,9 @@ class CppTypeBridgeEmitter:
         """正規化済み型名（str）を C++ 型名へマッピングする。"""
         t_norm, mapped = self.normalize_type_and_lookup_map(east_type, self.type_map)
         east_type = t_norm
+        alias = getattr(self, "_type_alias_reverse_map", {}).get(east_type)
+        if alias is not None:
+            return alias
         if east_type == "":
             return "auto"
         if east_type in self.ref_classes:

@@ -190,6 +190,10 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                         if target != "":
                             type_aliases[alias_name] = target
                 continue
+            m_pep695_pre = re.match(r"^type\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
+            if m_pep695_pre is not None:
+                _sh_register_type_alias(type_aliases, re.strip_group(m_pep695_pre, 1), re.strip_group(m_pep695_pre, 2))
+                continue
             asg_pre = _sh_split_top_level_assign(s)
             if asg_pre is not None:
                 pre_left, pre_right = asg_pre
@@ -1381,6 +1385,18 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
             i = logical_end + 1
             continue
 
+        m_pep695 = re.match(r"^type\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", s)
+        if m_pep695 is not None:
+            alias_name = re.strip_group(m_pep695, 1)
+            alias_rhs = re.strip_group(m_pep695, 2).strip()
+            normalized = _sh_ann_to_type(alias_rhs, type_aliases=_SH_TYPE_ALIASES)
+            if normalized == "" or normalized == "unknown":
+                normalized = alias_rhs
+            body_items.append(
+                _sh_make_node("TypeAlias", source_span=_sh_span(i, 0, len(ln)), name=alias_name, type_expr=normalized)
+            )
+            i = logical_end + 1
+            continue
         asg_top = _sh_split_top_level_assign(s)
         if asg_top is not None:
             asg_left, asg_right = asg_top

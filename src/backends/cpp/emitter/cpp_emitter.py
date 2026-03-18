@@ -258,6 +258,7 @@ class CppEmitter(
         self.function_return_types: dict[str, str] = {}
         self.function_return_abi_modes: dict[str, str] = {}
         self.extern_function_names: set[str] = set()
+        self._type_alias_reverse_map: dict[str, str] = {}
         self.current_function_return_type: str = ""
         self.current_function_return_abi_mode: str = "default"
         self.current_function_is_generator: bool = False
@@ -2208,6 +2209,7 @@ class CppEmitter(
             "Yield": self._emit_yield_stmt,
             "Import": self._emit_noop_stmt,
             "ImportFrom": self._emit_noop_stmt,
+            "TypeAlias": self._emit_type_alias_stmt,
         }
         handler = dispatch.get(kind)
         if not callable(handler):
@@ -2249,6 +2251,15 @@ class CppEmitter(
         self.emit(open_line)
         self.emit_scoped_stmt_list(stmts, scope_names)
         self.emit_block_close()
+
+    def _emit_type_alias_stmt(self, stmt: dict[str, Any]) -> None:
+        name = self.any_to_str(stmt.get("name"))
+        type_expr = self.any_to_str(stmt.get("type_expr"))
+        if name == "" or type_expr == "":
+            return
+        cpp_t = self._cpp_type_text(type_expr)
+        self.emit(f"using {name} = {cpp_t};")
+        self._type_alias_reverse_map[type_expr] = name
 
     def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
         kind = self._node_kind_from_dict(stmt)
@@ -4325,6 +4336,8 @@ class CppEmitter(
         source_t = self.normalize_type_name(self.get_expr_type(value_node))
         if source_t not in {"", "unknown"} and (not self.is_any_like_type(source_t)):
             if self._strip_rc_wrapper(source_t) == self._strip_rc_wrapper(target_t):
+                return value_expr
+            if self._is_safe_widening_cast(source_t, target_t):
                 return value_expr
         ctx = self.any_dict_get_str(expr_d, "ctx", "east3_unbox")
         return self._render_unbox_target_cast(value_expr, target_t, ctx)

@@ -23,22 +23,22 @@ class CppExpressionEmitter:
             return rendered_expr
         if norm_t in {"float32", "float64"}:
             if norm_t == "float64" and (
-                rendered_expr.startswith("static_cast<float64>(")
+                rendered_expr.startswith("float64(")
+                or rendered_expr.startswith("static_cast<float64>(")
                 or rendered_expr.startswith("py_to<float64>(")
                 or rendered_expr.startswith("py_to_float64(")
             ):
                 return rendered_expr
-            return f"static_cast<float64>({rendered_expr})"
+            return f"{norm_t}({rendered_expr})"
         if norm_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
             if norm_t == "int64" and (
-                rendered_expr.startswith("static_cast<int64>(")
+                rendered_expr.startswith("int64(")
+                or rendered_expr.startswith("static_cast<int64>(")
                 or rendered_expr.startswith("py_to<int64>(")
                 or rendered_expr.startswith("py_to_int64(")
             ):
                 return rendered_expr
-            if norm_t == "int64":
-                return f"static_cast<int64>({rendered_expr})"
-            return f"{norm_t}(static_cast<int64>({rendered_expr}))"
+            return f"{norm_t}({rendered_expr})"
         if norm_t == "bool":
             return f"py_to<bool>({rendered_expr})"
         if norm_t == "str":
@@ -189,13 +189,13 @@ class CppExpressionEmitter:
             n: Any = arg_nodes_safe[i] if i < len(arg_nodes_safe) else {}
             at0 = self.get_expr_type(n)
             at = at0 if isinstance(at0, str) else ""
+            at_norm = self.normalize_type_name(at)
             if self.is_any_like_type(at):
                 casted.append(self.apply_cast(a, t))
+            elif at_norm == t or self._is_safe_widening_cast(at_norm, t) or self.should_skip_same_type_cast(a, t):
+                casted.append(a)
             else:
-                if t in {"float64", "float32"}:
-                    casted.append(f"{t}({a})")
-                else:
-                    casted.append(f"static_cast<{t}>({a})")
+                casted.append(f"{t}({a})")
         call = f"::std::{fn}<{t}>({casted[0]}, {casted[1]})"
         for a in casted[2:]:
             call = f"::std::{fn}<{t}>({call}, {a})"
