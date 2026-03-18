@@ -242,21 +242,7 @@ static inline decltype(auto) py_at_bounds_debug(const Seq& v, int64 idx) {
 #endif
 }
 
-// is None 判定（optional / object / 任意型）。
-template <class T>
-static inline bool py_is_none(const ::std::optional<T>& v) {
-    return !v.has_value();
-}
-
-template <class T>
-static inline bool py_is_none(const T&) {
-    return false;
-}
-
-static inline bool py_is_none(const object& v) {
-    return !static_cast<bool>(v);
-}
-
+// py_is_none は native/built_in/base_ops.h へ移動済み（P6-EAST3-IS-NONE-INLINE-01）。
 
 // P0-contract-shrink label: shared_type_id_contract seam.
 // type_id 判定ロジックは generated built_in 層（py_tid_*）を正本とする。

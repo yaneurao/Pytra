@@ -3540,11 +3540,9 @@ class CppEmitter(
                 parts.append(f"!py_contains({rhs}, {cur})")
             else:
                 if op_name in {"Is", "IsNot"} and rhs in {"std::nullopt", "::std::nullopt"}:
-                    prefix = "!" if op_name == "IsNot" else ""
-                    parts.append(f"{prefix}py_is_none({cur})")
+                    parts.append(self._render_is_none_expr(cur, cur_node, op_name == "IsNot"))
                 elif op_name in {"Is", "IsNot"} and cur in {"std::nullopt", "::std::nullopt"}:
-                    prefix = "!" if op_name == "IsNot" else ""
-                    parts.append(f"{prefix}py_is_none({rhs})")
+                    parts.append(self._render_is_none_expr(rhs, rhs_node, op_name == "IsNot"))
                 else:
                     parts.append(f"{cur} {cop} {rhs}")
             cur = rhs
@@ -3593,6 +3591,27 @@ class CppEmitter(
         if self._uses_pyobj_runtime_list_expr(list_expr_node):
             return False
         return True
+
+    def _render_is_none_expr(self, var_expr: str, var_node: Any, negated: bool) -> str:
+        """py_is_none(v) を型ベースのインライン式に変換する。negated=True は `is not None`。
+        - optional[T] → .has_value() / !.has_value()
+        - 確定型（非 optional, 非 object）→ true / false
+        - object → static_cast<bool>(v) / !v
+        - 型不明 → fallback: py_is_none(v)
+        """
+        val_t = self.normalize_type_name(self.get_expr_type(var_node))
+        base = self._trim_ws(var_expr)
+        if val_t.startswith("optional[") and val_t.endswith("]"):
+            has_val = f"{base}.has_value()" if self._is_identifier_expr(base) else f"({base}).has_value()"
+            return has_val if negated else f"!{has_val}"
+        if val_t not in {"", "unknown", "object"}:
+            return "true" if negated else "false"
+        if val_t == "object":
+            if negated:
+                return f"static_cast<bool>({base})"
+            return f"!{base}" if self._is_identifier_expr(base) else f"!({base})"
+        prefix = "!" if negated else ""
+        return f"{prefix}py_is_none({base})"
 
     def _render_container_empty_expr(self, container_expr: str) -> str:
         """コンテナ式を `.empty()` 判定へ変換する。"""

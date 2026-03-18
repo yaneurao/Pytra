@@ -30,6 +30,15 @@ static inline int64 py_len(const char (&)[N]) {
     return N > 0 ? static_cast<int64>(N - 1) : 0;
 }
 
+// py_is_none: None 判定。
+// emitter が型不明の場合の fallback として参照する（P6-EAST3-IS-NONE-INLINE-01）。
+// optional<T> → !v.has_value()、object → !v、確定型 → 常に false。
+template <class T>
+static inline bool py_is_none(const ::std::optional<T>& v) { return !v.has_value(); }
+static inline bool py_is_none(const object& v) { return !static_cast<bool>(v); }
+template <class T>
+static inline bool py_is_none(const T&) { return false; }
+
 // py_str_slice: str のスライス（境界クランプ付き）。
 // 旧 py_slice(const str&, ...) を改名。emitter は str スライス時にこちらを使用する。
 static inline str py_str_slice(const str& v, int64 lo, int64 up) {
