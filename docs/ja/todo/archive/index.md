@@ -207,6 +207,10 @@
 
 ## 保留 / 退避 plan アーカイブ
 
+- [2026-03-18 / P6-CPP-UNKNOWN-TYPE-OBJECT-FALLBACK-01](../plans/p6-cpp-unknown-type-object-fallback.md)（型推論強化が前提条件）
+- [2026-03-18 / P6-CPP-BRANCH-MERGE-OBJECT-FALLBACK-01](../plans/p6-cpp-branch-merge-object-fallback.md)（型推論強化が前提条件）
+- [2026-03-18 / P6-CPP-FOR-LOOP-TYPE-OBJECT-FALLBACK-01](../plans/p6-cpp-for-loop-type-object-fallback.md)（型推論強化が前提条件）
+- [2026-03-18 / P6-CPP-GLOBAL-VAR-TYPE-OBJECT-FALLBACK-01](../plans/p6-cpp-global-var-type-object-fallback.md)（型推論強化が前提条件）
 - [2026-03-06 / P4-MULTILANG-SH-01](../plans/archive/20260306-p4-multilang-selfhost-full-rollout.md)（ABI 確立後に再投入）
 
 ## 日付別リンク
