@@ -414,10 +414,19 @@ def build_cpp_header_from_east(
             alias_name = dict_any_get_str(st, "name")
             type_expr = dict_any_get_str(st, "type_expr")
             if alias_name != "" and type_expr != "":
-                cpp_t = _header_cpp_type_from_east(type_expr, ref_classes, class_names)
-                used_types.add(cpp_t)
-                alias_lines.append("using " + alias_name + " = " + cpp_t + ";")
-                cpp_to_alias[cpp_t] = alias_name
+                # Multi-type union → tagged struct
+                _parts = [p.strip() for p in type_expr.split("|") if p.strip() != ""]
+                _non_none = [p for p in _parts if p != "None"]
+                _has_none = len(_non_none) < len(_parts)
+                if len(_non_none) >= 2:
+                    _struct_lines = _build_tagged_union_struct_lines(alias_name, _non_none, _has_none, ref_classes, class_names)
+                    for sl in _struct_lines:
+                        alias_lines.append(sl)
+                else:
+                    cpp_t = _header_cpp_type_from_east(type_expr, ref_classes, class_names)
+                    used_types.add(cpp_t)
+                    alias_lines.append("using " + alias_name + " = " + cpp_t + ";")
+                cpp_to_alias[type_expr] = alias_name
         elif kind in {"Assign", "AnnAssign"}:
             name = stmt_target_name(st)
             if name == "":
@@ -1386,6 +1395,48 @@ def _header_runtime_types_include(used_types: set[str], has_class_blocks: bool) 
     if needs_scalar:
         return "py_scalar_types.h"
     return ""
+
+
+def _build_tagged_union_struct_lines(
+    name: str, non_none: list[str], has_none: bool,
+    ref_classes: set[str], class_names: set[str],
+) -> list[str]:
+    """type X = A | B | ... から C++ tagged struct 定義行を生成する。"""
+    lines: list[str] = []
+    tag_entries: list[tuple[str, str, str]] = []  # (tag_name, cpp_type, field_name)
+    for p in non_none:
+        cpp_t = _header_cpp_type_from_east(p, ref_classes, class_names)
+        tag_name = "TAG_" + p.upper().replace("[", "_").replace("]", "").replace(",", "_").replace(" ", "")
+        field_name = p.lower().replace("[", "_").replace("]", "").replace(",", "_").replace(" ", "") + "_val"
+        if name in cpp_t or p == name:
+            if cpp_t.startswith("list<"):
+                cpp_t = "rc<" + cpp_t + ">"
+            elif cpp_t.startswith("dict<"):
+                cpp_t = "rc<" + cpp_t + ">"
+        tag_entries.append((tag_name, cpp_t, field_name))
+    lines.append("struct " + name + " {")
+    tag_names = [e[0] for e in tag_entries]
+    if has_none:
+        tag_names.append("TAG_NONE")
+    lines.append("    enum Tag { " + ", ".join(tag_names) + " };")
+    lines.append("    Tag tag;")
+    for _, cpp_t, field_name in tag_entries:
+        lines.append("    " + cpp_t + " " + field_name + ";")
+    lines.append("")
+    if has_none:
+        lines.append("    " + name + "() : tag(TAG_NONE) {}")
+    else:
+        lines.append("    " + name + "() : tag(" + tag_entries[0][0] + ") {}")
+    for tag_name, cpp_t, field_name in tag_entries:
+        if cpp_t == "bool":
+            lines.append("    " + name + "(Tag, " + cpp_t + " v) : tag(" + tag_name + "), " + field_name + "(v) {}")
+        else:
+            lines.append("    " + name + "(const " + cpp_t + "& v) : tag(" + tag_name + "), " + field_name + "(v) {}")
+    if has_none:
+        lines.append("    " + name + "(::std::monostate) : tag(TAG_NONE) {}")
+    lines.append("};")
+    lines.append("")
+    return lines
 
 
 def _header_cpp_type_from_east(

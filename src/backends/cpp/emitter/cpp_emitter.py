@@ -259,6 +259,8 @@ class CppEmitter(
         self.function_return_abi_modes: dict[str, str] = {}
         self.extern_function_names: set[str] = set()
         self._type_alias_reverse_map: dict[str, str] = {}
+        self._tagged_union_types: dict[str, list[str]] = {}  # name → [non_none_parts]
+        self._tagged_union_has_none: dict[str, bool] = {}  # name → has_none
         self.current_function_return_type: str = ""
         self.current_function_return_abi_mode: str = "default"
         self.current_function_is_generator: bool = False
@@ -1895,9 +1897,12 @@ class CppEmitter(
         if t in {"", "unknown", "Any", "object"}:
             return "object{}"
         if self._allows_none_default(t):
-            # 2型以上 + None → std::variant → std::monostate{}
+            # 2型以上 + None → tagged struct or std::variant
             non_none, has_none = self.split_union_non_none(t)
             if has_none and len(non_none) >= 2:
+                alias = getattr(self, "_type_alias_reverse_map", {}).get(t)
+                if alias is not None and alias in getattr(self, "_tagged_union_types", {}):
+                    return f"{alias}()"
                 return "::std::monostate{}"
             return "::std::nullopt"
         if t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
@@ -2257,9 +2262,74 @@ class CppEmitter(
         type_expr = self.any_to_str(stmt.get("type_expr"))
         if name == "" or type_expr == "":
             return
+        # Multi-type union → tagged struct
+        non_none, has_none = self.split_union_non_none(type_expr)
+        if len(non_none) >= 2:
+            self._tagged_union_types[name] = non_none
+            self._tagged_union_has_none[name] = has_none
+            self._type_alias_reverse_map[type_expr] = name
+            # runtime モード（header が別途生成される）では struct 定義をスキップ
+            if not self.emit_main:
+                return
+            self._emit_tagged_union_struct(name, non_none, has_none)
+            return
         cpp_t = self._cpp_type_text(type_expr)
+        if not self.emit_main:
+            # runtime モードでは using は header 側で出力済み
+            self._type_alias_reverse_map[type_expr] = name
+            return
         self.emit(f"using {name} = {cpp_t};")
         self._type_alias_reverse_map[type_expr] = name
+
+    def _emit_tagged_union_struct(self, name: str, non_none: list[str], has_none: bool) -> None:
+        """type X = A | B | ... から C++ tagged struct を生成する。"""
+        # tag 名を生成
+        tag_entries: list[tuple[str, str, str]] = []  # (tag_name, cpp_type, field_name)
+        for p in non_none:
+            cpp_t = self._cpp_type_text(p)
+            tag_name = "TAG_" + p.upper().replace("[", "_").replace("]", "").replace(",", "_").replace(" ", "")
+            field_name = p.lower().replace("[", "_").replace("]", "").replace(",", "_").replace(" ", "") + "_val"
+            # 再帰参照: 自分自身を含む型は rc<> で包む
+            if name in cpp_t or p == name:
+                if cpp_t.startswith("list<"):
+                    cpp_t = f"rc<{cpp_t}>"
+                elif cpp_t.startswith("dict<"):
+                    cpp_t = f"rc<{cpp_t}>"
+            tag_entries.append((tag_name, cpp_t, field_name))
+
+        # 登録
+        self._tagged_union_types[name] = non_none
+        self._tagged_union_has_none[name] = has_none
+
+        # struct 定義を emit
+        self.emit(f"struct {name} {{")
+        # Tag enum
+        tag_names = [e[0] for e in tag_entries]
+        if has_none:
+            tag_names.append("TAG_NONE")
+        self.emit(f"    enum Tag {{ {', '.join(tag_names)} }};")
+        self.emit(f"    Tag tag;")
+        # Fields
+        for _, cpp_t, field_name in tag_entries:
+            self.emit(f"    {cpp_t} {field_name};")
+        self.emit("")
+        # Default constructor (None if has_none, else first type)
+        if has_none:
+            self.emit(f"    {name}() : tag(TAG_NONE) {{}}")
+        else:
+            self.emit(f"    {name}() : tag({tag_entries[0][0]}) {{}}")
+        # Per-type constructors
+        for tag_name, cpp_t, field_name in tag_entries:
+            if cpp_t == "bool":
+                # bool constructor: use tag parameter to avoid ambiguity with int
+                self.emit(f"    {name}(Tag, {cpp_t} v) : tag({tag_name}), {field_name}(v) {{}}")
+            else:
+                self.emit(f"    {name}(const {cpp_t}& v) : tag({tag_name}), {field_name}(v) {{}}")
+        # monostate constructor for compatibility
+        if has_none:
+            self.emit(f"    {name}(::std::monostate) : tag(TAG_NONE) {{}}")
+        self.emit(f"}};")
+        self.emit("")
 
     def _emit_noop_stmt(self, stmt: dict[str, Any]) -> None:
         kind = self._node_kind_from_dict(stmt)
@@ -3643,7 +3713,11 @@ class CppEmitter(
                     # Optional[T] の union 記法 → std::optional → .has_value()
                     has_val = f"{base}.has_value()" if self._is_identifier_expr(base) else f"({base}).has_value()"
                     return has_val if negated else f"!{has_val}"
-                # 2型以上 + None → std::variant の std::monostate チェック
+                # 2型以上 + None → tagged struct or std::variant
+                alias = getattr(self, "_type_alias_reverse_map", {}).get(val_t)
+                if alias is not None and alias in getattr(self, "_tagged_union_types", {}):
+                    tag_check = f"{base}.tag == {alias}::TAG_NONE"
+                    return f"{base}.tag != {alias}::TAG_NONE" if negated else tag_check
                 holds = f"::std::holds_alternative<::std::monostate>({base})"
                 return f"!{holds}" if negated else holds
         if val_t not in {"", "unknown", "object"}:
@@ -4362,10 +4436,16 @@ class CppEmitter(
             return deque_truthy
         value_expr = self.render_expr(value_node)
         value_t = self.normalize_type_name(self.get_expr_type(value_node))
-        # Multi-type variant (str|bool|None 等) → py_variant_to_bool
+        # Multi-type variant (str|bool|None 等) → py_variant_to_bool or tagged struct
         if value_t != "" and self._contains_text(value_t, "|") and not self.is_any_like_type(value_t):
             non_none, _ = self.split_union_non_none(value_t)
             if len(non_none) >= 2:
+                alias = getattr(self, "_type_alias_reverse_map", {}).get(value_t)
+                if alias is not None and alias in getattr(self, "_tagged_union_types", {}):
+                    has_none = self._tagged_union_has_none.get(alias, False)
+                    if has_none:
+                        return f"{value_expr}.tag != {alias}::TAG_NONE"
+                    return "true"
                 return f"py_variant_to_bool({value_expr})"
         # 算術型確定ケース → bool(x)
         _arith_bool = {"bool", "int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64"}
