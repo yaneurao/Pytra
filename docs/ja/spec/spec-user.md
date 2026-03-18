@@ -81,8 +81,8 @@ Pytra は、型注釈付き Python コードを複数言語へ変換するトラ
   - `from pytra.dataclasses import dataclass, field` — `dataclasses` の代わり
   - `from pytra.types import int64, uint8` — Pytra 固有スカラー型
   - `from pytra.std.math import sqrt` — `math` 等の実行時モジュール
-  - これらのモジュールは Python 実行時は標準モジュールを re-export するため、Python でもそのまま動作します。
-  - 変換器はこれらの import を無視します（パーサーが `cast` / `Enum` / `dataclass` 等を既に認識しているため）。
+  - `pytra.typing` / `pytra.enum` / `pytra.dataclasses` / `pytra.types` は言語機能の補助モジュールであり、変換器はこれらの import を無視します（パーサーが `cast` / `Enum` / `dataclass` / `int64` 等を既に認識しているため）。Python 実行時は標準モジュールを re-export するため、そのまま動作します。
+  - `pytra.std.*` は実行時ライブラリであり、変換器は依存解決・ヘッダ生成に使用します。
   - 後方互換のため `from typing import ...` / `from enum import ...` / `from dataclasses import ...` も当面は受け付けますが、将来的に警告→エラー化する予定です。
 - import 可能なのは `pytra.*` 配下のモジュールと、ユーザーが作成した自作 `.py` モジュールです。
 - 自作モジュール import は仕様上合法ですが、複数ファイル依存解決は段階的に実装中です。
