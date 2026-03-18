@@ -51,6 +51,12 @@
 
 3. [x] [ID: P0-TAGGED-UNION-CAST-NARROWING-01] tagged union 変数からの値取り出しを `typing.cast(T, v)` による明示的フィールドアクセスに統一する。isinstance ガードによる暗黙ナローイングを除去し、`cast()` を `v.{T_field}` に変換する emitter パスを実装する。
 
+#### P0-4: pytra.types モジュール追加
+
+文脈: [docs/ja/plans/p0-pytra-types-module.md](../plans/p0-pytra-types-module.md)
+
+4. [x] [ID: P0-PYTRA-TYPES-MODULE-01] `src/pytra/types.py` に `int8`, `uint8`, `int64`, `float64` 等のスカラー型エイリアスを定義し、Pylance 互換にする。変換器は `from pytra.types import ...` を無視する。
+
 ### P1: 言語機能追加
 
 #### P1-1: `type X = T` 型エイリアスサポート

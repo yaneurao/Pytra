@@ -610,6 +610,11 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                     )
                 i = logical_end + 1
                 continue
+            if mod_name == "pytra.types":
+                # pytra.types はスカラー型エイリアス（Pylance 互換用）。
+                # パーサーが型名を既に認識しているため、import を無視する。
+                i = logical_end + 1
+                continue
             if mod_name == "__future__":
                 if names_txt == "*":
                     raise _make_east_build_error(

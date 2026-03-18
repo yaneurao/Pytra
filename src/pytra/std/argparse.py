@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import cast
 
+from pytra.types import int64
 from pytra.std import sys
 
 type ArgValue = str | bool | None
