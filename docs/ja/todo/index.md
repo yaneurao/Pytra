@@ -39,11 +39,15 @@
 
 1. [x] [ID: P0-PYTRA-IMPORT-UNIFY-01] `pytra.typing` / `pytra.enum` / `pytra.dataclasses` ダミーモジュールを作成し、Python 標準モジュールの import を `pytra.*` 経由に統一する。変換器はこれらの import を無視する。
 
-### P6: C++ include 最適化
+### P6: ランタイム最適化
 
 #### P6-1: CPP_HEADER の固定 include を必要性判定に変更
 
 1. [x] [ID: P6-CPP-INCLUDE-OPTIMIZE-01] C++ 生成コード冒頭の `#include` を固定文字列ではなく、emitter が生成コードの内容に応じて必要な include のみを emit するよう変更する。
+
+#### P6-2: Deque をネイティブ型にマッピング
+
+2. [ ] [ID: P6-DEQUE-NATIVE-MAPPING-01] ネイティブ deque を持つバックエンドで、`Deque` クラスを list ベース実装ではなく言語ネイティブの deque 型に emit するよう emitter を改良する。C++ は `std::deque` で対応済み。Rust(`VecDeque`), Java/Kotlin(`ArrayDeque`), Scala(`ArrayDeque`), Nim(`Deque`), PHP(`SplDoublyLinkedList`) が対象。
 
 ### P2: compile / link パイプライン分離
 
