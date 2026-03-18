@@ -1639,7 +1639,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(starts_node), 'py_startswith(s, "x")')
         self.assertEqual(
             emitter.render_expr(ends_slice_node),
-            'py_endswith(py_str_slice(s, static_cast<int64>(1), static_cast<int64>(3)), "x")',
+            'py_endswith(py_str_slice(s, int64(1), int64(3)), "x")',
         )
 
     def test_builtin_runtime_py_startswith_endswith_use_ir_node_path(self) -> None:
@@ -1679,7 +1679,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(starts_expr), 'py_startswith(s, "x")')
         self.assertEqual(
             emitter.render_expr(ends_expr),
-            'py_endswith(py_str_slice(s, static_cast<int64>(1), static_cast<int64>(3)), "x")',
+            'py_endswith(py_str_slice(s, int64(1), int64(3)), "x")',
         )
 
     def test_render_expr_supports_str_find_ir_node(self) -> None:
@@ -2272,7 +2272,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(print_node), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_node), "xs.size()")
         self.assertEqual(emitter.render_expr(to_string_node), "::std::to_string(1)")
-        self.assertEqual(emitter.render_expr(int_base_node), 'py_to_int64_base("10", static_cast<int64>(16))')
+        self.assertEqual(emitter.render_expr(int_base_node), 'py_to_int64_base("10", int64(16))')
         self.assertEqual(emitter.render_expr(static_cast_node), 'int64(::std::stoll("10"))')
         self.assertEqual(
             emitter.render_expr(iter_node),
@@ -2590,7 +2590,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(print_expr), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_expr), "xs.size()")
         self.assertEqual(emitter.render_expr(to_string_expr), "::std::to_string(1)")
-        self.assertEqual(emitter.render_expr(int_base_expr), 'py_to_int64_base("10", static_cast<int64>(16))')
+        self.assertEqual(emitter.render_expr(int_base_expr), 'py_to_int64_base("10", int64(16))')
         self.assertEqual(
             emitter.render_expr(iter_expr),
             '([&]() -> object { object __obj = xs; if (!__obj) throw TypeError("NoneType is not iterable"); return __obj->py_iter_or_raise(); }())',

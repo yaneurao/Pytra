@@ -347,7 +347,7 @@ def f(p: str) -> None:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("return py_to_int64_base(s, static_cast<int64>(16));", cpp)
+        self.assertIn("return py_to_int64_base(s, int64(16));", cpp)
 
     def test_from_import_symbol_call_uses_runtime_namespace(self) -> None:
         src = """from pytra.std.time import perf_counter
