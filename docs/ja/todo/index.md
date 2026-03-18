@@ -43,7 +43,7 @@
 
 #### P6-1: CPP_HEADER の固定 include を必要性判定に変更
 
-1. [ ] [ID: P6-CPP-INCLUDE-OPTIMIZE-01] C++ 生成コード冒頭の `#include` を固定文字列ではなく、emitter が生成コードの内容に応じて必要な include のみを emit するよう変更する。
+1. [x] [ID: P6-CPP-INCLUDE-OPTIMIZE-01] C++ 生成コード冒頭の `#include` を固定文字列ではなく、emitter が生成コードの内容に応じて必要な include のみを emit するよう変更する。
 
 ### P2: compile / link パイプライン分離
 

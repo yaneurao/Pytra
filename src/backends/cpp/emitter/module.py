@@ -529,6 +529,18 @@ class CppModuleEmitter:
             return self._cpp_expr_to_module_name(ns + "::" + attr)
         return ""
 
+    def _body_references_process_runtime(self, body: list[Any]) -> bool:
+        """body 内で process_runtime.h が必要な参照があるか判定する。"""
+        import json as _json
+        body_txt = _json.dumps(body, default=str, ensure_ascii=False)
+        return "sys.argv" in body_txt or "pytra.std.sys" in body_txt or "py_runtime_argv" in body_txt
+
+    def _body_references_scope_exit(self, body: list[Any]) -> bool:
+        """body 内で scope_exit.h が必要な参照（try/finally）があるか判定する。"""
+        import json as _json
+        body_txt = _json.dumps(body, default=str, ensure_ascii=False)
+        return '"Try"' in body_txt
+
     def _collect_import_cpp_includes(self, body: list[dict[str, Any]], meta: dict[str, Any]) -> list[str]:
         """EAST body から必要な C++ include を収集する。"""
         includes: list[str] = []

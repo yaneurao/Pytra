@@ -1521,8 +1521,13 @@ class CppEmitter(
             current.update(methods)
 
         self.emit_module_leading_trivia()
-        _CPP_HEADER = '#include "runtime/cpp/native/core/py_runtime.h"\n#include "runtime/cpp/native/core/process_runtime.h"\n#include "runtime/cpp/native/core/scope_exit.h"'
-        self.emit(_CPP_HEADER)
+        self.emit('#include "runtime/cpp/native/core/py_runtime.h"')
+        # process_runtime.h: main 生成時または sys.argv 参照時に必要
+        if self.emit_main or self._body_references_process_runtime(body):
+            self.emit('#include "runtime/cpp/native/core/process_runtime.h"')
+        # scope_exit.h: try/finally 使用時に必要
+        if self._body_references_scope_exit(body):
+            self.emit('#include "runtime/cpp/native/core/scope_exit.h"')
         extra_includes = self._collect_import_cpp_includes(body, meta)
         helper_includes = self._cpp_helper_header_includes()
         for inc in helper_includes:
