@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-18（P1-TAGGED-UNION-ALL-BACKENDS-01 C++ 先行完了）
+最終更新: 2026-03-18（P0-TAGGED-UNION-TID-UNIFY-01 追加）
 
 ## 文脈運用ルール
 
@@ -38,6 +38,12 @@
 文脈: [docs/ja/plans/p0-cpp-redundant-widening-cast.md](../plans/p0-cpp-redundant-widening-cast.md)
 
 1. [x] [ID: P0-CPP-REDUNDANT-WIDENING-CAST-01] `int64(static_cast<int64>(b))` のような三重冗長キャストを除去し、narrowing cast を `uint8(x)` 形式に統一する。(1) widening cast（uint8→int64 等）は C++ 暗黙変換で足りるため cast を emit しない。(2) narrowing cast / 同型 cast は `static_cast<T>` より短い関数形式 `T(x)` に統一して可読性を改善する。
+
+#### P0-2: tagged union の tag を PYTRA_TID に統一
+
+文脈: [docs/ja/plans/p0-tagged-union-tid-unify.md](../plans/p0-tagged-union-tid-unify.md)
+
+2. [ ] [ID: P0-TAGGED-UNION-TID-UNIFY-01] tagged struct の tag をローカル enum から `uint32` (PYTRA_TID) に変更し、isinstance を既存の type_id レンジ方式で統一する。isinstance ガード内の型ナローイング（フィールドアクセス自動挿入）を実装し、json.py を `type JsonVal = ...` で書き直して動作確認する。
 
 ### P1: 言語機能追加
 
