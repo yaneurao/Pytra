@@ -1,11 +1,11 @@
 import Foundation
 
 
-func __pytra_is_Deque(_ v: Any?) -> Bool {
-    return v is Deque
+func __pytra_is_deque(_ v: Any?) -> Bool {
+    return v is deque
 }
 
-class Deque {
+class deque {
     var _items: [Any] = []
 
     init() {

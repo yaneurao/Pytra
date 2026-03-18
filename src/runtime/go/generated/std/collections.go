@@ -1,6 +1,6 @@
 package main
 
-type DequeLike interface {
+type dequeLike interface {
     append(value int64)
     appendleft(value int64)
     pop() int64
@@ -10,48 +10,48 @@ type DequeLike interface {
 }
 
 
-func __pytra_is_Deque(v any) bool {
-    _, ok := v.(*Deque)
+func __pytra_is_deque(v any) bool {
+    _, ok := v.(*deque)
     return ok
 }
 
-func __pytra_as_Deque(v any) *Deque {
-    if t, ok := v.(*Deque); ok {
+func __pytra_as_deque(v any) *deque {
+    if t, ok := v.(*deque); ok {
         return t
     }
     return nil
 }
 
-type Deque struct {
+type deque struct {
     _items []any
 }
 
-func NewDeque() *Deque {
-    self := &Deque{}
+func Newdeque() *deque {
+    self := &deque{}
     self.Init()
     return self
 }
 
-func (self *Deque) Init() {
+func (self *deque) Init() {
     self._items = []any{}
 }
 
-func (self *Deque) append(value int64) {
+func (self *deque) append(value int64) {
     self._items = append(self._items, value)
 }
 
-func (self *Deque) appendleft(value int64) {
+func (self *deque) appendleft(value int64) {
     self._items.insert(int64(0), value)
 }
 
-func (self *Deque) pop() int64 {
+func (self *deque) pop() int64 {
     if (__pytra_len(self._items) == int64(0)) {
         panic(__pytra_str(IndexError("pop from empty deque")))
     }
     return __pytra_int(self._items.pop())
 }
 
-func (self *Deque) popleft() int64 {
+func (self *deque) popleft() int64 {
     if (__pytra_len(self._items) == int64(0)) {
         panic(__pytra_str(IndexError("pop from empty deque")))
     }
@@ -60,11 +60,11 @@ func (self *Deque) popleft() int64 {
     return item
 }
 
-func (self *Deque) __len__() int64 {
+func (self *deque) __len__() int64 {
     return __pytra_len(self._items)
 }
 
-func (self *Deque) clear() {
+func (self *deque) clear() {
     self._items = []any{}
 }
 

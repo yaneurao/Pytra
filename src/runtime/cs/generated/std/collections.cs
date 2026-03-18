@@ -7,12 +7,12 @@ using float64 = System.Double;
 using str = System.String;
 using Pytra.CsModule;
 
-public class Deque
+public class deque
 {
     public static readonly long PYTRA_TYPE_ID = Pytra.CsModule.py_runtime.py_register_class_type(Pytra.CsModule.py_runtime.PYTRA_TID_OBJECT);
     public System.Collections.Generic.List<long> _items;
     
-    public Deque()
+    public deque()
     {
         this._items = new System.Collections.Generic.List<long>();
     }

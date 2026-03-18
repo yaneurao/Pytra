@@ -1,11 +1,11 @@
-from pytra.std.collections import Deque
+from pytra.std.collections import deque
 from pytra.utils.assertions import py_assert_all, py_assert_eq
 
 
 def run_deque_basic() -> bool:
     checks: list[bool] = []
 
-    d: Deque = Deque()
+    d: deque = deque()
     d.append(1)
     d.append(2)
     d.append(3)

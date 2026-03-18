@@ -3,10 +3,10 @@ public final class collections {
     }
 
 
-    public static class Deque {
+    public static class deque {
         public java.util.ArrayList<Long> _items;
 
-        public Deque() {
+        public deque() {
             this._items = new java.util.ArrayList<Object>();
         }
 

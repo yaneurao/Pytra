@@ -1,14 +1,14 @@
 
 
-fun __pytra_is_Deque(v: Any?): Boolean {
-    return v is Deque
+fun __pytra_is_deque(v: Any?): Boolean {
+    return v is deque
 }
 
-fun __pytra_as_Deque(v: Any?): Deque {
-    return if (v is Deque) v else Deque()
+fun __pytra_as_deque(v: Any?): deque {
+    return if (v is deque) v else deque()
 }
 
-open class Deque() {
+open class deque() {
     var _items: MutableList<Any?> = mutableListOf()
 
     init {

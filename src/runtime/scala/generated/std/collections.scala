@@ -3,18 +3,18 @@ import scala.util.boundary, boundary.break
 import java.nio.file.{Files, Paths}
 
 
-def __pytra_is_Deque(v: Any): Boolean = {
-    v.isInstanceOf[Deque]
+def __pytra_is_deque(v: Any): Boolean = {
+    v.isInstanceOf[deque]
 }
 
-def __pytra_as_Deque(v: Any): Deque = {
+def __pytra_as_deque(v: Any): deque = {
     v match {
-        case obj: Deque => obj
-        case _ => new Deque()
+        case obj: deque => obj
+        case _ => new deque()
     }
 }
 
-class Deque() {
+class deque() {
     var _items: mutable.ArrayBuffer[Long] = mutable.ArrayBuffer[Long]()
 
     def __init__(): Unit = {

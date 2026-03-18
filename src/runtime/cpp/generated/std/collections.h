@@ -9,12 +9,12 @@
 
 namespace pytra::std::collections {
 
-struct Deque;
+struct deque;
 
-    struct Deque {
+    struct deque {
         rc<list<int64>> _items;
         
-        Deque();
+        deque();
         void append(int64 value);
         void appendleft(int64 value);
         int64 pop() const;

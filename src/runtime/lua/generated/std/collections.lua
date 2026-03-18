@@ -34,31 +34,31 @@ local function __pytra_isinstance(obj, class_tbl)
     return false
 end
 
-Deque = {}
-Deque.__index = Deque
+deque = {}
+deque.__index = deque
 
-function Deque.new()
-    local self = setmetatable({}, Deque)
+function deque.new()
+    local self = setmetatable({}, deque)
     self._items = {  }
     return self
 end
 
-function Deque:append(value)
+function deque:append(value)
     table.insert(self._items, value)
 end
 
-function Deque:appendleft(value)
+function deque:appendleft(value)
     self._items:insert(0, value)
 end
 
-function Deque:pop()
+function deque:pop()
     if (#(self._items) == 0) then
         error(IndexError("pop from empty deque"))
     end
     return table.remove(self._items)
 end
 
-function Deque:popleft()
+function deque:popleft()
     if (#(self._items) == 0) then
         error(IndexError("pop from empty deque"))
     end
@@ -67,10 +67,10 @@ function Deque:popleft()
     return item
 end
 
-function Deque:__len__()
+function deque:__len__()
     return #(self._items)
 end
 
-function Deque:clear()
+function deque:clear()
     self._items = {  }
 end

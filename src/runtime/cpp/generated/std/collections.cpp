@@ -15,25 +15,25 @@ can override this with emitter-level optimization.
  */
     
 
-    Deque::Deque() {
+    deque::deque() {
             this->_items = rc_list_from_value(list<int64>{});
     }
 
-    void Deque::append(int64 value) {
+    void deque::append(int64 value) {
             rc_list_ref(this->_items).append(value);
     }
 
-    void Deque::appendleft(int64 value) {
+    void deque::appendleft(int64 value) {
             this->_items.insert(0, value);
     }
 
-    int64 Deque::pop() const {
+    int64 deque::pop() const {
             if ((rc_list_ref(this->_items)).empty())
                 throw IndexError("pop from empty deque");
             return rc_list_ref(this->_items).pop();
     }
 
-    int64 Deque::popleft() {
+    int64 deque::popleft() {
             if ((rc_list_ref(this->_items)).empty())
                 throw IndexError("pop from empty deque");
             int64 item = py_list_at_ref(rc_list_ref(this->_items), 0);
@@ -41,11 +41,11 @@ can override this with emitter-level optimization.
             return item;
     }
 
-    int64 Deque::__len__() const {
+    int64 deque::__len__() const {
             return (rc_list_ref(this->_items)).size();
     }
 
-    void Deque::clear() {
+    void deque::clear() {
             this->_items = object_new<PyListObj>(list<object>{});
     }
     

@@ -1,11 +1,11 @@
 import { PYTRA_TYPE_ID, PY_TYPE_OBJECT, pyRegisterClassType } from "./runtime/js/native/built_in/py_runtime.js";
 
-class Deque {
+class deque {
     static PYTRA_TYPE_ID = pyRegisterClassType([PY_TYPE_OBJECT]);
     
     constructor() {
         this._items = [];
-    this[PYTRA_TYPE_ID] = Deque.PYTRA_TYPE_ID;
+    this[PYTRA_TYPE_ID] = deque.PYTRA_TYPE_ID;
     }
     
     append(value) {

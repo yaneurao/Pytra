@@ -1,0 +1,832 @@
+// Java ネイティブ変換向け Python 互換ランタイム補助。
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
+
+final class PyRuntime {
+    private PyRuntime() {
+    }
+
+    static String pyToString(Object v) {
+        if (v == null) {
+            return "None";
+        }
+        if (v instanceof Boolean b) {
+            return b ? "True" : "False";
+        }
+        if (v instanceof List<?> list) {
+            StringJoiner sj = new StringJoiner(", ", "[", "]");
+            for (Object it : list) {
+                sj.add(pyToString(it));
+            }
+            return sj.toString();
+        }
+        if (v instanceof Map<?, ?> map) {
+            StringJoiner sj = new StringJoiner(", ", "{", "}");
+            for (Map.Entry<?, ?> e : map.entrySet()) {
+                sj.add(pyToString(e.getKey()) + ": " + pyToString(e.getValue()));
+            }
+            return sj.toString();
+        }
+        return String.valueOf(v);
+    }
+
+    static void pyPrint(Object... values) {
+        StringJoiner sj = new StringJoiner(" ");
+        for (Object value : values) {
+            sj.add(pyToString(value));
+        }
+        System.out.println(sj);
+    }
+
+    static boolean pyBool(Object v) {
+        if (v == null) {
+            return false;
+        }
+        if (v instanceof Boolean b) {
+            return b;
+        }
+        if (v instanceof Integer i) {
+            return i != 0;
+        }
+        if (v instanceof Long i) {
+            return i != 0L;
+        }
+        if (v instanceof Double d) {
+            return d != 0.0;
+        }
+        if (v instanceof String s) {
+            return !s.isEmpty();
+        }
+        if (v instanceof List<?> list) {
+            return !list.isEmpty();
+        }
+        if (v instanceof Map<?, ?> map) {
+            return !map.isEmpty();
+        }
+        return true;
+    }
+
+    static int pyLen(Object v) {
+        if (v instanceof String s) {
+            return s.length();
+        }
+        if (v instanceof List<?> list) {
+            return list.size();
+        }
+        if (v instanceof byte[] bytes) {
+            return bytes.length;
+        }
+        if (v instanceof Map<?, ?> map) {
+            return map.size();
+        }
+        throw new RuntimeException("len() unsupported type");
+    }
+
+    static List<Object> pyRange(int start, int stop, int step) {
+        if (step == 0) {
+            throw new RuntimeException("range() step must not be zero");
+        }
+        List<Object> out = new ArrayList<>();
+        if (step > 0) {
+            for (int i = start; i < stop; i += step) {
+                out.add(i);
+            }
+        } else {
+            for (int i = start; i > stop; i += step) {
+                out.add(i);
+            }
+        }
+        return out;
+    }
+
+    static double pyToFloat(Object v) {
+        if (v instanceof Integer i) {
+            return i;
+        }
+        if (v instanceof Long i) {
+            return i;
+        }
+        if (v instanceof Double d) {
+            return d;
+        }
+        if (v instanceof Boolean b) {
+            return b ? 1.0 : 0.0;
+        }
+        throw new RuntimeException("cannot convert to float");
+    }
+
+    static int pyToInt(Object v) {
+        if (v instanceof Integer i) {
+            return i;
+        }
+        if (v instanceof Long i) {
+            return (int) i.longValue();
+        }
+        if (v instanceof Double d) {
+            // Python の int() は小数部切り捨て（0方向）なので Java のキャストで合わせる。
+            return (int) d.doubleValue();
+        }
+        if (v instanceof Boolean b) {
+            return b ? 1 : 0;
+        }
+        throw new RuntimeException("cannot convert to int");
+    }
+
+    static long pyToLong(Object v) {
+        if (v instanceof Integer i) {
+            return i.longValue();
+        }
+        if (v instanceof Long i) {
+            return i.longValue();
+        }
+        if (v instanceof Double d) {
+            return (long) d.doubleValue();
+        }
+        if (v instanceof Boolean b) {
+            return b ? 1L : 0L;
+        }
+        throw new RuntimeException("cannot convert to long");
+    }
+
+    static Object pyAdd(Object a, Object b) {
+        if (a instanceof String || b instanceof String) {
+            return pyToString(a) + pyToString(b);
+        }
+        if ((a instanceof Integer || a instanceof Long || a instanceof Boolean)
+                && (b instanceof Integer || b instanceof Long || b instanceof Boolean)) {
+            return pyToLong(a) + pyToLong(b);
+        }
+        return pyToFloat(a) + pyToFloat(b);
+    }
+
+    static Object pySub(Object a, Object b) {
+        if ((a instanceof Integer || a instanceof Long || a instanceof Boolean)
+                && (b instanceof Integer || b instanceof Long || b instanceof Boolean)) {
+            return pyToLong(a) - pyToLong(b);
+        }
+        return pyToFloat(a) - pyToFloat(b);
+    }
+
+    static Object pyMul(Object a, Object b) {
+        if ((a instanceof Integer || a instanceof Long || a instanceof Boolean)
+                && (b instanceof Integer || b instanceof Long || b instanceof Boolean)) {
+            return pyToLong(a) * pyToLong(b);
+        }
+        return pyToFloat(a) * pyToFloat(b);
+    }
+
+    static Object pyDiv(Object a, Object b) {
+        return pyToFloat(a) / pyToFloat(b);
+    }
+
+    static Object pyFloorDiv(Object a, Object b) {
+        if ((a instanceof Integer || a instanceof Long || a instanceof Boolean)
+                && (b instanceof Integer || b instanceof Long || b instanceof Boolean)) {
+            long ai = pyToLong(a);
+            long bi = pyToLong(b);
+            long q = ai / bi;
+            long r = ai % bi;
+            if (r != 0 && ((r > 0) != (bi > 0))) {
+                q -= 1;
+            }
+            return q;
+        }
+        return (int) Math.floor(pyToFloat(a) / pyToFloat(b));
+    }
+
+    static Object pyMod(Object a, Object b) {
+        if ((a instanceof Integer || a instanceof Long || a instanceof Boolean)
+                && (b instanceof Integer || b instanceof Long || b instanceof Boolean)) {
+            long ai = pyToLong(a);
+            long bi = pyToLong(b);
+            long r = ai % bi;
+            if (r != 0 && ((r > 0) != (bi > 0))) {
+                r += bi;
+            }
+            return r;
+        }
+        throw new RuntimeException("mod unsupported type");
+    }
+
+    static Object pyMin(Object... values) {
+        if (values.length == 0) {
+            throw new RuntimeException("min() arg is empty");
+        }
+        Object out = values[0];
+        for (int i = 1; i < values.length; i++) {
+            Object a = out;
+            Object b = values[i];
+            if (a instanceof Long || b instanceof Long) {
+                if (pyToLong(b) < pyToLong(a)) {
+                    out = b;
+                }
+                continue;
+            }
+            if (a instanceof Integer && b instanceof Integer) {
+                if (pyToInt(b) < pyToInt(a)) {
+                    out = b;
+                }
+            } else if (pyToFloat(b) < pyToFloat(a)) {
+                out = b;
+            }
+        }
+        return out;
+    }
+
+    static Object pyMax(Object... values) {
+        if (values.length == 0) {
+            throw new RuntimeException("max() arg is empty");
+        }
+        Object out = values[0];
+        for (int i = 1; i < values.length; i++) {
+            Object a = out;
+            Object b = values[i];
+            if (a instanceof Long || b instanceof Long) {
+                if (pyToLong(b) > pyToLong(a)) {
+                    out = b;
+                }
+                continue;
+            }
+            if (a instanceof Integer && b instanceof Integer) {
+                if (pyToInt(b) > pyToInt(a)) {
+                    out = b;
+                }
+            } else if (pyToFloat(b) > pyToFloat(a)) {
+                out = b;
+            }
+        }
+        return out;
+    }
+
+    static Object pyLShift(Object a, Object b) {
+        return pyToInt(a) << pyToInt(b);
+    }
+
+    static Object pyRShift(Object a, Object b) {
+        return pyToInt(a) >> pyToInt(b);
+    }
+
+    static Object pyBitAnd(Object a, Object b) {
+        return pyToInt(a) & pyToInt(b);
+    }
+
+    static Object pyBitOr(Object a, Object b) {
+        return pyToInt(a) | pyToInt(b);
+    }
+
+    static Object pyBitXor(Object a, Object b) {
+        return pyToInt(a) ^ pyToInt(b);
+    }
+
+    static Object pyNeg(Object a) {
+        if (a instanceof Integer || a instanceof Long || a instanceof Boolean) {
+            return -pyToLong(a);
+        }
+        return -pyToFloat(a);
+    }
+
+    static boolean pyEq(Object a, Object b) {
+        return pyToString(a).equals(pyToString(b));
+    }
+
+    static boolean pyNe(Object a, Object b) {
+        return !pyEq(a, b);
+    }
+
+    static boolean pyLt(Object a, Object b) {
+        return pyToFloat(a) < pyToFloat(b);
+    }
+
+    static boolean pyLe(Object a, Object b) {
+        return pyToFloat(a) <= pyToFloat(b);
+    }
+
+    static boolean pyGt(Object a, Object b) {
+        return pyToFloat(a) > pyToFloat(b);
+    }
+
+    static boolean pyGe(Object a, Object b) {
+        return pyToFloat(a) >= pyToFloat(b);
+    }
+
+    static boolean pyIn(Object item, Object container) {
+        if (container instanceof String s) {
+            return s.contains(pyToString(item));
+        }
+        if (container instanceof List<?> list) {
+            for (Object v : list) {
+                if (pyEq(v, item)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (container instanceof Map<?, ?> map) {
+            return map.containsKey(item);
+        }
+        return false;
+    }
+
+    static List<Object> pyIter(Object value) {
+        if (value instanceof List<?> list) {
+            return new ArrayList<>((List<Object>) list);
+        }
+        if (value instanceof byte[] arr) {
+            List<Object> out = new ArrayList<>();
+            for (byte b : arr) {
+                out.add((int) (b & 0xff));
+            }
+            return out;
+        }
+        if (value instanceof String s) {
+            List<Object> out = new ArrayList<>();
+            for (int i = 0; i < s.length(); i++) {
+                out.add(String.valueOf(s.charAt(i)));
+            }
+            return out;
+        }
+        if (value instanceof Map<?, ?> map) {
+            return new ArrayList<>(((Map<Object, Object>) map).keySet());
+        }
+        throw new RuntimeException("iter unsupported");
+    }
+
+    static Object pyTernary(boolean cond, Object a, Object b) {
+        return cond ? a : b;
+    }
+
+    static Object pyListFromIter(Object value) {
+        return pyIter(value);
+    }
+
+    static Object pySlice(Object value, Object start, Object end) {
+        if (value instanceof String s) {
+            int n = s.length();
+            int st = (start == null) ? 0 : pyToInt(start);
+            int ed = (end == null) ? n : pyToInt(end);
+            if (st < 0)
+                st += n;
+            if (ed < 0)
+                ed += n;
+            if (st < 0)
+                st = 0;
+            if (ed < 0)
+                ed = 0;
+            if (st > n)
+                st = n;
+            if (ed > n)
+                ed = n;
+            if (st > ed)
+                st = ed;
+            return s.substring(st, ed);
+        }
+        if (value instanceof List<?> list) {
+            int n = list.size();
+            int st = (start == null) ? 0 : pyToInt(start);
+            int ed = (end == null) ? n : pyToInt(end);
+            if (st < 0)
+                st += n;
+            if (ed < 0)
+                ed += n;
+            if (st < 0)
+                st = 0;
+            if (ed < 0)
+                ed = 0;
+            if (st > n)
+                st = n;
+            if (ed > n)
+                ed = n;
+            if (st > ed)
+                st = ed;
+            return new ArrayList<>(list.subList(st, ed));
+        }
+        throw new RuntimeException("slice unsupported");
+    }
+
+    static Object pyGet(Object value, Object key) {
+        if (value instanceof List<?> list) {
+            int i = pyToInt(key);
+            if (i < 0)
+                i += list.size();
+            return list.get(i);
+        }
+        if (value instanceof Map<?, ?> map) {
+            return ((Map<Object, Object>) map).get(key);
+        }
+        if (value instanceof String s) {
+            int i = pyToInt(key);
+            if (i < 0)
+                i += s.length();
+            return String.valueOf(s.charAt(i));
+        }
+        throw new RuntimeException("subscript unsupported");
+    }
+
+    static void pySet(Object value, Object key, Object newValue) {
+        if (value instanceof List<?> list) {
+            int i = pyToInt(key);
+            List<Object> l = (List<Object>) list;
+            if (i < 0)
+                i += l.size();
+            l.set(i, newValue);
+            return;
+        }
+        if (value instanceof Map<?, ?> map) {
+            ((Map<Object, Object>) map).put(key, newValue);
+            return;
+        }
+        throw new RuntimeException("setitem unsupported");
+    }
+
+    static Object pyPop(Object value, Object idx) {
+        if (value instanceof List<?> list) {
+            List<Object> l = (List<Object>) list;
+            int i = (idx == null) ? (l.size() - 1) : pyToInt(idx);
+            if (i < 0)
+                i += l.size();
+            Object out = l.get(i);
+            l.remove(i);
+            return out;
+        }
+        throw new RuntimeException("pop unsupported");
+    }
+
+    static Object pyOrd(Object v) {
+        String s = pyToString(v);
+        return (int) s.charAt(0);
+    }
+
+    static Object pyChr(Object v) {
+        return Character.toString((char) pyToInt(v));
+    }
+
+    static Object pyBytearray(Object size) {
+        int n = (size == null) ? 0 : pyToInt(size);
+        List<Object> out = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            out.add(0);
+        }
+        return out;
+    }
+
+    static Object pyBytes(Object v) {
+        return v;
+    }
+
+    static boolean pyIsDigit(Object v) {
+        String s = pyToString(v);
+        if (s.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static boolean pyIsAlpha(Object v) {
+        String s = pyToString(v);
+        if (s.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static List<Object> pyList(Object... items) {
+        List<Object> out = new ArrayList<>();
+        for (Object item : items) {
+            out.add(item);
+        }
+        return out;
+    }
+
+    static Map<Object, Object> pyDict(Object... kv) {
+        Map<Object, Object> out = new HashMap<>();
+        for (int i = 0; i + 1 < kv.length; i += 2) {
+            out.put(kv[i], kv[i + 1]);
+        }
+        return out;
+    }
+
+    static void __pytra_noop(Object... args) {
+    }
+
+    static final class PyFile {
+        private final String path;
+        private final String mode;
+        private final String encoding;
+
+        PyFile(String path, String mode, String encoding) {
+            this.path = path;
+            this.mode = mode;
+            this.encoding = encoding == null || encoding.isEmpty() ? "utf-8" : encoding;
+        }
+
+        String read() {
+            try {
+                return Files.readString(Paths.get(path), java.nio.charset.Charset.forName(encoding));
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        long write(Object value) {
+            try {
+                if (mode.contains("b")) {
+                    java.util.ArrayList<Long> src = __pytra_bytearray(value);
+                    byte[] bytes = new byte[src.size()];
+                    int i = 0;
+                    while (i < src.size()) {
+                        bytes[i] = (byte) (src.get(i) & 0xFFL);
+                        i += 1;
+                    }
+                    Files.write(Paths.get(path), bytes);
+                    return bytes.length;
+                }
+                String text = String.valueOf(value);
+                byte[] bytes = text.getBytes(java.nio.charset.Charset.forName(encoding));
+                Files.write(Paths.get(path), bytes);
+                return text.length();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        void close() {
+        }
+    }
+
+    static PyFile open(String path, String mode) {
+        return new PyFile(path, mode, "utf-8");
+    }
+
+    static PyFile open(String path, String mode, String encoding) {
+        return new PyFile(path, mode, encoding);
+    }
+
+    static long __pytra_int(Object value) {
+        if (value == null) {
+            return 0L;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value instanceof Boolean) {
+            return ((Boolean) value) ? 1L : 0L;
+        }
+        if (value instanceof String) {
+            String s = ((String) value).trim();
+            if (s.isEmpty()) {
+                return 0L;
+            }
+            try {
+                return Long.parseLong(s);
+            } catch (NumberFormatException ex) {
+                return 0L;
+            }
+        }
+        return 0L;
+    }
+
+    static java.util.ArrayList<Long> __pytra_int_to_bytes(Object value, Object length, Object byteorder) {
+        long v = __pytra_int(value);
+        long n = __pytra_int(length);
+        String order = String.valueOf(byteorder);
+        java.util.ArrayList<Long> out = new java.util.ArrayList<Long>();
+        long i = 0L;
+        while (i < n) {
+            long b = v & 255L;
+            out.add(b);
+            v = v >> 8L;
+            i += 1L;
+        }
+        if (!java.util.Objects.equals(order, "little")) {
+            java.util.Collections.reverse(out);
+        }
+        return out;
+    }
+
+    static long __pytra_len(Object value) {
+        if (value == null) {
+            return 0L;
+        }
+        if (value instanceof String) {
+            return ((String) value).length();
+        }
+        if (value instanceof java.util.Map<?, ?>) {
+            return ((java.util.Map<?, ?>) value).size();
+        }
+        if (value instanceof java.util.List<?>) {
+            return ((java.util.List<?>) value).size();
+        }
+        return 0L;
+    }
+
+    static boolean __pytra_str_isdigit(Object value) {
+        String s = String.valueOf(value);
+        if (s.isEmpty()) {
+            return false;
+        }
+        int i = 0;
+        while (i < s.length()) {
+            if (!Character.isDigit(s.charAt(i))) {
+                return false;
+            }
+            i += 1;
+        }
+        return true;
+    }
+
+    static boolean __pytra_str_isalpha(Object value) {
+        String s = String.valueOf(value);
+        if (s.isEmpty()) {
+            return false;
+        }
+        int i = 0;
+        while (i < s.length()) {
+            if (!Character.isLetter(s.charAt(i))) {
+                return false;
+            }
+            i += 1;
+        }
+        return true;
+    }
+
+    static String __pytra_str_slice(String s, long start, long stop) {
+        long n = s.length();
+        long lo = start;
+        long hi = stop;
+        if (lo < 0L) {
+            lo += n;
+        }
+        if (hi < 0L) {
+            hi += n;
+        }
+        if (lo < 0L) {
+            lo = 0L;
+        }
+        if (hi < 0L) {
+            hi = 0L;
+        }
+        if (lo > n) {
+            lo = n;
+        }
+        if (hi > n) {
+            hi = n;
+        }
+        if (hi < lo) {
+            hi = lo;
+        }
+        return s.substring((int) lo, (int) hi);
+    }
+
+    static java.util.ArrayList<Long> __pytra_bytearray(Object init) {
+        java.util.ArrayList<Long> out = new java.util.ArrayList<Long>();
+        if (init instanceof Number) {
+            long n = ((Number) init).longValue();
+            long i = 0L;
+            while (i < n) {
+                out.add(0L);
+                i += 1L;
+            }
+            return out;
+        }
+        if (init instanceof java.util.List<?>) {
+            java.util.List<?> src = (java.util.List<?>) init;
+            int i = 0;
+            while (i < src.size()) {
+                Object v = src.get(i);
+                if (v instanceof Number) {
+                    out.add(((Number) v).longValue());
+                } else {
+                    out.add(0L);
+                }
+                i += 1;
+            }
+        }
+        return out;
+    }
+
+    static <T> java.util.ArrayList<T> __pytra_list_concat(java.util.List<? extends T> left, java.util.List<? extends T> right) {
+        java.util.ArrayList<T> out = new java.util.ArrayList<T>(left.size() + right.size());
+        out.addAll(left);
+        out.addAll(right);
+        return out;
+    }
+
+    static <T> java.util.ArrayList<T> __pytra_list_slice(java.util.List<T> src, long start, long stop) {
+        long n = src.size();
+        long lo = start;
+        long hi = stop;
+        if (lo < 0L) {
+            lo += n;
+        }
+        if (hi < 0L) {
+            hi += n;
+        }
+        if (lo < 0L) {
+            lo = 0L;
+        }
+        if (hi < 0L) {
+            hi = 0L;
+        }
+        if (lo > n) {
+            lo = n;
+        }
+        if (hi > n) {
+            hi = n;
+        }
+        if (hi < lo) {
+            hi = lo;
+        }
+        java.util.ArrayList<T> out = new java.util.ArrayList<T>((int) (hi - lo));
+        long i = lo;
+        while (i < hi) {
+            out.add(src.get((int) i));
+            i += 1L;
+        }
+        return out;
+    }
+
+    static java.util.HashMap<Object, Object> __pytra_dict_of(Object... kv) {
+        java.util.HashMap<Object, Object> out = new java.util.HashMap<Object, Object>();
+        int i = 0;
+        while (i + 1 < kv.length) {
+            out.put(kv[i], kv[i + 1]);
+            i += 2;
+        }
+        return out;
+    }
+
+    static Object __pytra_dict_get_default(Object mapObj, Object key, Object defaultValue) {
+        if (mapObj instanceof Map<?, ?>) {
+            @SuppressWarnings("unchecked")
+            Map<Object, Object> map = (Map<Object, Object>) mapObj;
+            if (map.containsKey(key)) {
+                return map.get(key);
+            }
+        }
+        return defaultValue;
+    }
+
+    static <T> java.util.ArrayList<T> __pytra_list_repeat(T value, long count) {
+        java.util.ArrayList<T> out = new java.util.ArrayList<T>();
+        long i = 0L;
+        while (i < count) {
+            out.add(value);
+            i += 1L;
+        }
+        return out;
+    }
+
+    static java.util.ArrayList<Object> __pytra_enumerate(Object value) {
+        java.util.ArrayList<Object> out = new java.util.ArrayList<Object>();
+        List<Object> items = pyIter(value);
+        int i = 0;
+        while (i < items.size()) {
+            java.util.ArrayList<Object> pair = new java.util.ArrayList<Object>(2);
+            pair.add((long) i);
+            pair.add(items.get(i));
+            out.add(pair);
+            i += 1;
+        }
+        return out;
+    }
+
+    static boolean __pytra_truthy(Object value) {
+        if (value == null) {
+            return false;
+        }
+        if (value instanceof Boolean) {
+            return ((Boolean) value);
+        }
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue() != 0.0;
+        }
+        if (value instanceof String) {
+            return !((String) value).isEmpty();
+        }
+        if (value instanceof java.util.List<?>) {
+            return !((java.util.List<?>) value).isEmpty();
+        }
+        return true;
+    }
+}

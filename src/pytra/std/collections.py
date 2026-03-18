@@ -7,7 +7,7 @@ can override this with emitter-level optimization.
 
 
 
-class Deque:
+class deque:
     """Double-ended queue backed by a list."""
 
     _items: list[int]

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/pytra/py_runtime.php';
 
-class Deque {
+class deque {
     public function __construct() {
         $this->_items = [];
     }

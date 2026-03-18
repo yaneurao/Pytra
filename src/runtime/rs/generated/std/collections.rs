@@ -3,10 +3,10 @@ pub use crate::py_runtime::{pytra};
 use crate::py_runtime::*;
 
 #[derive(Clone, Debug)]
-struct Deque {
+struct deque {
     _items: Vec<i64>,
 }
-impl Deque {
+impl deque {
     fn new() -> Self {
         Self {
             _items: vec![],
