@@ -6111,13 +6111,15 @@ def head(xs: tuple[int, ...]) -> int:
             transpile_to_cpp(east)
 
 
-    def test_type_alias_pep695_transpile_generates_using_decl(self) -> None:
+    def test_type_alias_pep695_transpile_generates_tagged_struct(self) -> None:
         src_py = find_fixture_case("type_alias_pep695")
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
-        self.assertIn("using Scalar = ::std::variant<int64, float64>;", cpp)
+        self.assertIn("struct Scalar {", cpp)
+        self.assertIn("enum Tag { TAG_INT64, TAG_FLOAT64 }", cpp)
         self.assertIn("const Scalar&", cpp)
         self.assertNotIn("::std::variant<int64, float64> add_scalars", cpp)
+        self.assertNotIn("using Scalar", cpp)
 
 
 if __name__ == "__main__":

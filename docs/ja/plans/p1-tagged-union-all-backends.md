@@ -71,3 +71,4 @@ CLI オプションで tagged struct のフィールドレイアウトを union 
 
 - 2026-03-18: ユーザー提案。`std::variant` の再帰型制約が JSON 等の表現を阻害。tagged struct を全バックエンドで統一的に使う方針を決定。
 - 2026-03-18: C++ union 最適化は将来の CLI オプションとして分離。まずは全フィールド展開の tagged struct で実装する。
+- 2026-03-18: C++ バックエンド先行実装完了。named type alias（`type X = A | B | ...`）を tagged struct として emit。inline union（名前なし）は `std::variant` を維持。header_builder / cpp_emitter 両方で対応。暗黙変換コンストラクタ付き（bool は Tag 引数で曖昧さ回避）。None チェックは tag ベース判定に変更。242 test pass。他バックエンドは後続タスクとする。

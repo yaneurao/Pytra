@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-18（P1-TAGGED-UNION-ALL-BACKENDS-01 追加 / P1-TYPE-ALIAS-SUPPORT-01 完了）
+最終更新: 2026-03-18（P1-TAGGED-UNION-ALL-BACKENDS-01 C++ 先行完了）
 
 ## 文脈運用ルール
 
@@ -51,7 +51,7 @@
 
 文脈: [docs/ja/plans/p1-tagged-union-all-backends.md](../plans/p1-tagged-union-all-backends.md)
 
-3. [ ] [ID: P1-TAGGED-UNION-ALL-BACKENDS-01] `type X = A | B | ...` 宣言をタグ付き struct（tagged union）として全バックエンドで emit する。`std::variant` の再帰型制約を解消し、JSON のような再帰的データ構造を `type` 宣言で自然に表現可能にする。C++ union によるメモリ最適化は後続の CLI オプションとして分離する。
+3. [x] [ID: P1-TAGGED-UNION-ALL-BACKENDS-01] `type X = A | B | ...` 宣言をタグ付き struct（tagged union）として全バックエンドで emit する。`std::variant` の再帰型制約を解消し、JSON のような再帰的データ構造を `type` 宣言で自然に表現可能にする。C++ union によるメモリ最適化は後続の CLI オプションとして分離する。
 
 ### P5: py_runtime.h 縮小
 
