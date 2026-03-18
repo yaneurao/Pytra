@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-18（P6-2a P6-2b 完了）
+最終更新: 2026-03-18（P0 追加: widening cast 冗長除去）
 
 ## 文脈運用ルール
 
@@ -30,6 +30,14 @@
 - `docs/ja/todo/archive/index.md` は索引のみを保持し、履歴本文は `docs/ja/todo/archive/YYYYMMDD.md` に日付単位で保存します。
 
 ## 未完了タスク
+
+### P0: 緊急修正
+
+#### P0-1: 整数 widening cast の冗長 emit 除去
+
+文脈: [docs/ja/plans/p0-cpp-redundant-widening-cast.md](../plans/p0-cpp-redundant-widening-cast.md)
+
+1. [ ] [ID: P0-CPP-REDUNDANT-WIDENING-CAST-01] `int64(static_cast<int64>(b))` のような三重冗長キャストを除去する。C++ では `uint8 → int64` 等の widening conversion は暗黙変換で行われるため、算術型同士の widening cast では `static_cast` すら不要。emitter が narrowing/unbox パスと同じコードを widening にも適用している問題を修正する。
 
 ### P5: py_runtime.h 縮小
 
