@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-18 (Added P6-EAST3-GENERAL-UNION-VARIANT-01, P6-CPP-EMIT-LIST-DICT-CLEAR-01)
+Last updated: 2026-03-18 (Added 5 object-fallback elimination tasks)
 
 ## Context Operation Rules
 
@@ -99,10 +99,40 @@ Context: [docs/ja/plans/p6-east3-py-at-inline.md](../../ja/plans/p6-east3-py-at-
 
 8. [ ] [ID: P6-EAST3-PY-AT-INLINE-01] Unify `py_at(list_or_rc, idx)` emit to direct `py_list_at_ref` emit and remove the list/rc variants of `py_at` from `py_runtime.h`.
 
+#### P6-7: Eliminate object Fallback for Any-mixed Unions / Expressions
+
+Context: [docs/ja/plans/p6-cpp-any-union-object-fallback.md](../../ja/plans/p6-cpp-any-union-object-fallback.md)
+
+9. [ ] [ID: P6-CPP-ANY-UNION-OBJECT-FALLBACK-01] Eliminate silent `object` returns for dynamic unions (`int | Any` etc.) and Any-like binary operations (type_bridge.py L591, cpp_emitter.py L471/L2082).
+
+#### P6-8: Eliminate object Fallback for unknown / Empty Types
+
+Context: [docs/ja/plans/p6-cpp-unknown-type-object-fallback.md](../../ja/plans/p6-cpp-unknown-type-object-fallback.md)
+
+10. [ ] [ID: P6-CPP-UNKNOWN-TYPE-OBJECT-FALLBACK-01] Convert silent `object` fallbacks for `"unknown"` / empty type strings (type_bridge.py L668, header_builder.py L1373) into compile errors.
+
+#### P6-9: Eliminate object Fallback for if/else Branch Type Merge Failures
+
+Context: [docs/ja/plans/p6-cpp-branch-merge-object-fallback.md](../../ja/plans/p6-cpp-branch-merge-object-fallback.md)
+
+11. [ ] [ID: P6-CPP-BRANCH-MERGE-OBJECT-FALLBACK-01] Replace `object` fallback on if/else branch type merge failure (cpp_emitter.py L2101-2105) with `std::variant` or an explicit error.
+
+#### P6-10: Eliminate object Fallback for Unknown For-loop Variable Types
+
+Context: [docs/ja/plans/p6-cpp-for-loop-type-object-fallback.md](../../ja/plans/p6-cpp-for-loop-type-object-fallback.md)
+
+12. [ ] [ID: P6-CPP-FOR-LOOP-TYPE-OBJECT-FALLBACK-01] Eliminate `object` fallback at 5 locations in for-loop variable type resolution (stmt.py L1135/1161/1217/1278/1865) via improved type inference or explicit errors.
+
+#### P6-11: Eliminate object Fallback for Global Variable Type Inference Failures
+
+Context: [docs/ja/plans/p6-cpp-global-var-type-object-fallback.md](../../ja/plans/p6-cpp-global-var-type-object-fallback.md)
+
+13. [ ] [ID: P6-CPP-GLOBAL-VAR-TYPE-OBJECT-FALLBACK-01] Convert silent `object` fallback on global variable type inference failure (module.py L1155) into a compile error requiring explicit annotation.
+
 ### P7: Selfhost Full Independence
 
 #### P7-1: Complete deletion of native/compiler/
 
 Context: [docs/ja/plans/p7-selfhost-native-compiler-elim.md](../../ja/plans/p7-selfhost-native-compiler-elim.md)
 
-9. [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01] Completely delete `src/runtime/cpp/native/compiler/` so that the selfhost binary operates without shelling out to host Python.
+14. [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01] Completely delete `src/runtime/cpp/native/compiler/` so that the selfhost binary operates without shelling out to host Python.

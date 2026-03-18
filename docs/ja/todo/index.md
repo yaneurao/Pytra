@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-18（P6-EAST3-GENERAL-UNION-VARIANT-01、P6-CPP-EMIT-LIST-DICT-CLEAR-01 追加）
+最終更新: 2026-03-18（object フォールバック排除 5 件追加）
 
 ## 文脈運用ルール
 
@@ -99,10 +99,40 @@
 
 8. [ ] [ID: P6-EAST3-PY-AT-INLINE-01] `py_at(list_or_rc, idx)` の emit を `py_list_at_ref` 直接 emit に統一し、list/rc 版の `py_at` を `py_runtime.h` から除去する。
 
+#### P6-7: Any 混入ユニオン・式の object フォールバック排除
+
+文脈: [docs/ja/plans/p6-cpp-any-union-object-fallback.md](../plans/p6-cpp-any-union-object-fallback.md)
+
+9. [ ] [ID: P6-CPP-ANY-UNION-OBJECT-FALLBACK-01] `int | Any` 等の動的ユニオン・Any-like 二項演算でサイレントに `object` を返す箇所（type_bridge.py L591, cpp_emitter.py L471/L2082）を排除する。
+
+#### P6-8: unknown / 空文字型の object フォールバック排除
+
+文脈: [docs/ja/plans/p6-cpp-unknown-type-object-fallback.md](../plans/p6-cpp-unknown-type-object-fallback.md)
+
+10. [ ] [ID: P6-CPP-UNKNOWN-TYPE-OBJECT-FALLBACK-01] 型名 `"unknown"` / 空文字列で `object` にサイレントフォールバックする箇所（type_bridge.py L668, header_builder.py L1373）をコンパイルエラー化する。
+
+#### P6-9: if/else 分岐型マージ失敗の object フォールバック排除
+
+文脈: [docs/ja/plans/p6-cpp-branch-merge-object-fallback.md](../plans/p6-cpp-branch-merge-object-fallback.md)
+
+11. [ ] [ID: P6-CPP-BRANCH-MERGE-OBJECT-FALLBACK-01] if/else 両分岐の型マージ失敗時に `object` フォールバックする箇所（cpp_emitter.py L2101-2105）を `std::variant` または明示エラーに置き換える。
+
+#### P6-10: for ループ変数型不明の object フォールバック排除
+
+文脈: [docs/ja/plans/p6-cpp-for-loop-type-object-fallback.md](../plans/p6-cpp-for-loop-type-object-fallback.md)
+
+12. [ ] [ID: P6-CPP-FOR-LOOP-TYPE-OBJECT-FALLBACK-01] for ループ変数型不明時に `object` フォールバックする 5 箇所（stmt.py L1135/1161/1217/1278/1865）を型推論強化またはエラー化で排除する。
+
+#### P6-11: グローバル変数型推論失敗の object フォールバック排除
+
+文脈: [docs/ja/plans/p6-cpp-global-var-type-object-fallback.md](../plans/p6-cpp-global-var-type-object-fallback.md)
+
+13. [ ] [ID: P6-CPP-GLOBAL-VAR-TYPE-OBJECT-FALLBACK-01] グローバル変数型推論失敗時に `object` フォールバックする箇所（module.py L1155）をコンパイルエラー化する。
+
 ### P7: selfhost 完全自立化
 
 #### P7-1: native/compiler/ 完全削除
 
 文脈: [docs/ja/plans/p7-selfhost-native-compiler-elim.md](../plans/p7-selfhost-native-compiler-elim.md)
 
-9. [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01] `src/runtime/cpp/native/compiler/` を完全削除し、selfhost バイナリがホスト Python をシェルアウトなしで動作できるようにする。
+14. [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01] `src/runtime/cpp/native/compiler/` を完全削除し、selfhost バイナリがホスト Python をシェルアウトなしで動作できるようにする。
