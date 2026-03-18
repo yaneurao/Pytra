@@ -258,7 +258,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         self.assertEqual(emitter.render_expr(expr), "payload.as_obj()")
 
-    def test_emit_annassign_rejects_general_union_type_expr(self) -> None:
+    def test_emit_annassign_accepts_general_union_type_expr_as_variant(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         stmt = {
             "kind": "AnnAssign",
@@ -269,13 +269,11 @@ class East3CppBridgeTest(unittest.TestCase):
             "decl_type_expr": parse_type_expr_text("list[int | bool]"),
             "value": {"kind": "List", "elements": [], "resolved_type": "list[int64|bool]"},
         }
-        with self.assertRaisesRegex(
-            RuntimeError,
-            "unsupported_syntax\\|C\\+\\+ backend does not support general union TypeExpr yet",
-        ):
-            emitter.emit_stmt(stmt)
+        emitter.emit_stmt(stmt)
+        text = "\n".join(emitter.lines)
+        self.assertIn("variant", text)
 
-    def test_emit_function_rejects_general_union_type_expr(self) -> None:
+    def test_emit_function_accepts_general_union_type_expr_as_variant(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
         stmt = {
             "kind": "FunctionDef",
@@ -290,11 +288,9 @@ class East3CppBridgeTest(unittest.TestCase):
             "return_type_expr": parse_type_expr_text("int | bool"),
             "body": [{"kind": "Return", "value": {"kind": "Name", "id": "x", "resolved_type": "int64|bool"}}],
         }
-        with self.assertRaisesRegex(
-            RuntimeError,
-            "unsupported_syntax\\|C\\+\\+ backend does not support general union TypeExpr yet",
-        ):
-            emitter.emit_stmt(stmt)
+        emitter.emit_stmt(stmt)
+        text = "\n".join(emitter.lines)
+        self.assertIn("variant", text)
 
     def test_emit_stmt_annassign_empty_dict_with_marker_uses_brace_shorthand(self) -> None:
         emitter = CppEmitter({"kind": "Module", "body": [], "meta": {}}, {})
@@ -390,7 +386,7 @@ class East3CppBridgeTest(unittest.TestCase):
         text = "\n".join(emitter.lines)
         self.assertIn("object __itobj", text)
         self.assertIn("= *__next_", text)
-        self.assertIn("int64 v = py_to<int64>(__itobj", text)
+        self.assertIn("int64 v = int64(__itobj", text)
         self.assertNotIn("py_dyn_range(xs)", text)
 
     def test_emit_stmt_forcore_runtime_name_target_typed_iter_uses_typed_loop_header(self) -> None:
@@ -443,7 +439,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertIn("object __iter_obj_", text)
         self.assertIn("object __itobj", text)
         self.assertIn("__iter->py_next_or_stop()", text)
-        self.assertIn("int64 line_index = py_to<int64>(py_at(", text)
+        self.assertIn("int64 line_index = int64(py_at(", text)
         self.assertIn("str source = py_to_string(py_at(", text)
 
     def test_emit_stmt_forcore_runtime_tuple_target_typed_iter_uses_typed_loop_header(self) -> None:
@@ -474,7 +470,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertIn("for (::std::tuple<int64, str> __itobj", text)
         self.assertNotIn("for (object __itobj", text)
         self.assertNotIn("py_dyn_range(pairs)", text)
-        self.assertIn("int64 line_index = py_to<int64>(py_at(", text)
+        self.assertIn("int64 line_index = int64(py_at(", text)
         self.assertIn("str source = py_to_string(py_at(", text)
 
     def test_emit_stmt_forcore_runtime_tuple_target_uses_iter_item_hint_when_resolved_type_unknown(self) -> None:
@@ -660,7 +656,7 @@ class East3CppBridgeTest(unittest.TestCase):
         )
         self.assertEqual(emitter.render_expr(obj_type_id), "py_runtime_value_type_id(v)")
         self.assertEqual(emitter.render_expr(box_expr), "make_object(1)")
-        self.assertEqual(emitter.render_expr(unbox_expr), "py_to<int64>(v)")
+        self.assertEqual(emitter.render_expr(unbox_expr), "int64(v)")
         self.assertEqual(
             emitter.render_expr(is_instance),
             "py_runtime_value_isinstance(v, PYTRA_TID_INT)",
@@ -829,7 +825,7 @@ class East3CppBridgeTest(unittest.TestCase):
         emitter._coerce_any_expr_to_target = lambda *_args, **_kwargs: "LEGACY_PATH_USED"  # type: ignore[method-assign]
         self.assertEqual(
             emitter._coerce_any_expr_to_target_via_unbox("v", any_name, "int64", "assign:x"),
-            "py_to<int64>(v)",
+            "int64(v)",
         )
 
     def test_emit_return_stmt_prefers_unbox_ir_over_legacy_coerce(self) -> None:
@@ -842,7 +838,7 @@ class East3CppBridgeTest(unittest.TestCase):
         }
         emitter._emit_return_stmt(stmt)
         text = "\n".join(emitter.lines)
-        self.assertIn("return py_to<int64>(v);", text)
+        self.assertIn("return int64(v);", text)
         self.assertNotIn("LEGACY_PATH_USED", text)
 
     def test_box_any_target_value_handles_none_and_plain_values(self) -> None:
@@ -1643,7 +1639,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(starts_node), 'py_startswith(s, "x")')
         self.assertEqual(
             emitter.render_expr(ends_slice_node),
-            'py_endswith(py_str_slice(s, py_to<int64>(1), py_to<int64>(3)), "x")',
+            'py_endswith(py_str_slice(s, static_cast<int64>(1), static_cast<int64>(3)), "x")',
         )
 
     def test_builtin_runtime_py_startswith_endswith_use_ir_node_path(self) -> None:
@@ -1683,7 +1679,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(starts_expr), 'py_startswith(s, "x")')
         self.assertEqual(
             emitter.render_expr(ends_expr),
-            'py_endswith(py_str_slice(s, py_to<int64>(1), py_to<int64>(3)), "x")',
+            'py_endswith(py_str_slice(s, static_cast<int64>(1), static_cast<int64>(3)), "x")',
         )
 
     def test_render_expr_supports_str_find_ir_node(self) -> None:
@@ -2276,8 +2272,8 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(print_node), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_node), "xs.size()")
         self.assertEqual(emitter.render_expr(to_string_node), "::std::to_string(1)")
-        self.assertEqual(emitter.render_expr(int_base_node), 'py_to_int64_base("10", py_to<int64>(16))')
-        self.assertEqual(emitter.render_expr(static_cast_node), 'py_to_int64("10")')
+        self.assertEqual(emitter.render_expr(int_base_node), 'py_to_int64_base("10", static_cast<int64>(16))')
+        self.assertEqual(emitter.render_expr(static_cast_node), 'int64(::std::stoll("10"))')
         self.assertEqual(
             emitter.render_expr(iter_node),
             '([&]() -> object { object __obj = xs; if (!__obj) throw TypeError("NoneType is not iterable"); return __obj->py_iter_or_raise(); }())',
@@ -2300,7 +2296,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(dict_ctor_node), "d")
         self.assertEqual(
             emitter.render_expr(minmax_node),
-            "::std::max<int64>(static_cast<int64>(1), static_cast<int64>(2))",
+            "::std::max<int64>(1, 2)",
         )
         self.assertEqual(emitter.render_expr(perf_node), "pytra::std::time::perf_counter()")
         self.assertEqual(emitter.render_expr(open_node), 'open("a.txt", "rb")')
@@ -2594,7 +2590,7 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(print_expr), 'py_print(1, "x")')
         self.assertEqual(emitter.render_expr(len_expr), "xs.size()")
         self.assertEqual(emitter.render_expr(to_string_expr), "::std::to_string(1)")
-        self.assertEqual(emitter.render_expr(int_base_expr), 'py_to_int64_base("10", py_to<int64>(16))')
+        self.assertEqual(emitter.render_expr(int_base_expr), 'py_to_int64_base("10", static_cast<int64>(16))')
         self.assertEqual(
             emitter.render_expr(iter_expr),
             '([&]() -> object { object __obj = xs; if (!__obj) throw TypeError("NoneType is not iterable"); return __obj->py_iter_or_raise(); }())',
@@ -2617,11 +2613,11 @@ class East3CppBridgeTest(unittest.TestCase):
         self.assertEqual(emitter.render_expr(dict_ctor_expr), "d")
         self.assertEqual(
             emitter.render_expr(max_expr),
-            "::std::max<int64>(static_cast<int64>(1), static_cast<int64>(2))",
+            "::std::max<int64>(1, 2)",
         )
         self.assertEqual(
             emitter.render_expr(min_expr),
-            "::std::min<int64>(static_cast<int64>(1), static_cast<int64>(2))",
+            "::std::min<int64>(1, 2)",
         )
         self.assertEqual(emitter.render_expr(perf_expr), "pytra::std::time::perf_counter()")
         self.assertEqual(emitter.render_expr(open_expr), 'open("a.txt", "rb")')

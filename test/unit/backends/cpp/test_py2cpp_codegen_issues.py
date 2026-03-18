@@ -335,7 +335,7 @@ def f(p: str) -> None:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("return py_to_int64(s);", cpp)
+        self.assertIn("return int64(::std::stoll(s));", cpp)
 
     def test_int_cast_with_base_uses_py_to_int64_base(self) -> None:
         src = """def f(s: str) -> int:
@@ -347,10 +347,7 @@ def f(p: str) -> None:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertTrue(
-            ("return py_to_int64_base(s, py_to_int64(16));" in cpp)
-            or ("return py_to_int64_base(s, py_to<int64>(16));" in cpp)
-        )
+        self.assertIn("return py_to_int64_base(s, static_cast<int64>(16));", cpp)
 
     def test_from_import_symbol_call_uses_runtime_namespace(self) -> None:
         src = """from pytra.std.time import perf_counter
@@ -408,7 +405,7 @@ def f() -> float:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("return a / py_to<float64>(b);", cpp)
+        self.assertIn("return a / float64(b);", cpp)
         self.assertNotIn("py_div(", cpp)
 
     def test_int_div_uses_direct_slash_after_promotion(self) -> None:
@@ -421,7 +418,7 @@ def f() -> float:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("return py_to<float64>(a) / py_to<float64>(b);", cpp)
+        self.assertIn("return float64(a) / float64(b);", cpp)
         self.assertNotIn("py_div(", cpp)
 
     def test_unknown_div_keeps_py_div(self) -> None:
@@ -473,7 +470,7 @@ def f() -> float:
         src_py = ROOT / "sample" / "py" / "18_mini_language_interpreter.py"
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
-        self.assertIn("int64 single_tag = py_to<int64>(single_char_token_tags.get(ch, 0));", cpp)
+        self.assertIn("int64 single_tag = int64(single_char_token_tags.get(ch, 0));", cpp)
         self.assertIn(
             "py_list_at_ref(rc_list_ref(single_char_token_kinds), single_tag - 1)",
             cpp,
@@ -797,7 +794,7 @@ def f(frames: list[bytes]) -> None:
         east = load_east(src_py)
         cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
         self.assertIn("float64 __hoisted_cast_4 = float64(width);", cpp)
-        self.assertIn("::std::max<float64>(float64(ldy), float64(0.0));", cpp)
+        self.assertIn("::std::max<float64>(ldy, 0.0);", cpp)
         self.assertNotIn("static_cast<float64>(", cpp)
 
     def test_float_cast_on_any_like_keeps_runtime_conversion(self) -> None:
@@ -899,7 +896,7 @@ def new_nodes() -> list[Node]:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("py_to<int64>(([&]() -> object {", cpp)
+        self.assertIn("int64(([&]() -> object {", cpp)
         self.assertNotIn("py_dict_get_default(", cpp)
         self.assertNotIn("dict_get_node(", cpp)
         self.assertNotIn("dict_get_int(", cpp)
@@ -1834,8 +1831,8 @@ def f() -> str:
             cpp = em.transpile()
 
         self.assertIn("list<int64> xs = {};", cpp)
-        self.assertIn("xs.append(int64(1));", cpp)
-        self.assertIn("xs.append(int64(2));", cpp)
+        self.assertIn("xs.append(1);", cpp)
+        self.assertIn("xs.append(2);", cpp)
         self.assertIn("int64 head = xs[0];", cpp)
         self.assertNotIn("py_append(xs", cpp)
         self.assertNotIn("py_at(xs", cpp)

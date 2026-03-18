@@ -1916,7 +1916,7 @@ if __name__ == "__main__":
         self.assertIn('#include "generated/built_in/predicates.h"', cpp)
         self.assertIn('#include "generated/built_in/sequence.h"', cpp)
         self.assertIn('#include "generated/built_in/iter_ops.h"', cpp)
-        self.assertIn("py_any(make_object(xs))", cpp)
+        self.assertIn("py_any(xs)", cpp)
         self.assertIn("py_range(0, 3, 1)", cpp)
         self.assertIn("py_repeat(\"-\", 3)", cpp)
 
@@ -5105,7 +5105,7 @@ if __name__ == "__main__":
             finally:
                 os.chdir(prev_cwd)
         self.assertIn(
-            'p.add_argument("-m", "--mode", "", "", "", "", rc_list_from_value(list<str>{"a", "b"}), make_object("a"));',
+            'p.add_argument("-m", "--mode", "", "", "", "", rc_list_from_value(list<str>{"a", "b"}), "a");',
             cpp,
         )
 
@@ -6109,6 +6109,15 @@ def head(xs: tuple[int, ...]) -> int:
         }
         with self.assertRaisesRegex(RuntimeError, "object receiver method call"):
             transpile_to_cpp(east)
+
+
+    def test_type_alias_pep695_transpile_generates_using_decl(self) -> None:
+        src_py = find_fixture_case("type_alias_pep695")
+        east = load_east(src_py)
+        cpp = transpile_to_cpp(east, cpp_list_model="pyobj")
+        self.assertIn("using Scalar = ::std::variant<int64, float64>;", cpp)
+        self.assertIn("const Scalar&", cpp)
+        self.assertNotIn("::std::variant<int64, float64> add_scalars", cpp)
 
 
 if __name__ == "__main__":

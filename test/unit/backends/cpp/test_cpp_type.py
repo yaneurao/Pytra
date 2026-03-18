@@ -30,12 +30,13 @@ class CppTypeTest(unittest.TestCase):
         self.assertEqual(em._cpp_type_text("Any|None"), "object")
         self.assertEqual(em._cpp_type_text("bytes|bytearray|None"), "bytes")
 
-    def test_general_union_is_rejected_in_cpp_type_and_header_builder(self) -> None:
+    def test_general_union_emits_std_variant(self) -> None:
         em = CppEmitter({"body": []}, {}, emit_main=False)
-        with self.assertRaisesRegex(ValueError, r"unsupported general union for C\+\+ emit: int64\|bool"):
-            em._cpp_type_text("int64|bool")
-        with self.assertRaisesRegex(ValueError, r"unsupported general union for C\+\+ emit: int64\|bool"):
-            _header_cpp_type_from_east("int64|bool", set(), set())
+        self.assertEqual(em._cpp_type_text("int64|bool"), "::std::variant<int64, bool>")
+        self.assertEqual(
+            _header_cpp_type_from_east("int64|bool", set(), set()),
+            "::std::variant<int64, bool>",
+        )
 
     def test_list_type_text_can_switch_to_pyobj_model(self) -> None:
         em = CppEmitter({"body": []}, {}, emit_main=False)
@@ -52,18 +53,12 @@ class CppTypeTest(unittest.TestCase):
             "::std::deque<float64>",
         )
 
-    def test_type_expr_path_rejects_general_union_fallback(self) -> None:
+    def test_type_expr_path_emits_general_union_as_variant(self) -> None:
         em = CppEmitter({"body": []}, {}, emit_main=False)
-        with self.assertRaisesRegex(
-            RuntimeError,
-            "unsupported_syntax\\|C\\+\\+ backend does not support general union TypeExpr yet",
-        ):
-            em.cpp_type(parse_type_expr_text("int | bool"))
-        with self.assertRaisesRegex(
-            RuntimeError,
-            "unsupported general-union lane: int64\\|bool",
-        ):
-            em.cpp_signature_type(parse_type_expr_text("list[int | bool]"))
+        result = em.cpp_type(parse_type_expr_text("int | bool"))
+        self.assertIn("variant", result)
+        result2 = em.cpp_signature_type(parse_type_expr_text("list[int | bool]"))
+        self.assertIn("variant", result2)
 
 
 if __name__ == "__main__":
