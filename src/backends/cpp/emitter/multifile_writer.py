@@ -18,6 +18,7 @@ from toolchain.compiler.transpile_cli import (
 
 from backends.cpp.program_writer import write_cpp_rendered_program
 from backends.cpp.emitter.cpp_emitter import CppEmitter
+from backends.cpp.emitter.runtime_paths import module_name_to_cpp_include
 from toolchain.json_adapters import dumps_object as _json_dumps_object
 from backends.cpp.emitter.header_builder import build_cpp_header_from_east
 from backends.cpp.optimizer import optimize_cpp_ir
@@ -157,24 +158,48 @@ def write_multi_file_cpp(
             if isinstance(module_id_obj, str) and module_id_obj:
                 dep_modules.add(module_id_obj)
         for sym_obj in import_symbols.values():
-            module_id = dict_any_get_str(sym_obj if isinstance(sym_obj, dict) else {}, "module")
-            if module_id:
+            if not isinstance(sym_obj, dict):
+                continue
+            module_id = dict_any_get_str(sym_obj, "module")
+            export_name = dict_any_get_str(sym_obj, "name")
+            if module_id and export_name:
+                # e.g. module="pytra.std", name="os_path" → "pytra.std.os_path"
+                dep_modules.add(module_id + "." + export_name)
+            elif module_id:
                 dep_modules.add(module_id)
+        # Also use import_bindings for more precise resolution.
+        bindings = meta.get("import_bindings")
+        if isinstance(bindings, list):
+            for binding in bindings:
+                if not isinstance(binding, dict):
+                    continue
+                mod_id = dict_any_get_str(binding, "module_id")
+                export_name = dict_any_get_str(binding, "export_name")
+                if mod_id and export_name:
+                    dep_modules.add(mod_id + "." + export_name)
+                elif mod_id:
+                    dep_modules.add(mod_id)
 
         dep_include_lines: list[str] = []
         seen_dep_includes: set[str] = set()
         for mod_name in dep_modules:
             target_key = module_key_by_name.get(mod_name, "")
-            if target_key == "" or target_key == mod_key:
-                continue
-            dep_label = module_label_map.get(target_key, "")
-            if dep_label == "":
-                continue
-            include_line = f'#include "{dep_label}.h"'
-            if include_line in seen_dep_includes:
-                continue
-            seen_dep_includes.add(include_line)
-            dep_include_lines.append(include_line)
+            if target_key != "" and target_key != mod_key:
+                # User module → include by label
+                dep_label = module_label_map.get(target_key, "")
+                if dep_label != "":
+                    include_line = f'#include "{dep_label}.h"'
+                    if include_line not in seen_dep_includes:
+                        seen_dep_includes.add(include_line)
+                        dep_include_lines.append(include_line)
+            else:
+                # Runtime module → resolve via runtime_symbol_index
+                runtime_inc = module_name_to_cpp_include(mod_name)
+                if runtime_inc != "":
+                    include_line = f'#include "{runtime_inc}"'
+                    if include_line not in seen_dep_includes:
+                        seen_dep_includes.add(include_line)
+                        dep_include_lines.append(include_line)
 
         if len(dep_include_lines) > 0:
             cpp_txt = inject_after_includes_block(cpp_txt, join_str_list("\n", dep_include_lines))

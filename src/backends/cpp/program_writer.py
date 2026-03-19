@@ -59,7 +59,7 @@ def _generate_declarations_only_header(cpp_text: str, guard: str, bucket: str, n
     import re as _re
     _func_re = _re.compile(
         r"^((?:static\s+inline\s+|inline\s+|static\s+)?)"
-        r"([A-Za-z_][\w:*&<>, ]*\S)\s+"
+        r"([:A-Za-z_][\w:*&<>, ]*\S)\s+"
         r"([A-Za-z_]\w*)\s*"
         r"(\([^)]*\))"
         r"\s*\{"
@@ -86,11 +86,25 @@ def _generate_declarations_only_header(cpp_text: str, guard: str, bucket: str, n
             seen.add(vm.group(2))
             decls.append("extern " + vm.group(1) + " " + vm.group(2) + ";")
 
+    # Derive namespace from bucket/name for @extern runtime modules.
+    # e.g. std/os_path → pytra::std::os_path
+    stem_name = name[:-5] if name.endswith(".east") else name
+    if bucket == "std":
+        ns = "pytra::std::" + stem_name
+    elif bucket == "utils":
+        ns = "pytra::utils::" + stem_name
+    else:
+        ns = ""
+
+    body = "\n".join(decls)
+    if ns != "":
+        body = "namespace " + ns + " {\n" + body + "\n}  // namespace " + ns
+
     return (
         "// AUTO-GENERATED declarations from " + bucket + "/" + name + "\n"
         "#ifndef " + guard + "\n"
         "#define " + guard + "\n\n"
-        + "\n".join(decls) + "\n\n"
+        + body + "\n\n"
         "#endif  // " + guard + "\n"
     )
 
