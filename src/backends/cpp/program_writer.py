@@ -51,6 +51,50 @@ def _copy_native_runtime_to_output(output_root: Path) -> list[str]:
     return copied
 
 
+def _generate_declarations_only_header(cpp_text: str, guard: str, bucket: str, name: str) -> str:
+    """Generate a header with only function forward declarations (no bodies).
+
+    Used for @extern modules where native .cpp provides the implementation.
+    """
+    import re as _re
+    _func_re = _re.compile(
+        r"^((?:static\s+inline\s+|inline\s+|static\s+)?)"
+        r"([A-Za-z_][\w:*&<>, ]*\S)\s+"
+        r"([A-Za-z_]\w*)\s*"
+        r"(\([^)]*\))"
+        r"\s*\{"
+    )
+    # Also capture global variable declarations: Type name = ...;
+    _var_re = _re.compile(r"^([A-Za-z_][\w:*&<>, ]*\S)\s+([A-Za-z_]\w*)\s*=")
+
+    lines = cpp_text.splitlines()
+    decls: list[str] = []
+    seen: set[str] = set()
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("#include ") or stripped.startswith("//") or stripped == "":
+            continue
+        m = _func_re.match(stripped)
+        if m and m.group(3) not in seen:
+            seen.add(m.group(3))
+            quals = m.group(1).strip()
+            parts = ([quals] if quals else []) + [m.group(2).strip()]
+            decls.append(" ".join(parts) + " " + m.group(3) + m.group(4) + ";")
+            continue
+        vm = _var_re.match(stripped)
+        if vm and vm.group(2) not in seen:
+            seen.add(vm.group(2))
+            decls.append("extern " + vm.group(1) + " " + vm.group(2) + ";")
+
+    return (
+        "// AUTO-GENERATED declarations from " + bucket + "/" + name + "\n"
+        "#ifndef " + guard + "\n"
+        "#define " + guard + "\n\n"
+        + "\n".join(decls) + "\n\n"
+        "#endif  // " + guard + "\n"
+    )
+
+
 def _generate_runtime_east_headers(output_root: Path) -> list[str]:
     """Transpile runtime .east files to C++ headers in output directory.
 
@@ -76,6 +120,22 @@ def _generate_runtime_east_headers(output_root: Path) -> list[str]:
             dst_h = str(dst_dir / (stem + ".h"))
             # Skip if native header already exists (native takes precedence).
             if os.path.isfile(dst_h):
+                continue
+            # If native .cpp exists, this is an @extern module.
+            # Generate a declarations-only header (no function bodies).
+            dst_cpp = str(dst_dir / (stem + ".cpp"))
+            if os.path.isfile(dst_cpp):
+                try:
+                    east_text = open(east_path, "r", encoding="utf-8").read()
+                    east_doc = _json.loads(east_text)
+                    cpp_text = transpile_to_cpp(east_doc, emit_main=False)
+                    guard = "PYTRA_GEN_" + bucket.upper() + "_" + stem.upper() + "_H"
+                    decl_header = _generate_declarations_only_header(cpp_text, guard, bucket, name)
+                    with open(dst_h, "w", encoding="utf-8") as fh:
+                        fh.write(decl_header)
+                    generated.append(dst_h)
+                except Exception:
+                    pass
                 continue
             try:
                 east_text = open(east_path, "r", encoding="utf-8").read()
@@ -109,8 +169,16 @@ def _generate_runtime_east_headers(output_root: Path) -> list[str]:
                     r"(\([^)]*\))"
                     r"\s*\{"
                 )
+                _struct_re = _re.compile(r"^struct\s+([A-Za-z_]\w*)\s*")
                 fwd_decls: list[str] = []
                 fwd_seen: set[str] = set()
+                # Collect struct forward declarations first.
+                for line in body:
+                    sm = _struct_re.match(line)
+                    if sm and sm.group(1) not in fwd_seen:
+                        fwd_seen.add(sm.group(1))
+                        fwd_decls.append("struct " + sm.group(1) + ";")
+                # Then function forward declarations.
                 for line in body:
                     m = _func_re.match(line)
                     if m and m.group(3) not in fwd_seen:
