@@ -129,10 +129,11 @@ struct PyTaggedValue {
 ## 子タスク
 
 - [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S1] tagged union 宣言を `using X = PyTaggedValue;` に変更。`_Union_*` struct 生成を除去。`core/tagged_value.h` に `PyBoxed`/`py_box`/`py_unbox`/`PyTaggedValue` を追加。
-- [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S2] emitter の cast を変更。POD は `py_unbox<T, TID>(v.value)`、クラスは `static_cast<T*>(v.value.get())` を emit。
-- [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S3] emitter の union 値構築を変更。POD は `PyTaggedValue{TID, py_box<T, TID>(v)}`、クラスは `PyTaggedValue{T::PYTRA_TYPE_ID, v}` を emit。
-- [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S4] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。
-- [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S5] 他バックエンド（Rust, Go 等）への展開を検討する。
+- [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S2] emitter の cast を変更。POD は `py_unbox<T, TID>(v.value)`、クラスは `(*static_cast<T*>(v.value.get()))` を emit。
+- [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S3] isinstance narrow 後の暗黙代入で unbox を emit。`s: str = v`（`v: PyTaggedValue`）→ `str s = py_unbox<str, PYTRA_TID_STR>(v.value);`。emitter が narrow 後の型変換を検出し unbox/downcast を挿入する。
+- [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S4] 関数呼び出し時の暗黙 box を emit。`show("hello")`（`show(PyTaggedValue)`）→ `show(PyTaggedValue{PYTRA_TID_STR, py_box<str, PYTRA_TID_STR>("hello")})`。emitter が引数の型不一致を検出し box を挿入する。
+- [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S5] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。
+- [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S6] 他バックエンド（Rust, Go 等）への展開を検討する。
 
 ## 決定ログ
 

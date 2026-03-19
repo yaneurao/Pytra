@@ -68,10 +68,11 @@
 文脈: [docs/ja/plans/p0-tagged-union-object-box.md](../plans/p0-tagged-union-object-box.md)
 
 1. [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S1] tagged union 宣言を `using X = PyTaggedValue;` に変更。runtime に `PyBoxed`/`py_box`/`py_unbox`/`PyTaggedValue` 追加。
-2. [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S2] emitter の cast を変更。POD は `py_unbox<T, TID>(v.value)`、クラスは `static_cast` を emit。
-3. [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S3] emitter の union 値構築を変更。POD は `py_box`、クラスは `object` upcast を emit。
-4. [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S4] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。
-5. [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S5] 他バックエンド（Rust, Go 等）への展開を検討する。
+2. [x] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S2] emitter の cast を変更。POD は `py_unbox<T, TID>(v.value)`、クラスは `static_cast` を emit。
+3. [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S3] isinstance narrow 後の暗黙代入（`s: str = v` で `v` が `PyTaggedValue`）で unbox を emit する。emitter が narrow 後の型変換を検出して `py_unbox` / downcast を挿入。
+4. [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S4] 関数呼び出し時の暗黙 box（`show("hello")` で `str` → `PyTaggedValue`）を emit する。emitter が引数の型不一致を検出して `PyTaggedValue{TID, py_box(v)}` / `PyTaggedValue{TID, v}` を挿入。
+5. [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S5] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。
+6. [ ] [ID: P0-TAGGED-UNION-OBJECT-BOX-01-S6] 他バックエンド（Rust, Go 等）への展開を検討する。
 
 #### P0-5: リンカーによる C++ include パス確定
 文脈: [docs/ja/plans/p0-linker-resolved-includes.md](../plans/p0-linker-resolved-includes.md)
