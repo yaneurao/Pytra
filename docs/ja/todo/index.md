@@ -43,8 +43,8 @@
 
 文脈: union type（`str | Path` 等）の引数に値を渡すとき、値は `object` に box される（ヒープ確保 + rc 管理）。これは escape と同義。escape 解析がこれを検出していないため、`Path` が value 最適化されて `RcObject` を継承せず、`object` に格納できない。
 
-1. [ ] [ID: P0-UNION-ARG-ESCAPE-01] escape 解析（`NonEscapeInterproceduralPass` 等）で、関数引数が union type の場合、その引数に渡される値を escape としてマークする。
-2. [ ] [ID: P0-UNION-ARG-ESCAPE-02] `Path` 等が gc_managed（`rc<T>`、`RcObject` 継承）として emit され、`object` に格納可能になることを検証する。
+1. [x] [ID: P0-UNION-ARG-ESCAPE-01] escape 解析 + パーサーで、union type 引数を持つクラスを ref (gc_managed) に強制。
+2. [x] [ID: P0-UNION-ARG-ESCAPE-02] `Path` が gc_managed（`RcObject` 継承 + `PYTRA_TYPE_ID`）として emit され、`object` に格納可能。
 
 #### P0-3: runtime .east を link パイプラインに統合
 
