@@ -189,22 +189,45 @@ def _build_noncpp(input_path: Path, profile: TargetProfile, args: argparse.Names
 
 
 def _run_py2cpp(input_path: Path, output_dir: Path, argv: list[str]) -> tuple[int, Path | None]:
-    cmd = [
+    # Stage 1: compile + link → link-output.json
+    linked_dir = output_dir / _CPP_LINKED_MAX_DIRNAME
+    linked_dir.mkdir(parents=True, exist_ok=True)
+    link_cmd = [
         PYTHON,
         str(PY2X),
         str(input_path),
         "--target",
         "cpp",
-        "--multi-file",
+        "--link-only",
+        "--output-dir",
+        str(linked_dir),
+    ]
+    link_cmd.extend(argv)
+    link_proc = _run_proc(link_cmd, cwd=Path.cwd(), stdout_to_stderr=True)
+    if link_proc.returncode != 0:
+        return int(link_proc.returncode), None
+
+    link_output_path = linked_dir / "link-output.json"
+    if not link_output_path.exists():
+        print(f"error: link-output not found after link stage under: {linked_dir}", file=sys.stderr)
+        return 1, None
+
+    # Stage 2: link-output → multi-file C++ via ir2lang
+    emit_cmd = [
+        PYTHON,
+        str(PY2X),
+        str(link_output_path),
+        "--target",
+        "cpp",
+        "--from-link-output",
         "--output-dir",
         str(output_dir),
     ]
-    cmd.extend(argv)
-    proc = _run_proc(cmd, cwd=Path.cwd(), stdout_to_stderr=True)
+    emit_proc = _run_proc(emit_cmd, cwd=Path.cwd(), stdout_to_stderr=True)
     manifest_path = None
-    if proc.returncode == 0:
-        manifest_path = _require_manifest_exists(_resolve_cpp_manifest_path(proc.stdout or "", output_dir))
-    return int(proc.returncode), manifest_path
+    if emit_proc.returncode == 0:
+        manifest_path = _require_manifest_exists(_resolve_cpp_manifest_path(emit_proc.stdout or "", output_dir))
+    return int(emit_proc.returncode), manifest_path
 
 
 def _has_passthrough_flag(argv: list[str], flag: str) -> bool:
