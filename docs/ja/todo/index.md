@@ -31,6 +31,14 @@
 
 ## 未完了タスク
 
+### P0: C++ generated runtime ヘッダー生成パイプライン整備
+
+#### P0-1: .east → C++ ヘッダー生成パイプライン
+
+文脈: [docs/ja/plans/p0-cpp-generated-runtime-pipeline.md](../plans/p0-cpp-generated-runtime-pipeline.md)
+
+1. [ ] [ID: P0-CPP-GENERATED-RUNTIME-PIPELINE-01] `src/runtime/cpp/generated/` が存在せず、native ヘッダー 15 箇所の `#include` が壊れている。`runtime_generation_manifest.json` に C++ built_in/std ターゲットを追加し、`.east` → `.h` 生成パイプラインを整備する。
+
 ### P7: selfhost 完全自立化
 
 #### P7-1: native/compiler/ 完全削除
