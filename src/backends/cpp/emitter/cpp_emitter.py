@@ -2298,17 +2298,42 @@ class CppEmitter(
         handler(stmt)
         return True
 
+    def _format_source_location(self, node: dict[str, Any]) -> str:
+        """Extract source location string from an AST node's source_span."""
+        span = node.get("source_span")
+        if not isinstance(span, dict):
+            return ""
+        lineno = span.get("lineno")
+        col = span.get("col_offset")
+        src = self.any_dict_get_str(self.doc, "source_path", "")
+        parts: list[str] = []
+        if isinstance(src, str) and src != "":
+            parts.append(src)
+        if isinstance(lineno, int) and lineno > 0:
+            parts.append("line " + str(lineno))
+        if isinstance(col, int) and col >= 0:
+            parts.append("col " + str(col))
+        if len(parts) == 0:
+            return ""
+        return " (" + ", ".join(parts) + ")"
+
     def emit_stmt(self, stmt: dict[str, Any]) -> None:
         """1つの文ノードを C++ 文へ変換して出力する。"""
-        hook_stmt = self.hook_on_emit_stmt(stmt)
-        if hook_stmt:
-            return
-        kind = self.any_to_str(stmt.get("cpp_stmt_kind_v1"))
-        if kind == "":
-            kind = self._node_kind_from_dict(stmt)
-        if self.hook_on_emit_stmt_kind(kind, stmt):
-            return
-        raise RuntimeError("cpp emitter: unsupported stmt kind: " + kind)
+        try:
+            hook_stmt = self.hook_on_emit_stmt(stmt)
+            if hook_stmt:
+                return
+            kind = self.any_to_str(stmt.get("cpp_stmt_kind_v1"))
+            if kind == "":
+                kind = self._node_kind_from_dict(stmt)
+            if self.hook_on_emit_stmt_kind(kind, stmt):
+                return
+            raise RuntimeError("cpp emitter: unsupported stmt kind: " + kind)
+        except Exception as exc:
+            loc = self._format_source_location(stmt)
+            if loc != "" and loc not in str(exc):
+                raise type(exc)(str(exc) + loc) from exc
+            raise
 
     def emit_stmt_list(self, stmts: list[dict[str, Any]]) -> None:
         """CppEmitter 側で文ディスパッチを固定し、selfhost時の静的束縛を避ける。"""
@@ -4340,6 +4365,24 @@ class CppEmitter(
             return f"{base}->{emitted_attr}"
         return f"{base}.{emitted_attr}"
 
+    def _cpp_str_lit(self, s: str) -> str:
+        """Escape a Python string as a C++ string literal."""
+        out: list[str] = []
+        for ch in s:
+            if ch == "\\":
+                out.append("\\\\")
+            elif ch == "\"":
+                out.append("\\\"")
+            elif ch == "\n":
+                out.append("\\n")
+            elif ch == "\r":
+                out.append("\\r")
+            elif ch == "\t":
+                out.append("\\t")
+            else:
+                out.append(ch)
+        return "\"" + "".join(out) + "\""
+
     def _render_fstring_formatted_value(self, p: dict[str, Any]) -> str:
         """Render a single FormattedValue node from an f-string."""
         v: object = p.get("value")
@@ -4350,9 +4393,9 @@ class CppEmitter(
         vtxt = self.render_expr(v)
         vty = self.get_expr_type(v)
         if conversion != "" and conversion != "-1":
-            return "py_format_conversion(" + vtxt + ", " + cpp_string_lit(conversion) + ")"
+            return "py_format_conversion(" + vtxt + ", " + self._cpp_str_lit(conversion) + ")"
         if format_spec != "":
-            return "py_format_value(" + vtxt + ", " + cpp_string_lit(format_spec) + ")"
+            return "py_format_value(" + vtxt + ", " + self._cpp_str_lit(format_spec) + ")"
         if vty == "str":
             return vtxt
         return self.render_to_string(v)
@@ -4363,7 +4406,7 @@ class CppEmitter(
             parts: list[str] = []
             for p in self._dict_stmt_list(expr_d.get("concat_parts")):
                 if self._node_kind_from_dict(p) == "literal":
-                    parts.append(cpp_string_lit(self.any_dict_get_str(p, "value", "")))
+                    parts.append(self._cpp_str_lit(self.any_dict_get_str(p, "value", "")))
                 elif self._node_kind_from_dict(p) == "expr":
                     val_node: object = p.get("value")
                     if val_node is None:
@@ -4376,9 +4419,9 @@ class CppEmitter(
                         format_spec = self.any_dict_get_str(p, "format_spec", "")
                         conversion = self.any_dict_get_str(p, "conversion", "")
                         if conversion != "" and conversion != "-1":
-                            parts.append("py_format_conversion(" + vtxt + ", " + cpp_string_lit(conversion) + ")")
+                            parts.append("py_format_conversion(" + vtxt + ", " + self._cpp_str_lit(conversion) + ")")
                         elif format_spec != "":
-                            parts.append("py_format_value(" + vtxt + ", " + cpp_string_lit(format_spec) + ")")
+                            parts.append("py_format_value(" + vtxt + ", " + self._cpp_str_lit(format_spec) + ")")
                         elif vty == "str":
                             parts.append(vtxt)
                         else:
@@ -4390,7 +4433,7 @@ class CppEmitter(
         for p in self._dict_stmt_list(expr_d.get("values")):
             pk = self._node_kind_from_dict(p)
             if pk == "Constant":
-                parts.append(cpp_string_lit(self.any_dict_get_str(p, "value", "")))
+                parts.append(self._cpp_str_lit(self.any_dict_get_str(p, "value", "")))
             elif pk == "FormattedValue":
                 parts.append(self._render_fstring_formatted_value(p))
         if len(parts) == 0:
@@ -4654,6 +4697,15 @@ class CppEmitter(
         expr_d = self.any_to_dict_or_empty(expr)
         if len(expr_d) == 0:
             return "/* none */"
+        try:
+            return self._render_expr_inner(expr, expr_d)
+        except Exception as exc:
+            loc = self._format_source_location(expr_d)
+            if loc != "" and loc not in str(exc):
+                raise type(exc)(str(exc) + loc) from exc
+            raise
+
+    def _render_expr_inner(self, expr: Any, expr_d: dict[str, Any]) -> str:
         kind = self.any_to_str(expr_d.get("cpp_expr_kind_v1"))
         if kind == "":
             kind = self._node_kind_from_dict(expr_d)
