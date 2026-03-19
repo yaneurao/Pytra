@@ -541,8 +541,40 @@ class CppModuleEmitter:
         body_txt = _json.dumps(body, default=str, ensure_ascii=False)
         return '"Try"' in body_txt
 
+    def _includes_from_resolved_dependencies(self, deps: list[object], body: list[dict[str, Any]]) -> list[str]:
+        """Convert linker-resolved module IDs to C++ include paths."""
+        includes: list[str] = []
+        seen: set[str] = set()
+        for dep in deps:
+            if not isinstance(dep, str) or dep == "":
+                continue
+            inc = self._module_name_to_cpp_include(dep)
+            if inc != "" and inc not in seen:
+                seen.add(inc)
+                includes.append(inc)
+        # Helper includes (C++ specific: RuntimeSpecialOp, PathRuntimeOp, etc.)
+        # These are language-specific and stay in the emitter.
+        scan_nodes: list[dict[str, Any]] = list(body)
+        raw_main_guard = self.any_dict_get_list(self.doc, "main_guard_body")
+        if isinstance(raw_main_guard, list):
+            for item in raw_main_guard:
+                if isinstance(item, dict):
+                    scan_nodes.append(item)
+        helper_includes: set[str] = set()
+        for stmt in scan_nodes:
+            self._collect_cpp_helper_includes_from_node(stmt, helper_includes)
+        for inc in sorted(helper_includes):
+            append_unique_non_empty(includes, seen, inc)
+        return sort_str_list_copy(includes)
+
     def _collect_import_cpp_includes(self, body: list[dict[str, Any]], meta: dict[str, Any]) -> list[str]:
         """EAST body から必要な C++ include を収集する。"""
+        # If linker has resolved dependencies, use them directly.
+        linked_meta = dict_any_get_dict(meta, "linked_program_v1")
+        resolved_deps = linked_meta.get("resolved_dependencies_v1") if isinstance(linked_meta, dict) else None
+        if isinstance(resolved_deps, list) and len(resolved_deps) > 0:
+            return self._includes_from_resolved_dependencies(resolved_deps, body)
+        # Fallback: legacy emitter-side include resolution.
         includes: list[str] = []
         seen: set[str] = set()
         scan_nodes: list[dict[str, Any]] = list(body)

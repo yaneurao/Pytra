@@ -230,6 +230,78 @@ def _materialize_container_hints(
     return tuple(updated_modules), global_hints
 
 
+def _collect_runtime_module_ids_from_node(node: object, out: set[str]) -> None:
+    """Recursively collect runtime_module_id values from EAST nodes."""
+    if isinstance(node, dict):
+        mid = node.get("runtime_module_id")
+        if isinstance(mid, str) and mid != "":
+            out.add(mid)
+        for value in node.values():
+            _collect_runtime_module_ids_from_node(value, out)
+    elif isinstance(node, list):
+        for item in node:
+            _collect_runtime_module_ids_from_node(item, out)
+
+
+def _build_resolved_dependencies(module: LinkedProgramModule) -> list[str]:
+    """Build sorted list of dependency module IDs for a single module.
+
+    Collects both explicit imports (import_bindings / Import / ImportFrom)
+    and implicit runtime dependencies (runtime_module_id on EAST nodes).
+    """
+    deps: set[str] = set()
+    doc = module.east_doc if isinstance(module.east_doc, dict) else {}
+    meta = doc.get("meta")
+    meta_dict = meta if isinstance(meta, dict) else {}
+
+    # 1. Explicit imports from import_bindings.
+    bindings = meta_dict.get("import_bindings")
+    if isinstance(bindings, list):
+        for item in bindings:
+            if isinstance(item, dict):
+                mod_id = item.get("module_id")
+                if isinstance(mod_id, str) and mod_id != "":
+                    deps.add(mod_id)
+    else:
+        # Fallback: scan body for Import / ImportFrom nodes.
+        body = doc.get("body")
+        if isinstance(body, list):
+            for stmt in body:
+                if not isinstance(stmt, dict):
+                    continue
+                kind = stmt.get("kind")
+                if kind == "Import":
+                    names = stmt.get("names")
+                    if isinstance(names, list):
+                        for ent in names:
+                            if isinstance(ent, dict):
+                                name = ent.get("name")
+                                if isinstance(name, str) and name != "":
+                                    deps.add(name)
+                elif kind == "ImportFrom":
+                    mod = stmt.get("module")
+                    if isinstance(mod, str) and mod != "":
+                        deps.add(mod)
+
+    # 2. Implicit runtime dependencies from EAST node annotations.
+    body = doc.get("body")
+    if isinstance(body, list):
+        _collect_runtime_module_ids_from_node(body, deps)
+    main_guard = doc.get("main_guard_body")
+    if isinstance(main_guard, list):
+        _collect_runtime_module_ids_from_node(main_guard, deps)
+
+    return sorted(deps)
+
+
+def _build_all_resolved_dependencies(program: LinkedProgram) -> dict[str, list[str]]:
+    """Build resolved_dependencies_v1 for all modules in the program."""
+    out: dict[str, list[str]] = {}
+    for module in program.modules:
+        out[module.module_id] = _build_resolved_dependencies(module)
+    return out
+
+
 def _iter_module_class_defs(module_doc: dict[str, Any]) -> list[dict[str, Any]]:
     body_any = module_doc.get("body")
     body = body_any if isinstance(body_any, list) else []
@@ -398,6 +470,7 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
     if _is_global_pass_enabled(pass_config, "CppListValueLocalHintPass"):
         linked_modules, container_hints = _materialize_container_hints(linked_modules, target=program.target)
     type_id_table, type_id_base_map = _build_type_id_table(linked_input_program)
+    resolved_deps_by_module = _build_all_resolved_dependencies(linked_input_program)
     program_id = _program_id(linked_input_program)
 
     module_entries: list[dict[str, object]] = []
@@ -422,6 +495,7 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
             "entry_modules": list(program.entry_modules),
             "type_id_resolved_v1": dict(type_id_table),
             "type_id_base_map_v1": dict(type_id_base_map),
+            "resolved_dependencies_v1": resolved_deps_by_module.get(module.module_id, []),
             "non_escape_summary": dict(non_escape_summary),
             "container_ownership_hints_v1": module_hints,
         }
