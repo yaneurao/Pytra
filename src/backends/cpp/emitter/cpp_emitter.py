@@ -4340,6 +4340,23 @@ class CppEmitter(
             return f"{base}->{emitted_attr}"
         return f"{base}.{emitted_attr}"
 
+    def _render_fstring_formatted_value(self, p: dict[str, Any]) -> str:
+        """Render a single FormattedValue node from an f-string."""
+        v: object = p.get("value")
+        if v is None:
+            return '""'
+        conversion = self.any_dict_get_str(p, "conversion", "")
+        format_spec = self.any_dict_get_str(p, "format_spec", "")
+        vtxt = self.render_expr(v)
+        vty = self.get_expr_type(v)
+        if conversion != "" and conversion != "-1":
+            return "py_format_conversion(" + vtxt + ", " + cpp_string_lit(conversion) + ")"
+        if format_spec != "":
+            return "py_format_value(" + vtxt + ", " + cpp_string_lit(format_spec) + ")"
+        if vty == "str":
+            return vtxt
+        return self.render_to_string(v)
+
     def _render_joinedstr_expr(self, expr_d: dict[str, Any]) -> str:
         """JoinedStr（f-string）ノードを C++ の文字列連結式へ変換する。"""
         if self.any_dict_get_str(expr_d, "lowered_kind", "") == "Concat":
@@ -4348,16 +4365,24 @@ class CppEmitter(
                 if self._node_kind_from_dict(p) == "literal":
                     parts.append(cpp_string_lit(self.any_dict_get_str(p, "value", "")))
                 elif self._node_kind_from_dict(p) == "expr":
-                    val: object = p.get("value")
-                    if val is None:
+                    val_node: object = p.get("value")
+                    if val_node is None:
                         parts.append('""')
+                    elif isinstance(val_node, dict) and self._node_kind_from_dict(val_node) == "FormattedValue":
+                        parts.append(self._render_fstring_formatted_value(val_node))
                     else:
-                        vtxt = self.render_expr(val)
-                        vty = self.get_expr_type(val)
-                        if vty == "str":
+                        vtxt = self.render_expr(val_node)
+                        vty = self.get_expr_type(val_node)
+                        format_spec = self.any_dict_get_str(p, "format_spec", "")
+                        conversion = self.any_dict_get_str(p, "conversion", "")
+                        if conversion != "" and conversion != "-1":
+                            parts.append("py_format_conversion(" + vtxt + ", " + cpp_string_lit(conversion) + ")")
+                        elif format_spec != "":
+                            parts.append("py_format_value(" + vtxt + ", " + cpp_string_lit(format_spec) + ")")
+                        elif vty == "str":
                             parts.append(vtxt)
                         else:
-                            parts.append(self.render_to_string(val))
+                            parts.append(self.render_to_string(val_node))
             if len(parts) == 0:
                 return '""'
             return join_str_list(" + ", parts)
@@ -4367,13 +4392,7 @@ class CppEmitter(
             if pk == "Constant":
                 parts.append(cpp_string_lit(self.any_dict_get_str(p, "value", "")))
             elif pk == "FormattedValue":
-                v: object = p.get("value")
-                vtxt = self.render_expr(v)
-                vty = self.get_expr_type(v)
-                if vty == "str":
-                    parts.append(vtxt)
-                else:
-                    parts.append(self.render_to_string(v))
+                parts.append(self._render_fstring_formatted_value(p))
         if len(parts) == 0:
             return '""'
         return join_str_list(" + ", parts)
