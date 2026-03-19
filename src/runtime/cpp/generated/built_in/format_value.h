@@ -5,6 +5,35 @@
 #ifndef PYTRA_GEN_BUILT_IN_FORMAT_VALUE_H
 #define PYTRA_GEN_BUILT_IN_FORMAT_VALUE_H
 
+// forward declarations
+str py_format_value(const object& value, const str& spec);
+str py_format_conversion(const object& value, const str& conversion);
+str _to_str(const object& value);
+str _repr_value(const object& value);
+str _int_to_str(int64 value);
+str _float_to_str(float64 value);
+list<str> _parse_format_spec(const str& spec);
+str _spec_fill(const list<str>& p);
+str _spec_align(const list<str>& p);
+str _spec_sign(const list<str>& p);
+str _spec_width(const list<str>& p);
+str _spec_grouping(const list<str>& p);
+str _spec_precision(const list<str>& p);
+str _spec_type(const list<str>& p);
+str _format_core(const object& value, const list<str>& parsed);
+str _format_int(int64 value, const str& tc, const str& sign, const str& grouping);
+str _format_float(float64 value, const str& tc, const str& sign, const str& precision, const str& grouping);
+str _int_to_hex(int64 value, bool upper);
+str _int_to_oct(int64 value);
+str _int_to_bin(int64 value);
+str _float_fixed(float64 value, int64 prec);
+str _float_exp(float64 value, int64 prec, const str& e_char);
+str _float_general(float64 value, int64 prec, const str& tc);
+str _apply_sign(const str& raw, bool negative, const str& sign);
+str _apply_align(const str& raw, const list<str>& parsed);
+int64 _str_to_int(const str& s);
+str _insert_grouping(const str& digits, const str& sep, int64 group_size);
+
 /* Pure-Python format spec interpreter for f-string formatting.
 
 Implements a subset of Python's Format Specification Mini-Language:

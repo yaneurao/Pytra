@@ -5,6 +5,13 @@
 #ifndef PYTRA_GEN_STD_SYS_H
 #define PYTRA_GEN_STD_SYS_H
 
+// forward declarations
+void exit(int64 code = 0);
+void set_argv(const list<str>& values);
+void set_path(const list<str>& values);
+void write_stderr(const str& text);
+void write_stdout(const str& text);
+
 list<str> argv;
 list<str> path;
 object stderr;

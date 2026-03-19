@@ -5,6 +5,15 @@
 #ifndef PYTRA_GEN_STD_RANDOM_H
 #define PYTRA_GEN_STD_RANDOM_H
 
+// forward declarations
+void seed(int64 value);
+int64 _next_u31();
+float64 random();
+int64 randint(int64 a, int64 b);
+list<int64> choices(const list<int64>& population, const list<float64>& weights, int64 k = 1);
+float64 gauss(float64 mu = 0.0, float64 sigma = 1.0);
+void shuffle(list<int64>& xs);
+
 list<int64> _state_box;
 list<int64> _gauss_has_spare;
 list<float64> _gauss_spare;

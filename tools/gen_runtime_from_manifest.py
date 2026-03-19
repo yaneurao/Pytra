@@ -3603,11 +3603,43 @@ def rewrite_cpp_program_to_namespace(cpp_src: str, namespace_name: str) -> str:
     return "\n".join(out)
 
 
+_CPP_FUNC_DEF_RE = re.compile(
+    r"^((?:static\s+inline\s+|inline\s+|static\s+)?)"
+    r"([A-Za-z_][\w:*&<>, ]*\S)\s+"
+    r"([A-Za-z_]\w*)\s*"
+    r"(\([^)]*\))"
+    r"\s*\{"
+)
+
+
+def _extract_forward_declarations(body_lines: list[str]) -> list[str]:
+    """Extract forward declarations for top-level function definitions."""
+    decls: list[str] = []
+    seen: set[str] = set()
+    for line in body_lines:
+        m = _CPP_FUNC_DEF_RE.match(line)
+        if m is None:
+            continue
+        qualifiers = m.group(1).strip()
+        ret_type = m.group(2).strip()
+        func_name = m.group(3).strip()
+        params = m.group(4).strip()
+        if func_name in seen:
+            continue
+        seen.add(func_name)
+        parts: list[str] = []
+        if qualifiers:
+            parts.append(qualifiers)
+        parts.append(ret_type)
+        decls.append(" ".join(parts) + " " + func_name + params + ";")
+    return decls
+
+
 def rewrite_cpp_program_to_header(cpp_src: str, guard_name: str) -> str:
     """Convert transpiled C++ program into a header-only file with include guard.
 
     Removes #include directives (caller already has them), main(), __pytra_module_init(),
-    and wraps in an include guard.
+    and wraps in an include guard.  Inserts forward declarations for all functions.
     """
     lines = _strip_trailing_string_literal_expr(cpp_src).splitlines()
     lines = _remove_block_by_signature(lines, re.compile(r"^static\s+void\s+__pytra_module_init\s*\("))
@@ -3623,16 +3655,21 @@ def rewrite_cpp_program_to_header(cpp_src: str, guard_name: str) -> str:
                 continue
         body_lines.append(line)
 
-    # Trim leading/trailing blank lines from body.
     while len(body_lines) > 0 and body_lines[0].strip() == "":
         body_lines.pop(0)
     while len(body_lines) > 0 and body_lines[-1].strip() == "":
         body_lines.pop()
 
+    forward_decls = _extract_forward_declarations(body_lines)
+
     out: list[str] = []
     out.append("#ifndef " + guard_name)
     out.append("#define " + guard_name)
     out.append("")
+    if forward_decls:
+        out.append("// forward declarations")
+        out.extend(forward_decls)
+        out.append("")
     out.extend(body_lines)
     out.append("")
     out.append("#endif  // " + guard_name)

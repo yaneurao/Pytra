@@ -5,6 +5,9 @@
 #ifndef PYTRA_GEN_STD_TIME_H
 #define PYTRA_GEN_STD_TIME_H
 
+// forward declarations
+float64 perf_counter();
+
 /* pytra.std.time: extern-marked time API with Python runtime fallback. */
 
 float64 perf_counter() {

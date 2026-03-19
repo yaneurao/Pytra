@@ -5,6 +5,10 @@
 #ifndef PYTRA_GEN_BUILT_IN_SEQUENCE_H
 #define PYTRA_GEN_BUILT_IN_SEQUENCE_H
 
+// forward declarations
+list<int64> py_range(int64 start, int64 stop, int64 step);
+str py_repeat(const str& v, int64 n);
+
 /* Pure-Python source-of-truth for sequence helpers used by runtime built-ins. */
 
 list<int64> py_range(int64 start, int64 stop, int64 step) {

@@ -5,6 +5,9 @@
 #ifndef PYTRA_GEN_BUILT_IN_ZIP_OPS_H
 #define PYTRA_GEN_BUILT_IN_ZIP_OPS_H
 
+// forward declarations
+list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs);
+
 /* Pure-Python source-of-truth for generic zip helpers. */
 
 template <class A, class B>

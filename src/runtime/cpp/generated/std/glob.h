@@ -5,6 +5,9 @@
 #ifndef PYTRA_GEN_STD_GLOB_H
 #define PYTRA_GEN_STD_GLOB_H
 
+// forward declarations
+list<str> glob(const str& pattern);
+
 /* pytra.std.glob: extern-marked glob subset with Python runtime fallback. */
 
 list<str> glob(const str& pattern) {

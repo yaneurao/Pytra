@@ -5,6 +5,11 @@
 #ifndef PYTRA_GEN_STD_OS_H
 #define PYTRA_GEN_STD_OS_H
 
+// forward declarations
+str getcwd();
+void mkdir(const str& p);
+void makedirs(const str& p, bool exist_ok = false);
+
 /* pytra.std.os: extern-marked os subset with Python runtime fallback. */
 
 str getcwd() {

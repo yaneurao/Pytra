@@ -5,6 +5,10 @@
 #ifndef PYTRA_GEN_BUILT_IN_PREDICATES_H
 #define PYTRA_GEN_BUILT_IN_PREDICATES_H
 
+// forward declarations
+bool py_any(const T& values);
+bool py_all(const T& values);
+
 /* Pure-Python source-of-truth for predicate helpers. */
 
 template <class T>

@@ -5,6 +5,13 @@
 #ifndef PYTRA_GEN_STD_OS_PATH_H
 #define PYTRA_GEN_STD_OS_PATH_H
 
+// forward declarations
+str join(const str& a, const str& b);
+str dirname(const str& p);
+str basename(const str& p);
+str abspath(const str& p);
+bool exists(const str& p);
+
 /* pytra.std.os_path: extern-marked os.path subset with Python runtime fallback. */
 
 str join(const str& a, const str& b) {

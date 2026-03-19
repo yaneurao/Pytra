@@ -5,6 +5,9 @@
 #ifndef PYTRA_GEN_STD_TIMEIT_H
 #define PYTRA_GEN_STD_TIMEIT_H
 
+// forward declarations
+float64 default_timer();
+
 /* pytra.std.timeit compatibility shim. */
 
 float64 default_timer() {

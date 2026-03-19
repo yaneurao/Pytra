@@ -5,6 +5,9 @@
 #ifndef PYTRA_GEN_BUILT_IN_IO_OPS_H
 #define PYTRA_GEN_BUILT_IN_IO_OPS_H
 
+// forward declarations
+void py_print(const object& value);
+
 /* Extern-marked I/O helper built-ins. */
 
 void py_print(const object& value) {

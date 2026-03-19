@@ -19,7 +19,11 @@
 #include "py_types.h"
 #include "exceptions.h"
 #include "io.h"
-// `str` method delegates still live here, so string helper declarations remain a direct dependency.
+
+// base_ops.h provides py_str_slice / py_find_window used by generated string_ops.h.
+#include "runtime/cpp/built_in/base_ops.h"
+
+// Generated string helpers (py_split, py_join, py_count, etc.).
 #include "runtime/cpp/generated/built_in/string_ops.h"
 
 // PYTRA_TID_* 定数は py_scalar_types.h へ移動済み（P2-COMPILE-LINK-PIPELINE-01）。
@@ -43,9 +47,6 @@ inline int64 str::count(const str& needle) const {
 inline str str::join(const list<str>& parts) const {
     return py_join(*this, parts);
 }
-
-// py_len / py_str_slice（旧 py_slice の str 版）は native/built_in/base_ops.h へ移動済み。
-#include "runtime/cpp/built_in/base_ops.h"
 
 // py_to_string は base_ops.h へ移動済み（P6-EAST3-PY-TO-STRING-INLINE-01）。
 

@@ -5,6 +5,10 @@
 #ifndef PYTRA_GEN_BUILT_IN_ITER_OPS_H
 #define PYTRA_GEN_BUILT_IN_ITER_OPS_H
 
+// forward declarations
+list<object> py_reversed_object(const object& values);
+list<object> py_enumerate_object(const object& values, int64 start = 0);
+
 /* Pure-Python source-of-truth for object-based iterator helpers. */
 
 list<object> py_reversed_object(const object& values) {
