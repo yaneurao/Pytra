@@ -46,7 +46,7 @@
 1. [x] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S1] `object` の定義を `{pytra_type_id tag; rc<RcObject> _rc;}` に変更。暗黙変換コンストラクタ、`unbox`/`as`/`is` メソッド追加。既存互換レイヤ用意。
 2. [x] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S2] emitter が union 型に `object` を emit。`_Union_*` typedef 廃止。
 3. [x] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S3] emitter の cast / isinstance / 暗黙代入を `object::unbox` / `object::as` / `object::is` に変更。
-4. [ ] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S4] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。
+4. [ ] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S4] `pathlib.py` を含む `out/cpp/` g++ ビルドを検証する。generated ヘッダーの standalone transpile でクラスフィールド宣言（`str _value;`）が欠落する問題あり。
 5. [ ] [ID: P0-OBJECT-IS-TAGGED-VALUE-01-S5] 既存コードの `object` 使用箇所を新 API に移行し、互換レイヤを除去する。
 
 #### P0-3: py_runtime.h 分解・廃止
