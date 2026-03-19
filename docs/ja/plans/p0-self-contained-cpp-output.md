@@ -168,3 +168,4 @@ pytra-cli.py foo.py --target cpp --build --output-dir out
 ## 決定ログ
 
 - 2026-03-19: ユーザーから「ソースツリーにビルド生成物を置くのがおかしい。out/ に動的生成すべき」「py_runtime.h も out/ にコピーすればいい」「out/east, out/cpp のようにフォルダを分けるとすっきりする」「out/cpp に g++ ビルド一式が集まれば Makefile が書きやすい」と提案。自己完結ビルドディレクトリの設計で P0 起票。
+- 2026-03-19: S1（include パス namespace 化）、S2（native コピー + .east → C++ 動的生成）、S3（エミッター出力パス変更）完了。g++ ビルドテストで `py_runtime.h` ↔ `type_id.h` の循環依存が発覚。`type_id.h` が `py_runtime_value_isinstance`（`py_runtime.h` 内で `type_id.h` の後に定義）を使う構造。S7 として循環解消タスクを追加。

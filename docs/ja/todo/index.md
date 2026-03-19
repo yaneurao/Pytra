@@ -43,12 +43,13 @@
 
 文脈: [docs/ja/plans/p0-self-contained-cpp-output.md](../plans/p0-self-contained-cpp-output.md)
 
-1. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S1] `py_runtime.h` と native ヘッダーの include パスを namespace 基準の相対パスに変更する（`"py_types.h"` → `"core/py_types.h"` 等）。
-2. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S2] `write_cpp_rendered_program` を拡張し、native runtime を `out/cpp/{namespace}/` にコピーし、runtime `.east` を C++ に emit して同じ namespace フォルダに配置する。
-3. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S3] エミッターの `#include` 出力パスを `out/cpp/` 基準に変更する。
+1. [x] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S1] `py_runtime.h` と native ヘッダーの include パスを namespace 基準の相対パスに変更する（`"py_types.h"` → `"core/py_types.h"` 等）。
+2. [x] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S2] `write_cpp_rendered_program` を拡張し、native runtime を `out/cpp/{namespace}/` にコピーし、runtime `.east` を C++ に emit して同じ namespace フォルダに配置する。
+3. [x] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S3] エミッターの `#include` 出力パスを `out/cpp/` 基準に変更する。
 4. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S4] Makefile 生成を `out/cpp/` 自己完結に対応させる。
 5. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S5] `pytra-cli.py --build` フローを新パイプラインに対応させる。
 6. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S6] 最小 repro（pathlib import）が `out/cpp/` 内で `make` でビルドできることを検証する。
+7. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S7] `py_runtime.h` ↔ `type_id.h` の循環依存を解消する。`py_runtime.h` が `type_id.h` を include し、`type_id.h` が `py_runtime_value_isinstance`（`py_runtime.h` 内で `type_id.h` の後に定義）を使う循環。`py_runtime.h` の分割または前方宣言で対処。S6 の前提。
 
 #### P0-3: リンカーによる C++ include パス確定
 
