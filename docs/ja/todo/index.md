@@ -57,11 +57,11 @@
 
 #### P0-4: 旧 object API + 旧互換モード一掃（最優先 — pathlib ビルドのブロッカー）
 
-1. [ ] [ID: P0-LEGACY-API-CLEANUP-01-S1] emitter の `make_object` 生成箇所を `object(...)` に置換する（約 15 箇所）。
-2. [ ] [ID: P0-LEGACY-API-CLEANUP-01-S2] emitter の `obj_to_rc_or_raise<T>` 生成箇所を `object::as<T>()` / downcast に置換する。
-3. [ ] [ID: P0-LEGACY-API-CLEANUP-01-S3] runtime の `make_object` / `obj_to_rc_or_raise` 互換 shim を削除する。
+1. [x] [ID: P0-LEGACY-API-CLEANUP-01-S1] emitter の `make_object` 生成箇所を `object(...)` に置換。
+2. [x] [ID: P0-LEGACY-API-CLEANUP-01-S2] emitter の `obj_to_rc_or_raise<T>` 生成箇所を `object::as<T>()` に置換。
+3. [x] [ID: P0-LEGACY-API-CLEANUP-01-S3] runtime の `make_object` / `obj_to_rc_or_raise` 互換 shim を削除。
 4. [ ] [ID: P0-LEGACY-API-CLEANUP-01-S4] C++ list の value/pyobj モード互換（`cpp_list_model`）を削除する。ref モード統一。
-5. [ ] [ID: P0-LEGACY-API-CLEANUP-01-S5] pathlib repro が `out/cpp/` で g++ ビルドできることを検証する。
+5. [ ] [ID: P0-LEGACY-API-CLEANUP-01-S5] pathlib repro が `out/cpp/` で g++ ビルドできることを検証する。→ standalone transpile での ref_classes 空問題。P0-5 (link 統合) で解決。
 
 #### P0-5: runtime .east を link パイプラインに統合
 
