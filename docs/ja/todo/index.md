@@ -49,7 +49,20 @@
 4. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S4] Makefile 生成を `out/cpp/` 自己完結に対応させる。
 5. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S5] `pytra-cli.py --build` フローを新パイプラインに対応させる。
 6. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S6] 最小 repro（pathlib import）が `out/cpp/` 内で `make` でビルドできることを検証する。
-7. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S7] `py_runtime.h` ↔ `type_id.h` の循環依存を解消する。`py_runtime.h` が `type_id.h` を include し、`type_id.h` が `py_runtime_value_isinstance`（`py_runtime.h` 内で `type_id.h` の後に定義）を使う循環。`py_runtime.h` の分割または前方宣言で対処。S6 の前提。
+7. [ ] [ID: P0-SELF-CONTAINED-CPP-OUTPUT-01-S7] `py_runtime.h` ↔ `type_id.h` の循環依存を解消する。→ P0-PY-RUNTIME-H-DECOMPOSITION-01 で解決。
+
+#### P0-4: py_runtime.h 分解・廃止（S7 の前提、優先）
+
+文脈: [docs/ja/plans/p0-py-runtime-h-decomposition.md](../plans/p0-py-runtime-h-decomposition.md)
+
+1. [ ] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S1] `core/str_methods.h` を分離する（`str::split` 等の委譲）。
+2. [ ] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S2] `core/conversions.h` を分離する（`py_to`, `py_to_bool`, `py_variant_to_bool`）。
+3. [ ] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S3] `built_in/dict_ops.h` を分離する（`py_at(dict)`, `py_index`）。
+4. [ ] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S4] `built_in/bounds.h` を分離する（`py_at_bounds`, `py_at_bounds_debug`）。
+5. [ ] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S5] `core/type_id_support.h` を分離する（`py_runtime_value_isinstance` 等）。循環依存解消。
+6. [ ] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S6] `core/rc_ops.h` を分離する（`operator-(rc<T>)`）。
+7. [ ] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S7] `py_runtime.h` を include のみのファサードに書き換える。
+8. [ ] [ID: P0-PY-RUNTIME-H-DECOMPOSITION-01-S8] エミッターが `py_runtime.h` ではなく個別ヘッダーを emit するよう変更する。
 
 #### P0-3: リンカーによる C++ include パス確定
 
