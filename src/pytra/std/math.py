@@ -1,63 +1,63 @@
 """pytra.std.math: extern-marked math API with Python runtime fallback."""
 
 
+import math
+
 from pytra.std import extern
 
-import math as __m
-
-pi: float = extern(__m.pi)
-e: float = extern(__m.e)
+pi: float = extern(math.pi)
+e: float = extern(math.e)
 
 @extern
 def sqrt(x: float) -> float:
-    return __m.sqrt(x)
+    return math.sqrt(x)
 
 
 @extern
 def sin(x: float) -> float:
-    return __m.sin(x)
+    return math.sin(x)
 
 
 @extern
 def cos(x: float) -> float:
-    return __m.cos(x)
+    return math.cos(x)
 
 
 @extern
 def tan(x: float) -> float:
-    return __m.tan(x)
+    return math.tan(x)
 
 
 @extern
 def exp(x: float) -> float:
-    return __m.exp(x)
+    return math.exp(x)
 
 
 @extern
 def log(x: float) -> float:
-    return __m.log(x)
+    return math.log(x)
 
 
 @extern
 def log10(x: float) -> float:
-    return __m.log10(x)
+    return math.log10(x)
 
 
 @extern
 def fabs(x: float) -> float:
-    return __m.fabs(x)
+    return math.fabs(x)
 
 
 @extern
 def floor(x: float) -> float:
-    return __m.floor(x)
+    return math.floor(x)
 
 
 @extern
 def ceil(x: float) -> float:
-    return __m.ceil(x)
+    return math.ceil(x)
 
 
 @extern
 def pow(x: float, y: float) -> float:
-    return __m.pow(x, y)
+    return math.pow(x, y)

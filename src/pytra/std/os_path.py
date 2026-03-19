@@ -1,36 +1,36 @@
 """pytra.std.os_path: extern-marked os.path subset with Python runtime fallback."""
 
 
-from pytra.std import extern
+import os.path
 
-import os.path as __path
+from pytra.std import extern
 
 
 @extern
 def join(a: str, b: str) -> str:
-    return __path.join(a, b)
+    return os.path.join(a, b)
 
 
 @extern
 def dirname(p: str) -> str:
-    return __path.dirname(p)
+    return os.path.dirname(p)
 
 
 @extern
 def basename(p: str) -> str:
-    return __path.basename(p)
+    return os.path.basename(p)
 
 
 @extern
 def splitext(p: str) -> tuple[str, str]:
-    return __path.splitext(p)
+    return os.path.splitext(p)
 
 
 @extern
 def abspath(p: str) -> str:
-    return __path.abspath(p)
+    return os.path.abspath(p)
 
 
 @extern
 def exists(p: str) -> bool:
-    return __path.exists(p)
+    return os.path.exists(p)

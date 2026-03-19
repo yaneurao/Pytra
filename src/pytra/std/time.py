@@ -1,11 +1,11 @@
 """pytra.std.time: extern-marked time API with Python runtime fallback."""
 
 
-from pytra.std import extern
+import time
 
-import time as __t
+from pytra.std import extern
 
 
 @extern
 def perf_counter() -> float:
-    return __t.perf_counter()
+    return time.perf_counter()

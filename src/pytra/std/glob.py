@@ -1,10 +1,11 @@
 """pytra.std.glob: extern-marked glob subset with Python runtime fallback."""
 
 
+import glob as _glob_mod
+
 from pytra.std import extern
 
-import glob as __glob
 
 @extern
 def glob(pattern: str) -> list[str]:
-    return __glob.glob(pattern)
+    return _glob_mod.glob(pattern)

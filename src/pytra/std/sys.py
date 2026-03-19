@@ -1,19 +1,19 @@
 """pytra.std.sys: extern-marked sys API with Python runtime fallback."""
 
 
+import sys
+
 from pytra.std import extern
 
-import sys as __s
-
-argv: list[str] = extern(__s.argv)
-path: list[str] = extern(__s.path)
-stderr = extern(__s.stderr)
-stdout = extern(__s.stdout)
+argv: list[str] = extern(sys.argv)
+path: list[str] = extern(sys.path)
+stderr = extern(sys.stderr)
+stdout = extern(sys.stdout)
 
 
 @extern
 def exit(code: int = 0) -> None:
-    __s.exit(code)
+    sys.exit(code)
 
 
 @extern
@@ -32,9 +32,9 @@ def set_path(values: list[str]) -> None:
 
 @extern
 def write_stderr(text: str) -> None:
-    __s.stderr.write(text)
+    sys.stderr.write(text)
 
 
 @extern
 def write_stdout(text: str) -> None:
-    __s.stdout.write(text)
+    sys.stdout.write(text)

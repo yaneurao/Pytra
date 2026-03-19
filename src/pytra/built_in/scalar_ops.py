@@ -1,21 +1,19 @@
 """Extern-marked scalar helper built-ins."""
 
 
-import builtins as __b
-
 from pytra.std import extern
 
 
 @extern
 def py_to_int64_base(v: str, base: int) -> int:
-    return __b.int(v, base)
+    return int(v, base)
 
 
 @extern
 def py_ord(ch: str) -> int:
-    return __b.ord(ch)
+    return ord(ch)
 
 
 @extern
 def py_chr(codepoint: int) -> str:
-    return __b.chr(codepoint)
+    return chr(codepoint)
