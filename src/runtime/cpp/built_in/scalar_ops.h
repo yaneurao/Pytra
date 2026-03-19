@@ -1,6 +1,7 @@
 #ifndef PYTRA_NATIVE_BUILT_IN_SCALAR_OPS_H
 #define PYTRA_NATIVE_BUILT_IN_SCALAR_OPS_H
 
+#include <cmath>
 #include "built_in/scalar_ops.h"
 #include "core/py_runtime.h"
 
