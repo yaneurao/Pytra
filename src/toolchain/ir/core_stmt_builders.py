@@ -359,6 +359,7 @@ def _sh_make_class_def_stmt(
     dataclass_options: dict[str, Any] | None = None,
     decorators: list[str] | None = None,
     meta: dict[str, Any] | None = None,
+    mixin_bases: list[str] | None = None,
 ) -> dict[str, Any]:
     """`ClassDef` 文 node を構築する。"""
     node = _sh_make_stmt_node("ClassDef", source_span)
@@ -374,4 +375,6 @@ def _sh_make_class_def_stmt(
         node["decorators"] = decorators
     if meta is not None:
         node["meta"] = meta
+    if mixin_bases is not None:
+        node["mixin_bases"] = mixin_bases
     return node

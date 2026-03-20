@@ -201,15 +201,6 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                 _sh_register_type_alias(type_aliases, pre_left, pre_right)
                 continue
         cls_hdr_info = _sh_parse_class_header_base_list(s, split_top_commas=_sh_split_top_commas)
-        if cls_hdr_info is not None:
-            cls_name_info, bases_info = cls_hdr_info
-            if len(bases_info) > 1:
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"multiple inheritance is not supported: class '{cls_name_info}'",
-                    source_span=_sh_span(ln_no, 0, len(ln)),
-                    hint="Use single inheritance (`class Child(Base):`) or composition.",
-                )
         cls_hdr = _sh_parse_class_header(s, split_top_commas=_sh_split_top_commas)
         if cls_hdr is not None:
             cur_cls_name, cur_base = cls_hdr
@@ -704,15 +695,12 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
             i = logical_end + 1
             continue
         cls_hdr_info = _sh_parse_class_header_base_list(s, split_top_commas=_sh_split_top_commas)
+        pending_mixin_bases: list[str] = []
         if cls_hdr_info is not None:
-            cls_name_info, bases_info = cls_hdr_info
+            _cls_name_info, bases_info = cls_hdr_info
             if len(bases_info) > 1:
-                raise _make_east_build_error(
-                    kind="unsupported_syntax",
-                    message=f"multiple inheritance is not supported: class '{cls_name_info}'",
-                    source_span=_sh_span(i, 0, len(ln)),
-                    hint="Use single inheritance (`class Child(Base):`) or composition.",
-                )
+                # Store additional bases (2nd, 3rd, ...) as mixin bases for later expansion.
+                pending_mixin_bases = [b for b in bases_info[1:] if b != ""]
         cls_hdr = _sh_parse_class_header(s, split_top_commas=_sh_split_top_commas)
         if cls_hdr is not None:
             class_decorators = list(pending_top_level_decorators)
@@ -1137,6 +1125,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                 dataclass_options=dict(pending_dataclass_options) if len(pending_dataclass_options) > 0 else None,
                 decorators=list(class_decorators) if len(class_decorators) > 0 else None,
                 meta=class_meta,
+                mixin_bases=list(pending_mixin_bases) if len(pending_mixin_bases) > 0 else None,
             )
             static_field_names: set[str] = set()
             if not pending_dataclass:

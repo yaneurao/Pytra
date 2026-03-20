@@ -104,6 +104,104 @@ def _validate_raw_east3_via_link(
     )
 
 
+def expand_mixin_bases(east_doc: dict[str, object]) -> dict[str, object]:
+    """Expand mixin bases: copy methods and class members from mixin classes into target class.
+
+    For each ClassDef that has ``mixin_bases``, the pass copies FunctionDef and
+    AnnAssign/Assign nodes from each mixin class body into the target class body
+    (skipping members that already exist in the target).  After expansion the
+    ``mixin_bases`` key is removed so downstream stages see only single inheritance.
+    """
+    body_any = east_doc.get("body")
+    if not isinstance(body_any, list):
+        return east_doc
+    body: list[object] = body_any
+
+    # 1. Build class_name -> ClassDef node map.
+    class_map: dict[str, dict[str, object]] = {}
+    for item in body:
+        if isinstance(item, dict) and item.get("kind") == "ClassDef":
+            name_any = item.get("name")
+            if isinstance(name_any, str):
+                class_map[name_any] = item
+
+    # 2. For each ClassDef with mixin_bases, expand.
+    for item in body:
+        if not isinstance(item, dict) or item.get("kind") != "ClassDef":
+            continue
+        mixin_bases_any = item.get("mixin_bases")
+        if not isinstance(mixin_bases_any, list) or len(mixin_bases_any) == 0:
+            continue
+
+        target_body_any = item.get("body")
+        if not isinstance(target_body_any, list):
+            continue
+        target_body: list[object] = target_body_any
+
+        # Collect existing member names in the target class.
+        existing_names: set[str] = set()
+        for stmt in target_body:
+            if isinstance(stmt, dict):
+                stmt_kind = stmt.get("kind")
+                if stmt_kind == "FunctionDef":
+                    fn_name = stmt.get("name")
+                    if isinstance(fn_name, str):
+                        existing_names.add(fn_name)
+                elif stmt_kind in ("AnnAssign", "Assign"):
+                    tgt = stmt.get("target")
+                    if isinstance(tgt, dict) and tgt.get("kind") == "Name":
+                        tgt_id = tgt.get("id")
+                        if isinstance(tgt_id, str):
+                            existing_names.add(tgt_id)
+
+        # Copy from each mixin (in order).
+        target_field_types_any = item.get("field_types")
+        target_field_types: dict[str, object] = target_field_types_any if isinstance(target_field_types_any, dict) else {}
+        for mixin_name in mixin_bases_any:
+            if not isinstance(mixin_name, str):
+                continue
+            mixin_cls = class_map.get(mixin_name)
+            if mixin_cls is None:
+                continue
+            mixin_body_any = mixin_cls.get("body")
+            if not isinstance(mixin_body_any, list):
+                continue
+            for mixin_stmt in mixin_body_any:
+                if not isinstance(mixin_stmt, dict):
+                    continue
+                mixin_kind = mixin_stmt.get("kind")
+                member_name: str | None = None
+                if mixin_kind == "FunctionDef":
+                    fn_name = mixin_stmt.get("name")
+                    if isinstance(fn_name, str):
+                        member_name = fn_name
+                elif mixin_kind in ("AnnAssign", "Assign"):
+                    tgt = mixin_stmt.get("target")
+                    if isinstance(tgt, dict) and tgt.get("kind") == "Name":
+                        tgt_id = tgt.get("id")
+                        if isinstance(tgt_id, str):
+                            member_name = tgt_id
+                else:
+                    continue
+                if member_name is not None and member_name not in existing_names:
+                    import copy
+                    target_body.append(copy.deepcopy(mixin_stmt))
+                    existing_names.add(member_name)
+            # Also merge field_types from the mixin.
+            mixin_field_types_any = mixin_cls.get("field_types")
+            if isinstance(mixin_field_types_any, dict):
+                for ft_name, ft_type in mixin_field_types_any.items():
+                    if ft_name not in target_field_types:
+                        target_field_types[ft_name] = ft_type
+        if isinstance(target_field_types_any, dict):
+            item["field_types"] = target_field_types
+
+        # Remove mixin_bases so downstream sees single inheritance only.
+        item.pop("mixin_bases", None)
+
+    return east_doc
+
+
 def load_east3_document(
     input_path: Path,
     parser_backend: str = "self_hosted",
@@ -123,6 +221,7 @@ def load_east3_document(
     east2_any = load_east_document_fn(input_path, parser_backend=parser_backend)
     if isinstance(east2_any, dict):
         east2_doc: dict[str, object] = east2_any
+        east2_doc = expand_mixin_bases(east2_doc)
         east3_doc = lower_east2_to_east3_document(east2_doc, object_dispatch_mode=object_dispatch_mode)
         _normalize_legacy_source_spans(east3_doc)
         east3_doc = _validate_raw_east3_via_link(

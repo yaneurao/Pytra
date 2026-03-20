@@ -533,8 +533,8 @@ def _sh_parse_class_header(
     cls_name, bases = parsed
     if len(bases) == 0:
         return cls_name, ""
-    if len(bases) != 1:
-        return None
+    # Use the first base as the primary base (for single-inheritance compatibility).
+    # Multiple bases are handled by mixin expansion at a later stage.
     base_name = bases[0]
     if not _sh_is_identifier(base_name):
         return None
