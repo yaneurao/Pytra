@@ -246,3 +246,22 @@ def py_replace(s: str, oldv: str, newv: str) -> str:
             out += s[i]
             i += 1
     return out
+
+
+def py_replace_n(s: str, oldv: str, newv: str, count: int) -> str:
+    if oldv == "" or count == 0:
+        return s
+    out = ""
+    n = len(s)
+    m = len(oldv)
+    i = 0
+    replaced = 0
+    while i < n:
+        if replaced < count and i + m <= n and py_find_window(s, oldv, i, i + m) == i:
+            out += newv
+            i += m
+            replaced += 1
+        else:
+            out += s[i]
+            i += 1
+    return out

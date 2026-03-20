@@ -898,9 +898,10 @@ class CppCallEmitter:
         if not self._is_self_hosted_parser_doc():
             return None
         src = self.any_dict_get_str(self.doc, "source_path", "")
-        # Restrict fallback to known selfhost bootstrap sources.
+        # Restrict fallback to known selfhost bootstrap sources and linked docs.
         if not (
-            src.endswith("/selfhost/py2cpp.py")
+            src == ""  # リンク済み doc（global optimizer が source_path を "" にセットする）
+            or src.endswith("/selfhost/py2cpp.py")
             or src.endswith("/src/backends/cpp/cli.py")
             or src.endswith("/src/py2x-selfhost.py")
         ):
@@ -932,6 +933,8 @@ class CppCallEmitter:
         if attr == "replace":
             if len(call_args) == 2:
                 return f"py_replace({owner_expr}, {call_args[0]}, {call_args[1]})"
+            if len(call_args) == 3:
+                return f"py_replace_n({owner_expr}, {call_args[0]}, {call_args[1]}, {call_args[2]})"
             return None
         if attr == "join":
             if len(call_args) == 1:
