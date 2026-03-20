@@ -66,6 +66,16 @@ def _run(
     return _run_proc(cmd, cwd=cwd, timeout=timeout, stdout_to_stderr=stdout_to_stderr).returncode
 
 
+def _src_env() -> dict[str, str]:
+    """Return env dict with PYTHONPATH including src/ for subprocess calls."""
+    import os
+    env = dict(os.environ)
+    src_dir = str(ROOT / "src")
+    existing = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = src_dir + (os.pathsep + existing if existing else "")
+    return env
+
+
 def _run_proc(
     cmd: list[str],
     cwd: Path | None = None,
@@ -79,6 +89,7 @@ def _run_proc(
         capture_output=True,
         text=True,
         timeout=timeout,
+        env=_src_env(),
     )
     if proc.stdout:
         if stdout_to_stderr:
