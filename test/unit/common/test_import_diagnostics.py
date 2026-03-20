@@ -13,7 +13,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 import src.toolchain.frontends.transpile_cli as transpile_cli
-import src.toolchain.ir.core_entrypoints as core_entrypoints
+import src.toolchain.compile.core_entrypoints as core_entrypoints
 
 
 class ImportDiagnosticsTest(unittest.TestCase):

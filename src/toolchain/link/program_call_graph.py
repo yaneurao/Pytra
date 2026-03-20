@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from toolchain.ir.east3_opt_passes.non_escape_call_graph import build_non_escape_call_graph
-from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
-from toolchain.ir.east3_opt_passes.non_escape_call_graph import strongly_connected_components
+from toolchain.compile.east3_opt_passes.non_escape_call_graph import build_non_escape_call_graph
+from toolchain.compile.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
+from toolchain.compile.east3_opt_passes.non_escape_call_graph import strongly_connected_components
 from toolchain.link.program_model import LinkedProgram
 
 

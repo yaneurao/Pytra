@@ -26,11 +26,11 @@ class EastCoreSourceContractExprPrimaryTest(unittest.TestCase):
         self.assertIn("class _ShExprPrimaryParserMixin:", primary_text)
         self.assertNotIn("def _make_bin_impl(", shell_text)
         self.assertNotIn("def _parse_primary_impl(", shell_text)
-        self.assertIn("from toolchain.ir.core_expr_shell import _ShExprParser", core_text)
-        self.assertIn("from toolchain.ir.core_expr_primary import _make_bin_impl", shell_text)
-        self.assertIn("from toolchain.ir.core_expr_primary import _ShExprPrimaryParserMixin", shell_text)
-        self.assertIn("from toolchain.ir.core_numeric_types import FLOAT_TYPES", primary_text)
-        self.assertIn("from toolchain.ir.core_numeric_types import INT_TYPES", primary_text)
+        self.assertIn("from toolchain.compile.core_expr_shell import _ShExprParser", core_text)
+        self.assertIn("from toolchain.compile.core_expr_primary import _make_bin_impl", shell_text)
+        self.assertIn("from toolchain.compile.core_expr_primary import _ShExprPrimaryParserMixin", shell_text)
+        self.assertIn("from toolchain.compile.core_numeric_types import FLOAT_TYPES", primary_text)
+        self.assertIn("from toolchain.compile.core_numeric_types import INT_TYPES", primary_text)
 
     def test_core_wrappers_delegate_primary_cluster_to_split_module(self) -> None:
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
@@ -38,7 +38,7 @@ class EastCoreSourceContractExprPrimaryTest(unittest.TestCase):
 
         make_bin_text = shell_text.split("def _make_bin", 1)[1].split("def _sh_parse_expr", 1)[0]
 
-        self.assertIn("from toolchain.ir.core_expr_shell import _sh_parse_expr", core_text)
+        self.assertIn("from toolchain.compile.core_expr_shell import _sh_parse_expr", core_text)
         self.assertIn("return _make_bin_impl(self, left, op_sym, right)", make_bin_text)
         self.assertNotIn("op_map = {", make_bin_text)
         self.assertNotIn("def _parse_primary(", core_text)
@@ -54,7 +54,7 @@ class EastCoreSourceContractExprPrimaryTest(unittest.TestCase):
         self.assertIn("_sh_make_list_comp_expr(", primary_text)
         self.assertIn("_sh_make_dict_comp_expr(", primary_text)
         self.assertIn('message=f"self_hosted parser cannot parse expression token:', primary_text)
-        self.assertIn("from toolchain.ir.core_expr_shell import _sh_parse_expr", primary_text)
+        self.assertIn("from toolchain.compile.core_expr_shell import _sh_parse_expr", primary_text)
         self.assertNotIn('INT_TYPES = {', primary_text)
         self.assertNotIn('FLOAT_TYPES = {"float32", "float64"}', primary_text)
 

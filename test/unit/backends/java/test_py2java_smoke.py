@@ -28,7 +28,7 @@ from toolchain.emit.java.emitter.java_native_emitter import (
     _render_expr,
     transpile_to_java_native,
 )
-from src.toolchain.ir.core_entrypoints import convert_path
+from src.toolchain.compile.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 from relative_import_jvm_package_smoke_support import (
     relative_import_jvm_package_expected_needles,

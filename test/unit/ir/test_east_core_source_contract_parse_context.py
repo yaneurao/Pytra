@@ -24,19 +24,19 @@ class EastCoreSourceContractParseContextTest(unittest.TestCase):
         helper_text = CORE_PARSE_CONTEXT_SOURCE_PATH.read_text(encoding="utf-8")
 
         for marker in (
-            "from toolchain.ir.core_parse_context import _SH_CLASS_BASE",
-            "from toolchain.ir.core_parse_context import _SH_CLASS_METHOD_RETURNS",
-            "from toolchain.ir.core_parse_context import _SH_EMPTY_SPAN",
-            "from toolchain.ir.core_parse_context import _SH_FN_RETURNS",
-            "from toolchain.ir.core_parse_context import _SH_IMPORT_MODULES",
-            "from toolchain.ir.core_parse_context import _SH_IMPORT_SYMBOLS",
-            "from toolchain.ir.core_parse_context import _SH_RUNTIME_ABI_ARG_MODES",
-            "from toolchain.ir.core_parse_context import _SH_RUNTIME_ABI_MODE_ALIASES",
-            "from toolchain.ir.core_parse_context import _SH_RUNTIME_ABI_RET_MODES",
-            "from toolchain.ir.core_parse_context import _SH_TEMPLATE_INSTANTIATION_MODE",
-            "from toolchain.ir.core_parse_context import _SH_TEMPLATE_SCOPE",
-            "from toolchain.ir.core_parse_context import _SH_TYPE_ALIASES",
-            "from toolchain.ir.core_parse_context import _sh_set_parse_context",
+            "from toolchain.compile.core_parse_context import _SH_CLASS_BASE",
+            "from toolchain.compile.core_parse_context import _SH_CLASS_METHOD_RETURNS",
+            "from toolchain.compile.core_parse_context import _SH_EMPTY_SPAN",
+            "from toolchain.compile.core_parse_context import _SH_FN_RETURNS",
+            "from toolchain.compile.core_parse_context import _SH_IMPORT_MODULES",
+            "from toolchain.compile.core_parse_context import _SH_IMPORT_SYMBOLS",
+            "from toolchain.compile.core_parse_context import _SH_RUNTIME_ABI_ARG_MODES",
+            "from toolchain.compile.core_parse_context import _SH_RUNTIME_ABI_MODE_ALIASES",
+            "from toolchain.compile.core_parse_context import _SH_RUNTIME_ABI_RET_MODES",
+            "from toolchain.compile.core_parse_context import _SH_TEMPLATE_INSTANTIATION_MODE",
+            "from toolchain.compile.core_parse_context import _SH_TEMPLATE_SCOPE",
+            "from toolchain.compile.core_parse_context import _SH_TYPE_ALIASES",
+            "from toolchain.compile.core_parse_context import _sh_set_parse_context",
         ):
             self.assertIn(marker, core_text)
 
@@ -62,7 +62,7 @@ class EastCoreSourceContractParseContextTest(unittest.TestCase):
         self.assertIn("import_modules=_SH_IMPORT_MODULES", resolution_text)
         self.assertIn("import_symbols=_SH_IMPORT_SYMBOLS", resolution_text)
         self.assertIn(
-            "from toolchain.ir.core_expr_named_call_annotation import _ShExprNamedCallAnnotationMixin",
+            "from toolchain.compile.core_expr_named_call_annotation import _ShExprNamedCallAnnotationMixin",
             call_annotation_text,
         )
         self.assertIn("import_symbols=_SH_IMPORT_SYMBOLS", named_call_annotation_text)

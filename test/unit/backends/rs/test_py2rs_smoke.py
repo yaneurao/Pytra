@@ -25,7 +25,7 @@ from toolchain.compiler.relative_import_firstwave_smoke_contract import (
     RELATIVE_IMPORT_FIRST_WAVE_SCENARIOS_V1,
 )
 from toolchain.compiler.transpile_cli import load_east3_document
-from src.toolchain.ir.core_entrypoints import convert_path
+from src.toolchain.compile.core_entrypoints import convert_path
 from src.toolchain.frontends.type_expr import parse_type_expr_text
 from toolchain.emit.rs.emitter.rs_emitter import RustEmitter
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments

@@ -49,7 +49,7 @@ from pytra.std.math import sqrt
 - `src/pytra/typing.py` — 新規
 - `src/pytra/enum.py` — 新規
 - `src/pytra/dataclasses.py` — 新規
-- `src/toolchain/ir/core_module_parser.py` — no-op import 追加
+- `src/toolchain/compile/core_module_parser.py` — no-op import 追加
 - `test/fixtures/` — import 修正
 - `docs/ja/spec/spec-user.md` — import ルール更新
 

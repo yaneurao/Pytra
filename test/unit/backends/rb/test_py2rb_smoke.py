@@ -24,7 +24,7 @@ if str(ROOT / "test" / "unit" / "backends") not in sys.path:
 
 from toolchain.emit.ruby.emitter import load_ruby_profile, transpile_to_ruby, transpile_to_ruby_native
 from toolchain.compiler.transpile_cli import load_east3_document
-from src.toolchain.ir.core_entrypoints import convert_path
+from src.toolchain.compile.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 from relative_import_longtail_smoke_support import (
     transpile_relative_import_longtail_via_module_graph,

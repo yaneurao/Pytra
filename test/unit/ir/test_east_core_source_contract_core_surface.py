@@ -54,8 +54,8 @@ class EastCoreSourceContractCoreSurfaceTest(unittest.TestCase):
         self.assertIn('"INT_TYPES"', core_text)
         self.assertIn('"FLOAT_TYPES"', core_text)
         self.assertIn("__all__ = [*CORE_PUBLIC_FACADE_EXPORTS, *CORE_BRIDGE_COMPAT_EXPORTS]", core_text)
-        self.assertIn("from toolchain.ir.core_numeric_types import FLOAT_TYPES", core_text)
-        self.assertIn("from toolchain.ir.core_numeric_types import INT_TYPES", core_text)
+        self.assertIn("from toolchain.compile.core_numeric_types import FLOAT_TYPES", core_text)
+        self.assertIn("from toolchain.compile.core_numeric_types import INT_TYPES", core_text)
         self.assertNotIn('INT_TYPES = {', core_text)
         self.assertNotIn('FLOAT_TYPES = {"float32", "float64"}', core_text)
 
@@ -65,11 +65,11 @@ class EastCoreSourceContractCoreSurfaceTest(unittest.TestCase):
         module_parser_text = CORE_MODULE_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn(
-            "from toolchain.ir.core_stmt_parser import _sh_parse_stmt_block as _sh_parse_stmt_block_impl",
+            "from toolchain.compile.core_stmt_parser import _sh_parse_stmt_block as _sh_parse_stmt_block_impl",
             core_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_stmt_parser import _sh_parse_stmt_block_mutable as _sh_parse_stmt_block_mutable_impl",
+            "from toolchain.compile.core_stmt_parser import _sh_parse_stmt_block_mutable as _sh_parse_stmt_block_mutable_impl",
             core_text,
         )
         self.assertIn(
@@ -85,15 +85,15 @@ class EastCoreSourceContractCoreSurfaceTest(unittest.TestCase):
             core_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_stmt_parser_support import (",
+            "from toolchain.compile.core_stmt_parser_support import (",
             stmt_parser_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_module_parser_support import (",
+            "from toolchain.compile.core_module_parser_support import (",
             module_parser_text,
         )
-        self.assertNotIn("from toolchain.ir.core import (", stmt_parser_text)
-        self.assertNotIn("from toolchain.ir.core import (", module_parser_text)
+        self.assertNotIn("from toolchain.compile.core import (", stmt_parser_text)
+        self.assertNotIn("from toolchain.compile.core import (", module_parser_text)
         self.assertIn("def _sh_parse_stmt_block_mutable(", stmt_parser_text)
         self.assertIn("def _sh_parse_stmt_block(", stmt_parser_text)
         self.assertIn("def convert_source_to_east_self_hosted_impl(", module_parser_text)

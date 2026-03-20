@@ -22,10 +22,10 @@ from _east_core_test_support import EAST23_TYPE_SUMMARY_SOURCE_PATH
 class East2ToEast3SourceContractTest(unittest.TestCase):
     def test_main_lowering_imports_type_summary_cluster(self) -> None:
         text = EAST23_LOWERING_SOURCE_PATH.read_text(encoding="utf-8")
-        self.assertIn("from toolchain.ir.east2_to_east3_type_summary import _swap_nominal_adt_decl_summary_table", text)
-        self.assertIn("from toolchain.ir.east2_to_east3_call_metadata import _decorate_call_metadata", text)
-        self.assertIn("from toolchain.ir.east2_to_east3_dispatch_orchestration import _lower_node_dispatch", text)
-        self.assertIn("from toolchain.ir.east2_to_east3_type_id_predicate import _lower_type_id_call_expr", text)
+        self.assertIn("from toolchain.compile.east2_to_east3_type_summary import _swap_nominal_adt_decl_summary_table", text)
+        self.assertIn("from toolchain.compile.east2_to_east3_call_metadata import _decorate_call_metadata", text)
+        self.assertIn("from toolchain.compile.east2_to_east3_dispatch_orchestration import _lower_node_dispatch", text)
+        self.assertIn("from toolchain.compile.east2_to_east3_type_id_predicate import _lower_type_id_call_expr", text)
         self.assertIn(
             "prev_nominal_adt_decl_table = _swap_nominal_adt_decl_summary_table(",
             text,
@@ -64,7 +64,7 @@ class East2ToEast3SourceContractTest(unittest.TestCase):
     def test_call_metadata_module_owns_split_helpers(self) -> None:
         text = EAST23_CALL_METADATA_SOURCE_PATH.read_text(encoding="utf-8")
         self.assertIn(
-            "from toolchain.ir.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_ctor_call",
+            "from toolchain.compile.east2_to_east3_nominal_adt_meta import _decorate_nominal_adt_ctor_call",
             text,
         )
         for helper_name in (
@@ -91,7 +91,7 @@ class East2ToEast3SourceContractTest(unittest.TestCase):
 
     def test_dispatch_orchestration_module_owns_split_helpers(self) -> None:
         text = EAST23_DISPATCH_ORCHESTRATION_SOURCE_PATH.read_text(encoding="utf-8")
-        self.assertIn("from toolchain.ir.east2_to_east3_stmt_lowering import _lower_forcore_stmt", text)
+        self.assertIn("from toolchain.compile.east2_to_east3_stmt_lowering import _lower_forcore_stmt", text)
         for helper_name in (
             "_lower_attribute_expr",
             "_lower_variant_pattern",

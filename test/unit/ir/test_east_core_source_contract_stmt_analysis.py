@@ -21,17 +21,17 @@ class EastCoreSourceContractStmtAnalysisTest(unittest.TestCase):
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = CORE_STMT_ANALYSIS_SOURCE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("from toolchain.ir.core_stmt_analysis import _sh_extract_leading_docstring", core_text)
-        self.assertIn("from toolchain.ir.core_stmt_analysis import _sh_collect_yield_value_types", core_text)
-        self.assertIn("from toolchain.ir.core_stmt_analysis import _sh_collect_return_value_types", core_text)
+        self.assertIn("from toolchain.compile.core_stmt_analysis import _sh_extract_leading_docstring", core_text)
+        self.assertIn("from toolchain.compile.core_stmt_analysis import _sh_collect_yield_value_types", core_text)
+        self.assertIn("from toolchain.compile.core_stmt_analysis import _sh_collect_return_value_types", core_text)
         self.assertIn(
-            "from toolchain.ir.core_stmt_analysis import _sh_infer_return_type_for_untyped_def",
+            "from toolchain.compile.core_stmt_analysis import _sh_infer_return_type_for_untyped_def",
             core_text,
         )
-        self.assertIn("from toolchain.ir.core_stmt_analysis import _sh_collect_store_name_ids", core_text)
-        self.assertIn("from toolchain.ir.core_stmt_analysis import _sh_collect_reassigned_names", core_text)
-        self.assertIn("from toolchain.ir.core_stmt_analysis import _sh_build_arg_usage_map", core_text)
-        self.assertIn("from toolchain.ir.core_stmt_analysis import _sh_make_generator_return_type", core_text)
+        self.assertIn("from toolchain.compile.core_stmt_analysis import _sh_collect_store_name_ids", core_text)
+        self.assertIn("from toolchain.compile.core_stmt_analysis import _sh_collect_reassigned_names", core_text)
+        self.assertIn("from toolchain.compile.core_stmt_analysis import _sh_build_arg_usage_map", core_text)
+        self.assertIn("from toolchain.compile.core_stmt_analysis import _sh_make_generator_return_type", core_text)
 
         self.assertIn("def _sh_extract_leading_docstring(", helper_text)
         self.assertIn("def _sh_collect_yield_value_types(", helper_text)

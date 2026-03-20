@@ -19,7 +19,7 @@
 - `tools/check_todo_priority.py`
   - 目的: `docs/ja/todo/index.md` / `docs/ja/plans/*.md` の差分に追加した進捗 `ID` が、未完了の最上位 `ID`（またはその子 `ID`）と一致するかを検証し、優先度逸脱を防止する。`plans` 側は `決定ログ`（`- YYYY-MM-DD: ...`）行のみを進捗判定対象にし、構造整理の ID 列挙は対象外とする。
 - `tools/check_jsonvalue_decode_boundaries.py`
-  - 目的: `py2x.py` / `east2x.py` / `toolchain/ir/east_io.py` / `toolchain/link/*` の JSON artifact 境界で `json.loads_obj(...)` が正本であることを検証し、raw `json.loads(...)` への再侵入を fail-fast に止める。
+  - 目的: `py2x.py` / `east2x.py` / `toolchain/compile/east_io.py` / `toolchain/link/*` の JSON artifact 境界で `json.loads_obj(...)` が正本であることを検証し、raw `json.loads(...)` への再侵入を fail-fast に止める。
 - `tools/check_runtime_cpp_layout.py`
   - 目的: `src/runtime/cpp/{built_in,std,utils}` の legacy-closed 維持、`generated/native/pytra` の ownership 境界、`core` compatibility surface と `generated/core` / `native/core` の split 前提を同一 guard で検証する。あわせて `generated/core` / `native/core` lane の存在を要求し、`runtime/cpp/native/core/...` の直接 include を `core/*.h` forwarder 以外で禁止する。
   - 補足: `generated/built_in` / `generated/core` は plain naming と generated marker を必須とし、`native` / `core` への ownership 混在を fail させる。加えて `native/core/py_runtime.h` に `predicates` / `sequence` / `iter_ops` の removed transitive include が再侵入した場合も fail とする。

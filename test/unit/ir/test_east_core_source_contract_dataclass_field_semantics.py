@@ -31,7 +31,7 @@ class EastCoreSourceContractDataclassFieldSemanticsTest(unittest.TestCase):
         module_text = CORE_MODULE_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn(
-            "from toolchain.ir.core_module_parser_support import (",
+            "from toolchain.compile.core_module_parser_support import (",
             module_text,
         )
         self.assertIn("_sh_collect_dataclass_field_metadata,", module_text)

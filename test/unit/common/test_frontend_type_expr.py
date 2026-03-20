@@ -15,7 +15,7 @@ from src.toolchain.frontends.type_expr import parse_type_expr_text
 from src.toolchain.frontends.type_expr import summarize_type_text
 from src.toolchain.frontends.type_expr import sync_type_expr_mirrors
 from src.toolchain.compiler.transpile_cli import load_east3_document
-from src.toolchain.ir.east2 import normalize_east1_to_east2_document
+from src.toolchain.compile.east2 import normalize_east1_to_east2_document
 from src.toolchain.link import validate_raw_east3_doc
 
 

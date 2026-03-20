@@ -46,7 +46,7 @@ Backend (言語ごとに独立した実行単位)
 
 - **入力**: `link-output.json`（linked program manifest）または linked EAST3 JSON
 - **出力**: `--output-dir` で指定したディレクトリに multi-file C++ を生成
-- **依存**: `toolchain.emit.cpp.emitter` + `toolchain.emit.cpp.optimizer` + `toolchain.emit.cpp.program_writer` のみ。`toolchain.frontends` / `toolchain.ir` / 他言語 backend は import しない。
+- **依存**: `toolchain.emit.cpp.emitter` + `toolchain.emit.cpp.optimizer` + `toolchain.emit.cpp.program_writer` のみ。`toolchain.frontends` / `toolchain.compile` / 他言語 backend は import しない。
 
 ## 対象
 

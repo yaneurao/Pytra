@@ -19,7 +19,7 @@ from _east23_lowering_test_support import East23LoweringNominalAdtFixtureMixin
 from src.toolchain.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
 from src.toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.frontends.type_expr import parse_type_expr_text
-from src.toolchain.ir.east3 import load_east3_document as load_east3_stage
+from src.toolchain.compile.east3 import load_east3_document as load_east3_stage
 
 
 class East2ToEast3LoweringTest(East23LoweringNominalAdtFixtureMixin, unittest.TestCase):
@@ -504,7 +504,7 @@ class East2ToEast3LoweringTest(East23LoweringNominalAdtFixtureMixin, unittest.Te
         with tempfile.TemporaryDirectory() as tmpdir:
             p = Path(tmpdir) / "main.py"
             p.write_text("", encoding="utf-8")
-            with patch("src.toolchain.ir.east3.lower_east2_to_east3_document", return_value=bad_east3):
+            with patch("src.toolchain.compile.east3.lower_east2_to_east3_document", return_value=bad_east3):
                 with self.assertRaisesRegex(RuntimeError, r"raw EAST3\.body\[0\] must be an object: pkg\.main"):
                     load_east3_stage(
                         p,
@@ -529,8 +529,8 @@ class East2ToEast3LoweringTest(East23LoweringNominalAdtFixtureMixin, unittest.Te
         with tempfile.TemporaryDirectory() as tmpdir:
             p = Path(tmpdir) / "main.py"
             p.write_text("", encoding="utf-8")
-            with patch("src.toolchain.ir.east3.lower_east2_to_east3_document", return_value=valid_east3):
-                with patch("src.toolchain.ir.east3.optimize_east3_document", return_value=(bad_optimized, {"trace": []})):
+            with patch("src.toolchain.compile.east3.lower_east2_to_east3_document", return_value=valid_east3):
+                with patch("src.toolchain.compile.east3.optimize_east3_document", return_value=(bad_optimized, {"trace": []})):
                     with self.assertRaisesRegex(RuntimeError, r"raw EAST3\.body\[0\] must be an object: pkg\.main"):
                         load_east3_stage(
                             p,

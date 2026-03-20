@@ -6,9 +6,9 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
-from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_import_maps
-from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
-from toolchain.ir.east3_opt_passes.non_escape_call_graph import resolve_non_escape_call_target
+from toolchain.compile.east3_opt_passes.non_escape_call_graph import collect_non_escape_import_maps
+from toolchain.compile.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
+from toolchain.compile.east3_opt_passes.non_escape_call_graph import resolve_non_escape_call_target
 from toolchain.link.program_model import LinkedProgram
 from toolchain.link.program_model import LinkedProgramModule
 

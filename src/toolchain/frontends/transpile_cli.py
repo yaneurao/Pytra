@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from toolchain.ir.core_entrypoints import convert_path, convert_source_to_east_with_backend
-from toolchain.ir.core_entrypoints import parse_import_build_error
-from toolchain.ir.east1 import load_east1_document as load_east1_document_stage
-from toolchain.ir.east2 import normalize_east1_to_east2_document as normalize_east1_to_east2_document_stage
-from toolchain.ir.east3 import load_east3_document as load_east3_document_stage
+from toolchain.compile.core_entrypoints import convert_path, convert_source_to_east_with_backend
+from toolchain.compile.core_entrypoints import parse_import_build_error
+from toolchain.compile.east1 import load_east1_document as load_east1_document_stage
+from toolchain.compile.east2 import normalize_east1_to_east2_document as normalize_east1_to_east2_document_stage
+from toolchain.compile.east3 import load_east3_document as load_east3_document_stage
 from toolchain.compiler.typed_boundary import CompilerRootDocument
 from toolchain.compiler.typed_boundary import coerce_compiler_root_document
 from toolchain.frontends.import_graph_analysis_helpers import append_unique_graph_issue_entry

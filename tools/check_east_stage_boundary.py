@@ -129,12 +129,12 @@ def _check_east2_boundary(errors: list[str]) -> None:
     forbidden_import_prefixes = (
         "toolchain.compiler.east_parts.east3",
         "toolchain.compiler.east_parts.east2_to_east3_lowering",
-        "toolchain.ir.east3",
-        "toolchain.ir.east2_to_east3_lowering",
+        "toolchain.compile.east3",
+        "toolchain.compile.east2_to_east3_lowering",
         "src.toolchain.compiler.east_parts.east3",
         "src.toolchain.compiler.east_parts.east2_to_east3_lowering",
-        "src.toolchain.ir.east3",
-        "src.toolchain.ir.east2_to_east3_lowering",
+        "src.toolchain.compile.east3",
+        "src.toolchain.compile.east2_to_east3_lowering",
     )
     forbidden_calls = (
         "lower_east2_to_east3",

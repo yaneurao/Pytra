@@ -14,7 +14,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from toolchain.ir.east2_to_east3_lowering import lower_east2_to_east3
+from toolchain.compile.east2_to_east3_lowering import lower_east2_to_east3
 from toolchain.frontends.type_expr import parse_type_expr_text
 
 

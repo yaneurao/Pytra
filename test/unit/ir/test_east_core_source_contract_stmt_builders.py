@@ -133,7 +133,7 @@ class EastCoreSourceContractStmtBuildersTest(unittest.TestCase):
         )[0]
 
         self.assertIn(
-            "from toolchain.ir.core_stmt_parser import _sh_parse_stmt_block_mutable as _sh_parse_stmt_block_mutable_impl",
+            "from toolchain.compile.core_stmt_parser import _sh_parse_stmt_block_mutable as _sh_parse_stmt_block_mutable_impl",
             core_text,
         )
         self.assertIn("return _sh_parse_stmt_block_mutable_impl(", core_text)

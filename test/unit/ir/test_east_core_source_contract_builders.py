@@ -161,7 +161,7 @@ class EastCoreSourceContractBuildersTest(unittest.TestCase):
         class_text = CORE_CLASS_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         module_parser_text = CORE_MODULE_PARSER_SOURCE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("from toolchain.ir.core_class_semantics import _sh_collect_nominal_adt_class_metadata", text)
+        self.assertIn("from toolchain.compile.core_class_semantics import _sh_collect_nominal_adt_class_metadata", text)
         self.assertIn("class_meta = _sh_collect_nominal_adt_class_metadata(", module_parser_text)
         self.assertIn("def _sh_collect_nominal_adt_class_metadata(", class_text)
         self.assertNotIn("class_meta = _sh_collect_nominal_adt_class_metadata(", text)

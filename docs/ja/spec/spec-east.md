@@ -602,9 +602,9 @@ EAST3 -> backend の解決済み呼び出し契約（固定）:
 
 | 段/境界 | 入力 | 出力 | 禁止事項 | 担当ファイル |
 | --- | --- | --- | --- | --- |
-| `EAST1` | `Source`（`.py` / parser backend 指定） | `east_stage=1` の `Module` 文書 | `EAST2/EAST3` 変換、dispatch 意味適用、target 依存ノード生成 | `src/toolchain/ir/core.py`, `src/toolchain/ir/east1.py` |
-| `EAST2` | `EAST1` 文書 | `east_stage=2` の正規化 `Module` 文書 | dispatch 意味適用、boxing/type_id 命令化、backend 構文判断 | `src/toolchain/ir/east2.py` |
-| `EAST3` | `EAST2` 文書 + `meta.dispatch_mode` | `east_stage=3` の core 命令化 `Module` 文書 | target 言語構文への写像、hook による意味論再判断 | `src/toolchain/ir/east2_to_east3_lowering.py`, `src/toolchain/ir/east3.py` |
+| `EAST1` | `Source`（`.py` / parser backend 指定） | `east_stage=1` の `Module` 文書 | `EAST2/EAST3` 変換、dispatch 意味適用、target 依存ノード生成 | `src/toolchain/compile/core.py`, `src/toolchain/compile/east1.py` |
+| `EAST2` | `EAST1` 文書 | `east_stage=2` の正規化 `Module` 文書 | dispatch 意味適用、boxing/type_id 命令化、backend 構文判断 | `src/toolchain/compile/east2.py` |
+| `EAST3` | `EAST2` 文書 + `meta.dispatch_mode` | `east_stage=3` の core 命令化 `Module` 文書 | target 言語構文への写像、hook による意味論再判断 | `src/toolchain/compile/east2_to_east3_lowering.py`, `src/toolchain/compile/east3.py` |
 | `Link` | raw `EAST3` 群 + `link-input.v1` | linked module 群（`east_stage=3` 維持） + `link-output.v1` | target 言語レンダリング、runtime 配置、build manifest 生成 | `src/toolchain/link/*`（追加予定） |
 
 注:
@@ -661,11 +661,11 @@ linked-program optimizer が生成した synthetic helper module は、上記に
 
 | 段 | 責務 | 現行実装（着手時点） | 移行後の正本 |
 | --- | --- | --- | --- |
-| EAST1 | parser 直後 IR 生成 | `src/toolchain/compiler/east_parts/core.py`（互換 shim） | `src/toolchain/ir/core.py` |
-| EAST1 | EAST1 入口 API | `src/toolchain/compiler/east_parts/east1.py`（互換ラッパ経由） | `src/toolchain/ir/east1.py` |
-| EAST2 | EAST1 -> EAST2 正規化 API | `src/toolchain/compiler/east_parts/east2.py`（互換ラッパ + selfhost fallback） | `src/toolchain/ir/east2.py` |
-| EAST3 | EAST2 -> EAST3 lower 本体 | `src/toolchain/compiler/east_parts/east2_to_east3_lowering.py`（互換 shim） | `src/toolchain/ir/east2_to_east3_lowering.py` |
-| EAST3 | EAST3 入口 API | `src/toolchain/compiler/east_parts/east3.py`（互換ラッパ経由） | `src/toolchain/ir/east3.py` |
+| EAST1 | parser 直後 IR 生成 | `src/toolchain/compiler/east_parts/core.py`（互換 shim） | `src/toolchain/compile/core.py` |
+| EAST1 | EAST1 入口 API | `src/toolchain/compiler/east_parts/east1.py`（互換ラッパ経由） | `src/toolchain/compile/east1.py` |
+| EAST2 | EAST1 -> EAST2 正規化 API | `src/toolchain/compiler/east_parts/east2.py`（互換ラッパ + selfhost fallback） | `src/toolchain/compile/east2.py` |
+| EAST3 | EAST2 -> EAST3 lower 本体 | `src/toolchain/compiler/east_parts/east2_to_east3_lowering.py`（互換 shim） | `src/toolchain/compile/east2_to_east3_lowering.py` |
+| EAST3 | EAST3 入口 API | `src/toolchain/compiler/east_parts/east3.py`（互換ラッパ経由） | `src/toolchain/compile/east3.py` |
 | Bridge | backend 入口（C++） | `src/py2x.py`（`--east-stage 3` 専用） | `src/py2x.py`（`EAST3` 専用） |
 | CLI 互換 | 旧 API 公開 | `src/toolchain/compiler/transpile_cli.py`（互換 shim） | `src/toolchain/frontends/transpile_cli.py`（実体） |
 
@@ -676,7 +676,7 @@ linked-program optimizer が生成した synthetic helper module は、上記に
 - `.py/.json -> EAST1` build の入口責務を分離し、`transpile_cli.py` の責務を縮退する。
 
 構成:
-- `core.py`: self-hosted parser 実装（低レイヤ、現行正本は `src/toolchain/ir/core.py`）
+- `core.py`: self-hosted parser 実装（低レイヤ、現行正本は `src/toolchain/compile/core.py`）
 - `east1_build.py`: build 入口（追加対象）
 - `east1.py`: stage 契約 helper（薄い API）
 - `py2x.py --target cpp`: `_analyze_import_graph` / `build_module_east_map` は `East1BuildHelpers` への委譲のみを担当

@@ -6,13 +6,13 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
 
-from toolchain.ir.east3_opt_passes.cpp_list_value_local_hint_pass import CppListValueLocalHintPass
-from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_import_maps
-from toolchain.ir.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
-from toolchain.ir.east3_opt_passes.non_escape_interprocedural_pass import NonEscapeInterproceduralPass
-from toolchain.ir.east3_optimizer import PassContext
-from toolchain.ir.east3_optimizer import parse_east3_opt_pass_overrides
-from toolchain.ir.east3_optimizer import resolve_east3_opt_level
+from toolchain.compile.east3_opt_passes.cpp_list_value_local_hint_pass import CppListValueLocalHintPass
+from toolchain.compile.east3_opt_passes.non_escape_call_graph import collect_non_escape_import_maps
+from toolchain.compile.east3_opt_passes.non_escape_call_graph import collect_non_escape_symbols
+from toolchain.compile.east3_opt_passes.non_escape_interprocedural_pass import NonEscapeInterproceduralPass
+from toolchain.compile.east3_optimizer import PassContext
+from toolchain.compile.east3_optimizer import parse_east3_opt_pass_overrides
+from toolchain.compile.east3_optimizer import resolve_east3_opt_level
 from toolchain.frontends.runtime_abi import validate_runtime_abi_module
 from toolchain.frontends.runtime_abi import validate_runtime_abi_target_support
 from toolchain.frontends.runtime_template import validate_template_module

@@ -79,7 +79,7 @@ Based on the gcc `cc1` / `as` / `ld` analogy, the transpilation pipeline is sepa
 ```
 src/toolchain/
   frontends/   ← parse: .py → EAST
-  ir/          ← compile: EAST1 → EAST2 → EAST3
+  compile/     ← compile: EAST1 → EAST2 → EAST3
   link/        ← link: EAST3 modules → linked EAST
   emit/        ← emit: linked EAST → target source
     common/    ← CodeEmitter base (language-independent)
@@ -100,16 +100,16 @@ src/toolchain/
 - Not allowed:
   - re-adding to `compiler` any logic that has already been moved to `frontends` / `ir`
 - Dependency direction:
-  - canonical direction is `toolchain.frontends → toolchain.ir → toolchain.link → toolchain.emit`
+  - canonical direction is `toolchain.frontends → toolchain.compile → toolchain.link → toolchain.emit`
   - `toolchain.emit → toolchain.frontends` is forbidden
-  - `toolchain.compiler → toolchain.frontends|toolchain.ir` is allowed as a compatibility layer
+  - `toolchain.compiler → toolchain.frontends|toolchain.compile` is allowed as a compatibility layer
   - `py2x.py` does NOT import `toolchain.emit` (emit is called as a subprocess via `toolchain.emit.cpp` / `toolchain.emit.all`)
-  - as a temporary exception, `toolchain.ir.core` may reference `toolchain.frontends.signature_registry|frontend_semantics` (scheduled for removal in the cycle-elimination task)
+  - as a temporary exception, `toolchain.compile.core` may reference `toolchain.frontends.signature_registry|frontend_semantics` (scheduled for removal in the cycle-elimination task)
 
 #### 3.1.1 Forbidden Old Import Paths (Migration Contract)
 
 - Adding new imports to the old paths `pytra.frontends` / `pytra.ir` / `pytra.compiler` is forbidden.
-- The canonical paths are `toolchain.frontends` / `toolchain.ir` / `toolchain.compiler`.
+- The canonical paths are `toolchain.frontends` / `toolchain.compile` / `toolchain.compiler`.
 - Do not add re-export / alias shims to keep old paths alive (no backward-compatibility layer).
 - Audit and removal of remaining references is done in phased migration; unmigrated references can be found with:
   - `rg -n "pytra\\.(frontends|ir|compiler)" src tools test`

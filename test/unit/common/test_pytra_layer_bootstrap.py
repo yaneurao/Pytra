@@ -11,7 +11,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 import src.toolchain.frontends as frontends
-import src.toolchain.ir as ir
+import src.toolchain.compile as ir
 
 
 class PytraLayerBootstrapTest(unittest.TestCase):

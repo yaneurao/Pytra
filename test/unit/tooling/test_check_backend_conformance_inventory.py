@@ -67,19 +67,19 @@ class CheckBackendConformanceInventoryTest(unittest.TestCase):
                 {
                     "lane": "parse",
                     "harness_kind": "frontend_parse_diagnostic",
-                    "producer_entrypoint": "toolchain.ir.core_entrypoints.convert_source_to_east_with_backend",
+                    "producer_entrypoint": "toolchain.compile.core_entrypoints.convert_source_to_east_with_backend",
                     "compare_unit": "success_or_structured_error",
                 },
                 {
                     "lane": "east",
                     "harness_kind": "east_document_compare",
-                    "producer_entrypoint": "toolchain.ir.core_entrypoints.convert_source_to_east_with_backend",
+                    "producer_entrypoint": "toolchain.compile.core_entrypoints.convert_source_to_east_with_backend",
                     "compare_unit": "normalized_east_document",
                 },
                 {
                     "lane": "east3_lowering",
                     "harness_kind": "east3_document_compare",
-                    "producer_entrypoint": "toolchain.ir.east3.lower_east2_to_east3_document",
+                    "producer_entrypoint": "toolchain.compile.east3.lower_east2_to_east3_document",
                     "compare_unit": "normalized_east3_document",
                 },
                 {

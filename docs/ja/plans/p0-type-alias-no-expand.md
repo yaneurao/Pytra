@@ -45,8 +45,8 @@ def f(v: JsonVal) -> bool:
 
 ## 対象
 
-- `src/toolchain/ir/core_module_parser.py` — `_sh_register_type_alias` / `_sh_ann_to_type`
-- `src/toolchain/ir/core_type_semantics.py` — エイリアス登録・解決ロジック
+- `src/toolchain/compile/core_module_parser.py` — `_sh_register_type_alias` / `_sh_ann_to_type`
+- `src/toolchain/compile/core_type_semantics.py` — エイリアス登録・解決ロジック
 
 ## 受け入れ基準
 

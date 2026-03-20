@@ -79,18 +79,18 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("return self._apply_named_callee_call_annotation(", callee_text)
         self.assertIn("return self._apply_attr_callee_call_annotation(", callee_text)
         self.assertIn("return self._apply_call_expr_annotation(", annotation_text)
-        self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", shell_text)
+        self.assertIn("from toolchain.compile.core_expr_call_annotation import _ShExprCallAnnotationMixin", shell_text)
         self.assertIn("_ShExprCallAnnotationMixin", shell_text)
         self.assertIn(
-            "from toolchain.ir.core_expr_named_call_annotation import _ShExprNamedCallAnnotationMixin",
+            "from toolchain.compile.core_expr_named_call_annotation import _ShExprNamedCallAnnotationMixin",
             annotation_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_expr_attr_call_annotation import _ShExprAttrCallAnnotationMixin",
+            "from toolchain.compile.core_expr_attr_call_annotation import _ShExprAttrCallAnnotationMixin",
             annotation_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_expr_callee_call_annotation import _ShExprCalleeCallAnnotationMixin",
+            "from toolchain.compile.core_expr_callee_call_annotation import _ShExprCalleeCallAnnotationMixin",
             annotation_text,
         )
         self.assertIn("class _ShExprNamedCallAnnotationMixin:", named_text)
@@ -417,7 +417,7 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("return self._annotate_callee_call_expr(", apply_text)
         self.assertIn("call_ret, fn_name = self._resolve_call_expr_annotation_state(", call_helper_text)
         self.assertIn("return self._apply_call_expr_annotation(", call_helper_text)
-        self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", shell_text)
+        self.assertIn("from toolchain.compile.core_expr_call_annotation import _ShExprCallAnnotationMixin", shell_text)
         self.assertIn("class _ShExprCalleeCallAnnotationMixin:", callee_text)
         self.assertNotIn("_sh_infer_known_name_call_return_type(", helper_text)
         self.assertNotIn("stdlib_imported_ret = (", postfix_text)
@@ -463,18 +463,18 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("return self._consume_call_arg_entries(", text)
         self.assertIn("arg_entry, keyword_entry = self._resolve_call_arg_loop_entry_state()", text)
         self.assertIn("return self._apply_call_arg_loop_entry_state(", text)
-        self.assertIn("from toolchain.ir.core_expr_call_args import _ShExprCallArgParserMixin", shell_text)
-        self.assertIn("from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin", shell_text)
+        self.assertIn("from toolchain.compile.core_expr_call_args import _ShExprCallArgParserMixin", shell_text)
+        self.assertIn("from toolchain.compile.core_expr_call_suffix import _ShExprCallSuffixParserMixin", shell_text)
         self.assertIn(
-            "from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprPostfixSuffixParserMixin",
+            "from toolchain.compile.core_expr_attr_subscript_suffix import _ShExprPostfixSuffixParserMixin",
             shell_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_expr_attr_suffix import _ShExprAttrSuffixParserMixin",
+            "from toolchain.compile.core_expr_attr_suffix import _ShExprAttrSuffixParserMixin",
             shell_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_expr_subscript_suffix import _ShExprSubscriptSuffixParserMixin",
+            "from toolchain.compile.core_expr_subscript_suffix import _ShExprSubscriptSuffixParserMixin",
             shell_text,
         )
         self.assertIn("class _ShExprParser(", shell_text)
@@ -520,17 +520,17 @@ class EastCoreSourceContractCallDispatchTest(unittest.TestCase):
         self.assertIn("self._consume_call_suffix_open_token()", text)
         self.assertIn("return self._apply_call_suffix_open_token_state()", text)
         self.assertIn("return self._annotate_call_expr(", text)
-        self.assertIn("from toolchain.ir.core_expr_call_suffix import _ShExprCallSuffixParserMixin", shell_text)
+        self.assertIn("from toolchain.compile.core_expr_call_suffix import _ShExprCallSuffixParserMixin", shell_text)
         self.assertIn(
-            "from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprPostfixSuffixParserMixin",
+            "from toolchain.compile.core_expr_attr_subscript_suffix import _ShExprPostfixSuffixParserMixin",
             shell_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_expr_attr_suffix import _ShExprAttrSuffixParserMixin",
+            "from toolchain.compile.core_expr_attr_suffix import _ShExprAttrSuffixParserMixin",
             shell_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_expr_subscript_suffix import _ShExprSubscriptSuffixParserMixin",
+            "from toolchain.compile.core_expr_subscript_suffix import _ShExprSubscriptSuffixParserMixin",
             shell_text,
         )
         self.assertIn("class _ShExprParser(", shell_text)

@@ -1,13 +1,13 @@
 """Split EAST modules."""
-from toolchain.ir.core_entrypoints import (  # noqa: F401
+from toolchain.compile.core_entrypoints import (  # noqa: F401
     EastBuildError,
     convert_path,
     convert_source_to_east,
     convert_source_to_east_self_hosted,
     convert_source_to_east_with_backend,
 )
-from toolchain.ir.core_numeric_types import FLOAT_TYPES  # noqa: F401
-from toolchain.ir.core_numeric_types import INT_TYPES  # noqa: F401
+from toolchain.compile.core_numeric_types import FLOAT_TYPES  # noqa: F401
+from toolchain.compile.core_numeric_types import INT_TYPES  # noqa: F401
 from .east2_to_human_repr import (  # noqa: F401
     render_east2_to_human_repr,
     render_east_to_human_repr,

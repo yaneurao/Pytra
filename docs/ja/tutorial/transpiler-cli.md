@@ -8,13 +8,13 @@
 Pytra の変換パイプラインは gcc の `cc1` / `as` / `ld` のアナロジーに基づき、4 段に分離されています。
 
 ```
-.py → [frontends] → EAST → [ir] → EAST3 → [link] → linked EAST → [emit] → .cpp/.rs/...
+.py → [frontends] → EAST → [compile] → EAST3 → [link] → linked EAST → [emit] → .cpp/.rs/...
 ```
 
 | 段 | 責務 | ディレクトリ | エントリポイント |
 |---|---|---|---|
 | parse | `.py` → EAST | `src/toolchain/frontends/` | `py2x.py compile` |
-| compile | EAST1 → EAST2 → EAST3 | `src/toolchain/ir/` | （parse に統合） |
+| compile | EAST1 → EAST2 → EAST3 | `src/toolchain/compile/` | （parse に統合） |
 | link | EAST3 modules → linked EAST | `src/toolchain/link/` | `py2x.py --link-only` |
 | emit | linked EAST → target source | `src/toolchain/emit/<lang>/` | `toolchain/emit/cpp.py` 等 |
 

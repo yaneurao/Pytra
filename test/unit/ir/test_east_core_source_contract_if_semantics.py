@@ -20,7 +20,7 @@ class EastCoreSourceContractIfSemanticsTest(unittest.TestCase):
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = CORE_STMT_IF_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("from toolchain.ir.core_stmt_if_semantics import _sh_parse_if_tail", core_text)
+        self.assertIn("from toolchain.compile.core_stmt_if_semantics import _sh_parse_if_tail", core_text)
         self.assertIn("def _sh_parse_if_tail(", helper_text)
 
         self.assertNotIn("def _sh_parse_if_tail(", core_text)

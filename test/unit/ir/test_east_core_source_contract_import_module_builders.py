@@ -33,7 +33,7 @@ class EastCoreSourceContractImportModuleBuildersTest(unittest.TestCase):
             "_sh_make_module_meta",
             "_sh_make_module_root",
         ):
-            self.assertIn(f"from toolchain.ir.core_import_module_builders import {helper_name}", core_text)
+            self.assertIn(f"from toolchain.compile.core_import_module_builders import {helper_name}", core_text)
             self.assertIn(f"def {helper_name}(", helper_text)
             self.assertNotIn(f"def {helper_name}(", core_text)
 

@@ -21,19 +21,19 @@ class EastCoreSourceContractRuntimeDeclSemanticsTest(unittest.TestCase):
         helper_text = CORE_RUNTIME_DECL_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn(
-            "from toolchain.ir.core_runtime_decl_semantics import _sh_collect_function_runtime_decl_metadata",
+            "from toolchain.compile.core_runtime_decl_semantics import _sh_collect_function_runtime_decl_metadata",
             core_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_runtime_decl_semantics import _sh_reject_runtime_decl_class_decorators",
+            "from toolchain.compile.core_runtime_decl_semantics import _sh_reject_runtime_decl_class_decorators",
             core_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_runtime_decl_semantics import _sh_reject_runtime_decl_method_decorator",
+            "from toolchain.compile.core_runtime_decl_semantics import _sh_reject_runtime_decl_method_decorator",
             core_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_runtime_decl_semantics import _sh_reject_runtime_decl_nonfunction_decorators",
+            "from toolchain.compile.core_runtime_decl_semantics import _sh_reject_runtime_decl_nonfunction_decorators",
             core_text,
         )
         self.assertIn("def _sh_parse_runtime_abi_decorator(", helper_text)

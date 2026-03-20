@@ -23,7 +23,7 @@ if str(ROOT / "test" / "unit" / "backends") not in sys.path:
 
 from toolchain.emit.scala.emitter import load_scala_profile, transpile_to_scala, transpile_to_scala_native
 from toolchain.compiler.transpile_cli import load_east3_document
-from src.toolchain.ir.core_entrypoints import convert_path
+from src.toolchain.compile.core_entrypoints import convert_path
 from relative_import_jvm_package_smoke_support import (
     relative_import_jvm_package_expected_needles,
     transpile_relative_import_jvm_package_expect_failure,

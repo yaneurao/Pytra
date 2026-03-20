@@ -21,12 +21,12 @@ class EastCoreSourceContractImportSemanticsTest(unittest.TestCase):
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = CORE_IMPORT_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("from toolchain.ir.core_import_semantics import _sh_append_import_binding", core_text)
-        self.assertIn("from toolchain.ir.core_import_semantics import _sh_import_binding_fields", core_text)
-        self.assertIn("from toolchain.ir.core_import_semantics import _sh_is_host_only_alias", core_text)
-        self.assertIn("from toolchain.ir.core_import_semantics import _sh_make_import_resolution_binding", core_text)
-        self.assertIn("from toolchain.ir.core_import_semantics import _sh_register_import_module", core_text)
-        self.assertIn("from toolchain.ir.core_import_semantics import _sh_register_import_symbol", core_text)
+        self.assertIn("from toolchain.compile.core_import_semantics import _sh_append_import_binding", core_text)
+        self.assertIn("from toolchain.compile.core_import_semantics import _sh_import_binding_fields", core_text)
+        self.assertIn("from toolchain.compile.core_import_semantics import _sh_is_host_only_alias", core_text)
+        self.assertIn("from toolchain.compile.core_import_semantics import _sh_make_import_resolution_binding", core_text)
+        self.assertIn("from toolchain.compile.core_import_semantics import _sh_register_import_module", core_text)
+        self.assertIn("from toolchain.compile.core_import_semantics import _sh_register_import_symbol", core_text)
 
         self.assertIn("def _sh_append_import_binding(", helper_text)
         self.assertIn("def _sh_import_binding_fields(", helper_text)

@@ -19,7 +19,7 @@ VS Code の Pylance が未定義警告を出す。
 ## 対象
 
 - `src/pytra/types.py` — 新規作成
-- `src/toolchain/ir/core_module_parser.py` — `pytra.types` import の無視
+- `src/toolchain/compile/core_module_parser.py` — `pytra.types` import の無視
 - `src/pytra/std/argparse.py` — `from pytra.types import int64` 追加（検証用）
 
 ## 非対象

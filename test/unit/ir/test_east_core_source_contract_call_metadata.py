@@ -228,14 +228,14 @@ class EastCoreSourceContractCallMetadataTest(unittest.TestCase):
         self.assertIn("return self._annotate_attr_call_expr(", callee_text)
         self.assertIn("return self._apply_callee_call_annotation(", callee_text)
         self.assertIn("return self._annotate_callee_call_expr(", annotation_text)
-        self.assertIn("from toolchain.ir.core_expr_call_annotation import _ShExprCallAnnotationMixin", shell_text)
+        self.assertIn("from toolchain.compile.core_expr_call_annotation import _ShExprCallAnnotationMixin", shell_text)
         self.assertIn("_ShExprCallAnnotationMixin", shell_text)
         self.assertIn(
-            "from toolchain.ir.core_expr_callee_call_annotation import _ShExprCalleeCallAnnotationMixin",
+            "from toolchain.compile.core_expr_callee_call_annotation import _ShExprCalleeCallAnnotationMixin",
             annotation_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_expr_attr_call_annotation import _ShExprAttrCallAnnotationMixin",
+            "from toolchain.compile.core_expr_attr_call_annotation import _ShExprAttrCallAnnotationMixin",
             annotation_text,
         )
         self.assertIn("def _resolve_attr_call_annotation_state(", attr_text)

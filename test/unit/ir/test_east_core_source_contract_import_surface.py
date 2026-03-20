@@ -41,7 +41,7 @@ def _core_import_names(path: Path) -> set[str]:
     for node in ast.walk(tree):
         if not isinstance(node, ast.ImportFrom):
             continue
-        if node.module not in {"toolchain.ir.core", "src.toolchain.ir.core"}:
+        if node.module not in {"toolchain.compile.core", "src.toolchain.compile.core"}:
             continue
         for alias in node.names:
             imported.add(alias.name)

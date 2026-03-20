@@ -19,11 +19,11 @@ class EastCoreSourceContractEntrypointsTest(unittest.TestCase):
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = CORE_ENTRYPOINTS_SOURCE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("from toolchain.ir.core_entrypoints import EastBuildError", core_text)
-        self.assertIn("from toolchain.ir.core_entrypoints import _make_east_build_error", core_text)
-        self.assertIn("from toolchain.ir.core_entrypoints import convert_path", core_text)
-        self.assertIn("from toolchain.ir.core_entrypoints import convert_source_to_east", core_text)
-        self.assertIn("from toolchain.ir.core_entrypoints import convert_source_to_east_with_backend", core_text)
+        self.assertIn("from toolchain.compile.core_entrypoints import EastBuildError", core_text)
+        self.assertIn("from toolchain.compile.core_entrypoints import _make_east_build_error", core_text)
+        self.assertIn("from toolchain.compile.core_entrypoints import convert_path", core_text)
+        self.assertIn("from toolchain.compile.core_entrypoints import convert_source_to_east", core_text)
+        self.assertIn("from toolchain.compile.core_entrypoints import convert_source_to_east_with_backend", core_text)
 
         self.assertIn("class EastBuildError(Exception):", helper_text)
         self.assertIn("def _make_east_build_error(", helper_text)
@@ -47,7 +47,7 @@ class EastCoreSourceContractEntrypointsTest(unittest.TestCase):
 
         self.assertIn("def convert_source_to_east_self_hosted(", core_text)
         self.assertIn(
-            "from toolchain.ir.core_module_parser import convert_source_to_east_self_hosted_impl",
+            "from toolchain.compile.core_module_parser import convert_source_to_east_self_hosted_impl",
             helper_text,
         )
         self.assertIn("return convert_source_to_east_self_hosted_impl(source, filename)", helper_text)

@@ -18,7 +18,7 @@ They serve three main goals:
 - `tools/check_todo_priority.py`
   - Purpose: verify that new progress `ID`s added in diffs to `docs/ja/todo/index.md` / `docs/ja/plans/*.md` match the highest-priority unfinished `ID` (or one of its children), and prevent priority drift. On the `plans` side, only decision-log lines (`- YYYY-MM-DD: ...`) are evaluated; structure-cleanup ID lists are excluded.
 - `tools/check_jsonvalue_decode_boundaries.py`
-  - Purpose: verify that `json.loads_obj(...)` is the canonical entry at JSON artifact boundaries in `py2x.py` / `east2x.py` / `toolchain/ir/east_io.py` / `toolchain/link/*`, and fail fast on any re-entry of raw `json.loads(...)`.
+  - Purpose: verify that `json.loads_obj(...)` is the canonical entry at JSON artifact boundaries in `py2x.py` / `east2x.py` / `toolchain/compile/east_io.py` / `toolchain/link/*`, and fail fast on any re-entry of raw `json.loads(...)`.
 - `tools/check_runtime_cpp_layout.py`
   - Purpose: validate the C++ runtime ownership boundary in one guard: keep `src/runtime/cpp/{built_in,std,utils}` legacy-closed, enforce `generated/native/pytra` ownership, and validate the `core` compatibility surface plus the `generated/core` / `native/core` split
   - Notes: `generated/built_in` / `generated/core` require plain naming plus generated markers, ownership mixing into `native` / `core` fails, and reintroducing removed transitive includes (`predicates` / `sequence` / `iter_ops`) into `native/core/py_runtime.h` also fails

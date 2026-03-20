@@ -115,7 +115,7 @@ struct PyTaggedValue {
 | `src/toolchain/emit/cpp/emitter/cpp_emitter.py` | `_Union_*` struct 生成を `object + tag` に変更 |
 | `src/toolchain/emit/cpp/emitter/type_bridge.py` | tagged union 型の C++ 表現を変更 |
 | `src/toolchain/emit/cpp/emitter/header_builder.py` | union struct 生成除去 |
-| `src/toolchain/ir/` | EAST3 レベルでの tagged union 表現検討 |
+| `src/toolchain/compile/` | EAST3 レベルでの tagged union 表現検討 |
 | 各バックエンド emitter | 同様の変更 |
 
 ## 受け入れ基準

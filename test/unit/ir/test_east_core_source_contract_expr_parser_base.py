@@ -23,8 +23,8 @@ class EastCoreSourceContractExprParserBaseTest(unittest.TestCase):
         class_text = shell_text.split("class _ShExprParser(", 1)[1].split("def _sh_parse_expr", 1)[0]
 
         self.assertIn("class _ShExprParserBaseMixin:", base_text)
-        self.assertIn("from toolchain.ir.core_expr_shell import _ShExprParser", core_text)
-        self.assertIn("from toolchain.ir.core_expr_parser_base import _ShExprParserBaseMixin", shell_text)
+        self.assertIn("from toolchain.compile.core_expr_shell import _ShExprParser", core_text)
+        self.assertIn("from toolchain.compile.core_expr_parser_base import _ShExprParserBaseMixin", shell_text)
         self.assertIn("_ShExprParserBaseMixin,", shell_text)
 
         for marker in (

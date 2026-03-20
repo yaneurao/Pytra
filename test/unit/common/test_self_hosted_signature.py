@@ -9,7 +9,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.toolchain.ir.core_entrypoints import EastBuildError, convert_path
+from src.toolchain.compile.core_entrypoints import EastBuildError, convert_path
 
 SIG_DIR = ROOT / "test" / "fixtures" / "signature"
 

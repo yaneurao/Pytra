@@ -22,7 +22,7 @@ class EastCoreSourceContractExprResolutionSemanticsTest(unittest.TestCase):
         helper_text = CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn(
-            "from toolchain.ir.core_expr_resolution_semantics import _ShExprResolutionSemanticsMixin",
+            "from toolchain.compile.core_expr_resolution_semantics import _ShExprResolutionSemanticsMixin",
             shell_text,
         )
         self.assertIn("class _ShExprResolutionSemanticsMixin:", helper_text)
@@ -50,7 +50,7 @@ class EastCoreSourceContractExprResolutionSemanticsTest(unittest.TestCase):
         helper_text = CORE_EXPR_RESOLUTION_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
         call_annotation_text = CORE_CALL_ANNOTATION_SOURCE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("from toolchain.ir.core_expr_shell import _ShExprParser", core_text)
+        self.assertIn("from toolchain.compile.core_expr_shell import _ShExprParser", core_text)
         self.assertIn("_ShExprResolutionSemanticsMixin,", shell_text)
         self.assertIn("class _ShExprParser(", shell_text)
         self.assertIn("self._resolve_named_call_return_state(", helper_text)

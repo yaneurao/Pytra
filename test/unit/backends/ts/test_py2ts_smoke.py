@@ -23,7 +23,7 @@ if str(ROOT / "test" / "unit" / "backends") not in sys.path:
 
 from toolchain.emit.ts.emitter.ts_emitter import load_ts_profile, transpile_to_typescript
 from toolchain.compiler.transpile_cli import load_east3_document
-from src.toolchain.ir.core_entrypoints import convert_path
+from src.toolchain.compile.core_entrypoints import convert_path
 from toolchain.emit.ts.emitter import ts_emitter as ts_emitter_mod
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 from relative_import_secondwave_smoke_support import (

@@ -45,9 +45,9 @@ CONFORMANCE_LANE_HARNESS_KIND: Final[dict[str, str]] = {
 }
 
 CONFORMANCE_LANE_ENTRYPOINTS: Final[dict[str, str]] = {
-    "parse": "toolchain.ir.core_entrypoints.convert_source_to_east_with_backend",
-    "east": "toolchain.ir.core_entrypoints.convert_source_to_east_with_backend",
-    "east3_lowering": "toolchain.ir.east3.lower_east2_to_east3_document",
+    "parse": "toolchain.compile.core_entrypoints.convert_source_to_east_with_backend",
+    "east": "toolchain.compile.core_entrypoints.convert_source_to_east_with_backend",
+    "east3_lowering": "toolchain.compile.east3.lower_east2_to_east3_document",
     "emit": "toolchain.compiler.backend_registry.emit_source_typed",
     "runtime": "tools.runtime_parity_check.main",
 }

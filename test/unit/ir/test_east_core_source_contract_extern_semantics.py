@@ -20,7 +20,7 @@ class EastCoreSourceContractExternSemanticsTest(unittest.TestCase):
         core_text = CORE_SOURCE_PATH.read_text(encoding="utf-8")
         helper_text = CORE_EXTERN_SEMANTICS_SOURCE_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("from toolchain.ir.core_extern_semantics import _sh_collect_extern_var_metadata", core_text)
+        self.assertIn("from toolchain.compile.core_extern_semantics import _sh_collect_extern_var_metadata", core_text)
         self.assertIn("def _sh_expr_attr_chain(", helper_text)
         self.assertIn("def _sh_is_extern_symbol_ref(", helper_text)
         self.assertIn("def _sh_collect_extern_var_metadata(", helper_text)

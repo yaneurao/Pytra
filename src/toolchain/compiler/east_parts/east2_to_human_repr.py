@@ -6,8 +6,8 @@ from typing import Any
 from pytra.std import json
 from toolchain.json_adapters import dumps_object as _json_dumps_object
 
-from toolchain.ir.core_numeric_types import FLOAT_TYPES
-from toolchain.ir.core_numeric_types import INT_TYPES
+from toolchain.compile.core_numeric_types import FLOAT_TYPES
+from toolchain.compile.core_numeric_types import INT_TYPES
 
 def _dump_json(obj: dict[str, Any], *, pretty: bool) -> str:
     """Serialize output JSON in compact or pretty mode."""

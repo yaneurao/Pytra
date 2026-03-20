@@ -29,7 +29,7 @@ class EastCoreSourceContractExprPrecedenceTest(unittest.TestCase):
         self.assertIn("def _parse_unary(", precedence_text)
         self.assertIn('"Invert"', precedence_text)
         self.assertIn('{"+", "-", "~"}', precedence_text)
-        self.assertIn("from toolchain.ir.core_expr_shell import _ShExprParser", core_text)
+        self.assertIn("from toolchain.compile.core_expr_shell import _ShExprParser", core_text)
         self.assertIn("_ShExprPrecedenceParserMixin,", shell_text)
 
         self.assertNotIn("def _parse_lambda(", class_text)

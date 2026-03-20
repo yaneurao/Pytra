@@ -10,7 +10,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 from src.toolchain.frontends.type_expr import parse_type_expr_text
-from src.toolchain.ir.core_entrypoints import convert_source_to_east_with_backend
+from src.toolchain.compile.core_entrypoints import convert_source_to_east_with_backend
 
 
 def _const_i(v: int) -> dict[str, object]:

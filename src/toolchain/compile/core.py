@@ -1,0 +1,219 @@
+#!/usr/bin/env python3
+"""EAST parser core (self-hosted)."""
+
+from __future__ import annotations
+
+from pytra.std import argparse
+from pytra.std import json
+from pytra.std import re
+from dataclasses import dataclass
+from typing import Any
+from pytra.std import sys
+from toolchain.frontends.signature_registry import is_stdlib_path_type
+from toolchain.frontends.signature_registry import lookup_stdlib_function_return_type
+from toolchain.frontends.signature_registry import lookup_stdlib_function_runtime_call
+from toolchain.frontends.signature_registry import lookup_stdlib_function_runtime_binding
+from toolchain.frontends.signature_registry import lookup_stdlib_imported_symbol_runtime_call
+from toolchain.frontends.signature_registry import lookup_stdlib_imported_symbol_runtime_binding
+from toolchain.frontends.signature_registry import lookup_noncpp_imported_symbol_runtime_call
+from toolchain.frontends.signature_registry import lookup_noncpp_module_attr_runtime_call
+from toolchain.frontends.frontend_semantics import lookup_builtin_semantic_tag
+from toolchain.frontends.frontend_semantics import lookup_owner_method_semantic_tag
+from toolchain.frontends.frontend_semantics import lookup_runtime_binding_semantic_tag
+from toolchain.frontends.frontend_semantics import lookup_stdlib_function_semantic_tag
+from toolchain.frontends.frontend_semantics import lookup_stdlib_symbol_semantic_tag
+from toolchain.frontends.runtime_abi import validate_runtime_abi_module
+from toolchain.frontends.runtime_template import validate_template_module
+from toolchain.frontends.runtime_symbol_index import lookup_runtime_call_adapter_kind
+from toolchain.frontends.type_expr import sync_type_expr_mirrors
+from toolchain.compile.core_entrypoints import EastBuildError
+from toolchain.compile.core_entrypoints import _make_east_build_error
+from toolchain.compile.core_entrypoints import convert_path
+from toolchain.compile.core_entrypoints import convert_source_to_east
+from toolchain.compile.core_entrypoints import convert_source_to_east_with_backend
+from toolchain.compile.core_numeric_types import FLOAT_TYPES
+from toolchain.compile.core_numeric_types import INT_TYPES
+from toolchain.compile.core_ast_builders import _sh_block_end_span
+from toolchain.compile.core_ast_builders import _sh_make_arg_node
+from toolchain.compile.core_ast_builders import _sh_make_binop_expr
+from toolchain.compile.core_ast_builders import _sh_make_boolop_expr
+from toolchain.compile.core_ast_builders import _sh_make_cast_entry
+from toolchain.compile.core_ast_builders import _sh_make_comp_generator
+from toolchain.compile.core_ast_builders import _sh_make_compare_expr
+from toolchain.compile.core_ast_builders import _sh_make_constant_expr
+from toolchain.compile.core_ast_builders import _sh_make_def_sig_info
+from toolchain.compile.core_ast_builders import _sh_make_dict_comp_expr
+from toolchain.compile.core_ast_builders import _sh_make_dict_entry
+from toolchain.compile.core_ast_builders import _sh_make_dict_expr
+from toolchain.compile.core_ast_builders import _sh_make_formatted_value_node
+from toolchain.compile.core_ast_builders import _sh_make_ifexp_expr
+from toolchain.compile.core_ast_builders import _sh_make_joined_str_expr
+from toolchain.compile.core_ast_builders import _sh_make_lambda_arg_entry
+from toolchain.compile.core_ast_builders import _sh_make_lambda_expr
+from toolchain.compile.core_ast_builders import _sh_make_list_comp_expr
+from toolchain.compile.core_ast_builders import _sh_make_list_expr
+from toolchain.compile.core_ast_builders import _sh_make_range_expr
+from toolchain.compile.core_ast_builders import _sh_make_set_comp_expr
+from toolchain.compile.core_ast_builders import _sh_make_set_expr
+from toolchain.compile.core_ast_builders import _sh_make_simple_name_comp_generator
+from toolchain.compile.core_ast_builders import _sh_make_simple_name_list_comp_expr
+from toolchain.compile.core_ast_builders import _sh_make_unaryop_expr
+from toolchain.compile.core_ast_builders import _sh_push_stmt_with_trivia
+from toolchain.compile.core_ast_builders import _sh_stmt_span
+from toolchain.compile.core_class_semantics import _sh_collect_nominal_adt_class_metadata
+from toolchain.compile.core_class_semantics import _sh_is_value_safe_dataclass_candidate
+from toolchain.compile.core_class_semantics import _sh_make_decl_meta
+from toolchain.compile.core_class_semantics import _sh_make_nominal_adt_v1_meta
+from toolchain.compile.core_builder_base import _sh_make_expr_stmt
+from toolchain.compile.core_builder_base import _sh_make_expr_token
+from toolchain.compile.core_builder_base import _sh_make_kind_carrier
+from toolchain.compile.core_builder_base import _sh_make_name_expr
+from toolchain.compile.core_builder_base import _sh_make_node
+from toolchain.compile.core_builder_base import _sh_make_stmt_node
+from toolchain.compile.core_builder_base import _sh_make_trivia_blank
+from toolchain.compile.core_builder_base import _sh_make_trivia_comment
+from toolchain.compile.core_builder_base import _sh_make_tuple_expr
+from toolchain.compile.core_builder_base import _sh_make_value_expr
+from toolchain.compile.core_builder_base import _sh_span
+from toolchain.compile.core_decorator_semantics import _sh_is_abi_decorator
+from toolchain.compile.core_decorator_semantics import _sh_is_dataclass_decorator
+from toolchain.compile.core_decorator_semantics import _sh_is_sealed_decorator
+from toolchain.compile.core_decorator_semantics import _sh_is_template_decorator
+from toolchain.compile.core_decorator_semantics import _sh_parse_decorator_head_and_args
+from toolchain.compile.core_extern_semantics import _sh_collect_extern_var_metadata
+from toolchain.compile.core_import_module_builders import _sh_make_import_alias
+from toolchain.compile.core_import_module_builders import _sh_make_import_binding
+from toolchain.compile.core_import_module_builders import _sh_make_import_from_stmt
+from toolchain.compile.core_import_module_builders import _sh_make_import_resolution_meta
+from toolchain.compile.core_import_module_builders import _sh_make_import_stmt
+from toolchain.compile.core_import_module_builders import _sh_make_import_symbol_binding
+from toolchain.compile.core_import_module_builders import _sh_make_module_meta
+from toolchain.compile.core_import_module_builders import _sh_make_module_root
+from toolchain.compile.core_import_module_builders import _sh_make_module_source_span
+from toolchain.compile.core_import_module_builders import _sh_make_qualified_symbol_ref
+from toolchain.compile.core_import_semantics import _sh_append_import_binding
+from toolchain.compile.core_import_semantics import _sh_import_binding_fields
+from toolchain.compile.core_import_semantics import _sh_is_host_only_alias
+from toolchain.compile.core_import_semantics import _sh_make_import_resolution_binding
+from toolchain.compile.core_import_semantics import _sh_register_import_module
+from toolchain.compile.core_import_semantics import _sh_register_import_symbol
+from toolchain.compile.core_module_parser import convert_source_to_east_self_hosted_impl
+from toolchain.compile.core_parse_context import _SH_CLASS_BASE
+from toolchain.compile.core_parse_context import _SH_CLASS_METHOD_RETURNS
+from toolchain.compile.core_parse_context import _SH_EMPTY_SPAN
+from toolchain.compile.core_parse_context import _SH_FN_RETURNS
+from toolchain.compile.core_parse_context import _SH_IMPORT_MODULES
+from toolchain.compile.core_parse_context import _SH_IMPORT_SYMBOLS
+from toolchain.compile.core_parse_context import _SH_RUNTIME_ABI_ARG_MODES
+from toolchain.compile.core_parse_context import _SH_RUNTIME_ABI_MODE_ALIASES
+from toolchain.compile.core_parse_context import _SH_RUNTIME_ABI_RET_MODES
+from toolchain.compile.core_parse_context import _SH_TEMPLATE_INSTANTIATION_MODE
+from toolchain.compile.core_parse_context import _SH_TEMPLATE_SCOPE
+from toolchain.compile.core_parse_context import _SH_TYPE_ALIASES
+from toolchain.compile.core_parse_context import _sh_set_parse_context
+from toolchain.compile.core_runtime_call_semantics import _sh_infer_known_name_call_return_type
+from toolchain.compile.core_runtime_decl_semantics import _sh_collect_function_runtime_decl_metadata
+from toolchain.compile.core_runtime_decl_semantics import _sh_reject_runtime_decl_class_decorators
+from toolchain.compile.core_runtime_decl_semantics import _sh_reject_runtime_decl_method_decorator
+from toolchain.compile.core_runtime_decl_semantics import _sh_reject_runtime_decl_nonfunction_decorators
+from toolchain.compile.core_signature_semantics import _sh_parse_augassign
+from toolchain.compile.core_signature_semantics import _sh_parse_def_sig
+from toolchain.compile.core_signature_semantics import _sh_parse_typed_binding
+from toolchain.compile.core_stmt_builders import _sh_make_ann_assign_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_assign_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_augassign_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_class_def_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_except_handler
+from toolchain.compile.core_stmt_builders import _sh_make_for_range_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_for_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_function_def_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_if_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_pass_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_raise_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_return_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_swap_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_try_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_tuple_destructure_assign_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_while_stmt
+from toolchain.compile.core_stmt_builders import _sh_make_yield_stmt
+from toolchain.compile.core_stmt_analysis import _sh_build_arg_usage_map
+from toolchain.compile.core_stmt_analysis import _sh_collect_reassigned_names
+from toolchain.compile.core_stmt_analysis import _sh_collect_return_value_types
+from toolchain.compile.core_stmt_analysis import _sh_collect_store_name_ids
+from toolchain.compile.core_stmt_analysis import _sh_collect_yield_value_types
+from toolchain.compile.core_stmt_analysis import _sh_extract_leading_docstring
+from toolchain.compile.core_stmt_analysis import _sh_infer_return_type_for_untyped_def
+from toolchain.compile.core_stmt_analysis import _sh_make_generator_return_type
+from toolchain.compile.core_stmt_if_semantics import _sh_parse_if_tail
+from toolchain.compile.core_string_semantics import _sh_append_fstring_literal
+from toolchain.compile.core_string_semantics import _sh_decode_py_string_body
+from toolchain.compile.core_string_semantics import _sh_extract_adjacent_string_parts
+from toolchain.compile.core_stmt_text_semantics import _sh_bind_comp_target_types
+from toolchain.compile.core_stmt_text_semantics import _sh_collect_indented_block
+from toolchain.compile.core_stmt_text_semantics import _sh_find_top_char
+from toolchain.compile.core_stmt_text_semantics import _sh_has_explicit_line_continuation
+from toolchain.compile.core_stmt_text_semantics import _sh_infer_item_type
+from toolchain.compile.core_stmt_text_semantics import _sh_merge_logical_lines
+from toolchain.compile.core_stmt_text_semantics import _sh_parse_class_header
+from toolchain.compile.core_stmt_text_semantics import _sh_parse_class_header_base_list
+from toolchain.compile.core_stmt_text_semantics import _sh_parse_except_clause
+from toolchain.compile.core_stmt_text_semantics import _sh_raise_if_trailing_stmt_terminator
+from toolchain.compile.core_stmt_text_semantics import _sh_scan_logical_line_state
+from toolchain.compile.core_stmt_text_semantics import _sh_split_def_header_and_inline_stmt
+from toolchain.compile.core_stmt_text_semantics import _sh_split_top_commas
+from toolchain.compile.core_stmt_text_semantics import _sh_split_top_plus
+from toolchain.compile.core_stmt_text_semantics import _sh_split_top_level_assign
+from toolchain.compile.core_stmt_text_semantics import _sh_split_top_level_colon
+from toolchain.compile.core_stmt_text_semantics import _sh_split_top_level_from
+from toolchain.compile.core_stmt_text_semantics import _sh_split_top_level_in
+from toolchain.compile.core_stmt_text_semantics import _sh_strip_inline_comment
+from toolchain.compile.core_text_semantics import _sh_is_dotted_identifier
+from toolchain.compile.core_text_semantics import _sh_is_identifier
+from toolchain.compile.core_text_semantics import _sh_parse_dataclass_decorator_options
+from toolchain.compile.core_text_semantics import _sh_parse_import_alias
+from toolchain.compile.core_text_semantics import _sh_split_top_keyword
+from toolchain.compile.core_text_semantics import _sh_split_top_level_as
+from toolchain.compile.core_text_semantics import _sh_strip_utf8_bom
+from toolchain.compile.core_type_semantics import _sh_ann_to_type
+from toolchain.compile.core_type_semantics import _sh_ann_to_type_expr
+from toolchain.compile.core_type_semantics import _sh_default_type_aliases
+from toolchain.compile.core_type_semantics import _sh_is_type_expr_text
+from toolchain.compile.core_type_semantics import _sh_register_type_alias
+from toolchain.compile.core_type_semantics import _sh_typing_alias_to_type_name
+from toolchain.compile.core_expr_shell import _ShExprParser
+from toolchain.compile.core_expr_shell import _sh_parse_expr
+from toolchain.compile.core_expr_shell import _sh_parse_expr_lowered
+from toolchain.compile.core_stmt_parser import _sh_parse_stmt_block as _sh_parse_stmt_block_impl
+from toolchain.compile.core_stmt_parser import _sh_parse_stmt_block_mutable as _sh_parse_stmt_block_mutable_impl
+
+CORE_PUBLIC_FACADE_EXPORTS = (
+    "EastBuildError",
+    "convert_path",
+    "convert_source_to_east",
+    "convert_source_to_east_with_backend",
+)
+CORE_BRIDGE_COMPAT_EXPORTS = (
+    "convert_source_to_east_self_hosted",
+    "_sh_parse_stmt_block",
+    "_sh_parse_stmt_block_mutable",
+    "INT_TYPES",
+    "FLOAT_TYPES",
+)
+__all__ = [*CORE_PUBLIC_FACADE_EXPORTS, *CORE_BRIDGE_COMPAT_EXPORTS]
+
+# `BorrowKind` は実体のない型エイリアス用途のみなので、
+# selfhost 生成コードでは値として生成しない。
+
+def _sh_parse_stmt_block_mutable(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
+    """インデントブロックを文単位で解析し、EAST 文リストを返す。"""
+    return _sh_parse_stmt_block_mutable_impl(body_lines, name_types=name_types, scope_label=scope_label)
+
+
+def _sh_parse_stmt_block(body_lines: list[tuple[int, str]], *, name_types: dict[str, str], scope_label: str) -> list[dict[str, Any]]:
+    """読み取り専用引数で受け取り、mutable 実体へコピーを渡す。"""
+    return _sh_parse_stmt_block_impl(body_lines, name_types=name_types, scope_label=scope_label)
+
+
+def convert_source_to_east_self_hosted(source: str, filename: str) -> dict[str, Any]:
+    """Python ソースを self-hosted パーサで EAST Module に変換する。"""
+    return convert_source_to_east_self_hosted_impl(source, filename)

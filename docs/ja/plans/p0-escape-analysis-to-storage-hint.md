@@ -56,7 +56,7 @@ escape 解析 → storage_hint 反映が動作したら、`core_module_parser.py
 | ファイル | 変更 |
 |---------|------|
 | `src/toolchain/link/global_optimizer.py` | escape 解析結果から class_storage_hint を更新するロジック追加 |
-| `src/toolchain/ir/core_module_parser.py` | 暫定判定を除去 |
+| `src/toolchain/compile/core_module_parser.py` | 暫定判定を除去 |
 
 ## 受け入れ基準
 

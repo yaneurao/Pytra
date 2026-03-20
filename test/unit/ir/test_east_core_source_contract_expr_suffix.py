@@ -40,11 +40,11 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         builder_text = CORE_AST_BUILDERS_SOURCE_PATH.read_text(encoding="utf-8")
 
         self.assertIn(
-            "from toolchain.ir.core_expr_shell import _sh_parse_expr_lowered",
+            "from toolchain.compile.core_expr_shell import _sh_parse_expr_lowered",
             core_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_expr_lowered import _sh_parse_expr_lowered_impl",
+            "from toolchain.compile.core_expr_lowered import _sh_parse_expr_lowered_impl",
             shell_text,
         )
         self.assertIn("return _sh_parse_expr_lowered_impl(", shell_text)
@@ -312,7 +312,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertIn(") = self._resolve_attr_expr_metadata(", state_text)
         self.assertNotIn("return (\n            owner_t,", state_text)
         self.assertIn(
-            "from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin",
+            "from toolchain.compile.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin",
             shell_text,
         )
         self.assertIn("node = _sh_make_attribute_expr(", build_text)
@@ -380,11 +380,11 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertIn("return self._annotate_attr_expr(", text)
         self.assertIn("return self._resolve_postfix_span_repr(", text)
         self.assertIn(
-            "from toolchain.ir.core_expr_attr_suffix import _ShExprAttrSuffixParserMixin",
+            "from toolchain.compile.core_expr_attr_suffix import _ShExprAttrSuffixParserMixin",
             shell_text,
         )
         self.assertIn(
-            "from toolchain.ir.core_expr_attr_subscript_suffix import _ShExprPostfixSuffixParserMixin",
+            "from toolchain.compile.core_expr_attr_subscript_suffix import _ShExprPostfixSuffixParserMixin",
             shell_text,
         )
         self.assertIn("class _ShExprParser(", shell_text)
@@ -477,7 +477,7 @@ class EastCoreSourceContractExprSuffixTest(unittest.TestCase):
         self.assertIn("return self._parse_subscript_suffix(owner_expr=owner_expr)", postfix_suffix_apply_text)
         self.assertIn("next_node = self._parse_postfix_suffix(owner_expr=node)", postfix_text)
         self.assertIn(
-            "from toolchain.ir.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin",
+            "from toolchain.compile.core_expr_attr_subscript_annotation import _ShExprAttrSubscriptAnnotationMixin",
             shell_text,
         )
         self.assertNotIn("_sh_make_slice_node(lower, upper)", helper_text)

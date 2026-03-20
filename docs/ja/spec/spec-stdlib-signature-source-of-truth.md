@@ -12,7 +12,7 @@
 
 - 正本: `src/pytra/std/*.py` のトップレベル関数・クラスメソッドの戻り値注釈。
 - 参照層: `src/toolchain/frontends/signature_registry.py`。
-- 利用側: `src/toolchain/ir/core.py` は参照層 API 経由で型を取得する。
+- 利用側: `src/toolchain/compile/core.py` は参照層 API 経由で型を取得する。
 
 参照層の責務（必須）:
 
