@@ -55,6 +55,18 @@
 3. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S3] `py2x-selfhost.py` から `backend_registry_static` import を除去。→ C++ emitter のみ直接 import。非 C++ backend は import グラフに含まれない。
 4. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S4] selfhost compile+link で 65 モジュール（以前 151）。非 C++ backend 74 件が完全に消えた（57% 削減）。
 
+#### P1-3: C++ emitter @staticmethod 対応
+
+文脈: [docs/ja/plans/p1-cpp-staticmethod-emit.md](../plans/p1-cpp-staticmethod-emit.md)
+
+1. [x] [ID: P1-CPP-STATICMETHOD-EMIT-01] `emit_function` で `@staticmethod`/`@classmethod` デコレータを検出し、`static` を emit するよう修正する
+
+#### P1-4: C++ emitter Path が rc<Path> でなく bare 型で宣言される
+
+文脈: [docs/ja/plans/p1-cpp-path-rc-type.md](../plans/p1-cpp-path-rc-type.md)
+
+1. [x] [ID: P1-CPP-PATH-RC-TYPE-01] `pathlib.east` の `class_storage_hint` を `"value"` から `"ref"` に修正
+
 ### P7: selfhost 完全自立化
 
 #### P7-1: native/compiler/ 完全削除

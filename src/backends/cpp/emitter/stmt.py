@@ -2076,6 +2076,8 @@ class CppStatementEmitter:
     def emit_function(self, stmt: dict[str, Any], in_class: bool = False) -> None:
         """関数定義ノードを C++ 関数として出力する。"""
         name = self.any_dict_get_str(stmt, "name", "fn")
+        decorators = set(self.any_to_str_list(stmt.get("decorators")))
+        has_static_decorator = "staticmethod" in decorators or "classmethod" in decorators
         stmt_meta = self.any_to_dict_or_empty(stmt.get("meta"))
         template_meta = self.any_to_dict_or_empty(stmt_meta.get("template_v1"))
         template_params: list[str] = []
@@ -2154,7 +2156,7 @@ class CppStatementEmitter:
         )
         for idx, n in enumerate(arg_names):
             t = self.any_to_str(arg_types.get(n))
-            skip_self = in_class and idx == 0 and n == "self"
+            skip_self = in_class and idx == 0 and (n == "self" or (has_static_decorator and n == "cls"))
             arg_abi_mode = self._function_runtime_abi_arg_mode(stmt, n)
             if arg_abi_mode == "default" and idx < len(fallback_arg_abi_modes):
                 fallback_mode = self.any_to_str(fallback_arg_abi_modes[idx])
@@ -2270,7 +2272,9 @@ class CppStatementEmitter:
             if self.current_class_name is not None and in_class:
                 func_prefix = ""
                 func_suffix = ""
-                if name != "__del__":
+                if has_static_decorator:
+                    func_prefix = "static "
+                elif name != "__del__":
                     if self._class_has_base_method(self.current_class_name, str(name)):
                         func_suffix = " const override" if method_is_const else " override"
                     elif str(name) in self.class_method_virtual.get(self.current_class_name, set()):

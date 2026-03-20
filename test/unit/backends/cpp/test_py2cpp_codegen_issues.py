@@ -1484,7 +1484,7 @@ def check(x: object) -> bool:
             east = load_east(src_py)
             cpp = transpile_to_cpp(east, emit_main=False)
 
-        self.assertIn("int64 cm(const object& cls, int64 x) {", cpp)
+        self.assertIn("static int64 cm(int64 x) {", cpp)
         self.assertIn("return Child::cm(3);", cpp)
         self.assertNotRegex(cpp, r"type_id\(\)\s*(==|!=|<=|>=|<|>)")
         self.assertNotRegex(cpp, r"switch\s*\([^)]*type_id\(")
