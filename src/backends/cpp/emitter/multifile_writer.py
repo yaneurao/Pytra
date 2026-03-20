@@ -3,7 +3,7 @@ from __future__ import annotations
 from pytra.std import os as _os
 from pytra.std import json
 from pytra.std.pathlib import Path
-from typing import Any
+from pytra.typing import Any
 from toolchain.compiler.transpile_cli import (
     dict_any_get_dict,
     dict_any_get_str,

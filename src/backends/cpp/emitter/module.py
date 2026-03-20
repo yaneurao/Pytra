@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pytra.std.pathlib import Path
 
-from typing import Any
+from pytra.typing import Any
 from backends.cpp.emitter.runtime_paths import (
     module_name_to_cpp_include as _module_name_to_cpp_include_impl,
 )

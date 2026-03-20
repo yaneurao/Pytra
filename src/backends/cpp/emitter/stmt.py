@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from pytra.typing import Any
 from backends.cpp.emitter.profile_loader import AUG_BIN, AUG_OPS, load_cpp_profile
 
 

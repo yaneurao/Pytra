@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from pytra.typing import Any
 from toolchain.compiler.transpile_cli import (
     join_str_list,
     looks_like_runtime_function_name,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pytra.std import json
 from pytra.std import os
-from typing import Any
+from pytra.typing import Any
 from pytra.std.pathlib import Path
 
 from backends.common.emitter.code_emitter import CodeEmitter
@@ -137,22 +137,7 @@ def emit_cpp_from_east(
     return emitter.transpile()
 
 
-class CppEmitter(
-    CppAnalysisEmitter,
-    CppModuleEmitter,
-    CppClassEmitter,
-    CppTypeBridgeEmitter,
-    CppBuiltinRuntimeEmitter,
-    CppCollectionExprEmitter,
-    CppRuntimeExprEmitter,
-    CppCallEmitter,
-    CppStatementEmitter,
-    CppExpressionEmitter,
-    CppBinaryOperatorEmitter,
-    CppTriviaEmitter,
-    CppTemporaryEmitter,
-    CodeEmitter,
-):
+class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeBridgeEmitter, CppBuiltinRuntimeEmitter, CppCollectionExprEmitter, CppRuntimeExprEmitter, CppCallEmitter, CppStatementEmitter, CppExpressionEmitter, CppBinaryOperatorEmitter, CppTriviaEmitter, CppTemporaryEmitter, CodeEmitter):
     def __init__(
         self,
         east_doc: dict[str, Any],

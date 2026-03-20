@@ -7,7 +7,7 @@ from backends.cpp.emitter.cpp_emitter import (
     emit_cpp_from_east,
 )
 from backends.cpp.emitter.profile_loader import load_cpp_profile
-from typing import Any
+from pytra.typing import Any
 
 __all__ = [
     "CppEmitter",

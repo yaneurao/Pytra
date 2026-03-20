@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from pytra.typing import Any
 
 
 class CppOptContext:

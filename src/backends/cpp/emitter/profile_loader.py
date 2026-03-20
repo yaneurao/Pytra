@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pytra.std.pathlib import Path
-from typing import Any
+from pytra.typing import Any
 from backends.common.emitter.code_emitter import CodeEmitter
 from toolchain.compiler.transpile_cli import dict_any_get_dict, dict_any_get_str, dict_any_get_list
 from backends.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl
