@@ -299,7 +299,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
   - Use frontend-resolved wildcard references and fail only when wildcard cannot be resolved statically.
   - Same-name alias collision fails immediately as `duplicate_binding`.
 
-### 4. JavaScript (`src/py2js.py` + `src/backends/js/emitter/js_emitter.py`)
+### 4. JavaScript (`src/py2js.py` + `src/toolchain/emit/js/emitter/js_emitter.py`)
 
 - Implementation style:
   - Native AST conversion, runtime modules loaded by `require(...)`.
@@ -314,7 +314,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Consume frontend-resolved import metadata; unresolved wildcard must be rejected in frontend before JS emission.
 
-### 5. TypeScript (`src/py2ts.py` + `src/backends/ts/emitter/ts_emitter.py`)
+### 5. TypeScript (`src/py2ts.py` + `src/toolchain/emit/ts/emitter/ts_emitter.py`)
 
 - Implementation style:
   - Same conversion logic as JS (only runtime extension differs: `.ts`).
@@ -325,7 +325,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Same as JS. Unsupported import fails during conversion.
 
-### 6. Go (`src/py2go.py` + `src/backends/go/emitter/go_native_emitter.py`)
+### 6. Go (`src/py2go.py` + `src/toolchain/emit/go/emitter/go_native_emitter.py`)
 
 - Implementation style:
   - EAST3 conversion. `py2go.py` is a thin CLI and the default output is produced by the Go native emitter.
@@ -336,7 +336,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Unsupported input fails closed on frontend/EAST side before Go code generation.
 
-### 7. Java (`src/py2java.py` + `src/backends/java/emitter/java_native_emitter.py`)
+### 7. Java (`src/py2java.py` + `src/toolchain/emit/java/emitter/java_native_emitter.py`)
 
 - Implementation style:
   - EAST3 conversion via Java native emitter. Java runtime is `PyRuntime.java`.
@@ -350,7 +350,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Unresolved methods currently fail as `TranspileError("cannot resolve method call: ...")`; move detection to import-resolution phase and unify message format.
 
-### 8. Swift (`src/py2swift.py` + `src/backends/swift/emitter/swift_native_emitter.py`)
+### 8. Swift (`src/py2swift.py` + `src/toolchain/emit/swift/emitter/swift_native_emitter.py`)
 
 - Implementation style:
   - EAST3 conversion. `py2swift.py` is a thin CLI and the default output is produced by the Swift native emitter.
@@ -361,7 +361,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Unsupported input fails closed on frontend/EAST side before Swift code generation.
 
-### 9. Kotlin (`src/py2kotlin.py` + `src/backends/kotlin/emitter/kotlin_native_emitter.py`)
+### 9. Kotlin (`src/py2kotlin.py` + `src/toolchain/emit/kotlin/emitter/kotlin_native_emitter.py`)
 
 - Implementation style:
   - EAST3 conversion. `py2kotlin.py` is a thin CLI and the default output is produced by the Kotlin native emitter.
@@ -372,7 +372,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Unsupported input fails closed on frontend/EAST side before Kotlin code generation.
 
-### 10. Ruby (`src/py2rb.py` + `src/backends/ruby/emitter/ruby_native_emitter.py`)
+### 10. Ruby (`src/py2rb.py` + `src/toolchain/emit/ruby/emitter/ruby_native_emitter.py`)
 
 - Implementation style:
   - EAST3 conversion. `py2rb.py` is a thin CLI and the default output is handled by the Ruby native emitter.
@@ -382,7 +382,7 @@ Supported targets: `C++ / Rust / C# / JavaScript / TypeScript / Go / Java / Swif
 - Error policy:
   - Unsupported syntax must fail on the frontend/EAST side and must not proceed to Ruby output.
 
-### 11. Lua (`src/py2lua.py` + `src/backends/lua/emitter/lua_native_emitter.py`)
+### 11. Lua (`src/py2lua.py` + `src/toolchain/emit/lua/emitter/lua_native_emitter.py`)
 
 - Implementation style:
   - EAST3 conversion. `py2lua.py` is a thin CLI and the default output is handled by the Lua native emitter.

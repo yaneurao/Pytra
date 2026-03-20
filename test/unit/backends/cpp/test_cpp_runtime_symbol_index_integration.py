@@ -12,8 +12,8 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.backends.cpp.cli import load_east, transpile_to_cpp
-from src.backends.cpp.emitter.runtime_paths import module_name_to_cpp_include
+from src.toolchain.emit.cpp.cli import load_east, transpile_to_cpp
+from src.toolchain.emit.cpp.emitter.runtime_paths import module_name_to_cpp_include
 
 
 class CppRuntimeSymbolIndexIntegrationTest(unittest.TestCase):

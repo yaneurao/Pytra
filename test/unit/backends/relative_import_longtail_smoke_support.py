@@ -3,9 +3,9 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from backends.lua.emitter import transpile_to_lua_native
-from backends.php.emitter import transpile_to_php_native
-from backends.ruby.emitter import transpile_to_ruby_native
+from toolchain.emit.lua.emitter import transpile_to_lua_native
+from toolchain.emit.php.emitter import transpile_to_php_native
+from toolchain.emit.ruby.emitter import transpile_to_ruby_native
 from toolchain.compiler.relative_import_longtail_support_contract import (
     RELATIVE_IMPORT_LONGTAIL_SUPPORT_SCENARIOS_V1,
 )

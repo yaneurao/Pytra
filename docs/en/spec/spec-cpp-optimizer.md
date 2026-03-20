@@ -146,10 +146,10 @@ Required focus:
 
 ## 11. Recommended File Layout
 
-- `src/backends/cpp/optimizer/cpp_optimizer.py`
-- `src/backends/cpp/optimizer/passes/*.py`
-- `src/backends/cpp/optimizer/context.py`
-- `src/backends/cpp/optimizer/trace.py`
+- `src/toolchain/emit/cpp/optimizer/cpp_optimizer.py`
+- `src/toolchain/emit/cpp/optimizer/passes/*.py`
+- `src/toolchain/emit/cpp/optimizer/context.py`
+- `src/toolchain/emit/cpp/optimizer/trace.py`
 
 ## 12. Rollout Phases
 

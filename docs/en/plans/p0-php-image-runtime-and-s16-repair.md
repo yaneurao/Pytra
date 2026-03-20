@@ -62,7 +62,7 @@ Decision log:
 
 ## S1-01 Inventory Results
 
-- `src/backends/php/emitter/php_native_emitter.py`:
+- `src/toolchain/emit/php/emitter/php_native_emitter.py`:
   - `save_gif` / `write_rgb_png` calls are forcibly converted to `__pytra_noop(...)` (two locations: function-call path and attribute-call path).
 - `src/runtime/php/pytra/runtime/png.php`:
   - `__pytra_write_rgb_png(...)` had no implementation and only `return null;`.

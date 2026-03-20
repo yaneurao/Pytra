@@ -50,13 +50,13 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
         self.assertEqual(
             object_bridge,
             {
-                ("py_append", "src/backends/cs/emitter/cs_emitter.py"),
-                ("py_pop", "src/backends/cs/emitter/cs_emitter.py"),
+                ("py_append", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+                ("py_pop", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
             },
         )
         self.assertTrue(
             all(
-                path.startswith("src/backends/cs/") or path.startswith("src/runtime/cs/")
+                path.startswith("src/toolchain/emit/cs/") or path.startswith("src/runtime/cs/")
                 for _, path in object_bridge
             )
         )
@@ -66,7 +66,7 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
         cpp_emitter_entries = {
             entry
             for entry in shared
-            if entry[1].startswith("src/backends/cpp/")
+            if entry[1].startswith("src/toolchain/emit/cpp/")
         }
         self.assertTrue(
             all(
@@ -114,17 +114,17 @@ class CheckCppPyRuntimeContractInventoryTest(unittest.TestCase):
             for entry in shared
             if entry[1].startswith("src/runtime/cs/")
             or entry[1].startswith("src/runtime/rs/")
-            or entry[1].startswith("src/backends/cs/")
-            or entry[1].startswith("src/backends/rs/")
+            or entry[1].startswith("src/toolchain/emit/cs/")
+            or entry[1].startswith("src/toolchain/emit/rs/")
         }
-        self.assertNotIn(("py_append", "src/backends/cs/emitter/cs_emitter.py"), shared)
-        self.assertNotIn(("py_pop", "src/backends/cs/emitter/cs_emitter.py"), shared)
+        self.assertNotIn(("py_append", "src/toolchain/emit/cs/emitter/cs_emitter.py"), shared)
+        self.assertNotIn(("py_pop", "src/toolchain/emit/cs/emitter/cs_emitter.py"), shared)
         self.assertIn(
-            ("py_runtime_type_id_issubclass", "src/backends/rs/emitter/rs_emitter.py"),
+            ("py_runtime_type_id_issubclass", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
             shared,
         )
         self.assertIn(
-            ("py_runtime_type_id_issubclass", "src/backends/cs/emitter/cs_emitter.py"),
+            ("py_runtime_type_id_issubclass", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
             shared,
         )
 

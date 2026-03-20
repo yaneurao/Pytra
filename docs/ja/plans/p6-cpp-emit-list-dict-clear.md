@@ -43,7 +43,7 @@ detail: builtin method call must be lowered_kind=BuiltinCall: list[int64].clear
 
 ## 対象
 
-- `src/backends/cpp/emitter/`（BuiltinCall lowering の追加）
+- `src/toolchain/emit/cpp/emitter/`（BuiltinCall lowering の追加）
 - EAST3 IR の BuiltinCall ノード定義（必要に応じて）
 - `src/runtime/cpp/generated/built_in/type_id.cpp`（再生成）
 
@@ -55,7 +55,7 @@ detail: builtin method call must be lowered_kind=BuiltinCall: list[int64].clear
 
 ## 受け入れ基準
 
-- `PYTHONPATH=src python3 src/backends/cpp/cli.py src/pytra/built_in/type_id.py` が成功する。
+- `PYTHONPATH=src python3 src/toolchain/emit/cpp/cli.py src/pytra/built_in/type_id.py` が成功する。
 - 再生成した `type_id.cpp` でコンパイルが通る。
 - selfhost diff mismatches=0。
 

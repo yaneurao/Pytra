@@ -12,11 +12,11 @@
 
 | ファイル | 行 | 関数 | 条件 |
 |---|---|---|---|
-| `src/backends/cpp/emitter/stmt.py` | L1135 | `_emit_for_each_target_bind()` | タプル展開要素の型が空 |
-| `src/backends/cpp/emitter/stmt.py` | L1161 | `_emit_for_each_runtime_target_bind()` | ランタイム for ループのターゲット型が不明 |
-| `src/backends/cpp/emitter/stmt.py` | L1217 | `_emit_for_each_runtime_loop()` | ジェネリックイテレーション |
-| `src/backends/cpp/emitter/stmt.py` | L1278 | `_emit_target_unpack_declared()` | タプル展開の要素型推論失敗 |
-| `src/backends/cpp/emitter/stmt.py` | L1865 | `_emit_for_core()` | ループターゲットが Any-like |
+| `src/toolchain/emit/cpp/emitter/stmt.py` | L1135 | `_emit_for_each_target_bind()` | タプル展開要素の型が空 |
+| `src/toolchain/emit/cpp/emitter/stmt.py` | L1161 | `_emit_for_each_runtime_target_bind()` | ランタイム for ループのターゲット型が不明 |
+| `src/toolchain/emit/cpp/emitter/stmt.py` | L1217 | `_emit_for_each_runtime_loop()` | ジェネリックイテレーション |
+| `src/toolchain/emit/cpp/emitter/stmt.py` | L1278 | `_emit_target_unpack_declared()` | タプル展開の要素型推論失敗 |
+| `src/toolchain/emit/cpp/emitter/stmt.py` | L1865 | `_emit_for_core()` | ループターゲットが Any-like |
 
 ## 方針
 
@@ -27,7 +27,7 @@
 
 ## 対象
 
-- `src/backends/cpp/emitter/stmt.py` L1135, 1161, 1217, 1278, 1865
+- `src/toolchain/emit/cpp/emitter/stmt.py` L1135, 1161, 1217, 1278, 1865
 
 ## 受け入れ基準
 

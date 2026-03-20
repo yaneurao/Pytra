@@ -12,9 +12,9 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.backends.cpp.cli import CppEmitter
+from src.toolchain.emit.cpp.cli import CppEmitter
 from src.toolchain.frontends.type_expr import parse_type_expr_text
-from src.backends.cpp.emitter.header_builder import _header_cpp_type_from_east
+from src.toolchain.emit.cpp.emitter.header_builder import _header_cpp_type_from_east
 
 
 class CppTypeTest(unittest.TestCase):

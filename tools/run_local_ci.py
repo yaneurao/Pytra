@@ -72,8 +72,8 @@ def build_steps() -> list[list[str]]:
         ["python3", "tools/check_noncpp_east3_contract.py"],
         ["python3", "tools/check_noncpp_backend_health.py", "--family", "all", "--skip-parity"],
         ["python3", "-m", "unittest", "discover", "-s", "test/unit/common", "-p", "test_code_emitter.py"],
-        ["python3", "-m", "unittest", "discover", "-s", "test/unit/backends/cpp", "-p", "test_py2cpp_features.py"],
-        ["python3", "-m", "unittest", "discover", "-s", "test/unit/backends/cpp", "-p", "test_py2cpp_smoke.py"],
+        ["python3", "-m", "unittest", "discover", "-s", "test/unit/toolchain/emit/cpp", "-p", "test_py2cpp_features.py"],
+        ["python3", "-m", "unittest", "discover", "-s", "test/unit/toolchain/emit/cpp", "-p", "test_py2cpp_smoke.py"],
         ["python3", "tools/build_selfhost.py"],
         [
             "python3",

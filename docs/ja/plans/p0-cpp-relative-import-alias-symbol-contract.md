@@ -33,7 +33,7 @@
 
 確認コマンド:
 - `python3 tools/check_todo_priority.py`
-- `PYTHONPATH=src python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_features.py' -k sibling_relative_import`
+- `PYTHONPATH=src python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p 'test_py2cpp_features.py' -k sibling_relative_import`
 - `python3 tools/build_selfhost.py`
 - `git diff --check`
 

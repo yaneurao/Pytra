@@ -4,7 +4,7 @@
 
 # Backend Test Matrix
 
-このページは、backend ごとの `test/unit/backends/<backend>/` suite が現在どこまで green かを可視化する publish target です。
+このページは、backend ごとの `test/unit/toolchain/emit/<backend>/` suite が現在どこまで green かを可視化する publish target です。
 
 ## 目的
 
@@ -17,7 +17,7 @@
 ## Maintenance Rule
 
 - このページは [`tools/export_backend_test_matrix.py`](/workspace/Pytra/tools/export_backend_test_matrix.py) で更新する。
-- 対象は `test/unit/backends/<backend>/` 配下の backend-owned suite と、`test/unit/backends/test_py2starred_smoke.py` 相当の shared smoke とする。
+- 対象は `test/unit/toolchain/emit/<backend>/` 配下の backend-owned suite と、`test/unit/toolchain/emit/test_py2starred_smoke.py` 相当の shared smoke とする。
 - 状態は `🟩 PASS` / `🟥 FAIL` / `🟨 TM` (`toolchain_missing`) / `🟪 TO` (`timeout`) の 4 種で表示する。
 - GitHub の Markdown render では `<style>` や inline style が sanitization で落ちるため、このページは CSS なしで読める plain table を使う。
 
@@ -140,7 +140,7 @@
 ## Scope
 
 - overview matrix は `Primary Smoke` / `Backend Dir Discover` / `Shared Starred Smoke` の 3 行です。
-- `Module Detail` は `test/unit/backends/<backend>/test_*.py` を 1 module ずつ実行した結果です。
-- `Shared Starred Smoke` は `test/unit/backends/test_py2starred_smoke.py` と同じ fixture/assertion を backend ごとに再実行しています。
-- `test/unit/backends/` 直下の support helper (`*_support.py`) は実行対象に含めません。
+- `Module Detail` は `test/unit/toolchain/emit/<backend>/test_*.py` を 1 module ずつ実行した結果です。
+- `Shared Starred Smoke` は `test/unit/toolchain/emit/test_py2starred_smoke.py` と同じ fixture/assertion を backend ごとに再実行しています。
+- `test/unit/toolchain/emit/` 直下の support helper (`*_support.py`) は実行対象に含めません。
 <!-- END BACKEND TEST MATRIX DETAILS -->

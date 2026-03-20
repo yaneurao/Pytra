@@ -82,7 +82,7 @@ linker がクラスツリー全体を見て DFS オーダーで `type_id` を割
 
 - `src/py2x.py` — compile / link サブコマンド追加
 - `src/toolchain/link/` — linker 実装（type_id 確定、import 解決）
-- `src/backends/*/` — linked program からの emit に統一
+- `src/toolchain/emit/*/` — linked program からの emit に統一
 - `src/runtime/cpp/native/core/py_runtime.h` — 実行時レジストリ削除（linker 移行後）
 
 ## 非対象

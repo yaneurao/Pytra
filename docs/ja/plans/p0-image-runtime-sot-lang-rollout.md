@@ -17,7 +17,7 @@
 対象:
 - `tools/audit_image_runtime_sot.py`
 - `src/runtime/<lang>/...` の PNG/GIF helper 実装
-- `src/backends/<lang>/...` の正本変換に必要な lower/emitter 修正
+- `src/toolchain/emit/<lang>/...` の正本変換に必要な lower/emitter 修正
 - `tools/runtime_parity_check.py`（必要最小限）
 
 非対象:

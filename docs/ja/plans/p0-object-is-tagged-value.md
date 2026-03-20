@@ -83,11 +83,11 @@ struct object {
 |---------|------|
 | `src/runtime/cpp/core/py_types.h` | `object` の定義を `PyTaggedValue` ベースに変更 |
 | `src/runtime/cpp/core/tagged_value.h` | `PyBoxed` テンプレートは残す。`PyTaggedValue` struct は `object` に統合して削除。 |
-| `src/backends/cpp/emitter/type_bridge.py` | union 型 → `object` を返す。`_inline_union_structs` 廃止。 |
-| `src/backends/cpp/emitter/cpp_emitter.py` | `_emit_tagged_union_struct` 廃止。`_tagged_union_types` レジストリ廃止。 |
-| `src/backends/cpp/emitter/call.py` | `_try_render_tagged_union_cast` を `object::unbox` / `object::as` に変更。 |
-| `src/backends/cpp/emitter/runtime_expr.py` | isinstance を `v.tag ==` or `v.is()` に変更。 |
-| `src/backends/cpp/emitter/stmt.py` | 暗黙 unbox を `object::unbox` に変更。 |
+| `src/toolchain/emit/cpp/emitter/type_bridge.py` | union 型 → `object` を返す。`_inline_union_structs` 廃止。 |
+| `src/toolchain/emit/cpp/emitter/cpp_emitter.py` | `_emit_tagged_union_struct` 廃止。`_tagged_union_types` レジストリ廃止。 |
+| `src/toolchain/emit/cpp/emitter/call.py` | `_try_render_tagged_union_cast` を `object::unbox` / `object::as` に変更。 |
+| `src/toolchain/emit/cpp/emitter/runtime_expr.py` | isinstance を `v.tag ==` or `v.is()` に変更。 |
+| `src/toolchain/emit/cpp/emitter/stmt.py` | 暗黙 unbox を `object::unbox` に変更。 |
 | `src/runtime/cpp/core/type_id_support.h` | `py_runtime_value_isinstance` 等を `object::is` ベースに統合。 |
 
 ### 既存 `object` (`rc<RcObject>`) との互換

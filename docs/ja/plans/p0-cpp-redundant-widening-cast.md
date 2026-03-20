@@ -36,9 +36,9 @@ return f"{t_norm}(static_cast<int64>({expr_txt}))"
 
 ## 対象
 
-- `src/backends/cpp/emitter/type_bridge.py` — `_render_unbox_target_cast`
-- `src/backends/cpp/emitter/expr.py` — `apply_cast`
-- `src/backends/cpp/emitter/call.py` — `_render_builtin_static_cast_call`
+- `src/toolchain/emit/cpp/emitter/type_bridge.py` — `_render_unbox_target_cast`
+- `src/toolchain/emit/cpp/emitter/expr.py` — `apply_cast`
+- `src/toolchain/emit/cpp/emitter/call.py` — `_render_builtin_static_cast_call`
 - `src/runtime/cpp/generated/utils/png.cpp`（再生成で解消）
 
 ## 可読性問題（追加）

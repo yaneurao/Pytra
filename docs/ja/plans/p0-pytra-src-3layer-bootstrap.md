@@ -102,7 +102,7 @@ S1-02 で固定した境界ルール:
 - `frontends` は入力解釈と EAST1 構築までを担当し、target 言語固有分岐を持たない。
 - `ir` は EAST1/2/3、lower/optimizer/analysis、IR 入出力のみを担当し、CLI 引数解析や runtime コピー処理を持たない。
 - `compiler` は互換 shim と統合導線の薄い橋渡しに限定し、新規ロジック実装先として扱わない。
-- `backends` から `frontends` への import は禁止し、必要な共有処理は `backends/common` または `pytra/ir` に寄せる。
+- `backends` から `frontends` への import は禁止し、必要な共有処理は `toolchain/emit/common` または `pytra/ir` に寄せる。
 
 決定ログ:
 - 2026-03-03: `src/pytra` 名前空間を維持したまま `frontends` / `ir` を導入し、`src/frontends` 直下への最終移設は後続フェーズとする方針を採用。
@@ -119,7 +119,7 @@ S1-02 で固定した境界ルール:
 - 2026-03-03: `src/pytra/frontends/transpile_cli.py` へ `transpile_cli` 実体を移設し、旧 `src/pytra/compiler/transpile_cli.py` は互換 shim 化した。`python_frontend` は新経路（`pytra.frontends.transpile_cli`）参照へ切替した。
 - 2026-03-03: 互換導線検証として `test_py2x_cli.py`, `test_pytra_layer_bootstrap.py`, `test_stdlib_signature_registry.py`, `check_py2{cpp,rs,js}_transpile.py`, `check_noncpp_east3_contract --skip-transpile`, `check_transpiler_version_gate --base-ref HEAD` を再実行し通過を確認した。
 - 2026-03-03: 境界ガードとして `tools/check_pytra_layer_boundaries.py` を追加し、`frontends -> backends` / `ir -> backends` / `backends -> frontends` を禁止、`ir -> frontends` は `ir/core.py` のみ許可する静的 import 監視を導入した。
-- 2026-03-03: ガード追加時に `backends/cpp/emitter/multifile_writer.py` が `pytra.frontends.east1_build` を直参照していたため、互換 shim 経由（`pytra.compiler.east_parts.east1_build`）へ戻して逆流依存を解消した。
+- 2026-03-03: ガード追加時に `toolchain/emit/cpp/emitter/multifile_writer.py` が `pytra.frontends.east1_build` を直参照していたため、互換 shim 経由（`pytra.compiler.east_parts.east1_build`）へ戻して逆流依存を解消した。
 - 2026-03-03: 境界ガード導入後の回帰として `check_pytra_layer_boundaries.py`, `test_py2x_cli.py`, `check_py2{cpp,rs,js}_transpile.py`, `check_noncpp_east3_contract --skip-transpile`, `check_transpiler_version_gate --base-ref HEAD` を通過確認した。
 - 2026-03-03: S3-02 の主要回帰として `check_pytra_layer_boundaries`, `check_noncpp_east3_contract --skip-transpile`, `test_py2x_cli`, `check_py2{cpp,rs,js,ts,go,java,kotlin,swift,rb,lua,php,scala,nim}_transpile`, `check_transpiler_version_gate --base-ref HEAD` を一括実行し全通過を確認した。
 - 2026-03-03: `docs/ja/spec` の責務境界記述を更新し、`spec-folder.md`（3層+互換）、`spec-east.md`（担当ファイル表・移行後正本）、`spec-stdlib-signature-source-of-truth.md`（参照層/利用側パス）、`spec-options.md`（共通CLIの正本パス）へ反映した。

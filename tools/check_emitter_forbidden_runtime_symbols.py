@@ -2,7 +2,7 @@
 """Guard against forbidden runtime implementation symbols in emitter sources.
 
 Policy:
-- `src/backends/*/emitter/*.py` must not grow references to runtime
+- `src/toolchain/emit/*/emitter/*.py` must not grow references to runtime
   implementation symbols (`__pytra_write_rgb_png`, etc.).
 - Existing debt is tracked explicitly in an allowlist.
 - Newly introduced references fail this check.

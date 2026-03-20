@@ -14,7 +14,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.backends.common.emitter.code_emitter import CodeEmitter, EmitterHooks
+from src.toolchain.emit.common.emitter.code_emitter import CodeEmitter, EmitterHooks
 
 
 class _DummyEmitter(CodeEmitter):
@@ -394,7 +394,7 @@ class CodeEmitterTest(unittest.TestCase):
             )
             fake_anchor = str(src / "backends" / "x" / "emitter.py")
             merged = CodeEmitter.load_profile_with_includes(
-                "src/backends/x/profiles/profile.json",
+                "src/toolchain/emit/x/profiles/profile.json",
                 anchor_file=fake_anchor,
             )
         self.assertEqual(merged.get("types"), {"int64": "long"})
@@ -410,7 +410,7 @@ class CodeEmitterTest(unittest.TestCase):
             (prof_dir / "profile.json").write_text('["not-an-object"]', encoding="utf-8")
             fake_anchor = str(src / "backends" / "x" / "emitter.py")
             merged = CodeEmitter.load_profile_with_includes(
-                "src/backends/x/profiles/profile.json",
+                "src/toolchain/emit/x/profiles/profile.json",
                 anchor_file=fake_anchor,
             )
         self.assertEqual(merged, {})

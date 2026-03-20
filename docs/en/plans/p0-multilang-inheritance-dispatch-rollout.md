@@ -47,7 +47,7 @@ Breakdown:
 - [ ] [ID: P0-MULTILANG-INHERIT-DISPATCH-01-S3-01] Aggregate parity/smoke results across all backends and isolate unmet blockers.
 
 Decision log:
-- 2026-03-01: Planned P0 improvement for inheritance method dynamic dispatch across non-C++ backends.
+- 2026-03-01: Planned P0 improvement for inheritance method dynamic dispatch across non-C++ toolchain.emit.
 - 2026-03-01: Added `inheritance_virtual_dispatch_multilang` to default fixture cases in `tools/runtime_parity_check.py` and connected it to the regression path.
 - 2026-03-01: `PYTHONPATH=src python3 -m unittest discover -s test/unit -p 'test_runtime_parity_check_cli.py' -v` passed (7 tests, 0 fail).
 - 2026-03-01: Ran `python3 tools/runtime_parity_check.py inheritance_virtual_dispatch_multilang --targets cpp,rs,cs,js,ts,go,java,swift,kotlin,ruby,lua --ignore-unstable-stdout --summary-json out/inherit_dispatch_multilang_summary.json` and pinned a pre-S2 implementation baseline (`run_failed=10`, `toolchain_missing=1`).

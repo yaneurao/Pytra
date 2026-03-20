@@ -1,6 +1,6 @@
 # Boxing/Unboxing 仕様（Any/object 境界）
 
-> **[SUPERSEDED]** `PyObj` boxing 階層は P5-ANY-ELIM-OBJECT-FREE-01-S6 で除去されました。
+> **[Deprecated]** `PyObj` boxing 階層は P5-ANY-ELIM-OBJECT-FREE-01-S6 で除去されました。
 > `make_object`、`obj_to_*`、`PyIntObj` 等は削除済みです。
 > `object` 型は `rc<RcObject>` に再定義されました。
 > この文書は歴史的記録として保持されます。

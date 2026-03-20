@@ -19,8 +19,8 @@ selfhost バイナリの `backend_registry_static.cpp::emit_source_typed` は `p
 ```
 # Step 1: 各モジュールを個別に compile
 pytra compile src/py2x-selfhost.py -o work/selfhost/py2x_selfhost.east
-pytra compile src/backends/cpp/emitter/cpp_emitter.py -o work/selfhost/cpp_emitter.east
-pytra compile src/backends/cpp/emitter/class_def.py -o work/selfhost/class_def.east
+pytra compile src/toolchain/emit/cpp/emitter/cpp_emitter.py -o work/selfhost/cpp_emitter.east
+pytra compile src/toolchain/emit/cpp/emitter/class_def.py -o work/selfhost/class_def.east
 ...（emitter の全依存モジュール）
 
 # Step 2: link → C++ 出力（multi-file）
@@ -50,7 +50,7 @@ g++ -std=c++20 -O2 -Isrc -Isrc/runtime/cpp selfhost/cpp/src/*.cpp <runtime_sourc
 - `tools/build_selfhost.py` — multi-module transpile パイプラインへの拡張
 - `src/py2x-selfhost.py` — `emit_source_typed` シェルアウトを直接 emitter 呼び出しに置換
 - `src/runtime/cpp/compiler/backend_registry_static.cpp` — `emit_source_typed` シェルアウト除去
-- emitter モジュール群（`src/backends/cpp/emitter/*.py`）— selfhost 制約準拠の確認・修正
+- emitter モジュール群（`src/toolchain/emit/cpp/emitter/*.py`）— selfhost 制約準拠の確認・修正
 
 ## 非対象
 

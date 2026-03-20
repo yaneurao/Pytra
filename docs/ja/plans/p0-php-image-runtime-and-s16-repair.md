@@ -62,7 +62,7 @@
 
 ## S1-01 棚卸し結果
 
-- `src/backends/php/emitter/php_native_emitter.py`:
+- `src/toolchain/emit/php/emitter/php_native_emitter.py`:
   - `save_gif` / `write_rgb_png` 呼び出しを `__pytra_noop(...)` へ強制変換している（関数呼び出し経路と属性呼び出し経路の 2 箇所）。
 - `src/runtime/php/pytra/runtime/png.php`:
   - `__pytra_write_rgb_png(...)` は `return null;` のみで実装なし。

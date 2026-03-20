@@ -107,7 +107,7 @@ class CheckEmitterRuntimecallGuardrailsTest(unittest.TestCase):
             root = Path(td)
             emitter = root / "src" / "backends" / "java" / "emitter" / "java_native_emitter.py"
             _write_text(emitter, 'if module_name == "math":\n    return "x"\n')
-            key = "src/backends/java/emitter/java_native_emitter.py:1:math"
+            key = "src/toolchain/emit/java/emitter/java_native_emitter.py:1:math"
             allowlist_path = root / "tools" / "emitter_runtimecall_guardrails_allowlist.txt"
             _write_allowlist(allowlist_path, [key])
 
@@ -128,7 +128,7 @@ class CheckEmitterRuntimecallGuardrailsTest(unittest.TestCase):
             root = Path(td)
             emitter = root / "src" / "backends" / "ruby" / "emitter" / "ruby_native_emitter.py"
             _write_text(emitter, 'if runtime_call == "perf_counter":\n    return "x"\n')
-            key = "src/backends/ruby/emitter/ruby_native_emitter.py:1:perf_counter"
+            key = "src/toolchain/emit/ruby/emitter/ruby_native_emitter.py:1:perf_counter"
             allowlist_path = root / "tools" / "emitter_runtimecall_guardrails_allowlist.txt"
             _write_allowlist(allowlist_path, [key])
 

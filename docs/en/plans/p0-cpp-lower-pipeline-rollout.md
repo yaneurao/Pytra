@@ -15,9 +15,9 @@ Goal:
 - Reduce `CppEmitter` to a deterministic renderer of C++ IR, and gradually remove direct EAST3 interpretation logic.
 
 In scope:
-- `src/backends/cpp/lower/cpp_lower.py` (new)
-- `src/backends/cpp/optimizer/cpp_ir_optimizer.py` (new; bridge from existing optimizer)
-- `src/backends/cpp/emitter/cpp_emitter.py` (responsibility reduction)
+- `src/toolchain/emit/cpp/lower/cpp_lower.py` (new)
+- `src/toolchain/emit/cpp/optimizer/cpp_ir_optimizer.py` (new; bridge from existing optimizer)
+- `src/toolchain/emit/cpp/emitter/cpp_emitter.py` (responsibility reduction)
 - `src/py2cpp.py` (new pipeline wiring)
 - C++ backend regression tests (unit / transpile / sample)
 
@@ -78,8 +78,8 @@ Decision log:
 
 ## API Boundaries (S1-02)
 
-- `backends.cpp.lower.cpp_lower.CppLower.lower(east_module, debug_flags=...) -> (cpp_ir, report)`
-- `backends.cpp.lower.cpp_lower.lower_cpp_from_east3(...)` is a convenience wrapper around the above.
-- `backends.cpp.optimizer.cpp_ir_optimizer.CppIrOptimizer.optimize(cpp_ir, ...) -> (cpp_ir, report)`
-- `backends.cpp.optimizer.cpp_ir_optimizer.optimize_cpp_ir_module(...)` is a convenience wrapper around the above.
-- `backends.cpp.emitter.cpp_emitter.emit_cpp_from_east(...)` remains the public bridge and runs `lower -> optimizer -> CppEmitter.transpile()`.
+- `toolchain.emit.cpp.lower.cpp_lower.CppLower.lower(east_module, debug_flags=...) -> (cpp_ir, report)`
+- `toolchain.emit.cpp.lower.cpp_lower.lower_cpp_from_east3(...)` is a convenience wrapper around the above.
+- `toolchain.emit.cpp.optimizer.cpp_ir_optimizer.CppIrOptimizer.optimize(cpp_ir, ...) -> (cpp_ir, report)`
+- `toolchain.emit.cpp.optimizer.cpp_ir_optimizer.optimize_cpp_ir_module(...)` is a convenience wrapper around the above.
+- `toolchain.emit.cpp.emitter.cpp_emitter.emit_cpp_from_east(...)` remains the public bridge and runs `lower -> optimizer -> CppEmitter.transpile()`.

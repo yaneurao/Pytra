@@ -18,7 +18,7 @@ Goal:
 In scope:
 - Toolchain installation procedure (Nim install / version pin / existence check)
 - `src/py2nim.py`
-- `src/backends/nim/emitter/*` (if needed, migrate from `src/hooks/nim`)
+- `src/toolchain/emit/nim/emitter/*` (if needed, migrate from `src/hooks/nim`)
 - `src/runtime/nim/pytra/py_runtime.nim`
 - `test/unit/test_py2nim_smoke.py` and Nim fixtures
 - `tools/check_py2nim_transpile.py`
@@ -44,12 +44,12 @@ Verification commands (planned):
 
 Decision log:
 - 2026-03-02: Per user instruction, opened this as P0 up to Nim compiler installation, `py2nim.py` implementation, and test pass under `test/`.
-- 2026-03-02: Existing `src/hooks/nim/` skeleton is reusable, but to avoid import breakage we chose to reorganize responsibilities around `src/backends/nim/`.
+- 2026-03-02: Existing `src/hooks/nim/` skeleton is reusable, but to avoid import breakage we chose to reorganize responsibilities around `src/toolchain/emit/nim/`.
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S1-01] Installed Nim 1.6.10 with `apt-get install -y nim`, adding `nim` command to the environment.
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S1-02] Verified toolchain operation with `nim --version` and `nim c -r` on `/tmp/pytra_nim_smoke.nim`.
-- 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-01] Added `src/backends/nim/emitter` and removed dependency on `src/hooks/nim` (eventually removed `src/hooks/nim` itself).
+- 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-01] Added `src/toolchain/emit/nim/emitter` and removed dependency on `src/hooks/nim` (eventually removed `src/hooks/nim` itself).
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-02] Implemented `src/py2nim.py` (EAST3 only / separated runtime copy / explicit stage2 rejection).
-- 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-03] Wired Nim native emitter under `backends.nim` and added `include \"py_runtime.nim\"` at the top of generated code.
+- 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-03] Wired Nim native emitter under `toolchain.emit.nim` and added `include \"py_runtime.nim\"` at the top of generated code.
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-04] Added `src/runtime/nim/pytra/py_runtime.nim`, providing `py_int/py_float/py_truthy/py_mod/write_rgb_png`.
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-01] Added `test/unit/test_py2nim_smoke.py`, reusing existing `test/fixtures/core|control|oop` to lock CLI/conversion path.
 - 2026-03-03: [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S3-02] Added `tools/check_py2nim_transpile.py` and confirmed `checked=7 ok=7 fail=0`.
@@ -60,7 +60,7 @@ Decision log:
 
 - [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S1-01] Decide Nim compiler installation method (package manager/version pin) and install in this environment.
 - [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S1-02] Verify toolchain operation with `nim --version` and minimal compile run, and record reproduction steps.
-- [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-01] Reorganize Nim backend implementation under `src/backends/nim/emitter/` and remove dependency on `src/hooks/nim`.
+- [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-01] Reorganize Nim backend implementation under `src/toolchain/emit/nim/emitter/` and remove dependency on `src/hooks/nim`.
 - [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-02] Implement `src/py2nim.py` and provide CLI path satisfying EAST3-only, separated runtime copy, and fail-closed behavior.
 - [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-03] Build minimum support in Nim native emitter (functions/branches/loops/key expressions) so known fixtures can be converted.
 - [x] [ID: P0-NIM-TOOLCHAIN-PY2NIM-01-S2-04] Build `src/runtime/nim/pytra/py_runtime.nim` and lock reference contracts from generated code.

@@ -3,7 +3,7 @@
 
 Policy:
 - Language-agnostic helpers should be implemented in shared compiler layers
-  (`src/toolchain/compiler/*`) before adding to `src/backends/cpp/cli.py`.
+  (`src/toolchain/compiler/*`) before adding to `src/toolchain/emit/cpp/cli.py`.
 - This guard fails when new private helper methods are added to CppEmitter
   unless the allowlist is explicitly updated.
 """
@@ -87,8 +87,8 @@ def main() -> int:
     args = parser.parse_args()
 
     if _has_class(TARGET, CPP_EMITTER_CLASS_NAME):
-        print("[FAIL] CppEmitter must not be implemented in src/backends/cpp/cli.py")
-        print("Move implementation to src/backends/cpp/emitter/cpp_emitter.py")
+        print("[FAIL] CppEmitter must not be implemented in src/toolchain/emit/cpp/cli.py")
+        print("Move implementation to src/toolchain/emit/cpp/emitter/cpp_emitter.py")
         return 1
 
     current = _collect_cpp_private_helpers(CPP_EMITTER_TARGET)
@@ -108,7 +108,7 @@ def main() -> int:
     removed = [name for name in allowed if name not in current]
 
     if added:
-        print("[FAIL] new CppEmitter private helper(s) detected in src/backends/cpp/cli.py:")
+        print("[FAIL] new CppEmitter private helper(s) detected in src/toolchain/emit/cpp/cli.py:")
         for name in added:
             print(f"  - {name}")
         print("Move language-agnostic helpers to shared compiler layers first.")

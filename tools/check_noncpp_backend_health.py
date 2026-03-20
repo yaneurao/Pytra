@@ -57,29 +57,29 @@ class FamilyHealth:
 
 
 TARGET_SPECS: dict[str, TargetSpec] = {
-    "rs": TargetSpec("rs", "wave1", "test/unit/backends/rs/test_py2rs_smoke.py"),
-    "cs": TargetSpec("cs", "wave1", "test/unit/backends/cs/test_py2cs_smoke.py"),
+    "rs": TargetSpec("rs", "wave1", "test/unit/toolchain/emit/rs/test_py2rs_smoke.py"),
+    "cs": TargetSpec("cs", "wave1", "test/unit/toolchain/emit/cs/test_py2cs_smoke.py"),
     "js": TargetSpec(
         "js",
         "wave1",
-        "test/unit/backends/js/test_py2js_smoke.py",
+        "test/unit/toolchain/emit/js/test_py2js_smoke.py",
         ("--skip-east3-contract-tests",),
     ),
     "ts": TargetSpec(
         "ts",
         "wave1",
-        "test/unit/backends/ts/test_py2ts_smoke.py",
+        "test/unit/toolchain/emit/ts/test_py2ts_smoke.py",
         ("--skip-east3-contract-tests",),
     ),
-    "go": TargetSpec("go", "wave2", "test/unit/backends/go/test_py2go_smoke.py"),
-    "java": TargetSpec("java", "wave2", "test/unit/backends/java/test_py2java_smoke.py"),
-    "kotlin": TargetSpec("kotlin", "wave2", "test/unit/backends/kotlin/test_py2kotlin_smoke.py"),
-    "swift": TargetSpec("swift", "wave2", "test/unit/backends/swift/test_py2swift_smoke.py"),
-    "scala": TargetSpec("scala", "wave2", "test/unit/backends/scala/test_py2scala_smoke.py"),
-    "ruby": TargetSpec("ruby", "wave3", "test/unit/backends/rb/test_py2rb_smoke.py"),
-    "lua": TargetSpec("lua", "wave3", "test/unit/backends/lua/test_py2lua_smoke.py"),
-    "php": TargetSpec("php", "wave3", "test/unit/backends/php/test_py2php_smoke.py"),
-    "nim": TargetSpec("nim", "wave3", "test/unit/backends/nim/test_py2nim_smoke.py"),
+    "go": TargetSpec("go", "wave2", "test/unit/toolchain/emit/go/test_py2go_smoke.py"),
+    "java": TargetSpec("java", "wave2", "test/unit/toolchain/emit/java/test_py2java_smoke.py"),
+    "kotlin": TargetSpec("kotlin", "wave2", "test/unit/toolchain/emit/kotlin/test_py2kotlin_smoke.py"),
+    "swift": TargetSpec("swift", "wave2", "test/unit/toolchain/emit/swift/test_py2swift_smoke.py"),
+    "scala": TargetSpec("scala", "wave2", "test/unit/toolchain/emit/scala/test_py2scala_smoke.py"),
+    "ruby": TargetSpec("ruby", "wave3", "test/unit/toolchain/emit/rb/test_py2rb_smoke.py"),
+    "lua": TargetSpec("lua", "wave3", "test/unit/toolchain/emit/lua/test_py2lua_smoke.py"),
+    "php": TargetSpec("php", "wave3", "test/unit/toolchain/emit/php/test_py2php_smoke.py"),
+    "nim": TargetSpec("nim", "wave3", "test/unit/toolchain/emit/nim/test_py2nim_smoke.py"),
 }
 
 FAMILY_TARGETS: dict[str, tuple[str, ...]] = {

@@ -19,7 +19,7 @@
 - `src/runtime/java/pytra-core/built_in/PyRuntime.java`
 - `src/runtime/java/pytra-gen/std/*.java`（新設）
 - `src/runtime/java/pytra-gen/utils/*.java`
-- `src/backends/java/emitter/java_native_emitter.py`
+- `src/toolchain/emit/java/emitter/java_native_emitter.py`
 - `src/toolchain/compiler/backend_registry.py` / `_static.py`
 - `tools/` の SoT ガード・監査
 
@@ -42,7 +42,7 @@
 - `python3 tools/check_todo_priority.py`
 - `python3 tools/check_emitter_runtimecall_guardrails.py`
 - `python3 tools/audit_image_runtime_sot.py --fail-on-core-mix --fail-on-gen-markers`
-- `python3 -m unittest discover -s test/unit/backends/java -p 'test_py2java_smoke.py'`
+- `python3 -m unittest discover -s test/unit/toolchain/emit/java -p 'test_py2java_smoke.py'`
 - `python3 tools/runtime_parity_check.py --case-root sample --targets java --samples 01,05,18 --check-artifacts`
 
 実施方針:
@@ -60,7 +60,7 @@
 | `pytra-core` | `src/runtime/java/pytra-core/built_in/PyRuntime.java` | 汎用プリミティブ（`pyTo*`, `pyBool`, `pyLen`, `pyRange`, `pyAdd/pySub/...`）、コンテナ共通補助、例外/文字列化補助 | `src/pytra/std/*` / `src/pytra/utils/*` 由来のライブラリ実装本体 |
 | `pytra-gen/std` | `src/runtime/java/pytra-gen/std/*.java` | `time/json/pathlib/math` の SoT 生成物 | 手書き実装、`PyRuntime` への逆流 |
 | `pytra-gen/utils` | `src/runtime/java/pytra-gen/utils/*.java` | `png/gif` など SoT 生成物 | emitter 専用ラッパ名への改名、手書き実装 |
-| Java emitter | `src/backends/java/emitter/java_native_emitter.py` | IR で解決済みシンボルの描画 | `PyRuntime.pyJson*` などライブラリ名直書き分岐 |
+| Java emitter | `src/toolchain/emit/java/emitter/java_native_emitter.py` | IR で解決済みシンボルの描画 | `PyRuntime.pyJson*` などライブラリ名直書き分岐 |
 
 ### 2) `PyRuntime.java` 棚卸し（削除対象と移管先）
 

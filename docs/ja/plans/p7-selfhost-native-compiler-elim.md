@@ -28,7 +28,7 @@ backend_registry_static.cpp:
 | シェルアウト先 | 阻んでいるもの |
 |---|---|
 | `toolchain.frontends.load_east3_document_typed` | Python AST パーサー（`ast.parse` 等）が未 transpile |
-| `src/east2x.py --target cpp`（= `backends/cpp/cli.py`） | C++ emitter 本体が C++ に未 transpile |
+| `src/east2x.py --target cpp`（= `toolchain/emit/cpp/cli.py`） | C++ emitter 本体が C++ に未 transpile |
 
 ### `.json` 入力パスは既にネイティブ動作
 
@@ -43,7 +43,7 @@ backend_registry_static.cpp:
 - `src/runtime/cpp/native/compiler/`（削除対象）
 - `src/runtime/cpp/generated/compiler/`（include 先の更新）
 - selfhost ビルドパイプライン（EAST3 JSON 事前生成の統一等）
-- `backends/cpp/cli.py`（emitter の selfhost transpile 可能化）
+- `toolchain/emit/cpp/cli.py`（emitter の selfhost transpile 可能化）
 
 ## 非対象
 
@@ -59,7 +59,7 @@ backend_registry_static.cpp:
 ## 子タスク
 
 - [x] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01-S1] selfhost ビルドパイプラインを EAST3 JSON 入力専用に統一し、`transpile_cli.cpp` の `.py` シェルアウトパスを除去する。
-- [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01-S2] `backends/cpp/cli.py`（emitter）を C++ に transpile 可能にし、`emit_source_typed` のシェルアウトを除去する。
+- [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01-S2] `toolchain/emit/cpp/cli.py`（emitter）を C++ に transpile 可能にし、`emit_source_typed` のシェルアウトを除去する。
 - [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01-S3] シェルアウトがゼロになったことを確認し `native/compiler/` を削除、`generated/compiler/` の include を直接 generated C++ に向け直す。
 
 ## 決定ログ

@@ -190,14 +190,14 @@ CPP_PYRUNTIME_UPSTREAM_FALLBACK_INVENTORY_V1: Final[
     {
         "inventory_id": "cpp_emitter_object_list_bridge_sites",
         "bucket": "cpp_emitter_residual",
-        "scope_rel": "src/backends/cpp/emitter",
+        "scope_rel": "src/toolchain/emit/cpp/emitter",
         "matcher_kind": "literal",
         "needle": "obj_to_list_ref_or_raise(",
         "expected_count": 1,
         "shrink_stage": "P2-CPP-PYRUNTIME-UPSTREAM-FALLBACK-SHRINK-01-S2-01",
         "evidence_refs": (
             {
-                "relpath": "src/backends/cpp/emitter/call.py",
+                "relpath": "src/toolchain/emit/cpp/emitter/call.py",
                 "needle": 'return f\'obj_to_list_ref_or_raise({owner_expr}, "{ctx}")\'',
             },
         ),

@@ -17,7 +17,7 @@ Goal:
 Scope:
 - `src/runtime/<lang>/{pytra-core,pytra-gen}/`
 - SoT modules in `src/pytra/{std,utils}/`
-- Runtime-call paths in `src/backends/*/emitter/*.py`
+- Runtime-call paths in `src/toolchain/emit/*/emitter/*.py`
 - Audit/generation/parity/CI tooling in `tools/`
 
 Out of scope:

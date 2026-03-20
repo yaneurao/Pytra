@@ -26,10 +26,10 @@ EAST3 IR には現時点でこれら専用のノードが存在せず、emitter 
 
 ## 対象
 
-- `src/backends/cpp/emitter/`（`py_len` / `py_slice` emit 箇所）
+- `src/toolchain/emit/cpp/emitter/`（`py_len` / `py_slice` emit 箇所）
 - EAST3 IR 定義（ノード追加 or 既存 CallBuiltIn の活用）
 - `src/runtime/cpp/native/core/py_runtime.h`（除去対象関数）
-- `test/unit/backends/cpp/`（回帰テスト）
+- `test/unit/toolchain/emit/cpp/`（回帰テスト）
 
 ## 非対象
 

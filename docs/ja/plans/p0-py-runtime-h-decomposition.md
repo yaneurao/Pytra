@@ -94,9 +94,9 @@
 | `src/runtime/cpp/built_in/bounds.h` | 新規作成 |
 | `src/runtime/cpp/core/type_id_support.h` | 新規作成 |
 | `src/runtime/cpp/core/rc_ops.h` | 新規作成 |
-| `src/backends/cpp/emitter/module.py` | `py_runtime.h` 固定 emit → 個別ヘッダー emit |
-| `src/backends/cpp/emitter/cpp_emitter.py` | `py_runtime.h` 参照除去 |
-| `src/backends/cpp/cli.py` | `py_runtime.h` 参照除去 |
+| `src/toolchain/emit/cpp/emitter/module.py` | `py_runtime.h` 固定 emit → 個別ヘッダー emit |
+| `src/toolchain/emit/cpp/emitter/cpp_emitter.py` | `py_runtime.h` 参照除去 |
+| `src/toolchain/emit/cpp/cli.py` | `py_runtime.h` 参照除去 |
 
 ## 非対象
 

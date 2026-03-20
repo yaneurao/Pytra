@@ -18,8 +18,8 @@ TARGET_FILES = [
     "src/toolchain/link/program_loader.py",
     "src/toolchain/frontends/transpile_cli.py",
     "src/toolchain/frontends/runtime_symbol_index.py",
-    "src/backends/common/emitter/code_emitter.py",
-    "src/backends/js/emitter/js_emitter.py",
+    "src/toolchain/emit/common/emitter/code_emitter.py",
+    "src/toolchain/emit/js/emitter/js_emitter.py",
 ]
 REQUIRED_SNIPPET = "json.loads_obj("
 FORBIDDEN_SNIPPET = "json.loads("

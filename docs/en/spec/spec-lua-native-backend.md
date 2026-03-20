@@ -59,7 +59,7 @@ Prohibited:
 
 - `py2lua.py` can generate `.lua` from EAST3.
 - Conversion does not fail on minimal fixtures (`add` / `if_else` / `for_range`).
-- Pin regressions with `tools/check_py2lua_transpile.py` and `test/unit/backends/lua/test_py2lua_smoke.py`.
+- Pin regressions with `tools/check_py2lua_transpile.py` and `test/unit/toolchain/emit/lua/test_py2lua_smoke.py`.
 
 ## 7. Container Reference Management Boundary (v1)
 

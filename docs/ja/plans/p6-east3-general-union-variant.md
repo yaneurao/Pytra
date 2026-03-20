@@ -65,8 +65,8 @@ emitter 側を修正して自動生成できるようにすることが本タス
 
 ## 対象（本タスク: C++ 優先 MVP）
 
-- `src/backends/cpp/emitter/type_bridge.py`（型名変換: 拒否 → `std::variant<...>` emit）
-- `src/backends/cpp/emitter/cpp_emitter.py`（`isinstance` → `std::holds_alternative`、`is None` → `std::holds_alternative<std::monostate>`）
+- `src/toolchain/emit/cpp/emitter/type_bridge.py`（型名変換: 拒否 → `std::variant<...>` emit）
+- `src/toolchain/emit/cpp/emitter/cpp_emitter.py`（`isinstance` → `std::holds_alternative`、`is None` → `std::holds_alternative<std::monostate>`）
 - `src/runtime/cpp/generated/std/argparse.cpp`（再生成）
 - `src/runtime/cpp/generated/utils/assertions.cpp`（再生成）
 
@@ -78,8 +78,8 @@ emitter 側を修正して自動生成できるようにすることが本タス
 
 ## 受け入れ基準
 
-- `PYTHONPATH=src python3 src/backends/cpp/cli.py src/pytra/std/argparse.py` が成功する。
-- `PYTHONPATH=src python3 src/backends/cpp/cli.py src/pytra/utils/assertions.py` が成功する。
+- `PYTHONPATH=src python3 src/toolchain/emit/cpp/cli.py src/pytra/std/argparse.py` が成功する。
+- `PYTHONPATH=src python3 src/toolchain/emit/cpp/cli.py src/pytra/utils/assertions.py` が成功する。
 - 再生成した `argparse.cpp` / `assertions.cpp` でコンパイルが通る。
 - selfhost diff mismatches=0。
 

@@ -12,8 +12,8 @@ C++ emitter が型名が `"unknown"` または空文字列 `""` のときに `ob
 
 | ファイル | 行 | 関数 | 条件 |
 |---|---|---|---|
-| `src/backends/cpp/emitter/type_bridge.py` | L668-669 | `_cpp_type_text()` | `east_type == "unknown"` |
-| `src/backends/cpp/emitter/header_builder.py` | L1373-1374 | `_header_cpp_type_from_east()` | 型文字列が空 `""` |
+| `src/toolchain/emit/cpp/emitter/type_bridge.py` | L668-669 | `_cpp_type_text()` | `east_type == "unknown"` |
+| `src/toolchain/emit/cpp/emitter/header_builder.py` | L1373-1374 | `_header_cpp_type_from_east()` | 型文字列が空 `""` |
 
 ## 方針
 
@@ -24,8 +24,8 @@ C++ emitter が型名が `"unknown"` または空文字列 `""` のときに `ob
 
 ## 対象
 
-- `src/backends/cpp/emitter/type_bridge.py` L668-669
-- `src/backends/cpp/emitter/header_builder.py` L1373-1374
+- `src/toolchain/emit/cpp/emitter/type_bridge.py` L668-669
+- `src/toolchain/emit/cpp/emitter/header_builder.py` L1373-1374
 
 ## 受け入れ基準
 

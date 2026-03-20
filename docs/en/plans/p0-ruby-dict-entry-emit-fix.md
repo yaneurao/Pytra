@@ -7,7 +7,7 @@ Related TODO:
 
 Background:
 - In `P0-RUBY-S18-TOKENIZE-INVEST-01`, the direct cause of Ruby failure for `sample/18` was identified.
-- EAST3 `Dict` nodes have an `entries` array, but `_render_dict_expr` in `src/backends/ruby/emitter/ruby_native_emitter.py` references only the old `keys/values` format.
+- EAST3 `Dict` nodes have an `entries` array, but `_render_dict_expr` in `src/toolchain/emit/ruby/emitter/ruby_native_emitter.py` references only the old `keys/values` format.
 - As a result, `single_char_token_tags: dict[str, int] = {...}` becomes `{}` in generated Ruby code, `=` token recognition breaks, and execution stops at `tokenize error at line=0 pos=6 ch==`.
 
 Goal:
@@ -15,7 +15,7 @@ Goal:
 - Resolve Ruby parity failure on `sample/18`.
 
 In scope:
-- `src/backends/ruby/emitter/ruby_native_emitter.py`
+- `src/toolchain/emit/ruby/emitter/ruby_native_emitter.py`
 - Ruby regression cases for dict literal in `test/fixtures` or `test/unit`
 - Ruby revalidation for `sample/18` using `tools/runtime_parity_check.py`
 

@@ -174,7 +174,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
             (
                 {
                     "backend": "go",
-                    "test_path": "test/unit/backends/go/test_py2go_smoke.py",
+                    "test_path": "test/unit/toolchain/emit/go/test_py2go_smoke.py",
                     "required_tests": (
                         "test_go_runtime_source_path_is_migrated",
                         "test_go_generated_built_in_compare_lane_compiles_with_runtime_bundle",
@@ -182,7 +182,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                 },
                 {
                     "backend": "java",
-                    "test_path": "test/unit/backends/java/test_py2java_smoke.py",
+                    "test_path": "test/unit/toolchain/emit/java/test_py2java_smoke.py",
                     "required_tests": (
                         "test_java_runtime_source_path_is_migrated",
                         "test_java_generated_built_in_compare_lane_compiles_with_runtime_bundle",
@@ -190,7 +190,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                 },
                 {
                     "backend": "kotlin",
-                    "test_path": "test/unit/backends/kotlin/test_py2kotlin_smoke.py",
+                    "test_path": "test/unit/toolchain/emit/kotlin/test_py2kotlin_smoke.py",
                     "required_tests": (
                         "test_kotlin_runtime_source_path_is_migrated",
                         "test_kotlin_generated_built_in_compare_lane_compiles_with_runtime_bundle",
@@ -198,7 +198,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                 },
                 {
                     "backend": "scala",
-                    "test_path": "test/unit/backends/scala/test_py2scala_smoke.py",
+                    "test_path": "test/unit/toolchain/emit/scala/test_py2scala_smoke.py",
                     "required_tests": (
                         "test_scala_runtime_source_path_is_migrated",
                         "test_scala_generated_built_in_compare_lane_is_materialized",
@@ -206,7 +206,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                 },
                 {
                     "backend": "swift",
-                    "test_path": "test/unit/backends/swift/test_py2swift_smoke.py",
+                    "test_path": "test/unit/toolchain/emit/swift/test_py2swift_smoke.py",
                     "required_tests": (
                         "test_swift_runtime_source_path_is_migrated",
                         "test_swift_generated_built_in_compare_lane_compiles_with_runtime_bundle",
@@ -214,7 +214,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                 },
                 {
                     "backend": "nim",
-                    "test_path": "test/unit/backends/nim/test_py2nim_smoke.py",
+                    "test_path": "test/unit/toolchain/emit/nim/test_py2nim_smoke.py",
                     "required_tests": (
                         "test_nim_runtime_source_path_is_migrated",
                         "test_nim_generated_built_in_compare_lane_compiles_with_runtime_bundle",
@@ -222,7 +222,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                 },
                 {
                     "backend": "js",
-                    "test_path": "test/unit/backends/js/test_py2js_smoke.py",
+                    "test_path": "test/unit/toolchain/emit/js/test_py2js_smoke.py",
                     "required_tests": (
                         "test_js_cli_staged_runtime_bundle_resolves_runtime_helpers",
                         "test_js_generated_built_in_compare_lane_resolves_native_runtime",
@@ -230,7 +230,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                 },
                 {
                     "backend": "ts",
-                    "test_path": "test/unit/backends/ts/test_py2ts_smoke.py",
+                    "test_path": "test/unit/toolchain/emit/ts/test_py2ts_smoke.py",
                     "required_tests": (
                         "test_ts_cli_staged_runtime_bundle_resolves_runtime_helpers",
                         "test_ts_generated_built_in_compare_lane_rehomes_native_runtime_import",
@@ -238,7 +238,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                 },
                 {
                     "backend": "lua",
-                    "test_path": "test/unit/backends/lua/test_py2lua_smoke.py",
+                    "test_path": "test/unit/toolchain/emit/lua/test_py2lua_smoke.py",
                     "required_tests": (
                         "test_lua_runtime_source_path_is_migrated",
                         "test_lua_cli_staged_runtime_lane_resolves_runtime_helpers",
@@ -246,7 +246,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                 },
                 {
                     "backend": "ruby",
-                    "test_path": "test/unit/backends/rb/test_py2rb_smoke.py",
+                    "test_path": "test/unit/toolchain/emit/rb/test_py2rb_smoke.py",
                     "required_tests": (
                         "test_ruby_runtime_source_path_is_migrated",
                         "test_ruby_cli_staged_runtime_lane_resolves_runtime_helpers",
@@ -254,7 +254,7 @@ class CheckNonCppRuntimeGeneratedCppBaselineContractTest(unittest.TestCase):
                 },
                 {
                     "backend": "php",
-                    "test_path": "test/unit/backends/php/test_py2php_smoke.py",
+                    "test_path": "test/unit/toolchain/emit/php/test_py2php_smoke.py",
                     "required_tests": (
                         "test_php_runtime_source_path_is_migrated",
                         "test_php_generated_math_runtime_owner_is_live_wrapper_shaped",

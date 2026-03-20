@@ -64,11 +64,11 @@ Observed results (2026-03-04):
 
 Root-cause findings (confirmed so far):
 - Kotlin:
-  - In `src/backends/kotlin/emitter/kotlin_native_emitter.py`, `save_gif` falls back to `__pytra_noop`.
+  - In `src/toolchain/emit/kotlin/emitter/kotlin_native_emitter.py`, `save_gif` falls back to `__pytra_noop`.
   - `src/runtime/kotlin/pytra/py_runtime.kt` has no GIF writer implementation.
   - PNG goes through `ImageIO`, so binaries do not match Python baseline (`01..04` size mismatch).
 - Java:
-  - `src/backends/java/emitter/java_native_emitter.py` routes `save_gif/write_rgb_png` to `PyRuntime.__pytra_noop`.
+  - `src/toolchain/emit/java/emitter/java_native_emitter.py` routes `save_gif/write_rgb_png` to `PyRuntime.__pytra_noop`.
   - Runtime side has `pyWriteRGBPNG/pySaveGif`, but artifacts are not generated because the emitter is not wired to them.
   - Additional `run_failed` from missing compatibility in `RuntimeError` references and `Map.get(key, default)`.
 - Go:
@@ -89,11 +89,11 @@ Root-cause findings (confirmed so far):
 Goal:
 - Operate parity with Kotlin artifact skipping permanently removed.
 - Formalize Swift parity logs after toolchain installation, and connect failures to repair planning.
-- Fix failing backends/runtimes and achieve size+CRC32 parity for artifact-generating cases in `sample`.
+- Fix failing toolchain/emit/runtimes and achieve size+CRC32 parity for artifact-generating cases in `sample`.
 
 In scope:
 - `tools/runtime_parity_check.py`
-- `src/backends/{kotlin,java,go,swift,js,ts,cs,cpp}/**`
+- `src/toolchain/emit/{kotlin,java,go,swift,js,ts,cs,cpp}/**`
 - `src/runtime/{kotlin,java,go,js,ts,cs,cpp}/**`
 - `test/unit/test_runtime_parity_check_cli.py`
 - `docs/ja/todo/index.md` / this plan document

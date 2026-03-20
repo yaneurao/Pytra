@@ -137,9 +137,9 @@ pytra-cli.py foo.py --target cpp --build --output-dir out
 |---------|---------|
 | `src/runtime/cpp/core/py_runtime.h` | include パスを `out/cpp/` 基準の相対パスに変更 |
 | `src/runtime/cpp/built_in/*.h` | include パスを相対パスに変更 |
-| `src/backends/cpp/emitter/module.py` | emit する `#include` パスを `out/cpp/` 基準に変更 |
-| `src/backends/cpp/emitter/runtime_paths.py` | `module_name_to_cpp_include` の出力パスを変更 |
-| `src/backends/cpp/program_writer.py` | `write_cpp_rendered_program` で runtime コピー + generated emit を追加 |
+| `src/toolchain/emit/cpp/emitter/module.py` | emit する `#include` パスを `out/cpp/` 基準に変更 |
+| `src/toolchain/emit/cpp/emitter/runtime_paths.py` | `module_name_to_cpp_include` の出力パスを変更 |
+| `src/toolchain/emit/cpp/program_writer.py` | `write_cpp_rendered_program` で runtime コピー + generated emit を追加 |
 | `tools/gen_makefile_from_manifest.py` | Makefile の `-I` パスを `out/cpp/` 基準に変更 |
 | `src/pytra-cli.py` | `--build` フローを新パイプラインに対応 |
 

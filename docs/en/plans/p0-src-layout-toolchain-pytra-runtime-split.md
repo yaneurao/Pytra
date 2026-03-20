@@ -85,7 +85,7 @@ Verification commands (planned):
 | `frontends` | 7 | Parse Python input, build import graph, signature/semantic decisions | `src/py2cpp.py`, `pytra.compiler.transpile_cli`, `pytra.ir.core` |
 | `ir` | 30 | EAST1/2/3 definitions, lowering, optimizer, pipeline | `pytra.frontends.transpile_cli`, `pytra.compiler.east_parts.*` |
 | `compiler` | 44 | Compatibility shims, backend registry, CLI helpers, `east_parts` compatibility layer | `src/py2*.py`, `src/ir2lang.py`, `tools/*`, `test/unit/*` |
-| `std` | 19 | std compatibility layer resolved during transpilation (`typing/pathlib/json/...`) | `src/py2*.py`, `src/backends/*`, `test/fixtures/stdlib/*` |
+| `std` | 19 | std compatibility layer resolved during transpilation (`typing/pathlib/json/...`) | `src/py2*.py`, `src/toolchain/emit/*`, `test/fixtures/stdlib/*` |
 | `utils` | 4 | Helpers used by transpilation targets (`assertions/png/gif`) | `sample/py/*`, `test/fixtures/*`, `tools/verify_image_runtime_parity.py` |
 | `built_in` | 2 | Built-in compatibility helpers (`type_id`, etc.) | `test/unit/test_pytra_built_in_type_id.py` |
 
@@ -112,7 +112,7 @@ Decision log:
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S1-03] Added old-import ban rules to `spec-folder` (`pytra.frontends|ir|compiler` no new additions, no shim additions, plus `rg` check procedure).
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-01] Created `src/toolchain/frontends`, moved `src/pytra/frontends/*.py`, updated imports to `toolchain.frontends.*`, and confirmed passing `tools/check_pytra_layer_boundaries.py` and `test_pytra_layer_bootstrap`.
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-02] Created `src/toolchain/ir`, moved `src/pytra/ir/*.py`, updated references in `frontends`/`compiler.east_parts`/`test`/`tools` to `toolchain.ir.*`, and confirmed passing `check_pytra_layer_boundaries`, `test_pytra_layer_bootstrap`, and `py2cpp/py2x` conversion smoke.
-- 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-03] Created `src/toolchain/compiler`, moved `src/pytra/compiler`, switched imports in `py2x/py2*.py`, `backends/cpp`, `tools`, `test`, and `selfhost` to `toolchain.compiler.*`, and updated fixed-path dependencies (`prepare_selfhost_source`/`signature_registry`/`east_stage_boundary`) to new placement.
+- 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-03] Created `src/toolchain/compiler`, moved `src/pytra/compiler`, switched imports in `py2x/py2*.py`, `toolchain/emit/cpp`, `tools`, `test`, and `selfhost` to `toolchain.compiler.*`, and updated fixed-path dependencies (`prepare_selfhost_source`/`signature_registry`/`east_stage_boundary`) to new placement.
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S2-04] Confirmed `frontends`/`ir`/`compiler` directories are gone from `src/pytra`; converged `pytra` to `std`/`utils`/`built_in` plus minimal entry points (`__init__.py`, `cli.py`).
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-01] Bulk-updated imports in `src/tools/test/selfhost`; via `rg`, confirmed old `pytra.frontends|pytra.ir|pytra.compiler` imports are zero (including `src.pytra.*`).
 - 2026-03-03: [ID: P0-SRC-LAYOUT-SPLIT-01-S3-02] Unified imports in `py2x.py` / `py2x-selfhost.py` / `py2*.py` / `ir2lang.py` to `toolchain.compiler.*`, removing old `pytra.compiler` dependency from CLI entry points.

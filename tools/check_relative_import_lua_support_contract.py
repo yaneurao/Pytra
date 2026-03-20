@@ -46,7 +46,7 @@ EXPECTED_BACKEND = {
 }
 
 EXPECTED_SMOKE = {
-    "smoke_test_file": "test/unit/backends/lua/test_py2lua_smoke.py",
+    "smoke_test_file": "test/unit/toolchain/emit/lua/test_py2lua_smoke.py",
     "focused_tests": (
         "test_cli_relative_import_support_rollout_scenarios_transpile_for_lua",
         "test_cli_relative_import_support_rollout_fail_closed_for_wildcard_on_lua",
@@ -74,7 +74,7 @@ EXPECTED_HANDOFF = {
     "support_checker": "tools/check_relative_import_longtail_support_contract.py",
     "focused_contract_inventory": "src/toolchain/compiler/relative_import_lua_support_contract.py",
     "focused_checker": "tools/check_relative_import_lua_support_contract.py",
-    "smoke_test_file": "test/unit/backends/lua/test_py2lua_smoke.py",
+    "smoke_test_file": "test/unit/toolchain/emit/lua/test_py2lua_smoke.py",
     "backend": "lua",
     "verification_lane": "longtail_relative_import_support_rollout",
     "focused_verification_lane": "lua_relative_import_support_rollout_smoke",
@@ -141,7 +141,7 @@ def validate_relative_import_lua_support_contract() -> None:
         raise SystemExit("missing lua support smoke placeholder-comment guard")
     if "unsupported relative import form: relative import" in smoke_src:
         raise SystemExit("lua support smoke still references the old representative fail-closed path")
-    emitter_path = ROOT / "src/backends/lua/emitter/lua_native_emitter.py"
+    emitter_path = ROOT / "src/toolchain/emit/lua/emitter/lua_native_emitter.py"
     emitter_src = emitter_path.read_text(encoding="utf-8")
     for needle in RELATIVE_IMPORT_LUA_SUPPORT_SMOKE_V1["expected_emitter_markers"]:
         if needle not in emitter_src:

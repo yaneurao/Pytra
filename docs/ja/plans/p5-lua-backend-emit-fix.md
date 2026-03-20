@@ -14,7 +14,7 @@ Lua emitter の基盤に問題がある可能性。
 
 ## 対象
 
-- `src/backends/lua/emitter/lua_native_emitter.py` — emit 失敗箇所の特定・修正
+- `src/toolchain/emit/lua/emitter/lua_native_emitter.py` — emit 失敗箇所の特定・修正
 - Lua runtime の generated 出力
 
 ## 受け入れ基準

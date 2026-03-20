@@ -22,7 +22,7 @@
 ## 対象
 
 - `src/runtime/cpp/native/core/py_runtime.h`（7 関数群の定義を削除）
-- `test/unit/backends/cpp/test_cpp_runtime_iterable.py`（直接参照 1 件を修正）
+- `test/unit/toolchain/emit/cpp/test_cpp_runtime_iterable.py`（直接参照 1 件を修正）
 
 ## 非対象
 

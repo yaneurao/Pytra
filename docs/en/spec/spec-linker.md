@@ -4,7 +4,7 @@
 
 # Linked Program / Linker Specification
 
-This document defines the linked-program stage that receives multiple raw `EAST3` modules, validates them as one program, materializes whole-program summaries, and hands linked `EAST3` modules plus `link-output.v1` to backends.
+This document defines the linked-program stage that receives multiple raw `EAST3` modules, validates them as one program, materializes whole-program summaries, and hands linked `EAST3` modules plus `link-output.v1` to toolchain.emit.
 
 ## 1. Background
 

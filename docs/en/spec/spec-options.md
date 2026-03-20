@@ -13,7 +13,7 @@ Its purpose is to let users explicitly choose trade-offs between "Python compati
 - When compatibility is prioritized, explicitly opt in via `balanced` / `python` presets or individual options.
 - Introduce options in phases:
   - Phase 1: `py2x.py --target cpp` first
-  - Phase 2: consolidate into common CLI (`src/toolchain/compiler/transpile_cli.py`)
+  - Phase 2: consolidate into common CLI (`src/toolchain/frontends/transpile_cli.py`; `compiler/transpile_cli.py` becomes a compatibility shim)
   - Phase 3: make language-specific defaults switchable via LanguageProfile
 
 ## 2. Implemented Options (Current)
@@ -158,9 +158,9 @@ When adding/changing options, update all of the following at the same time:
 1. `docs/en/spec/spec-options.md` (option definitions, defaults, presets)
 2. `docs/en/spec/spec-dev.md` (implementation specification and CLI reflection)
 3. `docs/en/spec/spec-east.md` (responsibility boundary between EAST side and generator side)
-4. `docs/en/how-to-use.md` (usage examples)
+4. `docs/en/tutorial/how-to-use.md` (usage examples)
 
 After updates, verify:
 
 1. output of `python3 src/py2x.py INPUT.py --target cpp --dump-options` matches specification
-2. relevant option regressions in `test/unit/backends/cpp/test_py2cpp_features.py` pass
+2. relevant option regressions in `test/unit/toolchain/emit/cpp/test_py2cpp_features.py` pass

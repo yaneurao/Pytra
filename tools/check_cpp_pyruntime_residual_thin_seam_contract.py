@@ -23,8 +23,8 @@ OBJECT_BRIDGE_MUTATION_CLASSIFICATION = {
         'static inline void py_append(object& v, const U& item) {'
     },
     "must_remain_crossruntime": {
-        ("py_append", "src/backends/cs/emitter/cs_emitter.py"),
-        ("py_pop", "src/backends/cs/emitter/cs_emitter.py"),
+        ("py_append", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+        ("py_pop", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
     },
     "already_backend_localized_cpp": set(),
 }
@@ -38,31 +38,31 @@ SHARED_TYPE_ID_THIN_SEAM_CLASSIFICATION = {
 SHARED_TYPE_ID_THIN_SEAM_TARGETS = {
     "cpp": {
         "future_reducible": {
-            ("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
+            ("py_runtime_value_type_id", "src/toolchain/emit/cpp/emitter/cpp_emitter.py"),
         },
         "must_remain_until_runtime_task": {
-            ("py_runtime_value_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
-            ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
-            ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
-            ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
+            ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+            ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/stmt.py"),
+            ("py_runtime_type_id_is_subtype", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+            ("py_runtime_type_id_issubclass", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
         },
     },
     "rs": {
         "future_reducible": set(),
         "must_remain_until_runtime_task": {
-            ("py_runtime_value_type_id", "src/backends/rs/emitter/rs_emitter.py"),
-            ("py_runtime_value_isinstance", "src/backends/rs/emitter/rs_emitter.py"),
-            ("py_runtime_type_id_is_subtype", "src/backends/rs/emitter/rs_emitter.py"),
-            ("py_runtime_type_id_issubclass", "src/backends/rs/emitter/rs_emitter.py"),
+            ("py_runtime_value_type_id", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+            ("py_runtime_value_isinstance", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+            ("py_runtime_type_id_is_subtype", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+            ("py_runtime_type_id_issubclass", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
         },
     },
     "cs": {
         "future_reducible": set(),
         "must_remain_until_runtime_task": {
-            ("py_runtime_value_type_id", "src/backends/cs/emitter/cs_emitter.py"),
-            ("py_runtime_value_isinstance", "src/backends/cs/emitter/cs_emitter.py"),
-            ("py_runtime_type_id_is_subtype", "src/backends/cs/emitter/cs_emitter.py"),
-            ("py_runtime_type_id_issubclass", "src/backends/cs/emitter/cs_emitter.py"),
+            ("py_runtime_value_type_id", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+            ("py_runtime_value_isinstance", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+            ("py_runtime_type_id_is_subtype", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+            ("py_runtime_type_id_issubclass", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
         },
     },
 }
@@ -114,7 +114,7 @@ def _collect_issues() -> list[str]:
         expected_future_reducible=SHARED_TYPE_ID_THIN_SEAM_TARGETS["rs"]["future_reducible"],
         expected_must_remain=SHARED_TYPE_ID_THIN_SEAM_TARGETS["rs"]["must_remain_until_runtime_task"],
         expected_bucket=emitter_inventory.EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
-        required_prefix="src/backends/rs/",
+        required_prefix="src/toolchain/emit/rs/",
     ):
         issues.append("rs future shared type-id classification helper reported drift")
     if emitter_inventory._collect_future_bucket_classification_issues(
@@ -123,7 +123,7 @@ def _collect_issues() -> list[str]:
         expected_future_reducible=SHARED_TYPE_ID_THIN_SEAM_TARGETS["cs"]["future_reducible"],
         expected_must_remain=SHARED_TYPE_ID_THIN_SEAM_TARGETS["cs"]["must_remain_until_runtime_task"],
         expected_bucket=emitter_inventory.EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
-        required_prefix="src/backends/cs/",
+        required_prefix="src/toolchain/emit/cs/",
     ):
         issues.append("cs future shared type-id classification helper reported drift")
     return issues

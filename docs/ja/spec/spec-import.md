@@ -283,7 +283,7 @@ QualifiedSymbolRef
 ### 2. Rust（`src/py2rs.py`）
 
 - 実装方式:
-- EAST 変換。`py2rs.py` は薄い CLI、実出力は `src/backends/rs/emitter/rs_emitter.py` が担当。
+- EAST 変換。`py2rs.py` は薄い CLI、実出力は `src/toolchain/emit/rs/emitter/rs_emitter.py` が担当。
 - import 解決は EAST `meta.import_bindings` を正本として `use ...;` 行へ変換する。
 - 具体実装:
 - `binding_kind=module/symbol` を使って `use crate::a::b` / `use crate::a::b::sym` を生成する。
@@ -295,17 +295,17 @@ QualifiedSymbolRef
 ### 3. C#（`src/py2cs.py`）
 
 - 実装方式:
-- EAST 変換。`py2cs.py` は薄い CLI、実出力は `src/backends/cs/emitter/cs_emitter.py` が担当。
+- EAST 変換。`py2cs.py` は薄い CLI、実出力は `src/toolchain/emit/cs/emitter/cs_emitter.py` が担当。
 - import 解決は EAST `meta.import_bindings` を正本として `using` 行へ変換する。
 - 具体実装:
 - `binding_kind=module/symbol` を使って `using ns;` / `using alias = ns.sym;` を生成する。
 - `typing` / `__future__` / `browser*` は using 出力対象から除外する。
-- C# 固有の文・式変換は profile/hook（`src/backends/cs/profiles/*`, `src/backends/cs/*`）で管理する。
+- C# 固有の文・式変換は profile/hook（`src/toolchain/emit/cs/profiles/*`, `src/toolchain/emit/cs/*`）で管理する。
 - エラー方針:
 - `from M import *` は frontend で展開済み解決結果（`meta.qualified_symbol_refs`）を利用する。未解決の wildcard は frontend 側で fail-closed させる。
 - 相対 import や未解決 import は frontend 側の `input_invalid` 方針に従う。
 
-### 4. JavaScript（`src/py2js.py` + `src/backends/js/emitter/js_emitter.py`）
+### 4. JavaScript（`src/py2js.py` + `src/toolchain/emit/js/emitter/js_emitter.py`）
 
 - 実装方式:
 - EAST 変換。`py2js.py` は薄い CLI に限定し、出力処理は `JsEmitter` が担当。
@@ -317,18 +317,18 @@ QualifiedSymbolRef
 - エラー方針:
 - wildcard 由来の参照は frontend/EAST 側で解決済みメタを利用し、未解決時のみ `input_invalid(kind=unresolved_wildcard)` とする。
 
-### 5. TypeScript（`src/py2ts.py` + `src/backends/ts/emitter/ts_emitter.py`）
+### 5. TypeScript（`src/py2ts.py` + `src/toolchain/emit/ts/emitter/ts_emitter.py`）
 
 - 実装方式:
 - EAST 変換。`py2ts.py` は薄い CLI、実出力は `TSEmitter`（preview）が担当。
 - import 解決は EAST `meta.import_bindings` を正本とし、現状は JS 互換出力をそのまま利用する。
 - 具体実装:
-- profile/hook は `src/backends/ts/`（内部では JS profile を再利用）。
+- profile/hook は `src/toolchain/emit/ts/`（内部では JS profile を再利用）。
 - 出力は TypeScript 拡張子だが、現段階では JavaScript 互換コードを優先する。
 - エラー方針:
 - `py2js` と同一。未対応 import は frontend/EAST 側で停止する。
 
-### 6. Go（`src/py2go.py` + `src/backends/go/emitter/go_native_emitter.py`）
+### 6. Go（`src/py2go.py` + `src/toolchain/emit/go/emitter/go_native_emitter.py`）
 
 - 実装方式:
 - EAST3 変換。`py2go.py` は薄い CLI、既定出力は Go native emitter が担当。
@@ -339,7 +339,7 @@ QualifiedSymbolRef
 - エラー方針:
 - 未対応構文は frontend/EAST 側で停止し、Go 出力へ進ませない。
 
-### 7. Java（`src/py2java.py` + `src/backends/java/emitter/java_native_emitter.py`）
+### 7. Java（`src/py2java.py` + `src/toolchain/emit/java/emitter/java_native_emitter.py`）
 
 - 実装方式:
 - EAST3 変換。`py2java.py` は薄い CLI、既定出力は Java native emitter が担当。
@@ -350,7 +350,7 @@ QualifiedSymbolRef
 - エラー方針:
 - 未対応構文は frontend/EAST 側で停止し、Java 出力へ進ませない。
 
-### 8. Swift（`src/py2swift.py` + `src/backends/swift/emitter/swift_native_emitter.py`）
+### 8. Swift（`src/py2swift.py` + `src/toolchain/emit/swift/emitter/swift_native_emitter.py`）
 
 - 実装方式:
 - EAST3 変換。`py2swift.py` は薄い CLI、既定出力は Swift native emitter が担当。
@@ -361,7 +361,7 @@ QualifiedSymbolRef
 - エラー方針:
 - 未対応構文は frontend/EAST 側で停止し、Swift 出力へ進ませない。
 
-### 9. Kotlin（`src/py2kotlin.py` + `src/backends/kotlin/emitter/kotlin_native_emitter.py`）
+### 9. Kotlin（`src/py2kotlin.py` + `src/toolchain/emit/kotlin/emitter/kotlin_native_emitter.py`）
 
 - 実装方式:
 - EAST3 変換。`py2kotlin.py` は薄い CLI、既定出力は Kotlin native emitter が担当。
@@ -372,7 +372,7 @@ QualifiedSymbolRef
 - エラー方針:
 - 未対応構文は frontend/EAST 側で停止し、Kotlin 出力へ進ませない。
 
-### 10. Ruby（`src/py2rb.py` + `src/backends/ruby/emitter/ruby_native_emitter.py`）
+### 10. Ruby（`src/py2rb.py` + `src/toolchain/emit/ruby/emitter/ruby_native_emitter.py`）
 
 - 実装方式:
 - EAST3 変換。`py2rb.py` は薄い CLI、既定出力は Ruby native emitter が担当。
@@ -382,7 +382,7 @@ QualifiedSymbolRef
 - エラー方針:
 - 未対応構文は frontend/EAST 側で停止し、Ruby 出力へ進ませない。
 
-### 11. Lua（`src/py2lua.py` + `src/backends/lua/emitter/lua_native_emitter.py`）
+### 11. Lua（`src/py2lua.py` + `src/toolchain/emit/lua/emitter/lua_native_emitter.py`）
 
 - 実装方式:
 - EAST3 変換。`py2lua.py` は薄い CLI、既定出力は Lua native emitter が担当。

@@ -20,7 +20,7 @@
 - `tools/regenerate_samples.py`（Nim 対応）
 - `src/runtime/nim/pytra/py_runtime.nim`（手実装撤去と正本由来生成への切替）
 - `src/pytra/utils/png.py` / `src/pytra/utils/gif.py`（必要最小限の Nim 互換修正）
-- `src/backends/nim/emitter/nim_native_emitter.py`（runtime 契約接続に必要な範囲）
+- `src/toolchain/emit/nim/emitter/nim_native_emitter.py`（runtime 契約接続に必要な範囲）
 - `test/unit/test_runtime_parity_check_cli.py` / Nim 関連 smoke
 
 非対象:

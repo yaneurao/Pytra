@@ -46,7 +46,7 @@ Forbidden:
 
 - Node.js sidecar bridge dependency,
 - JS runtime shim assumptions (`pytra/runtime.js`),
-- async fallback to other backends.
+- async fallback to other toolchain.emit.
 
 ## 5. Out of Scope (Initial Phase)
 
@@ -58,7 +58,7 @@ Forbidden:
 
 - `py2rb.py` generates `.rb` from EAST3 input.
 - minimal fixtures (`add` / `if_else` / `for_range`) transpile without failure.
-- `test/unit/backends/rb/test_py2rb_smoke.py` locks CLI/emitter skeleton behavior.
+- `test/unit/toolchain/emit/rb/test_py2rb_smoke.py` locks CLI/emitter skeleton behavior.
 
 ## 7. Container Reference Management Boundary (v1)
 

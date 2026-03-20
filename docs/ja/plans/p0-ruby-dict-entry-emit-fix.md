@@ -7,7 +7,7 @@
 
 背景:
 - `P0-RUBY-S18-TOKENIZE-INVEST-01` で、`sample/18` Ruby 失敗の直接原因が判明した。
-- EAST3 の `Dict` ノードは `entries` 配列を持つが、`src/backends/ruby/emitter/ruby_native_emitter.py` の `_render_dict_expr` は旧 `keys/values` 形式のみを参照している。
+- EAST3 の `Dict` ノードは `entries` 配列を持つが、`src/toolchain/emit/ruby/emitter/ruby_native_emitter.py` の `_render_dict_expr` は旧 `keys/values` 形式のみを参照している。
 - その結果、`single_char_token_tags: dict[str, int] = {...}` が Ruby 生成コードでは `{}` になり、`=` トークン判定が壊れて `tokenize error at line=0 pos=6 ch==` で停止する。
 
 目的:
@@ -15,7 +15,7 @@
 - `sample/18` の Ruby parity 失敗を解消する。
 
 対象:
-- `src/backends/ruby/emitter/ruby_native_emitter.py`
+- `src/toolchain/emit/ruby/emitter/ruby_native_emitter.py`
 - `test/fixtures` または `test/unit` の Ruby 回帰ケース（dict literal）
 - `tools/runtime_parity_check.py` を使った `sample/18` Ruby 再検証
 

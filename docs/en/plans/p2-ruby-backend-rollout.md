@@ -8,7 +8,7 @@ Related TODO:
 Background:
 - User request indicates policy to add Ruby as a backend target.
 - Current supported languages are `cpp/rs/cs/js/ts/go/java/swift/kotlin`, and Ruby backend is not implemented.
-- If responsibility boundaries (EAST3 input, fail-closed behavior, runtime boundary) are not fixed first, there is risk of the same growth/complexity problems seen in existing backends.
+- If responsibility boundaries (EAST3 input, fail-closed behavior, runtime boundary) are not fixed first, there is risk of the same growth/complexity problems seen in existing toolchain.emit.
 
 Objective:
 - Add native direct generation path `EAST3 -> Ruby` with `py2rb.py` as entry point and make major `sample/py` cases executable in Ruby.

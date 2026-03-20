@@ -29,7 +29,7 @@ This page is the canonical publish target for bundle-based verification coverage
 | frontend | unit_common, unit_ir | frontend_parse_diagnostic, east_document_compare, east3_document_compare | test/unit/common<br>test/unit/ir |
 | emit | unit_backends, unit_common | backend_emit_compare | test/unit/backends<br>test/unit/common/test_py2x_smoke_common.py |
 | runtime | transpile_artifact | runtime_parity_compare | test/transpile<br>tools/runtime_parity_check.py |
-| import_package | unit_backends, unit_common | package_graph_transpile | test/unit/backends/relative_import_native_path_smoke_support.py<br>test/unit/backends/relative_import_jvm_package_smoke_support.py<br>tools/check_relative_import_backend_coverage.py |
+| import_package | unit_backends, unit_common | package_graph_transpile | test/unit/toolchain/emit/relative_import_native_path_smoke_support.py<br>test/unit/toolchain/emit/relative_import_jvm_package_smoke_support.py<br>tools/check_relative_import_backend_coverage.py |
 | east2x | ir_fixture | ir_json_emit_compare | test/ir<br>tools/check_east2x_smoke.py |
 | integration | integration | native_compile_run | test/integration |
 

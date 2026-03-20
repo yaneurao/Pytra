@@ -15,7 +15,7 @@
 - 改善を「sample/18 で再現できる最小スコープ」に限定し、fail-closed で段階適用する。
 
 対象:
-- `src/backends/php/emitter/php_native_emitter.py`
+- `src/toolchain/emit/php/emitter/php_native_emitter.py`
 - `src/runtime/php/pytra/py_runtime.php`（必要最小限の補助のみ）
 - `test/unit/test_py2php_smoke.py`（必要に応じて PHP codegen 回帰を追加）
 - `sample/php/18_mini_language_interpreter.php`（再生成による確認）

@@ -21,7 +21,7 @@ if str(ROOT / "src") not in sys.path:
 if str(ROOT / "test" / "unit" / "backends") not in sys.path:
     sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
-from backends.scala.emitter import load_scala_profile, transpile_to_scala, transpile_to_scala_native
+from toolchain.emit.scala.emitter import load_scala_profile, transpile_to_scala, transpile_to_scala_native
 from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core_entrypoints import convert_path
 from relative_import_jvm_package_smoke_support import (

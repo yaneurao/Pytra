@@ -84,7 +84,7 @@ python3 tools/check_noncpp_backend_health.py --family wave3 --skip-parity
 
 ## Emitter変更時の必須ガード（Stop-Ship）
 
-- `src/backends/*/emitter/*.py` を変更した場合は、コミット前に次を必ず実行します。
+- `src/toolchain/emit/*/emitter/*.py` を変更した場合は、コミット前に次を必ず実行します。
   - `python3 tools/check_emitter_runtimecall_guardrails.py`
   - `python3 tools/check_emitter_forbidden_runtime_symbols.py`
   - `python3 tools/check_noncpp_east3_contract.py`
@@ -164,7 +164,7 @@ python3 tools/check_selfhost_stage2_sample_parity.py --skip-build
 
 失敗時の確認ポイント:
 - `build.all.log` の `error:` を先に分類し、型系（`std::any` / `optional`）と構文系（未lowering）を分ける。
-- `selfhost/py2cpp.cpp` の該当行に対して、元の `src/backends/cpp/cli.py` や generated runtime (`src/runtime/cpp/generated/**`) の ABI が value/ref-first 契約を壊していないか確認する。
+- `selfhost/py2cpp.cpp` の該当行に対して、元の `src/toolchain/emit/cpp/cli.py` や generated runtime (`src/runtime/cpp/generated/**`) の ABI が value/ref-first 契約を壊していないか確認する。
 - `sample/py/18_mini_language_interpreter.py` のような host/selfhost diff は、selfhost binary を rebuild せずに runtime serializer だけ直したときにも起こりうる。`src/pytra/std/json.py` や generated runtime を直したら `python3 tools/build_selfhost.py` を再実行する。
 
 ## CodeEmitter 作業時の変換チェック

@@ -12,9 +12,9 @@ C++ emitter が以下の3箇所で `object` にサイレントフォールバッ
 
 | ファイル | 行 | 関数 | 条件 |
 |---|---|---|---|
-| `src/backends/cpp/emitter/type_bridge.py` | L591-592 | `_cpp_type_text()` | ユニオン要素に Any-like が含まれる（`int \| Any` 等） |
-| `src/backends/cpp/emitter/cpp_emitter.py` | L471-472 | `get_expr_type()` | 二項演算の片方が Any-like |
-| `src/backends/cpp/emitter/cpp_emitter.py` | L2082-2083 | `_infer_numeric_expr_type()` | 数値二項演算の片方が Any-like |
+| `src/toolchain/emit/cpp/emitter/type_bridge.py` | L591-592 | `_cpp_type_text()` | ユニオン要素に Any-like が含まれる（`int \| Any` 等） |
+| `src/toolchain/emit/cpp/emitter/cpp_emitter.py` | L471-472 | `get_expr_type()` | 二項演算の片方が Any-like |
+| `src/toolchain/emit/cpp/emitter/cpp_emitter.py` | L2082-2083 | `_infer_numeric_expr_type()` | 数値二項演算の片方が Any-like |
 
 ## 方針
 
@@ -26,8 +26,8 @@ C++ emitter が以下の3箇所で `object` にサイレントフォールバッ
 
 ## 対象
 
-- `src/backends/cpp/emitter/type_bridge.py` L591-592
-- `src/backends/cpp/emitter/cpp_emitter.py` L471-472, L2082-2083
+- `src/toolchain/emit/cpp/emitter/type_bridge.py` L591-592
+- `src/toolchain/emit/cpp/emitter/cpp_emitter.py` L471-472, L2082-2083
 
 ## 非対象
 

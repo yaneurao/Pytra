@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.backends.cpp.cli import CppEmitter, build_cpp_header_from_east, load_cpp_profile, load_east, transpile_to_cpp
+from src.toolchain.emit.cpp.cli import CppEmitter, build_cpp_header_from_east, load_cpp_profile, load_east, transpile_to_cpp
 
 
 class Py2CppCodegenIssueTest(unittest.TestCase):

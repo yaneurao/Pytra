@@ -16,7 +16,7 @@
 - backend 間で再利用可能な移行テンプレート（命名規約・契約・回帰ガード）を確立する。
 
 対象:
-- `src/backends/{rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,scala}/`
+- `src/toolchain/emit/{rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,scala}/`
 - 各 `py2*.py` bridge（必要最小限の配線変更）
 - 関連 unit / transpile check / sample regeneration
 
@@ -122,18 +122,18 @@
 ## S1-03 命名・import 規約（2026-03-03）
 
 ディレクトリ規約:
-- `src/backends/<lang>/lower/`:
+- `src/toolchain/emit/<lang>/lower/`:
   - `ir.py`（LangIR node 定義）
   - `from_east3.py`（EAST3 -> LangIR）
-- `src/backends/<lang>/optimizer/`:
+- `src/toolchain/emit/<lang>/optimizer/`:
   - `pipeline.py`（pass 合成）
   - `passes/*.py`（個別最適化）
-- `src/backends/<lang>/emitter/`:
+- `src/toolchain/emit/<lang>/emitter/`:
   - `<lang>_emitter.py` または `<lang>_native_emitter.py`（LangIR -> text）
   - `runtime_paths.py` / `profile_loader.py` 等の描画補助
 
 import 規約:
-- `py2<lang>.py` は `backends.<lang>.lower` -> `optimizer` -> `emitter` の順でのみ参照する。
+- `py2<lang>.py` は `toolchain.emit.<lang>.lower` -> `optimizer` -> `emitter` の順でのみ参照する。
 - `emitter` から `lower` を直接 import しない（循環依存を禁止）。
 - 他言語 backend への直接依存を禁止（例: `ts` が `js` emitter 実体へ委譲する構造は段階解消対象）。
 - 共通化が必要な場合は `pytra/compiler/*` の共通層へ抽出して参照する。
@@ -147,15 +147,15 @@ import 規約:
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] 非C++ backend の現状責務棚卸しを完了し、混在点を明文化。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] Lower/Optimizer/Emitter 契約と fail-closed 規約を確定。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] ディレクトリ命名/import 規約を確定し、Wave1 テンプレート方針を記録。
-- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] `backends/rs/lower` と `backends/rs/optimizer` を導入し、`py2rs.py` を 3層配線へ切替。`check_py2rs_transpile` を pass。
-- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] `backends/scala/lower` と `backends/scala/optimizer` を導入し、`py2scala.py` を 3層配線へ切替。`check_py2scala_transpile`（`checked=141 ok=141 fail=0`）を pass。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] `toolchain/emit/rs/lower` と `toolchain/emit/rs/optimizer` を導入し、`py2rs.py` を 3層配線へ切替。`check_py2rs_transpile` を pass。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] `toolchain/emit/scala/lower` と `toolchain/emit/scala/optimizer` を導入し、`py2scala.py` を 3層配線へ切替。`check_py2scala_transpile`（`checked=141 ok=141 fail=0`）を pass。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Wave1 回帰の初回実行で `SUMMARY cases=18 pass=6 fail=12`（`scala` の `run_failed=12`）を確認し、主因を `__pytra_bytearray/__pytra_bytes` 戻り型不整合と `ForCore` 条件式の不正正規化（`value` 混入）に特定。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] `src/runtime/scala/pytra/py_runtime.scala` の `bytearray/bytes` を `ArrayBuffer[Long]` 返却へ是正し、`scala_native_emitter` に正規化条件式の識別子検証フォールバックを追加。`check_py2scala_transpile`（141/141）、`check_py2rs_transpile`（131/131, skipped=10）、`runtime_parity_check --case-root sample --targets rs,scala --ignore-unstable-stdout`（18/18）で通過。
-- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] `backends/{js,ts,cs}/lower`・`optimizer` を追加し、`py2{js,ts,cs}.py` を `lower -> optimizer -> emitter` 配線へ切替。`check_py2{js,ts,cs}_transpile` は各 `checked=133 ok=133 fail=0 skipped=8` で通過。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] `toolchain/emit/{js,ts,cs}/lower`・`optimizer` を追加し、`py2{js,ts,cs}.py` を `lower -> optimizer -> emitter` 配線へ切替。`check_py2{js,ts,cs}_transpile` は各 `checked=133 ok=133 fail=0 skipped=8` で通過。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave2 sample parity（`runtime_parity_check --case-root sample --targets js,ts,cs --ignore-unstable-stdout`）は `cases=18 pass=14 fail=4`、`artifact_size_mismatch=8`（`js/ts` の `01-04`）を確認。3層配線変更に起因する transpile 崩れはなく、artifact差は既知課題として次 wave へ持ち越す。
-- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] `backends/{go,java,kotlin,swift}/lower`・`optimizer` を追加し、`py2{go,java,kotlin,swift}.py` を `lower -> optimizer -> emitter` 配線へ切替。`check_py2{go,java,kotlin,swift}_transpile` は各 `checked=131 ok=131 fail=0 skipped=10` で通過。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] `toolchain/emit/{go,java,kotlin,swift}/lower`・`optimizer` を追加し、`py2{go,java,kotlin,swift}.py` を `lower -> optimizer -> emitter` 配線へ切替。`check_py2{go,java,kotlin,swift}_transpile` は各 `checked=131 ok=131 fail=0 skipped=10` で通過。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Wave3 sample parity（`runtime_parity_check --case-root sample --targets go,java,kotlin,swift --ignore-unstable-stdout`）は `cases=18 pass=1 fail=17`（`go: run_failed=11`, `java: run_failed=5 + artifact_missing=12`, `swift: toolchain_missing=18`, `kotlin: failureなし`）。3層配線変更の回帰は transpile check で非退行を確認し、実行系差分は wave別課題として継続管理。
-- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] `backends/{ruby,lua,php}/lower`・`optimizer` を追加し、`py2{rb,lua,php}.py` を `lower -> optimizer -> emitter` 配線へ切替。`check_py2rb_transpile`（`checked=132 ok=132 fail=0 skipped=10`）、`check_py2lua_transpile`（`checked=89 ok=89 fail=0 skipped=53`）、`check_py2php_transpile`（`checked=10 ok=10 fail=0 skipped=0`）で通過。
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] `toolchain/emit/{ruby,lua,php}/lower`・`optimizer` を追加し、`py2{rb,lua,php}.py` を `lower -> optimizer -> emitter` 配線へ切替。`check_py2rb_transpile`（`checked=132 ok=132 fail=0 skipped=10`）、`check_py2lua_transpile`（`checked=89 ok=89 fail=0 skipped=53`）、`check_py2php_transpile`（`checked=10 ok=10 fail=0 skipped=0`）で通過。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Wave4 sample parity（`runtime_parity_check --case-root sample --targets ruby,lua,php --ignore-unstable-stdout`）は `cases=18 pass=14 fail=4`。内訳は `php` の `output_mismatch=2`（`12/13`）と `run_failed=1`（`16`）、`ruby` の `run_failed=1`（`18`）で、`lua` は failure なし。3層配線の transpile 回帰は非退行として確認済み。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-01] `tools/check_noncpp_east3_contract.py` を 12 backend（`rs/cs/js/ts/go/java/kotlin/swift/ruby/lua/php/scala`）対象に拡張し、`py2<lang>.py` の `lower/optimizer` 配線必須パターン・順序検査と `lower/optimizer <-> emitter` 逆流 import 禁止を static check 化。`python3 tools/check_noncpp_east3_contract.py --skip-transpile` と `python3 tools/check_noncpp_east3_contract.py`（12本 transpile check 含む）が pass。
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-02] `docs/ja/spec/{spec-dev,spec-folder}.md` と `docs/en/spec/{spec-dev,spec-folder}.md` を更新し、非C++ backend の 3 層標準（適用 backend、層責務、逆流禁止、検査導線）を明文化。これにより `P1-MULTILANG-BACKEND-3LAYER-01` の分解タスクを全完了とした。

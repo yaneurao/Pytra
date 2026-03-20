@@ -33,7 +33,7 @@ EXPECTED_JA_PLAN_PHRASES = (
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-02]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S3-01]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S4-01]",
-    "`test/unit/backends/cs/test_py2cs_smoke.py`",
+    "`test/unit/toolchain/emit/cs/test_py2cs_smoke.py`",
     "`test/unit/tooling/test_powershell_cs_host_profile.py`",
     "`tools/check_powershell_cs_host_sample_parity.py`",
     "`test/unit/tooling/test_pytra_cli_powershell_cs_host_profile.py`",
@@ -60,7 +60,7 @@ EXPECTED_EN_PLAN_PHRASES = (
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S2-02]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S3-01]",
     "[x] [ID: P5-POWERSHELL-CS-HOST-01-S4-01]",
-    "`test/unit/backends/cs/test_py2cs_smoke.py`",
+    "`test/unit/toolchain/emit/cs/test_py2cs_smoke.py`",
     "`test/unit/tooling/test_powershell_cs_host_profile.py`",
     "`tools/check_powershell_cs_host_sample_parity.py`",
     "`test/unit/tooling/test_pytra_cli_powershell_cs_host_profile.py`",
@@ -115,7 +115,7 @@ EXPECTED_JA_HOWTO_PHRASES = (
     "`pwsh + py2cs` host profile を整理中です。",
     "PowerShell を target language とする pure backend ではありません。",
     "`dotnet -> csc -> Add-Type`",
-    "`test/unit/backends/cs/test_py2cs_smoke.py` は backend transpile smoke に留まります。",
+    "`test/unit/toolchain/emit/cs/test_py2cs_smoke.py` は backend transpile smoke に留まります。",
 )
 
 EXPECTED_EN_HOWTO_PHRASES = (
@@ -123,7 +123,7 @@ EXPECTED_EN_HOWTO_PHRASES = (
     "Pytra is currently organizing a `pwsh + py2cs` host profile.",
     "This is not a pure PowerShell target backend.",
     "`dotnet -> csc -> Add-Type`",
-    "`test/unit/backends/cs/test_py2cs_smoke.py` remains a backend-transpile smoke only.",
+    "`test/unit/toolchain/emit/cs/test_py2cs_smoke.py` remains a backend-transpile smoke only.",
 )
 
 
@@ -164,7 +164,7 @@ def _collect_contract_issues() -> list[str]:
     }:
         issues.append("build driver fail-closed rule keys drifted")
     if contract_mod.REPRESENTATIVE_VERIFICATION_LANES != {
-        "existing_backend_smoke": "test/unit/backends/cs/test_py2cs_smoke.py",
+        "existing_backend_smoke": "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
         "future_host_smoke": "test/unit/tooling/test_powershell_cs_host_profile.py",
         "sample_parity_input": "sample/py/01_mandelbrot.py",
         "future_sample_parity": "tools/check_powershell_cs_host_sample_parity.py",
@@ -174,7 +174,7 @@ def _collect_contract_issues() -> list[str]:
     }:
         issues.append("representative verification lanes drifted")
     if contract_mod.CURRENT_PY2CS_SMOKE_BASELINE != {
-        "runner": "test/unit/backends/cs/test_py2cs_smoke.py",
+        "runner": "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
         "covers_backend_transpile": True,
         "covers_generated_program_cs": True,
         "covers_pwsh_launcher": False,

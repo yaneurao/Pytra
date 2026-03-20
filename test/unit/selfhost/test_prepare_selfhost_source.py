@@ -208,7 +208,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
             removed,
         )
         self.assertNotIn(
-            "from backends.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl\n",
+            "from toolchain.emit.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl\n",
             removed,
         )
 
@@ -369,7 +369,7 @@ class PrepareSelfhostSourceTest(unittest.TestCase):
         self.assertIn("hooks = _build_cpp_hooks_impl()", load_cpp_hooks_block)
         self.assertIn("try:", load_cpp_hooks_block)
         self.assertIn("if isinstance(hooks, dict):", load_cpp_hooks_block)
-        self.assertNotIn("from backends.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl", merged)
+        self.assertNotIn("from toolchain.emit.cpp.emitter.hooks_registry import build_cpp_hooks as _build_cpp_hooks_impl", merged)
         self.assertIn("def _build_cpp_hooks_impl() -> dict[str, Any]:", merged)
 
     def test_hook_patch_injects_dynamic_hook_disable_and_call_hook_stub(self) -> None:

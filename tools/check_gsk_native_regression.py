@@ -18,9 +18,9 @@ def _run(cmd: list[str]) -> int:
 
 def main() -> int:
     steps: list[list[str]] = [
-        ["python3", "-m", "unittest", "discover", "-s", "test/unit/backends/go", "-p", "test_py2go_smoke.py", "-v"],
-        ["python3", "-m", "unittest", "discover", "-s", "test/unit/backends/swift", "-p", "test_py2swift_smoke.py", "-v"],
-        ["python3", "-m", "unittest", "discover", "-s", "test/unit/backends/kotlin", "-p", "test_py2kotlin_smoke.py", "-v"],
+        ["python3", "-m", "unittest", "discover", "-s", "test/unit/toolchain/emit/go", "-p", "test_py2go_smoke.py", "-v"],
+        ["python3", "-m", "unittest", "discover", "-s", "test/unit/toolchain/emit/swift", "-p", "test_py2swift_smoke.py", "-v"],
+        ["python3", "-m", "unittest", "discover", "-s", "test/unit/toolchain/emit/kotlin", "-p", "test_py2kotlin_smoke.py", "-v"],
         ["python3", "tools/check_py2x_transpile.py", "--target", "go"],
         ["python3", "tools/check_py2x_transpile.py", "--target", "swift"],
         ["python3", "tools/check_py2x_transpile.py", "--target", "kotlin"],

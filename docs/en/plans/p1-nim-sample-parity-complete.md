@@ -18,7 +18,7 @@ In scope:
 - `tools/runtime_parity_check.py` (add Nim target)
 - `tools/regenerate_samples.py` (Nim support)
 - `src/runtime/nim/pytra/py_runtime.nim` (missing runtime implementations for PNG/GIF, etc.)
-- `src/backends/nim/emitter/nim_native_emitter.py` (only as needed for runtime contract connection)
+- `src/toolchain/emit/nim/emitter/nim_native_emitter.py` (only as needed for runtime contract connection)
 - `test/unit/test_runtime_parity_check_cli.py` / Nim-related smoke
 
 Out of scope:

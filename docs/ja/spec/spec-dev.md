@@ -14,10 +14,10 @@
 - `src/`
   - `py2cs.py`, `py2x.py --target cpp`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`, `py2rb.py`, `py2lua.py`, `py2php.py`, `py2scala.py`, `py2nim.py`
   - `src/` 直下にはトランスパイラ本体（`py2*.py`）のみを配置する
-  - `backends/common/`: 複数言語で共有する基底実装・共通ユーティリティ
-  - backend 段階実装の標準ディレクトリは `src/backends/<lang>/{lower,optimizer,emitter}/` とする（正本: `spec-folder.md`）。
+  - `toolchain/emit/common/`: 複数言語で共有する基底実装・共通ユーティリティ
+  - backend 段階実装の標準ディレクトリは `src/toolchain/emit/<lang>/{lower,optimizer,emitter}/` とする（正本: `spec-folder.md`）。
   - 当面は `extensions/<topic>/` を併用する（案2）。将来は `lower/optimizer/emitter` 中心へ縮退する（案3）。
-  - `backends/common/profiles/` と `backends/<lang>/profiles/`: `CodeEmitter` 用の言語差分 JSON（型/演算子/runtime call/syntax）
+  - `toolchain/emit/common/profiles/` と `toolchain/emit/<lang>/profiles/`: `CodeEmitter` 用の言語差分 JSON（型/演算子/runtime call/syntax）
   - `runtime/`: 各ターゲット言語のランタイム配置先（正本は `src/runtime/<lang>/{generated,native}/`。未移行 backend の `pytra-gen/pytra-core` は一時 debt）
   - `*_module/`: 旧ランタイム配置（互換レイヤ、段階撤去対象）
   - `pytra/`: Python 側の共通ライブラリ（正式）
@@ -139,7 +139,7 @@ linked module(EAST3)
 - C++ は `CppProgramWriter` を用い、`manifest.json` / `Makefile` / runtime tree を扱う。
 - 実装同期（2026-03-07）:
   - `backend_registry.py` / `backend_registry_static.py` は backend spec を正規化するとき、`emit_module` と `program_writer` を必ず生やす。
-  - `program_writer` 未指定 backend の既定は `backends/common/program_writer.py` の `write_single_file_program(...)` とする。
+  - `program_writer` 未指定 backend の既定は `toolchain/emit/common/program_writer.py` の `write_single_file_program(...)` とする。
   - `east2x.py` の single-module 経路は `emit_module -> ProgramArtifact -> ProgramWriter` を通し、旧 `emit_source()` は compatibility wrapper として `ModuleArtifact.text` を返すだけに縮退した。
 
 互換契約:
@@ -421,22 +421,22 @@ migration note:
 
 - EAST ベースで変換します（`.py/.json -> EAST -> C#`）。
 - `py2cs.py` は CLI + 入出力の薄いオーケストレータに限定します。
-- C# 固有ロジックは `src/backends/cs/emitter/cs_emitter.py` に分離します。
-- 言語差分は `src/backends/cs/profiles/*.json`（`types/operators/runtime_calls/syntax`）で管理します。
+- C# 固有ロジックは `src/toolchain/emit/cs/emitter/cs_emitter.py` に分離します。
+- 言語差分は `src/toolchain/emit/cs/profiles/*.json`（`types/operators/runtime_calls/syntax`）で管理します。
 - `import` / `from ... import ...` は EAST `meta.import_bindings` を正本として `using` 行へ変換します。
-- 主要型は `src/backends/cs/profiles/types.json` を通して変換します（例: `int64 -> long`, `float64 -> double`, `str -> string`）。
+- 主要型は `src/toolchain/emit/cs/profiles/types.json` を通して変換します（例: `int64 -> long`, `float64 -> double`, `str -> string`）。
 
 ## 3. C++ 変換仕様（`py2x.py --target cpp`）
 
 - Python AST を解析し、単一 `.cpp`（必要 include 付き）を生成します。
-- `CppEmitter` 実装は `src/backends/cpp/emitter/cpp_emitter.py` へ分離され、`py2x.py --target cpp` は CLI / オーケストレーション層として扱います。
+- `CppEmitter` 実装は `src/toolchain/emit/cpp/emitter/cpp_emitter.py` へ分離され、`py2x.py --target cpp` は CLI / オーケストレーション層として扱います。
 - 言語機能の詳細なサポート粒度（`enumerate(start)` / `lambda` / 内包表記など）は [py2cpp サポートマトリクス](../language/cpp/spec-support.md) を正として管理します。
 - 生成コードは `src/runtime/cpp/` のランタイム補助実装を利用します。
 - 補助関数は生成 `.cpp` に直書きせず、`runtime/cpp/native/core/py_runtime.h` 側を利用します。
 - `json` に限らず、Python 標準ライブラリ相当機能は `src/pytra/std/*.py` を正本とし、`runtime/cpp` 側へ独自実装を追加しません。
   - C++ 側で必要な処理は、これら Python 正本のトランスパイル結果を利用します。
 - class は `pytra::gc::PyObj` 継承の C++ class として生成します（例外クラスを除く）。
-- class method 呼び出しは `src/backends/cpp/emitter/call.py` の dispatch mode（`virtual` / `direct` / `fallback`）で描画先を分離します。
+- class method 呼び出しは `src/toolchain/emit/cpp/emitter/call.py` の dispatch mode（`virtual` / `direct` / `fallback`）で描画先を分離します。
   - `virtual` / `direct`: ユーザー定義 class method シグネチャが解決できる経路。
   - `fallback`: `BuiltinCall` lower 前提経路や runtime/type_id API（`IsInstance/IsSubtype/IsSubclass/ObjTypeId`）など、virtual dispatch 置換対象外の経路。
 - selfhost 回帰では `sample/cpp` と `src/runtime/cpp/generated`（`built_in/type_id.cpp` 除外）に `type_id` 比較/switch dispatch を残さないことをテストで固定します（`test_selfhost_virtual_dispatch_regression.py`）。
@@ -499,7 +499,7 @@ migration note:
 
 ### py2cpp 共通化ガードルール
 
-- `src/backends/cpp/cli.py` へ新規ロジックを追加する場合は、先に「C++ 固有」か「言語非依存」かを分類します。
+- `src/toolchain/emit/cpp/cli.py` へ新規ロジックを追加する場合は、先に「C++ 固有」か「言語非依存」かを分類します。
 - 言語非依存と判定した処理は `src/toolchain/compiler/`（`east_parts/` や `CodeEmitter` 含む）へ実装し、`py2x.py --target cpp` へは直接追加しません。
 - `py2x.py --target cpp` に残す処理は C++ 固有責務（型写像、runtime 名解決、header/include 生成、C++ 構文最適化）に限定します。
 - 例外として、後方互換の公開 API ラッパ（`load_east`, `_analyze_import_graph`, `build_module_east_map`, `dump_deps_graph_text`）のみ `py2x.py --target cpp` に残置できます。これらは共通層 API への委譲に限定します。
@@ -511,8 +511,8 @@ migration note:
 - `src/toolchain/compiler/transpile_cli.py` の汎用 helper は機能グループごとの `class + @staticmethod`（`*Helpers`）を正本とし、`py2x.py --target cpp` 側は class 単位 import + 起動時束縛で参照します。トップレベル関数は当面、既存 CLI / selfhost 互換のために併存させます。
 - `ImportGraphHelpers` のうち `analyze_import_graph` / `build_module_east_map` は、実装本体を `src/toolchain/compiler/east_parts/east1_build.py` へ委譲する thin wrapper として運用します（互換公開 API のみ保持）。
 - `py2x.py --target cpp` の import graph/build 入口（`_analyze_import_graph`, `build_module_east_map`）は `East1BuildHelpers` への委譲に限定し、`transpile_cli` へ実装詳細を持ち込みません。
-- 回帰は `test/unit/ir/test_east1_build.py`・`test/unit/backends/cpp/test_py2cpp_east1_build_bridge.py`・`tools/check_py2cpp_transpile.py` を正本導線とし、依存解析責務の逆流を検出します。
-- `P0-PY2CPP-SPLIT-01` の回帰として `python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_smoke.py'` を併用し、`py2x.py --target cpp` の責務境界（`tools/check_py2cpp_boundary.py`）が維持されていることを確認します。
+- 回帰は `test/unit/ir/test_east1_build.py`・`test/unit/toolchain/emit/cpp/test_py2cpp_east1_build_bridge.py`・`tools/check_py2cpp_transpile.py` を正本導線とし、依存解析責務の逆流を検出します。
+- `P0-PY2CPP-SPLIT-01` の回帰として `python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p 'test_py2cpp_smoke.py'` を併用し、`py2x.py --target cpp` の責務境界（`tools/check_py2cpp_boundary.py`）が維持されていることを確認します。
 
 ### 3.1 import と `runtime/cpp` 対応
 
@@ -645,7 +645,7 @@ migration note:
   - Python 正本と異なる既定値・フォーマット・丸め方への変更。
 - 受け入れ条件:
   - 変更後に `python3 tools/verify_image_runtime_parity.py` が `True` を返すこと。
-  - `test/unit/common/test_image_runtime_parity.py` と `test/unit/backends/cpp/test_py2cpp_features.py` を通過すること。
+  - `test/unit/common/test_image_runtime_parity.py` と `test/unit/toolchain/emit/cpp/test_py2cpp_features.py` を通過すること。
 
 ## 4. 検証手順（C++）
 
@@ -661,7 +661,7 @@ migration note:
   - `selfhost/py2cpp.py` から生成した `selfhost/py2cpp.cpp` がコンパイル成功する。
   - その実行ファイルで `sample/py/01_mandelbrot.py` を C++ へ変換できる。
 - 推奨確認:
-  - `src/backends/cpp/cli.py` 生成版と `selfhost` 生成版の C++ ソース差分を確認する（差分自体は許容）。
+  - `src/toolchain/emit/cpp/cli.py` 生成版と `selfhost` 生成版の C++ ソース差分を確認する（差分自体は許容）。
   - 変換後 C++ をコンパイル・実行し、Python 実行結果と一致することを確認する。
 
 ### 4.2 一致判定条件（selfhost / 通常比較）
@@ -677,12 +677,12 @@ migration note:
 
 - `src/toolchain/compiler/east.py`: Python -> EAST JSON（正本）
 - `src/toolchain/compiler/east_parts/east_io.py`: `.py/.json` 入力から EAST 読み込み、先頭 trivia 補完（正本）
-- `src/backends/common/emitter/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
-- `src/backends/cpp/cli.py`: EAST JSON -> C++
+- `src/toolchain/emit/common/emitter/code_emitter.py`: 各言語エミッタ共通の基底ユーティリティ（ノード判定・型文字列補助・`Any` 安全変換）
+- `src/toolchain/emit/cpp/cli.py`: EAST JSON -> C++
 - `src/runtime/cpp/native/core/py_runtime.h`: C++ ランタイム集約
 - 責務分離:
   - `range(...)` の意味解釈は EAST 構築側で完了させる
-  - `src/backends/cpp/cli.py` は正規化済み EAST を文字列化する
+  - `src/toolchain/emit/cpp/cli.py` は正規化済み EAST を文字列化する
   - 言語非依存の補助ロジックは `CodeEmitter` 側へ段階的に集約する
 - 出力構成方針:
   - 最終ゴールは「モジュール単位の複数ファイル出力（`.h/.cpp`）」とする。
@@ -690,7 +690,7 @@ migration note:
 
 ### 5.1 CodeEmitter テスト方針
 
-- `src/backends/common/emitter/code_emitter.py` の回帰は `test/unit/common/test_code_emitter.py` で担保します。
+- `src/toolchain/emit/common/emitter/code_emitter.py` の回帰は `test/unit/common/test_code_emitter.py` で担保します。
 - 主対象:
   - 出力バッファ操作（`emit`, `emit_stmt_list`, `next_tmp`）
   - 動的入力安全化（`any_to_dict`, `any_to_list`, `any_to_str`, `any_dict_get`）
@@ -701,10 +701,10 @@ migration note:
 ### 5.2 EASTベース Rust 経路（段階移行）
 
 - `src/py2rs.py` は CLI + 入出力の薄いオーケストレータに限定する。
-- Rust 固有の出力処理は `src/backends/rs/emitter/rs_emitter.py`（`RustEmitter`）へ分離する。
-- `src/py2rs.py` は `src/backends/common/` / `src/rs_module/` に依存しない（runtime 正本は `src/runtime/rs/{native,generated}/`）。
+- Rust 固有の出力処理は `src/toolchain/emit/rs/emitter/rs_emitter.py`（`RustEmitter`）へ分離する。
+- `src/py2rs.py` は `src/toolchain/emit/common/` / `src/rs_module/` に依存しない（runtime 正本は `src/runtime/rs/{native,generated}/`）。
 - non-C++ / non-C# backend の checked-in `src/runtime/<lang>/pytra/**` は存在してはならない。
-- 言語固有差分は `src/backends/rs/profiles/` と `src/backends/rs/` に分離する。
+- 言語固有差分は `src/toolchain/emit/rs/profiles/` と `src/toolchain/emit/rs/` に分離する。
 - 変換可否のスモーク確認は `tools/check_py2rs_transpile.py` を正本とする。
 - `--east-stage` の既定は `3`、`--east-stage 2` は移行互換モード（警告付き）として扱う。
 - 現時点の到達点は「変換成功（transpile success）を優先」であり、Rust コンパイル互換・出力品質は段階的に改善する。
@@ -712,9 +712,9 @@ migration note:
 ### 5.3 EASTベース JavaScript 経路（段階移行）
 
 - `src/py2js.py` は CLI + 入出力の薄いオーケストレータに限定する。
-- JavaScript 固有の出力処理は `src/backends/js/emitter/js_emitter.py`（`JsEmitter`）へ分離する。
-- `src/py2js.py` は `src/backends/common/` に依存しない。
-- 言語固有差分は `src/backends/js/profiles/` と `src/backends/js/` に分離する。
+- JavaScript 固有の出力処理は `src/toolchain/emit/js/emitter/js_emitter.py`（`JsEmitter`）へ分離する。
+- `src/py2js.py` は `src/toolchain/emit/common/` に依存しない。
+- 言語固有差分は `src/toolchain/emit/js/profiles/` と `src/toolchain/emit/js/` に分離する。
 - `browser` / `browser.widgets.dialog` は外部提供ランタイム（ブラウザ環境）として扱い、`py2js` 側では import 本体を生成しない。
 - `document: Any = extern()` / `doc: Any = extern("document")` のような ambient global 変数宣言は JS/TS 限定で許可し、import-free symbol として lower する。
 - ambient global marker が付いた `Any` binding に限り、property access / method call / call expression を raw identifier chain として lower してよい。一般の `Any/object` receiver 禁止ルールは緩めない。
@@ -783,8 +783,8 @@ migration note:
 
 ## 7. 実装上の共通ルール
 
-- `src/backends/common/` には言語非依存で再利用される処理のみを配置します。
-- 言語固有仕様（型マッピング、予約語、ランタイム名など）は `src/backends/common/` に置きません。
+- `src/toolchain/emit/common/` には言語非依存で再利用される処理のみを配置します。
+- 言語固有仕様（型マッピング、予約語、ランタイム名など）は `src/toolchain/emit/common/` に置きません。
 - ランタイム実体は canonical lane（移行済み backend は `src/runtime/<lang>/{generated,native}/`）に配置し、`src/*_module/` 直下へ新規実体を追加しません。
 - `py2x.py --target cpp` と `py2rs.py` で共通化できる処理は、各エミッタへ直接足さずに `CodeEmitter` 側へ先に寄せます。
 - 言語固有分岐は `hooks` / `profiles` 側へ分離し、`py2*.py` は薄いオーケストレータを維持します。

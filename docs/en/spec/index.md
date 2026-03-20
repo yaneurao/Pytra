@@ -7,10 +7,12 @@
 `docs/en/spec/index.md` is the entry page for the full specification set. Details are split into the following files.
 
 - User specification: [User Specification](./spec-user.md)
+- Python compatibility guide: [Python Compatibility Guide](./spec-python-compat.md)
 - Implementation specification: [Implementation Specification](./spec-dev.md)
 - Runtime specification: [Runtime Specification](./spec-runtime.md)
 - Boxing/Unboxing specification: [Boxing/Unboxing Specification](./spec-boxing.md)
 - type_id specification: [type_id Specification](./spec-type_id.md)
+- Tagged union specification: [Tagged Union Specification](./spec-tagged-union.md)
 - GC specification: [GC Specification](./spec-gc.md)
 - Language profile specification: [Language Profile Specification](./spec-language-profile.md)
 - Folder responsibility map specification: [Folder Responsibility Map Specification](./spec-folder.md)
@@ -26,6 +28,7 @@
 - EAST1 build responsibility boundary: [EAST1 Build Boundary](./spec-east.md#east1-build-boundary)
 - EAST migration phases: [EAST Migration Phases](./spec-east.md#east-migration-phases)
 - Linker specification (EAST link stage): [Linker Specification](./spec-linker.md)
+- Compile / link pipeline plan: [Compile / Link Pipeline](../plans/p2-compile-link-pipeline.md)
 - Language-specific specs: [Language-Specific Specifications](../language/index.md)
 - Codex operation spec: [Codex Operation Specification](./spec-codex.md)
 - Legacy spec archive: [Spec Archive](./archive/index.md)
@@ -36,6 +39,10 @@
 
 - If you want tool usage, input constraints, and test execution guidance:
   - [User Specification](./spec-user.md)
+- If you want differences from Python or unsupported syntax:
+  - [Python Compatibility Guide](./spec-python-compat.md)
+- If you want `import` rules, available types, or the module list:
+  - [User Specification § Python Input Specification](./spec-user.md#2-python-input-specification)
 - If you want implementation policy, module structure, and transpilation rules:
   - [Implementation Specification](./spec-dev.md)
 - If you want C++ runtime layout, include mapping rules, and the `Any` mapping policy:
@@ -44,6 +51,8 @@
   - [Boxing/Unboxing Specification](./spec-boxing.md)
 - If you want the single-inheritance `type_id` contract (`isinstance` / `issubclass`):
   - [type_id Specification](./spec-type_id.md)
+- If you want `type X = A | B | ...` tagged union declaration, `isinstance`, and `cast` narrowing:
+  - [Tagged Union Specification](./spec-tagged-union.md)
 - If you want RC-based GC policy:
   - [GC Specification](./spec-gc.md)
 - If you want `CodeEmitter` JSON profile and hooks specification:

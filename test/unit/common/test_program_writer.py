@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.backends.common.program_writer import write_single_file_program
+from src.toolchain.emit.common.program_writer import write_single_file_program
 
 
 class SingleFileProgramWriterTest(unittest.TestCase):

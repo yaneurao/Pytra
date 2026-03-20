@@ -17,7 +17,7 @@
 対象:
 - `src/runtime/<lang>/{pytra-core,pytra-gen}/`
 - `src/pytra/{std,utils}/`（正本モジュール）
-- `src/backends/*/emitter/*.py`（runtime 呼び出し経路）
+- `src/toolchain/emit/*/emitter/*.py`（runtime 呼び出し経路）
 - `tools/`（監査・生成・parity・CI導線）
 
 非対象:

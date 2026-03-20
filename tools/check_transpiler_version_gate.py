@@ -18,26 +18,26 @@ LANGS = ["cpp", "rs", "cs", "js", "ts", "go", "java", "swift", "kotlin"]
 
 SHARED_DEPENDENCY_PATHS = [
     "src/pytra",
-    "src/backends/common/profiles",
-    "src/backends/__init__.py",
+    "src/toolchain/emit/common/profiles",
+    "src/toolchain/emit/__init__.py",
 ]
 
 LANG_DIRECT_DEPENDENCY_PATHS: dict[str, list[str]] = {
     "cpp": [
         "src/py2x-selfhost.py",
         "src/toolchain/ir/core.py",
-        "src/backends/cpp/cli.py",
-        "src/backends/cpp",
-        "src/backends/cpp/profiles",
+        "src/toolchain/emit/cpp/cli.py",
+        "src/toolchain/emit/cpp",
+        "src/toolchain/emit/cpp/profiles",
     ],
-    "rs": ["src/py2x.py", "src/backends/rs", "src/backends/rs/profiles"],
-    "cs": ["src/py2x.py", "src/backends/cs", "src/backends/cs/profiles"],
-    "js": ["src/py2x.py", "src/backends/js", "src/backends/js/profiles"],
-    "ts": ["src/py2x.py", "src/backends/ts"],
-    "go": ["src/py2x.py", "src/backends/go"],
-    "java": ["src/py2x.py", "src/backends/java"],
-    "swift": ["src/py2x.py", "src/backends/swift"],
-    "kotlin": ["src/py2x.py", "src/backends/kotlin"],
+    "rs": ["src/py2x.py", "src/toolchain/emit/rs", "src/toolchain/emit/rs/profiles"],
+    "cs": ["src/py2x.py", "src/toolchain/emit/cs", "src/toolchain/emit/cs/profiles"],
+    "js": ["src/py2x.py", "src/toolchain/emit/js", "src/toolchain/emit/js/profiles"],
+    "ts": ["src/py2x.py", "src/toolchain/emit/ts"],
+    "go": ["src/py2x.py", "src/toolchain/emit/go"],
+    "java": ["src/py2x.py", "src/toolchain/emit/java"],
+    "swift": ["src/py2x.py", "src/toolchain/emit/swift"],
+    "kotlin": ["src/py2x.py", "src/toolchain/emit/kotlin"],
 }
 
 

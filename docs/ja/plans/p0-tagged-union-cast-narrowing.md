@@ -56,9 +56,9 @@ if ((s.py_default).tag == PYTRA_TID_BOOL) {
 
 ## 対象
 
-- `src/backends/cpp/emitter/cpp_emitter.py` — cast 検出・tagged union フィールドアクセス変換
-- `src/backends/cpp/emitter/stmt.py` — 暗黙ナローイング除去
-- `src/backends/cpp/emitter/call.py` or `builtin_runtime.py` — cast BuiltinCall の処理
+- `src/toolchain/emit/cpp/emitter/cpp_emitter.py` — cast 検出・tagged union フィールドアクセス変換
+- `src/toolchain/emit/cpp/emitter/stmt.py` — 暗黙ナローイング除去
+- `src/toolchain/emit/cpp/emitter/call.py` or `builtin_runtime.py` — cast BuiltinCall の処理
 - `src/pytra/std/argparse.py` — cast() 方式へ書き換え
 
 ## 非対象

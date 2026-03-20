@@ -1,0 +1,11 @@
+"""Rust 向け CodeEmitter hooks 実装。"""
+
+from __future__ import annotations
+
+from toolchain.emit.common.emitter.code_emitter import EmitterHooks
+
+
+def build_rs_hooks() -> dict[str, object]:
+    """Rust 向け hook を返す（現時点では最小構成）。"""
+    hooks = EmitterHooks()
+    return hooks.to_dict()

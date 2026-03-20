@@ -58,7 +58,7 @@ Ruby 生成コードの runtime 境界は、原則として次に限定する。
 
 - `py2rb.py` が EAST3 から `.rb` を生成できる。
 - 最小 fixture（`add` / `if_else` / `for_range`）で変換失敗しない。
-- `test/unit/backends/rb/test_py2rb_smoke.py` で CLI と emitter 骨格の回帰を固定する。
+- `test/unit/toolchain/emit/rb/test_py2rb_smoke.py` で CLI と emitter 骨格の回帰を固定する。
 
 ## 7. コンテナ参照管理境界（v1）
 

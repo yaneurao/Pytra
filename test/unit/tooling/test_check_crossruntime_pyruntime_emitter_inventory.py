@@ -27,14 +27,14 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
 
     def test_cpp_object_bridge_bucket_is_cpp_only(self) -> None:
         bucket = inventory_mod.EXPECTED_BUCKETS["cpp_emitter_object_bridge_residual"]
-        self.assertTrue(all(path.startswith("src/backends/cpp/") for _, path in bucket))
+        self.assertTrue(all(path.startswith("src/toolchain/emit/cpp/") for _, path in bucket))
         self.assertEqual({path for _, path in bucket}, set())
         self.assertEqual(
             inventory_mod.CPP_TYPED_WRAPPER_FORBIDDEN_PATHS,
             {
-                "src/backends/cpp/emitter/cpp_emitter.py",
-                "src/backends/cpp/emitter/runtime_expr.py",
-                "src/backends/cpp/emitter/stmt.py",
+                "src/toolchain/emit/cpp/emitter/cpp_emitter.py",
+                "src/toolchain/emit/cpp/emitter/runtime_expr.py",
+                "src/toolchain/emit/cpp/emitter/stmt.py",
             },
         )
         self.assertEqual({symbol for symbol, _ in bucket}, set())
@@ -44,9 +44,9 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         self.assertEqual(
             {path for _, path in bucket},
             {
-                "src/backends/cpp/emitter/cpp_emitter.py",
-                "src/backends/cpp/emitter/runtime_expr.py",
-                "src/backends/cpp/emitter/stmt.py",
+                "src/toolchain/emit/cpp/emitter/cpp_emitter.py",
+                "src/toolchain/emit/cpp/emitter/runtime_expr.py",
+                "src/toolchain/emit/cpp/emitter/stmt.py",
             },
         )
         self.assertEqual(
@@ -61,7 +61,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
 
     def test_rs_shared_type_id_bucket_is_rs_only(self) -> None:
         bucket = inventory_mod.EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"]
-        self.assertEqual({path for _, path in bucket}, {"src/backends/rs/emitter/rs_emitter.py"})
+        self.assertEqual({path for _, path in bucket}, {"src/toolchain/emit/rs/emitter/rs_emitter.py"})
         self.assertEqual(
             {symbol for symbol, _ in bucket},
             {
@@ -74,7 +74,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
 
     def test_cs_shared_type_id_bucket_is_cs_only(self) -> None:
         bucket = inventory_mod.EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"]
-        self.assertEqual({path for _, path in bucket}, {"src/backends/cs/emitter/cs_emitter.py"})
+        self.assertEqual({path for _, path in bucket}, {"src/toolchain/emit/cs/emitter/cs_emitter.py"})
         self.assertEqual(
             {symbol for symbol, _ in bucket},
             {
@@ -87,7 +87,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
 
     def test_crossruntime_mutation_bucket_covers_cpp_and_cs_only(self) -> None:
         bucket = inventory_mod.EXPECTED_BUCKETS["crossruntime_mutation_helper_residual"]
-        self.assertEqual({path for _, path in bucket}, {"src/backends/cs/emitter/cs_emitter.py"})
+        self.assertEqual({path for _, path in bucket}, {"src/toolchain/emit/cs/emitter/cs_emitter.py"})
         self.assertEqual({symbol for symbol, _ in bucket}, {"py_append", "py_pop"})
 
     def test_cpp_typed_lane_uses_direct_mutation_helpers(self) -> None:
@@ -97,7 +97,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         self.assertEqual(
             inventory_mod._collect_cpp_typed_lane_direct_pairs(),
             {
-                ("py_list_set_at_mut", "src/backends/cpp/emitter/stmt.py"),
+                ("py_list_set_at_mut", "src/toolchain/emit/cpp/emitter/stmt.py"),
             },
         )
 
@@ -129,7 +129,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         self.assertEqual(
             inventory_mod.REPRESENTATIVE_LANE_MANIFEST["cpp_emitter_object_bridge_residual"],
             {
-                "smoke_file": "test/unit/backends/cpp/test_east3_cpp_bridge.py",
+                "smoke_file": "test/unit/toolchain/emit/cpp/test_east3_cpp_bridge.py",
                 "smoke_tests": {
                     "test_render_expr_pyobj_runtime_list_append_uses_low_level_bridge",
                     "test_emit_assign_pyobj_runtime_list_store_uses_low_level_bridge",
@@ -142,43 +142,43 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         self.assertEqual(
             inventory_mod.REPRESENTATIVE_LANE_MANIFEST["cpp_emitter_shared_type_id_residual"],
             {
-                "smoke_file": "test/unit/backends/cpp/test_east3_cpp_bridge.py",
+                "smoke_file": "test/unit/toolchain/emit/cpp/test_east3_cpp_bridge.py",
                 "smoke_tests": {
                     "test_render_expr_supports_east3_obj_boundary_nodes",
                     "test_transpile_representative_nominal_adt_match_emits_if_else_chain",
                 },
                 "source_guard_paths": {
-                    "src/backends/cpp/emitter/cpp_emitter.py",
-                    "src/backends/cpp/emitter/runtime_expr.py",
-                    "src/backends/cpp/emitter/stmt.py",
+                    "src/toolchain/emit/cpp/emitter/cpp_emitter.py",
+                    "src/toolchain/emit/cpp/emitter/runtime_expr.py",
+                    "src/toolchain/emit/cpp/emitter/stmt.py",
                 },
             },
         )
         self.assertEqual(
             inventory_mod.REPRESENTATIVE_LANE_MANIFEST["rs_emitter_shared_type_id_residual"],
             {
-                "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",
+                "smoke_file": "test/unit/toolchain/emit/rs/test_py2rs_smoke.py",
                 "smoke_tests": {"test_type_predicate_nodes_are_lowered_without_legacy_bridge"},
-                "source_guard_paths": {"src/backends/rs/emitter/rs_emitter.py"},
+                "source_guard_paths": {"src/toolchain/emit/rs/emitter/rs_emitter.py"},
             },
         )
         self.assertEqual(
             inventory_mod.REPRESENTATIVE_LANE_MANIFEST["cs_emitter_shared_type_id_residual"],
             {
-                "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+                "smoke_file": "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
                 "smoke_tests": {"test_type_predicate_nodes_are_lowered_without_legacy_bridge"},
-                "source_guard_paths": {"src/backends/cs/emitter/cs_emitter.py"},
+                "source_guard_paths": {"src/toolchain/emit/cs/emitter/cs_emitter.py"},
             },
         )
         self.assertEqual(
             inventory_mod.REPRESENTATIVE_LANE_MANIFEST["crossruntime_mutation_helper_residual"],
             {
-                "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+                "smoke_file": "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
                 "smoke_tests": {
                     "test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not",
                     "test_bytearray_index_and_slice_compat_helpers_stay_explicit",
                 },
-                "source_guard_paths": {"src/backends/cs/emitter/cs_emitter.py"},
+                "source_guard_paths": {"src/toolchain/emit/cs/emitter/cs_emitter.py"},
             },
         )
 
@@ -186,11 +186,11 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
         self.assertEqual(
             set(inventory_mod.SOURCE_GUARD_REQUIRED_SUBSTRINGS.keys()),
             {
-                "src/backends/cpp/emitter/cpp_emitter.py",
-                "src/backends/cpp/emitter/runtime_expr.py",
-                "src/backends/cpp/emitter/stmt.py",
-                "src/backends/rs/emitter/rs_emitter.py",
-                "src/backends/cs/emitter/cs_emitter.py",
+                "src/toolchain/emit/cpp/emitter/cpp_emitter.py",
+                "src/toolchain/emit/cpp/emitter/runtime_expr.py",
+                "src/toolchain/emit/cpp/emitter/stmt.py",
+                "src/toolchain/emit/rs/emitter/rs_emitter.py",
+                "src/toolchain/emit/cs/emitter/cs_emitter.py",
             },
         )
         self.assertEqual(
@@ -203,7 +203,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
 
     def test_source_guard_covers_cs_bytes_residual_lane(self) -> None:
         required = inventory_mod.SOURCE_GUARD_REQUIRED_SUBSTRINGS[
-            "src/backends/cs/emitter/cs_emitter.py"
+            "src/toolchain/emit/cs/emitter/cs_emitter.py"
         ]
         self.assertTrue(
             {
@@ -251,45 +251,45 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             inventory_mod.FUTURE_REPRESENTATIVE_LANE_MANIFEST,
             {
                 "cpp_emitter_shared_type_id_residual": {
-                    "smoke_file": "test/unit/backends/cpp/test_east3_cpp_bridge.py",
+                    "smoke_file": "test/unit/toolchain/emit/cpp/test_east3_cpp_bridge.py",
                     "smoke_tests": {
                         "test_render_expr_supports_east3_obj_boundary_nodes",
                         "test_transpile_representative_nominal_adt_match_emits_if_else_chain",
                     },
                     "source_guard_paths": {
-                        "src/backends/cpp/emitter/cpp_emitter.py",
-                        "src/backends/cpp/emitter/runtime_expr.py",
-                        "src/backends/cpp/emitter/stmt.py",
+                        "src/toolchain/emit/cpp/emitter/cpp_emitter.py",
+                        "src/toolchain/emit/cpp/emitter/runtime_expr.py",
+                        "src/toolchain/emit/cpp/emitter/stmt.py",
                     },
                 },
                 "rs_emitter_shared_type_id_residual": {
-                    "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",
+                    "smoke_file": "test/unit/toolchain/emit/rs/test_py2rs_smoke.py",
                     "smoke_tests": {"test_type_predicate_nodes_are_lowered_without_legacy_bridge"},
-                    "source_guard_paths": {"src/backends/rs/emitter/rs_emitter.py"},
+                    "source_guard_paths": {"src/toolchain/emit/rs/emitter/rs_emitter.py"},
                 },
                 "cs_emitter_shared_type_id_residual": {
-                    "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+                    "smoke_file": "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
                     "smoke_tests": {"test_type_predicate_nodes_are_lowered_without_legacy_bridge"},
-                    "source_guard_paths": {"src/backends/cs/emitter/cs_emitter.py"},
+                    "source_guard_paths": {"src/toolchain/emit/cs/emitter/cs_emitter.py"},
                 },
                 "crossruntime_mutation_helper_residual": {
-                    "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+                    "smoke_file": "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
                     "smoke_tests": {
                         "test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not",
                         "test_bytearray_index_and_slice_compat_helpers_stay_explicit",
                     },
-                    "source_guard_paths": {"src/backends/cs/emitter/cs_emitter.py"},
+                    "source_guard_paths": {"src/toolchain/emit/cs/emitter/cs_emitter.py"},
                 },
             },
         )
         self.assertEqual(
             inventory_mod.FUTURE_SOURCE_GUARD_PATHS,
             {
-                "src/backends/cpp/emitter/cpp_emitter.py",
-                "src/backends/cpp/emitter/runtime_expr.py",
-                "src/backends/cpp/emitter/stmt.py",
-                "src/backends/rs/emitter/rs_emitter.py",
-                "src/backends/cs/emitter/cs_emitter.py",
+                "src/toolchain/emit/cpp/emitter/cpp_emitter.py",
+                "src/toolchain/emit/cpp/emitter/runtime_expr.py",
+                "src/toolchain/emit/cpp/emitter/stmt.py",
+                "src/toolchain/emit/rs/emitter/rs_emitter.py",
+                "src/toolchain/emit/cs/emitter/cs_emitter.py",
             },
         )
         self.assertEqual(inventory_mod._collect_future_representative_lane_issues(), [])
@@ -321,27 +321,27 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION,
             {
                 "future_reducible": {
-                    ("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
+                    ("py_runtime_value_type_id", "src/toolchain/emit/cpp/emitter/cpp_emitter.py"),
                 },
                 "must_remain_until_runtime_task": {
-                    ("py_runtime_value_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
-                    ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
-                    ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
-                    ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
+                    ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+                    ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/stmt.py"),
+                    ("py_runtime_type_id_is_subtype", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+                    ("py_runtime_type_id_issubclass", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
                 },
             },
         )
         self.assertEqual(
             inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_REDUCIBLE_ONLY,
-            {("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py")},
+            {("py_runtime_value_type_id", "src/toolchain/emit/cpp/emitter/cpp_emitter.py")},
         )
         self.assertEqual(
             inventory_mod.FUTURE_CPP_SHARED_TYPE_ID_MUST_REMAIN_ONLY,
             {
-                ("py_runtime_value_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
-                ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
-                ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
-                ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
+                ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+                ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/stmt.py"),
+                ("py_runtime_type_id_is_subtype", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+                ("py_runtime_type_id_issubclass", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
             },
         )
         self.assertEqual(
@@ -349,10 +349,10 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             {
                 "future_reducible": set(),
                 "must_remain_until_runtime_task": {
-                    ("py_runtime_value_type_id", "src/backends/rs/emitter/rs_emitter.py"),
-                    ("py_runtime_value_isinstance", "src/backends/rs/emitter/rs_emitter.py"),
-                    ("py_runtime_type_id_is_subtype", "src/backends/rs/emitter/rs_emitter.py"),
-                    ("py_runtime_type_id_issubclass", "src/backends/rs/emitter/rs_emitter.py"),
+                    ("py_runtime_value_type_id", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+                    ("py_runtime_value_isinstance", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+                    ("py_runtime_type_id_is_subtype", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+                    ("py_runtime_type_id_issubclass", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
                 },
             },
         )
@@ -361,10 +361,10 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             {
                 "future_reducible": set(),
                 "must_remain_until_runtime_task": {
-                    ("py_runtime_value_type_id", "src/backends/cs/emitter/cs_emitter.py"),
-                    ("py_runtime_value_isinstance", "src/backends/cs/emitter/cs_emitter.py"),
-                    ("py_runtime_type_id_is_subtype", "src/backends/cs/emitter/cs_emitter.py"),
-                    ("py_runtime_type_id_issubclass", "src/backends/cs/emitter/cs_emitter.py"),
+                    ("py_runtime_value_type_id", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+                    ("py_runtime_value_isinstance", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+                    ("py_runtime_type_id_is_subtype", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+                    ("py_runtime_type_id_issubclass", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
                 },
             },
         )
@@ -372,8 +372,8 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
             inventory_mod.FUTURE_CROSSRUNTIME_MUTATION_CLASSIFICATION,
             {
                 "future_reducible": {
-                    ("py_append", "src/backends/cs/emitter/cs_emitter.py"),
-                    ("py_pop", "src/backends/cs/emitter/cs_emitter.py"),
+                    ("py_append", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+                    ("py_pop", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
                 },
                 "must_remain_until_runtime_task": set(),
             },
@@ -419,7 +419,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
                 expected_future_reducible=set(),
                 expected_must_remain=inventory_mod.EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
                 expected_bucket=inventory_mod.EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
-                required_prefix="src/backends/rs/",
+                required_prefix="src/toolchain/emit/rs/",
             ),
             [],
         )
@@ -430,7 +430,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
                 expected_future_reducible=set(),
                 expected_must_remain=inventory_mod.EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
                 expected_bucket=inventory_mod.EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
-                required_prefix="src/backends/cs/",
+                required_prefix="src/toolchain/emit/cs/",
             ),
             [],
         )
@@ -441,7 +441,7 @@ class CheckCrossRuntimePyRuntimeEmitterInventoryTest(unittest.TestCase):
                 expected_future_reducible=inventory_mod.EXPECTED_BUCKETS["crossruntime_mutation_helper_residual"],
                 expected_must_remain=set(),
                 expected_bucket=inventory_mod.EXPECTED_BUCKETS["crossruntime_mutation_helper_residual"],
-                required_prefix="src/backends/cs/",
+                required_prefix="src/toolchain/emit/cs/",
             ),
             [],
         )

@@ -59,7 +59,7 @@ Lua 生成コードの runtime 境界は、原則として次に限定する。
 
 - `py2lua.py` が EAST3 から `.lua` を生成できる。
 - 最小 fixture（`add` / `if_else` / `for_range`）で変換失敗しない。
-- `tools/check_py2lua_transpile.py` と `test/unit/backends/lua/test_py2lua_smoke.py` で回帰を固定する。
+- `tools/check_py2lua_transpile.py` と `test/unit/toolchain/emit/lua/test_py2lua_smoke.py` で回帰を固定する。
 
 ## 7. コンテナ参照管理境界（v1）
 

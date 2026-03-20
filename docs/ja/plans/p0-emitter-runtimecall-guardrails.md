@@ -19,7 +19,7 @@
 - `src/pytra/std/*.py` / `src/pytra/utils/*.py` の宣言を正本とし、emitter 側の補正ロジック（wrapper 名生成・互換名フォールバック）を撤去する。
 
 対象:
-- `src/backends/*/emitter/*.py`（非C++）
+- `src/toolchain/emit/*/emitter/*.py`（非C++）
 - EAST3 lower / backend lower の runtime API 解決経路
 - `tools/` の静的チェック・CI導線・回帰テスト
 
@@ -130,7 +130,7 @@ non-C++ emitter の direct-branch 棚卸し結果（合計 `115` 件）:
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] Go emitter の同種分岐（`perf_counter/Path/json.loads/json.dumps/write_rgb_png/save_gif/grayscale_palette`）を `runtime_call + resolved_runtime_call` 経路へ移行した。`test_py2go_smoke.py`（13件）を通過し、guardrail allowlist を `105 -> 95` へ更新した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] Kotlin emitter の同種分岐（`perf_counter/json.loads/json.dumps/write_rgb_png/save_gif/grayscale_palette`）を `runtime_call + resolved_runtime_call` 経路へ移行した。`test_py2kotlin_smoke.py`（13件）を通過し、guardrail allowlist を `95 -> 87` へ更新した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] Swift emitter の同種分岐（`perf_counter/json.loads/json.dumps/write_rgb_png/save_gif/grayscale_palette`）を `runtime_call + resolved_runtime_call` 経路へ移行した。`test_py2swift_smoke.py`（11件）を通過し、guardrail allowlist を `87 -> 79` へ更新した。
-- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] `tools/check_emitter_forbidden_runtime_symbols.py` を追加し、`src/backends/*/emitter/*.py` における `__pytra_write_rgb_png/__pytra_save_gif/__pytra_grayscale_palette` の混入増分を CI fail 化した。`tools/run_local_ci.py` と `docs/ja|en/spec/spec-tools.md` へ導線を追加し、baseline allowlist（31件）を固定した。
+- 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] `tools/check_emitter_forbidden_runtime_symbols.py` を追加し、`src/toolchain/emit/*/emitter/*.py` における `__pytra_write_rgb_png/__pytra_save_gif/__pytra_grayscale_palette` の混入増分を CI fail 化した。`tools/run_local_ci.py` と `docs/ja|en/spec/spec-tools.md` へ導線を追加し、baseline allowlist（31件）を固定した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] タスク見直しの結果、Go/Kotlin/Swift の上記移行は runtime 実装シンボル（`__pytra_*`）直参照を emitter 側に残しており完了条件未達と判断。`S3-03-R1/R2` を追加して未完了として再実施する方針に戻した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-03`] 「公開wrapper名（例: `pyWriteRGBPNG`）へ置換する」案は、`png.py/gif.py` 宣言を正本にした解決責務分離に反するため却下。途中差分は破棄し、`S3-03-R1/R2` を宣言駆動移行として再定義した。
 - 2026-03-05: [ID: `P0-EMITTER-RUNTIMECALL-GUARDRAILS-01-S3-02`] Java emitter の `Path/json/png/gif` を `resolved_runtime_call` 宣言名マップへ統一し、`PyRuntime.*` 依存を撤去した（`pathlib.Path` 直描画化を含む）。

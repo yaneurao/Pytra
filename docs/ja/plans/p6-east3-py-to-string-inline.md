@@ -24,9 +24,9 @@
 
 ## 対象
 
-- `src/backends/cpp/emitter/`（`py_to_string` emit 箇所）
+- `src/toolchain/emit/cpp/emitter/`（`py_to_string` emit 箇所）
 - `src/runtime/cpp/native/core/py_runtime.h`（除去対象関数）
-- `test/unit/backends/cpp/`（回帰テスト）
+- `test/unit/toolchain/emit/cpp/`（回帰テスト）
 
 ## 非対象
 

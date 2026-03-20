@@ -20,7 +20,7 @@ if str(ROOT / "src") not in sys.path:
 if str(ROOT / "test" / "unit" / "backends") not in sys.path:
     sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
-from backends.powershell.emitter import load_powershell_profile, transpile_to_powershell
+from toolchain.emit.powershell.emitter import load_powershell_profile, transpile_to_powershell
 from toolchain.compiler.transpile_cli import load_east3_document
 
 def load_east(

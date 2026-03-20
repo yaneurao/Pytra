@@ -11,40 +11,40 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 TRACKED_PATHS = {
-    "src/backends/cpp/emitter/runtime_expr.py",
-    "src/backends/cpp/emitter/stmt.py",
-    "src/backends/rs/emitter/rs_emitter.py",
-    "src/backends/cs/emitter/cs_emitter.py",
+    "src/toolchain/emit/cpp/emitter/runtime_expr.py",
+    "src/toolchain/emit/cpp/emitter/stmt.py",
+    "src/toolchain/emit/rs/emitter/rs_emitter.py",
+    "src/toolchain/emit/cs/emitter/cs_emitter.py",
 }
 
 CPP_BLOCKER_RULES = {
-    ("py_isinstance", "src/backends/cpp/emitter/runtime_expr.py"): re.compile(r"\bpy_isinstance\s*\("),
-    ("py_isinstance", "src/backends/cpp/emitter/stmt.py"): re.compile(r"\bpy_isinstance\s*\("),
+    ("py_isinstance", "src/toolchain/emit/cpp/emitter/runtime_expr.py"): re.compile(r"\bpy_isinstance\s*\("),
+    ("py_isinstance", "src/toolchain/emit/cpp/emitter/stmt.py"): re.compile(r"\bpy_isinstance\s*\("),
 }
 
 CROSSRUNTIME_RULES = {
-    ("py_runtime_value_type_id", "src/backends/rs/emitter/rs_emitter.py"): re.compile(
+    ("py_runtime_value_type_id", "src/toolchain/emit/rs/emitter/rs_emitter.py"): re.compile(
         r'return "py_runtime_value_type_id\(&" \+ value_expr \+ "\)"'
     ),
-    ("py_runtime_value_isinstance", "src/backends/rs/emitter/rs_emitter.py"): re.compile(
+    ("py_runtime_value_isinstance", "src/toolchain/emit/rs/emitter/rs_emitter.py"): re.compile(
         r'py_runtime_value_isinstance\(&" \+ value_expr'
     ),
-    ("py_runtime_type_id_is_subtype", "src/backends/rs/emitter/rs_emitter.py"): re.compile(
+    ("py_runtime_type_id_is_subtype", "src/toolchain/emit/rs/emitter/rs_emitter.py"): re.compile(
         r'py_runtime_type_id_is_subtype\(" \+ actual_type_id'
     ),
-    ("py_runtime_type_id_issubclass", "src/backends/rs/emitter/rs_emitter.py"): re.compile(
+    ("py_runtime_type_id_issubclass", "src/toolchain/emit/rs/emitter/rs_emitter.py"): re.compile(
         r'py_runtime_type_id_issubclass\(" \+ actual_type_id'
     ),
-    ("py_runtime_value_type_id", "src/backends/cs/emitter/cs_emitter.py"): re.compile(
+    ("py_runtime_value_type_id", "src/toolchain/emit/cs/emitter/cs_emitter.py"): re.compile(
         r'Pytra\.CsModule\.py_runtime\.py_runtime_value_type_id\('
     ),
-    ("py_runtime_value_isinstance", "src/backends/cs/emitter/cs_emitter.py"): re.compile(
+    ("py_runtime_value_isinstance", "src/toolchain/emit/cs/emitter/cs_emitter.py"): re.compile(
         r'Pytra\.CsModule\.py_runtime\.py_runtime_value_isinstance\('
     ),
-    ("py_runtime_type_id_is_subtype", "src/backends/cs/emitter/cs_emitter.py"): re.compile(
+    ("py_runtime_type_id_is_subtype", "src/toolchain/emit/cs/emitter/cs_emitter.py"): re.compile(
         r'Pytra\.CsModule\.py_runtime\.py_runtime_type_id_is_subtype\('
     ),
-    ("py_runtime_type_id_issubclass", "src/backends/cs/emitter/cs_emitter.py"): re.compile(
+    ("py_runtime_type_id_issubclass", "src/toolchain/emit/cs/emitter/cs_emitter.py"): re.compile(
         r'Pytra\.CsModule\.py_runtime\.py_runtime_type_id_issubclass\('
     ),
 }
@@ -52,14 +52,14 @@ CROSSRUNTIME_RULES = {
 EXPECTED_BUCKETS = {
     "cpp_header_thincompat_blocker": set(),
     "crossruntime_shared_type_id_api": {
-        ("py_runtime_value_type_id", "src/backends/rs/emitter/rs_emitter.py"),
-        ("py_runtime_value_isinstance", "src/backends/rs/emitter/rs_emitter.py"),
-        ("py_runtime_type_id_is_subtype", "src/backends/rs/emitter/rs_emitter.py"),
-        ("py_runtime_type_id_issubclass", "src/backends/rs/emitter/rs_emitter.py"),
-        ("py_runtime_value_type_id", "src/backends/cs/emitter/cs_emitter.py"),
-        ("py_runtime_value_isinstance", "src/backends/cs/emitter/cs_emitter.py"),
-        ("py_runtime_type_id_is_subtype", "src/backends/cs/emitter/cs_emitter.py"),
-        ("py_runtime_type_id_issubclass", "src/backends/cs/emitter/cs_emitter.py"),
+        ("py_runtime_value_type_id", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+        ("py_runtime_value_isinstance", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+        ("py_runtime_type_id_is_subtype", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+        ("py_runtime_type_id_issubclass", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+        ("py_runtime_value_type_id", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+        ("py_runtime_value_isinstance", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+        ("py_runtime_type_id_is_subtype", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+        ("py_runtime_type_id_issubclass", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
     },
 }
 

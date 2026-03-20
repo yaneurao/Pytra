@@ -11,7 +11,7 @@ Background:
 - There is currently no shared regression test in `test/` that pins this case, so recurrence cannot be detected.
 
 Goal:
-- Add a shared downcount-range case to `test/`, and pass transpile/execution (where possible) across all backends.
+- Add a shared downcount-range case to `test/`, and pass transpile/execution (where possible) across all toolchain.emit.
 - Unify mode resolution for `ForCore(StaticRangeForPlan)` across backends and correctly handle `range(len-1, -1, -1)`.
 
 In scope:
@@ -56,7 +56,7 @@ Verification commands (planned):
 
 Breakdown:
 - [x] [ID: P0-MULTILANG-DOWNRANGE-01-S1-01] Add a minimal fixture for `range(len-1, -1, -1)` to `test/fixtures` and pin expected output.
-- [x] [ID: P0-MULTILANG-DOWNRANGE-01-S1-02] Reproduce and record baseline logs for currently failing backends (`cs/js/ts/rs`) and passing backends.
+- [x] [ID: P0-MULTILANG-DOWNRANGE-01-S1-02] Reproduce and record baseline logs for currently failing backends (`cs/js/ts/rs`) and passing toolchain.emit.
 - [x] [ID: P0-MULTILANG-DOWNRANGE-01-S2-01] Unify range-mode resolution for `ForCore(StaticRangeForPlan)` and derive descending/ascending/dynamic from `step` when `iter_plan` is absent.
 - [x] [ID: P0-MULTILANG-DOWNRANGE-01-S2-02] Remove the fixed `range_mode='ascending'` fallback in `ForCore -> ForRange` conversion for `cs/js/rs` emitters and use the shared resolution result.
 - [x] [ID: P0-MULTILANG-DOWNRANGE-01-S2-03] Add the same-case regression to `ts` (JS preview path) and pin that the `js` fix is reflected.
@@ -64,7 +64,7 @@ Breakdown:
 - [x] [ID: P0-MULTILANG-DOWNRANGE-01-S3-02] Verify expected-value parity on runnable targets and record results in the decision log.
 
 Decision log:
-- 2026-03-01: Per user instruction, we created this as P0 multilingual regression for `range(len-1, -1, -1)` and fixed the strategy to prioritize test addition + passing all backends.
+- 2026-03-01: Per user instruction, we created this as P0 multilingual regression for `range(len-1, -1, -1)` and fixed the strategy to prioritize test addition + passing all toolchain.emit.
 - 2026-03-01: Added minimal fixture `test/fixtures/control/range_downcount_len_minus1.py` and pinned it to a simple output case without `py_assert_stdout` dependency (expected value `10`).
 - 2026-03-01: Added `CodeEmitter.resolve_forcore_static_range_mode()` and implemented a shared path that determines `ascending/descending/dynamic` from constant `step` even when `iter_plan.range_mode` is missing.
 - 2026-03-01: Removed fixed `range_mode='ascending'` from `ForCore -> ForRange` conversion in `cs/js/rs`, and switched to shared mode resolution results. For `dynamic`, it now generates sign-branch conditions on `step`.

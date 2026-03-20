@@ -4,7 +4,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-18
+Last updated: 2026-03-21
 
 ## Operation Policy
 
@@ -14,6 +14,27 @@ Last updated: 2026-03-18
 - On the `docs/` side, `docs/ja/` remains the source of truth and translations are synchronized from it.
 
 ## Completed Plan Archive
+
+- [2026-03-21 / P0-CPP-GENERATED-RUNTIME-PIPELINE-01](20260321.md)
+- [2026-03-21 / P0-UNION-ARG-ESCAPE-01/02/03](20260321.md)
+- [2026-03-21 / P0-ESCAPE-TO-STORAGE-HINT-01](20260321.md)
+- [2026-03-21 / P0-LEGACY-API-CLEANUP-01](20260321.md)
+- [2026-03-21 / P0-RUNTIME-EAST-IN-LINK-PIPELINE-01](20260321.md)
+- [2026-03-21 / P0-OBJECT-IS-TAGGED-VALUE-01](20260321.md)
+- [2026-03-21 / P0-PY-RUNTIME-H-DECOMPOSITION-01](20260321.md)
+- [2026-03-21 / P0-SELF-CONTAINED-CPP-OUTPUT-01](20260321.md)
+- [2026-03-21 / P0-TAGGED-UNION-OBJECT-BOX-01](20260321.md)
+- [2026-03-21 / P0-LINKER-RESOLVED-INCLUDES-01](20260321.md)
+- [2026-03-21 / P1-PIPELINE-STAGE-SEPARATION-01](20260321.md)
+- [2026-03-21 / P4-VARARG-EAST3-LOWERING-01](20260321.md)
+- [2026-03-21 / P5-CPP-PY-IS-TYPE-DEAD-CODE-REMOVE-01](20260321.md)
+- [2026-03-21 / P5-EAST3-FLOORDIV-MOD-NODE-01](20260321.md)
+- [2026-03-21 / P6-CPP-LIST-MUT-IR-BYPASS-FIX-01](20260321.md)
+- [2026-03-21 / P6-EAST3-LEN-SLICE-NODE-01](20260321.md)
+
+- [2026-03-19 / P2-COMPILE-LINK-PIPELINE-01](../../../ja/todo/archive/20260319.md)
+- [2026-03-19 / P6-DEQUE-NATIVE-MAPPING-01](../../../ja/todo/archive/20260319.md)
+- [2026-03-19 / P7-SELFHOST-NATIVE-COMPILER-ELIM-01-S1](../../../ja/todo/archive/20260319.md)
 
 - [2026-03-18 / P5-ANY-ELIM-OBJECT-FREE-01](../plans/archive/20260318-p5-any-elimination-object-free.md)
 

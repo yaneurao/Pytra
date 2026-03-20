@@ -8,7 +8,7 @@ Related TODO:
 Background:
 - In the C++ backend, `cpp_list_model=pyobj` adopts a policy that reference-manages containers at `object` boundaries while reducing typed and non-escape paths to value types.
 - In non-C++ backends, memory models and container implementations are split per language, and the equivalent policy ("dynamic boundaries use reference management, typed known non-escape paths use value types") has not been handled explicitly.
-- This difference causes variance in output quality, optimization behavior, and maintainability, reducing design consistency across backends.
+- This difference causes variance in output quality, optimization behavior, and maintainability, reducing design consistency across toolchain.emit.
 
 Objective:
 - Roll out the same abstract policy used in C++ to non-C++ backends (`rs/cs/js/ts/go/java/kotlin/swift/ruby/lua`).
@@ -133,7 +133,7 @@ Validation Commands:
     are inserted, fixing typed/non-escape paths to "materialize a separate instance".
   - Kept fail-closed fallback to current paths when judgment is impossible (not a `Name` RHS, or `target==source`).
 - Intent:
-  - Confirm minimal implementation of reducing from reference boundaries (arguments) to value paths (local declarations) under the same boundary rules as the Rust pilot, even on GC backends.
+  - Confirm minimal implementation of reducing from reference boundaries (arguments) to value paths (local declarations) under the same boundary rules as the Rust pilot, even on GC toolchain.emit.
   - Reuse existing runtime-helper contracts (`__pytra_as_list/__pytra_as_dict`) and avoid destructive changes.
 
 ## S3-03 Regression Lock Notes (Rust + Kotlin pilots)
@@ -202,7 +202,7 @@ Breakdown:
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S3-03] Add regression tests for the two pilot backends (unit + sample fragments) and lock recurrence detection.
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01] Roll out sequentially to `cs/js/ts/go/swift/ruby/lua` and absorb runtime-dependency differences per backend.
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S1-01] Roll out to C# backend and materialize ref-boundary argument containers into value paths using copy constructors.
-- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S2-01] Roll out the same judgment rules to dynamic-container helper boundaries on JS/TS backends.
+- [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S2-01] Roll out the same judgment rules to dynamic-container helper boundaries on JS/TS toolchain.emit.
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S3-01] Roll out to Go backend and separate `any` boundaries from typed value paths.
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S4-01] Roll out to Swift backend and separate `Any` boundaries from typed value paths.
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S4-01-S5-01] Roll out to Ruby backend and add materialization rules for dynamic-helper boundaries and local value paths.
@@ -211,7 +211,7 @@ Breakdown:
 - [x] [ID: P3-MULTILANG-CONTAINER-REF-01-S5-01] Add operation rules (reference-management boundary and rollback procedure) to `docs/ja/how-to-use.md` and backend specs.
 
 Decision Log:
-- 2026-03-01: Per user request, newly created P3 plan to roll out the container reference-management policy already adopted in C++ to non-C++ backends.
+- 2026-03-01: Per user request, newly created P3 plan to roll out the container reference-management policy already adopted in C++ to non-C++ toolchain.emit.
 - 2026-03-01: Chosen policy is not "force-port `rc` to each language," but "unify abstract rules: dynamic boundaries use reference management; typed known non-escape paths use value types."
 - 2026-03-02: As S1-01, audited the current non-C++ backend models and organized that `rs/cs/go/java/kotlin/swift` are centered on "typed containers + Any/Object fallback," while `js/ts/ruby/lua` are centered on "dynamic containers + runtime helpers."
 - 2026-03-02: As S1-02, defined `container_ref_boundary` / `typed_non_escape_value_path` / `escape_condition` as v1 terms, and fixed fail-closed policy to treat unjudgeable cases as escape.

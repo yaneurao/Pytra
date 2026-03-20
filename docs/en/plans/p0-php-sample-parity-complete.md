@@ -18,8 +18,8 @@ Goal:
 In scope:
 - `src/runtime/php/pytra/runtime/png.php`
 - `src/runtime/php/pytra/runtime/gif.php`
-- `src/backends/php/lower/**`
-- `src/backends/php/emitter/**`
+- `src/toolchain/emit/php/lower/**`
+- `src/toolchain/emit/php/emitter/**`
 - `tools/runtime_parity_check.py`
 - `test/unit/test_runtime_parity_check_cli.py` (if needed)
 

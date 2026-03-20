@@ -8,7 +8,7 @@ use east2x.py.
 
 from __future__ import annotations
 
-from backends.cpp.emitter import transpile_to_cpp
+from toolchain.emit.cpp.emitter import transpile_to_cpp
 from toolchain.frontends import load_east3_document_typed
 from pytra.std.pathlib import Path
 from pytra.std import sys

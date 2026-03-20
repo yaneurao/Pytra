@@ -93,7 +93,7 @@ def extern(fn):
 - `name: Any = extern()` declares an ambient global with the same symbol name.
 - `name: Any = extern("symbol")` declares an ambient global under a different symbol name.
 - `name: T = extern(expr)` keeps the existing host-fallback / runtime-hook initializer behavior.
-- Ambient-global variable declarations are allowed only on the JS/TS backends in v1 and must be compile errors on other backends.
+- Ambient-global variable declarations are allowed only on the JS/TS backends in v1 and must be compile errors on other toolchain.emit.
 - runtime-SoT `@extern` is declaration-only metadata and does not identify the target implementation owner.
 - runtime layout / manifest / runtime symbol index define the native implementation owner.
 - ambient-global `extern()` / `extern("symbol")` is a separate category from runtime `@extern`.
@@ -315,7 +315,7 @@ With this annotation, in C++:
 #### 3.4.7 Constraints
 
 - `@abi` fixes helper ABI only. It does not define module imports, symbol resolution, or semantic tags.
-- `@abi` must not leak source-side module knowledge into backends.
+- `@abi` must not leak source-side module knowledge into toolchain.emit.
 - Even when `@abi` is present, the function must not be treated as an external implementation unless `@extern` is also present.
 - A contradiction between an `@abi` mode and the function body is a compile error.
   - for example, `append`, `pop`, or assignment against an argument marked `value`

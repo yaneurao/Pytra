@@ -282,7 +282,7 @@ def is_known_non_user_import(
         return True
     if module_name == "toolchain" or module_name.startswith("toolchain."):
         return True
-    if module_name == "backends" or module_name.startswith("backends."):
+    if module_name == "backends" or module_name.startswith("toolchain.emit."):
         return True
     if (
         module_name == "__future__"

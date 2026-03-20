@@ -6,7 +6,7 @@
   <img alt="Read in Japanese" src="https://img.shields.io/badge/docs-日本語-2563EB?style=flat-square">
 </a>
 
-Last updated: 2026-03-21 (Added P4 vararg EAST3 lowering task)
+Last updated: 2026-03-21 (Archived P0-1–P0-10, P1 pipeline stage separation, P4 vararg desugaring)
 
 ## Context Operation Rules
 
@@ -31,13 +31,29 @@ Last updated: 2026-03-21 (Added P4 vararg EAST3 lowering task)
 
 ## Unfinished Tasks
 
-### P4: `*args` Vararg Support — EAST3-Level Desugaring
+### P0: C++ Generated Runtime Header Generation Pipeline
 
-Context: [docs/ja/plans/p4-vararg-east3-lowering.md](../../ja/plans/p4-vararg-east3-lowering.md)
+#### P0-11: PowerShell Native Emitter Execution Parity
 
-1. [x] [ID: P4-VARARG-EAST3-LOWERING-01-S1] Add a post-pass to `east2_to_east3_lowering.py`: transform `vararg_name/type` in FunctionDef to a regular `list[T]` parameter, and pack within-module Call sites.
-2. [x] [ID: P4-VARARG-EAST3-LOWERING-01-S2] Add `_apply_vararg_callsite_packing_global` to `global_optimizer.py` for cross-module Call site packing.
-3. [x] [ID: P4-VARARG-EAST3-LOWERING-01-S3] Add `joinpath(*parts: str | Path) -> Path` to `pytra/std/pathlib.py`.
+Context: [docs/ja/plans/p0-powershell-native-emitter-execution-parity.md](../../ja/plans/p0-powershell-native-emitter-execution-parity.md)
+
+1. [ ] [ID: P0-PS-EXEC-PARITY-01-S1] Do not exclude the `self` parameter from FunctionDef; keep it as `$self` and pass it as the first argument when calling class methods.
+2. [ ] [ID: P0-PS-EXEC-PARITY-01-S2] Map `bytearray`, `bytes`, `enumerate`, `sorted`, `reversed`, `zip` etc. to `__pytra_*` runtime functions; add any missing runtime functions.
+3. [ ] [ID: P0-PS-EXEC-PARITY-01-S3] Translate stdlib Attribute Calls such as `math.sqrt` → `[Math]::Sqrt` directly to PowerShell syntax.
+4. [ ] [ID: P0-PS-EXEC-PARITY-01-S4] When a tuple target appears on the left-hand side of an Assign, emit a temporary variable expansion.
+5. [ ] [ID: P0-PS-EXEC-PARITY-01-S5] When the func of a Call is a class name, emit it as a constructor function call.
+6. [ ] [ID: P0-PS-EXEC-PARITY-01-S6] Add pwsh execution tests to `test/unit/toolchain/emit/powershell/test_py2ps_smoke.py` and verify successful execution of major fixtures.
+
+### P1: Pipeline Stage Separation — Decouple compile / link / emit
+
+#### P1-2: Remove backend_registry Dependency
+
+Context: [docs/ja/plans/p1-backend-registry-decoupling.md](../../ja/plans/p1-backend-registry-decoupling.md)
+
+1. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S1] Change the C++ emit path in `py2x.py` to invoke `east2cpp.py` as a subprocess and remove the `backend_registry` import.
+2. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S2] Change the non-C++ emit path in `py2x.py` to invoke `east2x.py` as a subprocess.
+3. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S3] Refactor `py2x-selfhost.py` to remove the `backend_registry_static` import; directly import `toolchain.emit.cpp.emitter` for C++ emit only.
+4. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S4] Verify that non-C++ backends are not included in the import graph during the compile+link stage of selfhost multi-module.
 
 ### P5: py_runtime.h Shrink
 
@@ -143,4 +159,19 @@ Context: [docs/ja/plans/p6-cpp-global-var-type-object-fallback.md](../../ja/plan
 
 Context: [docs/ja/plans/p7-selfhost-native-compiler-elim.md](../../ja/plans/p7-selfhost-native-compiler-elim.md)
 
-14. [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01] Completely delete `src/runtime/cpp/native/compiler/` so that the selfhost binary operates without shelling out to host Python.
+1. [x] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01-S1] Unify the selfhost build pipeline to EAST3 JSON input only; remove the `.py` shell-out path from `transpile_cli.cpp`.
+2. [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01-S2] Make `toolchain/emit/cpp/cli.py` (emitter) transpilable to C++ and remove the `emit_source_typed` shell-out. → Prerequisite: P7-SELFHOST-MULTIMOD-TRANSPILE-01.
+3. [ ] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01-S3] Confirm zero shell-outs, delete `src/runtime/cpp/compiler/`, and redirect `generated/compiler/` includes to generated C++ directly.
+
+#### P7-2: Selfhost Multi-module Transpile Infrastructure (prerequisite for S2)
+
+Context: [docs/ja/plans/p7-selfhost-multimodule-transpile.md](../../ja/plans/p7-selfhost-multimodule-transpile.md)
+
+1. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S1] Audit emitter modules (`src/toolchain/emit/cpp/emitter/*.py`) for selfhost constraint violations and enumerate them. → Details in context file decision log. Blockers: 4 dynamic dispatch issues.
+1a. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-01] Implement `relative_to` / `with_suffix` on `pytra.std.pathlib.Path`; migrate emitter's `from pathlib import Path`.
+1b. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-02] Implement `compile` / `Pattern` in `pytra.std.re`; migrate optimizer's `import re`.
+1c. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-03] Migrate `multifile_writer.py`'s `import os` to `pytra.std`.
+1d. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-04] Replace CppEmitter's dynamic mixin injection (`_attach_cpp_emitter_helper_methods` setattr/__dict__) with EAST3 mixin expansion via multiple inheritance. Remove `install_py2cpp_runtime_symbols` globals() injection.
+2. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S2] Extend `tools/build_selfhost.py` to a multi-module transpile pipeline (compile → link). → `--multi-module` flag runs compile→link→emit via py2x.py. All 150 modules compiled to EAST3 successfully. Parser fixes (typing no-op, dict string-key `:`, multi-arg subscript). Object receiver fixes across the dependency chain (40+ files).
+3. [ ] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S3] Call `emit_cpp_from_east` directly from `py2x-selfhost.py` and remove the `emit_source_typed` shell-out from `backend_registry_static.cpp`.
+4. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S4] Investigate and fix missing symbol resolution for `from toolchain.compiler.transpile_cli import make_user_error` etc. in the linker. → Implemented wildcard re-export propagation in `module_export_table`. `from X import *` re-exports now reflected in export table. Link of 151 modules succeeds.

@@ -21,10 +21,10 @@ if str(ROOT / "src") not in sys.path:
 if str(ROOT / "test" / "unit" / "backends") not in sys.path:
     sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
-from backends.ts.emitter.ts_emitter import load_ts_profile, transpile_to_typescript
+from toolchain.emit.ts.emitter.ts_emitter import load_ts_profile, transpile_to_typescript
 from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core_entrypoints import convert_path
-from backends.ts.emitter import ts_emitter as ts_emitter_mod
+from toolchain.emit.ts.emitter import ts_emitter as ts_emitter_mod
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 from relative_import_secondwave_smoke_support import (
     relative_import_secondwave_expected_needles,

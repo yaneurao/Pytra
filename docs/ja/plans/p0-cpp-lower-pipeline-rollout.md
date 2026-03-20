@@ -15,9 +15,9 @@
 - `CppEmitter` を「C++ IR の決定的レンダラ」に縮退し、EAST3 直接解釈ロジックを段階的に削減する。
 
 対象:
-- `src/backends/cpp/lower/cpp_lower.py`（新設）
-- `src/backends/cpp/optimizer/cpp_ir_optimizer.py`（新設、既存 optimizer との橋渡し）
-- `src/backends/cpp/emitter/cpp_emitter.py`（責務縮退）
+- `src/toolchain/emit/cpp/lower/cpp_lower.py`（新設）
+- `src/toolchain/emit/cpp/optimizer/cpp_ir_optimizer.py`（新設、既存 optimizer との橋渡し）
+- `src/toolchain/emit/cpp/emitter/cpp_emitter.py`（責務縮退）
 - `src/py2cpp.py`（新パイプライン配線）
 - C++ backend 回帰テスト（unit / transpile / sample）
 
@@ -78,8 +78,8 @@
 
 ## API 境界（S1-02）
 
-- `backends.cpp.lower.cpp_lower.CppLower.lower(east_module, debug_flags=...) -> (cpp_ir, report)`
-- `backends.cpp.lower.cpp_lower.lower_cpp_from_east3(...)` は上記 convenience wrapper。
-- `backends.cpp.optimizer.cpp_ir_optimizer.CppIrOptimizer.optimize(cpp_ir, ...) -> (cpp_ir, report)`
-- `backends.cpp.optimizer.cpp_ir_optimizer.optimize_cpp_ir_module(...)` は上記 convenience wrapper。
-- `backends.cpp.emitter.cpp_emitter.emit_cpp_from_east(...)` は公開 bridge として `lower -> optimizer -> CppEmitter.transpile()` を実行する。
+- `toolchain.emit.cpp.lower.cpp_lower.CppLower.lower(east_module, debug_flags=...) -> (cpp_ir, report)`
+- `toolchain.emit.cpp.lower.cpp_lower.lower_cpp_from_east3(...)` は上記 convenience wrapper。
+- `toolchain.emit.cpp.optimizer.cpp_ir_optimizer.CppIrOptimizer.optimize(cpp_ir, ...) -> (cpp_ir, report)`
+- `toolchain.emit.cpp.optimizer.cpp_ir_optimizer.optimize_cpp_ir_module(...)` は上記 convenience wrapper。
+- `toolchain.emit.cpp.emitter.cpp_emitter.emit_cpp_from_east(...)` は公開 bridge として `lower -> optimizer -> CppEmitter.transpile()` を実行する。

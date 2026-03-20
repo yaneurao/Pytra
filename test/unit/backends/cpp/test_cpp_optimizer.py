@@ -12,29 +12,29 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from backends.cpp.emitter.cpp_emitter import CppEmitter
-from backends.cpp.emitter.cpp_emitter import emit_cpp_from_east
-from backends.cpp.lower import lower_cpp_from_east3
-from backends.cpp.optimizer.context import CppOptContext
-from backends.cpp.optimizer.context import CppOptimizerPass
-from backends.cpp.optimizer.context import CppOptResult
-from backends.cpp.optimizer.cpp_optimizer import CppPassManager
-from backends.cpp.optimizer.cpp_optimizer import optimize_cpp_ir
-from backends.cpp.optimizer.cpp_optimizer import parse_cpp_opt_pass_overrides
-from backends.cpp.optimizer.cpp_optimizer import resolve_cpp_opt_level
-from backends.cpp.optimizer.cpp_ir_optimizer import optimize_cpp_ir_module
-from backends.cpp.optimizer.passes.const_condition_pass import CppConstConditionPass
-from backends.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
-from backends.cpp.optimizer.passes.binop_normalize_pass import CppBinOpNormalizePass
-from backends.cpp.optimizer.passes.brace_omit_hint_pass import CppBraceOmitHintPass
-from backends.cpp.optimizer.passes.cast_call_normalize_pass import CppCastCallNormalizePass
-from backends.cpp.optimizer.passes.compare_normalize_pass import CppCompareNormalizePass
-from backends.cpp.optimizer.passes.forcore_direct_unpack_hint_pass import CppForcoreDirectUnpackHintPass
-from backends.cpp.optimizer.passes.for_iter_mode_hint_pass import CppForIterModeHintPass
-from backends.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
-from backends.cpp.optimizer.passes.range_for_shape_pass import CppRangeForShapePass
-from backends.cpp.optimizer.passes.runtime_fastpath_pass import CppRuntimeFastPathPass
-from backends.cpp.optimizer.trace import render_cpp_opt_trace
+from toolchain.emit.cpp.emitter.cpp_emitter import CppEmitter
+from toolchain.emit.cpp.emitter.cpp_emitter import emit_cpp_from_east
+from toolchain.emit.cpp.lower import lower_cpp_from_east3
+from toolchain.emit.cpp.optimizer.context import CppOptContext
+from toolchain.emit.cpp.optimizer.context import CppOptimizerPass
+from toolchain.emit.cpp.optimizer.context import CppOptResult
+from toolchain.emit.cpp.optimizer.cpp_optimizer import CppPassManager
+from toolchain.emit.cpp.optimizer.cpp_optimizer import optimize_cpp_ir
+from toolchain.emit.cpp.optimizer.cpp_optimizer import parse_cpp_opt_pass_overrides
+from toolchain.emit.cpp.optimizer.cpp_optimizer import resolve_cpp_opt_level
+from toolchain.emit.cpp.optimizer.cpp_ir_optimizer import optimize_cpp_ir_module
+from toolchain.emit.cpp.optimizer.passes.const_condition_pass import CppConstConditionPass
+from toolchain.emit.cpp.optimizer.passes.dead_temp_pass import CppDeadTempPass
+from toolchain.emit.cpp.optimizer.passes.binop_normalize_pass import CppBinOpNormalizePass
+from toolchain.emit.cpp.optimizer.passes.brace_omit_hint_pass import CppBraceOmitHintPass
+from toolchain.emit.cpp.optimizer.passes.cast_call_normalize_pass import CppCastCallNormalizePass
+from toolchain.emit.cpp.optimizer.passes.compare_normalize_pass import CppCompareNormalizePass
+from toolchain.emit.cpp.optimizer.passes.forcore_direct_unpack_hint_pass import CppForcoreDirectUnpackHintPass
+from toolchain.emit.cpp.optimizer.passes.for_iter_mode_hint_pass import CppForIterModeHintPass
+from toolchain.emit.cpp.optimizer.passes.noop_cast_pass import CppNoOpCastPass
+from toolchain.emit.cpp.optimizer.passes.range_for_shape_pass import CppRangeForShapePass
+from toolchain.emit.cpp.optimizer.passes.runtime_fastpath_pass import CppRuntimeFastPathPass
+from toolchain.emit.cpp.optimizer.trace import render_cpp_opt_trace
 
 
 def _module_doc() -> dict[str, object]:
@@ -648,14 +648,14 @@ class CppOptimizerTest(unittest.TestCase):
                 return "dummy-cpp:" + str(meta.get("optimized", "0"))
 
         with patch(
-            "backends.cpp.emitter.cpp_emitter.lower_cpp_from_east3",
+            "toolchain.emit.cpp.emitter.cpp_emitter.lower_cpp_from_east3",
             return_value=(east_doc, {"mode": "pass_through_v0", "changed": False, "change_count": 0}),
         ) as lower_mock:
             with patch(
-                "backends.cpp.emitter.cpp_emitter.optimize_cpp_ir_module",
+                "toolchain.emit.cpp.emitter.cpp_emitter.optimize_cpp_ir_module",
                 return_value=(optimized_doc, {"trace": []}),
             ) as opt_mock:
-                with patch("backends.cpp.emitter.cpp_emitter.CppEmitter", _DummyEmitter):
+                with patch("toolchain.emit.cpp.emitter.cpp_emitter.CppEmitter", _DummyEmitter):
                     out = emit_cpp_from_east(east_doc, {})
         self.assertEqual(lower_mock.call_count, 1)
         lower_call_args = lower_mock.call_args

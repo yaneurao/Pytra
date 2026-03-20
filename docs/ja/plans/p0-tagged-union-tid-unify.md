@@ -99,9 +99,9 @@ json.py を `type JsonVal = None | bool | int | float | str | list[JsonVal] | di
 
 ## 対象
 
-- `src/backends/cpp/emitter/cpp_emitter.py` — tagged struct 生成・isinstance・型ナローイング
-- `src/backends/cpp/emitter/header_builder.py` — tagged struct 生成
-- `src/backends/cpp/emitter/type_bridge.py` — tagged union 型のフィールドアクセス変換
+- `src/toolchain/emit/cpp/emitter/cpp_emitter.py` — tagged struct 生成・isinstance・型ナローイング
+- `src/toolchain/emit/cpp/emitter/header_builder.py` — tagged struct 生成
+- `src/toolchain/emit/cpp/emitter/type_bridge.py` — tagged union 型のフィールドアクセス変換
 - `src/pytra/std/json.py` — union type での書き直し（検証用）
 
 ## 非対象

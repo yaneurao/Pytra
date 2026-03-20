@@ -21,9 +21,9 @@ if str(ROOT / "src") not in sys.path:
 if str(ROOT / "test" / "unit" / "backends") not in sys.path:
     sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
-from backends.java.emitter import load_java_profile, transpile_to_java
+from toolchain.emit.java.emitter import load_java_profile, transpile_to_java
 from toolchain.compiler.transpile_cli import load_east3_document
-from backends.java.emitter.java_native_emitter import (
+from toolchain.emit.java.emitter.java_native_emitter import (
     _java_string_literal,
     _render_expr,
     transpile_to_java_native,

@@ -45,8 +45,8 @@ static void __pytra_module_init() { ArgValue = str | bool | ::std::nullopt; }
 
 - `src/toolchain/ir/core_module_parser.py` — `type X = T` 文のパース・IR ノード化
 - `src/toolchain/ir/core.py` — TypeAlias IR ノード定義
-- `src/backends/cpp/emitter/cpp_emitter.py` — `using X = <cpp_type>;` の emit
-- `src/backends/cpp/emitter/` — 型式レンダリング時の alias 逆引き
+- `src/toolchain/emit/cpp/emitter/cpp_emitter.py` — `using X = <cpp_type>;` の emit
+- `src/toolchain/emit/cpp/emitter/` — 型式レンダリング時の alias 逆引き
 - `src/pytra/std/argparse.py` — `type ArgValue = str | bool | None` を追加して動作確認
 - `src/runtime/cpp/generated/std/argparse.h`（再生成で改善を確認）
 

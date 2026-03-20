@@ -100,8 +100,8 @@ out/cpp/
 | ファイル | 変更 |
 |---------|------|
 | `src/toolchain/link/program_loader.py` or `src/py2x.py` | runtime .east を LinkedProgram に自動追加 |
-| `src/backends/cpp/emitter/multifile_writer.py` | runtime モジュールも emit 対象に |
-| `src/backends/cpp/program_writer.py` | `_generate_runtime_east_headers` 廃止 |
+| `src/toolchain/emit/cpp/emitter/multifile_writer.py` | runtime モジュールも emit 対象に |
+| `src/toolchain/emit/cpp/program_writer.py` | `_generate_runtime_east_headers` 廃止 |
 | `src/toolchain/frontends/runtime_symbol_index.py` | runtime module_id → .east パスの解決 |
 
 ## 非対象

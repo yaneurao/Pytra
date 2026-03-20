@@ -21,7 +21,7 @@ if str(ROOT / "src") not in sys.path:
 if str(ROOT / "test" / "unit" / "backends") not in sys.path:
     sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
-from backends.php.emitter import load_php_profile, transpile_to_php, transpile_to_php_native
+from toolchain.emit.php.emitter import load_php_profile, transpile_to_php, transpile_to_php_native
 from toolchain.compiler.transpile_cli import load_east3_document
 from relative_import_longtail_smoke_support import (
     transpile_relative_import_longtail_via_module_graph,

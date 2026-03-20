@@ -47,7 +47,7 @@ Verification commands (planned):
 - [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S1-01] Inventory `test/ir` / `sample/ir` input format (JSON schema/stage marker/required metadata), and finalize `ir2lang` acceptance contract.
 - [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S1-02] Define `ir2lang.py` CLI spec (required args/output destination/layer options/fail-fast conditions).
 - [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-01] Implement `src/ir2lang.py` with EAST3 JSON loading and target dispatch.
-- [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-02] Implement target lazy import via backend registry and avoid importing unspecified backends.
+- [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-02] Implement target lazy import via backend registry and avoid importing unspecified toolchain.emit.
 - [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-03] Implement layer-specific pass-through for `--lower/--optimizer/--emitter-option`.
 - [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S2-04] Implement fail-fast errors for EAST2/invalid IR input and standardize error messages.
 - [x] [ID: P1-IR2LANG-LAZY-EMIT-01-S3-01] Add `sample/ir` / `test/ir` conversion smoke for major targets and fix backend-only regression path.

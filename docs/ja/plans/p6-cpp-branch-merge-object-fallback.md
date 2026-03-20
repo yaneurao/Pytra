@@ -12,7 +12,7 @@
 
 | ファイル | 行 | 関数 | 条件 |
 |---|---|---|---|
-| `src/backends/cpp/emitter/cpp_emitter.py` | L2101-2105 | `_predeclare_if_join_names()` | 分岐型マージ結果が `""` / `"auto"` になる |
+| `src/toolchain/emit/cpp/emitter/cpp_emitter.py` | L2101-2105 | `_predeclare_if_join_names()` | 分岐型マージ結果が `""` / `"auto"` になる |
 
 ```python
 # 現状（L2101-2105）:
@@ -37,7 +37,7 @@ cpp_t = "object" if fallback_to_object else cpp_t
 
 ## 対象
 
-- `src/backends/cpp/emitter/cpp_emitter.py` L2101-2105、`_merge_decl_types_for_branch_join()` 周辺
+- `src/toolchain/emit/cpp/emitter/cpp_emitter.py` L2101-2105、`_merge_decl_types_for_branch_join()` 周辺
 
 ## 受け入れ基準
 

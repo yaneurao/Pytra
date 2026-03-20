@@ -3,9 +3,9 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from backends.java.emitter.java_native_emitter import transpile_to_java_native
-from backends.kotlin.emitter import transpile_to_kotlin_native
-from backends.scala.emitter import transpile_to_scala_native
+from toolchain.emit.java.emitter.java_native_emitter import transpile_to_java_native
+from toolchain.emit.kotlin.emitter import transpile_to_kotlin_native
+from toolchain.emit.scala.emitter import transpile_to_scala_native
 from toolchain.compiler.relative_import_jvm_package_bundle_contract import (
     RELATIVE_IMPORT_JVM_PACKAGE_BUNDLE_SCENARIOS_V1,
 )

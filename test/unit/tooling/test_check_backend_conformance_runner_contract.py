@@ -32,9 +32,9 @@ class CheckBackendConformanceRunnerContractTest(unittest.TestCase):
         self.assertEqual(
             contract_mod.RUNNER_SMOKE_FILES,
             {
-                "cpp": "test/unit/backends/cpp/test_py2cpp_features.py",
-                "rs": "test/unit/backends/rs/test_py2rs_smoke.py",
-                "cs": "test/unit/backends/cs/test_py2cs_smoke.py",
+                "cpp": "test/unit/toolchain/emit/cpp/test_py2cpp_features.py",
+                "rs": "test/unit/toolchain/emit/rs/test_py2rs_smoke.py",
+                "cs": "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
             },
         )
 
@@ -49,7 +49,7 @@ class CheckBackendConformanceRunnerContractTest(unittest.TestCase):
                     "runtime_target": "cpp",
                     "emit_entrypoint": "src/pytra-cli.py",
                     "runtime_entrypoint": "tools/runtime_parity_check.py",
-                    "smoke_file": "test/unit/backends/cpp/test_py2cpp_features.py",
+                    "smoke_file": "test/unit/toolchain/emit/cpp/test_py2cpp_features.py",
                 },
                 {
                     "backend": "rs",
@@ -58,7 +58,7 @@ class CheckBackendConformanceRunnerContractTest(unittest.TestCase):
                     "runtime_target": "rs",
                     "emit_entrypoint": "src/pytra-cli.py",
                     "runtime_entrypoint": "tools/runtime_parity_check.py",
-                    "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",
+                    "smoke_file": "test/unit/toolchain/emit/rs/test_py2rs_smoke.py",
                 },
                 {
                     "backend": "cs",
@@ -67,7 +67,7 @@ class CheckBackendConformanceRunnerContractTest(unittest.TestCase):
                     "runtime_target": "cs",
                     "emit_entrypoint": "src/pytra-cli.py",
                     "runtime_entrypoint": "tools/runtime_parity_check.py",
-                    "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+                    "smoke_file": "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
                 },
             ),
         )

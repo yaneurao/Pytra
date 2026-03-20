@@ -64,11 +64,11 @@
 
 原因調査（現時点の確定）:
 - Kotlin:
-  - `src/backends/kotlin/emitter/kotlin_native_emitter.py` で `save_gif` が `__pytra_noop` に落ちる。
+  - `src/toolchain/emit/kotlin/emitter/kotlin_native_emitter.py` で `save_gif` が `__pytra_noop` に落ちる。
   - `src/runtime/kotlin/pytra/py_runtime.kt` に GIF writer 実装がない。
   - PNG は `ImageIO` 経路で Python 基準バイナリと不一致（01..04 size mismatch）。
 - Java:
-  - `src/backends/java/emitter/java_native_emitter.py` が `save_gif/write_rgb_png` を `PyRuntime.__pytra_noop` に落としている。
+  - `src/toolchain/emit/java/emitter/java_native_emitter.py` が `save_gif/write_rgb_png` を `PyRuntime.__pytra_noop` に落としている。
   - runtime 側には `pyWriteRGBPNG/pySaveGif` 実装があるが emitter 接続されていないため artifact 未生成。
   - 追加で `RuntimeError` 参照や `Map.get(key, default)` 互換不足により `run_failed`。
 - Go:
@@ -93,7 +93,7 @@
 
 対象:
 - `tools/runtime_parity_check.py`
-- `src/backends/{kotlin,java,go,swift,js,ts,cs,cpp}/**`
+- `src/toolchain/emit/{kotlin,java,go,swift,js,ts,cs,cpp}/**`
 - `src/runtime/{kotlin,java,go,js,ts,cs,cpp}/**`
 - `test/unit/test_runtime_parity_check_cli.py`
 - `docs/ja/todo/index.md` / 本計画書

@@ -40,7 +40,7 @@ class Py2CppSmokeTest(unittest.TestCase):
         for node in ast_root.body:
             if not isinstance(node, ast.ImportFrom):
                 continue
-            if node.module != "backends.cpp.emitter":
+            if node.module != "toolchain.emit.cpp.emitter":
                 continue
             has_emitter_import = any(alias.name == "CppEmitter" for alias in node.names)
             if has_emitter_import:

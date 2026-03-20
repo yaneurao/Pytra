@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Enforce top-level responsibility boundary of src/backends/cpp/cli.py.
+"""Enforce top-level responsibility boundary of src/toolchain/emit/cpp/cli.py.
 
 Policy:
-- src/backends/cpp/cli.py top-level defs must be either:
+- src/toolchain/emit/cpp/cli.py top-level defs must be either:
   1) C++-specific responsibilities, or
   2) explicit compatibility wrappers that delegate to shared compiler APIs.
 """
@@ -111,7 +111,7 @@ def main() -> int:
 
     # 許可集合を縮退した場合の追従漏れも検出。
     if missing:
-        print("[FAIL] py2cpp boundary guard: expected def(s) missing from src/backends/cpp/cli.py")
+        print("[FAIL] py2cpp boundary guard: expected def(s) missing from src/toolchain/emit/cpp/cli.py")
         for name in missing:
             print(f"  - {name}")
         print("Update tools/check_py2cpp_boundary.py if boundary contract intentionally changed.")

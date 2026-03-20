@@ -16,7 +16,7 @@ Goal:
 - Establish a reusable migration template across backends (naming conventions, contracts, regression guards).
 
 In scope:
-- `src/backends/{rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,scala}/`
+- `src/toolchain/emit/{rs,cs,js,ts,go,java,kotlin,swift,ruby,lua,scala}/`
 - Each `py2*.py` bridge (minimal wiring changes only)
 - Related unit/transpile checks/sample regeneration
 
@@ -122,18 +122,18 @@ Inventory summary:
 ## S1-03 Naming and Import Rules (2026-03-03)
 
 Directory rules:
-- `src/backends/<lang>/lower/`:
+- `src/toolchain/emit/<lang>/lower/`:
   - `ir.py` (LangIR node definitions)
   - `from_east3.py` (EAST3 -> LangIR)
-- `src/backends/<lang>/optimizer/`:
+- `src/toolchain/emit/<lang>/optimizer/`:
   - `pipeline.py` (pass composition)
   - `passes/*.py` (individual optimizations)
-- `src/backends/<lang>/emitter/`:
+- `src/toolchain/emit/<lang>/emitter/`:
   - `<lang>_emitter.py` or `<lang>_native_emitter.py` (LangIR -> text)
   - Rendering helpers such as `runtime_paths.py` / `profile_loader.py`
 
 Import rules:
-- `py2<lang>.py` may reference only in order: `backends.<lang>.lower` -> `optimizer` -> `emitter`.
+- `py2<lang>.py` may reference only in order: `toolchain.emit.<lang>.lower` -> `optimizer` -> `emitter`.
 - `emitter` must not import `lower` directly (cycle dependency prohibited).
 - Direct dependency across language backends is prohibited (example: a structure where `ts` delegates to `js` emitter internals is a staged-removal target).
 - If sharing is needed, extract to and reference common layers under `pytra/compiler/*`.
@@ -147,15 +147,15 @@ Decision log:
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-01] Completed inventory of current responsibilities in non-C++ backends and documented mixed-responsibility points.
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-02] Finalized Lower/Optimizer/Emitter contracts and fail-closed rules.
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S1-03] Finalized directory naming/import rules and recorded Wave 1 template policy.
-- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] Introduced `backends/rs/lower` and `backends/rs/optimizer`; switched `py2rs.py` to 3-layer wiring. `check_py2rs_transpile` passed.
-- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] Introduced `backends/scala/lower` and `backends/scala/optimizer`; switched `py2scala.py` to 3-layer wiring. `check_py2scala_transpile` (`checked=141 ok=141 fail=0`) passed.
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-01] Introduced `toolchain/emit/rs/lower` and `toolchain/emit/rs/optimizer`; switched `py2rs.py` to 3-layer wiring. `check_py2rs_transpile` passed.
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-02] Introduced `toolchain/emit/scala/lower` and `toolchain/emit/scala/optimizer`; switched `py2scala.py` to 3-layer wiring. `check_py2scala_transpile` (`checked=141 ok=141 fail=0`) passed.
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] First Wave 1 regression run showed `SUMMARY cases=18 pass=6 fail=12` (`scala` `run_failed=12`); main causes were `__pytra_bytearray/__pytra_bytes` return-type mismatch and invalid normalization in `ForCore` conditions (`value` contamination).
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S2-03] Fixed `bytearray/bytes` in `src/runtime/scala/pytra/py_runtime.scala` to return `ArrayBuffer[Long]`, and added identifier-validation fallback for normalized conditional expressions in `scala_native_emitter`. Passed `check_py2scala_transpile` (141/141), `check_py2rs_transpile` (131/131, skipped=10), and `runtime_parity_check --case-root sample --targets rs,scala --ignore-unstable-stdout` (18/18).
-- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Added `lower` and `optimizer` to `backends/{js,ts,cs}` and switched `py2{js,ts,cs}.py` to `lower -> optimizer -> emitter` wiring. `check_py2{js,ts,cs}_transpile` passed with `checked=133 ok=133 fail=0 skipped=8` each.
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Added `lower` and `optimizer` to `toolchain/emit/{js,ts,cs}` and switched `py2{js,ts,cs}.py` to `lower -> optimizer -> emitter` wiring. `check_py2{js,ts,cs}_transpile` passed with `checked=133 ok=133 fail=0 skipped=8` each.
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-01] Wave 2 sample parity (`runtime_parity_check --case-root sample --targets js,ts,cs --ignore-unstable-stdout`) showed `cases=18 pass=14 fail=4`, `artifact_size_mismatch=8` (`js/ts` `01-04`). No transpile breakage caused by 3-layer wiring changes; artifact differences were carried over as known issues to the next wave.
-- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Added `lower` and `optimizer` to `backends/{go,java,kotlin,swift}` and switched `py2{go,java,kotlin,swift}.py` to `lower -> optimizer -> emitter` wiring. `check_py2{go,java,kotlin,swift}_transpile` passed with `checked=131 ok=131 fail=0 skipped=10` each.
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Added `lower` and `optimizer` to `toolchain/emit/{go,java,kotlin,swift}` and switched `py2{go,java,kotlin,swift}.py` to `lower -> optimizer -> emitter` wiring. `check_py2{go,java,kotlin,swift}_transpile` passed with `checked=131 ok=131 fail=0 skipped=10` each.
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-02] Wave 3 sample parity (`runtime_parity_check --case-root sample --targets go,java,kotlin,swift --ignore-unstable-stdout`) showed `cases=18 pass=1 fail=17` (`go: run_failed=11`, `java: run_failed=5 + artifact_missing=12`, `swift: toolchain_missing=18`, `kotlin: no failures`). Transpile checks confirmed no regression from 3-layer wiring changes; execution-level gaps remain tracked as wave-specific issues.
-- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Added `lower` and `optimizer` to `backends/{ruby,lua,php}` and switched `py2{rb,lua,php}.py` to `lower -> optimizer -> emitter` wiring. Passed `check_py2rb_transpile` (`checked=132 ok=132 fail=0 skipped=10`), `check_py2lua_transpile` (`checked=89 ok=89 fail=0 skipped=53`), and `check_py2php_transpile` (`checked=10 ok=10 fail=0 skipped=0`).
+- 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Added `lower` and `optimizer` to `toolchain/emit/{ruby,lua,php}` and switched `py2{rb,lua,php}.py` to `lower -> optimizer -> emitter` wiring. Passed `check_py2rb_transpile` (`checked=132 ok=132 fail=0 skipped=10`), `check_py2lua_transpile` (`checked=89 ok=89 fail=0 skipped=53`), and `check_py2php_transpile` (`checked=10 ok=10 fail=0 skipped=0`).
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S3-03] Wave 4 sample parity (`runtime_parity_check --case-root sample --targets ruby,lua,php --ignore-unstable-stdout`) showed `cases=18 pass=14 fail=4`. Breakdown: for `php`, `output_mismatch=2` (`12/13`) and `run_failed=1` (`16`); for `ruby`, `run_failed=1` (`18`); `lua` had no failures. Transpile regression from 3-layer wiring changes was already confirmed non-regressive.
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-01] Expanded `tools/check_noncpp_east3_contract.py` to 12 backends (`rs/cs/js/ts/go/java/kotlin/swift/ruby/lua/php/scala`), adding static checks for required `lower/optimizer` wiring patterns/order in `py2<lang>.py` and banning reverse imports between `lower/optimizer` and `emitter`. Both `python3 tools/check_noncpp_east3_contract.py --skip-transpile` and `python3 tools/check_noncpp_east3_contract.py` (with 12 transpile checks) passed.
 - 2026-03-03: [ID: P1-MULTILANG-BACKEND-3LAYER-01-S4-02] Updated `docs/ja/spec/{spec-dev,spec-folder}.md` and `docs/en/spec/{spec-dev,spec-folder}.md` to formalize non-C++ backend 3-layer standards (applicable backends, layer responsibilities, reverse-flow prohibition, check path). This completes all breakdown tasks for `P1-MULTILANG-BACKEND-3LAYER-01`.

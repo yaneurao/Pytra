@@ -4,7 +4,7 @@
 
 # Tutorial
 
-This is the entry point for first-time Pytra users.  
+This is the entry point for first-time Pytra users.
 Start here.
 
 ## Smallest Example to Try in 3 Minutes
@@ -48,29 +48,39 @@ Once this smallest example works, the pages below become much easier to read.
 
 ## Recommended Reading Order
 
-1. Check how to run it: [Usage Guide](../how-to-use.md)
-2. Check the spec entry point: [Specification Index](../spec/index.md)
-3. Check type inference details: [Type Inference Rules](../spec/spec-east.md#7-type-inference-rules)
-4. Check `@extern` / `extern(...)`: [extern.md](./extern.md)
-5. Check `@template`: [Template Specification (Draft)](../spec/spec-template.md)
-6. Check how to read errors and common blockers: [troubleshooting.md](./troubleshooting.md)
+1. Check differences from Python: [Python Compatibility Guide](../spec/spec-python-compat.md)
+2. Check how to run it: [Usage Guide](./how-to-use.md)
+3. Check the spec entry point: [Specification Index](../spec/index.md)
+4. Check type inference details: [Type Inference Rules](../spec/spec-east.md#7-type-inference-rules)
+5. Check `@extern` / `extern(...)`: [extern.md](./extern.md)
+6. Use `py2x.py` / `east2x.py` directly: [transpiler-cli.md](./transpiler-cli.md)
+7. Check error categories and common blockers: [troubleshooting.md](./troubleshooting.md)
+8. Check advanced transpilation routes: [Advanced Usage](./advanced-usage.md)
+9. Check parity / selfhost / local CI: [Development Operations Guide](./dev-operations.md)
 
 ## How To Choose Pages
 
+- If you want to know differences from Python or unsupported syntax
+  - [Python Compatibility Guide](../spec/spec-python-compat.md)
 - If you want to transpile `.py` files into target languages and run them
-  - [Usage Guide](../how-to-use.md)
+  - [Usage Guide](./how-to-use.md)
 - If you want type inference details
   - [Type Inference Rules](../spec/spec-east.md#7-type-inference-rules)
 - If you want the source-of-truth specs
   - [Specification Index](../spec/index.md)
+- If you want to use `py2x.py` / `east2x.py` directly
+  - [transpiler-cli.md](./transpiler-cli.md)
 - If you want error categories and common blockers
   - [troubleshooting.md](./troubleshooting.md)
 - If you want Pytra-specific decorators
-  - `@template`: [Template Specification (Draft)](../spec/spec-template.md)
-  - `@extern` / `extern(...)`: [extern.md](./extern.md)
-  - `@abi`: [ABI Specification](../spec/spec-abi.md)
-- If you want `py2x.py` / `east2cpp.py` / `east2x.py` direct-entry workflows, parity checks, or selfhost-related runbooks
-  - [Usage Guide](../how-to-use.md)
+  - `@template`: something like C++ templates. Current v1 is limited to linked runtime helpers.
+    - [Template Specification (Draft)](../spec/spec-template.md)
+  - `@extern` / `extern(...)`: for calling external functions and classes.
+    - [extern.md](./extern.md)
+  - `@abi`: for defining ABI.
+    - [Advanced Usage](./advanced-usage.md)
+- If you want parity check procedures or development operations including selfhost
+  - [Development Operations Guide](./dev-operations.md)
 
 ## Smallest Examples for Pytra-Specific Decorators
 
@@ -139,7 +149,8 @@ Notes:
 
 ## Related Links
 
+- Python Compatibility Guide: [spec-python-compat.md](../spec/spec-python-compat.md)
 - Specification Index: [index.md](../spec/index.md)
 - User Specification: [spec-user.md](../spec/spec-user.md)
 - Option Specification: [spec-options.md](../spec/spec-options.md)
-- Tools: [spec-tools.md](../spec/spec-tools.md)
+- Tools Guide: [spec-tools.md](../spec/spec-tools.md)

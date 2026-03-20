@@ -221,7 +221,7 @@ python3 tools/runtime_parity_check.py \
 
 ## non-C++ backend health check after linked-program
 
-- After linked-program rollout, `tools/check_noncpp_backend_health.py` is the canonical gate for non-C++ backends.
+- After linked-program rollout, `tools/check_noncpp_backend_health.py` is the canonical gate for non-C++ toolchain.emit.
 - The everyday minimum check is this one command. `parity` is skipped here because it depends on installed toolchains.
 
 ```bash
@@ -241,7 +241,7 @@ python3 tools/check_noncpp_backend_health.py --family wave3 --skip-parity
 
 ## Mandatory Emitter Guardrails (Stop-Ship)
 
-- If you modify `src/backends/*/emitter/*.py`, run the following before commit:
+- If you modify `src/toolchain/emit/*/emitter/*.py`, run the following before commit:
   - `python3 tools/check_emitter_runtimecall_guardrails.py`
   - `python3 tools/check_emitter_forbidden_runtime_symbols.py`
   - `python3 tools/check_noncpp_east3_contract.py`
@@ -277,7 +277,7 @@ python3 src/py2x.py test/fixtures/core/add.py --target rs -o out/add_py2x.rs
 
 ## `east2cpp.py` / `east2x.py` (EAST3 JSON -> target backend)
 
-- `east2cpp.py` is the standalone C++ backend entry point. It reads `link-output.json` and emits C++ multi-file output without importing non-C++ backends.
+- `east2cpp.py` is the standalone C++ backend entry point. It reads `link-output.json` and emits C++ multi-file output without importing non-C++ toolchain.emit.
 - `east2x.py` is the generic all-backend entry point. It runs a backend directly from `EAST3(JSON)` without passing through the frontend (`.py -> EAST3`).
 - Use them for backend-only regression checks with fixed IR inputs under `sample/ir` and `test/ir`.
 - `east2x.py` accepts `.json` only and fail-fast rejects any input other than `east_stage=3`.
@@ -432,7 +432,7 @@ ruby test/transpile/ruby/iterable.rb
 ```
 
 Notes:
-- `py2x.py --target ruby` generates Ruby source directly from EAST3 via the native emitter (`src/backends/ruby/emitter/ruby_native_emitter.py`).
+- `py2x.py --target ruby` generates Ruby source directly from EAST3 via the native emitter (`src/toolchain/emit/ruby/emitter/ruby_native_emitter.py`).
 - Image APIs (`png.write_rgb_png` / `save_gif`) are currently handled by no-op runtime hooks; use the backend primarily for syntax/execution-path regression checks at this stage.
 - Check transpile regressions with `python3 tools/check_py2rb_transpile.py`.
 - Run parity entry flow with `python3 tools/runtime_parity_check.py --case-root sample --targets ruby` (environments without Ruby toolchain are recorded as `toolchain_missing`). Unstable timing lines such as `elapsed_sec` are excluded from compare by default.
@@ -448,7 +448,7 @@ php test/transpile/php/iterable.php
 ```
 
 Notes:
-- `py2x.py --target php` generates PHP source directly from EAST3 via the native emitter (`src/backends/php/emitter/php_native_emitter.py`).
+- `py2x.py --target php` generates PHP source directly from EAST3 via the native emitter (`src/toolchain/emit/php/emitter/php_native_emitter.py`).
 - Canonical PHP runtime helpers live under `src/runtime/php/{generated,native}/`, and transpilation stages only the required helper files into `test/transpile/php/`.
 - Check transpile regressions with `python3 tools/check_py2php_transpile.py`.
 - Run parity entry flow with `python3 tools/runtime_parity_check.py --case-root sample --targets php` (environments without PHP toolchain are recorded as `toolchain_missing`).
@@ -508,7 +508,7 @@ go run test/transpile/go/iterable.go
 ```
 
 Notes:
-- `py2x.py --target go` generates Go source directly from EAST3 via the native emitter (`src/backends/go/emitter/go_native_emitter.py`).
+- `py2x.py --target go` generates Go source directly from EAST3 via the native emitter (`src/toolchain/emit/go/emitter/go_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
 - Sidecar compatibility mode has been removed; only the native path is available.
 
@@ -524,7 +524,7 @@ java -cp test/transpile/java iterable
 ```
 
 Notes:
-- `py2x.py --target java` generates Java source directly from EAST3 via the native emitter (`src/backends/java/emitter/java_native_emitter.py`).
+- `py2x.py --target java` generates Java source directly from EAST3 via the native emitter (`src/toolchain/emit/java/emitter/java_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
 - Sidecar compatibility mode has been removed; only the native path is available.
 
@@ -540,7 +540,7 @@ swiftc test/transpile/swift/iterable.swift -o test/transpile/obj/iterable_swift.
 ```
 
 Notes:
-- `py2x.py --target swift` generates Swift source directly from EAST3 via the native emitter (`src/backends/swift/emitter/swift_native_emitter.py`).
+- `py2x.py --target swift` generates Swift source directly from EAST3 via the native emitter (`src/toolchain/emit/swift/emitter/swift_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
 - Sidecar compatibility mode has been removed; only the native path is available.
 
@@ -556,7 +556,7 @@ java -cp test/transpile/obj/iterable_kotlin.jar pytra_iterable
 ```
 
 Notes:
-- `py2x.py --target kotlin` generates Kotlin source directly from EAST3 via the native emitter (`src/backends/kotlin/emitter/kotlin_native_emitter.py`).
+- `py2x.py --target kotlin` generates Kotlin source directly from EAST3 via the native emitter (`src/toolchain/emit/kotlin/emitter/kotlin_native_emitter.py`).
 - Native generation is the default (no sidecar `.js` is emitted).
 - Sidecar compatibility mode has been removed; only the native path is available.
 
@@ -571,7 +571,7 @@ scala run test/transpile/scala/iterable.scala
 ```
 
 Notes:
-- `py2x.py --target scala` generates Scala3 code directly from EAST3 via the native emitter (`src/backends/scala/emitter/scala_native_emitter.py`).
+- `py2x.py --target scala` generates Scala3 code directly from EAST3 via the native emitter (`src/toolchain/emit/scala/emitter/scala_native_emitter.py`).
 - Check transpile regressions with `python3 tools/check_py2scala_transpile.py` (it validates both positive success and expected-negative error categories).
 - Run full parity (sample + positive fixture manifest) with `python3 tools/check_scala_parity.py`.
 - To run sample-only parity first, use `python3 tools/check_scala_parity.py --skip-fixture`.
@@ -642,7 +642,7 @@ Notes:
 
 Failure investigation tips:
 - First classify `error:` lines in `build.all.log` into type-related (`std::any` / `optional`) vs syntax-related (missing lowering).
-- At failing lines in `selfhost/py2cpp.cpp`, verify that the original `src/backends/cpp/cli.py` has not introduced extra `Any` mixing.
+- At failing lines in `selfhost/py2cpp.cpp`, verify that the original `src/toolchain/emit/cpp/cli.py` has not introduced extra `Any` mixing.
 - `selfhost/py2cpp.py` may be stale; run `python3 tools/prepare_selfhost_source.py` before each attempt.
 
 ## Conversion Check During CodeEmitter Work

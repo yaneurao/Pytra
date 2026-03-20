@@ -7,11 +7,11 @@ Related TODO:
 
 Background:
 - Current generated code mixes emitter-specific comments that do not exist in source (`Auto-generated` / `Runtime helpers are provided` / `TypeScript preview` / `TODO: unsupported` / `pass` replacement comments).
-- Meanwhile, top-of-source comments are missing on some backends, making comment fidelity inconsistent between backends.
+- Meanwhile, top-of-source comments are missing on some backends, making comment fidelity inconsistent between toolchain.emit.
 - Without a clear contract that "only source-derived comments are allowed," the same drift will recur when adding future emitters.
 
 Goal:
-- Enforce "output only comments derived from source" across all backends.
+- Enforce "output only comments derived from source" across all toolchain.emit.
 - Completely ban emitter-specific explanatory comments / unsupported-TODO comments, and unify unsupported handling to fail-closed (exception).
 - Keep comment-output regressions continuously detectable with tests and check tools.
 
@@ -29,10 +29,10 @@ Out of scope:
 
 Acceptance criteria:
 - Output code does not include emitter-specific fixed comments (`Auto-generated` / `Runtime helpers are provided` / `preview` / `TODO: unsupported` / `pass` comments).
-- Source top comments and pre-statement comments (`module_leading_trivia` / `leading_trivia`) are emitted without omission on supported backends.
+- Source top comments and pre-statement comments (`module_leading_trivia` / `leading_trivia`) are emitted without omission on supported toolchain.emit.
 - `pass` is represented as each language's no-op statement, or omitted when unnecessary, not as comments.
 - Unsupported syntax halts with exceptions (fail-closed), not comment embedding.
-- Comment-fidelity regressions pass on smoke tests for major backends.
+- Comment-fidelity regressions pass on smoke tests for major toolchain.emit.
 
 Verification commands:
 - `python3 tools/check_todo_priority.py`

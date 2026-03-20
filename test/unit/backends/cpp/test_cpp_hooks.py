@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.backends.cpp.emitter.hooks_registry import (
+from src.toolchain.emit.cpp.emitter.hooks_registry import (
     build_cpp_hooks,
     on_render_expr_complex,
     on_stmt_omit_braces,

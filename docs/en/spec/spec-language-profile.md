@@ -14,9 +14,9 @@ This document defines the language-profile JSON specification used by `CodeEmitt
 
 ## 2. Placement
 
-- `src/backends/common/profiles/`
+- `src/toolchain/emit/common/profiles/`
   - `core.json`: shared defaults for all languages
-- `src/backends/<lang>/profiles/`
+- `src/toolchain/emit/<lang>/profiles/`
   - `profile.json`: integrated language profile (entry)
   - `types.json`: type map
   - `operators.json`: operator map
@@ -25,9 +25,9 @@ This document defines the language-profile JSON specification used by `CodeEmitt
 
 ## 3. Load Order
 
-1. `src/backends/common/profiles/core.json`
-2. `include` order in `src/backends/<lang>/profiles/profile.json`
-3. body of `src/backends/<lang>/profiles/profile.json`
+1. `src/toolchain/emit/common/profiles/core.json`
+2. `include` order in `src/toolchain/emit/<lang>/profiles/profile.json`
+3. body of `src/toolchain/emit/<lang>/profiles/profile.json`
 4. CLI overrides (if needed)
 
 Last-write-wins merge is the default rule.
@@ -47,7 +47,7 @@ Minimal `profile.json` example:
     "syntax.json"
   ],
   "hooks": {
-    "module": "backends.cpp.emitter.hooks_registry",
+    "module": "toolchain.emit.cpp.emitter.hooks_registry",
     "factory": "build_cpp_hooks"
   }
 }
@@ -154,13 +154,13 @@ Move only branches hard to express in profiles into hooks.
 ```json
 {
   "hooks": {
-    "module": "backends.cpp.emitter.hooks_registry",
+    "module": "toolchain.emit.cpp.emitter.hooks_registry",
     "factory": "build_cpp_hooks"
   }
 }
 ```
 
-Place `module` under language-specific side (e.g., `src/backends/cpp/emitter/`), not under `src/backends/common/`.
+Place `module` under language-specific side (e.g., `src/toolchain/emit/cpp/emitter/`), not under `src/toolchain/emit/common/`.
 
 ## 5. Hooks Specification
 
@@ -182,7 +182,7 @@ Return values:
 ### 5.1 Implementation Location (C++)
 
 ```text
-src/backends/cpp/emitter/hooks_registry.py
+src/toolchain/emit/cpp/emitter/hooks_registry.py
 ```
 
 ## 6. Validation Rules

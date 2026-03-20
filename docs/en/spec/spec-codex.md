@@ -58,11 +58,11 @@ This document defines the operational rules Codex follows while working.
 
 ## 5. Implementation and Placement Rules
 
-- Place only language-agnostic code in `src/backends/common/`.
-- Place language-specific code in each `py2*.py`, `src/backends/<lang>/`, `src/backends/<lang>/profiles/`, and `src/runtime/<lang>/{generated,native}/`. Legacy `pytra-gen/pytra-core` on not-yet-migrated backends is rollout debt only.
+- Place only language-agnostic code in `src/toolchain/emit/common/`.
+- Place language-specific code in each `py2*.py`, `src/toolchain/emit/<lang>/`, `src/toolchain/emit/<lang>/profiles/`, and `src/runtime/<lang>/{generated,native}/`. Legacy `pytra-gen/pytra-core` on not-yet-migrated backends is rollout debt only.
 - Do not place files directly under `src/` except transpiler entry points (`py2*.py`).
-- Move shared base logic usable across languages (e.g., `CodeEmitter`) to `src/backends/common/`; keep only C++-specific logic in `py2cpp.py`.
-- To support future multi-language expansion and avoid `py2cpp.py` bloat, migrate commonizable processing to `src/backends/common/` in phases.
+- Move shared base logic usable across languages (e.g., `CodeEmitter`) to `src/toolchain/emit/common/`; keep only C++-specific logic in `py2cpp.py`.
+- To support future multi-language expansion and avoid `py2cpp.py` bloat, migrate commonizable processing to `src/toolchain/emit/common/` in phases.
 - Consolidate generated-code helper functions in each target runtime's canonical lanes (`src/runtime/<lang>/{generated,native}/` on migrated backends) and do not duplicate-embed them into generated code.
 - Treat `src/*_module/` as compatibility layers and do not add new runtime implementation files there (planned for gradual removal).
 - Treat `src/runtime/cpp/generated/utils/png.cpp` / `src/runtime/cpp/generated/utils/gif.cpp` as generated from `src/pytra/utils/*.py`; do not edit by hand (auto-updated when running `py2cpp.py`).
@@ -91,10 +91,10 @@ This document defines the operational rules Codex follows while working.
 - Use `-O3 -ffast-math -flto` for C++ in performance comparisons.
 - Keep generated artifact directories (`out/`, `test/transpile/obj/`, `test/transpile/cpp2/`, `sample/obj/`, `sample/out/`) outside Git management.
 - `out/` is for local temporary outputs only; do not place irreproducible source-of-truth data there.
-- If `src/backends/common/emitter/code_emitter.py` is changed, run `test/unit/common/test_code_emitter.py` first to verify shared utility regressions.
+- If `src/toolchain/emit/common/emitter/code_emitter.py` is changed, run `test/unit/common/test_code_emitter.py` first to verify shared utility regressions.
 - For `CodeEmitter` / `py2cpp` changes, pass both `python3 tools/check_py2cpp_transpile.py` and `python3 tools/build_selfhost.py` before commit.
 - Committing while either of the two commands above fails is prohibited.
-- When changing transpiler-related files (`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/backends/**/profiles/**`), bump the corresponding version in `src/toolchain/compiler/transpiler_versions.json` by at least minor and pass `python3 tools/check_transpiler_version_gate.py`.
+- When changing transpiler-related files (`src/py2*.py`, `src/pytra/**`, `src/toolchain/emit/**`, `src/toolchain/emit/**/profiles/**`), bump the corresponding version in `src/toolchain/compiler/transpiler_versions.json` by at least minor and pass `python3 tools/check_transpiler_version_gate.py`.
 - For sample regeneration, use `python3 tools/run_regen_on_version_bump.py --verify-cpp-on-diff` to compile/run-check C++ cases that changed after version bump.
 - For ad-hoc C++ compilation experiments (debugging/investigation), place sources and artifacts under `/tmp/` or `work/tmp/`, never under the repository root (see the `tempfile.TemporaryDirectory()` pattern in tests).
 - GCC dump flags (e.g. `-fdump-tree-all`) write to the current working directory; do not use them in the repository root. If needed, specify `-dumpdir /tmp/` explicitly.
@@ -107,7 +107,7 @@ This document defines the operational rules Codex follows while working.
 - For `#include "runtime/cpp/..."`, headers under `selfhost/` with the same path resolve first. Updating only `src/runtime/cpp` may not fix selfhost build.
 - Selfhost build logs may appear on stdout, so collect with `> selfhost/build.all.log 2>&1`.
 - In selfhost target code, confirm Python-only expressions do not leak into generated C++ (e.g., `super().__init__`, Python-style inheritance notation).
-- On runtime changes, besides `test/unit/backends/cpp/test_py2cpp_features.py`, also verify selfhost regeneration and recompilation.
+- On runtime changes, besides `test/unit/toolchain/emit/cpp/test_py2cpp_features.py`, also verify selfhost regeneration and recompilation.
 - Even in selfhost-target Python code, direct imports of standard modules are prohibited; use only shim modules in `src/pytra/std/` (e.g., `pytra.std.json`, `pytra.std.pathlib`, `pytra.std.sys`, `pytra.std.os`, `pytra.std.glob`, `pytra.std.argparse`, `pytra.std.re`). `typing` is the only exception and is allowed as an annotation-only no-op import.
 - In selfhost-critical areas where reliability is prioritized, avoid branches relying on `continue` and literal-set membership like `x in {"a", "b"}`; prefer `if/elif` and explicit comparison (`x == "a" or x == "b"`).
 - For daily minimal regression, run `python3 tools/run_local_ci.py` and pass `check_py2cpp_transpile` + unit tests + selfhost build + selfhost diff together.

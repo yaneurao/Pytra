@@ -23,7 +23,7 @@ Goal:
 Scope:
 - `src/toolchain/ir/core.py`
 - `src/toolchain/frontends/signature_registry.py`
-- `src/backends/*/`
+- `src/toolchain/emit/*/`
 - `tools/` (index generator / guards / tests)
 - `src/pytra/{built_in,std,utils}/`
 - `src/runtime/<lang>/{core,built_in,std,utils}/`
@@ -142,9 +142,9 @@ Notes:
 | - | - | - | - | - |
 | IR construction | `src/toolchain/ir/core.py` | bare `runtime_call` strings such as `enumerate -> py_enumerate`, `any -> py_any`, `all -> py_all`, `reversed -> py_reversed`, `bytes/bytearray/list/set/dict` ctors | symbol names exist without owning modules | keep `runtime_module_id` + `runtime_symbol` in IR |
 | frontend | `src/toolchain/frontends/signature_registry.py` | runtime-call matching for `perf_counter`, `Path`, `json.loads`, `write_rgb_png`, `save_gif`, `math.sqrt`, owner methods, and type inference | it still owns file/path inference; target-independent and target-dependent knowledge are mixed | keep only minimal module/symbol normalization and move file/artifact mapping into the index |
-| backend (C++) | `src/backends/cpp/emitter/module.py` | guesses include paths and namespaces from `pytra.std.*` / `pytra.utils.*` / `pytra.built_in.*` | backend implementation re-guesses module tails and file paths | derive include/header information from the index |
-| backend (C++) | `src/backends/cpp/emitter/runtime_paths.py` | `module_tail -> *.gen.h`, `module_name -> runtime/cpp/...` conversion | as a C++ path-rule center it is fine, but it becomes over-responsible if it also decides symbol ownership | shrink it to `module -> target artifact` derivation only |
-| backend (C++) | `src/backends/cpp/profiles/runtime_calls.json` | C++ callee names for `os.path.join`, `glob.glob`, `ArgumentParser`, `re.sub`, `sys.stdout.write`, etc. | symbol ownership and final rendering names are mixed; without the index this invites ad-hoc fallbacks | keep it temporarily only as a C++ callee-name table and split module ownership into IR + index |
+| backend (C++) | `src/toolchain/emit/cpp/emitter/module.py` | guesses include paths and namespaces from `pytra.std.*` / `pytra.utils.*` / `pytra.built_in.*` | backend implementation re-guesses module tails and file paths | derive include/header information from the index |
+| backend (C++) | `src/toolchain/emit/cpp/emitter/runtime_paths.py` | `module_tail -> *.gen.h`, `module_name -> runtime/cpp/...` conversion | as a C++ path-rule center it is fine, but it becomes over-responsible if it also decides symbol ownership | shrink it to `module -> target artifact` derivation only |
+| backend (C++) | `src/toolchain/emit/cpp/profiles/runtime_calls.json` | C++ callee names for `os.path.join`, `glob.glob`, `ArgumentParser`, `re.sub`, `sys.stdout.write`, etc. | symbol ownership and final rendering names are mixed; without the index this invites ad-hoc fallbacks | keep it temporarily only as a C++ callee-name table and split module ownership into IR + index |
 | tooling | `tools/build_multi_cpp.py` | recursively collects runtime sources starting from manifest sources | rebuilds `.gen/.ext` companions from includes but not on module/symbol units | derive required artifacts per module from the index |
 | tooling | `tools/gen_makefile_from_manifest.py` | re-collects runtime sources from the manifest | the build graph still leans on include-based guessing | decide compile sources from the index + manifest module information |
 
@@ -276,8 +276,8 @@ Work to do:
 Minimum files to inspect:
 - `src/toolchain/ir/core.py`
 - `src/toolchain/frontends/signature_registry.py`
-- `src/backends/cpp/emitter/module.py`
-- `src/backends/cpp/emitter/runtime_paths.py`
+- `src/toolchain/emit/cpp/emitter/module.py`
+- `src/toolchain/emit/cpp/emitter/runtime_paths.py`
 - `tools/build_multi_cpp.py`
 - `tools/gen_makefile_from_manifest.py`
 
@@ -359,7 +359,7 @@ Planned verification commands:
 - `python3 tools/check_todo_priority.py`
 - `python3 tools/gen_runtime_symbol_index.py --check`
 - `python3 -m unittest discover -s test/unit/tooling -p 'test_runtime_symbol_index*.py'`
-- `python3 -m unittest discover -s test/unit/backends/cpp -p test_*.py`
+- `python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p test_*.py`
 - `python3 tools/runtime_parity_check.py --targets cpp --case-root fixture`
 - `python3 tools/runtime_parity_check.py --targets cpp --case-root sample --all-samples`
 

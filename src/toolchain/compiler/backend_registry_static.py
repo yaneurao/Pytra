@@ -39,47 +39,47 @@ from toolchain.compiler.typed_boundary import ResolvedBackendSpec
 from toolchain.compiler.typed_boundary import coerce_backend_spec
 from toolchain.compiler.typed_boundary import export_resolved_backend_spec_any
 
-from backends.cs.lower import lower_east3_to_cs_ir
-from backends.cs.optimizer import optimize_cs_ir
-from backends.cs.emitter.cs_emitter import transpile_to_csharp
-from backends.common.program_writer import write_single_file_program
-from backends.cpp.program_writer import write_cpp_program
-from backends.go.lower import lower_east3_to_go_ir
-from backends.go.optimizer import optimize_go_ir
-from backends.go.emitter import transpile_to_go_native
-from backends.java.lower import lower_east3_to_java_ir
-from backends.java.optimizer import optimize_java_ir
-from backends.java.emitter import transpile_to_java_native
-from backends.powershell.emitter.powershell_emitter import transpile_to_powershell
-from backends.js.lower import lower_east3_to_js_ir
-from backends.js.optimizer import optimize_js_ir
-from backends.js.emitter.js_emitter import transpile_to_js
-from backends.kotlin.lower import lower_east3_to_kotlin_ir
-from backends.kotlin.optimizer import optimize_kotlin_ir
-from backends.kotlin.emitter import transpile_to_kotlin_native
-from backends.lua.lower import lower_east3_to_lua_ir
-from backends.lua.optimizer import optimize_lua_ir
-from backends.lua.emitter import transpile_to_lua_native
-from backends.nim.emitter import transpile_to_nim_native
-from backends.php.lower import lower_east3_to_php_ir
-from backends.php.optimizer import optimize_php_ir
-from backends.php.emitter import transpile_to_php_native
-from backends.rs.lower import lower_east3_to_rs_ir
-from backends.rs.optimizer import optimize_rs_ir
-from backends.rs.emitter.rs_emitter import transpile_to_rust
-from backends.ruby.lower import lower_east3_to_ruby_ir
-from backends.ruby.optimizer import optimize_ruby_ir
-from backends.ruby.emitter import transpile_to_ruby_native
-from backends.scala.lower import lower_east3_to_scala_ir
-from backends.scala.optimizer import optimize_scala_ir
-from backends.scala.emitter import transpile_to_scala_native
-from backends.swift.lower import lower_east3_to_swift_ir
-from backends.swift.optimizer import optimize_swift_ir
-from backends.swift.emitter import transpile_to_swift_native
-from backends.ts.lower import lower_east3_to_ts_ir
-from backends.ts.optimizer import optimize_ts_ir
-from backends.ts.emitter.ts_emitter import transpile_to_typescript
-from backends.cpp.emitter import transpile_to_cpp
+from toolchain.emit.cs.lower import lower_east3_to_cs_ir
+from toolchain.emit.cs.optimizer import optimize_cs_ir
+from toolchain.emit.cs.emitter.cs_emitter import transpile_to_csharp
+from toolchain.emit.common.program_writer import write_single_file_program
+from toolchain.emit.cpp.program_writer import write_cpp_program
+from toolchain.emit.go.lower import lower_east3_to_go_ir
+from toolchain.emit.go.optimizer import optimize_go_ir
+from toolchain.emit.go.emitter import transpile_to_go_native
+from toolchain.emit.java.lower import lower_east3_to_java_ir
+from toolchain.emit.java.optimizer import optimize_java_ir
+from toolchain.emit.java.emitter import transpile_to_java_native
+from toolchain.emit.powershell.emitter.powershell_emitter import transpile_to_powershell
+from toolchain.emit.js.lower import lower_east3_to_js_ir
+from toolchain.emit.js.optimizer import optimize_js_ir
+from toolchain.emit.js.emitter.js_emitter import transpile_to_js
+from toolchain.emit.kotlin.lower import lower_east3_to_kotlin_ir
+from toolchain.emit.kotlin.optimizer import optimize_kotlin_ir
+from toolchain.emit.kotlin.emitter import transpile_to_kotlin_native
+from toolchain.emit.lua.lower import lower_east3_to_lua_ir
+from toolchain.emit.lua.optimizer import optimize_lua_ir
+from toolchain.emit.lua.emitter import transpile_to_lua_native
+from toolchain.emit.nim.emitter import transpile_to_nim_native
+from toolchain.emit.php.lower import lower_east3_to_php_ir
+from toolchain.emit.php.optimizer import optimize_php_ir
+from toolchain.emit.php.emitter import transpile_to_php_native
+from toolchain.emit.rs.lower import lower_east3_to_rs_ir
+from toolchain.emit.rs.optimizer import optimize_rs_ir
+from toolchain.emit.rs.emitter.rs_emitter import transpile_to_rust
+from toolchain.emit.ruby.lower import lower_east3_to_ruby_ir
+from toolchain.emit.ruby.optimizer import optimize_ruby_ir
+from toolchain.emit.ruby.emitter import transpile_to_ruby_native
+from toolchain.emit.scala.lower import lower_east3_to_scala_ir
+from toolchain.emit.scala.optimizer import optimize_scala_ir
+from toolchain.emit.scala.emitter import transpile_to_scala_native
+from toolchain.emit.swift.lower import lower_east3_to_swift_ir
+from toolchain.emit.swift.optimizer import optimize_swift_ir
+from toolchain.emit.swift.emitter import transpile_to_swift_native
+from toolchain.emit.ts.lower import lower_east3_to_ts_ir
+from toolchain.emit.ts.optimizer import optimize_ts_ir
+from toolchain.emit.ts.emitter.ts_emitter import transpile_to_typescript
+from toolchain.emit.cpp.emitter import transpile_to_cpp
 from toolchain.compiler.js_runtime_shims import write_js_runtime_shims
 
 _SRC_ROOT = registry_src_root(__file__)
@@ -90,47 +90,47 @@ def _runtime_js_shims(output_path: Path) -> None:
 
 
 _STATIC_CALLABLES = {
-    "backends.rs.lower:lower_east3_to_rs_ir": lower_east3_to_rs_ir,
-    "backends.rs.optimizer:optimize_rs_ir": optimize_rs_ir,
-    "backends.rs.emitter.rs_emitter:transpile_to_rust": transpile_to_rust,
-    "backends.cs.lower:lower_east3_to_cs_ir": lower_east3_to_cs_ir,
-    "backends.cs.optimizer:optimize_cs_ir": optimize_cs_ir,
-    "backends.cs.emitter.cs_emitter:transpile_to_csharp": transpile_to_csharp,
-    "backends.js.lower:lower_east3_to_js_ir": lower_east3_to_js_ir,
-    "backends.js.optimizer:optimize_js_ir": optimize_js_ir,
-    "backends.js.emitter.js_emitter:transpile_to_js": transpile_to_js,
-    "backends.ts.lower:lower_east3_to_ts_ir": lower_east3_to_ts_ir,
-    "backends.ts.optimizer:optimize_ts_ir": optimize_ts_ir,
-    "backends.ts.emitter.ts_emitter:transpile_to_typescript": transpile_to_typescript,
-    "backends.go.lower:lower_east3_to_go_ir": lower_east3_to_go_ir,
-    "backends.go.optimizer:optimize_go_ir": optimize_go_ir,
-    "backends.go.emitter:transpile_to_go_native": transpile_to_go_native,
-    "backends.java.lower:lower_east3_to_java_ir": lower_east3_to_java_ir,
-    "backends.java.optimizer:optimize_java_ir": optimize_java_ir,
-    "backends.java.emitter:transpile_to_java_native": transpile_to_java_native,
-    "backends.kotlin.lower:lower_east3_to_kotlin_ir": lower_east3_to_kotlin_ir,
-    "backends.kotlin.optimizer:optimize_kotlin_ir": optimize_kotlin_ir,
-    "backends.kotlin.emitter:transpile_to_kotlin_native": transpile_to_kotlin_native,
-    "backends.swift.lower:lower_east3_to_swift_ir": lower_east3_to_swift_ir,
-    "backends.swift.optimizer:optimize_swift_ir": optimize_swift_ir,
-    "backends.swift.emitter:transpile_to_swift_native": transpile_to_swift_native,
-    "backends.ruby.lower:lower_east3_to_ruby_ir": lower_east3_to_ruby_ir,
-    "backends.ruby.optimizer:optimize_ruby_ir": optimize_ruby_ir,
-    "backends.ruby.emitter:transpile_to_ruby_native": transpile_to_ruby_native,
-    "backends.lua.lower:lower_east3_to_lua_ir": lower_east3_to_lua_ir,
-    "backends.lua.optimizer:optimize_lua_ir": optimize_lua_ir,
-    "backends.lua.emitter:transpile_to_lua_native": transpile_to_lua_native,
-    "backends.scala.lower:lower_east3_to_scala_ir": lower_east3_to_scala_ir,
-    "backends.scala.optimizer:optimize_scala_ir": optimize_scala_ir,
-    "backends.scala.emitter:transpile_to_scala_native": transpile_to_scala_native,
-    "backends.php.lower:lower_east3_to_php_ir": lower_east3_to_php_ir,
-    "backends.php.optimizer:optimize_php_ir": optimize_php_ir,
-    "backends.php.emitter:transpile_to_php_native": transpile_to_php_native,
-    "backends.nim.emitter:transpile_to_nim_native": transpile_to_nim_native,
-    "backends.powershell.emitter.powershell_emitter:transpile_to_powershell": transpile_to_powershell,
-    "backends.common.program_writer:write_single_file_program": write_single_file_program,
-    "backends.cpp.program_writer:write_cpp_program": write_cpp_program,
-    "backends.cpp.emitter:transpile_to_cpp": transpile_to_cpp,
+    "toolchain.emit.rs.lower:lower_east3_to_rs_ir": lower_east3_to_rs_ir,
+    "toolchain.emit.rs.optimizer:optimize_rs_ir": optimize_rs_ir,
+    "toolchain.emit.rs.emitter.rs_emitter:transpile_to_rust": transpile_to_rust,
+    "toolchain.emit.cs.lower:lower_east3_to_cs_ir": lower_east3_to_cs_ir,
+    "toolchain.emit.cs.optimizer:optimize_cs_ir": optimize_cs_ir,
+    "toolchain.emit.cs.emitter.cs_emitter:transpile_to_csharp": transpile_to_csharp,
+    "toolchain.emit.js.lower:lower_east3_to_js_ir": lower_east3_to_js_ir,
+    "toolchain.emit.js.optimizer:optimize_js_ir": optimize_js_ir,
+    "toolchain.emit.js.emitter.js_emitter:transpile_to_js": transpile_to_js,
+    "toolchain.emit.ts.lower:lower_east3_to_ts_ir": lower_east3_to_ts_ir,
+    "toolchain.emit.ts.optimizer:optimize_ts_ir": optimize_ts_ir,
+    "toolchain.emit.ts.emitter.ts_emitter:transpile_to_typescript": transpile_to_typescript,
+    "toolchain.emit.go.lower:lower_east3_to_go_ir": lower_east3_to_go_ir,
+    "toolchain.emit.go.optimizer:optimize_go_ir": optimize_go_ir,
+    "toolchain.emit.go.emitter:transpile_to_go_native": transpile_to_go_native,
+    "toolchain.emit.java.lower:lower_east3_to_java_ir": lower_east3_to_java_ir,
+    "toolchain.emit.java.optimizer:optimize_java_ir": optimize_java_ir,
+    "toolchain.emit.java.emitter:transpile_to_java_native": transpile_to_java_native,
+    "toolchain.emit.kotlin.lower:lower_east3_to_kotlin_ir": lower_east3_to_kotlin_ir,
+    "toolchain.emit.kotlin.optimizer:optimize_kotlin_ir": optimize_kotlin_ir,
+    "toolchain.emit.kotlin.emitter:transpile_to_kotlin_native": transpile_to_kotlin_native,
+    "toolchain.emit.swift.lower:lower_east3_to_swift_ir": lower_east3_to_swift_ir,
+    "toolchain.emit.swift.optimizer:optimize_swift_ir": optimize_swift_ir,
+    "toolchain.emit.swift.emitter:transpile_to_swift_native": transpile_to_swift_native,
+    "toolchain.emit.ruby.lower:lower_east3_to_ruby_ir": lower_east3_to_ruby_ir,
+    "toolchain.emit.ruby.optimizer:optimize_ruby_ir": optimize_ruby_ir,
+    "toolchain.emit.ruby.emitter:transpile_to_ruby_native": transpile_to_ruby_native,
+    "toolchain.emit.lua.lower:lower_east3_to_lua_ir": lower_east3_to_lua_ir,
+    "toolchain.emit.lua.optimizer:optimize_lua_ir": optimize_lua_ir,
+    "toolchain.emit.lua.emitter:transpile_to_lua_native": transpile_to_lua_native,
+    "toolchain.emit.scala.lower:lower_east3_to_scala_ir": lower_east3_to_scala_ir,
+    "toolchain.emit.scala.optimizer:optimize_scala_ir": optimize_scala_ir,
+    "toolchain.emit.scala.emitter:transpile_to_scala_native": transpile_to_scala_native,
+    "toolchain.emit.php.lower:lower_east3_to_php_ir": lower_east3_to_php_ir,
+    "toolchain.emit.php.optimizer:optimize_php_ir": optimize_php_ir,
+    "toolchain.emit.php.emitter:transpile_to_php_native": transpile_to_php_native,
+    "toolchain.emit.nim.emitter:transpile_to_nim_native": transpile_to_nim_native,
+    "toolchain.emit.powershell.emitter.powershell_emitter:transpile_to_powershell": transpile_to_powershell,
+    "toolchain.emit.common.program_writer:write_single_file_program": write_single_file_program,
+    "toolchain.emit.cpp.program_writer:write_cpp_program": write_cpp_program,
+    "toolchain.emit.cpp.emitter:transpile_to_cpp": transpile_to_cpp,
 }
 
 

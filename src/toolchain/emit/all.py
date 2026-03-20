@@ -39,7 +39,7 @@ from toolchain.json_adapters import unwrap_east_root_json_doc
 from toolchain.link import LINK_OUTPUT_SCHEMA
 from toolchain.link import LinkedProgramModule
 from toolchain.link import load_linked_output_bundle
-from backends.cpp.emitter.multifile_writer import write_multi_file_cpp
+from toolchain.emit.cpp.emitter.multifile_writer import write_multi_file_cpp
 from pytra.std import argparse
 from pytra.std import json
 from pytra.std.pathlib import Path

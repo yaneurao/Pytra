@@ -8,7 +8,7 @@ Related TODO:
 Background:
 - During C# selfhost support, adjustments originating from C#-specific constraints were mixed into `CodeEmitter` (common base).
 - User policy prioritizes: "Do not modify common compiler layers for unsupported C# transpiler issues."
-- If language-specific workarounds remain in common layers, regression surface and maintenance cost rise for other backends.
+- If language-specific workarounds remain in common layers, regression surface and maintenance cost rise for other toolchain.emit.
 
 Objective:
 - Re-limit `CodeEmitter` responsibility to "logic common to all backends" and move C#-specific workarounds to `CSharpEmitter` / C# runtime / selfhost-preparation layers.
@@ -41,7 +41,7 @@ Breakdown:
 - [ ] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S1-02] Document judgment criteria for "common-required" (backend neutrality, cross-language usage evidence, fail-closed necessity).
 - [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-01] Move "C#-specific" changes into `CSharpEmitter` / C# runtime / selfhost-preparation layers.
 - [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S2-02] Remove C#-specific workaround code from `CodeEmitter` and restore common implementation.
-- [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S3-01] Run unit/selfhost regressions and confirm C# pass maintenance and no regression in other backends.
+- [x] [ID: P3-CODEEMITTER-CS-ISOLATION-01-S3-01] Run unit/selfhost regressions and confirm C# pass maintenance and no regression in other toolchain.emit.
 
 ## S1-01 Audit (`v0.4.0=96898f02` and later)
 

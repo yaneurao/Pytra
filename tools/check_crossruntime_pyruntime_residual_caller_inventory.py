@@ -148,16 +148,16 @@ SMOKE_LANE_REQUIRED_SUBSTRINGS = {
         'native_transpile.count("py_runtime_object_isinstance("), 1',
         'native_registry.count("py_runtime_object_isinstance("), 1',
     },
-    "test/unit/backends/cpp/test_cpp_runtime_iterable.py": {
+    "test/unit/toolchain/emit/cpp/test_cpp_runtime_iterable.py": {
         "def test_runtime_iterable_protocol_helpers(self) -> None:",
     },
-    "test/unit/backends/cpp/test_cpp_runtime_type_id.py": {
+    "test/unit/toolchain/emit/cpp/test_cpp_runtime_type_id.py": {
         "def test_runtime_type_id_subtype_and_isinstance_contract(self) -> None:",
     },
-    "test/unit/backends/rs/test_py2rs_smoke.py": {
+    "test/unit/toolchain/emit/rs/test_py2rs_smoke.py": {
         "def test_type_predicate_nodes_are_lowered_without_legacy_bridge(self) -> None:",
     },
-    "test/unit/backends/cs/test_py2cs_smoke.py": {
+    "test/unit/toolchain/emit/cs/test_py2cs_smoke.py": {
         "def test_runtime_import_resolution_uses_canonical_runtime_helpers(self) -> None:",
         "def test_type_predicate_nodes_are_lowered_without_legacy_bridge(self) -> None:",
         "def test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not(self) -> None:",
@@ -185,7 +185,7 @@ REPRESENTATIVE_BUCKET_MANIFEST = {
         },
     },
     "generated_cpp_shared_type_id_residual": {
-        "smoke_file": "test/unit/backends/cpp/test_cpp_runtime_iterable.py",
+        "smoke_file": "test/unit/toolchain/emit/cpp/test_cpp_runtime_iterable.py",
         "smoke_tests": {
             "test_runtime_list_overload_inventory",
         },
@@ -195,7 +195,7 @@ REPRESENTATIVE_BUCKET_MANIFEST = {
         },
     },
     "rs_runtime_builtin_shared_type_id_residual": {
-        "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",
+        "smoke_file": "test/unit/toolchain/emit/rs/test_py2rs_smoke.py",
         "smoke_tests": {
             "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
         },
@@ -204,7 +204,7 @@ REPRESENTATIVE_BUCKET_MANIFEST = {
                     },
                 },
     "cs_runtime_builtin_shared_type_id_residual": {
-        "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+        "smoke_file": "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
         "smoke_tests": {
             "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
         },

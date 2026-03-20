@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.backends.common.emitter.code_emitter import CodeEmitter
+from src.toolchain.emit.common.emitter.code_emitter import CodeEmitter
 
 
 def _deep_merge(dst: dict[str, Any], src: dict[str, Any]) -> dict[str, Any]:
@@ -25,8 +25,8 @@ def _deep_merge(dst: dict[str, Any], src: dict[str, Any]) -> dict[str, Any]:
 
 
 def _load_language_profile(language: str) -> dict[str, Any]:
-    common_core = CodeEmitter.load_profile_with_includes("src/backends/common/profiles/core.json")
-    lang_profile = CodeEmitter.load_profile_with_includes(f"src/backends/{language}/profiles/profile.json")
+    common_core = CodeEmitter.load_profile_with_includes("src/toolchain/emit/common/profiles/core.json")
+    lang_profile = CodeEmitter.load_profile_with_includes(f"src/toolchain/emit/{language}/profiles/profile.json")
     if len(lang_profile) == 0:
         raise RuntimeError(f"language profile not found: {language}")
     return _deep_merge(common_core, lang_profile)

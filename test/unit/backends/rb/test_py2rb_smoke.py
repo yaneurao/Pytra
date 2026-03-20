@@ -22,7 +22,7 @@ if str(ROOT / "src") not in sys.path:
 if str(ROOT / "test" / "unit" / "backends") not in sys.path:
     sys.path.insert(0, str(ROOT / "test" / "unit" / "backends"))
 
-from backends.ruby.emitter import load_ruby_profile, transpile_to_ruby, transpile_to_ruby_native
+from toolchain.emit.ruby.emitter import load_ruby_profile, transpile_to_ruby, transpile_to_ruby_native
 from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core_entrypoints import convert_path
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments

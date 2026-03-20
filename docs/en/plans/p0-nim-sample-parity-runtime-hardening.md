@@ -16,7 +16,7 @@ Goal:
 
 In scope:
 - `src/runtime/nim/pytra/py_runtime.nim`
-- `src/backends/nim/emitter/nim_native_emitter.py` (only where required for runtime-contract wiring)
+- `src/toolchain/emit/nim/emitter/nim_native_emitter.py` (only where required for runtime-contract wiring)
 - `tools/runtime_parity_check.py` execution path (minimal fixes only if needed)
 - `sample/nim/` (regenerated outputs)
 - Required unit/transpile checks

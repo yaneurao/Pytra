@@ -7,7 +7,7 @@
 
 ## 背景
 
-`py_floordiv` / `py_mod` / `py_div` は現在 `src/runtime/cpp/native/core/py_runtime.h` に実装され、C++ バックエンドの `src/backends/cpp/emitter/operator.py` が文字列リテラルとして直接 emit している。
+`py_floordiv` / `py_mod` / `py_div` は現在 `src/runtime/cpp/native/core/py_runtime.h` に実装され、C++ バックエンドの `src/toolchain/emit/cpp/emitter/operator.py` が文字列リテラルとして直接 emit している。
 
 問題：
 - EAST3 IR ノードとして表現されていないため、各言語バックエンドが意味論を独自に保持するか C++ ヘルパを移植する必要がある。
@@ -22,9 +22,9 @@
 
 ## 対象
 
-- `src/backends/cpp/emitter/operator.py`（FloorDiv / Mod / Div の emit）
+- `src/toolchain/emit/cpp/emitter/operator.py`（FloorDiv / Mod / Div の emit）
 - `src/runtime/cpp/native/core/py_runtime.h`（`py_div` / `py_floordiv` / `py_mod` 除去）
-- `test/unit/backends/cpp/`（回帰テスト）
+- `test/unit/toolchain/emit/cpp/`（回帰テスト）
 - `docs/ja/spec/spec-runtime.md`（変更点注記）
 
 ## 非対象

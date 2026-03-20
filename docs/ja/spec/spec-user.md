@@ -147,7 +147,7 @@ test/
 python -m unittest discover -s test/unit -p "test_*.py" -v
 ```
 
-共通エミッタ基盤（`src/backends/common/emitter/code_emitter.py`）のみを確認したい場合:
+共通エミッタ基盤（`src/toolchain/emit/common/emitter/code_emitter.py`）のみを確認したい場合:
 
 ```bash
 python -m unittest discover -s test/unit/common -p "test_code_emitter.py" -v

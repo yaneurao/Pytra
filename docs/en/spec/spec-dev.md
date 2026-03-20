@@ -13,10 +13,10 @@ This document defines the transpiler's implementation policy, structure, and con
 - `src/`
   - `py2cs.py`, `py2x.py --target cpp`, `py2rs.py`, `py2js.py`, `py2ts.py`, `py2go.py`, `py2java.py`, `py2swift.py`, `py2kotlin.py`, `py2rb.py`, `py2lua.py`, `py2php.py`, `py2scala.py`, `py2nim.py`
   - Place only transpiler entry scripts (`py2*.py`) directly under `src/`.
-  - `backends/common/`: shared base implementations and common utilities reused across multiple languages
-  - The standard backend stage layout is `src/backends/<lang>/{lower,optimizer,emitter}/` (source of truth: `spec-folder.md`).
+  - `toolchain/emit/common/`: shared base implementations and common utilities reused across multiple languages
+  - The standard backend stage layout is `src/toolchain/emit/<lang>/{lower,optimizer,emitter}/` (source of truth: `spec-folder.md`).
   - During the transition period, `extensions/<topic>/` may coexist (plan 2). In the long run, the codebase will converge on `lower/optimizer/emitter` (plan 3).
-  - `backends/common/profiles/` and `backends/<lang>/profiles/`: language-difference JSON for `CodeEmitter` (`types`, `operators`, `runtime_calls`, `syntax`)
+  - `toolchain/emit/common/profiles/` and `toolchain/emit/<lang>/profiles/`: language-difference JSON for `CodeEmitter` (`types`, `operators`, `runtime_calls`, `syntax`)
   - `runtime/`: canonical runtime placement for each target language (`src/runtime/<lang>/{generated,native}/` on migrated backends; legacy `pytra-gen/pytra-core` is rollout debt)
   - `*_module/`: legacy runtime placement kept only as a compatibility layer and scheduled for staged removal
   - `pytra/`: canonical shared library on the Python side
@@ -134,7 +134,7 @@ Default implementations:
 - C++ uses `CppProgramWriter` and handles `manifest.json`, `Makefile`, and the runtime tree.
 - Implementation-aligned note (2026-03-07):
   - `backend_registry.py` and `backend_registry_static.py` always materialize both `emit_module` and `program_writer` when normalizing backend specs.
-  - If a backend does not define `program_writer`, the default is `write_single_file_program(...)` in `backends/common/program_writer.py`.
+  - If a backend does not define `program_writer`, the default is `write_single_file_program(...)` in `toolchain/emit/common/program_writer.py`.
   - The single-module path in `east2x.py` already goes through `emit_module -> ProgramArtifact -> ProgramWriter`. The old `emit_source()` has been reduced to a compatibility wrapper that only returns `ModuleArtifact.text`.
 
 Compatibility contract:
@@ -415,22 +415,22 @@ Names starting with `_` are treated as internal implementation details. The foll
 
 - Conversion is EAST-based (`.py/.json -> EAST -> C#`).
 - `py2cs.py` is restricted to a thin CLI and I/O orchestrator.
-- C#-specific logic is separated into `src/backends/cs/emitter/cs_emitter.py`.
-- Language-specific differences are managed in `src/backends/cs/profiles/*.json` (`types/operators/runtime_calls/syntax`).
+- C#-specific logic is separated into `src/toolchain/emit/cs/emitter/cs_emitter.py`.
+- Language-specific differences are managed in `src/toolchain/emit/cs/profiles/*.json` (`types/operators/runtime_calls/syntax`).
 - `import` and `from ... import ...` are converted into `using` lines based on canonical EAST `meta.import_bindings`.
-- Major types are mapped through `src/backends/cs/profiles/types.json` (for example `int64 -> long`, `float64 -> double`, `str -> string`).
+- Major types are mapped through `src/toolchain/emit/cs/profiles/types.json` (for example `int64 -> long`, `float64 -> double`, `str -> string`).
 
 ## 3. C++ Conversion Specification (`py2x.py --target cpp`)
 
 - It parses Python AST and generates a single `.cpp` with required includes.
-- The `CppEmitter` implementation is separated into `src/backends/cpp/emitter/cpp_emitter.py`, and `py2x.py --target cpp` is treated as the CLI/orchestration layer.
+- The `CppEmitter` implementation is separated into `src/toolchain/emit/cpp/emitter/cpp_emitter.py`, and `py2x.py --target cpp` is treated as the CLI/orchestration layer.
 - Detailed feature support such as `enumerate(start)`, `lambda`, and comprehensions is managed canonically in the [py2cpp support matrix](../language/cpp/spec-support.md).
 - Generated code uses runtime helpers under `src/runtime/cpp/`.
 - Helper functions are not inlined into generated `.cpp`; use `runtime/cpp/native/core/py_runtime.h` instead.
 - Not only `json`: standard-library-equivalent features use `src/pytra/std/*.py` as their source of truth, and `runtime/cpp` must not carry independent reimplementations.
   - When the C++ side needs that behavior, it must use the transpiled result of those Python source modules.
 - Classes are emitted as C++ classes inheriting `pytra::gc::PyObj` except for exception classes.
-- Class-method calls are split by dispatch mode (`virtual`, `direct`, `fallback`) in `src/backends/cpp/emitter/call.py`.
+- Class-method calls are split by dispatch mode (`virtual`, `direct`, `fallback`) in `src/toolchain/emit/cpp/emitter/call.py`.
   - `virtual` / `direct`: routes where user-defined class method signatures can be resolved
   - `fallback`: routes intentionally kept outside virtual-dispatch replacement, including runtime/type_id APIs such as `IsInstance`, `IsSubtype`, `IsSubclass`, and `ObjTypeId`, and routes that assume `BuiltinCall` lowering
 - Selfhost regression fixes the invariant that no `type_id` comparison or switch-based dispatch remains in `sample/cpp` and `src/runtime/cpp/generated` except `built_in/type_id.cpp` (`test_selfhost_virtual_dispatch_regression.py`).
@@ -493,7 +493,7 @@ Names starting with `_` are treated as internal implementation details. The foll
 
 ### Guard Rules for py2cpp Commonization
 
-- Before adding new logic to `src/backends/cpp/cli.py`, classify it as either C++-specific or language-agnostic.
+- Before adding new logic to `src/toolchain/emit/cpp/cli.py`, classify it as either C++-specific or language-agnostic.
 - If it is language-agnostic, implement it under `src/toolchain/compiler/` (including `east_parts/` and `CodeEmitter`) and do not add it directly to `py2x.py --target cpp`.
 - Keep logic in `py2x.py --target cpp` limited to C++-specific responsibilities such as type mapping, runtime-name resolution, header/include generation, and C++ syntax optimization.
 - The only allowed exception is a backward-compatible public API wrapper (`load_east`, `_analyze_import_graph`, `build_module_east_map`, `dump_deps_graph_text`). Even those must do nothing except delegate to the common-layer API.
@@ -505,8 +505,8 @@ Names starting with `_` are treated as internal implementation details. The foll
 - Generic helpers in `src/toolchain/compiler/transpile_cli.py` use per-feature `class + @staticmethod` (`*Helpers`) as the canonical layout. `py2x.py --target cpp` uses class-level imports and startup binding only. Top-level functions remain temporarily for compatibility with existing CLI/selfhost callers.
 - Inside `ImportGraphHelpers`, `analyze_import_graph` and `build_module_east_map` are operated as thin wrappers delegating their implementation body to `src/toolchain/compiler/east_parts/east1_build.py` (only the compatibility public API is retained).
 - The import-graph/build entrypoints in `py2x.py --target cpp` (`_analyze_import_graph`, `build_module_east_map`) are restricted to delegation into `East1BuildHelpers`; implementation details must not be brought back into `transpile_cli`.
-- Regressions are guarded through `test/unit/ir/test_east1_build.py`, `test/unit/backends/cpp/test_py2cpp_east1_build_bridge.py`, and `tools/check_py2cpp_transpile.py`, which detect responsibility backflow in dependency analysis.
-- As part of `P0-PY2CPP-SPLIT-01`, also run `python3 -m unittest discover -s test/unit/backends/cpp -p 'test_py2cpp_smoke.py'` to confirm that the `py2x.py --target cpp` responsibility boundary (`tools/check_py2cpp_boundary.py`) remains intact.
+- Regressions are guarded through `test/unit/ir/test_east1_build.py`, `test/unit/toolchain/emit/cpp/test_py2cpp_east1_build_bridge.py`, and `tools/check_py2cpp_transpile.py`, which detect responsibility backflow in dependency analysis.
+- As part of `P0-PY2CPP-SPLIT-01`, also run `python3 -m unittest discover -s test/unit/toolchain/emit/cpp -p 'test_py2cpp_smoke.py'` to confirm that the `py2x.py --target cpp` responsibility boundary (`tools/check_py2cpp_boundary.py`) remains intact.
 
 ### 3.1 Imports and `runtime/cpp`
 
@@ -629,7 +629,7 @@ Constraints:
   - any change to defaults, formats, or rounding behavior that diverges from the Python SoT
 - Acceptance conditions:
   - after changes, `python3 tools/verify_image_runtime_parity.py` must return `True`
-  - `test/unit/common/test_image_runtime_parity.py` and `test/unit/backends/cpp/test_py2cpp_features.py` must pass
+  - `test/unit/common/test_image_runtime_parity.py` and `test/unit/toolchain/emit/cpp/test_py2cpp_features.py` must pass
 
 ## 4. Validation Procedure (C++)
 
@@ -645,7 +645,7 @@ Constraints:
   - `selfhost/py2cpp.py` must generate `selfhost/py2cpp.cpp`, and that file must compile successfully.
   - The resulting executable must be able to convert `sample/py/01_mandelbrot.py` into C++.
 - Recommended checks:
-  - Inspect the C++ diff between the output generated by `src/backends/cpp/cli.py` and the output generated by selfhost. Diffs themselves are allowed.
+  - Inspect the C++ diff between the output generated by `src/toolchain/emit/cpp/cli.py` and the output generated by selfhost. Diffs themselves are allowed.
   - Compile and run the converted C++ and confirm it matches Python execution.
 
 ### 4.2 Match Conditions (Selfhost / Ordinary Comparison)
@@ -661,12 +661,12 @@ Constraints:
 
 - `src/toolchain/compiler/east.py`: Python -> EAST JSON (canonical)
 - `src/toolchain/compiler/east_parts/east_io.py`: read EAST from `.py/.json` input and fill leading trivia (canonical)
-- `src/backends/common/emitter/code_emitter.py`: shared base utilities for emitters in all languages (node tests, type-string helpers, safe `Any` conversions)
-- `src/backends/cpp/cli.py`: EAST JSON -> C++
+- `src/toolchain/emit/common/emitter/code_emitter.py`: shared base utilities for emitters in all languages (node tests, type-string helpers, safe `Any` conversions)
+- `src/toolchain/emit/cpp/cli.py`: EAST JSON -> C++
 - `src/runtime/cpp/native/core/py_runtime.h`: C++ runtime aggregation
 - Responsibility split:
   - `range(...)` semantics must be resolved during EAST construction
-  - `src/backends/cpp/cli.py` only stringifies already-normalized EAST
+  - `src/toolchain/emit/cpp/cli.py` only stringifies already-normalized EAST
   - language-agnostic helper logic must gradually move into `CodeEmitter`
 - Output-layout policy:
   - the final goal is multi-file output per module (`.h/.cpp`)
@@ -674,7 +674,7 @@ Constraints:
 
 ### 5.1 CodeEmitter Test Policy
 
-- Regressions in `src/backends/common/emitter/code_emitter.py` are covered by `test/unit/common/test_code_emitter.py`.
+- Regressions in `src/toolchain/emit/common/emitter/code_emitter.py` are covered by `test/unit/common/test_code_emitter.py`.
 - Main targets:
   - output-buffer operations (`emit`, `emit_stmt_list`, `next_tmp`)
   - dynamic-input sanitization (`any_to_dict`, `any_to_list`, `any_to_str`, `any_dict_get`)
@@ -685,10 +685,10 @@ Constraints:
 ### 5.2 EAST-Based Rust Route (Staged Migration)
 
 - Restrict `src/py2rs.py` to a thin CLI and I/O orchestrator.
-- Separate Rust-specific output into `src/backends/rs/emitter/rs_emitter.py` (`RustEmitter`).
-- `src/py2rs.py` must not depend on `src/backends/common/` or `src/rs_module/`; the canonical runtime now lives under `src/runtime/rs/{native,generated}/`.
+- Separate Rust-specific output into `src/toolchain/emit/rs/emitter/rs_emitter.py` (`RustEmitter`).
+- `src/py2rs.py` must not depend on `src/toolchain/emit/common/` or `src/rs_module/`; the canonical runtime now lives under `src/runtime/rs/{native,generated}/`.
 - For non-C++/non-C# backends, checked-in `src/runtime/<lang>/pytra/**` must not exist.
-- Separate language-specific differences into `src/backends/rs/profiles/` and `src/backends/rs/`.
+- Separate language-specific differences into `src/toolchain/emit/rs/profiles/` and `src/toolchain/emit/rs/`.
 - The canonical smoke check for convertibility is `tools/check_py2rs_transpile.py`.
 - Default `--east-stage` is `3`. `--east-stage 2` remains a migration-compatibility mode with a warning.
 - The current milestone prioritizes successful transpilation. Rust compile compatibility and output quality improve in later stages.
@@ -696,9 +696,9 @@ Constraints:
 ### 5.3 EAST-Based JavaScript Route (Staged Migration)
 
 - Restrict `src/py2js.py` to a thin CLI and I/O orchestrator.
-- Separate JavaScript-specific output into `src/backends/js/emitter/js_emitter.py` (`JsEmitter`).
-- `src/py2js.py` must not depend on `src/backends/common/`.
-- Separate language-specific differences into `src/backends/js/profiles/` and `src/backends/js/`.
+- Separate JavaScript-specific output into `src/toolchain/emit/js/emitter/js_emitter.py` (`JsEmitter`).
+- `src/py2js.py` must not depend on `src/toolchain/emit/common/`.
+- Separate language-specific differences into `src/toolchain/emit/js/profiles/` and `src/toolchain/emit/js/`.
 - Treat `browser` and `browser.widgets.dialog` as externally provided runtime libraries in the browser environment, so `py2js` must not generate the import bodies themselves.
 - The canonical smoke check for convertibility is `tools/check_py2js_transpile.py`.
 - Default `--east-stage` is `3`. `--east-stage 2` remains a migration-compatibility mode with a warning.
@@ -766,8 +766,8 @@ Constraints:
 
 ## 7. Shared Rules for Implementation
 
-- Put only language-agnostic reusable logic under `src/backends/common/`.
-- Do not place language-specific rules such as type mappings, reserved words, or runtime names under `src/backends/common/`.
+- Put only language-agnostic reusable logic under `src/toolchain/emit/common/`.
+- Do not place language-specific rules such as type mappings, reserved words, or runtime names under `src/toolchain/emit/common/`.
 - Place runtime bodies under the canonical lanes (`src/runtime/<lang>/{generated,native}/` on migrated backends), and do not add new runtime bodies under `src/*_module/`.
 - Logic that can be shared by `py2x.py --target cpp` and `py2rs.py` must first move into `CodeEmitter`, not directly into individual emitters.
 - Separate language-specific branches into `hooks` or `profiles`, and keep each `py2*.py` as a thin orchestrator.

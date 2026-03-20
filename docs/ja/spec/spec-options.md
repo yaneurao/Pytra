@@ -165,4 +165,4 @@
 更新後は次を確認する。
 
 1. `python3 src/py2x.py INPUT.py --target cpp --dump-options` の出力が仕様通りであること
-2. `test/unit/backends/cpp/test_py2cpp_features.py` の該当オプション回帰が通ること
+2. `test/unit/toolchain/emit/cpp/test_py2cpp_features.py` の該当オプション回帰が通ること

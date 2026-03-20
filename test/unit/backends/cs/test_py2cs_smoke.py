@@ -19,14 +19,14 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from backends.cs.emitter.cs_emitter import load_cs_profile, transpile_to_csharp
+from toolchain.emit.cs.emitter.cs_emitter import load_cs_profile, transpile_to_csharp
 from toolchain.compiler.relative_import_firstwave_smoke_contract import (
     RELATIVE_IMPORT_FIRST_WAVE_SCENARIOS_V1,
 )
 from toolchain.compiler.transpile_cli import load_east3_document
 from src.toolchain.ir.core_entrypoints import convert_path
 from src.toolchain.frontends.type_expr import parse_type_expr_text
-from backends.cs.emitter.cs_emitter import CSharpEmitter
+from toolchain.emit.cs.emitter.cs_emitter import CSharpEmitter
 from comment_fidelity import assert_no_generated_comments, assert_sample01_module_comments
 
 

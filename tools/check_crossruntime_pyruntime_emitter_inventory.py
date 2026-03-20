@@ -50,12 +50,12 @@ CPP_OBJECT_BRIDGE_WRAPPER_SYMBOLS = {
 }
 
 TRACKED_PATHS = {
-    "src/backends/cpp/emitter/call.py",
-    "src/backends/cpp/emitter/cpp_emitter.py",
-    "src/backends/cpp/emitter/runtime_expr.py",
-    "src/backends/cpp/emitter/stmt.py",
-    "src/backends/rs/emitter/rs_emitter.py",
-    "src/backends/cs/emitter/cs_emitter.py",
+    "src/toolchain/emit/cpp/emitter/call.py",
+    "src/toolchain/emit/cpp/emitter/cpp_emitter.py",
+    "src/toolchain/emit/cpp/emitter/runtime_expr.py",
+    "src/toolchain/emit/cpp/emitter/stmt.py",
+    "src/toolchain/emit/rs/emitter/rs_emitter.py",
+    "src/toolchain/emit/cs/emitter/cs_emitter.py",
 }
 
 CPP_TYPED_WRAPPER_SYMBOLS = {
@@ -69,44 +69,44 @@ CPP_TYPED_WRAPPER_SYMBOLS = {
 }
 
 CPP_TYPED_WRAPPER_FORBIDDEN_PATHS = {
-    "src/backends/cpp/emitter/cpp_emitter.py",
-    "src/backends/cpp/emitter/runtime_expr.py",
-    "src/backends/cpp/emitter/stmt.py",
+    "src/toolchain/emit/cpp/emitter/cpp_emitter.py",
+    "src/toolchain/emit/cpp/emitter/runtime_expr.py",
+    "src/toolchain/emit/cpp/emitter/stmt.py",
 }
 
 CPP_TYPED_LANE_DIRECT_PATHS = {
-    "src/backends/cpp/emitter/cpp_emitter.py",
-    "src/backends/cpp/emitter/stmt.py",
+    "src/toolchain/emit/cpp/emitter/cpp_emitter.py",
+    "src/toolchain/emit/cpp/emitter/stmt.py",
 }
 
 CPP_OBJECT_BRIDGE_ONLY_PATHS = {
-    "src/backends/cpp/emitter/call.py",
+    "src/toolchain/emit/cpp/emitter/call.py",
 }
 
 EXPECTED_BUCKETS = {
     "cpp_emitter_object_bridge_residual": set(),
     "cpp_emitter_shared_type_id_residual": {
-        ("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
-        ("py_runtime_value_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
-        ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
-        ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
-        ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
+        ("py_runtime_value_type_id", "src/toolchain/emit/cpp/emitter/cpp_emitter.py"),
+        ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+        ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/stmt.py"),
+        ("py_runtime_type_id_is_subtype", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+        ("py_runtime_type_id_issubclass", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
     },
     "rs_emitter_shared_type_id_residual": {
-        ("py_runtime_value_type_id", "src/backends/rs/emitter/rs_emitter.py"),
-        ("py_runtime_value_isinstance", "src/backends/rs/emitter/rs_emitter.py"),
-        ("py_runtime_type_id_is_subtype", "src/backends/rs/emitter/rs_emitter.py"),
-        ("py_runtime_type_id_issubclass", "src/backends/rs/emitter/rs_emitter.py"),
+        ("py_runtime_value_type_id", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+        ("py_runtime_value_isinstance", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+        ("py_runtime_type_id_is_subtype", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+        ("py_runtime_type_id_issubclass", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
     },
     "cs_emitter_shared_type_id_residual": {
-        ("py_runtime_value_type_id", "src/backends/cs/emitter/cs_emitter.py"),
-        ("py_runtime_value_isinstance", "src/backends/cs/emitter/cs_emitter.py"),
-        ("py_runtime_type_id_is_subtype", "src/backends/cs/emitter/cs_emitter.py"),
-        ("py_runtime_type_id_issubclass", "src/backends/cs/emitter/cs_emitter.py"),
+        ("py_runtime_value_type_id", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+        ("py_runtime_value_isinstance", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+        ("py_runtime_type_id_is_subtype", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+        ("py_runtime_type_id_issubclass", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
     },
     "crossruntime_mutation_helper_residual": {
-        ("py_append", "src/backends/cs/emitter/cs_emitter.py"),
-        ("py_pop", "src/backends/cs/emitter/cs_emitter.py"),
+        ("py_append", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+        ("py_pop", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
     },
 }
 
@@ -155,24 +155,24 @@ ACTIVE_REDUCTION_BUNDLES = {
 }
 
 SOURCE_GUARD_REQUIRED_SUBSTRINGS = {
-    "src/backends/cpp/emitter/cpp_emitter.py": {
+    "src/toolchain/emit/cpp/emitter/cpp_emitter.py": {
         'return f"py_runtime_value_type_id({value_expr})"',
     },
-    "src/backends/cpp/emitter/runtime_expr.py": {
+    "src/toolchain/emit/cpp/emitter/runtime_expr.py": {
         'return f"py_runtime_type_id_is_subtype({actual_type_id_expr}, {expected_type_id_expr})"',
         'return f"py_runtime_type_id_issubclass({actual_type_id_expr}, {expected_type_id_expr})"',
         'return f"py_runtime_value_isinstance({value_expr}, {expected_type_id_expr})"',
     },
-    "src/backends/cpp/emitter/stmt.py": {
+    "src/toolchain/emit/cpp/emitter/stmt.py": {
         'cond_txt = f"py_runtime_value_isinstance({subject_tmp}, {variant_name}::PYTRA_TYPE_ID)"',
     },
-    "src/backends/rs/emitter/rs_emitter.py": {
+    "src/toolchain/emit/rs/emitter/rs_emitter.py": {
         'return "py_runtime_value_type_id(&" + value_expr + ")"',
         'return "({ py_register_generated_type_info(); py_runtime_value_isinstance(&" + value_expr + ", " + expected_type_id + ") })"',
         'return "({ py_register_generated_type_info(); py_runtime_type_id_is_subtype(" + actual_type_id + ", " + expected_type_id + ") })"',
         'return "({ py_register_generated_type_info(); py_runtime_type_id_issubclass(" + actual_type_id + ", " + expected_type_id + ") })"',
     },
-    "src/backends/cs/emitter/cs_emitter.py": {
+    "src/toolchain/emit/cs/emitter/cs_emitter.py": {
         'return "Pytra.CsModule.py_runtime.py_runtime_value_type_id(" + value_expr + ")"',
         'return "Pytra.CsModule.py_runtime.py_runtime_value_isinstance(" + value_expr + ", " + expected_type_id + ")"',
         'return "Pytra.CsModule.py_runtime.py_runtime_type_id_is_subtype(" + actual_type_id + ", " + expected_type_id + ")"',
@@ -190,12 +190,12 @@ SOURCE_GUARD_REQUIRED_SUBSTRINGS = {
 }
 
 SOURCE_GUARD_FORBIDDEN_SUBSTRINGS = {
-    "src/backends/cpp/emitter/cpp_emitter.py": {
+    "src/toolchain/emit/cpp/emitter/cpp_emitter.py": {
         "py_runtime_object_type_id(",
         "py_runtime_object_isinstance(",
         "py_runtime_type_id(",
     },
-    "src/backends/cpp/emitter/runtime_expr.py": {
+    "src/toolchain/emit/cpp/emitter/runtime_expr.py": {
         "py_runtime_object_type_id(",
         "py_runtime_object_isinstance(",
         "py_runtime_type_id(",
@@ -203,17 +203,17 @@ SOURCE_GUARD_FORBIDDEN_SUBSTRINGS = {
         "py_is_subtype(",
         "py_issubclass(",
     },
-    "src/backends/cpp/emitter/stmt.py": {
+    "src/toolchain/emit/cpp/emitter/stmt.py": {
         "py_runtime_object_isinstance(",
         "py_isinstance(",
     },
-    "src/backends/rs/emitter/rs_emitter.py": {
+    "src/toolchain/emit/rs/emitter/rs_emitter.py": {
         "fn py_runtime_type_id(actual_type_id:",
         "fn py_is_subtype(",
         "fn py_issubclass(",
         "fn py_isinstance<",
     },
-    "src/backends/cs/emitter/cs_emitter.py": {
+    "src/toolchain/emit/cs/emitter/cs_emitter.py": {
         "Pytra.CsModule.py_runtime.py_runtime_type_id(",
         "Pytra.CsModule.py_runtime.py_is_subtype(",
         "Pytra.CsModule.py_runtime.py_issubclass(",
@@ -223,7 +223,7 @@ SOURCE_GUARD_FORBIDDEN_SUBSTRINGS = {
 
 REPRESENTATIVE_LANE_MANIFEST = {
     "cpp_emitter_object_bridge_residual": {
-        "smoke_file": "test/unit/backends/cpp/test_east3_cpp_bridge.py",
+        "smoke_file": "test/unit/toolchain/emit/cpp/test_east3_cpp_bridge.py",
         "smoke_tests": {
             "test_render_expr_pyobj_runtime_list_append_uses_low_level_bridge",
             "test_emit_assign_pyobj_runtime_list_store_uses_low_level_bridge",
@@ -233,38 +233,38 @@ REPRESENTATIVE_LANE_MANIFEST = {
         "source_guard_paths": set(),
     },
     "cpp_emitter_shared_type_id_residual": {
-        "smoke_file": "test/unit/backends/cpp/test_east3_cpp_bridge.py",
+        "smoke_file": "test/unit/toolchain/emit/cpp/test_east3_cpp_bridge.py",
         "smoke_tests": {
             "test_render_expr_supports_east3_obj_boundary_nodes",
             "test_transpile_representative_nominal_adt_match_emits_if_else_chain",
         },
         "source_guard_paths": {
-            "src/backends/cpp/emitter/cpp_emitter.py",
-            "src/backends/cpp/emitter/runtime_expr.py",
-            "src/backends/cpp/emitter/stmt.py",
+            "src/toolchain/emit/cpp/emitter/cpp_emitter.py",
+            "src/toolchain/emit/cpp/emitter/runtime_expr.py",
+            "src/toolchain/emit/cpp/emitter/stmt.py",
         },
     },
     "rs_emitter_shared_type_id_residual": {
-        "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",
+        "smoke_file": "test/unit/toolchain/emit/rs/test_py2rs_smoke.py",
         "smoke_tests": {
             "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
         },
-        "source_guard_paths": {"src/backends/rs/emitter/rs_emitter.py"},
+        "source_guard_paths": {"src/toolchain/emit/rs/emitter/rs_emitter.py"},
     },
     "cs_emitter_shared_type_id_residual": {
-        "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+        "smoke_file": "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
         "smoke_tests": {
             "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
         },
-        "source_guard_paths": {"src/backends/cs/emitter/cs_emitter.py"},
+        "source_guard_paths": {"src/toolchain/emit/cs/emitter/cs_emitter.py"},
     },
     "crossruntime_mutation_helper_residual": {
-        "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+        "smoke_file": "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
         "smoke_tests": {
             "test_bytearray_mutation_stays_on_runtime_helpers_but_list_append_does_not",
             "test_bytearray_index_and_slice_compat_helpers_stay_explicit",
         },
-        "source_guard_paths": {"src/backends/cs/emitter/cs_emitter.py"},
+        "source_guard_paths": {"src/toolchain/emit/cs/emitter/cs_emitter.py"},
     },
 }
 
@@ -316,25 +316,25 @@ FUTURE_HANDOFF_TARGETS = {
 
 FUTURE_CPP_SHARED_TYPE_ID_CLASSIFICATION = {
     "future_reducible": {
-        ("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
+        ("py_runtime_value_type_id", "src/toolchain/emit/cpp/emitter/cpp_emitter.py"),
     },
     "must_remain_until_runtime_task": {
-        ("py_runtime_value_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
-        ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
-        ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
-        ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
+        ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+        ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/stmt.py"),
+        ("py_runtime_type_id_is_subtype", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+        ("py_runtime_type_id_issubclass", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
     },
 }
 
 FUTURE_CPP_SHARED_TYPE_ID_REDUCIBLE_ONLY = {
-    ("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
+    ("py_runtime_value_type_id", "src/toolchain/emit/cpp/emitter/cpp_emitter.py"),
 }
 
 FUTURE_CPP_SHARED_TYPE_ID_MUST_REMAIN_ONLY = {
-    ("py_runtime_value_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
-    ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
-    ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
-    ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
+    ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+    ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/stmt.py"),
+    ("py_runtime_type_id_is_subtype", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+    ("py_runtime_type_id_issubclass", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
 }
 
 FUTURE_RS_SHARED_TYPE_ID_CLASSIFICATION = {
@@ -567,7 +567,7 @@ def _collect_future_followup_issues() -> list[str]:
             expected_future_reducible=EXPECTED_BUCKETS["crossruntime_mutation_helper_residual"],
             expected_must_remain=set(),
             expected_bucket=EXPECTED_BUCKETS["crossruntime_mutation_helper_residual"],
-            required_prefix="src/backends/cs/",
+            required_prefix="src/toolchain/emit/cs/",
         )
     )
     issues.extend(_collect_future_handoff_issues())
@@ -598,7 +598,7 @@ def _collect_cpp_future_shared_type_id_classification_issues() -> list[str]:
     if must_remain != FUTURE_CPP_SHARED_TYPE_ID_MUST_REMAIN_ONLY:
         issues.append("future cpp shared type-id must-remain classification drifted")
     for symbol, rel in sorted(union):
-        if not rel.startswith("src/backends/cpp/"):
+        if not rel.startswith("src/toolchain/emit/cpp/"):
             issues.append(
                 "future cpp shared type-id classification contains non-cpp path: "
                 f"{symbol} @ {rel}"
@@ -626,7 +626,7 @@ def _collect_shared_type_id_classification_issues() -> list[str]:
             expected_future_reducible=set(),
             expected_must_remain=EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
             expected_bucket=EXPECTED_BUCKETS["rs_emitter_shared_type_id_residual"],
-            required_prefix="src/backends/rs/",
+            required_prefix="src/toolchain/emit/rs/",
         )
     )
     issues.extend(
@@ -636,7 +636,7 @@ def _collect_shared_type_id_classification_issues() -> list[str]:
             expected_future_reducible=set(),
             expected_must_remain=EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
             expected_bucket=EXPECTED_BUCKETS["cs_emitter_shared_type_id_residual"],
-            required_prefix="src/backends/cs/",
+            required_prefix="src/toolchain/emit/cs/",
         )
     )
     return issues

@@ -274,9 +274,9 @@ def _run_preflight_hook(hook: str) -> str:
         cpp_cli = ROOT / "src" / "backends" / "cpp" / "cli.py"
         text = cpp_cli.read_text(encoding="utf-8")
         if "class CppEmitter" in text:
-            return "class CppEmitter must not be implemented in src/backends/cpp/cli.py"
-        if "from backends.cpp.emitter import CppEmitter" not in text:
-            return "missing import from backends.cpp.emitter import CppEmitter"
+            return "class CppEmitter must not be implemented in src/toolchain/emit/cpp/cli.py"
+        if "from toolchain.emit.cpp.emitter import CppEmitter" not in text:
+            return "missing import from toolchain.emit.cpp.emitter import CppEmitter"
         return ""
     if hook == "":
         return ""

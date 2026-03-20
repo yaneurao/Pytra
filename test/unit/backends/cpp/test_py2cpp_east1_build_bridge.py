@@ -13,10 +13,10 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.backends.cpp.cli import _analyze_import_graph
-from src.backends.cpp.cli import build_module_east_map
-from src.backends.cpp.cli import build_module_symbol_index
-from src.backends.cpp.cli import build_module_type_schema
+from src.toolchain.emit.cpp.cli import _analyze_import_graph
+from src.toolchain.emit.cpp.cli import build_module_east_map
+from src.toolchain.emit.cpp.cli import build_module_symbol_index
+from src.toolchain.emit.cpp.cli import build_module_type_schema
 
 
 class Py2CppEast1BuildBridgeTest(unittest.TestCase):

@@ -16,7 +16,7 @@
 
 対象:
 - `src/runtime/nim/pytra/py_runtime.nim`
-- `src/backends/nim/emitter/nim_native_emitter.py`（runtime 契約接続に必要な範囲）
+- `src/toolchain/emit/nim/emitter/nim_native_emitter.py`（runtime 契約接続に必要な範囲）
 - `tools/runtime_parity_check.py` 実行導線（必要時のみ最小修正）
 - `sample/nim/`（再生成結果）
 - 必要な unit/transpile check

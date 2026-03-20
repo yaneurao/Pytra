@@ -14,7 +14,7 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 import src.ir2lang as ir2lang_mod
-from src.backends.common.program_writer import write_single_file_program
+from src.toolchain.emit.common.program_writer import write_single_file_program
 
 
 class Ir2langCliTest(unittest.TestCase):

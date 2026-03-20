@@ -1,5 +1,17 @@
 # v0 Release Series (Past News)
 
+## 2026-03-20 | v0.15.0 Released
+
+> Version 0.15.0 released. PowerShell is now supported as a backend.
+
+## 2026-03-18 | v0.14.0 Released
+
+> Version 0.14.0 released. [Recursive union types](../../ja/spec/spec-tagged-union.md) (`type X = A | B | ...`) are now supported.
+
+## 2026-03-11 | v0.13.0 Released
+
+> Version 0.13.0 released. A NES (Famicom) emulator written in Python + SDL3 now works. [Super Mario Bros. 3 runs on it](https://x.com/yaneuraou/status/2031612549658202538), though very slowly. We are currently improving Pytra so it can transpile this emulator to C++.
+
 ## 2026-03-10 | v0.12.0 Released
 
 > Version 0.12.0 was released. I am currently in the middle of a large runtime reorganization.

@@ -24,8 +24,8 @@ class CheckCppPyRuntimeResidualThinSeamContractTest(unittest.TestCase):
                     'static inline void py_append(object& v, const U& item) {'
                 },
                 "must_remain_crossruntime": {
-                    ("py_append", "src/backends/cs/emitter/cs_emitter.py"),
-                    ("py_pop", "src/backends/cs/emitter/cs_emitter.py"),
+                    ("py_append", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+                    ("py_pop", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
                 },
                 "already_backend_localized_cpp": set(),
             },
@@ -41,31 +41,31 @@ class CheckCppPyRuntimeResidualThinSeamContractTest(unittest.TestCase):
             {
                 "cpp": {
                     "future_reducible": {
-                        ("py_runtime_value_type_id", "src/backends/cpp/emitter/cpp_emitter.py"),
+                        ("py_runtime_value_type_id", "src/toolchain/emit/cpp/emitter/cpp_emitter.py"),
                     },
                     "must_remain_until_runtime_task": {
-                        ("py_runtime_value_isinstance", "src/backends/cpp/emitter/runtime_expr.py"),
-                        ("py_runtime_value_isinstance", "src/backends/cpp/emitter/stmt.py"),
-                        ("py_runtime_type_id_is_subtype", "src/backends/cpp/emitter/runtime_expr.py"),
-                        ("py_runtime_type_id_issubclass", "src/backends/cpp/emitter/runtime_expr.py"),
+                        ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+                        ("py_runtime_value_isinstance", "src/toolchain/emit/cpp/emitter/stmt.py"),
+                        ("py_runtime_type_id_is_subtype", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
+                        ("py_runtime_type_id_issubclass", "src/toolchain/emit/cpp/emitter/runtime_expr.py"),
                     },
                 },
                 "rs": {
                     "future_reducible": set(),
                     "must_remain_until_runtime_task": {
-                        ("py_runtime_value_type_id", "src/backends/rs/emitter/rs_emitter.py"),
-                        ("py_runtime_value_isinstance", "src/backends/rs/emitter/rs_emitter.py"),
-                        ("py_runtime_type_id_is_subtype", "src/backends/rs/emitter/rs_emitter.py"),
-                        ("py_runtime_type_id_issubclass", "src/backends/rs/emitter/rs_emitter.py"),
+                        ("py_runtime_value_type_id", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+                        ("py_runtime_value_isinstance", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+                        ("py_runtime_type_id_is_subtype", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
+                        ("py_runtime_type_id_issubclass", "src/toolchain/emit/rs/emitter/rs_emitter.py"),
                     },
                 },
                 "cs": {
                     "future_reducible": set(),
                     "must_remain_until_runtime_task": {
-                        ("py_runtime_value_type_id", "src/backends/cs/emitter/cs_emitter.py"),
-                        ("py_runtime_value_isinstance", "src/backends/cs/emitter/cs_emitter.py"),
-                        ("py_runtime_type_id_is_subtype", "src/backends/cs/emitter/cs_emitter.py"),
-                        ("py_runtime_type_id_issubclass", "src/backends/cs/emitter/cs_emitter.py"),
+                        ("py_runtime_value_type_id", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+                        ("py_runtime_value_isinstance", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+                        ("py_runtime_type_id_is_subtype", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+                        ("py_runtime_type_id_issubclass", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
                     },
                 },
             },

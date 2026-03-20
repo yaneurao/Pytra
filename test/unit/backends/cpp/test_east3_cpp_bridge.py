@@ -12,8 +12,8 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from src.backends.cpp.cli import CppEmitter, build_cpp_header_from_east, load_east
-from src.backends.cpp.cli import transpile_to_cpp
+from src.toolchain.emit.cpp.cli import CppEmitter, build_cpp_header_from_east, load_east
+from src.toolchain.emit.cpp.cli import transpile_to_cpp
 from src.toolchain.compiler.east_parts.east2_to_east3_lowering import lower_east2_to_east3
 from src.toolchain.compiler.transpile_cli import collect_symbols_from_stmt, parse_py2cpp_argv
 from src.toolchain.frontends.type_expr import parse_type_expr_text

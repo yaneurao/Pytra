@@ -12,7 +12,7 @@
 
 | ファイル | 行 | 関数 | 条件 |
 |---|---|---|---|
-| `src/backends/cpp/emitter/module.py` | L1155 | `_collect_module_global_var_type()` | アノテーションも RHS 型も空の場合 |
+| `src/toolchain/emit/cpp/emitter/module.py` | L1155 | `_collect_module_global_var_type()` | アノテーションも RHS 型も空の場合 |
 
 ```python
 # 現状（L1155）:
@@ -28,7 +28,7 @@ picked = picked if picked != "" else "object"
 
 ## 対象
 
-- `src/backends/cpp/emitter/module.py` L1155
+- `src/toolchain/emit/cpp/emitter/module.py` L1155
 
 ## 受け入れ基準
 

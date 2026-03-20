@@ -44,5 +44,5 @@ console: Any = extern("console")
 
 Notes:
 
-- Ambient globals are currently limited to the JS/TS backends.
+- Ambient globals are currently limited to the JS/TS toolchain.emit.
 - `document: Any = extern()` lowers to a direct reference to `document`, and `console: Any = extern("console")` lowers to a direct reference to `console`.

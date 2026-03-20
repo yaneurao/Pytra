@@ -118,10 +118,10 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
             set(inventory_mod.SMOKE_LANE_REQUIRED_SUBSTRINGS.keys()),
             {
                 "test/unit/common/test_py2x_entrypoints_contract.py",
-                "test/unit/backends/cpp/test_cpp_runtime_iterable.py",
-                "test/unit/backends/cpp/test_cpp_runtime_type_id.py",
-                "test/unit/backends/rs/test_py2rs_smoke.py",
-                "test/unit/backends/cs/test_py2cs_smoke.py",
+                "test/unit/toolchain/emit/cpp/test_cpp_runtime_iterable.py",
+                "test/unit/toolchain/emit/cpp/test_cpp_runtime_type_id.py",
+                "test/unit/toolchain/emit/rs/test_py2rs_smoke.py",
+                "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
             },
         )
 
@@ -140,7 +140,7 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
                     },
                 },
                 "generated_cpp_shared_type_id_residual": {
-                    "smoke_file": "test/unit/backends/cpp/test_cpp_runtime_iterable.py",
+                    "smoke_file": "test/unit/toolchain/emit/cpp/test_cpp_runtime_iterable.py",
                     "smoke_tests": {
                         "test_runtime_list_overload_inventory",
                     },
@@ -150,7 +150,7 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
                     },
                 },
                 "rs_runtime_builtin_shared_type_id_residual": {
-                    "smoke_file": "test/unit/backends/rs/test_py2rs_smoke.py",
+                    "smoke_file": "test/unit/toolchain/emit/rs/test_py2rs_smoke.py",
                     "smoke_tests": {
                         "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
                     },
@@ -159,7 +159,7 @@ class CheckCrossRuntimePyRuntimeResidualCallerInventoryTest(unittest.TestCase):
                     },
                 },
                 "cs_runtime_builtin_shared_type_id_residual": {
-                    "smoke_file": "test/unit/backends/cs/test_py2cs_smoke.py",
+                    "smoke_file": "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
                     "smoke_tests": {
                         "test_type_predicate_nodes_are_lowered_without_legacy_bridge",
                     },

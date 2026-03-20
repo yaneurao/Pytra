@@ -28,7 +28,7 @@ value = pytra::std::pathlib::Path::cwd();     // OK
 
 ## 対象
 
-- `src/backends/cpp/emitter/stmt.py` — `emit_function` メソッド
+- `src/toolchain/emit/cpp/emitter/stmt.py` — `emit_function` メソッド
 
 ## 非対象
 

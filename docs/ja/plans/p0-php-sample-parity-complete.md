@@ -18,8 +18,8 @@
 対象:
 - `src/runtime/php/pytra/runtime/png.php`
 - `src/runtime/php/pytra/runtime/gif.php`
-- `src/backends/php/lower/**`
-- `src/backends/php/emitter/**`
+- `src/toolchain/emit/php/lower/**`
+- `src/toolchain/emit/php/emitter/**`
 - `tools/runtime_parity_check.py`
 - `test/unit/test_runtime_parity_check_cli.py`（必要時）
 
@@ -44,7 +44,7 @@
 - 2026-03-04: ユーザー指示により、PHP parity 全件完了を P0 で再起票。既存ログ上の未達（`artifact_crc32_mismatch` 8件）を baseline として採用。
 - 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-01] `work/logs/runtime_parity_sample_php_rebaseline_20260304_rerun.json` を再生成し、`case_pass=10` / `case_fail=8`（`artifact_crc32_mismatch` のみ）を再確認。
 - 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S1-02] `out/diag_php/05_{py,php}.gif` の先頭差分が byte 804（GCE delay）であることを確認し、`save_gif(delay_cs=..., loop=...)` の keyword が PHP 出力で欠落していると特定。
-- 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-03] `src/backends/php/emitter/php_native_emitter.py` に `_render_image_runtime_call` を追加し、`save_gif`/`write_rgb_png` の keyword/引数検証と `delay_cs`,`loop` の正規化を実装。
+- 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-03] `src/toolchain/emit/php/emitter/php_native_emitter.py` に `_render_image_runtime_call` を追加し、`save_gif`/`write_rgb_png` の keyword/引数検証と `delay_cs`,`loop` の正規化を実装。
 - 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S2-04] 再検証で残件 `sample/16` のみ不一致となり、GIF先頭差分が byte 13（palette）であることを確認。`palette_332` のビット演算が PHP emitter で `+` に崩れていたため、`BitAnd/BitOr/BitXor/LShift/RShift` を演算子マップへ追加。
 - 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-02] `test/unit/test_py2php_smoke.py` に `save_gif` keyword 引数順序と `sample/16` ビット演算維持の回帰テストを追加。`python3 -m unittest discover -s test/unit -p 'test_py2php_smoke.py'` で 9 件 pass。
 - 2026-03-04: [ID: P0-PHP-SAMPLE-PARITY-COMPLETE-01-S3-01] `work/logs/runtime_parity_sample_php_case16_after_bitops_20260304.json` で `sample/16` 単独 pass を確認後、`work/logs/runtime_parity_sample_php_all_pass_20260304.json` で `case_pass=18` / `case_fail=0` / `category_counts={ok:18}` を達成。

@@ -102,7 +102,7 @@ Boundary rules fixed in S1-02:
 - `frontends` handles input interpretation and EAST1 construction only, and must not include target-language-specific branches.
 - `ir` handles only EAST1/2/3, lower/optimizer/analysis, and IR I/O; it must not contain CLI arg parsing or runtime-copy processing.
 - `compiler` is limited to compatibility shims and thin integration bridges; it is not treated as destination for new logic implementation.
-- `backends -> frontends` imports are prohibited. Shared processing should be placed in `backends/common` or `pytra/ir`.
+- `backends -> frontends` imports are prohibited. Shared processing should be placed in `toolchain/emit/common` or `pytra/ir`.
 
 Decision log:
 - 2026-03-03: Adopted policy to introduce `frontends` / `ir` while preserving `src/pytra` namespace; final migration to top-level `src/frontends` is deferred to a later phase.
@@ -119,7 +119,7 @@ Decision log:
 - 2026-03-03: Moved `transpile_cli` implementation to `src/pytra/frontends/transpile_cli.py`; converted old `src/pytra/compiler/transpile_cli.py` to compatibility shim. `python_frontend` switched to new path (`pytra.frontends.transpile_cli`).
 - 2026-03-03: Re-ran compatibility-path regressions and confirmed pass: `test_py2x_cli.py`, `test_pytra_layer_bootstrap.py`, `test_stdlib_signature_registry.py`, `check_py2{cpp,rs,js}_transpile.py`, `check_noncpp_east3_contract --skip-transpile`, `check_transpiler_version_gate --base-ref HEAD`.
 - 2026-03-03: Added boundary guard `tools/check_pytra_layer_boundaries.py`: prohibit `frontends -> backends` / `ir -> backends` / `backends -> frontends`, and allow `ir -> frontends` only from `ir/core.py` via static import monitoring.
-- 2026-03-03: At guard introduction time, `backends/cpp/emitter/multifile_writer.py` directly referenced `pytra.frontends.east1_build`, so it was reverted to compatibility shim path (`pytra.compiler.east_parts.east1_build`) to eliminate reverse-flow dependency.
+- 2026-03-03: At guard introduction time, `toolchain/emit/cpp/emitter/multifile_writer.py` directly referenced `pytra.frontends.east1_build`, so it was reverted to compatibility shim path (`pytra.compiler.east_parts.east1_build`) to eliminate reverse-flow dependency.
 - 2026-03-03: Confirmed passes after guard introduction: `check_pytra_layer_boundaries.py`, `test_py2x_cli.py`, `check_py2{cpp,rs,js}_transpile.py`, `check_noncpp_east3_contract --skip-transpile`, `check_transpiler_version_gate --base-ref HEAD`.
 - 2026-03-03: As major regressions for S3-02, batch-ran `check_pytra_layer_boundaries`, `check_noncpp_east3_contract --skip-transpile`, `test_py2x_cli`, `check_py2{cpp,rs,js,ts,go,java,kotlin,swift,rb,lua,php,scala,nim}_transpile`, `check_transpiler_version_gate --base-ref HEAD`; all passed.
 - 2026-03-03: Updated responsibility boundary docs in `docs/ja/spec`: reflected in `spec-folder.md` (3 layers + compatibility), `spec-east.md` (file responsibility matrix, post-migration source of truth), `spec-stdlib-signature-source-of-truth.md` (reference layer / consumer paths), and `spec-options.md` (source-of-truth path for shared CLI options).

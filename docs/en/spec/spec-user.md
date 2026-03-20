@@ -30,6 +30,9 @@ Pytra transpiles type-annotated Python code into multiple languages. The canonic
 - Type annotations may be omitted under the following conditions (implicit type inference):
   - Assignment with a literal RHS and uniquely determined type (e.g., `x = 1`, `y = 1.5`, `s = "abc"`).
   - Simple assignment where RHS variable type is already known (e.g., `y = x` when `x` type is determined).
+- In the self-hosted parser, type annotations on function arguments are recommended.
+  - Unannotated arguments (e.g., `def f(x): ...`) are accepted and treated as `unknown`.
+  - One-line definitions of the form `def f(...): return ...` (including class methods) are accepted.
 - `class` supports single inheritance.
 - Assignments to `self.xxx` inside `__init__` are treated as instance members.
 - Members declared in class body are treated as class members (`static` in C#, `inline static` in C++).
@@ -59,9 +62,21 @@ Pytra transpiles type-annotated Python code into multiple languages. The canonic
   - A relative import that escapes above the entry root fails closed as `input_invalid(kind=relative_import_escape)`.
   - If the normalized module does not exist, the diagnostic is `input_invalid(kind=missing_module)`.
   - Illegal Python syntax such as `import .m` is outside the supported surface.
-- In transpilation target code, direct imports of Python standard modules (`json`, `pathlib`, `sys`, `os`, `glob`, `argparse`, `re`, etc.) are prohibited.
-- Exception: `typing` imports (`import typing`, `from typing import ...`) are allowed as annotation-only no-op imports and are removed from runtime/dependency import resolution.
-- Exception: `dataclasses` imports (`import dataclasses`, `from dataclasses import ...`) are allowed as decorator-resolution no-op imports and are removed from runtime/dependency import resolution.
+- `type X = A | B | ...` (PEP 695) can declare a union type (tagged union).
+  - Converted to each target language's native tagged union.
+  - Recursive types (e.g., `type JsonVal = ... | list[JsonVal]`) are supported.
+  - Use `typing.cast(T, v)` to extract a value from a union variable.
+  - See [Tagged Union Specification](./spec-tagged-union.md) for details.
+- In transpilation target code, **direct imports of Python standard modules are prohibited**. Use `pytra.*` for all such imports.
+  - `from pytra.typing import cast` — instead of `typing.cast`
+  - `from pytra.enum import Enum, IntEnum, IntFlag` — instead of `enum`
+  - `from pytra.dataclasses import dataclass, field` — instead of `dataclasses`
+  - `from pytra.types import int64, uint8` — Pytra-specific scalar types
+  - `from pytra.std.collections import deque` — instead of `collections.deque`
+  - `from pytra.std.math import sqrt` — instead of `math` and similar runtime modules
+  - `pytra.typing` / `pytra.enum` / `pytra.dataclasses` / `pytra.types` are language-feature helper modules; the transpiler ignores these imports (the parser already recognizes `cast` / `Enum` / `dataclass` / `int64` etc.). At Python runtime they re-export from the standard library, so the code also runs as Python unchanged.
+  - `pytra.std.*` is the runtime library; the transpiler uses it for dependency resolution and header generation.
+  - Direct imports from Python standard modules such as `from typing import ...` / `from enum import ...` / `from dataclasses import ...` are errors.
 - Importable modules are modules under `src/pytra/` and user-authored `.py` modules.
 - User module import is legal by specification, but multi-file dependency resolution is still under staged implementation.
 - Attribute access/method calls on `object` type (including `Any`-derived routes) are prohibited.
@@ -124,7 +139,7 @@ Run the following from project root (`Pytra/`):
 python -m unittest discover -s test/unit -p "test_*.py" -v
 ```
 
-If you want to verify only the shared emitter foundation (`src/backends/common/emitter/code_emitter.py`):
+If you want to verify only the shared emitter foundation (`src/toolchain/emit/common/emitter/code_emitter.py`):
 
 ```bash
 python -m unittest discover -s test/unit/common -p "test_code_emitter.py" -v
@@ -145,7 +160,8 @@ python -m unittest discover -s test/unit/common -p "test_fixtures_truth.py" -v
 
 ## 7. Related Documents
 
-- How to use: [Usage Guide](../how-to-use.md)
+- Quick reference for Python differences and unsupported features: [Python Compatibility Guide](./spec-python-compat.md)
+- How to use: [Usage Guide](../tutorial/how-to-use.md)
 - py2cpp feature support matrix (with test evidence): [C++ Support Matrix](../language/cpp/spec-support.md)
 - Sample code: [Sample Code](../../sample/README.md)
 - Detailed implementation status: [Pytra WIP Plan](../plans/archive/pytra-wip.md)

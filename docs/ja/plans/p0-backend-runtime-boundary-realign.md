@@ -6,23 +6,23 @@
 - `docs/ja/todo/index.md` の `ID: P0-BACKEND-BOUNDARY-REALIGN-01`
 
 背景:
-- `audit-runtime` 監査で、`src/backends/` に `math` / `gif` / `png` が多数出現した。
+- `audit-runtime` 監査で、`src/toolchain/emit/` に `math` / `gif` / `png` が多数出現した。
 - これは「文字列を消すこと」が本質ではなく、runtime/stdlib 解決責務が emitter 側へ漏れている設計不整合の症状である。
 - 正しい責務境界は、EAST3 までで module/call/attr/type を解決し、backend は解決済み情報を描画するだけに限定すること。
 
 監査結果（2026-03-05）:
 - 検出ファイル（11件）
-  - `src/backends/cpp/emitter/cpp_emitter.py`
-  - `src/backends/cpp/emitter/module.py`
-  - `src/backends/cs/emitter/cs_emitter.py`
-  - `src/backends/go/emitter/go_native_emitter.py`
-  - `src/backends/js/emitter/js_emitter.py`
-  - `src/backends/kotlin/emitter/kotlin_native_emitter.py`
-  - `src/backends/lua/emitter/lua_native_emitter.py`
-  - `src/backends/nim/emitter/nim_native_emitter.py`
-  - `src/backends/php/emitter/php_native_emitter.py`
-  - `src/backends/rs/emitter/rs_emitter.py`
-  - `src/backends/scala/emitter/scala_native_emitter.py`
+  - `src/toolchain/emit/cpp/emitter/cpp_emitter.py`
+  - `src/toolchain/emit/cpp/emitter/module.py`
+  - `src/toolchain/emit/cs/emitter/cs_emitter.py`
+  - `src/toolchain/emit/go/emitter/go_native_emitter.py`
+  - `src/toolchain/emit/js/emitter/js_emitter.py`
+  - `src/toolchain/emit/kotlin/emitter/kotlin_native_emitter.py`
+  - `src/toolchain/emit/lua/emitter/lua_native_emitter.py`
+  - `src/toolchain/emit/nim/emitter/nim_native_emitter.py`
+  - `src/toolchain/emit/php/emitter/php_native_emitter.py`
+  - `src/toolchain/emit/rs/emitter/rs_emitter.py`
+  - `src/toolchain/emit/scala/emitter/scala_native_emitter.py`
 
 S1-01 分類結果（違反タイプ別）:
 - 監査生ログ: `work/logs/backend_boundary_audit_hits_20260305_s1_01.txt`（179件）
@@ -30,17 +30,17 @@ S1-01 分類結果（違反タイプ別）:
 
 | backend file | branch | dispatch | runtime実装混在 | total |
 | --- | ---: | ---: | ---: | ---: |
-| `src/backends/lua/emitter/lua_native_emitter.py` | 4 | 25 | 20 | 49 |
-| `src/backends/scala/emitter/scala_native_emitter.py` | 12 | 16 | 11 | 39 |
-| `src/backends/rs/emitter/rs_emitter.py` | 2 | 15 | 14 | 31 |
-| `src/backends/cs/emitter/cs_emitter.py` | 11 | 9 | 0 | 20 |
-| `src/backends/php/emitter/php_native_emitter.py` | 3 | 15 | 0 | 18 |
-| `src/backends/go/emitter/go_native_emitter.py` | 2 | 8 | 0 | 10 |
-| `src/backends/nim/emitter/nim_native_emitter.py` | 5 | 0 | 1 | 6 |
-| `src/backends/js/emitter/js_emitter.py` | 0 | 0 | 2 | 2 |
-| `src/backends/kotlin/emitter/kotlin_native_emitter.py` | 1 | 0 | 1 | 2 |
-| `src/backends/cpp/emitter/cpp_emitter.py` | 1 | 0 | 0 | 1 |
-| `src/backends/cpp/emitter/module.py` | 0 | 1 | 0 | 1 |
+| `src/toolchain/emit/lua/emitter/lua_native_emitter.py` | 4 | 25 | 20 | 49 |
+| `src/toolchain/emit/scala/emitter/scala_native_emitter.py` | 12 | 16 | 11 | 39 |
+| `src/toolchain/emit/rs/emitter/rs_emitter.py` | 2 | 15 | 14 | 31 |
+| `src/toolchain/emit/cs/emitter/cs_emitter.py` | 11 | 9 | 0 | 20 |
+| `src/toolchain/emit/php/emitter/php_native_emitter.py` | 3 | 15 | 0 | 18 |
+| `src/toolchain/emit/go/emitter/go_native_emitter.py` | 2 | 8 | 0 | 10 |
+| `src/toolchain/emit/nim/emitter/nim_native_emitter.py` | 5 | 0 | 1 | 6 |
+| `src/toolchain/emit/js/emitter/js_emitter.py` | 0 | 0 | 2 | 2 |
+| `src/toolchain/emit/kotlin/emitter/kotlin_native_emitter.py` | 1 | 0 | 1 | 2 |
+| `src/toolchain/emit/cpp/emitter/cpp_emitter.py` | 1 | 0 | 0 | 1 |
+| `src/toolchain/emit/cpp/emitter/module.py` | 0 | 1 | 0 | 1 |
 
 修正順序（S1-01 確定）:
 1. `lua -> scala -> rs`（`runtime実装混在` が高密度）
@@ -52,7 +52,7 @@ S1-01 分類結果（違反タイプ別）:
 - `math/gif/png` 検出は「設計違反の検知ガード」として扱い、再発を CI で fail-fast にする。
 
 対象:
-- `src/backends/*/emitter/*.py`
+- `src/toolchain/emit/*/emitter/*.py`
 - EAST3 の `runtime_call` / `resolved_runtime_call` 契約
 - `tools/` の静的ガードと CI 導線
 
@@ -87,8 +87,8 @@ S1-01 分類結果（違反タイプ別）:
 - 2026-03-05: ユーザー指摘に基づき、目的を「文字列撤去」から「責務境界の設計是正」へ修正した。`math/gif/png` 検索は症状検知ガードとして再定義した。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-01] 179件を `branch/dispatch/runtime実装混在` へ分類し、`lua -> scala -> rs` を先行是正順に確定した（分類CSVを `work/logs/backend_boundary_audit_classified_20260305_s1_01.csv` に固定）。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S1-02] `docs/ja/spec/spec-east.md` に EAST3 -> backend の固定契約（`Call/Attribute` の解決済み属性、優先順位、`resolved_runtime_source`、fail-closed、emitter API 制約）を追記し、再解決禁止を仕様化した。
-- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua_native_emitter.py` から未使用の runtime 実装混在ブロック（`_emit_math_runtime_helpers` / `_emit_path_runtime_helpers` / `_emit_gif_runtime_helpers` / `_emit_png_runtime_helpers`）を削除。`math|gif|png` ヒットは `49 -> 8`、全 backend 合計は `179 -> 138` に縮退。`python3 test/unit/backends/lua/test_py2lua_smoke.py`（32件）で回帰 green を確認。
-- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `scala_native_emitter.py` に残留していた未使用 inline runtime helper 群（`_emit_runtime_helpers` / `_emit_runtime_helpers_minimal` など）を削除し、`rs_emitter.py` の未使用 `RUST_RUNTIME_SUPPORT` を撤去。`math|gif|png` ヒットは `scala: 39 -> 29`、`rs: 31 -> 4`、全 backend 合計は `138 -> 101` に縮退。`python3 test/unit/backends/scala/test_py2scala_smoke.py`（16件）と `python3 test/unit/backends/rs/test_py2rs_smoke.py`（30件）で回帰 green を確認。
+- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `lua_native_emitter.py` から未使用の runtime 実装混在ブロック（`_emit_math_runtime_helpers` / `_emit_path_runtime_helpers` / `_emit_gif_runtime_helpers` / `_emit_png_runtime_helpers`）を削除。`math|gif|png` ヒットは `49 -> 8`、全 backend 合計は `179 -> 138` に縮退。`python3 test/unit/toolchain/emit/lua/test_py2lua_smoke.py`（32件）で回帰 green を確認。
+- 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `scala_native_emitter.py` に残留していた未使用 inline runtime helper 群（`_emit_runtime_helpers` / `_emit_runtime_helpers_minimal` など）を削除し、`rs_emitter.py` の未使用 `RUST_RUNTIME_SUPPORT` を撤去。`math|gif|png` ヒットは `scala: 39 -> 29`、`rs: 31 -> 4`、全 backend 合計は `138 -> 101` に縮退。`python3 test/unit/toolchain/emit/scala/test_py2scala_smoke.py`（16件）と `python3 test/unit/toolchain/emit/rs/test_py2rs_smoke.py`（30件）で回帰 green を確認。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-01] `scala_native_emitter.py` から `owner=="math"` による生AST再解決フォールバック（attribute/call/type推論）を撤去し、解決済み runtime_call 経路へ統一。`math|gif|png` ヒットは `scala: 29 -> 16`、全 backend 合計は `101 -> 88` に縮退し、`test_py2scala_smoke.py`（16件）再通過を確認。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `php_native_emitter.py` / `go_native_emitter.py` から `owner=="math"` 生AST再解決フォールバック（call/attribute/type推論）を撤去。`math|gif|png` ヒットは `php+go: 28 -> 12`、全 backend 合計は `88 -> 72` に縮退。`test_py2php_smoke.py`（10件）と `test_py2go_smoke.py`（16件）で回帰 green を確認。
 - 2026-03-05: [ID: P0-BACKEND-BOUNDARY-REALIGN-01-S2-02] `kotlin_native_emitter.py` / `nim_native_emitter.py` の `math` 生AST再解決フォールバック（型推論・call/attr）を撤去。`math|gif|png` ヒットは `kotlin+nim: 8 -> 3`、全 backend 合計は `72 -> 67` に縮退。`test_py2kotlin_smoke.py`（16件）と `test_py2nim_smoke.py`（3件）で回帰 green を確認。

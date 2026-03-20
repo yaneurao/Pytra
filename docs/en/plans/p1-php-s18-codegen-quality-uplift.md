@@ -15,7 +15,7 @@ Goal:
 - Limit changes to the minimum scope reproducible in `sample/18`, with staged fail-closed application.
 
 In scope:
-- `src/backends/php/emitter/php_native_emitter.py`
+- `src/toolchain/emit/php/emitter/php_native_emitter.py`
 - `src/runtime/php/pytra/py_runtime.php` (minimum helper additions only if needed)
 - `test/unit/test_py2php_smoke.py` (add PHP codegen regressions if needed)
 - `sample/php/18_mini_language_interpreter.php` (validation by regeneration)

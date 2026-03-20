@@ -32,10 +32,10 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
     def test_backend_registry_host_is_lazy_import_style(self) -> None:
         host_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry.py").read_text(encoding="utf-8")
         self.assertIn("import importlib", host_src)
-        self.assertNotIn("from backends.", host_src)
+        self.assertNotIn("from toolchain.emit.", host_src)
 
         static_src = (ROOT / "src" / "toolchain" / "compiler" / "backend_registry_static.py").read_text(encoding="utf-8")
-        self.assertIn("from backends.rs.lower import lower_east3_to_rs_ir", static_src)
+        self.assertIn("from toolchain.emit.rs.lower import lower_east3_to_rs_ir", static_src)
 
     def test_host_registry_loads_only_selected_target_modules(self) -> None:
         host_registry._SPEC_CACHE.clear()
@@ -50,12 +50,12 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
             spec = host_registry.get_backend_spec("rs")
 
         self.assertEqual(spec.get("target_lang"), "rs")
-        self.assertIn("backends.rs.lower", calls)
-        self.assertIn("backends.rs.optimizer", calls)
-        self.assertIn("backends.rs.emitter.rs_emitter", calls)
-        self.assertFalse(any(name.startswith("backends.cs") for name in calls))
-        self.assertFalse(any(name.startswith("backends.go") for name in calls))
-        self.assertFalse(any(name.startswith("backends.js") for name in calls))
+        self.assertIn("toolchain.emit.rs.lower", calls)
+        self.assertIn("toolchain.emit.rs.optimizer", calls)
+        self.assertIn("toolchain.emit.rs.emitter.rs_emitter", calls)
+        self.assertFalse(any(name.startswith("toolchain.emit.cs") for name in calls))
+        self.assertFalse(any(name.startswith("toolchain.emit.go") for name in calls))
+        self.assertFalse(any(name.startswith("toolchain.emit.js") for name in calls))
 
     def test_host_registry_uses_spec_cache(self) -> None:
         host_registry._SPEC_CACHE.clear()
@@ -188,13 +188,13 @@ class Py2xEntrypointsContractTest(unittest.TestCase):
     def test_backend_registry_emit_kind_contract_matches(self) -> None:
         with (
             patch.object(runtime_registry_shared, "get_backend_emit_kind", return_value="broken"),
-            patch.object(runtime_registry_shared, "get_backend_emit_ref", return_value="backends.rs.emitter.rs_emitter:transpile_to_rust"),
+            patch.object(runtime_registry_shared, "get_backend_emit_ref", return_value="toolchain.emit.rs.emitter.rs_emitter:transpile_to_rust"),
         ):
             with self.assertRaisesRegex(RuntimeError, "unsupported emit kind: broken"):
                 host_registry._emit_from_target("rs")
         with (
             patch.object(runtime_registry_shared, "get_backend_emit_kind", return_value="broken"),
-            patch.object(runtime_registry_shared, "get_backend_emit_ref", return_value="backends.rs.emitter.rs_emitter:transpile_to_rust"),
+            patch.object(runtime_registry_shared, "get_backend_emit_ref", return_value="toolchain.emit.rs.emitter.rs_emitter:transpile_to_rust"),
         ):
             with self.assertRaisesRegex(RuntimeError, "unsupported emit kind: broken"):
                 static_registry._emit_from_target("rs")

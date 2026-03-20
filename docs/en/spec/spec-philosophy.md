@@ -17,7 +17,7 @@ Main gaps include:
 
 - It does not retain comments, blank lines, or original layout information, making it hard to reproduce output close to source code.
 - Standard AST itself does not retain inferred types for omitted annotations, or required cast information.
-- Preprocessing such as `range` normalization, name-collision avoidance, and main-guard extraction tends to be duplicated across backends.
+- Preprocessing such as `range` normalization, name-collision avoidance, and main-guard extraction tends to be duplicated across toolchain.emit.
 - Semantic information useful for optimization (such as readonly/mutable argument semantics) is hard to pass as shared data.
 
 If each language backend fills these gaps independently, preprocessing logic fragments, and behavior divergence plus maintenance cost increase.  

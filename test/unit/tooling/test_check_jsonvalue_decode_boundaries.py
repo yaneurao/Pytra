@@ -24,8 +24,8 @@ class JsonValueDecodeBoundaryGuardTest(unittest.TestCase):
     def test_target_files_cover_compiler_internal_json_loaders(self) -> None:
         self.assertIn("src/toolchain/frontends/transpile_cli.py", guard_mod.TARGET_FILES)
         self.assertIn("src/toolchain/frontends/runtime_symbol_index.py", guard_mod.TARGET_FILES)
-        self.assertIn("src/backends/common/emitter/code_emitter.py", guard_mod.TARGET_FILES)
-        self.assertIn("src/backends/js/emitter/js_emitter.py", guard_mod.TARGET_FILES)
+        self.assertIn("src/toolchain/emit/common/emitter/code_emitter.py", guard_mod.TARGET_FILES)
+        self.assertIn("src/toolchain/emit/js/emitter/js_emitter.py", guard_mod.TARGET_FILES)
 
     def test_collect_passes_when_targets_use_loads_obj(self) -> None:
         with tempfile.TemporaryDirectory() as td:

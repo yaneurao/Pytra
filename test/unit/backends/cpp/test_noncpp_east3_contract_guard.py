@@ -16,19 +16,19 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from backends.cs.emitter import transpile_to_csharp
-from backends.go.emitter import transpile_to_go
-from backends.java.emitter import transpile_to_java
-from backends.js.emitter.js_emitter import transpile_to_js
-from backends.kotlin.emitter import transpile_to_kotlin
-from backends.nim.emitter import transpile_to_nim
-from backends.php.emitter import transpile_to_php
-from backends.ruby.emitter import transpile_to_ruby
-from backends.rs.emitter.rs_emitter import transpile_to_rust
-from backends.scala.emitter import transpile_to_scala
-from backends.swift.emitter import transpile_to_swift
-from backends.ts.emitter.ts_emitter import transpile_to_typescript
-from backends.lua.emitter import transpile_to_lua
+from toolchain.emit.cs.emitter import transpile_to_csharp
+from toolchain.emit.go.emitter import transpile_to_go
+from toolchain.emit.java.emitter import transpile_to_java
+from toolchain.emit.js.emitter.js_emitter import transpile_to_js
+from toolchain.emit.kotlin.emitter import transpile_to_kotlin
+from toolchain.emit.nim.emitter import transpile_to_nim
+from toolchain.emit.php.emitter import transpile_to_php
+from toolchain.emit.ruby.emitter import transpile_to_ruby
+from toolchain.emit.rs.emitter.rs_emitter import transpile_to_rust
+from toolchain.emit.scala.emitter import transpile_to_scala
+from toolchain.emit.swift.emitter import transpile_to_swift
+from toolchain.emit.ts.emitter.ts_emitter import transpile_to_typescript
+from toolchain.emit.lua.emitter import transpile_to_lua
 from toolchain.frontends.type_expr import parse_type_expr_text
 
 

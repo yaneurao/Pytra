@@ -38,7 +38,7 @@ Verification commands:
 - `python3 tools/runtime_parity_check.py --case-root sample --targets go,swift,kotlin --all-samples --ignore-unstable-stdout`
 
 Decision log:
-- 2026-02-26: Initial draft created. Added low-priority migration plan to native-ize Go/Swift/Kotlin sidecar backends.
+- 2026-02-26: Initial draft created. Added low-priority migration plan to native-ize Go/Swift/Kotlin sidecar toolchain.emit.
 
 ## Breakdown
 

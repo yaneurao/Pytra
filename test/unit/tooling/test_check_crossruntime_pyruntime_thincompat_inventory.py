@@ -28,7 +28,7 @@ class CheckCrossRuntimePyRuntimeThinCompatInventoryTest(unittest.TestCase):
 
     def test_shared_type_id_api_bucket_is_rs_cs_only(self) -> None:
         bucket = inventory_mod.EXPECTED_BUCKETS["crossruntime_shared_type_id_api"]
-        self.assertTrue(all(path.startswith("src/backends/rs/") or path.startswith("src/backends/cs/") for _, path in bucket))
+        self.assertTrue(all(path.startswith("src/toolchain/emit/rs/") or path.startswith("src/toolchain/emit/cs/") for _, path in bucket))
         self.assertTrue(
             all(
                 symbol in {

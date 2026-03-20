@@ -1,0 +1,1720 @@
+"""EAST -> JavaScript transpiler."""
+
+from __future__ import annotations
+
+from pytra.std import json
+from pytra.std.pathlib import Path
+from typing import Any
+
+from toolchain.emit.js.hooks.js_hooks import build_js_hooks
+from toolchain.json_adapters import export_json_object_dict
+from toolchain.emit.common.emitter.code_emitter import (
+    CodeEmitter,
+    reject_backend_homogeneous_tuple_ellipsis_type_exprs,
+    reject_backend_typed_vararg_signatures,
+)
+from toolchain.frontends.runtime_symbol_index import canonical_runtime_module_id
+from toolchain.frontends.runtime_symbol_index import resolve_import_binding_doc
+
+_JS_EMITTER_BASE = CodeEmitter
+_JS_OUTPUT_RUNTIME_NATIVE_ROOT = "./runtime/js/native"
+_JS_OUTPUT_RUNTIME_GENERATED_ROOT = "./runtime/js/generated"
+
+
+def _load_json_dict(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    try:
+        raw_obj = json.loads_obj(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    if raw_obj is not None:
+        return export_json_object_dict(raw_obj)
+    return {}
+
+
+def _resolve_src_root(anchor_file: str) -> str:
+    if not isinstance(anchor_file, str):
+        return ""
+    if anchor_file.startswith("src/") or anchor_file.startswith("src\\"):
+        return "src"
+    pos = anchor_file.rfind("/src/")
+    if pos < 0:
+        return ""
+    return anchor_file[: pos + 4]
+
+
+def _load_profile_with_includes(profile_rel_path: str, anchor_file: str = "") -> dict[str, Any]:
+    profile_path = Path(profile_rel_path)
+    if not profile_path.exists() and anchor_file != "":
+        src_root = _resolve_src_root(anchor_file)
+        if src_root != "":
+            rel = profile_rel_path
+            if rel.startswith("src/"):
+                rel = rel[4:]
+            profile_path = Path(src_root) / rel
+    meta = _load_json_dict(profile_path)
+    if len(meta) == 0:
+        return {}
+
+    profile_root = profile_path.parent
+    out: dict[str, Any] = {}
+    includes_obj = meta.get("include")
+    includes: list[str] = []
+    if isinstance(includes_obj, list):
+        for item_obj in includes_obj:
+            if isinstance(item_obj, str) and item_obj != "":
+                includes.append(item_obj)
+
+    for rel in includes:
+        piece = _load_json_dict(profile_root / rel)
+        for key, val in piece.items():
+            out[key] = val
+
+    for key, val in meta.items():
+        if key != "include":
+            out[key] = val
+    return out
+
+
+def load_js_profile() -> dict[str, Any]:
+    """JavaScript 用 profile を読み込む。"""
+    return _load_profile_with_includes(
+        "src/toolchain/emit/js/profiles/profile.json",
+        anchor_file=__file__,
+    )
+
+
+def load_js_hooks(profile: dict[str, Any]) -> dict[str, Any]:
+    """JavaScript 用 hook を読み込む。"""
+    _ = profile
+    hooks = build_js_hooks()
+    if isinstance(hooks, dict):
+        return hooks
+    return {}
+
+
+class JsEmitter(CodeEmitter):
+    """EAST を JavaScript ソースへ変換するエミッタ。"""
+
+    def __init__(self, east_doc: dict[str, Any]) -> None:
+        profile = load_js_profile()
+        hooks = load_js_hooks(profile)
+        self.init_base_state(east_doc, profile, hooks)
+        self.type_map = self.load_type_map(profile)
+        operators = self.any_dict_get_dict(profile, "operators")
+        self.bin_ops = self.any_to_str_dict_or_empty(self.any_dict_get_dict(operators, "binop"))
+        self.cmp_ops = self.any_to_str_dict_or_empty(self.any_dict_get_dict(operators, "cmp"))
+        self.aug_ops = self.any_to_str_dict_or_empty(self.any_dict_get_dict(operators, "aug"))
+        syntax = self.any_dict_get_dict(profile, "syntax")
+        identifiers = self.any_dict_get_dict(syntax, "identifiers")
+        self.reserved_words: set[str] = set(self.any_to_str_list(self.any_dict_get_list(identifiers, "reserved_words")))
+        self.rename_prefix = self.any_dict_get_str(identifiers, "rename_prefix", "")
+        if self.rename_prefix == "":
+            self.rename_prefix = "py_"
+        self.declared_var_types: dict[str, str] = {}
+        self.current_class_name: str = ""
+        self.current_class_base_name: str = ""
+        self.class_names: set[str] = set()
+        self.in_method_scope: bool = False
+        self.browser_symbol_aliases: dict[str, str] = {}
+        self.browser_module_aliases: dict[str, str] = {}
+        self.ambient_global_aliases: dict[str, str] = {}
+        self.top_function_names: set[str] = set()
+        self.current_ref_vars: set[str] = set()
+
+    def _safe_name(self, name: str) -> str:
+        return self.rename_if_reserved(name, self.reserved_words, self.rename_prefix, {})
+
+    def _is_container_east_type(self, east_type_name: str) -> bool:
+        t = self.normalize_type_name(east_type_name)
+        return (
+            self._text_has_prefix(t, "list[")
+            or self._text_has_prefix(t, "tuple[")
+            or self._text_has_prefix(t, "dict[")
+            or self._text_has_prefix(t, "set[")
+            or t == "bytes"
+            or t == "bytearray"
+        )
+
+    def _materialize_container_value_from_ref(
+        self,
+        value_obj: Any,
+        rendered_value: str,
+        east_type_hint: str,
+        *,
+        target_name_raw: str,
+    ) -> str:
+        node = self.any_to_dict_or_empty(value_obj)
+        if self.any_dict_get_str(node, "kind", "") != "Name":
+            return rendered_value
+        src_raw = self.any_dict_get_str(node, "id", "")
+        if src_raw == "" or src_raw == target_name_raw:
+            return rendered_value
+        if src_raw not in self.current_ref_vars:
+            return rendered_value
+        hint = self.normalize_type_name(east_type_hint)
+        if self._text_has_prefix(hint, "list[") or self._text_has_prefix(hint, "tuple[") or hint == "bytes" or hint == "bytearray":
+            return "(Array.isArray(" + rendered_value + ") ? " + rendered_value + ".slice() : Array.from(" + rendered_value + "))"
+        if self._text_has_prefix(hint, "dict["):
+            return "((" + rendered_value + " && typeof " + rendered_value + " === \"object\") ? { ..." + rendered_value + " } : {})"
+        if self._text_has_prefix(hint, "set["):
+            return "(" + rendered_value + " instanceof Set ? new Set(" + rendered_value + ") : new Set())"
+        return rendered_value
+
+    def _render_assignment_value_with_hint(self, value_obj: Any, east_type_hint: str, *, target_name_raw: str) -> str:
+        rendered = self.render_expr(value_obj)
+        return self._materialize_container_value_from_ref(
+            value_obj,
+            rendered,
+            east_type_hint,
+            target_name_raw=target_name_raw,
+        )
+
+    def _is_browser_module(self, module_id: Any) -> bool:
+        """browser 外部参照モジュールかを判定する。"""
+        module_text = f"{module_id}"
+        if module_text == "":
+            return False
+        return module_text == "browser" or (len(module_text) >= 8 and module_text[0:8] == "browser.")
+
+    def _is_ignored_import_module(self, module_id_raw: Any) -> bool:
+        """selfhost でも安全に無視対象 import か判定する。"""
+        module_text = f"{module_id_raw}"
+        if module_text == "typing" or module_text == "pytra.std.typing":
+            return True
+        return len(module_text) >= 10 and module_text[0:10] == "__future__"
+
+    def _ambient_global_meta(self, stmt: dict[str, Any]) -> dict[str, Any]:
+        """ambient global extern variable metadata を返す。無ければ空 dict。"""
+        meta = self.any_to_dict_or_empty(stmt.get("meta"))
+        extern_meta = self.any_to_dict_or_empty(meta.get("extern_var_v1"))
+        if self.any_dict_get_int(extern_meta, "schema_version", 0) != 1:
+            return {}
+        if self.any_dict_get_str(extern_meta, "symbol", "") == "":
+            return {}
+        return extern_meta
+
+    def _is_ambient_global_decl_stmt(self, stmt: dict[str, Any]) -> bool:
+        """stmt が ambient global extern 宣言なら True を返す。"""
+        if self.any_dict_get_str(stmt, "kind", "") not in {"Assign", "AnnAssign"}:
+            return False
+        return len(self._ambient_global_meta(stmt)) > 0
+
+    def _collect_ambient_global_aliases(self, body: list[dict[str, Any]]) -> None:
+        """top-level ambient global extern 宣言を symbol alias として登録する。"""
+        self.ambient_global_aliases = {}
+        for stmt in body:
+            extern_meta = self._ambient_global_meta(stmt)
+            if len(extern_meta) == 0:
+                continue
+            target = self.any_to_dict_or_empty(stmt.get("target"))
+            if self.any_dict_get_str(target, "kind", "") != "Name":
+                continue
+            local_name = self.any_dict_get_str(target, "id", "")
+            symbol = self.any_dict_get_str(extern_meta, "symbol", "")
+            if local_name == "" or symbol == "":
+                continue
+            self.ambient_global_aliases[local_name] = symbol
+            self.declare_in_current_scope(local_name)
+            self.declared_var_types[local_name] = "Any"
+
+    def _module_id_to_js_path(self, module_id: str) -> str:
+        """Python 形式モジュール名を JS import パスへ変換する。"""
+        if not isinstance(module_id, str):
+            return ""
+        module_name = canonical_runtime_module_id(module_id.strip())
+        if module_name == "":
+            return ""
+        if module_name.startswith("pytra.std."):
+            tail = module_name.removeprefix("pytra.std.")
+            if tail != "":
+                return _JS_OUTPUT_RUNTIME_GENERATED_ROOT + "/std/" + tail.replace(".", "/") + ".js"
+        if module_name.startswith("pytra.utils."):
+            tail = module_name.removeprefix("pytra.utils.")
+            if tail != "":
+                return _JS_OUTPUT_RUNTIME_GENERATED_ROOT + "/utils/" + tail.replace(".", "/") + ".js"
+        return "./" + module_name.replace(".", "/") + ".js"
+
+    def _module_symbol_to_js_path(self, module_id: str, symbol_name: str) -> str:
+        """from-import の symbol 単位で JS import パスを解決する。"""
+        resolved = resolve_import_binding_doc(module_id, symbol_name, "symbol")
+        runtime_module_id = self.any_dict_get_str(resolved, "runtime_module_id", "")
+        if runtime_module_id != "":
+            return self._module_id_to_js_path(runtime_module_id)
+        return self._module_id_to_js_path(module_id)
+
+    def _walk_node_names(self, node: Any, out: set[str]) -> None:
+        """ノード配下の Name.id を収集する（Import/ImportFrom 自身は除外）。"""
+        node_dict = self.any_to_dict(node)
+        if node_dict is not None:
+            kind = self.any_dict_get_str(node_dict, "kind", "")
+            if kind == "Import" or kind == "ImportFrom":
+                return
+            if kind == "Name":
+                name = self.any_dict_get_str(node_dict, "id", "")
+                if name != "":
+                    out.add(name)
+                return
+            for key, value in node_dict.items():
+                if key == "comments":
+                    continue
+                self._walk_node_names(value, out)
+            return
+        if isinstance(node, list):
+            for item in node:
+                self._walk_node_names(item, out)
+
+    def _node_mentions_name(self, node: Any, name: str) -> bool:
+        """ノード配下に `Name(name)` が含まれる場合に True を返す。"""
+        if name == "":
+            return False
+        node_dict = self.any_to_dict(node)
+        if node_dict is not None:
+            if self.any_dict_get_str(node_dict, "kind", "") == "Name" and self.any_dict_get_str(node_dict, "id", "") == name:
+                return True
+            for value in node_dict.values():
+                if self._node_mentions_name(value, name):
+                    return True
+            return False
+        if isinstance(node, list):
+            for item in node:
+                if self._node_mentions_name(item, name):
+                    return True
+        return False
+
+    def _collect_used_names(self, body: list[dict[str, Any]], main_guard_body: list[dict[str, Any]]) -> set[str]:
+        """モジュール全体で実際に参照される識別子名を収集する。"""
+        used: set[str] = set()
+        for stmt in body:
+            self._walk_node_names(stmt, used)
+        for stmt in main_guard_body:
+            self._walk_node_names(stmt, used)
+        return used
+
+    def _collect_isinstance_type_symbols(self, rhs_node: dict[str, Any], required: set[str]) -> None:
+        """isinstance の第2引数から必要な runtime type 定数を抽出する。"""
+        kind = self.any_dict_get_str(rhs_node, "kind", "")
+        if kind == "Name":
+            rhs_name = self.any_dict_get_str(rhs_node, "id", "")
+            type_id_map = {
+                "str": "PY_TYPE_STRING",
+                "list": "PY_TYPE_ARRAY",
+                "dict": "PY_TYPE_MAP",
+                "set": "PY_TYPE_SET",
+                "int": "PY_TYPE_NUMBER",
+                "float": "PY_TYPE_NUMBER",
+                "bool": "PY_TYPE_BOOL",
+                "object": "PY_TYPE_OBJECT",
+            }
+            symbol = type_id_map.get(rhs_name, "")
+            if symbol != "":
+                required.add(symbol)
+            return
+        if kind == "Tuple":
+            for elt in self.tuple_elements(rhs_node):
+                self._collect_isinstance_type_symbols(self.any_to_dict_or_empty(elt), required)
+
+    def _collect_type_id_expr_symbols(self, expr_node: Any, required: set[str]) -> None:
+        """type_id 式から必要な runtime type 定数を抽出する。"""
+        expr_d = self.any_to_dict_or_empty(expr_node)
+        if len(expr_d) == 0:
+            return
+        if self.any_dict_get_str(expr_d, "kind", "") != "Name":
+            return
+        name = self.any_dict_get_str(expr_d, "id", "")
+        symbol_map = {
+            "PYTRA_TID_BOOL": "PY_TYPE_BOOL",
+            "PYTRA_TID_INT": "PY_TYPE_NUMBER",
+            "PYTRA_TID_FLOAT": "PY_TYPE_NUMBER",
+            "PYTRA_TID_STR": "PY_TYPE_STRING",
+            "PYTRA_TID_LIST": "PY_TYPE_ARRAY",
+            "PYTRA_TID_DICT": "PY_TYPE_MAP",
+            "PYTRA_TID_SET": "PY_TYPE_SET",
+            "PYTRA_TID_OBJECT": "PY_TYPE_OBJECT",
+            "bool": "PY_TYPE_BOOL",
+            "int": "PY_TYPE_NUMBER",
+            "float": "PY_TYPE_NUMBER",
+            "str": "PY_TYPE_STRING",
+            "list": "PY_TYPE_ARRAY",
+            "dict": "PY_TYPE_MAP",
+            "set": "PY_TYPE_SET",
+            "object": "PY_TYPE_OBJECT",
+        }
+        symbol = symbol_map.get(name, "")
+        if symbol != "":
+            required.add(symbol)
+
+    def _walk_runtime_requirements(self, node: Any, required: set[str]) -> None:
+        """ノード配下から py_runtime シンボル依存を収集する。"""
+        node_dict = self.any_to_dict(node)
+        if node_dict is not None:
+            kind = self.any_dict_get_str(node_dict, "kind", "")
+            if kind == "ClassDef":
+                required.add("PYTRA_TYPE_ID")
+                required.add("PY_TYPE_OBJECT")
+                required.add("pyRegisterClassType")
+            elif kind == "ObjBool":
+                required.add("pyBool")
+            elif kind == "ObjLen":
+                required.add("pyLen")
+            elif kind == "ObjStr":
+                required.add("pyStr")
+            elif kind == "ObjTypeId":
+                required.add("pyTypeId")
+            elif kind == "Dict":
+                required.add("PYTRA_TYPE_ID")
+                required.add("PY_TYPE_MAP")
+            elif kind == "IsInstance":
+                required.add("pyIsInstance")
+                self._collect_type_id_expr_symbols(self.any_dict_get(node_dict, "expected_type_id", None), required)
+            elif kind == "IsSubtype" or kind == "IsSubclass":
+                required.add("pyIsSubtype")
+                self._collect_type_id_expr_symbols(self.any_dict_get(node_dict, "actual_type_id", None), required)
+                self._collect_type_id_expr_symbols(self.any_dict_get(node_dict, "expected_type_id", None), required)
+            elif kind == "Call":
+                fn = self.any_dict_get_dict(node_dict, "func")
+                if self.any_dict_get_str(fn, "kind", "") == "Name" and self.any_dict_get_str(fn, "id", "") == "isinstance":
+                    required.add("pyIsInstance")
+                    args = self.any_dict_get_list(node_dict, "args")
+                    if len(args) >= 2:
+                        self._collect_isinstance_type_symbols(self.any_to_dict_or_empty(args[1]), required)
+            for key, value in node_dict.items():
+                if key == "comments":
+                    continue
+                self._walk_runtime_requirements(value, required)
+            return
+        if isinstance(node, list):
+            for item in node:
+                self._walk_runtime_requirements(item, required)
+
+    def _collect_runtime_symbols(
+        self,
+        body: list[dict[str, Any]],
+        main_guard_body: list[dict[str, Any]],
+    ) -> list[str]:
+        """モジュールで必要な py_runtime シンボルを順序付きで返す。"""
+        required: set[str] = set()
+        for stmt in body:
+            self._walk_runtime_requirements(stmt, required)
+        for stmt in main_guard_body:
+            self._walk_runtime_requirements(stmt, required)
+        ordered = [
+            "PYTRA_TYPE_ID",
+            "PY_TYPE_BOOL",
+            "PY_TYPE_NUMBER",
+            "PY_TYPE_STRING",
+            "PY_TYPE_ARRAY",
+            "PY_TYPE_MAP",
+            "PY_TYPE_SET",
+            "PY_TYPE_OBJECT",
+            "pyRegisterClassType",
+            "pyIsInstance",
+            "pyIsSubtype",
+            "pyBool",
+            "pyLen",
+            "pyStr",
+            "pyTypeId",
+        ]
+        out: list[str] = []
+        for name in ordered:
+            if name in required:
+                out.append(name)
+        return out
+
+    def _collect_import_statements(
+        self,
+        body: list[dict[str, Any]],
+        meta: dict[str, Any],
+        used_names: set[str],
+    ) -> list[str]:
+        """import 情報を JavaScript import 文へ変換する。"""
+        out: list[str] = []
+        seen: set[str] = set()
+        self.browser_symbol_aliases = {}
+        self.browser_module_aliases = {}
+
+        def _add(line: str) -> None:
+            if line == "" or line in seen:
+                return
+            seen.add(line)
+            out.append(line)
+
+        bindings = self.get_import_resolution_bindings(meta)
+        if len(bindings) > 0:
+            i = 0
+            while i < len(bindings):
+                ent = bindings[i]
+                binding_kind = self.any_dict_get_str(ent, "binding_kind", "")
+                resolved_binding_kind = self.any_dict_get_str(ent, "resolved_binding_kind", "")
+                module_id = self.any_dict_get_str(ent, "module_id", "")
+                runtime_module_id = self.any_dict_get_str(ent, "runtime_module_id", "")
+                local_name = self.any_dict_get_str(ent, "local_name", "")
+                export_name = self.any_dict_get_str(ent, "export_name", "")
+                if runtime_module_id != "":
+                    module_id = runtime_module_id
+                if resolved_binding_kind == "":
+                    resolved_binding_kind = binding_kind
+                if self._is_ignored_import_module(module_id):
+                    i += 1
+                    continue
+                if self._is_browser_module(module_id):
+                    if binding_kind == "symbol" and local_name != "" and export_name != "" and local_name != export_name:
+                        self.browser_symbol_aliases[local_name] = export_name
+                    if binding_kind == "module" and local_name != "":
+                        self.browser_module_aliases[local_name] = module_id
+                    i += 1
+                    continue
+                module_path = self._module_id_to_js_path(module_id)
+                if module_path == "":
+                    i += 1
+                    continue
+                if (binding_kind == "module" or resolved_binding_kind == "module") and local_name != "":
+                    if local_name not in used_names:
+                        i += 1
+                        continue
+                    leaf = self._last_dotted_name(module_id)
+                    alias = local_name if local_name != leaf else leaf
+                    _add("import * as " + self._safe_name(alias) + " from " + self.quote_string_literal(module_path) + ";")
+                elif binding_kind == "symbol" and export_name != "":
+                    if local_name == "" or local_name not in used_names:
+                        i += 1
+                        continue
+                    module_path = self._module_symbol_to_js_path(module_id, export_name)
+                    if module_path == "":
+                        i += 1
+                        continue
+                    if local_name != "" and local_name != export_name:
+                        _add(
+                            "import { "
+                            + export_name
+                            + " as "
+                            + self._safe_name(local_name)
+                            + " } from "
+                            + self.quote_string_literal(module_path)
+                            + ";"
+                        )
+                    else:
+                        _add("import { " + export_name + " } from " + self.quote_string_literal(module_path) + ";")
+                i += 1
+            return out
+
+        for stmt in body:
+            kind = self.any_dict_get_str(stmt, "kind", "")
+            if kind == "Import":
+                for ent in self.any_to_dict_list(self.any_dict_get_list(stmt, "names")):
+                    module_id = self.any_dict_get_str(ent, "name", "")
+                    if module_id == "" or self._is_ignored_import_module(module_id):
+                        continue
+                    if self._is_browser_module(module_id):
+                        asname = self.any_dict_get_str(ent, "asname", "")
+                        if asname != "":
+                            self.browser_module_aliases[asname] = module_id
+                        continue
+                    module_path = self._module_id_to_js_path(module_id)
+                    if module_path == "":
+                        continue
+                    asname = self.any_dict_get_str(ent, "asname", "")
+                    leaf = self._last_dotted_name(module_id)
+                    alias = asname if asname != "" else leaf
+                    if alias not in used_names:
+                        continue
+                    _add("import * as " + self._safe_name(alias) + " from " + self.quote_string_literal(module_path) + ";")
+            elif kind == "ImportFrom":
+                module_id = self.any_dict_get_str(stmt, "module", "")
+                if module_id == "" or self._is_ignored_import_module(module_id):
+                    continue
+                for ent in self.any_to_dict_list(self.any_dict_get_list(stmt, "names")):
+                    name = self.any_dict_get_str(ent, "name", "")
+                    asname = self.any_dict_get_str(ent, "asname", "")
+                    if name == "":
+                        continue
+                    if self._is_browser_module(module_id):
+                        if asname != "" and asname != name:
+                            self.browser_symbol_aliases[asname] = name
+                        continue
+                    module_path = self._module_symbol_to_js_path(module_id, name)
+                    if module_path == "":
+                        continue
+                    alias_name = asname if asname != "" else name
+                    if alias_name not in used_names:
+                        continue
+                    if asname != "" and asname != name:
+                        _add("import { " + name + " as " + self._safe_name(asname) + " } from " + self.quote_string_literal(module_path) + ";")
+                    else:
+                        _add("import { " + name + " } from " + self.quote_string_literal(module_path) + ";")
+        return out
+
+    def transpile(self) -> str:
+        """モジュール全体を JavaScript ソースへ変換する。"""
+        self.lines = []
+        self.scope_stack = [set()]
+        self.declared_var_types = {}
+        self.ambient_global_aliases = {}
+        self.in_method_scope = False
+
+        module = self.doc
+        body = self._dict_stmt_list(module.get("body"))
+        main_guard_body = self._dict_stmt_list(module.get("main_guard_body"))
+        meta = self.any_to_dict_or_empty(module.get("meta"))
+        self.load_import_bindings_from_meta(meta)
+        self._collect_ambient_global_aliases(body)
+        analysis_body: list[dict[str, Any]] = []
+        for stmt in body:
+            if self._is_ambient_global_decl_stmt(stmt):
+                continue
+            analysis_body.append(stmt)
+        self.emit_module_leading_trivia()
+        self.top_function_names = set()
+        for stmt in analysis_body:
+            if self.any_dict_get_str(stmt, "kind", "") == "FunctionDef":
+                fn_name = self.any_to_str(stmt.get("name"))
+                if fn_name != "":
+                    self.top_function_names.add(fn_name)
+        used_names = self._collect_used_names(analysis_body, main_guard_body)
+        runtime_symbols = self._collect_runtime_symbols(analysis_body, main_guard_body)
+        runtime_import_line = ""
+        if len(runtime_symbols) > 0:
+            runtime_import_line = "import { " + ", ".join(runtime_symbols) + " } from " + self.quote_string_literal(_JS_OUTPUT_RUNTIME_NATIVE_ROOT + "/built_in/py_runtime.js") + ";"
+        import_lines = self._collect_import_statements(analysis_body, meta, used_names)
+        if runtime_import_line != "":
+            self.emit(runtime_import_line)
+        for line in import_lines:
+            self.emit(line)
+        if runtime_import_line != "" or len(import_lines) > 0:
+            self.emit("")
+
+        self.class_names = set()
+        for stmt in analysis_body:
+            if self.any_dict_get_str(stmt, "kind", "") == "ClassDef":
+                nm = self.any_to_str(stmt.get("name"))
+                if nm != "":
+                    self.class_names.add(nm)
+
+        top_level_stmts: list[dict[str, Any]] = []
+        for stmt in analysis_body:
+            kind = self.any_dict_get_str(stmt, "kind", "")
+            if kind == "Import" or kind == "ImportFrom":
+                continue
+            if kind == "FunctionDef":
+                self.emit_leading_comments(stmt)
+                self._emit_function(stmt, in_class="")
+                self.emit("")
+                continue
+            if kind == "ClassDef":
+                self.emit_leading_comments(stmt)
+                self._emit_class(stmt)
+                self.emit("")
+                continue
+            top_level_stmts.append(stmt)
+
+        if len(main_guard_body) > 0:
+            self.emit_stmt_list(main_guard_body)
+        elif len(top_level_stmts) > 0:
+            self.emit_stmt_list(top_level_stmts)
+        out_text = ""
+        for i, line in enumerate(self.lines):
+            if i > 0:
+                out_text += "\n"
+            out_text += line
+        if len(self.lines) > 0:
+            out_text += "\n"
+        return out_text
+
+    def _emit_class(self, stmt: dict[str, Any]) -> None:
+        """ClassDef を JavaScript class として出力する。"""
+        class_name_raw = self.any_to_str(stmt.get("name"))
+        class_name = self._safe_name(class_name_raw)
+        base_raw = self.any_to_str(stmt.get("base"))
+        base_name = ""
+        if base_raw != "" and base_raw in self.class_names:
+            base_name = self._safe_name(base_raw)
+        self.current_class_name = class_name
+        self.current_class_base_name = base_name
+        class_header = "class " + class_name
+        if base_name != "":
+            class_header += " extends " + base_name
+        self.emit(class_header + " {")
+        self.indent += 1
+        members = self._dict_stmt_list(stmt.get("body"))
+        base_type_id = "PY_TYPE_OBJECT"
+        if base_name != "":
+            base_type_id = base_name + ".PYTRA_TYPE_ID"
+        self.emit("static PYTRA_TYPE_ID = pyRegisterClassType([" + base_type_id + "]);")
+        self.emit("")
+
+        field_names: list[str] = []
+        for member in members:
+            if self.any_dict_get_str(member, "kind", "") == "AnnAssign":
+                target = self.any_to_dict_or_empty(member.get("target"))
+                if self.any_dict_get_str(target, "kind", "") == "Name":
+                    nm = self.any_dict_get_str(target, "id", "")
+                    if nm != "":
+                        field_names.append(nm)
+
+        emitted_ctor = False
+        for member in members:
+            if self.any_dict_get_str(member, "kind", "") == "FunctionDef" and self.any_to_str(member.get("name")) == "__init__":
+                self._emit_function(member, in_class=class_name)
+                emitted_ctor = True
+                break
+        if not emitted_ctor:
+            ctor_args: list[str] = []
+            for field_name in field_names:
+                ctor_args.append(self._safe_name(field_name))
+            self.emit("constructor(" + ", ".join(ctor_args) + ") {")
+            if base_name != "":
+                self.emit("super();")
+            self.emit("this[PYTRA_TYPE_ID] = " + class_name + ".PYTRA_TYPE_ID;")
+            for field_name in field_names:
+                safe = self._safe_name(field_name)
+                self.emit("this." + safe + " = " + safe + ";")
+            self.emit("}")
+
+        for member in members:
+            if self.any_dict_get_str(member, "kind", "") != "FunctionDef":
+                continue
+            name = self.any_to_str(member.get("name"))
+            if name == "__init__":
+                continue
+            self.emit("")
+            self._emit_function(member, in_class=class_name)
+
+        self.indent -= 1
+        self.emit("}")
+        self.current_class_name = ""
+        self.current_class_base_name = ""
+
+    def _ctor_has_explicit_super_init(self, body: list[dict[str, Any]]) -> bool:
+        """`super().__init__(...)` 呼び出しが ctor 本体に含まれるか判定する。"""
+        for stmt in body:
+            if self.any_dict_get_str(stmt, "kind", "") != "Expr":
+                continue
+            value_node = self.any_to_dict_or_empty(stmt.get("value"))
+            if self.any_dict_get_str(value_node, "kind", "") != "Call":
+                continue
+            func_node = self.any_to_dict_or_empty(value_node.get("func"))
+            if self.any_dict_get_str(func_node, "kind", "") != "Attribute":
+                continue
+            if self.any_dict_get_str(func_node, "attr", "") != "__init__":
+                continue
+            owner_node = self.any_to_dict_or_empty(func_node.get("value"))
+            if self.any_dict_get_str(owner_node, "kind", "") != "Call":
+                continue
+            owner_fn = self.any_to_dict_or_empty(owner_node.get("func"))
+            if self.any_dict_get_str(owner_fn, "kind", "") == "Name" and self.any_dict_get_str(owner_fn, "id", "") == "super":
+                return True
+        return False
+
+    def _emit_function(self, fn: dict[str, Any], in_class: str) -> None:
+        """FunctionDef を JavaScript 関数/メソッドとして出力する。"""
+        fn_name_raw = self.any_to_str(fn.get("name"))
+        arg_order = self.any_to_str_list(fn.get("arg_order"))
+        arg_types = self.any_to_dict_or_empty(fn.get("arg_types"))
+        args: list[str] = []
+        scope_names: set[str] = set()
+        prev_ref_vars = self.current_ref_vars
+        prev_in_method_scope = self.in_method_scope
+        self.current_ref_vars = set()
+        self.in_method_scope = in_class != ""
+
+        if in_class != "":
+            method_name = "constructor" if fn_name_raw == "__init__" else self._safe_name(fn_name_raw)
+            if len(arg_order) > 0 and arg_order[0] == "self":
+                arg_order = arg_order[1:]
+            for arg_name in arg_order:
+                args.append(self._safe_name(arg_name))
+                scope_names.add(arg_name)
+                if self._is_container_east_type(self.any_to_str(arg_types.get(arg_name))):
+                    self.current_ref_vars.add(arg_name)
+            self.emit(method_name + "(" + ", ".join(args) + ") {")
+        else:
+            fn_name = self._safe_name(fn_name_raw)
+            for arg_name in arg_order:
+                args.append(self._safe_name(arg_name))
+                scope_names.add(arg_name)
+                if self._is_container_east_type(self.any_to_str(arg_types.get(arg_name))):
+                    self.current_ref_vars.add(arg_name)
+            self.emit("function " + fn_name + "(" + ", ".join(args) + ") {")
+
+        body = self._dict_stmt_list(fn.get("body"))
+        if in_class != "" and fn_name_raw == "__init__" and self.current_class_base_name != "":
+            if not self._ctor_has_explicit_super_init(body):
+                self.emit("super();")
+        self.emit_scoped_stmt_list(body, scope_names)
+        if in_class != "" and fn_name_raw == "__init__":
+            self.emit("this[PYTRA_TYPE_ID] = " + in_class + ".PYTRA_TYPE_ID;")
+        self.emit("}")
+        self.in_method_scope = prev_in_method_scope
+        self.current_ref_vars = prev_ref_vars
+
+    def emit_stmt(self, stmt: dict[str, Any]) -> None:
+        """文ノードを JavaScript へ出力する。"""
+        self.emit_leading_comments(stmt)
+        if self.hook_on_emit_stmt(stmt) is True:
+            return
+        kind = self.any_dict_get_str(stmt, "kind", "")
+        if self.hook_on_emit_stmt_kind(kind, stmt) is True:
+            return
+
+        if kind == "Pass":
+            self.emit(self.syntax_text("pass_stmt", ";"))
+            return
+        if kind == "Break":
+            self.emit(self.syntax_text("break_stmt", "break;"))
+            return
+        if kind == "Continue":
+            self.emit(self.syntax_text("continue_stmt", "continue;"))
+            return
+        if kind == "Expr":
+            expr_d = self.any_to_dict_or_empty(stmt.get("value"))
+            if self.any_dict_get_str(expr_d, "kind", "") == "Name":
+                expr_name = self.any_dict_get_str(expr_d, "id", "")
+                if expr_name == "break":
+                    self.emit(self.syntax_text("break_stmt", "break;"))
+                    return
+                if expr_name == "continue":
+                    self.emit(self.syntax_text("continue_stmt", "continue;"))
+                    return
+                if expr_name == "pass":
+                    self.emit(self.syntax_text("pass_stmt", ";"))
+                    return
+            expr_txt = self.render_expr(stmt.get("value"))
+            self.emit(self.syntax_line("expr_stmt", "{expr};", {"expr": expr_txt}))
+            return
+        if kind == "Return":
+            if stmt.get("value") is None:
+                self.emit(self.syntax_text("return_void", "return;"))
+            else:
+                value = self.render_expr(stmt.get("value"))
+                self.emit(self.syntax_line("return_value", "return {value};", {"value": value}))
+            return
+        if kind == "Raise":
+            exc = stmt.get("exc")
+            if exc is None:
+                self.emit("throw new Error(\"raise\");")
+            else:
+                self.emit("throw " + self.render_expr(exc) + ";")
+            return
+        if kind == "Try":
+            self._emit_try(stmt)
+            return
+        if kind == "AnnAssign":
+            self._emit_annassign(stmt)
+            return
+        if kind == "Assign":
+            self._emit_assign(stmt)
+            return
+        if kind == "Swap":
+            self._emit_swap(stmt)
+            return
+        if kind == "AugAssign":
+            self._emit_augassign(stmt)
+            return
+        if kind == "If":
+            self._emit_if(stmt)
+            return
+        if kind == "While":
+            self._emit_while(stmt)
+            return
+        if kind == "ForRange":
+            self._emit_for_range(stmt)
+            return
+        if kind == "For":
+            self._emit_for(stmt)
+            return
+        if kind == "ForCore":
+            self._emit_for_core(stmt)
+            return
+        if kind == "Import" or kind == "ImportFrom":
+            return
+        if kind == "FunctionDef":
+            self._emit_function(stmt, in_class="")
+            return
+        raise RuntimeError("js emitter: unsupported stmt kind: " + kind)
+
+    def _emit_try(self, stmt: dict[str, Any]) -> None:
+        """Try/Except/Finally を JavaScript の try/catch/finally へ変換する。"""
+        self.emit("try {")
+        body = self._dict_stmt_list(stmt.get("body"))
+        self.emit_scoped_stmt_list(body, set())
+        handlers = self._dict_stmt_list(stmt.get("handlers"))
+        finalbody = self._dict_stmt_list(stmt.get("finalbody"))
+        if len(handlers) > 0:
+            first = handlers[0]
+            ex_name = self.any_to_str(first.get("name"))
+            if ex_name == "":
+                ex_name = "ex"
+            ex_name_safe = self._safe_name(ex_name)
+            self.emit("} catch (" + ex_name_safe + ") {")
+            self.emit_scoped_stmt_list(self._dict_stmt_list(first.get("body")), set([ex_name]))
+            if len(handlers) > 1:
+                raise RuntimeError("js emitter: multiple except handlers are unsupported")
+        if len(finalbody) > 0:
+            if len(handlers) == 0:
+                self.emit("} finally {")
+            else:
+                self.emit("} finally {")
+            self.emit_scoped_stmt_list(finalbody, set())
+        self.emit("}")
+
+    def _emit_if(self, stmt: dict[str, Any]) -> None:
+        cond = self.render_cond(stmt.get("test"))
+        self.emit_if_stmt_skeleton(
+            cond,
+            self._dict_stmt_list(stmt.get("body")),
+            self._dict_stmt_list(stmt.get("orelse")),
+            if_open_default="if ({cond}) {",
+            else_open_default="} else {",
+        )
+
+    def _emit_while(self, stmt: dict[str, Any]) -> None:
+        cond = self.render_cond(stmt.get("test"))
+        self.emit_while_stmt_skeleton(
+            cond,
+            self._dict_stmt_list(stmt.get("body")),
+            while_open_default="while ({cond}) {",
+        )
+
+    def _emit_for_range(self, stmt: dict[str, Any]) -> None:
+        target_node = self.any_to_dict_or_empty(stmt.get("target"))
+        target_name = self.any_dict_get_str(target_node, "id", "_i")
+        target = self._safe_name(target_name)
+        start_node = stmt.get("start")
+        start = self.render_expr(start_node)
+        stop = self.render_expr(stmt.get("stop"))
+        step = self.render_expr(stmt.get("step"))
+        start_expr = start
+        if self._node_mentions_name(start_node, target_name):
+            start_tmp = self.next_tmp("__start")
+            self.emit("const " + start_tmp + " = " + start + ";")
+            start_expr = start_tmp
+        range_mode = self.any_to_str(stmt.get("range_mode"))
+        cond = target + " < " + stop
+        inc = target + " += " + step
+        if range_mode == "descending":
+            cond = target + " > " + stop
+        elif range_mode == "dynamic":
+            cond = "((" + step + ") > 0 && " + target + " < " + stop + ") || ((" + step + ") < 0 && " + target + " > " + stop + ")"
+        body = self._dict_stmt_list(stmt.get("body"))
+        scope = set()
+        scope.add(target_name)
+        self.emit_scoped_block("for (let " + target + " = " + start_expr + "; " + cond + "; " + inc + ") {", body, scope)
+
+    def _emit_for(self, stmt: dict[str, Any]) -> None:
+        target_node = self.any_to_dict_or_empty(stmt.get("target"))
+        target_kind = self.any_dict_get_str(target_node, "kind", "")
+        target_text = "_it"
+        scope: set[str] = set()
+        if target_kind == "Tuple":
+            items = self.tuple_elements(target_node)
+            names: list[str] = []
+            for item in items:
+                d = self.any_to_dict_or_empty(item)
+                if self.any_dict_get_str(d, "kind", "") == "Name":
+                    nm = self.any_dict_get_str(d, "id", "_")
+                    names.append(self._safe_name(nm))
+                    scope.add(nm)
+                else:
+                    names.append("_")
+            target_text = "[" + ", ".join(names) + "]"
+        else:
+            target_name = self.any_dict_get_str(target_node, "id", "_it")
+            target_text = self._safe_name(target_name)
+            scope.add(target_name)
+
+        iter_node = stmt.get("iter")
+        iter_expr = self.render_expr(iter_node)
+        iter_type = self.get_expr_type(iter_node)
+        if self._text_has_prefix(iter_type, "dict[") and target_kind != "Tuple":
+            iter_expr = "Object.keys(" + iter_expr + ")"
+        body = self._dict_stmt_list(stmt.get("body"))
+        self.emit_scoped_block(
+            self.syntax_line("for_open", "for (const {target} of {iter}) {", {"target": target_text, "iter": iter_expr}),
+            body,
+            scope,
+        )
+
+    def _legacy_target_from_for_core_plan(self, plan_node: Any) -> dict[str, Any]:
+        """ForCore target_plan を既存 For/ForRange target 形へ変換する。"""
+        plan = self.any_to_dict_or_empty(plan_node)
+        kind = self.any_dict_get_str(plan, "kind", "")
+        if kind == "NameTarget":
+            return {"kind": "Name", "id": self.any_dict_get_str(plan, "id", "_")}
+        if kind == "TupleTarget":
+            elements = self.any_to_list(plan.get("elements"))
+            legacy_elements: list[dict[str, Any]] = []
+            for elem in elements:
+                legacy_elements.append(self._legacy_target_from_for_core_plan(elem))
+            return {"kind": "Tuple", "elements": legacy_elements}
+        if kind == "ExprTarget":
+            target_any = plan.get("target")
+            if isinstance(target_any, dict):
+                return target_any
+        return {"kind": "Name", "id": "_"}
+
+    def _emit_for_core(self, stmt: dict[str, Any]) -> None:
+        """ForCore を既存 For/ForRange emit へ内部変換して処理する。"""
+        iter_plan = self.any_to_dict_or_empty(stmt.get("iter_plan"))
+        target_plan = self.any_to_dict_or_empty(stmt.get("target_plan"))
+        plan_kind = self.any_dict_get_str(iter_plan, "kind", "")
+        target = self._legacy_target_from_for_core_plan(target_plan)
+        target_type = self.any_dict_get_str(target_plan, "target_type", "")
+        body = self._dict_stmt_list(stmt.get("body"))
+        orelse = self._dict_stmt_list(stmt.get("orelse"))
+        if plan_kind == "StaticRangeForPlan":
+            self._emit_for_range(
+                {
+                    "kind": "ForRange",
+                    "target": target,
+                    "target_type": target_type,
+                    "start": iter_plan.get("start"),
+                    "stop": iter_plan.get("stop"),
+                    "step": iter_plan.get("step"),
+                    "range_mode": self.resolve_forcore_static_range_mode(iter_plan, "dynamic"),
+                    "body": body,
+                    "orelse": orelse,
+                }
+            )
+            return
+        if plan_kind == "RuntimeIterForPlan":
+            self._emit_for(
+                {
+                    "kind": "For",
+                    "target": target,
+                    "target_type": target_type,
+                    "iter_mode": "runtime_protocol",
+                    "iter": iter_plan.get("iter_expr"),
+                    "body": body,
+                    "orelse": orelse,
+                }
+            )
+            return
+        raise RuntimeError("js emitter: unsupported ForCore iter_plan: " + plan_kind)
+
+    def _emit_annassign(self, stmt: dict[str, Any]) -> None:
+        target = self.any_to_dict_or_empty(stmt.get("target"))
+        ann = self.any_to_str(stmt.get("annotation"))
+        decl = self.any_to_str(stmt.get("decl_type"))
+        t_hint = ann if ann != "" else decl
+        value_obj = stmt.get("value")
+        if t_hint == "" and value_obj is not None:
+            t_hint = self.get_expr_type(value_obj)
+        if self.any_dict_get_str(target, "kind", "") != "Name":
+            t = self.render_expr(target)
+            v = self._render_assignment_value_with_hint(value_obj, t_hint, target_name_raw="")
+            self.emit(self.syntax_line("annassign_assign", "{target} = {value};", {"target": t, "value": v}))
+            return
+        name_raw = self.any_dict_get_str(target, "id", "_")
+        name = self._safe_name(name_raw)
+        if self.should_declare_name_binding(stmt, name_raw, True):
+            self.declare_in_current_scope(name_raw)
+            if t_hint != "":
+                self.declared_var_types[name_raw] = self.normalize_type_name(t_hint)
+            if value_obj is None:
+                self.emit("let " + name + ";")
+            else:
+                self.emit("let " + name + " = " + self._render_assignment_value_with_hint(value_obj, t_hint, target_name_raw=name_raw) + ";")
+            return
+        if value_obj is not None:
+            hint = self.declared_var_types.get(name_raw, t_hint)
+            self.emit(name + " = " + self._render_assignment_value_with_hint(value_obj, hint, target_name_raw=name_raw) + ";")
+
+    def _emit_assign(self, stmt: dict[str, Any]) -> None:
+        target = self.primary_assign_target(stmt)
+        value_obj = stmt.get("value")
+        value = self.render_expr(value_obj)
+        target_kind = self.any_dict_get_str(target, "kind", "")
+        if target_kind == "Name":
+            name_raw = self.any_dict_get_str(target, "id", "_")
+            name = self._safe_name(name_raw)
+            if self.should_declare_name_binding(stmt, name_raw, False):
+                self.declare_in_current_scope(name_raw)
+                t_hint = self.get_expr_type(value_obj)
+                if t_hint != "":
+                    self.declared_var_types[name_raw] = self.normalize_type_name(t_hint)
+                self.emit("let " + name + " = " + self._render_assignment_value_with_hint(value_obj, t_hint, target_name_raw=name_raw) + ";")
+            else:
+                hint = self.declared_var_types.get(name_raw, "")
+                if hint != "":
+                    self.emit(name + " = " + self._render_assignment_value_with_hint(value_obj, hint, target_name_raw=name_raw) + ";")
+                else:
+                    self.emit(name + " = " + value + ";")
+            return
+        if target_kind == "Tuple":
+            items = self.tuple_elements(target)
+            if len(items) == 0:
+                return
+            tmp_name = self.next_tmp("__tmp")
+            self.emit("const " + tmp_name + " = " + value + ";")
+            i = 0
+            while i < len(items):
+                item_node = self.any_to_dict_or_empty(items[i])
+                item_expr = tmp_name + "[" + str(i) + "]"
+                item_kind = self.any_dict_get_str(item_node, "kind", "")
+                if item_kind == "Name":
+                    raw = self.any_dict_get_str(item_node, "id", "")
+                    if raw != "":
+                        safe = self._safe_name(raw)
+                        if not self.is_declared(raw):
+                            self.declare_in_current_scope(raw)
+                            self.emit("let " + safe + " = " + item_expr + ";")
+                        else:
+                            self.emit(safe + " = " + item_expr + ";")
+                    i += 1
+                    continue
+                self.emit(self.render_expr(item_node) + " = " + item_expr + ";")
+                i += 1
+            return
+        self.emit(self.render_expr(target) + " = " + value + ";")
+
+    def _emit_swap(self, stmt: dict[str, Any]) -> None:
+        left = self.render_expr(stmt.get("left"))
+        right = self.render_expr(stmt.get("right"))
+        tmp_name = self.next_tmp("__swap")
+        self.emit("const " + tmp_name + " = " + left + ";")
+        self.emit(left + " = " + right + ";")
+        self.emit(right + " = " + tmp_name + ";")
+
+    def _emit_augassign(self, stmt: dict[str, Any]) -> None:
+        target, value, mapped = self.render_augassign_basic(stmt, self.aug_ops, "+=")
+        self.emit(self.syntax_line("augassign_apply", "{target} {op} {value};", {"target": target, "op": mapped, "value": value}))
+
+    def _render_compare(self, expr: dict[str, Any]) -> str:
+        left_node = self.any_to_dict_or_empty(expr.get("left"))
+        left = self.render_expr(left_node)
+        ops = self.any_to_str_list(expr.get("ops"))
+        comps = self.any_to_list(expr.get("comparators"))
+        right_exprs: list[str] = []
+        pair_count = len(ops)
+        if len(comps) < pair_count:
+            pair_count = len(comps)
+        i = 0
+        while i < pair_count:
+            right_exprs.append(self.render_expr(comps[i]))
+            i += 1
+        if pair_count == 0:
+            return "false"
+        terms: list[str] = []
+        cur_left = left
+        j = 0
+        while j < pair_count:
+            op = ops[j]
+            right = right_exprs[j]
+            right_node = self.any_to_dict_or_empty(comps[j])
+            right_t = self.get_expr_type(right_node)
+            term = ""
+            if op == "In" or op == "NotIn":
+                if self._text_has_prefix(right_t, "dict["):
+                    term = "Object.prototype.hasOwnProperty.call(" + right + ", " + cur_left + ")"
+                elif self._text_has_prefix(right_t, "list[") or right_t == "bytes" or right_t == "bytearray" or right_t == "str":
+                    term = "(" + right + ").includes(" + cur_left + ")"
+                else:
+                    term = "(" + cur_left + " in " + right + ")"
+                if op == "NotIn":
+                    term = "!(" + term + ")"
+            else:
+                mapped = self.cmp_ops.get(op, "==")
+                term = cur_left + " " + mapped + " " + right
+            terms.append(term)
+            cur_left = right
+            j += 1
+        if len(terms) == 1:
+            return terms[0]
+        return " && ".join(terms)
+
+    def _render_isinstance_type_check(self, value_expr: str, type_name: str) -> str:
+        """`isinstance(x, T)` の `T` を JS runtime API 判定式へ変換する。"""
+        type_id_map = {
+            "str": "PY_TYPE_STRING",
+            "list": "PY_TYPE_ARRAY",
+            "dict": "PY_TYPE_MAP",
+            "set": "PY_TYPE_SET",
+            "int": "PY_TYPE_NUMBER",
+            "float": "PY_TYPE_NUMBER",
+            "bool": "PY_TYPE_BOOL",
+            "object": "PY_TYPE_OBJECT",
+        }
+        if type_name in type_id_map:
+            return "pyIsInstance(" + value_expr + ", " + type_id_map[type_name] + ")"
+        if type_name in self.class_names:
+            return "pyIsInstance(" + value_expr + ", " + self._safe_name(type_name) + ".PYTRA_TYPE_ID)"
+        return ""
+
+    def _render_isinstance_call(self, rendered_args: list[str], arg_nodes: list[Any]) -> str:
+        """`isinstance(...)` 呼び出しを JS runtime API へ lower する。"""
+        if len(rendered_args) != 2:
+            return "false"
+        rhs_node = self.any_to_dict_or_empty(arg_nodes[1] if len(arg_nodes) > 1 else None)
+        rhs_kind = self.any_dict_get_str(rhs_node, "kind", "")
+        if rhs_kind == "Name":
+            rhs_name = self.any_dict_get_str(rhs_node, "id", "")
+            lowered = self._render_isinstance_type_check(rendered_args[0], rhs_name)
+            if lowered != "":
+                return lowered
+            return "false"
+        if rhs_kind == "Tuple":
+            checks: list[str] = []
+            for elt in self.tuple_elements(rhs_node):
+                e_node = self.any_to_dict_or_empty(elt)
+                if self.any_dict_get_str(e_node, "kind", "") != "Name":
+                    continue
+                e_name = self.any_dict_get_str(e_node, "id", "")
+                lowered = self._render_isinstance_type_check(rendered_args[0], e_name)
+                if lowered != "":
+                    checks.append(lowered)
+            if len(checks) > 0:
+                return " || ".join(checks)
+        return "false"
+
+    def _render_type_id_expr(self, expr_node: Any) -> str:
+        """type_id 式を JS runtime 互換の識別子へ変換する。"""
+        expr_d = self.any_to_dict_or_empty(expr_node)
+        if self.any_dict_get_str(expr_d, "kind", "") == "Name":
+            name = self.any_dict_get_str(expr_d, "id", "")
+            symbol_map = {
+                "PYTRA_TID_BOOL": "PY_TYPE_BOOL",
+                "PYTRA_TID_INT": "PY_TYPE_NUMBER",
+                "PYTRA_TID_FLOAT": "PY_TYPE_NUMBER",
+                "PYTRA_TID_STR": "PY_TYPE_STRING",
+                "PYTRA_TID_LIST": "PY_TYPE_ARRAY",
+                "PYTRA_TID_DICT": "PY_TYPE_MAP",
+                "PYTRA_TID_SET": "PY_TYPE_SET",
+                "PYTRA_TID_OBJECT": "PY_TYPE_OBJECT",
+                "bool": "PY_TYPE_BOOL",
+                "int": "PY_TYPE_NUMBER",
+                "float": "PY_TYPE_NUMBER",
+                "str": "PY_TYPE_STRING",
+                "list": "PY_TYPE_ARRAY",
+                "dict": "PY_TYPE_MAP",
+                "set": "PY_TYPE_SET",
+                "object": "PY_TYPE_OBJECT",
+            }
+            mapped = symbol_map.get(name, "")
+            if mapped != "":
+                return mapped
+            if name in self.class_names:
+                return self._safe_name(name) + ".PYTRA_TYPE_ID"
+        return self.render_expr(expr_node)
+
+    def _render_list_repeat(self, base_expr: str, count_expr: str) -> str:
+        """Python の list 乗算（`[x] * n`）を JS 式へ lower する。"""
+        return (
+            "(() => { const __base = (" + base_expr + "); const __n = Math.max(0, Math.trunc(Number(" + count_expr + "))); "
+            "let __out = []; for (let __i = 0; __i < __n; __i += 1) { for (const __v of __base) { __out.push(__v); } } return __out; })()"
+        )
+
+    def _render_range_expr(self, expr_d: dict[str, Any]) -> str:
+        """RangeExpr を JavaScript 配列式へ lower する。"""
+        start = self.render_expr(expr_d.get("start"))
+        stop = self.render_expr(expr_d.get("stop"))
+        step = self.render_expr(expr_d.get("step"))
+        return (
+            "(() => { const __out = []; const __start = " + start + "; const __stop = " + stop + "; const __step = " + step + "; "
+            "if (__step === 0) { return __out; } "
+            "if (__step > 0) { for (let __i = __start; __i < __stop; __i += __step) { __out.push(__i); } } "
+            "else { for (let __i = __start; __i > __stop; __i += __step) { __out.push(__i); } } "
+            "return __out; })()"
+        )
+
+    def _render_comp_target(self, target_node: dict[str, Any]) -> str:
+        """comprehension target を JS `for..of` で使える形へ変換する。"""
+        kind = self.any_dict_get_str(target_node, "kind", "")
+        if kind == "Name":
+            return self._safe_name(self.any_dict_get_str(target_node, "id", "_"))
+        if kind == "Tuple":
+            parts: list[str] = []
+            for item in self.tuple_elements(target_node):
+                item_d = self.any_to_dict_or_empty(item)
+                if self.any_dict_get_str(item_d, "kind", "") == "Name":
+                    parts.append(self._safe_name(self.any_dict_get_str(item_d, "id", "_")))
+                else:
+                    parts.append("_")
+            return "[" + ", ".join(parts) + "]"
+        return "_"
+
+    def _render_list_comp_expr(self, expr_d: dict[str, Any]) -> str:
+        """ListComp を JavaScript 配列構築式へ lower する。"""
+        generators = self.any_to_list(expr_d.get("generators"))
+        if len(generators) == 0:
+            return "[]"
+        elt_expr = self.render_expr(expr_d.get("elt"))
+        lines: list[str] = []
+        lines.append("(() => {")
+        lines.append("let __out = [];")
+        depth = 0
+        for gen in generators:
+            gen_d = self.any_to_dict_or_empty(gen)
+            target_txt = self._render_comp_target(self.any_to_dict_or_empty(gen_d.get("target")))
+            iter_expr = self.render_expr(gen_d.get("iter"))
+            lines.append("for (const " + target_txt + " of " + iter_expr + ") {")
+            depth += 1
+            for cond_node in self.any_to_list(gen_d.get("ifs")):
+                lines.append("if (!(" + self.render_cond(cond_node) + ")) { continue; }")
+        lines.append("__out.push(" + elt_expr + ");")
+        while depth > 0:
+            lines.append("}")
+            depth -= 1
+        lines.append("return __out;")
+        lines.append("})()")
+        return " ".join(lines)
+
+    def _render_name_call(self, fn_name_raw: str, rendered_args: list[str], arg_nodes: list[Any]) -> str:
+        """組み込み関数呼び出しを JavaScript 式へ変換する。"""
+        fn_name = self._safe_name(fn_name_raw)
+        if self._text_has_prefix(fn_name_raw, "py_assert_"):
+            return '"True"'
+        if fn_name_raw == "main" and "__pytra_main" in self.top_function_names and "main" not in self.top_function_names:
+            fn_name = "__pytra_main"
+        if fn_name_raw == "isinstance":
+            return self._render_isinstance_call(rendered_args, arg_nodes)
+        if fn_name_raw == "print":
+            return "console.log(" + ", ".join(rendered_args) + ")"
+        if fn_name_raw == "len" and len(rendered_args) == 1:
+            return "(" + rendered_args[0] + ").length"
+        if fn_name_raw == "str" and len(rendered_args) == 1:
+            return "String(" + rendered_args[0] + ")"
+        if fn_name_raw == "int" and len(rendered_args) == 1:
+            return "Math.trunc(Number(" + rendered_args[0] + "))"
+        if fn_name_raw == "float" and len(rendered_args) == 1:
+            return "Number(" + rendered_args[0] + ")"
+        if fn_name_raw == "bool" and len(rendered_args) == 1:
+            return "Boolean(" + rendered_args[0] + ")"
+        if fn_name_raw == "max" and len(rendered_args) >= 1:
+            expr_txt = rendered_args[0]
+            i = 1
+            while i < len(rendered_args):
+                expr_txt = "Math.max(" + expr_txt + ", " + rendered_args[i] + ")"
+                i += 1
+            return expr_txt
+        if fn_name_raw == "min" and len(rendered_args) >= 1:
+            expr_txt = rendered_args[0]
+            i = 1
+            while i < len(rendered_args):
+                expr_txt = "Math.min(" + expr_txt + ", " + rendered_args[i] + ")"
+                i += 1
+            return expr_txt
+        if (
+            fn_name_raw == "Exception"
+            or fn_name_raw == "RuntimeError"
+            or fn_name_raw == "ValueError"
+            or fn_name_raw == "TypeError"
+            or fn_name_raw == "KeyError"
+            or fn_name_raw == "IndexError"
+        ):
+            if len(rendered_args) >= 1:
+                return "new Error(" + rendered_args[0] + ")"
+            return "new Error(" + self.quote_string_literal(fn_name_raw) + ")"
+        if fn_name_raw in self.class_names:
+            return "new " + fn_name_raw + "(" + ", ".join(rendered_args) + ")"
+        if fn_name_raw in self.ambient_global_aliases:
+            return self.ambient_global_aliases[fn_name_raw] + "(" + ", ".join(rendered_args) + ")"
+        if fn_name_raw == "enumerate" and len(rendered_args) == 1:
+            arg0 = rendered_args[0]
+            return arg0 + ".map((__v, __i) => [__i, __v])"
+        if fn_name_raw == "enumerate" and len(rendered_args) >= 2:
+            arg0 = rendered_args[0]
+            arg1 = rendered_args[1]
+            return arg0 + ".map((__v, __i) => [__i + (" + arg1 + "), __v])"
+        if fn_name_raw == "bytearray":
+            if len(rendered_args) == 0:
+                return "[]"
+            if len(rendered_args) == 1:
+                arg0 = rendered_args[0]
+                arg0_expr = "(" + arg0 + ")"
+                return "(typeof " + arg0_expr + " === \"number\" ? new Array(Math.max(0, Math.trunc(Number(" + arg0_expr + ")))).fill(0) : (Array.isArray(" + arg0_expr + ") ? " + arg0_expr + ".slice() : Array.from(" + arg0_expr + ")))"
+            return "[]"
+        if fn_name_raw == "bytes":
+            if len(rendered_args) == 0:
+                return "[]"
+            arg0_expr = "(" + rendered_args[0] + ")"
+            return "(Array.isArray(" + arg0_expr + ") ? " + arg0_expr + ".slice() : Array.from(" + arg0_expr + "))"
+        _ = arg_nodes
+        return fn_name + "(" + ", ".join(rendered_args) + ")"
+
+    def _render_attr_call(self, owner_node: dict[str, Any], attr_raw: str, rendered_args: list[str]) -> str:
+        """属性呼び出しを JavaScript 式へ変換する。"""
+        owner_kind = self.any_dict_get_str(owner_node, "kind", "")
+        if owner_kind == "Call":
+            owner_fn = self.any_to_dict_or_empty(owner_node.get("func"))
+            if self.any_dict_get_str(owner_fn, "kind", "") == "Name" and self.any_dict_get_str(owner_fn, "id", "") == "super":
+                if attr_raw == "__init__":
+                    return "super(" + ", ".join(rendered_args) + ")"
+                return "super." + self._safe_name(attr_raw) + "(" + ", ".join(rendered_args) + ")"
+        owner_expr = self.render_expr(owner_node)
+        owner_type = self.get_expr_type(owner_node)
+
+        if self._text_has_prefix(owner_type, "list[") or owner_type == "bytes" or owner_type == "bytearray":
+            if attr_raw == "append" and len(rendered_args) == 1:
+                return owner_expr + ".push(" + rendered_args[0] + ")"
+            if attr_raw == "clear" and len(rendered_args) == 0:
+                return owner_expr + ".length = 0"
+            if attr_raw == "pop" and len(rendered_args) == 0:
+                return owner_expr + ".pop()"
+            if attr_raw == "pop" and len(rendered_args) >= 1:
+                return owner_expr + ".splice(" + rendered_args[0] + ", 1)[0]"
+
+        if owner_type == "str":
+            if attr_raw == "isdigit" and len(rendered_args) == 0:
+                return "((typeof " + owner_expr + " === \"string\") && (" + owner_expr + ").length > 0 && (/^[0-9]+$/.test(" + owner_expr + ")))"
+            if attr_raw == "isalpha" and len(rendered_args) == 0:
+                return "((typeof " + owner_expr + " === \"string\") && (" + owner_expr + ").length > 0 && (/^[A-Za-z]+$/.test(" + owner_expr + ")))"
+
+        if self._text_has_prefix(owner_type, "dict["):
+            if attr_raw == "get":
+                if len(rendered_args) == 1:
+                    k = rendered_args[0]
+                    return "(Object.prototype.hasOwnProperty.call(" + owner_expr + ", " + k + ") ? " + owner_expr + "[" + k + "] : null)"
+                if len(rendered_args) >= 2:
+                    k = rendered_args[0]
+                    d = rendered_args[1]
+                    return "(Object.prototype.hasOwnProperty.call(" + owner_expr + ", " + k + ") ? " + owner_expr + "[" + k + "] : " + d + ")"
+            if attr_raw == "items" and len(rendered_args) == 0:
+                return "Object.entries(" + owner_expr + ")"
+            if attr_raw == "keys" and len(rendered_args) == 0:
+                return "Object.keys(" + owner_expr + ")"
+            if attr_raw == "values" and len(rendered_args) == 0:
+                return "Object.values(" + owner_expr + ")"
+
+        if attr_raw == "items" and len(rendered_args) == 0:
+            return "Object.entries(" + owner_expr + ")"
+        if attr_raw == "keys" and len(rendered_args) == 0:
+            return "Object.keys(" + owner_expr + ")"
+        if attr_raw == "values" and len(rendered_args) == 0:
+            return "Object.values(" + owner_expr + ")"
+
+        attr = self._safe_name(attr_raw)
+        return owner_expr + "." + attr + "(" + ", ".join(rendered_args) + ")"
+
+    def _resolved_runtime_matches_semantic_tag(self, runtime_call: str, semantic_tag: str) -> bool:
+        if not semantic_tag.startswith("stdlib."):
+            return True
+        tail = semantic_tag.rsplit(".", 1)[-1].strip()
+        call = runtime_call.strip()
+        if tail == "" or call == "":
+            return False
+        if call == tail:
+            return True
+        return call.endswith("." + tail)
+
+    def _resolved_runtime_call(self, expr: dict[str, Any]) -> tuple[str, str]:
+        runtime_call = self.any_dict_get_str(expr, "runtime_call", "")
+        if runtime_call != "":
+            return runtime_call, "runtime_call"
+        resolved_runtime_call = self.any_dict_get_str(expr, "resolved_runtime_call", "")
+        if resolved_runtime_call != "":
+            return resolved_runtime_call, "resolved_runtime_call"
+        return "", ""
+
+    def _render_call(self, expr: dict[str, Any]) -> str:
+        semantic_tag = self.any_dict_get_str(expr, "semantic_tag", "")
+        runtime_call, runtime_source = self._resolved_runtime_call(expr)
+        if semantic_tag.startswith("stdlib.") and semantic_tag != "stdlib.symbol.Path" and runtime_call == "":
+            raise RuntimeError("js emitter: unresolved stdlib runtime call: " + semantic_tag)
+        if semantic_tag.startswith("stdlib.") and runtime_source == "resolved_runtime_call":
+            if not self._resolved_runtime_matches_semantic_tag(runtime_call, semantic_tag):
+                raise RuntimeError(
+                    "js emitter: unresolved stdlib runtime mapping: "
+                    + semantic_tag
+                    + " ("
+                    + runtime_call
+                    + ")"
+                )
+
+        parts = self.prepare_call_context(expr)
+        fn_node = self.any_to_dict_or_empty(parts.get("fn"))
+        fn_kind = self.any_dict_get_str(fn_node, "kind", "")
+        args_raw = self.any_to_list(parts.get("args"))
+        kw_values_raw = self.any_to_list(parts.get("kw_values"))
+        args: list[str] = []
+        i = 0
+        while i < len(args_raw):
+            args.append(self.any_to_str(args_raw[i]))
+            i += 1
+        kw_values: list[str] = []
+        i = 0
+        while i < len(kw_values_raw):
+            kw_values.append(self.any_to_str(kw_values_raw[i]))
+            i += 1
+        args = self.merge_call_kw_values(args, kw_values)
+        arg_nodes = self.merge_call_arg_nodes(
+            self.any_to_list(parts.get("arg_nodes")),
+            self.any_to_list(parts.get("kw_nodes")),
+        )
+
+        rendered_args: list[str] = []
+        i = 0
+        while i < len(args):
+            rendered_args.append(args[i])
+            i += 1
+
+        if fn_kind == "Name":
+            fn_name_raw = self.any_dict_get_str(fn_node, "id", "")
+            return self._render_name_call(fn_name_raw, rendered_args, arg_nodes)
+        if fn_kind == "Attribute":
+            owner_node = self.any_to_dict_or_empty(fn_node.get("value"))
+            attr_raw = self.any_dict_get_str(fn_node, "attr", "")
+            return self._render_attr_call(owner_node, attr_raw, rendered_args)
+        fn_expr = self.render_expr(fn_node)
+        return fn_expr + "(" + ", ".join(rendered_args) + ")"
+
+    def render_expr(self, expr: Any) -> str:
+        """式ノードを JavaScript へ描画する。"""
+        expr_d = self.any_to_dict_or_empty(expr)
+        if len(expr_d) == 0:
+            return "undefined"
+        kind = self.any_dict_get_str(expr_d, "kind", "")
+
+        hook_specific = self.hook_on_render_expr_kind_specific(kind, expr_d)
+        if hook_specific != "":
+            return hook_specific
+        hook_leaf = self.hook_on_render_expr_leaf(kind, expr_d)
+        if hook_leaf != "":
+            return hook_leaf
+
+        if kind == "Name":
+            name = self.any_dict_get_str(expr_d, "id", "_")
+            if name in self.ambient_global_aliases:
+                return self.ambient_global_aliases[name]
+            if name in self.browser_symbol_aliases:
+                return self.browser_symbol_aliases[name]
+            if name == "main" and "__pytra_main" in self.top_function_names and "main" not in self.top_function_names:
+                return "__pytra_main"
+            if name == "self" and self.in_method_scope:
+                return "this"
+            return self._safe_name(name)
+        if kind == "Constant":
+            tag, non_str = self.render_constant_non_string_common(expr, expr_d, "null", "null")
+            if tag == "1":
+                return non_str
+            val = self.any_to_str(expr_d.get("value"))
+            return self.quote_string_literal(val)
+        if kind == "JoinedStr":
+            values = self.any_to_list(expr_d.get("values"))
+            if len(values) == 0:
+                return '""'
+            parts: list[str] = []
+            for item in values:
+                item_d = self.any_to_dict_or_empty(item)
+                item_kind = self.any_dict_get_str(item_d, "kind", "")
+                if item_kind == "Constant" and isinstance(item_d.get("value"), str):
+                    parts.append(self.render_expr(item_d))
+                    continue
+                if item_kind == "FormattedValue":
+                    parts.append("String(" + self.render_expr(item_d.get("value")) + ")")
+                    continue
+                parts.append("String(" + self.render_expr(item_d) + ")")
+            return "(" + " + ".join(parts) + ")"
+        if kind == "Attribute":
+            owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
+            owner_expr = self.render_expr(owner_node)
+            attr = self._safe_name(self.any_dict_get_str(expr_d, "attr", ""))
+            semantic_tag = self.any_dict_get_str(expr_d, "semantic_tag", "")
+            runtime_call, runtime_source = self._resolved_runtime_call(expr_d)
+            if semantic_tag.startswith("stdlib.") and runtime_call == "":
+                raise RuntimeError("js emitter: unresolved stdlib runtime attribute: " + semantic_tag)
+            if semantic_tag.startswith("stdlib.") and runtime_source == "resolved_runtime_call":
+                if not self._resolved_runtime_matches_semantic_tag(runtime_call, semantic_tag):
+                    raise RuntimeError(
+                        "js emitter: unresolved stdlib runtime attribute mapping: "
+                        + semantic_tag
+                        + " ("
+                        + runtime_call
+                        + ")"
+                    )
+            return owner_expr + "." + attr
+        if kind == "UnaryOp":
+            op = self.any_dict_get_str(expr_d, "op", "")
+            operand_node = self.any_to_dict_or_empty(expr_d.get("operand"))
+            operand = self.render_expr(operand_node)
+            operand_kind = self.any_dict_get_str(operand_node, "kind", "")
+            simple_operand = (
+                operand_kind == "Name"
+                or operand_kind == "Constant"
+                or operand_kind == "Call"
+                or operand_kind == "Attribute"
+                or operand_kind == "Subscript"
+            )
+            if op == "USub":
+                if simple_operand:
+                    return "-" + operand
+                return "-(" + operand + ")"
+            if op == "Invert":
+                if simple_operand:
+                    return "~" + operand
+                return "~(" + operand + ")"
+            if op == "Not":
+                if simple_operand:
+                    return "!" + operand
+                return "!(" + operand + ")"
+            return operand
+        if kind == "BinOp":
+            op = self.any_to_str(expr_d.get("op"))
+            left_node = self.any_to_dict_or_empty(expr_d.get("left"))
+            right_node = self.any_to_dict_or_empty(expr_d.get("right"))
+            left = self._wrap_for_binop_operand(self.render_expr(left_node), left_node, op, is_right=False)
+            right = self._wrap_for_binop_operand(self.render_expr(right_node), right_node, op, is_right=True)
+            left_kind = self.any_dict_get_str(left_node, "kind", "")
+            right_kind = self.any_dict_get_str(right_node, "kind", "")
+            custom = self.hook_on_render_binop(expr_d, left, right)
+            if custom != "":
+                return custom
+            if op == "FloorDiv":
+                return "Math.floor(" + left + " / " + right + ")"
+            if op == "Mult":
+                if left_kind == "List" and right_kind != "List":
+                    return self._render_list_repeat(left, right)
+                if right_kind == "List" and left_kind != "List":
+                    return self._render_list_repeat(right, left)
+            mapped = self.bin_ops.get(op, "+")
+            return left + " " + mapped + " " + right
+        if kind == "Compare":
+            return self._render_compare(expr_d)
+        if kind == "BoolOp":
+            vals = self.any_to_list(expr_d.get("values"))
+            op = self.any_to_str(expr_d.get("op"))
+            return self.render_boolop_chain_common(
+                vals,
+                op,
+                and_token="&&",
+                or_token="||",
+                empty_literal="false",
+                wrap_each=False,
+                wrap_whole=False,
+            )
+        if kind == "Call":
+            hook = self.hook_on_render_call(expr_d, self.any_to_dict_or_empty(expr_d.get("func")), [], {})
+            if hook != "":
+                return hook
+            return self._render_call(expr_d)
+        if kind == "IfExp":
+            return self._render_ifexp_expr(expr_d)
+        if kind == "ObjBool":
+            value = self.render_expr(expr_d.get("value"))
+            return "pyBool(" + value + ")"
+        if kind == "ObjLen":
+            value = self.render_expr(expr_d.get("value"))
+            return "pyLen(" + value + ")"
+        if kind == "ObjStr":
+            value = self.render_expr(expr_d.get("value"))
+            return "pyStr(" + value + ")"
+        if kind == "ObjIterInit":
+            value = self.render_expr(expr_d.get("value"))
+            return "((" + value + ")[Symbol.iterator]())"
+        if kind == "ObjIterNext":
+            iter_expr = self.render_expr(expr_d.get("iter"))
+            return "(() => { const __next = (" + iter_expr + ").next(); return __next.done ? null : __next.value; })()"
+        if kind == "ObjTypeId":
+            value = self.render_expr(expr_d.get("value"))
+            return "pyTypeId(" + value + ")"
+        if kind == "IsInstance":
+            value = self.render_expr(expr_d.get("value"))
+            expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
+            return "pyIsInstance(" + value + ", " + expected + ")"
+        if kind == "IsSubtype" or kind == "IsSubclass":
+            actual = self._render_type_id_expr(expr_d.get("actual_type_id"))
+            expected = self._render_type_id_expr(expr_d.get("expected_type_id"))
+            return "pyIsSubtype(" + actual + ", " + expected + ")"
+        if kind == "Box" or kind == "Unbox":
+            return self.render_expr(expr_d.get("value"))
+        if kind == "RangeExpr":
+            return self._render_range_expr(expr_d)
+        if kind == "ListComp":
+            return self._render_list_comp_expr(expr_d)
+        if kind == "List":
+            elts = self.any_to_list(expr_d.get("elts"))
+            if len(elts) == 0:
+                elts = self.any_to_list(expr_d.get("elements"))
+            rendered: list[str] = []
+            for elt in elts:
+                rendered.append(self.render_expr(elt))
+            return "[" + ", ".join(rendered) + "]"
+        if kind == "Tuple":
+            elts = self.tuple_elements(expr_d)
+            rendered = []
+            for elt in elts:
+                rendered.append(self.render_expr(elt))
+            return "[" + ", ".join(rendered) + "]"
+        if kind == "Dict":
+            entries = self.any_to_list(expr_d.get("entries"))
+            parts: list[str] = []
+            parts.append("[PYTRA_TYPE_ID]: PY_TYPE_MAP")
+            i = 0
+            while i < len(entries):
+                ent = self.any_to_dict_or_empty(entries[i])
+                key_node = self.any_to_dict_or_empty(ent.get("key"))
+                val_node = ent.get("value")
+                key_kind = self.any_dict_get_str(key_node, "kind", "")
+                if key_kind == "Constant":
+                    key_val = self.any_to_str(key_node.get("value"))
+                    parts.append(self.quote_string_literal(key_val) + ": " + self.render_expr(val_node))
+                else:
+                    key_expr = self.render_expr(key_node)
+                    parts.append("[" + key_expr + "]: " + self.render_expr(val_node))
+                i += 1
+            return "({" + ", ".join(parts) + "})"
+        if kind == "Subscript":
+            owner_node = self.any_to_dict_or_empty(expr_d.get("value"))
+            owner = self.render_expr(owner_node)
+            owner_t = self.get_expr_type(owner_node)
+            idx_node = self.any_to_dict_or_empty(expr_d.get("slice"))
+            idx_kind = self.any_dict_get_str(idx_node, "kind", "")
+            if idx_kind == "Slice":
+                lower_node = idx_node.get("lower")
+                upper_node = idx_node.get("upper")
+                step_node = idx_node.get("step")
+                has_lower = lower_node is not None and len(self.any_to_dict_or_empty(lower_node)) > 0
+                has_upper = upper_node is not None and len(self.any_to_dict_or_empty(upper_node)) > 0
+                has_step = step_node is not None and len(self.any_to_dict_or_empty(step_node)) > 0
+                if has_step:
+                    step_expr = self.render_expr(step_node)
+                    if has_lower and has_upper:
+                        return owner + ".slice(" + self.render_expr(lower_node) + ", " + self.render_expr(upper_node) + ").filter((_, i) => i % (" + step_expr + ") === 0)"
+                    if has_lower:
+                        return owner + ".slice(" + self.render_expr(lower_node) + ").filter((_, i) => i % (" + step_expr + ") === 0)"
+                    if has_upper:
+                        return owner + ".slice(0, " + self.render_expr(upper_node) + ").filter((_, i) => i % (" + step_expr + ") === 0)"
+                    return owner + ".filter((_, i) => i % (" + step_expr + ") === 0)"
+                if has_lower and has_upper:
+                    return owner + ".slice(" + self.render_expr(lower_node) + ", " + self.render_expr(upper_node) + ")"
+                if has_lower:
+                    return owner + ".slice(" + self.render_expr(lower_node) + ")"
+                if has_upper:
+                    return owner + ".slice(0, " + self.render_expr(upper_node) + ")"
+                return owner + ".slice()"
+            idx = self.render_expr(idx_node)
+            if self.is_indexable_sequence_type(owner_t):
+                return owner + "[(((" + idx + ") < 0) ? ((" + owner + ").length + (" + idx + ")) : (" + idx + "))]"
+            return owner + "[" + idx + "]"
+        if kind == "Lambda":
+            args_obj = self.any_to_dict_or_empty(expr_d.get("args"))
+            args = self.any_to_list(args_obj.get("args"))
+            arg_names: list[str] = []
+            for arg in args:
+                ad = self.any_to_dict_or_empty(arg)
+                arg_names.append(self._safe_name(self.any_to_str(ad.get("arg"))))
+            body = self.render_expr(expr_d.get("body"))
+            return "(" + ", ".join(arg_names) + ") => " + body
+
+        hook_complex = self.hook_on_render_expr_complex(expr_d)
+        if hook_complex != "":
+            return hook_complex
+        return self.any_to_str(expr_d.get("repr"))
+
+    def render_cond(self, expr: Any) -> str:
+        """条件式向け描画（シーケンスを真偽値へ寄せる）。"""
+        return self.render_truthy_cond_common(
+            expr,
+            str_non_empty_pattern="({expr}).length !== 0",
+            collection_non_empty_pattern="({expr}).length !== 0",
+            # JS backend は数値条件をそのまま使う既存挙動を維持する。
+            number_non_zero_pattern="{expr}",
+        )
+
+
+def transpile_to_js(east_doc: dict[str, Any]) -> str:
+    """EAST ドキュメントを JavaScript コードへ変換する。"""
+    reject_backend_typed_vararg_signatures(east_doc, backend_name="JS backend")
+    reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="JS backend")
+    emitter = JsEmitter(east_doc)
+    return emitter.transpile()

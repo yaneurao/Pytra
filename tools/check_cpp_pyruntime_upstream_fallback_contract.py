@@ -90,14 +90,14 @@ def _collect_boundary_guard_issues() -> list[str]:
         issues.append("typed-lane removable bucket must stay empty until shrink slices land")
     object_bridge_required = contract_inventory_mod.EXPECTED_BUCKETS["object_bridge_required"]
     if object_bridge_required != {
-        ("py_append", "src/backends/cs/emitter/cs_emitter.py"),
-        ("py_pop", "src/backends/cs/emitter/cs_emitter.py"),
+        ("py_append", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
+        ("py_pop", "src/toolchain/emit/cs/emitter/cs_emitter.py"),
     }:
         issues.append("cross-runtime object-bridge required bucket drifted")
     shared = contract_inventory_mod.EXPECTED_BUCKETS["shared_runtime_contract"]
-    if ("py_append", "src/backends/cpp/emitter/cpp_emitter.py") in shared:
+    if ("py_append", "src/toolchain/emit/cpp/emitter/cpp_emitter.py") in shared:
         issues.append("cpp typed-lane append re-entered the shared runtime contract bucket")
-    if ("py_append", "src/backends/cs/emitter/cs_emitter.py") in shared:
+    if ("py_append", "src/toolchain/emit/cs/emitter/cs_emitter.py") in shared:
         issues.append("cross-runtime bytes append helper leaked into shared runtime contract bucket")
     return issues
 

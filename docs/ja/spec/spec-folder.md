@@ -31,7 +31,7 @@
   - `src/runtime/<lang>/`（ターゲット言語固有の手書きランタイムコード。`native/` 階層は廃止済み）
   - 非 C++ / 非 C# backend の checked-in `src/runtime/<lang>/pytra/**` は存在してはならず、再出現は contract fail とする。
   - repo 正本 layout は `src/runtime/<lang>/{generated,native}/` のみを許可する。
-  - `src/backends/`
+  - `src/toolchain/emit/`
 - 置かないもの:
   - 運用ログ、検証一時生成物、手順ドキュメント
 
@@ -114,7 +114,7 @@
   - `frontends` / `ir` / `compiler` の実体実装
   - backend 固有ロジック
 
-### 3.3 `src/backends/`
+### 3.3 `src/toolchain/emit/`
 
 - 目的: 言語固有の構文差分を吸収する。
 - 置くもの: backendごとのhook実装
@@ -122,7 +122,7 @@
 
 #### 3.3.1 backend パイプラインの標準ディレクトリ
 
-- 各 backend の標準構成は `src/backends/<lang>/{lower,optimizer,emitter}/` とする。
+- 各 backend の標準構成は `src/toolchain/emit/<lang>/{lower,optimizer,emitter}/` とする。
 - 役割は次で固定する。
   - `lower/`: `EAST3 -> <LangIR>` への言語固有 lowering
   - `optimizer/`: `<LangIR> -> <LangIR>` の言語固有最適化
@@ -139,14 +139,14 @@
 - `extensions/` 配下の命名は機能名を固定語でそろえる。
   - 例: `extensions/runtime/`, `extensions/packaging/`, `extensions/integration/`
 - `header/`, `multifile/`, `runtime_emit/`, `hooks/` など言語ごとの独自名ディレクトリは、新規追加を禁止し、段階的に `extensions/<topic>/` へ寄せる。
-- 将来の案3移行では、`src/backends/<lang>/` から段階的に拡張機能を外出しし、最終的に `lower/optimizer/emitter` 中心の構成へ縮退する。
+- 将来の案3移行では、`src/toolchain/emit/<lang>/` から段階的に拡張機能を外出しし、最終的に `lower/optimizer/emitter` 中心の構成へ縮退する。
 
-### 3.4 `src/backends/common/profiles/` と `src/backends/<lang>/profiles/`
+### 3.4 `src/toolchain/emit/common/profiles/` と `src/toolchain/emit/<lang>/profiles/`
 
 - 目的: 言語差分設定を宣言的JSONとして保持する。
 - 置くもの:
-  - 共通既定値: `src/backends/common/profiles/core.json`
-  - 言語差分: `src/backends/<lang>/profiles/{profile,types,operators,runtime_calls,syntax}.json`
+  - 共通既定値: `src/toolchain/emit/common/profiles/core.json`
+  - 言語差分: `src/toolchain/emit/<lang>/profiles/{profile,types,operators,runtime_calls,syntax}.json`
 - 置かないもの: 実行ロジック（Pythonコード）
 
 ### 3.5 `src/runtime/`

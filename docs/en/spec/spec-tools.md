@@ -16,7 +16,9 @@ They serve three main goals:
 - `tools/run_local_ci.py`
   - Purpose: run the local minimal CI bundle at once (version gate + todo-priority guard + runtime-layer guard + non-C++ emitter runtime-call literal guard + forbidden runtime-symbol guard + non-C++ backend health gate + conditional sample regeneration + transpile regression + unit tests + selfhost build + diff)
 - `tools/check_todo_priority.py`
-  - Purpose: verify that new progress `ID`s added in diffs to `docs/ja/todo/index.md` / `docs/ja/plans/*.md` match the highest-priority unfinished `ID` (or one of its children), and prevent priority drift
+  - Purpose: verify that new progress `ID`s added in diffs to `docs/ja/todo/index.md` / `docs/ja/plans/*.md` match the highest-priority unfinished `ID` (or one of its children), and prevent priority drift. On the `plans` side, only decision-log lines (`- YYYY-MM-DD: ...`) are evaluated; structure-cleanup ID lists are excluded.
+- `tools/check_jsonvalue_decode_boundaries.py`
+  - Purpose: verify that `json.loads_obj(...)` is the canonical entry at JSON artifact boundaries in `py2x.py` / `east2x.py` / `toolchain/ir/east_io.py` / `toolchain/link/*`, and fail fast on any re-entry of raw `json.loads(...)`.
 - `tools/check_runtime_cpp_layout.py`
   - Purpose: validate the C++ runtime ownership boundary in one guard: keep `src/runtime/cpp/{built_in,std,utils}` legacy-closed, enforce `generated/native/pytra` ownership, and validate the `core` compatibility surface plus the `generated/core` / `native/core` split
   - Notes: `generated/built_in` / `generated/core` require plain naming plus generated markers, ownership mixing into `native` / `core` fails, and reintroducing removed transitive includes (`predicates` / `sequence` / `iter_ops`) into `native/core/py_runtime.h` also fails
@@ -71,11 +73,11 @@ They serve three main goals:
 - `tools/check_emitter_runtimecall_guardrails.py`
   - Purpose: detect new literal runtime/stdlib dispatch branches in non-C++ emitters
 - `tools/check_emitter_forbidden_runtime_symbols.py`
-  - Purpose: detect forbidden runtime implementation symbols in `src/backends/*/emitter/*.py`
+  - Purpose: detect forbidden runtime implementation symbols in `src/toolchain/emit/*/emitter/*.py`
 
 ### 1.1 Stop-Ship Checklist for Emitter Changes (mandatory)
 
-- Applies to commits changing `src/backends/*/emitter/*.py`
+- Applies to commits changing `src/toolchain/emit/*/emitter/*.py`
 - Before commit, run all three:
   - `python3 tools/check_emitter_runtimecall_guardrails.py`
   - `python3 tools/check_emitter_forbidden_runtime_symbols.py`
@@ -102,6 +104,9 @@ They serve three main goals:
   - Purpose: batch-transpile `sample/py` through the selfhost direct `.py` route and detect compile regressions via `g++ -fsyntax-only`
 - `tools/check_selfhost_stage2_cpp_diff.py`
   - Purpose: compare generated C++ between the Python version and the stage-2 selfhost binary
+  - Main options: `--skip-build`, `--mode strict`, `--show-diff`
+- `tools/check_selfhost_stage2_sample_parity.py`
+  - Purpose: verify full sample parity (transpile + compile + run) for all `sample/py/*.py` cases using `selfhost/py2cpp_stage2.out`
 - `tools/summarize_selfhost_errors.py`
   - Purpose: aggregate selfhost build-log errors by category
 - `tools/selfhost_error_hotspots.py`
@@ -164,7 +169,7 @@ Failure contract:
 - `tools/check_noncpp_runtime_generated_cpp_baseline_contract.py`
   - Purpose: verify the 25-module baseline derived from `cpp/generated/{built_in,std,utils}` together with the legacy-rollout inventory and active runtime-policy wording
 - `tools/export_backend_test_matrix.py`
-  - Purpose: run `test/unit/backends/**` plus the shared starred smoke and refresh the JA/EN backend test matrix docs
+  - Purpose: run `test/unit/toolchain/emit/**` plus the shared starred smoke and refresh the JA/EN backend test matrix docs
 - `tools/check_scala_parity.py`
   - Purpose: run sample parity plus the positive fixture manifest for Scala3 as one canonical route
 
@@ -190,6 +195,7 @@ Failure contract:
   - Wave 3: `ruby/lua/php/nim` toolchain-missing for sample parity
 - Daily family-level health checks use commands such as `python3 tools/check_noncpp_backend_health.py --family wave1`
 - `tools/run_local_ci.py` includes `python3 tools/check_noncpp_backend_health.py --family all --skip-parity`
+- `tools/run_local_ci.py` also includes `python3 tools/check_jsonvalue_decode_boundaries.py`, so raw `json.loads(...)` re-entry at JSON artifact boundaries in selfhost/host is caught by local CI
 
 ### 3.3 Full-Target Sample Parity Done Condition
 
@@ -231,6 +237,6 @@ Failure contract:
 - Each tool description must state in one line what it automates
 - If destructive changes are made (arguments, deprecation, consolidation), also update the related examples in `docs/ja/tutorial/how-to-use.md`
 - Sample regeneration is triggered by minor-or-greater updates in `src/toolchain/compiler/transpiler_versions.json`, not merely by source diffs
-- Commits that modify transpiler-related files (`src/py2*.py`, `src/pytra/**`, `src/backends/**`, `src/backends/**/profiles/**`) must pass `tools/check_transpiler_version_gate.py`
+- Commits that modify transpiler-related files (`src/py2*.py`, `src/pytra/**`, `src/toolchain/emit/**`, `src/toolchain/emit/**/profiles/**`) must pass `tools/check_transpiler_version_gate.py`
 - When regeneration happens due to a version bump, use `tools/run_regen_on_version_bump.py --verify-cpp-on-diff` to compile/run only the C++ cases whose generated output changed
 - Toolchain-compatibility shims go under `tools/shims/`; do not add special root-level directories such as `.chain`

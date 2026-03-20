@@ -1,0 +1,2365 @@
+from __future__ import annotations
+
+from pytra.typing import Any
+from toolchain.emit.cpp.emitter.profile_loader import AUG_BIN, AUG_OPS, load_cpp_profile
+
+
+class CppStatementEmitter:
+    """Statement-level emit helpers extracted from :class:`CppEmitter`."""
+
+    def _emit_if_stmt(self, stmt: dict[str, Any]) -> None:
+        """If ノードを出力する。"""
+        cond_txt, body_stmts, else_stmts = self.prepare_if_stmt_parts(
+            stmt,
+            cond_empty_default="false",
+        )
+        self._predeclare_if_join_names(body_stmts, else_stmts)
+        omit_default = self._stmt_omit_braces_default("If", stmt, False)
+        omit_braces = self.hook_on_stmt_omit_braces("If", stmt, omit_default)
+        if omit_braces and len(body_stmts) == 1 and len(else_stmts) <= 1:
+            self.emit(self.syntax_line("if_no_brace", "if ({cond})", {"cond": cond_txt}))
+            self.emit_scoped_stmt_list([body_stmts[0]], set())
+            if len(else_stmts) > 0:
+                self.emit(self.syntax_text("else_no_brace", "else"))
+                self.emit_scoped_stmt_list([else_stmts[0]], set())
+            return
+
+        # Flatten `else: if ...` chain into `else if (...)` for readability.
+        self.emit(self.syntax_line("if_open", "if ({cond}) {", {"cond": cond_txt}))
+        self.emit_scoped_stmt_list(body_stmts, set())
+        cur_else = else_stmts
+        while len(cur_else) == 1:
+            nested = self.any_to_dict_or_empty(cur_else[0])
+            if self._node_kind_from_dict(nested) != "If":
+                break
+            n_cond, n_body, n_else = self.prepare_if_stmt_parts(nested, cond_empty_default="false")
+            self.emit(f"}} else if ({n_cond}) {{")
+            self.emit_scoped_stmt_list(n_body, set())
+            cur_else = n_else
+        if len(cur_else) == 0:
+            self.emit(self.syntax_text("block_close", "}"))
+            return
+        self.emit(self.syntax_text("else_open", "} else {"))
+        self.emit_scoped_stmt_list(cur_else, set())
+        self.emit(self.syntax_text("block_close", "}"))
+
+    def _emit_while_stmt(self, stmt: dict[str, Any]) -> None:
+        """While ノードを出力する。"""
+        cond_txt, body_stmts = self.prepare_while_stmt_parts(
+            stmt,
+            cond_empty_default="false",
+        )
+        self.emit_while_stmt_skeleton(
+            cond_txt,
+            body_stmts,
+            while_open_default="while ({cond}) {",
+        )
+
+    def _emit_match_stmt(self, stmt: dict[str, Any]) -> None:
+        """Representative nominal ADT `match` を C++ `if/else if` へ lower する。"""
+        if self.any_dict_get_str(stmt, "lowered_kind", "") != "NominalAdtMatch":
+            raise RuntimeError("cpp emitter: unsupported Match lane (expected NominalAdtMatch)")
+        match_meta = self.any_to_dict_or_empty(stmt.get("nominal_adt_match_v1"))
+        family_name = self.any_dict_get_str(match_meta, "family_name", "")
+        if family_name == "":
+            raise RuntimeError("cpp emitter: nominal ADT match requires family metadata")
+        cases = self._dict_stmt_list(stmt.get("cases"))
+        if len(cases) == 0:
+            raise RuntimeError("cpp emitter: nominal ADT match requires at least one case")
+        subject_expr = self.render_expr(stmt.get("subject"))
+        subject_node = stmt.get("subject")
+        subject_tmp = self.next_tmp("__match_subject")
+        self.emit(f"auto {subject_tmp} = {subject_expr};")
+        for idx, case_stmt in enumerate(cases):
+            pattern = self.any_to_dict_or_empty(case_stmt.get("pattern"))
+            if self._node_kind_from_dict(pattern) != "VariantPattern":
+                raise RuntimeError("cpp emitter: only VariantPattern is supported in nominal ADT match")
+            if case_stmt.get("guard") is not None:
+                raise RuntimeError("cpp emitter: guards are unsupported in representative nominal ADT match")
+            pattern_meta = self.any_to_dict_or_empty(pattern.get("nominal_adt_pattern_v1"))
+            variant_name = self.any_dict_get_str(pattern_meta, "variant_name", "")
+            if variant_name == "":
+                variant_name = self.any_dict_get_str(pattern, "variant_name", "")
+            if variant_name == "":
+                variant_name = self.any_dict_get_str(pattern, "name", "")
+            if variant_name == "":
+                variant_name = self.any_dict_get_str(self.any_to_dict_or_empty(pattern.get("variant")), "id", "")
+            if variant_name == "":
+                raise RuntimeError("cpp emitter: nominal ADT match requires variant metadata")
+            cond_txt = f"py_runtime_value_isinstance({subject_tmp}, {variant_name}::PYTRA_TYPE_ID)"
+            if idx == 0:
+                self.emit(f"if ({cond_txt}) {{")
+            else:
+                self.emit(f"}} else if ({cond_txt}) {{")
+            self._emit_nominal_adt_match_case_body(
+                subject_tmp,
+                family_name,
+                variant_name,
+                pattern,
+                self._dict_stmt_list(case_stmt.get("body")),
+            )
+        self.emit("} else {")
+        self.indent += 1
+        self.emit(f'throw ::std::runtime_error("non-exhaustive nominal ADT match: {family_name}");')
+        self.indent -= 1
+        self.emit("}")
+
+    def _emit_nominal_adt_match_case_body(
+        self,
+        subject_tmp: str,
+        family_name: str,
+        variant_name: str,
+        pattern: dict[str, Any],
+        body_stmts: list[dict[str, Any]],
+    ) -> None:
+        self.indent += 1
+        scope_names: set[str] = set()
+        self.scope_stack.append(scope_names)
+        prev_declared_var_types = self.declared_var_types
+        self.declared_var_types = dict(self.declared_var_types)
+        try:
+            bind_nodes = self._dict_stmt_list(pattern.get("subpatterns"))
+            if len(bind_nodes) > 0:
+                variant_tmp = self.next_tmp("__match_variant")
+                self.emit(
+                    f'auto* {variant_tmp} = (object({subject_tmp})).as<{variant_name}>();'
+                )
+                for bind_node in bind_nodes:
+                    if self._node_kind_from_dict(bind_node) != "PatternBind":
+                        raise RuntimeError("cpp emitter: only PatternBind is supported in nominal ADT match payloads")
+                    if self.any_dict_get_str(bind_node, "lowered_kind", "") != "NominalAdtPatternBind":
+                        raise RuntimeError("cpp emitter: nominal ADT payload bind metadata is missing")
+                    bind_name = self.any_dict_get_str(bind_node, "name", "")
+                    bind_meta = self.any_to_dict_or_empty(bind_node.get("nominal_adt_pattern_bind_v1"))
+                    field_name = self.any_dict_get_str(bind_meta, "field_name", "")
+                    if field_name == "":
+                        field_name = bind_name
+                    field_type = self.normalize_type_name(self.any_dict_get_str(bind_meta, "field_type", ""))
+                    if field_type == "":
+                        field_type = self.normalize_type_name(self.any_dict_get_str(bind_node, "resolved_type", ""))
+                    if bind_name == "" or field_name == "":
+                        raise RuntimeError("cpp emitter: nominal ADT payload bind requires field metadata")
+                    emitted_bind_name = self.rename_if_reserved(
+                        bind_name,
+                        self.reserved_words,
+                        self.rename_prefix,
+                        self.renamed_symbols,
+                    )
+                    emitted_field_name = self.rename_if_reserved(
+                        field_name,
+                        self.reserved_words,
+                        self.rename_prefix,
+                        self.renamed_symbols,
+                    )
+                    decl_type = "auto"
+                    if field_type not in {"", "unknown", "Any", "object"}:
+                        decl_type = self._cpp_type_text(field_type)
+                    self.emit(f"{decl_type} {emitted_bind_name} = {variant_tmp}->{emitted_field_name};")
+                    scope_names.add(bind_name)
+                    self.declared_var_types[bind_name] = field_type if field_type != "" else "unknown"
+            for body_stmt in body_stmts:
+                self.emit_stmt(body_stmt)
+        finally:
+            self.declared_var_types = prev_declared_var_types
+            self.scope_stack.pop()
+            self.indent -= 1
+
+    def _render_lvalue_for_augassign(self, target_expr: Any) -> str:
+        """AugAssign 向けに左辺を簡易レンダリングする。"""
+        target_node = self.any_to_dict_or_empty(target_expr)
+        if self._node_kind_from_dict(target_node) == "Name":
+            return self.any_dict_get_str(target_node, "id", "_")
+        return self.render_lvalue(target_expr)
+
+    def _emit_annassign_stmt(self, stmt: dict[str, Any]) -> None:
+        """AnnAssign ノードを出力する。"""
+        annotation_type_expr = stmt.get("annotation_type_expr")
+        decl_type_expr = stmt.get("decl_type_expr")
+        annotation_type_source: Any = annotation_type_expr if self._is_type_expr_payload(annotation_type_expr) else stmt.get(
+            "annotation"
+        )
+        decl_type_source: Any = decl_type_expr if self._is_type_expr_payload(decl_type_expr) else stmt.get("decl_type")
+        t = self.cpp_type(annotation_type_source)
+        decl_hint = self.any_dict_get_str(stmt, "decl_type", "")
+        decl_hint_fallback = str(stmt.get("decl_type"))
+        ann_text_fallback = str(stmt.get("annotation"))
+        if decl_hint == "" and decl_hint_fallback not in {"", "{}", "None"}:
+            decl_hint = decl_hint_fallback
+        if decl_hint != "":
+            t = self.cpp_type(decl_type_source)
+        elif t == "auto":
+            t = self.cpp_type(decl_type_source)
+            if t == "auto" and ann_text_fallback not in {"", "{}", "None"}:
+                t = self._cpp_type_text(self.normalize_type_name(ann_text_fallback))
+        target_node = self.any_to_dict_or_empty(stmt.get("target"))
+        target = self.render_expr(stmt.get("target"))
+        target_name_raw = self.any_dict_get_str(target_node, "id", "")
+        stack_list_local = self._is_stack_list_local_name(target_name_raw)
+        val = self.any_to_dict_or_empty(stmt.get("value"))
+        val_is_dict: bool = len(val) > 0
+        rendered_val: str = ""
+        if val_is_dict:
+            rendered_val = self.render_expr(stmt.get("value"))
+        ann_t_str = self.any_dict_get_str(stmt, "annotation", "")
+        ann_fallback = ann_text_fallback if ann_text_fallback not in {"", "{}", "None"} else ""
+        ann_t_str = ann_t_str if ann_t_str != "" else (decl_hint if decl_hint != "" else ann_fallback)
+        ann_t_norm = self.normalize_type_name(ann_t_str)
+        ref_first_list_ann = self._is_pyobj_ref_first_list_target_expr(
+            stmt.get("target"),
+            ann_t_norm,
+        )
+        force_typed_list_ann = self._is_pyobj_value_model_list_type(ann_t_norm)
+        force_typed_list_str = force_typed_list_ann and ann_t_norm == "list[str]"
+        if ref_first_list_ann:
+            t = self._cpp_pyobj_alias_list_handle_type_text(ann_t_norm)
+        elif force_typed_list_ann:
+            t = self._cpp_list_value_model_type_text(ann_t_norm)
+        if stack_list_local and ann_t_str.startswith("list[") and ann_t_str.endswith("]"):
+            t = self._cpp_list_value_model_type_text(ann_t_str)
+        if rendered_val != "" and ann_t_str != "":
+            rendered_val = self._rewrite_nullopt_default_for_typed_target(rendered_val, ann_t_str)
+        if ann_t_str in {"byte", "uint8"} and val_is_dict:
+            byte_val = self._byte_from_str_expr(stmt.get("value"))
+            if byte_val != "":
+                rendered_val = str(byte_val)
+        val_kind = self.any_dict_get_str(val, "kind", "")
+        if val_is_dict and val_kind == "Dict" and ann_t_str.startswith("dict[") and ann_t_str.endswith("]"):
+            inner_ann = self.split_generic(ann_t_str[5:-1])
+            if len(inner_ann) == 2 and self.is_any_like_type(inner_ann[1]):
+                items: list[str] = []
+                for kv in self._dict_stmt_list(val.get("entries")):
+                    k = self.render_expr(kv.get("key"))
+                    v = self.render_expr_as_any(kv.get("value"))
+                    items.append(f"{{{k}, {v}}}")
+                rendered_val = f"{t}{{{', '.join(items)}}}"
+        if val_is_dict and t != "auto":
+            vkind = val_kind
+            if vkind == "BoolOp":
+                if ann_t_str != "bool":
+                    rendered_val = self.render_boolop(stmt.get("value"), True)
+            if vkind == "Tuple":
+                homogeneous_tuple_item_t = self._homogeneous_tuple_ellipsis_item_type(ann_t_norm)
+                if homogeneous_tuple_item_t != "":
+                    rendered_val = self._render_param_default_expr(stmt.get("value"), ann_t_norm)
+            if vkind == "List" and len(self._dict_stmt_list(val.get("elements"))) == 0:
+                if ref_first_list_ann:
+                    rendered_val = f"{self._cpp_list_value_model_type_text(ann_t_norm)}{{}}"
+                elif force_typed_list_ann:
+                    rendered_val = f"{t}{{}}"
+                elif stack_list_local and ann_t_str.startswith("list[") and ann_t_str.endswith("]"):
+                    rendered_val = f"{t}{{}}"
+                elif (
+                    self._is_pyobj_runtime_list_type(ann_t_str)
+                ):
+                    rendered_val = self._render_empty_pyobj_runtime_list_object()
+                else:
+                    rendered_val = f"{t}{{}}"
+            elif force_typed_list_ann and vkind == "List":
+                list_items: list[str] = []
+                for elem in self._dict_stmt_list(val.get("elements")):
+                    item_txt = self.render_expr(elem)
+                    if ann_t_norm == "list[str]":
+                        elem_t = self.normalize_type_name(self.get_expr_type(elem))
+                        if self.is_any_like_type(elem_t):
+                            item_txt = self._coerce_any_expr_to_target_via_unbox(
+                                item_txt,
+                                elem,
+                                "str",
+                                "annassign:list[str]",
+                            )
+                    list_items.append(item_txt)
+                rendered_val = f"{t}{{{', '.join(list_items)}}}"
+            elif vkind == "Dict" and len(self._dict_stmt_list(val.get("entries"))) == 0:
+                rendered_val = f"{t}{{}}"
+            elif vkind == "Set" and len(self._dict_stmt_list(val.get("elements"))) == 0:
+                rendered_val = f"{t}{{}}"
+            elif vkind == "ListComp" and isinstance(rendered_val, str):
+                rendered_trim = self._trim_ws(rendered_val)
+                if rendered_trim.startswith("[&]() -> list<object> {"):
+                    rendered_val = rendered_val.replace("[&]() -> list<object> {", f"[&]() -> {t} {{", 1)
+                    rendered_val = rendered_val.replace("list<object> __out;", f"{t} __out;", 1)
+        val_t0 = self.get_expr_type(stmt.get("value"))
+        val_t = val_t0 if isinstance(val_t0, str) else ""
+        # Tagged union → concrete type: insert unbox.
+        if rendered_val != "" and ann_t_str != "" and val_t != "":
+            val_t_norm = self.normalize_type_name(val_t)
+            tagged_union_types = getattr(self, "_tagged_union_types", {})
+            alias_map = getattr(self, "_type_alias_reverse_map", {})
+            union_name = alias_map.get(val_t_norm, "")
+            if union_name == "" and val_t_norm in tagged_union_types:
+                union_name = val_t_norm
+            # Inline union: val_t_norm is "str|int64|..." which is the east_type key.
+            if union_name == "" and "|" in val_t_norm:
+                if val_t_norm in tagged_union_types:
+                    union_name = val_t_norm
+            if union_name in tagged_union_types and ".as<" not in rendered_val and ".unbox<" not in rendered_val:
+                ann_norm = self.normalize_type_name(ann_t_str)
+                non_none_parts = tagged_union_types[union_name]
+                for part in non_none_parts:
+                    part_norm = self.normalize_type_name(part)
+                    if part_norm == ann_norm:
+                        cpp_t = self._cpp_type_text(part)
+                        tid_expr = self._pytra_tid_for_east_type(part)
+                        _POD = {"str", "int", "int64", "float", "float64", "bool", "uint8", "int8", "int16", "uint16", "int32", "uint32", "uint64", "float32"}
+                        if part_norm in _POD:
+                            rendered_val = f"{rendered_val}.unbox<{cpp_t}, {tid_expr}>()"
+                        else:
+                            inner_t = cpp_t[3:-1] if cpp_t.startswith("rc<") and cpp_t.endswith(">") else cpp_t
+                            rendered_val = f"(*{rendered_val}.as<{inner_t}>())"
+                        break
+        if rendered_val != "" and ann_t_str != "" and self._contains_text(val_t, "|"):
+            union_parts = self.split_union(val_t)
+            has_none = False
+            non_none_norm: list[str] = []
+            for p in union_parts:
+                pn = self.normalize_type_name(p)
+                if pn == "None":
+                    has_none = True
+                    continue
+                if pn != "":
+                    non_none_norm.append(pn)
+            ann_norm = self.normalize_type_name(ann_t_str)
+            if has_none and len(non_none_norm) == 1 and non_none_norm[0] == ann_norm:
+                rendered_val = f"({rendered_val}).value()"
+        if (not ref_first_list_ann) and self._can_runtime_cast_target(ann_t_str) and self.is_any_like_type(val_t) and rendered_val != "" and ".as<" not in rendered_val and ".unbox<" not in rendered_val:
+            rendered_val = self._coerce_any_expr_to_target_via_unbox(
+                rendered_val,
+                stmt.get("value"),
+                ann_t_str,
+                f"annassign:{target}",
+            )
+        if (
+            (not ref_first_list_ann)
+            and force_typed_list_ann
+            and rendered_val != ""
+        ):
+            rendered_val = self._render_pyobj_value_list_copy_adapter(rendered_val, stmt.get("value"), ann_t_norm)
+        if ref_first_list_ann and rendered_val != "":
+            rendered_val = self._render_pyobj_alias_list_value(rendered_val, stmt.get("value"), ann_t_norm)
+        elif self.is_any_like_type(ann_t_str) and val_is_dict:
+            rendered_val = self._box_any_target_value(rendered_val, stmt.get("value"))
+        if (not ref_first_list_ann) and val_is_dict and rendered_val != "":
+            rendered_val = self._apply_empty_init_shorthand_if_marked(stmt, ann_t_str, val, rendered_val)
+        is_plain_name_target = self._node_kind_from_dict(target_node) == "Name"
+        declare_stmt = self.stmt_declare_flag(stmt, True)
+        declare_name_binding = is_plain_name_target and self.should_declare_name_binding(stmt, target, True)
+        already_declared = is_plain_name_target and self.is_declared_for_name_binding(target)
+        if target.startswith("this->"):
+            if not val_is_dict:
+                self.emit(f"{target};")
+            else:
+                self.emit(f"{target} = {rendered_val};")
+            return
+        if not val_is_dict:
+            if declare_name_binding:
+                self.declare_in_current_scope(target)
+            if declare_stmt and not already_declared:
+                self.emit(f"{t} {target};")
+            return
+        if declare_name_binding:
+            self.declare_in_current_scope(target)
+            picked_decl_t = ann_t_str if ann_t_str != "" else decl_hint
+            if ref_first_list_ann:
+                picked_decl_t = ann_t_norm
+            picked_decl_t = (
+                picked_decl_t if picked_decl_t != "" else (val_t if val_t != "" else self.get_expr_type(target_node))
+            )
+            self.declared_var_types[target] = self.normalize_type_name(picked_decl_t)
+            if (not ref_first_list_ann) and force_typed_list_str and target_name_raw != "" and len(self.scope_stack) >= 2:
+                self.current_function_typed_list_str_locals.add(target_name_raw)
+        use_const_ref_decl = False
+        if declare_stmt and not already_declared and is_plain_name_target and target_name_raw != "":
+            decl_type_norm = self.normalize_type_name(ann_t_str if ann_t_str != "" else decl_hint)
+            if decl_type_norm == "":
+                decl_type_norm = self.normalize_type_name(self.any_to_str(self.declared_var_types.get(target_name_raw)))
+            emitted_type_norm = self.normalize_type_name(t)
+            if emitted_type_norm.startswith("list<") and len(self.scope_stack) >= 2:
+                self.current_function_value_list_locals.add(target_name_raw)
+            reassigned_names = set(getattr(self, "current_function_reassigned_names", set()))
+            if (
+                emitted_type_norm.startswith("rc<")
+                and self._node_kind_from_dict(val) == "Subscript"
+                and target_name_raw not in reassigned_names
+            ):
+                value_type_norm = self.normalize_type_name(val_t)
+                decl_cmp = self._strip_rc_wrapper(emitted_type_norm)
+                value_cmp = self._strip_rc_wrapper(value_type_norm)
+                if value_cmp in {"", "unknown", decl_cmp}:
+                    use_const_ref_decl = True
+        if declare_stmt and not already_declared:
+            if use_const_ref_decl:
+                self.emit(f"const {t}& {target} = {rendered_val};")
+            else:
+                self.emit(f"{t} {target} = {rendered_val};")
+        else:
+            self.emit(f"{target} = {rendered_val};")
+
+    def _emit_augassign_stmt(self, stmt: dict[str, Any]) -> None:
+        """AugAssign ノードを出力する。"""
+        op = "+="
+        target_expr_node = self.any_to_dict_or_empty(stmt.get("target"))
+        target = self._render_lvalue_for_augassign(stmt.get("target"))
+        declare_name_binding = self._node_kind_from_dict(target_expr_node) == "Name" and self.should_declare_name_binding(
+            stmt,
+            target,
+            False,
+        )
+        if declare_name_binding:
+            decl_t_raw = stmt.get("decl_type")
+            decl_t = str(decl_t_raw) if isinstance(decl_t_raw, str) else ""
+            inferred_t = self.get_expr_type(stmt.get("target"))
+            picked_t = decl_t if decl_t != "" else inferred_t
+            t = self._cpp_type_text(picked_t)
+            self.declare_in_current_scope(target)
+            self.emit(f"{t} {target} = {self.render_expr(stmt.get('value'))};")
+            return
+        val = self.render_expr(stmt.get("value"))
+        target_t = self.get_expr_type(stmt.get("target"))
+        value_t = self.get_expr_type(stmt.get("value"))
+        if self.is_any_like_type(value_t):
+            if target_t in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64"}:
+                val = f"py_to<int64>({val})"
+            elif target_t in {"float32", "float64"}:
+                val = f"float64(py_to<int64>({val}))"
+        op_name = str(stmt.get("op"))
+        op_txt = str(AUG_OPS.get(op_name, ""))
+        if op_txt != "":
+            op = op_txt
+        if str(AUG_BIN.get(op_name, "")) != "":
+            # Prefer idiomatic ++/-- for +/-1 updates.
+            if self._opt_ge(2) and op_name in {"Add", "Sub"} and val == "1":
+                if op_name == "Add":
+                    self.emit(f"{target}++;")
+                else:
+                    self.emit(f"{target}--;")
+                return
+            if op_name == "FloorDiv":
+                if self.floor_div_mode == "python":
+                    self.emit(f"{target} = py_floordiv({target}, {val});")
+                else:
+                    self.emit(f"{target} /= {val};")
+            elif op_name == "Mod":
+                if self.mod_mode == "python":
+                    self.emit(f"{target} = py_mod({target}, {val});")
+                else:
+                    self.emit(f"{target} {op} {val};")
+            else:
+                self.emit(f"{target} {op} {val};")
+            return
+        self.emit(f"{target} {op} {val};")
+
+    def _build_assign_subscript_index_hoist_plan(self, value: dict[str, Any]) -> dict[str, str] | None:
+        """`Name = subscript(...)` の index 式 hoist 計画を返す（適用不可時は None）。"""
+        if self._node_kind_from_dict(value) != "Subscript":
+            return None
+        owner_node = self.any_to_dict_or_empty(value.get("value"))
+        if self._node_kind_from_dict(owner_node) != "Name":
+            return None
+        owner_t = self.normalize_type_name(self.get_expr_type(value.get("value")))
+        if not (self.is_indexable_sequence_type(owner_t) or (owner_t.startswith("tuple[") and owner_t.endswith("]"))):
+            return None
+        index_node = self.any_to_dict_or_empty(value.get("slice"))
+        index_kind = self._node_kind_from_dict(index_node)
+        if index_kind in {"", "Name", "Constant", "Slice"}:
+            return None
+        idx_tmp = self.next_tmp("__idx")
+        idx_expr = self.render_expr(value.get("slice"))
+        idx_type = self.normalize_type_name(self.get_expr_type(value.get("slice")))
+        if idx_type == "":
+            idx_type = "unknown"
+        idx_name_node: dict[str, Any] = {
+            "kind": "Name",
+            "id": idx_tmp,
+            "resolved_type": idx_type,
+            "repr": idx_tmp,
+        }
+        rewritten = dict(value)
+        rewritten["slice"] = idx_name_node
+        return {
+            "idx_tmp": idx_tmp,
+            "idx_expr": idx_expr,
+            "rewritten_expr": self.render_expr(rewritten),
+        }
+
+    def _render_assign_value_with_subscript_index_hoist(self, value: dict[str, Any]) -> str:
+        """Assign RHS を描画し、必要時のみ subscript index を hoist する。"""
+        plan = self._build_assign_subscript_index_hoist_plan(value)
+        if plan is None:
+            return self.render_expr(value)
+        self.emit(f"auto {plan['idx_tmp']} = {plan['idx_expr']};")
+        return plan["rewritten_expr"]
+
+    def _assign_struct_bind_unpack_hint(self, stmt: dict[str, Any]) -> dict[str, Any] | None:
+        """EAST3 optimizer が付与した tuple unpack 構造化束縛ヒントを取得する。"""
+        hint_any = stmt.get("cpp_struct_bind_unpack_v1")
+        hint = hint_any if isinstance(hint_any, dict) else None
+        if hint is None:
+            return None
+        version = self.any_dict_get_str(hint, "version", "")
+        if version != "1":
+            return None
+        return hint
+
+    def _resolve_assign_struct_bind_targets(
+        self,
+        stmt: dict[str, Any],
+        lhs_elems: list[Any],
+        tuple_elem_types: list[str],
+        rhs_is_tuple: bool,
+        value_is_optional_tuple: bool,
+    ) -> dict[str, list[str]] | None:
+        """構造化束縛へ縮退できる tuple unpack の束縛情報を返す（不可時は None）。"""
+        if not rhs_is_tuple or value_is_optional_tuple:
+            return None
+        hint = self._assign_struct_bind_unpack_hint(stmt)
+        if hint is None:
+            return None
+        names_obj = hint.get("names")
+        types_obj = hint.get("types")
+        hint_names = self.any_to_str_list(names_obj)
+        hint_types = self.any_to_str_list(types_obj)
+        if len(hint_names) == 0 or len(hint_names) != len(lhs_elems) or len(hint_types) != len(lhs_elems):
+            return None
+        if len(set(hint_names)) != len(hint_names):
+            return None
+        if len(tuple_elem_types) != len(hint_types):
+            return None
+        rendered_names: list[str] = []
+        for i, elt in enumerate(lhs_elems):
+            elt_node = self.any_to_dict_or_empty(elt)
+            if self._node_kind_from_dict(elt_node) != "Name":
+                return None
+            raw_name = self.any_dict_get_str(elt_node, "id", "")
+            if raw_name == "" or raw_name != hint_names[i]:
+                return None
+            if self.is_declared_for_name_binding(raw_name):
+                return None
+            hint_t = self.normalize_type_name(hint_types[i])
+            tuple_t = self.normalize_type_name(tuple_elem_types[i])
+            if hint_t in {"", "unknown", "Any", "object"} or tuple_t in {"", "unknown", "Any", "object"}:
+                return None
+            if hint_t != tuple_t:
+                return None
+            rendered_names.append(self.render_expr(elt))
+        return {
+            "raw_names": hint_names,
+            "rendered_names": rendered_names,
+            "types": hint_types,
+        }
+
+    def _empty_init_shorthand_hint(self, stmt: dict[str, Any]) -> dict[str, Any] | None:
+        """EAST3 optimizer が付与した空初期化 shorthand ヒントを取得する。"""
+        hint_any = stmt.get("cpp_empty_init_shorthand_v1")
+        hint = hint_any if isinstance(hint_any, dict) else None
+        if hint is None:
+            return None
+        if self.any_dict_get_str(hint, "version", "") != "1":
+            return None
+        return hint
+
+    def _apply_empty_init_shorthand_if_marked(
+        self,
+        stmt: dict[str, Any],
+        target_type: str,
+        value_node: dict[str, Any],
+        rendered_value: str,
+    ) -> str:
+        """`T x = T{};` をマーカー付き安全ケースのみ `T x = {};` へ縮退する。"""
+        hint = self._empty_init_shorthand_hint(stmt)
+        if hint is None:
+            return rendered_value
+        kind = self._node_kind_from_dict(value_node)
+        if kind not in {"List", "Dict", "Set"}:
+            return rendered_value
+        if kind == "List" and len(self._dict_stmt_list(value_node.get("elements"))) != 0:
+            return rendered_value
+        if kind == "Set" and len(self._dict_stmt_list(value_node.get("elements"))) != 0:
+            return rendered_value
+        if kind == "Dict" and len(self._dict_stmt_list(value_node.get("entries"))) != 0:
+            return rendered_value
+        hint_kind = self.any_dict_get_str(hint, "rhs_kind", "")
+        if hint_kind != kind:
+            return rendered_value
+        hint_target = self.normalize_type_name(self.any_dict_get_str(hint, "target_type", ""))
+        target_norm = self.normalize_type_name(target_type)
+        if hint_target in {"", "unknown"} or target_norm in {"", "unknown"}:
+            return rendered_value
+        if hint_target != target_norm or self.is_any_like_type(target_norm) or self._contains_text(target_norm, "|"):
+            return rendered_value
+        if kind == "List" and not (target_norm.startswith("list[") and target_norm.endswith("]")):
+            return rendered_value
+        if kind == "Set" and not (target_norm.startswith("set[") and target_norm.endswith("]")):
+            return rendered_value
+        if kind == "Dict" and not (target_norm.startswith("dict[") and target_norm.endswith("]")):
+            return rendered_value
+        return "{}"
+
+    def emit_assign(self, stmt: dict[str, Any]) -> None:
+        """代入文（通常代入/タプル代入）を C++ へ出力する。"""
+        target = self.primary_assign_target(stmt)
+        value = self.any_to_dict_or_empty(stmt.get("value"))
+        if len(target) == 0 or len(value) == 0:
+            self.emit("/* invalid assign */")
+            return
+        # `X = imported.Y` / `X = imported` の純再エクスポートは
+        # C++ 側では宣言変数に落とすと未使用・型退化の温床になるため省略する。
+        if self._is_reexport_assign(target, value):
+            return
+        if self._node_kind_from_dict(target) == "Subscript":
+            owner_node = self.any_to_dict_or_empty(target.get("value"))
+            if self._uses_pyobj_runtime_list_expr(owner_node):
+                owner_expr = self.render_expr(owner_node)
+                idx_node = target.get("slice")
+                idx_expr = self.render_expr(idx_node)
+                idx_ty = self.normalize_type_name(self.get_expr_type(idx_node))
+                if self.is_any_like_type(idx_ty):
+                    idx_expr = f"py_to<int64>({idx_expr})"
+                value_expr = self.render_expr(stmt.get("value"))
+                boxed_value = self._box_expr_for_any(value_expr, stmt.get("value"))
+                list_ref_expr = self._render_pyobj_runtime_list_bridge_ref_for_op(owner_expr, "set_at")
+                self.emit(f"py_list_set_at_mut({list_ref_expr}, {idx_expr}, {boxed_value});")
+                return
+        if self._node_kind_from_dict(target) == "Tuple":
+            lhs_elems = self.any_dict_get_list(target, "elements")
+            if len(lhs_elems) == 0:
+                fallback_names = self.fallback_tuple_target_names_from_stmt(target, stmt)
+                if len(fallback_names) > 0:
+                    recovered: list[Any] = []
+                    for nm in fallback_names:
+                        rec: dict[str, Any] = {
+                            "kind": "Name",
+                            "id": nm,
+                            "resolved_type": "unknown",
+                            "repr": nm,
+                        }
+                        rec_any: Any = rec
+                        recovered.append(rec_any)
+                    lhs_elems = recovered
+            if self._opt_ge(2) and isinstance(value, dict) and self._node_kind_from_dict(value) == "Tuple":
+                rhs_elems = self.any_dict_get_list(value, "elements")
+                if (
+                    len(lhs_elems) == 2
+                    and len(rhs_elems) == 2
+                    and self._expr_repr_eq(lhs_elems[0], rhs_elems[1])
+                    and self._expr_repr_eq(lhs_elems[1], rhs_elems[0])
+                ):
+                    self.emit(f"::std::swap({self.render_lvalue(lhs_elems[0])}, {self.render_lvalue(lhs_elems[1])});")
+                    return
+            tmp = self.next_tuple_tmp_name()
+            value_expr = self.render_expr(stmt.get("value"))
+            tuple_elem_types: list[str] = []
+            value_t = self.get_expr_type(stmt.get("value"))
+            value_is_optional_tuple = False
+            rhs_is_tuple = False
+            if isinstance(value_t, str):
+                tuple_type_text = ""
+                if value_t.startswith("tuple[") and value_t.endswith("]"):
+                    tuple_type_text = value_t
+                elif self._contains_text(value_t, "|"):
+                    for part in self.split_union(value_t):
+                        if part.startswith("tuple[") and part.endswith("]"):
+                            tuple_type_text = part
+                            break
+                if tuple_type_text != "":
+                    rhs_is_tuple = True
+                    tuple_elem_types = self.split_generic(tuple_type_text[6:-1])
+                    if tuple_type_text != value_t:
+                        value_is_optional_tuple = True
+            if not rhs_is_tuple:
+                value_node = self.any_to_dict_or_empty(stmt.get("value"))
+                if self._node_kind_from_dict(value_node) == "Call":
+                    ret_t = self.normalize_type_name(self._infer_call_expr_type(value_node))
+                    if ret_t.startswith("tuple[") and ret_t.endswith("]"):
+                        rhs_is_tuple = True
+                        tuple_elem_types = self.split_generic(ret_t[6:-1])
+            struct_bind_targets = self._resolve_assign_struct_bind_targets(
+                stmt,
+                lhs_elems,
+                tuple_elem_types,
+                rhs_is_tuple,
+                value_is_optional_tuple,
+            )
+            if struct_bind_targets is not None:
+                bind_targets = ", ".join(struct_bind_targets["rendered_names"])
+                self.emit(f"auto [{bind_targets}] = {value_expr};")
+                for i, raw_name in enumerate(struct_bind_targets["raw_names"]):
+                    self.declare_in_current_scope(raw_name)
+                    self.declared_var_types[raw_name] = self.normalize_type_name(struct_bind_targets["types"][i])
+                return
+            if value_is_optional_tuple:
+                self.emit(f"auto {tmp} = *({value_expr});")
+            else:
+                self.emit(f"auto {tmp} = {value_expr};")
+            for i, elt in enumerate(lhs_elems):
+                lhs = self.render_expr(elt)
+                rhs_item = f"::std::get<{i}>({tmp})" if rhs_is_tuple else f"py_at({tmp}, {i})"
+                if self.is_plain_name_expr(elt):
+                    elt_dict = self.any_to_dict_or_empty(elt)
+                    name = self.any_dict_get_str(elt_dict, "id", "")
+                    if not self.is_declared_for_name_binding(name):
+                        decl_t_txt = tuple_elem_types[i] if i < len(tuple_elem_types) else self.get_expr_type(elt)
+                        self.declare_in_current_scope(name)
+                        self.declared_var_types[name] = decl_t_txt
+                        if decl_t_txt in {"", "unknown", "Any", "object"}:
+                            self.emit(f"auto {lhs} = {rhs_item};")
+                            continue
+                        decl_t = self._cpp_type_text(decl_t_txt)
+                        self.emit(f"{decl_t} {lhs} = {rhs_item};")
+                        continue
+                self.emit(f"{lhs} = {rhs_item};")
+            return
+        target_obj: Any = target
+        texpr = self.render_lvalue(target_obj)
+        runtime_alias_target = False
+        if self.is_plain_name_expr(target_obj) and not self.is_declared_for_name_binding(texpr):
+            d0 = self.normalize_type_name(self.any_dict_get_str(stmt, "decl_type", ""))
+            d1 = self.normalize_type_name(self.get_expr_type(target_obj))
+            d2 = self.normalize_type_name(self.get_expr_type(stmt.get("value")))
+            value_node = self.any_to_dict_or_empty(stmt.get("value"))
+            value_ret_abi_mode = "default"
+            if self._node_kind_from_dict(value_node) == "Call":
+                fn_node = self.any_to_dict_or_empty(value_node.get("func"))
+                if self._node_kind_from_dict(fn_node) == "Name":
+                    fn_name = self.any_to_str(fn_node.get("id"))
+                    if fn_name != "":
+                        emitted_name = self.rename_if_reserved(
+                            fn_name,
+                            self.reserved_words,
+                            self.rename_prefix,
+                            self.renamed_symbols,
+                        )
+                        value_ret_abi_mode = self.any_to_str(
+                            self.function_return_abi_modes.get(
+                                emitted_name,
+                                self.function_return_abi_modes.get(fn_name, "default"),
+                            )
+                        )
+            if d0 == "unknown":
+                d0 = ""
+            if d1 == "unknown":
+                d1 = ""
+            if d2 == "unknown":
+                d2 = ""
+            picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
+            logical_picked = picked
+            if picked == "None":
+                picked = "Any"
+            if picked in {"", "unknown", "Any", "object"} and isinstance(value, dict):
+                numeric_picked = self._infer_numeric_expr_type(value)
+                if numeric_picked != "":
+                    picked = numeric_picked
+                    logical_picked = picked
+            if picked in {"", "unknown", "Any", "object"} and isinstance(value, dict):
+                call_picked = self.normalize_type_name(self._infer_call_expr_type(value))
+                if call_picked not in {"", "unknown"}:
+                    picked = call_picked
+                    logical_picked = picked
+            runtime_alias_target = self._is_pyobj_ref_first_list_target_expr(target_obj, logical_picked)
+            if runtime_alias_target:
+                logical_picked = d0 if d0 != "" else (d1 if d1 != "" else d2)
+                picked = logical_picked
+                dtype = self._cpp_pyobj_alias_list_handle_type_text(picked)
+            elif (
+                picked.startswith("list[")
+                and picked.endswith("]")
+                and value_ret_abi_mode in {"value", "value_mut", "value_readonly"}
+            ):
+                dtype = self.cpp_signature_type(picked, runtime_abi_mode=value_ret_abi_mode)
+            else:
+                dtype = self._cpp_type_text(picked)
+            self.declare_in_current_scope(texpr)
+            self.declared_var_types[texpr] = logical_picked if runtime_alias_target else picked
+            if dtype.startswith("list<") and self.is_plain_name_expr(target_obj) and len(self.scope_stack) >= 2:
+                self.current_function_value_list_locals.add(texpr)
+            rval = self._render_assign_value_with_subscript_index_hoist(value)
+            rval = self._rewrite_nullopt_default_for_typed_target(rval, picked)
+            rval_trim = self._trim_ws(rval)
+            if dtype.startswith("list<") and rval_trim.startswith("[&]() -> list<object> {"):
+                rval = rval.replace("[&]() -> list<object> {", f"[&]() -> {dtype} {{", 1)
+                rval = rval.replace("list<object> __out;", f"{dtype} __out;", 1)
+            if dtype == "uint8" and isinstance(value, dict):
+                byte_val = self._byte_from_str_expr(stmt.get("value"))
+                if byte_val != "":
+                    rval = str(byte_val)
+            if isinstance(value, dict) and self._node_kind_from_dict(value) == "BoolOp" and picked != "bool":
+                rval = self.render_boolop(stmt.get("value"), True)
+            rval_t0 = self.get_expr_type(stmt.get("value"))
+            rval_t = rval_t0 if isinstance(rval_t0, str) else ""
+            if self._can_runtime_cast_target(picked) and self.is_any_like_type(rval_t):
+                rval = self._coerce_any_expr_to_target_via_unbox(
+                    rval,
+                    stmt.get("value"),
+                    picked,
+                    f"assign:{texpr}",
+                )
+            if (
+                (not runtime_alias_target)
+                and self._is_pyobj_value_model_list_type(picked)
+                and rval != ""
+            ):
+                rval = self._render_pyobj_value_list_copy_adapter(rval, value, picked)
+            if runtime_alias_target and rval != "":
+                rval = self._render_pyobj_alias_list_value(rval, value, picked)
+            elif self.is_any_like_type(picked):
+                rval = self._box_any_target_value(rval, stmt.get("value"))
+            rval = self._apply_empty_init_shorthand_if_marked(stmt, picked, value, rval)
+            use_const_ref_decl = False
+            if self.is_plain_name_expr(target_obj):
+                reassigned_names = set(getattr(self, "current_function_reassigned_names", set()))
+                if (
+                    dtype.startswith("rc<")
+                    and self._node_kind_from_dict(value) == "Subscript"
+                    and texpr not in reassigned_names
+                ):
+                    value_type_norm = self.normalize_type_name(d2)
+                    decl_cmp = self._strip_rc_wrapper(dtype)
+                    value_cmp = self._strip_rc_wrapper(value_type_norm)
+                    if value_cmp in {"", "unknown", decl_cmp}:
+                        use_const_ref_decl = True
+            if use_const_ref_decl:
+                self.emit(f"const {dtype}& {texpr} = {rval};")
+            else:
+                self.emit(f"{dtype} {texpr} = {rval};")
+            return
+        rval = self._render_assign_value_with_subscript_index_hoist(value)
+        t_target = self.get_expr_type(target_obj)
+        if t_target == "None":
+            t_target = "Any"
+        runtime_alias_target = self._is_pyobj_ref_first_list_target_expr(target_obj, t_target)
+        if runtime_alias_target and self.is_plain_name_expr(target_obj):
+            t_target = self.normalize_type_name(self.any_to_str(self.declared_var_types.get(texpr, t_target)))
+        if self.is_plain_name_expr(target_obj) and t_target in {"", "unknown"}:
+            if texpr in self.declared_var_types:
+                t_target = self.declared_var_types[texpr]
+        if t_target != "":
+            rval = self._rewrite_nullopt_default_for_typed_target(rval, t_target)
+        if t_target == "uint8" and isinstance(value, dict):
+            byte_val = self._byte_from_str_expr(stmt.get("value"))
+            if byte_val != "":
+                rval = str(byte_val)
+        if isinstance(value, dict) and self._node_kind_from_dict(value) == "BoolOp" and t_target != "bool":
+            rval = self.render_boolop(stmt.get("value"), True)
+        rval_t0 = self.get_expr_type(stmt.get("value"))
+        rval_t = rval_t0 if isinstance(rval_t0, str) else ""
+        # T|None → T: optional unwrapping when assigning to a non-optional target
+        if (
+            t_target != ""
+            and not self.is_any_like_type(t_target)
+            and rval != ""
+            and rval_t != ""
+            and self._contains_text(rval_t, "|")
+        ):
+            u_parts = self.split_union(rval_t)
+            u_has_none = False
+            u_non_none: list[str] = []
+            for _p in u_parts:
+                _pn = self.normalize_type_name(_p)
+                if _pn == "None":
+                    u_has_none = True
+                elif _pn != "":
+                    u_non_none.append(_pn)
+            t_target_norm = self.normalize_type_name(t_target)
+            if u_has_none and len(u_non_none) == 1 and u_non_none[0] == t_target_norm:
+                rval = f"{rval}.value()" if self._is_identifier_expr(rval) else f"({rval}).value()"
+        if self._can_runtime_cast_target(t_target) and self.is_any_like_type(rval_t):
+            rval = self._coerce_any_expr_to_target_via_unbox(
+                rval,
+                stmt.get("value"),
+                t_target,
+                f"assign:{texpr}",
+            )
+        if (
+            (not runtime_alias_target)
+            and self._is_pyobj_value_model_list_type(t_target)
+            and rval != ""
+        ):
+            rval = self._render_pyobj_value_list_copy_adapter(rval, value, t_target)
+        if runtime_alias_target and rval != "":
+            rval = self._render_pyobj_alias_list_value(rval, value, t_target)
+        elif self.is_any_like_type(t_target):
+            rval = self._box_any_target_value(rval, stmt.get("value"))
+        rval = self._apply_empty_init_shorthand_if_marked(stmt, t_target, value, rval)
+        # Rewrite empty collection literal to correct typed version for union/variant targets
+        if t_target != "" and not self.is_any_like_type(t_target) and value is not None and rval != "":
+            rval = self._rewrite_empty_collection_literal_for_typed_target(rval, value, t_target)
+        # Rewrite ::std::nullopt to ::std::monostate{} when target is multi-type variant with None
+        if rval in {"::std::nullopt", "std::nullopt"} and t_target != "" and not self.is_any_like_type(t_target):
+            rewritten_none = self._none_default_expr_for_type(t_target)
+            if rewritten_none not in {"::std::nullopt", "std::nullopt", "object{}"}:
+                rval = rewritten_none
+        self.emit(f"{texpr} = {rval};")
+
+    def _emit_try_stmt(self, stmt: dict[str, Any]) -> None:
+        finalbody = self._dict_stmt_list(stmt.get("finalbody"))
+        handlers = self._dict_stmt_list(stmt.get("handlers"))
+        has_effective_finally = False
+        for s in finalbody:
+            if isinstance(s, dict) and self._node_kind_from_dict(s) != "Pass":
+                has_effective_finally = True
+                break
+        if has_effective_finally:
+            self.emit(self.syntax_text("scope_open", "{"))
+            self.indent += 1
+            gid = self.next_finally_guard_name()
+            self.emit(
+                self.syntax_line(
+                    "scope_exit_open",
+                    "auto {guard} = py_make_scope_exit([&]() {{",
+                    {"guard": gid},
+                )
+            )
+            self.indent += 1
+            self.emit_stmt_list(finalbody)
+            self.indent -= 1
+            self.emit(self.syntax_text("scope_exit_close", "});"))
+        if len(handlers) == 0:
+            self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
+            if has_effective_finally:
+                self.indent -= 1
+                self.emit_block_close()
+            return
+        self.emit(self.syntax_text("try_open", "try {"))
+        self.indent += 1
+        self.emit_stmt_list(self._dict_stmt_list(stmt.get("body")))
+        self.indent -= 1
+        self.emit_block_close()
+        for h in handlers:
+            name_raw = h.get("name")
+            name = "ex"
+            if isinstance(name_raw, str) and name_raw != "":
+                name = name_raw
+            self.emit(
+                self.syntax_line(
+                    "catch_open",
+                    "catch (const ::std::exception& {name}) {{",
+                    {"name": name},
+                )
+            )
+            self.indent += 1
+            self.emit_stmt_list(self._dict_stmt_list(h.get("body")))
+            self.indent -= 1
+            self.emit_block_close()
+        if has_effective_finally:
+            self.indent -= 1
+            self.emit_block_close()
+
+    def _emit_for_body_open(self, header: str, scope_names: set[str], omit_braces: bool) -> None:
+        """for 系文のヘッダ出力 + scope 開始を共通化する。"""
+        if omit_braces:
+            self.emit(header)
+        else:
+            self.emit(
+                self.syntax_line(
+                    "for_open_block",
+                    "{header} {",
+                    {"header": header},
+                )
+            )
+        self.indent += 1
+        self.scope_stack.append(set(scope_names))
+
+    def _emit_for_body_stmts(self, body_stmts: list[dict[str, Any]], omit_braces: bool) -> None:
+        """for 系文の本文出力（omit_braces 対応）を共通化する。"""
+        if omit_braces:
+            self.emit_stmt(body_stmts[0])
+            return
+        self.emit_stmt_list(body_stmts)
+
+    def _emit_for_body_close(self, omit_braces: bool) -> None:
+        """for 系文の scope 終了 + ブロック閉じを共通化する。"""
+        self.scope_stack.pop()
+        self.indent -= 1
+        if not omit_braces:
+            self.emit_block_close()
+
+    def emit_for_range(self, stmt: dict[str, Any]) -> None:
+        """ForRange ノードを C++ の for ループとして出力する。"""
+        target_node = self.any_to_dict_or_empty(stmt.get("target"))
+        if len(target_node) == 0:
+            self.emit("/* invalid for-range target */")
+            return
+        tgt = self.render_expr(stmt.get("target"))
+        t0 = self.any_to_str(stmt.get("target_type"))
+        t1 = self.get_expr_type(stmt.get("target"))
+        tgt_ty_txt = t0 if t0 != "" else t1
+        tgt_ty = self._cpp_type_text(tgt_ty_txt)
+        start = self.render_expr(stmt.get("start"))
+        stop = self.render_expr(stmt.get("stop"))
+        step = self.render_expr(stmt.get("step"))
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
+        omit_default = self._stmt_omit_braces_default("ForRange", stmt, False)
+        omit_braces = self.hook_on_stmt_omit_braces("ForRange", stmt, omit_default)
+        if len(body_stmts) != 1:
+            omit_braces = False
+        mode_default = self._default_for_range_mode(stmt, "dynamic", step)
+        mode = self.hook_on_for_range_mode(stmt, mode_default)
+        if mode not in {"ascending", "descending", "dynamic"}:
+            mode = mode_default
+        cond = (
+            f"{tgt} < {stop}"
+            if mode == "ascending"
+            else (f"{tgt} > {stop}" if mode == "descending" else f"{step} > 0 ? {tgt} < {stop} : {tgt} > {stop}")
+        )
+        inc = (
+            f"++{tgt}"
+            if self._opt_ge(2) and step == "1"
+            else (f"--{tgt}" if self._opt_ge(2) and step == "-1" else f"{tgt} += {step}")
+        )
+        hdr: str = self.syntax_line(
+            "for_range_open",
+            "for ({type} {target} = {start}; {cond}; {inc})",
+            {"type": tgt_ty, "target": tgt, "start": start, "cond": cond, "inc": inc},
+        )
+        self.declared_var_types[tgt] = tgt_ty_txt
+        scope_names: set[str] = set()
+        scope_names.add(tgt)
+        self._emit_for_body_open(hdr, scope_names, omit_braces)
+        self._emit_for_body_stmts(body_stmts, omit_braces)
+        self._emit_for_body_close(omit_braces)
+
+    def emit_for_each(self, stmt: dict[str, Any]) -> None:
+        """For ノード（反復）を C++ range-for として出力する。"""
+        target = self.any_to_dict_or_empty(stmt.get("target"))
+        iter_expr = self.any_to_dict_or_empty(stmt.get("iter"))
+        if len(target) == 0 or len(iter_expr) == 0:
+            self.emit("/* invalid for */")
+            return
+        if self._node_kind_from_dict(iter_expr) == "RangeExpr":
+            t_raw = stmt.get("target_type")
+            target_type_txt = "int64"
+            if isinstance(t_raw, str) and t_raw != "":
+                target_type_txt = t_raw
+            self.emit_for_range(
+                {
+                    "target": stmt.get("target"),
+                    "target_type": target_type_txt,
+                    "start": iter_expr.get("start"),
+                    "stop": iter_expr.get("stop"),
+                    "step": iter_expr.get("step"),
+                    "range_mode": self.any_dict_get_str(iter_expr, "range_mode", "dynamic"),
+                    "body": self.any_dict_get_list(stmt, "body"),
+                    "orelse": self.any_dict_get_list(stmt, "orelse"),
+                }
+            )
+            return
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
+        omit_default = self._stmt_omit_braces_default("For", stmt, False)
+        omit_braces = self.hook_on_stmt_omit_braces("For", stmt, omit_default)
+        if len(body_stmts) != 1:
+            omit_braces = False
+        iter_mode = self._resolve_for_iter_mode(stmt, iter_expr)
+        typed_target_t = self.normalize_type_name(self.any_to_str(stmt.get("target_type")))
+        if typed_target_t in {"", "unknown"}:
+            typed_target_t = self.normalize_type_name(self.get_expr_type(stmt.get("target")))
+        typed_iter_override = ""
+        typed_iter_override = self._prepare_pyobj_typed_list_iter_expr(iter_expr, typed_target_t)
+        if typed_iter_override == "":
+            typed_iter_override = self._render_forcore_typed_reversed_iter_expr(iter_expr, typed_target_t)
+        if typed_iter_override != "":
+            iter_mode = "static_fastpath"
+        if iter_mode == "runtime_protocol":
+            self._emit_for_each_runtime(stmt, target, iter_expr, body_stmts, omit_braces)
+            return
+        t = self.render_expr(stmt.get("target"))
+        it = typed_iter_override if typed_iter_override != "" else self.render_expr(stmt.get("iter"))
+        if typed_iter_override == "" and self._uses_pyobj_ref_first_list_lvalue_expr(iter_expr):
+            it = f"rc_list_ref({it})"
+        t0 = self.any_to_str(stmt.get("target_type"))
+        t1 = self.get_expr_type(stmt.get("target"))
+        t_ty = self._cpp_type_text(t0 if t0 != "" else t1)
+        target_names = self.target_bound_names(target)
+        unpack_tuple = self._node_kind_from_dict(target) == "Tuple"
+        iter_tmp = ""
+        hdr = ""
+        if unpack_tuple:
+            iter_tmp = self.next_for_iter_name()
+            target_names = self.scope_names_with_tmp(target_names, iter_tmp)
+            hdr = self.syntax_line(
+                "for_each_unpack_open",
+                "for (auto {iter_tmp} : {iter})",
+                {"iter_tmp": iter_tmp, "iter": it},
+            )
+        else:
+            hdr = (
+                self.syntax_line(
+                    "for_each_auto_ref_open",
+                    "for (auto& {target} : {iter})",
+                    {"target": t, "iter": it},
+                )
+                if t_ty == "auto"
+                else self.syntax_line(
+                    "for_each_typed_open",
+                    "for ({type} {target} : {iter})",
+                    {"type": t_ty, "target": t, "iter": it},
+                )
+            )
+            if t_ty != "auto":
+                self.declared_var_types[t] = t0 if t0 != "" else t1
+
+        self._emit_for_body_open(hdr, target_names, omit_braces)
+        if unpack_tuple:
+            self._emit_target_unpack(target, iter_tmp, iter_expr)
+        self._emit_for_body_stmts(body_stmts, omit_braces)
+        self._emit_for_body_close(omit_braces)
+
+    def _emit_target_unpack(self, target: dict[str, Any], src: str, iter_expr: dict[str, Any]) -> None:
+        """タプルターゲットへのアンパック代入を出力する。"""
+        if not isinstance(target, dict) or len(target) == 0:
+            return
+        if self._node_kind_from_dict(target) != "Tuple":
+            return
+        elem_types: list[str] = []
+        iter_node: dict[str, Any] = iter_expr
+        if len(iter_node) > 0:
+            iter_kind: str = self._node_kind_from_dict(iter_node)
+            iter_t: str = self.any_dict_get_str(iter_node, "resolved_type", "")
+            if iter_t.startswith("list[") and iter_t.endswith("]"):
+                inner_txt: str = iter_t[5:-1]
+                if inner_txt.startswith("tuple[") and inner_txt.endswith("]"):
+                    elem_types = self.split_generic(inner_txt[6:-1])
+            elif iter_t.startswith("set[") and iter_t.endswith("]"):
+                inner_txt = iter_t[4:-1]
+                if inner_txt.startswith("tuple[") and inner_txt.endswith("]"):
+                    elem_types = self.split_generic(inner_txt[6:-1])
+            elif iter_kind == "Call":
+                runtime_call: str = self.any_dict_get_str(iter_node, "runtime_call", "")
+                if runtime_call == "dict.items":
+                    fn_node = self.any_to_dict_or_empty(iter_node.get("func"))
+                    owner_obj = fn_node.get("value")
+                    owner_t: str = self.get_expr_type(owner_obj)
+                    if owner_t.startswith("dict[") and owner_t.endswith("]"):
+                        dict_inner_parts: list[str] = self.split_generic(owner_t[5:-1])
+                        if len(dict_inner_parts) == 2:
+                            elem_types = [self.normalize_type_name(dict_inner_parts[0]), self.normalize_type_name(dict_inner_parts[1])]
+        for i, e in enumerate(self.any_dict_get_list(target, "elements")):
+            if isinstance(e, dict) and self._node_kind_from_dict(e) == "Name":
+                nm = self.render_expr(e)
+                elem_decl_t = self.normalize_type_name(elem_types[i]) if i < len(elem_types) else ""
+                decl_t = elem_decl_t if elem_decl_t != "" else self.normalize_type_name(self.get_expr_type(e))
+                decl_t = decl_t if decl_t != "" else "unknown"
+                self.declared_var_types[nm] = decl_t
+                if self.is_any_like_type(decl_t):
+                    self.emit(f"auto {nm} = ::std::get<{i}>({src});")
+                else:
+                    self.emit(f"{self._cpp_type_text(decl_t)} {nm} = ::std::get<{i}>({src});")
+
+    def _emit_target_unpack_runtime(self, target: dict[str, Any], src_obj: str, iter_expr: dict[str, Any]) -> None:
+        """runtime iterable プロトコル用のタプル unpack（`py_at` ベース）。"""
+        if self._node_kind_from_dict(target) != "Tuple":
+            return
+        elem_types: list[str] = []
+        target_t = self.any_dict_get_str(target, "resolved_type", "")
+        if target_t.startswith("tuple[") and target_t.endswith("]"):
+            elem_types = self.split_generic(target_t[6:-1])
+        if len(elem_types) == 0 and len(iter_expr) > 0:
+            iter_t = self.any_dict_get_str(iter_expr, "resolved_type", "")
+            if iter_t.startswith("list[") and iter_t.endswith("]"):
+                inner = iter_t[5:-1]
+                if inner.startswith("tuple[") and inner.endswith("]"):
+                    elem_types = self.split_generic(inner[6:-1])
+            elif iter_t.startswith("set[") and iter_t.endswith("]"):
+                inner = iter_t[4:-1]
+                if inner.startswith("tuple[") and inner.endswith("]"):
+                    elem_types = self.split_generic(inner[6:-1])
+        elems = self.any_to_list(target.get("elements"))
+        for i, e in enumerate(elems):
+            e_node = self.any_to_dict_or_empty(e)
+            if self._node_kind_from_dict(e_node) != "Name":
+                continue
+            nm = self.render_expr(e)
+            rhs = f"py_at({src_obj}, {i})"
+            elem_decl_t = self.normalize_type_name(elem_types[i]) if i < len(elem_types) else ""
+            decl_t = elem_decl_t if elem_decl_t != "" else self.normalize_type_name(self.get_expr_type(e))
+            if self._can_runtime_cast_target(decl_t):
+                rhs = self.render_expr(
+                    self._build_unbox_expr_node(
+                        self._build_py_at_expr_node(src_obj, i),
+                        decl_t,
+                        f"for_unpack:{nm}",
+                    )
+                )
+                self.emit(f"{self._cpp_type_text(decl_t)} {nm} = {rhs};")
+                self.declared_var_types[nm] = decl_t
+            else:
+                self.emit(f"auto {nm} = {rhs};")
+                self.declared_var_types[nm] = "object"
+
+    def _emit_for_each_runtime_target_bind(
+        self,
+        target: dict[str, Any],
+        target_name: str,
+        target_decl_type: str,
+        iter_tmp: str,
+    ) -> None:
+        """runtime for-each で一時 object をターゲットへ束縛する。"""
+        if iter_tmp == "" or self._node_kind_from_dict(target) != "Name":
+            return
+        rhs = iter_tmp
+        if self._can_runtime_cast_target(target_decl_type):
+            rhs = self.render_expr(
+                self._build_unbox_expr_node(
+                    self._build_name_expr_node(iter_tmp, "object"),
+                    target_decl_type,
+                    f"for_target:{target_name}",
+                )
+            )
+            self.emit(f"{self._cpp_type_text(target_decl_type)} {target_name} = {rhs};")
+            self.declared_var_types[target_name] = target_decl_type
+            return
+        self.emit(f"auto {target_name} = {rhs};")
+        self.declared_var_types[target_name] = "object"
+
+    def _runtime_iter_scope_names(self, scope_names: set[str], *tmp_names: str) -> set[str]:
+        out = set(scope_names)
+        for tmp_name in tmp_names:
+            if tmp_name != "":
+                out.add(tmp_name)
+        return out
+
+    def _emit_runtime_iter_loop_open(self, iter_expr_txt: str, scope_names: set[str]) -> tuple[str, str]:
+        iter_obj = self.next_tmp("__iter_obj")
+        next_tmp = self.next_tmp("__next")
+        self.emit(self.syntax_text("block_open", "{"))
+        self.indent += 1
+        self.scope_stack.append(self._runtime_iter_scope_names(scope_names, iter_obj, next_tmp))
+        self.emit(f"object {iter_obj} = {self._render_object_iter_or_raise_expr(iter_expr_txt)};")
+        self.emit(self.syntax_line("while_open", "while ({cond}) {", {"cond": "true"}))
+        self.indent += 1
+        self.emit(f"::std::optional<object> {next_tmp} = {self._render_object_iter_next_expr(iter_obj)};")
+        self.emit(f"if (!{next_tmp}.has_value()) break;")
+        return iter_obj, next_tmp
+
+    def _emit_runtime_iter_loop_close(self) -> None:
+        self.indent -= 1
+        self.emit_block_close()
+        self.scope_stack.pop()
+        self.indent -= 1
+        self.emit_block_close()
+
+    def _emit_for_each_runtime(
+        self,
+        stmt: dict[str, Any],
+        target: dict[str, Any],
+        iter_expr: dict[str, Any],
+        body_stmts: list[dict[str, Any]],
+        omit_braces: bool,
+    ) -> None:
+        """`For` を runtime iterable プロトコル（explicit iter/next while）で出力する。"""
+        t = self.render_expr(stmt.get("target"))
+        it = self.render_expr(stmt.get("iter"))
+        t0 = self.any_to_str(stmt.get("target_type"))
+        t1 = self.get_expr_type(stmt.get("target"))
+        t_decl = self.normalize_type_name(t0 if t0 != "" else t1)
+        unpack_tuple = self._node_kind_from_dict(target) == "Tuple"
+        target_names = self.target_bound_names(target)
+        iter_tmp = ""
+        needs_tmp = unpack_tuple or self._node_kind_from_dict(target) != "Name" or not self.is_any_like_type(t_decl)
+        if needs_tmp:
+            iter_tmp = self.next_for_runtime_iter_name()
+            target_names = self.scope_names_with_tmp(target_names, iter_tmp)
+        iter_obj, next_tmp = self._emit_runtime_iter_loop_open(it, target_names)
+        _ = iter_obj
+        if needs_tmp:
+            self.emit(f"object {iter_tmp} = *{next_tmp};")
+        elif t != "":
+            self.emit(f"object {t} = *{next_tmp};")
+            self.declared_var_types[t] = "object"
+        if unpack_tuple:
+            self._emit_target_unpack_runtime(target, iter_tmp, iter_expr)
+        else:
+            self._emit_for_each_runtime_target_bind(target, t, t_decl, iter_tmp)
+        self._emit_for_body_stmts(body_stmts, False)
+        self._emit_runtime_iter_loop_close()
+
+    def _forcore_target_bound_names(self, target_plan: dict[str, Any]) -> set[str]:
+        """ForCore `target_plan` から scope 登録すべき束縛名を抽出する。"""
+        out: set[str] = set()
+        plan_kind = self.any_dict_get_str(target_plan, "kind", "")
+        if plan_kind == "NameTarget":
+            target_id = self.any_dict_get_str(target_plan, "id", "")
+            if target_id != "":
+                out.add(target_id)
+            return out
+        if plan_kind == "TupleTarget":
+            for elem_obj in self.any_to_list(target_plan.get("elements")):
+                elem_plan = self.any_to_dict_or_empty(elem_obj)
+                out |= self._forcore_target_bound_names(elem_plan)
+        return out
+
+    def _emit_forcore_tuple_unpack_runtime(
+        self,
+        target_plan: dict[str, Any],
+        src_obj: str,
+        inherited_elem_types: list[str] | None = None,
+    ) -> None:
+        """ForCore tuple target を runtime iterable でアンパックする。"""
+        elem_plans = self.any_to_list(target_plan.get("elements"))
+        elem_types: list[str] = inherited_elem_types if isinstance(inherited_elem_types, list) else []
+        if len(elem_types) == 0:
+            parent_target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
+            if parent_target_type.startswith("tuple[") and parent_target_type.endswith("]"):
+                elem_types = self.split_generic(parent_target_type[6:-1])
+        for i, elem_plan_obj in enumerate(elem_plans):
+            elem_plan = self.any_to_dict_or_empty(elem_plan_obj)
+            plan_kind = self.any_dict_get_str(elem_plan, "kind", "")
+            if plan_kind == "NameTarget":
+                nm = self.any_dict_get_str(elem_plan, "id", "")
+                if nm == "":
+                    continue
+                elem_t = self.normalize_type_name(self.any_dict_get_str(elem_plan, "target_type", ""))
+                if elem_t in {"", "unknown"} and i < len(elem_types):
+                    elem_t = self.normalize_type_name(elem_types[i])
+                if elem_t == "":
+                    elem_t = "unknown"
+                rhs = f"py_at({src_obj}, {i})"
+                if self._can_runtime_cast_target(elem_t):
+                    rhs = self.render_expr(
+                        self._build_unbox_expr_node(
+                            self._build_py_at_expr_node(src_obj, i),
+                            elem_t,
+                            f"for_unpack:{nm}",
+                        )
+                    )
+                    self.emit(f"{self._cpp_type_text(elem_t)} {nm} = {rhs};")
+                    self.declared_var_types[nm] = elem_t
+                else:
+                    self.emit(f"auto {nm} = {rhs};")
+                    self.declared_var_types[nm] = "object"
+                continue
+            if plan_kind == "TupleTarget":
+                nested_tmp = self.next_for_runtime_iter_name()
+                self.emit(f"object {nested_tmp} = py_at({src_obj}, {i});")
+                nested_elem_types: list[str] = []
+                if i < len(elem_types):
+                    nested_type = self.normalize_type_name(elem_types[i])
+                    if nested_type.startswith("tuple[") and nested_type.endswith("]"):
+                        nested_elem_types = self.split_generic(nested_type[6:-1])
+                self._emit_forcore_tuple_unpack_runtime(elem_plan, nested_tmp, nested_elem_types)
+
+    def _range_mode_from_step_expr(self, step_expr: dict[str, Any]) -> str:
+        """`step` 式から `range_mode`（ascending/descending/dynamic）を求める。"""
+        step_value = step_expr.get("value")
+        if isinstance(step_value, int):
+            if step_value == 1:
+                return "ascending"
+            if step_value == -1:
+                return "descending"
+        return "dynamic"
+
+    def _render_reserve_count_expr(self, expr: Any) -> str:
+        """`east3_expr_v1` の正規化式を C++ 式へ描画する。"""
+        node = self.any_to_dict_or_empty(expr)
+        if len(node) == 0:
+            return ""
+        kind = self._node_kind_from_dict(node)
+        if kind == "Constant":
+            value = node.get("value")
+            if isinstance(value, bool):
+                return ""
+            if isinstance(value, int):
+                return str(value)
+            return ""
+        if kind == "Name":
+            ident = self.any_dict_get_str(node, "id", "")
+            if ident == "":
+                return ""
+            return self.render_expr(node)
+        if kind == "BinOp":
+            op = self.any_dict_get_str(node, "op", "")
+            op_txt = ""
+            if op == "Add":
+                op_txt = "+"
+            elif op == "Sub":
+                op_txt = "-"
+            elif op == "Div":
+                op_txt = "/"
+            if op_txt == "":
+                return ""
+            left = self._render_reserve_count_expr(node.get("left"))
+            right = self._render_reserve_count_expr(node.get("right"))
+            if left == "" or right == "":
+                return ""
+            return f"{left} {op_txt} {right}"
+        if kind == "Compare":
+            left = self._render_reserve_count_expr(node.get("left"))
+            if left == "":
+                return ""
+            ops = self.any_to_str_list(node.get("ops"))
+            cmps = self._dict_stmt_list(node.get("comparators"))
+            if len(ops) != 1 or len(cmps) != 1:
+                return ""
+            op = ops[0]
+            op_txt = ""
+            if op == "LtE":
+                op_txt = "<="
+            elif op == "GtE":
+                op_txt = ">="
+            elif op == "Lt":
+                op_txt = "<"
+            elif op == "Gt":
+                op_txt = ">"
+            elif op == "Eq":
+                op_txt = "=="
+            elif op == "NotEq":
+                op_txt = "!="
+            if op_txt == "":
+                return ""
+            right = self._render_reserve_count_expr(cmps[0])
+            if right == "":
+                return ""
+            return f"{left} {op_txt} {right}"
+        if kind == "IfExp":
+            test_txt = self._render_reserve_count_expr(node.get("test"))
+            body_txt = self._render_reserve_count_expr(node.get("body"))
+            else_txt = self._render_reserve_count_expr(node.get("orelse"))
+            if test_txt == "" or body_txt == "" or else_txt == "":
+                return ""
+            return f"({test_txt}) ? {body_txt} : {else_txt}"
+        return ""
+
+    def _emit_forcore_reserve_hints(
+        self,
+        stmt: dict[str, Any],
+    ) -> None:
+        """EAST3 `reserve_hints` に基づいて `reserve(...)` を出力する。"""
+        hints_obj = stmt.get("reserve_hints")
+        hints = hints_obj if isinstance(hints_obj, list) else []
+        for hint_obj in hints:
+            hint = self.any_to_dict_or_empty(hint_obj)
+            if self.any_dict_get_str(hint, "kind", "") != "StaticRangeReserveHint":
+                continue
+            if not bool(hint.get("safe", False)):
+                continue
+            owner = self.any_dict_get_str(hint, "owner", "")
+            if owner == "":
+                continue
+            if self.any_dict_get_str(hint, "count_expr_version", "") != "east3_expr_v1":
+                continue
+            trip_count_expr = self._render_reserve_count_expr(hint.get("count_expr"))
+            if trip_count_expr == "":
+                continue
+            reserve_owner = owner
+            if self._is_pyobj_runtime_list_alias_name(owner):
+                reserve_owner = f"rc_list_ref({owner})"
+            self.emit(f"{reserve_owner}.reserve({trip_count_expr});")
+
+    def _forcore_capture_mod_guard_rewrite(
+        self,
+        body_stmts: list[dict[str, Any]],
+        loop_var: str,
+        start_txt: str,
+    ) -> dict[str, Any] | None:
+        """`if i % k == 0: ...` 末尾ガードを next-capture カウンタ方式に置換する情報を返す。"""
+        if start_txt != "0" or len(body_stmts) == 0:
+            return None
+        guard_if = self.any_to_dict_or_empty(body_stmts[-1])
+        if self._node_kind_from_dict(guard_if) != "If":
+            return None
+        if len(self._dict_stmt_list(guard_if.get("orelse"))) != 0:
+            return None
+        guard_body = self._dict_stmt_list(guard_if.get("body"))
+        if len(guard_body) != 1:
+            return None
+        append_stmt = self.any_to_dict_or_empty(guard_body[0])
+        if self._node_kind_from_dict(append_stmt) != "Expr":
+            return None
+        append_call = self.any_to_dict_or_empty(append_stmt.get("value"))
+        if self._node_kind_from_dict(append_call) != "Call":
+            return None
+        append_func = self.any_to_dict_or_empty(append_call.get("func"))
+        if self._node_kind_from_dict(append_func) != "Attribute":
+            return None
+        if self.any_dict_get_str(append_func, "attr", "") != "append":
+            return None
+        owner_node = self.any_to_dict_or_empty(append_func.get("value"))
+        if self._node_kind_from_dict(owner_node) != "Name":
+            return None
+        test = self.any_to_dict_or_empty(guard_if.get("test"))
+        if self._node_kind_from_dict(test) != "Compare":
+            return None
+        ops = self.any_to_list(test.get("ops"))
+        comparators = self.any_to_list(test.get("comparators"))
+        if len(ops) != 1 or len(comparators) != 1 or self.any_to_str(ops[0]) != "Eq":
+            return None
+        if self._const_int_literal(comparators[0]) != 0:
+            return None
+        mod_expr = self.any_to_dict_or_empty(test.get("left"))
+        if self._node_kind_from_dict(mod_expr) != "BinOp" or self.any_dict_get_str(mod_expr, "op", "") != "Mod":
+            return None
+        mod_lhs = self.any_to_dict_or_empty(mod_expr.get("left"))
+        if self._node_kind_from_dict(mod_lhs) != "Name" or self.any_dict_get_str(mod_lhs, "id", "") != loop_var:
+            return None
+        capture_step = self.render_expr(mod_expr.get("right"))
+        if capture_step in {"", "0"}:
+            return None
+        return {
+            "prefix_body": body_stmts[:-1],
+            "append_stmt": append_stmt,
+            "capture_step": capture_step,
+        }
+
+    def _forcore_runtime_iter_item_type(
+        self, iter_expr: dict[str, Any], iter_plan: dict[str, Any] | None = None
+    ) -> str:
+        """ForCore runtime iterable の要素型（既知時）を返す。"""
+        iter_plan_norm = iter_plan if isinstance(iter_plan, dict) else {}
+        iter_item_hint = self.normalize_type_name(self.any_dict_get_str(iter_plan_norm, "iter_item_type", ""))
+        if iter_item_hint not in {"", "unknown"} and not self.is_any_like_type(iter_item_hint):
+            return iter_item_hint
+        iter_elem_hint = self.normalize_type_name(self.any_dict_get_str(iter_expr, "iter_element_type", ""))
+        if iter_elem_hint not in {"", "unknown"} and not self.is_any_like_type(iter_elem_hint):
+            return iter_elem_hint
+        if len(iter_expr) == 0:
+            return ""
+        iter_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
+        if iter_t in {"", "unknown"}:
+            iter_t = self.normalize_type_name(self.get_expr_type(iter_expr))
+        if iter_t.startswith("list[") and iter_t.endswith("]"):
+            parts = self.split_generic(iter_t[5:-1])
+            if len(parts) == 1:
+                return self.normalize_type_name(parts[0])
+        if iter_t.startswith("set[") and iter_t.endswith("]"):
+            parts = self.split_generic(iter_t[4:-1])
+            if len(parts) == 1:
+                return self.normalize_type_name(parts[0])
+        if self._node_kind_from_dict(iter_expr) == "Call":
+            runtime_call = self.any_dict_get_str(iter_expr, "runtime_call", "")
+            lowered_kind = self.any_dict_get_str(iter_expr, "lowered_kind", "")
+            builtin_name = self.any_dict_get_str(iter_expr, "builtin_name", "")
+            args = self.any_to_list(iter_expr.get("args"))
+            if len(args) >= 1:
+                src_node = self.any_to_dict_or_empty(args[0])
+                src_item_t = self._list_item_type_from_expr(src_node)
+                if src_item_t != "":
+                    is_enumerate = runtime_call == "py_enumerate" or (lowered_kind == "BuiltinCall" and builtin_name == "enumerate")
+                    if is_enumerate:
+                        return f"tuple[int64, {src_item_t}]"
+                    is_reversed = runtime_call == "py_reversed" or (lowered_kind == "BuiltinCall" and builtin_name == "reversed")
+                    if is_reversed:
+                        return src_item_t
+            if runtime_call == "dict.items":
+                fn_node = self.any_to_dict_or_empty(iter_expr.get("func"))
+                owner_obj = fn_node.get("value")
+                owner_t = self.normalize_type_name(self.get_expr_type(owner_obj))
+                if owner_t.startswith("dict[") and owner_t.endswith("]"):
+                    dict_inner_parts = self.split_generic(owner_t[5:-1])
+                    if len(dict_inner_parts) == 2:
+                        key_t = self.normalize_type_name(dict_inner_parts[0])
+                        val_t = self.normalize_type_name(dict_inner_parts[1])
+                        if key_t != "" and val_t != "":
+                            return f"tuple[{key_t}, {val_t}]"
+        return ""
+
+    def _forcore_type_has_list_str(self, type_text: str) -> bool:
+        """型文字列が `list[str]`（またはそれを含む union）か判定する。"""
+        t_norm = self.normalize_type_name(type_text)
+        if t_norm == "list[str]":
+            return True
+        if self._contains_text(t_norm, "|"):
+            for part in self.split_union(t_norm):
+                if self.normalize_type_name(part) == "list[str]":
+                    return True
+        return False
+
+    def _forcore_type_has_list_of(self, type_text: str, elem_type: str) -> bool:
+        """型文字列が `list[elem_type]`（またはそれを含む union）か判定する。"""
+        elem_norm = self.normalize_type_name(elem_type)
+        if elem_norm == "":
+            return False
+        t_norm = self.normalize_type_name(type_text)
+        if t_norm == f"list[{elem_norm}]":
+            return True
+        if self._contains_text(t_norm, "|"):
+            for part in self.split_union(t_norm):
+                if self.normalize_type_name(part) == f"list[{elem_norm}]":
+                    return True
+        return False
+
+    def _list_item_type_from_type(self, type_text: str) -> str:
+        """`list[T]` または同型 union から要素型 `T` を返す。"""
+        t_norm = self.normalize_type_name(type_text)
+        if t_norm == "":
+            return ""
+        if self._contains_text(t_norm, "|"):
+            picked = ""
+            for part in self.split_union(t_norm):
+                part_norm = self.normalize_type_name(part)
+                if part_norm == "None":
+                    continue
+                inner = self.type_generic_args(part_norm, "list")
+                if len(inner) != 1:
+                    return ""
+                elem_norm = self.normalize_type_name(inner[0])
+                if elem_norm == "":
+                    return ""
+                if picked == "":
+                    picked = elem_norm
+                    continue
+                if picked != elem_norm:
+                    return ""
+            return picked
+        inner = self.type_generic_args(t_norm, "list")
+        if len(inner) != 1:
+            return ""
+        return self.normalize_type_name(inner[0])
+
+    def _list_item_type_from_expr(self, expr_node: Any) -> str:
+        """式型から `list[T]` の要素型 `T` を返す。"""
+        expr_t = self.normalize_type_name(self.get_expr_type(expr_node))
+        if expr_t in {"", "unknown"}:
+            expr_t = self.normalize_type_name(self.any_dict_get_str(self.any_to_dict_or_empty(expr_node), "resolved_type", ""))
+        return self._list_item_type_from_type(expr_t)
+
+    def _prepare_pyobj_typed_list_iter_expr(self, iter_expr: dict[str, Any], iter_item_t: str) -> str:
+        """typed list 反復を object loop へ落とさない iterable 式へ変換する。"""
+        item_norm = self.normalize_type_name(iter_item_t)
+        if item_norm in {"", "unknown"} or self.is_any_like_type(item_norm):
+            return ""
+        src_item_t = self._list_item_type_from_expr(iter_expr)
+        if src_item_t == "" or src_item_t != item_norm:
+            return ""
+        iter_txt = self.render_expr(iter_expr)
+        if iter_txt == "":
+            return ""
+        if self._uses_pyobj_ref_first_list_lvalue_expr(iter_expr):
+            return f"rc_list_ref({iter_txt})"
+        if self._call_expr_returns_known_pyobj_list_handle(iter_expr):
+            handle_tmp = self.next_tmp("__iter_list")
+            self.emit(f"auto {handle_tmp} = {iter_txt};")
+            iter_expr_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
+            if iter_expr_t in {"", "unknown"}:
+                iter_expr_t = self.normalize_type_name(self.get_expr_type(iter_expr))
+            if iter_expr_t not in {"", "unknown"}:
+                self.declared_var_types[handle_tmp] = iter_expr_t
+            return f"rc_list_ref({handle_tmp})"
+        return iter_txt
+
+    def _render_forcore_typed_enumerate_iter_expr(self, iter_expr: dict[str, Any], iter_item_t: str) -> str:
+        """`enumerate(list[T])` を pyobj でも typed enumerate へ戻す。"""
+        iter_item_norm = self.normalize_type_name(iter_item_t)
+        if not (iter_item_norm.startswith("tuple[") and iter_item_norm.endswith("]")):
+            return ""
+        iter_item_parts = self.split_generic(iter_item_norm[6:-1])
+        if len(iter_item_parts) != 2:
+            return ""
+        index_t = self.normalize_type_name(iter_item_parts[0])
+        elem_t = self.normalize_type_name(iter_item_parts[1])
+        if index_t != "int64" or elem_t in {"", "unknown"} or self.is_any_like_type(elem_t):
+            return ""
+        if self._node_kind_from_dict(iter_expr) != "Call":
+            return ""
+        runtime_call = self.any_dict_get_str(iter_expr, "runtime_call", "")
+        lowered_kind = self.any_dict_get_str(iter_expr, "lowered_kind", "")
+        builtin_name = self.any_dict_get_str(iter_expr, "builtin_name", "")
+        is_enumerate = runtime_call == "py_enumerate" or (lowered_kind == "BuiltinCall" and builtin_name == "enumerate")
+        if not is_enumerate:
+            return ""
+        args = self.any_to_list(iter_expr.get("args"))
+        if len(args) < 1:
+            return ""
+        src_node = self.any_to_dict_or_empty(args[0])
+        if len(src_node) == 0:
+            return ""
+        src_t = self.normalize_type_name(self.get_expr_type(src_node))
+        if src_t in {"", "unknown"}:
+            src_t = self.normalize_type_name(self.any_dict_get_str(src_node, "resolved_type", ""))
+        src_item_t = self._list_item_type_from_type(src_t)
+        src_expr = self.render_expr(src_node)
+        if src_expr == "":
+            return ""
+        if src_item_t == elem_t and not self.is_any_like_type(src_t):
+            if len(args) >= 2:
+                start_expr = self.render_expr(args[1])
+                if start_expr == "":
+                    return ""
+                return f"py_enumerate({src_expr}, int64({start_expr}))"
+            return f"py_enumerate({src_expr})"
+        if not self._forcore_type_has_list_of(src_t, elem_t):
+            return ""
+        if not self._can_runtime_cast_target(elem_t):
+            return ""
+        elem_cpp_t = self._cpp_type_text(elem_t)
+        if len(args) >= 2:
+            start_expr = self.render_expr(args[1])
+            if start_expr == "":
+                return ""
+            return f"py_enumerate_list_as<{elem_cpp_t}>({src_expr}, int64({start_expr}))"
+        return f"py_enumerate_list_as<{elem_cpp_t}>({src_expr})"
+
+    def _render_forcore_typed_reversed_iter_expr(self, iter_expr: dict[str, Any], iter_item_t: str) -> str:
+        """`reversed(list[T])` を typed list 反復へ戻す。"""
+        item_norm = self.normalize_type_name(iter_item_t)
+        if item_norm in {"", "unknown"} or self.is_any_like_type(item_norm):
+            return ""
+        if self._node_kind_from_dict(iter_expr) != "Call":
+            return ""
+        runtime_call = self.any_dict_get_str(iter_expr, "runtime_call", "")
+        lowered_kind = self.any_dict_get_str(iter_expr, "lowered_kind", "")
+        builtin_name = self.any_dict_get_str(iter_expr, "builtin_name", "")
+        is_reversed = runtime_call == "py_reversed" or (lowered_kind == "BuiltinCall" and builtin_name == "reversed")
+        if not is_reversed:
+            return ""
+        args = self.any_to_list(iter_expr.get("args"))
+        if len(args) < 1:
+            return ""
+        src_node = self.any_to_dict_or_empty(args[0])
+        if len(src_node) == 0:
+            return ""
+        src_t = self.normalize_type_name(self.get_expr_type(src_node))
+        if src_t in {"", "unknown"}:
+            src_t = self.normalize_type_name(self.any_dict_get_str(src_node, "resolved_type", ""))
+        src_item_t = self._list_item_type_from_type(src_t)
+        if src_item_t == "" or src_item_t != item_norm:
+            return ""
+        if self.is_any_like_type(src_t):
+            return ""
+        src_expr = self.render_expr(src_node)
+        if src_expr == "":
+            return ""
+        return f"py_reversed({src_expr})"
+
+    def _render_forcore_typed_refclass_list_iter_expr(
+        self,
+        iter_expr: dict[str, Any],
+        iter_item_t: str,
+        target_id: str,
+    ) -> str:
+        """`list[RefClass]` object 反復を typed list 反復へ戻す。"""
+        item_norm = self.normalize_type_name(iter_item_t)
+        if item_norm == "" or item_norm not in self.ref_classes:
+            return ""
+        if self._node_kind_from_dict(iter_expr) != "Name":
+            return ""
+        src_name = self.any_dict_get_str(iter_expr, "id", "")
+        if src_name == "" or self._is_stack_list_local_name(src_name):
+            return ""
+        src_t = self.normalize_type_name(self.get_expr_type(iter_expr))
+        if src_t in {"", "unknown"}:
+            src_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
+        if not self._forcore_type_has_list_of(src_t, item_norm):
+            return ""
+        src_expr = self.render_expr(iter_expr)
+        if src_expr == "":
+            return ""
+        target_label = target_id if target_id != "" else "_"
+        return f'py_to_rc_list_from_object<{item_norm}>({src_expr}, "for_target:{target_label}")'
+
+    def emit_for_core(self, stmt: dict[str, Any]) -> None:
+        """EAST3 `ForCore` を直接 C++ ループへ描画する。"""
+        iter_plan = self.any_to_dict_or_empty(stmt.get("iter_plan"))
+        plan_kind = self.any_dict_get_str(iter_plan, "kind", "")
+        target_plan = self.any_to_dict_or_empty(stmt.get("target_plan"))
+        body_stmts = self.any_dict_get_list(stmt, "body")
+        _ = self.any_dict_get_list(stmt, "orelse")
+        omit_default = self._stmt_omit_braces_default("ForCore", stmt, False)
+        omit_braces = self.hook_on_stmt_omit_braces("ForCore", stmt, omit_default)
+        if len(body_stmts) != 1:
+            omit_braces = False
+
+        if plan_kind == "StaticRangeForPlan":
+            if self.any_dict_get_str(target_plan, "kind", "") != "NameTarget":
+                raise RuntimeError("cpp emitter: invalid forcore target for static range")
+            target_id = self.any_dict_get_str(target_plan, "id", "")
+            if target_id == "":
+                raise RuntimeError("cpp emitter: invalid forcore target name")
+            target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
+            if target_type in {"", "unknown"}:
+                target_type = "int64"
+            start_expr = iter_plan.get("start")
+            stop_expr = iter_plan.get("stop")
+            step_obj = iter_plan.get("step")
+            step_expr = self.any_to_dict_or_empty(step_obj)
+            if len(step_expr) == 0:
+                step_expr = {"kind": "Constant", "resolved_type": "int64", "value": 1, "repr": "1"}
+            start_txt = self.render_expr(start_expr)
+            loop_start_txt = start_txt
+            start_reads: set[str] = set()
+            self._collect_name_reads(start_expr, start_reads)
+            if target_id in start_reads:
+                start_tmp = self.next_tmp("__for_start")
+                self.emit(f"auto {start_tmp} = {start_txt};")
+                loop_start_txt = start_tmp
+            stop_txt = self.render_expr(stop_expr)
+            step_txt = self.render_expr(step_expr)
+            range_mode_txt = self.any_dict_get_str(iter_plan, "range_mode", "")
+            if range_mode_txt == "":
+                range_mode_txt = self._range_mode_from_step_expr(step_expr)
+            cond = ""
+            normalized_exprs = self.any_to_dict_or_empty(stmt.get("normalized_exprs"))
+            if self.any_dict_get_str(stmt, "normalized_expr_version", "") == "east3_expr_v1":
+                cond = self._render_reserve_count_expr(normalized_exprs.get("for_cond_expr"))
+            if cond == "":
+                cond = (
+                    f"{target_id} < {stop_txt}"
+                    if range_mode_txt == "ascending"
+                    else (
+                        f"{target_id} > {stop_txt}"
+                        if range_mode_txt == "descending"
+                        else f"{step_txt} > 0 ? {target_id} < {stop_txt} : {target_id} > {stop_txt}"
+                    )
+                )
+            inc = (
+                f"++{target_id}"
+                if self._opt_ge(2) and step_txt == "1"
+                else (f"--{target_id}" if self._opt_ge(2) and step_txt == "-1" else f"{target_id} += {step_txt}")
+            )
+            hdr = self.syntax_line(
+                "for_range_open",
+                "for ({type} {target} = {start}; {cond}; {inc})",
+                {
+                    "type": self._cpp_type_text(target_type),
+                    "target": target_id,
+                    "start": loop_start_txt,
+                    "cond": cond,
+                    "inc": inc,
+                },
+            )
+            # Temporarily disable emitter-side rewrite:
+            # `if i % k == 0: append(...)` -> `__next_capture` form.
+            # Keep original loop/body shape for source readability/fidelity.
+            # capture_guard_rewrite = self._forcore_capture_mod_guard_rewrite(body_stmts, target_id, start_txt)
+            capture_guard_rewrite = None
+            loop_body_stmts = body_stmts
+            loop_omit_braces = omit_braces
+            next_capture_var = ""
+            capture_step = ""
+            append_stmt: dict[str, Any] = {}
+            if capture_guard_rewrite is not None:
+                next_capture_var = self.next_tmp("__next_capture")
+                capture_step = self.any_to_str(capture_guard_rewrite.get("capture_step"))
+                append_stmt = self.any_to_dict_or_empty(capture_guard_rewrite.get("append_stmt"))
+                loop_body_stmts = self._dict_stmt_list(capture_guard_rewrite.get("prefix_body"))
+                loop_omit_braces = False
+                self.emit(f"int64 {next_capture_var} = 0;")
+                self.declared_var_types[next_capture_var] = "int64"
+            self._emit_forcore_reserve_hints(stmt)
+            self.declared_var_types[target_id] = target_type
+            self._emit_for_body_open(hdr, {target_id}, loop_omit_braces)
+            if capture_guard_rewrite is None:
+                self._emit_for_body_stmts(loop_body_stmts, loop_omit_braces)
+            else:
+                self._emit_for_body_stmts(loop_body_stmts, False)
+                self.emit(f"if ({target_id} == {next_capture_var}) {{")
+                self.indent += 1
+                self.emit_stmt(append_stmt)
+                self.emit(f"{next_capture_var} += {capture_step};")
+                self.indent -= 1
+                self.emit("}")
+            self._emit_for_body_close(loop_omit_braces)
+            return
+
+        if plan_kind == "RuntimeIterForPlan":
+            iter_expr = self.any_to_dict_or_empty(iter_plan.get("iter_expr"))
+            if len(iter_expr) == 0:
+                raise RuntimeError("cpp emitter: invalid forcore runtime iter_plan")
+            iter_txt = self.render_expr(iter_expr)
+            iter_expr_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
+            if iter_expr_t in {"", "unknown"}:
+                iter_expr_t = self.normalize_type_name(self.get_expr_type(iter_expr))
+            force_runtime_iter = False
+            if self._is_pyobj_runtime_list_type(iter_expr_t):
+                force_runtime_iter = True
+            elif self._contains_text(iter_expr_t, "|"):
+                for part in self.split_union(iter_expr_t):
+                    part_norm = self.normalize_type_name(part)
+                    if self._is_pyobj_runtime_list_type(part_norm):
+                        force_runtime_iter = True
+                        break
+            iter_expr_name = ""
+            if self._node_kind_from_dict(iter_expr) == "Name":
+                iter_expr_name = self.any_dict_get_str(iter_expr, "id", "")
+            if self._is_stack_list_local_name(iter_expr_name):
+                force_runtime_iter = False
+            target_kind = self.any_dict_get_str(target_plan, "kind", "")
+            if target_kind == "NameTarget":
+                target_id = self.any_dict_get_str(target_plan, "id", "")
+                if target_id == "":
+                    raise RuntimeError("cpp emitter: invalid forcore target name")
+                target_type = self.normalize_type_name(self.any_dict_get_str(target_plan, "target_type", ""))
+                target_is_loop_value_list = target_type.startswith("list[") and target_type.endswith("]")
+                iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
+                typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
+                typed_iter_expr = iter_txt
+                if typed_iter:
+                    list_iter_override = self._prepare_pyobj_typed_list_iter_expr(iter_expr, iter_item_t)
+                    if list_iter_override != "":
+                        typed_iter_expr = list_iter_override
+                        force_runtime_iter = False
+                    elif self._uses_pyobj_ref_first_list_lvalue_expr(iter_expr):
+                        typed_iter_expr = f"rc_list_ref({iter_txt})"
+                if force_runtime_iter and typed_iter:
+                    enumerate_override = self._render_forcore_typed_enumerate_iter_expr(iter_expr, iter_item_t)
+                    if enumerate_override != "":
+                        typed_iter_expr = enumerate_override
+                        force_runtime_iter = False
+                if force_runtime_iter and typed_iter:
+                    reversed_override = self._render_forcore_typed_reversed_iter_expr(iter_expr, iter_item_t)
+                    if reversed_override != "":
+                        typed_iter_expr = reversed_override
+                        force_runtime_iter = False
+                if force_runtime_iter and typed_iter:
+                    refclass_override = self._render_forcore_typed_refclass_list_iter_expr(iter_expr, iter_item_t, target_id)
+                    if refclass_override != "":
+                        typed_iter_expr = refclass_override
+                        force_runtime_iter = False
+                if force_runtime_iter:
+                    typed_iter = False
+                if target_type in {"", "unknown"}:
+                    target_type = iter_item_t if typed_iter else "object"
+                    target_is_loop_value_list = target_type.startswith("list[") and target_type.endswith("]")
+                if self.is_any_like_type(target_type):
+                    _, next_tmp = self._emit_runtime_iter_loop_open(iter_txt, {target_id})
+                    self.emit(f"object {target_id} = *{next_tmp};")
+                    self.declared_var_types[target_id] = "object"
+                    self._emit_for_body_stmts(body_stmts, False)
+                    self._emit_runtime_iter_loop_close()
+                    return
+                if typed_iter:
+                    typed_loop_type = self._cpp_type_text(target_type)
+                    if typed_loop_type.startswith("rc<") and typed_loop_type.endswith(">"):
+                        typed_loop_type = f"const {typed_loop_type}&"
+                    hdr = self.syntax_line(
+                        "for_each_typed_open",
+                        "for ({type} {target} : {iter})",
+                        {"type": typed_loop_type, "target": target_id, "iter": typed_iter_expr},
+                    )
+                    self.declared_var_types[target_id] = target_type
+                    prev_stack_list_locals = set(self.current_function_stack_list_locals)
+                    if target_is_loop_value_list:
+                        self.current_function_stack_list_locals.add(target_id)
+                    self._emit_for_body_open(hdr, {target_id}, omit_braces)
+                    self._emit_for_body_stmts(body_stmts, omit_braces)
+                    self._emit_for_body_close(omit_braces)
+                    self.current_function_stack_list_locals = prev_stack_list_locals
+                    return
+                iter_tmp = self.next_for_runtime_iter_name()
+                _, next_tmp = self._emit_runtime_iter_loop_open(iter_txt, self.scope_names_with_tmp({target_id}, iter_tmp))
+                self.emit(f"object {iter_tmp} = *{next_tmp};")
+                rhs = self.render_expr(
+                    self._build_unbox_expr_node(
+                        self._build_name_expr_node(iter_tmp, "object"),
+                        target_type,
+                        f"for_target:{target_id}",
+                    )
+                )
+                self.emit(f"{self._cpp_type_text(target_type)} {target_id} = {rhs};")
+                self.declared_var_types[target_id] = target_type
+                prev_stack_list_locals = set(self.current_function_stack_list_locals)
+                if target_is_loop_value_list:
+                    self.current_function_stack_list_locals.add(target_id)
+                self._emit_for_body_stmts(body_stmts, False)
+                self.current_function_stack_list_locals = prev_stack_list_locals
+                self._emit_runtime_iter_loop_close()
+                return
+            if target_kind == "TupleTarget":
+                iter_tmp = self.next_for_runtime_iter_name()
+                scope_names = self.scope_names_with_tmp(self._forcore_target_bound_names(target_plan), iter_tmp)
+                iter_item_t = self._forcore_runtime_iter_item_type(iter_expr, iter_plan)
+                typed_iter = iter_item_t not in {"", "unknown"} and not self.is_any_like_type(iter_item_t)
+                typed_iter_expr = iter_txt
+                if typed_iter:
+                    list_iter_override = self._prepare_pyobj_typed_list_iter_expr(iter_expr, iter_item_t)
+                    if list_iter_override != "":
+                        typed_iter_expr = list_iter_override
+                        force_runtime_iter = False
+                    elif self._uses_pyobj_ref_first_list_lvalue_expr(iter_expr):
+                        typed_iter_expr = f"rc_list_ref({iter_txt})"
+                if force_runtime_iter and typed_iter:
+                    enumerate_override = self._render_forcore_typed_enumerate_iter_expr(iter_expr, iter_item_t)
+                    if enumerate_override != "":
+                        typed_iter_expr = enumerate_override
+                        force_runtime_iter = False
+                if force_runtime_iter and typed_iter:
+                    reversed_override = self._render_forcore_typed_reversed_iter_expr(iter_expr, iter_item_t)
+                    if reversed_override != "":
+                        typed_iter_expr = reversed_override
+                        force_runtime_iter = False
+                if force_runtime_iter:
+                    typed_iter = False
+                inherited_elem_types: list[str] = []
+                if typed_iter and iter_item_t.startswith("tuple[") and iter_item_t.endswith("]"):
+                    inherited_elem_types = self.split_generic(iter_item_t[6:-1])
+                direct_unpack = bool(target_plan.get("direct_unpack", False))
+                direct_names_obj = target_plan.get("direct_unpack_names")
+                direct_types_obj = target_plan.get("direct_unpack_types")
+                direct_names = direct_names_obj if isinstance(direct_names_obj, list) else []
+                direct_types = direct_types_obj if isinstance(direct_types_obj, list) else []
+                direct_names_txt: list[str] = []
+                for raw_name in direct_names:
+                    if isinstance(raw_name, str) and raw_name != "":
+                        direct_names_txt.append(raw_name)
+                if typed_iter and direct_unpack and len(direct_names_txt) > 0:
+                    bind_targets = ", ".join(direct_names_txt)
+                    hdr = f"for (const auto& [{bind_targets}] : {typed_iter_expr})"
+                    self._emit_for_body_open(hdr, set(direct_names_txt), omit_braces)
+                    i = 0
+                    while i < len(direct_names_txt):
+                        nm = direct_names_txt[i]
+                        nm_t = "unknown"
+                        if i < len(direct_types) and isinstance(direct_types[i], str):
+                            nm_t = self.normalize_type_name(direct_types[i])
+                        if nm_t != "":
+                            self.declared_var_types[nm] = nm_t
+                        i += 1
+                    self._emit_for_body_stmts(body_stmts, omit_braces)
+                    self._emit_for_body_close(omit_braces)
+                    return
+                if typed_iter:
+                    hdr = self.syntax_line(
+                        "for_each_typed_open",
+                        "for (const {type}& {target} : {iter})",
+                        {"type": self._cpp_type_text(iter_item_t), "target": iter_tmp, "iter": typed_iter_expr},
+                    )
+                else:
+                    _, next_tmp = self._emit_runtime_iter_loop_open(iter_txt, scope_names)
+                    self.emit(f"object {iter_tmp} = *{next_tmp};")
+                    hdr = ""
+                if hdr != "":
+                    self._emit_for_body_open(hdr, scope_names, omit_braces)
+                self._emit_forcore_tuple_unpack_runtime(target_plan, iter_tmp, inherited_elem_types)
+                self._emit_for_body_stmts(body_stmts, False if hdr == "" else omit_braces)
+                if hdr == "":
+                    self._emit_runtime_iter_loop_close()
+                else:
+                    self._emit_for_body_close(omit_braces)
+                return
+            raise RuntimeError("cpp emitter: invalid forcore runtime target")
+
+        raise RuntimeError("cpp emitter: unsupported ForCore iter_plan kind: " + plan_kind)
+
+    def _resolve_for_iter_mode(self, stmt: dict[str, Any], iter_expr: dict[str, Any]) -> str:
+        """`For` の反復モード（static/runtime）を決定する。"""
+        hint_mode = self.any_to_str(stmt.get("cpp_iter_mode_v1"))
+        if hint_mode in {"runtime_protocol", "static_fastpath"}:
+            return hint_mode
+        mode_txt = self.any_to_str(stmt.get("iter_mode"))
+        if mode_txt == "runtime_protocol":
+            return mode_txt
+        iter_name = ""
+        if self._node_kind_from_dict(iter_expr) == "Name":
+            iter_name = self.any_dict_get_str(iter_expr, "id", "")
+        iter_t = self.normalize_type_name(self.get_expr_type(iter_expr))
+        if iter_t == "":
+            iter_t = self.normalize_type_name(self.any_dict_get_str(iter_expr, "resolved_type", ""))
+        if mode_txt == "static_fastpath":
+            if self._is_stack_list_local_name(iter_name):
+                return mode_txt
+            if self._is_pyobj_runtime_list_type(iter_t):
+                return "runtime_protocol"
+            if self._contains_text(iter_t, "|"):
+                parts = self.split_union(iter_t)
+                for p in parts:
+                    p_norm = self.normalize_type_name(p)
+                    if self._is_pyobj_runtime_list_type(p_norm):
+                        return "runtime_protocol"
+            return mode_txt
+        if iter_t == "Any" or iter_t == "object":
+            return "runtime_protocol"
+        if self._is_stack_list_local_name(iter_name):
+            return "static_fastpath"
+        if self._is_pyobj_runtime_list_type(iter_t):
+            return "runtime_protocol"
+        # 明示 `iter_mode` が無い既存 EAST では selfhost 互換を優先し、unknown は static 側に倒す。
+        if iter_t == "" or iter_t == "unknown":
+            return "static_fastpath"
+        if self._contains_text(iter_t, "|"):
+            parts = self.split_union(iter_t)
+            for p in parts:
+                p_norm = self.normalize_type_name(p)
+                if p_norm == "Any" or p_norm == "object":
+                    return "runtime_protocol"
+                if self._is_pyobj_runtime_list_type(p_norm):
+                    return "runtime_protocol"
+            return "static_fastpath"
+        return "static_fastpath"
+
+    def emit_function(self, stmt: dict[str, Any], in_class: bool = False) -> None:
+        """関数定義ノードを C++ 関数として出力する。"""
+        name = self.any_dict_get_str(stmt, "name", "fn")
+        decorators = set(self.any_to_str_list(stmt.get("decorators")))
+        has_static_decorator = "staticmethod" in decorators or "classmethod" in decorators
+        stmt_meta = self.any_to_dict_or_empty(stmt.get("meta"))
+        template_meta = self.any_to_dict_or_empty(stmt_meta.get("template_v1"))
+        template_params: list[str] = []
+        if not in_class and len(template_meta) > 0:
+            for raw_param in self.any_to_list(template_meta.get("params")):
+                param_name = self.any_to_str(raw_param)
+                if param_name != "":
+                    template_params.append(param_name)
+        function_symbol = str(name)
+        if in_class and self.current_class_name is not None and function_symbol != "":
+            function_symbol = str(self.current_class_name) + "." + function_symbol
+        fn_non_escape_summary = self._resolve_function_non_escape_summary(stmt, function_symbol)
+        self.function_non_escape_summary_map[function_symbol] = dict(fn_non_escape_summary) if len(fn_non_escape_summary) > 0 else {}
+        prev_fn_non_escape_for_collect = self.current_function_non_escape_summary
+        self.current_function_non_escape_summary = dict(fn_non_escape_summary)
+        stack_list_locals = self._collect_stack_list_locals(stmt)
+        runtime_list_alias_names = self._collect_pyobj_runtime_list_alias_names(stmt, stack_list_locals)
+        self.current_function_non_escape_summary = prev_fn_non_escape_for_collect
+        self.function_stack_list_locals_map[function_symbol] = sorted(list(stack_list_locals))
+        self.function_pyobj_runtime_list_alias_map[function_symbol] = sorted(list(runtime_list_alias_names))
+        emitted_name = self.rename_if_reserved(str(name), self.reserved_words, self.rename_prefix, self.renamed_symbols)
+        is_generator = self.any_dict_get_int(stmt, "is_generator", 0) != 0
+        yield_value_type = self.any_to_str(stmt.get("yield_value_type"))
+        ret_abi_mode = self._function_runtime_abi_ret_mode(stmt)
+        if ret_abi_mode == "default":
+            ret_abi_mode = self.any_to_str(
+                self.function_return_abi_modes.get(emitted_name, self.function_return_abi_modes.get(str(name), "default"))
+            )
+            if ret_abi_mode == "":
+                ret_abi_mode = "default"
+        return_type_expr = stmt.get("return_type_expr")
+        ret = self.cpp_signature_type(
+            return_type_expr if self._is_type_expr_payload(return_type_expr) else stmt.get("return_type"),
+            runtime_abi_mode=ret_abi_mode,
+        )
+        ret_t_norm = self.normalize_type_name(self.any_to_str(stmt.get("return_type")))
+        if is_generator:
+            elem_type_for_cpp = yield_value_type
+            if elem_type_for_cpp in {"", "unknown"}:
+                elem_type_for_cpp = "Any"
+            elem_cpp = self._cpp_type_text(elem_type_for_cpp)
+            ret = f"list<{elem_cpp}>"
+        arg_types = self.any_to_dict_or_empty(stmt.get("arg_types"))
+        arg_type_exprs = self.any_to_dict_or_empty(stmt.get("arg_type_exprs"))
+        arg_usage = self.any_to_dict_or_empty(stmt.get("arg_usage"))
+        arg_defaults = self.any_to_dict_or_empty(stmt.get("arg_defaults"))
+        arg_index = self.any_to_dict_or_empty(stmt.get("arg_index"))
+        body_stmts = self._dict_stmt_list(stmt.get("body"))
+        assign_counts = self._collect_assigned_name_counts(body_stmts)
+        reassigned_names = {name for name, count in assign_counts.items() if int(count) > 1}
+        params: list[str] = []
+        fn_scope: set[str] = set()
+        arg_names: list[str] = []
+        arg_names_for_mutation: list[str] = []
+        value_list_params: set[str] = set()
+        typed_list_str_params: set[str] = set()
+        ref_first_param_names: set[str] = set()
+        borrow_param_names: set[str] = set()
+        raw_order = self.any_dict_get_list(stmt, "arg_order")
+        for raw_n in raw_order:
+            if isinstance(raw_n, str) and raw_n != "":
+                n = str(raw_n)
+                if n in arg_types:
+                    arg_names.append(n)
+        arg_names_for_mutation.extend(arg_names)
+        vararg_name = self.any_dict_get_str(stmt, "vararg_name", "")
+        vararg_type = self.normalize_type_name(self.any_dict_get_str(stmt, "vararg_type", ""))
+        vararg_type_expr = stmt.get("vararg_type_expr")
+        vararg_list_t = f"list[{vararg_type}]" if vararg_name != "" and vararg_type != "" else ""
+        if vararg_name != "" and vararg_list_t != "":
+            arg_names_for_mutation.append(vararg_name)
+        mutated_params = self._collect_mutated_params(body_stmts, arg_names_for_mutation)
+        fallback_arg_abi_modes = self.function_arg_abi_modes.get(
+            emitted_name,
+            self.function_arg_abi_modes.get(str(name), []),
+        )
+        for idx, n in enumerate(arg_names):
+            t = self.any_to_str(arg_types.get(n))
+            skip_self = in_class and idx == 0 and (n == "self" or (has_static_decorator and n == "cls"))
+            arg_abi_mode = self._function_runtime_abi_arg_mode(stmt, n)
+            if arg_abi_mode == "default" and idx < len(fallback_arg_abi_modes):
+                fallback_mode = self.any_to_str(fallback_arg_abi_modes[idx])
+                if fallback_mode != "":
+                    arg_abi_mode = fallback_mode
+            type_expr_obj = arg_type_exprs.get(n)
+            ct = self.cpp_signature_type(
+                type_expr_obj if self._is_type_expr_payload(type_expr_obj) else t,
+                runtime_abi_mode=arg_abi_mode,
+            )
+            t_norm = self.normalize_type_name(t)
+            emitted_n = self.rename_if_reserved(n, self.reserved_words, self.rename_prefix, self.renamed_symbols)
+            if (
+                (not skip_self)
+                and arg_abi_mode not in {"value", "value_mut", "value_readonly"}
+                and self._is_pyobj_ref_first_list_type(t_norm)
+            ):
+                ref_first_param_names.add(n)
+            usage = self.any_to_str(arg_usage.get(n))
+            usage = usage if usage != "" else "readonly"
+            if usage != "mutable" and n in mutated_params:
+                usage = "mutable"
+            by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
+            borrow_param = self._is_cpp_class_borrow_param_type(t, ct)
+            if borrow_param:
+                borrow_param_names.add(n)
+            borrow_ct = self._strip_rc_wrapper(ct) if borrow_param else ct
+            if skip_self:
+                pass
+            else:
+                if by_ref and usage == "mutable":
+                    if ct.startswith("rc<") and not borrow_param:
+                        param_txt = f"{ct}& {emitted_n}"
+                    else:
+                        param_txt = f"{borrow_ct} {emitted_n}" if borrow_ct == "object" else f"{borrow_ct}& {emitted_n}"
+                elif by_ref:
+                    if borrow_param:
+                        param_txt = f"const {borrow_ct}& {emitted_n}"
+                    else:
+                        param_txt = f"const {borrow_ct}& {emitted_n}"
+                else:
+                    param_txt = f"{borrow_ct} {emitted_n}"
+                if ct.startswith("list<"):
+                    value_list_params.add(n)
+                if n in arg_defaults:
+                    default_txt = self._render_param_default_expr(arg_defaults.get(n), t)
+                    if default_txt != "":
+                        default_txt = self._coerce_param_signature_default(default_txt, t)
+                        param_txt += f" = {default_txt}"
+                params.append(param_txt)
+                fn_scope.add(n)
+        if vararg_name != "" and vararg_list_t != "":
+            ct = self.cpp_signature_type(vararg_list_t)
+            if self._is_pyobj_ref_first_list_type(vararg_list_t):
+                ref_first_param_names.add(vararg_name)
+            if ct.startswith("list<"):
+                value_list_params.add(vararg_name)
+            emitted_vararg = self.rename_if_reserved(
+                vararg_name,
+                self.reserved_words,
+                self.rename_prefix,
+                self.renamed_symbols,
+            )
+            usage = self.any_to_str(arg_usage.get(vararg_name))
+            usage = usage if usage != "" else "readonly"
+            if usage != "mutable" and vararg_name in mutated_params:
+                usage = "mutable"
+            by_ref = ct not in {"int8", "uint8", "int16", "uint16", "int32", "uint32", "int64", "uint64", "float32", "float64", "bool"}
+            borrow_param = self._is_cpp_class_borrow_param_type(vararg_list_t, ct)
+            if borrow_param:
+                borrow_param_names.add(vararg_name)
+            borrow_ct = self._strip_rc_wrapper(ct) if borrow_param else ct
+            if by_ref and usage == "mutable":
+                param_txt = f"{borrow_ct} {emitted_vararg}" if borrow_ct == "object" else f"{borrow_ct}& {emitted_vararg}"
+            elif by_ref:
+                if borrow_param:
+                    param_txt = f"const {borrow_ct}& {emitted_vararg}"
+                else:
+                    param_txt = f"const {borrow_ct}& {emitted_vararg}"
+            else:
+                param_txt = f"{borrow_ct} {emitted_vararg}"
+            params.append(param_txt)
+            fn_scope.add(vararg_name)
+        if in_class and name == "__init__" and self.current_class_name is not None:
+            param_sep = ", "
+            params_txt = param_sep.join(params)
+            if self.current_class_base_name == "CodeEmitter":
+                self.emit(f"{self.current_class_name}({params_txt}) : CodeEmitter(east_doc, load_cpp_profile(), dict<str, object>{{}}) {{")
+            else:
+                self.emit_ctor_open(str(self.current_class_name), params_txt)
+        elif in_class and name == "__del__" and self.current_class_name is not None:
+            self.emit_dtor_open(str(self.current_class_name))
+        else:
+            param_sep = ", "
+            params_txt = param_sep.join(params)
+            method_is_const = (
+                in_class
+                and self.current_class_name is not None
+                and "self" in arg_names
+                and name not in {"__init__", "__del__"}
+                and "self" not in mutated_params
+            )
+            if (
+                method_is_const
+                and in_class
+                and self.current_class_name is not None
+                and str(name) in getattr(self, "class_method_force_nonconst", {}).get(self.current_class_name, set())
+            ):
+                method_is_const = False
+            if len(template_params) > 0:
+                template_parts = [f"class {param_name}" for param_name in template_params]
+                self.emit("template <" + ", ".join(template_parts) + ">")
+            if self.current_class_name is not None and in_class:
+                func_prefix = ""
+                func_suffix = ""
+                if has_static_decorator:
+                    func_prefix = "static "
+                elif name != "__del__":
+                    if self._class_has_base_method(self.current_class_name, str(name)):
+                        func_suffix = " const override" if method_is_const else " override"
+                    elif str(name) in self.class_method_virtual.get(self.current_class_name, set()):
+                        func_prefix = "virtual "
+                        if method_is_const:
+                            func_suffix = " const"
+                    elif method_is_const:
+                        func_suffix = " const"
+                self.emit(f"{func_prefix}{ret} {emitted_name}({params_txt}){func_suffix} {{")
+            else:
+                self.emit_function_open(ret, str(emitted_name), params_txt)
+        docstring = self.any_to_str(stmt.get("docstring"))
+        self.indent += 1
+        self.scope_stack.append(set(fn_scope))
+        prev_ret = self.current_function_return_type
+        prev_ret_abi = self.current_function_return_abi_mode
+        prev_is_gen = self.current_function_is_generator
+        prev_yield_buf = self.current_function_yield_buffer
+        prev_yield_ty = self.current_function_yield_type
+        prev_fn_symbol = self.current_function_symbol
+        prev_fn_non_escape = self.current_function_non_escape_summary
+        prev_stack_list_locals = self.current_function_stack_list_locals
+        prev_runtime_list_alias_names = self.current_function_pyobj_runtime_list_alias_names
+        prev_value_list_params = getattr(self, "current_function_value_list_params", set())
+        prev_value_list_locals = getattr(self, "current_function_value_list_locals", set())
+        prev_typed_list_str_params = getattr(self, "current_function_typed_list_str_params", set())
+        prev_typed_list_str_locals = getattr(self, "current_function_typed_list_str_locals", set())
+        prev_reassigned_names = getattr(self, "current_function_reassigned_names", set())
+        prev_cpp_class_borrow_params = getattr(self, "current_function_cpp_class_borrow_params", set())
+        prev_decl_types = self.declared_var_types
+        empty_decl_types: dict[str, str] = {}
+        self.declared_var_types = empty_decl_types
+        self.current_function_symbol = function_symbol
+        self.current_function_non_escape_summary = dict(fn_non_escape_summary)
+        self.current_function_stack_list_locals = set(stack_list_locals)
+        self.current_function_pyobj_runtime_list_alias_names = set(runtime_list_alias_names) | set(ref_first_param_names)
+        self.current_function_cpp_class_borrow_params = set(borrow_param_names)
+        self.current_function_value_list_params = set(value_list_params)
+        self.current_function_value_list_locals = set()
+        self.current_function_typed_list_str_params = set(typed_list_str_params)
+        self.current_function_typed_list_str_locals = set()
+        self.current_function_reassigned_names = set(reassigned_names)
+        for i, an in enumerate(arg_names):
+            if not (in_class and i == 0 and an == "self"):
+                at = self.any_to_str(arg_types.get(an))
+                if at != "":
+                    imported_cpp_type = self._resolve_imported_symbol_class_cpp_type(at)
+                    if imported_cpp_type != "":
+                        self.declared_var_types[an] = self.normalize_type_name(imported_cpp_type)
+                    else:
+                        self.declared_var_types[an] = self.normalize_type_name(at)
+        if vararg_name != "" and vararg_list_t != "":
+            self.declared_var_types[vararg_name] = vararg_list_t
+        self.current_function_return_type = self.any_to_str(stmt.get("return_type"))
+        self.current_function_return_abi_mode = ret_abi_mode
+        self.current_function_is_generator = is_generator
+        self.current_function_yield_type = yield_value_type if yield_value_type != "" else "Any"
+        self.current_function_yield_buffer = self.next_yield_values_name() if is_generator else ""
+        if docstring != "":
+            self.emit_block_comment(docstring)
+        if is_generator:
+            yield_elem_ty = self.current_function_yield_type
+            if yield_elem_ty in {"", "unknown"}:
+                yield_elem_ty = "Any"
+            yield_elem_cpp = self._cpp_type_text(yield_elem_ty)
+            self.emit(f"list<{yield_elem_cpp}> {self.current_function_yield_buffer} = list<{yield_elem_cpp}>{{}};")
+        self.emit_stmt_list(body_stmts)
+        if is_generator and self.current_function_yield_buffer != "":
+            self.emit(f"return {self.current_function_yield_buffer};")
+        self.current_function_return_type = prev_ret
+        self.current_function_return_abi_mode = prev_ret_abi
+        self.current_function_is_generator = prev_is_gen
+        self.current_function_yield_buffer = prev_yield_buf
+        self.current_function_yield_type = prev_yield_ty
+        self.current_function_symbol = prev_fn_symbol
+        self.current_function_non_escape_summary = prev_fn_non_escape
+        self.current_function_stack_list_locals = prev_stack_list_locals
+        self.current_function_pyobj_runtime_list_alias_names = set(prev_runtime_list_alias_names)
+        self.current_function_value_list_params = set(prev_value_list_params)
+        self.current_function_value_list_locals = set(prev_value_list_locals)
+        self.current_function_typed_list_str_params = set(prev_typed_list_str_params)
+        self.current_function_typed_list_str_locals = set(prev_typed_list_str_locals)
+        self.current_function_reassigned_names = set(prev_reassigned_names)
+        self.current_function_cpp_class_borrow_params = set(prev_cpp_class_borrow_params)
+        self.declared_var_types = prev_decl_types
+        self.scope_stack.pop()
+        self.indent -= 1
+        self.emit_block_close()

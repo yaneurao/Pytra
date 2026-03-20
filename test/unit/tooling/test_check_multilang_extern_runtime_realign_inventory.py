@@ -91,23 +91,23 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
             row["representative_smoke_needles"],
             (
                 (
-                    "test/unit/backends/cs/test_py2cs_smoke.py",
+                    "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
                     "def test_representative_math_import_fixture_transpiles",
                 ),
                 (
-                    "test/unit/backends/go/test_py2go_smoke.py",
+                    "test/unit/toolchain/emit/go/test_py2go_smoke.py",
                     "def test_go_native_emitter_routes_math_calls_via_runtime_helpers",
                 ),
                 (
-                    "test/unit/backends/java/test_py2java_smoke.py",
+                    "test/unit/toolchain/emit/java/test_py2java_smoke.py",
                     "def test_java_generated_math_runtime_owner_is_live_wrapper_shaped",
                 ),
                 (
-                    "test/unit/backends/php/test_py2php_smoke.py",
+                    "test/unit/toolchain/emit/php/test_py2php_smoke.py",
                     "def test_php_generated_math_runtime_owner_is_live_wrapper_shaped",
                 ),
                 (
-                    "test/unit/backends/rs/test_py2rs_smoke.py",
+                    "test/unit/toolchain/emit/rs/test_py2rs_smoke.py",
                     "def test_runtime_scaffold_exposes_pytra_std_time_and_math",
                 ),
             ),
@@ -150,19 +150,19 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
             by_id["std/time"]["representative_smoke_needles"],
             (
                 (
-                    "test/unit/backends/cs/test_py2cs_smoke.py",
+                    "test/unit/toolchain/emit/cs/test_py2cs_smoke.py",
                     "def test_representative_time_import_fixture_transpiles",
                 ),
                 (
-                    "test/unit/backends/java/test_py2java_smoke.py",
+                    "test/unit/toolchain/emit/java/test_py2java_smoke.py",
                     "def test_java_native_emitter_routes_perf_counter_via_runtime_helper",
                 ),
                 (
-                    "test/unit/backends/php/test_py2php_smoke.py",
+                    "test/unit/toolchain/emit/php/test_py2php_smoke.py",
                     "def test_php_generated_time_runtime_owner_is_live_wrapper_shaped",
                 ),
                 (
-                    "test/unit/backends/rs/test_py2rs_smoke.py",
+                    "test/unit/toolchain/emit/rs/test_py2rs_smoke.py",
                     "def test_generated_time_and_math_runtime_hook_modules_compile_with_scaffold",
                 ),
             ),
@@ -268,11 +268,11 @@ class CheckMultilangExternRuntimeRealignInventoryTest(unittest.TestCase):
             by_id["built_in/io_ops"]["representative_smoke_needles"],
             (
                 (
-                    "test/unit/backends/go/test_py2go_smoke.py",
+                    "test/unit/toolchain/emit/go/test_py2go_smoke.py",
                     "def test_go_generated_built_in_compare_lane_compiles_with_runtime_bundle",
                 ),
                 (
-                    "test/unit/backends/kotlin/test_py2kotlin_smoke.py",
+                    "test/unit/toolchain/emit/kotlin/test_py2kotlin_smoke.py",
                     "def test_kotlin_generated_built_in_compare_lane_compiles_with_runtime_bundle",
                 ),
             ),

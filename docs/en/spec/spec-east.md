@@ -667,7 +667,7 @@ Acceptance conditions:
 2. Keep the error contract of `load_east_document_compat` (`input_invalid` family).
 3. `compiler/transpile_cli.py` must not own the build body and should mostly delegate into `frontends/transpile_cli.py`.
 4. Include `python3 tools/check_selfhost_cpp_diff.py --mode allow-not-implemented` in the regression path, and when diffs appear, track them by cutting new TODO items.
-5. Fix the `EAST1` entry contract and the `py2cpp` delegation route through `test/unit/ir/test_east1_build.py` and `test/unit/backends/cpp/test_py2cpp_east1_build_bridge.py`.
+5. Fix the `EAST1` entry contract and the `py2cpp` delegation route through `test/unit/ir/test_east1_build.py` and `test/unit/toolchain/emit/cpp/test_py2cpp_east1_build_bridge.py`.
 6. The body of import-graph analysis uses `src/toolchain/frontends/east1_build.py` (`_analyze_import_graph_impl`) as the source of truth; `analyze_import_graph` and `build_module_east_map` in `compiler/transpile_cli.py` remain only as thin public compatibility wrappers.
 
 <a id="east-migration-phases"></a>

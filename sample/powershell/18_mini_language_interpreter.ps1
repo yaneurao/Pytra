@@ -13,6 +13,9 @@ $kind = $null
 $text = $null
 $pos = $null
 $number_value = $null
+function Token {
+    param($self)
+}
 
 # class ExprNode
 $kind = $null
@@ -23,12 +26,18 @@ $left = $null
 $right = $null
 $kind_tag = $null
 $op_tag = $null
+function ExprNode {
+    param($self)
+}
 
 # class StmtNode
 $kind = $null
 $name = $null
 $expr_index = $null
 $kind_tag = $null
+function StmtNode {
+    param($self)
+}
 
 function tokenize {
     param($lines)
