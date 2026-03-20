@@ -14,7 +14,7 @@ function capture {
     param($grid, $w, $h, $scale)
     $width = ($w * $scale)
     $height = ($h * $scale)
-    $frame = (bytearray ($width * $height))
+    $frame = (__pytra_bytearray ($width * $height))
     for ($y = 0; ($y -lt $h); $y++) {
         for ($x = 0; ($x -lt $w); $x++) {
             $v = $(if (($grid[$y][$x] -eq 0)) { 255 } else { 40 })
@@ -26,7 +26,7 @@ function capture {
             }
         }
     }
-    return (bytes $frame)
+    return (__pytra_bytes $frame)
 }
 
 function run_13_maze_generation_steps {
@@ -44,10 +44,14 @@ function run_13_maze_generation_steps {
     $frames = @()
     $step = 0
     while ($stack) {
-        @($x, $y) = $stack[(-1)]
+        $__tuple_tmp = $stack[(-1)]
+        $x = $__tuple_tmp[0]
+        $y = $__tuple_tmp[1]
         $candidates = @()
         for ($k = 0; ($k -lt 4); $k++) {
-            @($dx, $dy) = $dirs[$k]
+            $__tuple_tmp = $dirs[$k]
+            $dx = $__tuple_tmp[0]
+            $dy = $__tuple_tmp[1]
             $nx = ($x + $dx)
             $ny = ($y + $dy)
             if ((($nx -ge 1) -and ($nx -lt ($cell_w - 1)) -and ($ny -ge 1) -and ($ny -lt ($cell_h - 1)) -and ($grid[$ny][$nx] -eq 1))) {
@@ -66,7 +70,11 @@ function run_13_maze_generation_steps {
             $stack[-1]; $stack = $stack[0..($stack.Length - 2)]
         } else {
             $sel = $candidates[(((($x * 17) + ($y * 29)) + (__pytra_len $stack * 13)) % __pytra_len $candidates)]
-            @($nx, $ny, $wx, $wy) = $sel
+            $__tuple_tmp = $sel
+            $nx = $__tuple_tmp[0]
+            $ny = $__tuple_tmp[1]
+            $wx = $__tuple_tmp[2]
+            $wy = $__tuple_tmp[3]
             $grid[$wy][$wx] = 0
             $grid[$ny][$nx] = 0
             $stack += @(@($nx, $ny))

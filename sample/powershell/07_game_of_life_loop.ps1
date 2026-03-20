@@ -44,7 +44,7 @@ function render {
     param($grid, $w, $h, $cell)
     $width = ($w * $cell)
     $height = ($h * $cell)
-    $frame = (bytearray ($width * $height))
+    $frame = (__pytra_bytearray ($width * $height))
     for ($y = 0; ($y -lt $h); $y++) {
         for ($x = 0; ($x -lt $w); $x++) {
             $v = $(if ($grid[$y][$x]) { 255 } else { 0 })
@@ -56,7 +56,7 @@ function render {
             }
         }
     }
-    return (bytes $frame)
+    return (__pytra_bytes $frame)
 }
 
 function run_07_game_of_life_loop {

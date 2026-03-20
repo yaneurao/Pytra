@@ -12,7 +12,7 @@ $ErrorActionPreference = "Stop"
 
 function render_frame {
     param($width, $height, $center_x, $center_y, $scale, $max_iter)
-    $frame = (bytearray ($width * $height))
+    $frame = (__pytra_bytearray ($width * $height))
     $__hoisted_cast_1 = __pytra_float $max_iter
     for ($y = 0; ($y -lt $height); $y++) {
         $row_base = ($y * $width)
@@ -35,7 +35,7 @@ function render_frame {
             $frame[($row_base + $x)] = __pytra_int ((255.0 * $i) / $__hoisted_cast_1)
         }
     }
-    return (bytes $frame)
+    return (__pytra_bytes $frame)
 }
 
 function run_05_mandelbrot_zoom {

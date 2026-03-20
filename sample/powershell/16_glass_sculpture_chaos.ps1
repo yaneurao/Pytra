@@ -30,7 +30,7 @@ function dot {
 
 function length {
     param($x, $y, $z)
-    return $math.sqrt(((($x * $x) + ($y * $y)) + ($z * $z)))
+    return [Math]::Sqrt(((($x * $x) + ($y * $y)) + ($z * $z)))
 }
 
 function normalize {
@@ -55,7 +55,7 @@ function refract {
     if (($sint2 -gt 1.0)) {
         return (reflect $ix $iy $iz $nx $ny $nz)
     }
-    $cost = $math.sqrt((1.0 - $sint2))
+    $cost = [Math]::Sqrt((1.0 - $sint2))
     $k = (($eta * $cosi) - $cost)
     return @((($eta * $ix) + ($k * $nx)), (($eta * $iy) + ($k * $ny)), (($eta * $iz) + ($k * $nz)))
 }
@@ -72,7 +72,7 @@ function sky_color {
     $r = (0.06 + (0.2 * $t))
     $g = (0.1 + (0.25 * $t))
     $b = (0.16 + (0.45 * $t))
-    $band = (0.5 + (0.5 * $math.sin((((8.0 * $dx) + (6.0 * $dz)) + $tphase))))
+    $band = (0.5 + (0.5 * [Math]::Sin((((8.0 * $dx) + (6.0 * $dz)) + $tphase))))
     $r += (0.08 * $band)
     $g += (0.05 * $band)
     $b += (0.12 * $band)
@@ -90,7 +90,7 @@ function sphere_intersect {
     if (($h -lt 0.0)) {
         return (-1.0)
     }
-    $s = $math.sqrt($h)
+    $s = [Math]::Sqrt($h)
     $t0 = ((-$b) - $s)
     if (($t0 -gt 0.0001)) {
         return $t0
@@ -104,7 +104,7 @@ function sphere_intersect {
 
 function palette_332 {
     param()
-    $p = (bytearray (256 * 3))
+    $p = (__pytra_bytearray (256 * 3))
     $__hoisted_cast_1 = __pytra_float 7
     $__hoisted_cast_2 = __pytra_float 3
     for ($i = 0; ($i -lt 256); $i++) {
@@ -115,7 +115,7 @@ function palette_332 {
         $p[(($i * 3) + 1)] = __pytra_int ((255 * $g) / $__hoisted_cast_1)
         $p[(($i * 3) + 2)] = __pytra_int ((255 * $b) / $__hoisted_cast_2)
     }
-    return (bytes $p)
+    return (__pytra_bytes $p)
 }
 
 function quantize_332 {
@@ -131,29 +131,38 @@ function render_frame {
     $t = ($frame_id / $frames_n)
     $tphase = ((2.0 * $math.pi) * $t)
     $cam_r = 3.0
-    $cam_x = ($cam_r * $math.cos(($tphase * 0.9)))
-    $cam_y = (1.1 + (0.25 * $math.sin(($tphase * 0.6))))
-    $cam_z = ($cam_r * $math.sin(($tphase * 0.9)))
+    $cam_x = ($cam_r * [Math]::Cos(($tphase * 0.9)))
+    $cam_y = (1.1 + (0.25 * [Math]::Sin(($tphase * 0.6))))
+    $cam_z = ($cam_r * [Math]::Sin(($tphase * 0.9)))
     $look_x = 0.0
     $look_y = 0.35
     $look_z = 0.0
-    @($fwd_x, $fwd_y, $fwd_z) = (normalize ($look_x - $cam_x) ($look_y - $cam_y) ($look_z - $cam_z))
-    @($right_x, $right_y, $right_z) = (normalize $fwd_z 0.0 (-$fwd_x))
-    @($up_x, $up_y, $up_z) = (normalize (($right_y * $fwd_z) - ($right_z * $fwd_y)) (($right_z * $fwd_x) - ($right_x * $fwd_z)) (($right_x * $fwd_y) - ($right_y * $fwd_x)))
-    $s0x = (0.9 * $math.cos((1.3 * $tphase)))
-    $s0y = (0.15 + (0.35 * $math.sin((1.7 * $tphase))))
-    $s0z = (0.9 * $math.sin((1.3 * $tphase)))
-    $s1x = (1.2 * $math.cos(((1.3 * $tphase) + 2.094)))
-    $s1y = (0.1 + (0.4 * $math.sin(((1.1 * $tphase) + 0.8))))
-    $s1z = (1.2 * $math.sin(((1.3 * $tphase) + 2.094)))
-    $s2x = (1.0 * $math.cos(((1.3 * $tphase) + 4.188)))
-    $s2y = (0.2 + (0.3 * $math.sin(((1.5 * $tphase) + 1.9))))
-    $s2z = (1.0 * $math.sin(((1.3 * $tphase) + 4.188)))
+    $__tuple_tmp = (normalize ($look_x - $cam_x) ($look_y - $cam_y) ($look_z - $cam_z))
+    $fwd_x = $__tuple_tmp[0]
+    $fwd_y = $__tuple_tmp[1]
+    $fwd_z = $__tuple_tmp[2]
+    $__tuple_tmp = (normalize $fwd_z 0.0 (-$fwd_x))
+    $right_x = $__tuple_tmp[0]
+    $right_y = $__tuple_tmp[1]
+    $right_z = $__tuple_tmp[2]
+    $__tuple_tmp = (normalize (($right_y * $fwd_z) - ($right_z * $fwd_y)) (($right_z * $fwd_x) - ($right_x * $fwd_z)) (($right_x * $fwd_y) - ($right_y * $fwd_x)))
+    $up_x = $__tuple_tmp[0]
+    $up_y = $__tuple_tmp[1]
+    $up_z = $__tuple_tmp[2]
+    $s0x = (0.9 * [Math]::Cos((1.3 * $tphase)))
+    $s0y = (0.15 + (0.35 * [Math]::Sin((1.7 * $tphase))))
+    $s0z = (0.9 * [Math]::Sin((1.3 * $tphase)))
+    $s1x = (1.2 * [Math]::Cos(((1.3 * $tphase) + 2.094)))
+    $s1y = (0.1 + (0.4 * [Math]::Sin(((1.1 * $tphase) + 0.8))))
+    $s1z = (1.2 * [Math]::Sin(((1.3 * $tphase) + 2.094)))
+    $s2x = (1.0 * [Math]::Cos(((1.3 * $tphase) + 4.188)))
+    $s2y = (0.2 + (0.3 * [Math]::Sin(((1.5 * $tphase) + 1.9))))
+    $s2z = (1.0 * [Math]::Sin(((1.3 * $tphase) + 4.188)))
     $lr = 0.35
-    $lx = (2.4 * $math.cos(($tphase * 1.8)))
-    $ly = (1.8 + (0.8 * $math.sin(($tphase * 1.2))))
-    $lz = (2.4 * $math.sin(($tphase * 1.8)))
-    $frame = (bytearray ($width * $height))
+    $lx = (2.4 * [Math]::Cos(($tphase * 1.8)))
+    $ly = (1.8 + (0.8 * [Math]::Sin(($tphase * 1.2))))
+    $lz = (2.4 * [Math]::Sin(($tphase * 1.8)))
+    $frame = (__pytra_bytearray ($width * $height))
     $aspect = ($width / $height)
     $fov = 1.25
     $__hoisted_cast_3 = __pytra_float $height
@@ -166,7 +175,10 @@ function render_frame {
             $rx = ($fwd_x + ($fov * (($sx * $right_x) + ($sy * $up_x))))
             $ry = ($fwd_y + ($fov * (($sx * $right_y) + ($sy * $up_y))))
             $rz = ($fwd_z + ($fov * (($sx * $right_z) + ($sy * $up_z))))
-            @($dx, $dy, $dz) = (normalize $rx $ry $rz)
+            $__tuple_tmp = (normalize $rx $ry $rz)
+            $dx = $__tuple_tmp[0]
+            $dy = $__tuple_tmp[1]
+            $dz = $__tuple_tmp[2]
             $best_t = 1000000000.0
             $hit_kind = 0
             $r = 0.0
@@ -195,12 +207,15 @@ function render_frame {
                 $hit_kind = 4
             }
             if (($hit_kind -eq 0)) {
-                @($r, $g, $b) = (sky_color $dx $dy $dz $tphase)
+                $__tuple_tmp = (sky_color $dx $dy $dz $tphase)
+                $r = $__tuple_tmp[0]
+                $g = $__tuple_tmp[1]
+                $b = $__tuple_tmp[2]
             } elseif (($hit_kind -eq 1)) {
                 $hx = ($cam_x + ($best_t * $dx))
                 $hz = ($cam_z + ($best_t * $dz))
-                $cx = __pytra_int $math.floor(($hx * 2.0))
-                $cz = __pytra_int $math.floor(($hz * 2.0))
+                $cx = __pytra_int [Math]::Floor(($hx * 2.0))
+                $cz = __pytra_int [Math]::Floor(($hz * 2.0))
                 $checker = $(if (((($cx + $cz) % 2) -eq 0)) { 0 } else { 1 })
                 $base_r = $(if (($checker -eq 0)) { 0.1 } else { 0.04 })
                 $base_g = $(if (($checker -eq 0)) { 0.11 } else { 0.05 })
@@ -208,7 +223,10 @@ function render_frame {
                 $lxv = ($lx - $hx)
                 $lyv = ($ly - (-1.2))
                 $lzv = ($lz - $hz)
-                @($ldx, $ldy, $ldz) = (normalize $lxv $lyv $lzv)
+                $__tuple_tmp = (normalize $lxv $lyv $lzv)
+                $ldx = $__tuple_tmp[0]
+                $ldy = $__tuple_tmp[1]
+                $ldz = $__tuple_tmp[2]
                 $ndotl = [Math]::Max($ldy, 0.0)
                 $ldist2 = ((($lxv * $lxv) + ($lyv * $lyv)) + ($lzv * $lzv))
                 $glow = (8.0 / (1.0 + $ldist2))
@@ -239,11 +257,26 @@ function render_frame {
                 $hx = ($cam_x + ($best_t * $dx))
                 $hy = ($cam_y + ($best_t * $dy))
                 $hz = ($cam_z + ($best_t * $dz))
-                @($nx, $ny, $nz) = (normalize (($hx - $cx) / $rad) (($hy - $cy) / $rad) (($hz - $cz) / $rad))
-                @($rdx, $rdy, $rdz) = (reflect $dx $dy $dz $nx $ny $nz)
-                @($tdx, $tdy, $tdz) = (refract $dx $dy $dz $nx $ny $nz (1.0 / 1.45))
-                @($sr, $sg, $sb) = (sky_color $rdx $rdy $rdz $tphase)
-                @($tr, $tg, $tb) = (sky_color $tdx $tdy $tdz ($tphase + 0.8))
+                $__tuple_tmp = (normalize (($hx - $cx) / $rad) (($hy - $cy) / $rad) (($hz - $cz) / $rad))
+                $nx = $__tuple_tmp[0]
+                $ny = $__tuple_tmp[1]
+                $nz = $__tuple_tmp[2]
+                $__tuple_tmp = (reflect $dx $dy $dz $nx $ny $nz)
+                $rdx = $__tuple_tmp[0]
+                $rdy = $__tuple_tmp[1]
+                $rdz = $__tuple_tmp[2]
+                $__tuple_tmp = (refract $dx $dy $dz $nx $ny $nz (1.0 / 1.45))
+                $tdx = $__tuple_tmp[0]
+                $tdy = $__tuple_tmp[1]
+                $tdz = $__tuple_tmp[2]
+                $__tuple_tmp = (sky_color $rdx $rdy $rdz $tphase)
+                $sr = $__tuple_tmp[0]
+                $sg = $__tuple_tmp[1]
+                $sb = $__tuple_tmp[2]
+                $__tuple_tmp = (sky_color $tdx $tdy $tdz ($tphase + 0.8))
+                $tr = $__tuple_tmp[0]
+                $tg = $__tuple_tmp[1]
+                $tb = $__tuple_tmp[2]
                 $cosi = [Math]::Max((-((($dx * $nx) + ($dy * $ny)) + ($dz * $nz))), 0.0)
                 $fr = (schlick $cosi 0.04)
                 $r = (($tr * (1.0 - $fr)) + ($sr * $fr))
@@ -252,9 +285,15 @@ function render_frame {
                 $lxv = ($lx - $hx)
                 $lyv = ($ly - $hy)
                 $lzv = ($lz - $hz)
-                @($ldx, $ldy, $ldz) = (normalize $lxv $lyv $lzv)
+                $__tuple_tmp = (normalize $lxv $lyv $lzv)
+                $ldx = $__tuple_tmp[0]
+                $ldy = $__tuple_tmp[1]
+                $ldz = $__tuple_tmp[2]
                 $ndotl = [Math]::Max(((($nx * $ldx) + ($ny * $ldy)) + ($nz * $ldz)), 0.0)
-                @($hvx, $hvy, $hvz) = (normalize ($ldx - $dx) ($ldy - $dy) ($ldz - $dz))
+                $__tuple_tmp = (normalize ($ldx - $dx) ($ldy - $dy) ($ldz - $dz))
+                $hvx = $__tuple_tmp[0]
+                $hvy = $__tuple_tmp[1]
+                $hvz = $__tuple_tmp[2]
                 $ndoth = [Math]::Max(((($nx * $hvx) + ($ny * $hvy)) + ($nz * $hvz)), 0.0)
                 $spec = ($ndoth * $ndoth)
                 $spec = ($spec * $spec)
@@ -278,13 +317,13 @@ function render_frame {
                     $b *= 0.95
                 }
             }
-            $r = $math.sqrt((clamp01 $r))
-            $g = $math.sqrt((clamp01 $g))
-            $b = $math.sqrt((clamp01 $b))
+            $r = [Math]::Sqrt((clamp01 $r))
+            $g = [Math]::Sqrt((clamp01 $g))
+            $b = [Math]::Sqrt((clamp01 $b))
             $frame[($row_base + $px)] = (quantize_332 $r $g $b)
         }
     }
-    return (bytes $frame)
+    return (__pytra_bytes $frame)
 }
 
 function run_16_glass_sculpture_chaos {

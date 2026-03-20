@@ -12,7 +12,7 @@ $ErrorActionPreference = "Stop"
 
 function fire_palette {
     param()
-    $p = (bytearray)
+    $p = (__pytra_bytearray 0)
     for ($i = 0; ($i -lt 256); $i++) {
         $r = 0
         $g = 0
@@ -34,7 +34,7 @@ function fire_palette {
         $p += @($g)
         $p += @($b)
     }
-    return (bytes $p)
+    return (__pytra_bytes $p)
 }
 
 function run_09_fire_simulation {
@@ -63,14 +63,14 @@ function run_09_fire_simulation {
                 $heat[($y - 1)][$x] = $(if (($nv -gt 0)) { $nv } else { 0 })
             }
         }
-        $frame = (bytearray ($w * $h))
+        $frame = (__pytra_bytearray ($w * $h))
         for ($yy = 0; ($yy -lt $h); $yy++) {
             $row_base = ($yy * $w)
             for ($xx = 0; ($xx -lt $w); $xx++) {
                 $frame[($row_base + $xx)] = $heat[$yy][$xx]
             }
         }
-        $frames += @((bytes $frame))
+        $frames += @((__pytra_bytes $frame))
     }
     (save_gif $out_path $w $h $frames (fire_palette))
     $elapsed = ((perf_counter) - $start)

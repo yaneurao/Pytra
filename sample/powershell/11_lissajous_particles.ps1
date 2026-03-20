@@ -14,7 +14,7 @@ $ErrorActionPreference = "Stop"
 
 function color_palette {
     param()
-    $p = (bytearray)
+    $p = (__pytra_bytearray 0)
     for ($i = 0; ($i -lt 256); $i++) {
         $r = $i
         $g = (($i * 3) % 256)
@@ -23,7 +23,7 @@ function color_palette {
         $p += @($g)
         $p += @($b)
     }
-    return (bytes $p)
+    return (__pytra_bytes $p)
 }
 
 function run_11_lissajous_particles {
@@ -36,12 +36,12 @@ function run_11_lissajous_particles {
     $start = (perf_counter)
     $frames = @()
     for ($t = 0; ($t -lt $frames_n); $t++) {
-        $frame = (bytearray ($w * $h))
+        $frame = (__pytra_bytearray ($w * $h))
         $__hoisted_cast_1 = __pytra_float $t
         for ($p = 0; ($p -lt $particles); $p++) {
             $phase = ($p * 0.261799)
-            $x = __pytra_int (($w * 0.5) + (($w * 0.38) * $math.sin(((0.11 * $__hoisted_cast_1) + ($phase * 2.0)))))
-            $y = __pytra_int (($h * 0.5) + (($h * 0.38) * $math.sin(((0.17 * $__hoisted_cast_1) + ($phase * 3.0)))))
+            $x = __pytra_int (($w * 0.5) + (($w * 0.38) * [Math]::Sin(((0.11 * $__hoisted_cast_1) + ($phase * 2.0)))))
+            $y = __pytra_int (($h * 0.5) + (($h * 0.38) * [Math]::Sin(((0.17 * $__hoisted_cast_1) + ($phase * 3.0)))))
             $color = (30 + (($p * 9) % 220))
             for ($dy = 0; ($dy -lt 3); $dy++) {
                 for ($dx = 0; ($dx -lt 3); $dx++) {
@@ -61,7 +61,7 @@ function run_11_lissajous_particles {
                 }
             }
         }
-        $frames += @((bytes $frame))
+        $frames += @((__pytra_bytes $frame))
     }
     (save_gif $out_path $w $h $frames (color_palette))
     $elapsed = ((perf_counter) - $start)

@@ -12,7 +12,7 @@ $ErrorActionPreference = "Stop"
 
 function render {
     param($values, $w, $h)
-    $frame = (bytearray ($w * $h))
+    $frame = (__pytra_bytearray ($w * $h))
     $n = __pytra_len $values
     $bar_w = ($w / $n)
     $__hoisted_cast_1 = __pytra_float $n
@@ -31,7 +31,7 @@ function render {
             }
         }
     }
-    return (bytes $frame)
+    return (__pytra_bytes $frame)
 }
 
 function run_12_sort_visualizer {
@@ -52,7 +52,9 @@ function run_12_sort_visualizer {
         $swapped = $false
         for ($j = 0; ($j -lt (($n - $i) - 1)); $j++) {
             if (($values[$j] -gt $values[($j + 1)])) {
-                @($values[$j], $values[($j + 1)]) = @($values[($j + 1)], $values[$j])
+                $__tuple_tmp = @($values[($j + 1)], $values[$j])
+                $values[$j] = $__tuple_tmp[0]
+                $values[($j + 1)] = $__tuple_tmp[1]
                 $swapped = $true
             }
             if ((($op % $frame_stride) -eq 0)) {

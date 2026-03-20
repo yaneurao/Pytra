@@ -12,14 +12,14 @@ $ErrorActionPreference = "Stop"
 
 function capture {
     param($grid, $w, $h)
-    $frame = (bytearray ($w * $h))
+    $frame = (__pytra_bytearray ($w * $h))
     for ($y = 0; ($y -lt $h); $y++) {
         $row_base = ($y * $w)
         for ($x = 0; ($x -lt $w); $x++) {
             $frame[($row_base + $x)] = $(if ($grid[$y][$x]) { 255 } else { 0 })
         }
     }
-    return (bytes $frame)
+    return (__pytra_bytes $frame)
 }
 
 function run_08_langtons_ant {

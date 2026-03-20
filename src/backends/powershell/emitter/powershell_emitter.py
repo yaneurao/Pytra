@@ -22,6 +22,7 @@ _PS_KEYWORDS = {
 }
 
 _RENAMED_SYMBOLS: list[dict[str, str]] = [{}]
+_CLASS_NAMES: list[set[str]] = [set()]
 
 _PS_AUTOMATIC_VARS = {
     "true", "false", "null", "args", "input", "PSScriptRoot", "PSCommandPath",
@@ -365,14 +366,63 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 return "[Math]::Max(" + ", ".join(rendered_args) + ")" if len(rendered_args) > 0 else "0"
             if fn_name == "isinstance":
                 return "$true"
+            if fn_name == "bytearray":
+                return "(__pytra_bytearray " + " ".join(rendered_args) + ")" if len(rendered_args) > 0 else "(__pytra_bytearray 0)"
+            if fn_name == "bytes":
+                return "(__pytra_bytes " + " ".join(rendered_args) + ")" if len(rendered_args) > 0 else "(__pytra_bytes @())"
+            if fn_name == "list":
+                return "(__pytra_list " + " ".join(rendered_args) + ")" if len(rendered_args) > 0 else "@()"
+            if fn_name == "dict":
+                return "(__pytra_dict " + " ".join(rendered_args) + ")" if len(rendered_args) > 0 else "@{}"
+            if fn_name == "set":
+                return "(__pytra_set " + " ".join(rendered_args) + ")" if len(rendered_args) > 0 else "@{}"
+            if fn_name == "tuple":
+                return "@(" + ", ".join(rendered_args) + ")" if len(rendered_args) > 0 else "@()"
+            if fn_name == "sorted":
+                return "(" + rendered_args[0] + " | Sort-Object)" if len(rendered_args) > 0 else "@()"
+            if fn_name == "reversed":
+                return "([array]::Reverse(" + rendered_args[0] + "); " + rendered_args[0] + ")" if len(rendered_args) > 0 else "@()"
+            if fn_name == "enumerate":
+                return rendered_args[0] if len(rendered_args) > 0 else "@()"
+            if fn_name == "type":
+                return rendered_args[0] + ".GetType().Name" if len(rendered_args) > 0 else '""'
+            if fn_name == "hash":
+                return rendered_args[0] + ".GetHashCode()" if len(rendered_args) > 0 else "0"
             safe = _safe_ident(fn_name, "_fn")
+            # Class constructor: ClassName args... -> (ClassName args...)
+            # __init__ is emitted as function ClassName { param($self, ...) ... }
+            if fn_name in _CLASS_NAMES[0]:
+                # Create a hashtable as $self, then call constructor
+                if len(rendered_args) == 0:
+                    return "& { $__obj = @{}; (" + safe + " $__obj); $__obj }"
+                return "& { $__obj = @{}; (" + safe + " $__obj " + " ".join(rendered_args) + "); $__obj }"
             if len(rendered_args) == 0:
                 return "(" + safe + ")"
             return "(" + safe + " " + " ".join(rendered_args) + ")"
 
         if fk == "Attribute":
-            owner = _render_expr(func_d.get("value"))
+            owner_node = func_d.get("value")
+            owner = _render_expr(owner_node)
             attr = _safe_ident(_get_str(func_d, "attr"), "method")
+            # math module: $math.sqrt(...) -> [Math]::Sqrt(...)
+            owner_name = ""
+            if isinstance(owner_node, dict) and _get_str(owner_node, "kind") == "Name":
+                owner_name = _get_str(owner_node, "id")
+            if owner_name == "math":
+                _MATH_PS: dict[str, str] = {
+                    "sqrt": "Sqrt", "floor": "Floor", "ceil": "Ceiling",
+                    "sin": "Sin", "cos": "Cos", "tan": "Tan",
+                    "asin": "Asin", "acos": "Acos", "atan": "Atan", "atan2": "Atan2",
+                    "log": "Log", "log10": "Log10", "log2": "Log",
+                    "exp": "Exp", "pow": "Pow", "abs": "Abs",
+                    "round": "Round", "trunc": "Truncate",
+                    "pi": "PI", "e": "E",
+                }
+                ps_name = _MATH_PS.get(attr, "")
+                if ps_name != "":
+                    if attr in ("pi", "e"):
+                        return "[Math]::" + ps_name
+                    return "[Math]::" + ps_name + "(" + ", ".join(rendered_args) + ")"
             if attr == "append":
                 if len(rendered_args) > 0:
                     return owner + " += @(" + rendered_args[0] + ")"
@@ -472,6 +522,19 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
             t = stmt.get("target")
             if isinstance(t, dict):
                 targets = [t]
+        # Tuple unpacking: (a, b) = expr -> temp, then assign each
+        if len(targets) == 1 and isinstance(targets[0], dict):
+            tk = _get_str(targets[0], "kind")
+            if tk == "Tuple" or tk == "List":
+                elts = _get_list(targets[0], "elements")
+                if len(elts) == 0:
+                    elts = _get_list(targets[0], "elts")
+                if len(elts) > 0:
+                    tmp = "$__tuple_tmp"
+                    lines = [indent + tmp + " = " + _render_expr(stmt.get("value"))]
+                    for idx, elt in enumerate(elts):
+                        lines.append(indent + _render_expr(elt) + " = " + tmp + "[" + str(idx) + "]")
+                    return lines
         value = _render_expr(stmt.get("value"))
         if len(targets) == 0:
             return [indent + value]
@@ -680,7 +743,7 @@ def _emit_function_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]
     ps_params: list[str] = []
     if len(arg_order) > 0:
         for arg_name in arg_order:
-            if not isinstance(arg_name, str) or arg_name == "self":
+            if not isinstance(arg_name, str):
                 continue
             safe = "$" + _safe_ident(arg_name, "_p")
             default = arg_defaults.get(arg_name)
@@ -699,16 +762,12 @@ def _emit_function_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]
                 arg_name_s = _get_str(p_d, "arg")
                 if arg_name_s == "":
                     arg_name_s = _get_str(p_d, "name")
-                if arg_name_s == "self":
-                    continue
                 default = p_d.get("default")
                 if default is not None:
                     ps_params.append("$" + _safe_ident(arg_name_s, "_p") + " = " + _render_expr(default))
                 else:
                     ps_params.append("$" + _safe_ident(arg_name_s, "_p"))
             elif isinstance(p, str):
-                if p == "self":
-                    continue
                 ps_params.append("$" + _safe_ident(p, "_p"))
 
     decorators = _get_list(stmt, "decorator_list")
@@ -827,6 +886,15 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
 
     renamed = _get_dict(east_doc, "renamed_symbols")
     _RENAMED_SYMBOLS[0] = {k: v for k, v in renamed.items() if isinstance(k, str) and isinstance(v, str)}
+
+    # Collect class names for constructor call detection
+    class_names: set[str] = set()
+    for node in body:
+        if isinstance(node, dict) and _get_str(node, "kind") == "ClassDef":
+            cn = _get_str(node, "name")
+            if cn != "":
+                class_names.add(cn)
+    _CLASS_NAMES[0] = class_names
 
     ctx: dict[str, Any] = {}
     lines: list[str] = [

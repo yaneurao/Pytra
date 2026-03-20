@@ -40,7 +40,7 @@ function color_map {
 
 function render_mandelbrot {
     param($width, $height, $max_iter, $x_min, $x_max, $y_min, $y_max)
-    $pixels = (bytearray)
+    $pixels = (__pytra_bytearray 0)
     $__hoisted_cast_1 = __pytra_float ($height - 1)
     $__hoisted_cast_2 = __pytra_float ($width - 1)
     $__hoisted_cast_3 = __pytra_float $max_iter

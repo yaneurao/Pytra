@@ -35,7 +35,7 @@ function hit_sphere {
     if (($d -lt 0.0)) {
         return (-1.0)
     }
-    $sd = $math.sqrt($d)
+    $sd = [Math]::Sqrt($d)
     $t0 = (((-$b) - $sd) / (2.0 * $a))
     $t1 = (((-$b) + $sd) / (2.0 * $a))
     if (($t0 -gt 0.001)) {
@@ -49,7 +49,7 @@ function hit_sphere {
 
 function render {
     param($width, $height, $aa)
-    $pixels = (bytearray)
+    $pixels = (__pytra_bytearray 0)
     $ox = 0.0
     $oy = 0.0
     $oz = (-3.0)
@@ -74,7 +74,7 @@ function render {
                     $dx = $sx
                     $dy = $sy
                     $dz = 1.0
-                    $inv_len = (1.0 / $math.sqrt(((($dx * $dx) + ($dy * $dy)) + ($dz * $dz))))
+                    $inv_len = (1.0 / [Math]::Sqrt(((($dx * $dx) + ($dy * $dy)) + ($dz * $dz))))
                     $dx *= $inv_len
                     $dy *= $inv_len
                     $dz *= $inv_len

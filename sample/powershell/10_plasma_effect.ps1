@@ -21,13 +21,13 @@ function run_10_plasma_effect {
     $start = (perf_counter)
     $frames = @()
     for ($t = 0; ($t -lt $frames_n); $t++) {
-        $frame = (bytearray ($w * $h))
+        $frame = (__pytra_bytearray ($w * $h))
         for ($y = 0; ($y -lt $h); $y++) {
             $row_base = ($y * $w)
             for ($x = 0; ($x -lt $w); $x++) {
                 $dx = ($x - 160)
                 $dy = ($y - 120)
-                $v = ((($math.sin((($x + ($t * 2.0)) * 0.045)) + $math.sin((($y - ($t * 1.2)) * 0.05))) + $math.sin(((($x + $y) + ($t * 1.7)) * 0.03))) + $math.sin((($math.sqrt((($dx * $dx) + ($dy * $dy))) * 0.07) - ($t * 0.18))))
+                $v = ((([Math]::Sin((($x + ($t * 2.0)) * 0.045)) + [Math]::Sin((($y - ($t * 1.2)) * 0.05))) + [Math]::Sin(((($x + $y) + ($t * 1.7)) * 0.03))) + [Math]::Sin((([Math]::Sqrt((($dx * $dx) + ($dy * $dy))) * 0.07) - ($t * 0.18))))
                 $c = __pytra_int (($v + 4.0) * (255.0 / 8.0))
                 if (($c -lt 0)) {
                     $c = 0
@@ -38,7 +38,7 @@ function run_10_plasma_effect {
                 $frame[($row_base + $x)] = $c
             }
         }
-        $frames += @((bytes $frame))
+        $frames += @((__pytra_bytes $frame))
     }
     (save_gif $out_path $w $h $frames (grayscale_palette))
     $elapsed = ((perf_counter) - $start)

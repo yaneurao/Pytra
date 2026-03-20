@@ -14,7 +14,7 @@ $ErrorActionPreference = "Stop"
 
 function julia_palette {
     param()
-    $palette = (bytearray (256 * 3))
+    $palette = (__pytra_bytearray (256 * 3))
     $palette[0] = 0
     $palette[1] = 0
     $palette[2] = 0
@@ -27,12 +27,12 @@ function julia_palette {
         $palette[(($i * 3) + 1)] = $g
         $palette[(($i * 3) + 2)] = $b
     }
-    return (bytes $palette)
+    return (__pytra_bytes $palette)
 }
 
 function render_frame {
     param($width, $height, $cr, $ci, $max_iter, $phase)
-    $frame = (bytearray ($width * $height))
+    $frame = (__pytra_bytearray ($width * $height))
     $__hoisted_cast_1 = __pytra_float ($height - 1)
     $__hoisted_cast_2 = __pytra_float ($width - 1)
     for ($y = 0; ($y -lt $height); $y++) {
@@ -60,7 +60,7 @@ function render_frame {
             }
         }
     }
-    return (bytes $frame)
+    return (__pytra_bytes $frame)
 }
 
 function run_06_julia_parameter_sweep {
@@ -82,8 +82,8 @@ function run_06_julia_parameter_sweep {
     for ($i = 0; ($i -lt $frames_n); $i++) {
         $t = ((($i + $start_offset) % $frames_n) / $__hoisted_cast_3)
         $angle = ((2.0 * $math.pi) * $t)
-        $cr = ($center_cr + ($radius_cr * $math.cos($angle)))
-        $ci = ($center_ci + ($radius_ci * $math.sin($angle)))
+        $cr = ($center_cr + ($radius_cr * [Math]::Cos($angle)))
+        $ci = ($center_ci + ($radius_ci * [Math]::Sin($angle)))
         $phase = (($phase_offset + ($i * 5)) % 255)
         $frames += @((render_frame $width $height $cr $ci $max_iter $phase))
     }

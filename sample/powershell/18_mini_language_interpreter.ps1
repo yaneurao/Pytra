@@ -46,7 +46,7 @@ function tokenize {
             }
             $single_tag = $(if ($single_char_token_tags.ContainsKey($ch)) { $single_char_token_tags[$ch] } else { 0 })
             if (($single_tag -gt 0)) {
-                $tokens += @((Token $single_char_token_kinds[($single_tag - 1)] $ch $i 0))
+                $tokens += @(& { $__obj = @{}; (Token $__obj $single_char_token_kinds[($single_tag - 1)] $ch $i 0); $__obj })
                 $i += 1
                 continue
             }
@@ -56,7 +56,7 @@ function tokenize {
                     $i += 1
                 }
                 $text = $source[$start..($i - 1)]
-                $tokens += @((Token "NUMBER" $text $start __pytra_int $text))
+                $tokens += @(& { $__obj = @{}; (Token $__obj "NUMBER" $text $start __pytra_int $text); $__obj })
                 continue
             }
             if (($ch.isalpha() -or ($ch -eq "_"))) {
@@ -66,47 +66,47 @@ function tokenize {
                 }
                 $text = $source[$start..($i - 1)]
                 if (($text -eq "let")) {
-                    $tokens += @((Token "LET" $text $start 0))
+                    $tokens += @(& { $__obj = @{}; (Token $__obj "LET" $text $start 0); $__obj })
                 } elseif (($text -eq "print")) {
-                    $tokens += @((Token "PRINT" $text $start 0))
+                    $tokens += @(& { $__obj = @{}; (Token $__obj "PRINT" $text $start 0); $__obj })
                 } else {
-                    $tokens += @((Token "IDENT" $text $start 0))
+                    $tokens += @(& { $__obj = @{}; (Token $__obj "IDENT" $text $start 0); $__obj })
                 }
                 continue
             }
             throw (RuntimeError ((((("tokenize error at line=" + __pytra_str $line_index) + " pos=") + __pytra_str $i) + " ch=") + $ch))
         }
-        $tokens += @((Token "NEWLINE" "" $n 0))
+        $tokens += @(& { $__obj = @{}; (Token $__obj "NEWLINE" "" $n 0); $__obj })
     }
-    $tokens += @((Token "EOF" "" __pytra_len $lines 0))
+    $tokens += @(& { $__obj = @{}; (Token $__obj "EOF" "" __pytra_len $lines 0); $__obj })
     return $tokens
 }
 
 # class Parser
 function Parser_new_expr_nodes {
-    param()
+    param($self)
     return @()
 }
 function Parser {
-    param($tokens)
+    param($self, $tokens)
     $self.tokens = $tokens
     $self.pos = 0
     $self.expr_nodes = $self.new_expr_nodes()
 }
 function Parser_current_token {
-    param()
+    param($self)
     return $self.tokens[$self.pos]
 }
 function Parser_previous_token {
-    param()
+    param($self)
     return $self.tokens[($self.pos - 1)]
 }
 function Parser_peek_kind {
-    param()
+    param($self)
     return $self.current_token().kind
 }
 function Parser_match {
-    param($kind)
+    param($self, $kind)
     if (($self.peek_kind() -eq $kind)) {
         $self.pos += 1
         return $true
@@ -114,7 +114,7 @@ function Parser_match {
     return $false
 }
 function Parser_expect {
-    param($kind)
+    param($self, $kind)
     $token = $self.current_token()
     if (($token.kind -ne $kind)) {
         throw (RuntimeError ((((("parse error at pos=" + __pytra_str $token.pos) + ", expected=") + $kind) + ", got=") + $token.kind))
@@ -123,18 +123,18 @@ function Parser_expect {
     return $token
 }
 function Parser_skip_newlines {
-    param()
+    param($self)
     while ($self.match("NEWLINE")) {
         # pass
     }
 }
 function Parser_add_expr {
-    param($node)
+    param($self, $node)
     $self.expr_nodes += @($node)
     return (__pytra_len $self.expr_nodes - 1)
 }
 function Parser_parse_program {
-    param()
+    param($self)
     $stmts = @()
     $self.skip_newlines()
     while (($self.peek_kind() -ne "EOF")) {
@@ -145,38 +145,38 @@ function Parser_parse_program {
     return $stmts
 }
 function Parser_parse_stmt {
-    param()
+    param($self)
     if ($self.match("LET")) {
         $let_name = $self.expect("IDENT").text
         $self.expect("EQUAL")
         $let_expr_index = $self.parse_expr()
-        return (StmtNode "let" $let_name $let_expr_index 1)
+        return & { $__obj = @{}; (StmtNode $__obj "let" $let_name $let_expr_index 1); $__obj }
     }
     if ($self.match("PRINT")) {
         $print_expr_index = $self.parse_expr()
-        return (StmtNode "print" "" $print_expr_index 3)
+        return & { $__obj = @{}; (StmtNode $__obj "print" "" $print_expr_index 3); $__obj }
     }
     $assign_name = $self.expect("IDENT").text
     $self.expect("EQUAL")
     $assign_expr_index = $self.parse_expr()
-    return (StmtNode "assign" $assign_name $assign_expr_index 2)
+    return & { $__obj = @{}; (StmtNode $__obj "assign" $assign_name $assign_expr_index 2); $__obj }
 }
 function Parser_parse_expr {
-    param()
+    param($self)
     return $self.parse_add()
 }
 function Parser_parse_add {
-    param()
+    param($self)
     $left = $self.parse_mul()
     while ($true) {
         if ($self.match("PLUS")) {
             $right = $self.parse_mul()
-            $left = $self.add_expr((ExprNode "bin" 0 "" "+" $left $right 3 1))
+            $left = $self.add_expr(& { $__obj = @{}; (ExprNode $__obj "bin" 0 "" "+" $left $right 3 1); $__obj })
             continue
         }
         if ($self.match("MINUS")) {
             $right = $self.parse_mul()
-            $left = $self.add_expr((ExprNode "bin" 0 "" "-" $left $right 3 2))
+            $left = $self.add_expr(& { $__obj = @{}; (ExprNode $__obj "bin" 0 "" "-" $left $right 3 2); $__obj })
             continue
         }
         break
@@ -184,17 +184,17 @@ function Parser_parse_add {
     return $left
 }
 function Parser_parse_mul {
-    param()
+    param($self)
     $left = $self.parse_unary()
     while ($true) {
         if ($self.match("STAR")) {
             $right = $self.parse_unary()
-            $left = $self.add_expr((ExprNode "bin" 0 "" "*" $left $right 3 3))
+            $left = $self.add_expr(& { $__obj = @{}; (ExprNode $__obj "bin" 0 "" "*" $left $right 3 3); $__obj })
             continue
         }
         if ($self.match("SLASH")) {
             $right = $self.parse_unary()
-            $left = $self.add_expr((ExprNode "bin" 0 "" "/" $left $right 3 4))
+            $left = $self.add_expr(& { $__obj = @{}; (ExprNode $__obj "bin" 0 "" "/" $left $right 3 4); $__obj })
             continue
         }
         break
@@ -202,22 +202,22 @@ function Parser_parse_mul {
     return $left
 }
 function Parser_parse_unary {
-    param()
+    param($self)
     if ($self.match("MINUS")) {
         $child = $self.parse_unary()
-        return $self.add_expr((ExprNode "neg" 0 "" "" $child (-1) 4 0))
+        return $self.add_expr(& { $__obj = @{}; (ExprNode $__obj "neg" 0 "" "" $child (-1) 4 0); $__obj })
     }
     return $self.parse_primary()
 }
 function Parser_parse_primary {
-    param()
+    param($self)
     if ($self.match("NUMBER")) {
         $token_num = $self.previous_token()
-        return $self.add_expr((ExprNode "lit" $token_num.number_value "" "" (-1) (-1) 1 0))
+        return $self.add_expr(& { $__obj = @{}; (ExprNode $__obj "lit" $token_num.number_value "" "" (-1) (-1) 1 0); $__obj })
     }
     if ($self.match("IDENT")) {
         $token_ident = $self.previous_token()
-        return $self.add_expr((ExprNode "var" 0 $token_ident.text "" (-1) (-1) 2 0))
+        return $self.add_expr(& { $__obj = @{}; (ExprNode $__obj "var" 0 $token_ident.text "" (-1) (-1) 2 0); $__obj })
     }
     if ($self.match("LPAREN")) {
         $expr_index = $self.parse_expr()
@@ -329,7 +329,7 @@ function run_demo {
     $demo_lines += @("print a")
     $demo_lines += @("print a / b")
     $tokens = (tokenize $demo_lines)
-    $parser = (Parser $tokens)
+    $parser = & { $__obj = @{}; (Parser $__obj $tokens); $__obj }
     $stmts = $parser.parse_program()
     $checksum = (execute $stmts $parser.expr_nodes $true)
     __pytra_print "demo_checksum:" $checksum
@@ -340,7 +340,7 @@ function run_benchmark {
     $source_lines = (build_benchmark_source 32 120000)
     $start = (perf_counter)
     $tokens = (tokenize $source_lines)
-    $parser = (Parser $tokens)
+    $parser = & { $__obj = @{}; (Parser $__obj $tokens); $__obj }
     $stmts = $parser.parse_program()
     $checksum = (execute $stmts $parser.expr_nodes $false)
     $elapsed = ((perf_counter) - $start)
