@@ -94,7 +94,7 @@ def main() -> int:
             out_path.parent.mkdir(parents=True, exist_ok=True)
             cmd = [
                 "python3",
-                "src/east2x.py",
+                "src/toolchain/emit/all.py",
                 str(case_path),
                 "--target",
                 target,

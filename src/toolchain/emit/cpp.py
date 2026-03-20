@@ -6,7 +6,7 @@ It reads a link-output.json (produced by ``pytra link --link-only``) and
 emits C++ source files.
 
 Usage:
-    python3 east2cpp.py link-output.json --output-dir out/cpp/
+    python3 -m toolchain.emit.cpp link-output.json --output-dir out/cpp/
 """
 
 from __future__ import annotations

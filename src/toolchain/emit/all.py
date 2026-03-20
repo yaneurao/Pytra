@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """All-backend emit entry point: EAST3(JSON) / link-output.json -> target source.
 
-Renamed from ir2lang.py. Use east2cpp.py for C++ only (faster, no non-C++ deps).
+Generic emit entry that supports all backends. For C++ only (faster, no non-C++
+deps), use toolchain.emit.cpp instead.
+
+Usage:
+    python3 -m toolchain.emit.all INPUT.json --target rs -o out.rs
 """
 
 from __future__ import annotations

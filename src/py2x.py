@@ -138,9 +138,9 @@ def _use_linked_program_route(target_hint: str, argv: list[str]) -> bool:
 
 
 def _invoke_east2x_main(argv: list[str]) -> int:
-    import east2x as east2x_mod
+    from toolchain.emit.all import main as _emit_main
 
-    return east2x_mod.main(argv)
+    return _emit_main(argv)
 
 
 
@@ -478,8 +478,8 @@ def main() -> int:
         output_path_txt = output_text if output_text != "" else str(_default_output_path(input_path, target))
 
         if target == "cpp":
-            # C++ emit via east2cpp.py (imports only C++ backend)
-            emit_cmd = [_python, _src_dir + "/east2cpp.py", str(link_output_path)]
+            # C++ emit via toolchain/emit/cpp.py (imports only C++ backend)
+            emit_cmd = [_python, _src_dir + "/toolchain/emit/cpp.py", str(link_output_path)]
             if output_dir_txt != "":
                 emit_cmd.extend(["--output-dir", output_dir_txt])
             else:
@@ -487,8 +487,8 @@ def main() -> int:
             for item in layer_option_items["emitter"]:
                 emit_cmd.extend(["--emitter-option", item])
         else:
-            # All other targets via east2x.py (generic all-backend entry)
-            emit_cmd = [_python, _src_dir + "/east2x.py",
+            # All other targets via toolchain/emit/all.py
+            emit_cmd = [_python, _src_dir + "/toolchain/emit/all.py",
                         str(link_output_path), "--target", target]
             if output_path_txt != "":
                 emit_cmd.extend(["-o", output_path_txt])
@@ -501,7 +501,10 @@ def main() -> int:
             for item in layer_option_items["emitter"]:
                 emit_cmd.extend(["--emitter-option", item])
 
-        proc = _subprocess.run(emit_cmd, text=True)
+        import os as _os
+        emit_env = dict(_os.environ)
+        emit_env["PYTHONPATH"] = _src_dir + (_os.pathsep + emit_env.get("PYTHONPATH", "")) if emit_env.get("PYTHONPATH") else _src_dir
+        proc = _subprocess.run(emit_cmd, text=True, env=emit_env)
         return proc.returncode
 
 

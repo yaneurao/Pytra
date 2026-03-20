@@ -23,7 +23,7 @@ from toolchain.compiler.pytra_cli_profiles import (
 # /src/pytra-cli.py -> project root is parents[1]
 ROOT = Path(__file__).resolve().parents[1]
 PY2X = ROOT / "src" / "py2x.py"
-EAST2CPP = ROOT / "src" / "east2cpp.py"
+EAST2CPP = ROOT / "src" / "toolchain" / "emit" / "cpp.py"
 GEN_MAKEFILE = ROOT / "tools" / "gen_makefile_from_manifest.py"
 PYTHON = sys.executable or "python3"
 

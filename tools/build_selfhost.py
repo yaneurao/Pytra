@@ -69,10 +69,10 @@ def build_selfhost_multimod_link_cmd(selfhost_entry: Path, linked_dir: Path) -> 
 
 
 def build_selfhost_multimod_emit_cmd(link_output: Path, output_dir: Path) -> list[str]:
-    """Stage 3: linked EAST → C++ via east2cpp."""
+    """Stage 3: linked EAST → C++ via toolchain/emit/cpp.py."""
     return [
         "python3",
-        str(ROOT / "src" / "east2cpp.py"),
+        str(ROOT / "src" / "toolchain" / "emit" / "cpp.py"),
         str(link_output),
         "--output-dir",
         str(output_dir),
