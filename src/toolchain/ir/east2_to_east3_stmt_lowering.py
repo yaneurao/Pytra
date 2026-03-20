@@ -17,7 +17,8 @@ from toolchain.ir.east2_to_east3_type_summary import _unknown_type_summary
 
 def _normalize_iter_mode(value: Any) -> str:
     if isinstance(value, str):
-        mode = value.strip()
+        s: str = value
+        mode = s.strip()
         if mode == "static_fastpath" or mode == "runtime_protocol":
             return mode
     return "runtime_protocol"
@@ -128,7 +129,8 @@ def _resolve_assign_target_type_summary(stmt: dict[str, Any]) -> dict[str, Any]:
         return summary
     target_obj = stmt.get("target")
     if isinstance(target_obj, dict):
-        summary = _type_expr_summary_from_payload(target_obj.get("type_expr"), target_obj.get("resolved_type"))
+        tod: dict[str, Any] = target_obj
+        summary = _type_expr_summary_from_payload(tod.get("type_expr"), tod.get("resolved_type"))
         if str(summary.get("category", "unknown")) != "unknown":
             return summary
     return _unknown_type_summary()
@@ -147,7 +149,8 @@ def _resolve_assign_target_type(stmt: dict[str, Any]) -> str:
         return ann_type
     target_obj = stmt.get("target")
     if isinstance(target_obj, dict):
-        target_t = _normalize_type_name(target_obj.get("resolved_type"))
+        tod2: dict[str, Any] = target_obj
+        target_t = _normalize_type_name(tod2.get("resolved_type"))
         if target_t != "unknown":
             return target_t
     return "unknown"
@@ -161,18 +164,20 @@ def _build_target_plan(
 ) -> dict[str, Any]:
     target_type_norm = _normalize_type_name(target_type)
     if isinstance(target, dict):
-        kind = target.get("kind")
+        td: dict[str, Any] = target
+        kind = td.get("kind")
         if kind == "Name":
-            out = {"kind": "NameTarget", "id": target.get("id", "")}
+            out = {"kind": "NameTarget", "id": td.get("id", "")}
             if target_type_norm != "unknown":
                 out["target_type"] = target_type_norm
             return out
         if kind == "Tuple":
-            elements_obj = target.get("elements")
+            elements_obj = td.get("elements")
             elem_plans: list[dict[str, Any]] = []
             elem_types = _tuple_element_types(target_type_norm)
             if isinstance(elements_obj, list):
-                for i, elem in enumerate(elements_obj):
+                for i in range(len(elements_obj)):
+                    elem = elements_obj[i]
                     elem_type = "unknown"
                     if i < len(elem_types):
                         elem_type = elem_types[i]
@@ -207,7 +212,8 @@ def _lower_assignment_like_stmt(
     target_obj = stmt.get("target")
     target_type_expr = stmt.get("decl_type_expr") or stmt.get("annotation_type_expr")
     if target_type_expr is None and isinstance(target_obj, dict):
-        target_type_expr = target_obj.get("type_expr")
+        tod3: dict[str, Any] = target_obj
+        target_type_expr = tod3.get("type_expr")
     out["value"] = _wrap_value_for_target_type(
         value_lowered,
         target_type,
@@ -312,6 +318,8 @@ def _lower_forcore_stmt(stmt: dict[str, Any], *, dispatch_mode: str, lower_node:
     for key in stmt:
         out[key] = lower_node(stmt[key])
     iter_plan_obj = out.get("iter_plan")
-    if isinstance(iter_plan_obj, dict) and iter_plan_obj.get("kind") == "RuntimeIterForPlan":
-        iter_plan_obj["dispatch_mode"] = dispatch_mode
+    if isinstance(iter_plan_obj, dict):
+        ipd: dict[str, Any] = iter_plan_obj
+        if ipd.get("kind") == "RuntimeIterForPlan":
+            ipd["dispatch_mode"] = dispatch_mode
     return out

@@ -20,12 +20,16 @@ def _as_list(value: Any) -> list[Any]:
 
 
 def _kind(node: Any) -> str:
-    return str(node.get("kind", "")) if isinstance(node, dict) else ""
+    if not isinstance(node, dict):
+        return ""
+    d: dict[str, Any] = node
+    return str(d.get("kind", ""))
 
 
 def _safe_name(value: Any) -> str:
     if isinstance(value, str):
-        text = value.strip()
+        s: str = value
+        text = s.strip()
         if text != "":
             return text
     return ""
@@ -38,17 +42,28 @@ def _function_symbol(module_id: str, scope: tuple[str, ...], fn_node: dict[str, 
         parts.append(".".join(scope))
     if fn_name != "":
         parts.append(fn_name)
-    return "::".join(parts[:1] + [".".join(parts[1:])] if len(parts) > 1 else parts)
+    if len(parts) > 1:
+        joined_parts: list[str] = [parts[0], ".".join(parts[1:])]
+        return "::".join(joined_parts)
+    return "::".join(parts)
 
 
 def _is_runtime_helper_module(module_doc: dict[str, Any]) -> bool:
     module_meta = _as_dict(module_doc.get("meta"))
     module_id = _safe_name(module_meta.get("module_id"))
-    if any(module_id == prefix or module_id.startswith(prefix + ".") for prefix in _RUNTIME_TEMPLATE_MODULE_PREFIXES):
+    found_prefix = False
+    for prefix in _RUNTIME_TEMPLATE_MODULE_PREFIXES:
+        if module_id == prefix or module_id.startswith(prefix + "."):
+            found_prefix = True
+            break
+    if found_prefix:
         return True
     source_path = _safe_name(module_doc.get("source_path"))
     normalized_source = source_path.replace("\\", "/")
-    return any(segment in normalized_source for segment in _RUNTIME_TEMPLATE_SOURCE_SEGMENTS)
+    for segment in _RUNTIME_TEMPLATE_SOURCE_SEGMENTS:
+        if segment in normalized_source:
+            return True
+    return False
 
 
 def _validate_template_shape(fn_node: dict[str, Any], *, symbol: str, top_level: bool) -> dict[str, Any] | None:

@@ -15,7 +15,8 @@ from toolchain.ir.east3_optimizer import PassResult
 
 def _safe_name(value: Any) -> str:
     if isinstance(value, str):
-        text = value.strip()
+        s: str = value
+        text = s.strip()
         if text != "":
             return text
     return ""
@@ -31,15 +32,16 @@ def _collect_calls(node: Any, out: list[tuple[dict[str, Any], bool]]) -> None:
             return
         if not isinstance(cur, dict):
             return
-        kind = cur.get("kind")
+        cd: dict[str, Any] = cur
+        kind = cd.get("kind")
         if kind == "Return":
-            value_any = cur.get("value")
+            value_any = cd.get("value")
             if isinstance(value_any, dict):
                 _walk(value_any, in_return_expr=True)
             return
         if kind == "Call":
-            out.append((cur, in_return_expr))
-        for value in cur.values():
+            out.append((cd, in_return_expr))
+        for value in cd.values():
             _walk(value, in_return_expr=False)
 
     _walk(node, in_return_expr=False)
@@ -54,11 +56,12 @@ def _collect_arg_refs(node: Any, arg_index: dict[str, int], out: set[int]) -> No
         return
     if not isinstance(node, dict):
         return
-    if node.get("kind") == "Name":
-        ident = _safe_name(node.get("id"))
+    nd: dict[str, Any] = node
+    if nd.get("kind") == "Name":
+        ident = _safe_name(nd.get("id"))
         if ident in arg_index:
             out.add(arg_index[ident])
-    for value in node.values():
+    for value in nd.values():
         _collect_arg_refs(value, arg_index, out)
 
 
@@ -120,9 +123,12 @@ def _collect_non_escape_module_closure(module_doc: dict[str, Any]) -> dict[str, 
         module_id = _safe_name(module_id_any)
         if module_id == "":
             continue
-        if not isinstance(doc_any, dict) or doc_any.get("kind") != "Module":
+        if not isinstance(doc_any, dict):
             continue
-        child_doc = doc_any
+        da: dict[str, Any] = doc_any
+        if da.get("kind") != "Module":
+            continue
+        child_doc = da
         child_meta_any = child_doc.get("meta")
         child_meta = child_meta_any if isinstance(child_meta_any, dict) else {}
         if _safe_name(child_meta.get("module_id")) == "":
@@ -141,15 +147,17 @@ def _infer_builtin_callee_arg_escape(call_node: dict[str, Any]) -> list[bool]:
         return []
     runtime_call = _safe_name(call_node.get("runtime_call"))
     builtin_name = _safe_name(call_node.get("builtin_name"))
-    if runtime_call in {"py_len", "py_to_string", "py_to_bool", "py_to_int64", "py_to_float64"}:
+    if runtime_call == "py_len" or runtime_call == "py_to_string" or runtime_call == "py_to_bool" or runtime_call == "py_to_int64" or runtime_call == "py_to_float64":
         return [False] * arg_count
-    if builtin_name in {"len", "str", "bool", "int", "float"}:
+    if builtin_name == "len" or builtin_name == "str" or builtin_name == "bool" or builtin_name == "int" or builtin_name == "float":
         return [False] * arg_count
     func_any = call_node.get("func")
-    if isinstance(func_any, dict) and _safe_name(func_any.get("kind")) == "Name":
-        fn_name = _safe_name(func_any.get("id"))
-        if fn_name in {"len", "str", "bool", "int", "float"}:
-            return [False] * arg_count
+    if isinstance(func_any, dict):
+        fad: dict[str, Any] = func_any
+        if _safe_name(fad.get("kind")) == "Name":
+            fn_name = _safe_name(fad.get("id"))
+            if fn_name == "len" or fn_name == "str" or fn_name == "bool" or fn_name == "int" or fn_name == "float":
+                return [False] * arg_count
     return []
 
 
@@ -171,8 +179,9 @@ def _collect_return_from_args(node: Any, arg_index: dict[str, int], out: set[int
         return has_return_value, direct_return_count
     if not isinstance(node, dict):
         return False, 0
-    if node.get("kind") == "Return":
-        value_any = node.get("value")
+    nd2: dict[str, Any] = node
+    if nd2.get("kind") == "Return":
+        value_any = nd2.get("value")
         if isinstance(value_any, dict):
             has_return_value = True
             direct_return_count = 1
@@ -181,7 +190,7 @@ def _collect_return_from_args(node: Any, arg_index: dict[str, int], out: set[int
             for idx in refs:
                 out.add(idx)
         return has_return_value, direct_return_count
-    for value in node.values():
+    for value in nd2.values():
         has_val_i, cnt_i = _collect_return_from_args(value, arg_index, out)
         has_return_value = has_return_value or has_val_i
         direct_return_count += cnt_i
@@ -236,7 +245,9 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
                 if nm != "":
                     arg_order.append(nm)
                 j += 1
-            arg_index = {name: idx for idx, name in enumerate(arg_order)}
+            arg_index: dict[str, int] = {}
+            for _ai in range(len(arg_order)):
+                arg_index[arg_order[_ai]] = _ai
 
             direct_return_from_args: set[int] = set()
             has_return_value, _ = _collect_return_from_args(fn_node.get("body"), arg_index, direct_return_from_args)
@@ -290,12 +301,13 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
                     callee_node = symbols[target]
                     callee_arg_types = callee_node.get("arg_types")
                     if isinstance(callee_arg_types, dict):
+                        cat: dict[str, Any] = callee_arg_types
                         callee_arg_order = callee_node.get("arg_order")
                         callee_arg_order = callee_arg_order if isinstance(callee_arg_order, list) else []
                         param_idx = 0
                         while param_idx < len(callee_arg_order):
                             param_name = _safe_name(callee_arg_order[param_idx])
-                            param_type = _safe_name(callee_arg_types.get(param_name))
+                            param_type = _safe_name(cat.get(param_name))
                             if "|" in param_type:
                                 # This parameter is a union type → arg escapes (boxed to object).
                                 call_arg_idx = param_idx
@@ -333,7 +345,12 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
             for idx in direct_return_from_args:
                 if idx >= 0 and idx < len(ret_from_args):
                     ret_from_args[idx] = True
-            ret_escape = bool(has_return_value or any(ret_from_args))
+            _has_any_ret = False
+            for _rfa in ret_from_args:
+                if _rfa:
+                    _has_any_ret = True
+                    break
+            ret_escape = bool(has_return_value or _has_any_ret)
             if bool(context.non_escape_policy.get("unknown_call_escape", True)) and unresolved_site_count > 0:
                 ret_escape = True
             summary[symbol] = {
@@ -405,7 +422,12 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
                                     r += 1
                             j += 1
                     s += 1
-                if any(ret_from_args) and not ret_escape:
+                _has_any_ret2 = False
+                for _rfa2 in ret_from_args:
+                    if _rfa2:
+                        _has_any_ret2 = True
+                        break
+                if _has_any_ret2 and not ret_escape:
                     ret_escape = True
                     changed = True
                 cur["arg_escape"] = arg_escape
@@ -454,20 +476,20 @@ class NonEscapeInterproceduralPass(East3OptimizerPass):
                                 callee_arg_escape_payload.append(bool(item))
                     elif not resolved:
                         callee_arg_escape_payload = _infer_builtin_callee_arg_escape(call_node)
-                    payload = {
+                    crfa: list[Any] = []
+                    cre = False
+                    if isinstance(callee_summary, dict):
+                        csd: dict[str, Any] = callee_summary
+                        crfa = list(csd.get("return_from_args", []))
+                        cre = bool(csd.get("return_escape", False))
+                    payload: dict[str, Any] = {
                         "callee": callee_symbol,
                         "resolved": resolved,
                         "in_return_expr": bool(site.get("in_return_expr", False)),
                         "arg_sources": site.get("arg_sources", []),
                         "callee_arg_escape": callee_arg_escape_payload,
-                        "callee_return_from_args": (
-                            list(callee_summary.get("return_from_args", []))
-                            if isinstance(callee_summary, dict)
-                            else []
-                        ),
-                        "callee_return_escape": bool(callee_summary.get("return_escape", False))
-                        if isinstance(callee_summary, dict)
-                        else False,
+                        "callee_return_from_args": crfa,
+                        "callee_return_escape": cre,
                     }
                     if _set_meta_value(call_node, "non_escape_callsite", payload):
                         annotation_changes += 1

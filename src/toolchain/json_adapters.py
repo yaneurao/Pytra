@@ -19,9 +19,17 @@ def _jv_to_object(v: json.JsonVal) -> object:
     if isinstance(v, str):
         return v
     if isinstance(v, list):
-        return [_jv_to_object(x) for x in v]
+        vl: list[json.JsonVal] = v
+        out_list: list[object] = []
+        for x in vl:
+            out_list.append(_jv_to_object(x))
+        return out_list
     if isinstance(v, dict):
-        return {k: _jv_to_object(vv) for k, vv in v.items()}
+        vd: dict[str, json.JsonVal] = v
+        out_dict: dict[str, object] = {}
+        for k, vv in vd.items():
+            out_dict[k] = _jv_to_object(vv)
+        return out_dict
     return None
 
 
@@ -38,9 +46,18 @@ def _object_to_jv(v: object) -> json.JsonVal:
     if isinstance(v, str):
         return v
     if isinstance(v, list):
-        return [_object_to_jv(x) for x in v]
+        vl2: list[object] = v
+        out_list2: list[json.JsonVal] = []
+        for x in vl2:
+            out_list2.append(_object_to_jv(x))
+        return out_list2
     if isinstance(v, dict):
-        return {k: _object_to_jv(vv) for k, vv in v.items() if isinstance(k, str)}
+        vd2: dict[str, object] = v
+        out_dict2: dict[str, json.JsonVal] = {}
+        for k, vv in vd2.items():
+            if isinstance(k, str):
+                out_dict2[k] = _object_to_jv(vv)
+        return out_dict2
     return None
 
 
@@ -69,8 +86,9 @@ def coerce_json_object_doc(doc: object, *, label: str) -> json.JsonObj:
         return doc
     if not isinstance(doc, dict):
         raise RuntimeError(label + " must be an object")
+    dd: dict[str, object] = doc
     raw: dict[str, json.JsonVal] = {}
-    for key, value in doc.items():
+    for key, value in dd.items():
         if isinstance(key, str):
             raw[key] = _object_to_jv(value)
     return json.JsonObj(raw)

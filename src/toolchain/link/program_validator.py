@@ -98,39 +98,61 @@ _RAW_EAST3_NODE_HINT_KEYS: frozenset[str] = frozenset(
 )
 
 
-def _iter_object_tree(value: object, path: str, *, parent_key: str | None = None) -> object:
+def _iter_object_tree(value: object, path: str, *, parent_key: str | None = None) -> list[tuple[str, str | None, dict[str, object]]]:
+    out: list[tuple[str, str | None, dict[str, object]]] = []
+    _iter_object_tree_impl(value, path, parent_key, out)
+    return out
+
+
+def _iter_object_tree_impl(value: object, path: str, parent_key: str | None, out: list[tuple[str, str | None, dict[str, object]]]) -> None:
     if isinstance(value, dict):
-        yield (path, parent_key, value)
-        for key, child in value.items():
-            yield from _iter_object_tree(child, path + "." + str(key), parent_key=str(key))
+        vd: dict[str, object] = value
+        out.append((path, parent_key, vd))
+        for key, child in vd.items():
+            _iter_object_tree_impl(child, path + "." + str(key), str(key), out)
         return
     if isinstance(value, list):
-        for idx, child in enumerate(value):
-            yield from _iter_object_tree(child, path + "[" + str(idx) + "]", parent_key=parent_key)
+        vl: list[object] = value
+        for idx in range(len(vl)):
+            _iter_object_tree_impl(vl[idx], path + "[" + str(idx) + "]", parent_key, out)
 
 
 def _looks_like_raw_east3_node(obj: dict[str, object], *, path: str, parent_key: str | None) -> bool:
     if path == "$":
         return True
-    if any(key in obj for key in _RAW_EAST3_NODE_HINT_KEYS):
+    kind_val = obj.get("kind")
+    has_ast_kind = False
+    if isinstance(kind_val, str):
+        kv: str = kind_val
+        if kv != "" and kv[0].isupper():
+            has_ast_kind = True
+    if not has_ast_kind:
+        return False
+    found_hint = False
+    for key in _RAW_EAST3_NODE_HINT_KEYS:
+        if key in obj:
+            found_hint = True
+            break
+    if found_hint:
         return True
     meta = obj.get("meta")
-    if isinstance(meta, dict) and "generated_by" in meta and "kind" in obj:
+    if isinstance(meta, dict) and "generated_by" in meta:
         return True
-    return parent_key in _RAW_EAST3_NODE_CONTAINER_KEYS and "kind" in obj
+    return parent_key in _RAW_EAST3_NODE_CONTAINER_KEYS
 
 
 def _validate_source_span_shape(span_any: object, label: str) -> None:
     if not isinstance(span_any, dict):
         raise RuntimeError(label + " must be an object")
+    sd: dict[str, object] = span_any
     for key in ("lineno", "end_lineno", "col_offset", "end_col_offset"):
-        value = span_any.get(key)
+        value = sd.get(key)
         if type(value) is not int:
             raise RuntimeError(label + "." + key + " must be int")
-    start_line = int(span_any["lineno"])
-    end_line = int(span_any["end_lineno"])
-    start_col = int(span_any["col_offset"])
-    end_col = int(span_any["end_col_offset"])
+    start_line = int(sd["lineno"])
+    end_line = int(sd["end_lineno"])
+    start_col = int(sd["col_offset"])
+    end_col = int(sd["end_col_offset"])
     if end_line < start_line or (end_line == start_line and end_col < start_col):
         raise RuntimeError(label + " must not encode reversed range")
 

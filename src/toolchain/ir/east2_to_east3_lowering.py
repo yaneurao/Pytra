@@ -21,11 +21,12 @@ from toolchain.ir.east2_to_east3_type_summary import _type_expr_summary_from_nod
 from toolchain.ir.east2_to_east3_type_summary import _type_expr_summary_from_payload
 
 
-_LEGACY_COMPAT_BRIDGE_ENABLED = True
+_LEGACY_COMPAT_BRIDGE_HOLDER: list[bool] = [True]
 
 def _normalize_dispatch_mode(value: Any) -> str:
     if isinstance(value, str):
-        mode = value.strip()
+        s: str = value
+        mode = s.strip()
         if mode == "native" or mode == "type_id":
             return mode
     return "native"
@@ -65,37 +66,43 @@ def _is_any_like_type(type_name: Any) -> bool:
 def _const_string_value(node: Any) -> str:
     if not isinstance(node, dict):
         return ""
-    kind = node.get("kind")
-    value = node.get("value")
+    d: dict[str, Any] = node
+    kind = d.get("kind")
+    value = d.get("value")
     if kind == "Constant" and isinstance(value, str):
         return value
     if kind == "Call":
-        func_obj = node.get("func")
-        if isinstance(func_obj, dict) and func_obj.get("kind") == "Name" and func_obj.get("id") == "str":
-            args_obj = node.get("args")
-            args: list[Any] = args_obj if isinstance(args_obj, list) else []
-            if len(args) == 1:
-                return _const_string_value(args[0])
+        func_obj = d.get("func")
+        if isinstance(func_obj, dict):
+            fd: dict[str, Any] = func_obj
+            if fd.get("kind") == "Name" and fd.get("id") == "str":
+                args_obj = d.get("args")
+                args: list[Any] = args_obj if isinstance(args_obj, list) else []
+                if len(args) == 1:
+                    return _const_string_value(args[0])
     return ""
 
 
 def _is_none_literal(node: Any) -> bool:
     if not isinstance(node, dict):
         return False
-    if node.get("kind") != "Constant":
+    nd: dict[str, Any] = node
+    if nd.get("kind") != "Constant":
         return False
-    return node.get("value") is None
+    return nd.get("value") is None
 
 
 def _node_source_span(node: Any) -> Any:
     if isinstance(node, dict):
-        return node.get("source_span")
+        dn: dict[str, Any] = node
+        return dn.get("source_span")
     return None
 
 
 def _node_repr(node: Any) -> str:
     if isinstance(node, dict):
-        repr_obj = node.get("repr")
+        dn: dict[str, Any] = node
+        repr_obj = dn.get("repr")
         if isinstance(repr_obj, str):
             return repr_obj
     return ""
@@ -153,29 +160,40 @@ def _expand_starred_call_args(call: dict[str, Any]) -> dict[str, Any]:
     expanded_args: list[Any] = []
     changed = False
     for arg in args:
-        if not isinstance(arg, dict) or arg.get("kind") != "Starred":
+        if not isinstance(arg, dict):
+            expanded_args.append(arg)
+            continue
+        ad: dict[str, Any] = arg
+        if ad.get("kind") != "Starred":
             expanded_args.append(arg)
             continue
         changed = True
-        value_obj = arg.get("value")
+        value_obj = ad.get("value")
         value = value_obj if isinstance(value_obj, dict) else None
         if value is None:
             raise RuntimeError("starred_call_contract_violation: call starred unpack requires expression value")
-        if value.get("kind") != "Name":
+        vd: dict[str, Any] = value
+        if vd.get("kind") != "Name":
             raise RuntimeError(
                 "starred_call_contract_violation: representative v1 supports only named tuple starred call receivers"
             )
-        tuple_types = _tuple_element_types(_expr_type_name(value))
+        tuple_types = _tuple_element_types(_expr_type_name(vd))
         if len(tuple_types) == 0:
             raise RuntimeError(
                 "starred_call_contract_violation: call starred unpack requires fixed tuple receiver TypeExpr"
             )
-        if any(_normalize_type_name(t) in {"", "unknown"} or _is_any_like_type(t) for t in tuple_types):
+        has_bad_type = False
+        for t in tuple_types:
+            nt = _normalize_type_name(t)
+            if nt == "" or nt == "unknown" or _is_any_like_type(t):
+                has_bad_type = True
+                break
+        if has_bad_type:
             raise RuntimeError(
                 "starred_call_contract_violation: call starred unpack requires non-dynamic fixed tuple receiver TypeExpr"
             )
-        for idx, elem_type in enumerate(tuple_types):
-            expanded_args.append(_make_tuple_starred_index_expr(value, idx, elem_type, arg))
+        for idx in range(len(tuple_types)):
+            expanded_args.append(_make_tuple_starred_index_expr(vd, idx, tuple_types[idx], ad))
     if changed:
         call["args"] = expanded_args
     return call
@@ -191,14 +209,14 @@ def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, A
         out,
         dispatch_mode=dispatch_mode,
         lower_node=lambda node: _lower_node(node, dispatch_mode=dispatch_mode),
-        legacy_compat_bridge_enabled=_LEGACY_COMPAT_BRIDGE_ENABLED,
+        legacy_compat_bridge_enabled=_LEGACY_COMPAT_BRIDGE_HOLDER[0],
     )
     if not isinstance(out, dict):
         return out
     if out.get("kind") != "Call":
         return out
     _set_type_expr_summary(out, _type_expr_summary_from_node(out))
-    out = _decorate_call_metadata(out, legacy_compat_bridge_enabled=_LEGACY_COMPAT_BRIDGE_ENABLED)
+    out = _decorate_call_metadata(out, legacy_compat_bridge_enabled=_LEGACY_COMPAT_BRIDGE_HOLDER[0])
 
     func_obj = out.get("func")
     if isinstance(func_obj, dict) and func_obj.get("kind") == "Name" and func_obj.get("id") == "getattr":
@@ -315,7 +333,7 @@ def _lower_call_expr(call: dict[str, Any], *, dispatch_mode: str) -> dict[str, A
         return out
 
     # Legacy fallback for stage2 payloads that still encode builtin identity.
-    if not _LEGACY_COMPAT_BRIDGE_ENABLED:
+    if not _LEGACY_COMPAT_BRIDGE_HOLDER[0]:
         return out
     builtin_name = out.get("builtin_name")
     if builtin_name == "bool":
@@ -390,23 +408,24 @@ def lower_east2_to_east3(east_module: dict[str, Any], object_dispatch_mode: str 
     if object_dispatch_mode != "":
         dispatch_mode = _normalize_dispatch_mode(object_dispatch_mode)
     elif isinstance(meta_obj, dict):
-        dispatch_mode = _normalize_dispatch_mode(meta_obj.get("dispatch_mode"))
+        md: dict[str, Any] = meta_obj
+        dispatch_mode = _normalize_dispatch_mode(md.get("dispatch_mode"))
 
-    global _LEGACY_COMPAT_BRIDGE_ENABLED
-    prev_legacy_compat = _LEGACY_COMPAT_BRIDGE_ENABLED
+    prev_legacy_compat = _LEGACY_COMPAT_BRIDGE_HOLDER[0]
     prev_nominal_adt_decl_table = _swap_nominal_adt_decl_summary_table(
         _collect_nominal_adt_decl_summary_table(east_module)
     )
-    _LEGACY_COMPAT_BRIDGE_ENABLED = True
+    _LEGACY_COMPAT_BRIDGE_HOLDER[0] = True
     if isinstance(meta_obj, dict):
-        legacy_obj = meta_obj.get("legacy_compat_bridge")
+        md2: dict[str, Any] = meta_obj
+        legacy_obj = md2.get("legacy_compat_bridge")
         if isinstance(legacy_obj, bool):
-            _LEGACY_COMPAT_BRIDGE_ENABLED = legacy_obj
+            _LEGACY_COMPAT_BRIDGE_HOLDER[0] = legacy_obj
 
     try:
         lowered = _lower_node(east_module, dispatch_mode=dispatch_mode)
     finally:
-        _LEGACY_COMPAT_BRIDGE_ENABLED = prev_legacy_compat
+        _LEGACY_COMPAT_BRIDGE_HOLDER[0] = prev_legacy_compat
         _swap_nominal_adt_decl_summary_table(prev_nominal_adt_decl_table)
     if not isinstance(lowered, dict):
         return east_module

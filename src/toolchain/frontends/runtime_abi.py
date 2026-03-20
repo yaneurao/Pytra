@@ -38,12 +38,16 @@ def _as_list(value: Any) -> list[Any]:
 
 
 def _kind(node: Any) -> str:
-    return str(node.get("kind", "")) if isinstance(node, dict) else ""
+    if not isinstance(node, dict):
+        return ""
+    d: dict[str, Any] = node
+    return str(d.get("kind", ""))
 
 
 def _safe_name(value: Any) -> str:
     if isinstance(value, str):
-        text = value.strip()
+        s: str = value
+        text = s.strip()
         if text != "":
             return text
     return ""

@@ -68,7 +68,8 @@ class _GlobalPassConfig:
 
 def _safe_name(value: Any) -> str:
     if isinstance(value, str):
-        text = value.strip()
+        s: str = value
+        text = s.strip()
         if text != "":
             return text
     return ""
@@ -233,13 +234,15 @@ def _materialize_container_hints(
 def _collect_runtime_module_ids_from_node(node: object, out: set[str]) -> None:
     """Recursively collect runtime_module_id values from EAST nodes."""
     if isinstance(node, dict):
-        mid = node.get("runtime_module_id")
+        nd: dict[str, Any] = node
+        mid = nd.get("runtime_module_id")
         if isinstance(mid, str) and mid != "":
             out.add(mid)
-        for value in node.values():
+        for value in nd.values():
             _collect_runtime_module_ids_from_node(value, out)
     elif isinstance(node, list):
-        for item in node:
+        nl: list[object] = node
+        for item in nl:
             _collect_runtime_module_ids_from_node(item, out)
 
 
@@ -393,13 +396,12 @@ def _build_type_id_table(program: LinkedProgram) -> tuple[dict[str, int], dict[s
         if base_fqcn not in class_bases:
             roots.append(fqcn)
 
-    next_type_id = _USER_TYPE_ID_BASE
+    next_type_id_holder: list[int] = [_USER_TYPE_ID_BASE]
     type_id_table: dict[str, int] = {}
 
     def _assign(fqcn: str) -> None:
-        nonlocal next_type_id
-        type_id_table[fqcn] = next_type_id
-        next_type_id += 1
+        type_id_table[fqcn] = next_type_id_holder[0]
+        next_type_id_holder[0] = next_type_id_holder[0] + 1
         for child_fqcn in children.get(fqcn, []):
             _assign(child_fqcn)
 
@@ -581,41 +583,43 @@ def optimize_linked_program(program: LinkedProgram) -> LinkedProgramOptimization
                 generated_by=module.generated_by,
             )
         )
-        module_entries.append(
-            {
-                "module_id": module.module_id,
-                "input": _input_label(module),
-                "output": _linked_output_path(module.module_id),
-                "source_path": module.source_path,
-                "is_entry": module.is_entry,
-                "module_kind": module.module_kind,
-                **(
-                    {
-                        "helper_id": module.helper_id,
-                        "owner_module_id": module.owner_module_id,
-                        "generated_by": module.generated_by,
-                    }
-                    if module.module_kind == "helper"
-                    else {}
-                ),
-            }
-        )
+        me: dict[str, object] = {
+            "module_id": module.module_id,
+            "input": _input_label(module),
+            "output": _linked_output_path(module.module_id),
+            "source_path": module.source_path,
+            "is_entry": module.is_entry,
+            "module_kind": module.module_kind,
+        }
+        if module.module_kind == "helper":
+            me["helper_id"] = module.helper_id
+            me["owner_module_id"] = module.owner_module_id
+            me["generated_by"] = module.generated_by
+        module_entries.append(me)
 
+    call_graph_dict: dict[str, object] = {}
+    for caller, callees in call_graph.graph.items():
+        call_graph_dict[caller] = list(callees)
+    sccs_list: list[object] = []
+    for component in call_graph.sccs:
+        sccs_list.append(list(component))
+    global_section: dict[str, object] = {
+        "type_id_table": dict(type_id_table),
+        "type_id_base_map": dict(type_id_base_map),
+        "call_graph": call_graph_dict,
+        "sccs": sccs_list,
+        "non_escape_summary": dict(non_escape_summary),
+        "container_ownership_hints_v1": dict(container_hints),
+    }
+    for ts_key, ts_val in template_summary.items():
+        global_section[ts_key] = ts_val
     link_output_doc: dict[str, object] = {
         "schema": LINK_OUTPUT_SCHEMA,
         "target": program.target,
         "dispatch_mode": program.dispatch_mode,
         "entry_modules": list(program.entry_modules),
         "modules": module_entries,
-        "global": {
-            "type_id_table": dict(type_id_table),
-            "type_id_base_map": dict(type_id_base_map),
-            "call_graph": {caller: list(callees) for caller, callees in call_graph.graph.items()},
-            "sccs": [list(component) for component in call_graph.sccs],
-            "non_escape_summary": dict(non_escape_summary),
-            "container_ownership_hints_v1": dict(container_hints),
-            **template_summary,
-        },
+        "global": global_section,
         "diagnostics": {"warnings": [], "errors": []},
     }
     _ = validate_link_output_doc(link_output_doc)

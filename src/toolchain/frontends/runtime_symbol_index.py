@@ -9,7 +9,8 @@ from toolchain.json_adapters import export_json_object_dict
 
 ROOT = Path(__file__).resolve().parents[3]
 INDEX_PATH = ROOT / "tools" / "runtime_symbol_index.json"
-_CACHE: dict[str, Any] | None = None
+_CACHE_HOLDER: list[dict[str, Any]] = [{}]
+_CACHE_LOADED_HOLDER: list[bool] = [False]
 _FRONTEND_FACADE_RUNTIME_MODULE_BY_SYMBOL: dict[str, str] = {
     "add_common_transpile_args": "toolchain.compiler.transpile_cli",
     "build_module_east_map": "toolchain.compiler.transpile_cli",
@@ -20,23 +21,23 @@ _FRONTEND_FACADE_RUNTIME_MODULE_BY_SYMBOL: dict[str, str] = {
 
 
 def _load_index() -> dict[str, Any]:
-    global _CACHE
-    if isinstance(_CACHE, dict):
-        return _CACHE
+    if _CACHE_LOADED_HOLDER[0]:
+        return _CACHE_HOLDER[0]
+    _CACHE_LOADED_HOLDER[0] = True
     try:
         obj = json.loads_obj(INDEX_PATH.read_text(encoding="utf-8"))
     except Exception:
         obj = None
     if obj is None:
-        _CACHE = {}
-        return _CACHE
-    _CACHE = export_json_object_dict(obj)
-    return _CACHE
+        _CACHE_HOLDER[0] = {}
+        return _CACHE_HOLDER[0]
+    _CACHE_HOLDER[0] = export_json_object_dict(obj)
+    return _CACHE_HOLDER[0]
 
 
 def clear_runtime_symbol_index_cache() -> None:
-    global _CACHE
-    _CACHE = None
+    _CACHE_HOLDER[0] = {}
+    _CACHE_LOADED_HOLDER[0] = False
 
 
 def load_runtime_symbol_index() -> dict[str, Any]:

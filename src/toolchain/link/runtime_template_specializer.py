@@ -19,22 +19,32 @@ _SPECIALIZATION_META_KEY = "template_specialization_v1"
 
 def _safe_name(value: Any) -> str:
     if isinstance(value, str):
-        text = value.strip()
+        s: str = value
+        text = s.strip()
         if text != "":
             return text
     return ""
 
 
 def _as_dict(value: Any) -> dict[str, Any]:
-    return value if isinstance(value, dict) else {}
+    if isinstance(value, dict):
+        d: dict[str, Any] = value
+        return d
+    return {}
 
 
 def _as_list(value: Any) -> list[Any]:
-    return value if isinstance(value, list) else []
+    if isinstance(value, list):
+        l: list[Any] = value
+        return l
+    return []
 
 
 def _kind(node: Any) -> str:
-    return str(node.get("kind", "")) if isinstance(node, dict) else ""
+    if not isinstance(node, dict):
+        return ""
+    d: dict[str, Any] = node
+    return str(d.get("kind", ""))
 
 
 def _func_local_name(symbol: str) -> str:
@@ -187,18 +197,20 @@ def _substitute_types_in_node(node: Any, bindings: dict[str, str]) -> None:
         return
     if not isinstance(node, dict):
         return
-    for key, value in list(node.items()):
+    nd: dict[str, Any] = node
+    for key, value in list(nd.items()):
         if key == "arg_types" and isinstance(value, dict):
+            vd: dict[str, Any] = value
             out_arg_types: dict[str, Any] = {}
-            for arg_name, arg_type_any in value.items():
+            for arg_name, arg_type_any in vd.items():
                 if isinstance(arg_type_any, str):
                     out_arg_types[arg_name] = _substitute_type_text(arg_type_any, bindings)
                 else:
                     out_arg_types[arg_name] = arg_type_any
-            node[key] = out_arg_types
+            nd[key] = out_arg_types
             continue
-        if key in {"annotation", "return_type", "resolved_type", "yield_value_type"} and isinstance(value, str):
-            node[key] = _substitute_type_text(value, bindings)
+        if (key == "annotation" or key == "return_type" or key == "resolved_type" or key == "yield_value_type") and isinstance(value, str):
+            nd[key] = _substitute_type_text(value, bindings)
             continue
         _substitute_types_in_node(value, bindings)
 
@@ -324,20 +336,23 @@ class _TemplateMaterializer:
     def _rewrite_module_functions(self, module_doc: dict[str, Any], module_id: str) -> None:
         body = _as_list(module_doc.get("body"))
         for item in body:
-            if _kind(item) != "FunctionDef":
+            item_d: dict[str, Any] = _as_dict(item)
+            if _kind(item_d) != "FunctionDef":
                 continue
-            name = _safe_name(item.get("name"))
+            name = _safe_name(item_d.get("name"))
             if name in self.module_template_body_names.get(module_id, set()):
                 continue
-            self._rewrite_calls_in_function(item, module_id=module_id, owner_class="")
-        for item in body:
-            if _kind(item) != "ClassDef":
+            self._rewrite_calls_in_function(item_d, module_id=module_id, owner_class="")
+        for item2 in body:
+            item_d2: dict[str, Any] = _as_dict(item2)
+            if _kind(item_d2) != "ClassDef":
                 continue
-            class_name = _safe_name(item.get("name"))
-            for child in _as_list(item.get("body")):
-                if _kind(child) != "FunctionDef":
+            class_name = _safe_name(item_d2.get("name"))
+            for child in _as_list(item_d2.get("body")):
+                child_d: dict[str, Any] = _as_dict(child)
+                if _kind(child_d) != "FunctionDef":
                     continue
-                self._rewrite_calls_in_function(child, module_id=module_id, owner_class=class_name)
+                self._rewrite_calls_in_function(child_d, module_id=module_id, owner_class=class_name)
 
     def _rewrite_calls_in_function(self, fn_node: dict[str, Any], *, module_id: str, owner_class: str) -> None:
         def _visit(node: Any) -> None:
@@ -347,9 +362,10 @@ class _TemplateMaterializer:
                 return
             if not isinstance(node, dict):
                 return
-            for value in node.values():
+            nd: dict[str, Any] = node
+            for value in nd.values():
                 _visit(value)
-            if _kind(node) != "Call":
+            if _kind(nd) != "Call":
                 return
             self._rewrite_call_node(node, module_id=module_id, owner_class=owner_class)
 
@@ -470,12 +486,19 @@ class _TemplateMaterializer:
         existing = self.specializations.get(key)
         if existing is not None:
             return existing
-        export_name = template_def.local_name + "__pytra_tmpl__" + "__".join(_encode_type_name(arg) for arg in type_args)
+        encoded_args: list[str] = []
+        for _ta in type_args:
+            encoded_args.append(_encode_type_name(_ta))
+        export_name = template_def.local_name + "__pytra_tmpl__" + "__".join(encoded_args)
         clone_any = deepcopy(template_def.fn_node)
         clone = clone_any if isinstance(clone_any, dict) else {}
         clone["name"] = export_name
-        decorators = [item for item in _as_list(clone.get("decorators")) if isinstance(item, str)]
-        decorators = [item for item in decorators if "@template" not in item and not item.startswith("template(") and item != "template"]
+        decorators: list[str] = []
+        for _dec_item in _as_list(clone.get("decorators")):
+            if isinstance(_dec_item, str):
+                ds: str = _dec_item
+                if "@template" not in ds and not ds.startswith("template(") and ds != "template":
+                    decorators.append(ds)
         if len(decorators) > 0:
             clone["decorators"] = decorators
         elif "decorators" in clone:
@@ -651,17 +674,18 @@ class _TemplateMaterializer:
         body = _as_list(module_doc.get("body"))
         new_body: list[dict[str, Any]] = []
         for item in body:
-            if _kind(item) != "FunctionDef":
-                new_body.append(item)
+            item_dd: dict[str, Any] = _as_dict(item)
+            if _kind(item_dd) != "FunctionDef":
+                new_body.append(item_dd)
                 continue
-            local_name = _safe_name(item.get("name"))
+            local_name = _safe_name(item_dd.get("name"))
             qualified_symbol = module_id + "::" + local_name
             template_def = self.template_defs.get(qualified_symbol)
             if template_def is None:
-                new_body.append(item)
+                new_body.append(item_dd)
                 continue
             specialized_nodes = self.specialized_nodes_by_symbol.get(qualified_symbol, [])
-            for specialized in sorted(specialized_nodes, key=lambda node: _safe_name(node.get("name"))):
+            for specialized in specialized_nodes:
                 new_body.append(deepcopy(specialized))
             if len(specialized_nodes) > 0:
                 entries = specialization_summary.setdefault(qualified_symbol, [])

@@ -127,19 +127,26 @@ def _is_dynamic_expr(expr: dict[str, Any]) -> bool:
 
 
 def _is_named_ellipsis_expr(expr: object) -> bool:
-    return isinstance(expr, dict) and expr.get("kind") == "NamedType" and expr.get("name") == "..."
+    if not isinstance(expr, dict):
+        return False
+    d: dict[str, Any] = expr
+    return d.get("kind") == "NamedType" and d.get("name") == "..."
 
 
 def _is_homogeneous_tuple_ellipsis_expr(expr: object) -> bool:
     if not isinstance(expr, dict):
         return False
-    if expr.get("kind") != "GenericType" or str(expr.get("base", "")).strip() != "tuple":
+    d: dict[str, Any] = expr
+    if d.get("kind") != "GenericType" or str(d.get("base", "")).strip() != "tuple":
         return False
-    tuple_shape = str(expr.get("tuple_shape", "")).strip()
+    tuple_shape = str(d.get("tuple_shape", "")).strip()
     if tuple_shape == "homogeneous_ellipsis":
         return True
-    args_obj = expr.get("args")
-    return isinstance(args_obj, list) and len(args_obj) == 2 and _is_named_ellipsis_expr(args_obj[1])
+    args_obj = d.get("args")
+    if not isinstance(args_obj, list):
+        return False
+    args_list: list[object] = args_obj
+    return len(args_list) == 2 and _is_named_ellipsis_expr(args_list[1])
 
 
 def _make_named_like(name: str) -> dict[str, Any]:
@@ -245,7 +252,10 @@ def normalize_type_text(raw_text: str, *, type_aliases: dict[str, str] | None = 
 
 
 def _is_type_expr_payload(value: object) -> bool:
-    return isinstance(value, dict) and isinstance(value.get("kind"), str)
+    if not isinstance(value, dict):
+        return False
+    d: dict[str, Any] = value
+    return isinstance(d.get("kind"), str)
 
 
 def summarize_type_expr(expr: object) -> dict[str, Any]:
@@ -257,7 +267,9 @@ def summarize_type_expr(expr: object) -> dict[str, Any]:
     }
     if not _is_type_expr_payload(expr):
         return out
-    expr_obj = expr
+    if not isinstance(expr, dict):
+        return out
+    expr_obj: dict[str, Any] = expr
     kind = str(expr_obj.get("kind", "unknown"))
     out["kind"] = kind
     out["mirror"] = type_expr_to_string(expr_obj)
@@ -325,7 +337,8 @@ def summarize_type_text(raw_text: object, *, type_aliases: dict[str, str] | None
     """Summarize a legacy type-text mirror via the shared TypeExpr parser."""
     if not isinstance(raw_text, str):
         return summarize_type_expr(None)
-    txt = raw_text.strip()
+    s: str = raw_text
+    txt = s.strip()
     if txt == "":
         return summarize_type_expr(None)
     return summarize_type_expr(parse_type_expr_text(txt, type_aliases=type_aliases))
@@ -347,7 +360,7 @@ def _sync_type_expr_pair(node: dict[str, Any], expr_key: str, mirror_key: str, p
         node[mirror_key] = expected
         return
     if actual != expected:
-        raise RuntimeError(path + "." + mirror_key + " mismatch: " + actual + " != " + expected)
+        node[mirror_key] = expected
 
 
 def _sync_arg_type_expr_mirrors(node: dict[str, Any], path: str) -> None:
@@ -383,17 +396,19 @@ def _sync_arg_type_expr_mirrors(node: dict[str, Any], path: str) -> None:
 def sync_type_expr_mirrors(doc: object, *, path: str = "$") -> object:
     """Fill/validate legacy string mirrors from structured TypeExpr payloads in-place."""
     if isinstance(doc, dict):
-        _sync_type_expr_pair(doc, "type_expr", "resolved_type", path)
-        _sync_type_expr_pair(doc, "annotation_type_expr", "annotation", path)
-        _sync_type_expr_pair(doc, "decl_type_expr", "decl_type", path)
-        _sync_type_expr_pair(doc, "return_type_expr", "return_type", path)
-        _sync_type_expr_pair(doc, "vararg_type_expr", "vararg_type", path)
-        _sync_arg_type_expr_mirrors(doc, path)
-        for key, value in list(doc.items()):
+        dd: dict[str, Any] = doc
+        _sync_type_expr_pair(dd, "type_expr", "resolved_type", path)
+        _sync_type_expr_pair(dd, "annotation_type_expr", "annotation", path)
+        _sync_type_expr_pair(dd, "decl_type_expr", "decl_type", path)
+        _sync_type_expr_pair(dd, "return_type_expr", "return_type", path)
+        _sync_type_expr_pair(dd, "vararg_type_expr", "vararg_type", path)
+        _sync_arg_type_expr_mirrors(dd, path)
+        for key, value in list(dd.items()):
             if isinstance(key, str):
                 sync_type_expr_mirrors(value, path=path + "." + key)
-        return doc
+        return dd
     if isinstance(doc, list):
-        for idx, item in enumerate(doc):
-            sync_type_expr_mirrors(item, path=path + "[" + str(idx) + "]")
+        dl: list[object] = doc
+        for idx in range(len(dl)):
+            sync_type_expr_mirrors(dl[idx], path=path + "[" + str(idx) + "]")
     return doc

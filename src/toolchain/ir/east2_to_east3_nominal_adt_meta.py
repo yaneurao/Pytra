@@ -225,15 +225,21 @@ def _build_nominal_adt_match_analysis(match_stmt: dict[str, Any]) -> dict[str, A
     invalid = False
     wildcard_seen = False
 
-    for idx, case in enumerate(cases):
-        pattern = case.get("pattern") if isinstance(case, dict) else None
+    for idx in range(len(cases)):
+        case = cases[idx]
+        case_pattern: Any = None
+        if isinstance(case, dict):
+            cd: dict[str, Any] = case
+            case_pattern = cd.get("pattern")
+        pattern = case_pattern
         if not isinstance(pattern, dict):
             invalid = True
             continue
-        pattern_kind = str(pattern.get("kind", "")).strip()
+        pd: dict[str, Any] = pattern
+        pattern_kind = str(pd.get("kind", "")).strip()
         if pattern_kind == "VariantPattern":
-            variant_family = str(pattern.get("family_name", "")).strip()
-            variant_name = _normalize_type_name(pattern.get("variant_name"))
+            variant_family = str(pd.get("family_name", "")).strip()
+            variant_name = _normalize_type_name(pd.get("variant_name"))
             if variant_family != family_name or variant_name not in family_variants:
                 invalid = True
                 continue
@@ -241,7 +247,7 @@ def _build_nominal_adt_match_analysis(match_stmt: dict[str, Any]) -> dict[str, A
             if decl is None:
                 invalid = True
                 continue
-            subpatterns_obj = pattern.get("subpatterns")
+            subpatterns_obj = pd.get("subpatterns")
             subpatterns: list[Any] = subpatterns_obj if isinstance(subpatterns_obj, list) else []
             field_types_obj = decl.get("field_types")
             field_types = field_types_obj if isinstance(field_types_obj, dict) else {}
@@ -313,10 +319,14 @@ def _decorate_nominal_adt_match_stmt(match_stmt: dict[str, Any]) -> dict[str, An
     for case in cases:
         if not isinstance(case, dict):
             continue
-        pattern = case.get("pattern")
-        if not isinstance(pattern, dict) or pattern.get("kind") != "VariantPattern":
+        cd2: dict[str, Any] = case
+        pattern2 = cd2.get("pattern")
+        if not isinstance(pattern2, dict):
             continue
-        variant_name = _normalize_type_name(pattern.get("variant_name"))
+        pd2: dict[str, Any] = pattern2
+        if pd2.get("kind") != "VariantPattern":
+            continue
+        variant_name = _normalize_type_name(pd2.get("variant_name"))
         decl = _lookup_nominal_adt_decl(variant_name)
         if decl is None:
             continue
@@ -327,9 +337,9 @@ def _decorate_nominal_adt_match_stmt(match_stmt: dict[str, Any]) -> dict[str, An
         field_types = field_types_obj if isinstance(field_types_obj, dict) else {}
         field_names = list(field_types.keys())
         bind_names: list[str] = []
-        pattern["lowered_kind"] = "NominalAdtVariantPattern"
-        pattern["semantic_tag"] = "nominal_adt.variant_pattern"
-        pattern["nominal_adt_pattern_v1"] = {
+        pd2["lowered_kind"] = "NominalAdtVariantPattern"
+        pd2["semantic_tag"] = "nominal_adt.variant_pattern"
+        pd2["nominal_adt_pattern_v1"] = {
             "schema_version": 1,
             "ir_category": "NominalAdtVariantPattern",
             "family_name": str(decl.get("family_name", variant_name)),
@@ -337,24 +347,28 @@ def _decorate_nominal_adt_match_stmt(match_stmt: dict[str, Any]) -> dict[str, An
             "payload_style": payload_style,
             "bind_names": bind_names,
         }
-        subpatterns_obj = pattern.get("subpatterns")
+        subpatterns_obj = pd2.get("subpatterns")
         subpatterns: list[Any] = subpatterns_obj if isinstance(subpatterns_obj, list) else []
-        for idx, subpattern in enumerate(subpatterns):
-            if not isinstance(subpattern, dict) or subpattern.get("kind") != "PatternBind":
+        for idx in range(len(subpatterns)):
+            subpattern = subpatterns[idx]
+            if not isinstance(subpattern, dict):
+                continue
+            spd: dict[str, Any] = subpattern
+            if spd.get("kind") != "PatternBind":
                 continue
             field_name = field_names[idx] if idx < len(field_names) else ""
             field_type = _normalize_type_name(field_types.get(field_name))
-            bind_name = str(subpattern.get("name", "")).strip()
+            bind_name = str(spd.get("name", "")).strip()
             if bind_name != "":
                 bind_names.append(bind_name)
-            subpattern["lowered_kind"] = "NominalAdtPatternBind"
-            subpattern["semantic_tag"] = "nominal_adt.pattern_bind"
-            subpattern["nominal_adt_pattern_bind_v1"] = {
+            spd["lowered_kind"] = "NominalAdtPatternBind"
+            spd["semantic_tag"] = "nominal_adt.pattern_bind"
+            spd["nominal_adt_pattern_bind_v1"] = {
                 "schema_version": 1,
                 "field_name": field_name,
                 "field_type": field_type,
             }
             if field_type != "unknown":
-                subpattern["resolved_type"] = field_type
-                _set_type_expr_summary(subpattern, _type_expr_summary_from_payload(None, field_type))
+                spd["resolved_type"] = field_type
+                _set_type_expr_summary(spd, _type_expr_summary_from_payload(None, field_type))
     return match_stmt

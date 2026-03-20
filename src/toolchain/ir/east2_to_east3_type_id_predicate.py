@@ -36,13 +36,15 @@ def _make_name_node(name: str, resolved_type: str = "unknown") -> dict[str, Any]
 
 def _node_source_span(node: Any) -> Any:
     if isinstance(node, dict):
-        return node.get("source_span")
+        dn: dict[str, Any] = node
+        return dn.get("source_span")
     return None
 
 
 def _node_repr(node: Any) -> str:
     if isinstance(node, dict):
-        repr_obj = node.get("repr")
+        dn: dict[str, Any] = node
+        repr_obj = dn.get("repr")
         if isinstance(repr_obj, str):
             return repr_obj
     return ""
@@ -122,9 +124,12 @@ def _make_type_predicate_expr(
 
 
 def _build_nominal_adt_type_test_meta(type_ref_expr: Any) -> dict[str, Any] | None:
-    if not isinstance(type_ref_expr, dict) or type_ref_expr.get("kind") != "Name":
+    if not isinstance(type_ref_expr, dict):
         return None
-    type_name = _normalize_type_name(type_ref_expr.get("id"))
+    trd: dict[str, Any] = type_ref_expr
+    if trd.get("kind") != "Name":
+        return None
+    type_name = _normalize_type_name(trd.get("id"))
     decl = _lookup_nominal_adt_decl(type_name)
     if decl is None:
         return None

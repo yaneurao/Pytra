@@ -7,7 +7,8 @@ from typing import Any
 
 def _safe_name(value: Any) -> str:
     if isinstance(value, str):
-        text = value.strip()
+        s: str = value
+        text = s.strip()
         if text != "":
             return text
     return ""
@@ -64,29 +65,35 @@ def collect_non_escape_symbols(module_doc: dict[str, Any]) -> tuple[str, dict[st
     i = 0
     while i < len(body):
         node = body[i]
-        if isinstance(node, dict) and node.get("kind") == "FunctionDef":
-            name = _safe_name(node.get("name"))
-            if name != "":
-                qualified = qualify_non_escape_symbol(module_id, name)
-                if qualified != "":
-                    symbols[qualified] = node
-                    local_to_qualified[name] = qualified
-        if isinstance(node, dict) and node.get("kind") == "ClassDef":
-            cls_name = _safe_name(node.get("name"))
-            cls_body_any = node.get("body")
-            cls_body = cls_body_any if isinstance(cls_body_any, list) else []
-            j = 0
-            while j < len(cls_body):
-                child = cls_body[j]
-                if isinstance(child, dict) and child.get("kind") == "FunctionDef":
-                    fn_name = _safe_name(child.get("name"))
-                    if cls_name != "" and fn_name != "":
-                        local_symbol = cls_name + "." + fn_name
-                        qualified = qualify_non_escape_symbol(module_id, local_symbol)
-                        if qualified != "":
-                            symbols[qualified] = child
-                            local_to_qualified[local_symbol] = qualified
-                j += 1
+        if isinstance(node, dict):
+            nd: dict[str, Any] = node
+            if nd.get("kind") == "FunctionDef":
+                name = _safe_name(nd.get("name"))
+                if name != "":
+                    qualified = qualify_non_escape_symbol(module_id, name)
+                    if qualified != "":
+                        symbols[qualified] = nd
+                        local_to_qualified[name] = qualified
+        if isinstance(node, dict):
+            nd2: dict[str, Any] = node
+            if nd2.get("kind") == "ClassDef":
+                cls_name = _safe_name(nd2.get("name"))
+                cls_body_any = nd2.get("body")
+                cls_body = cls_body_any if isinstance(cls_body_any, list) else []
+                j = 0
+                while j < len(cls_body):
+                    child = cls_body[j]
+                    if isinstance(child, dict):
+                        cd: dict[str, Any] = child
+                        if cd.get("kind") == "FunctionDef":
+                            fn_name = _safe_name(cd.get("name"))
+                            if cls_name != "" and fn_name != "":
+                                local_symbol = cls_name + "." + fn_name
+                                qualified = qualify_non_escape_symbol(module_id, local_symbol)
+                                if qualified != "":
+                                    symbols[qualified] = cd
+                                    local_to_qualified[local_symbol] = qualified
+                    j += 1
         i += 1
     return module_id, symbols, local_to_qualified
 
@@ -99,7 +106,8 @@ def collect_non_escape_import_maps(module_doc: dict[str, Any]) -> tuple[dict[str
 
     legacy_modules_any = meta.get("import_modules")
     if isinstance(legacy_modules_any, dict):
-        for local_any, module_any in legacy_modules_any.items():
+        lmd: dict[str, Any] = legacy_modules_any
+        for local_any, module_any in lmd.items():
             local_name = _safe_name(local_any)
             module_id = _normalize_module_id(_safe_name(module_any))
             if local_name != "" and module_id != "":
@@ -107,7 +115,8 @@ def collect_non_escape_import_maps(module_doc: dict[str, Any]) -> tuple[dict[str
 
     legacy_symbols_any = meta.get("import_symbols")
     if isinstance(legacy_symbols_any, dict):
-        for local_any, payload_any in legacy_symbols_any.items():
+        lsd: dict[str, Any] = legacy_symbols_any
+        for local_any, payload_any in lsd.items():
             local_name = _safe_name(local_any)
             payload = payload_any if isinstance(payload_any, dict) else {}
             module_id = _normalize_module_id(_safe_name(payload.get("module")))
@@ -123,10 +132,11 @@ def collect_non_escape_import_maps(module_doc: dict[str, Any]) -> tuple[dict[str
         if not isinstance(ent, dict):
             i += 1
             continue
-        binding_kind = _safe_name(ent.get("binding_kind"))
-        module_id = _normalize_module_id(_safe_name(ent.get("module_id")))
-        local_name = _safe_name(ent.get("local_name"))
-        export_name = _safe_name(ent.get("export_name"))
+        ed: dict[str, Any] = ent
+        binding_kind = _safe_name(ed.get("binding_kind"))
+        module_id = _normalize_module_id(_safe_name(ed.get("module_id")))
+        local_name = _safe_name(ed.get("local_name"))
+        export_name = _safe_name(ed.get("export_name"))
         if binding_kind == "module":
             if local_name != "" and module_id != "":
                 import_modules[local_name] = module_id
@@ -147,9 +157,10 @@ def _collect_calls(node: Any, out: list[dict[str, Any]]) -> None:
         return
     if not isinstance(node, dict):
         return
-    if node.get("kind") == "Call":
-        out.append(node)
-    for value in node.values():
+    nd3: dict[str, Any] = node
+    if nd3.get("kind") == "Call":
+        out.append(nd3)
+    for value in nd3.values():
         _collect_calls(value, out)
 
 
@@ -165,9 +176,10 @@ def resolve_non_escape_call_target(
     func_any = call_node.get("func")
     if not isinstance(func_any, dict):
         return "", False
-    kind = _safe_name(func_any.get("kind"))
+    fd: dict[str, Any] = func_any
+    kind = _safe_name(fd.get("kind"))
     if kind == "Name":
-        callee = _safe_name(func_any.get("id"))
+        callee = _safe_name(fd.get("id"))
         if callee == "":
             return "", False
         candidate = local_symbol_map.get(callee, "")
@@ -178,13 +190,14 @@ def resolve_non_escape_call_target(
         return candidate, candidate in known_symbols
     if kind != "Attribute":
         return "", False
-    attr_name = _safe_name(func_any.get("attr"))
-    value_any = func_any.get("value")
+    attr_name = _safe_name(fd.get("attr"))
+    value_any = fd.get("value")
     if not isinstance(value_any, dict):
         return "", False
-    if _safe_name(value_any.get("kind")) != "Name":
+    vd: dict[str, Any] = value_any
+    if _safe_name(vd.get("kind")) != "Name":
         return "", False
-    owner_name = _safe_name(value_any.get("id"))
+    owner_name = _safe_name(vd.get("id"))
     if owner_name == "self" and owner_class != "":
         self_local = owner_class + "." + attr_name
         candidate = local_symbol_map.get(self_local, "")
@@ -254,7 +267,7 @@ def build_non_escape_call_graph(
 
 def strongly_connected_components(graph: dict[str, set[str]]) -> list[list[str]]:
     """Deterministic Tarjan SCC decomposition."""
-    index = 0
+    index_holder: list[int] = [0]
     index_map: dict[str, int] = {}
     lowlink: dict[str, int] = {}
     stack: list[str] = []
@@ -262,10 +275,9 @@ def strongly_connected_components(graph: dict[str, set[str]]) -> list[list[str]]
     sccs: list[list[str]] = []
 
     def _strong_connect(v: str) -> None:
-        nonlocal index
-        index_map[v] = index
-        lowlink[v] = index
-        index += 1
+        index_map[v] = index_holder[0]
+        lowlink[v] = index_holder[0]
+        index_holder[0] = index_holder[0] + 1
         stack.append(v)
         on_stack.add(v)
 

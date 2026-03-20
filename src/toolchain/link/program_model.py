@@ -108,8 +108,9 @@ class LinkedProgram:
 def normalize_writer_options(raw: object) -> dict[str, object]:
     if not isinstance(raw, dict):
         return {}
+    rd: dict[str, object] = raw
     out: dict[str, object] = {}
-    for key, value in raw.items():
+    for key, value in rd.items():
         if isinstance(key, str):
             out[key] = value
     return out

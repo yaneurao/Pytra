@@ -8,7 +8,7 @@ from toolchain.frontends.type_expr import summarize_type_expr
 from toolchain.frontends.type_expr import summarize_type_text
 
 
-_NOMINAL_ADT_DECL_SUMMARY_TABLE: dict[str, dict[str, Any]] = {}
+_NOMINAL_ADT_DECL_SUMMARY_TABLE_HOLDER: list[dict[str, dict[str, Any]]] = [{}]
 _TYPE_EXPR_SUMMARY_KEY = "type_expr_summary_v1"
 _JSON_DECODE_META_KEY = "json_decode_v1"
 _JSON_RECEIVER_NAME_PREFIXES = {
@@ -19,15 +19,15 @@ _JSON_RECEIVER_NAME_PREFIXES = {
 
 
 def _swap_nominal_adt_decl_summary_table(table: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
-    global _NOMINAL_ADT_DECL_SUMMARY_TABLE
-    prev = dict(_NOMINAL_ADT_DECL_SUMMARY_TABLE)
-    _NOMINAL_ADT_DECL_SUMMARY_TABLE = dict(table)
+    prev = dict(_NOMINAL_ADT_DECL_SUMMARY_TABLE_HOLDER[0])
+    _NOMINAL_ADT_DECL_SUMMARY_TABLE_HOLDER[0] = dict(table)
     return prev
 
 
 def _normalize_type_name(value: Any) -> str:
     if isinstance(value, str):
-        t = value.strip()
+        s: str = value
+        t = s.strip()
         if t != "":
             return t
     return "unknown"
@@ -47,14 +47,15 @@ def _type_expr_summary_from_payload(type_expr: Any, mirror: Any) -> dict[str, An
 def _type_expr_summary_from_node(node: Any) -> dict[str, Any]:
     if not isinstance(node, dict):
         return _unknown_type_summary()
-    return _type_expr_summary_from_payload(node.get("type_expr"), node.get("resolved_type"))
+    nd: dict[str, Any] = node
+    return _type_expr_summary_from_payload(nd.get("type_expr"), nd.get("resolved_type"))
 
 
 def _lookup_nominal_adt_decl(name: Any) -> dict[str, Any] | None:
     type_name = _normalize_type_name(name)
     if type_name == "unknown":
         return None
-    entry = _NOMINAL_ADT_DECL_SUMMARY_TABLE.get(type_name)
+    entry = _NOMINAL_ADT_DECL_SUMMARY_TABLE_HOLDER[0].get(type_name)
     if not isinstance(entry, dict):
         return None
     return dict(entry)
@@ -132,18 +133,21 @@ def _collect_nominal_adt_decl_summary_table(east_module: dict[str, Any]) -> dict
     body_obj = east_module.get("body")
     body: list[Any] = body_obj if isinstance(body_obj, list) else []
     for item in body:
-        if not isinstance(item, dict) or item.get("kind") != "ClassDef":
+        if not isinstance(item, dict):
             continue
-        class_name = _normalize_type_name(item.get("name"))
+        id2: dict[str, Any] = item
+        if id2.get("kind") != "ClassDef":
+            continue
+        class_name = _normalize_type_name(id2.get("name"))
         if class_name == "unknown":
             continue
-        meta_obj = item.get("meta")
+        meta_obj = id2.get("meta")
         meta = meta_obj if isinstance(meta_obj, dict) else {}
         nominal_obj = meta.get("nominal_adt_v1")
         nominal = nominal_obj if isinstance(nominal_obj, dict) else {}
         role = str(nominal.get("role", "")).strip()
         family_name = str(nominal.get("family_name", "")).strip()
-        if role not in {"family", "variant"} or family_name == "":
+        if (role != "family" and role != "variant") or family_name == "":
             continue
         entry: dict[str, Any] = {
             "role": role,
@@ -155,10 +159,11 @@ def _collect_nominal_adt_decl_summary_table(east_module: dict[str, Any]) -> dict
         payload_style = str(nominal.get("payload_style", "")).strip()
         if payload_style != "":
             entry["payload_style"] = payload_style
-        field_types_obj = item.get("field_types")
+        field_types_obj = id2.get("field_types")
         if isinstance(field_types_obj, dict):
+            ftd: dict[str, Any] = field_types_obj
             field_types: dict[str, str] = {}
-            for field_name_obj, field_type_obj in field_types_obj.items():
+            for field_name_obj, field_type_obj in ftd.items():
                 field_name = str(field_name_obj).strip()
                 if field_name == "":
                     continue
@@ -174,7 +179,7 @@ def _collect_nominal_adt_decl_summary_table(east_module: dict[str, Any]) -> dict
 
 def _collect_nominal_adt_family_variants(family_name: str) -> list[str]:
     variants: list[str] = []
-    for type_name, entry in _NOMINAL_ADT_DECL_SUMMARY_TABLE.items():
+    for type_name, entry in _NOMINAL_ADT_DECL_SUMMARY_TABLE_HOLDER[0].items():
         if not isinstance(entry, dict):
             continue
         if str(entry.get("role", "")).strip() != "variant":
@@ -192,7 +197,8 @@ def _expr_type_name(expr: Any) -> str:
     if mirror != "unknown":
         return mirror
     if isinstance(expr, dict):
-        return _normalize_type_name(expr.get("resolved_type"))
+        ed: dict[str, Any] = expr
+        return _normalize_type_name(ed.get("resolved_type"))
     return "unknown"
 
 
@@ -251,7 +257,8 @@ def _raise_json_contract_violation(semantic_tag: str, owner_summary: dict[str, A
 def _structured_type_expr_summary_from_node(node: Any) -> dict[str, Any]:
     if not isinstance(node, dict):
         return _unknown_type_summary()
-    return dict(summarize_type_expr(node.get("type_expr")))
+    nd2: dict[str, Any] = node
+    return dict(summarize_type_expr(nd2.get("type_expr")))
 
 
 def _representative_json_contract_metadata(call: dict[str, Any], receiver_node: Any) -> tuple[str, dict[str, Any], dict[str, Any]]:

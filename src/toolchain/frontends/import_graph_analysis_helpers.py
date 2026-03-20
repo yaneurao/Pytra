@@ -29,8 +29,9 @@ def make_graph_issue_entry(file_part: str, module_part: str) -> dict[str, str]:
 def normalize_graph_issue_entry(entry_any: object) -> dict[str, str]:
     """graph issue carrier を `{file, module}` へ正規化する。"""
     if isinstance(entry_any, dict):
-        file_part_any = entry_any.get("file")
-        module_part_any = entry_any.get("module")
+        d: dict[str, object] = entry_any
+        file_part_any = d.get("file")
+        module_part_any = d.get("module")
         file_part = file_part_any if isinstance(file_part_any, str) else ""
         module_part = module_part_any if isinstance(module_part_any, str) else ""
         if file_part != "" or module_part != "":
@@ -290,6 +291,10 @@ def is_known_non_user_import(
         or module_name == "collections"
         or module_name == "statistics"
         or module_name == "typing"
+        or module_name == "shutil"
+        or module_name == "copy"
+        or module_name == "dataclasses"
+        or module_name == "pathlib"
     ):
         return True
     rel = module_name.replace(".", "/")

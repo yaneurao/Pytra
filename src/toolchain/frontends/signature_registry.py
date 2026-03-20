@@ -10,8 +10,9 @@ from toolchain.frontends.type_expr import normalize_type_text
 _DEF_PATTERN = r"^def\s+([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*(?:->\s*(.+)\s*)?:\s*$"
 _CLASS_PATTERN = r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$"
 
-_FUNC_RETURNS_CACHE: dict[str, str] | None = None
-_METHOD_RETURNS_CACHE: dict[str, dict[str, str]] | None = None
+_FUNC_RETURNS_CACHE_HOLDER: list[dict[str, str]] = [{}]
+_METHOD_RETURNS_CACHE_HOLDER: list[dict[str, dict[str, str]]] = [{}]
+_SIG_CACHE_LOADED_HOLDER: list[bool] = [False]
 
 _FUNCTION_RUNTIME_CALLS: dict[str, str] = {
     "perf_counter": "perf_counter",
@@ -300,9 +301,9 @@ def _normalize_return_type(raw_type: str) -> str:
 
 
 def _load_signature_cache() -> None:
-    global _FUNC_RETURNS_CACHE, _METHOD_RETURNS_CACHE
-    if _FUNC_RETURNS_CACHE is not None and _METHOD_RETURNS_CACHE is not None:
+    if _SIG_CACHE_LOADED_HOLDER[0]:
         return
+    _SIG_CACHE_LOADED_HOLDER[0] = True
 
     fn_returns: dict[str, str] = {}
     method_returns: dict[str, dict[str, str]] = {}
@@ -357,25 +358,22 @@ def _load_signature_cache() -> None:
                     continue
                 method_returns[current_class][method_name] = ret
 
-    _FUNC_RETURNS_CACHE = fn_returns
-    _METHOD_RETURNS_CACHE = method_returns
+    _FUNC_RETURNS_CACHE_HOLDER[0] = fn_returns
+    _METHOD_RETURNS_CACHE_HOLDER[0] = method_returns
 
 
 def lookup_stdlib_function_return_type(function_name: str) -> str:
     _load_signature_cache()
-    if _FUNC_RETURNS_CACHE is None:
-        return ""
-    return _FUNC_RETURNS_CACHE.get(function_name, "")
+    return _FUNC_RETURNS_CACHE_HOLDER[0].get(function_name, "")
 
 
 def lookup_stdlib_method_return_type(owner_type: str, method_name: str) -> str:
     _load_signature_cache()
-    if _METHOD_RETURNS_CACHE is None:
-        return ""
-    methods = _METHOD_RETURNS_CACHE.get(owner_type, {})
+    methods = _METHOD_RETURNS_CACHE_HOLDER[0].get(owner_type, {})
     if not isinstance(methods, dict):
         return ""
-    return methods.get(method_name, "")
+    d: dict[str, str] = methods
+    return d.get(method_name, "")
 
 
 def lookup_stdlib_method_runtime_call(owner_type: str, method_name: str) -> str:

@@ -164,10 +164,11 @@ def resolve_east3_opt_level(opt_level: str | int | object) -> int:
     if isinstance(opt_level, int):
         level = opt_level
     elif isinstance(opt_level, str):
-        text = opt_level.strip()
+        s: str = opt_level
+        text = s.strip()
         if text == "":
             level = 1
-        elif text in {"0", "1", "2"}:
+        elif text == "0" or text == "1" or text == "2":
             level = int(text)
         else:
             raise ValueError("invalid --east3-opt-level: " + text)

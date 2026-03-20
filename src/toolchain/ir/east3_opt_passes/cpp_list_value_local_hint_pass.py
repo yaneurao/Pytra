@@ -14,7 +14,8 @@ _CPP_VALUE_LIST_LOCAL_HINT_KEY = "cpp_value_list_locals_v1"
 
 def _normalize_type_name(value: Any) -> str:
     if isinstance(value, str):
-        txt = value.strip()
+        s: str = value
+        txt = s.strip()
         if txt != "":
             return txt
     return "unknown"
@@ -100,11 +101,12 @@ class CppListValueLocalHintPass(East3OptimizerPass):
             return
         if not isinstance(node, dict):
             return
-        if _normalize_type_name(node.get("kind")) == "Name":
-            ident = node.get("id")
+        nd: dict[str, Any] = node
+        if _normalize_type_name(nd.get("kind")) == "Name":
+            ident = nd.get("id")
             if isinstance(ident, str) and ident != "":
                 out.add(ident)
-        for value in node.values():
+        for value in nd.values():
             self._collect_name_reads(value, out)
 
     def _collect_name_targets(self, target_node: Any, out: set[str]) -> None:
@@ -114,20 +116,21 @@ class CppListValueLocalHintPass(East3OptimizerPass):
             return
         if not isinstance(target_node, dict):
             return
-        kind = _normalize_type_name(target_node.get("kind"))
+        tnd: dict[str, Any] = target_node
+        kind = _normalize_type_name(tnd.get("kind"))
         if kind == "Name":
-            ident = target_node.get("id")
+            ident = tnd.get("id")
             if isinstance(ident, str) and ident != "":
                 out.add(ident)
             return
         if kind == "Tuple":
-            for elem in _dict_items(target_node.get("elements")):
+            for elem in _dict_items(tnd.get("elements")):
                 self._collect_name_targets(elem, out)
 
     def _safe_call(self, call_node: dict[str, Any], candidates: set[str]) -> bool:
         runtime_call = _normalize_type_name(call_node.get("runtime_call"))
         builtin_name = _normalize_type_name(call_node.get("builtin_name"))
-        if runtime_call in {"py_len", "py_to_string", "py_to_bool", "py_to_int64", "py_to_float64"}:
+        if runtime_call == "py_len" or runtime_call == "py_to_string" or runtime_call == "py_to_bool" or runtime_call == "py_to_int64" or runtime_call == "py_to_float64":
             return True
         if builtin_name == "len":
             return True
@@ -144,7 +147,7 @@ class CppListValueLocalHintPass(East3OptimizerPass):
         if owner_name not in candidates:
             return False
         attr = _normalize_type_name(fn.get("attr"))
-        return attr in {"append", "extend", "pop", "clear", "reverse", "sort"}
+        return attr == "append" or attr == "extend" or attr == "pop" or attr == "clear" or attr == "reverse" or attr == "sort"
 
     def _value_list_locals_for_function(self, fn_node: dict[str, Any]) -> set[str]:
         body = _dict_items(fn_node.get("body"))
@@ -176,62 +179,73 @@ class CppListValueLocalHintPass(East3OptimizerPass):
         def _scan(cur: Any) -> None:
             if not isinstance(cur, dict):
                 if isinstance(cur, list):
-                    for item in cur:
+                    cl: list[Any] = cur
+                    for item in cl:
                         _scan(item)
                 return
-            kind = _normalize_type_name(cur.get("kind"))
+            cd: dict[str, Any] = cur
+            kind = _normalize_type_name(cd.get("kind"))
             if kind == "Return":
-                value_node = cur.get("value")
+                value_node = cd.get("value")
                 value = value_node if isinstance(value_node, dict) else {}
                 value_kind = _normalize_type_name(value.get("kind"))
                 if value_kind == "Name":
                     value_name = _normalize_type_name(value.get("id"))
                     if value_name in candidates:
                         escaped.add(value_name)
-                elif value_kind in {"Tuple", "List", "Set", "Dict"}:
+                elif value_kind == "Tuple" or value_kind == "List" or value_kind == "Set" or value_kind == "Dict":
                     reads: set[str] = set()
                     self._collect_name_reads(value, reads)
-                    escaped.update(nm for nm in reads if nm in candidates)
+                    for nm in reads:
+                        if nm in candidates:
+                            escaped.add(nm)
             if kind == "Call":
-                meta_node = cur.get("meta")
+                meta_node = cd.get("meta")
                 meta = meta_node if isinstance(meta_node, dict) else {}
                 callsite_node = meta.get("non_escape_callsite")
                 callsite = callsite_node if isinstance(callsite_node, dict) else {}
-                args = _dict_items(cur.get("args"))
+                args = _dict_items(cd.get("args"))
                 callsite_handled = False
                 callee_arg_escape_any = callsite.get("callee_arg_escape")
                 if isinstance(callee_arg_escape_any, list):
                     callsite_handled = True
-                    for i, arg in enumerate(args):
+                    for i in range(len(args)):
+                        arg = args[i]
                         must_escape = True
                         if i < len(callee_arg_escape_any):
                             must_escape = bool(callee_arg_escape_any[i])
                         if not must_escape:
                             continue
-                        reads: set[str] = set()
-                        self._collect_name_reads(arg, reads)
-                        escaped.update(nm for nm in reads if nm in candidates)
+                        reads2: set[str] = set()
+                        self._collect_name_reads(arg, reads2)
+                        for nm in reads2:
+                            if nm in candidates:
+                                escaped.add(nm)
                 elif isinstance(callsite.get("resolved"), bool):
                     callsite_handled = True
                     for arg in args:
-                        reads: set[str] = set()
-                        self._collect_name_reads(arg, reads)
-                        escaped.update(nm for nm in reads if nm in candidates)
-                if (not callsite_handled) and (not self._safe_call(cur, candidates)):
-                    reads: set[str] = set()
-                    self._collect_name_reads(args, reads)
-                    self._collect_name_reads(cur.get("keywords"), reads)
-                    escaped.update(nm for nm in reads if nm in candidates)
-            if kind in {"Assign", "AnnAssign"}:
+                        reads3: set[str] = set()
+                        self._collect_name_reads(arg, reads3)
+                        for nm in reads3:
+                            if nm in candidates:
+                                escaped.add(nm)
+                if (not callsite_handled) and (not self._safe_call(cd, candidates)):
+                    reads4: set[str] = set()
+                    self._collect_name_reads(args, reads4)
+                    self._collect_name_reads(cd.get("keywords"), reads4)
+                    for nm in reads4:
+                        if nm in candidates:
+                            escaped.add(nm)
+            if kind == "Assign" or kind == "AnnAssign":
                 targets: set[str] = set()
-                self._collect_name_targets(cur.get("target"), targets)
-                value_node = cur.get("value")
-                value = value_node if isinstance(value_node, dict) else {}
-                if _normalize_type_name(value.get("kind")) == "Name":
-                    value_name = _normalize_type_name(value.get("id"))
-                    if value_name in candidates and not (len(targets) == 1 and value_name in targets):
-                        escaped.add(value_name)
-            for value in cur.values():
+                self._collect_name_targets(cd.get("target"), targets)
+                value_node2 = cd.get("value")
+                value2 = value_node2 if isinstance(value_node2, dict) else {}
+                if _normalize_type_name(value2.get("kind")) == "Name":
+                    value_name2 = _normalize_type_name(value2.get("id"))
+                    if value_name2 in candidates and not (len(targets) == 1 and value_name2 in targets):
+                        escaped.add(value_name2)
+            for value in cd.values():
                 _scan(value)
 
         for stmt in body:
