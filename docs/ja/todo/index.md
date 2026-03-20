@@ -141,9 +141,9 @@
 
 文脈: [docs/ja/plans/p4-vararg-east3-lowering.md](../plans/p4-vararg-east3-lowering.md)
 
-1. [ ] [ID: P4-VARARG-EAST3-LOWERING-01-S1] `east2_to_east3_lowering.py` に post-pass を追加: FunctionDef の `vararg_name/type` を `list[T]` 通常引数に変換し、モジュール内 Call サイトをパックする。
-2. [ ] [ID: P4-VARARG-EAST3-LOWERING-01-S2] `global_optimizer.py` に `_apply_vararg_callsite_packing_global` を追加: クロスモジュール Call サイトをパックする。
-3. [ ] [ID: P4-VARARG-EAST3-LOWERING-01-S3] `pytra/std/pathlib.py` に `joinpath(*parts: str | Path) -> Path` を追加する。
+1. [x] [ID: P4-VARARG-EAST3-LOWERING-01-S1] `east2_to_east3_lowering.py` に post-pass を追加: FunctionDef の `vararg_name/type` を `list[T]` 通常引数に変換し、モジュール内 Call サイトをパックする。
+2. [x] [ID: P4-VARARG-EAST3-LOWERING-01-S2] `global_optimizer.py` に `_apply_vararg_callsite_packing_global` を追加: クロスモジュール Call サイトをパックする。
+3. [x] [ID: P4-VARARG-EAST3-LOWERING-01-S3] `pytra/std/pathlib.py` に `joinpath(*parts: str | Path) -> Path` を追加する。
 
 ### P7: selfhost 完全自立化
 

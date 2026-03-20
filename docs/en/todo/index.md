@@ -35,9 +35,9 @@ Last updated: 2026-03-21 (Added P4 vararg EAST3 lowering task)
 
 Context: [docs/ja/plans/p4-vararg-east3-lowering.md](../../ja/plans/p4-vararg-east3-lowering.md)
 
-1. [ ] [ID: P4-VARARG-EAST3-LOWERING-01-S1] Add a post-pass to `east2_to_east3_lowering.py`: transform `vararg_name/type` in FunctionDef to a regular `list[T]` parameter, and pack within-module Call sites.
-2. [ ] [ID: P4-VARARG-EAST3-LOWERING-01-S2] Add `_apply_vararg_callsite_packing_global` to `global_optimizer.py` for cross-module Call site packing.
-3. [ ] [ID: P4-VARARG-EAST3-LOWERING-01-S3] Add `joinpath(*parts: str | Path) -> Path` to `pytra/std/pathlib.py`.
+1. [x] [ID: P4-VARARG-EAST3-LOWERING-01-S1] Add a post-pass to `east2_to_east3_lowering.py`: transform `vararg_name/type` in FunctionDef to a regular `list[T]` parameter, and pack within-module Call sites.
+2. [x] [ID: P4-VARARG-EAST3-LOWERING-01-S2] Add `_apply_vararg_callsite_packing_global` to `global_optimizer.py` for cross-module Call site packing.
+3. [x] [ID: P4-VARARG-EAST3-LOWERING-01-S3] Add `joinpath(*parts: str | Path) -> Path` to `pytra/std/pathlib.py`.
 
 ### P5: py_runtime.h Shrink
 
