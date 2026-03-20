@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from pytra.std.pathlib import Path
 from typing import Any
 from backends.common.emitter.code_emitter import CodeEmitter
 from toolchain.compiler.transpile_cli import dict_any_get_dict, dict_any_get_str, dict_any_get_list

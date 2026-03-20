@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import re
+from pytra.std import re
 
 from pytra.std import time
 from typing import Any

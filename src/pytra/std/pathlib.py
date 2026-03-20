@@ -69,6 +69,27 @@ class Path:
         root, _ = path.splitext(path.basename(self._value))
         return root
 
+    def with_suffix(self, suffix: str) -> "Path":
+        root: str
+        _ext: str
+        root, _ext = path.splitext(self._value)
+        return Path(root + suffix)
+
+    def relative_to(self, other: str | "Path") -> "Path":
+        if isinstance(other, Path):
+            base: str = cast(Path, other)._value
+        else:
+            base = cast(str, other)
+        self_abs: str = path.abspath(self._value)
+        base_abs: str = path.abspath(base)
+        if not base_abs.endswith("/"):
+            base_abs = base_abs + "/"
+        if self_abs == base_abs or self_abs == base_abs[:-1]:
+            return Path(".")
+        if self_abs.startswith(base_abs):
+            return Path(self_abs[len(base_abs):])
+        raise ValueError(str(self._value) + " is not relative to " + str(base))
+
     def resolve(self) -> "Path":
         return Path(path.abspath(self._value))
 

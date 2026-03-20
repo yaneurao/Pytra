@@ -181,6 +181,15 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
             return Match(text, [])
         return None
 
+    # ^[A-Za-z0-9_]+$
+    if pattern == r"^[A-Za-z0-9_]+$":
+        if text == "":
+            return None
+        for ch in text:
+            if not _is_alnum_or_underscore(ch):
+                return None
+        return Match(text, [])
+
     # ^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$
     if pattern == r"^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\(([A-Za-z_][A-Za-z0-9_]*)\))?\s*:\s*$":
         t = _strip_suffix_colon(text)
@@ -475,6 +484,25 @@ def match(pattern: str, text: str, flags: int = 0) -> Match | None:
         return Match(text, [name, rhs])
 
     raise ValueError(f"unsupported regex pattern in pytra.std.re: {pattern}")
+
+
+class Pattern:
+    """Compiled regex pattern object compatible with re.compile() usage."""
+
+    _pattern: str
+    _flags: int
+
+    def __init__(self, pattern: str, flags: int = 0) -> None:
+        self._pattern = pattern
+        self._flags = flags
+
+    def match(self, text: str) -> Match | None:
+        return match(self._pattern, text, self._flags)
+
+
+def compile(pattern: str, flags: int = 0) -> Pattern:
+    """Compile a regex pattern into a Pattern object."""
+    return Pattern(pattern, flags)
 
 
 def sub(pattern: str, repl: str, text: str, flags: int = 0) -> str:

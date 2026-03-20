@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pathlib import Path
+from pytra.std.pathlib import Path
 
 from typing import Any
 from backends.cpp.emitter.runtime_paths import (
