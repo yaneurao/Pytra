@@ -152,19 +152,20 @@ class CSharpEmitter(CodeEmitter):
     def _find_unsupported_general_union_type_expr(self, value: Any) -> dict[str, Any] | None:
         if not self._is_type_expr_payload(value):
             return None
-        kind = self.any_dict_get_str(value, "kind", "")
+        d: dict[str, Any] = value
+        kind = self.any_dict_get_str(d, "kind", "")
         if kind == "UnionType":
-            if self.any_dict_get_str(value, "union_mode", "") != "dynamic":
-                return value
-            for option in self.any_to_list(value.get("options")):
+            if self.any_dict_get_str(d, "union_mode", "") != "dynamic":
+                return d
+            for option in self.any_to_list(d.get("options")):
                 found = self._find_unsupported_general_union_type_expr(option)
                 if found is not None:
                     return found
             return None
         if kind == "OptionalType":
-            return self._find_unsupported_general_union_type_expr(value.get("inner"))
+            return self._find_unsupported_general_union_type_expr(d.get("inner"))
         if kind == "GenericType":
-            for arg in self.any_to_list(value.get("args")):
+            for arg in self.any_to_list(d.get("args")):
                 found = self._find_unsupported_general_union_type_expr(arg)
                 if found is not None:
                     return found

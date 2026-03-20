@@ -84,18 +84,21 @@ def _collect_relative_import_name_aliases(east_doc: dict[str, Any]) -> dict[str,
     i = 0
     while i < len(body):
         stmt = body[i]
-        if not isinstance(stmt, dict) or stmt.get("kind") != "ImportFrom":
+        if not isinstance(stmt, dict):
+            i += 1
+        sd: dict[str, Any] = stmt
+        if sd.get("kind") != "ImportFrom":
             i += 1
             continue
-        module_any = stmt.get("module")
+        module_any = sd.get("module")
         module_id = module_any if isinstance(module_any, str) else ""
-        level_any = stmt.get("level")
+        level_any = sd.get("level")
         level = level_any if isinstance(level_any, int) else 0
         if level <= 0 and not module_id.startswith("."):
             i += 1
             continue
         module_path = _relative_import_module_path(module_id)
-        names_any = stmt.get("names")
+        names_any = sd.get("names")
         names = names_any if isinstance(names_any, list) else []
         j = 0
         while j < len(names):
@@ -224,7 +227,8 @@ def _runtime_symbol_call_adapter_kind(runtime_module_id: str, runtime_symbol: st
     symbol_doc = lookup_runtime_symbol_doc(runtime_module_id, runtime_symbol)
     adapter_kind_any = symbol_doc.get("call_adapter_kind")
     if isinstance(adapter_kind_any, str):
-        return adapter_kind_any.strip()
+        as: str = adapter_kind_any
+        return as.strip()
     return ""
 
 
@@ -232,7 +236,8 @@ def _runtime_symbol_semantic_tag(runtime_module_id: str, runtime_symbol: str) ->
     symbol_doc = lookup_runtime_symbol_doc(runtime_module_id, runtime_symbol)
     semantic_tag_any = symbol_doc.get("semantic_tag")
     if isinstance(semantic_tag_any, str):
-        return semantic_tag_any.strip()
+        ss: str = semantic_tag_any
+        return ss.strip()
     return ""
 
 
@@ -462,11 +467,12 @@ class LuaNativeEmitter:
     def __init__(self, east_doc: dict[str, Any]) -> None:
         if not isinstance(east_doc, dict):
             raise RuntimeError("lang=lua invalid east document: root must be dict")
-        kind = east_doc.get("kind")
+        ed: dict[str, Any] = east_doc
+        kind = ed.get("kind")
         if kind != "Module":
             raise RuntimeError("lang=lua invalid root kind: " + str(kind))
-        if east_doc.get("east_stage") != 3:
-            raise RuntimeError("lang=lua unsupported east_stage: " + str(east_doc.get("east_stage")))
+        if ed.get("east_stage") != 3:
+            raise RuntimeError("lang=lua unsupported east_stage: " + str(ed.get("east_stage")))
         self.east_doc = east_doc
         self.lines: list[str] = []
         self.indent = 0
@@ -500,9 +506,10 @@ class LuaNativeEmitter:
     def _container_kind_from_decl_type(self, type_name: Any) -> str:
         if not isinstance(type_name, str):
             return ""
-        if type_name.startswith("dict["):
+        ts: str = type_name
+        if ts.startswith("dict["):
             return "dict"
-        if type_name.startswith("list[") or type_name.startswith("tuple[") or type_name.startswith("set["):
+        if ts.startswith("list[") or ts.startswith("tuple[") or ts.startswith("set["):
             return "list"
         if type_name in {"bytes", "bytearray"}:
             return "list"
@@ -545,9 +552,12 @@ class LuaNativeEmitter:
     def _materialize_container_value_from_ref(self, value_any: Any, *, target_name: str, target_decl_type: Any) -> str | None:
         if target_name == "":
             return None
-        if not isinstance(value_any, dict) or value_any.get("kind") != "Name":
+        if not isinstance(value_any, dict):
             return None
-        source_name = _safe_ident(value_any.get("id"), "value")
+        vd2: dict[str, Any] = value_any
+        if vd2.get("kind") != "Name":
+            return None
+        source_name = _safe_ident(vd2.get("id"), "value")
         if source_name == target_name:
             return None
         if source_name not in self._current_ref_vars():
@@ -575,16 +585,17 @@ class LuaNativeEmitter:
     def _const_int_literal(self, node_any: Any) -> int | None:
         if not isinstance(node_any, dict):
             return None
-        kind = node_any.get("kind")
+        nd5: dict[str, Any] = node_any
+        kind = nd5.get("kind")
         if kind == "Constant":
-            value = node_any.get("value")
+            value = nd5.get("value")
             if isinstance(value, bool):
                 return None
             if isinstance(value, int):
                 return value
             return None
-        if kind == "UnaryOp" and str(node_any.get("op")) == "USub":
-            operand = self._const_int_literal(node_any.get("operand"))
+        if kind == "UnaryOp" and str(nd5.get("op")) == "USub":
+            operand = self._const_int_literal(nd5.get("operand"))
             if operand is None:
                 return None
             return -operand
@@ -593,10 +604,11 @@ class LuaNativeEmitter:
     def _resolved_runtime_call(self, expr_any: Any) -> str:
         if not isinstance(expr_any, dict):
             return ""
-        runtime_call = expr_any.get("runtime_call")
+        ed2: dict[str, Any] = expr_any
+        runtime_call = ed2.get("runtime_call")
         if isinstance(runtime_call, str) and runtime_call != "":
             return runtime_call
-        resolved_runtime_call = expr_any.get("resolved_runtime_call")
+        resolved_runtime_call = ed2.get("resolved_runtime_call")
         if isinstance(resolved_runtime_call, str) and resolved_runtime_call != "":
             return resolved_runtime_call
         return ""
@@ -604,10 +616,11 @@ class LuaNativeEmitter:
     def _is_sequence_expr(self, node_any: Any) -> bool:
         if not isinstance(node_any, dict):
             return False
-        kind = node_any.get("kind")
+        nd4: dict[str, Any] = node_any
+        kind = nd4.get("kind")
         if kind in {"List", "Tuple", "JoinedStr", "Dict", "Set"}:
             return True
-        if kind == "Constant" and isinstance(node_any.get("value"), str):
+        if kind == "Constant" and isinstance(nd4.get("value"), str):
             return True
         resolved = self._lookup_expr_type(node_any)
         if (
@@ -629,25 +642,27 @@ class LuaNativeEmitter:
     def _is_str_expr(self, node_any: Any) -> bool:
         if not isinstance(node_any, dict):
             return False
-        if node_any.get("kind") == "Constant" and isinstance(node_any.get("value"), str):
+        nd3: dict[str, Any] = node_any
+        if nd3.get("kind") == "Constant" and isinstance(nd3.get("value"), str):
             return True
         return self._lookup_expr_type(node_any) == "str"
 
     def _lookup_expr_type(self, node_any: Any) -> str:
         if not isinstance(node_any, dict):
             return ""
-        resolved = node_any.get("resolved_type")
+        nd2: dict[str, Any] = node_any
+        resolved = nd2.get("resolved_type")
         if isinstance(resolved, str) and resolved != "":
             return resolved
-        kind = node_any.get("kind")
+        kind = nd2.get("kind")
         if kind == "Name":
-            safe_name = _safe_ident(node_any.get("id"), "")
+            safe_name = _safe_ident(nd2.get("id"), "")
             if safe_name != "":
                 mapped = self._current_type_map().get(safe_name)
                 if isinstance(mapped, str) and mapped != "":
                     return mapped
         if kind == "Constant":
-            value = node_any.get("value")
+            value = nd2.get("value")
             if isinstance(value, bool):
                 return "bool"
             if isinstance(value, int):
@@ -789,26 +804,39 @@ class LuaNativeEmitter:
     def _is_safe_append_chain_arg_node(self, node: Any) -> bool:
         if not isinstance(node, dict):
             return False
-        kind = node.get("kind")
+        nd: dict[str, Any] = node
+        kind = nd.get("kind")
         return kind in {"Name", "Constant", "Attribute", "Subscript"}
 
     def _append_chain_stmt_parts(self, stmt_any: Any) -> tuple[str, str] | None:
-        if not isinstance(stmt_any, dict) or stmt_any.get("kind") != "Expr":
+        if not isinstance(stmt_any, dict):
             return None
-        value_any = stmt_any.get("value")
-        if not isinstance(value_any, dict) or value_any.get("kind") != "Call":
+        sd: dict[str, Any] = stmt_any
+        if sd.get("kind") != "Expr":
             return None
-        func_any = value_any.get("func")
-        if not isinstance(func_any, dict) or func_any.get("kind") != "Attribute":
+        value_any = sd.get("value")
+        if not isinstance(value_any, dict):
             return None
-        if _safe_ident(func_any.get("attr"), "") != "append":
+        vd: dict[str, Any] = value_any
+        if vd.get("kind") != "Call":
             return None
-        owner_any = func_any.get("value")
-        if not isinstance(owner_any, dict) or owner_any.get("kind") != "Name":
+        func_any = vd.get("func")
+        if not isinstance(func_any, dict):
             return None
-        args_any = value_any.get("args")
+        fd: dict[str, Any] = func_any
+        if fd.get("kind") != "Attribute":
+            return None
+        if _safe_ident(fd.get("attr"), "") != "append":
+            return None
+        owner_any = fd.get("value")
+        if not isinstance(owner_any, dict):
+            return None
+        od: dict[str, Any] = owner_any
+        if od.get("kind") != "Name":
+            return None
+        args_any = vd.get("args")
         args = args_any if isinstance(args_any, list) else []
-        keywords_any = value_any.get("keywords")
+        keywords_any = vd.get("keywords")
         keywords = keywords_any if isinstance(keywords_any, list) else []
         if len(args) != 1 or len(keywords) != 0:
             return None
@@ -843,11 +871,12 @@ class LuaNativeEmitter:
     def _is_simple_bound_expr(self, node_any: Any) -> bool:
         if not isinstance(node_any, dict):
             return False
-        kind = node_any.get("kind")
+        nd: dict[str, Any] = node_any
+        kind = nd.get("kind")
         if kind == "Name":
             return True
         if kind == "Constant":
-            value_any = node_any.get("value")
+            value_any = nd.get("value")
             if isinstance(value_any, bool):
                 return False
             return isinstance(value_any, int) or isinstance(value_any, float)
@@ -1261,7 +1290,8 @@ class LuaNativeEmitter:
                 if decl_type == "":
                     anno_any = stmt.get("annotation")
                     if isinstance(anno_any, str):
-                        decl_type = anno_any.strip()
+                        as: str = anno_any
+                        decl_type = as.strip()
                 if decl_type == "":
                     decl_type = self._infer_decl_type_from_expr(value_node)
                 if value_node is None and bool(stmt.get("declare")):
@@ -1290,13 +1320,14 @@ class LuaNativeEmitter:
         if kind == "Assign":
             target_any = stmt.get("target")
             if isinstance(target_any, dict):
-                if target_any.get("kind") == "Tuple":
+                td2: dict[str, Any] = target_any
+                if td2.get("kind") == "Tuple":
                     self._emit_tuple_assign(target_any, stmt.get("value"))
                     return
                 target = self._render_target(target_any)
                 value = self._render_expr(stmt.get("value"))
-                if isinstance(target_any, dict) and target_any.get("kind") == "Name":
-                    target_name = _safe_ident(target_any.get("id"), "value")
+                if isinstance(target_any, dict) and td2.get("kind") == "Name":
+                    target_name = _safe_ident(td2.get("id"), "value")
                     decl_type_any = stmt.get("decl_type")
                     decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
                     if decl_type == "":
@@ -1416,7 +1447,8 @@ class LuaNativeEmitter:
             while i < len(handlers):
                 h = handlers[i]
                 if isinstance(h, dict):
-                    h_body = self._dict_list(h.get("body"))
+                    hd: dict[str, Any] = h
+                    h_body = self._dict_list(hd.get("body"))
                     j = 0
                     while j < len(h_body):
                         self._emit_stmt(h_body[j])
@@ -1565,13 +1597,16 @@ class LuaNativeEmitter:
         needs_continue_label = self._has_continue_in_block(stmt.get("body"))
         if iter_mode == "static_fastpath":
             iter_plan = stmt.get("iter_plan")
-            if not isinstance(iter_plan, dict) or iter_plan.get("kind") != "StaticRangeForPlan":
+            if not isinstance(iter_plan, dict):
                 raise RuntimeError("lang=lua unsupported forcore static_fastpath shape")
-            start = self._render_expr(iter_plan.get("start"))
-            stop = self._render_expr(iter_plan.get("stop"))
-            step = self._render_expr(iter_plan.get("step"))
-            step_const = self._const_int_literal(iter_plan.get("step"))
-            range_mode = str(iter_plan.get("range_mode") or "")
+            id2: dict[str, Any] = iter_plan
+            if id2.get("kind") != "StaticRangeForPlan":
+                raise RuntimeError("lang=lua unsupported forcore static_fastpath shape")
+            start = self._render_expr(id2.get("start"))
+            stop = self._render_expr(id2.get("stop"))
+            step = self._render_expr(id2.get("step"))
+            step_const = self._const_int_literal(id2.get("step"))
+            range_mode = str(id2.get("range_mode") or "")
             if range_mode not in {"ascending", "descending", "dynamic"}:
                 if isinstance(step_const, int):
                     if step_const > 0:
@@ -1584,7 +1619,7 @@ class LuaNativeEmitter:
                     range_mode = "dynamic"
             if range_mode == "ascending":
                 # Python range stop is exclusive, Lua numeric-for upper bound is inclusive.
-                upper = stop + " - 1" if self._is_simple_bound_expr(iter_plan.get("stop")) else "(" + stop + ") - 1"
+                upper = stop + " - 1" if self._is_simple_bound_expr(id2.get("stop")) else "(" + stop + ") - 1"
                 if step_const == 1:
                     self._emit_line("for " + target_name + " = " + start + ", " + upper + " do")
                 else:
@@ -1655,7 +1690,8 @@ class LuaNativeEmitter:
             iter_plan = stmt.get("iter_plan")
             if not isinstance(iter_plan, dict):
                 raise RuntimeError("lang=lua unsupported forcore runtime shape")
-            iter_expr = self._render_expr(iter_plan.get("iter_expr"))
+            id: dict[str, Any] = iter_plan
+            iter_expr = self._render_expr(id.get("iter_expr"))
             tuple_target = isinstance(target_plan, dict) and target_plan.get("kind") == "TupleTarget"
             iter_name = target_name
             if tuple_target:
@@ -1749,22 +1785,30 @@ class LuaNativeEmitter:
         self._emit_line(right + " = " + tmp_name)
 
     def _render_target(self, target_any: Any) -> str:
-        if isinstance(target_any, dict) and target_any.get("kind") == "Name":
-            return _safe_ident(target_any.get("id"), "value")
-        if isinstance(target_any, dict) and target_any.get("kind") == "Attribute":
-            owner = self._render_expr(target_any.get("value"))
-            attr = _safe_ident(target_any.get("attr"), "field")
+        if not isinstance(target_any, dict):
+            return "nil"
+        tad: dict[str, Any] = target_any
+        if tad.get("kind") == "Name":
+            return _safe_ident(tad.get("id"), "value")
+        if tad.get("kind") == "Attribute":
+            owner = self._render_expr(tad.get("value"))
+            attr = _safe_ident(tad.get("attr"), "field")
             return owner + "." + attr
-        if isinstance(target_any, dict) and target_any.get("kind") == "Subscript":
-            owner_node = target_any.get("value")
+        if tad.get("kind") == "Subscript":
+            owner_node = tad.get("value")
             owner = self._render_expr(owner_node)
-            index_node = target_any.get("slice")
-            if isinstance(index_node, dict) and index_node.get("kind") == "Slice":
-                raise RuntimeError("lang=lua unsupported slice assignment target")
+            index_node = tad.get("slice")
+            if isinstance(index_node, dict):
+                ind: dict[str, Any] = index_node
+                if ind.get("kind") == "Slice":
+                    raise RuntimeError("lang=lua unsupported slice assignment target")
             index = self._render_expr(index_node)
             owner_type = ""
-            if isinstance(owner_node, dict) and isinstance(owner_node.get("resolved_type"), str):
-                owner_type = owner_node.get("resolved_type") or ""
+            if isinstance(owner_node, dict):
+                ond: dict[str, Any] = owner_node
+                rt_any = ond.get("resolved_type")
+                if isinstance(rt_any, str):
+                    owner_type = rt_any
             if owner_type.startswith("dict["):
                 return owner + "[" + index + "]"
             idx_const = self._const_int_literal(index_node)
@@ -1773,26 +1817,27 @@ class LuaNativeEmitter:
                     return owner + "[" + str(idx_const + 1) + "]"
                 return owner + "[(#(" + owner + ") + (" + str(idx_const) + ") + 1)]"
             return owner + "[(((" + index + ") < 0) and (#(" + owner + ") + (" + index + ") + 1) or ((" + index + ") + 1))]"
-        target_kind = target_any.get("kind") if isinstance(target_any, dict) else type(target_any).__name__
+        target_kind = tad.get("kind")
         raise RuntimeError("lang=lua unsupported assignment target: " + str(target_kind))
 
     def _render_expr(self, expr_any: Any) -> str:
         if not isinstance(expr_any, dict):
             return "nil"
-        kind = expr_any.get("kind")
+        ed: dict[str, Any] = expr_any
+        kind = ed.get("kind")
         if kind == "Constant":
-            return self._render_constant(expr_any.get("value"))
+            return self._render_constant(ed.get("value"))
         if kind == "Name":
             return self._render_name_expr(expr_any)
         if kind == "BinOp":
-            left_node = expr_any.get("left")
-            right_node = expr_any.get("right")
-            left = self._render_expr(expr_any.get("left"))
-            right = self._render_expr(expr_any.get("right"))
-            op_raw = str(expr_any.get("op"))
+            left_node = ed.get("left")
+            right_node = ed.get("right")
+            left = self._render_expr(ed.get("left"))
+            right = self._render_expr(ed.get("right"))
+            op_raw = str(ed.get("op"))
             op = _binop_symbol(op_raw)
             if op_raw == "Add":
-                expr_resolved = expr_any.get("resolved_type")
+                expr_resolved = ed.get("resolved_type")
                 if (
                     (isinstance(expr_resolved, str) and expr_resolved == "str")
                     or self._is_str_expr(left_node)
@@ -1803,8 +1848,8 @@ class LuaNativeEmitter:
                 return "__pytra_repeat_seq(" + left + ", " + right + ")"
             return "(" + left + " " + op + " " + right + ")"
         if kind == "UnaryOp":
-            operand = self._render_expr(expr_any.get("operand"))
-            op = str(expr_any.get("op"))
+            operand = self._render_expr(ed.get("operand"))
+            op = str(ed.get("op"))
             if op == "USub":
                 return "(-" + operand + ")"
             if op == "UAdd":
@@ -1815,11 +1860,11 @@ class LuaNativeEmitter:
                 return "(not " + operand + ")"
             return operand
         if kind == "Compare":
-            ops = expr_any.get("ops")
-            comps = expr_any.get("comparators")
+            ops = ed.get("ops")
+            comps = ed.get("comparators")
             if not isinstance(ops, list) or not isinstance(comps, list) or len(ops) == 0 or len(comps) == 0:
                 return "false"
-            left = self._render_expr(expr_any.get("left"))
+            left = self._render_expr(ed.get("left"))
             right = self._render_expr(comps[0])
             op0 = str(ops[0])
             if op0 == "In":
@@ -1828,11 +1873,11 @@ class LuaNativeEmitter:
                 return "(not __pytra_contains(" + right + ", " + left + "))"
             return "(" + left + " " + _cmp_symbol(op0) + " " + right + ")"
         if kind == "BoolOp":
-            values_any = expr_any.get("values")
+            values_any = ed.get("values")
             values = values_any if isinstance(values_any, list) else []
             if len(values) == 0:
                 return "false"
-            op = str(expr_any.get("op"))
+            op = str(ed.get("op"))
             delim = " and " if op == "And" else " or "
             out: list[str] = []
             for v in values:
@@ -1841,7 +1886,7 @@ class LuaNativeEmitter:
         if kind == "Call":
             return self._render_call(expr_any)
         if kind == "Lambda":
-            args_any = expr_any.get("args")
+            args_any = ed.get("args")
             args = args_any if isinstance(args_any, list) else []
             if len(args) == 0 and isinstance(args_any, dict):
                 nested_args_any = args_any.get("args")
@@ -1851,48 +1896,54 @@ class LuaNativeEmitter:
                 if not isinstance(arg_any, dict):
                     continue
                 names.append(_safe_ident(arg_any.get("arg"), "arg"))
-            body = self._render_expr(expr_any.get("body"))
+            body = self._render_expr(ed.get("body"))
             return "function(" + ", ".join(names) + ") return " + body + " end"
         if kind == "List":
-            elems_any = expr_any.get("elements")
+            elems_any = ed.get("elements")
             elems = elems_any if isinstance(elems_any, list) else []
             out: list[str] = []
             for e in elems:
                 out.append(self._render_expr(e))
             return "{ " + ", ".join(out) + " }"
         if kind == "Tuple":
-            elems_any = expr_any.get("elements")
+            elems_any = ed.get("elements")
             elems = elems_any if isinstance(elems_any, list) else []
             out: list[str] = []
             for e in elems:
                 out.append(self._render_expr(e))
             return "{ " + ", ".join(out) + " }"
         if kind == "Set":
-            elems_any = expr_any.get("elements")
+            elems_any = ed.get("elements")
             elems = elems_any if isinstance(elems_any, list) else []
             out: list[str] = []
             for e in elems:
                 out.append(self._render_expr(e))
             return "{ " + ", ".join(out) + " }"
         if kind == "ListComp":
-            gens_any = expr_any.get("generators")
+            gens_any = ed.get("generators")
             gens = gens_any if isinstance(gens_any, list) else []
             if len(gens) != 1 or not isinstance(gens[0], dict):
                 return "{}"
             gen = gens[0]
             target_any = gen.get("target")
             iter_any = gen.get("iter")
-            if not isinstance(target_any, dict) or target_any.get("kind") != "Name":
+            if not isinstance(target_any, dict):
                 return "{}"
-            if not isinstance(iter_any, dict) or iter_any.get("kind") != "RangeExpr":
+            td: dict[str, Any] = target_any
+            if td.get("kind") != "Name":
                 return "{}"
-            loop_var = _safe_ident(target_any.get("id"), "__lc_i")
+            if not isinstance(iter_any, dict):
+                return "{}"
+            id: dict[str, Any] = iter_any
+            if id.get("kind") != "RangeExpr":
+                return "{}"
+            loop_var = _safe_ident(td.get("id"), "__lc_i")
             if loop_var == "_":
                 loop_var = self._next_tmp_name("__lc_i")
-            start = self._render_expr(iter_any.get("start"))
-            stop = self._render_expr(iter_any.get("stop"))
-            step = self._render_expr(iter_any.get("step"))
-            elt = self._render_expr(expr_any.get("elt"))
+            start = self._render_expr(id.get("start"))
+            stop = self._render_expr(id.get("stop"))
+            step = self._render_expr(id.get("step"))
+            elt = self._render_expr(ed.get("elt"))
             out_name = self._next_tmp_name("__lc_out")
             cond_expr = ""
             ifs_any = gen.get("ifs")
@@ -1922,12 +1973,12 @@ class LuaNativeEmitter:
                 + " end)()"
             )
         if kind == "Dict":
-            keys_any = expr_any.get("keys")
-            values_any = expr_any.get("values")
+            keys_any = ed.get("keys")
+            values_any = ed.get("values")
             keys = keys_any if isinstance(keys_any, list) else []
             values = values_any if isinstance(values_any, list) else []
             if len(keys) == 0 or len(values) == 0:
-                entries_any = expr_any.get("entries")
+                entries_any = ed.get("entries")
                 entries = entries_any if isinstance(entries_any, list) else []
                 if len(entries) == 0:
                     return "{}"
@@ -1936,8 +1987,9 @@ class LuaNativeEmitter:
                 while i < len(entries):
                     ent = entries[i]
                     if isinstance(ent, dict):
-                        k = self._render_expr(ent.get("key"))
-                        v = self._render_expr(ent.get("value"))
+                        ed: dict[str, Any] = ent
+                        k = self._render_expr(ed.get("key"))
+                        v = self._render_expr(ed.get("value"))
                         pairs_from_entries.append("[" + k + "] = " + v)
                     i += 1
                 if len(pairs_from_entries) == 0:
@@ -1952,9 +2004,9 @@ class LuaNativeEmitter:
                 i += 1
             return "{ " + ", ".join(pairs) + " }"
         if kind == "Subscript":
-            owner = self._render_expr(expr_any.get("value"))
-            index_node = expr_any.get("slice")
-            owner_node = expr_any.get("value")
+            owner = self._render_expr(ed.get("value"))
+            index_node = ed.get("slice")
+            owner_node = ed.get("value")
             owner_type = ""
             if isinstance(owner_node, dict) and isinstance(owner_node.get("resolved_type"), str):
                 owner_type = owner_node.get("resolved_type") or ""
@@ -1987,17 +2039,17 @@ class LuaNativeEmitter:
                 return "string.sub(" + owner + ", " + pos + ", " + pos + ")"
             return owner + "[(((" + index + ") < 0) and (#(" + owner + ") + (" + index + ") + 1) or ((" + index + ") + 1))]"
         if kind == "Attribute":
-            owner = self._render_expr(expr_any.get("value"))
-            attr = _safe_ident(expr_any.get("attr"), "field")
-            semantic_tag_any = expr_any.get("semantic_tag")
+            owner = self._render_expr(ed.get("value"))
+            attr = _safe_ident(ed.get("attr"), "field")
+            semantic_tag_any = ed.get("semantic_tag")
             semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
             runtime_call = self._resolved_runtime_call(expr_any)
             if semantic_tag.startswith("stdlib.") and runtime_call == "":
                 raise RuntimeError("lang=lua unresolved stdlib runtime attribute: " + semantic_tag)
             return owner + "." + attr
         if kind == "IsInstance":
-            value = self._render_expr(expr_any.get("value"))
-            expected_any = expr_any.get("expected_type_id")
+            value = self._render_expr(ed.get("value"))
+            expected_any = ed.get("expected_type_id")
             if isinstance(expected_any, dict) and expected_any.get("kind") == "Name":
                 expected = _safe_ident(expected_any.get("id"), "object")
                 if expected in {"int", "int64", "float", "float64"}:
@@ -2012,13 +2064,13 @@ class LuaNativeEmitter:
                     return "__pytra_isinstance(" + value + ", " + expected + ")"
             return "false"
         if kind == "IsSubtype" or kind == "IsSubclass":
-            actual = self._render_expr(expr_any.get("actual_type_id"))
-            expected = self._render_expr(expr_any.get("expected_type_id"))
+            actual = self._render_expr(ed.get("actual_type_id"))
+            expected = self._render_expr(ed.get("expected_type_id"))
             return "py_tid_is_subtype(" + actual + ", " + expected + ")"
         if kind == "IfExp":
-            test = self._render_expr(expr_any.get("test"))
-            body = self._render_expr(expr_any.get("body"))
-            orelse = self._render_expr(expr_any.get("orelse"))
+            test = self._render_expr(ed.get("test"))
+            body = self._render_expr(ed.get("body"))
+            orelse = self._render_expr(ed.get("orelse"))
             return (
                 "(function() "
                 + "if __pytra_truthy("
@@ -2031,7 +2083,7 @@ class LuaNativeEmitter:
                 + "end)()"
             )
         if kind == "JoinedStr":
-            values_any = expr_any.get("values")
+            values_any = ed.get("values")
             values = values_any if isinstance(values_any, list) else []
             if len(values) == 0:
                 return '""'
@@ -2047,16 +2099,16 @@ class LuaNativeEmitter:
                     parts.append("tostring(" + self._render_expr(item_d) + ")")
             return "(" + " .. ".join(parts) + ")"
         if kind == "Box":
-            return self._render_expr(expr_any.get("value"))
+            return self._render_expr(ed.get("value"))
         if kind == "Unbox":
-            return self._render_expr(expr_any.get("value"))
+            return self._render_expr(ed.get("value"))
         if kind == "ObjTypeId":
-            return "__pytra_obj_type_id(" + self._render_expr(expr_any.get("value")) + ")"
+            return "__pytra_obj_type_id(" + self._render_expr(ed.get("value")) + ")"
         if kind == "ObjStr":
-            return "tostring(" + self._render_expr(expr_any.get("value")) + ")"
+            return "tostring(" + self._render_expr(ed.get("value")) + ")"
         if kind == "ObjBool":
-            val = self._render_expr(expr_any.get("value"))
-            resolved = expr_any.get("resolved_type")
+            val = self._render_expr(ed.get("value"))
+            resolved = ed.get("resolved_type")
             if isinstance(resolved, str):
                 if resolved in {"bool"}:
                     return "__pytra_truthy(" + val + ")"
@@ -2068,7 +2120,7 @@ class LuaNativeEmitter:
                     return "(next(" + val + ") ~= nil)"
             return "__pytra_truthy(" + val + ")"
         if kind == "ObjLen":
-            return "#(" + self._render_expr(expr_any.get("value")) + ")"
+            return "#(" + self._render_expr(ed.get("value")) + ")"
         raise RuntimeError("lang=lua unsupported expr kind: " + str(kind))
 
     def _render_call(self, expr: dict[str, Any]) -> str:

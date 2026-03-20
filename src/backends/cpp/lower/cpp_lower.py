@@ -59,16 +59,17 @@ def _annotate_stmt_kind_hints(node: Any) -> int:
         return changed
     if not isinstance(node, dict):
         return 0
-    kind_obj = node.get("kind")
+    d: dict[str, Any] = node
+    kind_obj = d.get("kind")
     if isinstance(kind_obj, str) and kind_obj in _CPP_STMT_KINDS:
-        if node.get("cpp_stmt_kind_v1") != kind_obj:
-            node["cpp_stmt_kind_v1"] = kind_obj
+        if d.get("cpp_stmt_kind_v1") != kind_obj:
+            d["cpp_stmt_kind_v1"] = kind_obj
             changed += 1
-    elif _is_expr_hint_annotatable(node, kind_obj):
-        if node.get("cpp_expr_kind_v1") != kind_obj:
-            node["cpp_expr_kind_v1"] = kind_obj
+    elif _is_expr_hint_annotatable(d, kind_obj):
+        if d.get("cpp_expr_kind_v1") != kind_obj:
+            d["cpp_expr_kind_v1"] = kind_obj
             changed += 1
-    for value in node.values():
+    for value in d.values():
         changed += _annotate_stmt_kind_hints(value)
     return changed
 

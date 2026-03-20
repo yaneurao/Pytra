@@ -53,11 +53,11 @@ _RUBY_KEYWORDS = {
     "yield",
 }
 
-_CLASS_NAMES: set[str] = set()
-_CLASS_NAME_MAP: dict[str, str] = {}
-_FUNCTION_NAMES: set[str] = set()
-_RELATIVE_IMPORT_MODULE_ALIASES: dict[str, str] = {}
-_RELATIVE_IMPORT_SYMBOL_ALIASES: dict[str, str] = {}
+_CLASS_NAMES: list[set[str]] = [set()]
+_CLASS_NAME_MAP: list[dict[str, str]] = [{}]
+_FUNCTION_NAMES: list[set[str]] = [set()]
+_RELATIVE_IMPORT_MODULE_ALIASES: list[dict[str, str]] = [{}]
+_RELATIVE_IMPORT_SYMBOL_ALIASES: list[dict[str, str]] = [{}]
 _INT_TYPES = {"int", "int64"}
 _FLOAT_TYPES = {"float", "float64"}
 _NIL_FREE_DECL_TYPES = {"int", "int64", "float", "float64", "bool", "str"}
@@ -111,12 +111,15 @@ def _collect_relative_import_module_aliases(east_doc: dict[str, Any]) -> dict[st
     i = 0
     while i < len(body):
         stmt = body[i]
-        if not isinstance(stmt, dict) or stmt.get("kind") != "ImportFrom":
+        if not isinstance(stmt, dict):
+            i += 1
+        sd6: dict[str, Any] = stmt
+        if sd6.get("kind") != "ImportFrom":
             i += 1
             continue
-        module_any = stmt.get("module")
+        module_any = sd6.get("module")
         module_id = module_any if isinstance(module_any, str) else ""
-        level_any = stmt.get("level")
+        level_any = sd6.get("level")
         level = level_any if isinstance(level_any, int) else 0
         if level <= 0 and not module_id.startswith("."):
             i += 1
@@ -125,7 +128,7 @@ def _collect_relative_import_module_aliases(east_doc: dict[str, Any]) -> dict[st
         if module_path != "":
             i += 1
             continue
-        names_any = stmt.get("names")
+        names_any = sd6.get("names")
         names = names_any if isinstance(names_any, list) else []
         j = 0
         while j < len(names):
@@ -186,12 +189,15 @@ def _collect_relative_import_symbol_aliases(east_doc: dict[str, Any]) -> dict[st
     i = 0
     while i < len(body):
         stmt = body[i]
-        if not isinstance(stmt, dict) or stmt.get("kind") != "ImportFrom":
+        if not isinstance(stmt, dict):
+            i += 1
+        sd5: dict[str, Any] = stmt
+        if sd5.get("kind") != "ImportFrom":
             i += 1
             continue
-        module_any = stmt.get("module")
+        module_any = sd5.get("module")
         module_id = module_any if isinstance(module_any, str) else ""
-        level_any = stmt.get("level")
+        level_any = sd5.get("level")
         level = level_any if isinstance(level_any, int) else 0
         if level <= 0 and not module_id.startswith("."):
             i += 1
@@ -200,7 +206,7 @@ def _collect_relative_import_symbol_aliases(east_doc: dict[str, Any]) -> dict[st
         if module_path == "":
             i += 1
             continue
-        names_any = stmt.get("names")
+        names_any = sd5.get("names")
         names = names_any if isinstance(names_any, list) else []
         j = 0
         while j < len(names):
@@ -388,10 +394,11 @@ def _call_name(expr: dict[str, Any]) -> str:
     func_any = expr.get("func")
     if not isinstance(func_any, dict):
         return ""
-    if func_any.get("kind") != "Name":
+    fd2: dict[str, Any] = func_any
+    if fd2.get("kind") != "Name":
         return ""
-    ident = _safe_ident(func_any.get("id"), "")
-    mapped = _RELATIVE_IMPORT_SYMBOL_ALIASES.get(ident)
+    ident = _safe_ident(fd2.get("id"), "")
+    mapped = _RELATIVE_IMPORT_SYMBOL_ALIASES[0].get(ident)
     if isinstance(mapped, str) and mapped != "":
         return mapped
     return ident
@@ -459,7 +466,8 @@ def _runtime_module_id(expr: dict[str, Any]) -> str:
 def _runtime_symbol_name(expr: dict[str, Any]) -> str:
     runtime_symbol_any = expr.get("runtime_symbol")
     if isinstance(runtime_symbol_any, str):
-        return runtime_symbol_any.strip()
+        rs: str = runtime_symbol_any
+        return rs.strip()
     runtime_call, _ = _resolved_runtime_call(expr)
     dot = runtime_call.find(".")
     if dot >= 0:
@@ -502,8 +510,9 @@ def _render_keyword_call_args(expr: dict[str, Any]) -> dict[str, str]:
     while i < len(keywords):
         kw = keywords[i]
         if isinstance(kw, dict):
-            arg_name = kw.get("arg")
-            value_any = kw.get("value")
+            kd: dict[str, Any] = kw
+            arg_name = kd.get("arg")
+            value_any = kd.get("value")
             if isinstance(arg_name, str) and isinstance(value_any, dict):
                 out[arg_name] = _render_expr(value_any)
         i += 1
@@ -530,9 +539,10 @@ def _render_constant_expr(expr: dict[str, Any]) -> str:
 def _const_int_literal(node: Any) -> int | None:
     if not isinstance(node, dict):
         return None
-    if node.get("kind") != "Constant":
+    nd11: dict[str, Any] = node
+    if nd11.get("kind") != "Constant":
         return None
-    value_any = node.get("value")
+    value_any = nd11.get("value")
     if isinstance(value_any, bool):
         return None
     if isinstance(value_any, int):
@@ -541,9 +551,12 @@ def _const_int_literal(node: Any) -> int | None:
 
 
 def _is_nonzero_numeric_constant(node: Any) -> bool:
-    if not isinstance(node, dict) or node.get("kind") != "Constant":
+    if not isinstance(node, dict):
         return False
-    value_any = node.get("value")
+    nd10: dict[str, Any] = node
+    if nd10.get("kind") != "Constant":
+        return False
+    value_any = nd10.get("value")
     if isinstance(value_any, bool):
         return False
     if isinstance(value_any, int):
@@ -556,10 +569,12 @@ def _is_nonzero_numeric_constant(node: Any) -> bool:
 def _resolved_type_name(node: Any) -> str:
     if not isinstance(node, dict):
         return ""
-    resolved = node.get("resolved_type")
+    nd9: dict[str, Any] = node
+    resolved = nd9.get("resolved_type")
     if not isinstance(resolved, str):
         return ""
-    return resolved.strip()
+    rs: str = resolved
+    return rs.strip()
 
 
 def _is_int_like_expr(node: Any) -> bool:
@@ -569,8 +584,9 @@ def _is_int_like_expr(node: Any) -> bool:
         return True
     if not isinstance(node, dict):
         return False
-    if node.get("kind") == "Constant":
-        value_any = node.get("value")
+    nd8: dict[str, Any] = node
+    if nd8.get("kind") == "Constant":
+        value_any = nd8.get("value")
         return isinstance(value_any, int) and not isinstance(value_any, bool)
     return _resolved_type_name(node) in _INT_TYPES
 
@@ -580,8 +596,9 @@ def _is_float_like_expr(node: Any) -> bool:
         return True
     if not isinstance(node, dict):
         return False
-    if node.get("kind") == "Constant":
-        return isinstance(node.get("value"), float)
+    nd7: dict[str, Any] = node
+    if nd7.get("kind") == "Constant":
+        return isinstance(nd7.get("value"), float)
     return _resolved_type_name(node) in _FLOAT_TYPES
 
 
@@ -590,8 +607,9 @@ def _is_bool_like_expr(node: Any) -> bool:
         return True
     if not isinstance(node, dict):
         return False
-    if node.get("kind") == "Constant":
-        return isinstance(node.get("value"), bool)
+    nd6: dict[str, Any] = node
+    if nd6.get("kind") == "Constant":
+        return isinstance(nd6.get("value"), bool)
     return _resolved_type_name(node) == "bool"
 
 
@@ -603,14 +621,16 @@ def _render_int_cast(node: Any) -> str:
 
 
 def _render_float_cast(node: Any) -> str:
-    if isinstance(node, dict) and node.get("kind") == "Constant":
-        value_any = node.get("value")
-        if isinstance(value_any, bool):
-            return "1.0" if value_any else "0.0"
-        if isinstance(value_any, int):
-            return str(value_any) + ".0"
-        if isinstance(value_any, float):
-            return str(value_any)
+    if isinstance(node, dict):
+        ncd: dict[str, Any] = node
+        if ncd.get("kind") == "Constant":
+            value_any = ncd.get("value")
+            if isinstance(value_any, bool):
+                return "1.0" if value_any else "0.0"
+            if isinstance(value_any, int):
+                return str(value_any) + ".0"
+            if isinstance(value_any, float):
+                return str(value_any)
     rendered = _render_expr(node)
     if _is_float_like_expr(node):
         return rendered
@@ -674,7 +694,8 @@ def _strip_outer_parens(text: str) -> str:
 def _is_simple_binop_operand(node: Any) -> bool:
     if not isinstance(node, dict):
         return False
-    kind = node.get("kind")
+    nd5: dict[str, Any] = node
+    kind = nd5.get("kind")
     return kind in {"Name", "Constant", "Attribute", "Call", "Subscript"}
 
 
@@ -701,9 +722,12 @@ def _bin_op_precedence(op: Any) -> int:
 
 
 def _wrap_binop_operand_if_needed(text: str, node: Any, parent_op: Any, *, is_right: bool) -> str:
-    if not isinstance(node, dict) or node.get("kind") != "BinOp":
+    if not isinstance(node, dict):
         return text
-    child_op = node.get("op")
+    nd4: dict[str, Any] = node
+    if nd4.get("kind") != "BinOp":
+        return text
+    child_op = nd4.get("op")
     parent_prec = _bin_op_precedence(parent_op)
     child_prec = _bin_op_precedence(child_op)
     need_wrap = False
@@ -721,13 +745,13 @@ def _render_name_expr(expr: dict[str, Any]) -> str:
     if raw == "self":
         return "self"
     ident = _safe_ident(raw, "value")
-    class_name = _CLASS_NAME_MAP.get(ident)
+    class_name = _CLASS_NAME_MAP[0].get(ident)
     if class_name is not None:
         return class_name
-    mapped = _RELATIVE_IMPORT_SYMBOL_ALIASES.get(ident)
+    mapped = _RELATIVE_IMPORT_SYMBOL_ALIASES[0].get(ident)
     if isinstance(mapped, str) and mapped != "":
         return mapped
-    if ident == "main" and "__pytra_main" in _FUNCTION_NAMES and "main" not in _FUNCTION_NAMES:
+    if ident == "main" and "__pytra_main" in _FUNCTION_NAMES and "main" not in _FUNCTION_NAMES[0]:
         return "__pytra_main"
     if ident == "self":
         return "self"
@@ -737,8 +761,9 @@ def _render_name_expr(expr: dict[str, Any]) -> str:
 def _render_isinstance_check(lhs: str, typ: Any) -> str:
     if not isinstance(typ, dict):
         return "false"
-    if typ.get("kind") == "Name":
-        name = _safe_ident(typ.get("id"), "")
+    td: dict[str, Any] = typ
+    if td.get("kind") == "Name":
+        name = _safe_ident(td.get("id"), "")
         if name in {"int", "int64"}:
             return lhs + ".is_a?(Integer)"
         if name in {"float", "float64"}:
@@ -751,12 +776,12 @@ def _render_isinstance_check(lhs: str, typ: Any) -> str:
             return lhs + ".is_a?(Array)"
         if name == "dict":
             return lhs + ".is_a?(Hash)"
-        rendered_class = _CLASS_NAME_MAP.get(name, name)
-        if rendered_class in _CLASS_NAMES:
+        rendered_class = _CLASS_NAME_MAP[0].get(name, name)
+        if rendered_class in _CLASS_NAMES[0]:
             return lhs + ".is_a?(" + rendered_class + ")"
         return "false"
-    if typ.get("kind") == "Tuple":
-        elems_any = typ.get("elements")
+    if td.get("kind") == "Tuple":
+        elems_any = td.get("elements")
         elems = elems_any if isinstance(elems_any, list) else []
         checks: list[str] = []
         i = 0
@@ -788,11 +813,13 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
         return runtime_symbol
 
     value_any = expr.get("value")
-    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
-        owner_ident = _safe_ident(value_any.get("id"), "")
-        module_alias = _RELATIVE_IMPORT_MODULE_ALIASES.get(owner_ident, "")
-        if module_alias != "":
-            return module_alias + "_" + _safe_ident(expr.get("attr"), "field")
+    if isinstance(value_any, dict):
+        vcd: dict[str, Any] = value_any
+        if vcd.get("kind") == "Name":
+            owner_ident = _safe_ident(value_any.get("id"), "")
+            module_alias = _RELATIVE_IMPORT_MODULE_ALIASES[0].get(owner_ident, "")
+            if module_alias != "":
+                return module_alias + "_" + _safe_ident(expr.get("attr"), "field")
     value = _render_expr(value_any)
     attr = _safe_ident(expr.get("attr"), "field")
     return value + "." + attr
@@ -877,12 +904,14 @@ def _render_boolop_expr(expr: dict[str, Any]) -> str:
 def _render_subscript_expr(expr: dict[str, Any]) -> str:
     owner = _render_expr(expr.get("value"))
     slice_any = expr.get("slice")
-    if isinstance(slice_any, dict) and slice_any.get("kind") == "Slice":
-        lower_any = slice_any.get("lower")
-        upper_any = slice_any.get("upper")
-        lower = _render_expr(lower_any) if isinstance(lower_any, dict) else "0"
-        upper = _render_expr(upper_any) if isinstance(upper_any, dict) else "__pytra_len(" + owner + ")"
-        return "__pytra_slice(" + owner + ", " + lower + ", " + upper + ")"
+    if isinstance(slice_any, dict):
+        scd: dict[str, Any] = slice_any
+        if scd.get("kind") == "Slice":
+            lower_any = slice_any.get("lower")
+            upper_any = slice_any.get("upper")
+            lower = _render_expr(lower_any) if isinstance(lower_any, dict) else "0"
+            upper = _render_expr(upper_any) if isinstance(upper_any, dict) else "__pytra_len(" + owner + ")"
+            return "__pytra_slice(" + owner + ", " + lower + ", " + upper + ")"
     index = _render_expr(slice_any)
     return "__pytra_get_index(" + owner + ", " + index + ")"
 
@@ -914,8 +943,9 @@ def _render_dict_expr(expr: dict[str, Any]) -> str:
         while i < len(entries):
             entry_any = entries[i]
             if isinstance(entry_any, dict):
-                key_any = entry_any.get("key")
-                value_any = entry_any.get("value")
+                ed: dict[str, Any] = entry_any
+                key_any = ed.get("key")
+                value_any = ed.get("value")
                 if key_any is not None and value_any is not None:
                     pairs_from_entries.append(_render_expr(key_any) + " => " + _render_expr(value_any))
             i += 1
@@ -955,18 +985,23 @@ def _render_list_comp_expr(expr: dict[str, Any]) -> str:
     if len(ifs) != 0:
         return "[]"
     target_any = gen.get("target")
-    if not isinstance(target_any, dict) or target_any.get("kind") != "Name":
+    if not isinstance(target_any, dict):
         return "[]"
-    loop_var = _safe_ident(target_any.get("id"), "__lc_i")
+    td4: dict[str, Any] = target_any
+    if td4.get("kind") != "Name":
+        return "[]"
+    loop_var = _safe_ident(td4.get("id"), "__lc_i")
     if loop_var == "_":
         loop_var = "__lc_i"
     elt = _render_expr(expr.get("elt"))
     iter_any = gen.get("iter")
-    if isinstance(iter_any, dict) and iter_any.get("kind") == "RangeExpr":
-        start = _render_expr(iter_any.get("start"))
-        stop = _render_expr(iter_any.get("stop"))
-        step = _render_expr(iter_any.get("step"))
-        return "__pytra_list_comp_range(" + start + ", " + stop + ", " + step + ") { |" + loop_var + "| " + elt + " }"
+    if isinstance(iter_any, dict):
+        icd: dict[str, Any] = iter_any
+        if icd.get("kind") == "RangeExpr":
+            start = _render_expr(iter_any.get("start"))
+            stop = _render_expr(iter_any.get("stop"))
+            step = _render_expr(iter_any.get("step"))
+            return "__pytra_list_comp_range(" + start + ", " + stop + ", " + step + ") { |" + loop_var + "| " + elt + " }"
     iter_expr = "__pytra_as_list(" + _render_expr(iter_any) + ")"
     return iter_expr + ".map { |" + loop_var + "| " + elt + " }"
 
@@ -1094,56 +1129,58 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         return _render_expr(args[0])
 
     func_any = expr.get("func")
-    if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
-        attr_name = _safe_ident(func_any.get("attr"), "")
-        owner_any = func_any.get("value")
-        if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
-            owner_ident = _safe_ident(owner_any.get("id"), "")
-            module_alias = _RELATIVE_IMPORT_MODULE_ALIASES.get(owner_ident, "")
-            if module_alias != "":
-                rendered_alias_args: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_alias_args.append(_render_expr(args[i]))
-                    i += 1
-                return module_alias + "_" + attr_name + "(" + ", ".join(rendered_alias_args) + ")"
-        if isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
-            if _call_name(owner_any) in {"super", "super_"}:
-                rendered_super_args: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_super_args.append(_render_expr(args[i]))
-                    i += 1
-                if attr_name == "__init__":
-                    return "super(" + ", ".join(rendered_super_args) + ")"
-                return (
-                    "self.class.superclass.instance_method(:"
-                    + attr_name
-                    + ").bind(self).call("
-                    + ", ".join(rendered_super_args)
-                    + ")"
-                )
-        owner = _render_expr(owner_any)
-        if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
-            owner_name = _safe_ident(owner_any.get("id"), "")
-            _ = owner_name
-        if attr_name == "isdigit" and len(args) == 0:
-            return "__pytra_isdigit(" + owner + ")"
-        if attr_name == "isalpha" and len(args) == 0:
-            return "__pytra_isalpha(" + owner + ")"
-        owner_type = _resolved_type_name(owner_any)
-        if attr_name == "get" and owner_type.startswith("dict[") and len(args) in {1, 2}:
-            key_expr = _render_expr(args[0])
-            default_expr = "nil" if len(args) == 1 else _render_expr(args[1])
-            return "__pytra_as_dict(" + owner + ").fetch(" + key_expr + ", " + default_expr + ")"
-        rendered_args: list[str] = []
-        i = 0
-        while i < len(args):
-            rendered_args.append(_render_expr(args[i]))
-            i += 1
-        return owner + "." + attr_name + "(" + ", ".join(rendered_args) + ")"
+    if isinstance(func_any, dict):
+        fcd: dict[str, Any] = func_any
+        if fcd.get("kind") == "Attribute":
+            attr_name = _safe_ident(func_any.get("attr"), "")
+            owner_any = func_any.get("value")
+            if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+                owner_ident = _safe_ident(owner_any.get("id"), "")
+                module_alias = _RELATIVE_IMPORT_MODULE_ALIASES[0].get(owner_ident, "")
+                if module_alias != "":
+                    rendered_alias_args: list[str] = []
+                    i = 0
+                    while i < len(args):
+                        rendered_alias_args.append(_render_expr(args[i]))
+                        i += 1
+                    return module_alias + "_" + attr_name + "(" + ", ".join(rendered_alias_args) + ")"
+            if isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
+                if _call_name(owner_any) in {"super", "super_"}:
+                    rendered_super_args: list[str] = []
+                    i = 0
+                    while i < len(args):
+                        rendered_super_args.append(_render_expr(args[i]))
+                        i += 1
+                    if attr_name == "__init__":
+                        return "super(" + ", ".join(rendered_super_args) + ")"
+                    return (
+                        "self.class.superclass.instance_method(:"
+                        + attr_name
+                        + ").bind(self).call("
+                        + ", ".join(rendered_super_args)
+                        + ")"
+                    )
+            owner = _render_expr(owner_any)
+            if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
+                owner_name = _safe_ident(owner_any.get("id"), "")
+                _ = owner_name
+            if attr_name == "isdigit" and len(args) == 0:
+                return "__pytra_isdigit(" + owner + ")"
+            if attr_name == "isalpha" and len(args) == 0:
+                return "__pytra_isalpha(" + owner + ")"
+            owner_type = _resolved_type_name(owner_any)
+            if attr_name == "get" and owner_type.startswith("dict[") and len(args) in {1, 2}:
+                key_expr = _render_expr(args[0])
+                default_expr = "nil" if len(args) == 1 else _render_expr(args[1])
+                return "__pytra_as_dict(" + owner + ").fetch(" + key_expr + ", " + default_expr + ")"
+            rendered_args: list[str] = []
+            i = 0
+            while i < len(args):
+                rendered_args.append(_render_expr(args[i]))
+                i += 1
+            return owner + "." + attr_name + "(" + ", ".join(rendered_args) + ")"
 
-    if callee_name in _CLASS_NAMES:
+    if callee_name in _CLASS_NAMES[0]:
         rendered_ctor: list[str] = []
         i = 0
         while i < len(args):
@@ -1165,45 +1202,46 @@ def _render_expr(expr: Any) -> str:
         if expr is None:
             return "nil"
         return str(expr)
-    kind = expr.get("kind")
+    d: dict[str, Any] = expr
+    kind = d.get("kind")
     if kind == "Name":
-        return _render_name_expr(expr)
+        return _render_name_expr(d)
     if kind == "Constant":
-        return _render_constant_expr(expr)
+        return _render_constant_expr(d)
     if kind == "Attribute":
-        return _render_attribute_expr(expr)
+        return _render_attribute_expr(d)
     if kind == "Call":
-        return _render_call_expr(expr)
+        return _render_call_expr(d)
     if kind == "BinOp":
-        return _render_binop_expr(expr)
+        return _render_binop_expr(d)
     if kind == "UnaryOp":
-        return _render_unary_expr(expr)
+        return _render_unary_expr(d)
     if kind == "Compare":
-        return _render_compare_expr(expr)
+        return _render_compare_expr(d)
     if kind == "BoolOp":
-        return _render_boolop_expr(expr)
+        return _render_boolop_expr(d)
     if kind == "Subscript":
-        return _render_subscript_expr(expr)
+        return _render_subscript_expr(d)
     if kind == "IfExp":
-        return _render_ifexp_expr(expr)
+        return _render_ifexp_expr(d)
     if kind == "List" or kind == "Tuple":
-        return _render_list_expr(expr)
+        return _render_list_expr(d)
     if kind == "Dict":
-        return _render_dict_expr(expr)
+        return _render_dict_expr(d)
     if kind == "RangeExpr":
-        return _render_range_expr(expr)
+        return _render_range_expr(d)
     if kind == "ListComp":
-        return _render_list_comp_expr(expr)
+        return _render_list_comp_expr(d)
     if kind == "ObjLen":
-        return "__pytra_len(" + _render_expr(expr.get("value")) + ")"
+        return "__pytra_len(" + _render_expr(d.get("value")) + ")"
     if kind == "ObjStr":
-        return "__pytra_str(" + _render_expr(expr.get("value")) + ")"
+        return "__pytra_str(" + _render_expr(d.get("value")) + ")"
     if kind == "ObjBool":
-        return "__pytra_truthy(" + _render_expr(expr.get("value")) + ")"
+        return "__pytra_truthy(" + _render_expr(d.get("value")) + ")"
     if kind == "IsInstance":
-        return _render_isinstance_check(_render_expr(expr.get("value")), expr.get("expected_type_id"))
+        return _render_isinstance_check(_render_expr(d.get("value")), d.get("expected_type_id"))
     if kind == "Unbox" or kind == "Box":
-        return _render_expr(expr.get("value"))
+        return _render_expr(d.get("value"))
     return "nil"
 
 
@@ -1236,9 +1274,10 @@ def _ref_var_set(ctx: dict[str, Any]) -> set[str]:
 def _container_kind_from_decl_type(type_name: Any) -> str:
     if not isinstance(type_name, str):
         return ""
-    if type_name.startswith("dict["):
+    ts: str = type_name
+    if ts.startswith("dict["):
         return "dict"
-    if type_name.startswith("list[") or type_name.startswith("tuple["):
+    if ts.startswith("list[") or ts.startswith("tuple["):
         return "list"
     if type_name in {"bytes", "bytearray"}:
         return "list"
@@ -1258,9 +1297,12 @@ def _materialize_container_value_from_ref(
 ) -> str | None:
     if target_name == "":
         return None
-    if not isinstance(value_any, dict) or value_any.get("kind") != "Name":
+    if not isinstance(value_any, dict):
         return None
-    source_name = _safe_ident(value_any.get("id"), "")
+    vd2: dict[str, Any] = value_any
+    if vd2.get("kind") != "Name":
+        return None
+    source_name = _safe_ident(vd2.get("id"), "")
     if source_name == "" or source_name == target_name:
         return None
     if source_name not in _ref_var_set(ctx):
@@ -1279,19 +1321,21 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
     target_plan_any = stmt.get("target_plan")
     if not isinstance(iter_plan_any, dict):
         raise RuntimeError("ruby native emitter: unsupported ForCore iter_plan")
+    id: dict[str, Any] = iter_plan_any
     if not isinstance(target_plan_any, dict):
         raise RuntimeError("ruby native emitter: unsupported ForCore target_plan")
+    td: dict[str, Any] = target_plan_any
 
     lines: list[str] = []
-    iter_kind = target_plan_any.get("kind")
+    iter_kind = td.get("kind")
 
-    if iter_plan_any.get("kind") == "StaticRangeForPlan" and iter_kind == "NameTarget":
-        target = _safe_ident(target_plan_any.get("id"), "i")
+    if id.get("kind") == "StaticRangeForPlan" and iter_kind == "NameTarget":
+        target = _safe_ident(td.get("id"), "i")
         if target == "_":
             target = _fresh_tmp(ctx, "loop")
-        start = _render_int_cast(iter_plan_any.get("start"))
-        stop = _render_int_cast(iter_plan_any.get("stop"))
-        step_node = iter_plan_any.get("step")
+        start = _render_int_cast(id.get("start"))
+        stop = _render_int_cast(id.get("stop"))
+        step_node = id.get("step")
         step = _render_int_cast(step_node)
         step_const = _const_int_literal(step_node)
 
@@ -1319,10 +1363,10 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         lines.append(indent + "end")
         return lines
 
-    if iter_plan_any.get("kind") == "RuntimeIterForPlan":
-        iter_expr = "__pytra_as_list(" + _render_expr(iter_plan_any.get("iter_expr")) + ")"
+    if id.get("kind") == "RuntimeIterForPlan":
+        iter_expr = "__pytra_as_list(" + _render_expr(id.get("iter_expr")) + ")"
         if iter_kind == "NameTarget":
-            target = _safe_ident(target_plan_any.get("id"), "item")
+            target = _safe_ident(td.get("id"), "item")
             if target == "_":
                 target = _fresh_tmp(ctx, "item")
             lines.append(indent + "for " + target + " in " + iter_expr)
@@ -1338,15 +1382,17 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             lines.append(indent + iter_tmp + " = " + iter_expr)
             lines.append(indent + "for " + item_tmp + " in " + iter_tmp)
             lines.append(indent + "  " + tuple_tmp + " = __pytra_as_list(" + item_tmp + ")")
-            elems_any = target_plan_any.get("elements")
+            elems_any = td.get("elements")
             elems = elems_any if isinstance(elems_any, list) else []
             i = 0
             while i < len(elems):
                 elem = elems[i]
-                if isinstance(elem, dict) and elem.get("kind") == "NameTarget":
-                    nm = _safe_ident(elem.get("id"), "item_" + str(i))
-                    if nm != "_":
-                        lines.append(indent + "  " + nm + " = " + tuple_tmp + "[" + str(i) + "]")
+                if isinstance(elem, dict):
+                    ecd: dict[str, Any] = elem
+                    if ecd.get("kind") == "NameTarget":
+                        nm = _safe_ident(elem.get("id"), "item_" + str(i))
+                        if nm != "_":
+                            lines.append(indent + "  " + nm + " = " + tuple_tmp + "[" + str(i) + "]")
                 i += 1
             body_any = stmt.get("body")
             body = body_any if isinstance(body_any, list) else []
@@ -1358,9 +1404,12 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
 
 
 def _emit_tuple_assign(target_any: Any, value_any: Any, *, indent: str, ctx: dict[str, Any]) -> list[str] | None:
-    if not isinstance(target_any, dict) or target_any.get("kind") != "Tuple":
+    if not isinstance(target_any, dict):
         return None
-    elems_any = target_any.get("elements")
+    td3: dict[str, Any] = target_any
+    if td3.get("kind") != "Tuple":
+        return None
+    elems_any = td3.get("elements")
     elems = elems_any if isinstance(elems_any, list) else []
     if len(elems) == 0:
         return None
@@ -1371,14 +1420,15 @@ def _emit_tuple_assign(target_any: Any, value_any: Any, *, indent: str, ctx: dic
         elem = elems[i]
         if not isinstance(elem, dict):
             return None
-        kind = elem.get("kind")
+        ed: dict[str, Any] = elem
+        kind = ed.get("kind")
         rhs = tuple_tmp + "[" + str(i) + "]"
         if kind == "Name":
-            nm = _safe_ident(elem.get("id"), "tmp_" + str(i))
+            nm = _safe_ident(ed.get("id"), "tmp_" + str(i))
             lines.append(indent + nm + " = " + rhs)
         elif kind == "Subscript":
-            owner = _render_expr(elem.get("value"))
-            index = _render_expr(elem.get("slice"))
+            owner = _render_expr(ed.get("value"))
+            index = _render_expr(ed.get("slice"))
             lines.append(indent + "__pytra_set_index(" + owner + ", " + index + ", " + rhs + ")")
         else:
             return None
@@ -1389,26 +1439,39 @@ def _emit_tuple_assign(target_any: Any, value_any: Any, *, indent: str, ctx: dic
 def _is_safe_append_chain_arg(node: Any) -> bool:
     if not isinstance(node, dict):
         return False
-    return node.get("kind") in {"Name", "Constant", "Attribute", "Subscript"}
+    nd3: dict[str, Any] = node
+    return nd3.get("kind") in {"Name", "Constant", "Attribute", "Subscript"}
 
 
 def _append_chain_stmt_parts(stmt: Any) -> tuple[str, str] | None:
-    if not isinstance(stmt, dict) or stmt.get("kind") != "Expr":
+    if not isinstance(stmt, dict):
         return None
-    value_any = stmt.get("value")
-    if not isinstance(value_any, dict) or value_any.get("kind") != "Call":
+    sd4: dict[str, Any] = stmt
+    if sd4.get("kind") != "Expr":
         return None
-    func_any = value_any.get("func")
-    if not isinstance(func_any, dict) or func_any.get("kind") != "Attribute":
+    value_any = sd4.get("value")
+    if not isinstance(value_any, dict):
         return None
-    if _safe_ident(func_any.get("attr"), "") != "append":
+    vd: dict[str, Any] = value_any
+    if vd.get("kind") != "Call":
         return None
-    owner_any = func_any.get("value")
-    if not isinstance(owner_any, dict) or owner_any.get("kind") != "Name":
+    func_any = vd.get("func")
+    if not isinstance(func_any, dict):
         return None
-    args_any = value_any.get("args")
+    fd: dict[str, Any] = func_any
+    if fd.get("kind") != "Attribute":
+        return None
+    if _safe_ident(fd.get("attr"), "") != "append":
+        return None
+    owner_any = fd.get("value")
+    if not isinstance(owner_any, dict):
+        return None
+    od: dict[str, Any] = owner_any
+    if od.get("kind") != "Name":
+        return None
+    args_any = vd.get("args")
     args = args_any if isinstance(args_any, list) else []
-    keywords_any = value_any.get("keywords")
+    keywords_any = vd.get("keywords")
     keywords = keywords_any if isinstance(keywords_any, list) else []
     if len(args) != 1 or len(keywords) != 0:
         return None
@@ -1421,24 +1484,31 @@ def _append_chain_stmt_parts(stmt: Any) -> tuple[str, str] | None:
 def _simple_name_assign_parts(stmt: Any) -> tuple[str, str] | None:
     if not isinstance(stmt, dict):
         return None
-    kind = stmt.get("kind")
+    sd3: dict[str, Any] = stmt
+    kind = sd3.get("kind")
     if kind == "AnnAssign":
-        target_any = stmt.get("target")
-        value_any = stmt.get("value")
-        if not isinstance(target_any, dict) or target_any.get("kind") != "Name" or value_any is None:
+        target_any = sd3.get("target")
+        value_any = sd3.get("value")
+        if not isinstance(target_any, dict):
+            return None
+        td2: dict[str, Any] = target_any
+        if td2.get("kind") != "Name" or value_any is None:
             return None
         return (_render_expr(target_any), _render_expr(value_any))
     if kind != "Assign":
         return None
-    targets_any = stmt.get("targets")
+    targets_any = sd3.get("targets")
     targets = targets_any if isinstance(targets_any, list) else []
-    if len(targets) == 0 and isinstance(stmt.get("target"), dict):
-        targets = [stmt.get("target")]
+    if len(targets) == 0 and isinstance(sd3.get("target"), dict):
+        targets = [sd3.get("target")]
     if len(targets) != 1:
         return None
     target_any = targets[0]
-    value_any = stmt.get("value")
-    if not isinstance(target_any, dict) or target_any.get("kind") != "Name" or value_any is None:
+    value_any = sd3.get("value")
+    if not isinstance(target_any, dict):
+        return None
+    td: dict[str, Any] = target_any
+    if td.get("kind") != "Name" or value_any is None:
         return None
     return (_render_expr(target_any), _render_expr(value_any))
 
@@ -1457,11 +1527,12 @@ def _collect_leading_name_assign_map(stmts: list[Any]) -> dict[str, str]:
 
 def _node_uses_any_name(node: Any, names: set[str]) -> bool:
     if isinstance(node, dict):
-        if node.get("kind") == "Name":
-            ident = _safe_ident(node.get("id"), "")
+        nd2: dict[str, Any] = node
+        if nd2.get("kind") == "Name":
+            ident = _safe_ident(nd2.get("id"), "")
             if ident in names:
                 return True
-        for value in node.values():
+        for value in nd2.values():
             if _node_uses_any_name(value, names):
                 return True
         return False
@@ -1488,13 +1559,16 @@ def _can_drop_preinit_before_if(stmts: list[Any], start: int, if_index: int) -> 
     if len(defaults) == 0:
         return False
     if_stmt = stmts[if_index]
-    if not isinstance(if_stmt, dict) or if_stmt.get("kind") != "If":
+    if not isinstance(if_stmt, dict):
+        return False
+    id: dict[str, Any] = if_stmt
+    if id.get("kind") != "If":
         return False
     names = set(defaults.keys())
-    if _node_uses_any_name(if_stmt.get("test"), names):
+    if _node_uses_any_name(id.get("test"), names):
         return False
-    body_any = if_stmt.get("body")
-    orelse_any = if_stmt.get("orelse")
+    body_any = id.get("body")
+    orelse_any = id.get("orelse")
     body = body_any if isinstance(body_any, list) else []
     orelse = orelse_any if isinstance(orelse_any, list) else []
     if len(body) == 0 or len(orelse) == 0:
@@ -1517,11 +1591,12 @@ def _emit_stmt_list(stmts: list[Any], *, indent: str, ctx: dict[str, Any]) -> li
         while j < len(stmts):
             if not isinstance(stmts[j], dict):
                 break
-            if stmts[j].get("kind") == "If":
+            sj: dict[str, Any] = stmts[j]
+            if sj.get("kind") == "If":
                 if _can_drop_preinit_before_if(stmts, i, j):
                     i = j
                 break
-            if _simple_name_assign_parts(stmts[j]) is None:
+            if _simple_name_assign_parts(sj) is None:
                 break
             j += 1
         if i >= len(stmts):
@@ -1549,8 +1624,9 @@ def _emit_stmt_list(stmts: list[Any], *, indent: str, ctx: dict[str, Any]) -> li
 def _emit_swap(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if not isinstance(stmt, dict):
         raise RuntimeError("ruby native emitter: unsupported Swap")
-    left = _render_expr(stmt.get("left"))
-    right = _render_expr(stmt.get("right"))
+    sd2: dict[str, Any] = stmt
+    left = _render_expr(sd2.get("left"))
+    right = _render_expr(sd2.get("right"))
     tmp = _fresh_tmp(ctx, "swap")
     return [
         indent + tmp + " = " + left,
@@ -1562,42 +1638,52 @@ def _emit_swap(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
 def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if not isinstance(stmt, dict):
         raise RuntimeError("ruby native emitter: unsupported statement")
-    kind = stmt.get("kind")
+    sd: dict[str, Any] = stmt
+    kind = sd.get("kind")
 
     if kind == "Return":
-        if "value" in stmt and stmt.get("value") is not None:
-            return [indent + "return " + _render_expr(stmt.get("value"))]
+        if "value" in stmt and sd.get("value") is not None:
+            return [indent + "return " + _render_expr(sd.get("value"))]
         return [indent + "return nil"]
 
     if kind == "Expr":
-        value_any = stmt.get("value")
-        if isinstance(value_any, dict) and value_any.get("kind") == "Name":
-            raw = value_any.get("id")
-            if raw == "break":
-                return [indent + "break"]
-            if raw == "continue":
-                return [indent + "next"]
+        value_any = sd.get("value")
+        if isinstance(value_any, dict):
+            vcd: dict[str, Any] = value_any
+            if vcd.get("kind") == "Name":
+                raw = value_any.get("id")
+                if raw == "break":
+                    return [indent + "break"]
+                if raw == "continue":
+                    return [indent + "next"]
         return [indent + _render_expr(value_any)]
 
     if kind == "AnnAssign":
-        target_any = stmt.get("target")
-        tuple_lines = _emit_tuple_assign(target_any, stmt.get("value"), indent=indent, ctx=ctx)
+        target_any = sd.get("target")
+        tuple_lines = _emit_tuple_assign(target_any, sd.get("value"), indent=indent, ctx=ctx)
         if tuple_lines is not None:
             return tuple_lines
-        value_any = stmt.get("value")
-        target_name = _safe_ident(target_any.get("id"), "") if isinstance(target_any, dict) and target_any.get("kind") == "Name" else ""
-        decl_type_any = stmt.get("decl_type")
+        value_any = sd.get("value")
+        if isinstance(target_any, dict):
+            tcd2: dict[str, Any] = target_any
+            target_name = tcd2.get("kind") == "Name"
+        else:
+            target_name = ""
+        decl_type_any = sd.get("decl_type")
         decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
         if decl_type == "":
-            annotation_any = stmt.get("annotation")
+            annotation_any = sd.get("annotation")
             if isinstance(annotation_any, str):
-                decl_type = annotation_any.strip()
+                as: str = annotation_any
+                decl_type = as.strip()
         if value_any is None:
-            if bool(stmt.get("declare")) and decl_type in _NIL_FREE_DECL_TYPES:
-                if isinstance(target_any, dict) and target_any.get("kind") == "Name":
-                    if target_name != "" and decl_type != "":
-                        _type_map(ctx)[target_name] = decl_type
-                    return []
+            if bool(sd.get("declare")) and decl_type in _NIL_FREE_DECL_TYPES:
+                if isinstance(target_any, dict):
+                    tcd: dict[str, Any] = target_any
+                    if tcd.get("kind") == "Name":
+                        if target_name != "" and decl_type != "":
+                            _type_map(ctx)[target_name] = decl_type
+                        return []
         target = _render_expr(target_any)
         value = "nil" if value_any is None else _render_expr(value_any)
         materialized = _materialize_container_value_from_ref(
@@ -1613,30 +1699,30 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return [indent + target + " = " + value]
 
     if kind == "Assign":
-        targets_any = stmt.get("targets")
+        targets_any = sd.get("targets")
         targets = targets_any if isinstance(targets_any, list) else []
-        if len(targets) == 0 and isinstance(stmt.get("target"), dict):
-            targets = [stmt.get("target")]
+        if len(targets) == 0 and isinstance(sd.get("target"), dict):
+            targets = [sd.get("target")]
         if len(targets) == 0:
             raise RuntimeError("ruby native emitter: Assign without target")
-        tuple_lines = _emit_tuple_assign(targets[0], stmt.get("value"), indent=indent, ctx=ctx)
+        tuple_lines = _emit_tuple_assign(targets[0], sd.get("value"), indent=indent, ctx=ctx)
         if tuple_lines is not None:
             return tuple_lines
         if isinstance(targets[0], dict) and targets[0].get("kind") == "Subscript":
             owner = _render_expr(targets[0].get("value"))
             index = _render_expr(targets[0].get("slice"))
-            value = _render_expr(stmt.get("value"))
+            value = _render_expr(sd.get("value"))
             return [indent + "__pytra_set_index(" + owner + ", " + index + ", " + value + ")"]
         target = _render_expr(targets[0])
-        value = _render_expr(stmt.get("value"))
+        value = _render_expr(sd.get("value"))
         target_name = _safe_ident(targets[0].get("id"), "") if isinstance(targets[0], dict) and targets[0].get("kind") == "Name" else ""
-        decl_type_any = stmt.get("decl_type")
+        decl_type_any = sd.get("decl_type")
         decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
         if decl_type == "" and target_name != "":
             mapped_decl = _type_map(ctx).get(target_name)
             decl_type = mapped_decl.strip() if isinstance(mapped_decl, str) else ""
         materialized_assign = _materialize_container_value_from_ref(
-            stmt.get("value"),
+            sd.get("value"),
             target_name=target_name,
             target_decl_type=decl_type,
             ctx=ctx,
@@ -1648,9 +1734,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return [indent + target + " = " + value]
 
     if kind == "AugAssign":
-        lhs = _render_expr(stmt.get("target"))
-        rhs = _render_expr(stmt.get("value"))
-        op = stmt.get("op")
+        lhs = _render_expr(sd.get("target"))
+        rhs = _render_expr(sd.get("value"))
+        op = sd.get("op")
         symbol = _bin_op_symbol(op)
         return [indent + lhs + " " + symbol + "= " + rhs]
 
@@ -1658,12 +1744,12 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return _emit_swap(stmt, indent=indent, ctx=ctx)
 
     if kind == "If":
-        test_expr = _strip_outer_parens(_render_condition_expr(stmt.get("test")))
+        test_expr = _strip_outer_parens(_render_condition_expr(sd.get("test")))
         lines = [indent + "if " + test_expr]
-        body_any = stmt.get("body")
+        body_any = sd.get("body")
         body = body_any if isinstance(body_any, list) else []
         lines.extend(_emit_stmt_list(body, indent=indent + "  ", ctx=ctx))
-        orelse_any = stmt.get("orelse")
+        orelse_any = sd.get("orelse")
         orelse = orelse_any if isinstance(orelse_any, list) else []
         if len(orelse) > 0:
             lines.append(indent + "else")
@@ -1675,9 +1761,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return _emit_for_core(stmt, indent=indent, ctx=ctx)
 
     if kind == "While":
-        test_expr = _strip_outer_parens(_render_condition_expr(stmt.get("test")))
+        test_expr = _strip_outer_parens(_render_condition_expr(sd.get("test")))
         lines = [indent + "while " + test_expr]
-        body_any = stmt.get("body")
+        body_any = sd.get("body")
         body = body_any if isinstance(body_any, list) else []
         lines.extend(_emit_stmt_list(body, indent=indent + "  ", ctx=ctx))
         lines.append(indent + "end")
@@ -1696,30 +1782,31 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return []
 
     if kind == "Raise":
-        exc_any = stmt.get("exc")
+        exc_any = sd.get("exc")
         if exc_any is None:
             return [indent + "raise RuntimeError, \"pytra raise\""]
         return [indent + "raise RuntimeError, __pytra_str(" + _render_expr(exc_any) + ")"]
 
     if kind == "Try":
         lines: list[str] = []
-        body_any = stmt.get("body")
+        body_any = sd.get("body")
         body = body_any if isinstance(body_any, list) else []
         lines.extend(_emit_stmt_list(body, indent=indent, ctx=ctx))
-        handlers_any = stmt.get("handlers")
+        handlers_any = sd.get("handlers")
         handlers = handlers_any if isinstance(handlers_any, list) else []
         i = 0
         while i < len(handlers):
             h = handlers[i]
             if isinstance(h, dict):
-                h_body_any = h.get("body")
+                hd: dict[str, Any] = h
+                h_body_any = hd.get("body")
                 h_body = h_body_any if isinstance(h_body_any, list) else []
                 lines.extend(_emit_stmt_list(h_body, indent=indent, ctx=ctx))
             i += 1
-        orelse_any = stmt.get("orelse")
+        orelse_any = sd.get("orelse")
         orelse = orelse_any if isinstance(orelse_any, list) else []
         lines.extend(_emit_stmt_list(orelse, indent=indent, ctx=ctx))
-        final_any = stmt.get("finalbody")
+        final_any = sd.get("finalbody")
         final = final_any if isinstance(final_any, list) else []
         lines.extend(_emit_stmt_list(final, indent=indent, ctx=ctx))
         return lines
@@ -1778,11 +1865,11 @@ def _emit_function(fn: dict[str, Any], *, indent: str, in_class: bool) -> list[s
 
 def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     class_key = _safe_ident(cls.get("name"), "PytraClass")
-    class_name = _CLASS_NAME_MAP.get(class_key, _safe_class_ident(cls.get("name"), "PytraClass"))
+    class_name = _CLASS_NAME_MAP[0].get(class_key, _safe_class_ident(cls.get("name"), "PytraClass"))
     base_any = cls.get("base")
     if isinstance(base_any, str):
         base_key = _safe_ident(base_any, "")
-        base_name = _CLASS_NAME_MAP.get(base_key, _safe_class_ident(base_any, ""))
+        base_name = _CLASS_NAME_MAP[0].get(base_key, _safe_class_ident(base_any, ""))
     else:
         base_name = ""
     head = indent + "class " + class_name
@@ -1796,7 +1883,8 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
 
     field_types_any = cls.get("field_types")
     if isinstance(field_types_any, dict):
-        for raw in field_types_any.keys():
+        fd: dict[str, Any] = field_types_any
+        for raw in fd.keys():
             if not isinstance(raw, str):
                 continue
             nm = _safe_ident(raw, "")
@@ -1809,13 +1897,15 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
         i = 0
         while i < len(body):
             node = body[i]
-            if isinstance(node, dict) and node.get("kind") == "AnnAssign":
-                target_any = node.get("target")
-                if isinstance(target_any, dict) and target_any.get("kind") == "Name":
-                    nm = _safe_ident(target_any.get("id"), "")
-                    if nm != "" and nm not in seen_fields:
-                        seen_fields.add(nm)
-                        field_names.append(nm)
+            if isinstance(node, dict):
+                ncd: dict[str, Any] = node
+                if ncd.get("kind") == "AnnAssign":
+                    target_any = node.get("target")
+                    if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                        nm = _safe_ident(target_any.get("id"), "")
+                        if nm != "" and nm not in seen_fields:
+                            seen_fields.add(nm)
+                            field_names.append(nm)
             i += 1
 
     if len(field_names) > 0:
@@ -1826,10 +1916,12 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     i = 0
     while i < len(body):
         node = body[i]
-        if isinstance(node, dict) and node.get("kind") == "FunctionDef":
-            if _safe_ident(node.get("name"), "") == "__init__":
-                has_init = True
-                break
+        if isinstance(node, dict):
+            ncd: dict[str, Any] = node
+            if ncd.get("kind") == "FunctionDef":
+                if _safe_ident(node.get("name"), "") == "__init__":
+                    has_init = True
+                    break
         i += 1
 
     if is_dataclass and not has_init and len(field_names) > 0:
@@ -1845,9 +1937,11 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
     i = 0
     while i < len(body):
         node = body[i]
-        if isinstance(node, dict) and node.get("kind") == "FunctionDef":
-            lines.append("")
-            lines.extend(_emit_function(node, indent=indent + "  ", in_class=True))
+        if isinstance(node, dict):
+            ncd: dict[str, Any] = node
+            if ncd.get("kind") == "FunctionDef":
+                lines.append("")
+                lines.extend(_emit_function(node, indent=indent + "  ", in_class=True))
         i += 1
     lines.append(indent + "end")
     return lines
@@ -1857,15 +1951,16 @@ def transpile_to_ruby_native(east_doc: dict[str, Any]) -> str:
     """Emit Ruby native source from EAST3 Module."""
     if not isinstance(east_doc, dict):
         raise RuntimeError("ruby native emitter: east_doc must be dict")
-    if east_doc.get("kind") != "Module":
+    ed: dict[str, Any] = east_doc
+    if ed.get("kind") != "Module":
         raise RuntimeError("ruby native emitter: root kind must be Module")
-    body_any = east_doc.get("body")
+    body_any = ed.get("body")
     if not isinstance(body_any, list):
         raise RuntimeError("ruby native emitter: Module.body must be list")
     _reject_unsupported_relative_import_forms(body_any)
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Ruby backend")
     reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Ruby backend")
-    main_guard_any = east_doc.get("main_guard_body")
+    main_guard_any = ed.get("main_guard_body")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []
 
     classes: list[dict[str, Any]] = []
@@ -1874,23 +1969,19 @@ def transpile_to_ruby_native(east_doc: dict[str, Any]) -> str:
     while i < len(body_any):
         node = body_any[i]
         if isinstance(node, dict):
-            kind = node.get("kind")
+            nd: dict[str, Any] = node
+            kind = nd.get("kind")
             if kind == "ClassDef":
                 classes.append(node)
             elif kind == "FunctionDef":
                 functions.append(node)
         i += 1
 
-    global _CLASS_NAMES
-    _CLASS_NAMES = set()
-    global _CLASS_NAME_MAP
-    _CLASS_NAME_MAP = {}
-    global _FUNCTION_NAMES
-    _FUNCTION_NAMES = set()
-    global _RELATIVE_IMPORT_MODULE_ALIASES
-    _RELATIVE_IMPORT_MODULE_ALIASES = _collect_relative_import_module_aliases(east_doc)
-    global _RELATIVE_IMPORT_SYMBOL_ALIASES
-    _RELATIVE_IMPORT_SYMBOL_ALIASES = _collect_relative_import_symbol_aliases(east_doc)
+    _CLASS_NAMES[0] = set()
+    _CLASS_NAME_MAP[0] = {}
+    _FUNCTION_NAMES[0] = set()
+    _RELATIVE_IMPORT_MODULE_ALIASES[0] = _collect_relative_import_module_aliases(east_doc)
+    _RELATIVE_IMPORT_SYMBOL_ALIASES[0] = _collect_relative_import_symbol_aliases(east_doc)
 
     i = 0
     while i < len(classes):
@@ -1898,11 +1989,11 @@ def transpile_to_ruby_native(east_doc: dict[str, Any]) -> str:
         class_key = _safe_ident(raw_name, "PytraClass")
         class_name = _safe_class_ident(raw_name, "PytraClass")
         _CLASS_NAME_MAP[class_key] = class_name
-        _CLASS_NAMES.add(class_name)
+        _CLASS_NAMES[0].add(class_name)
         i += 1
     i = 0
     while i < len(functions):
-        _FUNCTION_NAMES.add(_safe_ident(functions[i].get("name"), "func"))
+        _FUNCTION_NAMES[0].add(_safe_ident(functions[i].get("name"), "func"))
         i += 1
 
     lines: list[str] = []

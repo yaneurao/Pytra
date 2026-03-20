@@ -54,11 +54,11 @@ _SWIFT_KEYWORDS = {
     "throw",
 }
 
-_CLASS_NAMES: set[str] = set()
-_CLASS_BASES: dict[str, str] = {}
-_CLASS_METHODS: dict[str, set[str]] = {}
-_MAIN_CALL_ALIAS: str = ""
-_RELATIVE_IMPORT_NAME_ALIASES: dict[str, str] = {}
+_CLASS_NAMES: list[set[str]] = [set()]
+_CLASS_BASES: list[dict[str, str]] = [{}]
+_CLASS_METHODS: list[dict[str, set[str]]] = [{}]
+_MAIN_CALL_ALIAS: list[str] = [""]
+_RELATIVE_IMPORT_NAME_ALIASES: list[dict[str, str]] = [{}]
 
 
 def _safe_ident(name: Any, fallback: str) -> str:
@@ -100,18 +100,21 @@ def _collect_relative_import_name_aliases(east_doc: dict[str, Any]) -> dict[str,
     i = 0
     while i < len(body):
         stmt = body[i]
-        if not isinstance(stmt, dict) or stmt.get("kind") != "ImportFrom":
+        if not isinstance(stmt, dict):
+            i += 1
+        sd3: dict[str, Any] = stmt
+        if sd3.get("kind") != "ImportFrom":
             i += 1
             continue
-        module_any = stmt.get("module")
+        module_any = sd3.get("module")
         module_id = module_any if isinstance(module_any, str) else ""
-        level_any = stmt.get("level")
+        level_any = sd3.get("level")
         level = level_any if isinstance(level_any, int) else 0
         if level <= 0 and not module_id.startswith("."):
             i += 1
             continue
         module_path = _relative_import_module_path(module_id)
-        names_any = stmt.get("names")
+        names_any = sd3.get("names")
         names = names_any if isinstance(names_any, list) else []
         j = 0
         while j < len(names):
@@ -235,6 +238,7 @@ def _leading_comment_lines(stmt: dict[str, Any], prefix: str, indent: str = "") 
 def _swift_type(type_name: Any, *, allow_void: bool) -> str:
     if not isinstance(type_name, str):
         return "Any"
+    ts3: str = type_name
     if type_name == "None":
         return "Void" if allow_void else "Any"
     if type_name in {"int", "int64", "uint8"}:
@@ -245,15 +249,15 @@ def _swift_type(type_name: Any, *, allow_void: bool) -> str:
         return "Bool"
     if type_name == "str":
         return "String"
-    if type_name.startswith("list[") or type_name.startswith("tuple["):
+    if ts3.startswith("list[") or ts3.startswith("tuple["):
         return "[Any]"
-    if type_name.startswith("dict["):
+    if ts3.startswith("dict["):
         return "[AnyHashable: Any]"
     if type_name in {"bytes", "bytearray"}:
         return "[Any]"
     if type_name in {"unknown", "object", "any"}:
         return "Any"
-    if type_name.isidentifier():
+    if ts3.isidentifier():
         return _safe_ident(type_name, "Any")
     return "Any"
 
@@ -281,7 +285,8 @@ def _default_return_expr(swift_type: str) -> str:
 def _tuple_element_types(type_name: Any) -> list[str]:
     if not isinstance(type_name, str):
         return []
-    if not type_name.startswith("tuple[") or not type_name.endswith("]"):
+    ts2: str = type_name
+    if not ts2.startswith("tuple[") or not ts2.endswith("]"):
         return []
     body = type_name[6:-1]
     out: list[str] = []
@@ -395,7 +400,8 @@ def _to_dict_expr(expr: str) -> str:
 def _has_resolved_type(node: Any, expected: set[str]) -> bool:
     if not isinstance(node, dict):
         return False
-    resolved_any = node.get("resolved_type")
+    nd4: dict[str, Any] = node
+    resolved_any = nd4.get("resolved_type")
     if not isinstance(resolved_any, str):
         return False
     return resolved_any in expected
@@ -418,9 +424,10 @@ def _is_int_literal(node: Any, expected: int) -> bool:
         return node == expected
     if not isinstance(node, dict):
         return False
-    if node.get("kind") != "Constant":
+    nd3: dict[str, Any] = node
+    if nd3.get("kind") != "Constant":
         return False
-    value = node.get("value")
+    value = nd3.get("value")
     if isinstance(value, bool):
         return False
     return isinstance(value, int) and value == expected
@@ -441,14 +448,14 @@ def _cast_from_any(expr: str, swift_type: str) -> str:
         return _to_dict_expr(expr)
     if swift_type == "Any":
         return expr
-    if swift_type in _CLASS_NAMES:
+    if swift_type in _CLASS_NAMES[0]:
         return "(" + expr + " as? " + swift_type + ") ?? " + swift_type + "()"
     return expr
 
 
 def _render_name_expr(expr: dict[str, Any]) -> str:
     ident = _safe_ident(expr.get("id"), "value")
-    return _RELATIVE_IMPORT_NAME_ALIASES.get(ident, ident)
+    return _RELATIVE_IMPORT_NAME_ALIASES[0].get(ident, ident)
 
 
 def _render_constant_expr(expr: dict[str, Any]) -> str:
@@ -480,7 +487,8 @@ def _render_constant_expr(expr: dict[str, Any]) -> str:
 def _render_truthy_expr(expr: Any) -> str:
     if not isinstance(expr, dict):
         return "__pytra_truthy(" + _render_expr(expr) + ")"
-    resolved = expr.get("resolved_type")
+    ed3: dict[str, Any] = expr
+    resolved = ed3.get("resolved_type")
     rendered = _render_expr(expr)
     if isinstance(resolved, str):
         if resolved == "bool":
@@ -493,7 +501,7 @@ def _render_truthy_expr(expr: Any) -> str:
             return "(" + rendered + " != \"\")"
         if resolved.startswith("list[") or resolved.startswith("tuple[") or resolved.startswith("dict[") or resolved in {"bytes", "bytearray"}:
             return "(__pytra_len(" + rendered + ") != 0)"
-    kind = expr.get("kind")
+    kind = ed3.get("kind")
     if kind in {"Compare", "BoolOp", "IsInstance"}:
         return rendered
     return "__pytra_truthy(" + rendered + ")"
@@ -636,7 +644,8 @@ def _render_compare_expr(expr: dict[str, Any]) -> str:
             left_any = comps[i - 1].get("resolved_type")
             left_type = left_any if isinstance(left_any, str) else ""
         if isinstance(comp_node, dict):
-            right_any = comp_node.get("resolved_type")
+            cd: dict[str, Any] = comp_node
+            right_any = cd.get("resolved_type")
             right_type = right_any if isinstance(right_any, str) else ""
 
         symbol = _compare_op_symbol(op)
@@ -725,7 +734,8 @@ def _runtime_module_id(expr: dict[str, Any]) -> str:
 def _runtime_symbol_name(expr: dict[str, Any]) -> str:
     runtime_symbol_any = expr.get("runtime_symbol")
     if isinstance(runtime_symbol_any, str):
-        return runtime_symbol_any.strip()
+        rs: str = runtime_symbol_any
+        return rs.strip()
     runtime_call, _ = _resolved_runtime_call(expr)
     dot = runtime_call.find(".")
     if dot >= 0:
@@ -814,11 +824,12 @@ def _call_name(expr: dict[str, Any]) -> str:
     func_any = expr.get("func")
     if not isinstance(func_any, dict):
         return ""
-    kind = func_any.get("kind")
+    fd2: dict[str, Any] = func_any
+    kind = fd2.get("kind")
     if kind == "Name":
-        return _safe_ident(func_any.get("id"), "")
+        return _safe_ident(fd2.get("id"), "")
     if kind == "Attribute":
-        return _safe_ident(func_any.get("attr"), "")
+        return _safe_ident(fd2.get("attr"), "")
     return ""
 
 
@@ -837,7 +848,8 @@ def _call_arg_nodes(expr: dict[str, Any]) -> list[Any]:
         while j < len(keywords):
             kw = keywords[j]
             if isinstance(kw, dict):
-                out.append(kw.get("value"))
+                kd: dict[str, Any] = kw
+                out.append(kd.get("value"))
             else:
                 out.append(kw)
             j += 1
@@ -856,8 +868,9 @@ def _call_arg_nodes(expr: dict[str, Any]) -> list[Any]:
     while j < len(kw_nodes):
         node = kw_nodes[j]
         if isinstance(node, dict):
-            if node.get("kind") == "keyword":
-                out.append(node.get("value"))
+            nd2: dict[str, Any] = node
+            if nd2.get("kind") == "keyword":
+                out.append(nd2.get("value"))
             else:
                 out.append(node)
         else:
@@ -868,13 +881,13 @@ def _call_arg_nodes(expr: dict[str, Any]) -> list[Any]:
 
 def _class_has_base_method(class_name: str, method_name: str) -> bool:
     seen: set[str] = set()
-    cur = _CLASS_BASES.get(class_name, "")
+    cur = _CLASS_BASES[0].get(class_name, "")
     while cur != "" and cur not in seen:
         seen.add(cur)
-        methods = _CLASS_METHODS.get(cur)
+        methods = _CLASS_METHODS[0].get(cur)
         if isinstance(methods, set) and method_name in methods:
             return True
-        cur = _CLASS_BASES.get(cur, "")
+        cur = _CLASS_BASES[0].get(cur, "")
     return False
 
 
@@ -1079,7 +1092,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             i += 1
         return owner_expr + "." + attr_name + "(" + ", ".join(rendered_args) + ")"
 
-    if callee_name in _CLASS_NAMES:
+    if callee_name in _CLASS_NAMES[0]:
         rendered_ctor_args: list[str] = []
         i = 0
         while i < len(args):
@@ -1099,8 +1112,9 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
 def _render_isinstance_check(lhs: str, typ: Any) -> str:
     if not isinstance(typ, dict):
         return "false"
-    if typ.get("kind") == "Name":
-        name = _safe_ident(typ.get("id"), "")
+    td: dict[str, Any] = typ
+    if td.get("kind") == "Name":
+        name = _safe_ident(td.get("id"), "")
         if name in {"int", "int64"}:
             return "__pytra_is_int(" + lhs + ")"
         if name in {"float", "float64"}:
@@ -1111,11 +1125,11 @@ def _render_isinstance_check(lhs: str, typ: Any) -> str:
             return "__pytra_is_str(" + lhs + ")"
         if name in {"list", "bytes", "bytearray"}:
             return "__pytra_is_list(" + lhs + ")"
-        if name in _CLASS_NAMES:
+        if name in _CLASS_NAMES[0]:
             return "__pytra_is_" + name + "(" + lhs + ")"
         return "false"
-    if typ.get("kind") == "Tuple":
-        elements_any = typ.get("elements")
+    if td.get("kind") == "Tuple":
+        elements_any = td.get("elements")
         elements = elements_any if isinstance(elements_any, list) else []
         checks: list[str] = []
         i = 0
@@ -1131,7 +1145,8 @@ def _render_isinstance_check(lhs: str, typ: Any) -> str:
 def _render_expr(expr: Any) -> str:
     if not isinstance(expr, dict):
         return "__pytra_any_default()"
-    kind = expr.get("kind")
+    ed2: dict[str, Any] = expr
+    kind = ed2.get("kind")
 
     if kind == "Name":
         return _render_name_expr(expr)
@@ -1151,9 +1166,9 @@ def _render_expr(expr: Any) -> str:
         return _render_call_expr(expr)
 
     if kind == "List" or kind == "Tuple":
-        elements_any = expr.get("elements")
+        elements_any = ed2.get("elements")
         if not isinstance(elements_any, list):
-            elements_any = expr.get("elts")
+            elements_any = ed2.get("elts")
         elements = elements_any if isinstance(elements_any, list) else []
         rendered: list[str] = []
         i = 0
@@ -1164,23 +1179,24 @@ def _render_expr(expr: Any) -> str:
 
     if kind == "Dict":
         parts: list[str] = []
-        entries_any = expr.get("entries")
+        entries_any = ed2.get("entries")
         entries = entries_any if isinstance(entries_any, list) else []
         if len(entries) > 0:
             i = 0
             while i < len(entries):
                 entry = entries[i]
                 if isinstance(entry, dict):
-                    key_node = entry.get("key")
-                    val_node = entry.get("value")
+                    ed: dict[str, Any] = entry
+                    key_node = ed.get("key")
+                    val_node = ed.get("value")
                     if key_node is not None and val_node is not None:
                         parts.append("AnyHashable(__pytra_str(" + _render_expr(key_node) + ")): " + _render_expr(val_node))
                 i += 1
             if len(parts) == 0:
                 return "[:]"
             return "[" + ", ".join(parts) + "]"
-        keys_any = expr.get("keys")
-        vals_any = expr.get("values")
+        keys_any = ed2.get("keys")
+        vals_any = ed2.get("values")
         keys = keys_any if isinstance(keys_any, list) else []
         vals = vals_any if isinstance(vals_any, list) else []
         if len(keys) == 0 or len(vals) == 0:
@@ -1192,7 +1208,7 @@ def _render_expr(expr: Any) -> str:
         return "[" + ", ".join(parts) + "]"
 
     if kind == "ListComp":
-        gens_any = expr.get("generators")
+        gens_any = ed2.get("generators")
         gens = gens_any if isinstance(gens_any, list) else []
         if len(gens) != 1 or not isinstance(gens[0], dict):
             return "[]"
@@ -1203,17 +1219,23 @@ def _render_expr(expr: Any) -> str:
             return "[]"
         target_any = gen.get("target")
         iter_any = gen.get("iter")
-        if not isinstance(target_any, dict) or target_any.get("kind") != "Name":
+        if not isinstance(target_any, dict):
             return "[]"
-        if not isinstance(iter_any, dict) or iter_any.get("kind") != "RangeExpr":
+        td2: dict[str, Any] = target_any
+        if td2.get("kind") != "Name":
             return "[]"
-        loop_var = _safe_ident(target_any.get("id"), "i")
+        if not isinstance(iter_any, dict):
+            return "[]"
+        id: dict[str, Any] = iter_any
+        if id.get("kind") != "RangeExpr":
+            return "[]"
+        loop_var = _safe_ident(td2.get("id"), "i")
         if loop_var == "_":
             loop_var = "__lc_i"
-        start = _render_expr(iter_any.get("start"))
-        stop = _render_expr(iter_any.get("stop"))
-        step = _render_expr(iter_any.get("step"))
-        elt = _render_expr(expr.get("elt"))
+        start = _render_expr(id.get("start"))
+        stop = _render_expr(id.get("stop"))
+        step = _render_expr(id.get("step"))
+        elt = _render_expr(ed2.get("elt"))
         return (
             "({ () -> [Any] in "
             "var __out: [Any] = []; "
@@ -1245,14 +1267,14 @@ def _render_expr(expr: Any) -> str:
         )
 
     if kind == "IfExp":
-        test_expr = _render_truthy_expr(expr.get("test"))
-        body_expr = _render_expr(expr.get("body"))
-        else_expr = _render_expr(expr.get("orelse"))
+        test_expr = _render_truthy_expr(ed2.get("test"))
+        body_expr = _render_expr(ed2.get("body"))
+        else_expr = _render_expr(ed2.get("orelse"))
         return "__pytra_ifexp(" + test_expr + ", " + body_expr + ", " + else_expr + ")"
 
     if kind == "Subscript":
-        owner = _render_expr(expr.get("value"))
-        index_any = expr.get("slice")
+        owner = _render_expr(ed2.get("value"))
+        index_any = ed2.get("slice")
         if isinstance(index_any, dict) and index_any.get("kind") == "Slice":
             lower_any = index_any.get("lower")
             upper_any = index_any.get("upper")
@@ -1262,23 +1284,23 @@ def _render_expr(expr: Any) -> str:
 
         index = _render_expr(index_any)
         base = "__pytra_getIndex(" + owner + ", " + index + ")"
-        resolved = expr.get("resolved_type")
+        resolved = ed2.get("resolved_type")
         swift_t = _swift_type(resolved, allow_void=False)
         return _cast_from_any(base, swift_t)
 
     if kind == "IsInstance":
-        lhs = _render_expr(expr.get("value"))
-        return _render_isinstance_check(lhs, expr.get("expected_type_id"))
+        lhs = _render_expr(ed2.get("value"))
+        return _render_isinstance_check(lhs, ed2.get("expected_type_id"))
 
     if kind == "ObjLen":
-        return "__pytra_len(" + _render_expr(expr.get("value")) + ")"
+        return "__pytra_len(" + _render_expr(ed2.get("value")) + ")"
     if kind == "ObjStr":
-        return "__pytra_str(" + _render_expr(expr.get("value")) + ")"
+        return "__pytra_str(" + _render_expr(ed2.get("value")) + ")"
     if kind == "ObjBool":
-        return "__pytra_truthy(" + _render_expr(expr.get("value")) + ")"
+        return "__pytra_truthy(" + _render_expr(ed2.get("value")) + ")"
 
     if kind == "Unbox" or kind == "Box":
-        return _render_expr(expr.get("value"))
+        return _render_expr(ed2.get("value"))
 
     return "__pytra_any_default()"
 
@@ -1315,9 +1337,10 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool) -> list[str]:
 def _target_name(target: Any) -> str:
     if not isinstance(target, dict):
         return "tmp"
-    kind = target.get("kind")
+    td: dict[str, Any] = target
+    kind = td.get("kind")
     if kind == "Name":
-        return _safe_ident(target.get("id"), "tmp")
+        return _safe_ident(td.get("id"), "tmp")
     if kind == "Attribute":
         return _render_attribute_expr(target)
     return "tmp"
@@ -1375,7 +1398,8 @@ def _ref_var_set(ctx: dict[str, Any]) -> set[str]:
 def _is_container_east_type(type_name: Any) -> bool:
     if not isinstance(type_name, str):
         return False
-    if type_name.startswith("list[") or type_name.startswith("tuple[") or type_name.startswith("dict["):
+    ts: str = type_name
+    if ts.startswith("list[") or ts.startswith("tuple[") or ts.startswith("dict["):
         return True
     return type_name in {"bytes", "bytearray"}
 
@@ -1389,9 +1413,12 @@ def _materialize_container_value_from_ref(
 ) -> str | None:
     if target_type not in {"[Any]", "[AnyHashable: Any]"}:
         return None
-    if not isinstance(value_expr, dict) or value_expr.get("kind") != "Name":
+    if not isinstance(value_expr, dict):
         return None
-    source_name = _safe_ident(value_expr.get("id"), "")
+    vd2: dict[str, Any] = value_expr
+    if vd2.get("kind") != "Name":
+        return None
+    source_name = _safe_ident(vd2.get("id"), "")
     if source_name == "" or source_name == target_name:
         return None
     if source_name not in _ref_var_set(ctx):
@@ -1405,9 +1432,10 @@ def _materialize_container_value_from_ref(
 def _infer_swift_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
     if not isinstance(expr, dict):
         return "Any"
-    kind = expr.get("kind")
+    ed: dict[str, Any] = expr
+    kind = ed.get("kind")
     if kind == "Name" and isinstance(type_map, dict):
-        ident = _safe_ident(expr.get("id"), "")
+        ident = _safe_ident(ed.get("id"), "")
         if ident in type_map:
             return type_map[ident]
     if kind == "Call":
@@ -1444,7 +1472,7 @@ def _infer_swift_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
         }:
             return "Double"
         if name in {"min", "max"}:
-            args_any = expr.get("args")
+            args_any = ed.get("args")
             args = args_any if isinstance(args_any, list) else []
             saw_float = False
             saw_int = False
@@ -1460,55 +1488,56 @@ def _infer_swift_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
                 return "Double"
             if saw_int:
                 return "Int64"
-            resolved = _swift_type(expr.get("resolved_type"), allow_void=False)
+            resolved = _swift_type(ed.get("resolved_type"), allow_void=False)
             if resolved in {"Int64", "Double"}:
                 return resolved
             return "Any"
-        if name in _CLASS_NAMES:
+        if name in _CLASS_NAMES[0]:
             return name
     if kind == "BinOp":
-        op = expr.get("op")
+        op = ed.get("op")
         if op == "Div":
             return "Double"
-        left_t = _infer_swift_type(expr.get("left"), type_map)
-        right_t = _infer_swift_type(expr.get("right"), type_map)
+        left_t = _infer_swift_type(ed.get("left"), type_map)
+        right_t = _infer_swift_type(ed.get("right"), type_map)
         if left_t == "Double" or right_t == "Double":
             return "Double"
         if left_t == "Int64" and right_t == "Int64":
             return "Int64"
         if op == "Mult":
-            left_any = expr.get("left")
-            right_any = expr.get("right")
+            left_any = ed.get("left")
+            right_any = ed.get("right")
             if isinstance(left_any, dict) and left_any.get("kind") == "List":
                 return "[Any]"
             if isinstance(right_any, dict) and right_any.get("kind") == "List":
                 return "[Any]"
     if kind == "IfExp":
-        body_t = _infer_swift_type(expr.get("body"), type_map)
-        else_t = _infer_swift_type(expr.get("orelse"), type_map)
+        body_t = _infer_swift_type(ed.get("body"), type_map)
+        else_t = _infer_swift_type(ed.get("orelse"), type_map)
         if body_t == else_t:
             return body_t
         if body_t == "Double" or else_t == "Double":
             return "Double"
         if body_t == "Int64" and else_t == "Int64":
             return "Int64"
-    resolved = expr.get("resolved_type")
+    resolved = ed.get("resolved_type")
     return _swift_type(resolved, allow_void=False)
 
 
 def _expr_emits_target_type(value_expr: Any, target_type: str, type_map: dict[str, str] | None = None) -> bool:
     if not isinstance(value_expr, dict):
         return False
-    kind = value_expr.get("kind")
+    vd: dict[str, Any] = value_expr
+    kind = vd.get("kind")
     if kind == "Name":
         if isinstance(type_map, dict):
-            ident = _safe_ident(value_expr.get("id"), "")
+            ident = _safe_ident(vd.get("id"), "")
             mapped_any = type_map.get(ident)
             mapped = mapped_any if isinstance(mapped_any, str) else ""
             return mapped == target_type
         return False
     if kind == "Constant":
-        value = value_expr.get("value")
+        value = vd.get("value")
         if target_type == "Int64":
             return isinstance(value, int) and not isinstance(value, bool)
         if target_type == "Double":
@@ -1519,7 +1548,7 @@ def _expr_emits_target_type(value_expr: Any, target_type: str, type_map: dict[st
             return isinstance(value, str)
         return False
     if kind == "BinOp":
-        resolved = _swift_type(value_expr.get("resolved_type"), allow_void=False)
+        resolved = _swift_type(vd.get("resolved_type"), allow_void=False)
         return resolved == target_type
     if kind in {"Compare", "BoolOp", "IsInstance"}:
         return target_type == "Bool"
@@ -1537,15 +1566,16 @@ def _expr_emits_target_type(value_expr: Any, target_type: str, type_map: dict[st
             return target_type == "Double"
         if callee == "len":
             return target_type == "Int64"
-        resolved = _swift_type(value_expr.get("resolved_type"), allow_void=False)
-        func_any = value_expr.get("func")
+        resolved = _swift_type(vd.get("resolved_type"), allow_void=False)
+        func_any = vd.get("func")
         if isinstance(func_any, dict):
-            f_kind = func_any.get("kind")
+            fd: dict[str, Any] = func_any
+            f_kind = fd.get("kind")
             if f_kind == "Name":
                 if callee != "" and not callee.startswith("__pytra_") and resolved == target_type:
                     return True
             if f_kind == "Attribute":
-                attr = _safe_ident(func_any.get("attr"), "")
+                attr = _safe_ident(fd.get("attr"), "")
                 if attr not in {"get", "getOrElse"} and not attr.startswith("__pytra_") and resolved == target_type:
                     return True
     return False
@@ -1562,17 +1592,19 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
     target_plan_any = stmt.get("target_plan")
     if not isinstance(iter_plan_any, dict):
         raise RuntimeError("swift native emitter: unsupported ForCore iter_plan")
+    id: dict[str, Any] = iter_plan_any
     if not isinstance(target_plan_any, dict):
         raise RuntimeError("swift native emitter: unsupported ForCore target_plan")
+    td: dict[str, Any] = target_plan_any
 
     lines: list[str] = []
-    if iter_plan_any.get("kind") == "StaticRangeForPlan" and target_plan_any.get("kind") == "NameTarget":
-        target_name = _safe_ident(target_plan_any.get("id"), "i")
+    if id.get("kind") == "StaticRangeForPlan" and td.get("kind") == "NameTarget":
+        target_name = _safe_ident(td.get("id"), "i")
         if target_name == "_":
             target_name = _fresh_tmp(ctx, "loop")
-        start_node = iter_plan_any.get("start")
-        stop_node = iter_plan_any.get("stop")
-        step_node = iter_plan_any.get("step")
+        start_node = id.get("start")
+        stop_node = id.get("stop")
+        step_node = id.get("step")
         start = _to_int_expr(_render_expr(start_node))
         stop = _to_int_expr(_render_expr(stop_node))
         step = _to_int_expr(_render_expr(step_node))
@@ -1623,8 +1655,8 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         lines.append(indent + "}")
         return lines
 
-    if iter_plan_any.get("kind") == "RuntimeIterForPlan":
-        iter_expr = _render_expr(iter_plan_any.get("iter_expr"))
+    if id.get("kind") == "RuntimeIterForPlan":
+        iter_expr = _render_expr(id.get("iter_expr"))
         iter_tmp = _fresh_tmp(ctx, "iter")
         idx_tmp = _fresh_tmp(ctx, "i")
         lines.append(indent + "let " + iter_tmp + " = __pytra_as_list(" + iter_expr + ")")
@@ -1640,12 +1672,12 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             "return_type": ctx.get("return_type", ""),
             "continue_prefix": idx_tmp + " += 1",
         }
-        target_kind = target_plan_any.get("kind")
+        target_kind = td.get("kind")
         if target_kind == "NameTarget":
-            target_name = _safe_ident(target_plan_any.get("id"), "item")
+            target_name = _safe_ident(td.get("id"), "item")
             if target_name == "_":
                 target_name = _fresh_tmp(ctx, "item")
-            target_type = _swift_type(target_plan_any.get("target_type"), allow_void=False)
+            target_type = _swift_type(td.get("target_type"), allow_void=False)
             rhs = iter_tmp + "[Int(" + idx_tmp + ")]"
             if target_type == "Any":
                 lines.append(indent + "    let " + target_name + " = " + rhs)
@@ -1656,16 +1688,19 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
         elif target_kind == "TupleTarget":
             tuple_tmp = _fresh_tmp(ctx, "tuple")
             lines.append(indent + "    let " + tuple_tmp + " = __pytra_as_list(" + iter_tmp + "[Int(" + idx_tmp + ")])")
-            elems_any = target_plan_any.get("elements")
+            elems_any = td.get("elements")
             elems = elems_any if isinstance(elems_any, list) else []
             i = 0
             while i < len(elems):
                 elem = elems[i]
-                if not isinstance(elem, dict) or elem.get("kind") != "NameTarget":
+                if not isinstance(elem, dict):
                     raise RuntimeError("swift native emitter: unsupported RuntimeIter tuple target element")
-                name = _safe_ident(elem.get("id"), "item_" + str(i))
+                ed2: dict[str, Any] = elem
+                if ed2.get("kind") != "NameTarget":
+                    raise RuntimeError("swift native emitter: unsupported RuntimeIter tuple target element")
+                name = _safe_ident(ed2.get("id"), "item_" + str(i))
                 if name != "_":
-                    elem_type = _swift_type(elem.get("target_type"), allow_void=False)
+                    elem_type = _swift_type(ed2.get("target_type"), allow_void=False)
                     rhs = tuple_tmp + "[Int(" + str(i) + ")]"
                     if elem_type == "Any":
                         lines.append(indent + "    let " + name + " = " + rhs)
@@ -1697,9 +1732,12 @@ def _emit_tuple_assign(
     indent: str,
     ctx: dict[str, Any],
 ) -> list[str] | None:
-    if not isinstance(target_any, dict) or target_any.get("kind") != "Tuple":
+    if not isinstance(target_any, dict):
         return None
-    elems_any = target_any.get("elements")
+    td: dict[str, Any] = target_any
+    if td.get("kind") != "Tuple":
+        return None
+    elems_any = td.get("elements")
     elems = elems_any if isinstance(elems_any, list) else []
     if len(elems) == 0:
         return None
@@ -1710,14 +1748,16 @@ def _emit_tuple_assign(
     type_map = _type_map(ctx)
     tuple_types = _tuple_element_types(decl_type_any)
     if len(tuple_types) == 0 and isinstance(value_any, dict):
-        tuple_types = _tuple_element_types(value_any.get("resolved_type"))
+        vad: dict[str, Any] = value_any
+        tuple_types = _tuple_element_types(vad.get("resolved_type"))
 
     i = 0
     while i < len(elems):
         elem = elems[i]
         if not isinstance(elem, dict):
             return None
-        kind = elem.get("kind")
+        ed: dict[str, Any] = elem
+        kind = ed.get("kind")
         rhs = tuple_tmp + "[" + str(i) + "]"
         elem_type = "Any"
         if i < len(tuple_types):
@@ -1725,7 +1765,7 @@ def _emit_tuple_assign(
         casted = _cast_from_any(rhs, elem_type)
 
         if kind == "Name":
-            name = _safe_ident(elem.get("id"), "tmp_" + str(i))
+            name = _safe_ident(ed.get("id"), "tmp_" + str(i))
             if name not in declared:
                 lines.append(indent + "var " + name + ": " + elem_type + " = " + casted)
                 declared.add(name)
@@ -1803,20 +1843,21 @@ def _emit_subscript_store(target: dict[str, Any], value_expr: str, *, indent: st
 def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if not isinstance(stmt, dict):
         raise RuntimeError("swift native emitter: unsupported statement")
-    kind = stmt.get("kind")
+    sd2: dict[str, Any] = stmt
+    kind = sd2.get("kind")
 
     if kind == "Return":
-        if "value" in stmt and stmt.get("value") is not None:
-            value = _render_expr(stmt.get("value"))
+        if "value" in stmt and sd2.get("value") is not None:
+            value = _render_expr(sd2.get("value"))
             return_type_any = ctx.get("return_type")
             return_type = return_type_any if isinstance(return_type_any, str) else ""
-            if return_type not in {"", "Any"} and _needs_cast(stmt.get("value"), return_type, _type_map(ctx)):
+            if return_type not in {"", "Any"} and _needs_cast(sd2.get("value"), return_type, _type_map(ctx)):
                 value = _cast_from_any(value, return_type)
             return [indent + "return " + value]
         return [indent + "return"]
 
     if kind == "Expr":
-        value_any = stmt.get("value")
+        value_any = sd2.get("value")
         if isinstance(value_any, dict) and value_any.get("kind") == "Name":
             raw_ident = value_any.get("id")
             if raw_ident == "break":
@@ -1854,15 +1895,15 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return [indent + _render_expr(value_any)]
 
     if kind == "AnnAssign":
-        target_any = stmt.get("target")
+        target_any = sd2.get("target")
         if isinstance(target_any, dict) and target_any.get("kind") == "Attribute":
-            return [indent + _render_attribute_expr(target_any) + " = " + _render_expr(stmt.get("value"))]
+            return [indent + _render_attribute_expr(target_any) + " = " + _render_expr(sd2.get("value"))]
 
         tuple_lines = _emit_tuple_assign(
             target_any,
-            stmt.get("value"),
-            decl_type_any=(stmt.get("decl_type") or stmt.get("annotation")),
-            declare_hint=(stmt.get("declare") is not False),
+            sd2.get("value"),
+            decl_type_any=(sd2.get("decl_type") or sd2.get("annotation")),
+            declare_hint=(sd2.get("declare") is not False),
             indent=indent,
             ctx=ctx,
         )
@@ -1872,13 +1913,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         target = _target_name(target_any)
         declared = _declared_set(ctx)
         type_map = _type_map(ctx)
-        swift_type = _swift_type(stmt.get("decl_type") or stmt.get("annotation"), allow_void=False)
+        swift_type = _swift_type(sd2.get("decl_type") or sd2.get("annotation"), allow_void=False)
         if swift_type == "Any":
-            inferred = _infer_swift_type(stmt.get("value"), _type_map(ctx))
+            inferred = _infer_swift_type(sd2.get("value"), _type_map(ctx))
             if inferred != "Any":
                 swift_type = inferred
 
-        stmt_value = stmt.get("value")
+        stmt_value = sd2.get("value")
         if stmt_value is None:
             value = _default_return_expr(swift_type)
         else:
@@ -1893,7 +1934,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             )
             if materialized is not None:
                 value = materialized
-        if stmt.get("declare") is False or target in declared:
+        if sd2.get("declare") is False or target in declared:
             if target not in declared:
                 declared.add(target)
                 type_map[target] = swift_type
@@ -1920,18 +1961,18 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return [indent + "var " + target + ": " + swift_type + " = " + value]
 
     if kind == "Assign":
-        targets_any = stmt.get("targets")
+        targets_any = sd2.get("targets")
         targets = targets_any if isinstance(targets_any, list) else []
-        if len(targets) == 0 and isinstance(stmt.get("target"), dict):
-            targets = [stmt.get("target")]
+        if len(targets) == 0 and isinstance(sd2.get("target"), dict):
+            targets = [sd2.get("target")]
         if len(targets) == 0:
             raise RuntimeError("swift native emitter: Assign without target")
 
         tuple_lines = _emit_tuple_assign(
             targets[0],
-            stmt.get("value"),
-            decl_type_any=stmt.get("decl_type"),
-            declare_hint=bool(stmt.get("declare")),
+            sd2.get("value"),
+            decl_type_any=sd2.get("decl_type"),
+            declare_hint=bool(sd2.get("declare")),
             indent=indent,
             ctx=ctx,
         )
@@ -1940,26 +1981,26 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
 
         if isinstance(targets[0], dict) and targets[0].get("kind") == "Attribute":
             lhs_attr = _render_attribute_expr(targets[0])
-            value_attr = _render_expr(stmt.get("value"))
+            value_attr = _render_expr(sd2.get("value"))
             return [indent + lhs_attr + " = " + value_attr]
 
         if isinstance(targets[0], dict) and targets[0].get("kind") == "Subscript":
             tgt = targets[0]
-            value = _render_expr(stmt.get("value"))
+            value = _render_expr(sd2.get("value"))
             return _emit_subscript_store(tgt, value, indent=indent, ctx=ctx)
 
         lhs = _target_name(targets[0])
         declared = _declared_set(ctx)
         type_map = _type_map(ctx)
-        value = _render_expr(stmt.get("value"))
+        value = _render_expr(sd2.get("value"))
 
-        if stmt.get("declare"):
+        if sd2.get("declare"):
             if lhs in declared:
                 if lhs in type_map and type_map[lhs] != "Any":
-                    if _needs_cast(stmt.get("value"), type_map[lhs], _type_map(ctx)):
+                    if _needs_cast(sd2.get("value"), type_map[lhs], _type_map(ctx)):
                         value = _cast_from_any(value, type_map[lhs])
                     materialized_existing = _materialize_container_value_from_ref(
-                        stmt.get("value"),
+                        sd2.get("value"),
                         target_type=type_map[lhs],
                         target_name=lhs,
                         ctx=ctx,
@@ -1967,15 +2008,15 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                     if materialized_existing is not None:
                         value = materialized_existing
                 return [indent + lhs + " = " + value]
-            swift_type = _swift_type(stmt.get("decl_type"), allow_void=False)
+            swift_type = _swift_type(sd2.get("decl_type"), allow_void=False)
             if swift_type == "Any":
-                inferred = _infer_swift_type(stmt.get("value"), _type_map(ctx))
+                inferred = _infer_swift_type(sd2.get("value"), _type_map(ctx))
                 if inferred != "Any":
                     swift_type = inferred
-            if swift_type != "Any" and _needs_cast(stmt.get("value"), swift_type, _type_map(ctx)):
+            if swift_type != "Any" and _needs_cast(sd2.get("value"), swift_type, _type_map(ctx)):
                 value = _cast_from_any(value, swift_type)
             materialized_decl = _materialize_container_value_from_ref(
-                stmt.get("value"),
+                sd2.get("value"),
                 target_type=swift_type,
                 target_name=lhs,
                 ctx=ctx,
@@ -1987,13 +2028,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             return [indent + "var " + lhs + ": " + swift_type + " = " + value]
 
         if lhs not in declared:
-            inferred = _infer_swift_type(stmt.get("value"), _type_map(ctx))
+            inferred = _infer_swift_type(sd2.get("value"), _type_map(ctx))
             declared.add(lhs)
             type_map[lhs] = inferred
-            if inferred != "Any" and _needs_cast(stmt.get("value"), inferred, _type_map(ctx)):
+            if inferred != "Any" and _needs_cast(sd2.get("value"), inferred, _type_map(ctx)):
                 value = _cast_from_any(value, inferred)
             materialized_inferred = _materialize_container_value_from_ref(
-                stmt.get("value"),
+                sd2.get("value"),
                 target_type=inferred,
                 target_name=lhs,
                 ctx=ctx,
@@ -2002,10 +2043,10 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                 value = materialized_inferred
             return [indent + "var " + lhs + ": " + inferred + " = " + value]
         if lhs in type_map and type_map[lhs] != "Any":
-            if _needs_cast(stmt.get("value"), type_map[lhs], _type_map(ctx)):
+            if _needs_cast(sd2.get("value"), type_map[lhs], _type_map(ctx)):
                 value = _cast_from_any(value, type_map[lhs])
             materialized_known = _materialize_container_value_from_ref(
-                stmt.get("value"),
+                sd2.get("value"),
                 target_type=type_map[lhs],
                 target_name=lhs,
                 ctx=ctx,
@@ -2015,9 +2056,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return [indent + lhs + " = " + value]
 
     if kind == "AugAssign":
-        lhs = _target_name(stmt.get("target"))
-        rhs = _render_expr(stmt.get("value"))
-        op = stmt.get("op")
+        lhs = _target_name(sd2.get("target"))
+        rhs = _render_expr(sd2.get("value"))
+        op = sd2.get("op")
         if op == "Add":
             return [indent + lhs + " += " + rhs]
         if op == "Sub":
@@ -2034,9 +2075,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return _emit_swap(stmt, indent=indent, ctx=ctx)
 
     if kind == "If":
-        test_expr = _render_truthy_expr(stmt.get("test"))
+        test_expr = _render_truthy_expr(sd2.get("test"))
         lines: list[str] = [indent + "if " + test_expr + " {"]
-        body_any = stmt.get("body")
+        body_any = sd2.get("body")
         body = body_any if isinstance(body_any, list) else []
         body_ctx: dict[str, Any] = {
             "tmp": ctx.get("tmp", 0),
@@ -2051,7 +2092,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=body_ctx))
             i += 1
 
-        orelse_any = stmt.get("orelse")
+        orelse_any = sd2.get("orelse")
         orelse = orelse_any if isinstance(orelse_any, list) else []
         if len(orelse) == 0:
             ctx["tmp"] = body_ctx.get("tmp", ctx.get("tmp", 0))
@@ -2082,9 +2123,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return lines
 
     if kind == "While":
-        test_expr = _render_truthy_expr(stmt.get("test"))
+        test_expr = _render_truthy_expr(sd2.get("test"))
         lines = [indent + "while " + test_expr + " {"]
-        body_any = stmt.get("body")
+        body_any = sd2.get("body")
         body = body_any if isinstance(body_any, list) else []
         body_ctx: dict[str, Any] = {
             "tmp": ctx.get("tmp", 0),
@@ -2123,32 +2164,33 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
 
     if kind == "Try":
         lines: list[str] = []
-        body_any = stmt.get("body")
+        body_any = sd2.get("body")
         body = body_any if isinstance(body_any, list) else []
         i = 0
         while i < len(body):
             lines.extend(_emit_stmt(body[i], indent=indent, ctx=ctx))
             i += 1
-        handlers_any = stmt.get("handlers")
+        handlers_any = sd2.get("handlers")
         handlers = handlers_any if isinstance(handlers_any, list) else []
         i = 0
         while i < len(handlers):
             h = handlers[i]
             if isinstance(h, dict):
-                h_body_any = h.get("body")
+                hd: dict[str, Any] = h
+                h_body_any = hd.get("body")
                 h_body = h_body_any if isinstance(h_body_any, list) else []
                 j = 0
                 while j < len(h_body):
                     lines.extend(_emit_stmt(h_body[j], indent=indent, ctx=ctx))
                     j += 1
             i += 1
-        orelse_any = stmt.get("orelse")
+        orelse_any = sd2.get("orelse")
         orelse = orelse_any if isinstance(orelse_any, list) else []
         i = 0
         while i < len(orelse):
             lines.extend(_emit_stmt(orelse[i], indent=indent, ctx=ctx))
             i += 1
-        final_any = stmt.get("finalbody")
+        final_any = sd2.get("finalbody")
         final = final_any if isinstance(final_any, list) else []
         i = 0
         while i < len(final):
@@ -2162,14 +2204,15 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
 def _stmt_guarantees_return(stmt: Any) -> bool:
     if not isinstance(stmt, dict):
         return False
-    kind = stmt.get("kind")
+    sd: dict[str, Any] = stmt
+    kind = sd.get("kind")
     if kind == "Return":
         return True
     if kind != "If":
         return False
-    body_any = stmt.get("body")
+    body_any = sd.get("body")
     body = body_any if isinstance(body_any, list) else []
-    orelse_any = stmt.get("orelse")
+    orelse_any = sd.get("orelse")
     orelse = orelse_any if isinstance(orelse_any, list) else []
     if len(orelse) == 0:
         return False
@@ -2604,15 +2647,16 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
     """Emit Swift native source from EAST3 Module."""
     if not isinstance(east_doc, dict):
         raise RuntimeError("swift native emitter: east_doc must be dict")
-    if east_doc.get("kind") != "Module":
+    ed: dict[str, Any] = east_doc
+    if ed.get("kind") != "Module":
         raise RuntimeError("swift native emitter: root kind must be Module")
-    body_any = east_doc.get("body")
+    body_any = ed.get("body")
     if not isinstance(body_any, list):
         raise RuntimeError("swift native emitter: Module.body must be list")
     reject_backend_typed_vararg_signatures(east_doc, backend_name="Swift backend")
     reject_backend_general_union_type_exprs(east_doc, backend_name="Swift backend")
     reject_backend_homogeneous_tuple_ellipsis_type_exprs(east_doc, backend_name="Swift backend")
-    main_guard_any = east_doc.get("main_guard_body")
+    main_guard_any = ed.get("main_guard_body")
     main_guard = main_guard_any if isinstance(main_guard_any, list) else []
 
     classes: list[dict[str, Any]] = []
@@ -2621,28 +2665,24 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
     while i < len(body_any):
         node = body_any[i]
         if isinstance(node, dict):
-            kind = node.get("kind")
+            nd: dict[str, Any] = node
+            kind = nd.get("kind")
             if kind == "ClassDef":
                 classes.append(node)
             elif kind == "FunctionDef":
                 functions.append(node)
         i += 1
 
-    global _CLASS_NAMES
-    global _CLASS_BASES
-    global _CLASS_METHODS
-    global _MAIN_CALL_ALIAS
-    global _RELATIVE_IMPORT_NAME_ALIASES
-    _CLASS_NAMES = set()
-    _CLASS_BASES = {}
-    _CLASS_METHODS = {}
-    _MAIN_CALL_ALIAS = ""
-    _RELATIVE_IMPORT_NAME_ALIASES = _collect_relative_import_name_aliases(east_doc)
+    _CLASS_NAMES[0] = set()
+    _CLASS_BASES[0] = {}
+    _CLASS_METHODS[0] = {}
+    _MAIN_CALL_ALIAS[0] = ""
+    _RELATIVE_IMPORT_NAME_ALIASES[0] = _collect_relative_import_name_aliases(east_doc)
     i = 0
     while i < len(classes):
         cls = classes[i]
         cls_name = _safe_ident(cls.get("name"), "PytraClass")
-        _CLASS_NAMES.add(cls_name)
+        _CLASS_NAMES[0].add(cls_name)
         base_any = cls.get("base")
         base_name = _safe_ident(base_any, "") if isinstance(base_any, str) else ""
         _CLASS_BASES[cls_name] = base_name
@@ -2711,7 +2751,7 @@ def transpile_to_swift_native(east_doc: dict[str, Any]) -> str:
     if not has_user_main and has_pytra_main:
         has_user_main = True
         user_main_symbol = "__pytra_main"
-        _MAIN_CALL_ALIAS = "__pytra_main"
+        _MAIN_CALL_ALIAS[0] = "__pytra_main"
     if has_user_main:
         lines.append("")
         lines.append("func __pytra_entry_main() {")

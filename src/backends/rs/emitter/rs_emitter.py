@@ -102,19 +102,20 @@ class RustEmitter(CodeEmitter):
     def _find_unsupported_general_union_type_expr(self, value: Any) -> dict[str, Any] | None:
         if not self._is_type_expr_payload(value):
             return None
-        kind = self.any_dict_get_str(value, "kind", "")
+        d: dict[str, Any] = value
+        kind = self.any_dict_get_str(d, "kind", "")
         if kind == "UnionType":
-            if self.any_dict_get_str(value, "union_mode", "") != "dynamic":
-                return value
-            for option in self.any_to_list(value.get("options")):
+            if self.any_dict_get_str(d, "union_mode", "") != "dynamic":
+                return d
+            for option in self.any_to_list(d.get("options")):
                 found = self._find_unsupported_general_union_type_expr(option)
                 if found is not None:
                     return found
             return None
         if kind == "OptionalType":
-            return self._find_unsupported_general_union_type_expr(value.get("inner"))
+            return self._find_unsupported_general_union_type_expr(d.get("inner"))
         if kind == "GenericType":
-            for arg in self.any_to_list(value.get("args")):
+            for arg in self.any_to_list(d.get("args")):
                 found = self._find_unsupported_general_union_type_expr(arg)
                 if found is not None:
                     return found
@@ -193,15 +194,16 @@ class RustEmitter(CodeEmitter):
     def _collect_store_name_counts_from_target(self, target: Any, counts: dict[str, int]) -> None:
         """代入 target から束縛名書き込み回数を収集する。"""
         if isinstance(target, dict):
-            kind = self.any_dict_get_str(target, "kind", "")
+            td: dict[str, Any] = target
+            kind = self.any_dict_get_str(td, "kind", "")
             if kind == "Name":
-                self._increment_name_count(counts, self.any_dict_get_str(target, "id", ""))
+                self._increment_name_count(counts, self.any_dict_get_str(td, "id", ""))
                 return
             if kind == "Attribute" or kind == "Subscript":
-                self._collect_store_name_counts_from_target(target.get("value"), counts)
+                self._collect_store_name_counts_from_target(td.get("value"), counts)
                 return
             if kind == "Tuple" or kind == "List":
-                elems_obj: Any = target.get("elements")
+                elems_obj: Any = td.get("elements")
                 elems: list[Any] = elems_obj if isinstance(elems_obj, list) else []
                 for elem in elems:
                     self._collect_store_name_counts_from_target(elem, counts)
@@ -323,9 +325,10 @@ class RustEmitter(CodeEmitter):
     def _expr_mentions_name(self, node: Any, name: str) -> bool:
         """式/文サブツリーに `Name(name)` が含まれるかを返す。"""
         if isinstance(node, dict):
-            if self.any_dict_get_str(node, "kind", "") == "Name" and self.any_dict_get_str(node, "id", "") == name:
+            nd: dict[str, Any] = node
+            if self.any_dict_get_str(nd, "kind", "") == "Name" and self.any_dict_get_str(nd, "id", "") == name:
                 return True
-            for _k, v in node.items():
+            for _k, v in nd.items():
                 if self._expr_mentions_name(v, name):
                     return True
             return False
@@ -467,9 +470,10 @@ class RustEmitter(CodeEmitter):
 
     def _collect_dict_order_sensitive_names_from_expr(self, node: Any, dict_types: dict[str, str], out: set[str]) -> None:
         if isinstance(node, dict):
+            nd4: dict[str, Any] = node
             kind = self.any_dict_get_str(node, "kind", "")
             if kind == "Call":
-                fn = self.any_to_dict_or_empty(node.get("func"))
+                fn = self.any_to_dict_or_empty(nd4.get("func"))
                 mark_call_args_unsafe = False
                 if self.any_dict_get_str(fn, "kind", "") == "Attribute":
                     attr = self.any_dict_get_str(fn, "attr", "")
@@ -506,7 +510,7 @@ class RustEmitter(CodeEmitter):
                 else:
                     mark_call_args_unsafe = True
                 if mark_call_args_unsafe:
-                    for arg_node in self.any_to_list(node.get("args")):
+                    for arg_node in self.any_to_list(nd4.get("args")):
                         arg_d = self.any_to_dict_or_empty(arg_node)
                         if self.any_dict_get_str(arg_d, "kind", "") == "Name":
                             arg_name = self.any_dict_get_str(arg_d, "id", "")
@@ -514,7 +518,7 @@ class RustEmitter(CodeEmitter):
                                 out.add(arg_name)
             if kind == "Name":
                 return
-            for _k, v in node.items():
+            for _k, v in nd4.items():
                 self._collect_dict_order_sensitive_names_from_expr(v, dict_types, out)
             return
         if isinstance(node, list):
@@ -592,15 +596,16 @@ class RustEmitter(CodeEmitter):
     def _collect_self_called_methods_from_expr(self, node: Any, out: set[str]) -> None:
         """式木から `self.method(...)` 呼び出しの method 名を収集する。"""
         if isinstance(node, dict):
+            nd3: dict[str, Any] = node
             if self.any_dict_get_str(node, "kind", "") == "Call":
-                fn = self.any_to_dict_or_empty(node.get("func"))
+                fn = self.any_to_dict_or_empty(nd3.get("func"))
                 if self.any_dict_get_str(fn, "kind", "") == "Attribute":
                     owner = self.any_to_dict_or_empty(fn.get("value"))
                     if self.any_dict_get_str(owner, "kind", "") == "Name" and self.any_dict_get_str(owner, "id", "") == "self":
                         attr = self.any_dict_get_str(fn, "attr", "")
                         if attr != "":
                             out.add(attr)
-            for _k, v in node.items():
+            for _k, v in nd3.items():
                 self._collect_self_called_methods_from_expr(v, out)
             return
         if isinstance(node, list):
@@ -657,9 +662,10 @@ class RustEmitter(CodeEmitter):
     def _collect_mutating_call_counts_from_expr(self, node: Any, out: dict[str, int]) -> None:
         """破壊的メソッド呼び出し receiver 名の出現回数を収集する。"""
         if isinstance(node, dict):
+            nd2: dict[str, Any] = node
             kind = self.any_dict_get_str(node, "kind", "")
             if kind == "Call":
-                fn = self.any_to_dict_or_empty(node.get("func"))
+                fn = self.any_to_dict_or_empty(nd2.get("func"))
                 if self.any_dict_get_str(fn, "kind", "") == "Attribute":
                     attr = self.any_dict_get_str(fn, "attr", "")
                     owner = self.any_to_dict_or_empty(fn.get("value"))
@@ -673,7 +679,7 @@ class RustEmitter(CodeEmitter):
                         owner_t = self.normalize_type_name(self.get_expr_type(root_owner))
                         if owner_t in self.class_names:
                             self._increment_name_count(out, owner_name)
-            for _k, v in node.items():
+            for _k, v in nd2.items():
                 self._collect_mutating_call_counts_from_expr(v, out)
             return
         if isinstance(node, list):
@@ -751,7 +757,8 @@ class RustEmitter(CodeEmitter):
     def _doc_mentions_any(self, node: Any) -> bool:
         """EAST 全体に `Any/object` 型が含まれるかを粗く判定する。"""
         if isinstance(node, dict):
-            for _k, v in node.items():
+            nd: dict[str, Any] = node
+            for _k, v in nd.items():
                 if self._doc_mentions_any(v):
                     return True
             return False
@@ -771,11 +778,12 @@ class RustEmitter(CodeEmitter):
     def _doc_mentions_isinstance(self, node: Any) -> bool:
         """EAST 全体に type_id runtime helper が必要なノードが含まれるかを判定する。"""
         if isinstance(node, dict):
+            nd: dict[str, Any] = node
             kind = self.any_dict_get_str(node, "kind", "")
             if kind in {"IsInstance", "IsSubtype", "IsSubclass", "ObjTypeId"}:
                 return True
             if kind == "Call":
-                fn = self.any_to_dict_or_empty(node.get("func"))
+                fn = self.any_to_dict_or_empty(nd.get("func"))
                 if self.any_dict_get_str(fn, "kind", "") == "Name":
                     fn_name = self.any_dict_get_str(fn, "id", "")
                     if fn_name in {
@@ -790,7 +798,7 @@ class RustEmitter(CodeEmitter):
                         "py_tid_runtime_type_id",
                     }:
                         return True
-            for _k, v in node.items():
+            for _k, v in nd.items():
                 if self._doc_mentions_isinstance(v):
                     return True
             return False

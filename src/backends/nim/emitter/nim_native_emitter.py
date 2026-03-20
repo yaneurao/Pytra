@@ -69,18 +69,21 @@ def _collect_relative_import_name_aliases(east_doc: dict[str, Any]) -> dict[str,
     i = 0
     while i < len(body):
         stmt = body[i]
-        if not isinstance(stmt, dict) or stmt.get("kind") != "ImportFrom":
+        if not isinstance(stmt, dict):
+            i += 1
+        sd2: dict[str, Any] = stmt
+        if sd2.get("kind") != "ImportFrom":
             i += 1
             continue
-        module_any = stmt.get("module")
+        module_any = sd2.get("module")
         module_id = module_any if isinstance(module_any, str) else ""
-        level_any = stmt.get("level")
+        level_any = sd2.get("level")
         level = level_any if isinstance(level_any, int) else 0
         if level <= 0 and not module_id.startswith("."):
             i += 1
             continue
         module_path = _relative_import_module_path(module_id)
-        names_any = stmt.get("names")
+        names_any = sd2.get("names")
         names = names_any if isinstance(names_any, list) else []
         j = 0
         while j < len(names):
@@ -150,42 +153,60 @@ def _nim_string(text: str) -> str:
     return '"' + out + '"'
 
 def _binop_symbol(op: str) -> str:
-    if op == "Add": return "+"
-    if op == "Sub": return "-"
-    if op == "Mult": return "*"
-    if op == "Div": return "/"
-    if op == "FloorDiv": return "div"
-    if op == "Mod": return "mod"
-    if op == "BitAnd": return "and"
-    if op == "BitOr": return "or"
-    if op == "BitXor": return "xor"
-    if op == "LShift": return "shl"
-    if op == "RShift": return "shr"
+    if op == "Add":
+        return "+"
+    if op == "Sub":
+        return "-"
+    if op == "Mult":
+        return "*"
+    if op == "Div":
+        return "/"
+    if op == "FloorDiv":
+        return "div"
+    if op == "Mod":
+        return "mod"
+    if op == "BitAnd":
+        return "and"
+    if op == "BitOr":
+        return "or"
+    if op == "BitXor":
+        return "xor"
+    if op == "LShift":
+        return "shl"
+    if op == "RShift":
+        return "shr"
     return "+"
 
 def _cmp_symbol(op: str) -> str:
-    if op == "Eq": return "=="
-    if op == "NotEq": return "!="
-    if op == "Lt": return "<"
-    if op == "LtE": return "<="
-    if op == "Gt": return ">"
-    if op == "GtE": return ">="
+    if op == "Eq":
+        return "=="
+    if op == "NotEq":
+        return "!="
+    if op == "Lt":
+        return "<"
+    if op == "LtE":
+        return "<="
+    if op == "Gt":
+        return ">"
+    if op == "GtE":
+        return ">="
     return "=="
 
 
 def _const_int_value(node: Any) -> int | None:
     if not isinstance(node, dict):
         return None
-    kind = node.get("kind")
+    nd7: dict[str, Any] = node
+    kind = nd7.get("kind")
     if kind == "Constant":
-        val = node.get("value")
+        val = nd7.get("value")
         if isinstance(val, bool):
             return None
         if isinstance(val, int):
             return int(val)
         return None
-    if kind == "UnaryOp" and node.get("op") == "USub":
-        operand = node.get("operand")
+    if kind == "UnaryOp" and nd7.get("op") == "USub":
+        operand = nd7.get("operand")
         val = _const_int_value(operand)
         if isinstance(val, int):
             return -val
@@ -195,7 +216,8 @@ def _const_int_value(node: Any) -> int | None:
 def _is_uint8_expr(node: Any) -> bool:
     if not isinstance(node, dict):
         return False
-    resolved = node.get("resolved_type")
+    nd6: dict[str, Any] = node
+    resolved = nd6.get("resolved_type")
     if not isinstance(resolved, str):
         return False
     return resolved in {"uint8", "byte"}
@@ -204,15 +226,16 @@ def _is_uint8_expr(node: Any) -> bool:
 def _is_int_like_expr(node: Any) -> bool:
     if not isinstance(node, dict):
         return False
-    resolved = node.get("resolved_type")
+    nd5: dict[str, Any] = node
+    resolved = nd5.get("resolved_type")
     if isinstance(resolved, str) and resolved in {"int", "int64"}:
         return True
-    kind = node.get("kind")
+    kind = nd5.get("kind")
     if kind == "Constant":
-        val = node.get("value")
+        val = nd5.get("value")
         return isinstance(val, int) and not isinstance(val, bool)
     if kind == "Call":
-        fn = node.get("func")
+        fn = nd5.get("func")
         if isinstance(fn, dict) and fn.get("kind") == "Name" and fn.get("id") == "int":
             return True
     return False
@@ -221,15 +244,16 @@ def _is_int_like_expr(node: Any) -> bool:
 def _is_float_like_expr(node: Any) -> bool:
     if not isinstance(node, dict):
         return False
-    resolved = node.get("resolved_type")
+    nd4: dict[str, Any] = node
+    resolved = nd4.get("resolved_type")
     if isinstance(resolved, str) and resolved in {"float", "float64"}:
         return True
-    kind = node.get("kind")
+    kind = nd4.get("kind")
     if kind == "Constant":
-        val = node.get("value")
+        val = nd4.get("value")
         return isinstance(val, float)
     if kind == "Call":
-        fn = node.get("func")
+        fn = nd4.get("func")
         if isinstance(fn, dict) and fn.get("kind") == "Name" and fn.get("id") == "float":
             return True
     return False
@@ -237,11 +261,12 @@ def _is_float_like_expr(node: Any) -> bool:
 
 def _is_string_like_expr(node: Any, rendered: str) -> bool:
     if isinstance(node, dict):
-        resolved = node.get("resolved_type")
+        nd3: dict[str, Any] = node
+        resolved = nd3.get("resolved_type")
         if isinstance(resolved, str) and resolved == "str":
             return True
-        if node.get("kind") == "Constant":
-            return isinstance(node.get("value"), str)
+        if nd3.get("kind") == "Constant":
+            return isinstance(nd3.get("value"), str)
     txt = rendered.strip()
     return txt.startswith("$(") or txt.startswith('"')
 
@@ -261,7 +286,8 @@ def _resolved_runtime_call(expr: dict[str, Any]) -> tuple[str, str]:
 def _runtime_symbol_name(expr: dict[str, Any]) -> str:
     runtime_symbol_any = expr.get("runtime_symbol")
     if isinstance(runtime_symbol_any, str):
-        return runtime_symbol_any.strip()
+        rs: str = runtime_symbol_any
+        return rs.strip()
     runtime_call, _ = _resolved_runtime_call(expr)
     dot = runtime_call.find(".")
     if dot >= 0:
@@ -272,7 +298,8 @@ def _runtime_symbol_name(expr: dict[str, Any]) -> str:
 def _runtime_semantic_tag(expr: dict[str, Any]) -> str:
     semantic_tag_any = expr.get("semantic_tag")
     if isinstance(semantic_tag_any, str):
-        return semantic_tag_any.strip()
+        ss: str = semantic_tag_any
+        return ss.strip()
     return ""
 
 
@@ -383,14 +410,22 @@ class NimNativeEmitter:
     def _map_type(self, py_type: Any) -> str:
         if not isinstance(py_type, str):
             return "auto"
-        t = py_type.strip()
-        if t in {"int", "int64"}: return "int"
-        if t in {"float", "float64"}: return "float"
-        if t == "str": return "string"
-        if t == "bool": return "bool"
-        if t == "None": return "void"
-        if t == "bytearray": return "seq[uint8]"
-        if t == "bytes": return "seq[uint8]"
+        ps: str = py_type
+        t = ps.strip()
+        if t in {"int", "int64"}:
+            return "int"
+        if t in {"float", "float64"}:
+            return "float"
+        if t == "str":
+            return "string"
+        if t == "bool":
+            return "bool"
+        if t == "None":
+            return "void"
+        if t == "bytearray":
+            return "seq[uint8]"
+        if t == "bytes":
+            return "seq[uint8]"
         if t.startswith("list["):
             inner = self._map_type(t[5:-1])
             return f"seq[{inner}]"
@@ -444,13 +479,16 @@ class NimNativeEmitter:
     def _is_unknown_decl_type(self, t: Any) -> bool:
         if not isinstance(t, str):
             return True
-        tt = t.strip()
+        ts: str = t
+        tt = ts.strip()
         return tt in {"", "unknown", "auto", "None"}
 
     def _merge_decl_type(self, prev: Any, cur: Any) -> Any:
         if isinstance(prev, str) and isinstance(cur, str):
-            p = prev.strip()
-            c = cur.strip()
+            ps: str = prev
+            cs: str = cur
+            p = ps.strip()
+            c = cs.strip()
             if p in {"int", "int64"} and c in {"float", "float64"}:
                 return "float64"
             if p in {"float", "float64"} and c in {"int", "int64"}:
@@ -464,7 +502,8 @@ class NimNativeEmitter:
     def _tuple_decl_elem_type(self, tuple_decl: Any, index: int) -> Any:
         if not isinstance(tuple_decl, str):
             return "unknown"
-        txt = tuple_decl.strip()
+        ts: str = tuple_decl
+        txt = ts.strip()
         if not (txt.startswith("tuple[") and txt.endswith("]")):
             return "unknown"
         inner = txt[6:-1]
@@ -483,22 +522,25 @@ class NimNativeEmitter:
         def _walk_stmt(stmt: Any) -> None:
             if not isinstance(stmt, dict):
                 return
-            kind = stmt.get("kind")
-            if kind in {"Assign", "AnnAssign"} and bool(stmt.get("declare")):
-                target = stmt.get("target")
-                decl_type = stmt.get("decl_type")
+            sd: dict[str, Any] = stmt
+            kind = sd.get("kind")
+            if kind in {"Assign", "AnnAssign"} and bool(sd.get("declare")):
+                target = sd.get("target")
+                decl_type = sd.get("decl_type")
                 if kind == "AnnAssign" and self._is_unknown_decl_type(decl_type):
-                    decl_type = stmt.get("annotation")
+                    decl_type = sd.get("annotation")
                 if self._is_unknown_decl_type(decl_type):
-                    value_any = stmt.get("value")
+                    value_any = sd.get("value")
                     if isinstance(value_any, dict):
-                        decl_type = value_any.get("resolved_type")
+                        vd2: dict[str, Any] = value_any
+                        decl_type = vd2.get("resolved_type")
                 if isinstance(target, dict):
-                    tk = target.get("kind")
+                    td: dict[str, Any] = target
+                    tk = td.get("kind")
                     if tk == "Name":
-                        _put(_safe_ident(target.get("id"), "tmp"), decl_type)
+                        _put(_safe_ident(td.get("id"), "tmp"), decl_type)
                     elif tk == "Tuple":
-                        elements_any = target.get("elements")
+                        elements_any = td.get("elements")
                         elements = elements_any if isinstance(elements_any, list) else []
                         i = 0
                         while i < len(elements):
@@ -508,14 +550,15 @@ class NimNativeEmitter:
                             i += 1
             # recurse over nested statement lists
             for key in ("body", "orelse", "finalbody"):
-                child_any = stmt.get(key)
+                child_any = sd.get(key)
                 if isinstance(child_any, list):
                     for child in child_any:
                         _walk_stmt(child)
-            handlers_any = stmt.get("handlers")
+            handlers_any = sd.get("handlers")
             handlers = handlers_any if isinstance(handlers_any, list) else []
             for hd in handlers:
                 if isinstance(hd, dict):
+                    hd: dict[str, Any] = hd
                     hbody_any = hd.get("body")
                     hbody = hbody_any if isinstance(hbody_any, list) else []
                     for child in hbody:
@@ -544,14 +587,16 @@ class NimNativeEmitter:
 
         def _walk(node: Any) -> None:
             if isinstance(node, dict):
-                if node.get("kind") == "Return":
-                    value_any = node.get("value")
+                nd2: dict[str, Any] = node
+                if nd2.get("kind") == "Return":
+                    value_any = nd2.get("value")
                     if isinstance(value_any, dict):
-                        rt = self._map_type(value_any.get("resolved_type"))
+                        vd: dict[str, Any] = value_any
+                        rt = self._map_type(vd.get("resolved_type"))
                         if rt == "auto":
-                            vk = value_any.get("kind")
+                            vk = vd.get("kind")
                             if vk == "Constant":
-                                v = value_any.get("value")
+                                v = vd.get("value")
                                 if isinstance(v, bool):
                                     rt = "bool"
                                 elif isinstance(v, int) and not isinstance(v, bool):
@@ -561,7 +606,7 @@ class NimNativeEmitter:
                                 elif isinstance(v, str):
                                     rt = "string"
                             elif vk == "Attribute":
-                                attr = value_any.get("attr")
+                                attr = vd.get("attr")
                                 if isinstance(attr, str):
                                     if attr in {"kind", "name", "text", "op"}:
                                         rt = "string"
@@ -570,7 +615,7 @@ class NimNativeEmitter:
                         types.append(rt)
                     else:
                         types.append("void")
-                for v in node.values():
+                for v in nd2.values():
                     _walk(v)
             elif isinstance(node, list):
                 for v in node:
@@ -756,26 +801,28 @@ class NimNativeEmitter:
         def _collect_init_fields(node: Any) -> None:
             if not isinstance(node, dict):
                 return
-            nk = node.get("kind")
+            nd: dict[str, Any] = node
+            nk = nd.get("kind")
             if nk in {"Assign", "AnnAssign"}:
-                target = node.get("target")
+                target = nd.get("target")
                 if isinstance(target, dict) and target.get("kind") == "Attribute":
                     value_any = target.get("value")
                     if isinstance(value_any, dict) and value_any.get("kind") == "Name" and value_any.get("id") == "self":
                         field_name = _safe_ident(target.get("attr"), "field")
-                        decl_type = node.get("decl_type")
+                        decl_type = nd.get("decl_type")
                         if self._is_unknown_decl_type(decl_type):
-                            decl_type = node.get("annotation")
+                            decl_type = nd.get("annotation")
                         if self._is_unknown_decl_type(decl_type):
-                            val_any = node.get("value")
+                            val_any = nd.get("value")
                             if isinstance(val_any, dict):
-                                decl_type = val_any.get("resolved_type")
+                                vd: dict[str, Any] = val_any
+                                decl_type = vd.get("resolved_type")
                         field_type = self._map_type(decl_type)
                         if field_type == "auto" or field_type == "":
                             field_type = "int"
                         _put_field(field_name, field_type)
             for key in ("body", "orelse", "finalbody"):
-                child_any = node.get(key)
+                child_any = nd.get(key)
                 if isinstance(child_any, list):
                     j = 0
                     while j < len(child_any):
@@ -896,11 +943,12 @@ class NimNativeEmitter:
             call_name = ""
             fn_any = value_node.get("func")
             if isinstance(fn_any, dict):
-                if fn_any.get("kind") == "Name":
-                    raw = fn_any.get("id")
+                fd: dict[str, Any] = fn_any
+                if fd.get("kind") == "Name":
+                    raw = fd.get("id")
                     call_name = raw if isinstance(raw, str) else ""
-                elif fn_any.get("kind") == "Attribute":
-                    raw = fn_any.get("attr")
+                elif fd.get("kind") == "Attribute":
+                    raw = fd.get("attr")
                     call_name = raw if isinstance(raw, str) else ""
             if call_name == "skip_newlines":
                 self._emit_line(expr)
@@ -1195,11 +1243,12 @@ class NimNativeEmitter:
         target_name = "it"
         tuple_targets: list[str] = []
         if isinstance(target_plan, dict):
-            plan_kind = target_plan.get("kind")
+            td: dict[str, Any] = target_plan
+            plan_kind = td.get("kind")
             if plan_kind == "NameTarget":
-                target_name = _safe_ident(target_plan.get("id"))
+                target_name = _safe_ident(td.get("id"))
             elif plan_kind == "TupleTarget":
-                elements_any = target_plan.get("elements")
+                elements_any = td.get("elements")
                 elements = elements_any if isinstance(elements_any, list) else []
                 i = 0
                 while i < len(elements):
@@ -1275,27 +1324,34 @@ class NimNativeEmitter:
         decl_type: str,
         declare_var: bool,
     ) -> bool:
-        if not isinstance(value_node, dict) or value_node.get("kind") != "ListComp":
+        if not isinstance(value_node, dict):
             return False
-        gens_any = value_node.get("generators")
+        vd: dict[str, Any] = value_node
+        if vd.get("kind") != "ListComp":
+            return False
+        gens_any = vd.get("generators")
         gens = gens_any if isinstance(gens_any, list) else []
         if len(gens) != 1:
             return False
         gen = gens[0]
         if not isinstance(gen, dict):
             return False
-        ifs_any = gen.get("ifs")
+        gd: dict[str, Any] = gen
+        ifs_any = gd.get("ifs")
         ifs = ifs_any if isinstance(ifs_any, list) else []
         if len(ifs) != 0:
             return False
-        target_any = gen.get("target")
-        if not isinstance(target_any, dict) or target_any.get("kind") != "Name":
+        target_any = gd.get("target")
+        if not isinstance(target_any, dict):
             return False
-        loop_var = _safe_ident(target_any.get("id"), "__lc_it")
+        td: dict[str, Any] = target_any
+        if td.get("kind") != "Name":
+            return False
+        loop_var = _safe_ident(td.get("id"), "__lc_it")
         if loop_var == "_":
             loop_var = "__lc_it"
-        iter_expr = self._render_expr(gen.get("iter"))
-        elt_expr = self._render_expr(value_node.get("elt"))
+        iter_expr = self._render_expr(gd.get("iter"))
+        elt_expr = self._render_expr(vd.get("elt"))
         if declare_var:
             if decl_type != "":
                 self._emit_line(f"var {target}: {decl_type} = @[]")
@@ -1312,11 +1368,12 @@ class NimNativeEmitter:
     def _render_truthy_expr(self, expr_node: Any) -> str:
         if not isinstance(expr_node, dict):
             return "false"
-        kind = expr_node.get("kind")
+        ed: dict[str, Any] = expr_node
+        kind = ed.get("kind")
         if kind == "Compare":
             return self._render_expr(expr_node)
         if kind == "Constant":
-            val = expr_node.get("value")
+            val = ed.get("value")
             if isinstance(val, bool):
                  return "true" if val else "false"
         
@@ -1326,15 +1383,19 @@ class NimNativeEmitter:
     def _render_expr(self, expr: Any) -> str:
         if not isinstance(expr, dict):
             return "nil"
-        kind = expr.get("kind")
+        ed: dict[str, Any] = expr
+        kind = ed.get("kind")
         if kind == "Constant":
-            val = expr.get("value")
-            if isinstance(val, str): return _nim_string(val)
-            if isinstance(val, bool): return "true" if val else "false"
-            if val is None: return "nil"
+            val = ed.get("value")
+            if isinstance(val, str):
+                return _nim_string(val)
+            if isinstance(val, bool):
+                return "true" if val else "false"
+            if val is None:
+                return "nil"
             return str(val)
         elif kind == "Name":
-            name = expr.get("id")
+            name = ed.get("id")
             if name == "self" and self.self_replacement:
                  return self.self_replacement
             if name == "main" and "main" not in self.function_names and "v_pytra_main" in self.function_names:
@@ -1342,22 +1403,23 @@ class NimNativeEmitter:
             rendered = _safe_ident(name)
             return self.relative_import_name_aliases.get(rendered, rendered)
         elif kind == "UnaryOp":
-            op = expr.get("op")
+            op = ed.get("op")
             if op == "Not":
-                operand = self._render_truthy_expr(expr.get("operand"))
+                operand = self._render_truthy_expr(ed.get("operand"))
                 return f"(not {operand})"
-            operand = self._render_expr(expr.get("operand"))
+            operand = self._render_expr(ed.get("operand"))
             if op == "Invert":
                 return f"(not {operand})"
-            if op == "USub": return f"(-{operand})"
+            if op == "USub":
+                return f"(-{operand})"
             return operand
         elif kind == "BinOp":
-            left_node = expr.get("left")
-            right_node = expr.get("right")
+            left_node = ed.get("left")
+            right_node = ed.get("right")
             left = self._render_expr(left_node)
             right = self._render_expr(right_node)
-            op_raw = expr.get("op")
-            resolved = expr.get("resolved_type")
+            op_raw = ed.get("op")
+            resolved = ed.get("resolved_type")
             
             if op_raw == "Div":
                  # Nim / is for floats. If either is int, convert to float.
@@ -1388,17 +1450,18 @@ class NimNativeEmitter:
                     return f"($({left}) & $({right}))"
             return f"({left} {symbol} {right})"
         elif kind == "BoolOp":
-            op = "and" if expr.get("op") == "And" else "or"
-            values = [self._render_truthy_expr(v) for v in expr.get("values", [])]
+            op = "and" if ed.get("op") == "And" else "or"
+            values = [self._render_truthy_expr(v) for v in ed.get("values", [])]
             if len(values) == 0:
                 return "false"
             return "(" + (" " + op + " ").join(values) + ")"
         elif kind == "Compare":
-            left_node = expr.get("left")
+            left_node = ed.get("left")
             left = self._render_expr(left_node)
-            ops = expr.get("ops", [])
-            comps = expr.get("comparators", [])
-            if not ops: return left
+            ops = ed.get("ops", [])
+            comps = ed.get("comparators", [])
+            if not ops:
+                return left
             op = ops[0]
             right_node = comps[0]
             right = self._render_expr(right_node)
@@ -1421,28 +1484,28 @@ class NimNativeEmitter:
         elif kind == "Call":
             return self._render_call(expr)
         elif kind == "List":
-            elts = [self._render_expr(e) for e in expr.get("elements", [])]
+            elts = [self._render_expr(e) for e in ed.get("elements", [])]
             return f"@[{', '.join(elts)}]"
         elif kind == "Tuple":
-            elements = expr.get("elements", [])
+            elements = ed.get("elements", [])
             elts = [self._render_expr(e) for e in elements]
             return f"({', '.join(elts)})"
         elif kind == "Dict":
-            entries = expr.get("entries", [])
+            entries = ed.get("entries", [])
             pairs = []
             for entry in entries:
                 k = self._render_expr(entry.get("key"))
                 v = self._render_expr(entry.get("value"))
                 pairs.append(f"{k}: {v}")
             if len(pairs) == 0:
-                mapped = self._map_type(expr.get("resolved_type"))
+                mapped = self._map_type(ed.get("resolved_type"))
                 if isinstance(mapped, str) and mapped.startswith("Table["):
                     return self._default_value_for_type(mapped)
                 return "initTable[string, int]()"
             return f"{{ {', '.join(pairs)} }}.toTable"
         elif kind == "ListComp":
-            elt = self._render_expr(expr.get("elt"))
-            gens = expr.get("generators", [])
+            elt = self._render_expr(ed.get("elt"))
+            gens = ed.get("generators", [])
             if len(gens) == 1:
                 gen = gens[0]
                 target = self._render_expr(gen.get("target"))
@@ -1455,14 +1518,14 @@ class NimNativeEmitter:
                     return f"(block: var res: seq[auto] = @[]; for {target} in {iter_expr}: (if {cond}: res.add({elt})); res)"
             return "@[] # complex ListComp"
         elif kind == "IfExp":
-            test_expr = self._render_truthy_expr(expr.get("test"))
-            body_expr = self._render_expr(expr.get("body"))
-            else_expr = self._render_expr(expr.get("orelse"))
+            test_expr = self._render_truthy_expr(ed.get("test"))
+            body_expr = self._render_expr(ed.get("body"))
+            else_expr = self._render_expr(ed.get("orelse"))
             return f"(if {test_expr}: {body_expr} else: {else_expr})"
         elif kind == "RangeExpr":
-            start = self._render_expr(expr.get("start"))
-            stop = self._render_expr(expr.get("stop"))
-            step_node = expr.get("step")
+            start = self._render_expr(ed.get("start"))
+            stop = self._render_expr(ed.get("stop"))
+            step_node = ed.get("step")
             step_expr = self._render_expr(step_node)
             step_const = _const_int_value(step_node)
             if step_const == 1:
@@ -1471,16 +1534,16 @@ class NimNativeEmitter:
                 return f"countdown({start}, ({stop}) + 1)"
             return f"py_range({start}, {stop}, {step_expr})"
         elif kind == "ObjLen":
-            return f"{self._render_expr(expr.get('value'))}.len"
+            return f"{self._render_expr(ed.get('value'))}.len"
         elif kind == "ObjStr":
-            return f"$({self._render_expr(expr.get('value'))})"
+            return f"$({self._render_expr(ed.get('value'))})"
         elif kind == "ObjBool":
-            return self._render_truthy_expr(expr.get("value"))
+            return self._render_truthy_expr(ed.get("value"))
         elif kind == "IsInstance":
             return "false"
         elif kind == "Subscript":
-            value = self._render_expr(expr.get("value"))
-            slice_node = expr.get("slice")
+            value = self._render_expr(ed.get("value"))
+            slice_node = ed.get("slice")
             if isinstance(slice_node, dict) and slice_node.get("kind") == "Slice":
                 lower_node = slice_node.get("lower")
                 upper_node = slice_node.get("upper")
@@ -1493,22 +1556,22 @@ class NimNativeEmitter:
             base = f"{value}[{idx}]"
             if isinstance(idx_const, int) and idx_const < 0:
                 base = f"{value}[({value}.len + {idx})]"
-            resolved = expr.get("resolved_type")
+            resolved = ed.get("resolved_type")
             if isinstance(resolved, str) and resolved == "str":
                 return f"$({base})"
             return base
         elif kind == "Attribute":
-            value_node = expr.get("value")
+            value_node = ed.get("value")
             value = self._render_expr(value_node)
-            attr = _safe_ident(expr.get("attr"))
-            semantic_tag_any = expr.get("semantic_tag")
+            attr = _safe_ident(ed.get("attr"))
+            semantic_tag_any = ed.get("semantic_tag")
             semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
             runtime_call, runtime_source = _resolved_runtime_call(expr)
             if semantic_tag.startswith("stdlib.") and runtime_call == "":
                 raise RuntimeError("nim native emitter: unresolved stdlib runtime attribute: " + semantic_tag)
-            resolved_runtime_any = expr.get("resolved_runtime_call")
+            resolved_runtime_any = ed.get("resolved_runtime_call")
             resolved_runtime = resolved_runtime_any if isinstance(resolved_runtime_any, str) else ""
-            resolved_source_any = expr.get("resolved_runtime_source")
+            resolved_source_any = ed.get("resolved_runtime_source")
             resolved_source = resolved_source_any if isinstance(resolved_source_any, str) else ""
             if _is_math_constant(expr):
                 if _runtime_symbol_name(expr) == "pi":
@@ -1527,7 +1590,7 @@ class NimNativeEmitter:
                 )
             return f"{value}.{attr}"
         elif kind == "Unbox" or kind == "Box":
-            return self._render_expr(expr.get("value"))
+            return self._render_expr(ed.get("value"))
         return "0"
 
     def _render_call(self, expr: dict[str, Any]) -> str:
@@ -1564,7 +1627,8 @@ class NimNativeEmitter:
                 if len(args_nodes) > 0:
                     arg0_node = args_nodes[0]
                     if isinstance(arg0_node, dict):
-                        arg0_t = arg0_node.get("resolved_type")
+                        ad2: dict[str, Any] = arg0_node
+                        arg0_t = ad2.get("resolved_type")
                         if isinstance(arg0_t, str) and arg0_t == "str":
                             return f"parseInt({args[0]})"
                 return f"int({args[0]})"
@@ -1572,15 +1636,18 @@ class NimNativeEmitter:
                 if len(args_nodes) > 0:
                     arg0_node = args_nodes[0]
                     if isinstance(arg0_node, dict):
-                        arg0_t = arg0_node.get("resolved_type")
+                        ad: dict[str, Any] = arg0_node
+                        arg0_t = ad.get("resolved_type")
                         if isinstance(arg0_t, str) and arg0_t == "str":
                             return f"parseFloat({args[0]})"
                 return f"float({args[0]})"
             if name == "str":
                 return f"$( {args[0]} )"
             if name == "range":
-                if len(args) == 1: return f"0 ..< {args[0]}"
-                if len(args) == 2: return f"{args[0]} ..< {args[1]}"
+                if len(args) == 1:
+                    return f"0 ..< {args[0]}"
+                if len(args) == 2:
+                    return f"{args[0]} ..< {args[1]}"
             if name == "enumerate":
                 if len(args) == 1:
                     return f"pairs({args[0]})"

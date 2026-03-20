@@ -80,7 +80,8 @@ def resolve_cpp_opt_level(opt_level: str | int | object) -> int:
     if isinstance(opt_level, int):
         level = opt_level
     elif isinstance(opt_level, str):
-        text = opt_level.strip()
+        s: str = opt_level
+        text = s.strip()
         if text == "":
             level = 1
         elif text in {"0", "1", "2"}:

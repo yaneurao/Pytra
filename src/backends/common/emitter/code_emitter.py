@@ -24,14 +24,17 @@ _TYPE_EXPR_KINDS: set[str] = {
 def _is_type_expr_payload(value: object) -> bool:
     if not isinstance(value, dict):
         return False
-    kind = value.get("kind")
+    d: dict[str, Any] = value
+    kind = d.get("kind")
     return isinstance(kind, str) and kind in _TYPE_EXPR_KINDS
 
 
 def _find_general_union_lane(type_expr: object) -> dict[str, Any] | None:
     if not _is_type_expr_payload(type_expr):
         return None
-    expr_obj = type_expr
+    if not isinstance(type_expr, dict):
+        return None
+    expr_obj: dict[str, Any] = type_expr
     kind = str(expr_obj.get("kind", ""))
     if kind == "UnionType":
         union_mode = str(expr_obj.get("union_mode", "")).strip()
@@ -65,7 +68,8 @@ def _collect_general_union_type_expr_issues(doc: object, *, path: str, out: list
             out.append({"path": path, "carrier": carrier, "lane": lane_text})
         return
     if isinstance(doc, dict):
-        for key, value in doc.items():
+        dd: dict[str, Any] = doc
+        for key, value in dd.items():
             if isinstance(key, str):
                 _collect_general_union_type_expr_issues(value, path=path + "." + key, out=out)
         return
@@ -98,7 +102,9 @@ def reject_backend_general_union_type_exprs(doc: object, *, backend_name: str) -
 def _find_homogeneous_tuple_ellipsis_lane(type_expr: object) -> dict[str, Any] | None:
     if not _is_type_expr_payload(type_expr):
         return None
-    expr_obj = type_expr
+    if not isinstance(type_expr, dict):
+        return None
+    expr_obj: dict[str, Any] = type_expr
     kind = str(expr_obj.get("kind", ""))
     if kind == "GenericType":
         tuple_shape = str(expr_obj.get("tuple_shape", "")).strip()
@@ -138,7 +144,8 @@ def _collect_homogeneous_tuple_ellipsis_issues(
             out.append({"path": path, "carrier": carrier, "lane": lane_text})
         return
     if isinstance(doc, dict):
-        for key, value in doc.items():
+        dd2: dict[str, Any] = doc
+        for key, value in dd2.items():
             if isinstance(key, str):
                 _collect_homogeneous_tuple_ellipsis_issues(value, path=path + "." + key, out=out)
         return
@@ -186,14 +193,15 @@ def _format_typed_vararg_signature_lane(node: dict[str, Any]) -> str:
 
 def _collect_typed_vararg_signature_issues(doc: object, *, path: str, out: list[dict[str, str]]) -> None:
     if isinstance(doc, dict):
-        kind_any = doc.get("kind")
+        dd3: dict[str, Any] = doc
+        kind_any = dd3.get("kind")
         kind = kind_any if isinstance(kind_any, str) else ""
         if kind == "FunctionDef":
-            vararg_name_any = doc.get("vararg_name")
+            vararg_name_any = dd3.get("vararg_name")
             vararg_name = vararg_name_any if isinstance(vararg_name_any, str) else ""
             if vararg_name.strip() != "":
-                out.append({"path": path, "lane": _format_typed_vararg_signature_lane(doc)})
-        for key, value in doc.items():
+                out.append({"path": path, "lane": _format_typed_vararg_signature_lane(dd3)})
+        for key, value in dd3.items():
             if isinstance(key, str):
                 _collect_typed_vararg_signature_issues(value, path=path + "." + key, out=out)
         return

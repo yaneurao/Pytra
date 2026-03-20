@@ -19,8 +19,9 @@ RuntimeHookCallable: TypeAlias = Callable[[Path], None]
 def _copy_object_dict(raw: object) -> dict[str, object]:
     if not isinstance(raw, dict):
         return {}
+    d: dict[str, Any] = raw
     out: dict[str, object] = {}
-    for key, value in raw.items():
+    for key, value in d.items():
         if isinstance(key, str):
             out[key] = value
     return out
@@ -39,8 +40,9 @@ def _copy_string_tuple(raw: object) -> tuple[str, ...]:
 def _copy_scalar_dict(raw: object) -> dict[str, CompilerOptionScalar]:
     if not isinstance(raw, dict):
         return {}
+    d2: dict[str, Any] = raw
     out: dict[str, CompilerOptionScalar] = {}
-    for key, value in raw.items():
+    for key, value in d2.items():
         if not isinstance(key, str):
             continue
         if isinstance(value, bool):
@@ -55,8 +57,9 @@ def _copy_scalar_dict(raw: object) -> dict[str, CompilerOptionScalar]:
 def _copy_scalar_layers(raw: object) -> dict[str, dict[str, CompilerOptionScalar]]:
     if not isinstance(raw, dict):
         return {}
+    raw_d2: dict[str, Any] = raw
     out: dict[str, dict[str, CompilerOptionScalar]] = {}
-    for layer, values in raw.items():
+    for layer, values in raw_d2.items():
         if isinstance(layer, str):
             out[layer] = _copy_scalar_dict(values)
     return out
@@ -65,8 +68,9 @@ def _copy_scalar_layers(raw: object) -> dict[str, dict[str, CompilerOptionScalar
 def _copy_schema_layers(raw: object) -> dict[str, dict[str, dict[str, object]]]:
     if not isinstance(raw, dict):
         return {}
+    raw_d: dict[str, Any] = raw
     out: dict[str, dict[str, dict[str, object]]] = {}
-    for layer, values in raw.items():
+    for layer, values in raw_d.items():
         if not isinstance(layer, str) or not isinstance(values, dict):
             continue
         layer_out: dict[str, dict[str, object]] = {}
@@ -106,7 +110,8 @@ def _meta_dispatch_mode(raw_doc: dict[str, object]) -> str:
     meta_any = raw_doc.get("meta", {})
     if not isinstance(meta_any, dict):
         return ""
-    dispatch_any = meta_any.get("dispatch_mode")
+    meta_any_d2: dict[str, Any] = meta_any
+    dispatch_any = meta_any_d2.get("dispatch_mode")
     return dispatch_any if isinstance(dispatch_any, str) else ""
 
 
@@ -114,7 +119,8 @@ def _meta_string(raw_doc: dict[str, object], key: str) -> str:
     meta_any = raw_doc.get("meta", {})
     if not isinstance(meta_any, dict):
         return ""
-    value_any = meta_any.get(key)
+    meta_any_d: dict[str, Any] = meta_any
+    value_any = meta_any_d.get(key)
     return value_any if isinstance(value_any, str) else ""
 
 
@@ -1052,13 +1058,16 @@ def coerce_module_artifact(module_artifact: object) -> ModuleArtifactCarrier:
     if legacy_module is not None:
         module_artifact = legacy_module
     if isinstance(module_artifact, dict):
+        mad: dict[str, Any] = module_artifact
+        kind_val = mad.get("kind", "user")
+        default_k: str = str(kind_val) if isinstance(kind_val, str) else "user"
         return normalize_module_artifact_carrier(
-            module_artifact,
-            module_id=str(module_artifact.get("module_id", "")),
-            output_path=Path(str(module_artifact.get("label", "module"))),
-            extension=str(module_artifact.get("extension", "")),
-            is_entry=bool(module_artifact.get("is_entry", False)),
-            default_kind=str(module_artifact.get("kind", "user")) if isinstance(module_artifact.get("kind", "user"), str) else "user",
+            mad,
+            module_id=str(mad.get("module_id", "")),
+            output_path=Path(str(mad.get("label", "module"))),
+            extension=str(mad.get("extension", "")),
+            is_entry=bool(mad.get("is_entry", False)),
+            default_kind=default_k,
         )
     raise RuntimeError("module artifact must be dict or ModuleArtifactCarrier")
 
@@ -1087,19 +1096,22 @@ def coerce_program_artifact(
         program_artifact = legacy_program
     if not isinstance(program_artifact, dict):
         raise RuntimeError("program artifact must be dict or ProgramArtifactCarrier")
+    pad: dict[str, Any] = program_artifact
 
-    modules_out = list(collect_program_modules_from_items(program_artifact.get("modules", ())))
+    modules_out = list(collect_program_modules_from_items(pad.get("modules", ())))
 
-    target_any = program_artifact.get("target", fallback_target)
+    target_any = pad.get("target", fallback_target)
     target_out = target_any if isinstance(target_any, str) else fallback_target
-    program_id_any = program_artifact.get("program_id", fallback_program_id)
+    program_id_any = pad.get("program_id", fallback_program_id)
     program_id_out = program_id_any if isinstance(program_id_any, str) else fallback_program_id
     if program_id_out == "" and len(modules_out) > 0:
         program_id_out = modules_out[0].module_id
-    entry_modules_any = program_artifact.get("entry_modules", fallback_entry_modules if fallback_entry_modules is not None else ())
-    layout_mode_any = program_artifact.get("layout_mode", fallback_layout_mode)
-    link_output_schema_any = program_artifact.get("link_output_schema", fallback_link_output_schema)
-    writer_options_any = program_artifact.get("writer_options", fallback_writer_options if fallback_writer_options is not None else {})
+    fb_entry = fallback_entry_modules if fallback_entry_modules is not None else ()
+    entry_modules_any = pad.get("entry_modules", fb_entry)
+    layout_mode_any = pad.get("layout_mode", fallback_layout_mode)
+    link_output_schema_any = pad.get("link_output_schema", fallback_link_output_schema)
+    fb_writer = fallback_writer_options if fallback_writer_options is not None else {}
+    writer_options_any = pad.get("writer_options", fb_writer)
     return ProgramArtifactCarrier(
         target=target_out,
         program_id=program_id_out,

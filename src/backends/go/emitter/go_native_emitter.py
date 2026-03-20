@@ -42,14 +42,14 @@ _GO_KEYWORDS = {
     "var",
 }
 
-_CLASS_NAMES: set[str] = set()
-_CLASS_BASE_MAP: dict[str, str] = {}
-_CLASS_HAS_DERIVED: set[str] = set()
-_CURRENT_RECEIVER_CLASS: str = ""
-_CURRENT_RECEIVER_VAR: str = "self"
+_CLASS_NAMES: list[set[str]] = [set()]
+_CLASS_BASE_MAP: list[dict[str, str]] = [{}]
+_CLASS_HAS_DERIVED: list[set[str]] = [set()]
+_CURRENT_RECEIVER_CLASS: list[str] = [""]
+_CURRENT_RECEIVER_VAR: list[str] = ["self"]
 _INT_RESOLVED_TYPES = {"int", "int64", "uint8"}
 _FLOAT_RESOLVED_TYPES = {"float", "float64"}
-_RELATIVE_IMPORT_NAME_ALIASES: dict[str, str] = {}
+_RELATIVE_IMPORT_NAME_ALIASES: list[dict[str, str]] = [{}]
 
 
 def _class_iface_name(class_name: str) -> str:
@@ -173,7 +173,8 @@ def _collect_relative_import_name_aliases(east_doc: dict[str, Any]) -> dict[str,
 def _resolved_type(expr_any: Any) -> str:
     if not isinstance(expr_any, dict):
         return ""
-    resolved_any = expr_any.get("resolved_type")
+    d: dict[str, Any] = expr_any
+    resolved_any = d.get("resolved_type")
     if isinstance(resolved_any, str):
         return resolved_any
     return ""
@@ -232,16 +233,17 @@ def _coerce_float_expr(expr_any: Any, rendered: str) -> str:
 def _int_constant_value(expr_any: Any) -> int | None:
     if not isinstance(expr_any, dict):
         return None
-    kind = expr_any.get("kind")
+    ic: dict[str, Any] = expr_any
+    kind = ic.get("kind")
     if kind == "Constant":
-        value = expr_any.get("value")
+        value = ic.get("value")
         if isinstance(value, bool):
             return None
         if isinstance(value, int):
             return int(value)
         return None
-    if kind == "UnaryOp" and expr_any.get("op") == "USub":
-        inner = _int_constant_value(expr_any.get("operand"))
+    if kind == "UnaryOp" and ic.get("op") == "USub":
+        inner = _int_constant_value(ic.get("operand"))
         if inner is None:
             return None
         return -inner
@@ -250,7 +252,8 @@ def _int_constant_value(expr_any: Any) -> int | None:
 
 def _collect_go_deps(collector: CodeEmitter, node_any: Any) -> None:
     if isinstance(node_any, dict):
-        for child_any in node_any.values():
+        nd: dict[str, Any] = node_any
+        for child_any in nd.values():
             _collect_go_deps(collector, child_any)
         return
     if isinstance(node_any, list):
@@ -318,32 +321,33 @@ def _leading_comment_lines(stmt: dict[str, Any], prefix: str, indent: str = "") 
 def _go_type(type_name: Any, *, allow_void: bool) -> str:
     if not isinstance(type_name, str):
         return "any"
-    if type_name == "None":
+    tn: str = tn
+    if tn == "None":
         return "" if allow_void else "any"
-    if type_name in {"int", "int64", "uint8"}:
+    if tn in {"int", "int64", "uint8"}:
         return "int64"
-    if type_name in {"float", "float64"}:
+    if tn in {"float", "float64"}:
         return "float64"
-    if type_name == "bool":
+    if tn == "bool":
         return "bool"
-    if type_name == "str":
+    if tn == "str":
         return "string"
-    if type_name.startswith("list["):
+    if tn.startswith("list["):
         return "[]any"
-    if type_name.startswith("tuple["):
+    if tn.startswith("tuple["):
         return "[]any"
-    if type_name.startswith("dict["):
+    if tn.startswith("dict["):
         return "map[any]any"
-    if type_name in {"bytes", "bytearray"}:
+    if tn in {"bytes", "bytearray"}:
         return "[]any"
-    if type_name in {"unknown", "object", "any"}:
+    if tn in {"unknown", "object", "any"}:
         return "any"
-    if type_name in _CLASS_NAMES:
-        if type_name not in _CLASS_HAS_DERIVED:
-            return "*" + _safe_ident(type_name, "Any")
-        return _class_iface_name(type_name)
-    if type_name.isidentifier():
-        return "*" + _safe_ident(type_name, "Any")
+    if tn in _CLASS_NAMES[0]:
+        if tn not in _CLASS_HAS_DERIVED[0][0]:
+            return "*" + _safe_ident(tn, "Any")
+        return _class_iface_name(tn)
+    if tn.isidentifier():
+        return "*" + _safe_ident(tn, "Any")
     return "any"
 
 
@@ -362,9 +366,10 @@ def _default_return_expr(go_type: str) -> str:
 def _tuple_element_types(type_name: Any) -> list[str]:
     if not isinstance(type_name, str):
         return []
-    if not type_name.startswith("tuple[") or not type_name.endswith("]"):
+    tes: str = tes
+    if not tes.startswith("tuple[") or not tes.endswith("]"):
         return []
-    body = type_name[6:-1]
+    body = tes[6:-1]
     out: list[str] = []
     buf = ""
     depth = 0
@@ -399,11 +404,12 @@ def _tuple_element_types(type_name: Any) -> list[str]:
 def _needs_explicit_cast(value_any: Any) -> bool:
     if not isinstance(value_any, dict):
         return False
-    kind = value_any.get("kind")
+    nc: dict[str, Any] = value_any
+    kind = nc.get("kind")
     if kind == "IfExp":
         return True
     if kind == "Call":
-        call_name = _call_name(value_any)
+        call_name = _call_name(nc)
         return call_name in {"min", "max"}
     return False
 
@@ -458,7 +464,7 @@ def _cast_from_any(expr: str, go_type: str, value_any: Any = None, type_map: dic
 
 def _render_name_expr(expr: dict[str, Any]) -> str:
     ident = _safe_ident(expr.get("id"), "value")
-    return _RELATIVE_IMPORT_NAME_ALIASES.get(ident, ident)
+    return _RELATIVE_IMPORT_NAME_ALIASES[0].get(ident, ident)
 
 
 def _render_constant_expr(expr: dict[str, Any]) -> str:
@@ -490,9 +496,11 @@ def _render_constant_expr(expr: dict[str, Any]) -> str:
 def _render_truthy_expr(expr: Any) -> str:
     if not isinstance(expr, dict):
         return "__pytra_truthy(" + _render_expr(expr) + ")"
-    resolved = expr.get("resolved_type")
-    rendered = _render_expr(expr)
+    rt: dict[str, Any] = expr
+    resolved = rt.get("resolved_type")
+    rendered = _render_expr(rt)
     if isinstance(resolved, str):
+        rs2: str = resolved
         if resolved == "bool":
             return rendered
         if resolved in {"int", "int64", "uint8"}:
@@ -501,9 +509,9 @@ def _render_truthy_expr(expr: Any) -> str:
             return "(" + rendered + " != 0.0)"
         if resolved == "str":
             return "(" + rendered + " != \"\")"
-        if resolved.startswith("list[") or resolved.startswith("tuple[") or resolved.startswith("dict[") or resolved in {"bytes", "bytearray"}:
+        if rs2.startswith("list[") or rs2.startswith("tuple[") or rs2.startswith("dict[") or resolved in {"bytes", "bytearray"}:
             return "(__pytra_len(" + rendered + ") != 0)"
-    kind = expr.get("kind")
+    kind = rt.get("kind")
     if kind in {"Compare", "BoolOp", "IsInstance"}:
         return rendered
     return "__pytra_truthy(" + rendered + ")"
@@ -979,7 +987,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     resolved_type_any = expr.get("resolved_type")
     resolved_type = resolved_type_any if isinstance(resolved_type_any, str) else ""
     if semantic_tag == "stdlib.symbol.Path" or (
-        callee_name == "Path" and resolved_type == "Path" and "Path" not in _CLASS_NAMES
+        callee_name == "Path" and resolved_type == "Path" and "Path" not in _CLASS_NAMES[0][0]
     ):
         if len(args) == 0:
             return "NewPath(\"\")"
@@ -1084,8 +1092,8 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
         owner_any = func_any.get("value")
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Call":
             if _call_name(owner_any) == "super":
-                base_name = _CLASS_BASE_MAP.get(_CURRENT_RECEIVER_CLASS, "")
-                recv = _CURRENT_RECEIVER_VAR if _CURRENT_RECEIVER_VAR != "" else "self"
+                base_name = _CLASS_BASE_MAP[0].get(_CURRENT_RECEIVER_CLASS[0], "")
+                recv = _CURRENT_RECEIVER_VAR[0] if _CURRENT_RECEIVER_VAR[0] != "" else "self"
                 rendered_super_args: list[str] = []
                 i = 0
                 while i < len(args_with_keywords):
@@ -1125,7 +1133,7 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             i += 1
         return owner_expr + "." + attr_name + "(" + ", ".join(rendered_args) + ")"
 
-    if callee_name in _CLASS_NAMES:
+    if callee_name in _CLASS_NAMES[0]:
         rendered_ctor_args: list[str] = []
         i = 0
         while i < len(args_with_keywords):
@@ -1145,8 +1153,9 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
 def _render_isinstance_check(lhs: str, typ: Any) -> str:
     if not isinstance(typ, dict):
         return "false"
-    if typ.get("kind") == "Name":
-        name = _safe_ident(typ.get("id"), "")
+    td: dict[str, Any] = typ
+    if td.get("kind") == "Name":
+        name = _safe_ident(td.get("id"), "")
         if name in {"int", "int64"}:
             return "__pytra_is_int(" + lhs + ")"
         if name in {"float", "float64"}:
@@ -1157,11 +1166,11 @@ def _render_isinstance_check(lhs: str, typ: Any) -> str:
             return "__pytra_is_str(" + lhs + ")"
         if name in {"list", "bytes", "bytearray"}:
             return "__pytra_is_list(" + lhs + ")"
-        if name in _CLASS_NAMES:
+        if name in _CLASS_NAMES[0]:
             return "__pytra_is_" + name + "(" + lhs + ")"
         return "false"
-    if typ.get("kind") == "Tuple":
-        elements_any = typ.get("elements")
+    if td.get("kind") == "Tuple":
+        elements_any = td.get("elements")
         elements = elements_any if isinstance(elements_any, list) else []
         checks: list[str] = []
         i = 0
@@ -1177,29 +1186,30 @@ def _render_isinstance_check(lhs: str, typ: Any) -> str:
 def _render_expr(expr: Any) -> str:
     if not isinstance(expr, dict):
         return "nil"
-    kind = expr.get("kind")
+    re_d: dict[str, Any] = expr
+    kind = re_d.get("kind")
 
     if kind == "Name":
-        return _render_name_expr(expr)
+        return _render_name_expr(re_d)
     if kind == "Constant":
-        return _render_constant_expr(expr)
+        return _render_constant_expr(re_d)
     if kind == "UnaryOp":
-        return _render_unary_expr(expr)
+        return _render_unary_expr(re_d)
     if kind == "BinOp":
-        return _render_binop_expr(expr)
+        return _render_binop_expr(re_d)
     if kind == "Compare":
-        return _render_compare_expr(expr)
+        return _render_compare_expr(re_d)
     if kind == "BoolOp":
-        return _render_boolop_expr(expr)
+        return _render_boolop_expr(re_d)
     if kind == "Attribute":
-        return _render_attribute_expr(expr)
+        return _render_attribute_expr(re_d)
     if kind == "Call":
-        return _render_call_expr(expr)
+        return _render_call_expr(re_d)
 
     if kind == "List" or kind == "Tuple":
-        elements_any = expr.get("elements")
+        elements_any = re_d.get("elements")
         if not isinstance(elements_any, list):
-            elements_any = expr.get("elts")
+            elements_any = re_d.get("elts")
         elements = elements_any if isinstance(elements_any, list) else []
         rendered: list[str] = []
         i = 0
@@ -1209,12 +1219,12 @@ def _render_expr(expr: Any) -> str:
         return "[]any{" + ", ".join(rendered) + "}"
 
     if kind == "Dict":
-        keys_any = expr.get("keys")
-        vals_any = expr.get("values")
+        keys_any = re_d.get("keys")
+        vals_any = re_d.get("values")
         keys = keys_any if isinstance(keys_any, list) else []
         vals = vals_any if isinstance(vals_any, list) else []
         if len(keys) == 0 and len(vals) == 0:
-            entries_any = expr.get("entries")
+            entries_any = re_d.get("entries")
             entries = entries_any if isinstance(entries_any, list) else []
             if len(entries) > 0:
                 i = 0
@@ -1238,7 +1248,7 @@ def _render_expr(expr: Any) -> str:
         return "map[any]any{" + ", ".join(parts) + "}"
 
     if kind == "ListComp":
-        gens_any = expr.get("generators")
+        gens_any = re_d.get("generators")
         gens = gens_any if isinstance(gens_any, list) else []
         if len(gens) != 1 or not isinstance(gens[0], dict):
             return "[]any{}"
@@ -1259,7 +1269,7 @@ def _render_expr(expr: Any) -> str:
         start = _render_expr(iter_any.get("start"))
         stop = _render_expr(iter_any.get("stop"))
         step = _render_expr(iter_any.get("step"))
-        elt = _render_expr(expr.get("elt"))
+        elt = _render_expr(re_d.get("elt"))
         return (
             "func() []any { "
             "__out := []any{}; "
@@ -1274,14 +1284,14 @@ def _render_expr(expr: Any) -> str:
         )
 
     if kind == "IfExp":
-        test_expr = _render_truthy_expr(expr.get("test"))
-        body_expr = _render_expr(expr.get("body"))
-        else_expr = _render_expr(expr.get("orelse"))
+        test_expr = _render_truthy_expr(re_d.get("test"))
+        body_expr = _render_expr(re_d.get("body"))
+        else_expr = _render_expr(re_d.get("orelse"))
         return "__pytra_ifexp(" + test_expr + ", " + body_expr + ", " + else_expr + ")"
 
     if kind == "Subscript":
-        value_any = expr.get("value")
-        index_any = expr.get("slice")
+        value_any = re_d.get("value")
+        index_any = re_d.get("slice")
         owner = _render_expr(value_any)
         if isinstance(index_any, dict) and index_any.get("kind") == "Slice":
             lower_any = index_any.get("lower")
@@ -1292,23 +1302,23 @@ def _render_expr(expr: Any) -> str:
 
         index = _render_expr(index_any)
         base = "__pytra_get_index(" + owner + ", " + index + ")"
-        resolved = expr.get("resolved_type")
+        resolved = re_d.get("resolved_type")
         go_t = _go_type(resolved, allow_void=False)
         return _cast_from_any(base, go_t)
 
     if kind == "IsInstance":
-        lhs = _render_expr(expr.get("value"))
-        return _render_isinstance_check(lhs, expr.get("expected_type_id"))
+        lhs = _render_expr(re_d.get("value"))
+        return _render_isinstance_check(lhs, re_d.get("expected_type_id"))
 
     if kind == "ObjLen":
-        return "__pytra_len(" + _render_expr(expr.get("value")) + ")"
+        return "__pytra_len(" + _render_expr(re_d.get("value")) + ")"
     if kind == "ObjStr":
-        return "__pytra_str(" + _render_expr(expr.get("value")) + ")"
+        return "__pytra_str(" + _render_expr(re_d.get("value")) + ")"
     if kind == "ObjBool":
-        return "__pytra_truthy(" + _render_expr(expr.get("value")) + ")"
+        return "__pytra_truthy(" + _render_expr(re_d.get("value")) + ")"
 
     if kind == "Unbox" or kind == "Box":
-        return _render_expr(expr.get("value"))
+        return _render_expr(re_d.get("value"))
 
     return "nil"
 
@@ -1345,11 +1355,12 @@ def _function_params(fn: dict[str, Any], *, drop_self: bool) -> list[str]:
 def _target_name(target: Any) -> str:
     if not isinstance(target, dict):
         return "tmp"
-    kind = target.get("kind")
+    tnd: dict[str, Any] = target
+    kind = tnd.get("kind")
     if kind == "Name":
-        return _safe_ident(target.get("id"), "tmp")
+        return _safe_ident(tnd.get("id"), "tmp")
     if kind == "Attribute":
-        return _render_attribute_expr(target)
+        return _render_attribute_expr(tnd)
     return "tmp"
 
 
@@ -1402,7 +1413,8 @@ def _ref_var_set(ctx: dict[str, Any]) -> set[str]:
 def _is_container_east_type(type_name: Any) -> bool:
     if not isinstance(type_name, str):
         return False
-    t = type_name.strip()
+    ict: str = type_name
+    t = ict.strip()
     return (
         t.startswith("list[")
         or t.startswith("tuple[")
@@ -1420,9 +1432,12 @@ def _materialize_container_value_from_ref(
     ctx: dict[str, Any],
     target_name: str,
 ) -> str:
-    if not isinstance(value_expr, dict) or value_expr.get("kind") != "Name":
+    if not isinstance(value_expr, dict):
         return rendered_value
-    source_name = _safe_ident(value_expr.get("id"), "")
+    mvd: dict[str, Any] = value_expr
+    if mvd.get("kind") != "Name":
+        return rendered_value
+    source_name = _safe_ident(mvd.get("id"), "")
     if source_name == "" or source_name == target_name:
         return rendered_value
     if source_name not in _ref_var_set(ctx):
@@ -1481,12 +1496,13 @@ def _read_name_set(ctx: dict[str, Any]) -> set[str]:
 def _collect_read_names_expr(expr: Any, out: set[str]) -> None:
     if not isinstance(expr, dict):
         return
-    kind = expr.get("kind")
+    crd: dict[str, Any] = expr
+    kind = crd.get("kind")
     if kind == "Name":
-        out.add(_safe_ident(expr.get("id"), ""))
+        out.add(_safe_ident(crd.get("id"), ""))
         return
 
-    for val in expr.values():
+    for val in crd.values():
         if isinstance(val, dict):
             _collect_read_names_expr(val, out)
             continue
@@ -1507,89 +1523,94 @@ def _collect_read_names_block(body: list[Any], out: set[str]) -> None:
 def _collect_read_names_stmt(stmt: Any, out: set[str]) -> None:
     if not isinstance(stmt, dict):
         return
-    kind = stmt.get("kind")
+    crs: dict[str, Any] = stmt
+    kind = crs.get("kind")
     if kind == "Return":
-        _collect_read_names_expr(stmt.get("value"), out)
+        _collect_read_names_expr(crs.get("value"), out)
         return
     if kind == "Expr":
-        _collect_read_names_expr(stmt.get("value"), out)
+        _collect_read_names_expr(crs.get("value"), out)
         return
     if kind == "AnnAssign":
-        _collect_read_names_expr(stmt.get("value"), out)
-        target_any = stmt.get("target")
+        _collect_read_names_expr(crs.get("value"), out)
+        target_any = crs.get("target")
         if isinstance(target_any, dict):
-            target_kind = target_any.get("kind")
+            tad2: dict[str, Any] = target_any
+            target_kind = tad2.get("kind")
             if target_kind == "Subscript":
-                _collect_read_names_expr(target_any.get("value"), out)
-                _collect_read_names_expr(target_any.get("slice"), out)
+                _collect_read_names_expr(tad2.get("value"), out)
+                _collect_read_names_expr(tad2.get("slice"), out)
             elif target_kind == "Attribute":
-                _collect_read_names_expr(target_any.get("value"), out)
+                _collect_read_names_expr(tad2.get("value"), out)
         return
     if kind == "Assign":
-        _collect_read_names_expr(stmt.get("value"), out)
-        targets_any = stmt.get("targets")
+        _collect_read_names_expr(crs.get("value"), out)
+        targets_any = crs.get("targets")
         targets = targets_any if isinstance(targets_any, list) else []
-        if len(targets) == 0 and isinstance(stmt.get("target"), dict):
-            targets = [stmt.get("target")]
+        if len(targets) == 0 and isinstance(crs.get("target"), dict):
+            targets = [crs.get("target")]
         i = 0
         while i < len(targets):
             tgt = targets[i]
             if isinstance(tgt, dict):
-                tgt_kind = tgt.get("kind")
+                tgd2: dict[str, Any] = tgt
+                tgt_kind = tgd2.get("kind")
                 if tgt_kind == "Subscript":
-                    _collect_read_names_expr(tgt.get("value"), out)
-                    _collect_read_names_expr(tgt.get("slice"), out)
+                    _collect_read_names_expr(tgd2.get("value"), out)
+                    _collect_read_names_expr(tgd2.get("slice"), out)
                 elif tgt_kind == "Attribute":
-                    _collect_read_names_expr(tgt.get("value"), out)
+                    _collect_read_names_expr(tgd2.get("value"), out)
             i += 1
         return
     if kind == "AugAssign":
-        _collect_read_names_expr(stmt.get("target"), out)
-        _collect_read_names_expr(stmt.get("value"), out)
+        _collect_read_names_expr(crs.get("target"), out)
+        _collect_read_names_expr(crs.get("value"), out)
         return
     if kind == "If":
-        _collect_read_names_expr(stmt.get("test"), out)
-        body_any = stmt.get("body")
+        _collect_read_names_expr(crs.get("test"), out)
+        body_any = crs.get("body")
         body = body_any if isinstance(body_any, list) else []
         _collect_read_names_block(body, out)
-        orelse_any = stmt.get("orelse")
+        orelse_any = crs.get("orelse")
         orelse = orelse_any if isinstance(orelse_any, list) else []
         _collect_read_names_block(orelse, out)
         return
     if kind == "While":
-        _collect_read_names_expr(stmt.get("test"), out)
-        body_any = stmt.get("body")
+        _collect_read_names_expr(crs.get("test"), out)
+        body_any = crs.get("body")
         body = body_any if isinstance(body_any, list) else []
         _collect_read_names_block(body, out)
         return
     if kind == "ForCore":
-        iter_plan_any = stmt.get("iter_plan")
+        iter_plan_any = crs.get("iter_plan")
         if isinstance(iter_plan_any, dict):
-            _collect_read_names_expr(iter_plan_any.get("iter_expr"), out)
-            _collect_read_names_expr(iter_plan_any.get("start"), out)
-            _collect_read_names_expr(iter_plan_any.get("stop"), out)
-            _collect_read_names_expr(iter_plan_any.get("step"), out)
-        body_any = stmt.get("body")
+            ipd2: dict[str, Any] = iter_plan_any
+            _collect_read_names_expr(ipd2.get("iter_expr"), out)
+            _collect_read_names_expr(ipd2.get("start"), out)
+            _collect_read_names_expr(ipd2.get("stop"), out)
+            _collect_read_names_expr(ipd2.get("step"), out)
+        body_any = crs.get("body")
         body = body_any if isinstance(body_any, list) else []
         _collect_read_names_block(body, out)
-        orelse_any = stmt.get("orelse")
+        orelse_any = crs.get("orelse")
         orelse = orelse_any if isinstance(orelse_any, list) else []
         _collect_read_names_block(orelse, out)
         return
     if kind == "Raise":
-        _collect_read_names_expr(stmt.get("exc"), out)
+        _collect_read_names_expr(crs.get("exc"), out)
 
 
 def _infer_go_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
     if not isinstance(expr, dict):
         return "any"
-    kind = expr.get("kind")
+    igd: dict[str, Any] = expr
+    kind = igd.get("kind")
     if kind == "Name" and isinstance(type_map, dict):
-        ident = _safe_ident(expr.get("id"), "")
+        ident = _safe_ident(igd.get("id"), "")
         if ident in type_map:
             return type_map[ident]
     if kind == "Call":
-        name = _call_name(expr)
+        name = _call_name(igd)
         if name == "perf_counter":
             return "float64"
         if name == "int":
@@ -1605,7 +1626,7 @@ def _infer_go_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
         if name == "len":
             return "int64"
         if name in {"min", "max"}:
-            args_any = expr.get("args")
+            args_any = igd.get("args")
             args = args_any if isinstance(args_any, list) else []
             seen_any = False
             i = 0
@@ -1619,41 +1640,43 @@ def _infer_go_type(expr: Any, type_map: dict[str, str] | None = None) -> str:
             if seen_any:
                 return "any"
             return "int64"
-        if name in _CLASS_NAMES:
+        if name in _CLASS_NAMES[0]:
             return "*" + name
-        func_any = expr.get("func")
-        if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
-            owner_any = func_any.get("value")
-            attr_name = _safe_ident(func_any.get("attr"), "")
+        func_any = igd.get("func")
+        if isinstance(func_any, dict):
+            fid: dict[str, Any] = func_any
+            if fid.get("kind") == "Attribute":
+                owner_any = fid.get("value")
+                attr_name = _safe_ident(fid.get("attr"), "")
             if attr_name in {"isdigit", "isalpha"}:
                 return "bool"
     if kind == "BinOp":
-        op = expr.get("op")
+        op = igd.get("op")
         if op == "Div":
             return "float64"
-        left_t = _infer_go_type(expr.get("left"), type_map)
-        right_t = _infer_go_type(expr.get("right"), type_map)
+        left_t = _infer_go_type(igd.get("left"), type_map)
+        right_t = _infer_go_type(igd.get("right"), type_map)
         if left_t == "float64" or right_t == "float64":
             return "float64"
         if left_t == "int64" and right_t == "int64":
             return "int64"
         if op == "Mult":
-            left_any = expr.get("left")
-            right_any = expr.get("right")
-            if isinstance(left_any, dict) and left_any.get("kind") == "List":
+            left_any = igd.get("left")
+            right_any = igd.get("right")
+            if isinstance(left_any, dict) and True == "List":
                 return "[]any"
             if isinstance(right_any, dict) and right_any.get("kind") == "List":
                 return "[]any"
     if kind == "IfExp":
-        body_t = _infer_go_type(expr.get("body"), type_map)
-        else_t = _infer_go_type(expr.get("orelse"), type_map)
+        body_t = _infer_go_type(igd.get("body"), type_map)
+        else_t = _infer_go_type(igd.get("orelse"), type_map)
         if body_t == else_t:
             return body_t
         if body_t == "float64" or else_t == "float64":
             return "float64"
         if body_t == "int64" and else_t == "int64":
             return "int64"
-    resolved = expr.get("resolved_type")
+    resolved = igd.get("resolved_type")
     return _go_type(resolved, allow_void=False)
 
 
@@ -1828,7 +1851,7 @@ def _emit_for_core(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) ->
             elem = elems[i]
             if not isinstance(elem, dict) or elem.get("kind") != "NameTarget":
                 raise RuntimeError("go native emitter: unsupported RuntimeIter tuple target element")
-            name = _safe_ident(elem.get("id"), "item_" + str(i))
+            name = _safe_ident(emd2.get("id"), "item_" + str(i))
             if name == "_":
                 name = _fresh_tmp(body_ctx, "item")
             rhs = tuple_tmp + "[" + str(i) + "]"
@@ -1876,9 +1899,12 @@ def _emit_tuple_assign(
     indent: str,
     ctx: dict[str, Any],
 ) -> list[str] | None:
-    if not isinstance(target_any, dict) or target_any.get("kind") != "Tuple":
+    if not isinstance(target_any, dict):
         return None
-    elems_any = target_any.get("elements")
+    eta_d: dict[str, Any] = target_any
+    if eta_d.get("kind") != "Tuple":
+        return None
+    elems_any = eta_d.get("elements")
     elems = elems_any if isinstance(elems_any, list) else []
     if len(elems) == 0:
         return None
@@ -1890,14 +1916,16 @@ def _emit_tuple_assign(
     used_names = _read_name_set(ctx)
     tuple_types = _tuple_element_types(decl_type_any)
     if len(tuple_types) == 0 and isinstance(value_any, dict):
-        tuple_types = _tuple_element_types(value_any.get("resolved_type"))
+        vta: dict[str, Any] = value_any
+        tuple_types = _tuple_element_types(vta.get("resolved_type"))
 
     i = 0
     while i < len(elems):
         elem = elems[i]
         if not isinstance(elem, dict):
             return None
-        kind = elem.get("kind")
+        emd2: dict[str, Any] = elem
+        kind = emd2.get("kind")
         rhs = tuple_tmp + "[" + str(i) + "]"
         elem_type = "any"
         if i < len(tuple_types):
@@ -1905,7 +1933,7 @@ def _emit_tuple_assign(
         casted = _cast_from_any(rhs, elem_type)
 
         if kind == "Name":
-            name = _safe_ident(elem.get("id"), "tmp_" + str(i))
+            name = _safe_ident(emd2.get("id"), "tmp_" + str(i))
             if name not in used_names:
                 lines.append(indent + "_ = " + casted)
                 i += 1
@@ -1918,9 +1946,9 @@ def _emit_tuple_assign(
             else:
                 lines.append(indent + name + " = " + casted)
         elif kind == "Subscript":
-            value_node = elem.get("value")
+            value_node = emd2.get("value")
             owner = _render_expr(value_node)
-            index = _render_expr(elem.get("slice"))
+            index = _render_expr(emd2.get("slice"))
             lines.append(indent + "__pytra_set_index(" + owner + ", " + index + ", " + casted + ")")
         else:
             return None
@@ -1932,20 +1960,21 @@ def _emit_tuple_assign(
 def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
     if not isinstance(stmt, dict):
         raise RuntimeError("go native emitter: unsupported statement")
-    kind = stmt.get("kind")
+    esd: dict[str, Any] = stmt
+    kind = esd.get("kind")
 
     if kind == "Return":
-        if "value" in stmt and stmt.get("value") is not None:
-            value = _render_expr(stmt.get("value"))
+        if "value" in stmt and esd.get("value") is not None:
+            value = _render_expr(esd.get("value"))
             return_type_any = ctx.get("return_type")
             return_type = return_type_any if isinstance(return_type_any, str) else ""
             if return_type not in {"", "any"}:
-                value = _cast_from_any(value, return_type, stmt.get("value"), _type_map(ctx))
+                value = _cast_from_any(value, return_type, esd.get("value"), _type_map(ctx))
             return [indent + "return " + value]
         return [indent + "return"]
 
     if kind == "Expr":
-        value_any = stmt.get("value")
+        value_any = esd.get("value")
         if isinstance(value_any, dict) and value_any.get("kind") == "Name":
             raw_ident = value_any.get("id")
             if raw_ident == "break":
@@ -1979,15 +2008,15 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return [indent + _render_expr(value_any)]
 
     if kind == "AnnAssign":
-        target_any = stmt.get("target")
+        target_any = esd.get("target")
         if isinstance(target_any, dict) and target_any.get("kind") == "Attribute":
-            return [indent + _render_attribute_expr(target_any) + " = " + _render_expr(stmt.get("value"))]
+            return [indent + _render_attribute_expr(target_any) + " = " + _render_expr(esd.get("value"))]
 
         tuple_lines = _emit_tuple_assign(
             target_any,
-            stmt.get("value"),
-            decl_type_any=(stmt.get("decl_type") or stmt.get("annotation")),
-            declare_hint=(stmt.get("declare") is not False),
+            esd.get("value"),
+            decl_type_any=(esd.get("decl_type") or esd.get("annotation")),
+            declare_hint=(esd.get("declare") is not False),
             indent=indent,
             ctx=ctx,
         )
@@ -1999,13 +2028,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         type_map = _type_map(ctx)
         used_names = _read_name_set(ctx)
         target_is_name = isinstance(target_any, dict) and target_any.get("kind") == "Name"
-        go_type = _go_type(stmt.get("decl_type") or stmt.get("annotation"), allow_void=False)
+        go_type = _go_type(esd.get("decl_type") or esd.get("annotation"), allow_void=False)
         if go_type == "any":
-            inferred = _infer_go_type(stmt.get("value"), _type_map(ctx))
+            inferred = _infer_go_type(esd.get("value"), _type_map(ctx))
             if inferred != "any":
                 go_type = inferred
 
-        stmt_value = stmt.get("value")
+        stmt_value = esd.get("value")
         if stmt_value is None:
             value = _default_return_expr(go_type)
         else:
@@ -2023,7 +2052,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             if stmt_value is None:
                 return []
             return [indent + "_ = " + value]
-        if stmt.get("declare") is False or target in declared:
+        if esd.get("declare") is False or target in declared:
             if target not in declared:
                 declared.add(target)
                 type_map[target] = go_type
@@ -2046,18 +2075,18 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return [indent + "var " + target + " " + go_type + " = " + value]
 
     if kind == "Assign":
-        targets_any = stmt.get("targets")
+        targets_any = esd.get("targets")
         targets = targets_any if isinstance(targets_any, list) else []
-        if len(targets) == 0 and isinstance(stmt.get("target"), dict):
-            targets = [stmt.get("target")]
+        if len(targets) == 0 and isinstance(esd.get("target"), dict):
+            targets = [esd.get("target")]
         if len(targets) == 0:
             raise RuntimeError("go native emitter: Assign without target")
 
         tuple_lines = _emit_tuple_assign(
             targets[0],
-            stmt.get("value"),
-            decl_type_any=stmt.get("decl_type"),
-            declare_hint=bool(stmt.get("declare")),
+            esd.get("value"),
+            decl_type_any=esd.get("decl_type"),
+            declare_hint=bool(esd.get("declare")),
             indent=indent,
             ctx=ctx,
         )
@@ -2066,14 +2095,14 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
 
         if isinstance(targets[0], dict) and targets[0].get("kind") == "Attribute":
             lhs_attr = _render_attribute_expr(targets[0])
-            value_attr = _render_expr(stmt.get("value"))
+            value_attr = _render_expr(esd.get("value"))
             return [indent + lhs_attr + " = " + value_attr]
 
         if isinstance(targets[0], dict) and targets[0].get("kind") == "Subscript":
             tgt = targets[0]
             owner = _render_expr(tgt.get("value"))
             index = _render_expr(tgt.get("slice"))
-            value = _render_expr(stmt.get("value"))
+            value = _render_expr(esd.get("value"))
             return [indent + "__pytra_set_index(" + owner + ", " + index + ", " + value + ")"]
 
         lhs = _target_name(targets[0])
@@ -2081,13 +2110,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         type_map = _type_map(ctx)
         used_names = _read_name_set(ctx)
         lhs_is_name = isinstance(targets[0], dict) and targets[0].get("kind") == "Name"
-        value = _render_expr(stmt.get("value"))
-        value_node = stmt.get("value")
+        value = _render_expr(esd.get("value"))
+        value_node = esd.get("value")
 
         if lhs_is_name and lhs not in used_names:
             return [indent + "_ = " + value]
 
-        if stmt.get("declare"):
+        if esd.get("declare"):
             if lhs in declared:
                 if lhs in type_map and type_map[lhs] != "any":
                     reassigned = _materialize_container_value_from_ref(
@@ -2099,7 +2128,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                     )
                     return [indent + lhs + " = " + _cast_from_any(reassigned, type_map[lhs], value_node, _type_map(ctx))]
                 return [indent + lhs + " = " + value]
-            go_type = _go_type(stmt.get("decl_type"), allow_void=False)
+            go_type = _go_type(esd.get("decl_type"), allow_void=False)
             if go_type == "any":
                 inferred = _infer_go_type(value_node, _type_map(ctx))
                 if inferred != "any":
@@ -2143,9 +2172,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return [indent + lhs + " = " + value]
 
     if kind == "AugAssign":
-        lhs = _target_name(stmt.get("target"))
-        rhs = _render_expr(stmt.get("value"))
-        op = stmt.get("op")
+        lhs = _target_name(esd.get("target"))
+        rhs = _render_expr(esd.get("value"))
+        op = esd.get("op")
         if op == "Add":
             return [indent + lhs + " += " + rhs]
         if op == "Sub":
@@ -2162,9 +2191,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return _emit_swap(stmt, indent=indent, ctx=ctx)
 
     if kind == "If":
-        test_expr = _render_truthy_expr(stmt.get("test"))
+        test_expr = _render_truthy_expr(esd.get("test"))
         lines: list[str] = [indent + "if " + test_expr + " {"]
-        body_any = stmt.get("body")
+        body_any = esd.get("body")
         body = body_any if isinstance(body_any, list) else []
         body_ctx: dict[str, Any] = {
             "tmp": ctx.get("tmp", 0),
@@ -2179,7 +2208,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
             lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=body_ctx))
             i += 1
 
-        orelse_any = stmt.get("orelse")
+        orelse_any = esd.get("orelse")
         orelse = orelse_any if isinstance(orelse_any, list) else []
         if len(orelse) == 0:
             ctx["tmp"] = body_ctx.get("tmp", ctx.get("tmp", 0))
@@ -2207,9 +2236,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return _emit_for_core(stmt, indent=indent, ctx=ctx)
 
     if kind == "While":
-        test_expr = _render_truthy_expr(stmt.get("test"))
+        test_expr = _render_truthy_expr(esd.get("test"))
         lines: list[str] = [indent + "for " + test_expr + " {"]
-        body_any = stmt.get("body")
+        body_any = esd.get("body")
         body = body_any if isinstance(body_any, list) else []
         i = 0
         while i < len(body):
@@ -2220,13 +2249,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
 
     if kind == "Try":
         lines: list[str] = []
-        body_any = stmt.get("body")
+        body_any = esd.get("body")
         body = body_any if isinstance(body_any, list) else []
         i = 0
         while i < len(body):
             lines.extend(_emit_stmt(body[i], indent=indent, ctx=ctx))
             i += 1
-        handlers_any = stmt.get("handlers")
+        handlers_any = esd.get("handlers")
         handlers = handlers_any if isinstance(handlers_any, list) else []
         i = 0
         while i < len(handlers):
@@ -2239,13 +2268,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
                     lines.extend(_emit_stmt(h_body[j], indent=indent, ctx=ctx))
                     j += 1
             i += 1
-        orelse_any = stmt.get("orelse")
+        orelse_any = esd.get("orelse")
         orelse = orelse_any if isinstance(orelse_any, list) else []
         i = 0
         while i < len(orelse):
             lines.extend(_emit_stmt(orelse[i], indent=indent, ctx=ctx))
             i += 1
-        final_any = stmt.get("finalbody")
+        final_any = esd.get("finalbody")
         final = final_any if isinstance(final_any, list) else []
         i = 0
         while i < len(final):
@@ -2266,7 +2295,7 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         return []
 
     if kind == "Raise":
-        exc_any = stmt.get("exc")
+        exc_any = esd.get("exc")
         if isinstance(exc_any, dict):
             return [indent + "panic(__pytra_str(" + _render_expr(exc_any) + "))"]
         return [indent + "panic(\"pytra raise\")"]
@@ -2277,14 +2306,15 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
 def _stmt_guarantees_return(stmt: Any) -> bool:
     if not isinstance(stmt, dict):
         return False
-    kind = stmt.get("kind")
+    sgr: dict[str, Any] = stmt
+    kind = sgr.get("kind")
     if kind == "Return":
         return True
     if kind != "If":
         return False
-    body_any = stmt.get("body")
+    body_any = sgr.get("body")
     body = body_any if isinstance(body_any, list) else []
-    orelse_any = stmt.get("orelse")
+    orelse_any = sgr.get("orelse")
     orelse = orelse_any if isinstance(orelse_any, list) else []
     if len(orelse) == 0:
         return False
@@ -2301,7 +2331,6 @@ def _block_guarantees_return(body: list[Any]) -> bool:
 
 
 def _emit_function(fn: dict[str, Any], *, indent: str, receiver_name: str | None = None) -> list[str]:
-    global _CURRENT_RECEIVER_CLASS, _CURRENT_RECEIVER_VAR
     name = _safe_ident(fn.get("name"), "func")
     is_init = receiver_name is not None and name == "__init__"
     if is_init:
@@ -2353,16 +2382,16 @@ def _emit_function(fn: dict[str, Any], *, indent: str, receiver_name: str | None
         i += 1
 
     i = 0
-    prev_receiver_class = _CURRENT_RECEIVER_CLASS
-    prev_receiver_var = _CURRENT_RECEIVER_VAR
+    prev_receiver_class = _CURRENT_RECEIVER_CLASS[0]
+    prev_receiver_var = _CURRENT_RECEIVER_VAR[0]
     if isinstance(receiver_name, str):
-        _CURRENT_RECEIVER_CLASS = receiver_name
-        _CURRENT_RECEIVER_VAR = recv_var
+        _CURRENT_RECEIVER_CLASS[0] = receiver_name
+        _CURRENT_RECEIVER_VAR[0] = recv_var
     while i < len(body):
         lines.extend(_emit_stmt(body[i], indent=indent + "    ", ctx=ctx))
         i += 1
-    _CURRENT_RECEIVER_CLASS = prev_receiver_class
-    _CURRENT_RECEIVER_VAR = prev_receiver_var
+    _CURRENT_RECEIVER_CLASS[0] = prev_receiver_class
+    _CURRENT_RECEIVER_VAR[0] = prev_receiver_var
 
     if return_type != "" and not _block_guarantees_return(body):
         lines.append(indent + "    return " + _default_return_expr(return_type))
@@ -2549,18 +2578,17 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
                 functions.append(node)
         i += 1
 
-    global _CLASS_NAMES, _CLASS_BASE_MAP, _CLASS_HAS_DERIVED, _RELATIVE_IMPORT_NAME_ALIASES
-    _CLASS_NAMES = set()
-    _RELATIVE_IMPORT_NAME_ALIASES = _collect_relative_import_name_aliases(east_doc)
+    _CLASS_NAMES[0] = set()
+    _RELATIVE_IMPORT_NAME_ALIASES[0] = _collect_relative_import_name_aliases(east_doc)
     i = 0
     while i < len(classes):
-        _CLASS_NAMES.add(_safe_ident(classes[i].get("name"), "PytraClass"))
+        _CLASS_NAMES[0].add(_safe_ident(classes[i].get("name"), "PytraClass"))
         i += 1
-    _CLASS_BASE_MAP = _collect_class_base_map(classes)
-    _CLASS_HAS_DERIVED = set()
-    for _, base_name in _CLASS_BASE_MAP.items():
+    _CLASS_BASE_MAP[0] = _collect_class_base_map(classes)
+    _CLASS_HAS_DERIVED[0] = set()
+    for _, base_name in _CLASS_BASE_MAP[0].items():
         if base_name != "":
-            _CLASS_HAS_DERIVED.add(base_name)
+            _CLASS_HAS_DERIVED[0].add(base_name)
     class_method_sig_map = _collect_class_method_sig_map(classes)
 
     lines: list[str] = []
@@ -2584,7 +2612,7 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
     while i < len(classes):
         cname = _safe_ident(classes[i].get("name"), "PytraClass")
         iface_name = _class_iface_name(cname)
-        method_sigs = _resolve_interface_method_sigs(cname, _CLASS_BASE_MAP, class_method_sig_map)
+        method_sigs = _resolve_interface_method_sigs(cname, _CLASS_BASE_MAP[0], class_method_sig_map)
         lines.append("type " + iface_name + " interface {")
         j = 0
         while j < len(method_sigs):
