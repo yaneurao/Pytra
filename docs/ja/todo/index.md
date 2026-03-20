@@ -147,5 +147,5 @@
 1b. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-02] `pytra.std.re` に `compile` / `Pattern` を実装し、optimizer の `import re` を移行。
 1c. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-03] `multifile_writer.py` の `import os` を `pytra.std` 経由に移行。
 1d. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-04] CppEmitter の動的 mixin 注入（`_attach_cpp_emitter_helper_methods` の `setattr`/`__dict__`）を EAST3 mixin 展開による多重継承に置換する。`install_py2cpp_runtime_symbols` の `globals()` 注入を除去する。
-2. [ ] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S2] `tools/build_selfhost.py` を multi-module transpile パイプライン（compile → link）に拡張する。
+2. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S2] `tools/build_selfhost.py` を multi-module transpile パイプライン（compile → link）に拡張する。→ `--multi-module` フラグで py2x.py 経由の compile→link→emit パイプラインを実行。emitter 全 20 モジュール EAST3 コンパイル成功。パーサーの `typing`/`dataclasses` no-op import 許容を修正。残ブロッカー: `backend_registry_static.py` の `:` 入り文字列キーがパーサーで解析失敗。
 3. [ ] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S3] `py2x-selfhost.py` から `emit_cpp_from_east` を直接呼び出し、`backend_registry_static.cpp` の `emit_source_typed` シェルアウトを除去する。

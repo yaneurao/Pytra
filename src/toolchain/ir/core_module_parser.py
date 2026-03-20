@@ -541,7 +541,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
         import_from_clause = _sh_parse_import_from_clause(s)
         if import_from_clause is not None:
             mod_name, names_txt, mod_level = import_from_clause
-            if mod_name in {"typing", "dataclasses", "enum", "collections"}:
+            if mod_name in {"enum", "collections"}:
                 pytra_mod = f"pytra.std.{mod_name}" if mod_name == "collections" else f"pytra.{mod_name}"
                 raise _make_east_build_error(
                     kind="unsupported_syntax",
@@ -549,7 +549,7 @@ def convert_source_to_east_self_hosted_impl(source: str, filename: str) -> dict[
                     source_span=_sh_span(i, 0, len(ln)),
                     hint=f"Replace with: from {pytra_mod} import ...",
                 )
-            if mod_name in {"pytra.types", "pytra.typing", "pytra.enum", "pytra.dataclasses"}:
+            if mod_name in {"typing", "dataclasses", "pytra.types", "pytra.typing", "pytra.enum", "pytra.dataclasses"}:
                 # 言語補助モジュール: パーサーが型名・構文を既に認識しているため、import を無視する。
                 i = logical_end + 1
                 continue
