@@ -165,6 +165,12 @@ _RUNTIME_HOOK_DESCRIPTORS: dict[str, RuntimeHookDescriptor] = {
             ("runtime/nim/generated/utils/image_runtime.nim", "image_runtime.nim"),
         ],
     },
+    "powershell": {
+        "kind": "copy_files",
+        "files": [
+            ("runtime/powershell/built_in/py_runtime.ps1", "py_runtime.ps1"),
+        ],
+    },
 }
 
 _BACKEND_TARGET_ORDER: tuple[str, ...] = (
@@ -182,6 +188,7 @@ _BACKEND_TARGET_ORDER: tuple[str, ...] = (
     "scala",
     "php",
     "nim",
+    "powershell",
 )
 
 _BACKEND_DESCRIPTORS: dict[str, BackendDescriptor] = {
@@ -313,6 +320,15 @@ _BACKEND_DESCRIPTORS: dict[str, BackendDescriptor] = {
         "emit_kind": "unary",
         "emit_ref": "backends.nim.emitter:transpile_to_nim_native",
         "runtime_hook_key": "nim",
+    },
+    "powershell": {
+        "target_lang": "powershell",
+        "extension": ".ps1",
+        "lower_ref": "",
+        "optimizer_ref": "",
+        "emit_kind": "unary",
+        "emit_ref": "backends.powershell.emitter.powershell_emitter:transpile_to_powershell",
+        "runtime_hook_key": "powershell",
     },
 }
 
