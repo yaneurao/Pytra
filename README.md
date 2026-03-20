@@ -64,48 +64,39 @@ Pytra's features
 - Python to multi-language transpiler
   - Supports conversion to C++, C#, Rust, JavaScript, TypeScript, Go, Java, Swift, Kotlin, Ruby, Lua, Scala3, and PHP.
   - Converts code to output in a form extremely close to the original source.
-
-- Write Python code that targets C++-level output quality
-  - `int` defaults to 64-bit signed integer.
-  - No dynamic typing.
+  - The goal is to write Python code that produces output equivalent to writing directly in C++.
 
 - Simple language model
   - Basically a subset of Python.
   - Can be developed with existing tools such as VS Code.
-  - Drops multiple inheritance and keeps only single inheritance.
 
 - High extensibility
   - The transpiler core is implemented in Python, making extension and customization easy.
   - The transpiler's own source code can be transpiled into other languages by this transpiler, enabling self-hosting.
 
-Python vs Pytra
+## Python vs Pytra
 
 |Aspect|Python|Pytra|
 |-|-|-|
-|Execution|Runs on Python interpreter|Transpiles first, then runs on each target language|
-|Typing|Dynamic typing|Static-leaning typing|
+|Execution|Runs on Python interpreter|Runs on each target language|
 |Integers|Arbitrary precision|int64, uint64, ..., int8, uint8|
-|Float|64-bit only|64/32-bit|
+|Float|64-bit|64/32-bit|
 |Speed|x1|x10~x100 (when converting to C++/Rust)|
 |Backend optimization|Limited|Abundant|
-|Multi-language delivery|Single track|Deploy in multiple languages|
-|Type fixity|Loose|Stronger|
-|Boundary checks|Loose|Easier to control explicitly|
-|Platform integration|Python-runtime centric|Easy to integrate with language-specific SDKs/tools|
+|Multi-language delivery|❌|✅|
+|Typing|Dynamic typing|Static typing|
+|Boundary checks|Always|Customizable|
+|Platform integration|Python-centric|Fits each language's SDKs/tools|
 |Distribution|Python runtime required|Fits language-specific deployment|
-|mix-in|Yes|Yes|
-|Multiple inheritance|Yes|No|
-|Selfhost|No|Yes|
+|mix-in|✅|✅|
+|Multiple inheritance|✅|❌ (single inheritance)|
+|Selfhost|❌|✅|
 
-We also prioritize practical operational benefits.
-
-WARNING: This project is still under active development and may be far from production-ready. Review sample code first and use at your own risk.
-
-WARNING: Do not expect entire Python applications to be portable as-is. A realistic expectation is: if the core logic you wrote in Python transpiles well, that is a good outcome.
+⚠ This project is still under active development and may be far from production-ready. Review sample code first and use at your own risk.
 
 ## Runtime Performance Comparison
 
-Execution times for [sample programs](sample/readme.md) written in Python and their transpiled versions (unit: seconds). In the table, Python is the original code and PyPy is for reference.
+Execution times for sample programs written in Python and their transpiled versions (unit: seconds). In the table, Python is the original code and PyPy is for reference.
 
 |No.|Workload|<img alt="Python" src="https://img.shields.io/badge/-Python-3776AB?style=flat-square&logo=python&logoColor=white">|<img alt="PyPy" src="https://img.shields.io/badge/-PyPy-4B8BBE?style=flat-square">|<img alt="C++" src="https://img.shields.io/badge/-C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white">|<img alt="Rust" src="https://img.shields.io/badge/-Rust-F6B73C?style=flat-square&logo=rust&logoColor=black">|<img alt="C#" src="https://img.shields.io/badge/-C%23-239120?style=flat-square&logo=dotnet&logoColor=white">|<img alt="JS" src="https://img.shields.io/badge/-JS-F7DF1E?style=flat-square&logo=javascript&logoColor=black">|
 |-|-|-:|-:|-:|-:|-:|-:|
