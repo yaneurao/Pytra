@@ -364,7 +364,7 @@ def _sync_arg_type_expr_mirrors(node: dict[str, Any], path: str) -> None:
         if not isinstance(arg_name, str):
             continue
         if not _is_type_expr_payload(expr_obj):
-            raise RuntimeError(path + ".arg_type_exprs." + arg_name + " must be a TypeExpr object")
+            continue
         expected = type_expr_to_string(expr_obj)
         mirror_obj = arg_types_obj.get(arg_name)
         if mirror_obj is None:

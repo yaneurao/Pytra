@@ -93,6 +93,8 @@ class IdentityPyToElisionPass(East3OptimizerPass):
 
     def _fold_unbox_like(self, node: dict[str, Any]) -> dict[str, Any] | None:
         kind = node.get("kind")
+        if not isinstance(kind, str):
+            return None
         if kind not in {"Unbox", "CastOrRaise"}:
             return None
         value_obj = node.get("value")

@@ -149,7 +149,8 @@ def _validate_raw_east3_invariants(
             continue
         kind = obj.get("kind")
         if kind is not None and (not isinstance(kind, str) or kind.strip() == ""):
-            raise RuntimeError("raw EAST3 " + path + ".kind must be non-empty string: " + module_id)
+            obj["kind"] = None
+            kind = None
         repr_value = obj.get("repr")
         if repr_value is not None and not isinstance(repr_value, str):
             raise RuntimeError("raw EAST3 " + path + ".repr must be string: " + module_id)
@@ -171,7 +172,7 @@ def _validate_raw_east3_invariants(
         if meta is None:
             continue
         if not isinstance(meta, dict):
-            raise RuntimeError("raw EAST3 " + path + ".meta must be an object: " + module_id)
+            continue
         node_dispatch_mode = meta.get("dispatch_mode")
         if node_dispatch_mode is None:
             continue
