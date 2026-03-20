@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-19（P2/P6 完了→archive 移管、P7 子タスク具体化）
+最終更新: 2026-03-20（P7-S4 完了: リンカー wildcard re-export 対応）
 
 ## 文脈運用ルール
 
@@ -149,4 +149,4 @@
 1d. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-04] CppEmitter の動的 mixin 注入（`_attach_cpp_emitter_helper_methods` の `setattr`/`__dict__`）を EAST3 mixin 展開による多重継承に置換する。`install_py2cpp_runtime_symbols` の `globals()` 注入を除去する。
 2. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S2] `tools/build_selfhost.py` を multi-module transpile パイプライン（compile → link）に拡張する。→ `--multi-module` フラグで py2x.py 経由の compile→link→emit パイプラインを実行。全 150 モジュール EAST3 コンパイル成功。パーサー修正（typing no-op、dict 文字列キー内 `:`、複数型引数 subscript）。依存チェーン全体の object レシーバ修正（40+ ファイル）。
 3. [ ] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S3] `py2x-selfhost.py` から `emit_cpp_from_east` を直接呼び出し、`backend_registry_static.cpp` の `emit_source_typed` シェルアウトを除去する。
-4. [ ] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S4] リンカーの import 解決で `from toolchain.compiler.transpile_cli import make_user_error` 等のシンボルが見つからない問題を調査・修正する。全 150 モジュールの個別 EAST3 コンパイルは成功済み。リンク段階の export/import マッチングが失敗している。
+4. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S4] リンカーの import 解決で `from toolchain.compiler.transpile_cli import make_user_error` 等のシンボルが見つからない問題を調査・修正する。→ `module_export_table` に wildcard re-export 伝播を実装。`from X import *` による再エクスポートが export テーブルに反映されるようになり、151 モジュールの link に成功。wildcard バインディングの重複許容も追加。

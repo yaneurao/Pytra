@@ -1314,6 +1314,62 @@ def module_export_table(
                     if local_name != "":
                         exports.add(local_name)
         out[mod_name] = exports
+
+    # --- wildcard re-export propagation ---
+    # ``from X import *`` は X の公開シンボルをこのモジュールの export に含める。
+    # 推移的 wildcard を処理するため不動点ループを回す。
+    wildcard_edges: dict[str, list[str]] = {}
+    mod_id_map: dict[str, dict[str, object]] = {}
+    for mod_key, east in module_east_map.items():
+        mod_path = Path(mod_key)
+        mod_name = module_id_from_east_for_graph(root, mod_path, east)
+        if mod_name == "":
+            continue
+        mod_id_map[mod_name] = east
+        importer_root = resolve_import_graph_entry_root(mod_path)
+        body = dict_any_get_dict_list(east, "body")
+        sources: list[str] = []
+        for st in body:
+            if dict_any_kind(st) != "ImportFrom":
+                continue
+            for ent in dict_any_get_dict_list(st, "names"):
+                if dict_any_get_str(ent, "name") == "*":
+                    src_mod = dict_any_get_str(st, "module")
+                    if src_mod.startswith("."):
+                        src_mod = normalize_relative_module_id(src_mod, importer_root, mod_path)
+                    if src_mod != "":
+                        sources.append(src_mod)
+        if len(sources) > 0:
+            wildcard_edges[mod_name] = sources
+
+    if len(wildcard_edges) > 0:
+        changed = True
+        max_iter = 20
+        iteration = 0
+        while changed and iteration < max_iter:
+            changed = False
+            iteration += 1
+            for mod_name, sources in wildcard_edges.items():
+                if mod_name not in out:
+                    continue
+                for src_mod in sources:
+                    if src_mod not in out:
+                        continue
+                    # __all__ フィルタリング: src_mod に静的 __all__ があればそれに制限
+                    src_body = dict_any_get_dict_list(mod_id_map.get(src_mod, {}), "body")
+                    all_state, all_symbols_raw = _module_static_all_symbols(src_body)
+                    src_exports = out[src_mod]
+                    if all_state == "ok":
+                        allowed: set[str] = set()
+                        for sym_any in all_symbols_raw:
+                            sym_txt = str(sym_any)
+                            if sym_txt != "" and sym_txt in src_exports:
+                                allowed.add(sym_txt)
+                        src_exports = allowed
+                    for sym in src_exports:
+                        if sym != "" and not sym.startswith("_") and sym not in out[mod_name]:
+                            out[mod_name].add(sym)
+                            changed = True
     return out
 
 
@@ -1824,6 +1880,10 @@ def validate_from_import_symbols_or_raise(
                 detail_seen,
             )
             for sym in expanded_symbols:
+                # wildcard は既存の明示 import と衝突しても Python ではエラーにならない。
+                # 既にバインド済みのシンボルはスキップし、明示 import を優先する。
+                if sym in import_symbols or sym in import_modules:
+                    continue
                 bind_import_symbol_or_duplicate(
                     import_symbols,
                     import_modules,

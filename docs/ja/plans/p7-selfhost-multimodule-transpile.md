@@ -65,9 +65,10 @@ g++ -std=c++20 -O2 -Isrc -Isrc/runtime/cpp selfhost/cpp/src/*.cpp <runtime_sourc
 
 ## 子タスク
 
-- [ ] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S1] emitter モジュール群の selfhost 制約準拠を監査し、違反箇所を列挙する。
-- [ ] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S2] `tools/build_selfhost.py` を multi-module transpile パイプライン（compile → link）に拡張する。
+- [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S1] emitter モジュール群の selfhost 制約準拠を監査し、違反箇所を列挙する。
+- [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S2] `tools/build_selfhost.py` を multi-module transpile パイプライン（compile → link）に拡張する。
 - [ ] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S3] `py2x-selfhost.py` から `emit_cpp_from_east` を直接呼び出し、`backend_registry_static.cpp` の `emit_source_typed` シェルアウトを除去する。
+- [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S4] リンカーの import 解決で wildcard re-export が export テーブルに反映されない問題を修正する。
 
 ## 決定ログ
 
@@ -84,3 +85,4 @@ g++ -std=c++20 -O2 -Isrc -Isrc/runtime/cpp selfhost/cpp/src/*.cpp <runtime_sourc
   - **ブロッカー**: #4 の動的 dispatch 4件。`_attach_cpp_emitter_helper_methods` は mixin パターンで CppEmitter にヘルパーメソッドを動的注入しており、C++ では静的多重継承またはテンプレート CRTP に置換が必要。
 - 2026-03-20: S2 実装完了。パーサー修正 3 件（typing/dataclasses no-op import 許容、dict 文字列キー内 `:` 対応、複数型引数 subscript 対応）。コンパイラバグ修正 4 件（TypeExpr sync、EAST3 validator 2 件、optimizer fold）。全 150 モジュールの個別 EAST3 コンパイルに成功。依存チェーン全体（40+ ファイル）の object レシーバを dict[str, Any] 型ローカルに修正。global 文を mutable list holder に置換。typing import を pytra.typing に移行（emitter/optimizer 34 ファイル）。EAST3 mixin 展開を新規実装。
 - 2026-03-20: リンク段階で `from toolchain.compiler.transpile_cli import make_user_error` 等のシンボル解決に失敗。全モジュール個別コンパイルは成功しているが、リンカーの export/import マッチングが未解決。S4 として起票。
+- 2026-03-20: S4 解決。根本原因: `module_export_table` が `from X import *`（wildcard re-export）を export セットに反映していなかった。`toolchain.compiler.transpile_cli` は `from toolchain.frontends.transpile_cli import *` で全シンボルを再エクスポートする shim だが、wildcard がスキップされていたため consumer 側で 36 件の `missing_symbol` エラー発生。修正: (1) `module_export_table` に wildcard re-export の推移的展開ループを追加（`__all__` フィルタリング対応）。(2) wildcard バインディング時の既存明示 import との重複をエラーではなくスキップに変更。検証: 151 モジュールの link 成功（95秒）。後続の `optimize_linked_program` は 151 モジュール規模で 10 分超タイムアウト（別問題）。
