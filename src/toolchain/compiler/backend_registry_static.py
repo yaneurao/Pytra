@@ -50,6 +50,7 @@ from backends.go.emitter import transpile_to_go_native
 from backends.java.lower import lower_east3_to_java_ir
 from backends.java.optimizer import optimize_java_ir
 from backends.java.emitter import transpile_to_java_native
+from backends.powershell.emitter.powershell_emitter import transpile_to_powershell
 from backends.js.lower import lower_east3_to_js_ir
 from backends.js.optimizer import optimize_js_ir
 from backends.js.emitter.js_emitter import transpile_to_js
@@ -126,6 +127,7 @@ _STATIC_CALLABLES = {
     "backends.php.optimizer:optimize_php_ir": optimize_php_ir,
     "backends.php.emitter:transpile_to_php_native": transpile_to_php_native,
     "backends.nim.emitter:transpile_to_nim_native": transpile_to_nim_native,
+    "backends.powershell.emitter.powershell_emitter:transpile_to_powershell": transpile_to_powershell,
     "backends.common.program_writer:write_single_file_program": write_single_file_program,
     "backends.cpp.program_writer:write_cpp_program": write_cpp_program,
     "backends.cpp.emitter:transpile_to_cpp": transpile_to_cpp,

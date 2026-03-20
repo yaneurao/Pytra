@@ -16,8 +16,9 @@ RuntimeHookDescriptor = dict[str, object]
 
 def _deep_copy(value: object) -> object:
     if isinstance(value, dict):
+        d: dict[str, object] = value
         out: dict[str, object] = {}
-        for key, item in value.items():
+        for key, item in d.items():
             if isinstance(key, str):
                 out[key] = _deep_copy(item)
         return out
