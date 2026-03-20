@@ -148,6 +148,15 @@
 3. [x] [ID: P1-PIPELINE-STAGE-SEPARATION-01-S3] `pytra-cli.py --build` を east2cpp.py サブプロセス呼び出しに変更。
 4. [x] [ID: P1-PIPELINE-STAGE-SEPARATION-01-S4] `build_selfhost.py --multi-module` を 3 段パイプラインに分離。→ link-output 生成成功。link-output に非 C++ backend 74 件が含まれるのは py2x-selfhost.py の import グラフの問題（emit 段階では east2cpp.py が解決済み）。
 
+#### P1-2: backend_registry 依存の除去
+
+文脈: [docs/ja/plans/p1-backend-registry-decoupling.md](../plans/p1-backend-registry-decoupling.md)
+
+1. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S1] `py2x.py` の C++ emit パスを `east2cpp.py` サブプロセスに変更し、`backend_registry` import を除去する。
+2. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S2] `py2x.py` の非 C++ emit パスを `east2x.py` サブプロセスに変更する。
+3. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S3] `py2x-selfhost.py` から `backend_registry_static` import を除去し、C++ emit のみ `backends.cpp.emitter` を直接 import する形にリファクタする。
+4. [ ] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S4] selfhost multi-module の compile+link 段階で非 C++ backend が import グラフに含まれないことを検証する。
+
 ### P4: `*args` vararg サポート — EAST3 レベル脱糖
 
 文脈: [docs/ja/plans/p4-vararg-east3-lowering.md](../plans/p4-vararg-east3-lowering.md)
