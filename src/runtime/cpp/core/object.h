@@ -11,6 +11,9 @@
 
 #include "core/py_scalar_types.h"
 
+// Forward declarations for POD boxing constructors.
+class str;
+
 // =============================
 // TypeInfo (interval subtype)
 // =============================

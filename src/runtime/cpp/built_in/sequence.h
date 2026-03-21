@@ -20,8 +20,8 @@ static inline list<T> py_repeat(const list<T>& v, int64 n) {
 }
 
 template <class T>
-static inline list<T> py_repeat(const rc<list<T>>& v, int64 n) {
-    return py_repeat_list_copy(rc_list_ref(v), n);
+static inline list<T> py_repeat(const Object<list<T>>& v, int64 n) {
+    return py_repeat_list_copy(*v, n);
 }
 
 #endif  // PYTRA_NATIVE_BUILT_IN_SEQUENCE_H

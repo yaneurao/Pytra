@@ -36,7 +36,7 @@ bool glob_match_simple(const str& text, const str& pattern) {
 
 }  // namespace
 
-rc<list<str>> glob(const str& pattern) {
+Object<list<str>> glob(const str& pattern) {
     const ::std::string pat = pattern.std();
     const ::std::size_t sep = pat.find_last_of("/\\");
     const ::std::string dir = (sep == ::std::string::npos) ? "." : pat.substr(0, sep);

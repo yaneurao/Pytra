@@ -30,11 +30,6 @@ static inline bool py_contains(const list<T>& values, const Q& key) {
 }
 
 template <class T, class Q>
-static inline bool py_contains(const rc<list<T>>& values, const Q& key) {
-    return py_list_contains_ref(rc_list_ref(values), key);
-}
-
-template <class T, class Q>
 static inline bool py_contains(const Object<list<T>>& values, const Q& key) {
     return py_list_contains_ref(*values, key);
 }

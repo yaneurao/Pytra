@@ -4,7 +4,7 @@
 #include <algorithm>
 
 template <class T>
-class list : public pytra::gc::RcObject {
+class list {
 public:
     using value_type = T;
     using iterator = typename ::std::vector<T>::iterator;
@@ -13,9 +13,9 @@ public:
     using const_reference = typename ::std::vector<T>::const_reference;
 
     list() = default;
-    list(::std::initializer_list<T> init) : pytra::gc::RcObject(), data_(init) {}
-    explicit list(::std::size_t count) : pytra::gc::RcObject(), data_(count) {}
-    list(::std::size_t count, const T& value) : pytra::gc::RcObject(), data_(count, value) {}
+    list(::std::initializer_list<T> init) : data_(init) {}
+    explicit list(::std::size_t count) : data_(count) {}
+    list(::std::size_t count, const T& value) : data_(count, value) {}
     template <class U = T, ::std::enable_if_t<::std::is_same_v<U, uint8>, int> = 0>
     list(const char* s) {
         if (s == nullptr) return;
@@ -43,14 +43,14 @@ public:
     }
 
     template <class U, ::std::enable_if_t<::std::is_same_v<U, T>, int> = 0>
-    list(const rc<list<U>>& other) {
-        if (other) data_ = rc_list_ref(other);
+    list(const Object<list<U>>& other) {
+        if (other) data_ = *other;
     }
 
     template <class U, ::std::enable_if_t<!::std::is_same_v<U, T>, int> = 0>
-    list(const rc<list<U>>& other) {
+    list(const Object<list<U>>& other) {
         if (!other) return;
-        const list<U>& ref = rc_list_ref(other);
+        const list<U>& ref = *other;
         reserve(ref.size());
         for (const auto& v : ref) {
             data_.push_back(static_cast<T>(v));

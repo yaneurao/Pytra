@@ -9,7 +9,7 @@
 // py_len: 各コレクション型の長さを int64 で返す。
 // object 境界（型不明）の len() フォールバックとして emitter が参照する。
 template <class T>
-static inline int64 py_len(const rc<list<T>>& v) {
+static inline int64 py_len(const Object<list<T>>& v) {
     if (!v) return 0;
     return static_cast<int64>(v->size());
 }

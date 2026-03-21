@@ -41,34 +41,24 @@ class str;
 template <class T> class list;
 template <class K, class V> class dict;
 
+// Forward declare Object<T> so list/dict constructors can reference it.
+template <typename T> struct Object;
+
 #include "core/str.h"
 #include "core/list.h"
 #include "core/dict.h"
 #include "core/set.h"
 
+// Object<T> support — include after list/dict/set are complete.
+#include "core/object.h"
+
 template <class T>
 struct py_is_rc_list_handle : ::std::false_type {};
 
 template <class T>
-struct py_is_rc_list_handle<rc<list<T>>> : ::std::true_type {
+struct py_is_rc_list_handle<Object<list<T>>> : ::std::true_type {
     using item_type = T;
 };
-
-// Legacy rc<list<T>> overloads (backward compat during migration).
-template <class T>
-static inline list<T>& rc_list_ref(rc<list<T>>& values) {
-    if (!values) throw ::std::runtime_error("rc_list_ref: null list handle");
-    return *values;
-}
-
-template <class T>
-static inline const list<T>& rc_list_ref(const rc<list<T>>& values) {
-    if (!values) throw ::std::runtime_error("rc_list_ref: null list handle");
-    return *values;
-}
-
-// Object<T> support — include after list/dict/set are complete.
-#include "core/object.h"
 
 // Object<list<T>> based list helpers (requires Object<T> to be defined).
 

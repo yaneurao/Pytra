@@ -9,7 +9,7 @@ template <class T>
 static inline T py_to(const T& v);
 
 template <class T>
-static inline bool py_to_bool(const rc<list<T>>& v) {
+static inline bool py_to_bool(const Object<list<T>>& v) {
     return v && !v->empty();
 }
 
@@ -38,7 +38,7 @@ struct py_is_list_type<list<T>> : ::std::true_type {
 };
 
 template <class T>
-struct py_is_list_type<rc<list<T>>> : ::std::true_type {
+struct py_is_list_type<Object<list<T>>> : ::std::true_type {
     using item_type = T;
 };
 

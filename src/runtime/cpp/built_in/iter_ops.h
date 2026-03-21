@@ -16,8 +16,8 @@ static inline list<T> py_reversed(const list<T>& values) {
 }
 
 template <class T>
-static inline list<T> py_reversed(const rc<list<T>>& values) {
-    return py_reversed_list_copy(rc_list_ref(values));
+static inline list<T> py_reversed(const Object<list<T>>& values) {
+    return py_reversed_list_copy(*values);
 }
 
 template <class T>
@@ -36,18 +36,8 @@ static inline list<::std::tuple<int64, T>> py_enumerate(const list<T>& values) {
 }
 
 template <class T>
-static inline list<::std::tuple<int64, T>> py_enumerate(const rc<list<T>>& values) {
-    return py_enumerate_list_copy(rc_list_ref(values), 0);
-}
-
-template <class T>
 static inline list<::std::tuple<int64, T>> py_enumerate(const list<T>& values, int64 start) {
     return py_enumerate_list_copy(values, start);
-}
-
-template <class T>
-static inline list<::std::tuple<int64, T>> py_enumerate(const rc<list<T>>& values, int64 start) {
-    return py_enumerate_list_copy(rc_list_ref(values), start);
 }
 
 template <class T>

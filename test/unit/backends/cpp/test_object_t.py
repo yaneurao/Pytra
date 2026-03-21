@@ -40,8 +40,6 @@ class ObjectTTest(unittest.TestCase):
 #include <cassert>
 #include <iostream>
 
-TypeInfo* g_type_table[16] = {};
-uint32_t g_type_table_size = 0;
 
 struct Base {
     virtual ~Base() {}
@@ -87,8 +85,6 @@ int main() {
 #include <cassert>
 #include <iostream>
 
-TypeInfo* g_type_table[16] = {};
-uint32_t g_type_table_size = 0;
 
 struct Animal { virtual ~Animal() {} };
 struct Dog : Animal {};
@@ -126,8 +122,6 @@ int main() {
 #include <cassert>
 #include <iostream>
 
-TypeInfo* g_type_table[16] = {};
-uint32_t g_type_table_size = 0;
 
 struct A { virtual ~A() {} };
 struct B : A {};
@@ -171,8 +165,6 @@ int main() {
 #include <cassert>
 #include <iostream>
 
-TypeInfo* g_type_table[16] = {};
-uint32_t g_type_table_size = 0;
 
 struct Widget { int data = 99; };
 
@@ -209,8 +201,6 @@ int main() {
 #include <cassert>
 #include <iostream>
 
-TypeInfo* g_type_table[16] = {};
-uint32_t g_type_table_size = 0;
 
 enum { TID_LIST_INT = 0, TID_DICT_STR_INT = 1 };
 TypeInfo ti_list = {TID_LIST_INT, 0, 1, &deleter_impl<list<int64>>};
