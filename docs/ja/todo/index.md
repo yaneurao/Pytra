@@ -63,8 +63,8 @@
 12. [x] [ID: P0-OBJECT-T-MIGRATION-04-S1] `RcObject` クラスの外部依存を除去する。（py_types.h で legacy alias 化、type_id_support.h の specialization 削除）
 13. [x] [ID: P0-OBJECT-T-MIGRATION-04-S2] `rc<T>` テンプレートの外部依存を除去する。（S1 と同時。gc.h 定義自体は S5 で削除）
 14. [x] [ID: P0-OBJECT-T-MIGRATION-04-S3] 旧 `object` 型を削除し、`Object<void>` または新 `object` typedef に統一する。
-15. [ ] [ID: P0-OBJECT-T-MIGRATION-04-S4] `tagged_value.h` を削除する。（PyBoxed/py_box/py_unbox は未使用確認済み。生成コード依存確認後に削除）
-16. [ ] [ID: P0-OBJECT-T-MIGRATION-04-S5] `gc.h` を `ControlBlock` ベースの rc 管理に書き換える。（S1-S2 と同時）
+15. [x] [ID: P0-OBJECT-T-MIGRATION-04-S4] `tagged_value.h` を空ヘッダー化。（PyBoxed/py_box/py_unbox 削除、rc_ops.h も同時に空化）
+16. [ ] [ID: P0-OBJECT-T-MIGRATION-04-S5] `gc.h`/`gc.cpp` を削除する。（全 generated .cpp が rc<T> 不使用になった時点で実施。P0-22 と連動）
 
 **フェーズ 5: テスト・検証**
 
