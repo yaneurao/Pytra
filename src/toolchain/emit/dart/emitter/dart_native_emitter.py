@@ -1444,6 +1444,15 @@ class DartNativeEmitter:
         if kind == "Pass":
             self._emit_line("/* pass */")
             return
+        if kind == "TypeAlias":
+            # type X = A | B — no runtime effect in Dart, emit as comment
+            alias_name = _safe_ident(stmt.get("name"), "T")
+            self._emit_line("// type alias: " + alias_name)
+            return
+        if kind == "Yield":
+            val = self._render_expr(stmt.get("value"))
+            self._emit_line("yield " + val + ";")
+            return
         raise RuntimeError("lang=dart unsupported stmt kind: " + str(kind))
 
     def _emit_function_def(self, stmt: dict[str, Any]) -> None:
@@ -1840,6 +1849,12 @@ class DartNativeEmitter:
             for e in elems:
                 out.append(self._render_expr(e))
             return "{" + ", ".join(out) + "}"
+        if kind == "ListComp":
+            return self._render_list_comp(ed)
+        if kind == "SetComp":
+            return self._render_set_comp(ed)
+        if kind == "DictComp":
+            return self._render_dict_comp(ed)
         if kind == "Dict":
             keys_any = ed.get("keys")
             values_any = ed.get("values")
@@ -2171,7 +2186,124 @@ class DartNativeEmitter:
             if attr == "update" and len(rendered_args) == 1:
                 return owner + ".addAll(" + rendered_args[0] + ")"
             return owner + "." + attr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
-        raise RuntimeError("lang=dart unsupported call target")
+        # Lambda immediate call: (lambda x: body)(arg) → ((x) => body)(arg)
+        if isinstance(func_any, dict) and func_any.get("kind") == "Lambda":
+            lambda_expr = self._render_expr(func_any)
+            return "(" + lambda_expr + ")(" + ", ".join(rendered_args) + ")"
+        # Fallback: render func expression and call it
+        func_expr = self._render_expr(func_any)
+        return func_expr + "(" + ", ".join(rendered_args + kw_values_in_order) + ")"
+
+    def _render_list_comp(self, ed: dict[str, Any]) -> str:
+        gens_any = ed.get("generators")
+        gens = gens_any if isinstance(gens_any, list) else []
+        if len(gens) == 0 or not isinstance(gens[0], dict):
+            return "[]"
+        gen = gens[0]
+        target_any = gen.get("target")
+        iter_any = gen.get("iter")
+        if not isinstance(target_any, dict) or not isinstance(iter_any, dict):
+            return "[]"
+        td: dict[str, Any] = target_any
+        elt = self._render_expr(ed.get("elt"))
+        # Collect condition
+        cond_expr = ""
+        ifs_any = gen.get("ifs")
+        if isinstance(ifs_any, list) and len(ifs_any) > 0:
+            cond_parts: list[str] = []
+            for cond_any in ifs_any:
+                cond_parts.append(self._render_expr(cond_any))
+            cond_expr = " && ".join(cond_parts)
+        id_node: dict[str, Any] = iter_any
+        if id_node.get("kind") == "RangeExpr":
+            loop_var = _safe_ident(td.get("id"), "__lc_i") if td.get("kind") == "Name" else "__lc_i"
+            start = self._render_expr(id_node.get("start"))
+            stop = self._render_expr(id_node.get("stop"))
+            step = self._render_expr(id_node.get("step"))
+            step_const = self._const_int_literal(id_node.get("step"))
+            insert_stmt = "__out.add(" + elt + ");"
+            if cond_expr != "":
+                insert_stmt = "if (" + cond_expr + ") { " + insert_stmt + " }"
+            if step_const == 1:
+                return (
+                    "(() { var __out = []; for (var " + loop_var + " = " + start
+                    + "; " + loop_var + " < " + stop + "; " + loop_var + "++) { "
+                    + insert_stmt + " } return __out; })()"
+                )
+            return (
+                "(() { var __out = []; for (var " + loop_var + " = " + start
+                + "; " + loop_var + " < " + stop + "; " + loop_var + " += " + step + ") { "
+                + insert_stmt + " } return __out; })()"
+            )
+        # General iterable comprehension
+        loop_var = _safe_ident(td.get("id"), "__lc_i") if td.get("kind") == "Name" else "__lc_i"
+        iter_expr = self._render_expr(iter_any)
+        insert_stmt = "__out.add(" + elt + ");"
+        if cond_expr != "":
+            insert_stmt = "if (" + cond_expr + ") { " + insert_stmt + " }"
+        return (
+            "(() { var __out = []; for (var " + loop_var + " in " + iter_expr + ") { "
+            + insert_stmt + " } return __out; })()"
+        )
+
+    def _render_set_comp(self, ed: dict[str, Any]) -> str:
+        gens_any = ed.get("generators")
+        gens = gens_any if isinstance(gens_any, list) else []
+        if len(gens) == 0 or not isinstance(gens[0], dict):
+            return "<dynamic>{}"
+        gen = gens[0]
+        target_any = gen.get("target")
+        iter_any = gen.get("iter")
+        if not isinstance(target_any, dict) or not isinstance(iter_any, dict):
+            return "<dynamic>{}"
+        td: dict[str, Any] = target_any
+        elt = self._render_expr(ed.get("elt"))
+        cond_expr = ""
+        ifs_any = gen.get("ifs")
+        if isinstance(ifs_any, list) and len(ifs_any) > 0:
+            cond_parts: list[str] = []
+            for cond_any in ifs_any:
+                cond_parts.append(self._render_expr(cond_any))
+            cond_expr = " && ".join(cond_parts)
+        loop_var = _safe_ident(td.get("id"), "__sc_i") if td.get("kind") == "Name" else "__sc_i"
+        iter_expr = self._render_expr(iter_any)
+        insert_stmt = "__out.add(" + elt + ");"
+        if cond_expr != "":
+            insert_stmt = "if (" + cond_expr + ") { " + insert_stmt + " }"
+        return (
+            "(() { var __out = <dynamic>{}; for (var " + loop_var + " in " + iter_expr + ") { "
+            + insert_stmt + " } return __out; })()"
+        )
+
+    def _render_dict_comp(self, ed: dict[str, Any]) -> str:
+        gens_any = ed.get("generators")
+        gens = gens_any if isinstance(gens_any, list) else []
+        if len(gens) == 0 or not isinstance(gens[0], dict):
+            return "{}"
+        gen = gens[0]
+        target_any = gen.get("target")
+        iter_any = gen.get("iter")
+        if not isinstance(target_any, dict) or not isinstance(iter_any, dict):
+            return "{}"
+        td: dict[str, Any] = target_any
+        key_expr = self._render_expr(ed.get("key"))
+        value_expr = self._render_expr(ed.get("value"))
+        cond_expr = ""
+        ifs_any = gen.get("ifs")
+        if isinstance(ifs_any, list) and len(ifs_any) > 0:
+            cond_parts: list[str] = []
+            for cond_any in ifs_any:
+                cond_parts.append(self._render_expr(cond_any))
+            cond_expr = " && ".join(cond_parts)
+        loop_var = _safe_ident(td.get("id"), "__dc_i") if td.get("kind") == "Name" else "__dc_i"
+        iter_rendered = self._render_expr(iter_any)
+        insert_stmt = "__out[" + key_expr + "] = " + value_expr + ";"
+        if cond_expr != "":
+            insert_stmt = "if (" + cond_expr + ") { " + insert_stmt + " }"
+        return (
+            "(() { var __out = {}; for (var " + loop_var + " in " + iter_rendered + ") { "
+            + insert_stmt + " } return __out; })()"
+        )
 
     def _render_constant(self, value: Any) -> str:
         if value is None:

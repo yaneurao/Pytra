@@ -123,6 +123,11 @@ def _run_one(*, src: Path, out: Path, target: str) -> RunResult:
                     shutil.copy2(f, out)
                     break
 
+        # Copy runtime side files (py_runtime.*) to out.parent for validation
+        for f in emit_dir.rglob("py_runtime.*"):
+            if f.is_file():
+                shutil.copy2(f, out.parent / f.name)
+
         return RunResult(True, "", "", "")
 
 

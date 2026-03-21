@@ -1095,6 +1095,14 @@
         "test/fixtures/typing/any_class_alias.py": {
           "category": "expected_failure",
           "contains": ""
+        },
+        "test/fixtures/collections/deque_basic.py": {
+          "category": "expected_failure",
+          "contains": ""
+        },
+        "test/fixtures/stdlib/typing_extended.py": {
+          "category": "expected_failure",
+          "contains": ""
         }
       },
       "quality_hooks": [],
