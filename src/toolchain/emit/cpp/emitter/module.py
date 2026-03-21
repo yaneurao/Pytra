@@ -23,7 +23,7 @@ from toolchain.misc.transpile_cli import (
 )
 
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
+REPO_ROOT = Path(__file__).resolve().parents[5]
 RUNTIME_STD_SOURCE_ROOT = REPO_ROOT / "src/pytra/std"
 RUNTIME_UTILS_SOURCE_ROOT = REPO_ROOT / "src/pytra/utils"
 RUNTIME_BUILT_IN_SOURCE_ROOT = REPO_ROOT / "src/pytra/built_in"
