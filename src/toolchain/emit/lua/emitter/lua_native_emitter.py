@@ -227,8 +227,8 @@ def _runtime_symbol_call_adapter_kind(runtime_module_id: str, runtime_symbol: st
     symbol_doc = lookup_runtime_symbol_doc(runtime_module_id, runtime_symbol)
     adapter_kind_any = symbol_doc.get("call_adapter_kind")
     if isinstance(adapter_kind_any, str):
-        as: str = adapter_kind_any
-        return as.strip()
+        as_str: str = adapter_kind_any
+        return as_str.strip()
     return ""
 
 
@@ -1290,8 +1290,8 @@ class LuaNativeEmitter:
                 if decl_type == "":
                     anno_any = stmt.get("annotation")
                     if isinstance(anno_any, str):
-                        as: str = anno_any
-                        decl_type = as.strip()
+                        as_str: str = anno_any
+                        decl_type = as_str.strip()
                 if decl_type == "":
                     decl_type = self._infer_decl_type_from_expr(value_node)
                 if value_node is None and bool(stmt.get("declare")):
@@ -1476,6 +1476,11 @@ class LuaNativeEmitter:
             return
         if kind == "Pass":
             self._emit_line("do end")
+            return
+        if kind == "VarDecl":
+            name_raw = stmt.get("name")
+            name = _safe_ident(name_raw, "v") if isinstance(name_raw, str) else "v"
+            self._emit_line("local " + name)
             return
         raise RuntimeError("lang=lua unsupported stmt kind: " + str(kind))
 

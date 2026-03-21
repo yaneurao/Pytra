@@ -1674,8 +1674,8 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if decl_type == "":
             annotation_any = sd.get("annotation")
             if isinstance(annotation_any, str):
-                as: str = annotation_any
-                decl_type = as.strip()
+                as_str: str = annotation_any
+                decl_type = as_str.strip()
         if value_any is None:
             if bool(sd.get("declare")) and decl_type in _NIL_FREE_DECL_TYPES:
                 if isinstance(target_any, dict):
@@ -1810,6 +1810,9 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         final = final_any if isinstance(final_any, list) else []
         lines.extend(_emit_stmt_list(final, indent=indent, ctx=ctx))
         return lines
+
+    if kind == "VarDecl":
+        return []
 
     raise RuntimeError("ruby native emitter: unsupported stmt kind: " + str(kind))
 
@@ -1988,7 +1991,7 @@ def transpile_to_ruby_native(east_doc: dict[str, Any]) -> str:
         raw_name = classes[i].get("name")
         class_key = _safe_ident(raw_name, "PytraClass")
         class_name = _safe_class_ident(raw_name, "PytraClass")
-        _CLASS_NAME_MAP[class_key] = class_name
+        _CLASS_NAME_MAP[0][class_key] = class_name
         _CLASS_NAMES[0].add(class_name)
         i += 1
     i = 0

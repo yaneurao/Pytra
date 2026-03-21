@@ -975,8 +975,8 @@ def _runtime_symbol_name(expr: dict[str, Any], runtime_call: str) -> str:
 def _runtime_call_adapter_kind(expr: dict[str, Any]) -> str:
     adapter_kind_any = expr.get("runtime_call_adapter_kind")
     if isinstance(adapter_kind_any, str):
-        as: str = adapter_kind_any
-        return as.strip()
+        as_str: str = adapter_kind_any
+        return as_str.strip()
     return ""
 
 
@@ -2597,6 +2597,13 @@ def _emit_stmt(stmt: Any, *, indent: str, ctx: dict[str, Any]) -> list[str]:
         if exc_any is None:
             return [indent + "throw new RuntimeException(\"pytra raise\")"]
         return [indent + "throw new RuntimeException(__pytra_str(" + _render_expr(exc_any) + "))"]
+
+    if kind == "VarDecl":
+        name = _safe_ident(sd3.get("name"), "v")
+        var_type = _scala_type(sd3.get("type"), allow_void=False)
+        type_map = _type_map(ctx)
+        type_map[name] = var_type
+        return [indent + "var " + name + ": " + var_type + " = " + _default_return_expr(var_type)]
 
     raise RuntimeError("scala native emitter: unsupported stmt kind " + str(kind))
 
