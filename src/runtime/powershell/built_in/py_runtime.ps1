@@ -54,16 +54,23 @@ function __pytra_int {
 
 function __pytra_bytearray {
     param([object]$size = 0)
+    # 配列が渡された場合はコピーして返す
+    if ($size -is [array] -or $size -is [System.Collections.IList]) {
+        $result = New-Object System.Collections.Generic.List[int]
+        foreach ($item in $size) {
+            [void]$result.Add((__pytra_int $item))
+        }
+        return ,[int[]]$result.ToArray()
+    }
     $count = __pytra_int $size
     if ($count -lt 0) {
         throw "[PowerShell backend experimental] negative bytearray size"
     }
-
     $result = New-Object System.Collections.Generic.List[int]
     for ($i = 0; $i -lt $count; $i++) {
         [void]$result.Add(0)
     }
-    return [int[]]$result
+    return ,[int[]]$result.ToArray()
 }
 
 function __pytra_bytes {

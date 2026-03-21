@@ -287,8 +287,11 @@ def _render_expr(expr_any: Any) -> str:
         if isinstance(value_node, dict):
             vname = _get_str(value_node, "id") if _get_str(value_node, "kind") == "Name" else ""
             vtype = _get_str(value_node, "resolved_type")
-            if vname == "self" or vname in _CLASS_NAMES[0]:
+            if vname == "self":
                 return '$self["' + attr + '"]'
+            if vname in _CLASS_NAMES[0]:
+                # ClassName.attr → クラス変数 $attr（モジュールスコープ）
+                return "$" + _safe_ident(attr, "_cv")
             if vtype in _CLASS_NAMES[0]:
                 return value + '["' + attr + '"]'
         return value + "." + safe_attr
@@ -1278,8 +1281,53 @@ def _emit_class_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -
 
     # Generate default constructor if no __init__
     if not has_init:
+        # @dataclass: field_types からコンストラクタ引数を生成
+        field_types = _get_dict(stmt, "field_types")
+        field_defaults = _get_dict(stmt, "field_defaults")
+        field_params: list[str] = ["$self"]
+        field_assigns: list[str] = []
+        # body 内の AnnAssign/Assign からフィールド名と順序を取得
+        field_names: list[str] = []
+        for member in body:
+            if not isinstance(member, dict):
+                continue
+            mk2 = _get_str(member, "kind")
+            if mk2 == "AnnAssign" or mk2 == "Assign":
+                tgt = member.get("target")
+                if isinstance(tgt, dict) and _get_str(tgt, "kind") == "Name":
+                    fn_id = _get_str(tgt, "id")
+                    if fn_id != "":
+                        field_names.append(fn_id)
+        if len(field_names) == 0 and len(field_types) > 0:
+            for ft_name in field_types:
+                if isinstance(ft_name, str):
+                    field_names.append(ft_name)
+        for fn_id in field_names:
+            safe_fn = "$" + _safe_ident(fn_id, "_f")
+            default_val = field_defaults.get(fn_id)
+            if default_val is not None:
+                field_params.append(safe_fn + " = " + _render_expr(default_val))
+            else:
+                # AnnAssign の value をデフォルトとして使う
+                for member in body:
+                    if isinstance(member, dict) and _get_str(member, "kind") in ("AnnAssign", "Assign"):
+                        tgt2 = member.get("target")
+                        if isinstance(tgt2, dict) and _get_str(tgt2, "id") == fn_id:
+                            val = member.get("value")
+                            if val is not None:
+                                field_params.append(safe_fn + " = " + _render_expr(val))
+                            else:
+                                field_params.append(safe_fn)
+                            break
+                    else:
+                        continue
+                else:
+                    field_params.append(safe_fn)
+            field_assigns.append(indent + '    $self["' + fn_id + '"] = ' + safe_fn)
         lines.append(indent + "function " + name + " {")
-        lines.append(indent + "    param($self)")
+        lines.append(indent + "    param(" + ", ".join(field_params) + ")")
+        for fa in field_assigns:
+            lines.append(fa)
         lines.append(indent + '    $self["__type__"] = "' + name + '"')
         lines.append(indent + "}")
     # else: __type__ already injected in fn_lines above
