@@ -191,9 +191,19 @@ def cmd_build(argv: list[str]) -> int:
         if generated.exists() and str(generated.resolve()) != str(so_path.resolve()):
             so_path.write_text(generated.read_text(encoding="utf-8"), encoding="utf-8")
 
-    # Stage 3: build (C++ only for now)
+    # Stage 3: build + run
+    entry_stem = Path(input_file).stem
+    ext_map: dict[str, str] = {
+        "cpp": "cpp", "rs": "rs", "cs": "cs", "js": "js", "ts": "ts",
+        "go": "go", "java": "java", "swift": "swift", "kotlin": "kt",
+        "scala": "scala", "lua": "lua", "ruby": "rb", "php": "php",
+        "nim": "nim", "powershell": "ps1", "julia": "jl", "dart": "dart",
+    }
+    ext = ext_map.get(target, target)
+    entry_output = output_dir + "/" + entry_stem + "." + ext
+
     if target == "cpp":
-        # Generate Makefile
+        # C++: Makefile → make → exe
         makefile_gen = src_dir + "/../tools/gen_makefile_from_manifest.py"
         manifest = output_dir + "/manifest.json"
         makefile = output_dir + "/Makefile"
@@ -206,18 +216,62 @@ def cmd_build(argv: list[str]) -> int:
         result = _run(gen_cmd)
         if result.returncode != 0:
             return result.returncode
-
-        # Run make
         make_cmd = ["make", "-C", output_dir]
         result = _run(make_cmd)
         if result.returncode != 0:
             return result.returncode
-
-        # Run if requested
         if do_run:
-            exe_path = output_dir + "/" + exe_name
-            result = _run([exe_path])
+            result = _run([output_dir + "/" + exe_name])
             return result.returncode
+        return 0
+
+    # Non-C++ targets: run with language-specific runner
+    if do_run:
+        # Runner commands per target language.
+        # pytra.std.subprocess で呼ぶため selfhost 互換。
+        runner_map: dict[str, list[str]] = {
+            "js": ["node"],
+            "ts": ["npx", "-y", "tsx"],
+            "go": ["go", "run"],
+            "java": ["java"],
+            "ruby": ["ruby"],
+            "lua": ["lua"],
+            "php": ["php"],
+            "scala": ["scala", "run"],
+            "nim": ["nim", "r"],
+            "julia": ["julia"],
+            "dart": ["dart", "run"],
+            "powershell": ["pwsh", "-File"],
+        }
+        # Compiled languages: compile first, then run
+        compile_map: dict[str, list[list[str]]] = {
+            "rs": [["rustc", "-O", entry_output, "-o", output_dir + "/" + exe_name]],
+            "cs": [["dotnet-script", entry_output]],
+            "swift": [["swiftc", entry_output, "-o", output_dir + "/" + exe_name]],
+            "kotlin": [["kotlinc", entry_output, "-include-runtime", "-d", output_dir + "/" + entry_stem + ".jar"]],
+        }
+        compile_run_map: dict[str, list[str]] = {
+            "rs": [output_dir + "/" + exe_name],
+            "swift": [output_dir + "/" + exe_name],
+            "kotlin": ["java", "-cp", output_dir + "/" + entry_stem + ".jar", "pytra_" + entry_stem.replace("-", "_")],
+        }
+
+        if target in compile_map:
+            for compile_cmd in compile_map[target]:
+                result = _run(compile_cmd)
+                if result.returncode != 0:
+                    return result.returncode
+            if target in compile_run_map:
+                result = _run(compile_run_map[target])
+                return result.returncode
+            return 0
+
+        if target in runner_map:
+            run_cmd = runner_map[target] + [entry_output]
+            result = _run(run_cmd)
+            return result.returncode
+
+        _fatal("pytra build --run: no runner configured for target '" + target + "'")
 
     return 0
 
