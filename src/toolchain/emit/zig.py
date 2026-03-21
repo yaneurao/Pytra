@@ -1,32 +1,43 @@
 #!/usr/bin/env python3
-"""Standalone Zig backend: EAST3 JSON → Zig source.
+"""Zig backend: link-output.json → Zig multi-file output.
 
 Usage:
-    python3 -m toolchain.emit.zig INPUT.json -o out/output.zig
+    python3 -m toolchain.emit.zig LINK_OUTPUT.json --output-dir out/zig/
 """
 
 from __future__ import annotations
 
-import json
+import shutil
 import sys
 from pathlib import Path
 
 from toolchain.emit.zig.emitter import transpile_to_zig_native
+from toolchain.emit.loader import emit_all_modules
+
+_RUNTIME_DIR = Path(__file__).resolve().parents[2] / "runtime" / "zig" / "built_in"
+
+
+def _copy_runtime(output_dir: str) -> None:
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    for f in _RUNTIME_DIR.iterdir():
+        if f.is_file():
+            shutil.copy2(f, out / f.name)
 
 
 def main() -> int:
     argv = sys.argv[1:]
     if len(argv) == 0 or argv[0] in ("-h", "--help"):
-        print("usage: toolchain.emit.zig INPUT.json -o OUTPUT.zig")
+        print("usage: toolchain.emit.zig LINK_OUTPUT.json --output-dir DIR")
         return 0
 
     input_path = ""
-    output_path = ""
+    output_dir = "out/zig"
     i = 0
     while i < len(argv):
         tok = argv[i]
-        if (tok == "-o" or tok == "--output") and i + 1 < len(argv):
-            output_path = argv[i + 1]
+        if tok == "--output-dir" and i + 1 < len(argv):
+            output_dir = argv[i + 1]
             i += 2
             continue
         if not tok.startswith("-") and input_path == "":
@@ -34,17 +45,13 @@ def main() -> int:
         i += 1
 
     if input_path == "":
-        print("error: input file is required", file=sys.stderr)
+        print("error: input link-output.json is required", file=sys.stderr)
         return 1
-    if output_path == "":
-        output_path = Path(input_path).stem + ".zig"
 
-    east_doc = json.loads(Path(input_path).read_text(encoding="utf-8"))
-    source = transpile_to_zig_native(east_doc)
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    Path(output_path).write_text(source, encoding="utf-8")
-    print("generated: " + output_path)
-    return 0
+    rc = emit_all_modules(input_path, output_dir, ".zig", transpile_to_zig_native)
+    if rc == 0:
+        _copy_runtime(output_dir)
+    return rc
 
 
 if __name__ == "__main__":

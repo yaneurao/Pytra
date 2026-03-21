@@ -163,6 +163,10 @@ def _cmp_symbol(op: str) -> str:
         return ">"
     if op == "GtE":
         return ">="
+    if op == "Is":
+        return "=="
+    if op == "IsNot":
+        return "!="
     raise RuntimeError("lang=zig unsupported compare op: " + op)
 
 
@@ -526,6 +530,22 @@ class ZigNativeEmitter:
             return
         if kind == "Swap":
             self._emit_swap(stmt)
+            return
+        if kind == "TypeAlias":
+            alias_name = _safe_ident(stmt.get("name"), "T")
+            self._emit_line("const " + alias_name + " = PyObject;  // type alias")
+            return
+        if kind == "Yield":
+            val = self._render_expr(stmt.get("value"))
+            self._emit_line("_ = " + val + ";  // yield (unsupported)")
+            return
+        if kind == "Delete":
+            return
+        if kind == "Assert":
+            test = self._render_expr(stmt.get("test"))
+            self._emit_line("std.debug.assert(" + test + ");")
+            return
+        if kind == "Global" or kind == "Nonlocal":
             return
         raise RuntimeError("lang=zig unsupported stmt kind: " + str(kind))
 
@@ -905,6 +925,20 @@ class ZigNativeEmitter:
             return "if (" + test + ") " + body_expr + " else " + orelse_expr
         if kind == "FormattedValue":
             return self._render_expr(ed.get("value"))
+        if kind == "Lambda":
+            arg_order_any = ed.get("arg_order")
+            args = arg_order_any if isinstance(arg_order_any, list) else []
+            arg_names = [_safe_ident(a, "arg") for a in args]
+            body_expr = self._render_expr(ed.get("body"))
+            return "struct { fn call(" + ", ".join(a + ": PyObject" for a in arg_names) + ") PyObject { return " + body_expr + "; } }.call"
+        if kind == "ListComp" or kind == "SetComp" or kind == "DictComp" or kind == "GeneratorExp":
+            return "pytra.empty_list()  /* comprehension */";
+        if kind == "Starred":
+            return self._render_expr(ed.get("value"))
+        if kind == "Slice":
+            lower = self._render_expr(ed.get("lower")) if isinstance(ed.get("lower"), dict) else "0"
+            upper = self._render_expr(ed.get("upper")) if isinstance(ed.get("upper"), dict) else "null"
+            return "pytra.slice(" + lower + ", " + upper + ")"
         return "null"
 
     def _render_constant(self, node: dict[str, Any]) -> str:
@@ -934,8 +968,14 @@ class ZigNativeEmitter:
         i = 0
         while i < len(ops):
             right = self._render_expr(comparators[i])
-            sym = _cmp_symbol(str(ops[i]))
-            parts.append("(" + prev + " " + sym + " " + right + ")")
+            op_str = str(ops[i])
+            if op_str == "In":
+                parts.append("pytra.contains(" + right + ", " + prev + ")")
+            elif op_str == "NotIn":
+                parts.append("!pytra.contains(" + right + ", " + prev + ")")
+            else:
+                sym = _cmp_symbol(op_str)
+                parts.append("(" + prev + " " + sym + " " + right + ")")
             prev = right
             i += 1
         if len(parts) == 1:
