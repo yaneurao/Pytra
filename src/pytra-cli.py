@@ -53,7 +53,7 @@ def _run(cmd: list[str]) -> CompletedProcess:
 def cmd_compile(argv: list[str]) -> int:
     """pytra compile INPUT.py [-o OUTPUT.east] [options...]"""
     src_dir = _find_src_dir()
-    cmd = [_python(), src_dir + "/py2x.py", "compile"] + argv
+    cmd = [_python(), src_dir + "/toolchain/compile/cli.py"] + argv
     result = _run(cmd)
     return result.returncode
 
@@ -61,9 +61,9 @@ def cmd_compile(argv: list[str]) -> int:
 # ---------- link ----------
 
 def cmd_link(argv: list[str]) -> int:
-    """pytra link INPUT.east [--output-dir DIR] [--target TARGET] [options...]"""
+    """pytra link INPUT.py [--output-dir DIR] [--target TARGET] [options...]"""
     src_dir = _find_src_dir()
-    cmd = [_python(), src_dir + "/py2x.py", "link"] + argv
+    cmd = [_python(), src_dir + "/toolchain/link/cli.py"] + argv
     result = _run(cmd)
     return result.returncode
 
@@ -142,10 +142,9 @@ def cmd_build(argv: list[str]) -> int:
 
     # Stage 1: compile + link
     link_cmd = [
-        _python(), src_dir + "/py2x.py",
+        _python(), src_dir + "/toolchain/link/cli.py",
         input_file,
         "--target", target,
-        "--link-only",
         "--output-dir", linked_dir,
     ]
     link_cmd.extend(passthrough)
