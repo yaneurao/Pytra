@@ -265,6 +265,7 @@ class ZigNativeEmitter:
         self._dataclass_names: set[str] = set()
         self._dataclass_fields: dict[str, list[str]] = {}
         self._classes_with_init: set[str] = set()
+        self._classes_with_del: set[str] = set()
         self._classes_with_mut_method: set[str] = set()
         self._class_base: dict[str, str] = {}
         self._class_methods: dict[str, set[str]] = {}
@@ -642,6 +643,8 @@ class ZigNativeEmitter:
                     if sub.get("kind") == "FunctionDef":
                         if sub.get("name") == "__init__":
                             self._classes_with_init.add(name)
+                        elif sub.get("name") == "__del__":
+                            self._classes_with_del.add(name)
                         elif self._body_mutates_self(sub.get("body")):
                             self._classes_with_mut_method.add(name)
                 # メソッドの戻り値型を記録
@@ -653,6 +656,12 @@ class ZigNativeEmitter:
                         if isinstance(m_name, str) and isinstance(ret, str):
                             cls_ret_types[m_name] = ret.strip()
                 self._class_return_types[name] = cls_ret_types
+        # __del__ があるクラスも vtable 対象にする（rc + drop が必要）
+        for cls_name in self._classes_with_del:
+            if cls_name not in self._vtable_root:
+                self._vtable_root[cls_name] = cls_name
+                if cls_name not in self._vtable_methods:
+                    self._vtable_methods[cls_name] = []
         # vtable 検出: 継承階層でメソッドが override されている場合
         for cls_name in self.class_names:
             base = self._class_base.get(cls_name, "")
@@ -724,6 +733,15 @@ class ZigNativeEmitter:
                     self._emit_line("return " + impl_cls + "." + m + "(undefined);")
                     self.indent -= 1
                     self._emit_line("}")
+                # drop wrapper for __del__
+                if cls_name in self._classes_with_del:
+                    drop_name = cls_name + "_drop_wrap"
+                    self._emit_line("fn " + drop_name + "(p: *anyopaque) void {")
+                    self.indent += 1
+                    self._emit_line("const self: *" + cls_name + " = @ptrCast(@alignCast(p));")
+                    self._emit_line(cls_name + ".__del__(self);")
+                    self.indent -= 1
+                    self._emit_line("}")
                 # vtable instance
                 vt_inst = cls_name + "_vt"
                 field_inits: list[str] = []
@@ -788,6 +806,9 @@ class ZigNativeEmitter:
                     self._emit_line("var " + target + ": " + zig_ty + " = undefined;")
                 else:
                     self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
+                    norm_type = self._normalize_type(decl_type)
+                    if norm_type in self.class_names and self._has_vtable(norm_type):
+                        self._emit_line("defer " + target + ".release();")
             else:
                 self._emit_line(target + " = " + value + ";")
             return
@@ -812,6 +833,16 @@ class ZigNativeEmitter:
                         zig_ty = self._zig_type(decl_type)
                         decl_kw = "var" if (self._is_var_mutated(target_name) or self._needs_var_for_type(decl_type)) else "const"
                         self._emit_line(decl_kw + " " + target + ": " + zig_ty + " = " + value + ";")
+                        norm_type = self._normalize_type(decl_type)
+                        if norm_type in self.class_names and self._has_vtable(norm_type):
+                            self._emit_line("defer " + target + ".release();")
+                        return
+                # 既存変数への再代入 — pytra.Obj なら release + retain
+                if td2.get("kind") == "Name":
+                    old_type = self._current_type_map().get(target_name, "")
+                    if self._normalize_type(old_type) in self.class_names and self._has_vtable(self._normalize_type(old_type)):
+                        self._emit_line(target + ".release();")
+                        self._emit_line(target + " = " + value + ".retain();")
                         return
                 self._emit_line(target + " = " + value + ";")
                 return
@@ -1483,7 +1514,35 @@ class ZigNativeEmitter:
             lower = self._render_expr(ed.get("lower")) if isinstance(ed.get("lower"), dict) else "0"
             upper = self._render_expr(ed.get("upper")) if isinstance(ed.get("upper"), dict) else "null"
             return "pytra.slice(" + lower + ", " + upper + ")"
+        if kind == "IsInstance":
+            return self._render_isinstance(ed)
         return "null"
+
+    def _render_isinstance(self, node: dict[str, Any]) -> str:
+        """IsInstance ノードを静的に解決する。"""
+        value_node = node.get("value")
+        type_node = node.get("expected_type_id")
+        if not isinstance(value_node, dict) or not isinstance(type_node, dict):
+            return "false"
+        obj_type = self._get_expr_type(value_node)
+        if obj_type == "":
+            obj_type = _safe_ident(value_node.get("id"), "")
+            obj_type = self._current_type_map().get(obj_type, "")
+        target_type = _safe_ident(type_node.get("id"), "")
+        if obj_type == "" or target_type == "":
+            return "false"
+        if self._is_subclass_of(obj_type, target_type):
+            return "true"
+        return "false"
+
+    def _is_subclass_of(self, cls: str, base: str) -> bool:
+        """cls が base と同一か、base の子孫かを判定する。"""
+        current = cls
+        while current != "":
+            if current == base:
+                return True
+            current = self._class_base.get(current, "")
+        return False
 
     def _render_constant(self, node: dict[str, Any]) -> str:
         v = node.get("value")
@@ -1590,9 +1649,11 @@ class ZigNativeEmitter:
                 if fname in self.class_names:
                     if self._has_vtable(fname):
                         vt_inst = "&" + fname + "_vt"
+                        drop_arg = fname + "_drop_wrap" if fname in self._classes_with_del else "null"
+                        make_fn = "pytra.make_obj_drop"
                         if fname in self._classes_with_init:
-                            return "pytra.make_obj(" + fname + ", " + fname + ".init(" + ", ".join(arg_strs) + "), @ptrCast(" + vt_inst + "))"
-                        return "pytra.make_obj(" + fname + ", " + fname + "{}, @ptrCast(" + vt_inst + "))"
+                            return make_fn + "(" + fname + ", " + fname + ".init(" + ", ".join(arg_strs) + "), @ptrCast(" + vt_inst + "), " + drop_arg + ")"
+                        return make_fn + "(" + fname + ", " + fname + "{}, @ptrCast(" + vt_inst + "), " + drop_arg + ")"
                     if fname in self._dataclass_names:
                         fields = self._dataclass_fields.get(fname, [])
                         field_inits: list[str] = []

@@ -234,6 +234,7 @@ pub const Obj = struct {
     data: *anyopaque,
     vtable: *const anyopaque,
     rc: *usize,
+    drop_fn: ?*const fn (*anyopaque) void,
 
     pub fn retain(self: Obj) Obj {
         self.rc.* += 1;
@@ -243,6 +244,11 @@ pub const Obj = struct {
     pub fn release(self: Obj) void {
         if (self.rc.* > 0) {
             self.rc.* -= 1;
+            if (self.rc.* == 0) {
+                if (self.drop_fn) |drop| {
+                    drop(self.data);
+                }
+            }
         }
     }
 
@@ -259,6 +265,10 @@ pub const Obj = struct {
 
 /// Create a type-erased Obj with vtable.
 pub fn make_obj(comptime T: type, value: T, vtable: *const anyopaque) Obj {
+    return make_obj_drop(T, value, vtable, null);
+}
+
+pub fn make_obj_drop(comptime T: type, value: T, vtable: *const anyopaque, drop_fn: ?*const fn (*anyopaque) void) Obj {
     const alloc = std.heap.page_allocator;
     const p = alloc.create(T) catch @panic("alloc failed");
     p.* = value;
@@ -268,6 +278,7 @@ pub fn make_obj(comptime T: type, value: T, vtable: *const anyopaque) Obj {
         .data = @ptrCast(p),
         .vtable = vtable,
         .rc = rc,
+        .drop_fn = drop_fn,
     };
 }
 
