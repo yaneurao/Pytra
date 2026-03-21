@@ -357,6 +357,36 @@ class NimNativeEmitter:
         self.lines.append('include "py_runtime.nim"')
         self.lines.append("")
         self.lines.append('import std/os, std/times, std/tables, std/strutils, std/math, std/sequtils')
+
+        # Import linked sub-modules from import_bindings
+        meta_any = self.east_doc.get("meta")
+        meta = meta_any if isinstance(meta_any, dict) else {}
+        import_bindings_any = meta.get("import_bindings")
+        import_bindings = import_bindings_any if isinstance(import_bindings_any, list) else []
+        imported_modules: set[str] = set()
+        for binding in import_bindings:
+            if not isinstance(binding, dict):
+                continue
+            module_id_any = binding.get("module_id")
+            if not isinstance(module_id_any, str):
+                continue
+            module_id: str = module_id_any
+            if module_id.startswith("pytra.std.") or module_id.startswith("pytra.built_in."):
+                continue
+            binding_kind = binding.get("binding_kind", "")
+            export_name = binding.get("export_name", "")
+            local_name = binding.get("local_name", "")
+            if binding_kind == "symbol" and export_name != "" and module_id.endswith("utils"):
+                # e.g. module_id=pytra.utils, export_name=png → png/east
+                import_path = export_name + "/east"
+            else:
+                # e.g. module_id=io_ops.east → io_ops/east
+                import_path = module_id.replace(".", "/")
+            if import_path not in imported_modules:
+                imported_modules.add(import_path)
+                self.lines.append(f'import {import_path}')
+            if isinstance(local_name, str) and local_name != "":
+                self.imported_modules.add(local_name)
         self.lines.append("")
 
         body = self.east_doc.get("body")
@@ -1615,6 +1645,11 @@ class NimNativeEmitter:
                     + runtime_call
                     + ")"
                 )
+            # Linked sub-module attribute → direct reference
+            if isinstance(value_node, dict) and value_node.get("kind") == "Name":
+                owner_name = value_node.get("id")
+                if isinstance(owner_name, str) and owner_name in self.imported_modules:
+                    return attr
             return f"{value}.{attr}"
         elif kind == "Unbox" or kind == "Box":
             return self._render_expr(ed.get("value"))
@@ -1652,6 +1687,12 @@ class NimNativeEmitter:
                         return f"math.{func_attr}({', '.join(float_args)})"
                     if func_attr == "pow" and len(args) == 2:
                         return f"math.pow(float({args[0]}), float({args[1]}))"
+            # Linked sub-module method call → direct function call
+            if isinstance(func_value, dict) and func_value.get("kind") == "Name":
+                owner_name = func_value.get("id")
+                if isinstance(owner_name, str) and owner_name in self.imported_modules:
+                    if isinstance(func_attr, str):
+                        return f"{func_attr}({', '.join(args)})"
         if isinstance(func, dict) and func.get("kind") == "Name":
             name = func.get("id")
             if name == "print":

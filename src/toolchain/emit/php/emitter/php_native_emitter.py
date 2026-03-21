@@ -1579,6 +1579,36 @@ def _emit_class(cls: dict[str, Any], *, indent: str) -> list[str]:
             j += 1
         lines.append("")
 
+    # Collect instance properties from __init__ body (self.xxx = ...)
+    init_props: list[str] = []
+    i = 0
+    while i < len(body):
+        node = body[i]
+        if isinstance(node, dict) and node.get("kind") == "FunctionDef":
+            fn_name_any = node.get("name")
+            if isinstance(fn_name_any, str) and fn_name_any == "__init__":
+                init_body_any = node.get("body")
+                init_body = init_body_any if isinstance(init_body_any, list) else []
+                for init_stmt in init_body:
+                    if not isinstance(init_stmt, dict):
+                        continue
+                    if init_stmt.get("kind") in {"Assign", "AnnAssign"}:
+                        target_any2 = init_stmt.get("target")
+                        targets_any2 = init_stmt.get("targets")
+                        if isinstance(targets_any2, list) and len(targets_any2) > 0:
+                            target_any2 = targets_any2[0]
+                        if isinstance(target_any2, dict) and target_any2.get("kind") == "Attribute":
+                            val_node = target_any2.get("value")
+                            if isinstance(val_node, dict) and val_node.get("kind") == "Name" and val_node.get("id") == "self":
+                                prop_name = target_any2.get("attr")
+                                if isinstance(prop_name, str) and prop_name not in init_props and prop_name not in dataclass_fields:
+                                    init_props.append(prop_name)
+        i += 1
+    if len(init_props) > 0:
+        for prop in init_props:
+            lines.append(indent + "    public $" + _safe_ident(prop, "prop") + ";")
+        lines.append("")
+
     has_init = False
     i = 0
     while i < len(body):
