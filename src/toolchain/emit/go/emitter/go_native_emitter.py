@@ -50,6 +50,43 @@ _CURRENT_RECEIVER_VAR: list[str] = ["self"]
 _INT_RESOLVED_TYPES = {"int", "int64", "uint8"}
 _FLOAT_RESOLVED_TYPES = {"float", "float64"}
 _RELATIVE_IMPORT_NAME_ALIASES: list[dict[str, str]] = [{}]
+_IMPORT_ALIAS_MAP: list[dict[str, str]] = [{}]
+
+# stdlib module → Go expression mapping for module.attr calls
+_GO_STDLIB_CALL_MAP: dict[str, dict[str, str]] = {
+    "pytra.std.math": {
+        "sqrt": "math.Sqrt", "sin": "math.Sin", "cos": "math.Cos",
+        "tan": "math.Tan", "exp": "math.Exp", "log": "math.Log",
+        "log10": "math.Log10", "fabs": "math.Abs",
+        "floor": "math.Floor", "ceil": "math.Ceil", "pow": "math.Pow",
+    },
+}
+_GO_STDLIB_ATTR_MAP: dict[str, dict[str, str]] = {
+    "pytra.std.math": {"pi": "math.Pi", "e": "math.E"},
+    "pytra.std.time": {"perf_counter": "__pytra_perf_counter"},
+}
+
+
+def _resolve_stdlib_call(owner_id: str, attr: str) -> str:
+    """Resolve module.attr() to Go stdlib call via import alias map."""
+    module_id = _IMPORT_ALIAS_MAP[0].get(owner_id, "")
+    if module_id == "":
+        return ""
+    mod_map = _GO_STDLIB_CALL_MAP.get(module_id)
+    if mod_map is not None:
+        return mod_map.get(attr, "")
+    return ""
+
+
+def _resolve_stdlib_attr(owner_id: str, attr: str) -> str:
+    """Resolve module.attr to Go stdlib constant/value via import alias map."""
+    module_id = _IMPORT_ALIAS_MAP[0].get(owner_id, "")
+    if module_id == "":
+        return ""
+    mod_map = _GO_STDLIB_ATTR_MAP.get(module_id)
+    if mod_map is not None:
+        return mod_map.get(attr, "")
+    return ""
 
 
 def _class_iface_name(class_name: str) -> str:
@@ -825,6 +862,12 @@ def _is_math_constant(expr: dict[str, Any]) -> bool:
 def _render_attribute_expr(expr: dict[str, Any]) -> str:
     value_any = expr.get("value")
     attr = _safe_ident(expr.get("attr"), "field")
+    # Resolve stdlib attribute access via import alias map: math.pi → math.Pi
+    if isinstance(value_any, dict) and value_any.get("kind") == "Name":
+        owner_id = value_any.get("id", "")
+        stdlib_val = _resolve_stdlib_attr(owner_id, attr)
+        if stdlib_val != "":
+            return stdlib_val
     semantic_tag_any = expr.get("semantic_tag")
     semantic_tag = semantic_tag_any if isinstance(semantic_tag_any, str) else ""
     runtime_call, _ = _resolved_runtime_call(expr)
@@ -1090,9 +1133,18 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
     if isinstance(func_any, dict) and func_any.get("kind") == "Attribute":
         attr_name = _safe_ident(func_any.get("attr"), "")
         owner_any = func_any.get("value")
-        # Rewrite pytra.utils module calls: png.write_rgb_png → __pytra_write_rgb_png
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner_id = owner_any.get("id", "")
+            # Resolve stdlib calls via import alias map: math.sqrt → math.Sqrt
+            stdlib_fn = _resolve_stdlib_call(owner_id, attr_name)
+            if stdlib_fn != "":
+                rendered_stdlib_args: list[str] = []
+                si = 0
+                while si < len(args_with_keywords):
+                    rendered_stdlib_args.append(_render_expr(args_with_keywords[si]))
+                    si += 1
+                return stdlib_fn + "(" + ", ".join(rendered_stdlib_args) + ")"
+            # Rewrite pytra.utils module calls: png.write_rgb_png → __pytra_write_rgb_png
             if owner_id in {"png", "gif"} and attr_name != "":
                 rendered_utils_args: list[str] = []
                 ui = 0
@@ -2600,6 +2652,9 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
 
     _CLASS_NAMES[0] = set()
     _RELATIVE_IMPORT_NAME_ALIASES[0] = _collect_relative_import_name_aliases(east_doc)
+    meta = east_doc.get("meta") if isinstance(east_doc.get("meta"), dict) else {}
+    from toolchain.emit.common.emitter.code_emitter import build_import_alias_map
+    _IMPORT_ALIAS_MAP[0] = build_import_alias_map(meta)
     i = 0
     while i < len(classes):
         _CLASS_NAMES[0].add(_safe_ident(classes[i].get("name"), "PytraClass"))
@@ -2617,9 +2672,16 @@ def transpile_to_go_native(east_doc: dict[str, Any]) -> str:
     dep_collector = CodeEmitter({})
     _collect_go_deps(dep_collector, east_doc)
     deps = dep_collector.finalize_deps()
+    # Add Go stdlib imports needed by alias map resolution
+    _GO_MODULE_TO_IMPORT: dict[str, str] = {"pytra.std.math": "math"}
+    alias_map = _IMPORT_ALIAS_MAP[0]
+    for _, mod_id in alias_map.items():
+        go_import = _GO_MODULE_TO_IMPORT.get(mod_id, "")
+        if go_import != "" and go_import not in deps:
+            deps.append(go_import)
     if len(deps) > 0:
         lines.append("import (")
-        for dep in deps:
+        for dep in sorted(deps):
             lines.append('    "' + dep + '"')
         lines.append(")")
         lines.append("")

@@ -46,6 +46,12 @@ def _rewrite_extern_delegates(code: str, module_stem: str) -> str:
     return code
 
 
+def _strip_main(code: str) -> str:
+    """Remove func main() block from generated Go runtime modules."""
+    import re
+    return re.sub(r'\nfunc main\(\)\s*\{[^}]*\}\s*', '\n', code)
+
+
 def _generate_go_runtime(output_dir: str) -> None:
     """Generate Go runtime files from .east sources and copy native .go files."""
     out = NativePath(output_dir)
@@ -87,6 +93,8 @@ def _generate_go_runtime(output_dir: str) -> None:
                 go_text = transpile_to_go(east_doc)
                 # Rewrite @extern delegate calls: math.sqrt(x) → math_native_sqrt(x)
                 go_text = _rewrite_extern_delegates(go_text, stem)
+                # Remove func main() from runtime modules (only entry has main)
+                go_text = _strip_main(go_text)
                 dst_go.write_text(go_text, encoding="utf-8")
             except Exception:
                 pass
