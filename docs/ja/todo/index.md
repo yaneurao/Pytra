@@ -188,3 +188,12 @@
 
 1. [ ] [ID: P5-SWIFT-PARITY-01] `runtime_parity_check.py --targets swift` で sample/py の全 18 ケースが PASS する。
 
+### P6: Zig コンテナ型の Obj（rc）管理
+
+文脈: [docs/ja/plans/p6-zig-obj-managed-containers.md](../plans/p6-zig-obj-managed-containers.md)
+
+1. [ ] [ID: P6-ZIG-OBJ-CONTAINERS-01-S1] `py_runtime.zig` に `make_list` / `list_append` / `list_get` / `list_set` / `list_len` / `make_bytearray` を追加する。
+2. [ ] [ID: P6-ZIG-OBJ-CONTAINERS-01-S2] emitter の `_zig_type` で `list[T]` / `bytearray` / `bytes` → `pytra.Obj` に変更。List リテラル / Subscript / `.append` / `len()` をランタイム API 呼び出しに変換する。
+3. [ ] [ID: P6-ZIG-OBJ-CONTAINERS-01-S3] test/fixtures の 28/30 テストが通ることを確認する。
+4. [ ] [ID: P6-ZIG-OBJ-CONTAINERS-01-S4] sample/py/01_mandelbrot.py が正しい PNG を出力し、Python 版と一致することを確認する。
+
