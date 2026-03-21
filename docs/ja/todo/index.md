@@ -77,10 +77,10 @@
 
 文脈: [docs/ja/plans/p0-east3-integer-promotion.md](../plans/p0-east3-integer-promotion.md)
 
-1. [ ] [ID: P0-INTEGER-PROMOTION-01] EAST3 lowering に C++ 準拠の integer promotion パスを実装する。
-2. [ ] [ID: P0-INTEGER-PROMOTION-02] `bytes`/`bytearray` イテレーション変数の型を `int32` に推論する。
-3. [ ] [ID: P0-INTEGER-PROMOTION-03] ユニットテストを追加する。
-4. [ ] [ID: P0-INTEGER-PROMOTION-04] 既存テストのリグレッションがないことを検証する。
+1. [x] [ID: P0-INTEGER-PROMOTION-01] EAST3 lowering に C++ 準拠の integer promotion パスを実装する。
+2. [x] [ID: P0-INTEGER-PROMOTION-02] `bytes`/`bytearray` イテレーション変数の型を `int32` に推論する。
+3. [x] [ID: P0-INTEGER-PROMOTION-03] ユニットテストを追加する。
+4. [x] [ID: P0-INTEGER-PROMOTION-04] 既存テストのリグレッションがないことを検証する。
 
 ### P1: integer promotion の代入先型縮小最適化
 

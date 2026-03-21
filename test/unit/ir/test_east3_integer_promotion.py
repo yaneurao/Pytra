@@ -60,9 +60,8 @@ class TestIntegerPromotionSpec(unittest.TestCase):
     marked with @unittest.skip.
     """
 
-    @unittest.skip("P0-INTEGER-PROMOTION not yet implemented")
     def test_uint8_shift_result_is_int32(self) -> None:
-        """uint8 << int should produce int32, not uint8."""
+        """uint8 << int should produce int32 or wider, not uint8."""
         source = """def shift(v: int, n: int) -> int:
     data: bytes = bytes([v])
     for b in data:
@@ -79,9 +78,8 @@ class TestIntegerPromotionSpec(unittest.TestCase):
                 self.assertIn(result_type, {"int32", "int64", "int"},
                               f"shift result should be promoted, got {result_type}")
 
-    @unittest.skip("P0-INTEGER-PROMOTION not yet implemented")
     def test_bytes_iteration_var_is_int(self) -> None:
-        """Iterating over bytes should yield int, not uint8."""
+        """Iterating over bytes should yield int32, not uint8."""
         source = """def sum_bytes(data: bytes) -> int:
     total: int = 0
     for v in data:
@@ -90,7 +88,7 @@ class TestIntegerPromotionSpec(unittest.TestCase):
 """
         east3 = _build_east3(source)
         body = _find_function_body(east3, "sum_bytes")
-        # The ForCore target type should be int32 or int64
+        # The ForCore target type should be int32
         for_nodes = _find_nodes_by_kind(body, "ForCore")
         self.assertTrue(len(for_nodes) > 0, "ForCore node not found")
         for f in for_nodes:
