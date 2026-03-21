@@ -50,6 +50,16 @@ static inline list<::std::tuple<int64, T>> py_enumerate(const rc<list<T>>& value
     return py_enumerate_list_copy(rc_list_ref(values), start);
 }
 
+template <class T>
+static inline list<::std::tuple<int64, T>> py_enumerate(const Object<list<T>>& values) {
+    return py_enumerate_list_copy(*values, 0);
+}
+
+template <class T>
+static inline list<::std::tuple<int64, T>> py_enumerate(const Object<list<T>>& values, int64 start) {
+    return py_enumerate_list_copy(*values, start);
+}
+
 static inline list<::std::tuple<int64, str>> py_enumerate(const str& values) {
     list<::std::tuple<int64, str>> out;
     out.reserve(values.size());
