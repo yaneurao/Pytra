@@ -48,13 +48,13 @@
 
 文脈: [docs/ja/plans/p0-12-py2x-cpp-options-forwarding.md](../plans/p0-12-py2x-cpp-options-forwarding.md)
 
-1. [ ] [ID: P0-PY2X-CPP-OPTIONS-01] CLI テスト群を `toolchain/emit/cpp/cli.py` 直接呼び出しに変更する
+1. [x] [ID: P0-PY2X-CPP-OPTIONS-01] CLI テスト群を `toolchain/emit/cpp/cli.py` 直接呼び出しに変更する
 
 #### P0-13: テストが旧 src/backends/cpp/cli.py パスを参照
 
 文脈: [docs/ja/plans/p0-13-cli-path-migration.md](../plans/p0-13-cli-path-migration.md)
 
-1. [ ] [ID: P0-CLI-PATH-MIGRATION-01] テスト内の旧 cli.py パスを新パスに更新する
+1. [x] [ID: P0-CLI-PATH-MIGRATION-01] テスト内の旧 cli.py パスを新パスに更新する
 
 #### P0-15: エミッター出力変化によるテストアサーション不一致
 
@@ -119,56 +119,3 @@
 18. [ ] [ID: P0-OBJECT-T-MIGRATION-05-S2] `test_cpp_runtime_type_id.py` の type_id テストが通る。
 19. [ ] [ID: P0-OBJECT-T-MIGRATION-05-S3] selfhost multi-module transpile が動作する。
 20. [ ] [ID: P0-OBJECT-T-MIGRATION-05-S4] sample/py の全 18 ケースが C++ で compile + run できる。
-
-### P1: パイプライン段分離 — compile / link / emit の独立化
-
-#### P1-2: backend_registry 依存の除去
-
-文脈: [docs/ja/plans/p1-backend-registry-decoupling.md](../plans/p1-backend-registry-decoupling.md)
-
-1. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S1] `pytra-cli.py` の C++ emit パスを `east2cpp.py` サブプロセスに変更し、`backend_registry` import を除去。→ pytra-cli.py の import グラフに toolchain.emit.* が一切含まれない。
-2. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S2] `pytra-cli.py` の非 C++ emit パスを `east2x.py` サブプロセスに変更。→ S1 と同時に完了。
-3. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S3] `pytra-cli.py` から `backend_registry_static` import を除去。→ C++ emitter のみ直接 import。非 C++ backend は import グラフに含まれない。
-4. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S4] selfhost compile+link で 65 モジュール（以前 151）。非 C++ backend 74 件が完全に消えた（57% 削減）。
-
-#### P1-5: 各言語 emit ラッパーの個別 emitter 直接呼び出し化
-
-文脈: 現在 `toolchain/emit/{rs,cs,go,...}.py` は `toolchain/emit/all.py` に委譲しており、結果として全 backend を import している。`cpp.py` と同様に各言語が自分の emitter だけを直接呼ぶ形にし、`all.py` を廃止する。
-
-1. [x] [ID: P1-EMIT-DIRECT-CALL-01] 14 言語のラッパーを個別 emitter 直接呼び出しに変更。各ラッパーは自分の emitter のみ import。
-2. [x] [ID: P1-EMIT-DIRECT-CALL-02] `toolchain/emit/all.py` を削除。
-
-#### P1-3: C++ emitter @staticmethod 対応
-
-文脈: [docs/ja/plans/p1-cpp-staticmethod-emit.md](../plans/p1-cpp-staticmethod-emit.md)
-
-1. [x] [ID: P1-CPP-STATICMETHOD-EMIT-01] `emit_function` で `@staticmethod`/`@classmethod` デコレータを検出し、`static` を emit するよう修正する
-
-#### P1-4: C++ emitter Path が rc<Path> でなく bare 型で宣言される
-
-文脈: [docs/ja/plans/p1-cpp-path-rc-type.md](../plans/p1-cpp-path-rc-type.md)
-
-1. [x] [ID: P1-CPP-PATH-RC-TYPE-01] `pathlib.east` の `class_storage_hint` を `"value"` から `"ref"` に修正
-
-### P7: selfhost 完全自立化
-
-#### P7-1: native/compiler/ 完全削除
-
-文脈: [docs/ja/plans/p7-selfhost-native-compiler-elim.md](../plans/p7-selfhost-native-compiler-elim.md)
-
-1. [x] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01-S1] selfhost ビルドパイプラインを EAST3 JSON 入力専用に統一し、`transpile_cli.cpp` の `.py` シェルアウトパスを除去する。
-2. [x] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01-S2] `emit_source_typed` のシェルアウトを除去。→ 生成 C++ emitter (transpile_to_cpp) の直接呼び出しに置換。シェルアウト補助関数を全削除。
-3. [x] [ID: P7-SELFHOST-NATIVE-COMPILER-ELIM-01-S3] `src/runtime/cpp/compiler/` を削除。シェルアウトゼロ確認済み。契約インベントリから削除済みファイル参照を除去。
-
-#### P7-2: selfhost multi-module transpile 基盤構築（S2 の前提）
-
-文脈: [docs/ja/plans/p7-selfhost-multimodule-transpile.md](../plans/p7-selfhost-multimodule-transpile.md)
-
-1. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S1] emitter モジュール群（`src/toolchain/emit/cpp/emitter/*.py`）の selfhost 制約準拠を監査し、違反箇所を列挙する。→ 文脈ファイルの決定ログに詳細記録。ブロッカー: 動的 dispatch 4件。
-1a. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-01] `pytra.std.pathlib.Path` に `relative_to` / `with_suffix` を実装し、emitter の `from pathlib import Path` を移行。
-1b. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-02] `pytra.std.re` に `compile` / `Pattern` を実装し、optimizer の `import re` を移行。
-1c. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-03] `multifile_writer.py` の `import os` を `pytra.std` 経由に移行。
-1d. [x] [ID: P7-SELFHOST-CONSTRAINT-FIX-04] CppEmitter の動的 mixin 注入（`_attach_cpp_emitter_helper_methods` の `setattr`/`__dict__`）を EAST3 mixin 展開による多重継承に置換する。`install_py2cpp_runtime_symbols` の `globals()` 注入を除去する。
-2. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S2] `tools/build_selfhost.py` を multi-module transpile パイプライン（compile → link）に拡張する。→ `--multi-module` フラグで pytra-cli.py 経由の compile→link→emit パイプラインを実行。全 150 モジュール EAST3 コンパイル成功。パーサー修正（typing no-op、dict 文字列キー内 `:`、複数型引数 subscript）。依存チェーン全体の object レシーバ修正（40+ ファイル）。
-3. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S3] selfhost 66 モジュールの C++ emit 完了。→ compile+link (pytra-cli.py --link-only) → emit (toolchain/emit/cpp.py) の 3 段パイプラインで 233 C++ ファイル (4.1MB) を生成。backend_registry 依存除去により 151→66 モジュールに削減。
-4. [x] [ID: P7-SELFHOST-MULTIMOD-TRANSPILE-01-S4] リンカーの import 解決で `from toolchain.misc.transpile_cli import make_user_error` 等のシンボルが見つからない問題を調査・修正する。→ `module_export_table` に wildcard re-export 伝播を実装。`from X import *` による再エクスポートが export テーブルに反映されるようになり、151 モジュールの link に成功。wildcard バインディングの重複許容も追加。
