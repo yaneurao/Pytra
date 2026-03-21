@@ -252,6 +252,7 @@ class ZigNativeEmitter:
         self._classes_with_mut_method: set[str] = set()
         self._class_base: dict[str, str] = {}
         self._class_methods: dict[str, set[str]] = {}
+        self._static_fields: dict[str, list[tuple[str, str, str]]] = {}  # cls -> [(field, type, default)]
         self._local_type_stack: list[dict[str, str]] = []
         self._ref_var_stack: list[set[str]] = []
         self._local_var_stack: list[set[str]] = []
@@ -444,6 +445,11 @@ class ZigNativeEmitter:
         body = self._dict_list(self.east_doc.get("body"))
         main_guard = self._dict_list(self.east_doc.get("main_guard_body"))
         self._scan_module_symbols(body)
+        # 静的フィールドをモジュールスコープに emit
+        for cls_name, sfields in self._static_fields.items():
+            for field_name, field_type, default_val in sfields:
+                zig_ty = self._zig_type(field_type)
+                self._emit_line("var Module_" + cls_name + "_" + field_name + ": " + zig_ty + " = " + default_val + ";")
         # トップレベル変数をモジュールスコープに emit
         for stmt in body:
             if self._is_top_level_var(stmt):
@@ -566,6 +572,24 @@ class ZigNativeEmitter:
                             if isinstance(target_any, dict) and target_any.get("kind") == "Name":
                                 fields.append(_safe_ident(target_any.get("id"), "field"))
                     self._dataclass_fields[name] = fields
+                # 静的フィールドの検出: AnnAssign で初期値付き + メソッド内で ClassName.field としてアクセス
+                static_fields: list[tuple[str, str, str]] = []
+                for sub in cls_body:
+                    if sub.get("kind") == "AnnAssign":
+                        target_any = sub.get("target")
+                        if isinstance(target_any, dict) and target_any.get("kind") == "Name":
+                            field_name = _safe_ident(target_any.get("id"), "field")
+                            value_node = sub.get("value")
+                            if isinstance(value_node, dict):
+                                decl_type = self._infer_decl_type(sub)
+                                default_val = self._render_expr(value_node)
+                                # メソッド body で ClassName.field パターンがあるか
+                                body_text = str(cls_body)
+                                class_dot_field = "'" + str(stmt.get("name")) + "'"
+                                if class_dot_field in body_text:
+                                    static_fields.append((field_name, decl_type, default_val))
+                if len(static_fields) > 0:
+                    self._static_fields[name] = static_fields
                 for sub in cls_body:
                     if sub.get("kind") == "FunctionDef":
                         if sub.get("name") == "__init__":
@@ -681,7 +705,11 @@ class ZigNativeEmitter:
                     return
             expr_text = self._render_expr(value_any)
             if isinstance(value_any, dict) and value_any.get("kind") == "Call":
-                self._emit_line(expr_text + ";")
+                resolved = self._get_expr_type(value_any)
+                if resolved in {"None", ""}:
+                    self._emit_line(expr_text + ";")
+                else:
+                    self._emit_line("_ = " + expr_text + ";")
             else:
                 self._emit_line("_ = " + expr_text + ";")
             return
@@ -1002,6 +1030,10 @@ class ZigNativeEmitter:
                 target_any = sub.get("target")
                 if isinstance(target_any, dict) and target_any.get("kind") == "Name":
                     field_name = _safe_ident(target_any.get("id"), "field")
+                    # 静的フィールドはモジュールスコープに emit 済み → struct から除外
+                    static_field_names = {sf[0] for sf in self._static_fields.get(cls_name, [])}
+                    if field_name in static_field_names:
+                        continue
                     decl_type_any = sub.get("decl_type")
                     decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
                     if decl_type == "":
@@ -1127,8 +1159,15 @@ class ZigNativeEmitter:
         if kind == "Name":
             return _safe_ident(nd.get("id"), "value")
         if kind == "Attribute":
-            obj = self._render_expr(nd.get("value"))
+            val_node = nd.get("value")
             attr = _safe_ident(nd.get("attr"), "attr")
+            if isinstance(val_node, dict) and val_node.get("kind") == "Name":
+                owner = _safe_ident(val_node.get("id"), "")
+                if owner in self._static_fields:
+                    for sf_name, _, _ in self._static_fields[owner]:
+                        if sf_name == attr:
+                            return "Module_" + owner + "_" + attr
+            obj = self._render_expr(val_node)
             return obj + "." + attr
         if kind == "Subscript":
             obj = self._render_expr(nd.get("value"))
@@ -1225,8 +1264,15 @@ class ZigNativeEmitter:
         if kind == "Call":
             return self._render_call(ed)
         if kind == "Attribute":
-            obj = self._render_expr(ed.get("value"))
+            val_node = ed.get("value")
             attr = _safe_ident(ed.get("attr"), "attr")
+            if isinstance(val_node, dict) and val_node.get("kind") == "Name":
+                owner = _safe_ident(val_node.get("id"), "")
+                if owner in self._static_fields:
+                    for sf_name, _, _ in self._static_fields[owner]:
+                        if sf_name == attr:
+                            return "Module_" + owner + "_" + attr
+            obj = self._render_expr(val_node)
             return obj + "." + attr
         if kind == "Subscript":
             obj = self._render_expr(ed.get("value"))
