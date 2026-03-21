@@ -105,6 +105,27 @@ List<int> pytraBytes([dynamic arg]) {
   return List<int>.unmodifiable(<int>[]);
 }
 
+// --- file I/O (Python open/write/close bridge) ---
+class PytraFile {
+  final RandomAccessFile _raf;
+  PytraFile(this._raf);
+  void write(dynamic data) {
+    if (data is List<int>) {
+      _raf.writeFromSync(data);
+    } else if (data is String) {
+      _raf.writeStringSync(data);
+    }
+  }
+  void close() => _raf.closeSync();
+}
+
+PytraFile open(String path, [String mode = "r"]) {
+  FileMode fm = FileMode.read;
+  if (mode == "wb" || mode == "w") fm = FileMode.write;
+  if (mode == "ab" || mode == "a") fm = FileMode.append;
+  return PytraFile(File(path).openSync(mode: fm));
+}
+
 // --- IO helpers (for sys.stderr/stdout stubs) ---
 class PytraStderr {
   void write(dynamic text) => stderr.write(text);

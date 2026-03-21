@@ -422,8 +422,10 @@ def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
         return "// import " + alias_txt + " (json stub)"
     if mod == "pytra.std.pathlib":
         return "// import " + alias_txt + " (pathlib stub)"
-    if mod in {"pytra.utils.png", "pytra.utils.gif"}:
-        return "// import " + alias_txt + " (image stub)"
+    if mod == "pytra.utils.png":
+        return "import 'png/east.dart';"
+    if mod == "pytra.utils.gif":
+        return "import 'gif/east.dart';"
     symbol_names = _runtime_module_symbol_names(mod)
     if len(symbol_names) == 0:
         return ""
@@ -453,7 +455,8 @@ def _runtime_symbol_alias_line(alias_txt: str, runtime_module_id: str, runtime_s
     if mod == "pytra.std.pathlib" and sym == "Path":
         return "// " + alias_txt + " (pathlib stub)"
     if mod.startswith("pytra.utils.") and sym != "":
-        return "// " + alias_txt + " (utils stub)"
+        # Symbol imported from utils module — available via module-level import
+        return "// " + alias_txt + " from " + mod + " (via module import)"
     return ""
 
 
@@ -609,19 +612,32 @@ class DartNativeEmitter:
         return parts
 
     def _dart_return_type(self, stmt: dict[str, Any]) -> str:
-        """Get the Dart return type for a function statement."""
+        """Get the Dart return type for a function statement.
+
+        Container types use ``dynamic`` to avoid type mismatch.
+        """
         rt = stmt.get("return_type")
         if isinstance(rt, str) and rt.strip() != "":
-            return self._dart_type(rt)
+            dart_t = self._dart_type(rt)
+            if dart_t.startswith("List<") or dart_t.startswith("Map<") or dart_t.startswith("Set<"):
+                return "dynamic"
+            return dart_t
         return "dynamic"
 
     def _dart_arg_type(self, stmt: dict[str, Any], arg_name: str) -> str:
-        """Get the Dart type for a function argument."""
+        """Get the Dart type for a function argument.
+
+        Container types use ``dynamic`` to avoid type mismatch with
+        runtime helpers that pass ``List<dynamic>``.
+        """
         arg_types_any = stmt.get("arg_types")
         arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
         t = arg_types.get(arg_name)
         if isinstance(t, str) and t.strip() != "":
-            return self._dart_type(t)
+            dart_t = self._dart_type(t)
+            if dart_t.startswith("List<") or dart_t.startswith("Map<") or dart_t.startswith("Set<"):
+                return "dynamic"
+            return dart_t
         return "dynamic"
 
     def _dart_decl_type(self, stmt: dict[str, Any], value_node: Any) -> str:
@@ -1097,6 +1113,17 @@ class DartNativeEmitter:
                     alias_txt = _safe_ident(alias, sym)
                     if _is_compile_time_std_import_symbol(mod, sym):
                         continue
+                    # pytra.utils.png / pytra.utils.gif: emit import for the generated module
+                    if mod == "pytra.utils.png":
+                        dart_import = "import 'png/east.dart';"
+                        if dart_import not in import_lines:
+                            import_lines.append(dart_import)
+                        continue
+                    if mod == "pytra.utils.gif":
+                        dart_import = "import 'gif/east.dart';"
+                        if dart_import not in import_lines:
+                            import_lines.append(dart_import)
+                        continue
                     if mod in {"pytra.utils.assertions", "pytra.std.test"} and sym == "py_assert_stdout":
                         import_lines.append(
                             "dynamic " + alias_txt + " = (dynamic _expected, dynamic _fn) => true;"
@@ -1136,7 +1163,20 @@ class DartNativeEmitter:
                     import_lines.append(
                         "// from " + mod + " import " + sym + " as " + alias_txt + " (not yet mapped)"
                     )
+        # Dart requires all import directives before declarations.
+        # Split import lines into import directives and other lines.
+        dart_imports: list[str] = []
+        other_lines: list[str] = []
         for line in import_lines:
+            if line.startswith("import "):
+                dart_imports.append(line)
+            else:
+                other_lines.append(line)
+        for line in dart_imports:
+            self._emit_line(line)
+        if len(dart_imports) > 0 and len(other_lines) > 0:
+            self._emit_line("")
+        for line in other_lines:
             self._emit_line(line)
         if len(import_lines) > 0:
             self._emit_line("")
