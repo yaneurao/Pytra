@@ -1078,11 +1078,9 @@ def _resolved_runtime_symbol(expr: dict[str, Any], runtime_call: str, runtime_so
         return ""
     if normalized.startswith("py_assert_"):
         return normalized
-    # Functions provided by EAST-merged shim modules (math, etc.)
-    # should not get __pytra_ prefix.
-    if normalized in {"sqrt", "sin", "cos", "tan", "exp", "log", "log10",
-                      "fabs", "floor", "ceil", "pow",
-                      "write_rgb_png", "save_gif", "grayscale_palette", "fire_palette"}:
+    # For resolved_runtime_call: the function is provided by an EAST-merged
+    # shim module, so return the name as-is (no __pytra_ prefix needed).
+    if runtime_source == "resolved_runtime_call":
         return normalized
     return "__pytra_" + normalized
 
@@ -1125,12 +1123,13 @@ def _render_attribute_expr(expr: dict[str, Any]) -> str:
                 return runtime_symbol
     if isinstance(value_any, dict) and value_any.get("kind") == "Name":
         owner_ident = _safe_ident(value_any.get("id"), "")
-        if owner_ident in _PYTRA_MODULE_IMPORTS[0]:
-            return field
         # @extern module delegation: math -> math_native, time -> time_native
+        # Must be checked before _PYTRA_MODULE_IMPORTS stripping.
         native_name = _extern_native_owner(owner_ident)
         if native_name != "":
             return native_name + "." + field
+        if owner_ident in _PYTRA_MODULE_IMPORTS[0]:
+            return field
     value = _render_expr(value_any)
     return value + "." + field
 
@@ -1428,13 +1427,6 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             return "__pytra_as_dict(" + owner_expr + ").getOrElse(__pytra_str(" + key_expr + "), " + default_expr + ")"
         if isinstance(owner_any, dict) and owner_any.get("kind") == "Name":
             owner_ident = _safe_ident(owner_any.get("id"), "")
-            if owner_ident in _PYTRA_MODULE_IMPORTS[0]:
-                rendered_args_m: list[str] = []
-                i = 0
-                while i < len(args):
-                    rendered_args_m.append(_render_expr(args[i]))
-                    i += 1
-                return method + "(" + ", ".join(rendered_args_m) + ")"
             # @extern module delegation: math.sqrt(x) -> math_native.sqrt(x)
             native_owner = _extern_native_owner(owner_ident)
             if native_owner != "":
@@ -1444,6 +1436,13 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                     rendered_args_n.append(_render_expr(args[i]))
                     i += 1
                 return native_owner + "." + method + "(" + ", ".join(rendered_args_n) + ")"
+            if owner_ident in _PYTRA_MODULE_IMPORTS[0]:
+                rendered_args_m: list[str] = []
+                i = 0
+                while i < len(args):
+                    rendered_args_m.append(_render_expr(args[i]))
+                    i += 1
+                return method + "(" + ", ".join(rendered_args_m) + ")"
         owner_expr = _render_expr(owner_any)
         rendered_args: list[str] = []
         i = 0
