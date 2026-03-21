@@ -74,3 +74,5 @@
 - 2026-03-21: PowerShell emitter を JS 経由変換から EAST3 直接生成に全面書き換え。transpile 131/136 成功、実行 56/131 成功。
 - 2026-03-21: 実行時エラーの主要原因を分類。self パラメータ（6件）、モジュール未解決（5件）、builtin マッピング漏れ（6件）、タプル代入（3件）、タイムアウト/その他（17件）。
 - 2026-03-21: runtime の `(if ...)` → `$(if ...)` 修正で 18 件解消。main_guard_body の py_assert 除去で 25 件解消。
+- 2026-03-21: S1-S5 実装 + クラス動的ディスパッチ + import aliases + str methods + emit entry 修正。実行成功率 56 → 76/131。
+- 2026-03-21: 残り 55 件の内訳: assert_fail 19（意味論差分）、not_recog 14、var_unset 12、other 12。
