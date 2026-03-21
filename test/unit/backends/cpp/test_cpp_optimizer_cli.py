@@ -9,6 +9,13 @@ from pathlib import Path
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
 
+def _src_env():
+    import os as _os
+    env = dict(_os.environ)
+    env["PYTHONPATH"] = str(ROOT / "src") + (_os.pathsep + env.get("PYTHONPATH", "") if env.get("PYTHONPATH") else "")
+    return env
+
+
 
 class CppOptimizerCliTest(unittest.TestCase):
     def test_py2cpp_accepts_cpp_optimizer_options_and_writes_dumps(self) -> None:
@@ -23,7 +30,7 @@ class CppOptimizerCliTest(unittest.TestCase):
             cp = subprocess.run(
                 [
                     "python3",
-                    "src/pytra-cli.py", "--target", "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(src_py),
                     "-o",
                     str(out_cpp),
@@ -41,7 +48,8 @@ class CppOptimizerCliTest(unittest.TestCase):
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             self.assertEqual(cp.returncode, 0, msg=cp.stderr)
             self.assertTrue(out_cpp.exists())
             self.assertTrue(before_json.exists())
@@ -65,7 +73,7 @@ class CppOptimizerCliTest(unittest.TestCase):
             cp = subprocess.run(
                 [
                     "python3",
-                    "src/pytra-cli.py", "--target", "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(src_py),
                     "-o",
                     str(out_cpp),
@@ -75,7 +83,8 @@ class CppOptimizerCliTest(unittest.TestCase):
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             self.assertNotEqual(cp.returncode, 0)
             self.assertIn("invalid --cpp-opt-level", cp.stderr)
 

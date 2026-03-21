@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
-PY2X = ROOT / "src" / "pytra-cli.py"
+PY2X = ROOT / "src" / "toolchain" / "emit" / "cpp" / "cli.py"
 CPP_CLI = ROOT / "src" / "toolchain" / "emit" / "cpp" / "cli.py"
 STAGE2_REMOVED_ERROR = "error: --east-stage 2 is no longer supported; use EAST3 (default)."
 STAGE2_COMPAT_WARNING = "warning: --east-stage 2 is compatibility mode; default is 3."

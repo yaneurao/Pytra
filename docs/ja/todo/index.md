@@ -6,7 +6,7 @@
   <img alt="Read in English" src="https://img.shields.io/badge/docs-English-2563EB?style=flat-square">
 </a>
 
-最終更新: 2026-03-21（P0-1〜P0-10, P1 パイプライン段分離, P4 vararg 脱糖 をアーカイブへ移動）
+最終更新: 2026-03-21（P0-GPP-COMPILE-HEADERS-01, P1-2/3/4/5, P7-1/2 をアーカイブへ移動）
 
 ## 文脈運用ルール
 
@@ -55,12 +55,6 @@
 文脈: [docs/ja/plans/p0-13-cli-path-migration.md](../plans/p0-13-cli-path-migration.md)
 
 1. [ ] [ID: P0-CLI-PATH-MIGRATION-01] テスト内の旧 cli.py パスを新パスに更新する
-
-#### P0-14: g++ コンパイルテストが built_in/string_ops.h を見つけられない
-
-文脈: [docs/ja/plans/p0-14-gpp-compile-headers.md](../plans/p0-14-gpp-compile-headers.md)
-
-1. [x] [ID: P0-GPP-COMPILE-HEADERS-01] `tools/gen_runtime_cpp_from_east.py` で 26 .east → .h + .cpp を生成。`build_multi_cpp.py` + テストに `-Isrc/runtime/generated` を追加。
 
 #### P0-15: エミッター出力変化によるテストアサーション不一致
 

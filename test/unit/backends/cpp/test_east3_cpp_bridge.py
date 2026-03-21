@@ -7,6 +7,13 @@ import unittest
 from pathlib import Path
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
+
+def _src_env():
+    import os as _os
+    env = dict(_os.environ)
+    env["PYTHONPATH"] = str(ROOT / "src") + (_os.pathsep + env.get("PYTHONPATH", "") if env.get("PYTHONPATH") else "")
+    return env
+
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:

@@ -12,6 +12,13 @@ import unittest
 from pathlib import Path
 
 ROOT = next(p for p in Path(__file__).resolve().parents if (p / "src").exists())
+
+def _src_env():
+    import os as _os
+    env = dict(_os.environ)
+    env["PYTHONPATH"] = str(ROOT / "src") + (_os.pathsep + env.get("PYTHONPATH", "") if env.get("PYTHONPATH") else "")
+    return env
+
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(ROOT / "src") not in sys.path:
@@ -172,7 +179,7 @@ def sin(x: float) -> float:
             cp = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/pytra-cli.py", "--target", "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(rel_src),
                     "--emit-runtime-cpp",
                 ],
@@ -200,9 +207,7 @@ def sin(x: float) -> float:
         cp = self._run_subprocess_with_timeout(
             [
                 "python3",
-                "src/pytra-cli.py",
-                "--target",
-                "cpp",
+                "src/toolchain/emit/cpp/cli.py",
                 str(rel_src),
                 "--emit-runtime-cpp",
             ],
@@ -227,9 +232,7 @@ def sin(x: float) -> float:
         cp = self._run_subprocess_with_timeout(
             [
                 "python3",
-                "src/pytra-cli.py",
-                "--target",
-                "cpp",
+                "src/toolchain/emit/cpp/cli.py",
                 str(rel_src),
                 "--emit-runtime-cpp",
             ],
@@ -253,9 +256,7 @@ def sin(x: float) -> float:
         cp = self._run_subprocess_with_timeout(
             [
                 "python3",
-                "src/pytra-cli.py",
-                "--target",
-                "cpp",
+                "src/toolchain/emit/cpp/cli.py",
                 str(rel_src),
                 "--emit-runtime-cpp",
             ],
@@ -299,9 +300,7 @@ def sin(x: float) -> float:
         cp = self._run_subprocess_with_timeout(
             [
                 "python3",
-                "src/pytra-cli.py",
-                "--target",
-                "cpp",
+                "src/toolchain/emit/cpp/cli.py",
                 str(rel_src),
                 "--emit-runtime-cpp",
             ],
@@ -1630,7 +1629,7 @@ def sin(x: float) -> float:
             cp = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/pytra-cli.py", "--target", "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(src_py),
                     "-o",
                     str(out_cpp),
@@ -1657,7 +1656,7 @@ def sin(x: float) -> float:
             cp = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/pytra-cli.py", "--target", "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(src_py),
                     "-o",
                     str(out_cpp),
@@ -1681,7 +1680,7 @@ def sin(x: float) -> float:
             cp = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/pytra-cli.py", "--target", "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(src_py),
                     "-o",
                     str(out_cpp),
@@ -2128,11 +2127,12 @@ def main() -> None:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--dump-deps"],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "--dump-deps"],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
         self.assertEqual(proc.returncode, 0, msg=proc.stderr)
         self.assertIn("graph:", proc.stdout)
         self.assertIn("main.py -> helper.py", proc.stdout)
@@ -2174,11 +2174,12 @@ def main() -> None:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             self.assertEqual(proc.returncode, 0, msg=proc.stderr)
             main_cpp = (out_dir / "src" / "main.cpp").read_text(encoding="utf-8")
         self.assertIn("namespace pytra_mod_helper {", main_cpp)
@@ -2196,11 +2197,12 @@ def main() -> None:
             out_cpp = root / "out.cpp"
             main_py.write_text(src_main, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=missing_module", proc.stderr)
@@ -2226,11 +2228,12 @@ def f() -> int:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=import_cycle", proc.stderr)
@@ -2255,9 +2258,7 @@ def main() -> None:
             proc = subprocess.run(
                 [
                     "python3",
-                    "src/pytra-cli.py",
-                    "--target",
-                    "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(main_py),
                     "--multi-file",
                     "--output-dir",
@@ -2266,7 +2267,8 @@ def main() -> None:
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             main_cpp_txt = (out_dir / "src" / "main.cpp").read_text(encoding="utf-8")
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertNotIn("helper.f()", main_cpp_txt)
@@ -2296,9 +2298,7 @@ def main() -> None:
             proc = subprocess.run(
                 [
                     "python3",
-                    "src/pytra-cli.py",
-                    "--target",
-                    "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(main_py),
                     "--multi-file",
                     "--output-dir",
@@ -2307,7 +2307,8 @@ def main() -> None:
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             main_cpp_txt = (out_dir / "src" / "main.cpp").read_text(encoding="utf-8")
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertNotIn("helper.f()", main_cpp_txt)
@@ -2325,11 +2326,12 @@ def main() -> None:
             out_cpp = root / "out.cpp"
             main_py.write_text(src_main, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=relative_import_escape", proc.stderr)
@@ -2347,11 +2349,12 @@ def main() -> None:
             out_cpp = root / "out.cpp"
             main_py.write_text(src_main, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=missing_module", proc.stderr)
@@ -2377,7 +2380,7 @@ def main() -> None:
             proc = subprocess.run(
                 [
                     "python3",
-                    "src/pytra-cli.py", "--target", "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(main_py),
                     "--multi-file",
                     "--output-dir",
@@ -2386,7 +2389,8 @@ def main() -> None:
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             main_cpp = out_dir / "src" / "main.cpp"
             main_cpp_txt = main_cpp.read_text(encoding="utf-8")
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -2413,11 +2417,12 @@ def main() -> None:
             a_py.write_text(src_a, encoding="utf-8")
             b_py.write_text(src_b, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=duplicate_binding", proc.stderr)
@@ -2441,7 +2446,7 @@ def main() -> None:
             proc = subprocess.run(
                 [
                     "python3",
-                    "src/pytra-cli.py", "--target", "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(main_py),
                     "--multi-file",
                     "--output-dir",
@@ -2450,7 +2455,8 @@ def main() -> None:
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             main_cpp = out_dir / "src" / "main.cpp"
             main_cpp_txt = main_cpp.read_text(encoding="utf-8")
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -2479,7 +2485,7 @@ def main() -> None:
             proc = subprocess.run(
                 [
                     "python3",
-                    "src/pytra-cli.py", "--target", "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(main_py),
                     "--multi-file",
                     "--output-dir",
@@ -2488,7 +2494,8 @@ def main() -> None:
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=duplicate_binding", proc.stderr)
@@ -2517,7 +2524,7 @@ def f() -> int:
             proc = subprocess.run(
                 [
                     "python3",
-                    "src/pytra-cli.py", "--target", "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(main_py),
                     "--multi-file",
                     "--output-dir",
@@ -2526,7 +2533,8 @@ def f() -> int:
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=unresolved_wildcard", proc.stderr)
@@ -2552,11 +2560,12 @@ def main() -> None:
             a_py.write_text(src_a, encoding="utf-8")
             b_py.write_text(src_b, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=duplicate_binding", proc.stderr)
@@ -2582,11 +2591,12 @@ def main() -> None:
             a_py.write_text(src_a, encoding="utf-8")
             b_py.write_text(src_b, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=duplicate_binding", proc.stderr)
@@ -2608,11 +2618,12 @@ def main() -> None:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=missing_symbol", proc.stderr)
@@ -2635,11 +2646,12 @@ def main() -> None:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "-o", str(out_cpp)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("[input_invalid]", proc.stderr)
         self.assertIn("kind=missing_symbol", proc.stderr)
@@ -3563,11 +3575,12 @@ if __name__ == "__main__":
             bad_py.write_text("def main(:\n    pass\n", encoding="utf-8")
             out_cpp = Path(tmpdir) / "bad.cpp"
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(bad_py), "-o", str(out_cpp)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(bad_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("[user_syntax_error]", proc.stderr)
 
@@ -3577,11 +3590,12 @@ if __name__ == "__main__":
             bad_py.write_text("*value\n", encoding="utf-8")
             out_cpp = Path(tmpdir) / "bad.cpp"
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(bad_py), "-o", str(out_cpp)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(bad_py), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("[user_syntax_error]", proc.stderr)
             self.assertIn(str(bad_py), proc.stderr)
@@ -3593,11 +3607,12 @@ if __name__ == "__main__":
             src_py.write_text("print(1)\n", encoding="utf-8")
             out_cpp = Path(tmpdir) / "ok.cpp"
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(src_py), "--east-stage", "2", "-o", str(out_cpp)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(src_py), "--east-stage", "2", "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("--east-stage 2 is removed", proc.stderr)
 
@@ -3618,11 +3633,12 @@ def main() -> None:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             self.assertEqual(proc.returncode, 0, msg=proc.stderr)
             self.assertTrue((out_dir / "include").exists())
             self.assertTrue((out_dir / "src").exists())
@@ -3652,11 +3668,12 @@ def main() -> None:
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             self.assertEqual(proc.returncode, 0, msg=proc.stderr)
             self.assertTrue((out_dir / "include").exists())
             self.assertTrue((out_dir / "src").exists())
@@ -3675,11 +3692,12 @@ def main() -> None:
             main_py = root / "main.py"
             main_py.write_text(src_main, encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             self.assertEqual(proc.returncode, 0, msg=proc.stderr)
             self.assertTrue((out_dir / "manifest.json").exists())
 
@@ -3704,7 +3722,7 @@ if __name__ == "__main__":
             main_py.write_text(src_main, encoding="utf-8")
             helper_py.write_text(src_helper, encoding="utf-8")
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile multi-file sample",
@@ -3770,7 +3788,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile nested relative multi-file sample",
@@ -3823,7 +3841,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile bare parent relative multi-file sample",
@@ -3876,7 +3894,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile bare parent relative module alias multi-file sample",
@@ -3929,7 +3947,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile parent relative symbol alias multi-file sample",
@@ -3983,7 +4001,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile sibling relative import constants multi-file sample",
@@ -4041,7 +4059,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile sibling relative import class type multi-file sample",
@@ -4105,7 +4123,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile sibling relative import mixed symbol multi-file sample",
@@ -4168,7 +4186,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile sibling relative import alias symbol multi-file sample",
@@ -4237,7 +4255,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile sibling relative import function symbol multi-file sample",
@@ -4319,7 +4337,7 @@ if __name__ == "__main__":
             )
 
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(ppu_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile pytra nes representative multi-file sample",
@@ -4452,9 +4470,7 @@ if __name__ == "__main__":
             tr = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/pytra-cli.py",
-                    "--target",
-                    "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(src_py),
                     "--multi-file",
                     "--output-dir",
@@ -4502,9 +4518,7 @@ if __name__ == "__main__":
             tr = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/pytra-cli.py",
-                    "--target",
-                    "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(src_py),
                     "--multi-file",
                     "--output-dir",
@@ -4553,9 +4567,7 @@ if __name__ == "__main__":
             tr = self._run_subprocess_with_timeout(
                 [
                     "python3",
-                    "src/pytra-cli.py",
-                    "--target",
-                    "cpp",
+                    "src/toolchain/emit/cpp/cli.py",
                     str(src_py),
                     "--multi-file",
                     "--output-dir",
@@ -4639,7 +4651,7 @@ if __name__ == "__main__":
             exe = out_dir / "app.out"
             main_py.write_text(src_main, encoding="utf-8")
             tr = self._run_subprocess_with_timeout(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(main_py), "--multi-file", "--output-dir", str(out_dir)],
                 cwd=ROOT,
                 timeout_sec=PYTRA_TEST_TOOL_TIMEOUT_SEC,
                 label="transpile multi-file helper artifact sample",
@@ -4684,11 +4696,12 @@ if __name__ == "__main__":
             bad_json.write_text("[1,2,3]", encoding="utf-8")
             out_cpp = Path(tmpdir) / "bad.cpp"
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(bad_json), "-o", str(out_cpp)],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(bad_json), "-o", str(out_cpp)],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("[input_invalid]", proc.stderr)
 
@@ -4697,11 +4710,12 @@ if __name__ == "__main__":
             src_py = Path(tmpdir) / "ok.py"
             src_py.write_text("print(1)\n", encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(src_py), "--preset", "python", "--dump-options"],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(src_py), "--preset", "python", "--dump-options"],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             self.assertEqual(proc.returncode, 0, msg=proc.stderr)
             self.assertIn("preset: python", proc.stdout)
             self.assertIn("int-width: bigint", proc.stdout)
@@ -4713,11 +4727,12 @@ if __name__ == "__main__":
             src_py = Path(tmpdir) / "ok.py"
             src_py.write_text("print(1)\n", encoding="utf-8")
             proc = subprocess.run(
-                ["python3", "src/pytra-cli.py", "--target", "cpp", str(src_py), "--str-index-mode", "codepoint"],
+                ["python3", "src/toolchain/emit/cpp/cli.py", str(src_py), "--str-index-mode", "codepoint"],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
-            )
+            env=_src_env(),
+                )
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("--str-index-mode=codepoint is not implemented yet", proc.stderr)
 
