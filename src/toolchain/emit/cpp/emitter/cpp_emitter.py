@@ -877,8 +877,11 @@ class CppEmitter(CppAnalysisEmitter, CppModuleEmitter, CppClassEmitter, CppTypeB
         return f"list<{self._cpp_type_text(elem)}>"
 
     def _cpp_pyobj_alias_list_handle_type_text(self, east_type: str) -> str:
-        """alias 維持用の `rc<list<T>>` 型文字列を返す。"""
-        return f"rc<{self._cpp_list_value_model_type_text(east_type)}>"
+        """alias 維持用の `rc<list<T>>` / `Object<list<T>>` 型文字列を返す。"""
+        inner = self._cpp_list_value_model_type_text(east_type)
+        if getattr(self, "use_object_t", False):
+            return f"Object<{inner}>"
+        return f"rc<{inner}>"
 
     def _render_pyobj_alias_list_value(self, rendered_expr: str, value_node: Any, east_type: str) -> str:
         """list 値を `rc<list<T>>` handle 初期化へ寄せる。"""
