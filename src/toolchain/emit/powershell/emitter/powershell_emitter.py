@@ -1077,6 +1077,12 @@ def _emit_class_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -
                 fn_lines = _emit_function_def(member_d, indent=indent, ctx=ctx)
                 if len(fn_lines) > 0:
                     fn_lines[0] = fn_lines[0].replace("function __init__", "function " + name, 1)
+                # Insert __type__ at end of constructor (before closing brace)
+                # Must be after super() call to avoid being overwritten
+                for i_fn in range(len(fn_lines) - 1, -1, -1):
+                    if fn_lines[i_fn].strip() == "}":
+                        fn_lines.insert(i_fn, indent + '    $self["__type__"] = "' + name + '"')
+                        break
                 lines.extend(fn_lines)
             else:
                 fn_lines = _emit_function_def(member_d, indent=indent, ctx=ctx)
@@ -1096,13 +1102,7 @@ def _emit_class_def(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -
         lines.append(indent + "    param($self)")
         lines.append(indent + '    $self["__type__"] = "' + name + '"')
         lines.append(indent + "}")
-    else:
-        # Inject __type__ into existing constructor
-        # Find the line after param(...) and insert type tag
-        for i_line in range(len(lines)):
-            if lines[i_line].strip().startswith("param("):
-                lines.insert(i_line + 1, indent + '    $self["__type__"] = "' + name + '"')
-                break
+    # else: __type__ already injected in fn_lines above
 
     # Generate inherited method aliases: ChildClass_method -> BaseClass_method
     base = _get_str(stmt, "base")
