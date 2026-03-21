@@ -76,3 +76,5 @@
 - 2026-03-21: runtime の `(if ...)` → `$(if ...)` 修正で 18 件解消。main_guard_body の py_assert 除去で 25 件解消。
 - 2026-03-21: S1-S5 実装 + クラス動的ディスパッチ + import aliases + str methods + emit entry 修正。実行成功率 56 → 76/131。
 - 2026-03-21: 残り 55 件の内訳: assert_fail 19（意味論差分）、not_recog 14、var_unset 12、other 12。
+- 2026-03-21: In/NotIn → -contains、BoolOp Python semantics、callable param lambda、union rejection 除去。78/131 到達。
+- 2026-03-21: 残り 53 件: assert 20、not_recog 10、var_unset 12、other 11。主に意味論差分（comprehension, enumerate, str_slice）と stdlib 未実装（enum, json, pathlib）。
