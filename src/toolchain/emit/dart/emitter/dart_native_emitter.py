@@ -423,9 +423,9 @@ def _runtime_module_alias_line(alias_txt: str, runtime_module_id: str) -> str:
     if mod == "pytra.std.pathlib":
         return "// import " + alias_txt + " (pathlib stub)"
     if mod == "pytra.utils.png":
-        return "import 'png/east.dart';"
+        return "import 'png/east.dart' as " + alias_txt + ";"
     if mod == "pytra.utils.gif":
-        return "import 'gif/east.dart';"
+        return "import 'gif/east.dart' as " + alias_txt + ";"
     symbol_names = _runtime_module_symbol_names(mod)
     if len(symbol_names) == 0:
         return ""
@@ -1367,7 +1367,8 @@ class DartNativeEmitter:
                         self._current_type_map()[target_name] = decl_type
                     if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
                         self._current_local_vars().add(target_name)
-                        dart_t = self._dart_type(decl_type) if decl_type != "" else "var"
+                        dart_t_raw = self._dart_type(decl_type) if decl_type != "" else "var"
+                        dart_t = "var" if (dart_t_raw.startswith("List<") or dart_t_raw.startswith("Map<") or dart_t_raw.startswith("Set<")) else dart_t_raw
                         self._emit_line(dart_t + " " + target + " = " + value + ";")
                         return
                 self._emit_line(target + " = " + value + ";")
@@ -1392,7 +1393,8 @@ class DartNativeEmitter:
                         self._current_type_map()[target_name] = decl_type
                     if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
                         self._current_local_vars().add(target_name)
-                        dart_t = self._dart_type(decl_type) if decl_type != "" else "var"
+                        dart_t_raw = self._dart_type(decl_type) if decl_type != "" else "var"
+                        dart_t = "var" if (dart_t_raw.startswith("List<") or dart_t_raw.startswith("Map<") or dart_t_raw.startswith("Set<")) else dart_t_raw
                         self._emit_line(dart_t + " " + target + " = " + value + ";")
                         return
                 self._emit_line(target + " = " + value + ";")
@@ -1403,7 +1405,12 @@ class DartNativeEmitter:
             op = str(stmt.get("op"))
             value = self._render_expr(stmt.get("value"))
             op_token = _binop_symbol(op)
-            self._emit_line(target + " " + op_token + "= " + value + ";")
+            # If target is int-typed, cast the augmented result to avoid num promotion
+            target_type = self._lookup_expr_type(stmt.get("target"))
+            if target_type in {"int", "int64", "int32"} and op in {"Add", "Sub", "Mult", "Mod", "FloorDiv"}:
+                self._emit_line(target + " = ((" + target + " " + op_token + " " + value + ") as int);")
+            else:
+                self._emit_line(target + " " + op_token + "= " + value + ";")
             return
         if kind == "Swap":
             self._emit_swap(stmt)
