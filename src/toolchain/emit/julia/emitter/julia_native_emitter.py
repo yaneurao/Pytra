@@ -1225,7 +1225,12 @@ class JuliaNativeEmitter:
             if not isinstance(iter_plan, dict):
                 raise RuntimeError("lang=julia unsupported forcore runtime shape")
             ipd2: dict[str, Any] = iter_plan
-            iter_expr = self._render_expr(ipd2.get("iter_expr"))
+            iter_expr_node = ipd2.get("iter_expr")
+            iter_expr = self._render_expr(iter_expr_node)
+            # Python bytes/bytearray iteration yields int; Julia UInt8 overflows on bit ops
+            iter_type = self._lookup_expr_type(iter_expr_node) if isinstance(iter_expr_node, dict) else ""
+            if iter_type in {"bytes", "bytearray"}:
+                iter_expr = "__pytra_iter_ints(" + iter_expr + ")"
             tuple_target = isinstance(target_plan, dict) and target_plan.get("kind") == "TupleTarget"
             iter_name = target_name
             if tuple_target:

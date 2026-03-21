@@ -150,6 +150,13 @@ function __pytra_bytes(v=nothing)
     return UInt8[]
 end
 
+# Python の bytes イテレーションは int を返す。
+# Julia の UInt8 はビット演算でオーバーフローするため、
+# bytes/bytearray のイテレーション時に Int に昇格させる。
+function __pytra_iter_ints(data)
+    return Int.(data)
+end
+
 function __pytra_str_find(s, sub)
     r = findfirst(sub, s)
     if r === nothing
