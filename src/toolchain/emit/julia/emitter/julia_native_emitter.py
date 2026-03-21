@@ -351,8 +351,16 @@ def _runtime_module_alias_line(alias: str, runtime_module_id: str) -> str:
         return "# import " + alias + " (pathlib stub)"
     if mod == "pytra.std.collections":
         return "# import " + alias + " (collections stub)"
-    if mod in {"pytra.utils.png", "pytra.utils.gif"}:
-        return "# import " + alias + " (image stub)"
+    if mod == "pytra.utils.png":
+        return (
+            'include(joinpath(@__DIR__, "utils", "png.jl"))\n'
+            + alias + " = (write_rgb_png=write_rgb_png,)"
+        )
+    if mod == "pytra.utils.gif":
+        return (
+            'include(joinpath(@__DIR__, "utils", "gif.jl"))\n'
+            + alias + " = (save_gif=save_gif, grayscale_palette=grayscale_palette)"
+        )
     symbol_names = lookup_runtime_module_symbols(mod)
     if len(symbol_names) == 0:
         return ""
@@ -383,8 +391,12 @@ def _runtime_symbol_alias_line(alias: str, runtime_module_id: str, runtime_symbo
         return "# " + alias + " (pathlib stub)"
     if mod == "pytra.std.collections" and sym == "deque":
         return "# " + alias + " (deque stub)"
+    if mod == "pytra.utils.png" and sym != "":
+        return "__PYTRA_INCLUDE_UTILS_PNG__"
+    if mod == "pytra.utils.gif" and sym != "":
+        return "__PYTRA_INCLUDE_UTILS_GIF__"
     if mod.startswith("pytra.utils.") and sym != "":
-        return "# " + alias + " (utils stub)"
+        return ""
     return ""
 
 
@@ -789,9 +801,24 @@ class JuliaNativeEmitter:
                     import_lines.append(
                         "# from " + mod + " import " + sym + " as " + alias_txt + " (not yet mapped)"
                     )
+        # Deduplicate and resolve utils include markers
+        seen_includes: set[str] = set()
+        resolved_lines: list[str] = []
         for line in import_lines:
+            if line == "__PYTRA_INCLUDE_UTILS_PNG__":
+                if "utils_png" not in seen_includes:
+                    seen_includes.add("utils_png")
+                    resolved_lines.append('include(joinpath(@__DIR__, "utils", "png.jl"))')
+                continue
+            if line == "__PYTRA_INCLUDE_UTILS_GIF__":
+                if "utils_gif" not in seen_includes:
+                    seen_includes.add("utils_gif")
+                    resolved_lines.append('include(joinpath(@__DIR__, "utils", "gif.jl"))')
+                continue
+            resolved_lines.append(line)
+        for line in resolved_lines:
             self._emit_line(line)
-        if len(import_lines) > 0:
+        if len(resolved_lines) > 0:
             self._emit_line("")
 
     # ── statements ──
@@ -951,7 +978,20 @@ class JuliaNativeEmitter:
         if kind == "Yield":
             self._emit_line("# yield (not supported)")
             return
+        if kind == "VarDecl":
+            self._emit_var_decl(stmt)
+            return
         raise RuntimeError("lang=julia unsupported stmt kind: " + str(kind))
+
+    def _emit_var_decl(self, stmt: dict[str, Any]) -> None:
+        """Emit a hoisted variable declaration (VarDecl node)."""
+        name_raw = stmt.get("name")
+        name = _safe_ident(name_raw, "v") if isinstance(name_raw, str) else "v"
+        var_type_any = stmt.get("type")
+        var_type = var_type_any.strip() if isinstance(var_type_any, str) else ""
+        if var_type != "":
+            self._current_type_map()[name] = var_type
+        self._emit_line(name + " = nothing")
 
     def _emit_function_def(self, stmt: dict[str, Any]) -> None:
         name = _safe_ident(stmt.get("name"), "fn")
@@ -1696,6 +1736,8 @@ class JuliaNativeEmitter:
             if fn_name == "isinstance":
                 if len(rendered_args) >= 2:
                     return "isa(" + rendered_args[0] + ", " + rendered_args[1] + ")"
+            if fn_name == "open":
+                return "py_open(" + ", ".join(rendered_args) + ")"
             if fn_name in self.class_names:
                 return fn_name + "(" + ", ".join(rendered_args) + ")"
             rendered_name = self._render_name_expr(func_any)

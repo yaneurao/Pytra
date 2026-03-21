@@ -194,3 +194,12 @@ end
 function __pytra_noop()
     return nothing
 end
+
+function py_open(path, mode="r")
+    if mode == "wb"
+        return open(path, "w")
+    elseif mode == "rb"
+        return open(path, "r")
+    end
+    return open(path, mode)
+end

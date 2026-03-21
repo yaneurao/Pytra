@@ -15,7 +15,7 @@ from pathlib import Path
 from toolchain.emit.julia.emitter import transpile_to_julia_native
 from toolchain.emit.loader import emit_all_modules, load_linked_modules
 
-_RUNTIME_EAST_ROOT = Path(__file__).resolve().parent.parent / "runtime" / "east"
+_RUNTIME_EAST_ROOT = Path(__file__).resolve().parents[2] / "runtime" / "east"
 _RUNTIME_MODULE_BUCKETS = {
     "pytra.built_in.": "built_in",
     "pytra.std.": "std",
@@ -114,7 +114,7 @@ def _emit_runtime_modules(output_dir: str, runtime_module_ids: list[str]) -> Non
 
 def _copy_runtime(output_dir: str) -> None:
     """Copy py_runtime.jl to each directory containing generated .jl files."""
-    src_dir = Path(__file__).resolve().parent.parent
+    src_dir = Path(__file__).resolve().parents[2]
     runtime_src = src_dir / "runtime" / "julia" / "built_in" / "py_runtime.jl"
     if not runtime_src.exists():
         return
