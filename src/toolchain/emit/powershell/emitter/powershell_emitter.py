@@ -351,13 +351,8 @@ def _render_expr(expr_any: Any) -> str:
                     return "(" + cur_cls + "_" + _safe_ident(attr, "_p") + " $self)"
                 return '$self["' + attr + '"]'
             # Resolve import alias for module attribute access
-            resolved_attr_mod = _MODULE_ALIAS_MAP[0].get(vname, "")
-            if resolved_attr_mod != "":
-                leaf = resolved_attr_mod.split(".")[-1]
-                if leaf in ("math", "os_path", "os", "sys", "time", "random", "re",
-                            "glob", "collections", "subprocess", "json", "pathlib",
-                            "png", "gif", "argparse"):
-                    return "$" + _safe_ident(attr, "_f")
+            if vname in _MODULE_ALIAS_MAP[0]:
+                return "$" + _safe_ident(attr, "_f")
             if vname in _CLASS_NAMES[0]:
                 # ClassName.attr → クラス変数 $script:attr（モジュールスコープ）
                 return "$script:" + _safe_ident(attr, "_cv")
@@ -382,11 +377,8 @@ def _render_expr(expr_any: Any) -> str:
                     return '"powershell"'
                 if attr in ("stderr", "stdout"):
                     return "$" + attr
-            # stdlib module attribute: time.X, os.X, os.path.X → direct call or variable
-            # These are Python stdlib references inside transpiled stdlib modules.
-            # In PS, the functions are defined at module scope, so use bare name.
-            if vname in ("math", "time", "os", "random", "re", "collections", "glob",
-                        "subprocess", "sys", "png", "gif"):
+            # Module attribute: mod.X → $X (module scope variable/function)
+            if vname in _MODULE_ALIAS_MAP[0]:
                 return "$" + _safe_ident(attr, "_f")
         # Hashtable-based object field access: prefer ["attr"] over .attr
         # .NET methods (ToUpper, Split etc.) use dot notation
@@ -750,19 +742,12 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 if _get_str(owner_node, "kind") == "Name":
                     owner_name = _get_str(owner_node, "id")
                 owner_type = _get_str(owner_node, "resolved_type")
-            # Resolve import alias: path → pytra.std.os_path
-            resolved_mod = _MODULE_ALIAS_MAP[0].get(owner_name, "")
-            if resolved_mod != "":
-                leaf = resolved_mod.split(".")[-1]
-                raw_attr = _get_str(func_d, "attr")
-                # stdlib module call via alias
-                if leaf in ("math", "os_path", "os", "sys", "time", "random", "re",
-                            "glob", "collections", "subprocess", "json", "pathlib",
-                            "png", "gif", "argparse"):
-                    safe_fn = _safe_ident(raw_attr, "_f")
-                    if len(rendered_args) == 0:
-                        return "(" + safe_fn + ")"
-                    return "(" + safe_fn + " " + " ".join(rendered_args) + ")"
+            # Resolve import alias: path → pytra.std.os_path → direct function call
+            if owner_name in _MODULE_ALIAS_MAP[0]:
+                safe_fn = _safe_ident(_get_str(func_d, "attr"), "_f")
+                if len(rendered_args) == 0:
+                    return "(" + safe_fn + ")"
+                return "(" + safe_fn + " " + " ".join(rendered_args) + ")"
             # In method body, ClassName.method() means self.method()
             if owner_name in _CLASS_NAMES[0]:
                 owner = "$self"
@@ -791,9 +776,9 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                             if len(rendered_args) == 0:
                                 return "(" + method_fn + " $self)"
                             return "(" + method_fn + " $self " + " ".join(rendered_args) + ")"
-            # stdlib / imported module method call: mod.func() → (func args)
-            if owner_name in ("math", "time", "os", "random", "re", "collections", "glob",
-                              "subprocess", "sys", "png", "gif", "json_mod", "pathlib_mod"):
+            # Module method call: mod.func() → (func args)
+            # Detected via _MODULE_ALIAS_MAP (built from import_bindings)
+            if owner_name in _MODULE_ALIAS_MAP[0]:
                 safe_fn = _safe_ident(attr, "_f")
                 if len(rendered_args) == 0:
                     return "(" + safe_fn + ")"
@@ -1424,16 +1409,14 @@ def _is_stdlib_passthrough_function(stmt: dict[str, Any]) -> bool:
     # 1-level: time.perf_counter, math.sqrt, os.getcwd etc.
     if _get_str(owner, "kind") == "Name":
         owner_name = _get_str(owner, "id")
-        if owner_name in ("time", "math", "os", "random", "re", "glob", "subprocess", "sys"):
-            if func_attr == fn_name:
-                return True
+        if owner_name in _MODULE_ALIAS_MAP[0] and func_attr == fn_name:
+            return True
     # 2-level: os.path.join etc. — Attribute chain
     if _get_str(owner, "kind") == "Attribute":
         inner_owner = owner.get("value")
         if isinstance(inner_owner, dict) and _get_str(inner_owner, "kind") == "Name":
             inner_name = _get_str(inner_owner, "id")
-            if inner_name in ("os", "sys"):
-                if func_attr == fn_name:
+            if inner_name in _MODULE_ALIAS_MAP[0] and func_attr == fn_name:
                     return True
     return False
 
