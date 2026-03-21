@@ -38,6 +38,15 @@ function __pytra_str {
     param([object]$value)
     if ($value -eq $null) { return "None" }
     if ($value -is [bool]) { return $(if ($value) { "True" } else { "False" }) }
+    # Hashtable-based class with __str__ method
+    if ($value -is [hashtable] -and $value.ContainsKey("__type__")) {
+        $tn = $value["__type__"]
+        $str_fn = $tn + "___str__"
+        if (Get-Command $str_fn -ErrorAction SilentlyContinue) {
+            return [string](& (Get-Command $str_fn) $value)
+        }
+    }
+    if ($value -is [hashtable]) { return "hashtable" }
     return [string]$value
 }
 

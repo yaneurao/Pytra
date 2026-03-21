@@ -320,7 +320,32 @@ def _render_expr(expr_any: Any) -> str:
                 return "$" + _safe_ident(attr, "_cv")
             if vtype in _CLASS_NAMES[0]:
                 return value + '["' + attr + '"]'
-        return value + "." + safe_attr
+            # math module property: math.pi → [Math]::PI
+            if vname == "math":
+                _MATH_PROPS: dict[str, str] = {
+                    "pi": "PI", "e": "E", "inf": "PositiveInfinity",
+                    "nan": "NaN", "tau": "Tau",
+                }
+                ps_prop = _MATH_PROPS.get(attr, "")
+                if ps_prop != "":
+                    return "([Math]::" + ps_prop + ")"
+            # sys module property: sys.argv, sys.maxsize etc
+            if vname == "sys":
+                if attr == "argv":
+                    return "@($MyInvocation.MyCommand.Path) + $args"
+                if attr == "maxsize":
+                    return "[int64]::MaxValue"
+                if attr == "platform":
+                    return '"powershell"'
+        # Hashtable-based object field access: prefer ["attr"] over .attr
+        # .NET methods (ToUpper, Split etc.) use dot notation
+        _DOTNET_PROPS = {
+            "Length", "Count", "Keys", "Values",
+            "Name", "FullName", "Extension", "Directory",
+        }
+        if safe_attr in _DOTNET_PROPS or safe_attr[0].isupper():
+            return value + "." + safe_attr
+        return value + '["' + attr + '"]'
 
     if kind == "Call":
         return _render_call_expr(expr)
@@ -1463,6 +1488,17 @@ def transpile_to_powershell(east_doc: dict[str, Any]) -> str:
             cn = _get_str(node, "name")
             if cn != "":
                 class_names.add(cn)
+    # Also collect imported class names from import_bindings
+    # Convention: class names start with uppercase
+    meta = _get_dict(east_doc, "meta")
+    for binding in _get_list(meta, "import_bindings"):
+        if isinstance(binding, dict):
+            local = _get_str(binding, "local_name")
+            if local != "" and local[0].isupper() and local not in (
+                "Any", "Optional", "Union", "List", "Dict", "Tuple", "Set",
+                "Callable", "Iterator", "Iterable", "Enum", "IntEnum", "IntFlag",
+            ):
+                class_names.add(local)
     _CLASS_NAMES[0] = class_names
     class_bases: dict[str, str] = {}
     for node in body:
