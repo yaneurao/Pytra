@@ -1607,6 +1607,19 @@ class NimNativeEmitter:
             if op_raw == "Add":
                 if (isinstance(resolved, str) and resolved == "str") or _is_string_like_expr(left_node, left) or _is_string_like_expr(right_node, right):
                     return f"($({left}) & $({right}))"
+            # int/uint8 mixed arithmetic: promote uint8 operands to int
+            if op_raw in {"BitOr", "BitAnd", "BitXor", "LShift", "RShift", "Add", "Sub", "Mult"}:
+                left_t = left_node.get("resolved_type", "") if isinstance(left_node, dict) else ""
+                right_t = right_node.get("resolved_type", "") if isinstance(right_node, dict) else ""
+                if isinstance(left_t, str) and isinstance(right_t, str):
+                    left_is_byte = left_t in {"uint8", "byte"}
+                    right_is_byte = right_t in {"uint8", "byte"}
+                    left_is_int = left_t in {"int64", "int", "int32"}
+                    right_is_int = right_t in {"int64", "int", "int32"}
+                    if left_is_byte and right_is_int:
+                        return f"(int({left}) {symbol} {right})"
+                    if right_is_byte and left_is_int:
+                        return f"({left} {symbol} int({right}))"
             return f"({left} {symbol} {right})"
         elif kind == "BoolOp":
             op = "and" if ed.get("op") == "And" else "or"
