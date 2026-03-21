@@ -219,26 +219,25 @@ def _render_expr(expr_any: Any) -> str:
         if len(rendered) == 0:
             return "$null"
         # Python semantics: 'a or b' returns first truthy, 'a and b' returns first falsy or last
+        # Use __pytra_bool for truthiness check (Python empty string/0/None are falsy)
         if op == "Or":
-            # Chain: $(if (a) { a } elseif (b) { b } else { last })
             if len(rendered) == 1:
                 return rendered[0]
             result = rendered[-1]
             i = len(rendered) - 2
             while i >= 0:
                 v = rendered[i]
-                result = "$(if (" + v + ") { " + v + " } else { " + result + " })"
+                result = "$(if ((__pytra_bool " + v + ")) { " + v + " } else { " + result + " })"
                 i -= 1
             return result
         else:
-            # And: $(if (-not a) { a } elseif (-not b) { b } else { last })
             if len(rendered) == 1:
                 return rendered[0]
             result = rendered[-1]
             i = len(rendered) - 2
             while i >= 0:
                 v = rendered[i]
-                result = "$(if (-not " + v + ") { " + v + " } else { " + result + " })"
+                result = "$(if (-not (__pytra_bool " + v + ")) { " + v + " } else { " + result + " })"
                 i -= 1
             return result
 

@@ -166,9 +166,7 @@ function __pytra_bool {
     if ($value -is [bool]) { return $value }
     if ($value -is [int] -or $value -is [float] -or $value -is [double] -or $value -is [decimal]) { return [bool]$value }
     if ($value -is [string]) {
-        $trimmed = $value.Trim().ToLowerInvariant()
-        if ($trimmed -eq "true" -or $trimmed -eq "1") { return $true }
-        if ($trimmed -eq "false" -or $trimmed -eq "0") { return $false }
+        if ($value.Length -eq 0) { return $false }
         return $true
     }
     if ($value -is [System.Collections.ICollection]) {
