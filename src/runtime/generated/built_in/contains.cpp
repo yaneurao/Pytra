@@ -71,8 +71,3 @@ bool py_contains_str_object(const object& values, const object& key) {
     }
     return false;
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

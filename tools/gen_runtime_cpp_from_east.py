@@ -26,6 +26,9 @@ def main() -> int:
         east = json.loads(east_path.read_text(encoding="utf-8"))
         out_base = east_path.with_suffix("")
         cpp = transpile_to_cpp(east)
+        # Strip main() from generated .cpp — these are library modules, not executables.
+        import re
+        cpp = re.sub(r'\nint main\(int argc, char\*\* argv\) \{.*', '', cpp, flags=re.DOTALL)
         header = build_cpp_header_from_east(east, east_path, out_base.with_suffix(".h"), cpp_text=cpp)
         out_base.with_suffix(".cpp").write_text(cpp, encoding="utf-8")
         out_base.with_suffix(".h").write_text(header, encoding="utf-8")

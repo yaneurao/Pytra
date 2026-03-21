@@ -26,8 +26,3 @@ str abspath(const str& p) {
 bool exists(const str& p) {
     return os.path.exists(p);
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

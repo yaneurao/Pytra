@@ -57,9 +57,3 @@ static void __pytra_module_init() {
     pi = float64(pytra::std::extern(math.pi));
     e = float64(pytra::std::extern(math.e));
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    __pytra_module_init();
-    return 0;
-}

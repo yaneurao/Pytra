@@ -7,8 +7,3 @@
 void py_print(const object& value) {
     py_print(value);
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

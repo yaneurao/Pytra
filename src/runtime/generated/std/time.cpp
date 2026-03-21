@@ -6,8 +6,3 @@
 float64 perf_counter() {
     return time.perf_counter();
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

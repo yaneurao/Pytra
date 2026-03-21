@@ -344,9 +344,3 @@ static void __pytra_module_init() {
     _TYPE_MAX = {};
     _TYPE_STATE = {};
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    __pytra_module_init();
-    return 0;
-}

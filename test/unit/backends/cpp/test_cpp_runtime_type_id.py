@@ -67,8 +67,8 @@ int main() {
     assert(py_runtime_value_isinstance(int64(3), PYTRA_TID_INT));
     assert(py_runtime_value_isinstance(str("x"), PYTRA_TID_STR));
 
-    uint32 base_tid = py_register_class_type(PYTRA_TID_OBJECT);
-    uint32 child_tid = py_register_class_type(base_tid);
+    uint32 base_tid = py_tid_register_class_type(PYTRA_TID_OBJECT);
+    uint32 child_tid = py_tid_register_class_type(base_tid);
 
     assert(py_runtime_type_id_is_subtype(child_tid, base_tid));
     assert(py_runtime_type_id_issubclass(child_tid, base_tid));

@@ -15,8 +15,3 @@ int64 py_ord(const str& ch) {
 str py_chr(int64 codepoint) {
     return py_chr(codepoint);
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

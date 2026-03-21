@@ -15,8 +15,3 @@ void mkdir(const str& p) {
 void makedirs(const str& p, bool exist_ok = false) {
     os.makedirs(p, exist_ok);
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

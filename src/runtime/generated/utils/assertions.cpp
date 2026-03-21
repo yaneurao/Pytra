@@ -50,8 +50,3 @@ bool py_assert_stdout(const list<str>& expected_lines, const object& fn) {
     // self_hosted parser / runtime 互換優先: stdout capture は未実装。
     return true;
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

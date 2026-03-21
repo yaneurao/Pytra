@@ -35,8 +35,3 @@ str py_repeat(const str& v, int64 n) {
     }
     return out;
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

@@ -33,8 +33,3 @@ list<object> py_enumerate_object(const object& values, int64 start = 0) {
     }
     return out;
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

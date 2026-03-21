@@ -16,8 +16,3 @@ list<::std::tuple<A, B>> zip(const list<A>& lhs, const list<B>& rhs) {
     }
     return rc_list_copy_value(out);
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

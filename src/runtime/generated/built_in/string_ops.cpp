@@ -267,8 +267,3 @@ str py_replace(const str& s, const str& oldv, const str& newv) {
     }
     return out;
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

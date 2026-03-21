@@ -521,9 +521,3 @@ static void __pytra_module_init() {
     __initialized = true;
     S = 1;
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    __pytra_module_init();
-    return 0;
-}

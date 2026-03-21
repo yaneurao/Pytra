@@ -30,8 +30,3 @@ T py_max(const T& a, const T& b) {
         return a;
     return b;
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

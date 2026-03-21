@@ -39,8 +39,3 @@ struct deque {
         this->_items = object_new<PyListObj>(list<object>{});
     }
 };
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

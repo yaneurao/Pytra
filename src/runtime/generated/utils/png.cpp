@@ -137,8 +137,3 @@ void write_rgb_png(const str& path, int64 width, int64 height, const bytes& pixe
         f.write(bytes(rc_list_copy_value(png)));
     }
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

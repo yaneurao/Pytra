@@ -32,8 +32,3 @@ bool py_all(const T& values) {
     }
     return true;
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    return 0;
-}

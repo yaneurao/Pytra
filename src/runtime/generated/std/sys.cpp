@@ -43,9 +43,3 @@ static void __pytra_module_init() {
     stderr = object(pytra::std::extern(sys.stderr));
     stdout = object(pytra::std::extern(sys.stdout));
 }
-
-int main(int argc, char** argv) {
-    pytra_configure_from_argv(argc, argv);
-    __pytra_module_init();
-    return 0;
-}
