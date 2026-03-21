@@ -408,20 +408,16 @@ class ZigNativeEmitter:
             value = self._render_expr(value_node) if isinstance(value_node, dict) else "undefined"
             if isinstance(target_node, dict) and target_node.get("kind") == "Name":
                 target_name = _safe_ident(target_node.get("id"), "value")
-                decl_type_any = stmt.get("decl_type")
-                decl_type = decl_type_any.strip() if isinstance(decl_type_any, str) else ""
-                if decl_type == "":
-                    anno_any = stmt.get("annotation")
-                    if isinstance(anno_any, str):
-                        decl_type = anno_any.strip()
+                decl_type = self._infer_decl_type(stmt)
                 if decl_type != "":
                     self._current_type_map()[target_name] = decl_type
+                zig_ty = self._zig_type(decl_type)
                 if len(self._local_var_stack) > 0:
                     self._current_local_vars().add(target_name)
                 if value_node is None and bool(stmt.get("declare")):
-                    self._emit_line("var " + target + ": " + self._zig_type(decl_type) + " = undefined;")
+                    self._emit_line("var " + target + ": " + zig_ty + " = undefined;")
                 else:
-                    self._emit_line("var " + target + " = " + value + ";")
+                    self._emit_line("var " + target + ": " + zig_ty + " = " + value + ";")
             else:
                 self._emit_line(target + " = " + value + ";")
             return
@@ -436,9 +432,15 @@ class ZigNativeEmitter:
                 value = self._render_expr(stmt.get("value"))
                 if td2.get("kind") == "Name":
                     target_name = _safe_ident(td2.get("id"), "value")
+                    decl_type = self._infer_decl_type(stmt)
+                    if decl_type == "":
+                        decl_type = self._get_expr_type(stmt.get("value"))
+                    if decl_type != "":
+                        self._current_type_map()[target_name] = decl_type
                     if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
                         self._current_local_vars().add(target_name)
-                        self._emit_line("var " + target + " = " + value + ";")
+                        zig_ty = self._zig_type(decl_type)
+                        self._emit_line("var " + target + ": " + zig_ty + " = " + value + ";")
                         return
                 self._emit_line(target + " = " + value + ";")
                 return
@@ -451,9 +453,15 @@ class ZigNativeEmitter:
                 value = self._render_expr(stmt.get("value"))
                 if targets[0].get("kind") == "Name":
                     target_name = _safe_ident(targets[0].get("id"), "value")
+                    decl_type = self._infer_decl_type(stmt)
+                    if decl_type == "":
+                        decl_type = self._get_expr_type(stmt.get("value"))
+                    if decl_type != "":
+                        self._current_type_map()[target_name] = decl_type
                     if len(self._local_var_stack) > 0 and target_name not in self._current_local_vars():
                         self._current_local_vars().add(target_name)
-                        self._emit_line("var " + target + " = " + value + ";")
+                        zig_ty = self._zig_type(decl_type)
+                        self._emit_line("var " + target + ": " + zig_ty + " = " + value + ";")
                         return
                 self._emit_line(target + " = " + value + ";")
                 return
@@ -521,6 +529,14 @@ class ZigNativeEmitter:
             return
         raise RuntimeError("lang=zig unsupported stmt kind: " + str(kind))
 
+    def _resolve_arg_zig_type(self, arg_name: str, raw_name: Any, arg_types: dict[str, Any]) -> str:
+        """引数の型を EAST3 の arg_types から解決して Zig 型を返す。"""
+        raw_any = arg_types.get(raw_name) if isinstance(raw_name, str) else None
+        if not isinstance(raw_any, str):
+            raw_any = arg_types.get(arg_name)
+        py_type = raw_any.strip() if isinstance(raw_any, str) else ""
+        return self._zig_type(py_type)
+
     def _emit_function_def(self, stmt: dict[str, Any]) -> None:
         name = _safe_ident(stmt.get("name"), "fn_")
         arg_order_any = stmt.get("arg_order")
@@ -531,12 +547,15 @@ class ZigNativeEmitter:
         arg_strs: list[str] = []
         arg_types_any = stmt.get("arg_types")
         arg_types = arg_types_any if isinstance(arg_types_any, dict) else {}
-        for a_name in arg_names:
-            raw_any = arg_types.get(a_name)
-            zig_ty = self._zig_type(raw_any if isinstance(raw_any, str) else "")
-            arg_strs.append(a_name + ": " + zig_ty)
+        i = 0
+        while i < len(arg_names):
+            raw_name = args[i] if i < len(args) else arg_names[i]
+            zig_ty = self._resolve_arg_zig_type(arg_names[i], raw_name, arg_types)
+            arg_strs.append(arg_names[i] + ": " + zig_ty)
+            i += 1
         ret_type_any = stmt.get("return_type")
-        ret_type = self._zig_type(ret_type_any if isinstance(ret_type_any, str) else "")
+        ret_py = ret_type_any.strip() if isinstance(ret_type_any, str) else ""
+        ret_type = self._zig_type(ret_py)
         self._emit_line("fn " + name + "(" + ", ".join(arg_strs) + ") " + ret_type + " {")
         self.indent += 1
         self._push_function_context(stmt, arg_names, args)
@@ -698,13 +717,13 @@ class ZigNativeEmitter:
                 arg_strs.append("self: *" + cls_name)
                 continue
             args.append(arg_name)
-            raw_any = arg_types.get(arg)
-            zig_ty = self._zig_type(raw_any if isinstance(raw_any, str) else "")
+            zig_ty = self._resolve_arg_zig_type(arg_name, arg, arg_types)
             arg_strs.append(arg_name + ": " + zig_ty)
         prev_class = self.current_class_name
         self.current_class_name = cls_name
         ret_type_any = stmt.get("return_type")
-        ret_type = self._zig_type(ret_type_any if isinstance(ret_type_any, str) else "")
+        ret_py = ret_type_any.strip() if isinstance(ret_type_any, str) else ""
+        ret_type = self._zig_type(ret_py)
         if method_name == "__init__":
             self._emit_line("pub fn init(" + ", ".join(arg_strs[1:]) + ") " + cls_name + " {")
             self.indent += 1
@@ -1013,43 +1032,185 @@ class ZigNativeEmitter:
             return parts[0]
         return "pytra.str_join(&.{ " + ", ".join(parts) + " })"
 
+    def _normalize_type(self, t: str) -> str:
+        """Python 型名を内部正規表現へ変換する。"""
+        s = t.strip()
+        if s == "":
+            return ""
+        if s == "int":
+            return "int64"
+        if s == "float":
+            return "float64"
+        if s == "byte":
+            return "uint8"
+        if s == "any":
+            return "Any"
+        if s.startswith("list[") and s.endswith("]"):
+            inner = self._normalize_type(s[5:-1])
+            return "list[" + inner + "]"
+        if s.startswith("set[") and s.endswith("]"):
+            inner = self._normalize_type(s[4:-1])
+            return "set[" + inner + "]"
+        if s.startswith("dict[") and s.endswith("]"):
+            inner = s[5:-1]
+            parts = self._split_generic(inner)
+            if len(parts) == 2:
+                return "dict[" + self._normalize_type(parts[0]) + ", " + self._normalize_type(parts[1]) + "]"
+        if s.startswith("tuple[") and s.endswith("]"):
+            inner = s[6:-1]
+            parts = self._split_generic(inner)
+            normed: list[str] = []
+            for p in parts:
+                normed.append(self._normalize_type(p))
+            return "tuple[" + ", ".join(normed) + "]"
+        if s.find("|") != -1:
+            parts = [self._normalize_type(p.strip()) for p in s.split("|")]
+            return "|".join(parts)
+        return s
+
+    def _split_generic(self, inner: str) -> list[str]:
+        """ジェネリック型引数をカンマで分割する（ネスト考慮）。"""
+        parts: list[str] = []
+        depth = 0
+        current: list[str] = []
+        i = 0
+        while i < len(inner):
+            ch = inner[i]
+            if ch == "[":
+                depth += 1
+                current.append(ch)
+            elif ch == "]":
+                depth -= 1
+                current.append(ch)
+            elif ch == "," and depth == 0:
+                parts.append("".join(current).strip())
+                current = []
+            else:
+                current.append(ch)
+            i += 1
+        tail = "".join(current).strip()
+        if tail != "":
+            parts.append(tail)
+        return parts
+
     def _zig_type(self, py_type: str) -> str:
-        if py_type == "" or py_type == "Any" or py_type == "object":
-            return "anytype"
-        if py_type == "int" or py_type == "int64":
-            return "i64"
-        if py_type == "float" or py_type == "float64":
-            return "f64"
-        if py_type == "bool":
+        """正規化済み Python 型名を Zig 型名へ変換する。"""
+        t = self._normalize_type(py_type)
+        if t == "":
+            return "PyObject"
+        if t in {"Any", "object", "unknown"}:
+            return "PyObject"
+        # --- スカラー型 ---
+        if t == "bool":
             return "bool"
-        if py_type == "str":
+        if t == "int8":
+            return "i8"
+        if t == "uint8":
+            return "u8"
+        if t == "int16":
+            return "i16"
+        if t == "uint16":
+            return "u16"
+        if t == "int32":
+            return "i32"
+        if t == "uint32":
+            return "u32"
+        if t == "int64":
+            return "i64"
+        if t == "uint64":
+            return "u64"
+        if t == "float32":
+            return "f32"
+        if t == "float64":
+            return "f64"
+        if t == "str":
             return "[]const u8"
-        if py_type == "None":
+        if t == "bytes":
+            return "[]const u8"
+        if t == "bytearray":
+            return "[]u8"
+        if t == "None":
             return "void"
-        if py_type.startswith("list["):
-            return "std.ArrayList(" + self._zig_type(py_type[5:-1].strip()) + ")"
-        if py_type.startswith("dict["):
-            return "anytype"
-        return "anytype"
+        # --- Union / Optional ---
+        if t.find("|") != -1:
+            parts = [p.strip() for p in t.split("|")]
+            non_none = [p for p in parts if p != "None"]
+            has_none = len(non_none) < len(parts)
+            if has_none and len(non_none) == 1:
+                return "?" + self._zig_type(non_none[0])
+            if len(non_none) == 1:
+                return self._zig_type(non_none[0])
+            return "PyObject"
+        # --- コンテナ型 ---
+        if t.startswith("list[") and t.endswith("]"):
+            elem = t[5:-1].strip()
+            if elem == "uint8":
+                return "[]u8"
+            return "std.ArrayList(" + self._zig_type(elem) + ")"
+        if t.startswith("set[") and t.endswith("]"):
+            elem = t[4:-1].strip()
+            return "std.AutoHashMap(" + self._zig_type(elem) + ", void)"
+        if t.startswith("dict[") and t.endswith("]"):
+            parts = self._split_generic(t[5:-1])
+            if len(parts) == 2:
+                key_t = self._zig_type(parts[0].strip())
+                val_t = self._zig_type(parts[1].strip())
+                return "std.AutoHashMap(" + key_t + ", " + val_t + ")"
+            return "std.AutoHashMap([]const u8, PyObject)"
+        if t.startswith("tuple[") and t.endswith("]"):
+            parts = self._split_generic(t[6:-1])
+            if len(parts) == 2 and parts[1].strip() == "...":
+                return "std.ArrayList(" + self._zig_type(parts[0].strip()) + ")"
+            inner_types = [self._zig_type(p.strip()) for p in parts]
+            return "struct { " + ", ".join("_" + str(i) + ": " + zt for i, zt in enumerate(inner_types)) + " }"
+        # --- クラス名 ---
+        if t in self.class_names:
+            return t
+        return "PyObject"
+
+    def _get_expr_type(self, expr_any: Any) -> str:
+        """EAST3 式ノードの resolved_type を正規化して返す。"""
+        if not isinstance(expr_any, dict):
+            return ""
+        resolved = expr_any.get("resolved_type")
+        if isinstance(resolved, str) and resolved.strip() != "":
+            return self._normalize_type(resolved.strip())
+        return ""
+
+    def _infer_decl_type(self, stmt: dict[str, Any]) -> str:
+        """変数宣言ノードから型を推論する（decl_type → annotation → value の resolved_type）。"""
+        decl_type_any = stmt.get("decl_type")
+        if isinstance(decl_type_any, str) and decl_type_any.strip() != "":
+            return self._normalize_type(decl_type_any.strip())
+        anno_any = stmt.get("annotation")
+        if isinstance(anno_any, str) and anno_any.strip() != "":
+            return self._normalize_type(anno_any.strip())
+        value_any = stmt.get("value")
+        if isinstance(value_any, dict):
+            return self._get_expr_type(value_any)
+        return ""
 
     def _lookup_expr_type(self, expr_any: Any) -> str:
         if not isinstance(expr_any, dict):
             return ""
         ed: dict[str, Any] = expr_any
+        resolved = self._get_expr_type(ed)
+        if resolved != "":
+            return resolved
         kind = ed.get("kind")
         if kind == "Name":
             name = _safe_ident(ed.get("id"), "value")
             return self._current_type_map().get(name, "")
         if kind == "Constant":
             v = ed.get("value")
-            if isinstance(v, str):
-                return "str"
-            if isinstance(v, int):
-                return "int"
-            if isinstance(v, float):
-                return "float"
             if isinstance(v, bool):
                 return "bool"
+            if isinstance(v, int):
+                return "int64"
+            if isinstance(v, float):
+                return "float64"
+            if isinstance(v, str):
+                return "str"
         return ""
 
     def _aug_assign_op(self, op: str) -> str:
