@@ -137,6 +137,13 @@
 3. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S3] `py2x-selfhost.py` から `backend_registry_static` import を除去。→ C++ emitter のみ直接 import。非 C++ backend は import グラフに含まれない。
 4. [x] [ID: P1-BACKEND-REGISTRY-DECOUPLING-01-S4] selfhost compile+link で 65 モジュール（以前 151）。非 C++ backend 74 件が完全に消えた（57% 削減）。
 
+#### P1-5: 各言語 emit ラッパーの個別 emitter 直接呼び出し化
+
+文脈: 現在 `toolchain/emit/{rs,cs,go,...}.py` は `toolchain/emit/all.py` に委譲しており、結果として全 backend を import している。`cpp.py` と同様に各言語が自分の emitter だけを直接呼ぶ形にし、`all.py` を廃止する。
+
+1. [ ] [ID: P1-EMIT-DIRECT-CALL-01] 各言語ラッパー（rs, cs, go, java, js, ts, kotlin, swift, ruby, lua, scala, php, nim, powershell）を `all.py` 委譲から個別 emitter 直接呼び出しに変更する。
+2. [ ] [ID: P1-EMIT-DIRECT-CALL-02] `toolchain/emit/all.py` を削除する。
+
 #### P1-3: C++ emitter @staticmethod 対応
 
 文脈: [docs/ja/plans/p1-cpp-staticmethod-emit.md](../plans/p1-cpp-staticmethod-emit.md)
