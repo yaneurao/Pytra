@@ -55,7 +55,9 @@ static inline str py_str_slice(const str& v, int64 lo, int64 up) {
 // py_runtime.h から移動（P6-EAST3-PY-TO-STRING-INLINE-01）。
 // emitter は型確定ケースで ::std::to_string 等にインライン化済み。
 // object 境界の fallback として残す。
-template <class T, ::std::enable_if_t<!::std::is_same_v<::std::decay_t<T>, object>, int> = 0>
+template <class T, ::std::enable_if_t<
+    !::std::is_same_v<::std::decay_t<T>, object> &&
+    !::std::is_same_v<::std::decay_t<T>, ::std::string>, int> = 0>
 static inline ::std::string py_to_string(const T& v) {
     ::std::ostringstream oss;
     oss << v;

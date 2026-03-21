@@ -4,10 +4,12 @@
 #include <type_traits>
 #include "core/py_types.h"
 
-// Forward declarations for generated type_id functions (defined in built_in/type_id.h).
+// Forward declarations for generated type_id functions (defined in runtime/east/built_in/type_id.east).
 bool py_tid_is_subtype(int64 actual_type_id, int64 expected_type_id);
 bool py_tid_issubclass(int64 actual_type_id, int64 expected_type_id);
 bool py_tid_isinstance(const object& value, int64 expected_type_id);
+int64 py_tid_register_class_type(int64 base_type_id);
+int64 py_tid_register_known_class_type(int64 type_id, int64 base_type_id);
 
 static inline bool py_runtime_type_id_is_subtype(pytra_type_id actual_type_id, pytra_type_id expected_type_id) {
     return py_tid_is_subtype(static_cast<int64>(actual_type_id), static_cast<int64>(expected_type_id));

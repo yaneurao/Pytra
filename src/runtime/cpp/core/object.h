@@ -165,6 +165,9 @@ struct Object<void> {
     Object(bool v);
     Object(const str& v);
     Object(::std::size_t v);  // avoid ambiguity with int64/bool
+    // vector<bool>::reference is a proxy type, not bool
+    template<typename T, typename = ::std::enable_if_t<::std::is_convertible_v<T, bool> && !::std::is_same_v<::std::decay_t<T>, bool> && !::std::is_integral_v<::std::decay_t<T>>>>
+    Object(T v) : Object(static_cast<bool>(v)) {}
 
     ~Object() { release(); }
 
