@@ -250,6 +250,8 @@ class ZigNativeEmitter:
         self._dataclass_fields: dict[str, list[str]] = {}
         self._classes_with_init: set[str] = set()
         self._classes_with_mut_method: set[str] = set()
+        self._class_base: dict[str, str] = {}
+        self._class_methods: dict[str, set[str]] = {}
         self._local_type_stack: list[dict[str, str]] = []
         self._ref_var_stack: list[set[str]] = []
         self._local_var_stack: list[set[str]] = []
@@ -547,7 +549,17 @@ class ZigNativeEmitter:
             if kind == "ClassDef":
                 name = _safe_ident(stmt.get("name"), "Class")
                 self.class_names.add(name)
+                base_any = stmt.get("base")
+                if isinstance(base_any, str) and base_any.strip() != "":
+                    self._class_base[name] = _safe_ident(base_any.strip(), "")
+                methods: set[str] = set()
                 cls_body = self._dict_list(stmt.get("body"))
+                for sub in cls_body:
+                    if sub.get("kind") == "FunctionDef":
+                        m_name = sub.get("name")
+                        if isinstance(m_name, str) and m_name != "__init__":
+                            methods.add(m_name)
+                self._class_methods[name] = methods
                 if bool(stmt.get("dataclass")):
                     self._dataclass_names.add(name)
                     fields: list[str] = []
@@ -926,10 +938,26 @@ class ZigNativeEmitter:
             fields.append((field_name, decl_type))
         return fields
 
+    def _get_base_methods(self, cls_name: str) -> list[tuple[str, str]]:
+        """基底クラスのメソッド名と基底クラス名のペアを再帰的に収集する。"""
+        base = self._class_base.get(cls_name, "")
+        if base == "":
+            return []
+        result: list[tuple[str, str]] = []
+        base_methods = self._class_methods.get(base, set())
+        for m in base_methods:
+            result.append((m, base))
+        result.extend(self._get_base_methods(base))
+        return result
+
     def _emit_class_def(self, stmt: dict[str, Any]) -> None:
         cls_name = _safe_ident(stmt.get("name"), "Class")
+        base_name = self._class_base.get(cls_name, "")
         self._emit_line("const " + cls_name + " = struct {")
         self.indent += 1
+        # composition: 基底クラスフィールド
+        if base_name != "":
+            self._emit_line("_base: " + base_name + " = " + base_name + "{},")
         body = self._dict_list(stmt.get("body"))
         # __init__ body から struct フィールドを抽出
         emitted_fields: set[str] = set()
@@ -992,6 +1020,18 @@ class ZigNativeEmitter:
                         else:
                             self._emit_line(field_name + ": " + zig_ty + " = undefined,")
                         emitted_fields.add(field_name)
+        # 基底クラスの未 override メソッドの委譲関数を生成
+        if base_name != "":
+            own_methods = self._class_methods.get(cls_name, set())
+            base_method_pairs = self._get_base_methods(cls_name)
+            for method_name, origin_cls in base_method_pairs:
+                if method_name not in own_methods:
+                    self._emit_line("pub fn " + method_name + "(self: *const " + cls_name + ") @TypeOf(" + origin_cls + "." + method_name + "(&self._base)) {")
+                    self.indent += 1
+                    self._emit_line("return self._base." + method_name + "();")
+                    self.indent -= 1
+                    self._emit_line("}")
+                    self._emit_line("")
         self.indent -= 1
         self._emit_line("};")
         self._emit_line("")
