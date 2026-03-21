@@ -247,13 +247,13 @@ def _render_expr(expr_any: Any) -> str:
         attr = _get_str(expr, "attr")
         safe_attr = _safe_ident(attr, "prop")
         # Instance attribute on self/hashtable -> hashtable key access
-        if isinstance(value_node, dict) and _get_str(value_node, "kind") == "Name":
-            vname = _get_str(value_node, "id")
-            if vname == "self":
+        if isinstance(value_node, dict):
+            vname = _get_str(value_node, "id") if _get_str(value_node, "kind") == "Name" else ""
+            vtype = _get_str(value_node, "resolved_type")
+            if vname == "self" or vname in _CLASS_NAMES[0]:
                 return '$self["' + attr + '"]'
-            if vname in _CLASS_NAMES[0]:
-                # In method body, ClassName.attr means self.attr
-                return '$self["' + attr + '"]'
+            if vtype in _CLASS_NAMES[0]:
+                return value + '["' + attr + '"]'
         return value + "." + safe_attr
 
     if kind == "Call":
@@ -462,8 +462,11 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
             attr = _safe_ident(_get_str(func_d, "attr"), "method")
             # math module: $math.sqrt(...) -> [Math]::Sqrt(...)
             owner_name = ""
-            if isinstance(owner_node, dict) and _get_str(owner_node, "kind") == "Name":
-                owner_name = _get_str(owner_node, "id")
+            owner_type = ""
+            if isinstance(owner_node, dict):
+                if _get_str(owner_node, "kind") == "Name":
+                    owner_name = _get_str(owner_node, "id")
+                owner_type = _get_str(owner_node, "resolved_type")
             # In method body, ClassName.method() means self.method()
             if owner_name in _CLASS_NAMES[0]:
                 owner = "$self"
@@ -501,9 +504,9 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 }
                 ps_name = _MATH_PS.get(attr, "")
                 if ps_name != "":
-                    if attr in ("pi", "e"):
-                        return "[Math]::" + ps_name
-                    return "[Math]::" + ps_name + "(" + ", ".join(rendered_args) + ")"
+                    if attr in ("pi", "e", "inf"):
+                        return "([Math]::" + ps_name + ")"
+                    return "([Math]::" + ps_name + "(" + ", ".join(rendered_args) + "))"
             if attr == "append":
                 if len(rendered_args) > 0:
                     return owner + " += @(" + rendered_args[0] + ")"
@@ -589,9 +592,12 @@ def _render_call_expr(expr: dict[str, Any]) -> str:
                 "keys", "values", "items", "get", "update", "setdefault",
                 "add", "discard", "union", "intersection", "difference",
                 "encode", "decode", "read", "write", "close", "flush",
-            ) and owner_name != "" and owner_name not in (
-                "math", "os", "sys", "json", "re", "random", "pathlib", "time",
-                "collections", "itertools", "functools", "io", "struct",
+            ) and (
+                owner_name == "self" or owner_name in _CLASS_NAMES[0] or owner_type in _CLASS_NAMES[0]
+                or (owner_name != "" and owner_name not in (
+                    "math", "os", "sys", "json", "re", "random", "pathlib", "time",
+                    "collections", "itertools", "functools", "io", "struct",
+                ))
             ):
                 # Dynamic dispatch: ClassName_method $self args
                 if len(rendered_args) == 0:
