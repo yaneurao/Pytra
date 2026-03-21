@@ -268,6 +268,31 @@ def _render_expr(expr_any: Any) -> str:
         rendered = [_render_expr(e) for e in elements]
         return "@(" + ", ".join(rendered) + ")"
 
+    if kind == "ListComp":
+        elt = expr.get("elt")
+        generators = _get_list(expr, "generators")
+        if len(generators) == 0:
+            return "@()"
+        gen = generators[0]
+        if not isinstance(gen, dict):
+            return "@()"
+        target = gen.get("target")
+        iter_expr = gen.get("iter")
+        ifs = _get_list(gen, "ifs")
+        target_name = "$" + _safe_ident(_get_str(target, "id") if isinstance(target, dict) else "_lc", "_lc")
+        iter_rendered = _render_expr(iter_expr)
+        elt_rendered = _render_expr(elt)
+        if len(ifs) == 0:
+            return "@(" + iter_rendered + " | ForEach-Object { " + target_name + " = $_; " + elt_rendered + " })"
+        cond = " -and ".join(["(" + _render_expr(c) + ")" for c in ifs])
+        return "@(" + iter_rendered + " | ForEach-Object { " + target_name + " = $_; if (" + cond + ") { " + elt_rendered + " } })"
+
+    if kind == "DictComp":
+        return "@{}"
+
+    if kind == "SetComp":
+        return "@{}"
+
     if kind == "Dict":
         keys = _get_list(expr, "keys")
         vals = _get_list(expr, "values")
@@ -766,11 +791,67 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
         iter_plan = stmt.get("iter_plan")
         normalized = _get_dict(stmt, "normalized_exprs")
 
+        # RuntimeIterForPlan: foreach ($item in collection) { ... }
+        if isinstance(iter_plan, dict) and _get_str(iter_plan, "kind") == "RuntimeIterForPlan":
+            iter_expr = iter_plan.get("iter_expr")
+            iter_rendered = _render_expr(iter_expr)
+            # Check for enumerate: need index + value unpacking
+            is_enumerate = False
+            enumerate_start = "0"
+            if isinstance(iter_expr, dict) and _get_str(iter_expr, "kind") == "Call":
+                call_func = iter_expr.get("func")
+                if isinstance(call_func, dict) and _get_str(call_func, "id") == "enumerate":
+                    is_enumerate = True
+                    enum_args = _get_list(iter_expr, "args")
+                    if len(enum_args) >= 2:
+                        enumerate_start = _render_expr(enum_args[1])
+                    if len(enum_args) >= 1:
+                        iter_rendered = _render_expr(enum_args[0])
+
+            # TupleTarget: unpack into multiple variables
+            if isinstance(target_plan, dict) and _get_str(target_plan, "kind") == "TupleTarget":
+                elements = _get_list(target_plan, "elements")
+                if is_enumerate and len(elements) == 2:
+                    idx_var = "$" + _safe_ident(_get_str(elements[0], "id") if isinstance(elements[0], dict) else "_idx", "_idx")
+                    val_var = "$" + _safe_ident(_get_str(elements[1], "id") if isinstance(elements[1], dict) else "_val", "_val")
+                    lines = [
+                        indent + idx_var + " = " + enumerate_start,
+                        indent + "foreach (" + val_var + " in " + iter_rendered + ") {",
+                    ]
+                    lines.extend(_emit_body(body, indent=indent + "    ", ctx=ctx))
+                    lines.append(indent + "    " + idx_var + " += 1")
+                    lines.append(indent + "}")
+                    return lines
+                else:
+                    # General tuple unpack in foreach
+                    tmp_var = "$__for_item"
+                    lines = [indent + "foreach (" + tmp_var + " in " + iter_rendered + ") {"]
+                    for idx_e, elt in enumerate(elements):
+                        if isinstance(elt, dict):
+                            elt_var = "$" + _safe_ident(_get_str(elt, "id"), "_v")
+                            lines.append(indent + "    " + elt_var + " = " + tmp_var + "[" + str(idx_e) + "]")
+                    lines.extend(_emit_body(body, indent=indent + "    ", ctx=ctx))
+                    lines.append(indent + "}")
+                    return lines
+            else:
+                # Simple foreach with single target
+                loop_var = "$_item"
+                if isinstance(target_plan, dict):
+                    tp_name = _get_str(target_plan, "id")
+                    if tp_name != "":
+                        loop_var = "$" + _safe_ident(tp_name, "_item")
+                lines = [indent + "foreach (" + loop_var + " in " + iter_rendered + ") {"]
+                lines.extend(_emit_body(body, indent=indent + "    ", ctx=ctx))
+                lines.append(indent + "}")
+                return lines
+
         # Extract loop variable from target_plan
         loop_var = "$_i"
         if isinstance(target_plan, dict):
             tp_d: dict[str, object] = target_plan
-            loop_var = "$" + _safe_ident(_get_str(tp_d, "id"), "_i")
+            tp_id = _get_str(tp_d, "id")
+            if tp_id != "":
+                loop_var = "$" + _safe_ident(tp_id, "_i")
 
         # Try normalized_exprs (for_init_expr, for_cond_expr, for_update_expr)
         init_expr = normalized.get("for_init_expr")
@@ -786,21 +867,27 @@ def _emit_stmt(stmt: dict[str, Any], *, indent: str, ctx: dict[str, Any]) -> lis
             elif update_expr is not None:
                 update_str = _render_expr(update_expr)
             else:
-                update_str = loop_var + "++"
+                update_str = loop_var + " += 1"
             lines = [indent + "for (" + init_str + "; " + cond_str + "; " + update_str + ") {"]
         elif isinstance(iter_plan, dict):
-            # Fallback: use iter_plan (StaticRangeForPlan)
             ip_d: dict[str, object] = iter_plan
-            start = _render_expr(ip_d.get("start"))
-            stop = _render_expr(ip_d.get("stop"))
-            step = ip_d.get("step")
-            step_val = 1
-            if isinstance(step, dict) and step.get("value") is not None:
-                sv = step.get("value")
-                step_val = sv if isinstance(sv, int) else 1
-            lines = [indent + "for (" + loop_var + " = " + start + "; " + loop_var + " -lt " + stop + "; " + loop_var + " += " + str(step_val) + ") {"]
+            ip_kind = _get_str(ip_d, "kind")
+            if ip_kind == "StaticRangeForPlan":
+                start = _render_expr(ip_d.get("start"))
+                stop = _render_expr(ip_d.get("stop"))
+                step = ip_d.get("step")
+                step_val = 1
+                if isinstance(step, dict) and step.get("value") is not None:
+                    sv = step.get("value")
+                    step_val = sv if isinstance(sv, int) else 1
+                if step_val >= 0:
+                    lines = [indent + "for (" + loop_var + " = " + start + "; " + loop_var + " -lt " + stop + "; " + loop_var + " += " + str(step_val) + ") {"]
+                else:
+                    lines = [indent + "for (" + loop_var + " = " + start + "; " + loop_var + " -gt " + stop + "; " + loop_var + " += " + str(step_val) + ") {"]
+            else:
+                lines = [indent + "for (" + loop_var + " = 0; $true; " + loop_var + " += 1) {"]
         else:
-            lines = [indent + "for (" + loop_var + " = 0; $true; " + loop_var + "++) {"]
+            lines = [indent + "for (" + loop_var + " = 0; $true; " + loop_var + " += 1) {"]
 
         lines.extend(_emit_body(body, indent=indent + "    ", ctx=ctx))
         lines.append(indent + "}")
